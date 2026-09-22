@@ -2,11 +2,24 @@ import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-int
 import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
-import {Activity, ArrowUpRight, CircleAlert, Cloud, GitBranch, LogIn, Lock, Users} from 'lucide-react';
+import {
+    Activity,
+    ArrowUpRight,
+    AtSign,
+    CircleAlert,
+    CloudUpload,
+    Globe,
+    LogIn,
+    Lock,
+    Palette,
+    Trophy,
+    Users
+} from 'lucide-react';
 
 import Modal from '../../containers/windowed-modal.jsx';
 import Avatar from '../mw-avatar/avatar.jsx';
 import Button from '../button/button.jsx';
+import communityEnabled from '../../lib/community/enabled.js';
 import {getRoturSessionApi} from '../../lib/rotur/session-api.js';
 import styles from './rotur-login-modal.css';
 
@@ -23,84 +36,125 @@ const messages = defineMessages({
     }
 });
 
-const FEATURES = [
-    {
-        id: 'activity',
-        icon: Activity,
-        title: (
-            <FormattedMessage
-                defaultMessage="Show what you're editing"
-                description="Rotur login feature title"
-                id="mw.roturLogin.feature.activity.title"
-            />
-        ),
-        description: (
-            <FormattedMessage
-                defaultMessage="Share MistWarp activity on your Rotur profile."
-                description="Rotur login feature description"
-                id="mw.roturLogin.feature.activity.desc"
-            />
-        )
-    },
-    {
-        id: 'cloud',
-        icon: Cloud,
-        title: (
-            <FormattedMessage
-                defaultMessage="Cloud themes and settings"
-                description="Rotur login feature title"
-                id="mw.roturLogin.feature.cloud.title"
-            />
-        ),
-        description: (
-            <FormattedMessage
-                defaultMessage="Keep your themes and settings in sync across devices."
-                description="Rotur login feature description"
-                id="mw.roturLogin.feature.cloud.description"
-            />
-        )
-    },
-    {
-        id: 'git',
-        icon: GitBranch,
-        title: (
-            <FormattedMessage
-                defaultMessage="Rotur Git"
-                description="Rotur login feature title"
-                id="mw.roturLogin.feature.git.name"
-            />
-        ),
-        description: (
-            <FormattedMessage
-                defaultMessage="Push and clone projects from the Git window."
-                description="Rotur login feature description"
-                id="mw.roturLogin.feature.git.description"
-            />
-        )
-    },
-    {
-        id: 'friends',
-        icon: Users,
-        comingSoon: true,
-        title: (
-            <FormattedMessage
-                defaultMessage="Friends and collab invites"
-                description="Upcoming Rotur feature title"
-                id="mw.roturLogin.coming.friends.title"
-            />
-        ),
-        description: (
-            <FormattedMessage
-                defaultMessage="See which friends are online and invite them to collab."
-                description="Upcoming Rotur feature description"
-                id="mw.roturLogin.coming.friends.description"
-            />
-        )
-    }
+const feature = (id, icon, title, description) => ({id, icon, title, description});
+
+const COMMUNITY_FEATURES = [
+    feature(
+        'save',
+        CloudUpload,
+        <FormattedMessage
+            defaultMessage="Save to MistWarp"
+            description="Rotur login feature title"
+            id="mw.roturLogin.feature.save.title"
+        />,
+        <FormattedMessage
+            defaultMessage="Save from the File menu and restore old versions later."
+            description="Rotur login feature description"
+            id="mw.roturLogin.feature.save.description"
+        />
+    ),
+    feature(
+        'collab',
+        Users,
+        <FormattedMessage
+            defaultMessage="Live collaboration"
+            description="Rotur login feature title"
+            id="mw.roturLogin.feature.collab.title"
+        />,
+        <FormattedMessage
+            defaultMessage="Open a saved project to your teammates from the Tools menu."
+            description="Rotur login feature description"
+            id="mw.roturLogin.feature.collab.description"
+        />
+    ),
+    feature(
+        'publish',
+        Globe,
+        <FormattedMessage
+            defaultMessage="Publish and remix"
+            description="Rotur login feature title"
+            id="mw.roturLogin.feature.publish.title"
+        />,
+        <FormattedMessage
+            defaultMessage="Share projects, comment, react, and follow creators."
+            description="Rotur login feature description"
+            id="mw.roturLogin.feature.publish.description"
+        />
+    ),
+    feature(
+        'spaces',
+        Trophy,
+        <FormattedMessage
+            defaultMessage="Spaces and challenges"
+            description="Rotur login feature title"
+            id="mw.roturLogin.feature.spaces.title"
+        />,
+        <FormattedMessage
+            defaultMessage="Join studios and challenges, submit entries, and vote."
+            description="Rotur login feature description"
+            id="mw.roturLogin.feature.spaces.description"
+        />
+    )
 ];
 
-const FeatureRow = ({icon: Icon, title, description, comingSoon}) => (
-    <li className={comingSoon ? styles.featureComing : styles.feature}>
+const ACCOUNT_FEATURES = [
+    feature(
+        'sync',
+        Palette,
+        <FormattedMessage
+            defaultMessage="Themes and settings sync"
+            description="Rotur login feature title"
+            id="mw.roturLogin.feature.sync.title"
+        />,
+        <FormattedMessage
+            defaultMessage="Your theme and settings follow you to every device."
+            description="Rotur login feature description"
+            id="mw.roturLogin.feature.sync.description"
+        />
+    ),
+    feature(
+        'activity',
+        Activity,
+        <FormattedMessage
+            defaultMessage="Show what you're editing"
+            description="Rotur login feature title"
+            id="mw.roturLogin.feature.activity.title"
+        />,
+        <FormattedMessage
+            defaultMessage="Share MistWarp activity on your Rotur profile."
+            description="Rotur login feature description"
+            id="mw.roturLogin.feature.activity.desc"
+        />
+    )
+];
+
+const STANDALONE_FEATURES = [
+    feature(
+        'name',
+        AtSign,
+        <FormattedMessage
+            defaultMessage="Your name in projects"
+            description="Rotur login feature title"
+            id="mw.roturLogin.feature.name.title"
+        />,
+        <FormattedMessage
+            defaultMessage="The username block and cloud variables use your Rotur name."
+            description="Rotur login feature description"
+            id="mw.roturLogin.feature.name.description"
+        />
+    )
+];
+
+const FEATURES = communityEnabled ?
+    COMMUNITY_FEATURES.concat(ACCOUNT_FEATURES) :
+    ACCOUNT_FEATURES.concat(STANDALONE_FEATURES);
+
+const WINDOW_HEIGHTS = communityEnabled ?
+    {signedIn: 470, signedOut: 495} :
+    {signedIn: 420, signedOut: 470};
+
+const FeatureRow = ({icon: Icon, title, description}) => (
+    <li className={styles.feature}>
         <span className={styles.featureIcon}>
             <Icon
                 aria-hidden="true"
@@ -108,18 +162,7 @@ const FeatureRow = ({icon: Icon, title, description, comingSoon}) => (
             />
         </span>
         <span className={styles.featureText}>
-            <span className={styles.featureTitle}>
-                {title}
-                {comingSoon ? (
-                    <span className={styles.badge}>
-                        <FormattedMessage
-                            defaultMessage="Coming soon"
-                            description="Badge on a planned Rotur feature"
-                            id="mw.roturLogin.comingSoon"
-                        />
-                    </span>
-                ) : null}
-            </span>
+            <span className={styles.featureTitle}>{title}</span>
             <span className={styles.featureDesc}>{description}</span>
         </span>
     </li>
@@ -128,8 +171,7 @@ const FeatureRow = ({icon: Icon, title, description, comingSoon}) => (
 FeatureRow.propTypes = {
     icon: PropTypes.elementType.isRequired,
     title: PropTypes.node.isRequired,
-    description: PropTypes.node.isRequired,
-    comingSoon: PropTypes.bool
+    description: PropTypes.node.isRequired
 };
 
 class RoturLoginModal extends React.Component {
@@ -186,8 +228,8 @@ class RoturLoginModal extends React.Component {
                 onRequestClose={this.handleRequestClose}
                 resizable
                 maximizable={false}
-                width={440}
-                height={loggedIn ? 470 : 530}
+                width={communityEnabled ? 580 : 440}
+                height={WINDOW_HEIGHTS[loggedIn ? 'signedIn' : 'signedOut']}
                 minHeight={320}
                 minWidth={340}
             >
@@ -228,15 +270,15 @@ class RoturLoginModal extends React.Component {
                                 <p className={styles.subtitle}>
                                     {loggedIn ? (
                                         <FormattedMessage
-                                            defaultMessage="Your Rotur account turns these on in the editor."
+                                            defaultMessage="Your Rotur account turns these on across MistWarp."
                                             description="Subtitle in Rotur info modal when signed in"
-                                            id="mw.roturLogin.signedInSubtitle"
+                                            id="mw.roturLogin.signedInIntro"
                                         />
                                     ) : (
                                         <FormattedMessage
-                                            defaultMessage="One Rotur account turns these on in the editor."
+                                            defaultMessage="One Rotur account turns these on across MistWarp."
                                             description="Subtitle in Rotur login modal"
-                                            id="mw.roturLogin.intro"
+                                            id="mw.roturLogin.accountIntro"
                                         />
                                     )}
                                 </p>
@@ -244,13 +286,12 @@ class RoturLoginModal extends React.Component {
                         </div>
 
                         <ul className={styles.featureList}>
-                            {FEATURES.map(feature => (
+                            {FEATURES.map(item => (
                                 <FeatureRow
-                                    key={feature.id}
-                                    icon={feature.icon}
-                                    title={feature.title}
-                                    description={feature.description}
-                                    comingSoon={feature.comingSoon}
+                                    key={item.id}
+                                    icon={item.icon}
+                                    title={item.title}
+                                    description={item.description}
                                 />
                             ))}
                         </ul>
