@@ -10,6 +10,8 @@ import FriendsCollab from './mw-friends-collab.jsx';
 import CollaborationService from '../lib/collaboration/index.js';
 import NotificationSystem from '../lib/notification-manager.js';
 import {setGitModalInitialView} from '../lib/git/modal-view.js';
+import smartSave from '../lib/mw/smart-save.js';
+import {setProjectUnchanged} from '../reducers/project-changed.js';
 
 import {
     setProjectPresence,
@@ -185,20 +187,26 @@ class CollaborationContainer extends Component {
         }
     }
 
-    async handleJoinRoom (roomId, username, scope = null, invite = null) {
-        const accepted = await new Promise(resolve => this.props.openSimpleDialog({
+    async handleJoinRoom (roomId, username, scope = null, invite = null, {confirmed = false} = {}) {
+        const unsaved = Boolean(this.props.projectChanged);
+        const choice = confirmed ? 'join' : await new Promise(resolve => this.props.openSimpleDialog({
             type: 'confirm',
             title: 'Join live editing?',
             message: `Joining replaces the editor with the host's project. ` +
                 'Everyone in the room can change that code. ' +
                 `A device backup keeps your current code before each full synchronization. ${
                     scope ? 'Shared edits can be saved to this MistWarp project.' :
-                        'Your current MistWarp save destination will be disconnected.'}`,
-            choices: [{value: 'join', label: 'Back up and join live editing'}],
-            onOk: () => resolve(true),
-            onCancel: () => resolve(false)
+                        'Your current MistWarp save destination will be disconnected.'}${
+                    unsaved ? ' You have unsaved changes. Save them first so you can come back to your project.' : ''}`,
+            choices: unsaved ? [
+                {value: 'join', label: 'Join without saving'},
+                {value: 'save', label: 'Save and join'}
+            ] : [{value: 'join', label: 'Back up and join live editing'}],
+            onOk: value => resolve(value || 'join'),
+            onCancel: () => resolve(null)
         }));
-        if (!accepted) throw new Error('Joining canceled. Your current project is unchanged.');
+        if (!choice) throw new Error('Joining canceled. Your current project is unchanged.');
+        if (choice === 'save') await this.saveBeforeJoining();
         try {
             this.props.onSetError(null);
 
@@ -217,6 +225,20 @@ class CollaborationContainer extends Component {
             this.props.onSetError(error.message || 'Failed to join room');
             throw error;
         }
+    }
+
+    async saveBeforeJoining () {
+        let saved = false;
+        try {
+            saved = await smartSave({
+                vm: this.props.vm,
+                title: this.props.projectTitle,
+                onSaved: this.props.onProjectUnchanged
+            });
+        } catch (error) {
+            throw new Error('Joining canceled. Your project could not be saved.');
+        }
+        if (!saved) throw new Error('Joining canceled. Finish saving your project, then join again.');
     }
 
     async handleCreateRoom (roomId, username, privacy = 'public', scope = null) {
@@ -670,6 +692,9 @@ CollaborationContainer.propTypes = {
     onSetUserActivity: PropTypes.func.isRequired,
     onRemoveUserActivity: PropTypes.func.isRequired,
     onOpenChangeUsername: PropTypes.func.isRequired,
+    onProjectUnchanged: PropTypes.func.isRequired,
+    projectChanged: PropTypes.bool,
+    projectTitle: PropTypes.string,
     activeTabIndex: PropTypes.number,
     // eslint-disable-next-line react/forbid-prop-types
     userActivity: PropTypes.object.isRequired
@@ -677,6 +702,8 @@ CollaborationContainer.propTypes = {
 
 const mapStateToProps = state => ({
     isProjectReady: getIsShowingProject(state.scratchGui.projectState?.loadingState),
+    projectChanged: state.scratchGui.projectChanged,
+    projectTitle: state.scratchGui.projectTitle,
     isVisible: state.scratchGui.collaboration.modalVisible,
     isConnected: state.scratchGui.collaboration.isConnected,
     roomId: state.scratchGui.collaboration.roomId,
@@ -715,6 +742,7 @@ const mapDispatchToProps = dispatch => ({
     onSetUserActivity: activity => dispatch(setUserActivity(activity)),
     onRemoveUserActivity: userId => dispatch(removeUserActivity(userId)),
     onOpenChangeUsername: () => dispatch(openUsernameModal()),
+    onProjectUnchanged: () => dispatch(setProjectUnchanged()),
     onShowToast: (message, type) => dispatch({
         type: 'scratch-gui/SHOW_TOAST',
         message,

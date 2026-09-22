@@ -3,6 +3,7 @@ import {mountWithIntl} from '../../helpers/intl-helpers.jsx';
 import Emitter from '../../../src/lib/collaboration/emitter.js';
 
 jest.mock('../../../src/lib/notification-manager.js');
+jest.mock('../../../src/lib/mw/smart-save.js', () => jest.fn(async () => true));
 jest.mock('../../../src/lib/rotur/friends.js', () => {
     const mockEmitter = require('../../../src/lib/collaboration/emitter.js').default;
     const service = new mockEmitter();
@@ -28,6 +29,7 @@ jest.mock('../../../src/lib/rotur/friends.js', () => {
 });
 
 import {getFriendsService} from '../../../src/lib/rotur/friends.js';
+import smartSave from '../../../src/lib/mw/smart-save.js';
 import {FriendsCollab} from '../../../src/containers/mw-friends-collab.jsx';
 
 class FakeCollab extends Emitter {
@@ -37,6 +39,11 @@ class FakeCollab extends Emitter {
         this.isHost = false;
         this.roomId = null;
         this.keys = new Map();
+        this.users = [];
+    }
+
+    getConnectedUsers () {
+        return this.users;
     }
 
     addInviteKey (key, username, expiresAt) {
@@ -60,12 +67,21 @@ const mount = (props = {}) => {
     });
     const onJoinRoom = jest.fn(async () => {});
     const onOpen = jest.fn();
+    const dialogs = [];
+    const answer = {value: 'join'};
+    const openSimpleDialog = jest.fn(config => {
+        dialogs.push(config);
+        if (answer.value) config.onOk(answer.value);
+        else config.onCancel();
+    });
     let tools = null;
     const wrapper = mountWithIntl(
         <FriendsCollab
             roturHandle="alice"
             service={service}
             sessionMembers={[]}
+            openSimpleDialog={openSimpleDialog}
+            onProjectUnchanged={jest.fn()}
             onCreateRoom={onCreateRoom}
             onJoinRoom={onJoinRoom}
             onOpen={onOpen}
@@ -79,7 +95,7 @@ const mount = (props = {}) => {
         </FriendsCollab>
     );
     const instance = wrapper.find(FriendsCollab).instance();
-    return {wrapper, instance, service, onCreateRoom, onJoinRoom, onOpen, getTools: () => tools};
+    return {wrapper, instance, service, onCreateRoom, onJoinRoom, onOpen, dialogs, answer, getTools: () => tools};
 };
 
 describe('FriendsCollab', () => {
@@ -149,19 +165,87 @@ describe('FriendsCollab', () => {
         wrapper.update();
         expect(wrapper.text()).toContain('invited you to edit together');
         await instance.handleAcceptInvite(instance.state.incomingInvites[0]);
-        expect(onJoinRoom).toHaveBeenCalledWith('room-1', 'alice', null, key);
+        expect(onJoinRoom).toHaveBeenCalledWith('room-1', 'alice', null, key, {confirmed: true});
         expect(friends.send).toHaveBeenCalledWith('Bob', {t: 'mw.invite.reply', v: 1, id, answer: 'accepted'});
         expect(friends.sendToOwnTabs).toHaveBeenCalledWith({t: 'mw.handled', v: 1, id});
         expect(onOpen).toHaveBeenCalled();
         expect(instance.state.incomingInvites).toHaveLength(0);
     });
 
-    test('cancelling the join confirmation keeps the invite card', async () => {
-        const {instance, onJoinRoom} = mount();
-        onJoinRoom.mockRejectedValueOnce(new Error('Joining canceled. Your current project is unchanged.'));
-        friends.emit('message', {from: 'Bob', message: {t: 'mw.invite', v: 1, id: 'c'.repeat(24), room: 'r', key: 'd'.repeat(32)}});
+    const invite = id => ({from: 'Bob', message: {t: 'mw.invite', v: 1, id, room: 'r', key: 'd'.repeat(32)}});
+
+    test('the join dialog only offers saving when there are unsaved changes', async () => {
+        const clean = mount();
+        friends.emit('message', invite('1'.repeat(24)));
+        await clean.instance.handleAcceptInvite(clean.instance.state.incomingInvites[0]);
+        expect(clean.dialogs[0].title).toBe('Join Bob?');
+        expect(clean.dialogs[0].choices.map(choice => choice.value)).toEqual(['join']);
+
+        const changed = mount({projectChanged: true});
+        friends.emit('message', invite('2'.repeat(24)));
+        await changed.instance.handleAcceptInvite(changed.instance.state.incomingInvites[0]);
+        expect(changed.dialogs[0].choices.map(choice => choice.value)).toEqual(['join', 'save']);
+        expect(changed.dialogs[0].message).toContain('unsaved changes');
+    });
+
+    test('the join dialog warns when joining would end your own session', async () => {
+        const {instance, service, dialogs} = mount();
+        service.isConnected = true;
+        service.isHost = true;
+        service.users = [{id: 'me'}, {id: 'carol'}];
+        friends.emit('message', invite('3'.repeat(24)));
         await instance.handleAcceptInvite(instance.state.incomingInvites[0]);
+        expect(dialogs[0].message).toContain('everyone in it will be disconnected');
+    });
+
+    test('save and join saves first, then joins', async () => {
+        const {instance, answer, onJoinRoom} = mount({projectChanged: true});
+        answer.value = 'save';
+        smartSave.mockClear();
+        friends.emit('message', invite('4'.repeat(24)));
+        await instance.handleAcceptInvite(instance.state.incomingInvites[0]);
+        expect(smartSave).toHaveBeenCalled();
+        expect(smartSave.mock.invocationCallOrder[0]).toBeLessThan(onJoinRoom.mock.invocationCallOrder[0]);
+        expect(instance.state.incomingInvites).toHaveLength(0);
+    });
+
+    test('when saving needs the save window, the invite waits', async () => {
+        const {instance, answer, onJoinRoom} = mount({projectChanged: true});
+        answer.value = 'save';
+        smartSave.mockResolvedValueOnce(false);
+        friends.emit('message', invite('5'.repeat(24)));
+        await instance.handleAcceptInvite(instance.state.incomingInvites[0]);
+        expect(onJoinRoom).not.toHaveBeenCalled();
         expect(instance.state.incomingInvites).toHaveLength(1);
+        expect(instance.state.busyId).toBeNull();
+    });
+
+    test('a failed save does not join', async () => {
+        const {instance, answer, onJoinRoom} = mount({projectChanged: true});
+        answer.value = 'save';
+        smartSave.mockRejectedValueOnce(new Error('disk full'));
+        friends.emit('message', invite('6'.repeat(24)));
+        await instance.handleAcceptInvite(instance.state.incomingInvites[0]);
+        expect(onJoinRoom).not.toHaveBeenCalled();
+        expect(instance.state.incomingInvites).toHaveLength(1);
+    });
+
+    test('cancelling the join dialog keeps the invite card', async () => {
+        const {instance, answer, onJoinRoom} = mount();
+        answer.value = null;
+        friends.emit('message', invite('7'.repeat(24)));
+        await instance.handleAcceptInvite(instance.state.incomingInvites[0]);
+        expect(onJoinRoom).not.toHaveBeenCalled();
+        expect(instance.state.incomingInvites).toHaveLength(1);
+        expect(friends.send).not.toHaveBeenCalled();
+    });
+
+    test('a failed join removes the card and reports it', async () => {
+        const {instance, onJoinRoom} = mount();
+        onJoinRoom.mockRejectedValueOnce(new Error('Room did not respond.'));
+        friends.emit('message', invite('c'.repeat(24)));
+        await instance.handleAcceptInvite(instance.state.incomingInvites[0]);
+        expect(instance.state.incomingInvites).toHaveLength(0);
         expect(friends.send).not.toHaveBeenCalled();
     });
 

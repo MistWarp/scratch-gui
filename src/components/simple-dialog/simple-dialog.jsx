@@ -63,6 +63,8 @@ class SimpleDialogComponent extends React.Component {
                 onRequestClose={this.props.onCancel}
                 contentLabel={title}
                 id="simpleDialog"
+                fitContent
+                width={460}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="simpleDialog-title"
@@ -104,10 +106,10 @@ class SimpleDialogComponent extends React.Component {
                                 <FormattedMessage {...messages.cancel} />
                             </button>
                         )}
-                        {choices ? choices.map(choice => (
+                        {choices ? choices.map((choice, index) => (
                             <button
                                 key={choice.value}
-                                className={styles.okButton}
+                                className={index === choices.length - 1 ? styles.okButton : styles.choiceButton}
                                 onClick={this.handleChoice}
                                 value={choice.value}
                                 type="button"
