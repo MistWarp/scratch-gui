@@ -136,6 +136,7 @@ const Profile = () => {
     const [profile, setProfile] = useState(null);
     const [profileLoadContext, setProfileLoadContext] = useState('');
     const [mwUser, setMwUser] = useState(null);
+    const [mwUserLoadContext, setMwUserLoadContext] = useState('');
     const [followers, setFollowers] = useState([]);
     const [error, setError] = useState(null);
     const [errorLoadContext, setErrorLoadContext] = useState('');
@@ -193,6 +194,7 @@ const Profile = () => {
         setError(null);
         setErrorLoadContext('');
         setProjectsError('');
+        setMwUserLoadContext('');
         rotur.profile(name, {includePosts: true})
             .then(fresh(data => {
                 if (!data || typeof data !== 'object') throw new Error('Profile response was incomplete.');
@@ -206,11 +208,17 @@ const Profile = () => {
                 setError(profileLoadMessage(requestError));
             }));
         api.getUser(name)
-            .then(fresh(data => setMwUser(data ? {
-                ...data,
-                projects: Array.isArray(data.projects) ? data.projects : []
-            } : null)))
-            .catch(fresh(() => setMwUser(null)));
+            .then(fresh(data => {
+                setMwUser(data ? {
+                    ...data,
+                    projects: Array.isArray(data.projects) ? data.projects : []
+                } : null);
+                setMwUserLoadContext(loadContext);
+            }))
+            .catch(fresh(() => {
+                setMwUser(null);
+                setMwUserLoadContext(loadContext);
+            }));
         api.userReviews(name)
             .then(fresh(data => setReviews(data && Array.isArray(data.reviews) ? data.reviews : [])))
             .catch(fresh(() => setReviews([])));
@@ -270,6 +278,7 @@ const Profile = () => {
     const refreshAdminUser = useCallback(async () => {
         const data = await api.admin.getUser(name);
         setAdminUser(data);
+        setMwUser(current => (current ? {...current, banned: data.banned} : current));
         setAdminLevel((data.standing && data.standing.level) || 'good');
         setAdminProjects(data.projects || []);
     }, [name]);
@@ -290,6 +299,11 @@ const Profile = () => {
     }, [adminBusy, communityText, refreshAdminUser]);
 
     useEffect(() => {
+        if (mwUserLoadContext !== loadContext) return;
+        if (mwUser && mwUser.banned) {
+            setPageMeta({title: name, description: 'Banned from MistWarp by site admins.'});
+            return;
+        }
         if (!profile) return;
         setPageMeta({
             title: profile.username || name,
@@ -297,7 +311,7 @@ const Profile = () => {
             image: rotur.avatar(name, 256),
             card: 'summary'
         });
-    }, [profile, name]);
+    }, [profile, name, mwUser, mwUserLoadContext, loadContext]);
 
     // Scroll to a comment anchor after the comments section renders
     useEffect(() => {
@@ -429,6 +443,19 @@ const Profile = () => {
         pin: (commentId, pinned) => api.pinProfileComment(name, commentId, pinned)
     }), [name]);
 
+    if (mwUserLoadContext !== loadContext) {
+        return <main className={styles.page}><p className={styles.status}>{communityText('Loading…')}</p></main>;
+    }
+    if (mwUser && mwUser.banned) {
+        return (
+            <main className={styles.page}>
+                <div className={styles.status}>
+                    <Ban size={32} aria-hidden="true" />
+                    <p>{communityText('Banned from MistWarp by site admins.')}</p>
+                </div>
+            </main>
+        );
+    }
     if (error && errorLoadContext === loadContext && profileLoadContext !== loadContext) {
         return (
             <main className={styles.page}>
