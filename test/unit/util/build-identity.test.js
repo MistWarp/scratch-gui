@@ -7,6 +7,7 @@ const runBuild = async (initialEnv = {}, args = ['--site-only']) => {
     let head = 'commit-at-build-start';
     const identities = [];
     const builds = [];
+    const steps = [];
     const environment = {...initialEnv};
     const source = fs.readFileSync(path.resolve(__dirname, '../../../scripts/build.mjs'), 'utf8')
         .replace(/^import .*;\n/gm, '');
@@ -15,6 +16,7 @@ const runBuild = async (initialEnv = {}, args = ['--site-only']) => {
             cwd: () => '/test', execPath: '/node'},
         loadEnv: () => ({}),
         build: async () => {
+            steps.push('build');
             builds.push({...environment});
             identities.push(environment.MW_BUILD_ID || environment.GITHUB_SHA || head);
             // A commit made while the first compilation is running must not
@@ -23,13 +25,15 @@ const runBuild = async (initialEnv = {}, args = ['--site-only']) => {
         },
         execFileSync: (command, args) => {
             if (command === 'git') return head;
+            if (command === 'pnpm') steps.push(`pnpm ${args.join(' ')}`);
+            if (args[0] === 'scripts/sync-forks.mjs') steps.push('sync-forks');
             if (args[0] === 'scripts/write-version.mjs') {
                 identities.push(environment.MW_BUILD_ID || environment.GITHUB_SHA || head);
             }
         }
     };
     await vm.runInNewContext(`(async () => {${source}})()`, context);
-    return {identities, environment, builds};
+    return {identities, environment, builds, steps};
 };
 
 test('all build passes and version.json use the commit captured before compilation', async () => {
@@ -69,4 +73,14 @@ test('standalone editor builds retain their selected entry without building the 
     expect(builds).toHaveLength(1);
     expect(builds[0].ONLY_ENTRY).toBe('editor');
     expect(builds[0].BUILD_MODE).toBeUndefined();
+});
+
+test('Cloudflare Pages builds move every fork to its latest develop commit before compiling', async () => {
+    const {steps} = await runBuild({CF_PAGES: '1'});
+    expect(steps).toEqual(['sync-forks', 'pnpm install --no-frozen-lockfile', 'build']);
+});
+
+test('other builds keep the committed fork pins', async () => {
+    expect((await runBuild()).steps).toEqual(['build']);
+    expect((await runBuild({CF_PAGES: '1', MW_PINNED_FORKS: '1'})).steps).toEqual(['build']);
 });
