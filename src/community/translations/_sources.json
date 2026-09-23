@@ -2482,11 +2482,11 @@
   ],
   "Advanced analytics and CSV exports": [
     "src/community/components/UpgradeCelebration.jsx:43",
-    "src/community/pages/PaidPerks.jsx:187"
+    "src/community/pages/PaidPerks.jsx:191"
   ],
   "Custom project URLs": [
     "src/community/components/UpgradeCelebration.jsx:44",
-    "src/community/pages/PaidPerks.jsx:189"
+    "src/community/pages/PaidPerks.jsx:193"
   ],
   "Welcome to {tier}": [
     "src/community/components/UpgradeCelebration.jsx:50"
@@ -5400,70 +5400,73 @@
     "src/community/pages/PaidPerks.jsx:173"
   ],
   "Your membership": [
-    "src/community/pages/PaidPerks.jsx:180"
+    "src/community/pages/PaidPerks.jsx:183"
+  ],
+  "Recommended": [
+    "src/community/pages/PaidPerks.jsx:183"
   ],
   "Always free": [
-    "src/community/pages/PaidPerks.jsx:181"
-  ],
-  "Create, share, and join the community": [
-    "src/community/pages/PaidPerks.jsx:184"
-  ],
-  "{count} days to undo a deletion": [
     "src/community/pages/PaidPerks.jsx:185"
   ],
-  "All-time analytics history": [
-    "src/community/pages/PaidPerks.jsx:186"
-  ],
-  "{count} days of analytics history": [
-    "src/community/pages/PaidPerks.jsx:186"
-  ],
-  "Custom project branding": [
+  "Create, share, and join the community": [
     "src/community/pages/PaidPerks.jsx:188"
   ],
-  "{fee}% project sales fee": [
+  "{count} days to undo a deletion": [
+    "src/community/pages/PaidPerks.jsx:189"
+  ],
+  "All-time analytics history": [
     "src/community/pages/PaidPerks.jsx:190"
   ],
-  "Start creating": [
+  "{count} days of analytics history": [
+    "src/community/pages/PaidPerks.jsx:190"
+  ],
+  "Custom project branding": [
     "src/community/pages/PaidPerks.jsx:192"
   ],
-  "View {tier} on Rotur": [
+  "{fee}% project sales fee": [
     "src/community/pages/PaidPerks.jsx:194"
   ],
+  "Start creating": [
+    "src/community/pages/PaidPerks.jsx:196"
+  ],
+  "View {tier} on Rotur": [
+    "src/community/pages/PaidPerks.jsx:198"
+  ],
   "Prices are monthly. Rotur shows the billing options and payment terms before you join.": [
-    "src/community/pages/PaidPerks.jsx:201"
+    "src/community/pages/PaidPerks.jsx:205"
   ],
   "Compare the details": [
-    "src/community/pages/PaidPerks.jsx:205"
+    "src/community/pages/PaidPerks.jsx:209"
   ],
   "Check the tools, allowances, and sales terms included with each membership.": [
-    "src/community/pages/PaidPerks.jsx:205"
+    "src/community/pages/PaidPerks.jsx:209"
   ],
   "Creator tools": [
-    "src/community/pages/PaidPerks.jsx:207"
+    "src/community/pages/PaidPerks.jsx:211"
   ],
   "Uploads and storage": [
-    "src/community/pages/PaidPerks.jsx:207"
+    "src/community/pages/PaidPerks.jsx:211"
   ],
   "Project sales": [
-    "src/community/pages/PaidPerks.jsx:207"
+    "src/community/pages/PaidPerks.jsx:211"
   ],
   "Membership comparison": [
-    "src/community/pages/PaidPerks.jsx:210"
+    "src/community/pages/PaidPerks.jsx:214"
   ],
   "Membership comparison details": [
-    "src/community/pages/PaidPerks.jsx:212"
+    "src/community/pages/PaidPerks.jsx:216"
   ],
   "Uploads currently use a rolling seven-day allowance. Capacity becomes available as older uploads leave that window. Check your usage and upcoming resets in My stuff.": [
-    "src/community/pages/PaidPerks.jsx:214"
+    "src/community/pages/PaidPerks.jsx:218"
   ],
   "View your upload usage": [
-    "src/community/pages/PaidPerks.jsx:214"
+    "src/community/pages/PaidPerks.jsx:218"
   ],
   "Project purchases support individual creators. A membership does not include access to every project offered for purchase.": [
-    "src/community/pages/PaidPerks.jsx:215"
+    "src/community/pages/PaidPerks.jsx:219"
   ],
   "Manage project pricing": [
-    "src/community/pages/PaidPerks.jsx:215"
+    "src/community/pages/PaidPerks.jsx:219"
   ],
   "Post not found.": [
     "src/community/pages/Post.jsx:27"

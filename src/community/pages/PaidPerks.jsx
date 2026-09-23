@@ -175,9 +175,13 @@ const PaidPerks = () => {
                 <div className={styles.plans}>
                     {plans.map(plan => {
                         const isCurrent = Boolean(user) && plan.tier === currentTier;
+                        const isFeatured = plan.tier === 'Plus';
                         return (
-                            <article className={`${styles.plan} ${isCurrent ? styles.current : ''}`} key={plan.tier}>
-                                <div className={styles.planTitle}><h3>{plan.tier}</h3>{isCurrent ? <span>{communityText('Your membership')}</span> : null}</div>
+                            <article className={`${styles.plan} ${isFeatured ? styles.featured : ''} ${isCurrent ? styles.current : ''}`} key={plan.tier}>
+                                <div className={styles.planTitle}>
+                                    <h3>{plan.tier}</h3>
+                                    {isCurrent ? <span>{communityText('Your membership')}</span> : isFeatured ? <span>{communityText('Recommended')}</span> : null}
+                                </div>
                                 <strong>{plan.tier === 'Free' ? communityText('Always free') : PRICES[plan.tier]}</strong>
                                 <p>{planDescriptions[plan.tier]}</p>
                                 <ul>
@@ -190,7 +194,7 @@ const PaidPerks = () => {
                                     {plan.tier !== 'Free' ? <li><Coins size={15} />{communityText('{fee}% project sales fee', {fee: plan.mistwarp.salesFeeBasisPoints / 100})}</li> : null}
                                 </ul>
                                 {plan.tier === 'Free' ? <Button as={Link} to="/editor"><Plus size={15} />{communityText('Start creating')}</Button> : (
-                                    <Button as="a" href={data.roturMembershipUrl} target="_blank" rel="noopener noreferrer" variant="secondary">
+                                    <Button as="a" href={data.roturMembershipUrl} target="_blank" rel="noopener noreferrer" variant={isFeatured ? 'primary' : 'secondary'}>
                                         <ExternalLink size={15} />{communityText('View {tier} on Rotur', {tier: plan.tier})}
                                     </Button>
                                 )}

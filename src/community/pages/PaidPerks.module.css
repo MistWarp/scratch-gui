@@ -100,7 +100,12 @@
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 12px;
-    margin-top: 20px;
+    margin-top: 28px;
+}
+
+.plan.featured {
+    margin-block: -10px;
+    padding-block: 32px;
 }
 
 .plan {
@@ -112,7 +117,15 @@
     box-shadow: var(--card-shadow);
 }
 
+.plan.featured {
+    background: var(--accent-soft);
+}
+
 .plan.current {
+    background: var(--bg-raised);
+}
+
+.plan.featured.current {
     background: var(--accent-soft);
 }
 
@@ -303,5 +316,10 @@
 
     .plan p {
         min-height: 0;
+    }
+
+    .plan.featured {
+        margin-block: 0;
+        padding-block: 22px;
     }
 }
