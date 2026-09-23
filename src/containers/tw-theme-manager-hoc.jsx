@@ -3,7 +3,9 @@ import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 import bindAll from 'lodash.bindall';
 import {BLOCKS_CUSTOM, Theme} from '../lib/themes';
-import {applyThemeVisuals, detectTheme, onSystemPreferenceChange} from '../lib/themes/themePersistance';
+import {
+    applyThemeVisuals, detectTheme, onSystemPreferenceChange, THEME_CHANGE_EVENT
+} from '../lib/themes/themePersistance';
 import {setTheme} from '../reducers/theme';
 
 const TWThemeManagerHOC = function (WrappedComponent) {
@@ -17,6 +19,11 @@ const TWThemeManagerHOC = function (WrappedComponent) {
         }
         componentDidMount () {
             this.removeListeners = onSystemPreferenceChange(this.handleSystemThemeChange);
+            if (this.props.isEmbedded) {
+                window.addEventListener(THEME_CHANGE_EVENT, this.handleSystemThemeChange);
+                // Messages may arrive while locale preparation delays the first render.
+                this.handleSystemThemeChange();
+            }
         }
         componentDidUpdate (prevProps) {
             const prevTheme = prevProps.reduxTheme;
@@ -39,6 +46,7 @@ const TWThemeManagerHOC = function (WrappedComponent) {
         }
         componentWillUnmount () {
             this.removeListeners();
+            window.removeEventListener(THEME_CHANGE_EVENT, this.handleSystemThemeChange);
         }
         handleSystemThemeChange () {
             let newTheme = detectTheme();
@@ -64,11 +72,13 @@ const TWThemeManagerHOC = function (WrappedComponent) {
     }
 
     TWThemeManagerComponent.propTypes = {
+        isEmbedded: PropTypes.bool,
         reduxTheme: PropTypes.instanceOf(Theme),
         onChangeTheme: PropTypes.func
     };
 
     const mapStateToProps = (state, ownProps) => ({
+        isEmbedded: state.scratchGui.mode.isEmbedded,
         // Allow embed page to override theme
         reduxTheme: ownProps.theme || state.scratchGui.theme.theme
     });

@@ -17,10 +17,10 @@ import largeStageIcon from './icon--large-stage.svg?recolor';
 import smallStageIcon from './icon--small-stage.svg?recolor';
 import fullStageIcon from './icon--full-stage.svg?recolor';
 import hideStageIcon from './icon--hide-stage.svg?recolor';
-import settingsIcon from './icon--settings.svg';
 
 import {
     Database,
+    SlidersHorizontal,
     Minimize,
     Maximize
 } from 'lucide-react';
@@ -118,11 +118,9 @@ const StageHeaderComponent = function (props) {
                     className={styles.stageButton}
                     onClick={onOpenSettings}
                 >
-                    <img
-                        alt={props.intl.formatMessage(messages.openSettingsMessage)}
+                    <SlidersHorizontal
+                        aria-hidden="true"
                         className={styles.stageButtonIcon}
-                        draggable={false}
-                        src={settingsIcon}
                         title={props.intl.formatMessage(messages.openSettingsMessage)}
                     />
                 </Button>
