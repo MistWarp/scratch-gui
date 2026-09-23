@@ -11,8 +11,7 @@ import {compose} from 'redux';
 import AppStateHOC from '../lib/components/app-state-hoc.jsx';
 import TWEmbedFullScreenHOC from '../lib/components/tw-embed-fullscreen-hoc.jsx';
 import TWStateManagerHOC from '../lib/components/tw-state-manager-hoc.jsx';
-import {detectTheme, applyThemeVisuals} from '../lib/themes/themePersistance';
-import {customThemeManager} from '../lib/themes/custom-themes';
+import {applyEmbedThemeMessage} from '../lib/themes/embed-theme';
 import {request} from '../lib/community/api.js';
 
 import GUI from './render-gui.jsx';
@@ -33,6 +32,9 @@ const getProjectId = () => {
     }
     return '0';
 };
+
+// Listen before locale preparation/rendering so early parent messages are retained.
+window.addEventListener('message', applyEmbedThemeMessage);
 
 const urlParams = new URLSearchParams(location.search);
 const projectId = urlParams.get('platform_project') || getProjectId();
@@ -175,37 +177,8 @@ if (publicEmbedId && !urlParams.get('project_url')) {
         onVmInit={onVmInit}
         onProjectLoaded={onProjectLoaded}
         routingStyle="none"
-        theme={detectTheme()}
     />, prepareLocale);
 }
-
-window.addEventListener('message', event => {
-    if (!event.data || event.data.type !== 'mw:apply-theme') return;
-    // The embed runs sandboxed, so it can't read the parent's stored theme and
-    // big custom themes don't survive the URL. The parent posts the theme here.
-    try {
-        let changed = false;
-        if (event.data.theme) {
-            if (window.localStorage.getItem('tw:theme') !== event.data.theme) {
-                window.localStorage.setItem('tw:theme', event.data.theme);
-                changed = true;
-            }
-        } else if (window.localStorage.getItem('tw:theme')) {
-            window.localStorage.removeItem('tw:theme');
-            changed = true;
-        }
-        if (event.data.customThemes && window.localStorage.getItem('tw:custom-themes') !== event.data.customThemes) {
-            window.localStorage.setItem('tw:custom-themes', event.data.customThemes);
-            changed = true;
-        }
-        if (changed && typeof customThemeManager.loadCustomThemes === 'function') {
-            customThemeManager.loadCustomThemes();
-        }
-        if (changed) applyThemeVisuals(detectTheme());
-    } catch (e) {
-        // ignore
-    }
-});
 
 window.addEventListener('message', event => {
     if (!event.data || event.data.type !== 'mw:capture-stage' || !event.source) return;

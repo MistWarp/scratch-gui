@@ -765,19 +765,22 @@ class CustomThemeManager {
 
     /**
      * Load custom themes from localStorage
+     * @param {boolean} replace discard definitions absent from the new collection
      */
-    loadCustomThemes () {
+    loadCustomThemes (replace = false) {
         try {
             const stored = localStorage.getItem(CUSTOM_THEMES_STORAGE_KEY);
-            if (!stored) {
+            if (!stored && !replace) {
                 return;
             }
 
-            const themesData = JSON.parse(stored);
+            const themesData = stored ? JSON.parse(stored) : [];
             if (!Array.isArray(themesData)) {
                 console.warn('Invalid themes data format in storage - not an array');
                 return;
             }
+
+            if (replace) this.themes.clear();
 
             for (const themeData of themesData) {
                 try {
