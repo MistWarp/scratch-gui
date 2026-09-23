@@ -41,7 +41,7 @@ const UpgradeCelebration = () => {
         }),
         limits.recoveryDays && communityText('{days} days of deleted project recovery', {days: limits.recoveryDays}),
         limits.advancedAnalytics && communityText('Advanced analytics and CSV exports'),
-        limits.vanityProjectUrls && communityText('Vanity project URLs')
+        limits.vanityProjectUrls && communityText('Custom project URLs')
     ].filter(Boolean);
 
     return (

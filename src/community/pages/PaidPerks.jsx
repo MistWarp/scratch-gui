@@ -1,24 +1,22 @@
-import {getCommunityLocale} from '../locale.js';
-import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useState} from 'react';
 import PropTypes from 'prop-types';
-import {ArrowRight, BarChart3, Check, Coins, ExternalLink, Heart, Palette, Plus, RotateCcw, Server, Sparkles, X} from 'lucide-react';
+import {ArrowRight, BarChart3, Check, Coins, ExternalLink, FileSpreadsheet, Heart, Link2, Palette, Plus, RotateCcw, Server, Sparkles, Users, X} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import api from '../api.js';
+import {getCommunityLocale} from '../locale.js';
+import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import {useUser} from '../UserContext.jsx';
 import Button from '../components/ui/Button.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import SectionHeading from '../components/ui/SectionHeading.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
-import analyticsScreenshot from '../assets/membership/analytics.png';
-import brandingScreenshot from '../assets/membership/branding.png';
-import recoveryScreenshot from '../assets/membership/recovery.png';
+import {AnalyticsPreview, BrandingPreview, RecoveryPreview} from '../components/MembershipPreviews.jsx';
 import styles from './PaidPerks.module.css';
 
 const TIERS = ['Free', 'Lite', 'Plus', 'Pro'];
-const PRICES = {Free: 'Free', Lite: '15 RC/month', Plus: '£1.75/month', Pro: '£5.75/month'};
+const PRICES = {Lite: '15 RC/month', Plus: '£1.75/month', Pro: '£5.75/month'};
 
 const MISTWARP_ROWS = [
     ['Weekly uploads', 'weeklyUploadBytes', value => `${Math.round(value / 1048576).toLocaleString(getCommunityLocale())} MB`],
@@ -28,15 +26,19 @@ const MISTWARP_ROWS = [
     ['Creator analytics history', 'analyticsDays', (value, text) => (value === 0 ? text('All time') : text('{count} days', {count: value}))],
     ['Advanced analytics and CSV exports', 'advancedAnalytics', String],
     ['Custom project branding', 'customProjectBranding', String],
-    ['Vanity project URLs', 'vanityProjectUrls', String],
+    ['Custom project URLs', 'vanityProjectUrls', String],
     ['Project sales fee', 'salesFeeBasisPoints', value => `${value / 100}%`],
     ['Maximum project price', 'maxProjectPrice', value => `${value} RC`]
 ];
 
 const Cell = ({value, format}) => {
     const {text: communityText} = useCommunityText();
-    if (typeof value === 'boolean') return (value ? <Check aria-label={communityText('Included')} size={17} /> : <X aria-label={communityText('Not included')} size={17} />);
-    if (typeof value === 'undefined' || value === null) return '—';
+    if (typeof value === 'boolean') {
+        return value ?
+            <Check className={styles.included} aria-label={communityText('Included')} size={17} /> :
+            <X className={styles.excluded} aria-label={communityText('Not included')} size={17} />;
+    }
+    if (typeof value === 'undefined' || value === null) return null;
     return format ? format(value, communityText) : String(value);
 };
 
@@ -94,10 +96,7 @@ const PaidPerks = () => {
             icon: BarChart3,
             title: communityText('Get to know your audience'),
             description: communityText('Explore how your projects are doing, see view-to-buyer conversion, and export your analytics to CSV. Plus and Pro include these extra insights and a longer analytics history.'),
-            image: analyticsScreenshot,
-            width: 710,
-            height: 630,
-            alt: communityText('Example project analytics showing views, playtime, buyer conversion, and CSV export'),
+            preview: <AnalyticsPreview />,
             link: '/mystuff?section=projects',
             action: communityText('Choose a project to view analytics')
         },
@@ -105,10 +104,7 @@ const PaidPerks = () => {
             icon: Palette,
             title: communityText('Give your project its own identity'),
             description: communityText('Set an accent colour and a tagline with Plus or Pro. Pro also includes a custom project URL that is easier to share.'),
-            image: brandingScreenshot,
-            width: 710,
-            height: 479,
-            alt: communityText('Project branding settings with an accent colour and tagline'),
+            preview: <BrandingPreview />,
             link: '/mystuff?section=projects',
             action: communityText('Choose a project to customise')
         },
@@ -116,10 +112,7 @@ const PaidPerks = () => {
             icon: RotateCcw,
             title: communityText('Give yourself more time to recover work'),
             description: communityText('Changed your mind about deleting a project? Every account includes recovery from Trash. Memberships give you a longer window to restore projects you chose to delete. This is separate from keeping older projects online.'),
-            image: recoveryScreenshot,
-            width: 910,
-            height: 176,
-            alt: communityText('Deleted example projects in Trash with Restore buttons'),
+            preview: <RecoveryPreview />,
             link: '/mystuff?section=trash',
             action: communityText('Open your Trash')
         }
@@ -153,17 +146,14 @@ const PaidPerks = () => {
 
             <section className={styles.features} aria-label={communityText('Explore membership features')}>
                 {features.map(feature => (
-                    <article className={styles.feature} key={feature.title}>
-                        <figure className={styles.screenshot}>
-                            <img src={feature.image} alt={feature.alt} loading="lazy" width={feature.width} height={feature.height} />
-                            <figcaption>{communityText('MistWarp interface with example project data.')}</figcaption>
-                        </figure>
+                    <div className={styles.feature} key={feature.link + feature.action}>
                         <div className={styles.featureCopy}>
                             <SectionHeading icon={feature.icon} title={feature.title} />
                             <p>{feature.description}</p>
                             <Link className={styles.featureLink} to={feature.link}>{feature.action}<ArrowRight size={16} /></Link>
                         </div>
-                    </article>
+                        <div className={styles.featurePreview}>{feature.preview}</div>
+                    </div>
                 ))}
             </section>
 
@@ -176,31 +166,39 @@ const PaidPerks = () => {
             </section>
 
             <section id="memberships" className={styles.section}>
-                <SectionHeading icon={Heart} title={communityText('Choose how you support MistWarp')} lead={communityText('Keep creating for free, or choose the extra tools that fit you. Prices below are monthly; Rotur shows the billing options and payment terms before you join.')} />
+                <SectionHeading
+                    icon={Heart}
+                    title={communityText('Choose how you support MistWarp')}
+                    lead={communityText('Keep creating for free, or choose the extra tools that fit you.')}
+                    actions={user ? null : <Button onClick={login}>{communityText('Sign in to view your membership')}</Button>}
+                />
                 <div className={styles.plans}>
-                    {plans.map(plan => (
-                        <article className={`${styles.plan} ${user && plan.tier === currentTier ? styles.current : ''}`} key={plan.tier}>
-                            <div className={styles.planTitle}><h3>{plan.tier}</h3>{user && plan.tier === currentTier ? <span>{communityText('Your membership')}</span> : null}</div>
-                            <strong>{PRICES[plan.tier]}</strong>
-                            <p>{planDescriptions[plan.tier]}</p>
-                            <ul>
-                                {plan.tier === 'Free' ? <li><Check size={15} />{communityText('Create, share, and join the community')}</li> : null}
-                                <li><RotateCcw size={15} />{communityText('{count} days to undo a deletion', {count: plan.mistwarp.recoveryDays})}</li>
-                                <li><BarChart3 size={15} />{plan.mistwarp.analyticsDays === 0 ? communityText('All-time analytics history') : communityText('{count} days of analytics history', {count: plan.mistwarp.analyticsDays})}</li>
-                                {plan.mistwarp.advancedAnalytics ? <li><Check size={15} />{communityText('Advanced analytics and CSV exports')}</li> : null}
-                                {plan.mistwarp.customProjectBranding ? <li><Palette size={15} />{communityText('Custom project branding')}</li> : null}
-                                {plan.mistwarp.vanityProjectUrls ? <li><Check size={15} />{communityText('Custom project URLs')}</li> : null}
-                                {plan.tier !== 'Free' ? <li><Coins size={15} />{communityText('{fee}% project sales fee', {fee: plan.mistwarp.salesFeeBasisPoints / 100})}</li> : null}
-                            </ul>
-                            {plan.tier === 'Free' ? <Button as={Link} to="/editor"><Plus size={15} />{communityText('Start creating')}</Button> : (
-                                <Button as="a" href={data.roturMembershipUrl} target="_blank" rel="noopener noreferrer" variant={plan.tier === 'Plus' ? 'primary' : 'secondary'}>
-                                    <ExternalLink size={15} />{communityText('View {tier} on Rotur', {tier: plan.tier})}
-                                </Button>
-                            )}
-                        </article>
-                    ))}
+                    {plans.map(plan => {
+                        const isCurrent = Boolean(user) && plan.tier === currentTier;
+                        return (
+                            <article className={`${styles.plan} ${isCurrent ? styles.current : ''}`} key={plan.tier}>
+                                <div className={styles.planTitle}><h3>{plan.tier}</h3>{isCurrent ? <span>{communityText('Your membership')}</span> : null}</div>
+                                <strong>{plan.tier === 'Free' ? communityText('Always free') : PRICES[plan.tier]}</strong>
+                                <p>{planDescriptions[plan.tier]}</p>
+                                <ul>
+                                    {plan.tier === 'Free' ? <li><Users size={15} />{communityText('Create, share, and join the community')}</li> : null}
+                                    <li><RotateCcw size={15} />{communityText('{count} days to undo a deletion', {count: plan.mistwarp.recoveryDays})}</li>
+                                    <li><BarChart3 size={15} />{plan.mistwarp.analyticsDays === 0 ? communityText('All-time analytics history') : communityText('{count} days of analytics history', {count: plan.mistwarp.analyticsDays})}</li>
+                                    {plan.mistwarp.advancedAnalytics ? <li><FileSpreadsheet size={15} />{communityText('Advanced analytics and CSV exports')}</li> : null}
+                                    {plan.mistwarp.customProjectBranding ? <li><Palette size={15} />{communityText('Custom project branding')}</li> : null}
+                                    {plan.mistwarp.vanityProjectUrls ? <li><Link2 size={15} />{communityText('Custom project URLs')}</li> : null}
+                                    {plan.tier !== 'Free' ? <li><Coins size={15} />{communityText('{fee}% project sales fee', {fee: plan.mistwarp.salesFeeBasisPoints / 100})}</li> : null}
+                                </ul>
+                                {plan.tier === 'Free' ? <Button as={Link} to="/editor"><Plus size={15} />{communityText('Start creating')}</Button> : (
+                                    <Button as="a" href={data.roturMembershipUrl} target="_blank" rel="noopener noreferrer" variant="secondary">
+                                        <ExternalLink size={15} />{communityText('View {tier} on Rotur', {tier: plan.tier})}
+                                    </Button>
+                                )}
+                            </article>
+                        );
+                    })}
                 </div>
-                {!user ? <p className={styles.accountNote}><Button onClick={login}>{communityText('Sign in to view your membership')}</Button></p> : null}
+                <p className={styles.plansNote}>{communityText('Prices are monthly. Rotur shows the billing options and payment terms before you join.')}</p>
             </section>
 
             <section className={styles.section}>

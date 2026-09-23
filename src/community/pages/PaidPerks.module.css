@@ -13,7 +13,7 @@
 }
 
 .freeNote {
-    margin: 20px 0 0;
+    margin: 0;
 }
 
 .freeNote a,
@@ -32,44 +32,35 @@
 
 .features {
     display: grid;
-    gap: 24px;
-    margin-top: 32px;
+    gap: 40px;
+    margin-top: 40px;
 }
 
 .feature {
     display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-    gap: 32px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: 40px;
     align-items: center;
-    padding: 24px;
-    background: var(--bg-card);
-    border-radius: var(--radius);
 }
 
-.screenshot {
-    margin: 0;
+.feature:nth-child(even) .featureCopy {
+    order: 2;
+}
+
+.featureCopy {
     min-width: 0;
 }
 
-.screenshot img {
-    display: block;
-    width: 100%;
-    height: auto;
-    border-radius: var(--radius-xs);
-}
-
-.screenshot figcaption {
-    margin-top: 10px;
-    color: var(--text-faint);
-    font-size: var(--fs-xs);
-    line-height: 1.5;
-}
-
 .featureCopy p {
+    max-width: 48ch;
+    margin: 4px 0 18px;
     color: var(--text-dim);
     font-size: var(--fs-lg);
     line-height: 1.65;
-    margin: 12px 0 20px;
+}
+
+.featurePreview {
+    min-width: 0;
 }
 
 .featureLink {
@@ -84,24 +75,24 @@
 }
 
 .support {
-    margin-top: 40px;
-    padding: 28px;
+    margin-top: 48px;
+    padding: 24px;
     border-radius: var(--radius);
-    background: var(--bg-raised);
+    background: var(--bg-card);
 }
 
 .supportCopy {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 28px;
+    gap: 24px;
 }
 
 .supportCopy p {
-    margin: 8px 0 0;
+    margin: 0;
 }
 
 .section {
-    margin-top: 44px;
+    margin-top: 48px;
     scroll-margin-top: 80px;
 }
 
@@ -115,9 +106,10 @@
 .plan {
     display: flex;
     flex-direction: column;
-    padding: 20px;
-    border-radius: var(--radius-sm);
+    padding: 22px 20px;
+    border-radius: var(--radius);
     background: var(--bg-card);
+    box-shadow: var(--card-shadow);
 }
 
 .plan.current {
@@ -135,38 +127,44 @@
 .planTitle h3 {
     margin: 0;
     color: var(--mw-text);
-    font-size: var(--fs-2xl);
-    font-weight: 700;
-}
-
-.planTitle span {
-    color: var(--accent-strong);
-    font-size: var(--fs-xs);
-    font-weight: 600;
-}
-
-.plan > strong {
-    display: block;
-    margin-top: 16px;
     font-size: var(--fs-xl);
     font-weight: 700;
 }
 
+.planTitle span {
+    padding: 3px 8px;
+    border-radius: var(--radius-2xs);
+    background: var(--accent);
+    color: var(--accent-contrast);
+    font-size: var(--fs-2xs);
+    font-weight: 700;
+}
+
+.plan > strong {
+    display: block;
+    margin-top: 12px;
+    font-size: var(--fs-2xl);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
 .plan p {
-    margin: 10px 0 0;
+    min-height: calc(2 * 1.5em);
+    margin: 8px 0 0;
     color: var(--text-dim);
     font-size: var(--fs-sm);
-    line-height: 1.6;
+    line-height: 1.5;
 }
 
 .plan ul {
     flex: 1;
     display: grid;
     align-content: start;
-    gap: 12px;
+    gap: 10px;
     list-style: none;
-    padding: 0;
-    margin: 24px 0;
+    padding: 18px 0 0;
+    margin: 18px 0 22px;
+    border-top: 1px solid var(--border-soft);
 }
 
 .plan li {
@@ -182,8 +180,11 @@
     color: var(--accent-strong);
 }
 
-.accountNote {
-    margin: 20px 0 0;
+.plansNote {
+    margin: 14px 0 0;
+    color: var(--text-faint);
+    font-size: var(--fs-sm);
+    line-height: 1.5;
 }
 
 .tableWrap {
@@ -195,59 +196,112 @@
 
 .tableWrap table {
     width: 100%;
-    min-width: 640px;
+    min-width: 560px;
     border-collapse: collapse;
 }
 
 .tableWrap th,
 .tableWrap td {
-    padding: 14px;
+    padding: 14px 16px;
     text-align: center;
     font-size: var(--fs-sm);
+    white-space: nowrap;
 }
 
 .tableWrap th:first-child {
+    position: sticky;
+    left: 0;
+    min-width: 200px;
+    background: inherit;
     text-align: start;
+    white-space: normal;
 }
 
-.tableWrap thead th,
+.tableWrap thead th {
+    color: var(--text-dim);
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    text-transform: none;
+}
+
+.tableWrap thead tr,
 .tableWrap tbody tr:nth-child(even) {
     background: var(--bg-raised);
 }
 
+.tableWrap tbody tr:nth-child(odd) {
+    background: var(--bg-card);
+}
+
 .tableWrap tbody th {
+    color: var(--mw-text);
+    font-weight: 500;
+}
+
+.tableWrap td {
     color: var(--text-dim);
     font-weight: 500;
 }
 
-@media (max-width: 900px) {
+.tableWrap td svg {
+    vertical-align: middle;
+}
+
+.included {
+    color: var(--accent-strong);
+}
+
+.excluded {
+    color: var(--text-faint);
+}
+
+.detailNote {
+    margin: 14px 0 0;
+}
+
+@media (max-width: 960px) {
     .plans {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .feature {
-        gap: 20px;
-        padding: 20px;
+        gap: 24px;
     }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 720px) {
     .feature,
     .supportCopy,
     .plans {
         grid-template-columns: minmax(0, 1fr);
     }
 
-    .feature,
+    .features {
+        gap: 36px;
+    }
+
+    .feature {
+        gap: 16px;
+    }
+
+    .feature:nth-child(even) .featureCopy {
+        order: 0;
+    }
+
+    .featureCopy p {
+        margin-bottom: 14px;
+        font-size: var(--fs-md);
+    }
+
     .support {
         padding: 18px;
     }
 
-    .featureCopy p {
-        font-size: var(--fs-md);
-    }
-
     .supportCopy {
         gap: 12px;
+    }
+
+    .plan p {
+        min-height: 0;
     }
 }
