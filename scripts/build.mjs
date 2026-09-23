@@ -7,6 +7,10 @@ const env = {...loadEnv('production', process.cwd(), ''), ...process.env};
 process.env.MW_BUILD_ID = env.MW_BUILD_ID || env.GITHUB_SHA ||
     execFileSync('git', ['rev-parse', 'HEAD'], {encoding: 'utf8'}).trim();
 process.env.MW_BUILD_TIME = env.MW_BUILD_TIME || new Date().toISOString();
+if (env.CF_PAGES && !env.MW_PINNED_FORKS) {
+    execFileSync(process.execPath, ['scripts/sync-forks.mjs'], {stdio: 'inherit'});
+    execFileSync('pnpm', ['install', '--no-frozen-lockfile'], {stdio: 'inherit'});
+}
 const siteOnly = process.argv.includes('--site-only');
 // Compile all selected pages together so the editor, player, and community
 // share modules. ONLY_ENTRY=editor still produces a standalone editor bundle.
