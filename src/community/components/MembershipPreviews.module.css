@@ -244,11 +244,11 @@
 }
 
 .artStar {
-    background: linear-gradient(135deg, #4c97ff, #9966ff);
+    background: #4c97ff;
 }
 
 .artSprout {
-    background: linear-gradient(135deg, #59c059, #0fbd8c);
+    background: #59c059;
 }
 
 .rowText {
