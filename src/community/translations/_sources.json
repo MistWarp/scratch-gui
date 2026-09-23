@@ -999,6 +999,76 @@
   "Open branches…": [
     "src/community/components/LiveProjectSession.jsx:62"
   ],
+  "Views": [
+    "src/community/components/MembershipPreviews.jsx:24",
+    "src/community/pages/Admin.jsx:653",
+    "src/community/pages/Leaderboard.jsx:34",
+    "src/community/pages/ManageProject.jsx:529"
+  ],
+  "Hearts": [
+    "src/community/components/MembershipPreviews.jsx:25",
+    "src/community/pages/ManageProject.jsx:534",
+    "src/community/pages/MyStuff.jsx:169"
+  ],
+  "Buyers": [
+    "src/community/components/MembershipPreviews.jsx:26",
+    "src/community/pages/ManageProject.jsx:567",
+    "src/community/pages/ManageProject.jsx:727",
+    "src/community/pages/ManageProject.jsx:812"
+  ],
+  "View-to-buyer conversion": [
+    "src/community/components/MembershipPreviews.jsx:27",
+    "src/community/pages/ManageProject.jsx:570"
+  ],
+  "Example project analytics showing views, playtime, buyer conversion, and CSV export": [
+    "src/community/components/MembershipPreviews.jsx:31"
+  ],
+  "Last 30 days": [
+    "src/community/components/MembershipPreviews.jsx:44",
+    "src/community/pages/Wallet.jsx:307"
+  ],
+  "Export CSV": [
+    "src/community/components/MembershipPreviews.jsx:45",
+    "src/community/pages/ManageProject.jsx:576"
+  ],
+  "Project branding settings with an accent colour, a tagline, and a custom URL": [
+    "src/community/components/MembershipPreviews.jsx:61"
+  ],
+  "Star Garden": [
+    "src/community/components/MembershipPreviews.jsx:66",
+    "src/community/components/MembershipPreviews.jsx:101"
+  ],
+  "A little space to explore.": [
+    "src/community/components/MembershipPreviews.jsx:67",
+    "src/community/components/MembershipPreviews.jsx:87"
+  ],
+  "Brand colour": [
+    "src/community/components/MembershipPreviews.jsx:72",
+    "src/community/pages/ManageProject.jsx:659"
+  ],
+  "Tagline": [
+    "src/community/components/MembershipPreviews.jsx:86",
+    "src/community/pages/ManageProject.jsx:663"
+  ],
+  "Custom URL": [
+    "src/community/components/MembershipPreviews.jsx:90"
+  ],
+  "/p/star-garden": [
+    "src/community/components/MembershipPreviews.jsx:91"
+  ],
+  "First garden sketch": [
+    "src/community/components/MembershipPreviews.jsx:102"
+  ],
+  "Deleted example projects in Trash with Restore buttons": [
+    "src/community/components/MembershipPreviews.jsx:105"
+  ],
+  "{count} days left to restore": [
+    "src/community/components/MembershipPreviews.jsx:112"
+  ],
+  "Restore": [
+    "src/community/components/MembershipPreviews.jsx:114",
+    "src/community/pages/MyStuff.jsx:1528"
+  ],
   "Not played yet": [
     "src/community/components/MyStuffLibrary.jsx:20",
     "src/community/pages/Project.jsx:2071"
@@ -2412,10 +2482,11 @@
   ],
   "Advanced analytics and CSV exports": [
     "src/community/components/UpgradeCelebration.jsx:43",
-    "src/community/pages/PaidPerks.jsx:190"
+    "src/community/pages/PaidPerks.jsx:187"
   ],
-  "Vanity project URLs": [
-    "src/community/components/UpgradeCelebration.jsx:44"
+  "Custom project URLs": [
+    "src/community/components/UpgradeCelebration.jsx:44",
+    "src/community/pages/PaidPerks.jsx:189"
   ],
   "Welcome to {tier}": [
     "src/community/components/UpgradeCelebration.jsx:50"
@@ -2687,11 +2758,6 @@
   "Engagement, publishing, and moderation totals.": [
     "src/community/pages/Admin.jsx:650"
   ],
-  "Views": [
-    "src/community/pages/Admin.jsx:653",
-    "src/community/pages/Leaderboard.jsx:34",
-    "src/community/pages/ManageProject.jsx:529"
-  ],
   "Loves": [
     "src/community/pages/Admin.jsx:654",
     "src/community/pages/Leaderboard.jsx:28"
@@ -2768,7 +2834,7 @@
   ],
   "All time": [
     "src/community/pages/Admin.jsx:720",
-    "src/community/pages/PaidPerks.jsx:28"
+    "src/community/pages/PaidPerks.jsx:26"
   ],
   "Trends": [
     "src/community/pages/Admin.jsx:730"
@@ -4238,10 +4304,6 @@
   "See how your project is doing.": [
     "src/community/pages/ManageProject.jsx:524"
   ],
-  "Hearts": [
-    "src/community/pages/ManageProject.jsx:534",
-    "src/community/pages/MyStuff.jsx:169"
-  ],
   "Library saves": [
     "src/community/pages/ManageProject.jsx:539"
   ],
@@ -4258,19 +4320,8 @@
     "src/community/pages/ManageProject.jsx:560",
     "src/community/pages/MyStuff.jsx:255"
   ],
-  "Buyers": [
-    "src/community/pages/ManageProject.jsx:567",
-    "src/community/pages/ManageProject.jsx:727",
-    "src/community/pages/ManageProject.jsx:812"
-  ],
-  "View-to-buyer conversion": [
-    "src/community/pages/ManageProject.jsx:570"
-  ],
   "Credits per buyer": [
     "src/community/pages/ManageProject.jsx:571"
-  ],
-  "Export CSV": [
-    "src/community/pages/ManageProject.jsx:576"
   ],
   "Advanced analytics are included with your Rotur {value1} membership.": [
     "src/community/pages/ManageProject.jsx:578"
@@ -4345,12 +4396,6 @@
   ],
   "Branding": [
     "src/community/pages/ManageProject.jsx:656"
-  ],
-  "Brand colour": [
-    "src/community/pages/ManageProject.jsx:659"
-  ],
-  "Tagline": [
-    "src/community/pages/ManageProject.jsx:663"
   ],
   "A short line above your project": [
     "src/community/pages/ManageProject.jsx:664"
@@ -5101,9 +5146,6 @@
   "Deletes forever {value1}": [
     "src/community/pages/MyStuff.jsx:1525"
   ],
-  "Restore": [
-    "src/community/pages/MyStuff.jsx:1528"
-  ],
   "Delete forever": [
     "src/community/pages/MyStuff.jsx:1536"
   ],
@@ -5267,170 +5309,161 @@
     "src/community/pages/Notifications.jsx:605"
   ],
   "{count} days": [
-    "src/community/pages/PaidPerks.jsx:27",
-    "src/community/pages/PaidPerks.jsx:28"
+    "src/community/pages/PaidPerks.jsx:25",
+    "src/community/pages/PaidPerks.jsx:26"
   ],
   "Included": [
     "src/community/pages/PaidPerks.jsx:38"
   ],
   "Not included": [
-    "src/community/pages/PaidPerks.jsx:38"
+    "src/community/pages/PaidPerks.jsx:39"
   ],
   "Benefit": [
-    "src/community/pages/PaidPerks.jsx:47"
+    "src/community/pages/PaidPerks.jsx:49"
   ],
   "Loading membership benefits…": [
-    "src/community/pages/PaidPerks.jsx:88"
+    "src/community/pages/PaidPerks.jsx:90"
   ],
   "Get to know your audience": [
-    "src/community/pages/PaidPerks.jsx:95"
+    "src/community/pages/PaidPerks.jsx:97"
   ],
   "Explore how your projects are doing, see view-to-buyer conversion, and export your analytics to CSV. Plus and Pro include these extra insights and a longer analytics history.": [
-    "src/community/pages/PaidPerks.jsx:96"
-  ],
-  "Example project analytics showing views, playtime, buyer conversion, and CSV export": [
-    "src/community/pages/PaidPerks.jsx:100"
+    "src/community/pages/PaidPerks.jsx:98"
   ],
   "Choose a project to view analytics": [
-    "src/community/pages/PaidPerks.jsx:102"
+    "src/community/pages/PaidPerks.jsx:101"
   ],
   "Give your project its own identity": [
-    "src/community/pages/PaidPerks.jsx:106"
+    "src/community/pages/PaidPerks.jsx:105"
   ],
   "Set an accent colour and a tagline with Plus or Pro. Pro also includes a custom project URL that is easier to share.": [
-    "src/community/pages/PaidPerks.jsx:107"
-  ],
-  "Project branding settings with an accent colour and tagline": [
-    "src/community/pages/PaidPerks.jsx:111"
+    "src/community/pages/PaidPerks.jsx:106"
   ],
   "Choose a project to customise": [
-    "src/community/pages/PaidPerks.jsx:113"
+    "src/community/pages/PaidPerks.jsx:109"
   ],
   "Give yourself more time to recover work": [
-    "src/community/pages/PaidPerks.jsx:117"
+    "src/community/pages/PaidPerks.jsx:113"
   ],
   "Changed your mind about deleting a project? Every account includes recovery from Trash. Memberships give you a longer window to restore projects you chose to delete. This is separate from keeping older projects online.": [
-    "src/community/pages/PaidPerks.jsx:118"
-  ],
-  "Deleted example projects in Trash with Restore buttons": [
-    "src/community/pages/PaidPerks.jsx:122"
+    "src/community/pages/PaidPerks.jsx:114"
   ],
   "Open your Trash": [
-    "src/community/pages/PaidPerks.jsx:124"
+    "src/community/pages/PaidPerks.jsx:117"
   ],
   "Start creating and find your community.": [
-    "src/community/pages/PaidPerks.jsx:135"
+    "src/community/pages/PaidPerks.jsx:128"
   ],
   "Support MistWarp with Rotur credits.": [
-    "src/community/pages/PaidPerks.jsx:136"
+    "src/community/pages/PaidPerks.jsx:129"
   ],
   "Get more insight and make your projects your own.": [
-    "src/community/pages/PaidPerks.jsx:137"
+    "src/community/pages/PaidPerks.jsx:130"
   ],
   "More flexibility for an established creator.": [
-    "src/community/pages/PaidPerks.jsx:138"
+    "src/community/pages/PaidPerks.jsx:131"
   ],
   "More tools for your next project": [
-    "src/community/pages/PaidPerks.jsx:144"
+    "src/community/pages/PaidPerks.jsx:137"
   ],
   "Get more from creating on MistWarp with a Rotur membership. Your support helps cover the real costs of running the platform we share.": [
-    "src/community/pages/PaidPerks.jsx:145"
+    "src/community/pages/PaidPerks.jsx:138"
   ],
   "Find your membership": [
-    "src/community/pages/PaidPerks.jsx:146"
+    "src/community/pages/PaidPerks.jsx:139"
   ],
   "You can create, share, and take part with a free account. Membership is an optional way to support MistWarp and get extra tools.": [
-    "src/community/pages/PaidPerks.jsx:149"
+    "src/community/pages/PaidPerks.jsx:142"
   ],
   "Start creating for free": [
-    "src/community/pages/PaidPerks.jsx:150"
+    "src/community/pages/PaidPerks.jsx:143"
   ],
   "Explore membership features": [
-    "src/community/pages/PaidPerks.jsx:154"
-  ],
-  "MistWarp interface with example project data.": [
-    "src/community/pages/PaidPerks.jsx:159"
+    "src/community/pages/PaidPerks.jsx:147"
   ],
   "Help keep MistWarp running": [
-    "src/community/pages/PaidPerks.jsx:171"
+    "src/community/pages/PaidPerks.jsx:161"
   ],
   "Keeping projects available has an ongoing cost, including storing older work. Memberships help cover storage, hosting, and the work of maintaining MistWarp. Projects do not expire just because they are old or their creator is inactive.": [
-    "src/community/pages/PaidPerks.jsx:173"
+    "src/community/pages/PaidPerks.jsx:163"
   ],
   "Rotur runs MistWarp, so support goes through your Rotur membership. Use the same Rotur account here to receive your benefits. You do not need a separate MistWarp subscription.": [
-    "src/community/pages/PaidPerks.jsx:174"
+    "src/community/pages/PaidPerks.jsx:164"
   ],
   "Choose how you support MistWarp": [
-    "src/community/pages/PaidPerks.jsx:179"
+    "src/community/pages/PaidPerks.jsx:171"
   ],
-  "Keep creating for free, or choose the extra tools that fit you. Prices below are monthly; Rotur shows the billing options and payment terms before you join.": [
-    "src/community/pages/PaidPerks.jsx:179"
-  ],
-  "Your membership": [
-    "src/community/pages/PaidPerks.jsx:183"
-  ],
-  "Create, share, and join the community": [
-    "src/community/pages/PaidPerks.jsx:187"
-  ],
-  "{count} days to undo a deletion": [
-    "src/community/pages/PaidPerks.jsx:188"
-  ],
-  "All-time analytics history": [
-    "src/community/pages/PaidPerks.jsx:189"
-  ],
-  "{count} days of analytics history": [
-    "src/community/pages/PaidPerks.jsx:189"
-  ],
-  "Custom project branding": [
-    "src/community/pages/PaidPerks.jsx:191"
-  ],
-  "Custom project URLs": [
-    "src/community/pages/PaidPerks.jsx:192"
-  ],
-  "{fee}% project sales fee": [
-    "src/community/pages/PaidPerks.jsx:193"
-  ],
-  "Start creating": [
-    "src/community/pages/PaidPerks.jsx:195"
-  ],
-  "View {tier} on Rotur": [
-    "src/community/pages/PaidPerks.jsx:197"
+  "Keep creating for free, or choose the extra tools that fit you.": [
+    "src/community/pages/PaidPerks.jsx:172"
   ],
   "Sign in to view your membership": [
-    "src/community/pages/PaidPerks.jsx:203"
+    "src/community/pages/PaidPerks.jsx:173"
+  ],
+  "Your membership": [
+    "src/community/pages/PaidPerks.jsx:180"
+  ],
+  "Always free": [
+    "src/community/pages/PaidPerks.jsx:181"
+  ],
+  "Create, share, and join the community": [
+    "src/community/pages/PaidPerks.jsx:184"
+  ],
+  "{count} days to undo a deletion": [
+    "src/community/pages/PaidPerks.jsx:185"
+  ],
+  "All-time analytics history": [
+    "src/community/pages/PaidPerks.jsx:186"
+  ],
+  "{count} days of analytics history": [
+    "src/community/pages/PaidPerks.jsx:186"
+  ],
+  "Custom project branding": [
+    "src/community/pages/PaidPerks.jsx:188"
+  ],
+  "{fee}% project sales fee": [
+    "src/community/pages/PaidPerks.jsx:190"
+  ],
+  "Start creating": [
+    "src/community/pages/PaidPerks.jsx:192"
+  ],
+  "View {tier} on Rotur": [
+    "src/community/pages/PaidPerks.jsx:194"
+  ],
+  "Prices are monthly. Rotur shows the billing options and payment terms before you join.": [
+    "src/community/pages/PaidPerks.jsx:201"
   ],
   "Compare the details": [
-    "src/community/pages/PaidPerks.jsx:207"
+    "src/community/pages/PaidPerks.jsx:205"
   ],
   "Check the tools, allowances, and sales terms included with each membership.": [
-    "src/community/pages/PaidPerks.jsx:207"
+    "src/community/pages/PaidPerks.jsx:205"
   ],
   "Creator tools": [
-    "src/community/pages/PaidPerks.jsx:209"
+    "src/community/pages/PaidPerks.jsx:207"
   ],
   "Uploads and storage": [
-    "src/community/pages/PaidPerks.jsx:209"
+    "src/community/pages/PaidPerks.jsx:207"
   ],
   "Project sales": [
-    "src/community/pages/PaidPerks.jsx:209"
+    "src/community/pages/PaidPerks.jsx:207"
   ],
   "Membership comparison": [
-    "src/community/pages/PaidPerks.jsx:212"
+    "src/community/pages/PaidPerks.jsx:210"
   ],
   "Membership comparison details": [
-    "src/community/pages/PaidPerks.jsx:214"
+    "src/community/pages/PaidPerks.jsx:212"
   ],
   "Uploads currently use a rolling seven-day allowance. Capacity becomes available as older uploads leave that window. Check your usage and upcoming resets in My stuff.": [
-    "src/community/pages/PaidPerks.jsx:216"
+    "src/community/pages/PaidPerks.jsx:214"
   ],
   "View your upload usage": [
-    "src/community/pages/PaidPerks.jsx:216"
+    "src/community/pages/PaidPerks.jsx:214"
   ],
   "Project purchases support individual creators. A membership does not include access to every project offered for purchase.": [
-    "src/community/pages/PaidPerks.jsx:217"
+    "src/community/pages/PaidPerks.jsx:215"
   ],
   "Manage project pricing": [
-    "src/community/pages/PaidPerks.jsx:217"
+    "src/community/pages/PaidPerks.jsx:215"
   ],
   "Post not found.": [
     "src/community/pages/Post.jsx:27"
@@ -7427,9 +7460,6 @@
   ],
   "Tips, project sales, revenue shares, and bounties paid to you.": [
     "src/community/pages/Wallet.jsx:298"
-  ],
-  "Last 30 days": [
-    "src/community/pages/Wallet.jsx:307"
   ],
   "Recorded total": [
     "src/community/pages/Wallet.jsx:311"
