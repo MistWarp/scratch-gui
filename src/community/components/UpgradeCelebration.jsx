@@ -41,7 +41,7 @@ const UpgradeCelebration = () => {
         }),
         limits.recoveryDays && communityText('{days} days of deleted project recovery', {days: limits.recoveryDays}),
         limits.advancedAnalytics && communityText('Advanced analytics and CSV exports'),
-        limits.vanityProjectUrls && communityText('Vanity project URLs')
+        limits.vanityProjectUrls && communityText('Custom project URLs')
     ].filter(Boolean);
 
     return (
@@ -56,7 +56,7 @@ const UpgradeCelebration = () => {
                     to="/perks"
                     variant="primary"
                     onClick={close}
-                ><Sparkles size={16} />{communityText('See all your perks')}</Button>
+                ><Sparkles size={16} />{communityText('View your membership benefits')}</Button>
             </>}
         >
             <div className={styles.confetti} aria-hidden="true">
@@ -68,7 +68,7 @@ const UpgradeCelebration = () => {
                 ))}
             </div>
             <p className={styles.lead}>
-                {communityText('Thank you for supporting MistWarp. Your new limits are already active.')}
+                {communityText('Thank you for supporting MistWarp. Your new membership benefits are ready to use.')}
             </p>
             <ul className={styles.list}>
                 {unlocked.map(line => <li key={line}><Check size={16} />{line}</li>)}
