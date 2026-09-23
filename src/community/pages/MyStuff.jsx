@@ -266,7 +266,7 @@ const Overview = ({stats, account, quota, username, onNavigate}) => {
                             !(account && account.donationsReceived > 0) &&
                             !(account && account.balance !== null) ? (
                                 <EmptyState compact icon={Coins} title={communityText('No earnings yet')}>
-                                    {communityText('Share a paid project to earn credits.')}
+                                    {communityText('Offer a project for purchase so people can support your work.')}
                                 </EmptyState>
                             ) : null}
                     </div>
@@ -427,7 +427,7 @@ const UploadUsage = ({error, onRetry, quota, onRefresh, perks}) => {
         <section className={styles.uploads}>
             {perks ? (
                 <Notice variant="info">
-                    {communityText('Your {value1} Rotur plan gives you {value2} of weekly uploads, {value3} of assets per project, and {value4} per asset.', {
+                    {communityText('Your Rotur {value1} membership includes {value2} of weekly uploads, {value3} of assets per project, and {value4} per asset.', {
                         value1: perks.tier,
                         value2: formatBytes(perks.mistwarp.weeklyUploadBytes),
                         value3: formatBytes(perks.mistwarp.maxProjectAssetsBytes),
@@ -1616,7 +1616,7 @@ const MyStuff = () => {
                                             {project.contributionOnly ? (
                                                 <Button
                                                     disabled
-                                                    title={communityText('Paid project remixes stay private and can only be contributed back')}
+                                                    title={communityText('Remixes of projects offered for purchase stay private. Contribute your changes back to the original creator.')}
                                                 >{communityText('Contribution only')}</Button>
                                             ) : project.shared ? (
                                                 <Button

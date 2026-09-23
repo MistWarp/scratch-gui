@@ -1902,7 +1902,7 @@ const Project = () => {
                     onCancel={() => setConfirmBuy(false)}
                 >
                     <p className={styles.confirmText}>
-                        {communityText('Buy {value1} for {value2} credits?', {value1: project.title, value2: price})}
+                        {communityText('Buy {value1} for a one-time payment of {value2} credits and support its creator?', {value1: project.title, value2: price})}
                     </p>
                     {confirmBalance !== null ? (
                         <p className={styles.confirmBalance}>{communityText('Your balance: {value1} credits', {value1: confirmBalance})}</p>
@@ -1928,17 +1928,17 @@ const Project = () => {
             {visibility === 'private' ? (
                 <Notice variant="info" icon={EyeOff} className={styles.pageNotice}>
                     {project.contributionOnly ?
-                        communityText('Private paid-project remix. It can only be contributed back to the original project.') :
+                        communityText('This remix of a project offered for purchase stays private. You can contribute your changes back to the original creator.') :
                         communityText('Unshared. Only you can see this project.')}
                 </Notice>
             ) : null}
             {price > 0 ? (
                 <Notice variant="info" icon={Coins} className={styles.pageNotice}>
                     {project.isOwner ?
-                        communityText('Paywalled at {value1} credits.', {value1: price}) :
+                        communityText('Available for a one-time purchase of {value1} credits.', {value1: price}) :
                         project.bought ?
-                            communityText('You own this project.') :
-                            communityText('{value1} credits to play this project.', {value1: price})}
+                            communityText('Thanks for supporting this creator. You have access to play this project.') :
+                            communityText('Support this creator with a one-time purchase of {value1} credits to play.', {value1: price})}
                 </Notice>
             ) : null}
             {projectThemeApplied && !revertTheme ? (
@@ -1986,14 +1986,14 @@ const Project = () => {
                                 <div className={styles.paywall}>
                                     <EmptyState
                                         icon={Lock}
-                                        title={communityText('{value1} credits to play', {value1: price})}
+                                        title={communityText('Support this creator')}
                                         action={(
                                             <Button variant="primary" onClick={openBuyConfirm} disabled={!user || buying}>
                                                 <Coins size={16} />{communityText('Buy for {value1} credits', {value1: price})}</Button>
                                         )}
                                     >
-                                        {communityText('Buy once to play {value1} whenever you like.', {value1: project.title})}
-                                        {user ? null : ` ${communityText('Log in to buy this project.')}`}
+                                        {communityText('Your purchase supports the creator and gives you access to play {value1}. Pay once, with no recurring charge.', {value1: project.title})}
+                                        {user ? null : ` ${communityText('Sign in to purchase and support this creator.')}`}
                                     </EmptyState>
                                 </div>
                             ) : contentError ? (

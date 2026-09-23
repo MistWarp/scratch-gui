@@ -430,8 +430,8 @@ const NavBar = () => {
                     <Link
                         to="/perks"
                         className={styles.iconLink}
-                        title={communityText('Perks')}
-                        aria-label={communityText('Membership perks')}
+                        title={communityText('Memberships')}
+                        aria-label={communityText('Memberships')}
                     >
                         <Crown size={19} />
                     </Link>
