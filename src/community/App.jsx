@@ -64,7 +64,7 @@ const ROUTE_TITLES = [
     ['/groups/', 'Group'],
     ['/groups', 'Groups'],
     ['/settings', 'Settings'],
-    ['/perks', 'Membership perks'],
+    ['/perks', 'Memberships'],
     ['/mystuff/project/', 'Manage project'],
     ['/mystuff', 'My Stuff'],
     ['/wallet', 'Wallet'],

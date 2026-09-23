@@ -729,8 +729,10 @@
   "More": [
     "src/community/components/Footer.jsx:49"
   ],
-  "Paid perks": [
-    "src/community/components/Footer.jsx:50"
+  "Memberships": [
+    "src/community/components/Footer.jsx:50",
+    "src/community/components/NavBar.jsx:433",
+    "src/community/components/NavBar.jsx:434"
   ],
   "Documentation": [
     "src/community/components/Footer.jsx:51"
@@ -1246,12 +1248,6 @@
   "nav.search": [
     "src/community/components/NavBar.jsx:425",
     "src/community/components/NavBar.jsx:511"
-  ],
-  "Perks": [
-    "src/community/components/NavBar.jsx:433"
-  ],
-  "Membership perks": [
-    "src/community/components/NavBar.jsx:434"
   ],
   "Notifications": [
     "src/community/components/NavBar.jsx:443",
@@ -2428,10 +2424,10 @@
     "src/community/components/UpgradeCelebration.jsx:53",
     "src/community/components/ui/Modal.jsx:85"
   ],
-  "See all your perks": [
+  "View your membership benefits": [
     "src/community/components/UpgradeCelebration.jsx:59"
   ],
-  "Thank you for supporting MistWarp. Your new limits are already active.": [
+  "Thank you for supporting MistWarp. Your new membership benefits are ready to use.": [
     "src/community/components/UpgradeCelebration.jsx:71"
   ],
   "Shared": [
@@ -4276,10 +4272,10 @@
   "Export CSV": [
     "src/community/pages/ManageProject.jsx:576"
   ],
-  "Advanced analytics are included with your {value1} Rotur plan.": [
+  "Advanced analytics are included with your Rotur {value1} membership.": [
     "src/community/pages/ManageProject.jsx:578"
   ],
-  "Rotur Plus adds conversion insights and downloadable analytics. Your current plan keeps {value1} history.": [
+  "Rotur Plus includes conversion insights and downloadable analytics. Your current membership includes {value1} history.": [
     "src/community/pages/ManageProject.jsx:582"
   ],
   "all-time": [
@@ -4335,7 +4331,7 @@
   "my-project": [
     "src/community/pages/ManageProject.jsx:640"
   ],
-  "Your {value1} plan includes a vanity URL.": [
+  "Your {value1} membership includes a vanity URL.": [
     "src/community/pages/ManageProject.jsx:641"
   ],
   "Vanity project URLs are included with Rotur Pro.": [
@@ -4359,7 +4355,7 @@
   "A short line above your project": [
     "src/community/pages/ManageProject.jsx:664"
   ],
-  "Included with your {value1} Rotur plan.": [
+  "Included with your Rotur {value1} membership.": [
     "src/community/pages/ManageProject.jsx:667"
   ],
   "Custom branding is included with Rotur Plus and Pro.": [
@@ -4377,7 +4373,7 @@
     "src/community/pages/Project.jsx:1833",
     "src/community/pages/Spaces.jsx:256"
   ],
-  "This remix contains a paid project, so it stays private. Send your changes back to the original project from the Contribute tab.": [
+  "This remix includes a project offered for purchase, so it stays private. You can support the original creator by sending your changes from the Contribute tab.": [
     "src/community/pages/ManageProject.jsx:693"
   ],
   "Allow remixes": [
@@ -4386,7 +4382,7 @@
   "Allow people to see inside": [
     "src/community/pages/ManageProject.jsx:698"
   ],
-  "See inside includes project files and version history. For paid projects, only buyers can use it. Enable remixes too to let them make a private fork.": [
+  "When enabled, See inside gives access to project files and version history. If your project has a price, only buyers have this access. Enable remixes too to let them make a private remix.": [
     "src/community/pages/ManageProject.jsx:699"
   ],
   "Turn off comments": [
@@ -4429,7 +4425,7 @@
   "Price in credits": [
     "src/community/pages/ManageProject.jsx:742"
   ],
-  "Set the price to 0 to make the project free.": [
+  "Let people support your work with a one-time purchase, or set the price to 0 to share it for free.": [
     "src/community/pages/ManageProject.jsx:744"
   ],
   "Original creator share": [
@@ -4438,7 +4434,7 @@
   "Percentage of each sale paid to the original project.": [
     "src/community/pages/ManageProject.jsx:750"
   ],
-  "Your {value1} plan allows prices up to {value2} credits. MistWarp takes a {value3}% fee.": [
+  "Your {value1} membership supports project prices up to {value2} credits. Each sale includes a {value3}% MistWarp fee.": [
     "src/community/pages/ManageProject.jsx:754"
   ],
   "Save price": [
@@ -4459,10 +4455,10 @@
   "No buyers yet": [
     "src/community/pages/ManageProject.jsx:826"
   ],
-  "No one has bought this project yet.": [
+  "Purchases will appear here when people support your project.": [
     "src/community/pages/ManageProject.jsx:827"
   ],
-  "This project is free. Set a price to start selling it.": [
+  "This project is free to play. Set a price to let people support your work with a purchase.": [
     "src/community/pages/ManageProject.jsx:827"
   ],
   "Move the project to a group or transfer it to someone else.": [
@@ -4909,7 +4905,7 @@
   "No earnings yet": [
     "src/community/pages/MyStuff.jsx:268"
   ],
-  "Share a paid project to earn credits.": [
+  "Offer a project for purchase so people can support your work.": [
     "src/community/pages/MyStuff.jsx:269"
   ],
   "Storage": [
@@ -4974,7 +4970,7 @@
   "Uploads this week": [
     "src/community/pages/MyStuff.jsx:423"
   ],
-  "Your {value1} Rotur plan gives you {value2} of weekly uploads, {value3} of assets per project, and {value4} per asset.": [
+  "Your Rotur {value1} membership includes {value2} of weekly uploads, {value3} of assets per project, and {value4} per asset.": [
     "src/community/pages/MyStuff.jsx:430"
   ],
   "Nearly full": [
@@ -5120,7 +5116,7 @@
   "{value1} earned": [
     "src/community/pages/MyStuff.jsx:1604"
   ],
-  "Paid project remixes stay private and can only be contributed back": [
+  "Remixes of projects offered for purchase stay private. Contribute your changes back to the original creator.": [
     "src/community/pages/MyStuff.jsx:1619"
   ],
   "Contribution only": [
@@ -5286,28 +5282,28 @@
   "Loading membership benefits…": [
     "src/community/pages/PaidPerks.jsx:83"
   ],
-  "More MistWarp with your Rotur plan": [
+  "Support MistWarp with a membership": [
     "src/community/pages/PaidPerks.jsx:90"
   ],
-  "MistWarp is run by Rotur. Supporting Rotur supports MistWarp and unlocks higher limits and creator perks here.": [
+  "Rotur runs MistWarp. Your Rotur membership helps support MistWarp and gives you more room to create here.": [
     "src/community/pages/PaidPerks.jsx:91"
   ],
-  "View membership on rotur.dev": [
+  "Explore memberships on Rotur": [
     "src/community/pages/PaidPerks.jsx:94"
   ],
-  "Sign in to check your plan": [
+  "Sign in to view your membership": [
     "src/community/pages/PaidPerks.jsx:95"
   ],
-  "Rotur plans": [
+  "Rotur memberships": [
     "src/community/pages/PaidPerks.jsx:100"
   ],
   "{mb} MB weekly uploads and {days}-day recovery": [
     "src/community/pages/PaidPerks.jsx:105"
   ],
-  "MistWarp benefits": [
+  "Your membership benefits": [
     "src/community/pages/PaidPerks.jsx:113"
   ],
-  "MistWarp owns and enforces these limits. They apply as soon as MistWarp verifies your Rotur tier.": [
+  "Compare what each membership includes on MistWarp. Your benefits become available once your Rotur membership is confirmed.": [
     "src/community/pages/PaidPerks.jsx:114"
   ],
   "Post not found.": [
@@ -5653,7 +5649,7 @@
   "Pay {value1} credits": [
     "src/community/pages/Project.jsx:1896"
   ],
-  "Buy {value1} for {value2} credits?": [
+  "Buy {value1} for a one-time payment of {value2} credits and support its creator?": [
     "src/community/pages/Project.jsx:1905"
   ],
   "Your balance: {value1} credits": [
@@ -5671,19 +5667,19 @@
   "Unlisted. Hidden from search and profiles, but anyone with the link can open it.": [
     "src/community/pages/Project.jsx:1925"
   ],
-  "Private paid-project remix. It can only be contributed back to the original project.": [
+  "This remix of a project offered for purchase stays private. You can contribute your changes back to the original creator.": [
     "src/community/pages/Project.jsx:1931"
   ],
   "Unshared. Only you can see this project.": [
     "src/community/pages/Project.jsx:1932"
   ],
-  "Paywalled at {value1} credits.": [
+  "Available for a one-time purchase of {value1} credits.": [
     "src/community/pages/Project.jsx:1938"
   ],
-  "You own this project.": [
+  "Thanks for supporting this creator. You have access to play this project.": [
     "src/community/pages/Project.jsx:1940"
   ],
-  "{value1} credits to play this project.": [
+  "Support this creator with a one-time purchase of {value1} credits to play.": [
     "src/community/pages/Project.jsx:1941"
   ],
   "Use my theme": [
@@ -5704,16 +5700,16 @@
   "This project has not been uploaded yet.": [
     "src/community/pages/Project.jsx:1982"
   ],
-  "{value1} credits to play": [
+  "Support this creator": [
     "src/community/pages/Project.jsx:1989"
   ],
   "Buy for {value1} credits": [
     "src/community/pages/Project.jsx:1992"
   ],
-  "Buy once to play {value1} whenever you like.": [
+  "Your purchase supports the creator and gives you access to play {value1}. Pay once, with no recurring charge.": [
     "src/community/pages/Project.jsx:1995"
   ],
-  "Log in to buy this project.": [
+  "Sign in to purchase and support this creator.": [
     "src/community/pages/Project.jsx:1996"
   ],
   "Project unavailable": [

@@ -87,17 +87,17 @@ const PaidPerks = () => {
         <main className={styles.page}>
             <PageHeader
                 icon={Sparkles}
-                title={communityText('More MistWarp with your Rotur plan')}
-                lead={communityText('MistWarp is run by Rotur. Supporting Rotur supports MistWarp and unlocks higher limits and creator perks here.')}
+                title={communityText('Support MistWarp with a membership')}
+                lead={communityText('Rotur runs MistWarp. Your Rotur membership helps support MistWarp and gives you more room to create here.')}
                 actions={(
                     <React.Fragment>
-                        <Button variant="primary" onClick={() => window.open(data.roturMembershipUrl, '_blank', 'noopener,noreferrer')}><ExternalLink size={15} />{communityText('View membership on rotur.dev')}</Button>
-                        {!user ? <Button variant="secondary" onClick={login}>{communityText('Sign in to check your plan')}</Button> : null}
+                        <Button variant="primary" onClick={() => window.open(data.roturMembershipUrl, '_blank', 'noopener,noreferrer')}><ExternalLink size={15} />{communityText('Explore memberships on Rotur')}</Button>
+                        {!user ? <Button variant="secondary" onClick={login}>{communityText('Sign in to view your membership')}</Button> : null}
                     </React.Fragment>
                 )}
             />
 
-            <section className={styles.plans} aria-label={communityText('Rotur plans')}>
+            <section className={styles.plans} aria-label={communityText('Rotur memberships')}>
                 {data.plans.map(plan => (
                     <article className={`${styles.plan} ${plan.tier === currentTier ? styles.current : ''}`} key={plan.tier}>
                         <div><h2>{plan.tier}</h2>{plan.tier === currentTier ? <span>{communityText('Current')}</span> : null}</div>
@@ -110,8 +110,8 @@ const PaidPerks = () => {
             <section className={styles.section}>
                 <SectionHeading
                     icon={Check}
-                    title={communityText('MistWarp benefits')}
-                    lead={communityText('MistWarp owns and enforces these limits. They apply as soon as MistWarp verifies your Rotur tier.')}
+                    title={communityText('Your membership benefits')}
+                    lead={communityText('Compare what each membership includes on MistWarp. Your benefits become available once your Rotur membership is confirmed.')}
                 />
                 <Comparison plans={data.plans} rows={MISTWARP_ROWS} source="mistwarp" />
             </section>
