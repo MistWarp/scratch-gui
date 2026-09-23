@@ -575,11 +575,11 @@ const ManageProject = () => {
                                     variant="info"
                                     action={<Button onClick={() => exportAnalyticsCsv(project, analytics)}>{communityText('Export CSV')}</Button>}
                                 >
-                                    {communityText('Advanced analytics are included with your {value1} Rotur plan.', {value1: perks.tier})}
+                                    {communityText('Advanced analytics are included with your Rotur {value1} membership.', {value1: perks.tier})}
                                 </Notice>
                             ) : (
                                 <Notice variant="info">
-                                    {communityText('Rotur Plus adds conversion insights and downloadable analytics. Your current plan keeps {value1} history.', {
+                                    {communityText('Rotur Plus includes conversion insights and downloadable analytics. Your current membership includes {value1} history.', {
                                         value1: analytics.historyDays === 0 ? communityText('all-time') : communityText('{value1}-day', {value1: analytics.historyDays})
                                     })}
                                 </Notice>
@@ -638,7 +638,7 @@ const ManageProject = () => {
                                     <label className={styles.field}>
                                         <span>{communityText('Vanity URL')}</span>
                                         <div className={styles.vanityField}><span>{communityText('/p/')}</span><input disabled={saving || !perks?.mistwarp?.vanityProjectUrls} maxLength={40} value={form.vanitySlug} placeholder={communityText('my-project')} onChange={e => set('vanitySlug', e.target.value)} /></div>
-                                        <small>{project.vanitySlug ? <Link to={projectUrl(project)}>{communityText('Open {value1}', {value1: `/p/${project.vanitySlug}`})}</Link> : null}{project.vanitySlug && perks?.mistwarp?.vanityProjectUrls ? ' · ' : ''}{perks?.mistwarp?.vanityProjectUrls ? communityText('Your {value1} plan includes a vanity URL.', {value1: perks.tier}) : communityText('Vanity project URLs are included with Rotur Pro.')}</small>
+                                        <small>{project.vanitySlug ? <Link to={projectUrl(project)}>{communityText('Open {value1}', {value1: `/p/${project.vanitySlug}`})}</Link> : null}{project.vanitySlug && perks?.mistwarp?.vanityProjectUrls ? ' · ' : ''}{perks?.mistwarp?.vanityProjectUrls ? communityText('Your {value1} membership includes a vanity URL.', {value1: perks.tier}) : communityText('Vanity project URLs are included with Rotur Pro.')}</small>
                                     </label>
                                     <div className={styles.formActions}>
                                         {status ? <span className={styles.formStatus}>{status}</span> : null}
@@ -664,7 +664,7 @@ const ManageProject = () => {
                                         <input disabled={saving || !perks?.mistwarp?.customProjectBranding} maxLength={120} value={form.brandingTagline} placeholder={communityText('A short line above your project')} onChange={e => set('brandingTagline', e.target.value)} />
                                     </label>
                                 </div>
-                                <p className={styles.cardHint}>{perks?.mistwarp?.customProjectBranding ? communityText('Included with your {value1} Rotur plan.', {value1: perks.tier}) : communityText('Custom branding is included with Rotur Plus and Pro.')}</p>
+                                <p className={styles.cardHint}>{perks?.mistwarp?.customProjectBranding ? communityText('Included with your Rotur {value1} membership.', {value1: perks.tier}) : communityText('Custom branding is included with Rotur Plus and Pro.')}</p>
                             </div>
                             <ProjectInfoPanel
                                 project={project}
@@ -690,13 +690,13 @@ const ManageProject = () => {
                                             onChange={value => set('visibility', value)}
                                         />
                                         {project.contributionOnly ? (
-                                            <p className={styles.cardHint}>{communityText('This remix contains a paid project, so it stays private. Send your changes back to the original project from the Contribute tab.')}</p>
+                                            <p className={styles.cardHint}>{communityText('This remix includes a project offered for purchase, so it stays private. You can support the original creator by sending your changes from the Contribute tab.')}</p>
                                         ) : null}
                                     </div>
                                     <div className={styles.switches}>
                                         <SwitchRow checked={form.remixable} disabled={saving} label={communityText('Allow remixes')} onChange={value => set('remixable', value)} />
                                         <SwitchRow checked={form.seeInside} disabled={saving} label={communityText('Allow people to see inside')} onChange={value => set('seeInside', value)} />
-                                        <p className={styles.cardHint}>{communityText('See inside includes project files and version history. For paid projects, only buyers can use it. Enable remixes too to let them make a private fork.')}</p>
+                                        <p className={styles.cardHint}>{communityText('When enabled, See inside gives access to project files and version history. If your project has a price, only buyers have this access. Enable remixes too to let them make a private remix.')}</p>
                                         <SwitchRow checked={form.commentsOff} disabled={saving} label={communityText('Turn off comments')} onChange={value => set('commentsOff', value)} />
                                     </div>
                                     <div className={styles.formActions}>
@@ -741,7 +741,7 @@ const ManageProject = () => {
                                             <label className={styles.field}>
                                                 <span>{communityText('Price in credits')}</span>
                                                 <input disabled={saving} type="number" min="0" max={perks?.mistwarp?.maxProjectPrice} step="1" value={form.price} onChange={event => set('price', event.target.value)} />
-                                                <small>{communityText('Set the price to 0 to make the project free.')}</small>
+                                                <small>{communityText('Let people support your work with a one-time purchase, or set the price to 0 to share it for free.')}</small>
                                             </label>
                                             {project.remixParent ? (
                                                 <label className={styles.field}>
@@ -751,7 +751,7 @@ const ManageProject = () => {
                                                 </label>
                                             ) : null}
                                         </div>
-                                        {perks ? <p className={styles.cardHint}>{communityText('Your {value1} plan allows prices up to {value2} credits. MistWarp takes a {value3}% fee.', {value1: perks.tier, value2: perks.mistwarp.maxProjectPrice, value3: perks.mistwarp.salesFeeBasisPoints / 100})}</p> : null}
+                                        {perks ? <p className={styles.cardHint}>{communityText('Your {value1} membership supports project prices up to {value2} credits. Each sale includes a {value3}% MistWarp fee.', {value1: perks.tier, value2: perks.mistwarp.maxProjectPrice, value3: perks.mistwarp.salesFeeBasisPoints / 100})}</p> : null}
                                         <div className={styles.formActions}>
                                             {status ? <span className={styles.formStatus}>{status}</span> : null}
                                             <Button variant="primary" busy={saving} busyLabel={communityText('Saving…')} onClick={save}><Check size={16} />{communityText('Save price')}</Button>
@@ -824,7 +824,7 @@ const ManageProject = () => {
                                         </ul>
                                     ) : (
                                         <EmptyState compact icon={Users} title={communityText('No buyers yet')}>
-                                            {paywalled ? communityText('No one has bought this project yet.') : communityText('This project is free. Set a price to start selling it.')}
+                                            {paywalled ? communityText('Purchases will appear here when people support your project.') : communityText('This project is free to play. Set a price to let people support your work with a purchase.')}
                                         </EmptyState>
                                     )}
                                 </div>
