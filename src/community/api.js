@@ -419,6 +419,7 @@ const api = {
     deleteSpaceComment: (id, commentId) => request(`/spaces/${id}/comments/${commentId}`, {method: 'DELETE'}),
     editSpaceComment: (id, commentId, content) => request(`/spaces/${id}/comments/${commentId}`, {method: 'PUT', body: {content}}),
     reactSpaceComment: (id, commentId, type) => request(`/spaces/${id}/comments/${commentId}/react`, {method: 'POST', body: {type}}),
+    pinSpaceComment: (id, commentId, pinned) => request(`/spaces/${id}/comments/${commentId}/pin`, {method: 'POST', body: {pinned}}),
     developmentPulls: () => request('/development/pulls'),
     roadmap: () => request('/roadmap'),
     createIdea: idea => request('/roadmap', {method: 'POST', body: idea}),

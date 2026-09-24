@@ -1,12 +1,13 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {Clock3, FolderOpen, MessageCircle, Settings, UserMinus, UserPlus, Users} from 'lucide-react';
 import api from '../api';
 import Avatar from '../components/Avatar.jsx';
 import GroupTag from '../components/GroupTag.jsx';
 import CommentThread from '../components/CommentThread.jsx';
+import useSpaceCommentSource from '../space-comments.js';
 import ProjectCard from '../components/ProjectCard.jsx';
 import ProjectThumbnail from '../components/ProjectThumbnail.jsx';
 import RichText from '../components/RichText.jsx';
@@ -29,13 +30,7 @@ const Studio = ({id, space, user, login, load}) => {
     const actionLocks = useRef(new Set());
     const currentId = useRef(id);
     currentId.current = id;
-    const commentSource = useMemo(() => ({
-        list: options => api.spaceComments(id, options),
-        add: (content, parent) => api.addSpaceComment(id, content, parent),
-        remove: commentId => api.deleteSpaceComment(id, commentId),
-        edit: (commentId, content) => api.editSpaceComment(id, commentId, content),
-        react: (commentId, type) => api.reactSpaceComment(id, commentId, type)
-    }), [id]);
+    const commentSource = useSpaceCommentSource(id);
 
     useEffect(() => {
         setActionBusy('');
@@ -153,7 +148,7 @@ const Studio = ({id, space, user, login, load}) => {
                     {tab === 'comments' ? (
                         <section>
                             <SectionHeading icon={MessageCircle} title={communityText('Comments')} lead={communityText('Talk with the studio community.')} />
-                            <CommentThread source={commentSource} canModerate={Boolean(space.canManage)} reportContext={`studio ${space.title}`} />
+                            <CommentThread source={commentSource} canModerate={Boolean(space.canManage)} canPin={Boolean(space.canManage)} reportContext={`studio ${space.title}`} />
                         </section>
                     ) : null}
                     {tab === 'curators' ? (

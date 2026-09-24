@@ -168,7 +168,7 @@
     display: grid;
     align-items: start;
     grid-template-columns: minmax(0, 1fr) 300px;
-    gap: 40px;
+    gap: 28px 40px;
 }
 
 .mainColumn {
@@ -211,6 +211,11 @@
 
 .section {
     min-width: 0;
+}
+
+.community {
+    min-width: 0;
+    grid-column: 1;
 }
 
 .longText {
