@@ -19,6 +19,7 @@
 }
 
 .brand {
+    position: relative;
     display: flex;
     align-items: center;
     height: 100%;
@@ -32,11 +33,29 @@
     display: block;
 }
 
+.brandText {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+}
+
 .wordmark {
     font-weight: 700;
     font-size: var(--fs-xl);
+    line-height: 1.1;
     color: var(--menu-bar-foreground, #fff);
     letter-spacing: -0.02em;
+}
+
+.beta {
+    padding: 0 5px;
+    border-radius: var(--radius-2xs);
+    background: color-mix(in srgb, var(--menu-bar-foreground, #fff) 22%, transparent);
+    color: var(--menu-bar-foreground, #fff);
+    font-size: var(--fs-2xs);
+    font-weight: 700;
+    line-height: 1.35;
 }
 
 .links {
@@ -380,6 +399,21 @@ a.suggestionMeta:hover {
 
     .wordmark {
         display: none;
+    }
+
+    .brandText {
+        position: absolute;
+        bottom: 2px;
+        left: 50%;
+        transform: translateX(-50%);
+        pointer-events: none;
+    }
+
+    .beta {
+        padding: 0 4px;
+        background: var(--menu-bar-background, var(--accent));
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--menu-bar-foreground, #fff) 40%, transparent);
+        line-height: 1.2;
     }
 
     .iconLink {

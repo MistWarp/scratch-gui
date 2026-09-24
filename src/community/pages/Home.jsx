@@ -18,8 +18,6 @@ import ProjectCard from '../components/ProjectCard.jsx';
 import HomeDiscovery from '../components/HomeDiscovery.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import ScratchImport from '../components/ScratchImport.jsx';
-import CommunityNewsBanner from '../components/CommunityNewsBanner.jsx';
-import JoinCommunityModal from '../components/JoinCommunityModal.jsx';
 import ChallengeCalendar from '../components/ChallengeCalendar.jsx';
 import ReactionButtons from '../components/ReactionButtons.jsx';
 import UserLink from '../components/UserLink.jsx';
@@ -327,11 +325,6 @@ const Home = () => {
     const viewerName = (user && user.username) || '';
     const {t} = useCommunityIntl();
     const [projectCount, setProjectCount] = useState(null);
-    const [joinOpen, setJoinOpen] = useState(false);
-    const openJoin = () => {
-        track('community_join_open');
-        setJoinOpen(true);
-    };
     const showStarters = !loading && (!user ||
         (projectCount && projectCount.username === viewerName && projectCount.total < 4));
     useEffect(() => {
@@ -339,7 +332,6 @@ const Home = () => {
     }, []);
     return (
         <main className={styles.page}>
-            <CommunityNewsBanner onJoin={openJoin} />
             {loading ? <StatusMessage>{communityText('Loading your workspace…')}</StatusMessage> : user ?
                 <ContinueProjects username={viewerName} onProjectCount={setProjectCount} /> : (
                     <section className={styles.hero}>
@@ -473,7 +465,6 @@ const Home = () => {
                     }
                 ]}
             />
-            {joinOpen ? <JoinCommunityModal onClose={() => setJoinOpen(false)} /> : null}
         </main>
     );
 };
