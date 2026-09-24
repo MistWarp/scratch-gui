@@ -25,6 +25,7 @@
   ],
   "Dismiss": [
     "src/community/components/BetaBanner.jsx:43",
+    "src/community/components/CommunityNewsBanner.jsx:51",
     "src/community/components/StandingBanner.jsx:35",
     "src/community/components/StandingBanner.jsx:55",
     "src/community/components/ui/Notice.jsx:35",
@@ -57,7 +58,7 @@
   "All challenges": [
     "src/community/components/ChallengeCalendar.jsx:144",
     "src/community/pages/Challenge.jsx:368",
-    "src/community/pages/Home.jsx:477"
+    "src/community/pages/Home.jsx:472"
   ],
   "{value1}, {value2} to {value3}": [
     "src/community/components/ChallengeCalendar.jsx:155"
@@ -429,6 +430,17 @@
   "This comment and its replies will be deleted permanently.": [
     "src/community/components/CommentThread.jsx:1055"
   ],
+  "New": [
+    "src/community/components/CommunityNewsBanner.jsx:35"
+  ],
+  "MistWarp now has a community server, bridged between OriginChats and Discord.": [
+    "src/community/components/CommunityNewsBanner.jsx:38"
+  ],
+  "Join our community": [
+    "src/community/components/CommunityNewsBanner.jsx:45",
+    "src/community/components/JoinCommunityModal.jsx:31",
+    "src/community/pages/Home.jsx:352"
+  ],
   "Code": [
     "src/community/components/DiffView.jsx:18"
   ],
@@ -557,7 +569,7 @@
   ],
   "Nothing to show": [
     "src/community/components/DiffView.jsx:647",
-    "src/community/pages/Home.jsx:294",
+    "src/community/pages/Home.jsx:295",
     "src/community/pages/Notifications.jsx:594"
   ],
   "Projects": [
@@ -604,7 +616,7 @@
     "src/community/components/Footer.jsx:39",
     "src/community/components/MyStuffSpaces.jsx:79",
     "src/community/pages/Group.jsx:203",
-    "src/community/pages/Home.jsx:474",
+    "src/community/pages/Home.jsx:469",
     "src/community/pages/Spaces.jsx:23"
   ],
   "Collections": [
@@ -706,8 +718,8 @@
   ],
   "News": [
     "src/community/components/Footer.jsx:42",
-    "src/community/pages/Home.jsx:68",
-    "src/community/pages/Home.jsx:458",
+    "src/community/pages/Home.jsx:69",
+    "src/community/pages/Home.jsx:453",
     "src/community/pages/News.jsx:166"
   ],
   "Stats": [
@@ -715,8 +727,8 @@
   ],
   "Roadmap": [
     "src/community/components/Footer.jsx:44",
-    "src/community/pages/Home.jsx:166",
-    "src/community/pages/Home.jsx:466",
+    "src/community/pages/Home.jsx:167",
+    "src/community/pages/Home.jsx:461",
     "src/community/pages/Roadmap.jsx:478"
   ],
   "Compare with Scratch": [
@@ -871,8 +883,8 @@
   "See all": [
     "src/community/components/HomeDiscovery.jsx:56",
     "src/community/components/ui/SectionHeading.jsx:21",
-    "src/community/pages/Home.jsx:288",
-    "src/community/pages/Home.jsx:500"
+    "src/community/pages/Home.jsx:289",
+    "src/community/pages/Home.jsx:495"
   ],
   "{value1} projects · {value2} hearts": [
     "src/community/components/HomeDiscovery.jsx:65"
@@ -880,7 +892,7 @@
   "Following": [
     "src/community/components/HomeDiscovery.jsx:76",
     "src/community/pages/Collection.jsx:75",
-    "src/community/pages/Home.jsx:393",
+    "src/community/pages/Home.jsx:395",
     "src/community/pages/Profile.jsx:854",
     "src/community/pages/Space.jsx:183",
     "src/community/pages/Studio.jsx:119"
@@ -964,11 +976,6 @@
   ],
   "Hang out with the community on our Discord server.": [
     "src/community/components/JoinCommunityModal.jsx:26"
-  ],
-  "Join our community": [
-    "src/community/components/JoinCommunityModal.jsx:31",
-    "src/community/pages/Home.jsx:350",
-    "src/community/pages/Home.jsx:450"
   ],
   "Where would you like to join?": [
     "src/community/components/JoinCommunityModal.jsx:34"
@@ -1274,7 +1281,7 @@
     "src/community/components/SharedProjects.jsx:50",
     "src/community/components/SpaceCard.jsx:35",
     "src/community/components/ThemeCard.jsx:20",
-    "src/community/pages/Home.jsx:175",
+    "src/community/pages/Home.jsx:176",
     "src/community/pages/ManageProject.jsx:641",
     "src/community/pages/Profile.jsx:574"
   ],
@@ -1340,7 +1347,7 @@
     "src/community/components/NavBar.jsx:444",
     "src/community/components/NavBar.jsx:528",
     "src/community/components/NavBar.jsx:529",
-    "src/community/pages/Home.jsx:399",
+    "src/community/pages/Home.jsx:401",
     "src/community/pages/Notifications.jsx:556",
     "src/community/pages/Settings.jsx:104",
     "src/community/pages/Settings.jsx:634"
@@ -1942,7 +1949,7 @@
     "src/community/components/ProjectInfoPanel.jsx:141",
     "src/community/components/ProjectInfoPanel.jsx:144",
     "src/community/pages/Explore.jsx:193",
-    "src/community/pages/Home.jsx:430"
+    "src/community/pages/Home.jsx:432"
   ],
   "Shared projects with this option appear in Looking for feedback. Add a specific question to Creator notes, such as \"Is the first level too difficult?\"": [
     "src/community/components/ProjectInfoPanel.jsx:142"
@@ -2248,7 +2255,7 @@
   ],
   "No shared projects yet": [
     "src/community/components/SharedProjects.jsx:98",
-    "src/community/pages/Home.jsx:574",
+    "src/community/pages/Home.jsx:569",
     "src/community/pages/Random.jsx:46"
   ],
   "Projects will appear here when someone adds you to their team.": [
@@ -3890,7 +3897,7 @@
   ],
   "Trending": [
     "src/community/pages/Explore.jsx:20",
-    "src/community/pages/Home.jsx:416",
+    "src/community/pages/Home.jsx:418",
     "src/community/pages/Search.jsx:25"
   ],
   "Recent": [
@@ -4103,157 +4110,151 @@
     "src/community/pages/Groups.jsx:110"
   ],
   "All updates": [
-    "src/community/pages/Home.jsx:68",
-    "src/community/pages/Home.jsx:461"
+    "src/community/pages/Home.jsx:69",
+    "src/community/pages/Home.jsx:456"
   ],
   "Couldn't load news.": [
-    "src/community/pages/Home.jsx:70",
+    "src/community/pages/Home.jsx:71",
     "src/community/pages/News.jsx:304"
   ],
   "No updates yet": [
-    "src/community/pages/Home.jsx:71",
+    "src/community/pages/Home.jsx:72",
     "src/community/pages/News.jsx:371"
   ],
   "News from MistWarp will show up here.": [
-    "src/community/pages/Home.jsx:71"
+    "src/community/pages/Home.jsx:72"
   ],
   "From people you follow": [
-    "src/community/pages/Home.jsx:110"
-  ],
-  "Sign in to see projects, reviews, and activity from people you follow.": [
     "src/community/pages/Home.jsx:111"
   ],
+  "Sign in to see projects, reviews, and activity from people you follow.": [
+    "src/community/pages/Home.jsx:112"
+  ],
   "Couldn't load activity.": [
-    "src/community/pages/Home.jsx:113",
+    "src/community/pages/Home.jsx:114",
     "src/community/pages/Notifications.jsx:560"
   ],
   "No recent activity yet": [
-    "src/community/pages/Home.jsx:114"
+    "src/community/pages/Home.jsx:115"
   ],
   "Explore projects": [
-    "src/community/pages/Home.jsx:114",
+    "src/community/pages/Home.jsx:115",
     "src/community/pages/Wallet.jsx:467"
   ],
   "Find a project you like and follow its creator.": [
-    "src/community/pages/Home.jsx:114"
+    "src/community/pages/Home.jsx:115"
   ],
   "posted: ": [
-    "src/community/pages/Home.jsx:131"
+    "src/community/pages/Home.jsx:132"
   ],
   "View post": [
-    "src/community/pages/Home.jsx:131"
+    "src/community/pages/Home.jsx:132"
   ],
   "Suggest and vote": [
-    "src/community/pages/Home.jsx:166",
-    "src/community/pages/Home.jsx:469"
+    "src/community/pages/Home.jsx:167",
+    "src/community/pages/Home.jsx:464"
   ],
   "Couldn't load roadmap suggestions.": [
-    "src/community/pages/Home.jsx:168"
+    "src/community/pages/Home.jsx:169"
   ],
   "No suggestions yet": [
-    "src/community/pages/Home.jsx:169"
+    "src/community/pages/Home.jsx:170"
   ],
   "Add the first one": [
-    "src/community/pages/Home.jsx:169"
+    "src/community/pages/Home.jsx:170"
   ],
   "No active suggestions": [
-    "src/community/pages/Home.jsx:170"
+    "src/community/pages/Home.jsx:171"
   ],
   "View the roadmap": [
-    "src/community/pages/Home.jsx:170"
+    "src/community/pages/Home.jsx:171"
   ],
   "Bug": [
-    "src/community/pages/Home.jsx:188",
+    "src/community/pages/Home.jsx:189",
     "src/community/pages/Roadmap.jsx:119",
     "src/community/pages/Roadmap.jsx:205"
   ],
   "Recent notifications": [
-    "src/community/pages/Home.jsx:288"
+    "src/community/pages/Home.jsx:289"
   ],
   "Sign in to see your notifications.": [
-    "src/community/pages/Home.jsx:289",
+    "src/community/pages/Home.jsx:290",
     "src/community/pages/Notifications.jsx:545"
   ],
   "Couldn't load notifications.": [
-    "src/community/pages/Home.jsx:291"
-  ],
-  "Nothing new yet": [
     "src/community/pages/Home.jsx:292"
   ],
+  "Nothing new yet": [
+    "src/community/pages/Home.jsx:293"
+  ],
   "Change preferences": [
-    "src/community/pages/Home.jsx:294",
+    "src/community/pages/Home.jsx:295",
     "src/community/pages/Notifications.jsx:597"
   ],
   "Your notification preferences hide all recent activity.": [
-    "src/community/pages/Home.jsx:295"
+    "src/community/pages/Home.jsx:296"
   ],
   "Loading your workspace…": [
-    "src/community/pages/Home.jsx:341"
+    "src/community/pages/Home.jsx:343"
   ],
   "home.title": [
-    "src/community/pages/Home.jsx:345"
+    "src/community/pages/Home.jsx:347"
   ],
   "home.lead": [
-    "src/community/pages/Home.jsx:346"
+    "src/community/pages/Home.jsx:348"
   ],
   "Try a starter": [
-    "src/community/pages/Home.jsx:348",
-    "src/community/pages/Home.jsx:374"
+    "src/community/pages/Home.jsx:350",
+    "src/community/pages/Home.jsx:376"
   ],
   "home.explore": [
-    "src/community/pages/Home.jsx:349"
+    "src/community/pages/Home.jsx:351"
   ],
   "Coming from Scratch or TurboWarp? See what is different": [
-    "src/community/pages/Home.jsx:355"
+    "src/community/pages/Home.jsx:357"
   ],
   "Build together, keep your progress": [
-    "src/community/pages/Home.jsx:360"
-  ],
-  "Make your first version": [
-    "src/community/pages/Home.jsx:361"
-  ],
-  "Invite someone to improve it": [
     "src/community/pages/Home.jsx:362"
   ],
-  "Keep earlier versions to return to": [
+  "Make your first version": [
     "src/community/pages/Home.jsx:363"
   ],
-  "Start with a working clicker": [
+  "Invite someone to improve it": [
     "src/community/pages/Home.jsx:364"
   ],
+  "Keep earlier versions to return to": [
+    "src/community/pages/Home.jsx:365"
+  ],
+  "Start with a working clicker": [
+    "src/community/pages/Home.jsx:366"
+  ],
   "Welcome to MistWarp, {value1}": [
-    "src/community/pages/Home.jsx:370"
+    "src/community/pages/Home.jsx:372"
   ],
   "Start from a working project, or follow a few creators to fill your feed.": [
-    "src/community/pages/Home.jsx:371"
+    "src/community/pages/Home.jsx:373"
   ],
   "Find creators": [
-    "src/community/pages/Home.jsx:377"
+    "src/community/pages/Home.jsx:379"
   ],
   "Freshly shared": [
-    "src/community/pages/Home.jsx:423"
+    "src/community/pages/Home.jsx:425"
   ],
   "Continue playing": [
-    "src/community/pages/Home.jsx:437",
-    "src/community/pages/Home.jsx:530"
+    "src/community/pages/Home.jsx:439",
+    "src/community/pages/Home.jsx:525"
   ],
   "Game library": [
-    "src/community/pages/Home.jsx:440"
-  ],
-  "Hang out with other creators": [
-    "src/community/pages/Home.jsx:447"
-  ],
-  "Share what you are making, get help, and meet the MistWarp community.": [
-    "src/community/pages/Home.jsx:448"
+    "src/community/pages/Home.jsx:442"
   ],
   "Nothing played yet": [
-    "src/community/pages/Home.jsx:528"
+    "src/community/pages/Home.jsx:523"
   ],
   "Games you save to your library show up here after you play them.": [
-    "src/community/pages/Home.jsx:529"
+    "src/community/pages/Home.jsx:524"
   ],
   "Couldn't load projects.": [
-    "src/community/pages/Home.jsx:573"
+    "src/community/pages/Home.jsx:568"
   ],
   "Followers": [
     "src/community/pages/Leaderboard.jsx:22",
