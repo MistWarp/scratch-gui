@@ -1,5 +1,3 @@
-import ScratchBlocks from 'scratch-blocks';
-
 /**
  * Main function for the addon.
  * @param {object} params - The parameters for the addon.
@@ -25,60 +23,62 @@ export default function ({addon, msg}) {
         }
     );
 
-    // https://github.com/scratchfoundation/scratch-blocks/blob/893c7e7ad5bfb416eaed75d9a1c93bdce84e36ab/core/workspace_svg.js#L979
-    /**
-     * Reports a value for a specific block by its ID.
-     * @param {string} id - The ID of the block.
-     * @param {*} value - The value to report. Can be of any type. If it's an object, it will be stringified.
-     * @throws {Error} Will throw an error if the block does not exist.
-     */
-    ScratchBlocks.WorkspaceSvg.prototype.reportValue = function (id, value, fullValue) {
-        const block = this.getBlockById(id);
-        if (!block) {
-            throw new Error('Tried to report value on block that does not exist.');
-        }
-
-        ScratchBlocks.DropDownDiv.hideWithoutAnimation();
-        ScratchBlocks.DropDownDiv.clearContent();
-
-        const contentDiv = ScratchBlocks.DropDownDiv.getContentDiv();
-
-        const valueReportBox = document.createElement('div');
-        valueReportBox.setAttribute('class', 'valueReportBox');
-        const copyValue = fullValue || value;
-        const displayValue = copyValue.length > 5000 ? `${copyValue.slice(0, 5000)}...` : copyValue;
-        valueReportBox.innerText = displayValue;
-        if (!addon.self.disabled) {
-            // use to get focus and event priority
-            valueReportBox.setAttribute('tabindex', '0');
-            // if the user pressed Ctrl+C, prevent propagation to Blockly
-            valueReportBox.onkeydown = event => {
-                if ((event.altKey || event.ctrlKey || event.metaKey) && event.code === 'KeyC') {
-                    event.stopPropagation();
-                }
-            };
-
-            if (copyValue.length !== 0) {
-                const copyButton = document.createElement('img');
-                copyButton.setAttribute('role', 'button');
-                copyButton.setAttribute('tabindex', '0');
-                copyButton.setAttribute('alt', msg('copy-to-clipboard'));
-                copyButton.setAttribute('src', addon.self.getResource('/copy.svg'));
-
-                copyButton.classList.add('sa-copy-reporter-icon');
-                addon.tab.displayNoneWhileDisabled(copyButton);
-
-                copyButton.onclick = () => navigator.clipboard.writeText(copyValue);
-                valueReportBox.appendChild(copyButton);
+    addon.tab.traps.getBlockly().then(ScratchBlocks => {
+        // https://github.com/scratchfoundation/scratch-blocks/blob/893c7e7ad5bfb416eaed75d9a1c93bdce84e36ab/core/workspace_svg.js#L979
+        /**
+         * Reports a value for a specific block by its ID.
+         * @param {string} id - The ID of the block.
+         * @param {*} value - The value to report. Can be of any type. If it's an object, it will be stringified.
+         * @throws {Error} Will throw an error if the block does not exist.
+         */
+        ScratchBlocks.WorkspaceSvg.prototype.reportValue = function (id, value, fullValue) {
+            const block = this.getBlockById(id);
+            if (!block) {
+                throw new Error('Tried to report value on block that does not exist.');
             }
-        }
 
-        contentDiv.appendChild(valueReportBox);
+            ScratchBlocks.DropDownDiv.hideWithoutAnimation();
+            ScratchBlocks.DropDownDiv.clearContent();
 
-        ScratchBlocks.DropDownDiv.setColour(
-            ScratchBlocks.Colours.valueReportBackground,
-            ScratchBlocks.Colours.valueReportBorder
-        );
-        ScratchBlocks.DropDownDiv.showPositionedByBlock(this, block);
-    };
+            const contentDiv = ScratchBlocks.DropDownDiv.getContentDiv();
+
+            const valueReportBox = document.createElement('div');
+            valueReportBox.setAttribute('class', 'valueReportBox');
+            const copyValue = fullValue || value;
+            const displayValue = copyValue.length > 5000 ? `${copyValue.slice(0, 5000)}...` : copyValue;
+            valueReportBox.innerText = displayValue;
+            if (!addon.self.disabled) {
+                // use to get focus and event priority
+                valueReportBox.setAttribute('tabindex', '0');
+                // if the user pressed Ctrl+C, prevent propagation to Blockly
+                valueReportBox.onkeydown = event => {
+                    if ((event.altKey || event.ctrlKey || event.metaKey) && event.code === 'KeyC') {
+                        event.stopPropagation();
+                    }
+                };
+
+                if (copyValue.length !== 0) {
+                    const copyButton = document.createElement('img');
+                    copyButton.setAttribute('role', 'button');
+                    copyButton.setAttribute('tabindex', '0');
+                    copyButton.setAttribute('alt', msg('copy-to-clipboard'));
+                    copyButton.setAttribute('src', addon.self.getResource('/copy.svg'));
+
+                    copyButton.classList.add('sa-copy-reporter-icon');
+                    addon.tab.displayNoneWhileDisabled(copyButton);
+
+                    copyButton.onclick = () => navigator.clipboard.writeText(copyValue);
+                    valueReportBox.appendChild(copyButton);
+                }
+            }
+
+            contentDiv.appendChild(valueReportBox);
+
+            ScratchBlocks.DropDownDiv.setColour(
+                ScratchBlocks.Colours.valueReportBackground,
+                ScratchBlocks.Colours.valueReportBorder
+            );
+            ScratchBlocks.DropDownDiv.showPositionedByBlock(this, block);
+        };
+    });
 }

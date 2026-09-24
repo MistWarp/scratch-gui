@@ -416,7 +416,7 @@ export default defineConfig(({mode}) => {
                 // Shared translations belong in their own chunk on site builds,
                 // not in an arbitrarily named UI component such as "checkbox".
                 rollupOptions: {output: {manualChunks: id => (
-                    id.includes('/generated/editor-locales/') ? 'editor-locales' : undefined
+                    id.endsWith('/generated/editor-locales/en.json') ? 'editor-locales' : undefined
                 )}}
             } : {}),
             ...(library ? {lib: {entry: absolute('src/index.js'),

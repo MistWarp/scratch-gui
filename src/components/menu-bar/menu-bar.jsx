@@ -493,6 +493,7 @@ class MenuBar extends React.Component {
             this.props.vm.runtime.on('PROJECT_LOADED', this.workspaceBookmarksProjectListener);
         }
 
+        if (!LazyScratchBlocks.isLoaded()) return;
         this.ensureScratchBlocks().then(ScratchBlocks => {
             if (this.unmounted) return;
             const workspace = ScratchBlocks.getMainWorkspace();

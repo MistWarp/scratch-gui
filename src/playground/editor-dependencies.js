@@ -1,5 +1,4 @@
-// Initialize the block engine before mounting the editor.
-import ScratchBlocks from 'scratch-blocks';
-import LazyScratchBlocks from '../lib/tw-lazy-scratch-blocks';
+import editorComponents from '../components/gui/editor-components';
+import {setGuiComponents} from '../components/gui/gui-components';
 
-LazyScratchBlocks.set(ScratchBlocks);
+setGuiComponents(editorComponents);
