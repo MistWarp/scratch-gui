@@ -141,6 +141,26 @@ class SettingsStore extends EventTargetShim {
 
     /**
      * @private
+     * @returns {object} stored settings whose addon id is no longer registered
+     */
+    readRetiredAddonSettings () {
+        const retired = Object.create(null);
+        try {
+            const local = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+            if (!local || typeof local !== 'object') return retired;
+            for (const key of Object.keys(local)) {
+                if (key === '_' || Object.prototype.hasOwnProperty.call(addons, key)) continue;
+                const value = local[key];
+                if (value && typeof value === 'object') retired[key] = value;
+            }
+        } catch (e) {
+            // ignore
+        }
+        return retired;
+    }
+
+    /**
+     * @private
      */
     saveToLocalStorage () {
         if (this.remote) {
@@ -150,6 +170,12 @@ class SettingsStore extends EventTargetShim {
             const result = {
                 _: VERSION
             };
+            // Settings of addons that were retired into native features stay
+            // in storage until their migration has read them.
+            const previous = this.readRetiredAddonSettings();
+            for (const addonId of Object.keys(previous)) {
+                result[addonId] = previous[addonId];
+            }
             for (const addonId of Object.keys(addons)) {
                 const data = this.getAddonStorage(addonId);
                 if (Object.keys(data).length > 0) {

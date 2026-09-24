@@ -95,15 +95,17 @@ const getStoredStyleSettings = () => {
     return getStyleSettings();
 };
 
-const applyStyleSettings = settings => {
+const applyStyleSettings = (settings, {persist = true} = {}) => {
     for (const group of STYLE_GROUPS) {
         const value = settings && isValidValue(group, settings[group.id]) ?
             settings[group.id] : group.defaultValue;
-        try {
-            if (settings) localStorage.setItem(storageKey(group.id), value);
-            else localStorage.removeItem(storageKey(group.id));
-        } catch (err) {
-            // ignore
+        if (persist) {
+            try {
+                if (settings) localStorage.setItem(storageKey(group.id), value);
+                else localStorage.removeItem(storageKey(group.id));
+            } catch (err) {
+                // ignore
+            }
         }
         applyStyleSetting(group.id, value);
     }
