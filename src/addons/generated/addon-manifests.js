@@ -56,10 +56,7 @@ import _number_pad from "../addons/number-pad/_manifest_entry.js";
 import _editor_number_arrow_keys from "../addons/editor-number-arrow-keys/_manifest_entry.js";
 import _script_snap from "../addons/script-snap/_manifest_entry.js";
 import _fullscreen from "../addons/fullscreen/_manifest_entry.js";
-import _hide_stage from "../addons/hide-stage/_manifest_entry.js";
 import _tw_straighten_comments from "../addons/tw-straighten-comments/_manifest_entry.js";
-import _tw_disable_cloud_variables from "../addons/tw-disable-cloud-variables/_manifest_entry.js";
-import _tw_disable_compiler from "../addons/tw-disable-compiler/_manifest_entry.js";
 import _no_category_text from "../addons/no-category-text/_manifest_entry.js";
 import _green_flag_order from "../addons/green-flag-order/_manifest_entry.js";
 import _merge_operators from "../addons/merge-operators/_manifest_entry.js";
@@ -121,10 +118,7 @@ export default {
   "editor-number-arrow-keys": _editor_number_arrow_keys,
   "script-snap": _script_snap,
   "fullscreen": _fullscreen,
-  "hide-stage": _hide_stage,
   "tw-straighten-comments": _tw_straighten_comments,
-  "tw-disable-cloud-variables": _tw_disable_cloud_variables,
-  "tw-disable-compiler": _tw_disable_compiler,
   "no-category-text": _no_category_text,
   "green-flag-order": _green_flag_order,
   "merge-operators": _merge_operators

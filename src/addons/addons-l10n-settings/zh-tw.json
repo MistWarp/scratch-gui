@@ -281,8 +281,6 @@
   "fullscreen/@description": "修復了一些全屏顯示模式下的一些問題，讓全屏時同時讓瀏覽器也以全屏展開，且可以選擇隱藏綠旗等工具列。",
   "fullscreen/@name": "增強全屏",
   "fullscreen/@settings-name-browserFullscreen": "全屏模式時同時讓瀏覽器進入全屏",
-  "hide-stage/@description": "在專案預覽視窗上添加一個按鈕，用來隱藏舞台和角色面板，按鈕按鈕後能讓編輯區的空間變大。",
-  "hide-stage/@name": "添加隱藏舞台與角色面板按鈕",
   "editor-stepping/@description": "專案運行時，以顏色高亮正在執行的程式積木。",
   "editor-stepping/@name": "高亮執行中的程式",
   "editor-stepping/@settings-name-highlight-color": "高亮顏色"

@@ -17,6 +17,7 @@ import {
 } from '../modal-sidebar/modal-sidebar.jsx';
 import styles from './settings-modal.css';
 import {APP_NAME} from '../../lib/constants/brand.js';
+import {isScratchDesktop} from '../../lib/utils/isScratchDesktop';
 import {STYLE_GROUPS} from '../../lib/mw-style-settings';
 import StylePreview from './style-preview.jsx';
 import MenuBarLayoutSetting from './menu-bar-layout.jsx';
@@ -79,6 +80,10 @@ const messages = defineMessages({
     headerInterface: {
         defaultMessage: 'Interface',
         id: 'mw.settings.interface'
+    },
+    headerEditorDefaults: {
+        defaultMessage: 'Editor defaults',
+        id: 'mw.settings.editorDefaultsHeader'
     },
     headerStage: {
         defaultMessage: 'Stage',
@@ -303,6 +308,28 @@ const settingDefinitions = {
                 'operator blocks like +, and, or and join. You can still add or remove inputs ' +
                 'by right-clicking the block.',
             id: 'mw.settingsModal.hideOperatorArrowsHelp'
+        }
+    },
+    disableCompiler: {
+        label: {
+            defaultMessage: 'Disable compiler in editor',
+            id: 'mw.settingsModal.disableCompiler'
+        },
+        help: {
+            // eslint-disable-next-line max-len
+            defaultMessage: 'Turns the compiler off whenever a project opens in the editor on this device. Scripts run slower but behave more like vanilla Scratch, which helps when debugging compiler-specific issues.',
+            id: 'mw.settingsModal.disableCompilerHelp'
+        }
+    },
+    disableCloudVariables: {
+        label: {
+            defaultMessage: 'Disable cloud variables in editor',
+            id: 'mw.settingsModal.disableCloudVariables'
+        },
+        help: {
+            // eslint-disable-next-line max-len
+            defaultMessage: 'Keeps cloud variables local whenever a project opens in the editor on this device, so nothing is sent to or received from the cloud variable server.',
+            id: 'mw.settingsModal.disableCloudVariablesHelp'
         }
     },
     vanillaPalette: {
@@ -542,6 +569,8 @@ const HideDeleteButton = createBooleanSetting('HideDeleteButton', settingDefinit
 const HideExtensionButton = createBooleanSetting('HideExtensionButton', settingDefinitions.hideExtensionButton);
 const HideBackpack = createBooleanSetting('HideBackpack', settingDefinitions.hideBackpack);
 const HideOperatorArrows = createBooleanSetting('HideOperatorArrows', settingDefinitions.hideOperatorArrows);
+const DisableCompiler = createBooleanSetting('DisableCompiler', settingDefinitions.disableCompiler);
+const DisableCloudVariables = createBooleanSetting('DisableCloudVariables', settingDefinitions.disableCloudVariables);
 const UnclipPalette = createBooleanSetting('UnclipPalette', settingDefinitions.unclipPalette);
 const VanillaPalette = createBooleanSetting('VanillaPalette', settingDefinitions.vanillaPalette);
 
@@ -1073,6 +1102,26 @@ const pageConfigurations = {
                             value: props.hideBackpack,
                             onChange: props.onHideBackpackChange
                         })
+                    }
+                ]
+            },
+            {
+                headerMessage: 'headerEditorDefaults',
+                settings: [
+                    {
+                        component: DisableCompiler,
+                        props: props => ({
+                            value: props.disableCompiler,
+                            onChange: props.onDisableCompilerChange
+                        })
+                    },
+                    {
+                        component: DisableCloudVariables,
+                        props: props => ({
+                            value: props.disableCloudVariables,
+                            onChange: props.onDisableCloudVariablesChange
+                        }),
+                        condition: () => !isScratchDesktop()
                     }
                 ]
             }
@@ -1979,6 +2028,10 @@ SettingsModalComponent.propTypes = {
     onHideBackpackChange: PropTypes.func,
     hideOperatorArrows: PropTypes.bool,
     onHideOperatorArrowsChange: PropTypes.func,
+    disableCompiler: PropTypes.bool,
+    onDisableCompilerChange: PropTypes.func,
+    disableCloudVariables: PropTypes.bool,
+    onDisableCloudVariablesChange: PropTypes.func,
     vanillaPalette: PropTypes.bool,
     onVanillaPaletteChange: PropTypes.func,
     tabStyle: PropTypes.string,

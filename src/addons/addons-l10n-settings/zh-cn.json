@@ -389,8 +389,6 @@
   "fullscreen/@settings-select-toolbar-hide": "从不",
   "fullscreen/@settings-select-toolbar-hover": "当鼠标悬停时",
   "fullscreen/@settings-select-toolbar-show": "总是",
-  "hide-stage/@description": "在“小舞台”和“大舞台”按钮旁边添加一个按钮，隐藏舞台和角色窗格，使代码区域更大。",
-  "hide-stage/@name": "隐藏舞台和角色窗格",
   "editor-stepping/@description": "项目运行时高亮正在运行的积木",
   "editor-stepping/@name": "给运行中的积木显示边框",
   "editor-stepping/@settings-name-highlight-color": "高亮色"
