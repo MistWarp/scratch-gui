@@ -169,7 +169,7 @@ import {
     GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Wrench,
     Download, AppWindow, Computer, Shield, Code, Code2,
     Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, HelpCircle, Video,
-    ShoppingBag, Backpack, Check
+    ShoppingBag, Backpack, Check, Zap
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -1975,6 +1975,26 @@ class MenuBar extends React.Component {
                                             id="gui.menuBar.redo"
                                         />
                                     </MenuItem>
+                                </MenuSection>
+                                <MenuSection>
+                                    <TurboMode>{(toggleTurboMode, {turboMode}) => (
+                                        <MenuItem onClick={toggleTurboMode}>
+                                            <Zap />
+                                            {turboMode ? (
+                                                <FormattedMessage
+                                                    defaultMessage="Turn off Turbo Mode"
+                                                    description="Menu bar item for turning off turbo mode"
+                                                    id="gui.menuBar.turboModeOff"
+                                                />
+                                            ) : (
+                                                <FormattedMessage
+                                                    defaultMessage="Turn on Turbo Mode"
+                                                    description="Menu bar item for turning on turbo mode"
+                                                    id="gui.menuBar.turboModeOn"
+                                                />
+                                            )}
+                                        </MenuItem>
+                                    )}</TurboMode>
                                 </MenuSection>
                                 <MenuSection>
                                     {this.props.onClickAddonSettings && (
