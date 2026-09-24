@@ -28,6 +28,7 @@ import NativeFindBar from '../find-bar/find-bar.jsx';
 import StarterGuide from './starter-guide.jsx';
 import NativeSpotlight from '../../containers/spotlight.jsx';
 import MobileStageControls from '../mobile-stage-controls/mobile-stage-controls.jsx';
+import ChatDock from '../mw-chat/chat-dock.jsx';
 
 import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../../lib/constants/layout-constants';
 import {resolveStageSize} from '../../lib/utils/screen';
@@ -1388,6 +1389,7 @@ const GUIComponent = props => {
                                 </React.Fragment>
                             )}
                         </Box>
+                        <ChatDock />
                     </Box>
                     <React.Suspense fallback={null}>
                         {extensionLibraryVisible ? (
