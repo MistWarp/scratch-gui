@@ -1,6 +1,6 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {Link, useParams} from 'react-router-dom';
 import {CalendarDays, Library, MessageCircle, Settings, UserMinus, UserPlus, Users} from 'lucide-react';
 import api from '../api';
@@ -8,6 +8,7 @@ import {useUser} from '../UserContext.jsx';
 import Avatar from '../components/Avatar.jsx';
 import GroupTag from '../components/GroupTag.jsx';
 import CommentThread from '../components/CommentThread.jsx';
+import useSpaceCommentSource from '../space-comments.js';
 import ProjectCard from '../components/ProjectCard.jsx';
 import SpaceProjectPicker from '../components/SpaceProjectPicker.jsx';
 import Button from '../components/ui/Button.jsx';
@@ -71,13 +72,7 @@ const Space = () => {
     const [error, setError] = useState('');
     const beginLoad = useLatest();
 
-    const commentSource = useMemo(() => ({
-        list: options => api.spaceComments(id, options),
-        add: (content, parent) => api.addSpaceComment(id, content, parent),
-        remove: commentId => api.deleteSpaceComment(id, commentId),
-        edit: (commentId, content) => api.editSpaceComment(id, commentId, content),
-        react: (commentId, type) => api.reactSpaceComment(id, commentId, type)
-    }), [id]);
+    const commentSource = useSpaceCommentSource(id);
 
     const load = useCallback(() => {
         const fresh = beginLoad();
@@ -262,7 +257,7 @@ const Space = () => {
             </section>
             <section id="space-comments" className={styles.spaceComments}>
                 <SectionHeading icon={MessageCircle} title={communityText('Comments')} lead={communityText('Talk about this space and reply to other people.')} />
-                <CommentThread source={commentSource} canModerate={Boolean(space.canManage)} reportContext={`${space.kind} ${space.title}`} />
+                <CommentThread source={commentSource} canModerate={Boolean(space.canManage)} canPin={Boolean(space.canManage)} reportContext={`${space.kind} ${space.title}`} />
             </section>
         </main>
     );
