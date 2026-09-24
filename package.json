@@ -242,7 +242,8 @@
     "patchedDependencies": {
       "@isomorphic-git/lightning-fs": "patches/@isomorphic-git__lightning-fs.patch",
       "scratch-parser": "patches/scratch-parser.patch",
-      "@turbowarp/scratch-svg-renderer": "patches/@turbowarp__scratch-svg-renderer.patch"
+      "@turbowarp/scratch-svg-renderer": "patches/@turbowarp__scratch-svg-renderer.patch",
+      "rotur-sdk@2.5.2": "patches/rotur-sdk@2.5.2.patch"
     },
     "allowUnusedPatches": true
   },
