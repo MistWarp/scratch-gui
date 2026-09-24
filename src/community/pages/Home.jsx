@@ -18,6 +18,7 @@ import ProjectCard from '../components/ProjectCard.jsx';
 import HomeDiscovery from '../components/HomeDiscovery.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import ScratchImport from '../components/ScratchImport.jsx';
+import JoinCommunityModal from '../components/JoinCommunityModal.jsx';
 import ChallengeCalendar from '../components/ChallengeCalendar.jsx';
 import ReactionButtons from '../components/ReactionButtons.jsx';
 import UserLink from '../components/UserLink.jsx';
@@ -325,6 +326,11 @@ const Home = () => {
     const viewerName = (user && user.username) || '';
     const {t} = useCommunityIntl();
     const [projectCount, setProjectCount] = useState(null);
+    const [joinOpen, setJoinOpen] = useState(false);
+    const openJoin = () => {
+        track('community_join_open');
+        setJoinOpen(true);
+    };
     const showStarters = !loading && (!user ||
         (projectCount && projectCount.username === viewerName && projectCount.total < 4));
     useEffect(() => {
@@ -341,6 +347,7 @@ const Home = () => {
                             <div className={styles.heroActions}>
                                 <Button variant="primary" as="a" href="#starters"><Rocket size={16} />{communityText('Try a starter')}</Button>
                                 <Button variant="secondary" as={Link} to="/explore">{t('home.explore')}</Button>
+                                <Button variant="secondary" onClick={openJoin}><Users size={16} />{communityText('Join our community')}</Button>
                             </div>
                             <div className={styles.heroImport}>
                                 <ScratchImport source="home" />
@@ -435,6 +442,13 @@ const Home = () => {
                     }] : [])
                 ]}
             />
+            <section className={styles.community}>
+                <div>
+                    <h2>{communityText('Hang out with other creators')}</h2>
+                    <p>{communityText('Share what you are making, get help, and meet the MistWarp community.')}</p>
+                </div>
+                <Button variant="primary" onClick={openJoin}><Users size={16} />{communityText('Join our community')}</Button>
+            </section>
             <HomeTabs
                 className={styles.projectSection}
                 label="Community updates"
@@ -465,6 +479,7 @@ const Home = () => {
                     }
                 ]}
             />
+            {joinOpen ? <JoinCommunityModal onClose={() => setJoinOpen(false)} /> : null}
         </main>
     );
 };
