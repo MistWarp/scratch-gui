@@ -1,5 +1,5 @@
 import {ensureScopes, getRotur} from '../rotur/client.js';
-import {CHAT_SOCKET, CHAT_URL, DISCORD_INVITE} from './links.js';
+import {CHAT_INVITE, CHAT_SOCKET, CHAT_URL, DISCORD_INVITE} from './links.js';
 const CLIENT_NAME = 'mistwarp';
 const HISTORY_PAGE = 50;
 const MAX_MESSAGES = 400;
@@ -20,6 +20,11 @@ const initialState = () => ({
     messages: {},
     history: {},
     users: {},
+    online: null,
+    roles: {},
+    emojis: {},
+    referenced: {},
+    capabilities: [],
     typing: {},
     unread: 0
 });
@@ -35,17 +40,114 @@ const isChatChannel = channel => Boolean(channel) && channel.type === 'text';
 
 const channelName = channel => (channel && (channel.display_name || channel.name)) || '';
 
-const messageAvatar = message => {
-    if (!message) return null;
-    if (message.webhook && message.webhook.avatar) return message.webhook.avatar;
-    if (message.author_pfp) return message.author_pfp;
+const LOCAL_PREFIX = 'usr:local_';
+
+const formatUsername = name => {
+    const text = String(name || '');
+    return text.toLowerCase().startsWith(LOCAL_PREFIX) ? text.slice(LOCAL_PREFIX.length) : text;
+};
+
+const isProviderAccount = name => /^USR:/i.test(String(name || ''));
+
+const isBridgedAccount = name => /^USR:discord_/i.test(String(name || ''));
+
+const findUser = (state, name) => state.users[userKey(name)] || null;
+
+const isRoturUser = (state, name) => {
+    if (!name || isProviderAccount(name)) return false;
+    const user = findUser(state, name);
+    return !(user && user.cracked);
+};
+
+const userDisplayName = (state, name) => {
+    const user = findUser(state, name);
+    return (user && user.nickname) || formatUsername(name);
+};
+
+const messageAuthor = (state, message) => {
+    if (!message) return '';
+    if (message.alias && message.alias.name) return message.alias.name;
+    if (message.webhook && message.webhook.name) return message.webhook.name;
+    return userDisplayName(state, message.user);
+};
+
+const messageAuthorKey = message => {
+    const user = userKey(message && message.user);
+    if (message && message.alias && message.alias.name) return `${user}:alias:${message.alias.name}`;
+    if (message && message.webhook) return `webhook:${message.webhook.id}`;
+    return user;
+};
+
+const userAvatar = (state, name, serverUrl = CHAT_URL) => {
+    const user = findUser(state, name);
+    const stored = user && (user.pfp || user.pfp_url || (user.account && user.account.pfp));
+    if (stored) return String(stored).replace(/\/+$/, '');
+    if ((user && user.cracked) || isProviderAccount(name)) {
+        return `${serverUrl}/avatar/${encodeURIComponent(name)}`;
+    }
     return null;
 };
 
-const messageAuthor = message => {
-    if (!message) return '';
-    if (message.webhook && message.webhook.name) return message.webhook.name;
-    return message.user || '';
+const messageAvatar = (state, message, serverUrl = CHAT_URL) => {
+    if (!message) return null;
+    if (message.alias && message.alias.avatar) return message.alias.avatar;
+    if (message.webhook && message.webhook.avatar) return message.webhook.avatar;
+    return userAvatar(state, message.user, serverUrl);
+};
+
+const userColor = (state, name) => {
+    const user = findUser(state, name);
+    return (user && user.color) || null;
+};
+
+const roleById = (state, id) => Object.keys(state.roles || {})
+    .map(name => ({name, ...state.roles[name]}))
+    .find(role => role.id === id) || null;
+
+const pingsMe = (state, message) => {
+    const me = state.me && userKey(state.me.username);
+    if (!me || !message) return null;
+    const pings = message.pings || {};
+    const lower = list => (Array.isArray(list) ? list : []).map(userKey);
+    if (lower(pings.users).includes(me)) return 'user';
+    if (Array.isArray(pings.roles) && pings.roles.length) {
+        const mine = findUser(state, me);
+        const myRoleIds = ((mine && mine.roles) || [])
+            .map(name => state.roles[name] || state.roles[String(name).toLowerCase()])
+            .filter(Boolean)
+            .map(role => role.id);
+        if (pings.roles.some(id => myRoleIds.includes(id))) return 'role';
+    }
+    if (lower(pings.replies).includes(me)) return 'reply';
+    if (message.ping !== false && message.reply_to && userKey(message.reply_to.user) === me) return 'reply';
+    return null;
+};
+
+const findMessage = (state, channel, id) => {
+    const list = state.messages[channel] || [];
+    const found = list.find(message => message.id === id);
+    if (found) return found;
+    const referenced = state.referenced[channel];
+    return (referenced && referenced[id]) || null;
+};
+
+const parseEmojiList = value => {
+    const emojis = {};
+    const put = (id, item) => {
+        if (!id || !item) return;
+        emojis[String(id)] = {
+            id: String(id),
+            name: item.name || String(id),
+            fileName: item.fileName || item.filename || String(id),
+            assetServerUrl: item.assetServerUrl || null
+        };
+    };
+    if (Array.isArray(value)) {
+        value.forEach(item => put(item && item.id, item));
+    } else if (value && typeof value === 'object') {
+        Object.keys(value).forEach(id => put(id, value[id]));
+    }
+    return emojis;
 };
 
 const sortMessages = list => list.slice().sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
@@ -68,6 +170,10 @@ const withUser = (users, user, patch = {}) => {
 
 const frameChannel = frame => frame.thread_id || frame.channel || '';
 
+const QUIET_ERRORS = ['roles_list', 'emoji_list', 'users_online', 'message_get'];
+const OPTIONAL_LOADS = ['roles_list', 'emoji_list', 'users_online'];
+const REFERENCE_TTL_MS = 15000;
+
 const pickActive = (channels, preferred) => {
     const chats = channels.filter(isChatChannel);
     const match = chats.find(channel => channel.name === preferred);
@@ -80,7 +186,38 @@ const applyFrame = (state, frame) => {
     switch (frame.cmd) {
     case 'handshake': {
         const val = frame.val || {};
-        return {...state, server: val.server || null, limits: val.limits || {}};
+        const capabilities = Array.isArray(val.capabilities) ? val.capabilities : [];
+        return {...state, server: val.server || null, limits: val.limits || {}, capabilities};
+    }
+    case 'roles_list':
+        return {...state, roles: frame.roles || frame.val || {}};
+    case 'emoji_list':
+        return {...state, emojis: parseEmojiList(frame.emojis || frame.val)};
+    case 'message_get': {
+        if (!frame.message || !frame.message.id) return state;
+        const channel = frameChannel(frame);
+        const current = state.referenced[channel] || {};
+        const referenced = {...current, [frame.message.id]: frame.message};
+        return {...state, referenced: {...state.referenced, [channel]: referenced}};
+    }
+    case 'nickname_update':
+    case 'nickname_remove':
+    case 'user_update': {
+        const name = frame.username || frame.user;
+        if (!name || !state.users[userKey(name)]) return state;
+        const patch = {nickname: frame.cmd === 'nickname_remove' ? null : (frame.nickname || null)};
+        if (frame.pfp) patch.pfp = frame.pfp;
+        return {...state, users: withUser(state.users, {username: name}, patch)};
+    }
+    case 'users_online': {
+        const list = Array.isArray(frame.users) ? frame.users : [];
+        let users = state.users;
+        list.forEach(user => {
+            if (!user || !user.username) return;
+            const status = user.status || {};
+            users = withUser(users, user, {status: {...status, status: status.status || 'online'}});
+        });
+        return {...state, users, online: list.map(user => userKey(user && user.username)).filter(Boolean)};
     }
     case 'ready':
         return frame.user ? {...state, me: frame.user, users: withUser(state.users, frame.user)} : state;
@@ -150,11 +287,16 @@ const applyFrame = (state, frame) => {
         if (!frame.user) return state;
         const status = frame.user.status || {};
         const users = withUser(state.users, frame.user, {status: {...status, status: status.status || 'online'}});
-        return {...state, users};
+        const key = userKey(frame.user.username);
+        const online = state.online && !state.online.includes(key) ? [...state.online, key] : state.online;
+        return {...state, users, online};
     }
     case 'user_disconnect': {
         const user = frame.user || (frame.username ? {username: frame.username} : null);
-        return user ? {...state, users: withUser(state.users, user, {status: {status: 'offline'}})} : state;
+        if (!user) return state;
+        const key = userKey(user.username);
+        const online = state.online ? state.online.filter(name => name !== key) : null;
+        return {...state, online, users: withUser(state.users, user, {status: {status: 'offline'}})};
     }
     case 'user_leave': {
         const key = userKey(frame.username);
@@ -186,6 +328,7 @@ const applyFrame = (state, frame) => {
                 notice: {kind: 'error', text: frame.val}
             };
         }
+        if (QUIET_ERRORS.includes(frame.src)) return state;
         return frame.src && frame.src !== 'typing' ? {...state, notice: {kind: 'error', text: frame.val}} : state;
     default:
         return state;
@@ -197,7 +340,11 @@ const activeTyping = (state, channel, now = Date.now()) => Object.values(state.t
     .map(entry => entry.name);
 
 const onlineUsers = state => Object.values(state.users)
-    .filter(user => user.status && user.status.status && user.status.status !== 'offline')
+    .filter(user => {
+        if (state.online) return state.online.includes(userKey(user.username));
+        return user.status && user.status.status && user.status.status !== 'offline';
+    })
+    .filter(user => !user.status || !['offline', 'invisible'].includes(user.status.status))
     .sort((a, b) => userKey(a.username).localeCompare(userKey(b.username)));
 
 const readStoredChannel = () => {
@@ -246,6 +393,7 @@ class ChatConnection {
         this.typingSentAt = 0;
         this.listenerId = 0;
         this.viewing = false;
+        this.pendingReferences = new Map();
     }
 
     setViewing (viewing) {
@@ -369,6 +517,7 @@ class ChatConnection {
             this.patch({status: 'ready'});
             this.send({cmd: 'channels_get'});
             this.send({cmd: 'users_list'});
+            OPTIONAL_LOADS.filter(cmd => this.state.capabilities.includes(cmd)).forEach(cmd => this.send({cmd}));
             break;
         case 'channels_get':
             if (this.state.active) this.loadHistory(this.state.active);
@@ -394,6 +543,17 @@ class ChatConnection {
     requestHistory (channel, start) {
         this.patch({history: {...this.state.history, [channel]: {...this.state.history[channel], loading: true}}});
         this.send({cmd: 'messages_get', channel, start, limit: HISTORY_PAGE});
+    }
+
+    fetchMessage (channel, id) {
+        if (!channel || !id || findMessage(this.state, channel, id)) return false;
+        if (this.state.capabilities.length && !this.state.capabilities.includes('message_get')) return false;
+        const key = `${channel}/${id}`;
+        const now = Date.now();
+        const requested = this.pendingReferences.get(key);
+        if (requested && now - requested < REFERENCE_TTL_MS) return false;
+        this.pendingReferences.set(key, now);
+        return this.send({cmd: 'message_get', channel, id});
     }
 
     selectChannel (name) {
@@ -442,6 +602,7 @@ const getChatConnection = () => {
 };
 
 export {
+    CHAT_INVITE,
     CHAT_URL,
     DISCORD_INVITE,
     ChatConnection,
@@ -449,12 +610,25 @@ export {
     applyFrame,
     channelName,
     fetchServerInfo,
+    findMessage,
+    findUser,
+    formatUsername,
     getChatConnection,
     initialState,
+    isBridgedAccount,
     isChatChannel,
+    isProviderAccount,
+    isRoturUser,
     mergeMessages,
     messageAuthor,
+    messageAuthorKey,
     messageAvatar,
     onlineUsers,
+    pingsMe,
+    roleById,
+    userAvatar,
+    userColor,
+    userDisplayName,
+    userKey,
     validatorKeyMatches
 };

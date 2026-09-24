@@ -6,6 +6,7 @@ import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import {
     Check,
     ChevronDown,
+    CornerUpRight,
     ExternalLink,
     Hash,
     LogIn,
@@ -14,25 +15,34 @@ import {
     PanelRight,
     PictureInPicture2,
     SendHorizontal,
+    Server,
+    Webhook,
     X
 } from 'lucide-react';
 
 import Avatar from '../mw-avatar/avatar.jsx';
 import {
-    CHAT_URL,
+    CHAT_INVITE,
     DISCORD_INVITE,
     activeTyping,
     channelName,
+    findMessage,
+    isBridgedAccount,
     isChatChannel,
+    isRoturUser,
     messageAuthor,
+    messageAuthorKey,
     messageAvatar,
-    onlineUsers
+    onlineUsers,
+    pingsMe,
+    userAvatar,
+    userColor,
+    userDisplayName
 } from '../../lib/originchats/connection.js';
+import {firstLine, onlyEmoji, parse} from '../../lib/originchats/rich-text.js';
 import styles from './chat-pane.css';
 
 const GROUP_WINDOW = 5 * 60;
-const TOKEN = /(https?:\/\/[^\s<]+|@[A-Za-z0-9][A-Za-z0-9_-]{0,19})/g;
-const ROTUR_NAME = /^@[A-Za-z0-9][A-Za-z0-9_-]{0,19}$/;
 
 const messages = defineMessages({
     title: {
@@ -127,8 +137,8 @@ const messages = defineMessages({
         id: 'mw.chat.introBody'
     },
     serverLink: {
-        defaultMessage: 'chats.mistwarp.org',
-        description: 'Link to the OriginChats server the MistWarp chat runs on',
+        defaultMessage: 'Join in OriginChats',
+        description: 'Link that opens the invite to the MistWarp server in an OriginChats client',
         id: 'mw.chat.serverLink'
     },
     discordLink: {
@@ -136,20 +146,45 @@ const messages = defineMessages({
         description: 'Link to the bridged MistWarp Discord server',
         id: 'mw.chat.discordLink'
     },
-    discordBadge: {
-        defaultMessage: 'Discord',
-        description: 'Label next to a chat message that was sent from the bridged Discord server',
-        id: 'mw.chat.discordBadge'
+    bridged: {
+        defaultMessage: 'Bridged from Discord',
+        description: 'Tooltip on the mark next to a chat message that was sent from the bridged Discord server',
+        id: 'mw.chat.bridged'
+    },
+    webhook: {
+        defaultMessage: 'Posted by a webhook',
+        description: 'Tooltip on the mark next to a chat message that was posted by a webhook',
+        id: 'mw.chat.webhook'
     },
     edited: {
         defaultMessage: '(edited)',
         description: 'Marker after a chat message that was edited',
         id: 'mw.chat.edited'
     },
-    replyingTo: {
-        defaultMessage: 'Replying to {user}: {preview}',
-        description: 'Preview of the message a chat message replies to',
-        id: 'mw.chat.replyingTo'
+    replyTo: {
+        defaultMessage: 'Jump to the message this replies to',
+        description: 'Accessible label for the reply preview above a chat message',
+        id: 'mw.chat.replyTo'
+    },
+    unknownUser: {
+        defaultMessage: 'Unknown user',
+        description: 'Shown in a reply preview when the original author is not known',
+        id: 'mw.chat.unknownUser'
+    },
+    noContent: {
+        defaultMessage: 'No content',
+        description: 'Shown in a reply preview when the original message has no text',
+        id: 'mw.chat.noContent'
+    },
+    attachment: {
+        defaultMessage: 'Attachment',
+        description: 'Shown in a reply preview when the original message only has an attachment',
+        id: 'mw.chat.attachment'
+    },
+    spoiler: {
+        defaultMessage: 'Reveal spoiler',
+        description: 'Accessible label for hidden spoiler text in a chat message',
+        id: 'mw.chat.spoiler'
     },
     placeholder: {
         defaultMessage: 'Message #{channel}',
@@ -183,37 +218,6 @@ const messages = defineMessages({
     }
 });
 
-const RichContent = ({text}) => String(text || '').split(TOKEN)
-    .map((part, index) => {
-        if (ROTUR_NAME.test(part)) {
-            return (
-                <a
-                    key={index}
-                    className={styles.mention}
-                    href={`/users/${encodeURIComponent(part.slice(1))}`}
-                    target="_blank"
-                    rel="noreferrer"
-                >{part}</a>
-            );
-        }
-        if (/^https?:\/\//.test(part)) {
-            const trailing = part.match(/[.,!?)]+$/);
-            const url = trailing ? part.slice(0, -trailing[0].length) : part;
-            return (
-                <React.Fragment key={index}>
-                    <a
-                        className={styles.link}
-                        href={url}
-                        target="_blank"
-                        rel="noreferrer"
-                    >{url.replace(/^https?:\/\//, '')}</a>
-                    {trailing ? trailing[0] : ''}
-                </React.Fragment>
-            );
-        }
-        return part;
-    });
-
 const formatTime = seconds => {
     const date = new Date(seconds * 1000);
     const today = new Date();
@@ -228,99 +232,385 @@ const formatClock = seconds => new Date(seconds * 1000)
 
 const groupMessages = list => list.reduce((groups, message) => {
     const last = groups[groups.length - 1];
-    const author = messageAuthor(message);
-    const avatar = messageAvatar(message);
+    const authorKey = messageAuthorKey(message);
     const time = message.timestamp || 0;
-    const continues = last && last.author === author && last.avatar === avatar;
+    const continues = last && last.authorKey === authorKey;
     if (continues && time - last.lastTime < GROUP_WINDOW && !message.reply_to) {
         last.messages.push(message);
         last.lastTime = time;
         return groups;
     }
-    groups.push({author, avatar, key: message.id, lastTime: time, messages: [message]});
+    groups.push({authorKey, key: message.id, lastTime: time, messages: [message]});
     return groups;
 }, []);
 
-const ProfileLink = ({className, member, name, children, tabIndex}) => (member ? (
+const richContext = (state, message) => ({
+    users: state.users,
+    roles: state.roles,
+    emojis: state.emojis,
+    channels: state.channels,
+    pinged: (message && message.pings && message.pings.users) || []
+});
+
+const profileHref = username => `/users/${encodeURIComponent(username)}`;
+
+const Spoiler = ({children, intl}) => {
+    const [shown, setShown] = useState(false);
+    return (
+        <span
+            className={classNames(styles.spoiler, {[styles.spoilerShown]: shown})}
+            role={shown ? null : 'button'}
+            tabIndex={shown ? null : 0}
+            aria-label={shown ? null : intl.formatMessage(messages.spoiler)}
+            onClick={() => setShown(true)}
+            onKeyDown={event => {
+                if (event.key === 'Enter' || event.key === ' ') setShown(true);
+            }}
+        >{children}</span>
+    );
+};
+
+Spoiler.propTypes = {
+    children: PropTypes.node,
+    intl: intlShape.isRequired
+};
+
+const RichText = ({tokens, intl, state, onChannel, inline}) => tokens.map((token, index) => {
+    switch (token.type) {
+    case 'text':
+        return token.text;
+    case 'break':
+        return inline ? ' ' : <br key={index} />;
+    case 'link':
+        return (
+            <a
+                key={index}
+                className={styles.link}
+                href={token.url}
+                target="_blank"
+                rel="noreferrer"
+            >{token.text.replace(/^https?:\/\//, '')}</a>
+        );
+    case 'emoji':
+        return (
+            <img
+                key={index}
+                className={styles.emoji}
+                src={token.src}
+                alt={`:${token.name}:`}
+                title={`:${token.name}:`}
+                loading="lazy"
+                draggable={false}
+            />
+        );
+    case 'sticker':
+        return inline ? `:${token.id}:` : (
+            <img
+                key={index}
+                className={styles.sticker}
+                src={token.src}
+                alt=""
+                loading="lazy"
+                draggable={false}
+            />
+        );
+    case 'mention': {
+        const label = `@${token.display}`;
+        if (!token.known || !isRoturUser(state, token.username)) {
+            return (
+                <span
+                    key={index}
+                    className={classNames(styles.mention, {[styles.mentionUnknown]: !token.known})}
+                >{label}</span>
+            );
+        }
+        return (
+            <a
+                key={index}
+                className={styles.mention}
+                href={profileHref(token.username)}
+                target="_blank"
+                rel="noreferrer"
+            >{label}</a>
+        );
+    }
+    case 'roleMention':
+        return (
+            <span
+                key={index}
+                className={classNames(styles.mention, styles.roleMention)}
+                style={token.color ? {'--mention-color': token.color} : null}
+            >{`@${token.name}`}</span>
+        );
+    case 'channel':
+        return (
+            <button
+                key={index}
+                type="button"
+                className={classNames(styles.mention, styles.channelMention)}
+                onClick={() => onChannel && onChannel(token.name)}
+            >{`#${token.name}`}</button>
+        );
+    case 'inlineCode':
+        return (
+            <code
+                key={index}
+                className={styles.code}
+            >{token.code}</code>
+        );
+    case 'codeBlock':
+        return inline ? (
+            <code
+                key={index}
+                className={styles.code}
+            >{token.code}</code>
+        ) : (
+            <pre
+                key={index}
+                className={styles.codeBlock}
+            ><code>{token.code}</code></pre>
+        );
+    case 'format': {
+        const children = (
+            <RichText
+                tokens={token.children}
+                intl={intl}
+                state={state}
+                onChannel={onChannel}
+                inline={inline}
+            />
+        );
+        if (token.style === 'spoiler') {
+            return (
+                <Spoiler
+                    key={index}
+                    intl={intl}
+                >{children}</Spoiler>
+            );
+        }
+        return (
+            <span
+                key={index}
+                className={styles[token.style]}
+            >{children}</span>
+        );
+    }
+    default:
+        return null;
+    }
+});
+
+RichText.propTypes = {
+    inline: PropTypes.bool,
+    intl: intlShape.isRequired,
+    onChannel: PropTypes.func,
+    state: PropTypes.object.isRequired,
+    tokens: PropTypes.arrayOf(PropTypes.object).isRequired
+};
+
+const ProfileLink = ({className, member, name, children, tabIndex, style}) => (member ? (
     <a
         className={className}
-        href={`/users/${encodeURIComponent(name)}`}
+        href={profileHref(name)}
         target="_blank"
         rel="noreferrer"
         tabIndex={tabIndex}
+        style={style}
     >{children}</a>
-) : <span className={className}>{children}</span>);
+) : (
+    <span
+        className={className}
+        style={style}
+    >{children}</span>
+));
 
 ProfileLink.propTypes = {
     children: PropTypes.node,
     className: PropTypes.string,
     member: PropTypes.bool,
     name: PropTypes.string.isRequired,
+    style: PropTypes.object,
     tabIndex: PropTypes.number
 };
 
-const MessageBody = ({intl, message}) => (
-    <React.Fragment>
-        {message.reply_to ? (
-            <p className={styles.reply}>
-                {intl.formatMessage(messages.replyingTo, {
-                    user: message.reply_to.user,
-                    preview: message.reply_to.preview || ''
-                })}
-            </p>
-        ) : null}
-        {message.content ? (
-            <p className={styles.content}>
-                <RichContent text={message.content} />
-                {message.edited ? (
-                    <span className={styles.edited}>{` ${intl.formatMessage(messages.edited)}`}</span>
-                ) : null}
-            </p>
-        ) : null}
-        {(message.attachments || []).map(attachment => (
-            <a
-                key={attachment.id || attachment.url}
-                className={styles.link}
-                href={attachment.url}
-                target="_blank"
-                rel="noreferrer"
-            >{attachment.name || attachment.url}</a>
-        ))}
-    </React.Fragment>
+const UserPicture = ({size, src, username}) => (
+    <Avatar
+        username={src ? null : username}
+        src={src || null}
+        size={size}
+    />
 );
 
-MessageBody.propTypes = {
+UserPicture.propTypes = {
+    size: PropTypes.number.isRequired,
+    src: PropTypes.string,
+    username: PropTypes.string
+};
+
+const SourceMark = ({intl, message}) => {
+    if (message.webhook) {
+        return (
+            <span
+                className={styles.mark}
+                title={intl.formatMessage(messages.webhook)}
+            ><Webhook size={12} /></span>
+        );
+    }
+    if (isBridgedAccount(message.user)) {
+        return (
+            <span
+                className={styles.mark}
+                title={intl.formatMessage(messages.bridged)}
+            ><Server size={12} /></span>
+        );
+    }
+    return null;
+};
+
+SourceMark.propTypes = {
     intl: intlShape.isRequired,
     message: PropTypes.object.isRequired
 };
 
-const DiscordBadge = ({intl}) => (
-    <span className={styles.badge}>{intl.formatMessage(messages.discordBadge)}</span>
-);
+const ReplyPreview = ({connection, intl, message, onJump, state}) => {
+    const reference = message.reply_to;
+    const channel = state.active;
+    const target = findMessage(state, channel, reference.id);
+    useEffect(() => {
+        if (!target && reference.id) connection.fetchMessage(channel, reference.id);
+    }, [connection, channel, reference.id, target]);
 
-DiscordBadge.propTypes = {intl: intlShape.isRequired};
+    const username = (target && target.user) || reference.user || '';
+    let name = intl.formatMessage(messages.unknownUser);
+    if (target) name = messageAuthor(state, target);
+    else if (username) name = userDisplayName(state, username);
 
-const MessageGroup = ({group, intl, member}) => {
+    const text = target ? firstLine(target.content) : (reference.preview || '');
+    const hasAttachments = Boolean(target && Array.isArray(target.attachments) && target.attachments.length);
+    const tokens = parse(text, richContext(state, target));
+    const avatarSrc = target ? messageAvatar(state, target) : userAvatar(state, username);
+    let fallback = messages.noContent;
+    if (hasAttachments) fallback = messages.attachment;
+
+    return (
+        <button
+            type="button"
+            className={styles.reply}
+            title={intl.formatMessage(messages.replyTo)}
+            disabled={!target}
+            onClick={() => target && onJump(target.id)}
+        >
+            <CornerUpRight
+                size={14}
+                className={styles.replyIcon}
+            />
+            {username ? (
+                <UserPicture
+                    size={16}
+                    src={avatarSrc}
+                    username={username}
+                />
+            ) : null}
+            <span className={styles.replyName}>{name}</span>
+            <span className={styles.replyText}>
+                {tokens.length ? (
+                    <RichText
+                        tokens={tokens}
+                        intl={intl}
+                        state={state}
+                        inline
+                    />
+                ) : intl.formatMessage(fallback)}
+            </span>
+        </button>
+    );
+};
+
+ReplyPreview.propTypes = {
+    connection: PropTypes.object.isRequired,
+    intl: intlShape.isRequired,
+    message: PropTypes.object.isRequired,
+    onJump: PropTypes.func.isRequired,
+    state: PropTypes.object.isRequired
+};
+
+const MessageBody = ({connection, intl, message, onJump, state}) => {
+    const tokens = useMemo(() => parse(message.content, richContext(state, message)), [
+        message.content, message.pings, state.users, state.roles, state.emojis, state.channels
+    ]);
+    const jumbo = onlyEmoji(tokens);
+    return (
+        <React.Fragment>
+            {message.reply_to ? (
+                <ReplyPreview
+                    connection={connection}
+                    intl={intl}
+                    message={message}
+                    onJump={onJump}
+                    state={state}
+                />
+            ) : null}
+            {tokens.length ? (
+                <p className={classNames(styles.content, {[styles.jumbo]: jumbo})}>
+                    <RichText
+                        tokens={tokens}
+                        intl={intl}
+                        state={state}
+                        onChannel={name => connection.selectChannel(name)}
+                    />
+                    {message.edited ? (
+                        <span className={styles.edited}>{` ${intl.formatMessage(messages.edited)}`}</span>
+                    ) : null}
+                </p>
+            ) : null}
+            {(message.attachments || []).map(attachment => (
+                <a
+                    key={attachment.id || attachment.url}
+                    className={styles.link}
+                    href={attachment.url}
+                    target="_blank"
+                    rel="noreferrer"
+                >{attachment.name || attachment.url}</a>
+            ))}
+        </React.Fragment>
+    );
+};
+
+MessageBody.propTypes = {
+    connection: PropTypes.object.isRequired,
+    intl: intlShape.isRequired,
+    message: PropTypes.object.isRequired,
+    onJump: PropTypes.func.isRequired,
+    state: PropTypes.object.isRequired
+};
+
+const MessageGroup = ({connection, group, intl, onJump, state}) => {
     const first = group.messages[0];
-    const fromDiscord = !member && Boolean(first.webhook || first.author_pfp);
+    const person = !first.webhook && !first.alias;
+    const member = person && isRoturUser(state, first.user);
+    const color = person ? userColor(state, first.user) : null;
     return (
         <li className={styles.group}>
             {group.messages.map((message, index) => (
                 <div
                     key={message.id}
-                    className={classNames(styles.row, {[styles.rowFirst]: index === 0})}
+                    data-message-id={message.id}
+                    className={classNames(styles.row, {
+                        [styles.rowFirst]: index === 0,
+                        [styles.pinged]: Boolean(pingsMe(state, message))
+                    })}
                 >
                     {index === 0 ? (
                         <ProfileLink
                             className={styles.avatar}
                             member={member}
-                            name={group.author}
+                            name={first.user || ''}
                             tabIndex={-1}
                         >
-                            <Avatar
-                                username={group.avatar ? null : group.author}
-                                src={group.avatar}
+                            <UserPicture
                                 size={28}
+                                src={messageAvatar(state, first)}
+                                username={first.user}
                             />
                         </ProfileLink>
                     ) : (
@@ -332,15 +622,22 @@ const MessageGroup = ({group, intl, member}) => {
                                 <ProfileLink
                                     className={styles.author}
                                     member={member}
-                                    name={group.author}
-                                >{group.author}</ProfileLink>
-                                {fromDiscord ? <DiscordBadge intl={intl} /> : null}
+                                    name={first.user || ''}
+                                    style={color ? {color} : null}
+                                >{messageAuthor(state, first)}</ProfileLink>
+                                <SourceMark
+                                    intl={intl}
+                                    message={first}
+                                />
                                 <time className={styles.time}>{formatTime(first.timestamp || 0)}</time>
                             </div>
                         ) : null}
                         <MessageBody
+                            connection={connection}
                             intl={intl}
                             message={message}
+                            onJump={onJump}
+                            state={state}
                         />
                     </div>
                 </div>
@@ -350,9 +647,11 @@ const MessageGroup = ({group, intl, member}) => {
 };
 
 MessageGroup.propTypes = {
+    connection: PropTypes.object.isRequired,
     group: PropTypes.object.isRequired,
     intl: intlShape.isRequired,
-    member: PropTypes.bool
+    onJump: PropTypes.func.isRequired,
+    state: PropTypes.object.isRequired
 };
 
 const Intro = ({channel, intl}) => (
@@ -363,7 +662,7 @@ const Intro = ({channel, intl}) => (
         <div className={styles.chips}>
             <a
                 className={styles.chip}
-                href={CHAT_URL}
+                href={CHAT_INVITE}
                 target="_blank"
                 rel="noreferrer"
             >
@@ -423,6 +722,15 @@ const MessageList = ({connection, intl, state}) => {
         if (element.scrollTop < 80) connection.loadOlder(channel);
     };
 
+    const jump = id => {
+        const element = listRef.current && listRef.current.querySelector(`[data-message-id="${id}"]`);
+        if (!element) return;
+        pinnedRef.current = false;
+        element.scrollIntoView({block: 'center'});
+        element.classList.add(styles.flash);
+        setTimeout(() => element.classList.remove(styles.flash), 1200);
+    };
+
     return (
         <ol
             className={styles.messages}
@@ -437,18 +745,16 @@ const MessageList = ({connection, intl, state}) => {
                 />
             ) : null}
             {history.loading ? <li className={styles.status}>{intl.formatMessage(messages.loadingOlder)}</li> : null}
-            {groups.map(group => {
-                const first = group.messages[0];
-                const member = !first.webhook && Boolean(state.users[String(first.user || '').toLowerCase()]);
-                return (
-                    <MessageGroup
-                        key={group.key}
-                        group={group}
-                        intl={intl}
-                        member={member}
-                    />
-                );
-            })}
+            {groups.map(group => (
+                <MessageGroup
+                    key={group.key}
+                    connection={connection}
+                    group={group}
+                    intl={intl}
+                    onJump={jump}
+                    state={state}
+                />
+            ))}
         </ol>
     );
 };
@@ -657,7 +963,7 @@ const Presence = ({intl, state}) => {
     return (
         <span
             className={styles.online}
-            title={users.map(user => user.username).join(', ')}
+            title={users.map(user => userDisplayName(state, user.username)).join(', ')}
         >
             <span className={styles.dot} />
             {intl.formatMessage(messages.online, {count: users.length})}
