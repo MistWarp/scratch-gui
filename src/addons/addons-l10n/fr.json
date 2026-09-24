@@ -247,6 +247,5 @@
     "swap-local-global/edit-variable-header": "Modifier la variable",
     "swap-local-global/edit-variable-option": "Renommer ou modifier la variable",
     "swap-local-global/to-global": "Convertir en \"Pour tous les sprites\"",
-    "swap-local-global/to-local": "Convertir en \"Pour ce sprite uniquement\"",
-    "hide-stage/hide-stage": "Cacher la scène"
+    "swap-local-global/to-local": "Convertir en \"Pour ce sprite uniquement\""
 }

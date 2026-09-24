@@ -388,8 +388,6 @@
   "fullscreen/@settings-select-toolbar-hide": "Mai",
   "fullscreen/@settings-select-toolbar-hover": "Quando il mouse è in alto",
   "fullscreen/@settings-select-toolbar-show": "Sempre",
-  "hide-stage/@description": "Aggiunge un pulsante vicino ai pulsanti \"stage piccolo\" e \"stage grande\" per nascondere lo stage e l'area degli sprite, rendendo l'area degli script molto più ampia.",
-  "hide-stage/@name": "Nasconde lo stage e l'area degli sprite",
   "editor-stepping/@description": "Aggiunge un bordo colorato ai blocchi in esecuzione nel progetto.",
   "editor-stepping/@name": "Bordo blocchi in esecuzione",
   "editor-stepping/@settings-name-highlight-color": "Colore evidenziazione"

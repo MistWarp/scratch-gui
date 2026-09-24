@@ -252,6 +252,5 @@
     "swap-local-global/edit-variable-header": "변수 편집하기",
     "swap-local-global/edit-variable-option": "이름을 변경하거나 리스트를 편집하기",
     "swap-local-global/to-global": "\"모든 스프라이트에서 사용\"으로 바꾸기",
-    "swap-local-global/to-local": "\"이 스프라이트에서만 사용\"으로 바꾸기",
-    "hide-stage/hide-stage": "무대 숨기기"
+    "swap-local-global/to-local": "\"이 스프라이트에서만 사용\"으로 바꾸기"
 }
