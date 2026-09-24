@@ -54,6 +54,7 @@ import LoadScratchBlocksHOC from '../lib/components/tw-load-scratch-blocks-hoc.j
 import {offsetToPosition} from '../lib/backpack/code-payload.js';
 import {gentlyRequestPersistentStorage} from '../lib/utils/storage-request.js';
 import CollaborationService from '../lib/collaboration/index.js';
+import {trackWorkspaceUndo, untrackWorkspaceUndo} from '../lib/undo-history.js';
 
 // TW: Strings we add to scratch-blocks are localized here
 const messages = defineMessages({
@@ -215,6 +216,7 @@ class Blocks extends React.Component {
         
         this.workspace = this.ScratchBlocks.inject(this.blocks, workspaceConfig);
         AddonHooks.blocklyWorkspace = this.workspace;
+        trackWorkspaceUndo(this.workspace);
 
         // Register buttons under new callback keys for creating variables,
         // lists, and procedures from extensions.
@@ -421,6 +423,7 @@ class Blocks extends React.Component {
         this.detachVM();
         this.unmounted = true;
         this.cancelDeferredWorkspaceLoad();
+        untrackWorkspaceUndo(this.workspace);
         this.workspace.dispose();
         clearTimeout(this.toolboxUpdateTimeout);
         clearTimeout(this.toolboxStateUpdateTimeout);
