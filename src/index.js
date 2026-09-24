@@ -1,4 +1,6 @@
 import GUI from './containers/gui.jsx';
+import editorComponents from './components/gui/editor-components';
+import {setGuiComponents} from './components/gui/gui-components';
 import AppStateHOC from './lib/components/app-state-hoc.jsx';
 import GuiReducer, {guiInitialState, guiMiddleware, initEmbedded, initFullScreen, initPlayer} from './reducers/gui';
 import LocalesReducer, {localesInitialState, initLocale} from './reducers/locales';
@@ -7,6 +9,8 @@ import {prepareLocale, loadLocale} from './lib/editor-locales';
 import {setFullScreen, setPlayer} from './reducers/mode';
 import {remixProject} from './reducers/project-state';
 import {setAppElement} from 'react-modal';
+
+setGuiComponents(editorComponents);
 
 const guiReducers = {
     locales: LocalesReducer,

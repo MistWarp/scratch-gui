@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import bindAll from 'lodash.bindall';
 import VM from 'scratch-vm';
-import PaintEditor from '../lib/tw-scratch-paint';
+import PaintEditor from 'scratch-paint';
 import {inlineSvgFonts, sanitizeSvg} from '@turbowarp/scratch-svg-renderer';
 import ErrorBoundaryHOC from '../lib/components/error-boundary-hoc.jsx';
 import {openFontsModal} from '../reducers/modals';

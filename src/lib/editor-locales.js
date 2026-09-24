@@ -1,5 +1,6 @@
 import {messages, blockMessages, loaders} from '../generated/editor-locales/index.js';
 import {detectLocale} from './utils/detect-locale';
+import {importWithRetry} from './lazy-with-retry';
 
 const loaded = new Set(['en']);
 const pending = new Map();
@@ -8,7 +9,7 @@ const isLocaleLoaded = locale => loaded.has(locale) || !loaders[locale];
 const loadLocale = locale => {
     if (isLocaleLoaded(locale)) return Promise.resolve();
     if (!pending.has(locale)) {
-        const request = loaders[locale]().then(module => {
+        const request = importWithRetry(loaders[locale]).then(module => {
             // Keep untranslated MistWarp strings available without duplicating
             // the English catalog in every language chunk.
             messages[locale] = {...messages.en, ...module.default.messages};

@@ -1,7 +1,7 @@
 import {blockMessages} from '../generated/editor-locales/index.js';
 import {getVanillaPalette} from './mw-vanilla-palette';
 import {applyCatBlocksToLoadedBlockly} from './mw-cat-blocks';
-import BundledScratchBlocks from 'scratch-blocks';
+import {importWithRetry} from './lazy-with-retry';
 
 let _ScratchBlocks = null;
 
@@ -112,11 +112,23 @@ const set = ScratchBlocks => {
     return _ScratchBlocks;
 };
 
+let loading = null;
+
 const load = () => {
     if (_ScratchBlocks) {
         return Promise.resolve();
     }
-    return Promise.resolve(set(BundledScratchBlocks));
+    if (!loading) {
+        loading = importWithRetry(() => import('scratch-blocks'))
+            .then(module => {
+                set(module.default);
+            })
+            .catch(error => {
+                loading = null;
+                throw error;
+            });
+    }
+    return loading;
 };
 
 export default {

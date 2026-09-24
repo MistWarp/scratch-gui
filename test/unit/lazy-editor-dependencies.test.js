@@ -1,17 +1,57 @@
-describe('eager paint dependencies', () => {
-    test('exports paint and initializes its reducer before opening the costume tab', () => {
+describe('lazy paint reducer', () => {
+    let paint;
+
+    beforeEach(() => {
         jest.resetModules();
-        const paint = {
-            __esModule: true,
-            default: () => null,
-            ScratchPaintReducer: (state = {undo: []}, action) =>
-                (action.type === 'draw' ? {...state, undo: [...state.undo, action.value]} : state)
-        };
-        jest.doMock('scratch-paint', () => paint, {virtual: true});
-        const module = require('../../src/lib/tw-scratch-paint');
-        expect(module.default).toBe(paint.default);
-        const initial = module.ScratchPaintReducer(undefined, {type: '@@INIT'});
-        expect(initial).toEqual({undo: []});
-        expect(module.ScratchPaintReducer(initial, {type: 'draw', value: 'line'}).undo).toEqual(['line']);
+        paint = require('../../src/lib/tw-scratch-paint');
+    });
+
+    const realReducer = (state = {undo: []}, action) =>
+        (action.type === 'draw' ? {...state, undo: [...state.undo, action.value]} : state);
+
+    test('keeps one empty state until paint is loaded', () => {
+        const initial = paint.ScratchPaintReducer(void 0, {type: '@@INIT'});
+        expect(paint.ScratchPaintReducer(initial, {type: 'draw', value: 'line'})).toBe(initial);
+    });
+
+    test('initializes the store when paint loads later', () => {
+        let state = paint.ScratchPaintReducer(void 0, {type: '@@INIT'});
+        const dispatch = jest.fn(action => {
+            state = paint.ScratchPaintReducer(state, action);
+        });
+        paint.onScratchPaintLoaded(() => dispatch({type: paint.PAINT_LOADED}));
+        paint.setScratchPaintReducer(realReducer);
+        expect(dispatch).toHaveBeenCalledTimes(1);
+        expect(state).toEqual({undo: []});
+        state = paint.ScratchPaintReducer(state, {type: 'draw', value: 'line'});
+        expect(state.undo).toEqual(['line']);
+    });
+
+    test('uses the real reducer from the first action when paint is loaded first', () => {
+        paint.setScratchPaintReducer(realReducer);
+        const callback = jest.fn();
+        paint.onScratchPaintLoaded(callback);
+        expect(callback).not.toHaveBeenCalled();
+        expect(paint.ScratchPaintReducer(void 0, {type: '@@INIT'})).toEqual({undo: []});
+    });
+});
+
+describe('lazy editor components', () => {
+    beforeEach(() => {
+        jest.resetModules();
+    });
+
+    test('player pages get lazy components', () => {
+        const {getGuiComponents} = require('../../src/components/gui/gui-components');
+        const components = getGuiComponents();
+        expect(components.Blocks.$$typeof).toBe(Symbol.for('react.lazy'));
+        expect(components.TWSettingsModal.$$typeof).toBe(Symbol.for('react.lazy'));
+    });
+
+    test('the editor registers its components before rendering', () => {
+        const {getGuiComponents, setGuiComponents} = require('../../src/components/gui/gui-components');
+        const Blocks = () => null;
+        setGuiComponents({Blocks});
+        expect(getGuiComponents().Blocks).toBe(Blocks);
     });
 });

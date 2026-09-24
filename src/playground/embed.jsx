@@ -1,6 +1,3 @@
-import * as bundledModule0 from "../lib/community/publish";
-import * as bundledModule1 from "../addons/entry";
-
 /* eslint-disable max-len */
 import './embed-storage-shim';
 import './import-first';
@@ -183,7 +180,7 @@ if (publicEmbedId && !urlParams.get('project_url')) {
 window.addEventListener('message', event => {
     if (!event.data || event.data.type !== 'mw:capture-stage' || !event.source) return;
     const source = event.source;
-    Promise.resolve(bundledModule0).then(({captureThumbnailDataUri}) => captureThumbnailDataUri(vm))
+    import('../lib/community/publish').then(({captureThumbnailDataUri}) => captureThumbnailDataUri(vm))
         .then(dataURL => {
             if (dataURL) {
                 source.postMessage({type: 'mw:stage-capture', dataURL}, '*');
@@ -195,5 +192,5 @@ window.addEventListener('message', event => {
 });
 
 if (urlParams.has('addons')) {
-    Promise.resolve(bundledModule1).then(({default: runAddons}) => runAddons()).catch(() => null);
+    import('../addons/entry').then(({default: runAddons}) => runAddons()).catch(() => null);
 }
