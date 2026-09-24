@@ -8,9 +8,9 @@ const overlayStatus = new Map();
 
 const Avatar = ({username, src, size = 40, className}) => {
     const name = encodeURIComponent((username || '').toLowerCase());
-    const [overlayFailed, setOverlayFailed] = useState(() => overlayStatus.get(name) === false);
+    const [overlayFailed, setOverlayFailed] = useState(() => !name || overlayStatus.get(name) === false);
     useEffect(() => {
-        setOverlayFailed(overlayStatus.get(name) === false);
+        setOverlayFailed(!name || overlayStatus.get(name) === false);
     }, [name]);
     const handleOverlayError = useCallback(() => {
         overlayStatus.set(name, false);

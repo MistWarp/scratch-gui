@@ -65,7 +65,12 @@ const parse = (input, context = {}) => {
         const name = Object.keys(ctx.roles).find(key => ctx.roles[key] && ctx.roles[key].id === id);
         return name ? {name, color: ctx.roles[name].color || null} : null;
     };
-    const channelNames = ctx.channels.map(channel => String(channel.name || '').toLowerCase());
+    const channelByLabel = {};
+    ctx.channels.forEach(channel => {
+        if (!channel || !channel.name) return;
+        channelByLabel[String(channel.name).toLowerCase()] = channel.name;
+        if (channel.display_name) channelByLabel[String(channel.display_name).toLowerCase()] = channel.name;
+    });
 
     let s = String(input || '');
     s = s.replace(/```(?:[a-zA-Z0-9_-]*\n)?([\s\S]*?)```/g, (source, code) => (
@@ -100,9 +105,10 @@ const parse = (input, context = {}) => {
         if (/[\w.]/.test(whole.charAt(offset - 1))) return source;
         return add({type: 'mention', username, display: formatUsername(username), known: false});
     });
-    s = s.replace(/#([a-zA-Z0-9_-]+)/g, (source, name) => (
-        channelNames.includes(name.toLowerCase()) ? add({type: 'channel', name}) : source
-    ));
+    s = s.replace(/#([a-zA-Z0-9_-]+)/g, (source, name) => {
+        const channel = channelByLabel[name.toLowerCase()];
+        return channel ? add({type: 'channel', name, channel}) : source;
+    });
 
     const format = text => {
         let out = String(text);

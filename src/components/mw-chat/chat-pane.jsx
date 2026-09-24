@@ -348,7 +348,7 @@ const RichText = ({tokens, intl, state, onChannel, inline}) => tokens.map((token
                 key={index}
                 type="button"
                 className={classNames(styles.mention, styles.channelMention)}
-                onClick={() => onChannel && onChannel(token.name)}
+                onClick={() => onChannel && onChannel(token.channel)}
             >{`#${token.name}`}</button>
         );
     case 'inlineCode':
@@ -433,15 +433,16 @@ ProfileLink.propTypes = {
     tabIndex: PropTypes.number
 };
 
-const UserPicture = ({size, src, username}) => (
+const UserPicture = ({rotur, size, src, username}) => (
     <Avatar
-        username={src ? null : username}
+        username={rotur || !src ? username : null}
         src={src || null}
         size={size}
     />
 );
 
 UserPicture.propTypes = {
+    rotur: PropTypes.bool,
     size: PropTypes.number.isRequired,
     src: PropTypes.string,
     username: PropTypes.string
@@ -489,6 +490,7 @@ const ReplyPreview = ({connection, intl, message, onJump, state}) => {
     const hasAttachments = Boolean(target && Array.isArray(target.attachments) && target.attachments.length);
     const tokens = parse(text, richContext(state, target));
     const avatarSrc = target ? messageAvatar(state, target) : userAvatar(state, username);
+    const rotur = Boolean(username) && !(target && (target.webhook || target.alias)) && isRoturUser(state, username);
     let fallback = messages.noContent;
     if (hasAttachments) fallback = messages.attachment;
 
@@ -506,6 +508,7 @@ const ReplyPreview = ({connection, intl, message, onJump, state}) => {
             />
             {username ? (
                 <UserPicture
+                    rotur={rotur}
                     size={16}
                     src={avatarSrc}
                     username={username}
@@ -609,6 +612,7 @@ const MessageGroup = ({connection, group, intl, onJump, state}) => {
                             tabIndex={-1}
                         >
                             <UserPicture
+                                rotur={member}
                                 size={28}
                                 src={messageAvatar(state, first)}
                                 username={first.user}
@@ -740,7 +744,7 @@ const MessageList = ({connection, intl, state}) => {
         >
             {history.atStart ? (
                 <Intro
-                    channel={channel}
+                    channel={channelName(state.channels.find(item => item.name === channel))}
                     intl={intl}
                 />
             ) : null}
