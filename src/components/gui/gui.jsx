@@ -747,7 +747,6 @@ const GUIComponent = props => {
         isShared,
         isWindowFullScreen,
         isTelemetryEnabled,
-        isTotallyNormal,
         loading,
         locale,
         logo,
@@ -1054,7 +1053,6 @@ const GUIComponent = props => {
                         className={styles.menuBarPosition}
                         enableCommunity={enableCommunity}
                         isShared={isShared}
-                        isTotallyNormal={isTotallyNormal}
                         logo={logo}
                         renderLogin={renderLogin}
                         showComingSoon={showComingSoon}
@@ -1465,7 +1463,6 @@ GUIComponent.propTypes = {
     isRtl: PropTypes.bool,
     isShared: PropTypes.bool,
     isWindowFullScreen: PropTypes.bool,
-    isTotallyNormal: PropTypes.bool,
     loading: PropTypes.bool,
     logo: PropTypes.string,
     onActivateTab: PropTypes.func,
@@ -1541,7 +1538,6 @@ GUIComponent.defaultProps = {
     enableCommunity: false,
     isCreating: false,
     isShared: false,
-    isTotallyNormal: false,
     loading: false,
     showComingSoon: false,
     stageSizeMode: STAGE_SIZE_MODES.large

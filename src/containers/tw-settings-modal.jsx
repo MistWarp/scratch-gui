@@ -25,10 +25,6 @@ class UsernameModal extends React.Component {
         super(props);
 
         this.state = {
-            optimizeAnimations: localStorage.getItem('mw:optimize-animations') === 'true',
-            debugMode: localStorage.getItem('mw:debug-mode') === 'true',
-            showFPSCounter: localStorage.getItem('mw:show-fps-counter') === 'true',
-            viewCompiledMode: localStorage.getItem('mw:view-compiled-mode') === 'true',
             storeThemeInProject: localStorage.getItem('mw:store-theme-in-project') === 'true',
             hideOperatorArrows: getHideOperatorArrows(),
             vanillaPalette: getVanillaPalette(),
@@ -55,13 +51,8 @@ class UsernameModal extends React.Component {
             'handleDisableCompilerChange',
             'handleDisableCloudVariablesChange',
             'handleCaseSensitiveListsChange',
-            'handleUnsafeOptimisationsChange',
             'handleRealLayerIndexesChange',
             'handleStoreProjectOptions',
-            'handleOptimizeAnimationsChange',
-            'handleDebugModeChange',
-            'handleShowFPSCounterChange',
-            'handleViewCompiledModeChange',
             'handleStoreThemeInProjectChange',
             'handleHideOperatorArrowsChange',
             'handleVanillaPaletteChange',
@@ -130,11 +121,6 @@ class UsernameModal extends React.Component {
             caseSensitiveLists: e.target.checked
         });
     }
-    handleUnsafeOptimisationsChange (e) {
-        this.props.vm.setRuntimeOptions({
-            unsafeOptimisations: e.target.checked
-        });
-    }
     handleRealLayerIndexesChange (e) {
         this.props.vm.renderer.useRealLayerIndexes = e.target.checked;
         this.props.vm.setRuntimeOptions({
@@ -196,42 +182,6 @@ class UsernameModal extends React.Component {
         this.props.vm.storeProjectOptions({
             mistwarpTheme
         });
-    }
-
-    handleOptimizeAnimationsChange (e) {
-        this.setState({optimizeAnimations: e.target.checked});
-        try {
-            localStorage.setItem('mw:optimize-animations', e.target.checked);
-        } catch (err) {
-            // ignore
-        }
-    }
-
-    handleDebugModeChange (e) {
-        this.setState({debugMode: e.target.checked});
-        try {
-            localStorage.setItem('mw:debug-mode', e.target.checked);
-        } catch (err) {
-            // ignore
-        }
-    }
-
-    handleShowFPSCounterChange (e) {
-        this.setState({showFPSCounter: e.target.checked});
-        try {
-            localStorage.setItem('mw:show-fps-counter', e.target.checked);
-        } catch (err) {
-            // ignore
-        }
-    }
-
-    handleViewCompiledModeChange (e) {
-        this.setState({viewCompiledMode: e.target.checked});
-        try {
-            localStorage.setItem('mw:view-compiled-mode', e.target.checked);
-        } catch (err) {
-            // ignore
-        }
     }
 
     handleStoreThemeInProjectChange (e) {
@@ -330,10 +280,6 @@ class UsernameModal extends React.Component {
                     this.props.customStageSize.height !== defaultStageSize.height
                 }
                 onStoreProjectOptions={this.handleStoreProjectOptions}
-                onOptimizeAnimationsChange={this.handleOptimizeAnimationsChange}
-                onDebugModeChange={this.handleDebugModeChange}
-                onShowFPSCounterChange={this.handleShowFPSCounterChange}
-                onViewCompiledModeChange={this.handleViewCompiledModeChange}
                 onStoreThemeInProjectChange={this.handleStoreThemeInProjectChange}
                 onHideOperatorArrowsChange={this.handleHideOperatorArrowsChange}
                 hideOperatorArrows={this.state.hideOperatorArrows}
@@ -355,10 +301,6 @@ class UsernameModal extends React.Component {
                 tabLooks={getStyleSetting('tab-looks')}
                 onWindowStyleChange={this.handleWindowStyleChange}
                 windowStyle={getStyleSetting('window-style')}
-                optimizeAnimations={this.state.optimizeAnimations}
-                debugMode={this.state.debugMode}
-                showFPSCounter={this.state.showFPSCounter}
-                viewCompiledMode={this.state.viewCompiledMode}
                 storeThemeInProject={this.state.storeThemeInProject}
                 theme={this.props.theme}
                 {...props}

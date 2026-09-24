@@ -2047,13 +2047,7 @@ SettingsModalComponent.propTypes = {
     onStageHeightChange: PropTypes.func,
     onStoreProjectOptions: PropTypes.func,
     storeThemeInProject: PropTypes.bool,
-    onStoreThemeInProjectChange: PropTypes.func,
-    optimizeAnimations: PropTypes.bool,
-    onOptimizeAnimationsChange: PropTypes.func,
-    debugMode: PropTypes.bool,
-    onDebugModeChange: PropTypes.func,
-    showFPSCounter: PropTypes.bool,
-    onShowFPSCounterChange: PropTypes.func
+    onStoreThemeInProjectChange: PropTypes.func
 };
 
 export default injectIntl(SettingsModalComponent);
