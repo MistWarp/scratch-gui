@@ -388,29 +388,6 @@
     font-size: var(--fs-md);
 }
 
-.community {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 28px;
-    padding: 20px 24px;
-    border-radius: var(--radius);
-    background: var(--accent-soft);
-}
-
-.community h2 {
-    margin: 0 0 4px;
-    font-size: var(--fs-xl);
-}
-
-.community p {
-    margin: 0;
-    color: var(--text-dim);
-    font-size: var(--fs-md);
-}
-
 .heroImport {
     display: grid;
     gap: 10px;
