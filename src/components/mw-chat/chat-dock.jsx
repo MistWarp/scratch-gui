@@ -18,10 +18,16 @@ import {
     subscribeChatUi
 } from '../../lib/originchats/chat-ui.js';
 import {openRoturLoginModal} from '../../reducers/modals.js';
-import ChatPane from './chat-pane.jsx';
+import ChatPane, {VARIANTS} from './chat-pane.jsx';
 import styles from './chat-pane.css';
 
 const WINDOW_ID = 'mw-chat-window';
+const readVariant = () => {
+    const requested = new URLSearchParams(window.location.search).get('chat-variant');
+    if (VARIANTS.includes(requested)) localStorage.setItem('mw:chat-variant', requested);
+    const value = localStorage.getItem('mw:chat-variant');
+    return VARIANTS.includes(value) ? value : VARIANTS[0];
+};
 const DOCK_MIN_VIEWPORT = 1000;
 
 const messages = defineMessages({
@@ -210,6 +216,7 @@ const ChatDock = ({intl, onOpenLogin, username}) => {
         <ChatPane
             connection={connection}
             state={state}
+            variant={readVariant()}
             floating={floating}
             canDock={viewport >= DOCK_MIN_VIEWPORT}
             onClose={closeChat}

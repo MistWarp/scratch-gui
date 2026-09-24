@@ -3,7 +3,20 @@ import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React, {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
-import {ExternalLink, LogIn, LogOut, MessagesSquare, PanelRight, PictureInPicture2, Send, X} from 'lucide-react';
+import {
+    ArrowUp,
+    Check,
+    ChevronDown,
+    ExternalLink,
+    Hash,
+    LogIn,
+    LogOut,
+    MessagesSquare,
+    PanelRight,
+    PictureInPicture2,
+    SendHorizontal,
+    X
+} from 'lucide-react';
 
 import Avatar from '../mw-avatar/avatar.jsx';
 import {
@@ -19,8 +32,10 @@ import {
 import styles from './chat-pane.css';
 
 const GROUP_WINDOW = 5 * 60;
+const DIVIDER_WINDOW = 20 * 60;
 const TOKEN = /(https?:\/\/[^\s<]+|@[A-Za-z0-9][A-Za-z0-9_-]{0,19})/g;
 const ROTUR_NAME = /^@[A-Za-z0-9][A-Za-z0-9_-]{0,19}$/;
+export const VARIANTS = ['quiet', 'cards', 'bubbles', 'compact'];
 
 const messages = defineMessages({
     title: {
@@ -103,10 +118,26 @@ const messages = defineMessages({
         description: 'Shown while older chat history loads',
         id: 'mw.chat.loadingOlder'
     },
-    start: {
-        defaultMessage: 'This is the start of #{channel}.',
-        description: 'Shown above the oldest message in a chat channel',
-        id: 'mw.chat.start'
+    introTitle: {
+        defaultMessage: 'Welcome to #{channel}',
+        description: 'Heading above the oldest message in a chat channel',
+        id: 'mw.chat.introTitle'
+    },
+    introBody: {
+        // eslint-disable-next-line max-len
+        defaultMessage: 'This is the start of the channel. MistWarp chat runs on OriginChats and is bridged to the MistWarp Discord, so people on either side see the same messages.',
+        description: 'Explanation above the oldest message in a chat channel',
+        id: 'mw.chat.introBody'
+    },
+    serverLink: {
+        defaultMessage: 'chats.mistwarp.org',
+        description: 'Link to the OriginChats server the MistWarp chat runs on',
+        id: 'mw.chat.serverLink'
+    },
+    discordLink: {
+        defaultMessage: 'Join on Discord',
+        description: 'Link to the bridged MistWarp Discord server',
+        id: 'mw.chat.discordLink'
     },
     discordBadge: {
         defaultMessage: 'Discord',
@@ -152,16 +183,6 @@ const messages = defineMessages({
         defaultMessage: 'Slow down a little before sending another message.',
         description: 'Shown when the chat server rate limits the user',
         id: 'mw.chat.slowDown'
-    },
-    server: {
-        defaultMessage: 'MistWarp chat runs on OriginChats at chats.mistwarp.org.',
-        description: 'Footer of the chat pane naming the chat server',
-        id: 'mw.chat.server'
-    },
-    discord: {
-        defaultMessage: 'Prefer Discord? The chat is bridged, so you can join from there too.',
-        description: 'Footer link in the chat pane to the bridged MistWarp Discord server',
-        id: 'mw.chat.discord'
     }
 });
 
@@ -205,6 +226,22 @@ const formatTime = seconds => {
         date.toLocaleDateString([], {month: 'short', day: 'numeric'});
 };
 
+const formatClock = seconds => new Date(seconds * 1000)
+    .toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', hour12: false});
+
+const formatDivider = seconds => {
+    const date = new Date(seconds * 1000);
+    const today = new Date();
+    const time = date.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'});
+    if (date.toDateString() === today.toDateString()) return time;
+    return `${date.toLocaleDateString([], {weekday: 'short', month: 'short', day: 'numeric'})}, ${time}`;
+};
+
+const isOwn = (state, message) => Boolean(
+    state.me && !message.webhook &&
+    String(message.user || '').toLowerCase() === String(state.me.username || '').toLowerCase()
+);
+
 const groupMessages = list => list.reduce((groups, message) => {
     const last = groups[groups.length - 1];
     const author = messageAuthor(message);
@@ -216,78 +253,174 @@ const groupMessages = list => list.reduce((groups, message) => {
         last.lastTime = time;
         return groups;
     }
-    groups.push({author, avatar, key: message.id, lastTime: time, messages: [message]});
+    const previous = last ? last.lastTime : 0;
+    groups.push({
+        author,
+        avatar,
+        key: message.id,
+        lastTime: time,
+        firstTime: time,
+        divider: !last || time - previous > DIVIDER_WINDOW,
+        messages: [message]
+    });
     return groups;
 }, []);
 
-const MessageGroup = ({group, intl, member}) => {
+const ProfileLink = ({className, member, name, children, tabIndex}) => (member ? (
+    <a
+        className={className}
+        href={`/users/${encodeURIComponent(name)}`}
+        target="_blank"
+        rel="noreferrer"
+        tabIndex={tabIndex}
+    >{children}</a>
+) : <span className={className}>{children}</span>);
+
+ProfileLink.propTypes = {
+    children: PropTypes.node,
+    className: PropTypes.string,
+    member: PropTypes.bool,
+    name: PropTypes.string.isRequired,
+    tabIndex: PropTypes.number
+};
+
+const MessageBody = ({intl, message}) => (
+    <React.Fragment>
+        {message.reply_to ? (
+            <p className={styles.reply}>
+                {intl.formatMessage(messages.replyingTo, {
+                    user: message.reply_to.user,
+                    preview: message.reply_to.preview || ''
+                })}
+            </p>
+        ) : null}
+        {message.content ? (
+            <p className={styles.content}>
+                <RichContent text={message.content} />
+                {message.edited ? (
+                    <span className={styles.edited}>{` ${intl.formatMessage(messages.edited)}`}</span>
+                ) : null}
+            </p>
+        ) : null}
+        {(message.attachments || []).map(attachment => (
+            <a
+                key={attachment.id || attachment.url}
+                className={styles.link}
+                href={attachment.url}
+                target="_blank"
+                rel="noreferrer"
+            >{attachment.name || attachment.url}</a>
+        ))}
+    </React.Fragment>
+);
+
+MessageBody.propTypes = {
+    intl: intlShape.isRequired,
+    message: PropTypes.object.isRequired
+};
+
+const DiscordBadge = ({intl}) => (
+    <span className={styles.badge}>{intl.formatMessage(messages.discordBadge)}</span>
+);
+
+DiscordBadge.propTypes = {intl: intlShape.isRequired};
+
+const RowsGroup = ({group, intl, member, size}) => {
     const first = group.messages[0];
     const fromDiscord = !member && Boolean(first.webhook || first.author_pfp);
-    const avatar = (
-        <Avatar
-            username={group.avatar ? null : group.author}
-            src={group.avatar}
-            size={30}
-        />
-    );
     return (
         <li className={styles.group}>
-            {member ? (
-                <a
-                    className={styles.avatar}
-                    href={`/users/${encodeURIComponent(group.author)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    tabIndex={-1}
-                >{avatar}</a>
-            ) : (
-                <span className={styles.avatar}>{avatar}</span>
-            )}
-            <div className={styles.groupBody}>
-                <div className={styles.meta}>
-                    {member ? (
-                        <a
-                            className={styles.author}
-                            href={`/users/${encodeURIComponent(group.author)}`}
-                            target="_blank"
-                            rel="noreferrer"
-                        >{group.author}</a>
-                    ) : <span className={styles.author}>{group.author}</span>}
-                    {fromDiscord ? (
-                        <span className={styles.badge}>{intl.formatMessage(messages.discordBadge)}</span>
-                    ) : null}
-                    <time className={styles.time}>{formatTime(first.timestamp || 0)}</time>
+            {group.messages.map((message, index) => (
+                <div
+                    key={message.id}
+                    className={classNames(styles.row, {[styles.rowFirst]: index === 0})}
+                >
+                    {index === 0 ? (
+                        <ProfileLink
+                            className={styles.avatar}
+                            member={member}
+                            name={group.author}
+                            tabIndex={-1}
+                        >
+                            <Avatar
+                                username={group.avatar ? null : group.author}
+                                src={group.avatar}
+                                size={size}
+                            />
+                        </ProfileLink>
+                    ) : (
+                        <time className={styles.gutterTime}>{formatClock(message.timestamp || 0)}</time>
+                    )}
+                    <div className={styles.rowBody}>
+                        {index === 0 ? (
+                            <div className={styles.meta}>
+                                <ProfileLink
+                                    className={styles.author}
+                                    member={member}
+                                    name={group.author}
+                                >{group.author}</ProfileLink>
+                                {fromDiscord ? <DiscordBadge intl={intl} /> : null}
+                                <time className={styles.time}>{formatTime(first.timestamp || 0)}</time>
+                            </div>
+                        ) : null}
+                        <MessageBody
+                            intl={intl}
+                            message={message}
+                        />
+                    </div>
                 </div>
+            ))}
+        </li>
+    );
+};
+
+RowsGroup.propTypes = {
+    group: PropTypes.object.isRequired,
+    intl: intlShape.isRequired,
+    member: PropTypes.bool,
+    size: PropTypes.number.isRequired
+};
+
+const BubbleGroup = ({group, intl, member, own}) => {
+    const first = group.messages[0];
+    const fromDiscord = !member && Boolean(first.webhook || first.author_pfp);
+    return (
+        <li className={classNames(styles.group, styles.bubbleGroup, {[styles.own]: own})}>
+            {own ? null : (
+                <ProfileLink
+                    className={styles.avatar}
+                    member={member}
+                    name={group.author}
+                    tabIndex={-1}
+                >
+                    <Avatar
+                        username={group.avatar ? null : group.author}
+                        src={group.avatar}
+                        size={26}
+                    />
+                </ProfileLink>
+            )}
+            <div className={styles.bubbleColumn}>
+                {own ? null : (
+                    <div className={styles.meta}>
+                        <ProfileLink
+                            className={styles.author}
+                            member={member}
+                            name={group.author}
+                        >{group.author}</ProfileLink>
+                        {fromDiscord ? <DiscordBadge intl={intl} /> : null}
+                    </div>
+                )}
                 {group.messages.map(message => (
                     <div
                         key={message.id}
-                        className={styles.message}
+                        className={styles.bubble}
+                        title={formatTime(message.timestamp || 0)}
                     >
-                        {message.reply_to ? (
-                            <p className={styles.reply}>
-                                {intl.formatMessage(messages.replyingTo, {
-                                    user: message.reply_to.user,
-                                    preview: message.reply_to.preview || ''
-                                })}
-                            </p>
-                        ) : null}
-                        {message.content ? (
-                            <p className={styles.content}>
-                                <RichContent text={message.content} />
-                                {message.edited ? (
-                                    <span className={styles.edited}>{` ${intl.formatMessage(messages.edited)}`}</span>
-                                ) : null}
-                            </p>
-                        ) : null}
-                        {(message.attachments || []).map(attachment => (
-                            <a
-                                key={attachment.id || attachment.url}
-                                className={styles.link}
-                                href={attachment.url}
-                                target="_blank"
-                                rel="noreferrer"
-                            >{attachment.name || attachment.url}</a>
-                        ))}
+                        <MessageBody
+                            intl={intl}
+                            message={message}
+                        />
                     </div>
                 ))}
             </div>
@@ -295,17 +428,84 @@ const MessageGroup = ({group, intl, member}) => {
     );
 };
 
-MessageGroup.propTypes = {
-    group: PropTypes.shape({
-        author: PropTypes.string,
-        avatar: PropTypes.string,
-        messages: PropTypes.arrayOf(PropTypes.object)
-    }).isRequired,
+BubbleGroup.propTypes = {
+    group: PropTypes.object.isRequired,
+    intl: intlShape.isRequired,
+    member: PropTypes.bool,
+    own: PropTypes.bool
+};
+
+const CompactGroup = ({group, intl, member}) => {
+    const first = group.messages[0];
+    const fromDiscord = !member && Boolean(first.webhook || first.author_pfp);
+    return (
+        <li className={styles.group}>
+            {group.messages.map(message => (
+                <div
+                    key={message.id}
+                    className={styles.line}
+                >
+                    <time className={styles.lineTime}>{formatClock(message.timestamp || 0)}</time>
+                    <div className={styles.lineBody}>
+                        <span className={styles.meta}>
+                            <ProfileLink
+                                className={styles.author}
+                                member={member}
+                                name={group.author}
+                            >{group.author}</ProfileLink>
+                            {fromDiscord ? <DiscordBadge intl={intl} /> : null}
+                        </span>
+                        <MessageBody
+                            intl={intl}
+                            message={message}
+                        />
+                    </div>
+                </div>
+            ))}
+        </li>
+    );
+};
+
+CompactGroup.propTypes = {
+    group: PropTypes.object.isRequired,
     intl: intlShape.isRequired,
     member: PropTypes.bool
 };
 
-const MessageList = ({connection, intl, state}) => {
+const Intro = ({channel, intl}) => (
+    <li className={styles.intro}>
+        <span className={styles.introIcon}><Hash size={18} /></span>
+        <p className={styles.introTitle}>{intl.formatMessage(messages.introTitle, {channel})}</p>
+        <p className={styles.introBody}>{intl.formatMessage(messages.introBody)}</p>
+        <div className={styles.chips}>
+            <a
+                className={styles.chip}
+                href={CHAT_URL}
+                target="_blank"
+                rel="noreferrer"
+            >
+                {intl.formatMessage(messages.serverLink)}
+                <ExternalLink size={11} />
+            </a>
+            <a
+                className={styles.chip}
+                href={DISCORD_INVITE}
+                target="_blank"
+                rel="noreferrer"
+            >
+                {intl.formatMessage(messages.discordLink)}
+                <ExternalLink size={11} />
+            </a>
+        </div>
+    </li>
+);
+
+Intro.propTypes = {
+    channel: PropTypes.string.isRequired,
+    intl: intlShape.isRequired
+};
+
+const MessageList = ({connection, intl, state, variant}) => {
     const listRef = useRef(null);
     const pinnedRef = useRef(true);
     const heightRef = useRef(0);
@@ -347,18 +547,58 @@ const MessageList = ({connection, intl, state}) => {
             onScroll={onScroll}
             aria-live="polite"
         >
-            {history.atStart ? <li className={styles.start}>{intl.formatMessage(messages.start, {channel})}</li> : null}
-            {history.loading ? <li className={styles.start}>{intl.formatMessage(messages.loadingOlder)}</li> : null}
+            {history.atStart ? (
+                <Intro
+                    channel={channel}
+                    intl={intl}
+                />
+            ) : null}
+            {history.loading ? <li className={styles.status}>{intl.formatMessage(messages.loadingOlder)}</li> : null}
             {groups.map(group => {
                 const first = group.messages[0];
                 const member = !first.webhook && Boolean(state.users[String(first.user || '').toLowerCase()]);
+                const divider = variant === 'bubbles' && group.divider ? (
+                    <li
+                        key={`${group.key}-divider`}
+                        className={styles.divider}
+                    >{formatDivider(group.firstTime)}</li>
+                ) : null;
+                let item;
+                if (variant === 'bubbles') {
+                    item = (
+                        <BubbleGroup
+                            key={group.key}
+                            group={group}
+                            intl={intl}
+                            member={member}
+                            own={isOwn(state, first)}
+                        />
+                    );
+                } else if (variant === 'compact') {
+                    item = (
+                        <CompactGroup
+                            key={group.key}
+                            group={group}
+                            intl={intl}
+                            member={member}
+                        />
+                    );
+                } else {
+                    item = (
+                        <RowsGroup
+                            key={group.key}
+                            group={group}
+                            intl={intl}
+                            member={member}
+                            size={variant === 'cards' ? 28 : 32}
+                        />
+                    );
+                }
                 return (
-                    <MessageGroup
-                        key={group.key}
-                        group={group}
-                        intl={intl}
-                        member={member}
-                    />
+                    <React.Fragment key={group.key}>
+                        {divider}
+                        {item}
+                    </React.Fragment>
                 );
             })}
         </ol>
@@ -368,10 +608,11 @@ const MessageList = ({connection, intl, state}) => {
 MessageList.propTypes = {
     connection: PropTypes.object.isRequired,
     intl: intlShape.isRequired,
-    state: PropTypes.object.isRequired
+    state: PropTypes.object.isRequired,
+    variant: PropTypes.string.isRequired
 };
 
-const Composer = ({connection, intl, state}) => {
+const Composer = ({connection, intl, state, variant}) => {
     const [draft, setDraft] = useState('');
     const [, setTick] = useState(0);
     const inputRef = useRef(null);
@@ -389,7 +630,7 @@ const Composer = ({connection, intl, state}) => {
         const input = inputRef.current;
         if (!input) return;
         input.style.height = 'auto';
-        input.style.height = `${Math.min(input.scrollHeight + 2, 140)}px`;
+        input.style.height = `${Math.min(input.scrollHeight, 140)}px`;
     }, [draft]);
 
     const submit = event => {
@@ -406,15 +647,24 @@ const Composer = ({connection, intl, state}) => {
         typingText = intl.formatMessage(messages.typingMany);
     }
 
+    const SendIcon = variant === 'bubbles' ? ArrowUp : SendHorizontal;
+    const sendButton = (
+        <button
+            type="submit"
+            className={styles.send}
+            disabled={!draft.trim()}
+            title={intl.formatMessage(messages.send)}
+            aria-label={intl.formatMessage(messages.send)}
+        >
+            <SendIcon size={variant === 'bubbles' ? 18 : 16} />
+        </button>
+    );
+
     return (
         <form
             className={styles.composer}
             onSubmit={submit}
         >
-            <p
-                className={styles.typing}
-                aria-live="polite"
-            >{typingText}</p>
             {state.notice ? (
                 <p
                     className={styles.notice}
@@ -424,34 +674,34 @@ const Composer = ({connection, intl, state}) => {
                 </p>
             ) : null}
             <div className={styles.inputRow}>
-                <textarea
-                    ref={inputRef}
-                    className={styles.input}
-                    rows={1}
-                    value={draft}
-                    maxLength={Number(state.limits.post_content) || 2000}
-                    placeholder={label}
-                    aria-label={label}
-                    onChange={event => {
-                        setDraft(event.target.value);
-                        connection.clearNotice();
-                        if (event.target.value.trim()) connection.sendTyping(state.active);
-                    }}
-                    onKeyDown={event => {
-                        event.stopPropagation();
-                        if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) submit(event);
-                    }}
-                />
-                <button
-                    type="submit"
-                    className={styles.send}
-                    disabled={!draft.trim()}
-                    title={intl.formatMessage(messages.send)}
-                    aria-label={intl.formatMessage(messages.send)}
-                >
-                    <Send size={16} />
-                </button>
+                <div className={styles.field}>
+                    <textarea
+                        ref={inputRef}
+                        className={styles.input}
+                        rows={1}
+                        value={draft}
+                        maxLength={Number(state.limits.post_content) || 2000}
+                        placeholder={label}
+                        aria-label={label}
+                        onChange={event => {
+                            setDraft(event.target.value);
+                            connection.clearNotice();
+                            if (event.target.value.trim()) connection.sendTyping(state.active);
+                        }}
+                        onKeyDown={event => {
+                            event.stopPropagation();
+                            const plain = !event.shiftKey && !event.nativeEvent.isComposing;
+                            if (event.key === 'Enter' && plain) submit(event);
+                        }}
+                    />
+                    {variant === 'bubbles' ? null : sendButton}
+                </div>
+                {variant === 'bubbles' ? sendButton : null}
             </div>
+            <p
+                className={styles.typing}
+                aria-live="polite"
+            >{typingText}</p>
         </form>
     );
 };
@@ -459,7 +709,8 @@ const Composer = ({connection, intl, state}) => {
 Composer.propTypes = {
     connection: PropTypes.object.isRequired,
     intl: intlShape.isRequired,
-    state: PropTypes.object.isRequired
+    state: PropTypes.object.isRequired,
+    variant: PropTypes.string.isRequired
 };
 
 const HeaderButton = ({icon: Icon, label, onClick}) => (
@@ -480,19 +731,164 @@ HeaderButton.propTypes = {
     onClick: PropTypes.func.isRequired
 };
 
-const ChatPane = ({canDock, connection, floating, intl, onClose, onLeave, onSignIn, onToggleMode, state}) => {
+const ChannelMenu = ({active, channels, intl, onSelect}) => {
+    const [open, setOpen] = useState(false);
+    const rootRef = useRef(null);
+    const current = channels.find(channel => channel.name === active) || channels[0];
+    const single = channels.length < 2;
+
+    useEffect(() => {
+        if (!open) return;
+        const onPointer = event => {
+            if (rootRef.current && !rootRef.current.contains(event.target)) setOpen(false);
+        };
+        const onKey = event => {
+            if (event.key === 'Escape') setOpen(false);
+        };
+        document.addEventListener('pointerdown', onPointer);
+        document.addEventListener('keydown', onKey);
+        return () => {
+            document.removeEventListener('pointerdown', onPointer);
+            document.removeEventListener('keydown', onKey);
+        };
+    }, [open]);
+
+    return (
+        <div
+            className={styles.channelMenu}
+            ref={rootRef}
+        >
+            <button
+                type="button"
+                className={classNames(styles.channelButton, {[styles.channelStatic]: single})}
+                aria-label={intl.formatMessage(messages.channel)}
+                aria-haspopup={single ? null : 'listbox'}
+                aria-expanded={single ? null : open}
+                disabled={single}
+                onClick={() => setOpen(value => !value)}
+            >
+                <Hash
+                    size={15}
+                    className={styles.hash}
+                />
+                <span className={styles.channelLabel}>{channelName(current)}</span>
+                {single ? null : <ChevronDown size={14} />}
+            </button>
+            {open ? (
+                <ul
+                    className={styles.menu}
+                    role="listbox"
+                >
+                    {channels.map(channel => (
+                        <li key={channel.name}>
+                            <button
+                                type="button"
+                                role="option"
+                                aria-selected={channel.name === active}
+                                className={classNames(styles.menuItem, {
+                                    [styles.menuItemActive]: channel.name === active
+                                })}
+                                onClick={() => {
+                                    onSelect(channel.name);
+                                    setOpen(false);
+                                }}
+                            >
+                                <Hash size={14} />
+                                <span>{channelName(channel)}</span>
+                                {channel.name === active ? <Check size={14} /> : null}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            ) : null}
+        </div>
+    );
+};
+
+ChannelMenu.propTypes = {
+    active: PropTypes.string,
+    channels: PropTypes.arrayOf(PropTypes.object).isRequired,
+    intl: intlShape.isRequired,
+    onSelect: PropTypes.func.isRequired
+};
+
+const ChannelTabs = ({active, channels, intl, onSelect}) => (
+    <div
+        className={styles.tabs}
+        role="tablist"
+        aria-label={intl.formatMessage(messages.channel)}
+    >
+        {channels.map(channel => (
+            <button
+                key={channel.name}
+                type="button"
+                role="tab"
+                aria-selected={channel.name === active}
+                className={classNames(styles.tab, {[styles.tabActive]: channel.name === active})}
+                onClick={() => onSelect(channel.name)}
+            >{channelName(channel)}</button>
+        ))}
+    </div>
+);
+
+ChannelTabs.propTypes = {
+    active: PropTypes.string,
+    channels: PropTypes.arrayOf(PropTypes.object).isRequired,
+    intl: intlShape.isRequired,
+    onSelect: PropTypes.func.isRequired
+};
+
+const Presence = ({intl, state, stack}) => {
+    const users = onlineUsers(state);
+    const label = intl.formatMessage(messages.online, {count: users.length});
+    if (!stack) {
+        return (
+            <span
+                className={styles.online}
+                title={users.map(user => user.username).join(', ')}
+            >
+                <span className={styles.dot} />
+                {label}
+            </span>
+        );
+    }
+    const shown = users.slice(0, 3);
+    return (
+        <span
+            className={styles.stack}
+            title={users.map(user => user.username).join(', ')}
+            aria-label={label}
+        >
+            {shown.map(user => (
+                <Avatar
+                    key={user.username}
+                    className={styles.stackAvatar}
+                    username={user.username}
+                    size={20}
+                />
+            ))}
+            <span className={styles.stackCount}>{users.length}</span>
+        </span>
+    );
+};
+
+Presence.propTypes = {
+    intl: intlShape.isRequired,
+    stack: PropTypes.bool,
+    state: PropTypes.object.isRequired
+};
+
+const ChatPane = ({
+    canDock, connection, floating, intl, onClose, onLeave, onSignIn, onToggleMode, state, variant
+}) => {
     const channels = state.channels.filter(isChatChannel);
     const ready = state.status === 'ready' && Boolean(state.active);
-    const online = onlineUsers(state).length;
 
     let body;
     if (state.status === 'signed_out') {
         body = (
             <div className={classNames(styles.empty, styles.fill)}>
-                <MessagesSquare
-                    size={28}
-                    className={styles.emptyIcon}
-                />
+                <span className={styles.emptyIcon}><MessagesSquare size={22} /></span>
                 <p className={styles.emptyTitle}>{intl.formatMessage(messages.signedOutTitle)}</p>
                 <p className={styles.emptyBody}>{intl.formatMessage(messages.signedOutBody)}</p>
                 <button
@@ -523,11 +919,13 @@ const ChatPane = ({canDock, connection, floating, intl, onClose, onLeave, onSign
                     connection={connection}
                     intl={intl}
                     state={state}
+                    variant={variant}
                 />
                 <Composer
                     connection={connection}
                     intl={intl}
                     state={state}
+                    variant={variant}
                 />
             </React.Fragment>
         );
@@ -539,37 +937,39 @@ const ChatPane = ({canDock, connection, floating, intl, onClose, onLeave, onSign
         );
     }
 
+    const tabs = variant === 'cards';
+    let heading;
+    if (ready && !tabs) {
+        heading = (
+            <ChannelMenu
+                active={state.active}
+                channels={channels}
+                intl={intl}
+                onSelect={name => connection.selectChannel(name)}
+            />
+        );
+    } else {
+        heading = (
+            <h2 className={styles.title}>
+                <MessagesSquare size={16} />
+                {intl.formatMessage(messages.title)}
+            </h2>
+        );
+    }
+
     return (
         <section
-            className={classNames(styles.pane, {[styles.floating]: floating})}
+            className={classNames(styles.pane, styles[variant], {[styles.floating]: floating})}
             aria-label={intl.formatMessage(messages.title)}
         >
             <header className={styles.header}>
-                {ready && channels.length > 1 ? (
-                    <select
-                        className={styles.channelSelect}
-                        aria-label={intl.formatMessage(messages.channel)}
-                        value={state.active}
-                        onChange={event => connection.selectChannel(event.target.value)}
-                    >
-                        {channels.map(channel => (
-                            <option
-                                key={channel.name}
-                                value={channel.name}
-                            >{`# ${channelName(channel)}`}</option>
-                        ))}
-                    </select>
-                ) : (
-                    <h2 className={styles.title}>
-                        <MessagesSquare size={16} />
-                        {ready ? `# ${channelName(channels[0])}` : intl.formatMessage(messages.title)}
-                    </h2>
-                )}
+                {heading}
                 {ready ? (
-                    <span className={styles.online}>
-                        <span className={styles.dot} />
-                        {intl.formatMessage(messages.online, {count: online})}
-                    </span>
+                    <Presence
+                        intl={intl}
+                        state={state}
+                        stack={variant === 'bubbles'}
+                    />
                 ) : null}
                 <div className={styles.headerActions}>
                     {ready ? (
@@ -595,23 +995,15 @@ const ChatPane = ({canDock, connection, floating, intl, onClose, onLeave, onSign
                     )}
                 </div>
             </header>
-            {body}
-            <footer className={styles.footer}>
-                <a
-                    href={CHAT_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                >{intl.formatMessage(messages.server)}</a>
-                <a
-                    href={DISCORD_INVITE}
-                    target="_blank"
-                    rel="noreferrer"
-                    className={styles.discord}
-                >
-                    {intl.formatMessage(messages.discord)}
-                    <ExternalLink size={12} />
-                </a>
-            </footer>
+            {ready && tabs && channels.length > 1 ? (
+                <ChannelTabs
+                    active={state.active}
+                    channels={channels}
+                    intl={intl}
+                    onSelect={name => connection.selectChannel(name)}
+                />
+            ) : null}
+            <div className={styles.body}>{body}</div>
         </section>
     );
 };
@@ -625,7 +1017,12 @@ ChatPane.propTypes = {
     onLeave: PropTypes.func.isRequired,
     onSignIn: PropTypes.func.isRequired,
     onToggleMode: PropTypes.func.isRequired,
-    state: PropTypes.object.isRequired
+    state: PropTypes.object.isRequired,
+    variant: PropTypes.oneOf(VARIANTS)
+};
+
+ChatPane.defaultProps = {
+    variant: 'quiet'
 };
 
 export default injectIntl(ChatPane);
