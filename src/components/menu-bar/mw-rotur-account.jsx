@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
 import {FormattedMessage} from 'react-intl';
-import {LogOut, Settings, ShieldCheck, Trophy, User, Users, Wallet} from 'lucide-react';
+import {LogOut, Settings, ShieldCheck, Trophy, User, UserCog, Users, Wallet} from 'lucide-react';
 
 import MenuLabel from './tw-menu-label.jsx';
 import MenuBarMenu from './menu-bar-menu.jsx';
@@ -20,7 +20,8 @@ import {
     closeAccountMenu,
     accountMenuOpen
 } from '../../reducers/menus.js';
-import {openRoturLoginModal} from '../../reducers/modals.js';
+import {openRoturLoginModal, openSettingsModal} from '../../reducers/modals.js';
+import communityEnabled from '../../lib/community/enabled.js';
 
 const logout = onLogout => {
     if (onLogout) {
@@ -60,6 +61,11 @@ const RoturAccount = props => {
         window.location.href = authUrl;
     }, [props.onCloseMenu, props.onLogout]);
 
+    const handleOpenSettings = React.useCallback(() => {
+        props.onCloseMenu();
+        props.onOpenSettings();
+    }, [props.onCloseMenu, props.onOpenSettings]);
+
     const handleLogout = React.useCallback(() => {
         props.onCloseMenu();
         logout(props.onLogout);
@@ -87,8 +93,13 @@ const RoturAccount = props => {
 
     const go = path => () => {
         props.onCloseMenu();
-        window.location.href = path;
+        if (props.showEditorItems) {
+            window.open(path, '_blank', 'noopener');
+        } else {
+            window.location.href = path;
+        }
     };
+
 
     return (
         <MenuLabel
@@ -145,14 +156,34 @@ const RoturAccount = props => {
                         ) : null}
                     </React.Fragment>
                 )}
-                <MenuItemContainer onClick={go('/settings')}>
-                    <Settings />
-                    <FormattedMessage
-                        defaultMessage="Settings"
-                        description="Text to link to settings, in the Rotur account navigation menu"
-                        id="mw.rotur.accountMenu.settings"
-                    />
-                </MenuItemContainer>
+                {props.showEditorItems && props.onOpenSettings ? (
+                    <MenuItemContainer onClick={handleOpenSettings}>
+                        <Settings />
+                        <FormattedMessage
+                            defaultMessage="Settings"
+                            description="Text to link to settings, in the Rotur account navigation menu"
+                            id="mw.rotur.accountMenu.settings"
+                        />
+                    </MenuItemContainer>
+                ) : null}
+                {props.showEditorItems && !communityEnabled ? null : (
+                    <MenuItemContainer onClick={go('/settings')}>
+                        {props.showEditorItems ? <UserCog /> : <Settings />}
+                        {props.showEditorItems ? (
+                            <FormattedMessage
+                                defaultMessage="Account settings"
+                                description="Editor account menu item that opens account settings on the website"
+                                id="mw.rotur.accountMenu.accountSettings"
+                            />
+                        ) : (
+                            <FormattedMessage
+                                defaultMessage="Settings"
+                                description="Text to link to settings, in the Rotur account navigation menu"
+                                id="mw.rotur.accountMenu.settings"
+                            />
+                        )}
+                    </MenuItemContainer>
+                )}
                 <MenuSection>
                     <MenuItemContainer
                         onClick={handleSwitchAccount}
@@ -188,6 +219,7 @@ RoturAccount.propTypes = {
     onLogout: PropTypes.func,
     onOpenLogin: PropTypes.func.isRequired,
     onOpenMenu: PropTypes.func.isRequired,
+    onOpenSettings: PropTypes.func,
     openReports: PropTypes.number,
     openErrors: PropTypes.number,
     showEditorItems: PropTypes.bool,
@@ -210,7 +242,8 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => ({
     onOpenLogin: () => dispatch(openRoturLoginModal()),
     onOpenMenu: () => dispatch(openAccountMenu()),
-    onCloseMenu: () => dispatch(closeAccountMenu())
+    onCloseMenu: () => dispatch(closeAccountMenu()),
+    onOpenSettings: () => dispatch(openSettingsModal())
 });
 
 export {RoturAccount};

@@ -12,6 +12,9 @@ import {
     PanelTop,
     Pen,
     Settings,
+    Shield,
+    SunMoon,
+    SwatchBook,
     Type,
     Variable,
     Zap
@@ -40,6 +43,11 @@ const getSettingsSidebarGroups = (intl, includeDesktop) => {
                         defaultMessage: 'Keyboard Shortcuts'
                     }),
                     icon: Keyboard
+                },
+                {
+                    id: 'privacy',
+                    label: intl.formatMessage({id: 'mw.settings.privacy', defaultMessage: 'Privacy'}),
+                    icon: Shield
                 }
             ]
         },
@@ -48,8 +56,18 @@ const getSettingsSidebarGroups = (intl, includeDesktop) => {
             label: intl.formatMessage({id: 'mw.settings.groupAppearance', defaultMessage: 'Appearance'}),
             items: [
                 {
+                    id: 'theme',
+                    label: intl.formatMessage({id: 'mw.settings.theme', defaultMessage: 'Theme'}),
+                    icon: SunMoon
+                },
+                {
+                    id: 'customThemes',
+                    label: intl.formatMessage({id: 'mw.settings.customThemes', defaultMessage: 'Custom themes'}),
+                    icon: SwatchBook
+                },
+                {
                     id: 'appearance',
-                    label: intl.formatMessage({id: 'mw.settings.appearance', defaultMessage: 'Appearance'}),
+                    label: intl.formatMessage({id: 'mw.settings.styles', defaultMessage: 'Styles'}),
                     icon: Palette
                 },
                 {

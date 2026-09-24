@@ -22,8 +22,11 @@ import {STYLE_GROUPS} from '../../lib/mw-style-settings';
 import StylePreview from './style-preview.jsx';
 import MenuBarLayoutSetting from './menu-bar-layout.jsx';
 import MenuBarFeatureSettings from './menu-bar-settings.jsx';
-import {LanguagePage, ThemePage, WallpaperPage, FontsPage} from './appearance-pages.jsx';
+import {
+    LanguagePage, ThemePage, WallpaperPage, FontsPage, ColorThemePage, CustomThemesSettingsPage
+} from './appearance-pages.jsx';
 import LoadingScreenPage from './loading-screen-page.jsx';
+import PrivacyPage from './privacy-page.jsx';
 import ShortcutManager from '../shortcut-manager/shortcut-manager.jsx';
 import {takeSettingsModalInitialView} from '../../lib/settings/modal-view.js';
 
@@ -1866,6 +1869,12 @@ const SettingsRouter = ({view, ...handlers}) => {
         return <LanguagePage />;
     case 'shortcuts':
         return <ShortcutManager />;
+    case 'privacy':
+        return <PrivacyPage />;
+    case 'theme':
+        return <ColorThemePage />;
+    case 'customThemes':
+        return <CustomThemesSettingsPage />;
     case 'appearance':
         return <StylesPage {...handlers} />;
     case 'blocks':
@@ -1913,7 +1922,7 @@ class SettingsModalComponent extends React.Component {
 
         const requestedView = takeSettingsModalInitialView() || 'general';
         this.state = {
-            currentView: requestedView === 'theme' ? 'appearance' : requestedView,
+            currentView: requestedView,
             mobileView: 'list'
         };
     }
