@@ -64,11 +64,9 @@
 }
 
 .columnTitle {
-    font-weight: 700;
+    font-weight: 600;
     font-size: var(--fs-sm);
-    text-transform: none;
-    letter-spacing: 0.06em;
-    color: var(--text-faint);
+    color: var(--mw-text);
     margin-bottom: 2px;
 }
 
@@ -104,6 +102,24 @@
 
 @media (max-width: 760px) {
     .footer {
-        display: none;
+        margin-top: 40px;
+        padding-bottom: 72px;
+    }
+
+    .inner {
+        padding: 28px 14px 20px;
+        gap: 24px;
+    }
+
+    .columns {
+        gap: 20px 32px;
+    }
+
+    .column {
+        min-width: 130px;
+    }
+
+    .legal {
+        padding: 0 14px 20px;
     }
 }

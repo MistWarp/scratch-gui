@@ -45,10 +45,10 @@ function Notification ({id, message, type, onDismiss, duration}) {
     const Icon = icons[type] || icons.info;
 
     const colors = {
-        info: '#4C97FF',
-        success: '#00a65a',
-        warning: '#FF661A',
-        error: '#FF661A'
+        info: 'var(--status-info, #4c97ff)',
+        success: 'var(--status-success, #2f9e5b)',
+        warning: 'var(--status-warning, #d98324)',
+        error: 'var(--status-danger, #d94747)'
     };
 
     return (
@@ -58,9 +58,10 @@ function Notification ({id, message, type, onDismiss, duration}) {
                 borderRadius: '12px',
                 background: 'var(--ui-modal-background, #ffffff)',
                 color: 'var(--text-primary, #2d3748)',
-                boxShadow: 'var(--shadow, 0 4px 12px rgba(0, 0, 0, 0.15))',
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif',
-                fontSize: '14px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+                border: '1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15))',
+                fontFamily: 'inherit',
+                fontSize: '13px',
                 maxWidth: '400px',
                 minWidth: '300px',
                 wordWrap: 'break-word',

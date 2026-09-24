@@ -1,6 +1,6 @@
 .sidebar {
     position: sticky;
-    top: 18px;
+    top: calc(var(--nav-h) + 16px);
     min-width: 0;
     max-height: calc(100vh - 40px);
     overflow: auto;

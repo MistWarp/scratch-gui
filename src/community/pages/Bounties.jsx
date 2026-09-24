@@ -71,7 +71,6 @@ const Bounties = () => {
 
     return (
         <main className={styles.page}>
-            <ExploreNav active="bounties" />
             <PageHeader
                 icon={Coins}
                 title={communityText('Project bounties')}
@@ -80,6 +79,7 @@ const Bounties = () => {
                     <label className={styles.search}><Search size={16} /><input value={query} placeholder={communityText('Search bounties')} onChange={event => setQuery(event.target.value)} /></label>
                 )}
             />
+            <ExploreNav active="bounties" />
             {entries === null ? <StatusMessage>{communityText('Loading bounties…')}</StatusMessage> : error ? (
                 <StatusMessage error onRetry={load}>{error}</StatusMessage>
             ) : visible.length ? (

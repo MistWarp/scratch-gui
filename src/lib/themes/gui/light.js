@@ -25,6 +25,11 @@ const guiColors = {
     'text-primary': 'hsla(225, 15%, 40%, 1)', /* #575E75 */
     'text-primary-transparent': 'hsla(225, 15%, 40%, 0.75)',
 
+    'status-success': '#2f9e5b',
+    'status-warning': '#d98324',
+    'status-danger': '#d94747',
+    'status-info': '#4c97ff',
+
     'red-primary': 'hsla(20, 100%, 55%, 1)', /* #FF661A */
     'red-tertiary': 'hsla(20, 100%, 45%, 1)', /* #E64D00 */
 

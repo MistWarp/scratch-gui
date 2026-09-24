@@ -280,7 +280,7 @@
 }
 
 .actionMenu .menuDanger {
-    color: #e25555;
+    color: var(--mw-danger);
 }
 
 .sideCol {
