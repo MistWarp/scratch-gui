@@ -1,9 +1,9 @@
 {
   "a11y.skip": [
-    "src/community/App.jsx:106"
+    "src/community/App.jsx:107"
   ],
   "Loading page…": [
-    "src/community/App.jsx:115"
+    "src/community/App.jsx:119"
   ],
   "Activity": [
     "src/community/components/ActivityCard.jsx:29",
@@ -17,14 +17,15 @@
   "On {value1}": [
     "src/community/components/ActivityCard.jsx:77"
   ],
-  "The new MistWarp is a beta. Expect bugs, and please report them on": [
-    "src/community/components/BetaBanner.jsx:37"
+  "MistWarp now has a community server, bridged between OriginChats and Discord.": [
+    "src/community/components/AnnouncementBanner.jsx:44"
   ],
-  "the bug tracker": [
-    "src/community/components/BetaBanner.jsx:38"
+  "Join our community": [
+    "src/community/components/AnnouncementBanner.jsx:51",
+    "src/community/components/JoinCommunityModal.jsx:33"
   ],
   "Dismiss": [
-    "src/community/components/BetaBanner.jsx:43",
+    "src/community/components/AnnouncementBanner.jsx:57",
     "src/community/components/StandingBanner.jsx:35",
     "src/community/components/StandingBanner.jsx:55",
     "src/community/components/ui/Notice.jsx:35",
@@ -56,7 +57,7 @@
   ],
   "All challenges": [
     "src/community/components/ChallengeCalendar.jsx:144",
-    "src/community/pages/Challenge.jsx:374",
+    "src/community/pages/Challenge.jsx:368",
     "src/community/pages/Home.jsx:463"
   ],
   "{value1}, {value2} to {value3}": [
@@ -138,7 +139,7 @@
     "src/community/components/NewsItem.jsx:275",
     "src/community/components/ProfileBadges.jsx:204",
     "src/community/components/ProjectInfoPanel.jsx:388",
-    "src/community/pages/Challenge.jsx:145",
+    "src/community/pages/Challenge.jsx:146",
     "src/community/pages/Commit.jsx:386",
     "src/community/pages/Group.jsx:284",
     "src/community/pages/ManageProject.jsx:648",
@@ -381,9 +382,9 @@
     "src/community/pages/Profile.jsx:626",
     "src/community/pages/Project.jsx:1441",
     "src/community/pages/RemixTree.jsx:244",
-    "src/community/pages/Search.jsx:188",
+    "src/community/pages/Search.jsx:203",
     "src/community/pages/Spaces.jsx:319",
-    "src/community/pages/Themes.jsx:194"
+    "src/community/pages/Themes.jsx:193"
   ],
   "Could not load more comments. Try again.": [
     "src/community/components/CommentThread.jsx:1005"
@@ -568,17 +569,17 @@
     "src/community/pages/Admin.jsx:746",
     "src/community/pages/Admin.jsx:753",
     "src/community/pages/Admin.jsx:913",
-    "src/community/pages/Collection.jsx:42",
+    "src/community/pages/Collection.jsx:37",
     "src/community/pages/Group.jsx:201",
     "src/community/pages/ManageSpace.jsx:27",
     "src/community/pages/ManageSpace.jsx:737",
     "src/community/pages/Profile.jsx:544",
     "src/community/pages/Profile.jsx:612",
-    "src/community/pages/Search.jsx:143",
+    "src/community/pages/Search.jsx:158",
     "src/community/pages/Settings.jsx:74",
-    "src/community/pages/Space.jsx:251",
-    "src/community/pages/Studio.jsx:89",
-    "src/community/pages/Studio.jsx:140"
+    "src/community/pages/Space.jsx:246",
+    "src/community/pages/Studio.jsx:84",
+    "src/community/pages/Studio.jsx:135"
   ],
   "Bounties": [
     "src/community/components/ExploreNav.jsx:9",
@@ -589,14 +590,14 @@
   ],
   "Groups": [
     "src/community/components/ExploreNav.jsx:10",
-    "src/community/pages/Groups.jsx:81"
+    "src/community/pages/Groups.jsx:80"
   ],
   "Studios": [
     "src/community/components/ExploreNav.jsx:11",
     "src/community/components/Footer.jsx:38",
     "src/community/components/MyStuffSpaces.jsx:65",
     "src/community/pages/Group.jsx:202",
-    "src/community/pages/Search.jsx:145",
+    "src/community/pages/Search.jsx:160",
     "src/community/pages/Spaces.jsx:22"
   ],
   "Challenges": [
@@ -620,7 +621,7 @@
     "src/community/components/MyStuffThemes.jsx:217",
     "src/community/pages/MyStuff.jsx:629",
     "src/community/pages/Profile.jsx:546",
-    "src/community/pages/Themes.jsx:177"
+    "src/community/pages/Themes.jsx:176"
   ],
   "Explore sections": [
     "src/community/components/ExploreNav.jsx:19"
@@ -660,8 +661,8 @@
   ],
   "MistWarp": [
     "src/community/components/Footer.jsx:24",
-    "src/community/components/NavBar.jsx:369",
-    "src/community/components/NavBar.jsx:376",
+    "src/community/components/NavBar.jsx:397",
+    "src/community/components/NavBar.jsx:405",
     "src/community/components/RichText.jsx:116",
     "src/community/pages/Roadmap.jsx:511"
   ],
@@ -670,8 +671,8 @@
   ],
   "Create": [
     "src/community/components/Footer.jsx:31",
-    "src/community/components/NavBar.jsx:521",
-    "src/community/components/NavBar.jsx:521",
+    "src/community/components/NavBar.jsx:552",
+    "src/community/components/NavBar.jsx:552",
     "src/community/pages/Spaces.jsx:275"
   ],
   "Editor": [
@@ -682,25 +683,24 @@
   ],
   "My stuff": [
     "src/community/components/Footer.jsx:33",
-    "src/community/components/NavBar.jsx:454",
-    "src/community/components/NavBar.jsx:455",
-    "src/community/components/NavBar.jsx:537",
-    "src/community/components/NavBar.jsx:537",
+    "src/community/components/NavBar.jsx:485",
+    "src/community/components/NavBar.jsx:486",
+    "src/community/components/NavBar.jsx:568",
+    "src/community/components/NavBar.jsx:568",
     "src/community/pages/ManageProject.jsx:486",
     "src/community/pages/MyStuff.jsx:1361"
   ],
   "Community": [
     "src/community/components/Footer.jsx:36",
-    "src/community/pages/Challenge.jsx:347",
-    "src/community/pages/Challenge.jsx:472",
+    "src/community/pages/Challenge.jsx:439",
     "src/community/pages/Roadmap.jsx:497",
     "src/community/pages/Roadmap.jsx:511"
   ],
   "Explore": [
     "src/community/components/Footer.jsx:37",
-    "src/community/components/NavBar.jsx:518",
-    "src/community/components/NavBar.jsx:518",
-    "src/community/pages/Explore.jsx:178"
+    "src/community/components/NavBar.jsx:549",
+    "src/community/components/NavBar.jsx:549",
+    "src/community/pages/Explore.jsx:177"
   ],
   "Leaderboard": [
     "src/community/components/Footer.jsx:41"
@@ -731,8 +731,8 @@
   ],
   "Memberships": [
     "src/community/components/Footer.jsx:50",
-    "src/community/components/NavBar.jsx:433",
-    "src/community/components/NavBar.jsx:434"
+    "src/community/components/NavBar.jsx:464",
+    "src/community/components/NavBar.jsx:465"
   ],
   "Documentation": [
     "src/community/components/Footer.jsx:51"
@@ -833,7 +833,7 @@
   ],
   "Results": [
     "src/community/components/GifPicker.jsx:61",
-    "src/community/pages/Challenge.jsx:346",
+    "src/community/pages/Challenge.jsx:341",
     "src/community/pages/ManageSpace.jsx:700"
   ],
   "Popular GIFs": [
@@ -880,17 +880,17 @@
   ],
   "Following": [
     "src/community/components/HomeDiscovery.jsx:76",
-    "src/community/pages/Collection.jsx:80",
+    "src/community/pages/Collection.jsx:75",
     "src/community/pages/Home.jsx:386",
     "src/community/pages/Profile.jsx:854",
-    "src/community/pages/Space.jsx:188",
-    "src/community/pages/Studio.jsx:124"
+    "src/community/pages/Space.jsx:183",
+    "src/community/pages/Studio.jsx:119"
   ],
   "Follow": [
     "src/community/components/HomeDiscovery.jsx:76",
-    "src/community/pages/Collection.jsx:80",
+    "src/community/pages/Collection.jsx:75",
     "src/community/pages/Profile.jsx:854",
-    "src/community/pages/Space.jsx:188"
+    "src/community/pages/Space.jsx:183"
   ],
   "Featured today": [
     "src/community/components/HomeDiscovery.jsx:105"
@@ -959,6 +959,22 @@
   ],
   "View challenge and enter": [
     "src/community/components/HomeWorkspace.jsx:216"
+  ],
+  "Chat with the community on MistWarp's own chat.": [
+    "src/community/components/JoinCommunityModal.jsx:27"
+  ],
+  "Hang out with the community on our Discord server.": [
+    "src/community/components/JoinCommunityModal.jsx:28"
+  ],
+  "Where would you like to join?": [
+    "src/community/components/JoinCommunityModal.jsx:36"
+  ],
+  "Join from {value1}": [
+    "src/community/components/JoinCommunityModal.jsx:53"
+  ],
+  "Recommended": [
+    "src/community/components/JoinCommunityModal.jsx:55",
+    "src/community/pages/PaidPerks.jsx:183"
   ],
   "settings.language": [
     "src/community/components/LanguagePicker.jsx:9"
@@ -1095,7 +1111,7 @@
     "src/community/components/PlaytimeLibrary.jsx:78",
     "src/community/components/ProjectCard.jsx:48",
     "src/community/components/SpaceProjectPicker.jsx:230",
-    "src/community/pages/Challenge.jsx:461",
+    "src/community/pages/Challenge.jsx:459",
     "src/community/pages/Profile.jsx:583"
   ],
   "Hidden": [
@@ -1205,7 +1221,7 @@
   "Browse themes": [
     "src/community/components/MyStuffThemes.jsx:172",
     "src/community/components/MyStuffThemes.jsx:226",
-    "src/community/pages/Themes.jsx:180"
+    "src/community/pages/Themes.jsx:179"
   ],
   "Save a theme from WarpTheme or create one in Theme settings.": [
     "src/community/components/MyStuffThemes.jsx:176"
@@ -1224,7 +1240,7 @@
   ],
   "Publish a theme": [
     "src/community/components/MyStuffThemes.jsx:204",
-    "src/community/pages/Themes.jsx:177",
+    "src/community/pages/Themes.jsx:176",
     "src/community/pages/Themes.jsx:209"
   ],
   "Share your current theme with the WarpTheme community.": [
@@ -1270,7 +1286,7 @@
   ],
   "People": [
     "src/community/components/NavBar.jsx:46",
-    "src/community/pages/Search.jsx:144"
+    "src/community/pages/Search.jsx:159"
   ],
   " followers · ": [
     "src/community/components/NavBar.jsx:53"
@@ -1289,7 +1305,7 @@
     "src/community/components/SpaceProjectPicker.jsx:202",
     "src/community/pages/ManageSpace.jsx:693",
     "src/community/pages/ManageSpace.jsx:714",
-    "src/community/pages/Search.jsx:158"
+    "src/community/pages/Search.jsx:173"
   ],
   "Could not load quick results. Press Enter to search.": [
     "src/community/components/NavBar.jsx:95"
@@ -1300,59 +1316,63 @@
   "See all results for \"{value1}\"": [
     "src/community/components/NavBar.jsx:105"
   ],
+  "Beta": [
+    "src/community/components/NavBar.jsx:406",
+    "src/community/pages/Project.jsx:2846"
+  ],
   "nav.main": [
-    "src/community/components/NavBar.jsx:379"
+    "src/community/components/NavBar.jsx:410"
   ],
   "nav.create": [
-    "src/community/components/NavBar.jsx:380",
-    "src/community/components/NavBar.jsx:382"
+    "src/community/components/NavBar.jsx:411",
+    "src/community/components/NavBar.jsx:413"
   ],
   "nav.explore": [
-    "src/community/components/NavBar.jsx:387",
-    "src/community/components/NavBar.jsx:390"
+    "src/community/components/NavBar.jsx:418",
+    "src/community/components/NavBar.jsx:421"
   ],
   "nav.random": [
-    "src/community/components/NavBar.jsx:395",
-    "src/community/components/NavBar.jsx:398"
+    "src/community/components/NavBar.jsx:426",
+    "src/community/components/NavBar.jsx:429"
   ],
   "nav.search": [
-    "src/community/components/NavBar.jsx:425",
-    "src/community/components/NavBar.jsx:511"
+    "src/community/components/NavBar.jsx:456",
+    "src/community/components/NavBar.jsx:542"
   ],
   "Notifications": [
-    "src/community/components/NavBar.jsx:443",
-    "src/community/components/NavBar.jsx:444",
-    "src/community/components/NavBar.jsx:528",
-    "src/community/components/NavBar.jsx:529",
+    "src/community/components/NavBar.jsx:474",
+    "src/community/components/NavBar.jsx:475",
+    "src/community/components/NavBar.jsx:559",
+    "src/community/components/NavBar.jsx:560",
     "src/community/pages/Home.jsx:392",
     "src/community/pages/Notifications.jsx:556",
     "src/community/pages/Settings.jsx:104",
     "src/community/pages/Settings.jsx:634"
   ],
   "Notifications ({value1} unread)": [
-    "src/community/components/NavBar.jsx:444",
-    "src/community/components/NavBar.jsx:528"
+    "src/community/components/NavBar.jsx:475",
+    "src/community/components/NavBar.jsx:559"
   ],
   "Signing in…": [
-    "src/community/components/NavBar.jsx:478"
+    "src/community/components/NavBar.jsx:509"
   ],
   "Signing in": [
-    "src/community/components/NavBar.jsx:479",
-    "src/community/components/NavBar.jsx:541",
-    "src/community/components/NavBar.jsx:541"
+    "src/community/components/NavBar.jsx:510",
+    "src/community/components/NavBar.jsx:572",
+    "src/community/components/NavBar.jsx:572"
   ],
   "Sign in": [
-    "src/community/components/NavBar.jsx:479",
-    "src/community/components/NavBar.jsx:482",
-    "src/community/components/NavBar.jsx:541",
-    "src/community/components/NavBar.jsx:541"
+    "src/community/components/NavBar.jsx:510",
+    "src/community/components/NavBar.jsx:513",
+    "src/community/components/NavBar.jsx:572",
+    "src/community/components/NavBar.jsx:572"
   ],
   "Mobile navigation": [
-    "src/community/components/NavBar.jsx:514"
+    "src/community/components/NavBar.jsx:545"
   ],
   "Home": [
-    "src/community/components/NavBar.jsx:515",
-    "src/community/components/NavBar.jsx:515"
+    "src/community/components/NavBar.jsx:546",
+    "src/community/components/NavBar.jsx:546"
   ],
   "Could not delete update.": [
     "src/community/components/NewsItem.jsx:74"
@@ -1971,7 +1991,7 @@
   "Owner": [
     "src/community/components/ProjectInfoPanel.jsx:202",
     "src/community/pages/ManageSpace.jsx:726",
-    "src/community/pages/Studio.jsx:162"
+    "src/community/pages/Studio.jsx:157"
   ],
   "Contributor": [
     "src/community/components/ProjectInfoPanel.jsx:206",
@@ -2036,7 +2056,7 @@
   ],
   "Unavailable": [
     "src/community/components/ReactionButtons.jsx:39",
-    "src/community/pages/Themes.jsx:194"
+    "src/community/pages/Themes.jsx:193"
   ],
   "Next project": [
     "src/community/components/RelatedProjects.jsx:53"
@@ -2363,10 +2383,10 @@
   ],
   "No description yet.": [
     "src/community/components/SpaceCard.jsx:42",
-    "src/community/pages/Collection.jsx:77",
+    "src/community/pages/Collection.jsx:72",
     "src/community/pages/Group.jsx:277",
-    "src/community/pages/Space.jsx:183",
-    "src/community/pages/Studio.jsx:122"
+    "src/community/pages/Space.jsx:178",
+    "src/community/pages/Studio.jsx:117"
   ],
   " joined": [
     "src/community/components/SpaceCard.jsx:49"
@@ -2538,7 +2558,7 @@
   ],
   "Overview": [
     "src/community/pages/Admin.jsx:30",
-    "src/community/pages/Challenge.jsx:343",
+    "src/community/pages/Challenge.jsx:338",
     "src/community/pages/MyStuff.jsx:623"
   ],
   "Storage and runtime": [
@@ -3249,7 +3269,7 @@
   "All": [
     "src/community/pages/Admin.jsx:1953",
     "src/community/pages/Explore.jsx:192",
-    "src/community/pages/Search.jsx:142"
+    "src/community/pages/Search.jsx:157"
   ],
   "Unknown error": [
     "src/community/pages/Admin.jsx:1976"
@@ -3413,14 +3433,14 @@
     "src/community/pages/Bounties.jsx:55"
   ],
   "Project bounties": [
-    "src/community/pages/Bounties.jsx:77",
+    "src/community/pages/Bounties.jsx:76",
     "src/community/pages/ManageProject.jsx:1180"
   ],
   "Funded improvements open across public MistWarp projects.": [
-    "src/community/pages/Bounties.jsx:78"
+    "src/community/pages/Bounties.jsx:77"
   ],
   "Search bounties": [
-    "src/community/pages/Bounties.jsx:80"
+    "src/community/pages/Bounties.jsx:79"
   ],
   "Loading bounties…": [
     "src/community/pages/Bounties.jsx:83"
@@ -3436,7 +3456,7 @@
   "On": [
     "src/community/pages/Bounties.jsx:93",
     "src/community/pages/Bounty.jsx:125",
-    "src/community/pages/Challenge.jsx:417"
+    "src/community/pages/Challenge.jsx:411"
   ],
   "by {owner}": [
     "src/community/pages/Bounties.jsx:93",
@@ -3458,10 +3478,10 @@
     "src/community/pages/Bounties.jsx:101",
     "src/community/pages/Groups.jsx:104",
     "src/community/pages/PullRequests.jsx:91",
-    "src/community/pages/Search.jsx:173",
-    "src/community/pages/Search.jsx:185",
-    "src/community/pages/Search.jsx:196",
-    "src/community/pages/Search.jsx:198",
+    "src/community/pages/Search.jsx:188",
+    "src/community/pages/Search.jsx:200",
+    "src/community/pages/Search.jsx:211",
+    "src/community/pages/Search.jsx:213",
     "src/community/pages/Spaces.jsx:306"
   ],
   "Bounties on public projects will show up here when someone funds one.": [
@@ -3495,11 +3515,11 @@
   ],
   "Updating…": [
     "src/community/pages/Bounty.jsx:141",
-    "src/community/pages/Challenge.jsx:386",
-    "src/community/pages/Collection.jsx:80",
+    "src/community/pages/Challenge.jsx:380",
+    "src/community/pages/Collection.jsx:75",
     "src/community/pages/MyStuff.jsx:1625",
     "src/community/pages/MyStuff.jsx:1632",
-    "src/community/pages/Studio.jsx:124",
+    "src/community/pages/Studio.jsx:119",
     "src/community/pages/Theme.jsx:221"
   ],
   "Stop working on this": [
@@ -3541,244 +3561,244 @@
     "src/community/pages/Bounty.jsx:165"
   ],
   "Starts soon": [
-    "src/community/pages/Challenge.jsx:25"
+    "src/community/pages/Challenge.jsx:26"
   ],
   "Submissions open": [
-    "src/community/pages/Challenge.jsx:26",
-    "src/community/pages/Challenge.jsx:217",
+    "src/community/pages/Challenge.jsx:27",
+    "src/community/pages/Challenge.jsx:218",
     "src/community/pages/ManageSpace.jsx:657",
     "src/community/pages/Spaces.jsx:269"
   ],
   "Judging": [
-    "src/community/pages/Challenge.jsx:27",
+    "src/community/pages/Challenge.jsx:28",
     "src/community/pages/ManageSpace.jsx:34"
   ],
   "Results pending": [
-    "src/community/pages/Challenge.jsx:28"
-  ],
-  "Results published": [
     "src/community/pages/Challenge.jsx:29"
   ],
+  "Results published": [
+    "src/community/pages/Challenge.jsx:30"
+  ],
   "Give every criterion a score from 1 to 10.": [
-    "src/community/pages/Challenge.jsx:105"
+    "src/community/pages/Challenge.jsx:106"
   ],
   "Score saved.": [
-    "src/community/pages/Challenge.jsx:120"
+    "src/community/pages/Challenge.jsx:121"
   ],
   "Your score": [
-    "src/community/pages/Challenge.jsx:135"
+    "src/community/pages/Challenge.jsx:136"
   ],
   "Last saved {value1}": [
-    "src/community/pages/Challenge.jsx:135"
+    "src/community/pages/Challenge.jsx:136"
   ],
   "/ 10": [
-    "src/community/pages/Challenge.jsx:140",
-    "src/community/pages/Challenge.jsx:461"
+    "src/community/pages/Challenge.jsx:141",
+    "src/community/pages/Challenge.jsx:459"
   ],
   "Private feedback for the host": [
-    "src/community/pages/Challenge.jsx:143"
+    "src/community/pages/Challenge.jsx:144"
   ],
   "Notes on this entry": [
-    "src/community/pages/Challenge.jsx:143"
+    "src/community/pages/Challenge.jsx:144"
   ],
   "No judging criteria are configured.": [
-    "src/community/pages/Challenge.jsx:144",
-    "src/community/pages/Challenge.jsx:433"
+    "src/community/pages/Challenge.jsx:145",
+    "src/community/pages/Challenge.jsx:427"
   ],
   "Save score": [
-    "src/community/pages/Challenge.jsx:145"
+    "src/community/pages/Challenge.jsx:146"
   ],
   "judges": [
-    "src/community/pages/Challenge.jsx:193"
-  ],
-  "audience": [
     "src/community/pages/Challenge.jsx:194"
   ],
-  "Audience rating": [
-    "src/community/pages/Challenge.jsx:199"
+  "audience": [
+    "src/community/pages/Challenge.jsx:195"
   ],
-  "Rate {value1} out of 5": [
+  "Audience rating": [
     "src/community/pages/Challenge.jsx:200"
   ],
-  "{value1} ratings": [
+  "Rate {value1} out of 5": [
     "src/community/pages/Challenge.jsx:201"
   ],
+  "{value1} ratings": [
+    "src/community/pages/Challenge.jsx:202"
+  ],
   "Starts in {value1}": [
-    "src/community/pages/Challenge.jsx:221"
+    "src/community/pages/Challenge.jsx:222"
   ],
   "Submissions close": [
-    "src/community/pages/Challenge.jsx:227",
+    "src/community/pages/Challenge.jsx:228",
     "src/community/pages/ManageSpace.jsx:658",
     "src/community/pages/Spaces.jsx:270"
   ],
   "{value1} left to enter": [
-    "src/community/pages/Challenge.jsx:231"
+    "src/community/pages/Challenge.jsx:232"
   ],
   "Judging ends": [
-    "src/community/pages/Challenge.jsx:237",
+    "src/community/pages/Challenge.jsx:238",
     "src/community/pages/ManageSpace.jsx:659"
   ],
   "{value1} of judging left": [
-    "src/community/pages/Challenge.jsx:241"
+    "src/community/pages/Challenge.jsx:242"
   ],
   "Challenge schedule": [
-    "src/community/pages/Challenge.jsx:245"
+    "src/community/pages/Challenge.jsx:246"
   ],
   "Submissions": [
-    "src/community/pages/Challenge.jsx:344",
-    "src/community/pages/Challenge.jsx:416",
-    "src/community/pages/Challenge.jsx:450",
+    "src/community/pages/Challenge.jsx:339",
+    "src/community/pages/Challenge.jsx:410",
+    "src/community/pages/Challenge.jsx:448",
     "src/community/pages/ManageSpace.jsx:35",
     "src/community/pages/ManageSpace.jsx:737"
   ],
   "Judge entries": [
-    "src/community/pages/Challenge.jsx:345",
-    "src/community/pages/Challenge.jsx:466"
+    "src/community/pages/Challenge.jsx:340",
+    "src/community/pages/Challenge.jsx:464"
   ],
   "invited you to judge this challenge.": [
-    "src/community/pages/Challenge.jsx:361"
+    "src/community/pages/Challenge.jsx:355"
   ],
   "Responding…": [
-    "src/community/pages/Challenge.jsx:364",
-    "src/community/pages/Studio.jsx:110"
+    "src/community/pages/Challenge.jsx:358",
+    "src/community/pages/Studio.jsx:105"
   ],
   "Accept": [
-    "src/community/pages/Challenge.jsx:364",
-    "src/community/pages/Studio.jsx:110"
+    "src/community/pages/Challenge.jsx:358",
+    "src/community/pages/Studio.jsx:105"
   ],
   "Decline": [
-    "src/community/pages/Challenge.jsx:365",
-    "src/community/pages/Space.jsx:206",
-    "src/community/pages/Studio.jsx:111"
+    "src/community/pages/Challenge.jsx:359",
+    "src/community/pages/Space.jsx:201",
+    "src/community/pages/Studio.jsx:106"
   ],
   "Judges score every submission against the published criteria.": [
-    "src/community/pages/Challenge.jsx:369"
+    "src/community/pages/Challenge.jsx:363"
   ],
   "Hosted by {value1}": [
-    "src/community/pages/Challenge.jsx:380"
+    "src/community/pages/Challenge.jsx:374"
   ],
   "Leave challenge": [
-    "src/community/pages/Challenge.jsx:386"
+    "src/community/pages/Challenge.jsx:380"
   ],
   "Join challenge": [
-    "src/community/pages/Challenge.jsx:386"
+    "src/community/pages/Challenge.jsx:380"
   ],
   "Manage challenge": [
-    "src/community/pages/Challenge.jsx:387"
+    "src/community/pages/Challenge.jsx:381"
   ],
   "Theme": [
-    "src/community/pages/Challenge.jsx:401",
+    "src/community/pages/Challenge.jsx:395",
     "src/community/pages/ManageSpace.jsx:637",
     "src/community/pages/Settings.jsx:102",
     "src/community/pages/Theme.jsx:195"
   ],
   "About this challenge": [
-    "src/community/pages/Challenge.jsx:405"
+    "src/community/pages/Challenge.jsx:399"
   ],
   "The host has not added a description yet.": [
-    "src/community/pages/Challenge.jsx:406"
+    "src/community/pages/Challenge.jsx:400"
   ],
   "Rules": [
-    "src/community/pages/Challenge.jsx:409",
+    "src/community/pages/Challenge.jsx:403",
     "src/community/pages/ManageSpace.jsx:637"
   ],
   "The host has not added rules yet.": [
-    "src/community/pages/Challenge.jsx:410"
+    "src/community/pages/Challenge.jsx:404"
   ],
   "Joined": [
-    "src/community/pages/Challenge.jsx:415",
+    "src/community/pages/Challenge.jsx:409",
     "src/community/pages/Groups.jsx:110"
   ],
   "Audience voting": [
-    "src/community/pages/Challenge.jsx:417"
+    "src/community/pages/Challenge.jsx:411"
   ],
   "Off": [
-    "src/community/pages/Challenge.jsx:417"
+    "src/community/pages/Challenge.jsx:411"
   ],
   "Judging criteria": [
-    "src/community/pages/Challenge.jsx:420"
+    "src/community/pages/Challenge.jsx:414"
   ],
   "Weight {value1} of 5": [
-    "src/community/pages/Challenge.jsx:427"
+    "src/community/pages/Challenge.jsx:421"
   ],
   "Judges": [
-    "src/community/pages/Challenge.jsx:436",
+    "src/community/pages/Challenge.jsx:430",
     "src/community/pages/ManageSpace.jsx:689"
   ],
   "No judges announced yet.": [
-    "src/community/pages/Challenge.jsx:441"
-  ],
-  "Enter a shared or unlisted project before submissions close.": [
-    "src/community/pages/Challenge.jsx:452"
-  ],
-  "Submissions are locked for this challenge.": [
-    "src/community/pages/Challenge.jsx:452"
-  ],
-  "No submissions yet": [
-    "src/community/pages/Challenge.jsx:455"
-  ],
-  "The first entry will appear here.": [
-    "src/community/pages/Challenge.jsx:455"
-  ],
-  "Final results": [
-    "src/community/pages/Challenge.jsx:460"
-  ],
-  "Ranked by the judges using the criteria shown on the overview.": [
-    "src/community/pages/Challenge.jsx:460"
-  ],
-  "No results": [
-    "src/community/pages/Challenge.jsx:461"
-  ],
-  "This challenge did not receive any submissions.": [
-    "src/community/pages/Challenge.jsx:461"
-  ],
-  "{value1} of {value2} entries scored by you.": [
-    "src/community/pages/Challenge.jsx:466"
-  ],
-  "No entries to judge": [
-    "src/community/pages/Challenge.jsx:467"
-  ],
-  "Submissions will appear here after the deadline.": [
-    "src/community/pages/Challenge.jsx:467"
+    "src/community/pages/Challenge.jsx:435"
   ],
   "Questions, progress updates, and discussion about the challenge.": [
-    "src/community/pages/Challenge.jsx:472"
+    "src/community/pages/Challenge.jsx:439"
+  ],
+  "Enter a shared or unlisted project before submissions close.": [
+    "src/community/pages/Challenge.jsx:450"
+  ],
+  "Submissions are locked for this challenge.": [
+    "src/community/pages/Challenge.jsx:450"
+  ],
+  "No submissions yet": [
+    "src/community/pages/Challenge.jsx:453"
+  ],
+  "The first entry will appear here.": [
+    "src/community/pages/Challenge.jsx:453"
+  ],
+  "Final results": [
+    "src/community/pages/Challenge.jsx:458"
+  ],
+  "Ranked by the judges using the criteria shown on the overview.": [
+    "src/community/pages/Challenge.jsx:458"
+  ],
+  "No results": [
+    "src/community/pages/Challenge.jsx:459"
+  ],
+  "This challenge did not receive any submissions.": [
+    "src/community/pages/Challenge.jsx:459"
+  ],
+  "{value1} of {value2} entries scored by you.": [
+    "src/community/pages/Challenge.jsx:464"
+  ],
+  "No entries to judge": [
+    "src/community/pages/Challenge.jsx:465"
+  ],
+  "Submissions will appear here after the deadline.": [
+    "src/community/pages/Challenge.jsx:465"
   ],
   "Discussion": [
-    "src/community/pages/Collection.jsx:43",
-    "src/community/pages/Collection.jsx:108"
+    "src/community/pages/Collection.jsx:38",
+    "src/community/pages/Collection.jsx:103"
   ],
   "Could not update follow status.": [
-    "src/community/pages/Collection.jsx:62",
-    "src/community/pages/Space.jsx:121",
-    "src/community/pages/Studio.jsx:61"
+    "src/community/pages/Collection.jsx:57",
+    "src/community/pages/Space.jsx:116",
+    "src/community/pages/Studio.jsx:56"
   ],
   "All collections": [
-    "src/community/pages/Collection.jsx:74"
+    "src/community/pages/Collection.jsx:69"
   ],
   "Manage": [
-    "src/community/pages/Collection.jsx:81",
+    "src/community/pages/Collection.jsx:76",
     "src/community/pages/Commit.jsx:299",
-    "src/community/pages/Studio.jsx:125"
+    "src/community/pages/Studio.jsx:120"
   ],
   "Curated by": [
-    "src/community/pages/Collection.jsx:85",
-    "src/community/pages/Space.jsx:237"
+    "src/community/pages/Collection.jsx:80",
+    "src/community/pages/Space.jsx:232"
   ],
   "In this collection": [
-    "src/community/pages/Collection.jsx:93"
+    "src/community/pages/Collection.jsx:88"
   ],
   "A curated set of MistWarp projects.": [
-    "src/community/pages/Collection.jsx:94"
+    "src/community/pages/Collection.jsx:89"
   ],
   "This collection is empty": [
-    "src/community/pages/Collection.jsx:100"
+    "src/community/pages/Collection.jsx:95"
   ],
   "The curator has not added any projects yet.": [
-    "src/community/pages/Collection.jsx:100"
+    "src/community/pages/Collection.jsx:95"
   ],
   "Talk about the projects in this collection.": [
-    "src/community/pages/Collection.jsx:109"
+    "src/community/pages/Collection.jsx:104"
   ],
   "Finding this commit": [
     "src/community/pages/Commit.jsx:69",
@@ -3892,7 +3912,7 @@
     "src/community/pages/Explore.jsx:163",
     "src/community/pages/MyStuff.jsx:1719",
     "src/community/pages/Profile.jsx:632",
-    "src/community/pages/Search.jsx:98"
+    "src/community/pages/Search.jsx:111"
   ],
   "Could not load projects.": [
     "src/community/pages/Explore.jsx:201"
@@ -3902,7 +3922,7 @@
   ],
   "Load more ({value1} left)": [
     "src/community/pages/Explore.jsx:218",
-    "src/community/pages/Search.jsx:189",
+    "src/community/pages/Search.jsx:204",
     "src/community/pages/Spaces.jsx:321"
   ],
   "Users {name} follows": [
@@ -3970,8 +3990,8 @@
     "src/community/pages/Group.jsx:242",
     "src/community/pages/MyStuff.jsx:219",
     "src/community/pages/MyStuff.jsx:1725",
-    "src/community/pages/Space.jsx:258",
-    "src/community/pages/Studio.jsx:147"
+    "src/community/pages/Space.jsx:253",
+    "src/community/pages/Studio.jsx:142"
   ],
   "Projects assigned to this group will appear here.": [
     "src/community/pages/Group.jsx:242"
@@ -4065,10 +4085,10 @@
     "src/community/pages/Groups.jsx:53"
   ],
   "Organisations that share projects, spaces, members, and funding.": [
-    "src/community/pages/Groups.jsx:82"
+    "src/community/pages/Groups.jsx:81"
   ],
   "New group": [
-    "src/community/pages/Groups.jsx:83"
+    "src/community/pages/Groups.jsx:82"
   ],
   "Search groups": [
     "src/community/pages/Groups.jsx:97",
@@ -4236,7 +4256,7 @@
   "Followers": [
     "src/community/pages/Leaderboard.jsx:22",
     "src/community/pages/Profile.jsx:703",
-    "src/community/pages/Studio.jsx:129"
+    "src/community/pages/Studio.jsx:124"
   ],
   "{count} loves": [
     "src/community/pages/Leaderboard.jsx:56"
@@ -4251,20 +4271,20 @@
     "src/community/pages/Leaderboard.jsx:104"
   ],
   "No one on this leaderboard yet": [
-    "src/community/pages/Leaderboard.jsx:133"
+    "src/community/pages/Leaderboard.jsx:130"
   ],
   "Check back once the community has been active for a while.": [
-    "src/community/pages/Leaderboard.jsx:134"
+    "src/community/pages/Leaderboard.jsx:131"
   ],
   "Account #{value1}": [
-    "src/community/pages/Leaderboard.jsx:156",
+    "src/community/pages/Leaderboard.jsx:153",
     "src/community/pages/Profile.jsx:921"
   ],
   "Account number unavailable": [
-    "src/community/pages/Leaderboard.jsx:157"
+    "src/community/pages/Leaderboard.jsx:154"
   ],
   "{count, plural, one {# shared project} other {# shared projects}}": [
-    "src/community/pages/Leaderboard.jsx:162"
+    "src/community/pages/Leaderboard.jsx:159"
   ],
   "Analytics": [
     "src/community/pages/ManageProject.jsx:71",
@@ -4658,8 +4678,8 @@
   "Curators": [
     "src/community/pages/ManageSpace.jsx:26",
     "src/community/pages/ManageSpace.jsx:709",
-    "src/community/pages/Studio.jsx:91",
-    "src/community/pages/Studio.jsx:161"
+    "src/community/pages/Studio.jsx:86",
+    "src/community/pages/Studio.jsx:156"
   ],
   "Danger zone": [
     "src/community/pages/ManageSpace.jsx:28",
@@ -4855,7 +4875,7 @@
   ],
   "Curator": [
     "src/community/pages/ManageSpace.jsx:727",
-    "src/community/pages/Studio.jsx:162"
+    "src/community/pages/Studio.jsx:157"
   ],
   "Cancelling…": [
     "src/community/pages/ManageSpace.jsx:729"
@@ -5285,10 +5305,10 @@
     "src/community/pages/Post.jsx:52"
   ],
   "That page does not exist.": [
-    "src/community/pages/NotFound.jsx:14"
+    "src/community/pages/NotFound.jsx:17"
   ],
   "Return to the MistWarp home page": [
-    "src/community/pages/NotFound.jsx:15"
+    "src/community/pages/NotFound.jsx:21"
   ],
   "posted": [
     "src/community/pages/Notifications.jsx:368"
@@ -5397,9 +5417,6 @@
     "src/community/pages/PaidPerks.jsx:173"
   ],
   "Your membership": [
-    "src/community/pages/PaidPerks.jsx:183"
-  ],
-  "Recommended": [
     "src/community/pages/PaidPerks.jsx:183"
   ],
   "Always free": [
@@ -5557,9 +5574,9 @@
   "Comments": [
     "src/community/pages/Profile.jsx:734",
     "src/community/pages/Project.jsx:1449",
-    "src/community/pages/Space.jsx:264",
-    "src/community/pages/Studio.jsx:90",
-    "src/community/pages/Studio.jsx:155"
+    "src/community/pages/Space.jsx:259",
+    "src/community/pages/Studio.jsx:85",
+    "src/community/pages/Studio.jsx:150"
   ],
   "Turning on…": [
     "src/community/pages/Profile.jsx:740"
@@ -6097,9 +6114,6 @@
   "Stable": [
     "src/community/pages/Project.jsx:2845"
   ],
-  "Beta": [
-    "src/community/pages/Project.jsx:2846"
-  ],
   "Development": [
     "src/community/pages/Project.jsx:2847"
   ],
@@ -6372,7 +6386,7 @@
   ],
   "{count, plural, one {# project} other {# projects}}": [
     "src/community/pages/RemixTree.jsx:242",
-    "src/community/pages/Search.jsx:121"
+    "src/community/pages/Search.jsx:136"
   ],
   "No projects found in this tree.": [
     "src/community/pages/RemixTree.jsx:251"
@@ -6603,28 +6617,28 @@
     "src/community/pages/Search.jsx:24"
   ],
   "{count, plural, one {# follower} other {# followers}}": [
-    "src/community/pages/Search.jsx:119"
+    "src/community/pages/Search.jsx:134"
   ],
   "Results for \"{value1}\"": [
-    "src/community/pages/Search.jsx:150"
+    "src/community/pages/Search.jsx:165"
   ],
   "Could not load these results.": [
-    "src/community/pages/Search.jsx:159"
+    "src/community/pages/Search.jsx:174"
   ],
   "See all {value1}": [
-    "src/community/pages/Search.jsx:167"
+    "src/community/pages/Search.jsx:182"
   ],
   "Nothing matched that search": [
-    "src/community/pages/Search.jsx:173"
+    "src/community/pages/Search.jsx:188"
   ],
   "No projects matched that search": [
-    "src/community/pages/Search.jsx:185"
+    "src/community/pages/Search.jsx:200"
   ],
   "No people matched that search": [
-    "src/community/pages/Search.jsx:196"
+    "src/community/pages/Search.jsx:211"
   ],
   "No studios or challenges matched that search": [
-    "src/community/pages/Search.jsx:198"
+    "src/community/pages/Search.jsx:213"
   ],
   "Ask each project": [
     "src/community/pages/Settings.jsx:54"
@@ -6906,71 +6920,71 @@
     "src/community/pages/Settings.jsx:967"
   ],
   "Could not respond to the invitation.": [
-    "src/community/pages/Space.jsx:131",
-    "src/community/pages/Studio.jsx:80"
+    "src/community/pages/Space.jsx:126",
+    "src/community/pages/Studio.jsx:75"
   ],
   "Could not rate this space.": [
-    "src/community/pages/Space.jsx:150"
+    "src/community/pages/Space.jsx:145"
   ],
   "Loading space…": [
-    "src/community/pages/Space.jsx:167"
+    "src/community/pages/Space.jsx:162"
   ],
   "All spaces": [
-    "src/community/pages/Space.jsx:180"
+    "src/community/pages/Space.jsx:175"
   ],
   "Manage space": [
-    "src/community/pages/Space.jsx:190"
+    "src/community/pages/Space.jsx:185"
   ],
   "Created by": [
-    "src/community/pages/Space.jsx:196",
-    "src/community/pages/Studio.jsx:130"
+    "src/community/pages/Space.jsx:191",
+    "src/community/pages/Studio.jsx:125"
   ],
   "You have been invited to curate this space.": [
-    "src/community/pages/Space.jsx:202"
+    "src/community/pages/Space.jsx:197"
   ],
   "Accept invitation": [
-    "src/community/pages/Space.jsx:205"
+    "src/community/pages/Space.jsx:200"
   ],
   "Curators can add and remove projects and update its details.": [
-    "src/community/pages/Space.jsx:210"
+    "src/community/pages/Space.jsx:205"
   ],
   "{count} comments": [
-    "src/community/pages/Space.jsx:222"
+    "src/community/pages/Space.jsx:217"
   ],
   "{count, plural, one {project} other {projects}}": [
-    "src/community/pages/Space.jsx:226"
+    "src/community/pages/Space.jsx:221"
   ],
   "{count, plural, one {follower} other {followers}}": [
-    "src/community/pages/Space.jsx:227"
+    "src/community/pages/Space.jsx:222"
   ],
   "{count, plural, one {team member} other {team members}}": [
-    "src/community/pages/Space.jsx:228"
+    "src/community/pages/Space.jsx:223"
   ],
   "Ends {date}": [
-    "src/community/pages/Space.jsx:230"
+    "src/community/pages/Space.jsx:225"
   ],
   "The people who choose and organise projects in this space.": [
-    "src/community/pages/Space.jsx:238"
+    "src/community/pages/Space.jsx:233"
   ],
   "This space is open for project submissions.": [
-    "src/community/pages/Space.jsx:252"
+    "src/community/pages/Space.jsx:247"
   ],
   "Curators choose the projects shown here.": [
-    "src/community/pages/Space.jsx:252"
+    "src/community/pages/Space.jsx:247"
   ],
   "Add the first project to get this space started.": [
-    "src/community/pages/Space.jsx:259"
+    "src/community/pages/Space.jsx:254"
   ],
   "The curators have not added anything yet.": [
-    "src/community/pages/Space.jsx:259",
-    "src/community/pages/Studio.jsx:148"
+    "src/community/pages/Space.jsx:254",
+    "src/community/pages/Studio.jsx:143"
   ],
   "Talk about this space and reply to other people.": [
-    "src/community/pages/Space.jsx:264"
+    "src/community/pages/Space.jsx:259"
   ],
   "Your spaces": [
     "src/community/pages/Spaces.jsx:21",
-    "src/community/pages/Spaces.jsx:218"
+    "src/community/pages/Spaces.jsx:217"
   ],
   "Could not load more spaces.": [
     "src/community/pages/Spaces.jsx:150"
@@ -6985,10 +6999,10 @@
     "src/community/pages/Spaces.jsx:201"
   ],
   "Spaces you own, curate, follow, or have been invited to.": [
-    "src/community/pages/Spaces.jsx:215"
+    "src/community/pages/Spaces.jsx:214"
   ],
   "New space": [
-    "src/community/pages/Spaces.jsx:224"
+    "src/community/pages/Spaces.jsx:223"
   ],
   "Create a space": [
     "src/community/pages/Spaces.jsx:231"
@@ -7137,31 +7151,31 @@
     "src/community/pages/Status.jsx:104"
   ],
   "All studios": [
-    "src/community/pages/Studio.jsx:101"
+    "src/community/pages/Studio.jsx:96"
   ],
   "You have been invited to curate this studio.": [
-    "src/community/pages/Studio.jsx:107"
+    "src/community/pages/Studio.jsx:102"
   ],
   "Curators can organise projects and update studio details.": [
-    "src/community/pages/Studio.jsx:116"
+    "src/community/pages/Studio.jsx:111"
   ],
   "Follow studio": [
-    "src/community/pages/Studio.jsx:124"
+    "src/community/pages/Studio.jsx:119"
   ],
   "Total play time": [
-    "src/community/pages/Studio.jsx:128"
+    "src/community/pages/Studio.jsx:123"
   ],
   "Projects collected and shared by this studio.": [
-    "src/community/pages/Studio.jsx:141"
+    "src/community/pages/Studio.jsx:136"
   ],
   "Add the first project to this studio.": [
-    "src/community/pages/Studio.jsx:148"
+    "src/community/pages/Studio.jsx:143"
   ],
   "Talk with the studio community.": [
-    "src/community/pages/Studio.jsx:155"
+    "src/community/pages/Studio.jsx:150"
   ],
   "The people who organise this studio.": [
-    "src/community/pages/Studio.jsx:161"
+    "src/community/pages/Studio.jsx:156"
   ],
   "Complete every field before sending your request.": [
     "src/community/pages/Support.jsx:79"
@@ -7296,25 +7310,25 @@
     "src/community/pages/Themes.jsx:165"
   ],
   "Share your current look with the WarpTheme community.": [
-    "src/community/pages/Themes.jsx:178"
+    "src/community/pages/Themes.jsx:177"
   ],
   "Discover community-made looks for MistWarp.": [
-    "src/community/pages/Themes.jsx:178"
+    "src/community/pages/Themes.jsx:177"
   ],
   "Publish": [
-    "src/community/pages/Themes.jsx:182"
+    "src/community/pages/Themes.jsx:181"
   ],
   "Search themes": [
-    "src/community/pages/Themes.jsx:187"
+    "src/community/pages/Themes.jsx:186"
   ],
   "Search by theme or creator": [
-    "src/community/pages/Themes.jsx:187"
+    "src/community/pages/Themes.jsx:186"
   ],
   "Sort themes": [
-    "src/community/pages/Themes.jsx:189"
+    "src/community/pages/Themes.jsx:188"
   ],
   "{count, plural, one {# theme} other {# themes}}": [
-    "src/community/pages/Themes.jsx:194"
+    "src/community/pages/Themes.jsx:193"
   ],
   "No themes found": [
     "src/community/pages/Themes.jsx:204"
