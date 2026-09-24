@@ -1,7 +1,7 @@
 import {getCommunityLocale} from '../locale.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {CalendarDays, Gavel, Info, Medal, MessageCircle, ScrollText, Settings, Sparkles, Star, Trophy, UserMinus, UserPlus, Users} from 'lucide-react';
 import api from '../api';
@@ -9,6 +9,7 @@ import Avatar from '../components/Avatar.jsx';
 import GroupTag from '../components/GroupTag.jsx';
 import UserLink from '../components/UserLink.jsx';
 import CommentThread from '../components/CommentThread.jsx';
+import useSpaceCommentSource from '../space-comments.js';
 import ProjectCard from '../components/ProjectCard.jsx';
 import RichText from '../components/RichText.jsx';
 import SpaceProjectPicker from '../components/SpaceProjectPicker.jsx';
@@ -272,13 +273,7 @@ const Challenge = ({id, space, user, login, load}) => {
     const liveSpace = {...space, phase: currentPhase};
     const criteria = space.criteria || [];
     const judges = space.judges || [];
-    const commentSource = useMemo(() => ({
-        list: options => api.spaceComments(id, options),
-        add: (content, parent) => api.addSpaceComment(id, content, parent),
-        remove: commentId => api.deleteSpaceComment(id, commentId),
-        edit: (commentId, content) => api.editSpaceComment(id, commentId, content),
-        react: (commentId, type) => api.reactSpaceComment(id, commentId, type)
-    }), [id]);
+    const commentSource = useSpaceCommentSource(id);
 
     useEffect(() => {
         const timer = setInterval(() => setNow(Date.now()), 30000);
@@ -343,8 +338,7 @@ const Challenge = ({id, space, user, login, load}) => {
         {key: 'overview', label: communityText('Overview')},
         {key: 'submissions', label: <>{communityText('Submissions')} <b>{space.projects.length}</b></>},
         ...(space.isJudge && currentPhase === 'judging' ? [{key: 'judging', label: communityText('Judge entries')}] : []),
-        ...(currentPhase === 'results' ? [{key: 'results', label: communityText('Results')}] : []),
-        {key: 'community', label: communityText('Community')}
+        ...(currentPhase === 'results' ? [{key: 'results', label: communityText('Results')}] : [])
     ];
 
     useEffect(() => {
@@ -441,6 +435,10 @@ const Challenge = ({id, space, user, login, load}) => {
                             ) : <p className={styles.sidebarEmpty}>{communityText('No judges announced yet.')}</p>}
                         </div>
                     </aside>
+                    <section className={styles.community} id="space-comments">
+                        <SectionHeading icon={MessageCircle} title={communityText('Community')} lead={communityText('Questions, progress updates, and discussion about the challenge.')} />
+                        <CommentThread source={commentSource} canModerate={Boolean(space.canManage)} canPin={Boolean(space.canManage)} reportContext={`challenge ${space.title}`} />
+                    </section>
                 </div>
             ) : null}
             {tab === 'submissions' ? (
@@ -465,12 +463,6 @@ const Challenge = ({id, space, user, login, load}) => {
                 <section>
                     <SectionHeading icon={Gavel} title={communityText('Judge entries')} lead={communityText('{value1} of {value2} entries scored by you.', {value1: space.projects.filter(project => project.myScore?.edited).length, value2: space.projects.length})} />
                     {space.projects.length ? <CardGrid>{space.projects.map(project => <Entry key={project.id} challengeId={id} project={project} challenge={liveSpace} user={user} login={login} load={load} showScore />)}</CardGrid> : <EmptyState icon={Gavel} title={communityText('No entries to judge')}>{communityText('Submissions will appear here after the deadline.')}</EmptyState>}
-                </section>
-            ) : null}
-            {tab === 'community' ? (
-                <section>
-                    <SectionHeading icon={MessageCircle} title={communityText('Community')} lead={communityText('Questions, progress updates, and discussion about the challenge.')} />
-                    <CommentThread source={commentSource} canModerate={Boolean(space.canManage)} reportContext={`challenge ${space.title}`} />
                 </section>
             ) : null}
         </main>
