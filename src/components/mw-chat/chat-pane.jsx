@@ -534,22 +534,13 @@ ReplyPreview.propTypes = {
     state: PropTypes.object.isRequired
 };
 
-const MessageBody = ({connection, intl, message, onJump, state}) => {
+const MessageBody = ({connection, intl, message, state}) => {
     const tokens = useMemo(() => parse(message.content, richContext(state, message)), [
         message.content, message.pings, state.users, state.roles, state.emojis, state.channels
     ]);
     const jumbo = onlyEmoji(tokens);
     return (
         <React.Fragment>
-            {message.reply_to ? (
-                <ReplyPreview
-                    connection={connection}
-                    intl={intl}
-                    message={message}
-                    onJump={onJump}
-                    state={state}
-                />
-            ) : null}
             {tokens.length ? (
                 <p className={classNames(styles.content, {[styles.jumbo]: jumbo})}>
                     <RichText
@@ -580,7 +571,6 @@ MessageBody.propTypes = {
     connection: PropTypes.object.isRequired,
     intl: intlShape.isRequired,
     message: PropTypes.object.isRequired,
-    onJump: PropTypes.func.isRequired,
     state: PropTypes.object.isRequired
 };
 
@@ -600,6 +590,17 @@ const MessageGroup = ({connection, group, intl, onJump, state}) => {
                         [styles.pinged]: Boolean(pingsMe(state, message))
                     })}
                 >
+                    {message.reply_to ? (
+                        <div className={styles.replyRow}>
+                            <ReplyPreview
+                                connection={connection}
+                                intl={intl}
+                                message={message}
+                                onJump={onJump}
+                                state={state}
+                            />
+                        </div>
+                    ) : null}
                     {index === 0 ? (
                         <ProfileLink
                             className={styles.avatar}
@@ -636,7 +637,6 @@ const MessageGroup = ({connection, group, intl, onJump, state}) => {
                             connection={connection}
                             intl={intl}
                             message={message}
-                            onJump={onJump}
                             state={state}
                         />
                     </div>

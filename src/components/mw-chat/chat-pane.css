@@ -489,12 +489,18 @@ a.author:hover {
     user-select: text;
 }
 
+.reply-row {
+    grid-column: 1 / -1;
+    min-width: 0;
+    padding: 0.125rem 0 0.125rem 0.5rem;
+}
+
 .reply {
     display: flex;
     align-items: center;
     gap: 0.3rem;
     max-width: 100%;
-    margin: 0 0 0.125rem;
+    margin: 0;
     padding: 0;
     border: 0;
     background: transparent;
@@ -520,7 +526,7 @@ a.author:hover {
 }
 
 .reply-name {
-    flex: 0 1 auto;
+    flex: 0 0 auto;
     max-width: 55%;
     overflow: hidden;
     color: var(--chat-text);
