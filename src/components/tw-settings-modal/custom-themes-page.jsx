@@ -447,10 +447,17 @@ class CustomThemesPage extends React.Component {
                         />
                     </h3>
                     <p className={styles.detail}>
-                        <FormattedMessage
-                            defaultMessage="Create one from your current look, or browse the marketplace."
-                            id="mw.customThemes.empty.hint"
-                        />
+                        {this.props.onOpenThemeMarketplace ? (
+                            <FormattedMessage
+                                defaultMessage="Create one from your current look, or browse the marketplace."
+                                id="mw.customThemes.empty.hint"
+                            />
+                        ) : (
+                            <FormattedMessage
+                                defaultMessage="Create one from your current look, or import a theme file."
+                                id="mw.customThemes.empty.hintOffline"
+                            />
+                        )}
                     </p>
                     <div className={styles.ctEmptyActions}>
                         <button
@@ -464,17 +471,19 @@ class CustomThemesPage extends React.Component {
                                 id="mw.customThemes.empty.create"
                             />
                         </button>
-                        <button
-                            type="button"
-                            className={styles.ctButtonSecondary}
-                            onClick={this.props.onOpenThemeMarketplace}
-                        >
-                            <Store size={14} />
-                            <FormattedMessage
-                                defaultMessage="Browse marketplace"
-                                id="mw.customThemes.empty.marketplace"
-                            />
-                        </button>
+                        {this.props.onOpenThemeMarketplace ? (
+                            <button
+                                type="button"
+                                className={styles.ctButtonSecondary}
+                                onClick={this.props.onOpenThemeMarketplace}
+                            >
+                                <Store size={14} />
+                                <FormattedMessage
+                                    defaultMessage="Browse marketplace"
+                                    id="mw.customThemes.empty.marketplace"
+                                />
+                            </button>
+                        ) : null}
                     </div>
                 </div>
             );
@@ -820,34 +829,36 @@ class CustomThemesPage extends React.Component {
                     </button>
                 </div>
 
-                <div className={styles.ctActionCard}>
-                    <div className={styles.ctActionIcon}><Store size={18} /></div>
-                    <div className={styles.ctActionBody}>
-                        <h3>
+                {this.props.onOpenThemeMarketplace ? (
+                    <div className={styles.ctActionCard}>
+                        <div className={styles.ctActionIcon}><Store size={18} /></div>
+                        <div className={styles.ctActionBody}>
+                            <h3>
+                                <FormattedMessage
+                                    defaultMessage="WarpTheme marketplace"
+                                    id="mw.customThemes.marketplace.title"
+                                />
+                            </h3>
+                            <p className={styles.detail}>
+                                <FormattedMessage
+                                    defaultMessage="Browse community themes and add them to your library."
+                                    id="mw.customThemes.marketplace.hint"
+                                />
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            className={styles.ctButtonSecondary}
+                            onClick={this.props.onOpenThemeMarketplace}
+                        >
+                            <Store size={14} />
                             <FormattedMessage
-                                defaultMessage="WarpTheme marketplace"
-                                id="mw.customThemes.marketplace.title"
+                                defaultMessage="Open"
+                                id="mw.customThemes.marketplace.open"
                             />
-                        </h3>
-                        <p className={styles.detail}>
-                            <FormattedMessage
-                                defaultMessage="Browse community themes and add them to your library."
-                                id="mw.customThemes.marketplace.hint"
-                            />
-                        </p>
+                        </button>
                     </div>
-                    <button
-                        type="button"
-                        className={styles.ctButtonSecondary}
-                        onClick={this.props.onOpenThemeMarketplace}
-                    >
-                        <Store size={14} />
-                        <FormattedMessage
-                            defaultMessage="Open"
-                            id="mw.customThemes.marketplace.open"
-                        />
-                    </button>
-                </div>
+                ) : null}
             </div>
         );
     }
