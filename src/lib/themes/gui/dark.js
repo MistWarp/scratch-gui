@@ -20,6 +20,12 @@ const guiColors = {
     'ui-black-transparent': '#ffffff26',
 
     'text-primary': '#eeeeee',
+    'text-primary-transparent': 'rgba(238, 238, 238, 0.7)',
+
+    'status-success': '#58c78b',
+    'status-warning': '#f0b653',
+    'status-danger': '#ef6a6a',
+    'status-info': '#6db9f2',
 
     'menu-bar-background': '#333333',
 

@@ -54,12 +54,12 @@
 }
 
 .item-danger {
-    color: #e25555;
+    color: var(--mw-danger);
 }
 
 .item-danger:hover:not(:disabled),
 .item-danger:focus-visible {
-    background: color-mix(in srgb, #e25555 10%, transparent);
+    background: color-mix(in srgb, var(--mw-danger) 10%, transparent);
 }
 
 @media (max-width: 620px) {

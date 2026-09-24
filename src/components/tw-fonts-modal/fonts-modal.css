@@ -27,15 +27,18 @@
     gap: 0.5rem;
     width: 100%;
     align-items: center;
-    background: none;
-    padding: 0.5rem;
+    background: $ui-modal-inset;
+    color: $text-primary;
+    padding: 1rem 0.75rem;
     margin: 0;
-    border: 2px solid $ui-black-transparent;
-    border-radius: 0.5rem;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
 }
 .open-button:hover {
     color: $looks-secondary;
-    border-color: $looks-secondary;
+    background: color-mix(in srgb, $looks-secondary 12%, $ui-modal-background);
 }
 .open-button-image {
     width: 64px;

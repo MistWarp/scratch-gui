@@ -53,7 +53,6 @@
     background: var(--accent-soft);
     font-size: var(--fs-2xs);
     font-weight: 700;
-    letter-spacing: .04em;
     text-transform: none;
 }
 
@@ -151,7 +150,7 @@
 }
 
 .delete:hover {
-    color: #e0245e;
+    color: var(--mw-danger);
 }
 
 .edit:hover {

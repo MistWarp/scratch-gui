@@ -2,63 +2,76 @@
 
 .modal-content {
     max-width: 550px;
-    margin-top: 50px;
 }
 
 .body {
-    background: $ui-white;
-    padding: 1.5rem 2.25rem;
+    background: $ui-modal-background;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
 }
 
-.body p,
-.unsandboxed-container,
-.url-input,
-.text-code-input {
-    margin: 1rem 0;
-    display: block;
+.body p {
+    margin: 0;
+    font-size: 0.875rem;
 }
 
 .type-selector-container {
     display: flex;
-    justify-content: space-around;
+    gap: 0.35rem;
+    padding: 0.25rem;
+    border-radius: 8px;
+    background: $ui-black-transparent;
 }
 .type-selector-button {
     appearance: none;
-    width: 100%;
+    flex: 1;
     cursor: pointer;
     border: 0;
-    border-bottom: 0.25rem solid $ui-tertiary;
+    border-radius: 6px;
     background: transparent;
-    color: inherit;
+    color: $text-primary;
     font: inherit;
-    margin: 0 1rem;
-    padding: 0.5rem 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin: 0;
+    padding: 0.45rem 0.75rem;
     text-align: center;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: background 0.12s ease, color 0.12s ease;
 }
 .type-selector-button:disabled {
     cursor: default;
     opacity: 0.65;
 }
-.type-selector-button[data-active="true"] {
-    border-color: $looks-secondary;
+.type-selector-button:hover:not(:disabled) {
+    background: $ui-black-transparent;
 }
-.type-selector-button:active {
-    border-color: $looks-transparent;
+.type-selector-button[data-active="true"] {
+    background: $ui-modal-background;
+    color: $looks-secondary;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 
 .url-input,
 .text-code-input {
     width: 100%;
+    box-sizing: border-box;
     border: 1px solid $ui-black-transparent;
-    border-radius: 0.25rem;
-    padding: 0.5rem;
-    font-size: inherit;
+    border-radius: 6px;
+    padding: 0.55rem 0.7rem;
+    background: $input-background;
+    color: $text-primary;
+    font-size: 0.875rem;
+    font-family: inherit;
 }
-.url-input {
-    height: 3rem;
+.url-input:focus,
+.text-code-input:focus {
+    outline: none;
+    border-color: $looks-secondary;
 }
 .text-code-input {
     min-height: 3rem;
@@ -66,6 +79,7 @@
     min-width: 100%;
     max-width: 100%;
     font-family: monospace;
+    resize: vertical;
 }
 
 .unsandboxed-container {
@@ -76,22 +90,23 @@
     margin-right: 0.5rem;
 }
 .trusted-extension,
-.unsandboxed-warning {
-    padding: 0.5rem;
-    border-radius: 0.25rem;
+.unsandboxed-warning,
+.load-error {
+    padding: 0.6rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    line-height: 1.4;
 }
 .trusted-extension {
-    background-color: rgba(94, 255, 94, 0.25);
-    border: 1px solid green;
+    background: color-mix(in srgb, $status-warning 12%, transparent);
+    color: $text-primary;
 }
 .load-error {
-    color: $error-primary;
-    background: $error-transparent;
-    border: 1px solid $error-primary;
+    color: $status-danger;
+    background: color-mix(in srgb, $status-danger 12%, transparent);
 }
 .unsandboxed-warning {
-    background-color: rgba(255, 81, 81, 0.25);
-    border: 1px solid red;
+    background: color-mix(in srgb, $status-danger 12%, transparent);
 }
 .unsandboxed-warning > *:not(:last-child) {
     display: block;
@@ -103,18 +118,26 @@
     justify-content: flex-end;
 }
 .load-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2rem;
+    padding: 0 0.9rem;
+    border-radius: 6px;
+    border: 1px solid transparent;
     font: inherit;
-    color: inherit;
-    padding: 0.75rem 1rem;
-    border-radius: 0.25rem;
-    border: 1px solid $ui-black-transparent;
-    font-weight: 600;
-    font-size: 0.85rem;
-    color: white;
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: $accent-foreground;
     background: $looks-secondary;
+    cursor: pointer;
+}
+.load-button:hover:not(:disabled) {
+    background: color-mix(in srgb, $looks-secondary 88%, black);
 }
 .load-button:disabled {
-    opacity: 0.8;
+    opacity: 0.6;
+    cursor: default;
 }
 
 @media only screen and (max-width: 480px) {
@@ -125,7 +148,6 @@
 
     .type-selector-button {
         min-height: 44px;
-        margin: 0 0.25rem;
     }
 
     .url-input,

@@ -136,8 +136,8 @@
 }
 
 .kind-bug {
-    background: color-mix(in srgb, #e25555 18%, transparent);
-    color: #e25555;
+    background: color-mix(in srgb, var(--mw-danger) 18%, transparent);
+    color: var(--mw-danger);
 }
 
 .kind-suggestion {

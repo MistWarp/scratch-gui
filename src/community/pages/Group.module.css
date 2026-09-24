@@ -34,7 +34,7 @@
 
 .profileRail {
     position: sticky;
-    top: 82px;
+    top: calc(var(--nav-h) + 28px);
     grid-area: rail;
 }
 
@@ -47,7 +47,6 @@
     color: var(--accent);
     font-size: var(--fs-sm);
     font-weight: 700;
-    letter-spacing: .05em;
     text-transform: none;
 }
 

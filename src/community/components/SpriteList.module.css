@@ -1,6 +1,6 @@
 .sidebar {
     position: sticky;
-    top: 18px;
+    top: calc(var(--nav-h) + 16px);
     display: grid;
     gap: 4px;
     min-width: 0;

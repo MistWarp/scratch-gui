@@ -490,19 +490,6 @@ class GameItemsModalComponent extends React.Component {
                 onRequestClose={onRequestClose}
             >
                 <Box className={styles.body}>
-                    <div
-                        className={styles.tabs}
-                        role="tablist"
-                    >
-                        <span className={`${styles.tab} ${styles.tabSelected}`}>
-                            <Backpack size={15} />
-                            <FormattedMessage
-                                defaultMessage="Items"
-                                description="Items tab in game items modal"
-                                id="mw.gameItemsModal.itemsTab"
-                            />
-                        </span>
-                    </div>
                     <div className={styles.panel}>
                         <div className={styles.sectionHeader}>
                             <h3 className={styles.sectionTitle}>

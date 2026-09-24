@@ -170,7 +170,7 @@ export class Debugger extends React.Component {
                         >
                             <span
                                 className={debuggerStyles['mw-debugger-tab-icon']}
-                                style={{maskImage: `url(${tab.icon})`, WebkitMaskImage: `url(${tab.icon})`}}
+                                style={{maskImage: `url("${tab.icon}")`, WebkitMaskImage: `url("${tab.icon}")`}}
                             />
                             {tab.label}
                         </button>
@@ -193,7 +193,7 @@ export class Debugger extends React.Component {
                         >
                             <span
                                 className={debuggerStyles['mw-debugger-toolbar-icon']}
-                                style={{maskImage: `url(${playIcon})`, WebkitMaskImage: `url(${playIcon})`}}
+                                style={{maskImage: `url("${playIcon}")`, WebkitMaskImage: `url("${playIcon}")`}}
                             />
                             {'Resume'}
                         </button>
@@ -206,7 +206,7 @@ export class Debugger extends React.Component {
                         >
                             <span
                                 className={debuggerStyles['mw-debugger-toolbar-icon']}
-                                style={{maskImage: `url(${stepIcon})`, WebkitMaskImage: `url(${stepIcon})`}}
+                                style={{maskImage: `url("${stepIcon}")`, WebkitMaskImage: `url("${stepIcon}")`}}
                             />
                             {'Step'}
                         </button>
@@ -224,8 +224,8 @@ export class Debugger extends React.Component {
                                 <span
                                     className={debuggerStyles['mw-debugger-toolbar-icon']}
                                     style={{
-                                        maskImage: `url(${button.icon})`,
-                                        WebkitMaskImage: `url(${button.icon})`
+                                        maskImage: `url("${button.icon}")`,
+                                        WebkitMaskImage: `url("${button.icon}")`
                                     }}
                                 />
                             )}

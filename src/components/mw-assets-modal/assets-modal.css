@@ -152,8 +152,8 @@
 
 .empty {
     padding: 0.75rem;
-    border: 1px dashed $ui-black-transparent;
-    border-radius: 0.5rem;
+    border-radius: 8px;
+    background: $ui-modal-inset;
     color: $text-primary-transparent;
     text-align: center;
     font-size: 0.85rem;
@@ -164,8 +164,8 @@
     flex-grow: 1;
     min-height: 6rem;
     padding: 0.5rem;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 0.5rem;
+    border-radius: 8px;
+    background: $ui-modal-inset;
 }
 
 .folder {
@@ -292,8 +292,8 @@
     flex: 1 1 45%;
     min-width: 0;
     padding: 0.75rem;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 0.5rem;
+    border-radius: 8px;
+    background: $ui-modal-inset;
     overflow: auto;
     display: flex;
     flex-direction: column;

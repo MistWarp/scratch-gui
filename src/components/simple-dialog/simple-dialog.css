@@ -12,9 +12,11 @@
 
 .input {
     width: 100%;
-    padding: 0.5rem;
-    border: 2px solid var(--ui-tertiary, #ccc);
-    border-radius: 4px;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+    border-radius: 6px;
+    background: var(--input-background, #fff);
+    color: inherit;
     font-size: 1rem;
     font-family: inherit;
     margin-bottom: 1rem;
@@ -23,7 +25,7 @@
 
 .input:focus {
     outline: none;
-    border-color: var(--ui-primary, #4d97ff);
+    border-color: var(--looks-secondary, #855cd6);
 }
 
 .buttonRow {
@@ -36,49 +38,47 @@
 
 .okButton,
 .cancelButton {
-    padding: 0.5rem 1rem;
-    border: 2px solid transparent;
-    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2rem;
+    padding: 0 0.9rem;
+    border: 1px solid transparent;
+    border-radius: 6px;
     font-size: 0.875rem;
+    font-weight: 700;
     font-family: inherit;
     cursor: pointer;
-    transition: all 0.1s ease;
+    transition: background 0.12s ease, border-color 0.12s ease;
 }
 
 .okButton {
-    background-color: var(--ui-primary, #4d97ff);
-    color: white;
+    background: var(--looks-secondary, #855cd6);
+    color: var(--accent-foreground, #ffffff);
 }
 
 .okButton:hover {
-    background-color: var(--ui-primary-hover, #3b85ff);
-}
-
-.okButton:active {
-    transform: scale(0.98);
-}
-
-.okButton:focus,
-.cancelButton:focus {
-    outline: 2px solid var(--ui-primary, #4d97ff);
-    outline-offset: 2px;
+    background: color-mix(in srgb, var(--looks-secondary, #855cd6) 88%, black);
 }
 
 .cancelButton {
-    background-color: var(--ui-secondary, #e6e6e6);
-    color: var(--ui-secondary-foreground, #575e75);
+    background: transparent;
+    border-color: var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+    color: var(--text-primary, #575e75);
 }
 
 .cancelButton:hover {
-    background-color: var(--ui-secondary-hover, #d9d9d9);
+    background: var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
 }
 
-.cancelButton:active {
-    transform: scale(0.98);
+.okButton:focus-visible,
+.cancelButton:focus-visible {
+    outline: 2px solid var(--looks-secondary, #855cd6);
+    outline-offset: 2px;
 }
 
-.input:focus {
-    outline: 2px solid var(--ui-primary, #4d97ff);
+.input:focus-visible {
+    outline: 2px solid var(--looks-secondary, #855cd6);
     outline-offset: 2px;
 }
 

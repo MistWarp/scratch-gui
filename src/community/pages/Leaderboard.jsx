@@ -6,7 +6,7 @@ import {Users, Trophy, Heart, Play} from 'lucide-react';
 import rotur from '../rotur';
 import api from '../api';
 import useLatest from '../use-latest.js';
-import SectionTabs from '../components/SectionTabs.jsx';
+import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import Avatar from '../components/Avatar.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
@@ -114,17 +114,14 @@ const Leaderboard = () => {
 
     return (
         <main className={styles.page}>
-            <PageHeader icon={Trophy} title={communityText(active.title)} lead={communityText(active.lead)}>
-                <SectionTabs
-                    items={BOARDS}
-                    value={board}
-                    onChange={selectBoard}
-                    className={styles.tabs}
-                    itemClassName={styles.tab}
-                    activeClassName={styles.tabActive}
-                    ariaLabel="Leaderboard type"
-                />
-            </PageHeader>
+            <PageHeader icon={Trophy} title={communityText(active.title)} lead={communityText(active.lead)} />
+            <UnderlineTabs
+                items={BOARDS}
+                value={board}
+                onChange={selectBoard}
+                className={styles.tabs}
+                ariaLabel="Leaderboard type"
+            />
             {users === null ? (
                 <StatusMessage />
             ) : error ? (

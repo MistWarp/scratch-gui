@@ -11,33 +11,8 @@
     margin: 0;
     min-width: 240px;
     overflow: visible;
-    border: 2px solid transparent;
+    border: 1px solid $ui-black-transparent;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-}
-
-.menu:not(.submenu)::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    padding: 2px;
-    border-radius: inherit;
-    background: linear-gradient(to top, $looks-secondary, $ui-secondary);
-
-    -webkit-mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-
-    mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-
-    pointer-events: none;
-}
-
-.submenu .menu::before {
-  content: none;
 }
 
 .menu.left {

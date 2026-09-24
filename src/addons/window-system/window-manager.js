@@ -14,6 +14,15 @@ const css = `
   background: var(--ui-black-transparent, rgba(0, 0, 0, 0.08));
 }
 
+.addon-window:focus {
+  outline: none;
+}
+
+.addon-window-btn:focus-visible {
+  outline: 2px solid var(--looks-secondary, #855cd6);
+  outline-offset: -2px;
+}
+
 .addon-window-btn-close:hover {
   background: var(--red-primary, #e64a4a);
   color: white;
@@ -192,8 +201,10 @@ class AddonWindow {
         this.minHeight = options.minHeight || 150;
         this.maxWidth = options.maxWidth || null;
         this.maxHeight = options.maxHeight || null;
-        this.x = options.x || (Math.random() * 100) + 50;
-        this.y = options.y || (Math.random() * 100) + 50;
+        this.x = typeof options.x === 'number' ? options.x :
+            Math.max(16, Math.round((window.innerWidth - this.width) / 2));
+        this.y = typeof options.y === 'number' ? options.y :
+            Math.max(16, Math.round((window.innerHeight - this.height) / 2));
         this.resizable = options.resizable !== false;
         this.modal = options.modal || false;
         this.closable = options.closable !== false;
@@ -298,7 +309,6 @@ class AddonWindow {
             gap: 6px;
             align-items: center;
             z-index: 1;
-            overflow: hidden;
         `;
         
         // Control buttons
@@ -826,7 +836,7 @@ class AddonWindow {
         };
         document.addEventListener('focusin', this.modalFocusHandler);
         document.addEventListener('keydown', this.modalKeyHandler);
-        (focusable()[0] || this.element).focus();
+        this.element.focus({preventScroll: true});
     }
 
     hideModalBackdrop () {
@@ -1015,8 +1025,10 @@ class NativeAddonWindow {
         this.minHeight = options.minHeight || 150;
         this.maxWidth = options.maxWidth || null;
         this.maxHeight = options.maxHeight || null;
-        this.x = options.x || (Math.random() * 100) + 50;
-        this.y = options.y || (Math.random() * 100) + 50;
+        this.x = typeof options.x === 'number' ? options.x :
+            Math.max(16, Math.round((window.innerWidth - this.width) / 2));
+        this.y = typeof options.y === 'number' ? options.y :
+            Math.max(16, Math.round((window.innerHeight - this.height) / 2));
         this.resizable = options.resizable !== false;
         this.modal = options.modal || false;
         this.closable = options.closable !== false;
