@@ -93,14 +93,6 @@ import {
 import {openCollaborationModal} from '../../reducers/collaboration';
 import {setPlayer} from '../../reducers/mode';
 import {
-    isTimeTravel220022BC,
-    isTimeTravel1920,
-    isTimeTravel1990,
-    isTimeTravel2020,
-    isTimeTravelNow,
-    setTimeTravel
-} from '../../reducers/time-travel';
-import {
     autoUpdateProject,
     getIsUpdating,
     getIsShowingProject,
@@ -128,9 +120,6 @@ import {
     openLoginMenu,
     closeLoginMenu,
     loginMenuOpen,
-    openModeMenu,
-    closeModeMenu,
-    modeMenuOpen,
     errorsMenuOpen,
     openErrorsMenu,
     closeErrorsMenu,
@@ -172,10 +161,6 @@ import styles from './menu-bar.css';
 import ChevronDown from './ChevronDown.jsx';
 
 import mistwarpLogo from '../../community/assets/mistwarp-logo.png';
-import ninetiesLogo from './nineties_logo.svg';
-import catLogo from './cat_logo.svg';
-import prehistoricLogo from './prehistoric-logo.svg';
-import oldtimeyLogo from './oldtimey-logo.svg';
 
 import {
     FilePen, PencilRuler, TriangleAlert, Info, Shuffle,
@@ -245,11 +230,6 @@ const menuLabelMessages = defineMessages({
         id: 'gui.menuBar.file',
         defaultMessage: 'File',
         description: 'Text for file dropdown menu'
-    },
-    mode: {
-        id: 'gui.menuBar.modeMenu',
-        defaultMessage: 'Mode',
-        description: 'Mode menu item in the menu bar'
     },
     more: {
         id: 'mw.menuBar.more',
@@ -446,7 +426,6 @@ class MenuBar extends React.Component {
             'handleClickGitPull',
             'handleClickSaveMwp',
             'handleClickSaveMwpAs',
-            'handleSetMode',
             'handleKeyPress',
             'handleRestoreOption',
             'getSaveToComputerHandler',
@@ -1010,36 +989,6 @@ class MenuBar extends React.Component {
 
     handleClickSaveMwpAs () {
         return this.saveMwp(true);
-    }
-    handleSetMode (mode) {
-        return () => {
-            // Turn on/off filters for modes.
-            if (mode === '1920') {
-                document.documentElement.style.filter = 'brightness(.9)contrast(.8)sepia(1.0)';
-                document.documentElement.style.height = '100%';
-            } else if (mode === '1990') {
-                document.documentElement.style.filter = 'hue-rotate(40deg)';
-                document.documentElement.style.height = '100%';
-            } else {
-                document.documentElement.style.filter = '';
-                document.documentElement.style.height = '';
-            }
-
-            // Change logo for modes
-            if (mode === '1990') {
-                document.getElementById('logo_img').src = ninetiesLogo;
-            } else if (mode === '2020') {
-                document.getElementById('logo_img').src = catLogo;
-            } else if (mode === '1920') {
-                document.getElementById('logo_img').src = oldtimeyLogo;
-            } else if (mode === '220022BC') {
-                document.getElementById('logo_img').src = prehistoricLogo;
-            } else {
-                document.getElementById('logo_img').src = this.props.logo;
-            }
-
-            this.props.onSetTimeTravelMode(mode);
-        };
     }
     handleRestoreOption (restoreFun) {
         return () => {
@@ -2115,54 +2064,6 @@ class MenuBar extends React.Component {
                                 </MenuSection>
                             </MenuBarMenu>
                         </MenuLabel>
-                        {this.props.isTotallyNormal && (
-                            <MenuLabel
-                                ariaLabel={this.props.intl.formatMessage(menuLabelMessages.mode)}
-                                dataItem="mode"
-                                open={this.props.modeMenuOpen}
-                                onOpen={this.props.onClickMode}
-                                onClose={this.props.onRequestCloseMode}
-                            >
-                                <FormattedMessage
-                                    defaultMessage="Mode"
-                                    description="Mode menu item in the menu bar"
-                                    id="gui.menuBar.modeMenu"
-                                />
-                                <MenuBarMenu
-                                    className={classNames(styles.menuBarMenu)}
-                                    mobileBack
-                                    mobileTitle={this.props.intl.formatMessage(menuLabelMessages.mode)}
-                                    onMobileClose={this.props.onRequestCloseMode}
-                                    open={this.props.modeMenuOpen}
-                                    place={this.props.isRtl ? 'left' : 'right'}
-                                >
-                                    <MenuSection>
-                                        <MenuItem onClick={this.handleSetMode('NOW')}>
-                                            <span className={classNames({[styles.inactive]: !this.props.modeNow})}>
-                                                <Check size={14} />
-                                            </span>
-                                            {' '}
-                                            <FormattedMessage
-                                                defaultMessage="Normal mode"
-                                                description="April fools: resets editor to not have any pranks"
-                                                id="gui.menuBar.normalMode"
-                                            />
-                                        </MenuItem>
-                                        <MenuItem onClick={this.handleSetMode('2020')}>
-                                            <span className={classNames({[styles.inactive]: !this.props.mode2020})}>
-                                                <Check size={14} />
-                                            </span>
-                                            {' '}
-                                            <FormattedMessage
-                                                defaultMessage="Caturday mode"
-                                                description="April fools: Cat blocks mode"
-                                                id="gui.menuBar.caturdayMode"
-                                            />
-                                        </MenuItem>
-                                    </MenuSection>
-                                </MenuBarMenu>
-                            </MenuLabel>
-                        )}
                         <MenuLabel
                             ariaLabel={this.props.intl.formatMessage(menuLabelMessages.tools)}
                             dataItem="tools"
@@ -2315,7 +2216,7 @@ class MenuBar extends React.Component {
                                 />
                             </MenuBarItemTooltip>
                         </div>
-                    ) : ((this.props.authorUsername && this.props.authorUsername !== this.props.username) ? (
+                    ) : (this.props.authorUsername ? (
                         <AuthorInfo
                             className={styles.authorInfo}
                             imageUrl={this.props.authorThumbnailUrl}
@@ -2522,16 +2423,9 @@ MenuBar.propTypes = {
     isRtl: PropTypes.bool,
     isShared: PropTypes.bool,
     isShowingProject: PropTypes.bool,
-    isTotallyNormal: PropTypes.bool,
     isUpdating: PropTypes.bool,
     locale: PropTypes.string.isRequired,
     loginMenuOpen: PropTypes.bool,
-    mode1920: PropTypes.bool,
-    mode1990: PropTypes.bool,
-    mode2020: PropTypes.bool,
-    mode220022BC: PropTypes.bool,
-    modeMenuOpen: PropTypes.bool,
-    modeNow: PropTypes.bool,
     onClickAbout: PropTypes.oneOfType([
         PropTypes.func, // button mode: call this callback when the About button is clicked
         PropTypes.arrayOf( // menu mode: list of items in the About menu
@@ -2560,7 +2454,6 @@ MenuBar.propTypes = {
     onClickFile: PropTypes.func,
     onClickWorkspaceBookmarks: PropTypes.func,
     onClickLogin: PropTypes.func,
-    onClickMode: PropTypes.func,
     onClickNew: PropTypes.func,
     onClickNewWindow: PropTypes.func,
     onClickRemix: PropTypes.func,
@@ -2584,12 +2477,10 @@ MenuBar.propTypes = {
     onRequestCloseFile: PropTypes.func,
     onRequestCloseWorkspaceBookmarks: PropTypes.func,
     onRequestCloseLogin: PropTypes.func,
-    onRequestCloseMode: PropTypes.func,
     onClickTools: PropTypes.func,
     onRequestCloseTools: PropTypes.func,
     onRequestOpenAbout: PropTypes.func,
     onSeeCommunity: PropTypes.func,
-    onSetTimeTravelMode: PropTypes.func,
     onShare: PropTypes.func,
     onStartSelectingFileUpload: PropTypes.func,
     onToggleLoginOpen: PropTypes.func,
@@ -2602,14 +2493,11 @@ MenuBar.propTypes = {
     onCloseGitStatus: PropTypes.func,
     onGitStatusDone: PropTypes.func,
     renderLogin: PropTypes.func,
-    sessionExists: PropTypes.bool,
     showSaveFilePicker: PropTypes.func,
     showComingSoon: PropTypes.bool,
     theme: PropTypes.shape({
         menuBarAlign: PropTypes.string
     }),
-    username: PropTypes.string,
-    userOwnsProject: PropTypes.bool,
     vm: PropTypes.instanceOf(VM).isRequired
 };
 
@@ -2623,7 +2511,6 @@ MenuBar.defaultProps = {
 
 const mapStateToProps = (state, ownProps) => {
     const loadingState = state.scratchGui.projectState.loadingState;
-    const user = state.session && state.session.session && state.session.session.user;
     return {
         authorUsername: state.scratchGui.tw.author.username,
         authorThumbnailUrl: state.scratchGui.tw.author.thumbnail,
@@ -2643,21 +2530,11 @@ const mapStateToProps = (state, ownProps) => {
         isShowingProject: getIsShowingProject(loadingState),
         locale: state.locales.locale,
         loginMenuOpen: loginMenuOpen(state),
-        modeMenuOpen: modeMenuOpen(state),
         projectTitle: state.scratchGui.projectTitle,
         projectChanged: state.scratchGui.projectChanged,
         roturReady: state.scratchGui.rotur && state.scratchGui.rotur.status === 'ready',
-        sessionExists: state.session && typeof state.session.session !== 'undefined',
         theme: state.scratchGui.theme.theme,
-        username: user ? user.username : null,
-        userOwnsProject: ownProps.authorUsername && user &&
-            (ownProps.authorUsername === user.username),
-        vm: state.scratchGui.vm,
-        mode220022BC: isTimeTravel220022BC(state),
-        mode1920: isTimeTravel1920(state),
-        mode1990: isTimeTravel1990(state),
-        mode2020: isTimeTravel2020(state),
-        modeNow: isTimeTravelNow(state)
+        vm: state.scratchGui.vm
     };
 };
 
@@ -2685,8 +2562,6 @@ const mapDispatchToProps = dispatch => ({
     onRequestCloseTools: () => dispatch(closeToolsMenu()),
     onClickLogin: () => dispatch(openLoginMenu()),
     onRequestCloseLogin: () => dispatch(closeLoginMenu()),
-    onClickMode: () => dispatch(openModeMenu()),
-    onRequestCloseMode: () => dispatch(closeModeMenu()),
     onRequestOpenAbout: () => dispatch(openAboutMenu()),
     onRequestCloseAbout: () => dispatch(closeAboutMenu()),
     onClickRestorePoints: () => dispatch(openRestorePointModal()),
@@ -2709,8 +2584,7 @@ const mapDispatchToProps = dispatch => ({
     onClickRemix: () => dispatch(remixProject()),
     onClickSave: () => dispatch(manualUpdateProject()),
     onClickSaveAsCopy: () => dispatch(saveProjectAsCopy()),
-    onSeeCommunity: () => dispatch(setPlayer(true)),
-    onSetTimeTravelMode: mode => dispatch(setTimeTravel(mode))
+    onSeeCommunity: () => dispatch(setPlayer(true))
 });
 
 export default compose(
