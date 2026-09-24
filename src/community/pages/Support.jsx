@@ -2,8 +2,9 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useRef, useState} from 'react';
 import {Link, useSearchParams} from 'react-router-dom';
-import api from '../api';
-import {Bug, LifeBuoy, Send} from 'lucide-react';
+import api, {editorUrl} from '../api';
+import {DISCORD_INVITE} from '../../lib/originchats/links.js';
+import {Bug, LifeBuoy, MessagesSquare, Send} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import Button from '../components/ui/Button.jsx';
 import Notice from '../components/ui/Notice.jsx';
@@ -104,6 +105,13 @@ const Support = () => {
                 <SectionHeading icon={Bug} title={communityText('Found a product bug?')} />
                 <p>{communityText('Post it on the roadmap bug tracker. Other users can confirm it, add context, and follow its status.')}</p>
                 <p><Link to="/roadmap?new=bug">{communityText('Open the roadmap bug tracker')}</Link></p>
+            </section>
+            <section className={styles.section}>
+                <SectionHeading icon={MessagesSquare} title={communityText('Ask the community')} />
+                <p>{communityText('The MistWarp chat is the best place to ask quick questions and talk with other creators. It runs on OriginChats, so you can open it beside your project with the Chat button in the editor, or use any OriginChats client with chats.mistwarp.org.')}</p>
+                <p><a href={editorUrl({chat: true})}>{communityText('Open chat in the editor')}</a></p>
+                <p>{communityText('Prefer Discord? The chat is bridged with the MistWarp Discord server, so you can join the same conversations there.')}</p>
+                <p><a href={DISCORD_INVITE} target="_blank" rel="noreferrer">{communityText('Join the MistWarp Discord server')}</a></p>
             </section>
             <section className={styles.section}>
                 <SectionHeading icon={Send} title={communityText('Send a private request')} />
