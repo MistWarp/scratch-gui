@@ -1,3 +1,4 @@
+import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {ArrowUpRight, MessageCircle, Users} from 'lucide-react';
@@ -10,7 +11,8 @@ const COMMUNITIES = [
     {
         key: 'originchats',
         name: 'OriginChats',
-        href: 'https://chats.mistwarp.org/invite'
+        href: 'https://chats.mistwarp.org/invite',
+        recommended: true
     },
     {
         key: 'discord',
@@ -36,7 +38,7 @@ const JoinCommunityModal = ({onClose}) => {
                 {COMMUNITIES.map(community => (
                     <a
                         key={community.key}
-                        className={styles.option}
+                        className={classNames(styles.option, community.recommended && styles.recommended)}
                         href={community.href}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -47,7 +49,12 @@ const JoinCommunityModal = ({onClose}) => {
                     >
                         <span className={styles.optionIcon}><MessageCircle size={18} /></span>
                         <span className={styles.optionText}>
-                            <strong>{communityText('Join from {value1}', {value1: community.name})}</strong>
+                            <span className={styles.optionTitle}>
+                                <strong>{communityText('Join from {value1}', {value1: community.name})}</strong>
+                                {community.recommended ? (
+                                    <span className={styles.badge}>{communityText('Recommended')}</span>
+                                ) : null}
+                            </span>
                             <span>{descriptions[community.key]}</span>
                         </span>
                         <ArrowUpRight size={16} className={styles.optionArrow} />
