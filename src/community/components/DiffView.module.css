@@ -289,7 +289,6 @@
     color: var(--text-dim);
     font-size: var(--fs-2xs);
     font-weight: 700;
-    letter-spacing: 0.05em;
     text-transform: none;
 }
 
@@ -497,7 +496,6 @@
     color: var(--text-dim);
     font-size: var(--fs-2xs);
     font-weight: 700;
-    letter-spacing: 0.05em;
     text-transform: none;
 }
 

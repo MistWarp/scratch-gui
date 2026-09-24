@@ -29,6 +29,8 @@
     --mw-input: var(--bg-raised);
     --mw-text-muted: var(--text-dim);
     --mw-danger: #d94747;
+    --mw-success: #2f9e5b;
+    --nav-h: 48px;
 
     --status-building: #e7a33e;
     --status-shipped: #58c78b;

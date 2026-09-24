@@ -208,7 +208,6 @@ const Spaces = () => {
 
     return (
         <main className={styles.page}>
-            <ExploreNav active={kind === 'mine' ? 'studios' : `${kind}s`} />
             <PageHeader
                 icon={KIND_ICONS[kind] || Layers3}
                 title={communityText(KINDS.find(item => item.key === kind).label)}
@@ -225,6 +224,7 @@ const Spaces = () => {
                     </React.Fragment>
                 )}
             />
+            <ExploreNav active={kind === 'mine' ? 'studios' : `${kind}s`} />
 
             {creating ? (
                 <form className={styles.form} onSubmit={create} aria-busy={createBusy}>

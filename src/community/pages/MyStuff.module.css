@@ -14,7 +14,7 @@
 
 .error {
     margin: -10px 0 18px;
-    color: #f0a3a3;
+    color: var(--mw-danger);
     font-size: var(--fs-md);
 }
 
@@ -158,11 +158,11 @@
 }
 
 .danger {
-    color: #f0a3a3 !important;
+    color: var(--mw-danger) !important;
 }
 
 .danger:hover {
-    color: #f0a3a3;
+    color: var(--mw-danger);
     border-color: rgba(220, 70, 70, 0.5);
 }
 
@@ -212,7 +212,7 @@
 
 .quotaWarn {
     font-size: var(--fs-xs);
-    color: #f0a3a3;
+    color: var(--mw-danger);
     font-weight: 600;
     margin-top: 2px;
     display: inline-flex;
@@ -792,7 +792,7 @@
 }
 
 .uploadWarn {
-    color: #f0a3a3;
+    color: var(--mw-danger);
     font-weight: 600;
     display: inline-flex;
     align-items: center;

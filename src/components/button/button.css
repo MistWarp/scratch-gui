@@ -49,6 +49,7 @@
 .variant-button {
     box-sizing: border-box;
     justify-content: center;
+    gap: 0.4rem;
     height: 2rem;
     padding: 0 0.9rem;
     border: 1px solid transparent;
@@ -82,7 +83,7 @@
 
 .variant-primary {
     background: $looks-secondary;
-    color: white;
+    color: $accent-foreground;
 }
 
 .variant-primary:hover:not(:disabled):not([aria-disabled="true"]) {
@@ -100,10 +101,10 @@
 }
 
 .variant-danger {
-    background: $error-primary;
+    background: $status-danger;
     color: white;
 }
 
 .variant-danger:hover:not(:disabled):not([aria-disabled="true"]) {
-    background: color-mix(in srgb, $error-primary 88%, black);
+    background: color-mix(in srgb, $status-danger 88%, black);
 }

@@ -18,16 +18,20 @@
     pointer-events: all;
 }
 
+.alert.warn,
+.alert.success {
+    background: $ui-modal-background;
+    color: $text-primary;
+    border: 1px solid $ui-black-transparent;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
 .alert.warn {
-    background: #FFF0DF;
-    border: 1px solid #FF8C1A;
-    box-shadow: 0px 0px 0px 2px rgba(255, 140, 26, 0.25);
+    border-inline-start: 4px solid $status-warning;
 }
 
 .alert.success {
-    background: $extensions-light;
-    border: 1px solid $extensions-tertiary;
-    box-shadow: 0px 0px 0px 2px $extensions-light;
+    border-inline-start: 4px solid $status-success;
 }
 
 .alert-spinner {
@@ -46,8 +50,8 @@
 }
 
 .alert-message {
-    color: #555;
-    font-weight: bold;
+    color: $text-primary;
+    font-weight: 600;
     font-size: .8125rem;
     line-height: .875rem;
     display: flex;
@@ -75,11 +79,11 @@
     min-height: 2rem;
     width: 6.5rem;
     padding: 0.55rem 0.9rem;
-    border-radius: 0.35rem;
-    background: #FF8C1A;
-    color: white;
+    border-radius: 6px;
+    background: $looks-secondary;
+    color: $accent-foreground;
     font-weight: 700;
-    font-size: 0.77rem;
+    font-size: 0.8125rem;
     border: none;
     cursor: pointer;
     display: flex;

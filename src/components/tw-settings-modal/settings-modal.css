@@ -378,6 +378,11 @@
     margin-right: 0.5rem;
 }
 
+.number-input {
+    width: 5.5rem;
+    margin: 0 0.5rem;
+}
+
 .help-icon {
     position: relative;
     border: 0;
@@ -685,13 +690,13 @@
 }
 
 .ct-tab-selected {
-    background: $looks-transparent;
-    color: white;
+    background: color-mix(in srgb, $looks-secondary 14%, transparent);
+    color: $looks-secondary;
 }
 
 .ct-tab-selected:hover {
-    background: $looks-transparent;
-    color: white;
+    background: color-mix(in srgb, $looks-secondary 20%, transparent);
+    color: $looks-secondary;
 }
 
 .ct-tab-badge {

@@ -32,7 +32,7 @@
 
 .profileRail {
     position: sticky;
-    top: 76px;
+    top: calc(var(--nav-h) + 28px);
     min-width: 0;
     max-height: calc(100vh - 96px);
     overflow-y: auto;
@@ -205,11 +205,9 @@
 
 .railSection h2 {
     margin: 0 0 8px;
-    color: var(--text-faint);
-    font-size: var(--fs-2xs);
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: none;
+    color: var(--text-dim);
+    font-size: var(--fs-xs);
+    font-weight: 600;
 }
 
 .accountMeta {

@@ -190,6 +190,7 @@ class WindowedModal extends React.Component {
             resizable,
             maximizable,
             closable: true,
+            minimizable: false,
             className: `modal-window ${className}`,
             modal: this.props.modal !== false,
             alwaysOnTop: id === 'unknownPlatformModal' || id === 'securitymanagermodal',

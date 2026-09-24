@@ -33,8 +33,8 @@
     flex: 1 1 0;
     font: inherit;
     color: inherit;
-    padding: 0.75rem 1rem;
-    border-radius: 0.25rem;
+    padding: 0.6rem 1rem;
+    border-radius: 6px;
     border: 1px solid $ui-black-transparent;
     font-weight: 600;
     font-size: 0.85rem;
@@ -60,19 +60,20 @@
 }
 
 .block-button {
-    background-color: $ui-white;
-    color: rgb(190, 38, 38);
-    border-color: rgba(190, 38, 38, 0.45);
+    background-color: $ui-modal-background;
+    color: $status-danger;
+    border-color: color-mix(in srgb, $status-danger 45%, transparent);
 }
 .load-all-button {
-    background-color: $ui-white;
+    background-color: $ui-modal-background;
 }
 .deny-button {
-    background-color: $ui-white;
+    background-color: $ui-modal-background;
 }
 .allow-button {
-    background-color: #24cd11;
-    color: black;
+    background-color: $status-success;
+    border-color: transparent;
+    color: white;
 }
 
 @media only screen and (max-width: 480px) {

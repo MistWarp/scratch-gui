@@ -4,7 +4,6 @@
     background: var(--bg-card);
     border-radius: var(--radius-sm);
     overflow: hidden;
-    border: 1px solid var(--border-soft);
     display: flex;
     flex-direction: column;
     min-height: 0;
@@ -100,11 +99,9 @@
 .aboutSections h3,
 .detailSections h3 {
     margin: 0 0 8px;
-    color: var(--text-faint);
-    font-size: var(--fs-2xs);
-    font-weight: 700;
-    letter-spacing: .07em;
-    text-transform: none;
+    color: var(--text-dim);
+    font-size: var(--fs-xs);
+    font-weight: 600;
 }
 
 .detailSections {
@@ -281,7 +278,7 @@
 }
 
 .creditRemove:hover {
-    color: #f0a3a3;
+    color: var(--mw-danger);
 }
 
 .creditAdd {

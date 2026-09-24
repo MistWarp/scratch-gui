@@ -171,7 +171,6 @@ const Themes = () => {
 
     return (
         <main className={styles.page}>
-            <ExploreNav active="themes" />
             <PageHeader
                 icon={tab === 'publish' ? Upload : Palette}
                 title={tab === 'publish' ? communityText('Publish a theme') : communityText('Themes')}
@@ -195,6 +194,7 @@ const Themes = () => {
                     </div>
                 ) : null}
             </PageHeader>
+            <ExploreNav active="themes" />
             {tab === 'browse' ? (
                 loading ? <StatusMessage>{communityText('Loading themes…')}</StatusMessage> : browseError ? (
                     <StatusMessage error onRetry={() => setLoadAttempt(value => value + 1)}>{browseError}</StatusMessage>

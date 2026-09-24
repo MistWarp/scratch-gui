@@ -71,8 +71,7 @@ a:active, a:focus {
     background: $ui-secondary;
     border: 1px solid $ui-black-transparent;
     padding: 8px 12px;
-    border-radius: 4px;
-    outline: none;
+    border-radius: 6px;
     height: 32px;
     font-family: inherit;
     font-size: 14px;
@@ -278,10 +277,10 @@ a:active, a:focus {
 
 .switch {
     display: block;
-    background: #333;
+    background: $ui-black-transparent;
     width: 40px;
     height: 22px;
-    border: 1px solid $ui-black-transparent;
+    border: 1px solid transparent;
     border-radius: 12px;
     position: relative;
     cursor: pointer;
@@ -306,8 +305,7 @@ a:active, a:focus {
 }
 .switch[state="on"]::before {
     background: #fff;
-    left: auto;
-    right: 3px;
+    left: 22px;
 }
 .switch:active, .switch:focus-within {
     outline: none;
@@ -319,41 +317,36 @@ a:active, a:focus {
     align-items: center;
 }
 .tag {
-    border-radius: 4px;
-    padding: 2px 5px;
+    border-radius: 999px;
+    padding: 2px 8px;
     margin-left: 10px;
-    border-bottom: 2px solid #111;
+    font-size: 12px;
+    font-weight: 600;
     white-space: nowrap;
 }
 .tag-recommended {
-    color: white;
-    background-color: #175ef8;
-    border-color: #0e44b8;
+    color: $looks-secondary;
+    background-color: color-mix(in srgb, $looks-secondary 14%, transparent);
 }
 .tag-theme {
-    color: black;
-    background-color: #9ad4cf;
-    border-color: #628f8c;
+    color: $status-info;
+    background-color: color-mix(in srgb, $status-info 14%, transparent);
 }
 .tag-beta {
-    color: white;
-    background-color: #fd662b;
-    border-color: #d84a12;
+    color: $status-warning;
+    background-color: color-mix(in srgb, $status-warning 16%, transparent);
 }
 .tag-easter-egg {
-    color: black;
-    background-color: #b9f38d;
-    border-color: #8fce5e;
+    color: $status-success;
+    background-color: color-mix(in srgb, $status-success 14%, transparent);
 }
 .tag-new {
-    color: white;
-    background: #b117f8;
-    border-color: #6f0073;
+    color: $status-info;
+    background-color: color-mix(in srgb, $status-info 14%, transparent);
 }
 .tag-danger {
-    color: white;
-    background: #fd2b2b;
-    border-color: #d81212;
+    color: $status-danger;
+    background-color: color-mix(in srgb, $status-danger 14%, transparent);
 }
 
 /* Tag Filter Styles */
@@ -511,11 +504,10 @@ a:active, a:focus {
     flex-wrap: wrap;
 }
 .setting-label {
-    font-weight: bold;
-    text-transform: uppercase;
-    font-size: 12px;
+    font-weight: 600;
+    font-size: 13px;
     margin-right: 10px;
-    opacity: 0.8;
+    opacity: 0.85;
 }
 .setting input {
     background: $input-background;

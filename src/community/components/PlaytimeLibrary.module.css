@@ -28,7 +28,6 @@
     align-items: center;
     gap: 14px;
     padding: 10px 14px;
-    border: 1px solid var(--border-soft);
     border-radius: var(--radius-sm);
     background: var(--bg-card);
     box-shadow: var(--card-shadow);
@@ -36,7 +35,7 @@
 }
 
 .row:hover {
-    border-color: var(--accent-border);
+    background: var(--bg-raised);
 }
 
 .row a {
