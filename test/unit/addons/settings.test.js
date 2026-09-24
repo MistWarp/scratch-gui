@@ -712,3 +712,21 @@ test('Settings migration 4 -> 5', () => {
     store.readLocalStorage();
     expect(store.getAddonSetting('fullscreen', 'toolbar')).toBe('hide');
 });
+
+test('saving keeps settings of addons that were retired into native features', () => {
+    localStorage.setItem('tw:addons', JSON.stringify({
+        _: 5,
+        'tw-disable-restore-points': {enabled: true},
+        'vol-slider': {enabled: true, defaultVolume: 40},
+        'mute-project': {enabled: false}
+    }));
+    const store = new SettingStore();
+    store.readLocalStorage();
+
+    store.setAddonEnabled('mute-project', true);
+
+    const saved = JSON.parse(localStorage.getItem('tw:addons'));
+    expect(saved['tw-disable-restore-points']).toEqual({enabled: true});
+    expect(saved['vol-slider']).toEqual({enabled: true, defaultVolume: 40});
+    expect(saved['mute-project'].enabled).toBe(true);
+});

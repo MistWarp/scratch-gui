@@ -18,8 +18,10 @@ const mergeStoredAppearance = appearance => ({
     ...(appearance || {})
 });
 
-const applyAppearance = appearance => {
-    for (const module of MODULES) module.apply((appearance || {})[module.id] || null);
+// persist: false renders the appearance without writing it, for previews,
+// embeds, and other people's project themes.
+const applyAppearance = (appearance, {persist = true} = {}) => {
+    for (const module of MODULES) module.apply((appearance || {})[module.id] || null, {persist});
 };
 
 export {
