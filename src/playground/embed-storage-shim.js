@@ -1,7 +1,26 @@
 import * as fakeIndexedDB from 'fake-indexeddb';
 
+const originOf = url => {
+    try {
+        return new URL(url).origin;
+    } catch (e) {
+        return null;
+    }
+};
+
+// Running every extension unsandboxed is only safe when the page that framed
+// the embed is MistWarp itself, because the embed shares this origin's storage.
+const framedBySameOrigin = () => {
+    if (window.parent === window) return false;
+    const ancestors = window.location.ancestorOrigins;
+    if (ancestors && ancestors.length) {
+        return ancestors[0] === window.location.origin;
+    }
+    return originOf(document.referrer) === window.location.origin;
+};
+
 try {
-    if (new URLSearchParams(window.location.search).get('allow_all') === '1') {
+    if (new URLSearchParams(window.location.search).get('allow_all') === '1' && framedBySameOrigin()) {
         window.__mwAllowAllSecurity = true;
     }
 } catch (e) {

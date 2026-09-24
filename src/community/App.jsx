@@ -97,6 +97,7 @@ const RouteMeta = () => {
 };
 
 const App = () => {
+    const {pathname} = useLocation();
     const {text: communityText} = useCommunityIntl();
     const {t} = useCommunityIntl();
     useEffect(() => {
@@ -111,7 +112,10 @@ const App = () => {
         <UpdateToast />
         <UpgradeCelebration />
         <div className={tokenStyles['mw-app-content']} id="mw-main-content" tabIndex="-1">
-            <ErrorBoundary action="community-route">
+            <ErrorBoundary
+                action="community-route"
+                resetKey={pathname}
+            >
                 <Suspense fallback={<p className={tokenStyles['mw-route-loading']} role="status">{communityText('Loading page…')}</p>}>
                     <Routes>
                         <Route path="/" element={<Home />} />

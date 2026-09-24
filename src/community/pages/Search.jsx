@@ -1,6 +1,6 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Link, Navigate, useSearchParams} from 'react-router-dom';
 import {Search as SearchIcon} from 'lucide-react';
 import api from '../api';
@@ -50,12 +50,16 @@ const Search = () => {
     const [loadingMore, setLoadingMore] = useState(false);
     const [loadMoreError, setLoadMoreError] = useState('');
     const beginLoad = useLatest();
+    const loadMoreVersion = useRef(0);
+    const loadMoreLocks = useRef(new Set());
 
     useEffect(() => {
         if (!q) return;
         const fresh = beginLoad();
+        loadMoreVersion.current += 1;
         setLoading(true);
         setFailed(false);
+        setLoadingMore(false);
         setLoadMoreError('');
         Promise.allSettled([
             api.explore({q, sort, limit: PAGE_SIZE}),
@@ -88,16 +92,27 @@ const Search = () => {
     };
 
     const loadMore = async () => {
+        const version = loadMoreVersion.current;
+        if (loadMoreLocks.current.has(version)) return;
+        loadMoreLocks.current.add(version);
         setLoadingMore(true);
         setLoadMoreError('');
         try {
             const data = await api.explore({q, sort, offset: projects.length, limit: PAGE_SIZE});
-            setProjects(current => current.concat(data.projects || []));
+            if (loadMoreVersion.current !== version) return;
+            const incoming = data.projects || [];
+            setProjects(current => {
+                const seen = new Set(current.map(project => project.id));
+                return current.concat(incoming.filter(project => !seen.has(project.id)));
+            });
             setProjectTotal(data.total || 0);
         } catch (error) {
-            setLoadMoreError(error.message || communityText('Could not load more projects.'));
+            if (loadMoreVersion.current === version) {
+                setLoadMoreError(error.message || communityText('Could not load more projects.'));
+            }
         } finally {
-            setLoadingMore(false);
+            loadMoreLocks.current.delete(version);
+            if (loadMoreVersion.current === version) setLoadingMore(false);
         }
     };
 

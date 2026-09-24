@@ -4,19 +4,32 @@ import {withProjectOperation, projectRevision} from './project-operation.js';
 
 // Consent belongs to the caller. This protects both code and history if the
 // approved operation fails after it has started changing the workspace.
+// Where device backups cannot be written (no IndexedDB, or an embed that
+// blocks it) the current project is held in memory for the rollback instead.
+const backupCurrentCode = async (vm, title) => {
+    try {
+        const backupId = await RestorePointAPI.createSafetyRestorePoint(vm, title);
+        return () => RestorePointAPI.loadRestorePoint(vm, backupId);
+    } catch (error) {
+        if (!RestorePointAPI.isStorageUnavailableError(error)) throw error;
+        const sb3 = await vm.saveProjectSb3('arraybuffer');
+        return () => vm.loadProject(sb3);
+    }
+};
+
 const prepareProjectReplacement = async (vm, title) => {
     const hydration = vm._mwHistoryHydration;
     if (hydration && hydration.promise) await hydration.promise;
     const revision = projectRevision(vm);
-    const backupId = await RestorePointAPI.createSafetyRestorePoint(vm, title);
+    const restoreCode = await backupCurrentCode(vm, title);
     const restoreRepo = await createRepoBackup();
     if (projectRevision(vm) !== revision) {
         throw new Error('The project changed while its backup was being made. Nothing was replaced. Try again.');
     }
-    return async ({restoreCode = true} = {}) => {
+    return async ({restoreCode: shouldRestoreCode = true} = {}) => {
         await restoreRepo();
         vm._mwHistoryHydration = hydration;
-        if (restoreCode) await RestorePointAPI.loadRestorePoint(vm, backupId);
+        if (shouldRestoreCode) await restoreCode();
     };
 };
 

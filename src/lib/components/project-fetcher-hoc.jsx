@@ -10,6 +10,7 @@ import {setProjectUnchanged} from '../../reducers/project-changed.js';
 import {setProjectTitle} from '../../reducers/project-title.js';
 import {
     LoadingStates,
+    abortProjectSwitch,
     getIsCreatingNew,
     getIsFetchingWithId,
     getIsFetchingWithoutId,
@@ -23,6 +24,7 @@ import {
     activateTab,
     BLOCKS_TAB_INDEX
 } from '../../reducers/editor-tab.js';
+import {openSimpleDialog} from '../../reducers/modals.js';
 
 import log from '../utils/log.js';
 import storage from '../persistence/storage.js';
@@ -179,6 +181,7 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 storage.setAssetHost(this.props.assetHost);
             }
             if (this.props.isFetchingWithId && !prevProps.isFetchingWithId) {
+                this.previousProjectId = prevProps.reduxProjectId;
                 this.fetchProject(this.props.reduxProjectId, this.props.loadingState);
             }
             if (this.props.isShowingProject && !prevProps.isShowingProject) {
@@ -191,9 +194,20 @@ const ProjectFetcherHOC = function (WrappedComponent) {
         componentWillUnmount () {
             this.fetchGeneration++;
         }
+        // Returns to the project that was open before the switch started. Only
+        // the first project load has nothing to go back to, so that one stays fatal.
+        abandonProjectSwitch (error) {
+            const hasPreviousProject = Boolean(this.props.vm.runtime?.targets?.length);
+            if (!hasPreviousProject) {
+                this.props.onError(error);
+                return;
+            }
+            this.props.onAbortProjectSwitch(this.previousProjectId);
+            this.props.onShowProjectSwitchError(error);
+        }
         async fetchProject (projectId, loadingState) {
             if (isProjectOperationActive(this.props.vm)) {
-                this.props.onError(new Error(
+                this.abandonProjectSwitch(new Error(
                     'Wait for the current save or project change to finish before opening another project.'
                 ));
                 return;
@@ -206,15 +220,19 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 try {
                     const project = getRememberedPlatformProjectState();
                     const restore = await prepareProjectReplacement(this.props.vm, 'Before switching projects');
-                    rollback = async () => {
+                    const previousProjectId = this.previousProjectId;
+                    rollback = async ({abort = true, error = null} = {}) => {
                         await restore();
                         rememberPlatformProject(project, {resetSaveBase: true});
                         setRemoteProjectHistory(project);
+                        if (!abort) return;
+                        this.props.onAbortProjectSwitch(previousProjectId);
+                        if (error) this.props.onShowProjectSwitchError(error);
                     };
                     this.props.vm._mwRollbackProjectLoad = rollback;
                 } catch (error) {
                     release();
-                    this.props.onError(error);
+                    this.abandonProjectSwitch(error);
                     return;
                 }
             }
@@ -364,17 +382,26 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                     }
                 })
                 .catch(async err => {
-                    if (rollback) await rollback();
+                    log.error(err);
                     this.props.vm._mwRollbackProjectLoad = null;
+                    // Download failures keep the retry screen; anything else
+                    // goes back to the previous project once it is restored.
+                    let restored = false;
+                    if (rollback) {
+                        restored = await rollback({abort: !downloadFailed, error: downloadFailed ? null : err})
+                            .then(() => true, rollbackError => {
+                                log.error('Could not restore the previous project:', rollbackError);
+                                return false;
+                            });
+                    }
                     if (fetchGeneration !== this.fetchGeneration) return;
                     this.props.vm._mwPrepareProjectHistory = null;
                     if (downloadFailed) {
                         this.handleRetryProjectFetch = () => this.fetchProject(projectId, loadingState);
                         this.setState({projectFetchError: err});
-                    } else {
+                    } else if (!restored) {
                         this.props.onError(err);
                     }
-                    log.error(err);
                 })
                 .finally(() => {
                     if (!handedOff) release();
@@ -387,10 +414,12 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 intl,
                 isLoadingProject: isLoadingProjectProp,
                 loadingState,
+                onAbortProjectSwitch,
                 onActivateTab,
                 onError: onErrorProp,
                 onFetchedProjectData: onFetchedProjectDataProp,
                 onProjectUnchanged,
+                onShowProjectSwitchError,
                 projectHost,
                 projectId,
                 reduxProjectId,
@@ -423,7 +452,9 @@ const ProjectFetcherHOC = function (WrappedComponent) {
         onError: PropTypes.func,
         onFetchedProjectData: PropTypes.func,
         onProjectUnchanged: PropTypes.func,
+        onAbortProjectSwitch: PropTypes.func,
         onSetProjectTitle: PropTypes.func,
+        onShowProjectSwitchError: PropTypes.func,
         projectHost: PropTypes.string,
         projectToken: PropTypes.string,
         projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
@@ -447,8 +478,14 @@ const ProjectFetcherHOC = function (WrappedComponent) {
         vm: state.scratchGui.vm
     });
     const mapDispatchToProps = dispatch => ({
+        onAbortProjectSwitch: previousProjectId => dispatch(abortProjectSwitch(previousProjectId)),
         onActivateTab: tab => dispatch(activateTab(tab)),
         onError: error => dispatch(projectError(error)),
+        onShowProjectSwitchError: error => dispatch(openSimpleDialog({
+            type: 'alert',
+            title: 'Could not open the project',
+            message: `${error && error.message ? error.message : error} Your previous project was restored.`
+        })),
         onFetchedProjectData: (projectData, loadingState) =>
             dispatch(onFetchedProjectData(projectData, loadingState)),
         setProjectId: projectId => dispatch(setProjectId(projectId)),

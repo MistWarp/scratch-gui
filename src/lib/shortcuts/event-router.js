@@ -278,9 +278,6 @@ const executeVMAction = shortcut => {
                 vm.setEditingTarget(targets[nextIndex].id);
             }
             break;
-        case 'postRedo':
-            if (vm.postRedo) vm.postRedo();
-            break;
         case 'copy':
         case 'paste':
         case 'cut':
@@ -319,8 +316,11 @@ const executeCallbackAction = shortcut => {
         case 'undo':
             if (callbacks.undo) {
                 callbacks.undo();
-            } else if (vm && vm.postUndo) {
-                vm.postUndo();
+            }
+            break;
+        case 'redo':
+            if (callbacks.redo) {
+                callbacks.redo();
             }
             break;
         case 'loadFromComputer':
@@ -389,8 +389,10 @@ const handleKeyDown = event => {
 
     if (matchingShortcut) {
         if (matchingShortcut.actionType !== null) {
+            // The router owns this key. scratch-blocks listens on the same
+            // document, so stop it from running its own copy of the action.
             event.preventDefault();
-            event.stopPropagation();
+            event.stopImmediatePropagation();
         }
         executeShortcut(matchingShortcut);
     }
@@ -414,7 +416,7 @@ const updateCallbacks = newCallbacks => {
 
 const dispose = () => {
     if (isInitialized) {
-        document.removeEventListener('keydown', handleKeyDown);
+        document.removeEventListener('keydown', handleKeyDown, true);
         isInitialized = false;
     }
     dispatch = null;
@@ -430,7 +432,7 @@ const initialize = (dispatchFn, vmInstance, callbacksFn) => {
     loadCustomShortcuts();
 
     if (!isInitialized) {
-        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keydown', handleKeyDown, true);
         isInitialized = true;
     }
 };
