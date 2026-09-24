@@ -369,8 +369,6 @@
   "fullscreen/@description": "Corrige certains effets indésirables dans le mode plein écran des projets, l'ouvre dans le mode plein écran de votre navigateur et masque la barre d'outils du drapeau vert.",
   "fullscreen/@name": "Plein écran amélioré",
   "fullscreen/@settings-name-browserFullscreen": "Ouvrir le projet en mode plein écran",
-  "hide-stage/@description": "Ajoute un bouton à côté des boutons \"petite scène\" et \"grande scène\" qui cache la scène et la liste des sprites, rendant la zone de code plus grande.",
-  "hide-stage/@name": "Cacher la scène et la liste des sprites",
   "editor-stepping/@description": "Ajoute un contour bleu sur les blocs qui sont actuellement exécutés dans un projet.",
   "editor-stepping/@name": "Bordure du bloc executé",
   "editor-stepping/@settings-name-highlight-color": "Couleurs de surbrillance"
