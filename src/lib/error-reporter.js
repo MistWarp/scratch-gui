@@ -67,12 +67,46 @@ const isUnactionable = (message, stack) => {
     return frames.length > 0 && BROWSER_EXTENSION_FRAME.test(frames[0]);
 };
 
-export const reportSiteError = ({message, stack = '', kind = 'uncaught', url = '', projectId = '', componentStack = ''}) => {
+// The URL this bundle was actually loaded from, taken from the first stack frame at module load.
+// It is empty outside a browser bundle (for example under jest), which disables the check.
+const bundleHost = (() => {
+    try {
+        const match = String(new Error().stack || '').match(/https?:\/\/([^/\s]+)\//);
+        return match ? match[1] : '';
+    } catch (e) {
+        return '';
+    }
+})();
+
+// Rewriting proxies serve MistWarp's bundles from their own host while spoofing window.location.
+// Their copies are stale and outside our control, so their errors are noise.
+const isRehostedCopy = () => {
+    try {
+        return Boolean(bundleHost) && bundleHost !== window.location.host;
+    } catch (e) {
+        return false;
+    }
+};
+
+const PROJECT_THREAD_FRAME = /stepThread|executeBlock|executeInCompatibilityLayer/;
+
+// A ReferenceError or SyntaxError raised while a project thread runs comes from JavaScript
+// typed into a project block (a typo like "runtimr", or Node-only "require"), not from MistWarp.
+const isProjectScriptError = (name, stack) => (
+    (name === 'ReferenceError' || name === 'SyntaxError') && PROJECT_THREAD_FRAME.test(String(stack || ''))
+);
+
+// NotAllowedError is the browser refusing an action such as autoplay without a user gesture.
+// NetworkError is a transport failure with no stack, so nothing in it can be acted on.
+const BROWSER_REFUSAL = /^(NotAllowedError|NetworkError)$/;
+
+export const reportSiteError = ({message, stack = '', kind = 'uncaught', url = '', projectId = '', componentStack = '', name = ''}) => {
     try {
         const text = String(message || '').trim();
         if (!text || sending) return;
         if (isBenignResizeObserverLoop(text, stack)) return;
-        if (isUnactionable(text, stack) || isCrawler()) return;
+        if (isUnactionable(text, stack) || isCrawler() || isRehostedCopy()) return;
+        if (isProjectScriptError(name, stack) || BROWSER_REFUSAL.test(String(name || ''))) return;
         const href = String(url || window.location.href || '').slice(0, 2000);
         if (href.includes('/errors')) return;
         const signature = `${text.slice(0, 200)}|${href.slice(0, 200)}|${String(stack).slice(0, 200)}`;
@@ -115,6 +149,7 @@ export const initSiteErrorReporting = () => {
         reportSiteError({
             message: (error && error.message) || event.message || 'Uncaught error',
             stack: toStack(error || event.error) || `${event.filename || ''}:${event.lineno || 0}:${event.colno || 0}`,
+            name: error && error.name,
             kind: 'uncaught',
             url: event.filename && event.filename !== window.location.href ? window.location.href : window.location.href
         });
@@ -126,6 +161,7 @@ export const initSiteErrorReporting = () => {
         reportSiteError({
             message,
             stack: toStack(reason),
+            name: reason && reason.name,
             kind: 'rejection'
         });
     });

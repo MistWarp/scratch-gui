@@ -14,6 +14,9 @@ patchedDependencies:
   '@turbowarp/scratch-svg-renderer':
     hash: 81a01d6d472570d53eec593be679e84867db1ba1410f5ef084d5c404068481b9
     path: patches/@turbowarp__scratch-svg-renderer.patch
+  rotur-sdk@2.5.2:
+    hash: ddb178093163bd8090ac3a82aacb74805a1beca08e81ac9b72de7fff3bb08692
+    path: patches/rotur-sdk@2.5.2.patch
   scratch-parser:
     hash: 7f03af2d2e61fc6d5af5eecddef071142f83bbae93a9e0733cf5b9a8e8b6a3eb
     path: patches/scratch-parser.patch
@@ -177,7 +180,7 @@ importers:
         version: 0.1.1
       rotur-sdk:
         specifier: ^2.0.0
-        version: 2.5.2
+        version: 2.5.2(patch_hash=ddb178093163bd8090ac3a82aacb74805a1beca08e81ac9b72de7fff3bb08692)
       scratch-audio:
         specifier: https://codeload.github.com/MistWarp/scratch-audio/tar.gz/2f2ad72ef9c5d11bbf2ca13560489cb5d33d4c33
         version: https://codeload.github.com/MistWarp/scratch-audio/tar.gz/2f2ad72ef9c5d11bbf2ca13560489cb5d33d4c33
@@ -12560,7 +12563,7 @@ snapshots:
       '@rollup/rollup-win32-x64-msvc': 4.63.1
       fsevents: 2.3.3
 
-  rotur-sdk@2.5.2: {}
+  rotur-sdk@2.5.2(patch_hash=ddb178093163bd8090ac3a82aacb74805a1beca08e81ac9b72de7fff3bb08692): {}
 
   rst-selector-parser@2.2.3:
     dependencies:
@@ -12728,7 +12731,7 @@ snapshots:
       format-message: 6.2.1
       htmlparser2: 3.10.0
       immutable: 3.8.2
-      rotur-sdk: 2.5.2
+      rotur-sdk: 2.5.2(patch_hash=ddb178093163bd8090ac3a82aacb74805a1beca08e81ac9b72de7fff3bb08692)
       scratch-parser: https://codeload.github.com/TurboWarp/scratch-parser/tar.gz/fb65ba09d78ab6a0d19ce908d64b72d1a122312f(patch_hash=7f03af2d2e61fc6d5af5eecddef071142f83bbae93a9e0733cf5b9a8e8b6a3eb)
       scratch-sb1-converter: 0.2.7
       scratch-translate-extension-languages: 1.0.7
