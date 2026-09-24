@@ -22,7 +22,7 @@
   ],
   "Join our community": [
     "src/community/components/AnnouncementBanner.jsx:51",
-    "src/community/components/JoinCommunityModal.jsx:31"
+    "src/community/components/JoinCommunityModal.jsx:33"
   ],
   "Dismiss": [
     "src/community/components/AnnouncementBanner.jsx:57",
@@ -661,8 +661,8 @@
   ],
   "MistWarp": [
     "src/community/components/Footer.jsx:24",
-    "src/community/components/NavBar.jsx:369",
-    "src/community/components/NavBar.jsx:377",
+    "src/community/components/NavBar.jsx:397",
+    "src/community/components/NavBar.jsx:405",
     "src/community/components/RichText.jsx:116",
     "src/community/pages/Roadmap.jsx:511"
   ],
@@ -671,8 +671,8 @@
   ],
   "Create": [
     "src/community/components/Footer.jsx:31",
-    "src/community/components/NavBar.jsx:524",
-    "src/community/components/NavBar.jsx:524",
+    "src/community/components/NavBar.jsx:552",
+    "src/community/components/NavBar.jsx:552",
     "src/community/pages/Spaces.jsx:275"
   ],
   "Editor": [
@@ -683,10 +683,10 @@
   ],
   "My stuff": [
     "src/community/components/Footer.jsx:33",
-    "src/community/components/NavBar.jsx:457",
-    "src/community/components/NavBar.jsx:458",
-    "src/community/components/NavBar.jsx:540",
-    "src/community/components/NavBar.jsx:540",
+    "src/community/components/NavBar.jsx:485",
+    "src/community/components/NavBar.jsx:486",
+    "src/community/components/NavBar.jsx:568",
+    "src/community/components/NavBar.jsx:568",
     "src/community/pages/ManageProject.jsx:486",
     "src/community/pages/MyStuff.jsx:1361"
   ],
@@ -698,8 +698,8 @@
   ],
   "Explore": [
     "src/community/components/Footer.jsx:37",
-    "src/community/components/NavBar.jsx:521",
-    "src/community/components/NavBar.jsx:521",
+    "src/community/components/NavBar.jsx:549",
+    "src/community/components/NavBar.jsx:549",
     "src/community/pages/Explore.jsx:177"
   ],
   "Leaderboard": [
@@ -731,8 +731,8 @@
   ],
   "Memberships": [
     "src/community/components/Footer.jsx:50",
-    "src/community/components/NavBar.jsx:436",
-    "src/community/components/NavBar.jsx:437"
+    "src/community/components/NavBar.jsx:464",
+    "src/community/components/NavBar.jsx:465"
   ],
   "Documentation": [
     "src/community/components/Footer.jsx:51"
@@ -961,16 +961,20 @@
     "src/community/components/HomeWorkspace.jsx:216"
   ],
   "Chat with the community on MistWarp's own chat.": [
-    "src/community/components/JoinCommunityModal.jsx:25"
+    "src/community/components/JoinCommunityModal.jsx:27"
   ],
   "Hang out with the community on our Discord server.": [
-    "src/community/components/JoinCommunityModal.jsx:26"
+    "src/community/components/JoinCommunityModal.jsx:28"
   ],
   "Where would you like to join?": [
-    "src/community/components/JoinCommunityModal.jsx:34"
+    "src/community/components/JoinCommunityModal.jsx:36"
   ],
   "Join from {value1}": [
-    "src/community/components/JoinCommunityModal.jsx:50"
+    "src/community/components/JoinCommunityModal.jsx:53"
+  ],
+  "Recommended": [
+    "src/community/components/JoinCommunityModal.jsx:55",
+    "src/community/pages/PaidPerks.jsx:183"
   ],
   "settings.language": [
     "src/community/components/LanguagePicker.jsx:9"
@@ -1313,62 +1317,62 @@
     "src/community/components/NavBar.jsx:105"
   ],
   "Beta": [
-    "src/community/components/NavBar.jsx:378",
+    "src/community/components/NavBar.jsx:406",
     "src/community/pages/Project.jsx:2846"
   ],
   "nav.main": [
-    "src/community/components/NavBar.jsx:382"
+    "src/community/components/NavBar.jsx:410"
   ],
   "nav.create": [
-    "src/community/components/NavBar.jsx:383",
-    "src/community/components/NavBar.jsx:385"
+    "src/community/components/NavBar.jsx:411",
+    "src/community/components/NavBar.jsx:413"
   ],
   "nav.explore": [
-    "src/community/components/NavBar.jsx:390",
-    "src/community/components/NavBar.jsx:393"
+    "src/community/components/NavBar.jsx:418",
+    "src/community/components/NavBar.jsx:421"
   ],
   "nav.random": [
-    "src/community/components/NavBar.jsx:398",
-    "src/community/components/NavBar.jsx:401"
+    "src/community/components/NavBar.jsx:426",
+    "src/community/components/NavBar.jsx:429"
   ],
   "nav.search": [
-    "src/community/components/NavBar.jsx:428",
-    "src/community/components/NavBar.jsx:514"
+    "src/community/components/NavBar.jsx:456",
+    "src/community/components/NavBar.jsx:542"
   ],
   "Notifications": [
-    "src/community/components/NavBar.jsx:446",
-    "src/community/components/NavBar.jsx:447",
-    "src/community/components/NavBar.jsx:531",
-    "src/community/components/NavBar.jsx:532",
+    "src/community/components/NavBar.jsx:474",
+    "src/community/components/NavBar.jsx:475",
+    "src/community/components/NavBar.jsx:559",
+    "src/community/components/NavBar.jsx:560",
     "src/community/pages/Home.jsx:392",
     "src/community/pages/Notifications.jsx:556",
     "src/community/pages/Settings.jsx:104",
     "src/community/pages/Settings.jsx:634"
   ],
   "Notifications ({value1} unread)": [
-    "src/community/components/NavBar.jsx:447",
-    "src/community/components/NavBar.jsx:531"
+    "src/community/components/NavBar.jsx:475",
+    "src/community/components/NavBar.jsx:559"
   ],
   "Signing in…": [
-    "src/community/components/NavBar.jsx:481"
+    "src/community/components/NavBar.jsx:509"
   ],
   "Signing in": [
-    "src/community/components/NavBar.jsx:482",
-    "src/community/components/NavBar.jsx:544",
-    "src/community/components/NavBar.jsx:544"
+    "src/community/components/NavBar.jsx:510",
+    "src/community/components/NavBar.jsx:572",
+    "src/community/components/NavBar.jsx:572"
   ],
   "Sign in": [
-    "src/community/components/NavBar.jsx:482",
-    "src/community/components/NavBar.jsx:485",
-    "src/community/components/NavBar.jsx:544",
-    "src/community/components/NavBar.jsx:544"
+    "src/community/components/NavBar.jsx:510",
+    "src/community/components/NavBar.jsx:513",
+    "src/community/components/NavBar.jsx:572",
+    "src/community/components/NavBar.jsx:572"
   ],
   "Mobile navigation": [
-    "src/community/components/NavBar.jsx:517"
+    "src/community/components/NavBar.jsx:545"
   ],
   "Home": [
-    "src/community/components/NavBar.jsx:518",
-    "src/community/components/NavBar.jsx:518"
+    "src/community/components/NavBar.jsx:546",
+    "src/community/components/NavBar.jsx:546"
   ],
   "Could not delete update.": [
     "src/community/components/NewsItem.jsx:74"
@@ -5413,9 +5417,6 @@
     "src/community/pages/PaidPerks.jsx:173"
   ],
   "Your membership": [
-    "src/community/pages/PaidPerks.jsx:183"
-  ],
-  "Recommended": [
     "src/community/pages/PaidPerks.jsx:183"
   ],
   "Always free": [

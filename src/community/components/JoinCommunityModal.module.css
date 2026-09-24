@@ -46,9 +46,37 @@
     min-width: 0;
 }
 
-.optionText > span {
+.optionText > span:not(.optionTitle) {
     color: var(--text-dim);
     font-size: var(--fs-sm);
+}
+
+.optionTitle {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+}
+
+.recommended {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+.recommended .optionIcon {
+    background: var(--accent);
+    color: var(--accent-contrast, #ffffff);
+}
+
+.badge {
+    padding: 1px 7px;
+    border-radius: var(--radius-2xs);
+    background: var(--accent);
+    color: var(--accent-contrast, #ffffff);
+    font-size: var(--fs-2xs);
+    font-weight: 700;
+    line-height: 1.4;
 }
 
 .optionArrow {
