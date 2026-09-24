@@ -231,14 +231,14 @@ const persistTheme = theme => {
  * must only happen on an explicit user change via applyTheme.
  * @param {Theme} theme the theme
  */
-const applyThemeVisuals = theme => {
+const applyThemeVisuals = (theme, {persistAppearance = false} = {}) => {
     try {
         applyGuiColors(theme);
     } catch (e) {
         console.error('Failed to apply GUI colors for theme:', e);
     }
 
-    applyAppearance(theme.appearance);
+    applyAppearance(theme.appearance, {persist: persistAppearance});
 };
 
 /**
@@ -247,7 +247,7 @@ const applyThemeVisuals = theme => {
  * @param {Theme} theme the theme
  */
 const applyTheme = theme => {
-    applyThemeVisuals(theme);
+    applyThemeVisuals(theme, {persistAppearance: true});
     persistTheme(theme);
     announceThemeChange();
 };
