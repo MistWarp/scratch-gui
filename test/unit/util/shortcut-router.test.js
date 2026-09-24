@@ -22,6 +22,18 @@ const pressUndo = () => {
     document.dispatchEvent(event);
 };
 
+const pressRedo = () => {
+    const event = new KeyboardEvent('keydown', {
+        bubbles: true,
+        ctrlKey: true,
+        key: 'z',
+        metaKey: true,
+        shiftKey: true
+    });
+    Object.defineProperty(event, 'keyCode', {value: 90});
+    document.dispatchEvent(event);
+};
+
 const pressFullscreen = () => {
     const event = new KeyboardEvent('keydown', {
         bubbles: true,
@@ -103,6 +115,45 @@ describe('shortcut router lifecycle', () => {
 
         expect(undo).toHaveBeenCalledTimes(1);
         expect(vm.postUndo).not.toHaveBeenCalled();
+    });
+
+    test('redo goes through the workspace callback', () => {
+        const redo = jest.fn();
+        initialize({}, {}, {redo});
+
+        pressRedo();
+
+        expect(redo).toHaveBeenCalledTimes(1);
+    });
+
+    test('a handled shortcut is not also delivered to later document listeners', () => {
+        const undo = jest.fn();
+        const later = jest.fn();
+        initialize({}, {}, {undo});
+        document.addEventListener('keydown', later);
+        try {
+            pressUndo();
+        } finally {
+            document.removeEventListener('keydown', later);
+        }
+
+        expect(undo).toHaveBeenCalledTimes(1);
+        expect(later).not.toHaveBeenCalled();
+    });
+
+    test('unbound keys still reach later document listeners', () => {
+        const later = jest.fn();
+        initialize({}, {}, {});
+        document.addEventListener('keydown', later);
+        try {
+            const event = new KeyboardEvent('keydown', {bubbles: true, key: 'q'});
+            Object.defineProperty(event, 'keyCode', {value: 81});
+            document.dispatchEvent(event);
+        } finally {
+            document.removeEventListener('keydown', later);
+        }
+
+        expect(later).toHaveBeenCalledTimes(1);
     });
 
     test('F11 uses the fullscreen callback', () => {
