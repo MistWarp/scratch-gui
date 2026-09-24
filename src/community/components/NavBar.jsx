@@ -373,7 +373,10 @@ const NavBar = () => {
                         src={logo}
                         alt=""
                     />
-                    <span className={styles.wordmark}>{communityText('MistWarp')}</span>
+                    <span className={styles.brandText}>
+                        <span className={styles.wordmark}>{communityText('MistWarp')}</span>
+                        <span className={styles.beta}>{communityText('Beta')}</span>
+                    </span>
                 </Link>
 
                 <nav className={styles.links} aria-label={t('nav.main')}>

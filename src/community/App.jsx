@@ -7,7 +7,7 @@ import {UserProvider} from './UserContext.jsx';
 import setPageMeta from './page-meta.js';
 import {initSiteErrorReporting} from '../lib/error-reporter.js';
 import NavBar from './components/NavBar.jsx';
-import BetaBanner from './components/BetaBanner.jsx';
+import AnnouncementBanner from './components/AnnouncementBanner.jsx';
 import StandingBanner from './components/StandingBanner.jsx';
 import UpgradeCelebration from './components/UpgradeCelebration.jsx';
 import UpdateToast from '../components/update-toast/update-toast.jsx';
@@ -107,7 +107,7 @@ const App = () => {
         <a className={tokenStyles['mw-skip-link']} href="#mw-main-content">{t('a11y.skip')}</a>
         <RouteMeta />
         <NavBar />
-        <BetaBanner />
+        <AnnouncementBanner />
         <StandingBanner />
         <UpdateToast />
         <UpgradeCelebration />
