@@ -2100,7 +2100,7 @@
     "src/community/pages/Profile.jsx:1143",
     "src/community/pages/Project.jsx:1729",
     "src/community/pages/Project.jsx:3089",
-    "src/community/pages/Support.jsx:140"
+    "src/community/pages/Support.jsx:141"
   ],
   "Send report": [
     "src/community/components/ReportModal.jsx:95"
@@ -3018,7 +3018,7 @@
   "Message": [
     "src/community/pages/Admin.jsx:1162",
     "src/community/pages/Admin.jsx:2097",
-    "src/community/pages/Support.jsx:138"
+    "src/community/pages/Support.jsx:139"
   ],
   "Send": [
     "src/community/pages/Admin.jsx:1166"
@@ -3860,7 +3860,7 @@
     "src/community/pages/ManageProject.jsx:855",
     "src/community/pages/ManageProject.jsx:978",
     "src/community/pages/ManageSpace.jsx:635",
-    "src/community/pages/Support.jsx:136"
+    "src/community/pages/Support.jsx:137"
   ],
   "MistWarp compared with Scratch and TurboWarp": [
     "src/community/pages/Compare.jsx:69"
@@ -7195,41 +7195,44 @@
   "Open chat in the editor": [
     "src/community/pages/Support.jsx:112"
   ],
-  "Prefer Discord? The chat is bridged with the MistWarp Discord server, so you can join the same conversations there.": [
+  "Join the server in OriginChats": [
     "src/community/pages/Support.jsx:113"
   ],
-  "Join the MistWarp Discord server": [
+  "Prefer Discord? The chat is bridged with the MistWarp Discord server, so you can join the same conversations there.": [
     "src/community/pages/Support.jsx:114"
   ],
+  "Join the MistWarp Discord server": [
+    "src/community/pages/Support.jsx:115"
+  ],
   "Send a private request": [
-    "src/community/pages/Support.jsx:117"
+    "src/community/pages/Support.jsx:118"
   ],
   "Send another request": [
-    "src/community/pages/Support.jsx:128"
+    "src/community/pages/Support.jsx:129"
   ],
   "Your request was sent to the MistWarp moderators.": [
-    "src/community/pages/Support.jsx:131"
+    "src/community/pages/Support.jsx:132"
   ],
   "Topic": [
-    "src/community/pages/Support.jsx:135"
+    "src/community/pages/Support.jsx:136"
   ],
   "Account help": [
-    "src/community/pages/Support.jsx:135"
+    "src/community/pages/Support.jsx:136"
   ],
   "Safety concern": [
-    "src/community/pages/Support.jsx:135"
+    "src/community/pages/Support.jsx:136"
   ],
   "Legal or copyright": [
-    "src/community/pages/Support.jsx:135"
+    "src/community/pages/Support.jsx:136"
   ],
   "Moderation appeal": [
-    "src/community/pages/Support.jsx:135"
+    "src/community/pages/Support.jsx:136"
   ],
   "Subject": [
-    "src/community/pages/Support.jsx:137"
+    "src/community/pages/Support.jsx:138"
   ],
   "Send request": [
-    "src/community/pages/Support.jsx:140"
+    "src/community/pages/Support.jsx:141"
   ],
   "Could not load this theme.": [
     "src/community/pages/Theme.jsx:109"

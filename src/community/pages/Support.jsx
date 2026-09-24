@@ -3,7 +3,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useRef, useState} from 'react';
 import {Link, useSearchParams} from 'react-router-dom';
 import api, {editorUrl} from '../api';
-import {DISCORD_INVITE} from '../../lib/originchats/links.js';
+import {CHAT_INVITE, DISCORD_INVITE} from '../../lib/originchats/links.js';
 import {Bug, LifeBuoy, MessagesSquare, Send} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import Button from '../components/ui/Button.jsx';
@@ -110,6 +110,7 @@ const Support = () => {
                 <SectionHeading icon={MessagesSquare} title={communityText('Ask the community')} />
                 <p>{communityText('The MistWarp chat is the best place to ask quick questions and talk with other creators. It runs on OriginChats, so you can open it beside your project with the Chat button in the editor, or use any OriginChats client with chats.mistwarp.org.')}</p>
                 <p><a href={editorUrl({chat: true})}>{communityText('Open chat in the editor')}</a></p>
+                <p><a href={CHAT_INVITE} target="_blank" rel="noreferrer">{communityText('Join the server in OriginChats')}</a></p>
                 <p>{communityText('Prefer Discord? The chat is bridged with the MistWarp Discord server, so you can join the same conversations there.')}</p>
                 <p><a href={DISCORD_INVITE} target="_blank" rel="noreferrer">{communityText('Join the MistWarp Discord server')}</a></p>
             </section>
