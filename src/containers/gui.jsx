@@ -64,6 +64,7 @@ import TWThemeManagerHOC from './tw-theme-manager-hoc.jsx';
 import {dispose as disposeShortcuts, initialize as initializeShortcuts} from
     '../lib/shortcuts/event-router.js';
 import startFractchLiveReload from '../lib/fractch-live';
+import LazyScratchBlocks from '../lib/tw-lazy-scratch-blocks.js';
 import smartSave from '../lib/mw/smart-save.js';
 import MwAutosave from './mw-autosave.jsx';
 import MwCreatorSession from './mw-creator-session.jsx';
@@ -117,6 +118,7 @@ class GUI extends React.Component {
                 duplicateSprite: () => this.props.onDuplicateEditingSprite(this.props.vm),
                 deleteSprite: () => this.props.onDeleteEditingSprite(this.props.vm),
                 undo: () => this.handleUndo(),
+                redo: () => this.handleRedo(),
                 toggleStageSize: () => {
                     this.props.onSetStageSize(
                         this.props.stageSizeMode === STAGE_SIZE_MODES.large 
@@ -161,12 +163,21 @@ class GUI extends React.Component {
             this.fractchLiveReloadDispose = null;
         }
     }
+    undoInWorkspace (redo) {
+        if (!LazyScratchBlocks.isLoaded()) return false;
+        const workspace = LazyScratchBlocks.get().getMainWorkspace();
+        if (!workspace || typeof workspace.undo !== 'function') return false;
+        workspace.undo(redo);
+        return true;
+    }
+    handleRedo () {
+        return this.undoInWorkspace(true);
+    }
     handleUndo () {
         if (this.restoreDeletionPromise) return this.restoreDeletionPromise;
         const restore = this.props.restoreDeletion && this.props.restoreDeletion.restoreFun;
         if (typeof restore !== 'function') {
-            if (this.props.vm.postUndo) this.props.vm.postUndo();
-            return Promise.resolve(false);
+            return Promise.resolve(this.undoInWorkspace(false));
         }
 
         this.restoreDeletionPromise = Promise.resolve()

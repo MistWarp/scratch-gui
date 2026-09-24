@@ -1,5 +1,6 @@
 import keyMirror from 'keymirror';
 
+const ABORT_PROJECT_SWITCH = 'scratch-gui/project-state/ABORT_PROJECT_SWITCH';
 const DONE_CREATING_COPY = 'scratch-gui/project-state/DONE_CREATING_COPY';
 const DONE_CREATING_NEW = 'scratch-gui/project-state/DONE_CREATING_NEW';
 const DONE_FETCHING_DEFAULT = 'scratch-gui/project-state/DONE_FETCHING_DEFAULT';
@@ -204,6 +205,24 @@ const reducer = function (state, action) {
             return Object.assign({}, state, {
                 loadingState: LoadingState.FETCHING_NEW_DEFAULT,
                 projectId: defaultProjectId
+            });
+        }
+        return state;
+    case ABORT_PROJECT_SWITCH:
+        // the previous project was restored after a fetch or load failed part way through
+        if ([
+            LoadingState.FETCHING_NEW_DEFAULT,
+            LoadingState.FETCHING_WITH_ID,
+            LoadingState.LOADING_VM_NEW_DEFAULT,
+            LoadingState.LOADING_VM_WITH_ID
+        ].includes(state.loadingState)) {
+            const previousId = action.projectId === null || typeof action.projectId === 'undefined' ?
+                defaultProjectId : `${action.projectId}`;
+            return Object.assign({}, state, {
+                loadingState: previousId === defaultProjectId ?
+                    LoadingState.SHOWING_WITHOUT_ID : LoadingState.SHOWING_WITH_ID,
+                projectId: previousId,
+                projectData: null
             });
         }
         return state;
@@ -465,6 +484,11 @@ const projectError = error => ({
     error: error
 });
 
+const abortProjectSwitch = previousProjectId => ({
+    type: ABORT_PROJECT_SWITCH,
+    projectId: previousProjectId
+});
+
 const setProjectId = id => ({
     type: SET_PROJECT_ID,
     projectId: id
@@ -509,6 +533,7 @@ export {
     initialState as projectStateInitialState,
     LoadingState,
     LoadingStates,
+    abortProjectSwitch,
     autoUpdateProject,
     createProject,
     defaultProjectId,

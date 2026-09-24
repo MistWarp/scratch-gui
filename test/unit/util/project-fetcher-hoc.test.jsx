@@ -8,7 +8,7 @@ import storage from '../../../src/lib/persistence/storage';
 import {LoadingState} from '../../../src/reducers/project-state';
 import {getEditorProject, fetchWorkspace} from '../../../src/lib/community/api.js';
 import {cachedFetchBuffer} from '../../../src/lib/community/cached-fetch.js';
-import {isProjectOperationActive} from '../../../src/lib/project-operation.js';
+import {beginProjectOperation, isProjectOperationActive} from '../../../src/lib/project-operation.js';
 
 jest.mock('../../../src/lib/git/browser-git.js', () => ({
     cloneRepo: jest.fn(),
@@ -117,6 +117,73 @@ describe('ProjectFetcherHOC', () => {
         expect(onFetchedProjectData).toHaveBeenCalledTimes(1);
         expect(onFetchedProjectData).toHaveBeenCalledWith('old project', LoadingState.FETCHING_WITH_ID);
         storage.load = originalLoad;
+    });
+
+    test('a lock conflict returns to the previous project instead of a fatal error', async () => {
+        const Component = () => <div />;
+        const WrappedComponent = ProjectFetcherHOC(Component);
+        const onAbortProjectSwitch = jest.fn();
+        const onShowProjectSwitchError = jest.fn();
+        const onError = jest.fn();
+        const vmForFetch = {
+            loadProject: jest.fn(),
+            quit: jest.fn(),
+            runtime: {targets: [{}]}
+        };
+        const release = beginProjectOperation(vmForFetch);
+        try {
+            const wrapper = shallowWithIntl(
+                <WrappedComponent
+                    onAbortProjectSwitch={onAbortProjectSwitch}
+                    onError={onError}
+                    onShowProjectSwitchError={onShowProjectSwitchError}
+                    store={store}
+                    vm={vmForFetch}
+                />,
+                {context: {store}}
+            );
+            const instance = wrapper.dive().dive().instance();
+            instance.previousProjectId = '100';
+            await instance.fetchProject('200', LoadingState.FETCHING_WITH_ID);
+        } finally {
+            release();
+        }
+
+        expect(onError).not.toHaveBeenCalled();
+        expect(onAbortProjectSwitch).toHaveBeenCalledWith('100');
+        expect(onShowProjectSwitchError).toHaveBeenCalledTimes(1);
+        expect(onShowProjectSwitchError.mock.calls[0][0].message).toMatch(/Wait for the current save/);
+    });
+
+    test('a lock conflict on the first project load stays fatal', async () => {
+        const Component = () => <div />;
+        const WrappedComponent = ProjectFetcherHOC(Component);
+        const onAbortProjectSwitch = jest.fn();
+        const onError = jest.fn();
+        const vmForFetch = {
+            loadProject: jest.fn(),
+            quit: jest.fn(),
+            runtime: {targets: []}
+        };
+        const release = beginProjectOperation(vmForFetch);
+        try {
+            const wrapper = shallowWithIntl(
+                <WrappedComponent
+                    onAbortProjectSwitch={onAbortProjectSwitch}
+                    onError={onError}
+                    store={store}
+                    vm={vmForFetch}
+                />,
+                {context: {store}}
+            );
+            const instance = wrapper.dive().dive().instance();
+            await instance.fetchProject('200', LoadingState.FETCHING_WITH_ID);
+        } finally {
+            release();
+        }
+
+        expect(onAbortProjectSwitch).not.toHaveBeenCalled();
+        expect(onError).toHaveBeenCalledTimes(1);
     });
 
     test('loads a MistWarp project without downloading or importing its workspace', async () => {

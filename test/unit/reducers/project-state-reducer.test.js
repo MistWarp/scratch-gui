@@ -1,6 +1,7 @@
 /* eslint-env jest */
 import projectStateReducer, {
     LoadingState,
+    abortProjectSwitch,
     autoUpdateProject,
     doneCreatingProject,
     doneUpdatingProject,
@@ -505,4 +506,49 @@ test('projectError encountered while in state FETCHING_WITH_ID results in ' +
     expect(resultState.loadingState).toBe(LoadingState.ERROR);
     expect(resultState.projectId).toBe(null);
     expect(resultState.error).toEqual('Error string');
+});
+
+test('abortProjectSwitch while fetching returns to the previous project', () => {
+    const initialState = {
+        projectId: '200',
+        loadingState: LoadingState.FETCHING_WITH_ID,
+        projectData: null
+    };
+    const action = abortProjectSwitch('100');
+    const resultState = projectStateReducer(initialState, action);
+    expect(resultState.loadingState).toBe(LoadingState.SHOWING_WITH_ID);
+    expect(resultState.projectId).toBe('100');
+});
+
+test('abortProjectSwitch while loading the VM returns to the previous project', () => {
+    const initialState = {
+        projectId: '200',
+        loadingState: LoadingState.LOADING_VM_WITH_ID,
+        projectData: 'data'
+    };
+    const resultState = projectStateReducer(initialState, abortProjectSwitch(100));
+    expect(resultState.loadingState).toBe(LoadingState.SHOWING_WITH_ID);
+    expect(resultState.projectId).toBe('100');
+    expect(resultState.projectData).toBe(null);
+});
+
+test('abortProjectSwitch back to an unsaved project shows it without an id', () => {
+    const initialState = {
+        projectId: '200',
+        loadingState: LoadingState.FETCHING_WITH_ID,
+        projectData: null
+    };
+    expect(projectStateReducer(initialState, abortProjectSwitch(null)).loadingState)
+        .toBe(LoadingState.SHOWING_WITHOUT_ID);
+    expect(projectStateReducer(initialState, abortProjectSwitch('0')).loadingState)
+        .toBe(LoadingState.SHOWING_WITHOUT_ID);
+});
+
+test('abortProjectSwitch does nothing while a project is showing', () => {
+    const initialState = {
+        projectId: '200',
+        loadingState: LoadingState.SHOWING_WITH_ID,
+        projectData: null
+    };
+    expect(projectStateReducer(initialState, abortProjectSwitch('100'))).toBe(initialState);
 });

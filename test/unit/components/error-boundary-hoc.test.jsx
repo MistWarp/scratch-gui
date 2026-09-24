@@ -55,4 +55,69 @@ describe('ErrorBoundary', () => {
             Object.defineProperty(window, 'location', {configurable: true, value: originalLocation});
         }
     });
+
+    test('the crash screen can download the project while the VM is still alive', async () => {
+        const blob = new Blob(['sb3']);
+        window.vm = {
+            runtime: {targets: [{}]},
+            saveProjectSb3: jest.fn(() => Promise.resolve(blob))
+        };
+        const createObjectURL = window.URL.createObjectURL;
+        const revokeObjectURL = window.URL.revokeObjectURL;
+        window.URL.createObjectURL = jest.fn(() => 'blob:project');
+        window.URL.revokeObjectURL = jest.fn();
+        try {
+            const wrapper = mountWithIntl(
+                <Provider store={store}><ErrorBoundary action="test"><ChildComponent /></ErrorBoundary></Provider>
+            );
+            wrapper.childAt(0).childAt(0).simulateError(new Error('render failed'));
+            wrapper.update();
+            const button = wrapper.find('button').filterWhere(node => /Download project/.test(node.text()));
+            expect(button).toHaveLength(1);
+            button.simulate('click');
+            await new Promise(resolve => setTimeout(resolve, 0));
+            expect(window.vm.saveProjectSb3).toHaveBeenCalledTimes(1);
+            expect(window.URL.createObjectURL).toHaveBeenCalledWith(blob);
+        } finally {
+            delete window.vm;
+            window.URL.createObjectURL = createObjectURL;
+            window.URL.revokeObjectURL = revokeObjectURL;
+        }
+    });
+
+    test('the download action is hidden when no project is loaded', () => {
+        delete window.vm;
+        const wrapper = mountWithIntl(
+            <Provider store={store}><ErrorBoundary action="test"><ChildComponent /></ErrorBoundary></Provider>
+        );
+        wrapper.childAt(0).childAt(0).simulateError(new Error('render failed'));
+        wrapper.update();
+        expect(wrapper.find('button').filterWhere(node => /Download project/.test(node.text()))).toHaveLength(0);
+    });
+
+    test('changing the reset key clears the crash and renders the children again', () => {
+        const wrapper = mountWithIntl(
+            <Provider store={store}>
+                <ErrorBoundary
+                    action="test"
+                    resetKey="/one"
+                ><ChildComponent /></ErrorBoundary>
+            </Provider>
+        );
+        wrapper.childAt(0).childAt(0).simulateError(new Error('render failed'));
+        wrapper.update();
+        expect(wrapper.containsMatchingElement(<CrashMessageComponent />)).toBeTruthy();
+
+        wrapper.setProps({
+            children: (
+                <ErrorBoundary
+                    action="test"
+                    resetKey="/two"
+                ><ChildComponent /></ErrorBoundary>
+            )
+        });
+        wrapper.update();
+        expect(wrapper.containsMatchingElement(<CrashMessageComponent />)).toBeFalsy();
+        expect(wrapper.text()).toContain('hello');
+    });
 });

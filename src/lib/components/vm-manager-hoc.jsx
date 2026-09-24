@@ -146,7 +146,16 @@ const vmManagerHOC = function (WrappedComponent) {
                     return true;
                 })
                 .catch(async e => {
-                    if (rollback) await rollback();
+                    log.error(e);
+                    if (rollback) {
+                        // A successful rollback restores the previous project and
+                        // its redux state; only an unrecoverable failure is fatal.
+                        const restored = await rollback({error: e}).then(() => true, rollbackError => {
+                            log.error('Could not restore the previous project:', rollbackError);
+                            return false;
+                        });
+                        if (restored) return false;
+                    }
                     if (this._isMounted && loadGeneration === this.loadGeneration) {
                         onError(e);
                     }
