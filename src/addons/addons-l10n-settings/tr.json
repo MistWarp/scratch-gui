@@ -379,8 +379,6 @@
   "fullscreen/@description": "Proje oynatıcısının tam ekran modundaki bazı istenmeyen efektlerini düzeltir, tarayıcınızın tam ekran modunda açar ve yeşil bayrak araç çubuğunu gizler.",
   "fullscreen/@name": "Geliştirilmiş tam ekran",
   "fullscreen/@settings-name-browserFullscreen": "Tam ekran proje oynatıcısını, tam ekran tarayıcı modunda aç",
-  "hide-stage/@description": "Sahne alanını ve kukla bölmesini gizleyen \"küçük sahne\" ve \"büyük sahne\" düğmelerinin yanına bir düğme daha ekleyerek kod alanını çok daha büyük hâle getirir.",
-  "hide-stage/@name": "Sahneyi ve kukla bölmesini gizle",
   "editor-stepping/@description": "Projede çalışmakta olan bloklara renkli bir vurgu ekler.",
   "editor-stepping/@name": "Çalışan blok kenarlığı",
   "editor-stepping/@settings-name-highlight-color": "Vurgu rengi"

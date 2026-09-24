@@ -323,8 +323,6 @@
   "fullscreen/@description": "전체 화면 모드에서 발생하는 몇몇 의도하지 않은 효과들을 고치고, 브라우저의 전체 화면 모드로 열 수 있으며, 녹색 깃발 툴바를 숨깁니다.",
   "fullscreen/@name": "향상된 전체 화면",
   "fullscreen/@settings-name-browserFullscreen": "전체 화면 플레리어를 전체 화면 브라우저 모드에서 열기",
-  "hide-stage/@description": "무대와 스프라이트 탭을 숨기는 \"무대 숨기기\" 버튼을 추가하여 코드 편집기를 더 크게 사용할 수 있습니다.",
-  "hide-stage/@name": "무대와 스프라이트 탭 숨기기",
   "editor-stepping/@description": "프로젝트에서 현재 실행 중인 블록을 색으로 강조합니다.",
   "editor-stepping/@name": "실행 블록 테두리",
   "editor-stepping/@settings-name-highlight-color": "강조색"

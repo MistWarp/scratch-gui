@@ -63,7 +63,6 @@ const addons = [
     'fullscreen',
     'tw-straighten-comments',
     'tw-remove-backpack',
-    'tw-disable-cloud-variables',
     'no-category-text',
     'green-flag-order',
     'remove-extension-button',

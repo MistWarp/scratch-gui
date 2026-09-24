@@ -12,6 +12,11 @@ import {getStyleSetting, getStyleSettings, setStyleSetting} from '../lib/mw-styl
 import {applyTheme} from '../lib/themes/themePersistance';
 import {getHideOperatorArrows, setHideOperatorArrows} from '../lib/mw-operator-arrows';
 import {getVanillaPalette, setVanillaPalette} from '../lib/mw-vanilla-palette';
+import {
+    getDisableCompiler, setDisableCompiler,
+    getDisableCloudVariables, setDisableCloudVariables
+} from '../lib/mw-editor-defaults';
+import {setCloud} from '../reducers/tw';
 import {normalizeCustomFramerate} from '../lib/utils/framerate';
 
 
@@ -27,6 +32,8 @@ class UsernameModal extends React.Component {
             storeThemeInProject: localStorage.getItem('mw:store-theme-in-project') === 'true',
             hideOperatorArrows: getHideOperatorArrows(),
             vanillaPalette: getVanillaPalette(),
+            disableCompiler: getDisableCompiler(),
+            disableCloudVariables: getDisableCloudVariables(),
             squareStageCorners: getAppearanceSetting('square-stage-corners'),
             hideDeleteButton: getAppearanceSetting('hide-delete-button'),
             hideExtensionButton: getAppearanceSetting('hide-extension-button'),
@@ -46,6 +53,7 @@ class UsernameModal extends React.Component {
             'handleStageWidthChange',
             'handleStageHeightChange',
             'handleDisableCompilerChange',
+            'handleDisableCloudVariablesChange',
             'handleCaseSensitiveListsChange',
             'handleUnsafeOptimisationsChange',
             'handleRealLayerIndexesChange',
@@ -104,9 +112,18 @@ class UsernameModal extends React.Component {
         });
     }
     handleDisableCompilerChange (e) {
+        const disabled = e.target.checked;
+        this.setState({disableCompiler: disabled});
+        setDisableCompiler(disabled);
         this.props.vm.setCompilerOptions({
-            enabled: !e.target.checked
+            enabled: !disabled
         });
+    }
+    handleDisableCloudVariablesChange (e) {
+        const disabled = e.target.checked;
+        this.setState({disableCloudVariables: disabled});
+        setDisableCloudVariables(disabled);
+        this.props.onSetCloud(!disabled);
     }
     handleCaseSensitiveListsChange (e) {
         this.props.vm.setRuntimeOptions({
@@ -301,6 +318,9 @@ class UsernameModal extends React.Component {
                 onStageWidthChange={this.handleStageWidthChange}
                 onStageHeightChange={this.handleStageHeightChange}
                 onDisableCompilerChange={this.handleDisableCompilerChange}
+                disableCompiler={this.state.disableCompiler}
+                onDisableCloudVariablesChange={this.handleDisableCloudVariablesChange}
+                disableCloudVariables={this.state.disableCloudVariables}
                 onCaseSensitiveListsChange={this.handleCaseSensitiveListsChange}
                 onRealLayerIndexesChange={this.handleRealLayerIndexesChange}
                 stageWidth={this.props.customStageSize.width}
@@ -374,7 +394,7 @@ UsernameModal.propTypes = {
         width: PropTypes.number,
         height: PropTypes.number
     }),
-    disableCompiler: PropTypes.bool,
+    onSetCloud: PropTypes.func,
     caseSensitiveLists: PropTypes.bool,
     realLayerIndexes: PropTypes.bool,
     theme: PropTypes.any,
@@ -400,6 +420,7 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => ({
     onClose: () => dispatch(closeSettingsModal()),
+    onSetCloud: cloud => dispatch(setCloud(cloud)),
     onChangeTheme: theme => {
         dispatch(setTheme(theme));
         applyTheme(theme);

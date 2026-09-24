@@ -53,10 +53,7 @@ import * as bundledModule51 from "../addons/number-pad/_runtime_entry.js";
 import * as bundledModule52 from "../addons/editor-number-arrow-keys/_runtime_entry.js";
 import * as bundledModule53 from "../addons/script-snap/_runtime_entry.js";
 import * as bundledModule54 from "../addons/fullscreen/_runtime_entry.js";
-import * as bundledModule55 from "../addons/hide-stage/_runtime_entry.js";
 import * as bundledModule56 from "../addons/tw-straighten-comments/_runtime_entry.js";
-import * as bundledModule57 from "../addons/tw-disable-cloud-variables/_runtime_entry.js";
-import * as bundledModule58 from "../addons/tw-disable-compiler/_runtime_entry.js";
 import * as bundledModule59 from "../addons/no-category-text/_runtime_entry.js";
 import * as bundledModule60 from "../addons/green-flag-order/_runtime_entry.js";
 import * as bundledModule61 from "../addons/merge-operators/_runtime_entry.js";
@@ -120,10 +117,7 @@ export default {
   "editor-number-arrow-keys": () => Promise.resolve(bundledModule52),
   "script-snap": () => Promise.resolve(bundledModule53),
   "fullscreen": () => Promise.resolve(bundledModule54),
-  "hide-stage": () => Promise.resolve(bundledModule55),
   "tw-straighten-comments": () => Promise.resolve(bundledModule56),
-  "tw-disable-cloud-variables": () => Promise.resolve(bundledModule57),
-  "tw-disable-compiler": () => Promise.resolve(bundledModule58),
   "no-category-text": () => Promise.resolve(bundledModule59),
   "green-flag-order": () => Promise.resolve(bundledModule60),
   "merge-operators": () => Promise.resolve(bundledModule61),

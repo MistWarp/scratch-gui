@@ -10,8 +10,10 @@ import {initStyleSettings} from '../mw-style-settings';
 import {initMenuBarLayout} from '../mw-menu-bar-layout';
 
 import {
+    setCloud,
     setUsername
 } from '../../reducers/tw';
+import {getDisableCompiler, getDisableCloudVariables} from '../mw-editor-defaults';
 import {
     defaultProjectId,
     setProjectId
@@ -304,8 +306,10 @@ const TWStateManager = function (WrappedComponent) {
                 'onSetIsPlayerOnly',
                 'onSetIsFullScreen',
                 'handleRoomCode',
-                'handleParentIdentity'
+                'handleParentIdentity',
+                'applyEditorDefaults'
             ]);
+            this.editorDefaultsApplied = false;
         }
         componentDidMount () {
             const urlParams = new URLSearchParams(location.search);
@@ -313,6 +317,7 @@ const TWStateManager = function (WrappedComponent) {
             initAppearanceSettings();
             initStyleSettings();
             initMenuBarLayout();
+            this.applyEditorDefaults();
 
             if (urlParams.has('fps')) {
                 const fps = parseNonNegativeURLNumber(urlParams.get('fps'));
@@ -430,6 +435,9 @@ const TWStateManager = function (WrappedComponent) {
             }
         }
         componentDidUpdate (prevProps) {
+            if (this.props.isPlayerOnly !== prevProps.isPlayerOnly) {
+                this.applyEditorDefaults();
+            }
             if (this.props.username !== prevProps.username && this.props.username !== this.doNotPersistUsername) {
                 // TODO: this always restores the current username once at startup, which is unnecessary
                 setLocalStorage(USERNAME_KEY, this.props.username);
@@ -569,6 +577,23 @@ const TWStateManager = function (WrappedComponent) {
             window.removeEventListener('popstate', this.handlePopState);
             window.removeEventListener('message', this.handleParentIdentity);
         }
+        applyEditorDefaults () {
+            if (this.editorDefaultsApplied) {
+                return;
+            }
+            if (this.props.isPlayerOnly && !this.props.isEmbedded) {
+                return;
+            }
+            this.editorDefaultsApplied = true;
+            if (getDisableCompiler() && this.props.vm) {
+                this.props.vm.setCompilerOptions({
+                    enabled: false
+                });
+            }
+            if (getDisableCloudVariables()) {
+                this.props.onSetCloud(false);
+            }
+        }
         handleParentIdentity (event) {
             const data = event.data;
             if (!data || data.type !== 'mw:rotur-user' || event.source !== window.parent) return;
@@ -662,6 +687,7 @@ const TWStateManager = function (WrappedComponent) {
                 onSetIsPlayerOnly,
                 onSetProjectId,
                 onSetUsername,
+                onSetCloud,
                 onSetCollaborationRoomId,
                 onOpenCollaborationModal,
                 reduxProjectId,
@@ -707,6 +733,7 @@ const TWStateManager = function (WrappedComponent) {
         onSetIsPlayerOnly: PropTypes.func,
         onSetProjectId: PropTypes.func,
         onSetUsername: PropTypes.func,
+        onSetCloud: PropTypes.func,
         roturUsername: PropTypes.string,
         usernameOverride: PropTypes.string,
         onSetCollaborationRoomId: PropTypes.func,
@@ -744,6 +771,7 @@ const TWStateManager = function (WrappedComponent) {
         onSetIsPlayerOnly: isPlayerOnly => dispatch(setPlayer(isPlayerOnly)),
         onSetProjectId: projectId => dispatch(setProjectId(projectId)),
         onSetUsername: username => dispatch(setUsername(username)),
+        onSetCloud: cloud => dispatch(setCloud(cloud)),
         onSetCollaborationRoomId: roomId => dispatch(setCollaborationRoomId(roomId)),
         onOpenCollaborationModal: () => dispatch(openCollaborationModal()),
         openSimpleDialog: config => dispatch(openSimpleDialog(config))

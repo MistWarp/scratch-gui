@@ -373,8 +373,6 @@
   "fullscreen/@settings-select-toolbar-hide": "Никогда",
   "fullscreen/@settings-select-toolbar-hover": "При наведении курсора мыши",
   "fullscreen/@settings-select-toolbar-show": "Всегда",
-  "hide-stage/@description": "Добавляет кнопку рядом с кнопками \"маленькая сцена\" и \"большая сцена\", которая скрывает сцену и область спрайтов, делая область кода намного больше.",
-  "hide-stage/@name": "Скрыть сцену и область спрайтов",
   "editor-stepping/@description": "Добавляет цветную подсветку к блокам, которые в данный момент выполняются в проекте.",
   "editor-stepping/@name": "Выделять выполняемые в данный момент блоки",
   "editor-stepping/@settings-name-highlight-color": "Цвет подсветки"
