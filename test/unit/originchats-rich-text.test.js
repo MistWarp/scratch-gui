@@ -26,7 +26,9 @@ describe('originchats rich text', () => {
     test('resolves role mentions through the role list and channel mentions through the channel list', () => {
         const tokens = parse('@&1552656206236090490 see #help or #nowhere @&missing', context);
         expect(tokens[0]).toEqual({type: 'roleMention', id: '1552656206236090490', name: 'everyone', color: '#5865f2'});
-        expect(tokens.find(token => token.type === 'channel')).toEqual({type: 'channel', name: 'help'});
+        expect(tokens.find(token => token.type === 'channel')).toEqual({type: 'channel', name: 'help', channel: 'help'});
+        const bridged = parse('#general', {channels: [{name: 'discord-1', display_name: 'general'}]});
+        expect(bridged[0]).toEqual({type: 'channel', name: 'general', channel: 'discord-1'});
         const text = tokens.filter(token => token.type === 'text').map(token => token.text)
             .join('');
         expect(text).toContain('#nowhere');
