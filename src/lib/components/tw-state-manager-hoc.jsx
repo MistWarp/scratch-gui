@@ -636,6 +636,11 @@ const TWStateManager = function (WrappedComponent) {
                     this.restoreCurrentRoute();
                     return false;
                 }
+                // A save or autosave may have started while the dialog was open.
+                if (isProjectOperationActive(this.props.vm)) {
+                    this.restoreCurrentRoute();
+                    return false;
+                }
             }
             this.props.onSetProjectId(id);
             return true;

@@ -2,6 +2,12 @@ import {GUI, mapDispatchToProps} from '../../../src/containers/gui.jsx';
 
 jest.mock('../../../src/components/gui/gui.jsx', () => () => null);
 
+const mockWorkspace = {undo: jest.fn()};
+jest.mock('../../../src/lib/tw-lazy-scratch-blocks.js', () => ({
+    isLoaded: () => true,
+    get: () => ({getMainWorkspace: () => mockWorkspace})
+}));
+
 describe('GUI sprite shortcut actions', () => {
     test('exposes one shared tab activation dispatcher', () => {
         const actions = mapDispatchToProps(jest.fn());
@@ -112,10 +118,21 @@ describe('GUI deletion undo', () => {
     });
 
     test('undo falls back to the block workspace when nothing was deleted', async () => {
+        mockWorkspace.undo.mockClear();
         const gui = makeGui();
 
-        await gui.handleUndo();
+        await expect(gui.handleUndo()).resolves.toBe(true);
 
-        expect(gui.props.vm.postUndo).toHaveBeenCalledTimes(1);
+        expect(mockWorkspace.undo).toHaveBeenCalledWith(false);
+        expect(gui.props.vm.postUndo).not.toHaveBeenCalled();
+    });
+
+    test('redo goes to the block workspace', () => {
+        mockWorkspace.undo.mockClear();
+        const gui = makeGui();
+
+        expect(gui.handleRedo()).toBe(true);
+
+        expect(mockWorkspace.undo).toHaveBeenCalledWith(true);
     });
 });

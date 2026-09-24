@@ -21,7 +21,14 @@
     color: inherit;
 }
 
-.reloadButton {
+.actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.reloadButton, .downloadButton {
     border: 1px solid $motion-primary;
     border-radius: 0.25rem;
     padding: 0.5rem 2rem;
@@ -30,6 +37,21 @@
     font-weight: bold;
     font-size: 0.875rem;
     cursor: pointer;
+}
+
+.reloadButton {
+    background: transparent;
+    border-color: white;
+    color: white;
+}
+
+.downloadButton:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.downloadStatus {
+    font-size: 0.875rem;
 }
 
 .header {

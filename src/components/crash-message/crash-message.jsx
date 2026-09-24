@@ -47,24 +47,61 @@ const CrashMessage = props => (
                     />
                 </p>
             )}
-            <button
-                type="button"
-                className={styles.reloadButton}
-                onClick={props.onReload}
-            >
-                <FormattedMessage
-                    defaultMessage="Reload"
-                    description="Button to reload the page when page crashes"
-                    id="gui.crashMessage.reload"
-                />
-            </button>
+            <div className={styles.actions}>
+                {props.onDownloadProject && (
+                    <button
+                        type="button"
+                        className={styles.downloadButton}
+                        disabled={props.downloadState === 'saving'}
+                        onClick={props.onDownloadProject}
+                    >
+                        <FormattedMessage
+                            defaultMessage="Download project"
+                            description="Button to save the project to the computer after the page crashes"
+                            id="mw.crashMessage.downloadProject"
+                        />
+                    </button>
+                )}
+                <button
+                    type="button"
+                    className={styles.reloadButton}
+                    onClick={props.onReload}
+                >
+                    <FormattedMessage
+                        defaultMessage="Reload"
+                        description="Button to reload the page when page crashes"
+                        id="gui.crashMessage.reload"
+                    />
+                </button>
+            </div>
+            {props.downloadState === 'saved' && (
+                <p className={styles.downloadStatus}>
+                    <FormattedMessage
+                        defaultMessage="Your project was downloaded. Open it from File after reloading."
+                        description="Shown after the project is saved to the computer from the crash screen"
+                        id="mw.crashMessage.downloadSaved"
+                    />
+                </p>
+            )}
+            {props.downloadState === 'failed' && (
+                <p className={styles.downloadStatus}>
+                    <FormattedMessage
+                        // eslint-disable-next-line max-len
+                        defaultMessage="The project could not be saved. A device backup may still be available under File after reloading."
+                        description="Shown when saving the project from the crash screen fails"
+                        id="mw.crashMessage.downloadFailed"
+                    />
+                </p>
+            )}
         </Box>
     </div>
 );
 
 CrashMessage.propTypes = {
+    downloadState: PropTypes.oneOf(['saving', 'saved', 'failed']),
     eventId: PropTypes.string,
     errorMessage: PropTypes.string,
+    onDownloadProject: PropTypes.func,
     onReload: PropTypes.func.isRequired
 };
 
