@@ -2,7 +2,6 @@ import {MenuBar, mapDispatchToProps} from '../../../src/components/menu-bar/menu
 import {openExtensionLibrary} from '../../../src/reducers/modals';
 import {commitProject, pull, push, repoExists} from '../../../src/lib/git/browser-git';
 import {createMwp} from '../../../src/lib/git/mwp.js';
-import requestVersionMessage from '../../../src/lib/mw/request-version-message.jsx';
 
 jest.mock('../../../src/lib/git/browser-git', () => ({
     REPO_DIR: '/repo',
@@ -21,7 +20,6 @@ jest.mock('../../../src/lib/git/project-history.js', () => ({
     preloadProjectHistory: jest.fn(() => Promise.resolve()),
     subscribeProjectHistory: jest.fn()
 }));
-jest.mock('../../../src/lib/mw/request-version-message.jsx', () => jest.fn(() => Promise.resolve(false)));
 
 jest.mock('../../../src/lib/api/restore-points.js', () => ({
     createSafetyRestorePoint: jest.fn(async () => 42)
@@ -48,7 +46,6 @@ describe('menu bar file workflows', () => {
         push.mockClear();
         pull.mockClear();
         commitProject.mockClear();
-        requestVersionMessage.mockClear();
     });
 
     test('flushes a focused project title before saving with the keyboard', () => {
@@ -279,7 +276,6 @@ describe('menu bar file workflows', () => {
         expect(createMwp).toHaveBeenCalledWith(expect.objectContaining({
             commitChanges: false
         }));
-        expect(requestVersionMessage).not.toHaveBeenCalled();
         expect(menuBar.props.onShowGitStatus).toHaveBeenCalledWith('savingMwp');
         expect(showSaveFilePicker.mock.invocationCallOrder[0])
             .toBeLessThan(menuBar.props.onShowGitStatus.mock.invocationCallOrder[0]);
