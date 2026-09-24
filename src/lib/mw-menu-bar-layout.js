@@ -133,16 +133,28 @@ const getZoneExtras = (zoneId, presentIds) => {
     return zone.extras.filter(id => presentIds.includes(id));
 };
 
-const applyLayout = () => {
+const fullZoneOrder = (zone, order) => {
+    const result = order.filter(id => zone.items.includes(id));
+    for (const id of zone.items) {
+        if (!result.includes(id)) result.push(id);
+    }
+    return result;
+};
+
+// Renders a layout without touching storage, so a theme can be previewed
+// without overwriting the layout the user saved.
+const renderLayout = layout => {
     const parts = [];
+    const orders = (layout && layout.orders) || {};
     for (const zone of ZONES) {
-        if (!hasStoredOrder(zone.id)) continue;
-        const order = getStoredOrder(zone.id);
+        const stored = orders[zone.id];
+        if (!Array.isArray(stored) || stored.length === 0) continue;
+        const order = fullZoneOrder(zone, stored);
         for (let i = 0; i < order.length; i++) {
             parts.push(`[data-mw-item="${order[i]}"]{order:${i};}`);
         }
     }
-    for (const id of getHidden()) {
+    for (const id of (layout && layout.hidden) || []) {
         parts.push(`[data-mw-item="${id}"]{display:none !important;}`);
     }
     let style = document.getElementById(STYLE_ID);
@@ -154,8 +166,14 @@ const applyLayout = () => {
     style.textContent = parts.join('');
 };
 
-const applyMenuBarLayout = layout => {
+const applyLayout = () => renderLayout(getMenuBarLayout());
+
+const applyMenuBarLayout = (layout, {persist = true} = {}) => {
     const normalized = normalizeLayout(layout);
+    if (!persist) {
+        renderLayout(normalized);
+        return;
+    }
     try {
         if (normalized) {
             localStorage.setItem(ORDER_KEY, JSON.stringify(normalized.orders));
