@@ -66,3 +66,36 @@ test.each([
     reportSiteError({message: 'Failed to fetch dynamically imported module: https://mistwarp.org/assets/Project-C1T5GCNh.js', kind: 'react'});
     expect(request).not.toHaveBeenCalled();
 });
+
+test('skips ReferenceErrors and SyntaxErrors thrown by JavaScript typed into a project block', () => {
+    const {reportSiteError, request} = load();
+    reportSiteError({
+        message: 'Can\'t find variable: runtimr',
+        name: 'ReferenceError',
+        stack: 'gen3@\nM@https://mistwarp.org/assets/api-CDdEy8sZ.js:1340:43\nstepThread@https://mistwarp.org/assets/api-CDdEy8sZ.js:1487:12988'
+    });
+    reportSiteError({
+        message: 'Unexpected identifier \'repeat\'',
+        name: 'SyntaxError',
+        stack: 'SyntaxError: Unexpected identifier \'repeat\'\n    at executeBlock (eval at F (https://mistwarp.org/assets/api.js:1340:234), <anonymous>:99:54)\n    at _.stepThread (https://mistwarp.org/assets/api.js:1487:12987)'
+    });
+    expect(request).not.toHaveBeenCalled();
+});
+
+test.each([
+    ['ReferenceError', 'foo is not defined', 'ReferenceError: foo is not defined\n    at render (https://mistwarp.org/assets/app.js:1:10)'],
+    ['TypeError', 'Cannot read properties of undefined (reading \'getFenceBounds\')', 'TypeError: Cannot read properties of undefined (reading \'getFenceBounds\')\n    at Oe.getFencedPositionOfDrawable (https://mistwarp.org/assets/api.js:2789:22012)\n    at _.stepThread (https://mistwarp.org/assets/api.js:1487:12987)']
+])('still reports %s from MistWarp code', (name, message, stack) => {
+    const {reportSiteError, request} = load();
+    reportSiteError({message, name, stack});
+    expect(request).toHaveBeenCalledTimes(1);
+});
+
+test.each([
+    ['NotAllowedError', 'The request is not allowed by the user agent or the platform in the current context, possibly because the user denied permission.'],
+    ['NetworkError', 'A network error occurred.']
+])('skips browser refusals: %s', (name, message) => {
+    const {reportSiteError, request} = load();
+    reportSiteError({message, name, stack: `${name}: ${message}`, kind: 'rejection'});
+    expect(request).not.toHaveBeenCalled();
+});

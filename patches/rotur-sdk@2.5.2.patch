@@ -1,0 +1,74 @@
+diff --git a/dist/index.js b/dist/index.js
+index 9d7ff34bf38b7c804e3c45a92516d297912223b3..568779dfa1bc23e31e62026d3ca90a40140e9d7f 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -338,9 +338,29 @@ var RoturSocket = class extends EventTarget {
+     this.reconnectTimer = null;
+   }
+   emit(cmd, msg) {
+-    this.handlers.get(cmd)?.forEach((h) => h(msg));
+-    this.dispatchEvent(new CustomEvent(cmd, { detail: msg }));
+-    this.dispatchEvent(new CustomEvent("*", { detail: msg }));
++    const handlers = this.handlers.get(cmd);
++    handlers?.forEach((h) => {
++      try {
++        h(msg);
++      } catch (error) {
++        if (/dead object/i.test(String(error && error.message))) {
++          handlers.delete(h);
++          return;
++        }
++        setTimeout(() => {
++          throw error;
++        });
++      }
++    });
++    try {
++      this.dispatchEvent(new CustomEvent(cmd, { detail: msg }));
++      this.dispatchEvent(new CustomEvent("*", { detail: msg }));
++    } catch (error) {
++      if (/dead object/i.test(String(error && error.message))) return;
++      setTimeout(() => {
++        throw error;
++      });
++    }
+   }
+   send(packet) {
+     if (this.ws?.readyState === WebSocket.OPEN) {
+diff --git a/dist/index.mjs b/dist/index.mjs
+index 62f55ac5e31365504de85c78a671537777173e23..5ff3b60e2200121c3ca8cdf546189f34dd074519 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -294,9 +294,29 @@ var RoturSocket = class extends EventTarget {
+     this.reconnectTimer = null;
+   }
+   emit(cmd, msg) {
+-    this.handlers.get(cmd)?.forEach((h) => h(msg));
+-    this.dispatchEvent(new CustomEvent(cmd, { detail: msg }));
+-    this.dispatchEvent(new CustomEvent("*", { detail: msg }));
++    const handlers = this.handlers.get(cmd);
++    handlers?.forEach((h) => {
++      try {
++        h(msg);
++      } catch (error) {
++        if (/dead object/i.test(String(error && error.message))) {
++          handlers.delete(h);
++          return;
++        }
++        setTimeout(() => {
++          throw error;
++        });
++      }
++    });
++    try {
++      this.dispatchEvent(new CustomEvent(cmd, { detail: msg }));
++      this.dispatchEvent(new CustomEvent("*", { detail: msg }));
++    } catch (error) {
++      if (/dead object/i.test(String(error && error.message))) return;
++      setTimeout(() => {
++        throw error;
++      });
++    }
+   }
+   send(packet) {
+     if (this.ws?.readyState === WebSocket.OPEN) {
