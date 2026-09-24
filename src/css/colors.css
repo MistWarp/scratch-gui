@@ -9,6 +9,7 @@ $ui-modal-background: var(--ui-modal-background);
 $ui-modal-foreground: var(--ui-modal-foreground);
 $ui-modal-header-background: var(--ui-modal-header-background);
 $ui-modal-header-foreground: var(--ui-modal-header-foreground);
+$ui-modal-inset: color-mix(in srgb, var(--text-primary) 6%, var(--ui-modal-background));
 
 $ui-white: var(--ui-white);
 $accent-foreground: var(--accent-foreground);
@@ -19,7 +20,12 @@ $ui-transparent: var(--ui-transparent);
 $ui-black-transparent: var(--ui-black-transparent);
 
 $text-primary: var(--text-primary);
-$text-primary-transparent: var(--ui-text-primary-transparent);
+$text-primary-transparent: var(--text-primary-transparent);
+
+$status-success: var(--status-success);
+$status-warning: var(--status-warning);
+$status-danger: var(--status-danger);
+$status-info: var(--status-info);
 
 $motion-primary: var(--motion-primary);
 $motion-tertiary: var(--motion-tertiary);

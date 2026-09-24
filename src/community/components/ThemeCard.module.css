@@ -3,14 +3,13 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--bg-card);
-    transition: border-color 0.13s ease, background 0.13s ease;
+    box-shadow: var(--card-shadow);
+    transition: background 0.13s ease;
 }
 
 .card:hover {
-    border-color: var(--accent-border);
     background: var(--bg-raised);
 }
 
@@ -84,7 +83,6 @@
 
 @media (hover: none) {
     .card:hover {
-        border-color: var(--border);
         background: var(--bg-card);
     }
 }

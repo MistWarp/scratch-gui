@@ -32,8 +32,8 @@ import styles from './products-modal.css';
 
 const messages = defineMessages({
     title: {
-        defaultMessage: 'Project Management & Analytics',
-        description: 'Title for project management and analytics window',
+        defaultMessage: 'Products',
+        description: 'Title for the products, analytics and entitlements window',
         id: 'mw.productsModal.title'
     },
     grantPlaceholder: {

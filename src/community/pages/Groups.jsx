@@ -75,13 +75,13 @@ const Groups = () => {
 
     const cards = query.trim() ? groups : [...mine, ...groups.filter(group => !mineTags.has(group.tag))];
     return (<main className={styles.page}>
-        <ExploreNav active="groups" />
         <PageHeader
             icon={Building2}
             title={communityText('Groups')}
             lead={communityText('Organisations that share projects, spaces, members, and funding.')}
             actions={<Button variant="primary" onClick={() => window.location.assign(ROTUR_GROUP_CREATION_URL)}><Plus size={16} />{communityText('New group')}</Button>}
         />
+        <ExploreNav active="groups" />
 
         <form
             className={styles.search} onSubmit={event => {

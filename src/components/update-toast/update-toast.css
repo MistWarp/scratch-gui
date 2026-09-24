@@ -1,4 +1,5 @@
 @import "../../css/z-index.css";
+@import "../../css/colors.css";
 
 .updateToast {
     position: fixed;
@@ -15,15 +16,17 @@
     padding: 0.875rem 1rem;
     min-height: 1.5rem;
     pointer-events: all;
-    background: #FFF0DF;
-    border: 1px solid #FF8C1A;
-    box-shadow: 0px 0px 0px 2px rgba(255, 140, 26, 0.25);
+    background: $ui-modal-background;
+    color: $text-primary;
+    border: 1px solid $ui-black-transparent;
+    border-inline-start: 4px solid $status-info;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     z-index: $z-index-alerts;
 }
 
 .message {
-    color: #555;
-    font-weight: bold;
+    color: $text-primary;
+    font-weight: 600;
     font-size: 0.8125rem;
     line-height: 1.25;
     display: flex;
@@ -40,11 +43,11 @@
 .reloadButton {
     min-height: 2rem;
     padding: 0.55rem 0.9rem;
-    border-radius: 0.35rem;
-    background: #FF8C1A;
-    color: white;
+    border-radius: 6px;
+    background: $looks-secondary;
+    color: $accent-foreground;
     font-weight: 700;
-    font-size: 0.77rem;
+    font-size: 0.8125rem;
     border: none;
     cursor: pointer;
     white-space: nowrap;

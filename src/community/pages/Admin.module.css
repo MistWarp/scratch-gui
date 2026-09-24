@@ -348,7 +348,7 @@
 
 .quotaWarnText {
     font-size: var(--fs-xs);
-    color: #f0a3a3;
+    color: var(--mw-danger);
     font-weight: 600;
     margin-top: 2px;
     display: inline-flex;
@@ -712,7 +712,7 @@
     padding: 0;
     border: 0;
     background: transparent;
-    color: #e25555;
+    color: var(--mw-danger);
     font: inherit;
     font-size: var(--fs-xs);
     cursor: pointer;

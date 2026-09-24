@@ -43,9 +43,8 @@
     flex-direction: column;
     gap: 12px;
     padding: 22px;
-    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    background: var(--bg-card);
+    background: var(--bg-raised);
     font-size: var(--fs-md);
 }
 

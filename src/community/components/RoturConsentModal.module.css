@@ -15,7 +15,6 @@
     font-size: var(--fs-xs);
     font-weight: 700;
     text-transform: none;
-    letter-spacing: 0.03em;
     color: var(--text-dim);
 }
 

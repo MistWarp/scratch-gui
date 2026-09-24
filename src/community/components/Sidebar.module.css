@@ -3,11 +3,10 @@
     gap: 6px;
     padding: 8px;
     background: var(--bg-card);
-    border: 1px solid var(--border);
     border-radius: var(--radius);
     box-shadow: var(--card-shadow);
     position: sticky;
-    top: 20px;
+    top: calc(var(--nav-h) + 16px);
 }
 
 .item,
@@ -57,11 +56,9 @@
 
 .groupLabel {
     margin: 10px 10px 1px;
-    color: var(--text-faint);
-    font-size: var(--fs-2xs);
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: none;
+    color: var(--text-dim);
+    font-size: var(--fs-xs);
+    font-weight: 600;
 }
 
 .groupLabel:first-child {

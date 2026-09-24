@@ -7,8 +7,8 @@
     font-weight: 600;
     font-size: var(--fs-md);
     padding: 8px 14px;
-    border-radius: var(--radius-sm, var(--radius-sm));
-    border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
     cursor: pointer;
     min-height: 38px;
     text-decoration: none;
@@ -40,7 +40,7 @@
 }
 
 .secondary:hover:not(:disabled) {
-    background: var(--bg-header, #343434);
+    background: color-mix(in srgb, var(--mw-text, #eeeeee) 10%, var(--bg-raised, #2a2a2a));
 }
 
 .primary {
@@ -54,13 +54,12 @@
 }
 
 .danger {
-    background: transparent;
-    color: #e25555;
-    border-color: color-mix(in srgb, #e25555 45%, transparent);
+    background: color-mix(in srgb, var(--mw-danger, #d94747) 10%, transparent);
+    color: var(--mw-danger, #d94747);
 }
 
 .danger:hover:not(:disabled) {
-    background: color-mix(in srgb, #e25555 10%, transparent);
+    background: color-mix(in srgb, var(--mw-danger, #d94747) 18%, transparent);
 }
 
 @keyframes spin {

@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
-import {ChevronDown, ChevronUp, GripVertical} from 'lucide-react';
+import {ChevronDown, ChevronUp, GripVertical, Puzzle} from 'lucide-react';
 
 import Modal from '../../containers/windowed-modal.jsx';
 import Box from '../box/box.jsx';
@@ -29,6 +29,11 @@ const messages = defineMessages({
         defaultMessage: 'No extensions loaded',
         description: 'Label shown when no extensions are loaded',
         id: 'tw.extensionManager.noneLoaded'
+    },
+    emptyHint: {
+        defaultMessage: 'Extensions you add from the library or a custom source will be listed here.',
+        description: 'Hint shown under the empty state of the extension manager',
+        id: 'tw.extensionManager.emptyHint'
     },
     oneLoaded: {
         defaultMessage: '1 loaded extension',
@@ -311,7 +316,15 @@ export const ExtensionManagerModal = props => {
             id="extensionManagerModal"
         >
             <Box className={styles.body}>
-                <p className={styles.loadedAmount}>{loadedAmountText}</p>
+                {extensionIds.length === 0 ? (
+                    <div className={styles.emptyState}>
+                        <Puzzle size={28} />
+                        <strong>{loadedAmountText}</strong>
+                        <span>{props.intl.formatMessage(messages.emptyHint)}</span>
+                    </div>
+                ) : (
+                    <p className={styles.loadedAmount}>{loadedAmountText}</p>
+                )}
                 {extensionIds.length > 1 ? (
                     <p className={styles.reorderHint}>{props.intl.formatMessage(messages.reorderHint)}</p>
                 ) : null}

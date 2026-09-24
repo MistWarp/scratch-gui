@@ -171,7 +171,6 @@ const Explore = () => {
 
     return (
         <main className={styles.page}>
-            <ExploreNav active="projects" />
             <PageHeader
                 compact
                 icon={Compass}
@@ -188,6 +187,7 @@ const Explore = () => {
                     />
                 )}
             />
+            <ExploreNav active="projects" />
             <div className={styles.categories}>
                 <button type="button" className={!tag ? styles.categoryActive : styles.category} onClick={() => setTag('')}>{communityText('All')}</button>
                 <button type="button" className={tag === 'feedback' ? styles.categoryActive : styles.category} onClick={() => setTag('feedback')}>{communityText('Looking for feedback')}</button>

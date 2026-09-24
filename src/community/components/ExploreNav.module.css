@@ -18,7 +18,7 @@
     padding: 10px 1px;
     border-bottom: 2px solid transparent;
     color: var(--text-dim);
-    font-size: var(--fs-md);
+    font-size: var(--fs-sm);
     font-weight: 700;
     white-space: nowrap;
 }

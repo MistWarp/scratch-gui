@@ -17,7 +17,7 @@
     background: var(--ui-modal-background, var(--bg-card, #232328));
     color: var(--ui-modal-foreground, var(--mw-text, #eeeeee));
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-    font-family: var(--sans, "Helvetica Neue", Helvetica, Arial, sans-serif);
+    font-family: inherit;
     font-size: 0.8125rem;
     line-height: 1.25;
     animation: toast-in 0.22s ease-out;
@@ -45,19 +45,19 @@
 }
 
 .success .icon-badge {
-    color: #4caf7d;
+    color: var(--status-success, #4caf7d);
 }
 
 .error .icon-badge {
-    color: #e25555;
+    color: var(--status-danger, #e25555);
 }
 
 .warning .icon-badge {
-    color: #ff8c1a;
+    color: var(--status-warning, #ff8c1a);
 }
 
 .info .icon-badge {
-    color: var(--looks-secondary, #855cd6);
+    color: var(--status-info, #4c97ff);
 }
 
 .message {
