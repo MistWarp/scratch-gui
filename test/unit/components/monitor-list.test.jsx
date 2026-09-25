@@ -1,5 +1,6 @@
 import React from 'react';
 import {OrderedMap} from 'immutable';
+import MonitorState from 'scratch-vm/src/engine/tw-monitor-state';
 import configureStore from 'redux-mock-store';
 import {Provider} from 'react-redux';
 import {mountWithIntl} from '../../helpers/intl-helpers.jsx';
@@ -74,5 +75,18 @@ describe('MonitorListComponent', () => {
         const wrapper = mountWithIntl(getComponent());
         const input = wrapper.find('input');
         expect(input.props().step).toBe(0.01);
+    });
+
+    test('it renders monitor state sent by the VM without converting it', () => {
+        monitors = new MonitorState();
+        monitors.set('id1', {
+            id: 'id1',
+            visible: true,
+            mode: 'slider',
+            isDiscrete: true
+        });
+        const wrapper = mountWithIntl(getComponent());
+        const input = wrapper.find('input');
+        expect(input.props().step).toBe(1);
     });
 });

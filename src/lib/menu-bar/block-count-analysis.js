@@ -435,9 +435,17 @@ export default function (options) {
         if (analysisWindow) renderAnalysis();
     };
 
+    const runWhenIdle = () => {
+        if (typeof requestIdleCallback === 'function') {
+            requestIdleCallback(updateDisplay, {timeout: 2000});
+        } else {
+            updateDisplay();
+        }
+    };
+
     const scheduleUpdate = () => {
         clearTimeout(refreshTimer);
-        refreshTimer = setTimeout(updateDisplay, 500);
+        refreshTimer = setTimeout(runWhenIdle, 500);
     };
 
     vm.on('PROJECT_CHANGED', scheduleUpdate);
