@@ -2,6 +2,7 @@ import path from 'path';
 import SeleniumHelper from '../helpers/selenium-helper';
 
 const {
+    clickContextMenuItem,
     clickText,
     clickXpath,
     findByText,
@@ -19,6 +20,15 @@ jest.setTimeout(60_000);
 const uri = path.resolve(__dirname, '../../build/index.html');
 
 let driver;
+
+const paintNewCostume = async () => {
+    const el = await findByXpath('//button[@aria-label="Choose a Costume"]');
+    await driver.actions().mouseMove(el)
+        .perform();
+    await driver.sleep(500); // Wait for thermometer menu to come up
+    await clickXpath('//button[@aria-label="Paint"]');
+    await findByText('costume2', scope.costumesTab);
+};
 
 describe('Working with costumes', () => {
     beforeAll(() => {
@@ -71,11 +81,11 @@ describe('Working with costumes', () => {
         await clickText('Costumes');
 
         await rightClickText('costume1', scope.costumesTab);
-        await clickText('duplicate', scope.costumesTab);
+        await clickContextMenuItem('duplicate');
         await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for duplication to finish
 
         // Make sure the duplicated costume is named correctly.
-        await clickText('costume3', scope.costumesTab);
+        await clickText('costume2', scope.costumesTab);
 
         const logs = await getLogs();
         await expect(logs).toEqual([]);
@@ -84,6 +94,9 @@ describe('Working with costumes', () => {
     test('Converting bitmap/vector in paint editor', async () => {
         await loadUri(uri);
         await clickText('Costumes');
+
+        // The default sprite has one costume, so paint a second one first.
+        await paintNewCostume();
 
         // Convert the first costume to bitmap.
         await clickText('costume1', scope.costumesTab);
@@ -109,10 +122,10 @@ describe('Working with costumes', () => {
         await clickText('Costumes');
         await clickText('costume1', scope.costumesTab);
         await clickText('Convert to Bitmap', scope.costumesTab);
-        await clickXpath('//img[@alt="Undo"]');
+        await clickXpath('//*[@role="button"][@aria-label="Undo"]');
         await clickText('Convert to Bitmap', scope.costumesTab);
-        await clickXpath('//img[@alt="Undo"]');
-        await clickXpath('//img[@alt="Redo"]');
+        await clickXpath('//*[@role="button"][@aria-label="Undo"]');
+        await clickXpath('//*[@role="button"][@aria-label="Redo"]');
         await clickText('Convert to Vector', scope.costumesTab);
         const logs = await getLogs();
         await expect(logs).toEqual([]);
