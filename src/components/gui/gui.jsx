@@ -1030,7 +1030,7 @@ const GUIComponent = props => {
                             onRequestClose={onRequestCloseBackdropLibrary}
                         />
                     ) : null}
-                    {soundLibraryVisible ? (
+                    {soundLibraryVisible && !soundsTabVisible ? (
                         <SoundLibrary
                             vm={vm}
                             onRequestClose={onRequestCloseSoundLibrary}
