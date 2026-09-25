@@ -316,8 +316,9 @@ const pagesAndAssets = (env, root, library, generatedInputs) => {
                 fs.copyFileSync(path.join(out, 'editor.html'), path.join(out, 'index.html'));
             }
             for (const [from, to] of copies) fs.cpSync(absolute(from), path.join(out, to), {recursive: true});
-            if (!library && fs.existsSync(absolute('../docs/build'))) {
-                fs.cpSync(absolute('../docs/build'), path.join(out, 'docs'), {recursive: true});
+            const docs = absolute(env.MW_DOCS_BUILD || '../docs/build');
+            if (!library && fs.existsSync(docs)) {
+                fs.cpSync(docs, path.join(out, 'docs'), {recursive: true});
             }
             if (library) {
                 fs.mkdirSync(path.join(out, 'libraries'), {recursive: true});
