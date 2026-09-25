@@ -1,6 +1,7 @@
 import {blockMessages} from '../generated/editor-locales/index.js';
 import {getVanillaPalette} from './mw-vanilla-palette';
 import {applyCatBlocksToLoadedBlockly} from './mw-cat-blocks';
+import {installSteadySvgResize} from './mw-svg-resize';
 import BundledScratchBlocks from 'scratch-blocks';
 
 let _ScratchBlocks = null;
@@ -35,6 +36,8 @@ const set = ScratchBlocks => {
     } catch (e) {
         // ignore
     }
+
+    installSteadySvgResize(_ScratchBlocks);
 
     const Procedures = _ScratchBlocks.Procedures;
     if (Procedures && typeof Procedures.flyoutCategory === 'function') {
