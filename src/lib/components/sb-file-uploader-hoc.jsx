@@ -35,6 +35,13 @@ import {
     closeFileMenu
 } from '../../reducers/menus';
 
+// Checked when a file is requested rather than at load time, so tests and embedders can turn the picker off.
+const getSystemFilePicker = () => (
+    typeof window.showOpenFilePicker === 'function' && !navigator.userAgent.includes('Android') ?
+        window.showOpenFilePicker.bind(window) :
+        null
+);
+
 /**
  * Higher Order Component to provide behavior for loading local project files into editor.
  * @param {React.Component} WrappedComponent the component to add project file loading functionality to
@@ -100,10 +107,13 @@ const SBFileUploaderHOC = function (WrappedComponent) {
             );
             this.fileReader.onabort = () => this.handleFileReadError(new Error('Project file read was cancelled'));
             // tw: Use FS API when available
-            if (this.props.showOpenFilePicker) {
+            const showOpenFilePicker = typeof this.props.showOpenFilePicker === 'undefined' ?
+                getSystemFilePicker() :
+                this.props.showOpenFilePicker;
+            if (showOpenFilePicker) {
                 (async () => {
                     try {
-                        const [handle] = await this.props.showOpenFilePicker({
+                        const [handle] = await showOpenFilePicker({
                             multiple: false
                         });
                         const file = await handle.getFile();
@@ -395,11 +405,6 @@ const SBFileUploaderHOC = function (WrappedComponent) {
             })
         }),
         onSetFileHandle: PropTypes.func
-    };
-    SBFileUploaderComponent.defaultProps = {
-        showOpenFilePicker: typeof showOpenFilePicker === 'function' && !navigator.userAgent.includes('Android') ?
-            window.showOpenFilePicker.bind(window) :
-            null
     };
     const mapStateToProps = (state, ownProps) => {
         const loadingState = state.scratchGui.projectState.loadingState;

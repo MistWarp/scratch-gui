@@ -167,12 +167,15 @@ class GUI extends React.Component {
         return workspace;
     }
     handleRedo () {
+        // The costume and sound editors own the keys on their tabs.
+        if (!this.props.blocksTabVisible) return false;
         const workspace = this.getMainWorkspace();
         if (!workspace) return false;
         workspace.undo(true);
         return true;
     }
     handleUndo () {
+        if (!this.props.blocksTabVisible) return false;
         return undoLatest({
             workspace: this.getMainWorkspace(),
             deletion: this.props.restoreDeletion,
@@ -283,7 +286,8 @@ GUI.propTypes = {
     onProjectUnchanged: PropTypes.func,
     telemetryModalVisible: PropTypes.bool,
     vm: PropTypes.instanceOf(VM).isRequired,
-    activeTabIndex: PropTypes.number
+    activeTabIndex: PropTypes.number,
+    blocksTabVisible: PropTypes.bool
 };
 
 GUI.defaultProps = {
