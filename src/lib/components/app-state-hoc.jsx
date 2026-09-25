@@ -5,7 +5,7 @@ import {createStore, combineReducers, compose, applyMiddleware} from 'redux';
 import ConnectedIntlProvider from '../connected-intl-provider.jsx';
 import AddonHooks from '../../addons/hooks.js';
 import * as guiRedux from '../../reducers/gui.js';
-import {ScratchPaintReducer} from '../tw-scratch-paint.js';
+import {PAINT_LOADED, ScratchPaintReducer, onScratchPaintLoaded} from '../tw-scratch-paint.js';
 
 import localesReducer, {initLocale, localesInitialState, localeMiddleware} from '../../reducers/locales.js';
 
@@ -93,6 +93,9 @@ const AppStateHOC = function (WrappedComponent, localesOnly) {
                 initialState,
                 enhancer
             );
+            if (!localesOnly) {
+                onScratchPaintLoaded(() => this.store.dispatch({type: PAINT_LOADED}));
+            }
             window.ReduxStore = this.store;
             AddonHooks.appStateStore = this.store;
             for (const callback of AddonHooks.appStateStoreCallbacks.splice(0)) {
