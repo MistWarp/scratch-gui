@@ -6,6 +6,7 @@ const AVATARS = 'https://avatars.rotur.dev';
 const DEFAULT_IMAGE = 'https://mistwarp.org/images/apple-touch-icon.png';
 const FETCH_TIMEOUT_MS = 3000;
 const STATIC_FILE_PATH = /^\/(?:assets|js|static\/assets)\//;
+const DOCS_PATH = /^\/docs(?:\/|$)/;
 // Standalone HTML entries with their own tags; the community SPA is index.html.
 const SKIP_PATHS = new Set([
     '/editor',
@@ -534,7 +535,7 @@ export const onRequest = async context => {
     }
 
     if (!contentType.includes('text/html')) return response;
-    if (SKIP_PATHS.has(url.pathname)) return response;
+    if (SKIP_PATHS.has(url.pathname) || DOCS_PATH.test(url.pathname)) return response;
 
     const meta = await metaForPath(url.pathname);
     if (!meta) return response;
