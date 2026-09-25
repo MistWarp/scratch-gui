@@ -125,6 +125,8 @@ const UserProvider = ({children}) => {
         const version = ++identityVersion.current;
         setBanMessage(state.banMessage || null);
         if (state.user) {
+            const username = state.user.username;
+            setUser(current => (current && current.username === username ? current : normalizeUser({username})));
             if (!notificationsUnsub.current) {
                 notificationsUnsub.current = subscribeNotifications(handleNotificationPush);
                 removalsUnsub.current = subscribeNotificationRemovals(handleNotificationRemoved);

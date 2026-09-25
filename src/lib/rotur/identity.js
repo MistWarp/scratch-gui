@@ -93,13 +93,27 @@ const invalidateFailedValidator = error => {
 };
 
 let restoreInFlight = null;
+const RESTORE_RETRY_DELAYS = [1000, 3000];
+
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+const restoreWithRetry = async () => {
+    for (let attempt = 0; ; attempt++) {
+        try {
+            return await roturRestore();
+        } catch (error) {
+            if (!error || !error.transient || attempt >= RESTORE_RETRY_DELAYS.length) throw error;
+            await wait(RESTORE_RETRY_DELAYS[attempt]);
+        }
+    }
+};
 
 const doRestore = async () => {
     setState({status: 'restoring'});
     adoptUrlToken();
     let user = null;
     try {
-        user = await roturRestore();
+        user = await restoreWithRetry();
     } catch (_) {
         setState({status: 'idle', user: null});
         return null;
