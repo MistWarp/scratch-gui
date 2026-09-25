@@ -24,9 +24,9 @@ jest.mock('../../src/lib/community/api.js', () => {
 jest.mock('../../src/lib/rotur/cloud-sync.js', () => ({onRoturLogout: jest.fn()}));
 jest.mock('../../src/lib/rotur/git-api.js', () => ({clearGitAuth: jest.fn()}));
 
-import {login} from '../../src/lib/rotur/identity.js';
+import {login, restore} from '../../src/lib/rotur/identity.js';
 import {exchangeValidator} from '../../src/lib/community/api.js';
-import {logout as roturLogout} from '../../src/lib/rotur/client.js';
+import {logout as roturLogout, restoreSession} from '../../src/lib/rotur/client.js';
 
 test('switching Rotur accounts exchanges a fresh MistWarp session', async () => {
     localStorage.setItem('mw:mistwarp-session', 'old-account-session');
@@ -45,4 +45,33 @@ test('a rejected validator invalidates the Rotur login', async () => {
 
     expect(roturLogout).toHaveBeenCalled();
     expect(localStorage.getItem('mw:mistwarp-session')).toBeNull();
+});
+
+test('restoring retries when Rotur is briefly unreachable', async () => {
+    jest.useFakeTimers();
+    localStorage.setItem('mw:mistwarp-session', 'existing-session');
+    const unreachable = Object.assign(new Error('Could not reach Rotur'), {transient: true});
+    restoreSession
+        .mockRejectedValueOnce(unreachable)
+        .mockResolvedValueOnce({username: 'returning-user'});
+
+    const restored = restore();
+    await jest.advanceTimersByTimeAsync(1000);
+
+    await expect(restored).resolves.toEqual({username: 'returning-user'});
+    expect(restoreSession).toHaveBeenCalledTimes(2);
+    jest.useRealTimers();
+});
+
+test('restoring gives up after repeated Rotur failures', async () => {
+    jest.useFakeTimers();
+    restoreSession.mockReset();
+    restoreSession.mockRejectedValue(Object.assign(new Error('Could not reach Rotur'), {transient: true}));
+
+    const restored = restore();
+    await jest.advanceTimersByTimeAsync(4000);
+
+    await expect(restored).resolves.toBeNull();
+    expect(restoreSession).toHaveBeenCalledTimes(3);
+    jest.useRealTimers();
 });
