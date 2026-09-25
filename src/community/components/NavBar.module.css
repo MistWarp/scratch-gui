@@ -402,6 +402,10 @@ a.suggestionMeta:hover {
         display: none;
     }
 
+    .account {
+        margin-inline-start: auto;
+    }
+
     .desktopSearch {
         display: none;
     }
