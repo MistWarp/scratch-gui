@@ -406,6 +406,10 @@ a.suggestionMeta:hover {
         margin-inline-start: auto;
     }
 
+    .account > div {
+        padding-inline-end: 0;
+    }
+
     .desktopSearch {
         display: none;
     }
