@@ -36,6 +36,17 @@ test('a rejected Rotur validator is marked for token invalidation', async () => 
     });
 });
 
+test('a Rotur outage while generating a validator keeps the login', async () => {
+    window.fetch = jest.fn(() => Promise.resolve({
+        status: 503,
+        json: () => Promise.resolve({error: 'service unavailable'})
+    }));
+
+    await expect(exchangeValidator('good-token')).rejects.toMatchObject({
+        code: 'VALIDATOR_UNAVAILABLE'
+    });
+});
+
 test('MistWarp project identity controls share, remix, and update actions', () => {
     expect(getMistWarpAction(null, false)).toBe('save');
     expect(getMistWarpAction({isOwner: false, shared: true}, false)).toBeNull();
