@@ -136,13 +136,19 @@ const createBlocksWorkspaceObserver = () => {
         return;
     }
     
+    let lastBlocksSvg = null;
+    let lastOpacity = null;
     const observer = new MutationObserver(mutations => {
         for (const mutation of mutations) {
             if (mutation.type === 'childList') {
-                // Check for both specific and general blocks workspace selectors
                 const blocksSvg = document.querySelector('svg.blocklySvg');
+                if (blocksSvg === lastBlocksSvg && currentWallpaperState.opacity === lastOpacity) {
+                    break;
+                }
                 
                 if (blocksSvg && currentWallpaperState.hasWallpaper) {
+                    lastBlocksSvg = blocksSvg;
+                    lastOpacity = currentWallpaperState.opacity;
                     // Apply transparency to newly created blocks workspace
                     applyTransparencyToElement(blocksSvg, true, currentWallpaperState.opacity);
                     
