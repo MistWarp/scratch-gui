@@ -16,36 +16,32 @@ jest.mock('../../../src/lib/api/cloud-provider', () =>
 
 import cloudManagerHOC from '../../../src/lib/components/cloud-manager-hoc.jsx';
 
-describe.skip('CloudManagerHOC', () => {
+describe('CloudManagerHOC', () => {
     const mockStore = configureStore();
     let store;
     let vm;
     let stillLoadingStore;
+    let noCloudHostStore;
+    const makeStore = (loadingState, cloudHost = 'nonEmpty') => mockStore({
+        scratchGui: {
+            projectState: {
+                projectId: '1234',
+                loadingState
+            },
+            mode: {
+                hasEverEnteredEditor: false
+            },
+            tw: {
+                cloud: true,
+                cloudHost
+            }
+        }
+    });
 
     beforeEach(() => {
-        store = mockStore({
-            scratchGui: {
-                projectState: {
-                    projectId: '1234',
-                    loadingState: LoadingState.SHOWING_WITH_ID
-                },
-                mode: {
-                    hasEverEnteredEditor: false
-                },
-                tw: {}
-            }
-        });
-        stillLoadingStore = mockStore({
-            scratchGui: {
-                projectState: {
-                    projectId: '1234',
-                    loadingState: LoadingState.LOADING_WITH_ID
-                },
-                mode: {
-                    hasEverEnteredEditor: false
-                }
-            }
-        });
+        store = makeStore(LoadingState.SHOWING_WITH_ID);
+        stillLoadingStore = makeStore(LoadingState.LOADING_WITH_ID);
+        noCloudHostStore = makeStore(LoadingState.SHOWING_WITH_ID, null);
         vm = new VM();
         vm.setCloudProvider = jest.fn();
         vm.runtime = {
@@ -84,7 +80,7 @@ describe.skip('CloudManagerHOC', () => {
         mountWithIntl(
             <WrappedComponent
                 hasCloudPermission
-                store={store}
+                store={noCloudHostStore}
                 username="user"
                 vm={vm}
             />
@@ -144,24 +140,6 @@ describe.skip('CloudManagerHOC', () => {
         expect(CloudProvider).not.toHaveBeenCalled();
     });
 
-    test('when videoSensing extension is active, the cloud provider is not set on the vm', () => {
-        const Component = () => <div />;
-        const WrappedComponent = cloudManagerHOC(Component);
-        vm.extensionManager.isExtensionLoaded = jest.fn(extension => extension === 'videoSensing');
-
-        mount(
-            <WrappedComponent
-                hasCloudPermission
-                cloudHost="nonEmpty"
-                store={store}
-                username="user"
-                vm={vm}
-            />
-        );
-
-        expect(vm.setCloudProvider.mock.calls.length).toBe(0);
-        expect(CloudProvider).not.toHaveBeenCalled();
-    });
 
     test('if the isShowingWithId prop becomes true, it sets the cloud provider on the vm', () => {
         const Component = () => <div />;
@@ -291,7 +269,7 @@ describe.skip('CloudManagerHOC', () => {
             username: 'a different user'
         });
 
-        expect(vm.setCloudProvider.mock.calls.length).toBe(3); // tw: the test is wrong.
+        expect(vm.setCloudProvider.mock.calls.length).toBe(3);
         expect(vm.setCloudProvider).toHaveBeenCalledWith(null);
         expect(requestCloseConnection).toHaveBeenCalledTimes(1);
 

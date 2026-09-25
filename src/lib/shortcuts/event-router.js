@@ -315,12 +315,12 @@ const executeCallbackAction = shortcut => {
             break;
         case 'undo':
             if (callbacks.undo) {
-                callbacks.undo();
+                return callbacks.undo();
             }
             break;
         case 'redo':
             if (callbacks.redo) {
-                callbacks.redo();
+                return callbacks.redo();
             }
             break;
         case 'loadFromComputer':
@@ -375,7 +375,7 @@ const executeShortcut = shortcut => {
     } else if (shortcut.actionType === 'vm') {
         executeVMAction(shortcut);
     } else if (shortcut.actionType === 'callback') {
-        executeCallbackAction(shortcut);
+        return executeCallbackAction(shortcut);
     } else {
         console.warn(`Unknown action type: ${shortcut.actionType}`);
     }
@@ -388,6 +388,15 @@ const handleKeyDown = event => {
     const matchingShortcut = findMatchingShortcut(keyCombo);
 
     if (matchingShortcut) {
+        if (matchingShortcut.actionType === 'callback') {
+            // The sound and paint editors handle their own undo and redo keys, so a callback
+            // that returns false leaves the event for them.
+            if (executeShortcut(matchingShortcut) !== false) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+            }
+            return;
+        }
         if (matchingShortcut.actionType !== null) {
             // The router owns this key. scratch-blocks listens on the same
             // document, so stop it from running its own copy of the action.

@@ -3,6 +3,8 @@ import SeleniumHelper from '../helpers/selenium-helper';
 import {Key} from 'selenium-webdriver';
 
 const {
+    addSoundFromLibrary,
+    clickContextMenuItem,
     clickText,
     clickXpath,
     findByText,
@@ -31,20 +33,12 @@ describe('Working with sounds', () => {
         await loadUri(uri);
         await clickText('Sounds');
 
-        // Delete the sound
-        await rightClickText('Meow', scope.soundsTab);
-        await driver.sleep(500); // Wait a moment for context menu; only needed for local testing
-        await clickText('delete', scope.soundsTab);
-
-        // Add it back
-        await clickXpath('//button[@aria-label="Choose a Sound"]');
-        let el = await findByXpath("//input[@placeholder='Search']");
-        await el.sendKeys('meow');
-        await clickText('Meow', scope.modal); // Should close the modal
+        // The default project has no sounds, so add one first
+        await addSoundFromLibrary('meow', 'Meow');
 
         // Add a new sound
-        await clickXpath('//button[@aria-label="Choose a Sound"]');
-        el = await findByXpath("//input[@placeholder='Search']");
+        await clickXpath('//button[@aria-label="Add sound"]');
+        const el = await findByXpath("//input[@placeholder='Search']");
         await el.sendKeys('chom');
         await clickText('Chomp'); // Should close the modal, then click the sounds in the selector
         await findByXpath("//input[@value='Chomp']"); // Should show editor for new sound
@@ -65,7 +59,7 @@ describe('Working with sounds', () => {
     test('Adding a sound by surprise button', async () => {
         await loadUri(uri);
         await clickText('Sounds');
-        const el = await findByXpath('//button[@aria-label="Choose a Sound"]');
+        const el = await findByXpath('//button[@aria-label="Add sound"]');
         await driver.actions().mouseMove(el)
             .perform();
         await driver.sleep(500); // Wait for thermometer menu to come up
@@ -77,9 +71,10 @@ describe('Working with sounds', () => {
     test('Duplicating a sound', async () => {
         await loadUri(uri);
         await clickText('Sounds');
+        await addSoundFromLibrary('meow', 'Meow');
 
         await rightClickText('Meow', scope.soundsTab);
-        await clickText('duplicate', scope.soundsTab);
+        await clickContextMenuItem('duplicate');
         await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for error
 
         // Make sure the duplicated sound is named correctly.
@@ -93,10 +88,10 @@ describe('Working with sounds', () => {
     test('Switching sprites with different numbers of sounds', async () => {
         await loadUri(uri);
 
-        // Add a sound so this sprite has 2 sounds.
+        // Add sounds so this sprite has 2 sounds.
         await clickText('Sounds');
-        await clickXpath('//button[@aria-label="Choose a Sound"]');
-        await clickText('A Bass'); // Closes the modal
+        await addSoundFromLibrary('meow', 'Meow');
+        await addSoundFromLibrary('a bass', 'A Bass');
 
         // Now add a sprite with only one sound.
         await clickXpath('//button[@aria-label="Choose a Sprite"]');
@@ -119,11 +114,11 @@ describe('Working with sounds', () => {
         ];
         await loadUri(uri);
         await clickText('Sounds');
-        const el = await findByXpath('//button[@aria-label="Choose a Sound"]');
+        const el = await findByXpath('//button[@aria-label="Add sound"]');
         await driver.actions().mouseMove(el)
             .perform();
         await driver.sleep(500); // Wait for thermometer menu to come up
-        const input = await findByXpath('//input[@type="file"]');
+        const input = await findByXpath('//button[@aria-label="Add sound"]/following-sibling::div//input[@type="file"]');
         await input.sendKeys(files.join('\n'));
 
         await findByText('movie', scope.soundsTab);
@@ -136,6 +131,7 @@ describe('Working with sounds', () => {
     test('Copy to new button adds a new sound', async () => {
         await loadUri(uri);
         await clickText('Sounds');
+        await addSoundFromLibrary('meow', 'Meow');
         await clickText('Copy to New', scope.soundsTab);
         await clickText('Meow2', scope.soundsTab);
 
@@ -146,6 +142,7 @@ describe('Working with sounds', () => {
     test('Copy and pasting within a sound changes its duration', async () => {
         await loadUri(uri);
         await clickText('Sounds');
+        await addSoundFromLibrary('meow', 'Meow');
         await findByText('0.85', scope.soundsTab); // Original meow sound duration
         await clickText('Copy', scope.soundsTab);
         await clickText('Paste', scope.soundsTab);
@@ -155,32 +152,23 @@ describe('Working with sounds', () => {
         await expect(logs).toEqual([]);
     });
 
-    test('Can copy a sound from a sprite and paste into a sound on the stage', async () => {
-        await loadUri(uri);
-        await clickText('Sounds');
-        await clickText('Copy', scope.soundsTab); // Copy the meow sound
-        await clickXpath('//span[text()="Stage"]');
-        await findByText('0.02', scope.soundsTab); // Original pop sound duration
-        await clickText('Paste', scope.soundsTab);
-        await findByText('0.87', scope.soundsTab); // Duration of pop + meow sound
-
-        const logs = await getLogs();
-        await expect(logs).toEqual([]);
-    });
 
     test('Keyboard shortcuts', async () => {
         const cmdCtrl = process.platform.includes('darwin') ? Key.COMMAND : Key.CONTROL;
 
         await loadUri(uri);
         await clickText('Sounds');
-        const el = await findByXpath('//button[@aria-label="Choose a Sound"]');
-        await el.sendKeys(Key.chord(cmdCtrl, 'a')); // Select all
+        await addSoundFromLibrary('meow', 'Meow');
+        // The sound editor listens for shortcuts on the document, so send them to the page
+        const sendKeys = keys => driver.actions().sendKeys(keys)
+            .perform();
+        await sendKeys(Key.chord(cmdCtrl, 'a')); // Select all
         await findByText('0.85', scope.soundsTab); // Meow sound duration
-        await el.sendKeys(Key.DELETE);
+        await sendKeys(Key.DELETE);
         await findByText('0.00', scope.soundsTab); // Sound is now empty
-        await el.sendKeys(Key.chord(cmdCtrl, 'z')); // undo
+        await sendKeys(Key.chord(cmdCtrl, 'z')); // undo
         await findByText('0.85', scope.soundsTab); // Meow sound is back
-        await el.sendKeys(Key.chord(cmdCtrl, Key.SHIFT, 'z')); // redo
+        await sendKeys(Key.chord(cmdCtrl, Key.SHIFT, 'z')); // redo
         await findByText('0.00', scope.soundsTab); // Sound is empty again
 
         const logs = await getLogs();

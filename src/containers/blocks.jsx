@@ -393,6 +393,13 @@ class Blocks extends React.Component {
                 // call setLocale if the locale has changed, or changed while the blocks were hidden.
                 // vm.getLocale() will be out of sync if locale was changed while not visible
                 this.setLocale();
+            } else {
+                // Costumes and sounds added or renamed on the other tabs change the default
+                // values in the palette, so rebuild the toolbox from the current target.
+                const toolboxXML = this.getToolboxXML();
+                if (toolboxXML) {
+                    this.props.updateToolboxState(toolboxXML);
+                }
             }
 
             // Visibility changes used to resize Blockly up to three times. Refresh
