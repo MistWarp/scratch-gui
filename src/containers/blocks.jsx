@@ -136,6 +136,7 @@ class Blocks extends React.Component {
             'onWorkspaceUpdate',
             'onWorkspaceMetricsChange',
             'setBlocks',
+            'setPaletteResizer',
             'setLocale',
             'handleEnableProcedureReturns'
         ]);
@@ -466,8 +467,8 @@ class Blocks extends React.Component {
             toolbox.setFlyoutWidth(flyoutWidth);
         }
 
-        if (this.blocks && this.blocks.style && typeof this.blocks.style.setProperty === 'function') {
-            this.blocks.style.setProperty('--blocks-palette-width', `${60 + flyoutWidth}px`);
+        if (this.paletteResizer) {
+            this.paletteResizer.style.setProperty('--blocks-palette-width', `${60 + flyoutWidth}px`);
         }
 
         if (this.state.flyoutWidth !== flyoutWidth) {
@@ -536,7 +537,6 @@ class Blocks extends React.Component {
         if (!this.paletteResizeSession) return;
         if (!this.state.paletteResizeEnabled) return;
         const {
-            startFlyoutWidth,
             containerLeft,
             containerRight,
             containerWidth,
@@ -564,24 +564,31 @@ class Blocks extends React.Component {
             Math.min(maxFlyoutWidth, nextFlyoutWidth)
         );
 
-        // Avoid excessive reflows.
+        this.paletteResizeSession.nextFlyoutWidth = nextFlyoutWidth;
         if (this.paletteResizeRaf) return;
         this.paletteResizeRaf = window.requestAnimationFrame(() => {
             this.paletteResizeRaf = null;
-            // If something changed mid-drag (e.g. window resized), fall back to incremental changes.
-            if (!Number.isFinite(nextFlyoutWidth)) return;
-            if (Math.round(nextFlyoutWidth) !== Math.round(startFlyoutWidth)) {
-                this.setFlyoutWidth(nextFlyoutWidth);
-            }
+            this.applyPaletteResize();
         });
     }
 
+    applyPaletteResize () {
+        const session = this.paletteResizeSession;
+        if (!session) return;
+        const {nextFlyoutWidth, startFlyoutWidth} = session;
+        if (!Number.isFinite(nextFlyoutWidth)) return;
+        if (Math.round(nextFlyoutWidth) !== Math.round(startFlyoutWidth)) {
+            this.setFlyoutWidth(nextFlyoutWidth);
+        }
+    }
+
     handlePaletteResizePointerUp () {
-        this.paletteResizeSession = null;
         if (this.paletteResizeRaf) {
             window.cancelAnimationFrame(this.paletteResizeRaf);
             this.paletteResizeRaf = null;
+            this.applyPaletteResize();
         }
+        this.paletteResizeSession = null;
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
         window.removeEventListener('pointermove', this.handlePaletteResizePointerMove);
@@ -671,8 +678,8 @@ class Blocks extends React.Component {
                 toolbox.width = CATEGORY_MENU_WIDTH + flyoutWidth;
             }
 
-            if (this.blocks && this.blocks.style) {
-                this.blocks.style.removeProperty('--blocks-palette-width');
+            if (this.paletteResizer) {
+                this.paletteResizer.style.removeProperty('--blocks-palette-width');
             }
 
             if (this.state.flyoutWidth !== null) {
@@ -1252,6 +1259,9 @@ class Blocks extends React.Component {
             this.workspace.toolbox_.setSelectedCategoryById(categoryId);
         });
     }
+    setPaletteResizer (element) {
+        this.paletteResizer = element;
+    }
     setBlocks (blocks) {
         this.blocks = blocks;
     }
@@ -1419,6 +1429,7 @@ class Blocks extends React.Component {
                         (60 + this.state.flyoutWidth) : null}
                     paletteResizingEnabled={this.state.paletteResizeEnabled && !isFullScreen}
                     onPaletteResizePointerDown={this.handlePaletteResizePointerDown}
+                    paletteResizerRef={this.setPaletteResizer}
                     {...props}
                 />
                 {this.state.prompt ? (

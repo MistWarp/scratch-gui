@@ -501,7 +501,12 @@ class MenuBar extends React.Component {
             if (workspace) {
                 this.undoRedoWorkspace = workspace;
                 this.undoRedoChangeListener = () => {
-                    setTimeout(() => this.updateUndoRedoState(), 0);
+                    if (this.undoRedoUpdateQueued) return;
+                    this.undoRedoUpdateQueued = true;
+                    setTimeout(() => {
+                        this.undoRedoUpdateQueued = false;
+                        this.updateUndoRedoState();
+                    }, 0);
                 };
                 workspace.addChangeListener(this.undoRedoChangeListener);
                 setTimeout(() => this.updateUndoRedoState(), 100);
@@ -1478,7 +1483,9 @@ class MenuBar extends React.Component {
                     workspace.hasUndoStack() : (workspace.undoStack_ && workspace.undoStack_.length > 0)));
             const canRedo = !!workspace && (workspace.hasRedoStack ?
                 workspace.hasRedoStack() : (workspace.redoStack_ && workspace.redoStack_.length > 0));
-            this.setState({canUndo, canRedo});
+            if (canUndo !== this.state.canUndo || canRedo !== this.state.canRedo) {
+                this.setState({canUndo, canRedo});
+            }
         });
     }
     buildAboutMenu (onClickAbout) {
