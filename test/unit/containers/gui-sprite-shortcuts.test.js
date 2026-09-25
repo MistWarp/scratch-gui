@@ -69,6 +69,7 @@ describe('GUI deletion undo', () => {
     const makeGui = overrides => {
         const gui = Object.create(GUI.prototype);
         gui.props = {
+            blocksTabVisible: true,
             onClearDeletionRestore: jest.fn(),
             onShowRestoreError: jest.fn(),
             restoreDeletion: {restoreFun: null},
@@ -77,6 +78,16 @@ describe('GUI deletion undo', () => {
         };
         return gui;
     };
+
+    test('undo and redo leave the keys to the costume and sound editors on their tabs', () => {
+        mockWorkspace.undo.mockClear();
+        const gui = makeGui({blocksTabVisible: false, restoreDeletion: {restoreFun: jest.fn()}});
+
+        expect(gui.handleUndo()).toBe(false);
+        expect(gui.handleRedo()).toBe(false);
+        expect(gui.props.restoreDeletion.restoreFun).not.toHaveBeenCalled();
+        expect(mockWorkspace.undo).not.toHaveBeenCalled();
+    });
 
     test('undo restores a deleted asset before using block undo', async () => {
         const restoreFun = jest.fn(() => Promise.resolve());

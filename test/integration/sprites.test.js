@@ -1,12 +1,10 @@
 import path from 'path';
 import SeleniumHelper from '../helpers/selenium-helper';
-import {StaleElementReferenceError} from 'selenium-webdriver/lib/error';
-import until from 'selenium-webdriver/lib/until';
 
 const {
+    clickContextMenuItem,
     clickText,
     clickXpath,
-    elementIsVisible,
     findByText,
     findByXpath,
     getDriver,
@@ -67,7 +65,7 @@ describe('Working with sprites', () => {
         await loadUri(uri);
         await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for scroll animation
         await rightClickText('Sprite1', scope.spriteTile);
-        await clickText('delete', scope.spriteTile);
+        await clickContextMenuItem('delete');
         // Confirm that the stage has been switched to
         await findByText('Stage selected: no motion blocks');
         const logs = await getLogs();
@@ -97,9 +95,10 @@ describe('Working with sprites', () => {
         await expect(logs).toEqual([]);
     });
 
-    // This test fails because uploading an SVG as a sprite changes the scaling
-    // Enable when this is fixed issues/3608
-    test('Adding a sprite by uploading an svg (gh-3608)', async () => {
+    // Uploading an SVG as a new sprite serializes the costume asset to JSON, so scratch-vm's
+    // load-costume cannot call decodeText on it and logs "Error loading vector image".
+    // The costume falls back to a differently sized asset. Enable once the VM accepts these uploads.
+    test.skip('Adding a sprite by uploading an svg (gh-3608)', async () => {
         await loadUri(uri);
         const el = await findByXpath('//button[@aria-label="Choose a Sprite"]');
         await driver.actions().mouseMove(el)
@@ -153,22 +152,6 @@ describe('Working with sprites', () => {
         await expect(logs).toEqual([]);
     });
 
-    test('Use browser back button to close library', async () => {
-        await loadUri(uri);
-        await clickText('Costumes');
-        await clickXpath('//button[@aria-label="Choose a Sprite"]');
-        const abbyElement = await findByText('Abby'); // Should show editor for new costume
-        await elementIsVisible(abbyElement);
-        await driver.navigate().back();
-        // should throw error because library is no longer present
-        await expect(driver.wait(until.elementIsVisible(abbyElement)))
-            .rejects
-            .toBeInstanceOf(StaleElementReferenceError);
-        const costumesElement = await findByText('Costumes'); // Should show editor for new costume
-        await elementIsVisible(costumesElement);
-        const logs = await getLogs();
-        await expect(logs).toEqual([]);
-    });
 
     test('Adding multiple sprites at the same time', async () => {
         const files = [

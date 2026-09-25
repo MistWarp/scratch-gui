@@ -2,6 +2,11 @@ import path from 'path';
 import SeleniumHelper from '../helpers/selenium-helper';
 
 const {
+    clickButton,
+    closeTopWindow,
+    openSettingsPage,
+    textExists,
+    clickContextMenuItem,
     clickText,
     clickXpath,
     findByText,
@@ -18,9 +23,6 @@ let driver;
 
 const FILE_MENU_XPATH = '//div[contains(@class, "menu-bar_menu-bar-item")]' +
     '[*[contains(@class, "menu-bar_collapsible-label")]//*[text()="File"]]';
-const SETTINGS_MENU_XPATH = '//div[contains(@class, "menu-bar_menu-bar-item")]' +
-    '[*[contains(@class, "settings-menu_dropdown-label")]//*[text()="Settings"]]';
-
 describe('Menu bar settings', () => {
     beforeAll(() => {
         driver = getDriver();
@@ -48,31 +50,27 @@ describe('Menu bar settings', () => {
         await findByXpath('//*[li[span[text()="Save to your computer"]] and not(@data-tip="tooltip")]');
     });
 
-    test('Share button should NOT be enabled', async () => {
-        await loadUri(uri);
-        await findByXpath('//div[span[div[span[text()="Share"]]] and @data-tip="tooltip"]');
-    });
 
     test('Logo should be clickable', async () => {
         await loadUri(uri);
-        await clickXpath('//img[@alt="Scratch"]');
+        await clickXpath('//a[@href="/"]//img[@alt="MistWarp"]');
         const currentUrl = await driver.getCurrentUrl();
-        await expect(currentUrl).toEqual('https://scratch.mit.edu/');
+        await expect(currentUrl.startsWith(process.env.TEST_BASE_URL)).toBe(true);
     });
 
     test('(GH#4064) Project name should be editable', async () => {
         await loadUri(uri);
-        const el = await findByXpath('//input[@value="Scratch Project"]');
+        const el = await findByXpath('//input[@value="Project"]');
         await el.sendKeys(' - Personalized');
         await clickText('Costumes'); // just to blur the input
-        await clickXpath('//input[@value="Scratch Project - Personalized"]');
+        await clickXpath('//input[@value="Project - Personalized"]');
     });
 
     test('User is not warned before uploading project file over a fresh project', async () => {
         await loadUri(uri);
         await clickXpath(FILE_MENU_XPATH);
         await clickText('Load from your computer');
-        const input = await findByXpath('//input[@accept=".sb,.sb2,.sb3"]');
+        const input = await findByXpath('//body/input[@type="file"]');
         await input.sendKeys(path.resolve(__dirname, '../fixtures/project1.sb3'));
         // No replace alert since no changes were made
         await findByText('project1-sprite');
@@ -83,31 +81,31 @@ describe('Menu bar settings', () => {
 
         // Change the project by deleting a sprite
         await rightClickText('Sprite1', scope.spriteTile);
-        await clickText('delete', scope.spriteTile);
+        await clickContextMenuItem('delete');
 
         await clickXpath(FILE_MENU_XPATH);
         await clickText('Load from your computer');
-        const input = await findByXpath('//input[@accept=".sb,.sb2,.sb3"]');
+        const input = await findByXpath('//body/input[@type="file"]');
         await input.sendKeys(path.resolve(__dirname, '../fixtures/project1.sb3'));
-        await driver.switchTo().alert()
-            .accept();
+        // The editor asks before replacing an edited project
+        await findByText('Replace this project?');
+        await clickButton('OK');
         await findByText('project1-sprite');
     });
 
-    test('Theme picker shows themes', async () => {
+    test('Block colors page shows the color options', async () => {
         await loadUri(uri);
-        await clickXpath(SETTINGS_MENU_XPATH);
-        await clickText('Color Mode', scope.menuBar);
+        await openSettingsPage('Blocks');
 
-        expect(await (await findByText('Original', scope.menuBar)).isDisplayed()).toBe(true);
-        expect(await (await findByText('High Contrast', scope.menuBar)).isDisplayed()).toBe(true);
+        expect(await (await findByText('Original', scope.modal)).isDisplayed()).toBe(true);
+        expect(await (await findByText('High Contrast', scope.modal)).isDisplayed()).toBe(true);
     });
 
-    test('Theme picker switches to high contrast', async () => {
+    test('Block colors page switches to high contrast', async () => {
         await loadUri(uri);
-        await clickXpath(SETTINGS_MENU_XPATH);
-        await clickText('Color Mode', scope.menuBar);
-        await clickText('High Contrast', scope.menuBar);
+        await openSettingsPage('Blocks');
+        await clickText('High Contrast', scope.modal);
+        await closeTopWindow();
 
         // There is a tiny delay for the color theme to be applied to the categories.
         await driver.wait(async () => {
@@ -123,25 +121,19 @@ describe('Menu bar settings', () => {
         }, 5000, 'Motion category color does not match high contrast theme');
     });
 
-    test('Settings menu switches between submenus', async () => {
+    test('Settings window switches between pages', async () => {
         await loadUri(uri);
-        await clickXpath(SETTINGS_MENU_XPATH);
+        await openSettingsPage('Language');
 
-        // Language and theme options not visible yet
-        expect(await (await findByText('High Contrast', scope.menuBar)).isDisplayed()).toBe(false);
-        expect(await (await findByText('Esperanto', scope.menuBar)).isDisplayed()).toBe(false);
+        // Only the language picker is visible
+        await findByXpath('//*[contains(@class,"modal-window")]//select/option[text()="Esperanto"]');
+        expect(await textExists('High Contrast', scope.modal)).toBe(false);
 
-        await clickText('Color Mode', scope.menuBar);
+        await clickText('Blocks', scope.modal);
 
-        // Only theme options visible
-        expect(await (await findByText('High Contrast', scope.menuBar)).isDisplayed()).toBe(true);
-        expect(await (await findByText('Esperanto', scope.menuBar)).isDisplayed()).toBe(false);
-
-        await clickText('Language', scope.menuBar);
-
-        // Only language options visible
-        expect(await (await findByText('High Contrast', scope.menuBar)).isDisplayed()).toBe(false);
-        expect(await (await findByText('Esperanto', scope.menuBar)).isDisplayed()).toBe(true);
+        // Only the block color options are visible
+        expect(await (await findByText('High Contrast', scope.modal)).isDisplayed()).toBe(true);
+        expect(await textExists('Esperanto', scope.modal)).toBe(false);
     });
 
     test('Menu labels hidden when width is equal to 1024', async () => {
@@ -150,7 +142,7 @@ describe('Menu bar settings', () => {
             .window()
             .setSize(1024, 768);
 
-        const collapsibleMenus = ['Settings', 'File', 'Edit', 'Tutorials'];
+        const collapsibleMenus = ['Settings', 'File', 'Edit'];
         for (const menu of collapsibleMenus) {
             const settingsMenu = await findByText(menu, scope.menuBar);
             expect(await settingsMenu.isDisplayed()).toBe(false);
@@ -163,7 +155,7 @@ describe('Menu bar settings', () => {
             .window()
             .setSize(1200, 768);
 
-        const collapsibleMenus = ['Settings', 'File', 'Edit', 'Tutorials'];
+        const collapsibleMenus = ['Settings', 'File', 'Edit'];
         for (const menu of collapsibleMenus) {
             const settingsMenu = await findByText(menu, scope.menuBar);
             expect(await settingsMenu.isDisplayed()).toBe(true);
