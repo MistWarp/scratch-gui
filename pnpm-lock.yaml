@@ -182,23 +182,23 @@ importers:
         specifier: ^2.0.0
         version: 2.5.2(patch_hash=ddb178093163bd8090ac3a82aacb74805a1beca08e81ac9b72de7fff3bb08692)
       scratch-audio:
-        specifier: https://codeload.github.com/MistWarp/scratch-audio/tar.gz/2f2ad72ef9c5d11bbf2ca13560489cb5d33d4c33
-        version: https://codeload.github.com/MistWarp/scratch-audio/tar.gz/2f2ad72ef9c5d11bbf2ca13560489cb5d33d4c33
+        specifier: https://codeload.github.com/MistWarp/scratch-audio/tar.gz/9577662f5e2d1eed73f5f35b576935906d831fbf
+        version: https://codeload.github.com/MistWarp/scratch-audio/tar.gz/9577662f5e2d1eed73f5f35b576935906d831fbf
       scratch-blocks:
-        specifier: https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/34ab2cd34785353c25b9c16697bcba52a7c09dce
-        version: https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/34ab2cd34785353c25b9c16697bcba52a7c09dce
+        specifier: https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/fcdbf6be7d013fe83f393376da72b0074ecc2816
+        version: https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/fcdbf6be7d013fe83f393376da72b0074ecc2816
       scratch-paint:
-        specifier: https://codeload.github.com/MistWarp/scratch-paint/tar.gz/52db8c8ede05ab2f925148ec1e783ea39b9dfca0
-        version: https://codeload.github.com/MistWarp/scratch-paint/tar.gz/52db8c8ede05ab2f925148ec1e783ea39b9dfca0(react-dom@16.14.0(react@16.14.0))(react-intl-redux@0.7.0(react-intl@2.9.0(prop-types@15.8.1)(react@16.14.0))(react-redux@5.0.7(react@16.14.0)(redux@3.7.2)))(react-intl@2.9.0(prop-types@15.8.1)(react@16.14.0))(react-popover@0.5.10)(react-redux@5.0.7(react@16.14.0)(redux@3.7.2))(react-responsive@5.0.0(react@16.14.0))(react-style-proptype@3.2.2)(react-tooltip@5.30.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0))(react@16.14.0)(redux@3.7.2)(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd)
+        specifier: https://codeload.github.com/MistWarp/scratch-paint/tar.gz/d1806116a16128c9a8dd4044d37321722ad548ca
+        version: https://codeload.github.com/MistWarp/scratch-paint/tar.gz/d1806116a16128c9a8dd4044d37321722ad548ca(react-dom@16.14.0(react@16.14.0))(react-intl-redux@0.7.0(react-intl@2.9.0(prop-types@15.8.1)(react@16.14.0))(react-redux@5.0.7(react@16.14.0)(redux@3.7.2)))(react-intl@2.9.0(prop-types@15.8.1)(react@16.14.0))(react-popover@0.5.10)(react-redux@5.0.7(react@16.14.0)(redux@3.7.2))(react-responsive@5.0.0(react@16.14.0))(react-style-proptype@3.2.2)(react-tooltip@5.30.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0))(react@16.14.0)(redux@3.7.2)(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd)
       scratch-render:
-        specifier: https://codeload.github.com/MistWarp/scratch-render/tar.gz/ce8e30cb75fcba486d20a453bd51127f5a145a1a
-        version: https://codeload.github.com/MistWarp/scratch-render/tar.gz/ce8e30cb75fcba486d20a453bd51127f5a145a1a(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd)(webpack@4.47.0)
+        specifier: https://codeload.github.com/MistWarp/scratch-render/tar.gz/4be4543ea2c67799c452637679c31c95c6880dc9
+        version: https://codeload.github.com/MistWarp/scratch-render/tar.gz/4be4543ea2c67799c452637679c31c95c6880dc9(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd)(webpack@4.47.0)
       scratch-render-fonts:
         specifier: https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd
         version: https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd
       scratch-vm:
-        specifier: https://codeload.github.com/MistWarp/scratch-vm/tar.gz/4e8113e2546ff406644f4099f99ef5a7e85aa4c5
-        version: https://codeload.github.com/MistWarp/scratch-vm/tar.gz/4e8113e2546ff406644f4099f99ef5a7e85aa4c5(@turbowarp/scratch-svg-renderer@1.1.0(patch_hash=81a01d6d472570d53eec593be679e84867db1ba1410f5ef084d5c404068481b9)(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd))(eslint@8.55.0)(webpack@4.47.0)
+        specifier: https://codeload.github.com/MistWarp/scratch-vm/tar.gz/b55b051a2332393ce3d86347aa04865e28a7696b
+        version: https://codeload.github.com/MistWarp/scratch-vm/tar.gz/b55b051a2332393ce3d86347aa04865e28a7696b(@turbowarp/scratch-svg-renderer@1.1.0(patch_hash=81a01d6d472570d53eec593be679e84867db1ba1410f5ef084d5c404068481b9)(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd))(eslint@8.55.0)(webpack@4.47.0)
       scratchblocks:
         specifier: 3.7.1
         version: 3.7.1
@@ -5450,16 +5450,16 @@ packages:
     resolution: {integrity: sha512-i27Mic4KovM/lnGsy8whRCHhc7VicJajAjTrYg11K9zfZXnYIt4k5F+kZkwjnrhKzLic/HLU4j11mjsz2G/75g==}
     engines: {node: '>= 4'}
 
-  scratch-audio@https://codeload.github.com/MistWarp/scratch-audio/tar.gz/2f2ad72ef9c5d11bbf2ca13560489cb5d33d4c33:
-    resolution: {tarball: https://codeload.github.com/MistWarp/scratch-audio/tar.gz/2f2ad72ef9c5d11bbf2ca13560489cb5d33d4c33}
+  scratch-audio@https://codeload.github.com/MistWarp/scratch-audio/tar.gz/9577662f5e2d1eed73f5f35b576935906d831fbf:
+    resolution: {tarball: https://codeload.github.com/MistWarp/scratch-audio/tar.gz/9577662f5e2d1eed73f5f35b576935906d831fbf}
     version: 0.1.0
 
-  scratch-blocks@https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/34ab2cd34785353c25b9c16697bcba52a7c09dce:
-    resolution: {tarball: https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/34ab2cd34785353c25b9c16697bcba52a7c09dce}
+  scratch-blocks@https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/fcdbf6be7d013fe83f393376da72b0074ecc2816:
+    resolution: {tarball: https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/fcdbf6be7d013fe83f393376da72b0074ecc2816}
     version: 0.1.0
 
-  scratch-paint@https://codeload.github.com/MistWarp/scratch-paint/tar.gz/52db8c8ede05ab2f925148ec1e783ea39b9dfca0:
-    resolution: {tarball: https://codeload.github.com/MistWarp/scratch-paint/tar.gz/52db8c8ede05ab2f925148ec1e783ea39b9dfca0}
+  scratch-paint@https://codeload.github.com/MistWarp/scratch-paint/tar.gz/d1806116a16128c9a8dd4044d37321722ad548ca:
+    resolution: {tarball: https://codeload.github.com/MistWarp/scratch-paint/tar.gz/d1806116a16128c9a8dd4044d37321722ad548ca}
     version: 0.2.0
     peerDependencies:
       react: ^16.14.0
@@ -5483,8 +5483,8 @@ packages:
     resolution: {tarball: https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd}
     version: 1.0.0
 
-  scratch-render@https://codeload.github.com/MistWarp/scratch-render/tar.gz/ce8e30cb75fcba486d20a453bd51127f5a145a1a:
-    resolution: {tarball: https://codeload.github.com/MistWarp/scratch-render/tar.gz/ce8e30cb75fcba486d20a453bd51127f5a145a1a}
+  scratch-render@https://codeload.github.com/MistWarp/scratch-render/tar.gz/4be4543ea2c67799c452637679c31c95c6880dc9:
+    resolution: {tarball: https://codeload.github.com/MistWarp/scratch-render/tar.gz/4be4543ea2c67799c452637679c31c95c6880dc9}
     version: 0.1.0
 
   scratch-sb1-converter@0.2.7:
@@ -5496,8 +5496,8 @@ packages:
   scratch-translate-extension-languages@1.0.7:
     resolution: {integrity: sha512-6+bQU9iVYv23T8J0SjpV6MTugm0y8myh/4DPgu1BGfccysdkaWzu3MkNGQyQRUlbqAiW9wM7ctfv3USPEkzTgg==}
 
-  scratch-vm@https://codeload.github.com/MistWarp/scratch-vm/tar.gz/4e8113e2546ff406644f4099f99ef5a7e85aa4c5:
-    resolution: {tarball: https://codeload.github.com/MistWarp/scratch-vm/tar.gz/4e8113e2546ff406644f4099f99ef5a7e85aa4c5}
+  scratch-vm@https://codeload.github.com/MistWarp/scratch-vm/tar.gz/b55b051a2332393ce3d86347aa04865e28a7696b:
+    resolution: {tarball: https://codeload.github.com/MistWarp/scratch-vm/tar.gz/b55b051a2332393ce3d86347aa04865e28a7696b}
     version: 2.1.46
     peerDependencies:
       '@turbowarp/scratch-svg-renderer': ^1.1.0
@@ -12549,17 +12549,17 @@ snapshots:
       ajv-errors: 1.0.1(ajv@6.15.0)
       ajv-keywords: 3.5.2(ajv@6.15.0)
 
-  scratch-audio@https://codeload.github.com/MistWarp/scratch-audio/tar.gz/2f2ad72ef9c5d11bbf2ca13560489cb5d33d4c33:
+  scratch-audio@https://codeload.github.com/MistWarp/scratch-audio/tar.gz/9577662f5e2d1eed73f5f35b576935906d831fbf:
     dependencies:
       '@turbowarp/nanolog': 0.2.0
       '@turbowarp/startaudiocontext': 1.0.0
 
-  scratch-blocks@https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/34ab2cd34785353c25b9c16697bcba52a7c09dce:
+  scratch-blocks@https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/fcdbf6be7d013fe83f393376da72b0074ecc2816:
     dependencies:
       exports-loader: 0.7.0
       imports-loader: 0.8.0
 
-  scratch-paint@https://codeload.github.com/MistWarp/scratch-paint/tar.gz/52db8c8ede05ab2f925148ec1e783ea39b9dfca0(react-dom@16.14.0(react@16.14.0))(react-intl-redux@0.7.0(react-intl@2.9.0(prop-types@15.8.1)(react@16.14.0))(react-redux@5.0.7(react@16.14.0)(redux@3.7.2)))(react-intl@2.9.0(prop-types@15.8.1)(react@16.14.0))(react-popover@0.5.10)(react-redux@5.0.7(react@16.14.0)(redux@3.7.2))(react-responsive@5.0.0(react@16.14.0))(react-style-proptype@3.2.2)(react-tooltip@5.30.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0))(react@16.14.0)(redux@3.7.2)(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd):
+  scratch-paint@https://codeload.github.com/MistWarp/scratch-paint/tar.gz/d1806116a16128c9a8dd4044d37321722ad548ca(react-dom@16.14.0(react@16.14.0))(react-intl-redux@0.7.0(react-intl@2.9.0(prop-types@15.8.1)(react@16.14.0))(react-redux@5.0.7(react@16.14.0)(redux@3.7.2)))(react-intl@2.9.0(prop-types@15.8.1)(react@16.14.0))(react-popover@0.5.10)(react-redux@5.0.7(react@16.14.0)(redux@3.7.2))(react-responsive@5.0.0(react@16.14.0))(react-style-proptype@3.2.2)(react-tooltip@5.30.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0))(react@16.14.0)(redux@3.7.2)(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd):
     dependencies:
       '@turbowarp/paper': 0.12.202505131813
       classnames: 2.2.5
@@ -12596,7 +12596,7 @@ snapshots:
     dependencies:
       base64-loader: 1.0.0
 
-  scratch-render@https://codeload.github.com/MistWarp/scratch-render/tar.gz/ce8e30cb75fcba486d20a453bd51127f5a145a1a(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd)(webpack@4.47.0):
+  scratch-render@https://codeload.github.com/MistWarp/scratch-render/tar.gz/4be4543ea2c67799c452637679c31c95c6880dc9(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd)(webpack@4.47.0):
     dependencies:
       '@turbowarp/ancient-hull.js': 0.2.13
       '@turbowarp/nanolog': 0.2.0
@@ -12630,7 +12630,7 @@ snapshots:
 
   scratch-translate-extension-languages@1.0.7: {}
 
-  scratch-vm@https://codeload.github.com/MistWarp/scratch-vm/tar.gz/4e8113e2546ff406644f4099f99ef5a7e85aa4c5(@turbowarp/scratch-svg-renderer@1.1.0(patch_hash=81a01d6d472570d53eec593be679e84867db1ba1410f5ef084d5c404068481b9)(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd))(eslint@8.55.0)(webpack@4.47.0):
+  scratch-vm@https://codeload.github.com/MistWarp/scratch-vm/tar.gz/b55b051a2332393ce3d86347aa04865e28a7696b(@turbowarp/scratch-svg-renderer@1.1.0(patch_hash=81a01d6d472570d53eec593be679e84867db1ba1410f5ef084d5c404068481b9)(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd))(eslint@8.55.0)(webpack@4.47.0):
     dependencies:
       '@turbowarp/json': 0.1.2
       '@turbowarp/jszip': 3.12.0
