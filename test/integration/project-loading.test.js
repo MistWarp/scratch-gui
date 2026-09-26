@@ -2,6 +2,7 @@ import path from 'path';
 import SeleniumHelper from '../helpers/selenium-helper';
 
 const {
+    clickBlocksCategory,
     clickText,
     clickXpath,
     findByText,
@@ -32,7 +33,7 @@ describe('Loading scratch gui', () => {
 
         test('Nonexistent projects show error screen', async () => {
             await loadUri(`${uri}#999999999999999999999`);
-            await clickText('Oops! Something went wrong.');
+            await findByText('Something went wrong.');
         });
 
         // skipping because it relies on network speed, and tests a method
@@ -95,8 +96,7 @@ describe('Loading scratch gui', () => {
             await loadUri(uri);
             await clickXpath(FILE_MENU_XPATH);
             await clickXpath('//li[span[text()="New"]]');
-            await findByXpath('//*[div[@class="scratchCategoryMenu"]]');
-            await clickText('Operators', scope.blocksTab);
+            await clickBlocksCategory('Operators');
         });
 
         test.skip('Not logged in->made a change to project->create new project should show alert', async () => {
@@ -110,8 +110,7 @@ describe('Loading scratch gui', () => {
             driver.switchTo()
                 .alert()
                 .accept();
-            await findByXpath('//*[div[@class="scratchCategoryMenu"]]');
-            await clickText('Operators', scope.blocksTab);
+            await clickBlocksCategory('Operators');
         });
     });
 });

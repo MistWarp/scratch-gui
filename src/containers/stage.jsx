@@ -7,6 +7,7 @@ import {connect} from 'react-redux';
 
 import {STAGE_DISPLAY_SIZES} from '../lib/constants/layout-constants';
 import {getEventXY} from '../lib/utils/touch';
+import {afterLiveResize, cancelAfterLiveResize} from '../lib/mw-live-resize';
 import VideoProvider from '../lib/video/video-provider';
 import {BitmapAdapter as V2BitmapAdapter} from '@turbowarp/scratch-svg-renderer';
 
@@ -39,6 +40,7 @@ class Stage extends React.Component {
             'onWheel',
             'onContextMenu',
             'updateRect',
+            'resizeRenderer',
             'questionListener',
             'setDragCanvas',
             'clearDragCanvas',
@@ -111,10 +113,10 @@ class Stage extends React.Component {
         } else if (!this.props.isColorPicking && prevProps.isColorPicking) {
             this.stopColorPickingLoop();
         }
-        this.updateRect();
-        this.renderer.resize(this.rect.width, this.rect.height);
+        afterLiveResize(this.resizeRenderer);
     }
     componentWillUnmount () {
+        cancelAfterLiveResize(this.resizeRenderer);
         this.detachMouseEvents(this.canvas);
         this.detachRectEvents();
         this.stopColorPickingLoop();
@@ -170,6 +172,10 @@ class Stage extends React.Component {
     }
     updateRect () {
         this.rect = this.canvas.getBoundingClientRect();
+    }
+    resizeRenderer () {
+        this.updateRect();
+        this.renderer.resize(this.rect.width, this.rect.height);
     }
     getScratchCoords (x, y) {
         const nativeSize = this.renderer.getNativeSize();

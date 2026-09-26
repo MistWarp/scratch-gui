@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect, useLayoutEffect, useRef} from 'react';
 import {Link, useLocation, useNavigate} from 'react-router-dom';
 import {
     Search, Compass, Plus, FolderOpen, Bell, LogIn,
@@ -110,6 +110,9 @@ const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, 
     </form>);
 };
 
+const NAV_GAP = 18;
+const MIN_CENTRED_SEARCH = 280;
+
 const NavBar = () => {
     const {text: communityText} = useCommunityIntl();
     const {user, loading, loginOrThrow, logout} = useUser();
@@ -129,6 +132,9 @@ const NavBar = () => {
     const [openErrors, setOpenErrors] = useState(0);
     const navigate = useNavigate();
     const location = useLocation();
+    const innerRef = useRef(null);
+    const linksRef = useRef(null);
+    const accountRef = useRef(null);
     const desktopSearchRef = useRef(null);
     const mobileSearchRef = useRef(null);
     const desktopSearchInputRef = useRef(null);
@@ -137,6 +143,28 @@ const NavBar = () => {
     const releaseLogin = () => {
         loginInFlight.current = false;
     };
+
+    // Centre the desktop search in the bar. It needs equal room on both sides, so reserve the wider of the
+    // left group (logo and links) and the account area, and fall back to sitting between them when too tight.
+    useLayoutEffect(() => {
+        const inner = innerRef.current;
+        const links = linksRef.current;
+        const account = accountRef.current;
+        if (!inner || !links || !account || typeof ResizeObserver === 'undefined') return;
+        const measure = () => {
+            const box = inner.getBoundingClientRect();
+            const side = Math.max(
+                links.getBoundingClientRect().right - box.left,
+                box.right - account.getBoundingClientRect().left
+            ) + NAV_GAP;
+            inner.style.setProperty('--nav-side', `${Math.ceil(side)}px`);
+            inner.dataset.centredSearch = box.width - (2 * side) >= MIN_CENTRED_SEARCH ? 'true' : 'false';
+        };
+        measure();
+        const observer = new ResizeObserver(measure);
+        [inner, links, account].forEach(element => observer.observe(element));
+        return () => observer.disconnect();
+    }, []);
 
     useEffect(() => {
         setQuery('');
@@ -362,7 +390,7 @@ const NavBar = () => {
 
     return (
         <header className={styles.bar}>
-            <div className={styles.inner}>
+            <div className={styles.inner} ref={innerRef}>
                 <Link
                     to="/"
                     className={styles.brand}
@@ -373,10 +401,13 @@ const NavBar = () => {
                         src={logo}
                         alt=""
                     />
-                    <span className={styles.wordmark}>{communityText('MistWarp')}</span>
+                    <span className={styles.brandText}>
+                        <span className={styles.wordmark}>{communityText('MistWarp')}</span>
+                        <span className={styles.beta}>{communityText('Beta')}</span>
+                    </span>
                 </Link>
 
-                <nav className={styles.links} aria-label={t('nav.main')}>
+                <nav className={styles.links} ref={linksRef} aria-label={t('nav.main')}>
                     <a href={editorUrl()} className={styles.link} aria-label={t('nav.create')}>
                         <Plus size={17} />
                         <span className={styles.linkLabel}>{t('nav.create')}</span>
@@ -426,7 +457,7 @@ const NavBar = () => {
                     suggestionId="mw-search-suggestions-desktop"
                 />
 
-                <div className={styles.account}>
+                <div className={styles.account} ref={accountRef}>
                     <Link
                         to="/perks"
                         className={styles.iconLink}

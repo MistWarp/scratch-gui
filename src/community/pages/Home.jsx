@@ -1,6 +1,6 @@
 /* eslint-disable max-len */
 import {isMilestoneNotification, milestoneText, milestoneLink} from '../milestone-notifications.js';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {ArrowRight, Bell, Bug, Clock, Gamepad2, Rocket, UserPlus, GitFork, Globe, Heart, Lightbulb, Megaphone, MessageCircle, Sparkles, Star, Trophy, Users} from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
@@ -473,13 +473,23 @@ const HomeTabs = ({label, tabs, className}) => {
     const {text: communityText} = useCommunityIntl();
     const [active, setActive] = useState(tabs[0].key);
     const current = tabs.find(tab => tab.key === active) || tabs[0];
+    const headRef = useRef(null);
+    const revealTab = key => {
+        const index = tabs.findIndex(tab => tab.key === key);
+        const tab = headRef.current && headRef.current.querySelectorAll('[role="tab"]')[index];
+        if (tab) tab.scrollIntoView({block: 'nearest', inline: 'nearest', behavior: 'smooth'});
+    };
     return (
         <section className={className}>
-            <div className={styles.tabHead}>
+            <div className={styles.tabHead} ref={headRef}>
                 <UnderlineTabs
+                    className={styles.homeTabs}
                     items={tabs.map(({key, title, icon: Icon}) => ({key, label: <><Icon size={16} />{title}</>}))}
                     value={current.key}
-                    onChange={setActive}
+                    onChange={key => {
+                        setActive(key);
+                        revealTab(key);
+                    }}
                     ariaLabel={label}
                 />
                 {current.link ? <Link to={current.link}>{current.linkLabel || communityText('See all')}</Link> : null}

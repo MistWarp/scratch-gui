@@ -307,6 +307,13 @@
 }
 
 @media (max-width: 700px) {
+    .homeTabs {
+        gap: 18px;
+        padding-inline-end: 24px;
+        scroll-padding-inline: 24px;
+        mask-image: linear-gradient(to left, transparent, #000 24px);
+    }
+
     .hero {
         grid-template-columns: 1fr;
         padding: 24px;

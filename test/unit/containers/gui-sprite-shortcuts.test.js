@@ -44,8 +44,8 @@ describe('GUI sprite shortcut actions', () => {
         expect(actions.onDeleteEditingSprite(vm)).toBe(true);
 
         const restoreAction = dispatch.mock.calls[0][0];
-        expect(restoreAction.state.deletedItem).toBe('Sprite');
-        await restoreAction.state.restoreFun();
+        expect(restoreAction.entry.deletedItem).toBe('Sprite');
+        await restoreAction.entry.restoreFun();
         expect(restoreSprite).toHaveBeenCalledTimes(1);
     });
 
@@ -68,8 +68,8 @@ describe('GUI sprite shortcut actions', () => {
 describe('GUI deletion undo', () => {
     const makeGui = overrides => {
         const gui = Object.create(GUI.prototype);
-        gui.restoreDeletionPromise = null;
         gui.props = {
+            blocksTabVisible: true,
             onClearDeletionRestore: jest.fn(),
             onShowRestoreError: jest.fn(),
             restoreDeletion: {restoreFun: null},
@@ -79,6 +79,16 @@ describe('GUI deletion undo', () => {
         return gui;
     };
 
+    test('undo and redo leave the keys to the costume and sound editors on their tabs', () => {
+        mockWorkspace.undo.mockClear();
+        const gui = makeGui({blocksTabVisible: false, restoreDeletion: {restoreFun: jest.fn()}});
+
+        expect(gui.handleUndo()).toBe(false);
+        expect(gui.handleRedo()).toBe(false);
+        expect(gui.props.restoreDeletion.restoreFun).not.toHaveBeenCalled();
+        expect(mockWorkspace.undo).not.toHaveBeenCalled();
+    });
+
     test('undo restores a deleted asset before using block undo', async () => {
         const restoreFun = jest.fn(() => Promise.resolve());
         const gui = makeGui({restoreDeletion: {restoreFun, deletedItem: 'Costume'}});
@@ -86,7 +96,7 @@ describe('GUI deletion undo', () => {
         await expect(gui.handleUndo()).resolves.toBe(true);
 
         expect(restoreFun).toHaveBeenCalledTimes(1);
-        expect(gui.props.onClearDeletionRestore).toHaveBeenCalledTimes(1);
+        expect(gui.props.onClearDeletionRestore).toHaveBeenCalledWith(restoreFun);
         expect(gui.props.vm.postUndo).not.toHaveBeenCalled();
     });
 
@@ -125,6 +135,32 @@ describe('GUI deletion undo', () => {
 
         expect(mockWorkspace.undo).toHaveBeenCalledWith(false);
         expect(gui.props.vm.postUndo).not.toHaveBeenCalled();
+    });
+
+    test('undo takes block edits made after a deletion first', async () => {
+        mockWorkspace.undo.mockClear();
+        mockWorkspace.undoStack_ = [{_mwUndoSequence: 5}];
+        const restoreFun = jest.fn(() => Promise.resolve());
+        const gui = makeGui({restoreDeletion: {restoreFun, deletedItem: 'Sprite', sequence: 4}});
+
+        await expect(gui.handleUndo()).resolves.toBe(true);
+
+        expect(mockWorkspace.undo).toHaveBeenCalledWith(false);
+        expect(restoreFun).not.toHaveBeenCalled();
+        delete mockWorkspace.undoStack_;
+    });
+
+    test('undo takes a deletion made after block edits first', async () => {
+        mockWorkspace.undo.mockClear();
+        mockWorkspace.undoStack_ = [{_mwUndoSequence: 3}];
+        const restoreFun = jest.fn(() => Promise.resolve());
+        const gui = makeGui({restoreDeletion: {restoreFun, deletedItem: 'Sprite', sequence: 4}});
+
+        await expect(gui.handleUndo()).resolves.toBe(true);
+
+        expect(restoreFun).toHaveBeenCalledTimes(1);
+        expect(mockWorkspace.undo).not.toHaveBeenCalled();
+        delete mockWorkspace.undoStack_;
     });
 
     test('redo goes to the block workspace', () => {

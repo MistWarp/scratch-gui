@@ -2,7 +2,7 @@ import bindAll from 'lodash.bindall';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
-import {setRestore} from '../reducers/restore-deletion';
+import {removeRestore} from '../reducers/restore-deletion';
 import {showStandardAlert} from '../reducers/alerts';
 import log from '../lib/utils/log';
 
@@ -34,11 +34,12 @@ export class DeletionRestorer extends React.Component {
     restoreDeletion () {
         if (this.restorePromise || typeof this.props.restore !== 'function') return this.restorePromise;
 
+        const restore = this.props.restore;
         this.setState({restoring: true});
         this.restorePromise = Promise.resolve()
-            .then(() => this.props.restore())
+            .then(() => restore())
             .then(() => {
-                this.props.dispatchUpdateRestore({restoreFun: null, deletedItem: ''});
+                this.props.onRestored(restore);
                 this.restorePromise = null;
                 this.setState({restoring: false});
                 return true;
@@ -56,7 +57,7 @@ export class DeletionRestorer extends React.Component {
         const {
             /* eslint-disable no-unused-vars */
             children,
-            dispatchUpdateRestore,
+            onRestored,
             /* eslint-enable no-unused-vars */
             ...props
         } = this.props;
@@ -71,7 +72,7 @@ export class DeletionRestorer extends React.Component {
 DeletionRestorer.propTypes = {
     children: PropTypes.func,
     deletedItem: PropTypes.string,
-    dispatchUpdateRestore: PropTypes.func,
+    onRestored: PropTypes.func.isRequired,
     onShowRestoreError: PropTypes.func.isRequired,
     restore: PropTypes.func
 };
@@ -81,9 +82,7 @@ const mapStateToProps = state => ({
     restore: state.scratchGui.restoreDeletion.restoreFun
 });
 const mapDispatchToProps = dispatch => ({
-    dispatchUpdateRestore: updatedState => {
-        dispatch(setRestore(updatedState));
-    },
+    onRestored: restoreFun => dispatch(removeRestore(restoreFun)),
     onShowRestoreError: () => dispatch(showStandardAlert('assetRestoreError'))
 });
 

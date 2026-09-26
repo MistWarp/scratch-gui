@@ -32,6 +32,7 @@ import customStageSizeReducer, {customStageSizeInitialState} from './custom-stag
 import vmReducer, {vmInitialState} from './vm';
 import vmStatusReducer, {vmStatusInitialState} from './vm-status';
 import workspaceMetricsReducer, {workspaceMetricsInitialState} from './workspace-metrics';
+import scriptLoadProgressReducer, {scriptLoadProgressInitialState} from './script-load-progress';
 import mwProjectThemeReducer, {mwProjectThemeInitialState} from './mw-project-theme';
 import toastReducer, {toastInitialState} from './toast';
 import shortcutsReducer, {shortcutsInitialState} from './shortcuts';
@@ -77,6 +78,7 @@ const guiInitialState = {
     vm: vmInitialState,
     vmStatus: vmStatusInitialState,
     workspaceMetrics: workspaceMetricsInitialState,
+    scriptLoadProgress: scriptLoadProgressInitialState,
     rotur: roturInitialState,
     shortcuts: shortcutsInitialState
 };
@@ -188,6 +190,7 @@ const guiReducer = combineReducers({
     vm: vmReducer,
     vmStatus: vmStatusReducer,
     workspaceMetrics: workspaceMetricsReducer,
+    scriptLoadProgress: scriptLoadProgressReducer,
     shortcuts: shortcutsReducer,
     rotur: roturReducer
 });

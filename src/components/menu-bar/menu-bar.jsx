@@ -130,6 +130,8 @@ import {
 import {setFileHandle} from '../../reducers/tw.js';
 import {setProjectUnchanged} from '../../reducers/project-changed';
 import {showStandardAlert, showAlertWithTimeout, closeAlertWithId} from '../../reducers/alerts';
+import {removeRestore} from '../../reducers/restore-deletion';
+import {nextUndoSource, undoLatest} from '../../lib/undo-history';
 import collectMetadata from '../../lib/collect-metadata';
 import LazyScratchBlocks from '../../lib/tw-lazy-scratch-blocks';
 import {mediaRecorderSupported} from '../../addons/environment.js';
@@ -499,12 +501,22 @@ class MenuBar extends React.Component {
             if (workspace) {
                 this.undoRedoWorkspace = workspace;
                 this.undoRedoChangeListener = () => {
-                    setTimeout(() => this.updateUndoRedoState(), 0);
+                    if (this.undoRedoUpdateQueued) return;
+                    this.undoRedoUpdateQueued = true;
+                    setTimeout(() => {
+                        this.undoRedoUpdateQueued = false;
+                        this.updateUndoRedoState();
+                    }, 0);
                 };
                 workspace.addChangeListener(this.undoRedoChangeListener);
                 setTimeout(() => this.updateUndoRedoState(), 100);
             }
         });
+    }
+    componentDidUpdate (prevProps) {
+        if (prevProps.restoreDeletion !== this.props.restoreDeletion) {
+            this.updateUndoRedoState();
+        }
     }
     componentWillUnmount () {
         this.unmounted = true;
@@ -1434,16 +1446,20 @@ class MenuBar extends React.Component {
         this.props.onClickSeeInside();
     }
     handleClickUndo () {
-        if (!this.props.isPlayerOnly && this.state.canUndo) {
-            this.ensureScratchBlocks().then(ScratchBlocks => {
-                if (this.unmounted) return;
-                const workspace = ScratchBlocks.getMainWorkspace();
-                if (workspace) {
-                    workspace.undo(false);
-                    this.updateUndoRedoState();
-                }
+        if (this.props.isPlayerOnly || !this.state.canUndo) return;
+        this.ensureScratchBlocks()
+            .then(ScratchBlocks => {
+                if (this.unmounted) return false;
+                return undoLatest({
+                    workspace: ScratchBlocks.getMainWorkspace(),
+                    deletion: this.props.restoreDeletion,
+                    onRestored: this.props.onDeletionRestored,
+                    onRestoreError: this.props.onShowRestoreError
+                });
+            })
+            .then(() => {
+                if (!this.unmounted) this.updateUndoRedoState();
             });
-        }
     }
     handleClickRedo () {
         if (!this.props.isPlayerOnly && this.state.canRedo) {
@@ -1462,11 +1478,12 @@ class MenuBar extends React.Component {
         this.ensureScratchBlocks().then(ScratchBlocks => {
             if (this.unmounted) return;
             const workspace = ScratchBlocks.getMainWorkspace();
-            if (workspace) {
-                const canUndo = workspace.hasUndoStack ?
-                    workspace.hasUndoStack() : (workspace.undoStack_ && workspace.undoStack_.length > 0);
-                const canRedo = workspace.hasRedoStack ?
-                    workspace.hasRedoStack() : (workspace.redoStack_ && workspace.redoStack_.length > 0);
+            const canUndo = nextUndoSource(workspace, this.props.restoreDeletion) === 'deletion' ||
+                (!!workspace && (workspace.hasUndoStack ?
+                    workspace.hasUndoStack() : (workspace.undoStack_ && workspace.undoStack_.length > 0)));
+            const canRedo = !!workspace && (workspace.hasRedoStack ?
+                workspace.hasRedoStack() : (workspace.redoStack_ && workspace.redoStack_.length > 0));
+            if (canUndo !== this.state.canUndo || canRedo !== this.state.canRedo) {
                 this.setState({canUndo, canRedo});
             }
         });
@@ -2441,6 +2458,12 @@ MenuBar.propTypes = {
     intl: intlShape,
     isPlayerOnly: PropTypes.bool,
     isRtl: PropTypes.bool,
+    onDeletionRestored: PropTypes.func,
+    onShowRestoreError: PropTypes.func,
+    restoreDeletion: PropTypes.shape({
+        restoreFun: PropTypes.func,
+        sequence: PropTypes.number
+    }),
     isShared: PropTypes.bool,
     isShowingProject: PropTypes.bool,
     isUpdating: PropTypes.bool,
@@ -2552,6 +2575,7 @@ const mapStateToProps = (state, ownProps) => {
         loginMenuOpen: loginMenuOpen(state),
         projectTitle: state.scratchGui.projectTitle,
         projectChanged: state.scratchGui.projectChanged,
+        restoreDeletion: state.scratchGui.restoreDeletion,
         roturReady: state.scratchGui.rotur && state.scratchGui.rotur.status === 'ready',
         theme: state.scratchGui.theme.theme,
         vm: state.scratchGui.vm
@@ -2570,6 +2594,8 @@ const mapDispatchToProps = dispatch => ({
     onRequestCloseFile: () => dispatch(closeFileMenu()),
     onProjectUnchanged: () => dispatch(setProjectUnchanged()),
     onShowGitStatus: alertId => dispatch(showStandardAlert(alertId)),
+    onDeletionRestored: restoreFun => dispatch(removeRestore(restoreFun)),
+    onShowRestoreError: () => dispatch(showStandardAlert('assetRestoreError')),
     onCloseGitStatus: alertId => dispatch(closeAlertWithId(alertId)),
     onGitStatusDone: alertId => showAlertWithTimeout(dispatch, alertId),
     onClickWorkspaceBookmarks: () => dispatch(openWorkspaceBookmarksMenu()),

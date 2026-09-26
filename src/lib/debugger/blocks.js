@@ -129,7 +129,7 @@ const registerDebuggerBlocks = (vm, handlers) => {
 
     const ogStartHats = vm.runtime.startHats;
     vm.runtime.startHats = function (hat, optMatchFields, ...args) {
-        if (getSetting('log_broadcasts') && hat === 'event_whenbroadcastreceived') {
+        if (hat === 'event_whenbroadcastreceived' && getSetting('log_broadcasts')) {
             onLog(
                 `Broadcasted "${optMatchFields.BROADCAST_OPTION}"`,
                 vm.runtime.sequencer.activeThread,
