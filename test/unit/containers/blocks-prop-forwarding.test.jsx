@@ -25,13 +25,38 @@ describe('blocks DOM prop forwarding', () => {
 
 
 describe('script loading progress', () => {
-    test('updates the UI when progress changes without other prop changes', () => {
+    test('keeps the progress setter out of the blocks DOM wrapper', () => {
         const blocks = Object.create(Blocks.prototype);
-        blocks.state = {scriptLoadProgress: null};
-        blocks.props = {};
-        const progress = {phase: 'building', completed: 100, total: 1200};
-        expect(blocks.shouldComponentUpdate(blocks.props, {scriptLoadProgress: progress})).toBe(true);
-        blocks.state = {scriptLoadProgress: progress};
-        expect(blocks.shouldComponentUpdate(blocks.props, {scriptLoadProgress: null})).toBe(true);
+        blocks.state = {
+            flyoutWidth: null,
+            paletteResizeEnabled: false,
+            prompt: null
+        };
+        blocks.props = {
+            isFullScreen: false,
+            options: {},
+            setScriptLoadProgress: jest.fn(),
+            theme: {wallpaper: {gridVisible: true}},
+            vm: {}
+        };
+
+        const rendered = blocks.render();
+        const blocksWrapper = rendered.props.children[0];
+
+        expect(blocksWrapper.props.setScriptLoadProgress).toBeUndefined();
+    });
+
+    test('clears the shared progress when a deferred load is cancelled', () => {
+        const blocks = Object.create(Blocks.prototype);
+        const setScriptLoadProgress = jest.fn();
+        blocks.props = {setScriptLoadProgress};
+        blocks.workspace = {cancelDeferredRender: jest.fn()};
+        blocks.deferredWorkspaceLoad = {};
+
+        blocks.cancelDeferredWorkspaceLoad();
+
+        expect(setScriptLoadProgress).toHaveBeenCalledWith(null);
+        expect(blocks.workspace.cancelDeferredRender).toHaveBeenCalled();
+        expect(blocks.deferredWorkspaceLoad).toBeNull();
     });
 });
