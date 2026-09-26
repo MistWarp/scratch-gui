@@ -39,6 +39,7 @@ import {Theme} from '../../lib/themes';
 
 import {BLOCKS_TAB_INDEX, COSTUMES_TAB_INDEX, SOUNDS_TAB_INDEX} from '../../reducers/editor-tab';
 import CollaborationTabIndicator from '../../containers/collaboration-tab-indicator.jsx';
+import ScriptLoadIndicator from '../script-load-indicator/script-load-indicator.jsx';
 import {editorTabMessages, getEditorTabLabels} from './editor-tab-labels.js';
 import {setStageSize} from '../../reducers/stage-size';
 
@@ -1259,6 +1260,7 @@ const GUIComponent = props => {
                                             <FormattedMessage {...editorTabMessages.sounds} />
                                             <CollaborationTabIndicator tab={SOUNDS_TAB_INDEX} />
                                         </Tab>
+                                        <ScriptLoadIndicator />
                                     </TabList>
                                     <TabPanel className={tabClassNames.tabPanel}>
                                         <React.Fragment>
