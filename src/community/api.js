@@ -11,7 +11,7 @@ import {
 } from '../lib/community/api.js';
 import warpthemeApi from '../lib/warptheme-api.js';
 
-const editorUrl = ({clone, platformProject, projectJson, assets, starter, restore} = {}) => {
+const editorUrl = ({chat, clone, platformProject, projectJson, assets, starter, restore} = {}) => {
     if (platformProject) {
         return `/editor#mw-${platformProject}`;
     }
@@ -21,6 +21,7 @@ const editorUrl = ({clone, platformProject, projectJson, assets, starter, restor
     if (clone) params.set('clone', clone);
     if (projectJson) params.set('project_url', projectJson);
     if (assets) params.set('mw_assets', assets);
+    if (chat) params.set('chat', '1');
     const query = params.toString();
     return `/editor${query ? `?${query}` : ''}`;
 };

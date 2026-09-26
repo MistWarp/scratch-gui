@@ -594,7 +594,7 @@
   ],
   "Studios": [
     "src/community/components/ExploreNav.jsx:11",
-    "src/community/components/Footer.jsx:38",
+    "src/community/components/Footer.jsx:39",
     "src/community/components/MyStuffSpaces.jsx:65",
     "src/community/pages/Group.jsx:202",
     "src/community/pages/Search.jsx:160",
@@ -602,7 +602,7 @@
   ],
   "Challenges": [
     "src/community/components/ExploreNav.jsx:12",
-    "src/community/components/Footer.jsx:39",
+    "src/community/components/Footer.jsx:40",
     "src/community/components/MyStuffSpaces.jsx:79",
     "src/community/pages/Group.jsx:203",
     "src/community/pages/Home.jsx:460",
@@ -617,7 +617,7 @@
   ],
   "Themes": [
     "src/community/components/ExploreNav.jsx:14",
-    "src/community/components/Footer.jsx:40",
+    "src/community/components/Footer.jsx:41",
     "src/community/components/MyStuffThemes.jsx:217",
     "src/community/pages/MyStuff.jsx:629",
     "src/community/pages/Profile.jsx:546",
@@ -660,29 +660,29 @@
     "src/community/components/FileBrowserTree.jsx:123"
   ],
   "MistWarp": [
-    "src/community/components/Footer.jsx:24",
+    "src/community/components/Footer.jsx:25",
     "src/community/components/NavBar.jsx:397",
     "src/community/components/NavBar.jsx:405",
     "src/community/components/RichText.jsx:116",
     "src/community/pages/Roadmap.jsx:511"
   ],
   "Build, share, and remix projects together.": [
-    "src/community/components/Footer.jsx:25"
+    "src/community/components/Footer.jsx:26"
   ],
   "Create": [
-    "src/community/components/Footer.jsx:31",
+    "src/community/components/Footer.jsx:32",
     "src/community/components/NavBar.jsx:552",
     "src/community/components/NavBar.jsx:552",
     "src/community/pages/Spaces.jsx:275"
   ],
   "Editor": [
-    "src/community/components/Footer.jsx:32",
+    "src/community/components/Footer.jsx:33",
     "src/community/components/SharedProjects.jsx:19",
     "src/community/pages/ManageProject.jsx:995",
     "src/community/pages/Roadmap.jsx:497"
   ],
   "My stuff": [
-    "src/community/components/Footer.jsx:33",
+    "src/community/components/Footer.jsx:34",
     "src/community/components/NavBar.jsx:485",
     "src/community/components/NavBar.jsx:486",
     "src/community/components/NavBar.jsx:568",
@@ -691,90 +691,96 @@
     "src/community/pages/MyStuff.jsx:1361"
   ],
   "Community": [
-    "src/community/components/Footer.jsx:36",
+    "src/community/components/Footer.jsx:37",
     "src/community/pages/Challenge.jsx:439",
     "src/community/pages/Roadmap.jsx:497",
     "src/community/pages/Roadmap.jsx:511"
   ],
   "Explore": [
-    "src/community/components/Footer.jsx:37",
+    "src/community/components/Footer.jsx:38",
     "src/community/components/NavBar.jsx:549",
     "src/community/components/NavBar.jsx:549",
     "src/community/pages/Explore.jsx:177"
   ],
   "Leaderboard": [
-    "src/community/components/Footer.jsx:41"
+    "src/community/components/Footer.jsx:42"
   ],
   "News": [
-    "src/community/components/Footer.jsx:42",
+    "src/community/components/Footer.jsx:43",
     "src/community/pages/Home.jsx:67",
     "src/community/pages/Home.jsx:444",
     "src/community/pages/News.jsx:166"
   ],
   "Stats": [
-    "src/community/components/Footer.jsx:43"
+    "src/community/components/Footer.jsx:44"
   ],
   "Roadmap": [
-    "src/community/components/Footer.jsx:44",
+    "src/community/components/Footer.jsx:45",
     "src/community/pages/Home.jsx:165",
     "src/community/pages/Home.jsx:452",
     "src/community/pages/Roadmap.jsx:478"
   ],
   "Compare with Scratch": [
-    "src/community/components/Footer.jsx:45"
-  ],
-  "Report a bug": [
     "src/community/components/Footer.jsx:46"
   ],
+  "Report a bug": [
+    "src/community/components/Footer.jsx:47"
+  ],
+  "Chat": [
+    "src/community/components/Footer.jsx:48"
+  ],
+  "Discord": [
+    "src/community/components/Footer.jsx:53"
+  ],
   "More": [
-    "src/community/components/Footer.jsx:49"
+    "src/community/components/Footer.jsx:56"
   ],
   "Memberships": [
-    "src/community/components/Footer.jsx:50",
+    "src/community/components/Footer.jsx:57",
     "src/community/components/NavBar.jsx:464",
     "src/community/components/NavBar.jsx:465"
   ],
   "Documentation": [
-    "src/community/components/Footer.jsx:51"
+    "src/community/components/Footer.jsx:58"
   ],
   "Packager": [
-    "src/community/components/Footer.jsx:52"
-  ],
-  "GitHub": [
     "src/community/components/Footer.jsx:59"
   ],
+  "GitHub": [
+    "src/community/components/Footer.jsx:66"
+  ],
   "Rotur": [
-    "src/community/components/Footer.jsx:64"
+    "src/community/components/Footer.jsx:71"
   ],
   "Credits": [
-    "src/community/components/Footer.jsx:65",
+    "src/community/components/Footer.jsx:72",
     "src/community/components/ProjectInfoPanel.jsx:224",
     "src/community/pages/Group.jsx:262"
   ],
   "Help and safety": [
-    "src/community/components/Footer.jsx:68"
+    "src/community/components/Footer.jsx:75"
   ],
   "Support": [
-    "src/community/components/Footer.jsx:69",
+    "src/community/components/Footer.jsx:76",
     "src/community/pages/Group.jsx:206",
     "src/community/pages/Project.jsx:1542",
-    "src/community/pages/Support.jsx:100"
+    "src/community/pages/Support.jsx:101"
   ],
   "Trust, privacy, and terms": [
-    "src/community/components/Footer.jsx:70",
+    "src/community/components/Footer.jsx:77",
     "src/community/pages/Trust.jsx:31"
   ],
   "Service status": [
-    "src/community/components/Footer.jsx:71"
+    "src/community/components/Footer.jsx:78"
   ],
   "MistWarp is a mod of TurboWarp and Scratch. Not affiliated with Scratch or the Scratch Foundation.": [
-    "src/community/components/Footer.jsx:77"
+    "src/community/components/Footer.jsx:84"
   ],
   "Deployed {value1}": [
-    "src/community/components/Footer.jsx:80"
+    "src/community/components/Footer.jsx:87"
   ],
   "Version": [
-    "src/community/components/Footer.jsx:82"
+    "src/community/components/Footer.jsx:89"
   ],
   "Could not load this game shop.": [
     "src/community/components/GameMarketplaceModal.jsx:118"
@@ -873,7 +879,7 @@
     "src/community/components/HomeDiscovery.jsx:56",
     "src/community/components/ui/SectionHeading.jsx:21",
     "src/community/pages/Home.jsx:287",
-    "src/community/pages/Home.jsx:485"
+    "src/community/pages/Home.jsx:495"
   ],
   "{value1} projects · {value2} hearts": [
     "src/community/components/HomeDiscovery.jsx:65"
@@ -2115,7 +2121,7 @@
     "src/community/pages/Profile.jsx:1143",
     "src/community/pages/Project.jsx:1729",
     "src/community/pages/Project.jsx:3089",
-    "src/community/pages/Support.jsx:132"
+    "src/community/pages/Support.jsx:141"
   ],
   "Send report": [
     "src/community/components/ReportModal.jsx:95"
@@ -2252,7 +2258,7 @@
   ],
   "No shared projects yet": [
     "src/community/components/SharedProjects.jsx:98",
-    "src/community/pages/Home.jsx:559",
+    "src/community/pages/Home.jsx:569",
     "src/community/pages/Random.jsx:46"
   ],
   "Projects will appear here when someone adds you to their team.": [
@@ -3033,7 +3039,7 @@
   "Message": [
     "src/community/pages/Admin.jsx:1162",
     "src/community/pages/Admin.jsx:2097",
-    "src/community/pages/Support.jsx:130"
+    "src/community/pages/Support.jsx:139"
   ],
   "Send": [
     "src/community/pages/Admin.jsx:1166"
@@ -3875,7 +3881,7 @@
     "src/community/pages/ManageProject.jsx:855",
     "src/community/pages/ManageProject.jsx:978",
     "src/community/pages/ManageSpace.jsx:635",
-    "src/community/pages/Support.jsx:128"
+    "src/community/pages/Support.jsx:137"
   ],
   "MistWarp compared with Scratch and TurboWarp": [
     "src/community/pages/Compare.jsx:69"
@@ -4239,19 +4245,19 @@
   ],
   "Continue playing": [
     "src/community/pages/Home.jsx:430",
-    "src/community/pages/Home.jsx:515"
+    "src/community/pages/Home.jsx:525"
   ],
   "Game library": [
     "src/community/pages/Home.jsx:433"
   ],
   "Nothing played yet": [
-    "src/community/pages/Home.jsx:513"
+    "src/community/pages/Home.jsx:523"
   ],
   "Games you save to your library show up here after you play them.": [
-    "src/community/pages/Home.jsx:514"
+    "src/community/pages/Home.jsx:524"
   ],
   "Couldn't load projects.": [
-    "src/community/pages/Home.jsx:558"
+    "src/community/pages/Home.jsx:568"
   ],
   "Followers": [
     "src/community/pages/Leaderboard.jsx:22",
@@ -7178,52 +7184,70 @@
     "src/community/pages/Studio.jsx:156"
   ],
   "Complete every field before sending your request.": [
-    "src/community/pages/Support.jsx:79"
+    "src/community/pages/Support.jsx:80"
   ],
   "Could not send your request.": [
-    "src/community/pages/Support.jsx:90"
+    "src/community/pages/Support.jsx:91"
   ],
   "Contact MistWarp about accounts, safety, legal questions, or moderation decisions.": [
-    "src/community/pages/Support.jsx:101"
+    "src/community/pages/Support.jsx:102"
   ],
   "Found a product bug?": [
-    "src/community/pages/Support.jsx:104"
-  ],
-  "Post it on the roadmap bug tracker. Other users can confirm it, add context, and follow its status.": [
     "src/community/pages/Support.jsx:105"
   ],
-  "Open the roadmap bug tracker": [
+  "Post it on the roadmap bug tracker. Other users can confirm it, add context, and follow its status.": [
     "src/community/pages/Support.jsx:106"
   ],
+  "Open the roadmap bug tracker": [
+    "src/community/pages/Support.jsx:107"
+  ],
+  "Ask the community": [
+    "src/community/pages/Support.jsx:110"
+  ],
+  "The MistWarp chat is the best place to ask quick questions and talk with other creators. It runs on OriginChats, so you can open it beside your project with the Chat button in the editor, or use any OriginChats client with chats.mistwarp.org.": [
+    "src/community/pages/Support.jsx:111"
+  ],
+  "Open chat in the editor": [
+    "src/community/pages/Support.jsx:112"
+  ],
+  "Join the server in OriginChats": [
+    "src/community/pages/Support.jsx:113"
+  ],
+  "Prefer Discord? The chat is bridged with the MistWarp Discord server, so you can join the same conversations there.": [
+    "src/community/pages/Support.jsx:114"
+  ],
+  "Join the MistWarp Discord server": [
+    "src/community/pages/Support.jsx:115"
+  ],
   "Send a private request": [
-    "src/community/pages/Support.jsx:109"
+    "src/community/pages/Support.jsx:118"
   ],
   "Send another request": [
-    "src/community/pages/Support.jsx:120"
-  ],
-  "Your request was sent to the MistWarp moderators.": [
-    "src/community/pages/Support.jsx:123"
-  ],
-  "Topic": [
-    "src/community/pages/Support.jsx:127"
-  ],
-  "Account help": [
-    "src/community/pages/Support.jsx:127"
-  ],
-  "Safety concern": [
-    "src/community/pages/Support.jsx:127"
-  ],
-  "Legal or copyright": [
-    "src/community/pages/Support.jsx:127"
-  ],
-  "Moderation appeal": [
-    "src/community/pages/Support.jsx:127"
-  ],
-  "Subject": [
     "src/community/pages/Support.jsx:129"
   ],
-  "Send request": [
+  "Your request was sent to the MistWarp moderators.": [
     "src/community/pages/Support.jsx:132"
+  ],
+  "Topic": [
+    "src/community/pages/Support.jsx:136"
+  ],
+  "Account help": [
+    "src/community/pages/Support.jsx:136"
+  ],
+  "Safety concern": [
+    "src/community/pages/Support.jsx:136"
+  ],
+  "Legal or copyright": [
+    "src/community/pages/Support.jsx:136"
+  ],
+  "Moderation appeal": [
+    "src/community/pages/Support.jsx:136"
+  ],
+  "Subject": [
+    "src/community/pages/Support.jsx:138"
+  ],
+  "Send request": [
+    "src/community/pages/Support.jsx:141"
   ],
   "Could not load this theme.": [
     "src/community/pages/Theme.jsx:109"
