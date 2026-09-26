@@ -38,6 +38,7 @@ import {
 import {activateCustomProcedures, deactivateCustomProcedures} from '../reducers/custom-procedures';
 import {setConnectionModalExtensionId} from '../reducers/connection-modal';
 import {updateMetrics} from '../reducers/workspace-metrics';
+import {setScriptLoadProgress} from '../reducers/script-load-progress';
 import {isTimeTravel2020} from '../reducers/time-travel';
 import {showStandardAlert} from '../reducers/alerts';
 
@@ -156,7 +157,6 @@ class Blocks extends React.Component {
         this.updateBlockColors = this.updateBlockColors.bind(this);
 
         this.state = {
-            scriptLoadProgress: null,
             prompt: null,
             flyoutWidth: null,
             paletteResizeEnabled: !SettingsStore.getAddonEnabled('hide-flyout')
@@ -307,7 +307,6 @@ class Blocks extends React.Component {
     }
     shouldComponentUpdate (nextProps, nextState) {
         return (
-            this.state.scriptLoadProgress !== nextState.scriptLoadProgress ||
             this.state.prompt !== nextState.prompt ||
             this.state.flyoutWidth !== nextState.flyoutWidth ||
             this.state.paletteResizeEnabled !== nextState.paletteResizeEnabled ||
@@ -424,6 +423,7 @@ class Blocks extends React.Component {
         }
     }
     componentWillUnmount () {
+        this.props.setScriptLoadProgress(null);
         clearTimeout(this.collabRefreshTimer);
         SettingsStore.removeEventListener('setting-changed', this.handleAddonSettingChanged);
         window.removeEventListener(VANILLA_PALETTE_CHANGED, this.handleVanillaPaletteChanged);
@@ -1121,7 +1121,7 @@ class Blocks extends React.Component {
             this.deferredWorkspaceLoad = loadWorkspace(this.ScratchBlocks, this.workspace, data, {
                 onProgress: progress => {
                     if (!this.unmounted) {
-                        this.setState({scriptLoadProgress: progress.phase === 'idle' ? null : progress});
+                        this.props.setScriptLoadProgress(progress.phase === 'idle' ? null : progress);
                     }
                 },
                 onDone: () => {
@@ -1142,7 +1142,7 @@ class Blocks extends React.Component {
                 error.message = `Workspace Update Error: ${error.message}`;
             }
             log.error(error);
-            if (!this.unmounted) this.setState({scriptLoadProgress: {phase: 'error'}});
+            if (!this.unmounted) this.props.setScriptLoadProgress({phase: 'error'});
         } finally {
             this.ScratchBlocks.Events.enable();
         }
@@ -1266,7 +1266,7 @@ class Blocks extends React.Component {
         this.blocks = blocks;
     }
     cancelDeferredWorkspaceLoad () {
-        if (!this.unmounted) this.setState({scriptLoadProgress: null});
+        this.props.setScriptLoadProgress(null);
         this.deferredWorkspaceLoad = null;
         if (this.workspace && this.workspace.cancelDeferredRender) {
             this.workspace.cancelDeferredRender();
@@ -1413,6 +1413,7 @@ class Blocks extends React.Component {
             onRequestCloseCustomProcedures,
             toolboxXML,
             updateMetrics: updateMetricsProp,
+            setScriptLoadProgress: setScriptLoadProgressProp,
             useCatBlocks,
             workspaceMetrics,
             ...props
@@ -1421,7 +1422,6 @@ class Blocks extends React.Component {
         return (
             <React.Fragment>
                 <DroppableBlocks
-                    scriptLoadProgress={this.state.scriptLoadProgress}
                     componentRef={this.setBlocks}
                     onDrop={this.handleDrop}
                     gridVisible={this.props.theme.wallpaper.gridVisible !== false}
@@ -1499,6 +1499,7 @@ Blocks.propTypes = {
     theme: PropTypes.instanceOf(Theme),
     toolboxXML: PropTypes.string,
     updateMetrics: PropTypes.func,
+    setScriptLoadProgress: PropTypes.func,
     updateToolboxState: PropTypes.func,
     useCatBlocks: PropTypes.bool,
     vm: PropTypes.instanceOf(VM).isRequired,
@@ -1574,6 +1575,9 @@ const mapDispatchToProps = dispatch => ({
     },
     updateMetrics: metrics => {
         dispatch(updateMetrics(metrics));
+    },
+    setScriptLoadProgress: progress => {
+        dispatch(setScriptLoadProgress(progress));
     },
     onShowImportError: () => dispatch(showStandardAlert('blockImportError'))
 });
