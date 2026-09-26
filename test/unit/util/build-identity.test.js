@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-const runBuild = async (initialEnv = {}, args = ['--site-only']) => {
+const runBuild = async (initialEnv = {}, args = ['--site-only'], siblingDocs = false) => {
     let head = 'commit-at-build-start';
     const identities = [];
     const builds = [];
@@ -15,6 +15,9 @@ const runBuild = async (initialEnv = {}, args = ['--site-only']) => {
         process: {env: environment, argv: ['node', 'build.mjs', ...args],
             cwd: () => '/test', execPath: '/node'},
         loadEnv: () => ({}),
+        fs: {existsSync: file => siblingDocs && file === '../docs/build'},
+        os: {tmpdir: () => '/tmp'},
+        path,
         build: async () => {
             steps.push('build');
             builds.push({...environment});
@@ -27,6 +30,7 @@ const runBuild = async (initialEnv = {}, args = ['--site-only']) => {
             if (command === 'git') return head;
             if (command === 'pnpm') steps.push(`pnpm ${args.join(' ')}`);
             if (args[0] === 'scripts/sync-forks.mjs') steps.push('sync-forks');
+            if (args[0] === 'scripts/build-docs.mjs') steps.push(`build-docs ${args[1]}`);
             if (args[0] === 'scripts/write-version.mjs') {
                 identities.push(environment.MW_BUILD_ID || environment.GITHUB_SHA || head);
             }
@@ -77,10 +81,24 @@ test('standalone editor builds retain their selected entry without building the 
 
 test('Cloudflare Pages builds move every fork to its latest develop commit before compiling', async () => {
     const {steps} = await runBuild({CF_PAGES: '1'});
-    expect(steps).toEqual(['sync-forks', 'pnpm install --no-frozen-lockfile', 'build']);
+    expect(steps).toEqual(['sync-forks', 'pnpm install --no-frozen-lockfile',
+        'build-docs /tmp/mistwarp-docs/build', 'build']);
 });
 
 test('other builds keep the committed fork pins', async () => {
     expect((await runBuild()).steps).toEqual(['build']);
-    expect((await runBuild({CF_PAGES: '1', MW_PINNED_FORKS: '1'})).steps).toEqual(['build']);
+    expect((await runBuild({CF_PAGES: '1', MW_PINNED_FORKS: '1'})).steps)
+        .toEqual(['build-docs /tmp/mistwarp-docs/build', 'build']);
+});
+
+test('Cloudflare Pages builds hand the docs site to the site build', async () => {
+    const {builds} = await runBuild({CF_PAGES: '1'});
+    expect(builds[0].MW_DOCS_BUILD).toBe('/tmp/mistwarp-docs/build');
+});
+
+test('a sibling docs build or an explicit docs build skips building the docs', async () => {
+    expect((await runBuild({MW_BUILD_DOCS: '1'}, ['--site-only'], true)).steps).toEqual(['build']);
+    const {steps, builds} = await runBuild({MW_BUILD_DOCS: '1', MW_DOCS_BUILD: '/docs-output'});
+    expect(steps).toEqual(['build']);
+    expect(builds[0].MW_DOCS_BUILD).toBe('/docs-output');
 });
