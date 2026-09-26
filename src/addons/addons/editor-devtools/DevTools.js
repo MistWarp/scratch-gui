@@ -232,17 +232,60 @@ export default class DevTools {
         const makeSpaceForBlock = block && block.getRootBlock();
 
         UndoGroup.startUndoGroup(workspace);
+        workspace.setResizesEnabled(false);
+        try {
+            this.layOutColumns(workspace, block, makeSpaceForBlock);
+        } finally {
+            workspace.setResizesEnabled(true);
+        }
 
+        setTimeout(() => {
+            const workspace = this.getWorkspace();
+            const map = workspace.getVariableMap();
+            const usedIds = this.getUsedVariableIds(workspace);
+            const findUnusedLocals = type => map.getVariablesOfType(type)
+                .filter(variable => variable.isLocal && !usedIds.has(variable.getId()));
+
+            const unusedLocals = findUnusedLocals('');
+            if (unusedLocals.length > 0) {
+                const message = this.msg('unused-var', {
+                    count: unusedLocals.length
+                }) + unusedLocals.map(variable => variable.name).join(', ');
+                if (confirm(message)) {
+                    for (const orphan of unusedLocals) {
+                        workspace.deleteVariableById(orphan.getId());
+                    }
+                }
+            }
+
+            const unusedLists = findUnusedLocals('list');
+            if (unusedLists.length > 0) {
+                const message = this.msg('unused-list', {
+                    count: unusedLists.length
+                }) + unusedLists.map(variable => variable.name).join(', ');
+                if (confirm(message)) {
+                    for (const orphan of unusedLists) {
+                        workspace.deleteVariableById(orphan.getId());
+                    }
+                }
+            }
+
+            UndoGroup.endUndoGroup(workspace);
+        }, 100);
+    }
+
+    layOutColumns (workspace, block, makeSpaceForBlock) {
         const result = this.getOrderedTopBlockColumns(true);
         const columns = result.cols;
+        const positions = result.positions;
         const orphanCount = result.orphans.blocks.length;
         if (orphanCount > 0 && !block) {
             const message = this.msg('orphaned', {
                 count: orphanCount
             });
             if (confirm(message)) {
-                for (const block of result.orphans.blocks) {
-                    block.dispose();
+                for (const orphan of result.orphans.blocks) {
+                    orphan.dispose();
                 }
             } else {
                 columns.unshift(result.orphans);
@@ -257,100 +300,34 @@ export default class DevTools {
             let cursorY = 64;
             let maxWidth = 0;
 
-            for (const block of column.blocks) {
-                const extraWidth = block === makeSpaceForBlock ? 380 : 0;
-                const extraHeight = block === makeSpaceForBlock ? 480 : 72;
-                const xy = block.getRelativeToSurfaceXY();
+            for (const topBlock of column.blocks) {
+                const extraWidth = topBlock === makeSpaceForBlock ? 380 : 0;
+                const extraHeight = topBlock === makeSpaceForBlock ? 480 : 72;
+                const xy = positions.get(topBlock);
                 if (cursorX - xy.x !== 0 || cursorY - xy.y !== 0) {
-                    block.moveBy(cursorX - xy.x, cursorY - xy.y);
+                    topBlock.moveBy(cursorX - xy.x, cursorY - xy.y);
                 }
-                const heightWidth = block.getHeightWidth();
+                const heightWidth = topBlock.getHeightWidth();
                 cursorY += heightWidth.height + extraHeight;
 
-                const maxWidthWithComments = maxWidths[block.id] || 0;
+                const maxWidthWithComments = maxWidths[topBlock.id] || 0;
                 maxWidth = Math.max(maxWidth, Math.max(heightWidth.width + extraWidth, maxWidthWithComments));
             }
 
             cursorX += maxWidth + 96;
         }
+    }
 
-        const topComments = workspace.getTopComments();
-        for (const comment of topComments) {
-            if (comment.setVisible) {
-                comment.setVisible(false);
-                comment.needsAutoPositioning_ = true;
-                comment.setVisible(true);
+    getUsedVariableIds (workspace) {
+        if (workspace.materializeAllScripts) workspace.materializeAllScripts();
+        const usedIds = new Set();
+        for (const workspaceBlock of workspace.getAllBlocks()) {
+            const models = workspaceBlock.getVarModels();
+            if (models) {
+                for (const model of models) usedIds.add(model.getId());
             }
         }
-
-        setTimeout(() => {
-            // Locate unused local variables...
-            const workspace = this.getWorkspace();
-            const map = workspace.getVariableMap();
-            const vars = map.getVariablesOfType('');
-            const unusedLocals = [];
-
-            for (const row of vars) {
-                if (row.isLocal) {
-                    const usages = map.getVariableUsesById(row.getId());
-                    if (!usages || usages.length === 0) {
-                        unusedLocals.push(row);
-                    }
-                }
-            }
-
-            if (unusedLocals.length > 0) {
-                const unusedCount = unusedLocals.length;
-                let message = this.msg('unused-var', {
-                    count: unusedCount
-                });
-                for (let i = 0; i < unusedLocals.length; i++) {
-                    const orphan = unusedLocals[i];
-                    if (i > 0) {
-                        message += ', ';
-                    }
-                    message += orphan.name;
-                }
-                if (confirm(message)) {
-                    for (const orphan of unusedLocals) {
-                        workspace.deleteVariableById(orphan.getId());
-                    }
-                }
-            }
-
-            // Locate unused local lists...
-            const lists = map.getVariablesOfType('list');
-            const unusedLists = [];
-
-            for (const row of lists) {
-                if (row.isLocal) {
-                    const usages = map.getVariableUsesById(row.getId());
-                    if (!usages || usages.length === 0) {
-                        unusedLists.push(row);
-                    }
-                }
-            }
-            if (unusedLists.length > 0) {
-                const unusedCount = unusedLists.length;
-                let message = this.msg('unused-list', {
-                    count: unusedCount
-                });
-                for (let i = 0; i < unusedLists.length; i++) {
-                    const orphan = unusedLists[i];
-                    if (i > 0) {
-                        message += ', ';
-                    }
-                    message += orphan.name;
-                }
-                if (confirm(message)) {
-                    for (const orphan of unusedLists) {
-                        workspace.deleteVariableById(orphan.getId());
-                    }
-                }
-            }
-
-            UndoGroup.endUndoGroup(workspace);
-        }, 100);
+        return usedIds;
     }
 
     /**
@@ -438,10 +415,12 @@ export default class DevTools {
         const cols = [];
         const TOLERANCE = 256;
         const orphans = {x: -999999, count: 0, blocks: []};
+        const positions = new Map();
 
         for (const topBlock of topBlocks) {
             // let r = b.getBoundingRectangle();
             const position = topBlock.getRelativeToSurfaceXY();
+            positions.set(topBlock, position);
             /**
        * @type {Col}
        */
@@ -479,10 +458,10 @@ export default class DevTools {
         // Sort columns, then blocks inside the columns
         cols.sort((a, b) => a.x - b.x);
         for (const col of cols) {
-            col.blocks.sort((a, b) => a.getRelativeToSurfaceXY().y - b.getRelativeToSurfaceXY().y);
+            col.blocks.sort((a, b) => positions.get(a).y - positions.get(b).y);
         }
 
-        return {cols: cols, orphans: orphans, maxWidths: maxWidths};
+        return {cols: cols, orphans: orphans, maxWidths: maxWidths, positions: positions};
     }
 
     /**
