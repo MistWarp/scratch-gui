@@ -3,6 +3,7 @@ import React from 'react';
 import {Link} from 'react-router-dom';
 import {Github} from 'lucide-react';
 import {editorUrl} from '../api';
+import {DISCORD_INVITE} from '../../lib/originchats/links.js';
 import {BUILD_ID, BUILD_TIME, shortId} from '../../lib/build-version.js';
 import logo from '../assets/mistwarp-logo.png';
 import styles from './Footer.module.css';
@@ -44,6 +45,12 @@ const Footer = () => {
                     <Link to="/roadmap">{communityText('Roadmap')}</Link>
                     <Link to="/compare">{communityText('Compare with Scratch')}</Link>
                     <Link to="/roadmap?new=bug">{communityText('Report a bug')}</Link>
+                    <a href={editorUrl({chat: true})}>{communityText('Chat')}</a>
+                    <a
+                        href={DISCORD_INVITE}
+                        target="_blank"
+                        rel="noreferrer"
+                    >{communityText('Discord')}</a>
                 </div>
                 <div className={styles.column}>
                     <span className={styles.columnTitle}>{communityText('More')}</span>

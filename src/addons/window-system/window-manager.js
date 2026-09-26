@@ -134,7 +134,8 @@ let windowCount = 0;
 const activeWindows = new Map();
 
 const IN_PAGE_WINDOW_IDS = new Set([
-    'customProceduresModal'
+    'customProceduresModal',
+    'mw-chat-window'
 ]);
 
 const canUseNativeWindows = () =>
