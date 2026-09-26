@@ -23,6 +23,7 @@ const BlocksComponent = props => {
         gridVisible,
         paletteResizingEnabled,
         onPaletteResizePointerDown,
+        paletteResizerRef,
         paletteWidth,
         style,
         ...componentProps
@@ -33,10 +34,7 @@ const BlocksComponent = props => {
                 [styles.dragOver]: dragOver,
                 [styles['hide-grid']]: gridVisible === false
             })}
-            style={{
-                ...(style || null),
-                ...(typeof paletteWidth === 'number' ? {'--blocks-palette-width': `${paletteWidth}px`} : null)
-            }}
+            style={style}
             {...componentProps}
             componentRef={containerRef}
         >
@@ -67,6 +65,8 @@ const BlocksComponent = props => {
             {paletteResizingEnabled ? (
                 <div
                     className={styles.paletteResizer}
+                    ref={paletteResizerRef}
+                    style={typeof paletteWidth === 'number' ? {'--blocks-palette-width': `${paletteWidth}px`} : null}
                     onPointerDown={onPaletteResizePointerDown}
                     onMouseDown={onPaletteResizePointerDown}
                 />
@@ -85,6 +85,7 @@ BlocksComponent.propTypes = {
     gridVisible: PropTypes.bool,
     paletteResizingEnabled: PropTypes.bool,
     onPaletteResizePointerDown: PropTypes.func,
+    paletteResizerRef: PropTypes.func,
     paletteWidth: PropTypes.number,
     style: PropTypes.object
 };
