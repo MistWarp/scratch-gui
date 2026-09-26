@@ -139,7 +139,7 @@ describe('Sound Editor Component', () => {
         expect(wrapper.find('button[title="Redo"]').prop('disabled')).toBe(false);
     });
 
-    test.skip('undo/redo buttons call the correct callback', () => {
+    test('undo/redo buttons call the correct callback', () => {
         const wrapper = mountWithIntl(
             <SoundEditor
                 {...props}

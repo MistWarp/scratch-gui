@@ -1,0 +1,85 @@
+.lead {
+    margin: 0 0 14px;
+    color: var(--text-dim);
+    font-size: var(--fs-md);
+}
+
+.options {
+    display: grid;
+    gap: 10px;
+}
+
+.option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-field);
+    color: var(--mw-text);
+    text-decoration: none;
+}
+
+.option:hover,
+.option:focus-visible {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.optionIcon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent-strong, var(--accent));
+}
+
+.optionText {
+    display: grid;
+    flex: 1;
+    gap: 2px;
+    min-width: 0;
+}
+
+.optionText > span:not(.optionTitle) {
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+}
+
+.optionTitle {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+}
+
+.recommended {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+.recommended .optionIcon {
+    background: var(--accent);
+    color: var(--accent-contrast, #ffffff);
+}
+
+.badge {
+    padding: 1px 7px;
+    border-radius: var(--radius-2xs);
+    background: var(--accent);
+    color: var(--accent-contrast, #ffffff);
+    font-size: var(--fs-2xs);
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.optionArrow {
+    flex: none;
+    color: var(--text-dim);
+}

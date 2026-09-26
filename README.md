@@ -203,6 +203,13 @@ Then, you can run all integration tests:
 npm run test:integration
 ```
 
+The tests drive Chrome through the `chromedriver` package, which must match the Chrome major version on your
+machine. If Chrome is not on your `PATH`, or you need a different chromedriver, point the tests at them:
+
+```bash
+CHROME_BIN=/path/to/chrome CHROMEDRIVER_BIN=/path/to/chromedriver npm run test:integration
+```
+
 Or, you can run a single file of integration tests (in this example, the `backpack` tests):
 
 ```bash
@@ -287,10 +294,6 @@ If you run into npm install errors, try these steps:
 2. Delete the node_modules directory
 3. Delete package-lock.json
 4. run `npm install` again
-
-## Publishing to GitHub Pages
-You can publish the GUI to github.io so that others on the Internet can view it.
-[Read the wiki for a step-by-step guide.](https://github.com/LLK/scratch-gui/wiki/Publishing-to-GitHub-Pages)
 
 ## Understanding the project state machine
 

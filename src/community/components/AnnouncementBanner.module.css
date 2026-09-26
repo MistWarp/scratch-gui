@@ -14,12 +14,17 @@
     flex-shrink: 0;
 }
 
-.text a {
+.link {
+    padding: 0;
+    border: none;
+    background: none;
     color: var(--accent-strong);
+    font: inherit;
     font-weight: 700;
+    cursor: pointer;
 }
 
-.text a:hover {
+.link:hover {
     text-decoration: underline;
 }
 

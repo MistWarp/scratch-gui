@@ -2,6 +2,7 @@ import path from 'path';
 import SeleniumHelper from '../helpers/selenium-helper';
 
 const {
+    addSoundFromLibrary,
     clickText,
     clickXpath,
     findByText,
@@ -30,6 +31,7 @@ describe('Working with backdrops', () => {
 
         // Start on the sounds tab of sprite1 to test switching behavior
         await clickText('Sounds');
+        await addSoundFromLibrary('meow', 'Meow');
 
         // Add a backdrop without selecting the stage first to test switching
         await clickXpath('//button[@aria-label="Choose a Backdrop"]');
@@ -73,6 +75,7 @@ describe('Working with backdrops', () => {
 
         // Start on the sounds tab of sprite1 to test switching behavior
         await clickText('Sounds');
+        await addSoundFromLibrary('meow', 'Meow');
 
         const buttonXpath = '//button[@aria-label="Choose a Backdrop"]';
         const surpriseXpath = `${buttonXpath}/following-sibling::div//button[@aria-label="Surprise"]`;

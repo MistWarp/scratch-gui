@@ -23,7 +23,7 @@ const APPEARANCE_SETTINGS = [
         css: '.injectionDiv:has(> .blocklyToolboxDiv:hover, > svg.blocklyFlyout:not(.sa-flyoutClose):hover)' +
             ' > svg.blocklyFlyout:not(.sa-flyoutClose){overflow:visible;}' +
             '.injectionDiv:has(> .blocklyToolboxDiv:hover, > svg.blocklyFlyout:not(.sa-flyoutClose):hover)' +
-            ' #blocklyBlockMenuClipRect{width:100000px;}'
+            ' #blocklyBlockMenuClipRect{width:100vw;}'
     }
 ];
 

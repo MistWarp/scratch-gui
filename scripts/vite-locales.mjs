@@ -26,9 +26,12 @@ export const readEditorDefaultMessages = directory => {
                 continue;
             }
             if (entry.name.startsWith('_') || !/\.jsx?$/.test(entry.name)) continue;
+            const code = fs.readFileSync(filename, 'utf8');
+            // Every extractable message names its defaultMessage, so skip parsing files without one.
+            if (!code.includes('defaultMessage')) continue;
             let ast;
             try {
-                ast = parse(fs.readFileSync(filename, 'utf8'), {
+                ast = parse(code, {
                     sourceType: 'module',
                     allowAwaitOutsideFunction: true,
                     plugins: ['jsx', 'dynamicImport']

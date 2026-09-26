@@ -38,6 +38,7 @@ import {
 import {activateCustomProcedures, deactivateCustomProcedures} from '../reducers/custom-procedures';
 import {setConnectionModalExtensionId} from '../reducers/connection-modal';
 import {updateMetrics} from '../reducers/workspace-metrics';
+import {setScriptLoadProgress} from '../reducers/script-load-progress';
 import {isTimeTravel2020} from '../reducers/time-travel';
 import {showStandardAlert} from '../reducers/alerts';
 
@@ -54,6 +55,7 @@ import LoadScratchBlocksHOC from '../lib/components/tw-load-scratch-blocks-hoc.j
 import {offsetToPosition} from '../lib/backpack/code-payload.js';
 import {gentlyRequestPersistentStorage} from '../lib/utils/storage-request.js';
 import CollaborationService from '../lib/collaboration/index.js';
+import {trackWorkspaceUndo, untrackWorkspaceUndo} from '../lib/undo-history.js';
 
 // TW: Strings we add to scratch-blocks are localized here
 const messages = defineMessages({
@@ -135,6 +137,7 @@ class Blocks extends React.Component {
             'onWorkspaceUpdate',
             'onWorkspaceMetricsChange',
             'setBlocks',
+            'setPaletteResizer',
             'setLocale',
             'handleEnableProcedureReturns'
         ]);
@@ -154,7 +157,6 @@ class Blocks extends React.Component {
         this.updateBlockColors = this.updateBlockColors.bind(this);
 
         this.state = {
-            scriptLoadProgress: null,
             prompt: null,
             flyoutWidth: null,
             paletteResizeEnabled: !SettingsStore.getAddonEnabled('hide-flyout')
@@ -215,6 +217,7 @@ class Blocks extends React.Component {
         
         this.workspace = this.ScratchBlocks.inject(this.blocks, workspaceConfig);
         AddonHooks.blocklyWorkspace = this.workspace;
+        trackWorkspaceUndo(this.workspace);
 
         // Register buttons under new callback keys for creating variables,
         // lists, and procedures from extensions.
@@ -304,7 +307,6 @@ class Blocks extends React.Component {
     }
     shouldComponentUpdate (nextProps, nextState) {
         return (
-            this.state.scriptLoadProgress !== nextState.scriptLoadProgress ||
             this.state.prompt !== nextState.prompt ||
             this.state.flyoutWidth !== nextState.flyoutWidth ||
             this.state.paletteResizeEnabled !== nextState.paletteResizeEnabled ||
@@ -391,6 +393,13 @@ class Blocks extends React.Component {
                 // call setLocale if the locale has changed, or changed while the blocks were hidden.
                 // vm.getLocale() will be out of sync if locale was changed while not visible
                 this.setLocale();
+            } else {
+                // Costumes and sounds added or renamed on the other tabs change the default
+                // values in the palette, so rebuild the toolbox from the current target.
+                const toolboxXML = this.getToolboxXML();
+                if (toolboxXML) {
+                    this.props.updateToolboxState(toolboxXML);
+                }
             }
 
             // Visibility changes used to resize Blockly up to three times. Refresh
@@ -414,6 +423,7 @@ class Blocks extends React.Component {
         }
     }
     componentWillUnmount () {
+        this.props.setScriptLoadProgress(null);
         clearTimeout(this.collabRefreshTimer);
         SettingsStore.removeEventListener('setting-changed', this.handleAddonSettingChanged);
         window.removeEventListener(VANILLA_PALETTE_CHANGED, this.handleVanillaPaletteChanged);
@@ -421,6 +431,7 @@ class Blocks extends React.Component {
         this.detachVM();
         this.unmounted = true;
         this.cancelDeferredWorkspaceLoad();
+        untrackWorkspaceUndo(this.workspace);
         this.workspace.dispose();
         clearTimeout(this.toolboxUpdateTimeout);
         clearTimeout(this.toolboxStateUpdateTimeout);
@@ -456,8 +467,8 @@ class Blocks extends React.Component {
             toolbox.setFlyoutWidth(flyoutWidth);
         }
 
-        if (this.blocks && this.blocks.style && typeof this.blocks.style.setProperty === 'function') {
-            this.blocks.style.setProperty('--blocks-palette-width', `${60 + flyoutWidth}px`);
+        if (this.paletteResizer) {
+            this.paletteResizer.style.setProperty('--blocks-palette-width', `${60 + flyoutWidth}px`);
         }
 
         if (this.state.flyoutWidth !== flyoutWidth) {
@@ -526,7 +537,6 @@ class Blocks extends React.Component {
         if (!this.paletteResizeSession) return;
         if (!this.state.paletteResizeEnabled) return;
         const {
-            startFlyoutWidth,
             containerLeft,
             containerRight,
             containerWidth,
@@ -554,24 +564,31 @@ class Blocks extends React.Component {
             Math.min(maxFlyoutWidth, nextFlyoutWidth)
         );
 
-        // Avoid excessive reflows.
+        this.paletteResizeSession.nextFlyoutWidth = nextFlyoutWidth;
         if (this.paletteResizeRaf) return;
         this.paletteResizeRaf = window.requestAnimationFrame(() => {
             this.paletteResizeRaf = null;
-            // If something changed mid-drag (e.g. window resized), fall back to incremental changes.
-            if (!Number.isFinite(nextFlyoutWidth)) return;
-            if (Math.round(nextFlyoutWidth) !== Math.round(startFlyoutWidth)) {
-                this.setFlyoutWidth(nextFlyoutWidth);
-            }
+            this.applyPaletteResize();
         });
     }
 
+    applyPaletteResize () {
+        const session = this.paletteResizeSession;
+        if (!session) return;
+        const {nextFlyoutWidth, startFlyoutWidth} = session;
+        if (!Number.isFinite(nextFlyoutWidth)) return;
+        if (Math.round(nextFlyoutWidth) !== Math.round(startFlyoutWidth)) {
+            this.setFlyoutWidth(nextFlyoutWidth);
+        }
+    }
+
     handlePaletteResizePointerUp () {
-        this.paletteResizeSession = null;
         if (this.paletteResizeRaf) {
             window.cancelAnimationFrame(this.paletteResizeRaf);
             this.paletteResizeRaf = null;
+            this.applyPaletteResize();
         }
+        this.paletteResizeSession = null;
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
         window.removeEventListener('pointermove', this.handlePaletteResizePointerMove);
@@ -661,8 +678,8 @@ class Blocks extends React.Component {
                 toolbox.width = CATEGORY_MENU_WIDTH + flyoutWidth;
             }
 
-            if (this.blocks && this.blocks.style) {
-                this.blocks.style.removeProperty('--blocks-palette-width');
+            if (this.paletteResizer) {
+                this.paletteResizer.style.removeProperty('--blocks-palette-width');
             }
 
             if (this.state.flyoutWidth !== null) {
@@ -1104,7 +1121,7 @@ class Blocks extends React.Component {
             this.deferredWorkspaceLoad = loadWorkspace(this.ScratchBlocks, this.workspace, data, {
                 onProgress: progress => {
                     if (!this.unmounted) {
-                        this.setState({scriptLoadProgress: progress.phase === 'idle' ? null : progress});
+                        this.props.setScriptLoadProgress(progress.phase === 'idle' ? null : progress);
                     }
                 },
                 onDone: () => {
@@ -1125,7 +1142,7 @@ class Blocks extends React.Component {
                 error.message = `Workspace Update Error: ${error.message}`;
             }
             log.error(error);
-            if (!this.unmounted) this.setState({scriptLoadProgress: {phase: 'error'}});
+            if (!this.unmounted) this.props.setScriptLoadProgress({phase: 'error'});
         } finally {
             this.ScratchBlocks.Events.enable();
         }
@@ -1242,11 +1259,14 @@ class Blocks extends React.Component {
             this.workspace.toolbox_.setSelectedCategoryById(categoryId);
         });
     }
+    setPaletteResizer (element) {
+        this.paletteResizer = element;
+    }
     setBlocks (blocks) {
         this.blocks = blocks;
     }
     cancelDeferredWorkspaceLoad () {
-        if (!this.unmounted) this.setState({scriptLoadProgress: null});
+        this.props.setScriptLoadProgress(null);
         this.deferredWorkspaceLoad = null;
         if (this.workspace && this.workspace.cancelDeferredRender) {
             this.workspace.cancelDeferredRender();
@@ -1393,6 +1413,7 @@ class Blocks extends React.Component {
             onRequestCloseCustomProcedures,
             toolboxXML,
             updateMetrics: updateMetricsProp,
+            setScriptLoadProgress: setScriptLoadProgressProp,
             useCatBlocks,
             workspaceMetrics,
             ...props
@@ -1401,7 +1422,6 @@ class Blocks extends React.Component {
         return (
             <React.Fragment>
                 <DroppableBlocks
-                    scriptLoadProgress={this.state.scriptLoadProgress}
                     componentRef={this.setBlocks}
                     onDrop={this.handleDrop}
                     gridVisible={this.props.theme.wallpaper.gridVisible !== false}
@@ -1409,6 +1429,7 @@ class Blocks extends React.Component {
                         (60 + this.state.flyoutWidth) : null}
                     paletteResizingEnabled={this.state.paletteResizeEnabled && !isFullScreen}
                     onPaletteResizePointerDown={this.handlePaletteResizePointerDown}
+                    paletteResizerRef={this.setPaletteResizer}
                     {...props}
                 />
                 {this.state.prompt ? (
@@ -1478,6 +1499,7 @@ Blocks.propTypes = {
     theme: PropTypes.instanceOf(Theme),
     toolboxXML: PropTypes.string,
     updateMetrics: PropTypes.func,
+    setScriptLoadProgress: PropTypes.func,
     updateToolboxState: PropTypes.func,
     useCatBlocks: PropTypes.bool,
     vm: PropTypes.instanceOf(VM).isRequired,
@@ -1553,6 +1575,9 @@ const mapDispatchToProps = dispatch => ({
     },
     updateMetrics: metrics => {
         dispatch(updateMetrics(metrics));
+    },
+    setScriptLoadProgress: progress => {
+        dispatch(setScriptLoadProgress(progress));
     },
     onShowImportError: () => dispatch(showStandardAlert('blockImportError'))
 });

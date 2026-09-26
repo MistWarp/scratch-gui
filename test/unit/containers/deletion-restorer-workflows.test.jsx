@@ -4,7 +4,7 @@ const makeRestorer = overrides => {
     const restorer = new DeletionRestorer({
         children: jest.fn(),
         deletedItem: 'Sprite',
-        dispatchUpdateRestore: jest.fn(),
+        onRestored: jest.fn(),
         onShowRestoreError: jest.fn(),
         restore: jest.fn(() => Promise.resolve()),
         ...overrides
@@ -27,14 +27,11 @@ describe('deletion restorer workflows', () => {
         restorer.restoreDeletion();
         await Promise.resolve();
         expect(restore).toHaveBeenCalledTimes(1);
-        expect(restorer.props.dispatchUpdateRestore).not.toHaveBeenCalled();
+        expect(restorer.props.onRestored).not.toHaveBeenCalled();
 
         finishRestore();
         await firstRestore;
-        expect(restorer.props.dispatchUpdateRestore).toHaveBeenCalledWith({
-            restoreFun: null,
-            deletedItem: ''
-        });
+        expect(restorer.props.onRestored).toHaveBeenCalledWith(restore);
     });
 
     test('keeps undo available and shows an error when restore fails', async () => {
@@ -43,7 +40,7 @@ describe('deletion restorer workflows', () => {
 
         await expect(restorer.restoreDeletion()).resolves.toBe(false);
 
-        expect(restorer.props.dispatchUpdateRestore).not.toHaveBeenCalled();
+        expect(restorer.props.onRestored).not.toHaveBeenCalled();
         expect(restorer.props.onShowRestoreError).toHaveBeenCalledTimes(1);
         expect(restorer.state.restoring).toBe(false);
     });

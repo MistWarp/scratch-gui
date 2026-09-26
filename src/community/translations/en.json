@@ -2471,5 +2471,11 @@
   "Open chat in the editor": "Open chat in the editor",
   "Prefer Discord? The chat is bridged with the MistWarp Discord server, so you can join the same conversations there.": "Prefer Discord? The chat is bridged with the MistWarp Discord server, so you can join the same conversations there.",
   "Join the MistWarp Discord server": "Join the MistWarp Discord server",
-  "Join the server in OriginChats": "Join the server in OriginChats"
+  "Join the server in OriginChats": "Join the server in OriginChats",
+  "MistWarp now has a community server, bridged between OriginChats and Discord.": "MistWarp now has a community server, bridged between OriginChats and Discord.",
+  "Join our community": "Join our community",
+  "Chat with the community on MistWarp's own chat.": "Chat with the community on MistWarp's own chat.",
+  "Hang out with the community on our Discord server.": "Hang out with the community on our Discord server.",
+  "Where would you like to join?": "Where would you like to join?",
+  "Join from {value1}": "Join from {value1}"
 }

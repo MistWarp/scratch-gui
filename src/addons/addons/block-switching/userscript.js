@@ -939,11 +939,62 @@ export default async function ({ addon, console, msg }) {
 
   const uniques = (array) => [...new Set(array)];
 
+  const blockLabel = (info) => {
+    let text = typeof info.text === "function" ? info.text() : info.text;
+    if (Array.isArray(text)) text = text.join(" ");
+    if (text && typeof text === "object") text = text.default;
+    if (typeof text !== "string") return info.opcode;
+    return text.replace(/\[[^\]]*\]/g, "_").replace(/\s+/g, " ").trim() || info.opcode;
+  };
+
+  // Extensions declare `switches` on a block to offer other blocks from the
+  // same extension in its context menu, the way built-in blocks do above.
+  const getExtensionSwitches = (block) => {
+    const type = block.type;
+    const runtime = vm.runtime;
+    if (!runtime || !Array.isArray(runtime._blockInfo)) return null;
+    for (const category of runtime._blockInfo) {
+      const prefix = `${category.id}_`;
+      if (!type.startsWith(prefix) || !Array.isArray(category.blocks)) continue;
+      const findInfo = (opcode) => {
+        const entry = category.blocks.find((b) => b && b.info && `${prefix}${b.info.opcode}` === opcode);
+        return entry ? entry.info : null;
+      };
+      const info = findInfo(type);
+      if (!info || !Array.isArray(info.switches)) return null;
+      const result = [{ isNoop: true, msg: blockLabel(info) }];
+      for (const item of info.switches) {
+        const data = typeof item === "string" ? { id: item } : item;
+        if (!data || typeof data.id !== "string" || !data.id) continue;
+        const opcode = data.rawId ? data.id : `${prefix}${data.id}`;
+        if (opcode === type) continue;
+        const targetInfo = findInfo(opcode);
+        if (!data.rawId && !targetInfo) continue;
+        const remapInputName = {};
+        if (Array.isArray(data.inputs)) {
+          for (const pair of data.inputs) {
+            if (Array.isArray(pair) && typeof pair[0] === "string" && typeof pair[1] === "string") {
+              remapInputName[pair[0]] = pair[1];
+            }
+          }
+        }
+        result.push({
+          opcode,
+          msg: targetInfo ? blockLabel(targetInfo) : typeof data.text === "string" ? data.text : opcode,
+          remapInputName,
+          splitInputs: Array.isArray(data.splitInputs) ? data.splitInputs.filter((name) => typeof name === "string") : [],
+        });
+      }
+      return result.length > 1 ? result : null;
+    }
+    return null;
+  };
+
   addon.tab.createBlockContextMenu(
     (items, block) => {
       if (!addon.self.disabled) {
         const type = block.type;
-        let switches = blockSwitches[block.type] || [];
+        let switches = blockSwitches[block.type] || getExtensionSwitches(block) || [];
 
         const customArgsMode = addon.settings.get("customargs") ? addon.settings.get("customargsmode") : "off";
         if (
