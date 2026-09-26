@@ -32,11 +32,27 @@
     display: block;
 }
 
+.brandText {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .wordmark {
     font-weight: 700;
     font-size: var(--fs-xl);
     color: var(--menu-bar-foreground, #fff);
     letter-spacing: -0.02em;
+}
+
+.beta {
+    padding: 1px 6px;
+    border-radius: var(--radius-2xs);
+    background: color-mix(in srgb, var(--menu-bar-foreground, #fff) 22%, transparent);
+    color: var(--menu-bar-foreground, #fff);
+    font-size: var(--fs-2xs);
+    font-weight: 700;
+    line-height: 1.35;
 }
 
 .links {
@@ -378,12 +394,20 @@ a.suggestionMeta:hover {
         min-width: 0;
     }
 
-    .wordmark {
+    .brandText {
         display: none;
     }
 
     .iconLink {
         display: none;
+    }
+
+    .account {
+        margin-inline-start: auto;
+    }
+
+    .account > div {
+        padding-inline-end: 0;
     }
 
     .desktopSearch {
@@ -534,9 +558,25 @@ a.suggestionMeta:hover {
     }
 }
 
-@media (min-width: 761px) and (max-width: 1200px) {
+@media (min-width: 761px) and (max-width: 1480px) {
     .linkLabel {
         display: none;
+    }
+}
+
+@media (min-width: 761px) {
+    .inner[data-centred-search="true"] .desktopSearch {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: min(440px, calc(100% - 2 * var(--nav-side, 0px)));
+        max-width: none;
+        margin: 0;
+        transform: translate(-50%, -50%);
+    }
+
+    .inner[data-centred-search="true"] .account {
+        margin-inline-start: auto;
     }
 }
 

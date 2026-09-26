@@ -2470,5 +2470,11 @@
   "The MistWarp chat is the best place to ask quick questions and talk with other creators. It runs on OriginChats, so you can open it beside your project with the Chat button in the editor, or use any OriginChats client with chats.mistwarp.org.": "The MistWarp chat is the best place to ask quick questions and talk with other creators. It runs on OriginChats, so you can open it beside your project with the Chat button in the editor, or use any OriginChats client with chats.mistwarp.org.",
   "Open chat in the editor": "Open chat in the editor",
   "Prefer Discord? The chat is bridged with the MistWarp Discord server, so you can join the same conversations there.": "Prefer Discord? The chat is bridged with the MistWarp Discord server, so you can join the same conversations there.",
-  "Join the MistWarp Discord server": "Join the MistWarp Discord server"
+  "Join the MistWarp Discord server": "Join the MistWarp Discord server",
+  "MistWarp now has a community server, bridged between OriginChats and Discord.": "MistWarp now has a community server, bridged between OriginChats and Discord.",
+  "Join our community": "Join our community",
+  "Chat with the community on MistWarp's own chat.": "Chat with the community on MistWarp's own chat.",
+  "Hang out with the community on our Discord server.": "Hang out with the community on our Discord server.",
+  "Where would you like to join?": "Where would you like to join?",
+  "Join from {value1}": "Join from {value1}"
 }

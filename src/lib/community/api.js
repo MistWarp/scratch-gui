@@ -114,7 +114,10 @@ const exchangeValidator = async (roturToken, appKey = 'mistwarp') => {
     if (!validator) {
         const error = new Error(validatorData.error || 'Could not validate Rotur login');
         error.status = validatorResponse.status;
-        const defaultCode = validatorResponse.status === 403 ? 'account_blocked' : 'VALIDATOR_GENERATION_FAILED';
+        const status = validatorResponse.status;
+        let defaultCode = 'VALIDATOR_GENERATION_FAILED';
+        if (status === 403) defaultCode = 'account_blocked';
+        else if (status === 429 || status >= 500) defaultCode = 'VALIDATOR_UNAVAILABLE';
         error.code = validatorData.code || defaultCode;
         error.redirectUrl = validatorData.redirect_url || 'https://rotur.dev/me';
         error.data = validatorData;

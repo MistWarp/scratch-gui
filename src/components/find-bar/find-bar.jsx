@@ -128,30 +128,37 @@ export default function NativeFindBar ({vm, locale, activeTabIndex, isPlayerOnly
                 };
             };
 
-            const ensureInjected = async () => {
-                if (didUnmount || isPlayerOnlyRef.current) return;
-
+            let injectedElement = null;
+            let pendingInjection = null;
+            const barSelector = `.${findBarStyles['mw-native-find-bar']}`;
+            const inject = async () => {
                 const root = await waitForElement('ul[class*=gui_tab-list_]', {
                     signal: abortController.signal}
                 ).catch(() => null);
                 if (!root || didUnmount) return;
 
-                if (root.querySelector(`.${findBarStyles['mw-native-find-bar']}`)) {
-                    findBar.tabChanged();
-                    return;
+                if (!root.querySelector(barSelector)) {
+                    findBar.createDom(root);
                 }
-
-                findBar.createDom(root);
+                injectedElement = root.querySelector(barSelector);
                 findBar.tabChanged();
+            };
+            const ensureInjected = () => {
+                if (didUnmount || isPlayerOnlyRef.current) return Promise.resolve();
+                if (!pendingInjection) {
+                    pendingInjection = inject().finally(() => {
+                        pendingInjection = null;
+                    });
+                }
+                return pendingInjection;
             };
 
             const removeGesturePatch = installGesturePatch();
 
             const observer = new MutationObserver(() => {
-                if (didUnmount) return;
-                if (!document.querySelector(`ul[class*=gui_tab-list_] .${findBarStyles['mw-native-find-bar']}`)) {
-                    ensureInjected();
-                }
+                if (didUnmount || (injectedElement && injectedElement.isConnected)) return;
+                injectedElement = null;
+                ensureInjected();
             });
             observer.observe(document.documentElement, {childList: true, subtree: true});
 

@@ -3,7 +3,6 @@ import classNames from 'classnames';
 import Box from '../box/box.jsx';
 import Monitor from '../../containers/monitor.jsx';
 import PropTypes from 'prop-types';
-import {OrderedMap} from 'immutable';
 import {stageSizeToTransform} from '../../lib/utils/screen';
 
 import styles from './monitor-list.css';
@@ -21,7 +20,7 @@ const MonitorList = props => (
             className={styles.monitorListScaler}
             style={stageSizeToTransform(props.stageSize)}
         >
-            {props.monitors.valueSeq().filter(m => m.visible)
+            {props.monitors && props.monitors.valueSeq().filter(m => m.visible)
                 .map(monitorData => (
                     <Monitor
                         draggable={props.draggable}
@@ -47,30 +46,11 @@ const MonitorList = props => (
     </Box>
 );
 
-const validateOrderedMap = (props, propName, componentName) => {
-    const value = props[propName];
-    if (value === null) return null;
-
-    const isOrderedMap =
-        typeof OrderedMap.isOrderedMap === 'function' ?
-            OrderedMap.isOrderedMap(value) :
-            Boolean(
-                value &&
-                (value.constructor && value.constructor.name === 'OrderedMap') &&
-                typeof value.valueSeq === 'function'
-            );
-
-    if (!isOrderedMap) {
-        return new Error(
-            `Invalid prop \`${propName}\` supplied to \`${componentName}\`: expected an Immutable OrderedMap.`
-        );
-    }
-    return null;
-};
-
 MonitorList.propTypes = {
     draggable: PropTypes.bool.isRequired,
-    monitors: validateOrderedMap,
+    monitors: PropTypes.shape({
+        valueSeq: PropTypes.func
+    }),
     onMonitorChange: PropTypes.func.isRequired,
     stageSize: PropTypes.shape({
         width: PropTypes.number,

@@ -17,14 +17,15 @@
   "On {value1}": [
     "src/community/components/ActivityCard.jsx:77"
   ],
-  "The new MistWarp is a beta. Expect bugs, and please report them on": [
-    "src/community/components/BetaBanner.jsx:37"
+  "MistWarp now has a community server, bridged between OriginChats and Discord.": [
+    "src/community/components/AnnouncementBanner.jsx:44"
   ],
-  "the bug tracker": [
-    "src/community/components/BetaBanner.jsx:38"
+  "Join our community": [
+    "src/community/components/AnnouncementBanner.jsx:51",
+    "src/community/components/JoinCommunityModal.jsx:33"
   ],
   "Dismiss": [
-    "src/community/components/BetaBanner.jsx:43",
+    "src/community/components/AnnouncementBanner.jsx:57",
     "src/community/components/StandingBanner.jsx:35",
     "src/community/components/StandingBanner.jsx:55",
     "src/community/components/ui/Notice.jsx:35",
@@ -660,8 +661,8 @@
   ],
   "MistWarp": [
     "src/community/components/Footer.jsx:25",
-    "src/community/components/NavBar.jsx:369",
-    "src/community/components/NavBar.jsx:376",
+    "src/community/components/NavBar.jsx:397",
+    "src/community/components/NavBar.jsx:405",
     "src/community/components/RichText.jsx:116",
     "src/community/pages/Roadmap.jsx:511"
   ],
@@ -670,8 +671,8 @@
   ],
   "Create": [
     "src/community/components/Footer.jsx:32",
-    "src/community/components/NavBar.jsx:521",
-    "src/community/components/NavBar.jsx:521",
+    "src/community/components/NavBar.jsx:552",
+    "src/community/components/NavBar.jsx:552",
     "src/community/pages/Spaces.jsx:275"
   ],
   "Editor": [
@@ -682,10 +683,10 @@
   ],
   "My stuff": [
     "src/community/components/Footer.jsx:34",
-    "src/community/components/NavBar.jsx:454",
-    "src/community/components/NavBar.jsx:455",
-    "src/community/components/NavBar.jsx:537",
-    "src/community/components/NavBar.jsx:537",
+    "src/community/components/NavBar.jsx:485",
+    "src/community/components/NavBar.jsx:486",
+    "src/community/components/NavBar.jsx:568",
+    "src/community/components/NavBar.jsx:568",
     "src/community/pages/ManageProject.jsx:486",
     "src/community/pages/MyStuff.jsx:1361"
   ],
@@ -697,8 +698,8 @@
   ],
   "Explore": [
     "src/community/components/Footer.jsx:38",
-    "src/community/components/NavBar.jsx:518",
-    "src/community/components/NavBar.jsx:518",
+    "src/community/components/NavBar.jsx:549",
+    "src/community/components/NavBar.jsx:549",
     "src/community/pages/Explore.jsx:177"
   ],
   "Leaderboard": [
@@ -736,8 +737,8 @@
   ],
   "Memberships": [
     "src/community/components/Footer.jsx:57",
-    "src/community/components/NavBar.jsx:433",
-    "src/community/components/NavBar.jsx:434"
+    "src/community/components/NavBar.jsx:464",
+    "src/community/components/NavBar.jsx:465"
   ],
   "Documentation": [
     "src/community/components/Footer.jsx:58"
@@ -878,7 +879,7 @@
     "src/community/components/HomeDiscovery.jsx:56",
     "src/community/components/ui/SectionHeading.jsx:21",
     "src/community/pages/Home.jsx:287",
-    "src/community/pages/Home.jsx:485"
+    "src/community/pages/Home.jsx:495"
   ],
   "{value1} projects · {value2} hearts": [
     "src/community/components/HomeDiscovery.jsx:65"
@@ -964,6 +965,22 @@
   ],
   "View challenge and enter": [
     "src/community/components/HomeWorkspace.jsx:216"
+  ],
+  "Chat with the community on MistWarp's own chat.": [
+    "src/community/components/JoinCommunityModal.jsx:27"
+  ],
+  "Hang out with the community on our Discord server.": [
+    "src/community/components/JoinCommunityModal.jsx:28"
+  ],
+  "Where would you like to join?": [
+    "src/community/components/JoinCommunityModal.jsx:36"
+  ],
+  "Join from {value1}": [
+    "src/community/components/JoinCommunityModal.jsx:53"
+  ],
+  "Recommended": [
+    "src/community/components/JoinCommunityModal.jsx:55",
+    "src/community/pages/PaidPerks.jsx:183"
   ],
   "settings.language": [
     "src/community/components/LanguagePicker.jsx:9"
@@ -1305,59 +1322,63 @@
   "See all results for \"{value1}\"": [
     "src/community/components/NavBar.jsx:105"
   ],
+  "Beta": [
+    "src/community/components/NavBar.jsx:406",
+    "src/community/pages/Project.jsx:2846"
+  ],
   "nav.main": [
-    "src/community/components/NavBar.jsx:379"
+    "src/community/components/NavBar.jsx:410"
   ],
   "nav.create": [
-    "src/community/components/NavBar.jsx:380",
-    "src/community/components/NavBar.jsx:382"
+    "src/community/components/NavBar.jsx:411",
+    "src/community/components/NavBar.jsx:413"
   ],
   "nav.explore": [
-    "src/community/components/NavBar.jsx:387",
-    "src/community/components/NavBar.jsx:390"
+    "src/community/components/NavBar.jsx:418",
+    "src/community/components/NavBar.jsx:421"
   ],
   "nav.random": [
-    "src/community/components/NavBar.jsx:395",
-    "src/community/components/NavBar.jsx:398"
+    "src/community/components/NavBar.jsx:426",
+    "src/community/components/NavBar.jsx:429"
   ],
   "nav.search": [
-    "src/community/components/NavBar.jsx:425",
-    "src/community/components/NavBar.jsx:511"
+    "src/community/components/NavBar.jsx:456",
+    "src/community/components/NavBar.jsx:542"
   ],
   "Notifications": [
-    "src/community/components/NavBar.jsx:443",
-    "src/community/components/NavBar.jsx:444",
-    "src/community/components/NavBar.jsx:528",
-    "src/community/components/NavBar.jsx:529",
+    "src/community/components/NavBar.jsx:474",
+    "src/community/components/NavBar.jsx:475",
+    "src/community/components/NavBar.jsx:559",
+    "src/community/components/NavBar.jsx:560",
     "src/community/pages/Home.jsx:392",
     "src/community/pages/Notifications.jsx:556",
     "src/community/pages/Settings.jsx:104",
     "src/community/pages/Settings.jsx:634"
   ],
   "Notifications ({value1} unread)": [
-    "src/community/components/NavBar.jsx:444",
-    "src/community/components/NavBar.jsx:528"
+    "src/community/components/NavBar.jsx:475",
+    "src/community/components/NavBar.jsx:559"
   ],
   "Signing in…": [
-    "src/community/components/NavBar.jsx:478"
+    "src/community/components/NavBar.jsx:509"
   ],
   "Signing in": [
-    "src/community/components/NavBar.jsx:479",
-    "src/community/components/NavBar.jsx:541",
-    "src/community/components/NavBar.jsx:541"
+    "src/community/components/NavBar.jsx:510",
+    "src/community/components/NavBar.jsx:572",
+    "src/community/components/NavBar.jsx:572"
   ],
   "Sign in": [
-    "src/community/components/NavBar.jsx:479",
-    "src/community/components/NavBar.jsx:482",
-    "src/community/components/NavBar.jsx:541",
-    "src/community/components/NavBar.jsx:541"
+    "src/community/components/NavBar.jsx:510",
+    "src/community/components/NavBar.jsx:513",
+    "src/community/components/NavBar.jsx:572",
+    "src/community/components/NavBar.jsx:572"
   ],
   "Mobile navigation": [
-    "src/community/components/NavBar.jsx:514"
+    "src/community/components/NavBar.jsx:545"
   ],
   "Home": [
-    "src/community/components/NavBar.jsx:515",
-    "src/community/components/NavBar.jsx:515"
+    "src/community/components/NavBar.jsx:546",
+    "src/community/components/NavBar.jsx:546"
   ],
   "Could not delete update.": [
     "src/community/components/NewsItem.jsx:74"
@@ -2237,7 +2258,7 @@
   ],
   "No shared projects yet": [
     "src/community/components/SharedProjects.jsx:98",
-    "src/community/pages/Home.jsx:559",
+    "src/community/pages/Home.jsx:569",
     "src/community/pages/Random.jsx:46"
   ],
   "Projects will appear here when someone adds you to their team.": [
@@ -4224,19 +4245,19 @@
   ],
   "Continue playing": [
     "src/community/pages/Home.jsx:430",
-    "src/community/pages/Home.jsx:515"
+    "src/community/pages/Home.jsx:525"
   ],
   "Game library": [
     "src/community/pages/Home.jsx:433"
   ],
   "Nothing played yet": [
-    "src/community/pages/Home.jsx:513"
+    "src/community/pages/Home.jsx:523"
   ],
   "Games you save to your library show up here after you play them.": [
-    "src/community/pages/Home.jsx:514"
+    "src/community/pages/Home.jsx:524"
   ],
   "Couldn't load projects.": [
-    "src/community/pages/Home.jsx:558"
+    "src/community/pages/Home.jsx:568"
   ],
   "Followers": [
     "src/community/pages/Leaderboard.jsx:22",
@@ -5404,9 +5425,6 @@
   "Your membership": [
     "src/community/pages/PaidPerks.jsx:183"
   ],
-  "Recommended": [
-    "src/community/pages/PaidPerks.jsx:183"
-  ],
   "Always free": [
     "src/community/pages/PaidPerks.jsx:185"
   ],
@@ -6101,9 +6119,6 @@
   ],
   "Stable": [
     "src/community/pages/Project.jsx:2845"
-  ],
-  "Beta": [
-    "src/community/pages/Project.jsx:2846"
   ],
   "Development": [
     "src/community/pages/Project.jsx:2847"

@@ -8,43 +8,47 @@ import catIcon from './icons/cat.svg';
 import fullIcon from './icons/300cats.svg';
 import styles from './stage-controls.css';
 
-// Wraps runtime._step once per VM so the counter updates after each step.
-const wrappedVMs = new WeakSet();
-const wrapStep = (vm, onStep) => {
-    if (wrappedVMs.has(vm)) {
-        return;
-    }
-    wrappedVMs.add(vm);
-    const oldStep = vm.runtime._step;
-    vm.runtime._step = function (...args) {
-        const result = oldStep.call(this, ...args);
-        onStep();
-        return result;
-    };
-};
-
 class CloneCounter extends React.Component {
     constructor (props) {
         super(props);
         bindAll(this, [
-            'handleStep',
+            'handleFrame',
             'handleSettingChanged'
         ]);
+        this.frame = null;
         this.state = {
             visible: getSetting('clone_counter'),
             count: props.vm.runtime._cloneCounter || 0
         };
     }
     componentDidMount () {
-        wrapStep(this.props.vm, this.handleStep);
         this.removeSettingListener = onSettingChanged(this.handleSettingChanged);
+        this.updatePolling();
+    }
+    componentDidUpdate () {
+        this.updatePolling();
     }
     componentWillUnmount () {
         if (this.removeSettingListener) {
             this.removeSettingListener();
         }
+        this.stopPolling();
     }
-    handleStep () {
+    updatePolling () {
+        if (this.state.visible && this.frame === null) {
+            this.frame = requestAnimationFrame(this.handleFrame);
+        } else if (!this.state.visible) {
+            this.stopPolling();
+        }
+    }
+    stopPolling () {
+        if (this.frame !== null) {
+            cancelAnimationFrame(this.frame);
+            this.frame = null;
+        }
+    }
+    handleFrame () {
+        this.frame = requestAnimationFrame(this.handleFrame);
         const count = this.props.vm.runtime._cloneCounter || 0;
         if (count !== this.state.count) {
             this.setState({count});

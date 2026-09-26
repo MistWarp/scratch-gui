@@ -70,7 +70,9 @@ for (const definition of DEFINITIONS) {
 
 const events = new EventTarget();
 
-const getSetting = id => {
+const cache = new Map();
+
+const readSetting = id => {
     let stored = null;
     try {
         stored = localStorage.getItem(STORAGE_PREFIX + id);
@@ -82,7 +84,25 @@ const getSetting = id => {
     return defaults[id] || false;
 };
 
+const getSetting = id => {
+    if (!cache.has(id)) {
+        cache.set(id, readSetting(id));
+    }
+    return cache.get(id);
+};
+
+if (typeof window !== 'undefined') {
+    window.addEventListener('storage', e => {
+        if (e.key === null) {
+            cache.clear();
+        } else if (e.key.startsWith(STORAGE_PREFIX)) {
+            cache.delete(e.key.slice(STORAGE_PREFIX.length));
+        }
+    });
+}
+
 const setSetting = (id, value) => {
+    cache.set(id, !!value);
     try {
         localStorage.setItem(STORAGE_PREFIX + id, value ? 'true' : 'false');
     } catch (e) {

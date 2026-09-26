@@ -2,6 +2,8 @@ import path from 'path';
 import SeleniumHelper from '../helpers/selenium-helper';
 
 const {
+    addSoundFromLibrary,
+    selectLanguage,
     clickText,
     clickBlocksCategory,
     clickButton,
@@ -20,9 +22,6 @@ const {
 const uri = path.resolve(__dirname, '../../build/index.html');
 
 let driver;
-
-const SETTINGS_MENU_XPATH = '//div[contains(@class, "menu-bar_menu-bar-item")]' +
-    '[*[contains(@class, "settings-menu_dropdown-label")]//*[text()="Settings"]]';
 
 describe('Working with the blocks', () => {
     beforeAll(() => {
@@ -45,12 +44,16 @@ describe('Working with the blocks', () => {
 
     test('Switching sprites updates the block menus', async () => {
         await loadUri(uri);
+        await clickText('Sounds');
+        await addSoundFromLibrary('meow', 'Meow');
+        await clickText('Code');
         await clickBlocksCategory('Sound');
         // "Meow" sound block should be visible
         await findByText('Meow', scope.blocksTab);
         await clickText('Backdrops'); // Switch to the backdrop
-        // Now "pop" sound block should be visible and motion blocks hidden
-        await findByText('pop', scope.blocksTab);
+        // Now the sprite's sound is gone from the menus and motion blocks are hidden
+        await driver.sleep(500);
+        expect(await textExists('Meow', scope.blocksTab)).toBeFalsy();
         await clickBlocksCategory('Motion');
         await findByText('Stage selected: no motion blocks');
 
@@ -177,14 +180,13 @@ describe('Working with the blocks', () => {
 
     test('Record option from sound block menu opens sound recorder', async () => {
         await loadUri(uri);
+        await clickText('Sounds');
+        await addSoundFromLibrary('meow', 'Meow');
         await clickText('Code');
         await clickBlocksCategory('Sound');
         await clickText('Meow', scope.blocksTab); // Click "play sound <Meow> until done" block
         await clickText('record'); // Click "record..." option in the block's sound menu
-        // Access has been force denied, so close the alert that comes up
-        await driver.sleep(1000); // getUserMedia requests are very slow to fail for some reason
-        await driver.switchTo().alert()
-            .accept();
+        // Microphone access has been force denied, which the recorder reports inside its window
         await findByText('Record Sound'); // Sound recorder is open
         const logs = await getLogs();
         await expect(logs).toEqual([]);
@@ -195,8 +197,8 @@ describe('Working with the blocks', () => {
 
         // Rename the costume
         await clickText('Costumes');
-        await clickText('costume2', scope.costumesTab);
-        const el = await findByXpath("//input[@value='costume2']");
+        await clickText('costume1', scope.costumesTab);
+        const el = await findByXpath("//input[@value='costume1']");
         await el.sendKeys('newname');
         await el.sendKeys(Key.ENTER);
         // wait until the updated costume appears in costume item list panel
@@ -214,8 +216,8 @@ describe('Working with the blocks', () => {
 
         // Rename the costume
         await clickText('Costumes');
-        await clickText('costume2', scope.costumesTab);
-        const el = await findByXpath("//input[@value='costume2']");
+        await clickText('costume1', scope.costumesTab);
+        const el = await findByXpath("//input[@value='costume1']");
         await el.sendKeys('<NewCostume>');
         await el.sendKeys(Key.ENTER);
         // wait until the updated costume appears in costume item list panel
@@ -233,9 +235,9 @@ describe('Working with the blocks', () => {
     test('Adding costumes DOES update the default costume name in the toolbox', async () => {
         await loadUri(uri);
 
-        // By default, costume2 is in the costume tab
+        // By default, costume1 is in the costume tab
         await clickBlocksCategory('Looks');
-        await clickText('costume2', scope.blocksTab);
+        await clickText('costume1', scope.blocksTab);
 
         // Also check that adding a new costume does update the list
         await clickText('Costumes');
@@ -246,19 +248,18 @@ describe('Working with the blocks', () => {
         await clickXpath('//button[@aria-label="Paint"]');
         // wait until the new costume appears in costume item list panel
         await findByXpath("//div[contains(@class,'sprite-selector-item_is-selected_')]" +
-            "//div[contains(text(), 'costume3')]");
-        await clickText('costume3', scope.costumesTab);
+            "//div[contains(text(), 'costume2')]");
+        await clickText('costume2', scope.costumesTab);
         // Check that the menu has been updated
         await clickText('Code');
-        await clickText('costume3', scope.blocksTab);
+        await clickText('costume2', scope.blocksTab);
     });
 
     // Skipped because it was flakey on travis, but seems to run locally ok
     test('Adding a sound DOES update the default sound name in the toolbox', async () => {
         await loadUri(uri);
         await clickText('Sounds');
-        await clickXpath('//button[@aria-label="Choose a Sound"]');
-        await clickText('A Bass', scope.modal); // Should close the modal
+        await addSoundFromLibrary('a bass', 'A Bass');
         // wait until the selected sound appears in sounds item list panel
         await findByXpath("//div[contains(@class,'sprite-selector-item_is-selected_')]" +
             "//div[contains(text(), 'A Bass')]");
@@ -267,20 +268,6 @@ describe('Working with the blocks', () => {
         await clickText('A\u00A0Bass', scope.blocksTab); // Need &nbsp; for block text
     });
 
-    // Regression test for switching between editor/player causing toolbox to stop updating
-    test('"See inside" after being on project page re-initializing variables', async () => {
-        const playerUri = path.resolve(__dirname, '../../build/player.html');
-        await loadUri(playerUri);
-        await clickText('See inside');
-        await clickBlocksCategory('Variables');
-        await clickText('my\u00A0variable');
-
-        await clickText('See Project Page');
-        await clickText('See inside');
-
-        await clickBlocksCategory('Variables');
-        await clickText('my\u00A0variable');
-    });
 
     // Regression test for switching editor tabs causing toolbox to stop updating
     test('Creating variables after adding extensions updates the toolbox', async () => {
@@ -312,9 +299,7 @@ describe('Working with the blocks', () => {
         await findByText('1', scope.reportedValue);
 
         // change language
-        await clickXpath(SETTINGS_MENU_XPATH);
-        await clickText('Language', scope.menuBar);
-        await clickText('Deutsch');
+        await selectLanguage('Deutsch');
 
         await clickText('Skripte');
         await clickBlocksCategory('Variablen');

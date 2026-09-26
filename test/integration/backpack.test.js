@@ -12,7 +12,7 @@ const uri = path.resolve(__dirname, '../../build/index.html');
 
 let driver;
 
-describe('Working with the how-to library', () => {
+describe('Working with the backpack', () => {
     beforeAll(() => {
         driver = getDriver();
     });
@@ -21,13 +21,6 @@ describe('Working with the how-to library', () => {
         await driver.quit();
     });
 
-    test('Backpack is "Coming Soon" without backpack host param', async () => {
-        await loadUri(uri);
-        // Check that the backpack header is visible and wrapped in a coming soon tooltip
-        await clickText('Backpack', '*[@data-for="backpack-tooltip"]');
-        const logs = await getLogs();
-        await expect(logs).toEqual([]);
-    });
 
     test('Backpack can be expanded with backpack host param', async () => {
         await loadUri(`${uri}?backpack_host=https://backpack.scratch.mit.edu`);
