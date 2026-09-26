@@ -44,10 +44,6 @@ describe('Audio Effects manager', () => {
         expect(fadeEffect.adjustedTrimEndSeconds).toBeCloseTo(fadeEffect.trimEndSeconds, 3);
     });
 
-    test.skip('process starts the offline rendering context and returns a promise', () => {
-        // @todo haven't been able to get web audio test api to actually run render
-    });
-
     test('reverse effect strictly reverses the samples', () => {
         const fakeSound = [1, 2, 3, 4, 5, 6, 7, 8];
 

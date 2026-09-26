@@ -36,23 +36,24 @@ const migrateFromAddon = () => {
     }
 };
 
-const getCatBlocks = () => {
+const flagCache = new Map();
+
+const readFlag = key => {
+    if (flagCache.has(key)) return flagCache.get(key);
     migrateFromAddon();
+    let value = false;
     try {
-        return localStorage.getItem(ENABLED_KEY) === 'true';
+        value = localStorage.getItem(key) === 'true';
     } catch (err) {
-        return false;
+        value = false;
     }
+    flagCache.set(key, value);
+    return value;
 };
 
-const getCatBlocksWatch = () => {
-    migrateFromAddon();
-    try {
-        return localStorage.getItem(WATCH_KEY) === 'true';
-    } catch (err) {
-        return false;
-    }
-};
+const getCatBlocks = () => readFlag(ENABLED_KEY);
+
+const getCatBlocksWatch = () => readFlag(WATCH_KEY);
 
 const notifyChanged = () => {
     window.dispatchEvent(new CustomEvent(CAT_BLOCKS_CHANGED));
@@ -65,6 +66,7 @@ const setCatBlocks = enabled => {
     } catch (err) {
         // ignore
     }
+    flagCache.set(ENABLED_KEY, !!enabled);
     applyCatBlocksToLoadedBlockly();
     notifyChanged();
 };
@@ -76,6 +78,7 @@ const setCatBlocksWatch = enabled => {
     } catch (err) {
         // ignore
     }
+    flagCache.set(WATCH_KEY, !!enabled);
     notifyChanged();
 };
 

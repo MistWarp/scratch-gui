@@ -99,8 +99,8 @@
 }
 
 .tab-list {
+    position: relative;
     height: $stage-menu-height;
-    width: 250px; /* Match width of the toolbox */
     display: flex;
     align-items: flex-end;
     flex-shrink: 0;
@@ -118,8 +118,19 @@
     gap: 0.8rem;
 }
 
+.tab-list > :global([class*="mw-native-find-bar-container"]) {
+    flex: 0 1 280px;
+    min-width: 3rem;
+    max-width: none;
+}
+
+.tab-list :global([class*="sa-find-wrapper"]) {
+    min-width: 0;
+}
+
 .tab {
-    flex-grow: 1;
+    flex: 0 0 auto;
+    padding: 0 0.6rem;
     height: 80%;
     top: -4px;
 
@@ -229,6 +240,7 @@
 .tabs {
     position: relative;
     flex-grow: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
 }

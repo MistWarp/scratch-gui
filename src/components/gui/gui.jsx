@@ -1,6 +1,7 @@
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React, {useCallback, useEffect, useRef, useState, useMemo} from 'react';
+import ReactDOM from 'react-dom';
 import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
 import MediaQuery from 'react-responsive';
@@ -33,11 +34,13 @@ import ChatDock from '../mw-chat/chat-dock.jsx';
 import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../../lib/constants/layout-constants';
 import {resolveStageSize} from '../../lib/utils/screen';
 import listenForStagePanelDrag from '../../lib/utils/stage-panel-drag.js';
+import {beginLiveResize} from '../../lib/mw-live-resize.js';
 import {getFindBarApi} from '../../lib/find-bar/api';
 import {Theme} from '../../lib/themes';
 
 import {BLOCKS_TAB_INDEX, COSTUMES_TAB_INDEX, SOUNDS_TAB_INDEX} from '../../reducers/editor-tab';
 import CollaborationTabIndicator from '../../containers/collaboration-tab-indicator.jsx';
+import ScriptLoadIndicator from '../script-load-indicator/script-load-indicator.jsx';
 import {editorTabMessages, getEditorTabLabels} from './editor-tab-labels.js';
 import {setStageSize} from '../../reducers/stage-size';
 
@@ -645,37 +648,33 @@ const GUIComponent = props => {
         const directionFactor = stageIsLeft ? 1 : -1;
 
         let moveRaf = null;
-        const onMove = ev => {
-            if (moveRaf) return;
-            
-            moveRaf = requestAnimationFrame(() => {
-                moveRaf = null;
-                
-                const x = (typeof ev.clientX === 'number') ? ev.clientX : 0;
-                const dx = x - startX;
-                const rawWidth = startWidth + (dx * directionFactor);
+        let latestX = startX;
+        const applyMove = () => {
+            const dx = latestX - startX;
+            const rawWidth = startWidth + (dx * directionFactor);
 
-                if (typeof props.onSetStageSize === 'function') {
-                    if (rawWidth < minWidth - HIDE_STAGE_DRAG_SLOP) {
-                        if (!isStageHiddenRef.current) {
-                            isStageHiddenRef.current = true;
-                            syncingModeRef.current = true;
-                            props.onSetStageSize(STAGE_SIZE_MODES.hidden);
-                        }
-                        return;
-                    }
-                    if (isStageHiddenRef.current) {
-                        isStageHiddenRef.current = false;
-                        autoHiddenRef.current = false;
+            if (typeof props.onSetStageSize === 'function') {
+                if (rawWidth < minWidth - HIDE_STAGE_DRAG_SLOP) {
+                    if (!isStageHiddenRef.current) {
+                        isStageHiddenRef.current = true;
                         syncingModeRef.current = true;
-                        props.onSetStageSize(STAGE_SIZE_MODES.small);
+                        props.onSetStageSize(STAGE_SIZE_MODES.hidden);
                     }
+                    return;
                 }
+                if (isStageHiddenRef.current) {
+                    isStageHiddenRef.current = false;
+                    autoHiddenRef.current = false;
+                    syncingModeRef.current = true;
+                    props.onSetStageSize(STAGE_SIZE_MODES.small);
+                }
+            }
 
-                const nextWidth = Math.min(maxWidth, Math.max(minWidth, rawWidth));
-                const nextInnerWidth = Math.max(0, nextWidth - paddingLeft - paddingRight - borderExtra);
-                preferredPanelWidthRef.current = nextWidth;
+            const nextWidth = Math.min(maxWidth, Math.max(minWidth, rawWidth));
+            const nextInnerWidth = Math.max(0, nextWidth - paddingLeft - paddingRight - borderExtra);
+            preferredPanelWidthRef.current = nextWidth;
 
+            ReactDOM.unstable_batchedUpdates(() => {
                 setStagePanelWidth(nextWidth);
                 setStageContainerWidth(prev => {
                     if (typeof prev === 'number' && Math.abs(prev - nextInnerWidth) < 0.5) {
@@ -685,20 +684,34 @@ const GUIComponent = props => {
                 });
             });
         };
-
-        const cancelPendingMove = () => {
-            if (moveRaf) {
-                cancelAnimationFrame(moveRaf);
+        const onMove = ev => {
+            if (typeof ev.clientX === 'number') latestX = ev.clientX;
+            if (moveRaf) return;
+            moveRaf = requestAnimationFrame(() => {
                 moveRaf = null;
-            }
+                applyMove();
+            });
+        };
+
+        const endLiveResize = beginLiveResize();
+        const flushPendingMove = () => {
+            if (!moveRaf) return;
+            cancelAnimationFrame(moveRaf);
+            moveRaf = null;
+            applyMove();
         };
         const finishResize = () => {
-            cancelPendingMove();
+            flushPendingMove();
+            endLiveResize();
             stagePanelResizeCleanupRef.current = null;
         };
         const removeListeners = listenForStagePanelDrag(onMove, finishResize);
         stagePanelResizeCleanupRef.current = () => {
-            cancelPendingMove();
+            if (moveRaf) {
+                cancelAnimationFrame(moveRaf);
+                moveRaf = null;
+            }
+            endLiveResize();
             removeListeners();
             stagePanelResizeCleanupRef.current = null;
         };
@@ -1031,7 +1044,7 @@ const GUIComponent = props => {
                             onRequestClose={onRequestCloseBackdropLibrary}
                         />
                     ) : null}
-                    {soundLibraryVisible ? (
+                    {soundLibraryVisible && !soundsTabVisible ? (
                         <SoundLibrary
                             vm={vm}
                             onRequestClose={onRequestCloseSoundLibrary}
@@ -1248,6 +1261,7 @@ const GUIComponent = props => {
                                             <FormattedMessage {...editorTabMessages.sounds} />
                                             <CollaborationTabIndicator tab={SOUNDS_TAB_INDEX} />
                                         </Tab>
+                                        <ScriptLoadIndicator />
                                     </TabList>
                                     <TabPanel className={tabClassNames.tabPanel}>
                                         <React.Fragment>

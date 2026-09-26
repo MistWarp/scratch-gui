@@ -1,6 +1,5 @@
 .addon-window {
   border-radius: 16px !important;
-  backdrop-filter: blur(30px) saturate(180%) !important;
   background: var(--ui-modal-background, #ffffff) !important;
 }
 
@@ -11,7 +10,6 @@
 .addon-window-header {
   background: var(--ui-secondary, #f8f9fa) !important;
   border-bottom: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.08)) !important;
-  backdrop-filter: blur(20px) !important;
   padding: 12px 16px !important;
   min-height: 48px !important;
   justify-content: flex-start !important;
@@ -85,6 +83,5 @@
 .addon-window-content {
   border-radius: 0 0 16px 16px !important;
   background: var(--ui-modal-background, #ffffff) !important;
-  backdrop-filter: blur(10px) !important;
   border-top: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.06)) !important;
 }

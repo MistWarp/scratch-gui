@@ -2,11 +2,13 @@ import path from 'path';
 import SeleniumHelper from '../helpers/selenium-helper';
 
 const {
-    clickText,
+    clickButton,
+    findByText,
+    textExists,
+    scope,
     clickXpath,
     findByXpath,
     getDriver,
-    Key,
     loadUri
 } = new SeleniumHelper();
 
@@ -26,20 +28,24 @@ describe('Project state', () => {
         await driver.quit();
     });
 
-    test('File->New resets project title', async () => {
-        const defaultProjectTitle = 'Scratch Project';
+    test('File->New starts a fresh project', async () => {
         await loadUri(uri);
-        const inputEl = await findByXpath(`//input[@value="${defaultProjectTitle}"]`);
-        for (let i = 0; i < defaultProjectTitle.length; i++) {
-            inputEl.sendKeys(Key.BACK_SPACE);
-        }
-        inputEl.sendKeys('Changed title of project');
-        await clickText('Costumes'); // just to blur the input
-        // verify that project title has changed
-        await clickXpath('//input[@value="Changed title of project"]');
+
+        // Change the project by painting a new sprite
+        const el = await findByXpath('//button[@aria-label="Choose a Sprite"]');
+        await driver.actions().mouseMove(el)
+            .perform();
+        await driver.sleep(500); // Wait for thermometer menu to come up
+        await clickXpath('//button[@aria-label="Paint"]');
+        await findByText('Sprite2', scope.spriteTile);
+
         await clickXpath(FILE_MENU_XPATH);
         await clickXpath('//li[span[text()="New"]]');
-        // project title should be default again
-        await clickXpath(`//input[@value="${defaultProjectTitle}"]`);
+        // The editor asks before replacing an edited project
+        await clickButton('Back up and start new project');
+
+        // The new project only has the default sprite again
+        await findByText('Sprite1', scope.spriteTile);
+        await driver.wait(async () => !(await textExists('Sprite2', scope.spriteTile)), 20000);
     });
 });

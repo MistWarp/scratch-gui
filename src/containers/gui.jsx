@@ -24,7 +24,7 @@ import {STAGE_SIZE_MODES} from '../lib/constants/layout-constants';
 import {setStageSize} from '../reducers/stage-size';
 import {setProjectUnchanged} from '../reducers/project-changed';
 import {setFullScreen} from '../reducers/mode';
-import {setRestore} from '../reducers/restore-deletion';
+import {removeRestore, setRestore} from '../reducers/restore-deletion';
 import {showStandardAlert} from '../reducers/alerts';
 
 import {
@@ -65,6 +65,7 @@ import {dispose as disposeShortcuts, initialize as initializeShortcuts} from
     '../lib/shortcuts/event-router.js';
 import startFractchLiveReload from '../lib/fractch-live';
 import LazyScratchBlocks from '../lib/tw-lazy-scratch-blocks.js';
+import {undoLatest} from '../lib/undo-history';
 import smartSave from '../lib/mw/smart-save.js';
 import MwAutosave from './mw-autosave.jsx';
 import MwCreatorSession from './mw-creator-session.jsx';
@@ -82,10 +83,6 @@ const setProjectIdMetadata = projectId => {
 };
 
 class GUI extends React.Component {
-    constructor (props) {
-        super(props);
-        this.restoreDeletionPromise = null;
-    }
     componentDidMount () {
         setIsScratchDesktop(this.props.isScratchDesktop);
         this.props.onStorageInit(storage);
@@ -163,40 +160,28 @@ class GUI extends React.Component {
             this.fractchLiveReloadDispose = null;
         }
     }
-    undoInWorkspace (redo) {
-        if (!LazyScratchBlocks.isLoaded()) return false;
+    getMainWorkspace () {
+        if (!LazyScratchBlocks.isLoaded()) return null;
         const workspace = LazyScratchBlocks.get().getMainWorkspace();
-        if (!workspace || typeof workspace.undo !== 'function') return false;
-        workspace.undo(redo);
-        return true;
+        if (!workspace || typeof workspace.undo !== 'function') return null;
+        return workspace;
     }
     handleRedo () {
-        return this.undoInWorkspace(true);
+        // The costume and sound editors own the keys on their tabs.
+        if (!this.props.blocksTabVisible) return false;
+        const workspace = this.getMainWorkspace();
+        if (!workspace) return false;
+        workspace.undo(true);
+        return true;
     }
     handleUndo () {
-        if (this.restoreDeletionPromise) return this.restoreDeletionPromise;
-        const restore = this.props.restoreDeletion && this.props.restoreDeletion.restoreFun;
-        if (typeof restore !== 'function') {
-            return Promise.resolve(this.undoInWorkspace(false));
-        }
-
-        this.restoreDeletionPromise = Promise.resolve()
-            .then(() => restore())
-            .then(() => {
-                if (this.props.restoreDeletion.restoreFun === restore) {
-                    this.props.onClearDeletionRestore();
-                }
-                return true;
-            })
-            .catch(() => {
-                this.props.onShowRestoreError();
-                return false;
-            })
-            .then(result => {
-                this.restoreDeletionPromise = null;
-                return result;
-            });
-        return this.restoreDeletionPromise;
+        if (!this.props.blocksTabVisible) return false;
+        return undoLatest({
+            workspace: this.getMainWorkspace(),
+            deletion: this.props.restoreDeletion,
+            onRestored: this.props.onClearDeletionRestore,
+            onRestoreError: this.props.onShowRestoreError
+        });
     }
     render () {
         if (this.props.isError) {
@@ -295,12 +280,14 @@ GUI.propTypes = {
     projectTitle: PropTypes.string,
     restoreDeletion: PropTypes.shape({
         deletedItem: PropTypes.string,
-        restoreFun: PropTypes.func
+        restoreFun: PropTypes.func,
+        sequence: PropTypes.number
     }),
     onProjectUnchanged: PropTypes.func,
     telemetryModalVisible: PropTypes.bool,
     vm: PropTypes.instanceOf(VM).isRequired,
-    activeTabIndex: PropTypes.number
+    activeTabIndex: PropTypes.number,
+    blocksTabVisible: PropTypes.bool
 };
 
 GUI.defaultProps = {
@@ -379,7 +366,7 @@ export const mapDispatchToProps = dispatch => ({
     openExtensionManagerModal: () => dispatch(openExtensionManagerModal()),
     openSettingsModal: () => dispatch(openSettingsModal()),
     openRestorePointModal: () => dispatch(openRestorePointModal()),
-    onClearDeletionRestore: () => dispatch(setRestore({restoreFun: null, deletedItem: ''})),
+    onClearDeletionRestore: restoreFun => dispatch(removeRestore(restoreFun)),
     onShowRestoreError: () => dispatch(showStandardAlert('assetRestoreError')),
     onDuplicateEditingSprite: vm => {
         const target = vm && vm.editingTarget;

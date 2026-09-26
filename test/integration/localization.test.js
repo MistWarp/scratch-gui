@@ -2,6 +2,7 @@ import path from 'path';
 import SeleniumHelper from '../helpers/selenium-helper';
 
 const {
+    selectLanguage,
     clickText,
     clickXpath,
     findByText,
@@ -19,9 +20,6 @@ let driver;
 
 const FILE_MENU_XPATH = '//div[contains(@class, "menu-bar_menu-bar-item")]' +
     '[*[contains(@class, "menu-bar_collapsible-label")]//*[text()="File"]]';
-const SETTINGS_MENU_XPATH = '//div[contains(@class, "menu-bar_menu-bar-item")]' +
-    '[*[contains(@class, "settings-menu_dropdown-label")]//*[text()="Settings"]]';
-
 describe('Localization', () => {
     beforeAll(() => {
         driver = getDriver();
@@ -38,9 +36,7 @@ describe('Localization', () => {
         await clickXpath('//button[@aria-label="Choose a Sprite"]');
         await clickText('Apple', scope.modal); // Closes modal
 
-        await clickXpath(SETTINGS_MENU_XPATH);
-        await clickText('Language', scope.menuBar);
-        await clickText('Deutsch');
+        await selectLanguage('Deutsch');
         await new Promise(resolve => setTimeout(resolve, 1000)); // wait for blocks refresh
 
         // Make sure the blocks are translating
@@ -87,7 +83,7 @@ describe('Localization', () => {
         await loadUri(uri);
         await clickXpath(FILE_MENU_XPATH);
         await clickText('Load from your computer');
-        const input = await findByXpath('//input[@accept=".sb,.sb2,.sb3"]');
+        const input = await findByXpath('//body/input[@type="file"]');
         await input.sendKeys(path.resolve(__dirname, '../fixtures/monitor-variable.sb3'));
 
         // Monitors are present
@@ -95,9 +91,7 @@ describe('Localization', () => {
         await findByText('language', scope.monitors);
 
         // Change locale to ja
-        await clickXpath(SETTINGS_MENU_XPATH);
-        await clickText('Language', scope.menuBar);
-        await clickText('日本語');
+        await selectLanguage('日本語');
 
         // Monitor labels updated
         await findByText('ユーザー名', scope.monitors);

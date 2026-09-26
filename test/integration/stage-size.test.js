@@ -2,6 +2,7 @@ import path from 'path';
 import SeleniumHelper from '../helpers/selenium-helper';
 
 const {
+    clickContextMenuItem,
     clickText,
     clickXpath,
     rightClickText,
@@ -32,13 +33,13 @@ describe('Loading scratch gui', () => {
 
         // Delete it
         await rightClickText('Sprite1', scope.spriteTile);
-        await clickText('delete', scope.spriteTile);
+        await clickContextMenuItem('delete');
 
         // Go to small stage mode
         await clickXpath('//button[@title="Switch to small stage"]');
 
         // Confirm app still working
-        await clickXpath('//button[@title="Switch to large stage"]');
+        await clickXpath('//button[@title="Switch to full stage"]');
 
         const logs = await getLogs();
         await expect(logs).toEqual([]);
