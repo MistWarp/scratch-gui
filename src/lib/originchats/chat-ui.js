@@ -11,11 +11,12 @@ const readLayout = () => {
         const stored = JSON.parse(localStorage.getItem(LAYOUT_KEY) || '{}');
         return {
             mode: stored.mode === 'floating' ? 'floating' : 'docked',
+            space: stored.space === 'dms' ? 'dms' : 'server',
             width: clampWidth(stored.width),
             floating: stored.floating && typeof stored.floating === 'object' ? stored.floating : null
         };
     } catch (e) {
-        return {mode: 'docked', width: DEFAULT_WIDTH, floating: null};
+        return {mode: 'docked', space: 'server', width: DEFAULT_WIDTH, floating: null};
     }
 };
 
@@ -42,7 +43,7 @@ const listeners = new Set();
 
 const persist = () => {
     try {
-        const layout = {mode: state.mode, width: state.width, floating: state.floating};
+        const layout = {mode: state.mode, space: state.space, width: state.width, floating: state.floating};
         localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
         sessionStorage.setItem(OPEN_KEY, state.open ? '1' : '0');
     } catch (e) {
@@ -63,9 +64,24 @@ const subscribeChatUi = listener => {
     return () => listeners.delete(listener);
 };
 
+const offerListeners = new Set();
+
+const subscribeFileOffers = listener => {
+    offerListeners.add(listener);
+    return () => offerListeners.delete(listener);
+};
+
+const offerFiles = files => {
+    const list = Array.from(files || []).filter(Boolean);
+    if (!list.length || !offerListeners.size) return false;
+    offerListeners.forEach(listener => listener(list));
+    return true;
+};
+
 const openChat = () => update({open: true});
 const closeChat = () => update({open: false});
 const toggleChat = () => update({open: !state.open});
+const setChatSpace = space => update({space: space === 'dms' ? 'dms' : 'server'});
 const setChatMode = mode => update({mode: mode === 'floating' ? 'floating' : 'docked'});
 const setChatWidth = width => update({width: clampWidth(width)});
 const setFloatingBounds = bounds => update({floating: {...state.floating, ...bounds}});
@@ -76,10 +92,13 @@ export {
     clampWidth,
     closeChat,
     getChatUi,
+    offerFiles,
     openChat,
     setChatMode,
+    setChatSpace,
     setChatWidth,
     setFloatingBounds,
     subscribeChatUi,
+    subscribeFileOffers,
     toggleChat
 };

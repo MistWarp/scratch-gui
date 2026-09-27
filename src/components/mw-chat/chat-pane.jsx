@@ -1,54 +1,54 @@
 /* eslint-disable react/jsx-no-bind */
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
-import React, {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import {
+    ArrowLeft,
+    Blocks,
     Check,
     ChevronDown,
-    CornerUpRight,
-    ExternalLink,
     Hash,
     LogIn,
     LogOut,
+    MessageCircle,
     MessagesSquare,
     PanelRight,
+    Paperclip,
     PictureInPicture2,
-    SendHorizontal,
-    Server,
-    Webhook,
     X
 } from 'lucide-react';
 
-import Avatar from '../mw-avatar/avatar.jsx';
-import {
-    CHAT_INVITE,
-    DISCORD_INVITE,
-    activeTyping,
-    channelName,
-    findMessage,
-    isBridgedAccount,
-    isChatChannel,
-    isRoturUser,
-    messageAuthor,
-    messageAuthorKey,
-    messageAvatar,
-    onlineUsers,
-    pingsMe,
-    userAvatar,
-    userColor,
-    userDisplayName
-} from '../../lib/originchats/connection.js';
-import {firstLine, onlyEmoji, parse} from '../../lib/originchats/rich-text.js';
+import {channelName, isChatChannel, onlineUsers, userDisplayName} from '../../lib/originchats/connection.js';
+import {offerFiles} from '../../lib/originchats/chat-ui.js';
+import {CHAT_DRAG_MIME} from './chat-actions.js';
+import {CheckingCard, DeniedCard, InviteCard} from './chat-access.jsx';
+import Composer from './chat-composer.jsx';
+import {DirectAvatar, DirectList} from './chat-direct.jsx';
+import {ServerIcon} from './chat-embeds.jsx';
+import {MessageList} from './chat-messages.jsx';
 import styles from './chat-pane.css';
-
-const GROUP_WINDOW = 5 * 60;
 
 const messages = defineMessages({
     title: {
         defaultMessage: 'Chat',
         description: 'Title of the community chat pane in the editor',
         id: 'mw.chat.title'
+    },
+    spaces: {
+        defaultMessage: 'Chat spaces',
+        description: 'Accessible label for the strip that switches between the chat server and direct messages',
+        id: 'mw.chat.spaces'
+    },
+    directTitle: {
+        defaultMessage: 'Direct messages',
+        description: 'Title of the direct messages view in the chat pane',
+        id: 'mw.chat.directTitle'
+    },
+    back: {
+        defaultMessage: 'Back to conversations',
+        description: 'Button that returns from a direct message conversation to the list of conversations',
+        id: 'mw.chat.back'
     },
     channel: {
         defaultMessage: 'Channel',
@@ -100,6 +100,11 @@ const messages = defineMessages({
         description: 'Shown while the editor connects to the chat server',
         id: 'mw.chat.joining'
     },
+    directJoining: {
+        defaultMessage: 'Loading your direct messages…',
+        description: 'Shown while the editor connects to the direct message server',
+        id: 'mw.chat.directJoining'
+    },
     reconnecting: {
         defaultMessage: 'Reconnecting…',
         description: 'Shown while the editor reconnects to the chat server',
@@ -115,753 +120,22 @@ const messages = defineMessages({
         description: 'Button that retries the chat connection',
         id: 'mw.chat.retry'
     },
-    loading: {
-        defaultMessage: 'Loading messages…',
-        description: 'Shown while chat history loads',
-        id: 'mw.chat.loading'
+    dropScript: {
+        defaultMessage: 'Drop to share this script as an image',
+        description: 'Overlay shown while dragging blocks from the code area over the chat pane',
+        id: 'mw.chat.dropScript'
     },
-    loadingOlder: {
-        defaultMessage: 'Loading older messages…',
-        description: 'Shown while older chat history loads',
-        id: 'mw.chat.loadingOlder'
+    dropFiles: {
+        defaultMessage: 'Drop to attach files',
+        description: 'Overlay shown while dragging files over the chat pane',
+        id: 'mw.chat.dropFiles'
     },
-    introTitle: {
-        defaultMessage: 'Welcome to #{channel}',
-        description: 'Heading above the oldest message in a chat channel',
-        id: 'mw.chat.introTitle'
-    },
-    introBody: {
-        // eslint-disable-next-line max-len
-        defaultMessage: 'This is the start of the channel. MistWarp chat runs on OriginChats and is bridged to the MistWarp Discord, so people on either side see the same messages.',
-        description: 'Explanation above the oldest message in a chat channel',
-        id: 'mw.chat.introBody'
-    },
-    serverLink: {
-        defaultMessage: 'Join in OriginChats',
-        description: 'Link that opens the invite to the MistWarp server in an OriginChats client',
-        id: 'mw.chat.serverLink'
-    },
-    discordLink: {
-        defaultMessage: 'Join on Discord',
-        description: 'Link to the bridged MistWarp Discord server',
-        id: 'mw.chat.discordLink'
-    },
-    bridged: {
-        defaultMessage: 'Bridged from Discord',
-        description: 'Tooltip on the mark next to a chat message that was sent from the bridged Discord server',
-        id: 'mw.chat.bridged'
-    },
-    webhook: {
-        defaultMessage: 'Posted by a webhook',
-        description: 'Tooltip on the mark next to a chat message that was posted by a webhook',
-        id: 'mw.chat.webhook'
-    },
-    edited: {
-        defaultMessage: '(edited)',
-        description: 'Marker after a chat message that was edited',
-        id: 'mw.chat.edited'
-    },
-    replyTo: {
-        defaultMessage: 'Jump to the message this replies to',
-        description: 'Accessible label for the reply preview above a chat message',
-        id: 'mw.chat.replyTo'
-    },
-    unknownUser: {
-        defaultMessage: 'Unknown user',
-        description: 'Shown in a reply preview when the original author is not known',
-        id: 'mw.chat.unknownUser'
-    },
-    noContent: {
-        defaultMessage: 'No content',
-        description: 'Shown in a reply preview when the original message has no text',
-        id: 'mw.chat.noContent'
-    },
-    attachment: {
-        defaultMessage: 'Attachment',
-        description: 'Shown in a reply preview when the original message only has an attachment',
-        id: 'mw.chat.attachment'
-    },
-    spoiler: {
-        defaultMessage: 'Reveal spoiler',
-        description: 'Accessible label for hidden spoiler text in a chat message',
-        id: 'mw.chat.spoiler'
-    },
-    placeholder: {
-        defaultMessage: 'Message #{channel}',
-        description: 'Placeholder for the chat message box',
-        id: 'mw.chat.placeholder'
-    },
-    send: {
-        defaultMessage: 'Send message',
-        description: 'Button that sends a chat message',
-        id: 'mw.chat.send'
-    },
-    typingOne: {
-        defaultMessage: '{user} is typing…',
-        description: 'Typing indicator for one person in the chat',
-        id: 'mw.chat.typingOne'
-    },
-    typingTwo: {
-        defaultMessage: '{first} and {second} are typing…',
-        description: 'Typing indicator for two people in the chat',
-        id: 'mw.chat.typingTwo'
-    },
-    typingMany: {
-        defaultMessage: 'Several people are typing…',
-        description: 'Typing indicator for three or more people in the chat',
-        id: 'mw.chat.typingMany'
-    },
-    slowDown: {
-        defaultMessage: 'Slow down a little before sending another message.',
-        description: 'Shown when the chat server rate limits the user',
-        id: 'mw.chat.slowDown'
+    unreadIn: {
+        defaultMessage: '{name}, {count} unread',
+        description: 'Accessible label for a chat space button that has unread messages',
+        id: 'mw.chat.unreadIn'
     }
 });
-
-const formatTime = seconds => {
-    const date = new Date(seconds * 1000);
-    const today = new Date();
-    const sameDay = date.toDateString() === today.toDateString();
-    return sameDay ?
-        date.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'}) :
-        date.toLocaleDateString([], {month: 'short', day: 'numeric'});
-};
-
-const formatClock = seconds => new Date(seconds * 1000)
-    .toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', hour12: false});
-
-const groupMessages = list => list.reduce((groups, message) => {
-    const last = groups[groups.length - 1];
-    const authorKey = messageAuthorKey(message);
-    const time = message.timestamp || 0;
-    const continues = last && last.authorKey === authorKey;
-    if (continues && time - last.lastTime < GROUP_WINDOW && !message.reply_to) {
-        last.messages.push(message);
-        last.lastTime = time;
-        return groups;
-    }
-    groups.push({authorKey, key: message.id, lastTime: time, messages: [message]});
-    return groups;
-}, []);
-
-const richContext = (state, message) => ({
-    users: state.users,
-    roles: state.roles,
-    emojis: state.emojis,
-    channels: state.channels,
-    pinged: (message && message.pings && message.pings.users) || []
-});
-
-const profileHref = username => `/users/${encodeURIComponent(username)}`;
-
-const Spoiler = ({children, intl}) => {
-    const [shown, setShown] = useState(false);
-    return (
-        <span
-            className={classNames(styles.spoiler, {[styles.spoilerShown]: shown})}
-            role={shown ? null : 'button'}
-            tabIndex={shown ? null : 0}
-            aria-label={shown ? null : intl.formatMessage(messages.spoiler)}
-            onClick={() => setShown(true)}
-            onKeyDown={event => {
-                if (event.key === 'Enter' || event.key === ' ') setShown(true);
-            }}
-        >{children}</span>
-    );
-};
-
-Spoiler.propTypes = {
-    children: PropTypes.node,
-    intl: intlShape.isRequired
-};
-
-const RichText = ({tokens, intl, state, onChannel, inline}) => tokens.map((token, index) => {
-    switch (token.type) {
-    case 'text':
-        return token.text;
-    case 'break':
-        return inline ? ' ' : <br key={index} />;
-    case 'link':
-        return (
-            <a
-                key={index}
-                className={styles.link}
-                href={token.url}
-                target="_blank"
-                rel="noreferrer"
-            >{token.text.replace(/^https?:\/\//, '')}</a>
-        );
-    case 'emoji':
-        return (
-            <img
-                key={index}
-                className={styles.emoji}
-                src={token.src}
-                alt={`:${token.name}:`}
-                title={`:${token.name}:`}
-                loading="lazy"
-                draggable={false}
-            />
-        );
-    case 'sticker':
-        return inline ? `:${token.id}:` : (
-            <img
-                key={index}
-                className={styles.sticker}
-                src={token.src}
-                alt=""
-                loading="lazy"
-                draggable={false}
-            />
-        );
-    case 'mention': {
-        const label = `@${token.display}`;
-        if (!token.known || !isRoturUser(state, token.username)) {
-            return (
-                <span
-                    key={index}
-                    className={classNames(styles.mention, {[styles.mentionUnknown]: !token.known})}
-                >{label}</span>
-            );
-        }
-        return (
-            <a
-                key={index}
-                className={styles.mention}
-                href={profileHref(token.username)}
-                target="_blank"
-                rel="noreferrer"
-            >{label}</a>
-        );
-    }
-    case 'roleMention':
-        return (
-            <span
-                key={index}
-                className={classNames(styles.mention, styles.roleMention)}
-                style={token.color ? {'--mention-color': token.color} : null}
-            >{`@${token.name}`}</span>
-        );
-    case 'channel':
-        return (
-            <button
-                key={index}
-                type="button"
-                className={classNames(styles.mention, styles.channelMention)}
-                onClick={() => onChannel && onChannel(token.channel)}
-            >{`#${token.name}`}</button>
-        );
-    case 'inlineCode':
-        return (
-            <code
-                key={index}
-                className={styles.code}
-            >{token.code}</code>
-        );
-    case 'codeBlock':
-        return inline ? (
-            <code
-                key={index}
-                className={styles.code}
-            >{token.code}</code>
-        ) : (
-            <pre
-                key={index}
-                className={styles.codeBlock}
-            ><code>{token.code}</code></pre>
-        );
-    case 'format': {
-        const children = (
-            <RichText
-                tokens={token.children}
-                intl={intl}
-                state={state}
-                onChannel={onChannel}
-                inline={inline}
-            />
-        );
-        if (token.style === 'spoiler') {
-            return (
-                <Spoiler
-                    key={index}
-                    intl={intl}
-                >{children}</Spoiler>
-            );
-        }
-        return (
-            <span
-                key={index}
-                className={styles[token.style]}
-            >{children}</span>
-        );
-    }
-    default:
-        return null;
-    }
-});
-
-RichText.propTypes = {
-    inline: PropTypes.bool,
-    intl: intlShape.isRequired,
-    onChannel: PropTypes.func,
-    state: PropTypes.object.isRequired,
-    tokens: PropTypes.arrayOf(PropTypes.object).isRequired
-};
-
-const ProfileLink = ({className, member, name, children, tabIndex, style}) => (member ? (
-    <a
-        className={className}
-        href={profileHref(name)}
-        target="_blank"
-        rel="noreferrer"
-        tabIndex={tabIndex}
-        style={style}
-    >{children}</a>
-) : (
-    <span
-        className={className}
-        style={style}
-    >{children}</span>
-));
-
-ProfileLink.propTypes = {
-    children: PropTypes.node,
-    className: PropTypes.string,
-    member: PropTypes.bool,
-    name: PropTypes.string.isRequired,
-    style: PropTypes.object,
-    tabIndex: PropTypes.number
-};
-
-const UserPicture = ({rotur, size, src, username}) => (
-    <Avatar
-        username={rotur || !src ? username : null}
-        src={src || null}
-        size={size}
-    />
-);
-
-UserPicture.propTypes = {
-    rotur: PropTypes.bool,
-    size: PropTypes.number.isRequired,
-    src: PropTypes.string,
-    username: PropTypes.string
-};
-
-const SourceMark = ({intl, message}) => {
-    if (message.webhook) {
-        return (
-            <span
-                className={styles.mark}
-                title={intl.formatMessage(messages.webhook)}
-            ><Webhook size={12} /></span>
-        );
-    }
-    if (isBridgedAccount(message.user)) {
-        return (
-            <span
-                className={styles.mark}
-                title={intl.formatMessage(messages.bridged)}
-            ><Server size={12} /></span>
-        );
-    }
-    return null;
-};
-
-SourceMark.propTypes = {
-    intl: intlShape.isRequired,
-    message: PropTypes.object.isRequired
-};
-
-const ReplyPreview = ({connection, intl, message, onJump, state}) => {
-    const reference = message.reply_to;
-    const channel = state.active;
-    const target = findMessage(state, channel, reference.id);
-    useEffect(() => {
-        if (!target && reference.id) connection.fetchMessage(channel, reference.id);
-    }, [connection, channel, reference.id, target]);
-
-    const username = (target && target.user) || reference.user || '';
-    let name = intl.formatMessage(messages.unknownUser);
-    if (target) name = messageAuthor(state, target);
-    else if (username) name = userDisplayName(state, username);
-
-    const text = target ? firstLine(target.content) : (reference.preview || '');
-    const hasAttachments = Boolean(target && Array.isArray(target.attachments) && target.attachments.length);
-    const tokens = parse(text, richContext(state, target));
-    const avatarSrc = target ? messageAvatar(state, target) : userAvatar(state, username);
-    const rotur = Boolean(username) && !(target && (target.webhook || target.alias)) && isRoturUser(state, username);
-    let fallback = messages.noContent;
-    if (hasAttachments) fallback = messages.attachment;
-
-    return (
-        <button
-            type="button"
-            className={styles.reply}
-            title={intl.formatMessage(messages.replyTo)}
-            disabled={!target}
-            onClick={() => target && onJump(target.id)}
-        >
-            <CornerUpRight
-                size={14}
-                className={styles.replyIcon}
-            />
-            {username ? (
-                <UserPicture
-                    rotur={rotur}
-                    size={16}
-                    src={avatarSrc}
-                    username={username}
-                />
-            ) : null}
-            <span className={styles.replyName}>{name}</span>
-            <span className={styles.replyText}>
-                {tokens.length ? (
-                    <RichText
-                        tokens={tokens}
-                        intl={intl}
-                        state={state}
-                        inline
-                    />
-                ) : intl.formatMessage(fallback)}
-            </span>
-        </button>
-    );
-};
-
-ReplyPreview.propTypes = {
-    connection: PropTypes.object.isRequired,
-    intl: intlShape.isRequired,
-    message: PropTypes.object.isRequired,
-    onJump: PropTypes.func.isRequired,
-    state: PropTypes.object.isRequired
-};
-
-const MessageBody = ({connection, intl, message, state}) => {
-    const tokens = useMemo(() => parse(message.content, richContext(state, message)), [
-        message.content, message.pings, state.users, state.roles, state.emojis, state.channels
-    ]);
-    const jumbo = onlyEmoji(tokens);
-    return (
-        <React.Fragment>
-            {tokens.length ? (
-                <p className={classNames(styles.content, {[styles.jumbo]: jumbo})}>
-                    <RichText
-                        tokens={tokens}
-                        intl={intl}
-                        state={state}
-                        onChannel={name => connection.selectChannel(name)}
-                    />
-                    {message.edited ? (
-                        <span className={styles.edited}>{` ${intl.formatMessage(messages.edited)}`}</span>
-                    ) : null}
-                </p>
-            ) : null}
-            {(message.attachments || []).map(attachment => (
-                <a
-                    key={attachment.id || attachment.url}
-                    className={styles.link}
-                    href={attachment.url}
-                    target="_blank"
-                    rel="noreferrer"
-                >{attachment.name || attachment.url}</a>
-            ))}
-        </React.Fragment>
-    );
-};
-
-MessageBody.propTypes = {
-    connection: PropTypes.object.isRequired,
-    intl: intlShape.isRequired,
-    message: PropTypes.object.isRequired,
-    state: PropTypes.object.isRequired
-};
-
-const MessageGroup = ({connection, group, intl, onJump, state}) => {
-    const first = group.messages[0];
-    const person = !first.webhook && !first.alias;
-    const member = person && isRoturUser(state, first.user);
-    const color = person ? userColor(state, first.user) : null;
-    return (
-        <li className={styles.group}>
-            {group.messages.map((message, index) => (
-                <div
-                    key={message.id}
-                    data-message-id={message.id}
-                    className={classNames(styles.row, {
-                        [styles.rowFirst]: index === 0,
-                        [styles.pinged]: Boolean(pingsMe(state, message))
-                    })}
-                >
-                    {message.reply_to ? (
-                        <div className={styles.replyRow}>
-                            <ReplyPreview
-                                connection={connection}
-                                intl={intl}
-                                message={message}
-                                onJump={onJump}
-                                state={state}
-                            />
-                        </div>
-                    ) : null}
-                    {index === 0 ? (
-                        <ProfileLink
-                            className={styles.avatar}
-                            member={member}
-                            name={first.user || ''}
-                            tabIndex={-1}
-                        >
-                            <UserPicture
-                                rotur={member}
-                                size={28}
-                                src={messageAvatar(state, first)}
-                                username={first.user}
-                            />
-                        </ProfileLink>
-                    ) : (
-                        <time className={styles.gutterTime}>{formatClock(message.timestamp || 0)}</time>
-                    )}
-                    <div className={styles.rowBody}>
-                        {index === 0 ? (
-                            <div className={styles.meta}>
-                                <ProfileLink
-                                    className={styles.author}
-                                    member={member}
-                                    name={first.user || ''}
-                                    style={color ? {color} : null}
-                                >{messageAuthor(state, first)}</ProfileLink>
-                                <SourceMark
-                                    intl={intl}
-                                    message={first}
-                                />
-                                <time className={styles.time}>{formatTime(first.timestamp || 0)}</time>
-                            </div>
-                        ) : null}
-                        <MessageBody
-                            connection={connection}
-                            intl={intl}
-                            message={message}
-                            state={state}
-                        />
-                    </div>
-                </div>
-            ))}
-        </li>
-    );
-};
-
-MessageGroup.propTypes = {
-    connection: PropTypes.object.isRequired,
-    group: PropTypes.object.isRequired,
-    intl: intlShape.isRequired,
-    onJump: PropTypes.func.isRequired,
-    state: PropTypes.object.isRequired
-};
-
-const Intro = ({channel, intl}) => (
-    <li className={styles.intro}>
-        <span className={styles.introIcon}><Hash size={18} /></span>
-        <p className={styles.introTitle}>{intl.formatMessage(messages.introTitle, {channel})}</p>
-        <p className={styles.introBody}>{intl.formatMessage(messages.introBody)}</p>
-        <div className={styles.chips}>
-            <a
-                className={styles.chip}
-                href={CHAT_INVITE}
-                target="_blank"
-                rel="noreferrer"
-            >
-                {intl.formatMessage(messages.serverLink)}
-                <ExternalLink size={11} />
-            </a>
-            <a
-                className={styles.chip}
-                href={DISCORD_INVITE}
-                target="_blank"
-                rel="noreferrer"
-            >
-                {intl.formatMessage(messages.discordLink)}
-                <ExternalLink size={11} />
-            </a>
-        </div>
-    </li>
-);
-
-Intro.propTypes = {
-    channel: PropTypes.string.isRequired,
-    intl: intlShape.isRequired
-};
-
-const MessageList = ({connection, intl, state}) => {
-    const listRef = useRef(null);
-    const pinnedRef = useRef(true);
-    const heightRef = useRef(0);
-    const channel = state.active;
-    const list = state.messages[channel];
-    const history = state.history[channel] || {};
-    const groups = useMemo(() => groupMessages(list || []), [list]);
-
-    useLayoutEffect(() => {
-        const element = listRef.current;
-        if (!element) return;
-        if (pinnedRef.current) {
-            element.scrollTop = element.scrollHeight;
-        } else if (heightRef.current && element.scrollTop < 40) {
-            element.scrollTop += element.scrollHeight - heightRef.current;
-        }
-        heightRef.current = element.scrollHeight;
-    }, [groups, history.loaded]);
-
-    useEffect(() => {
-        pinnedRef.current = true;
-    }, [channel]);
-
-    if (!history.loaded) {
-        return <p className={classNames(styles.status, styles.fill)}>{intl.formatMessage(messages.loading)}</p>;
-    }
-
-    const onScroll = () => {
-        const element = listRef.current;
-        pinnedRef.current = element.scrollHeight - element.scrollTop - element.clientHeight < 60;
-        heightRef.current = element.scrollHeight;
-        if (element.scrollTop < 80) connection.loadOlder(channel);
-    };
-
-    const jump = id => {
-        const element = listRef.current && listRef.current.querySelector(`[data-message-id="${id}"]`);
-        if (!element) return;
-        pinnedRef.current = false;
-        element.scrollIntoView({block: 'center'});
-        element.classList.add(styles.flash);
-        setTimeout(() => element.classList.remove(styles.flash), 1200);
-    };
-
-    return (
-        <ol
-            className={styles.messages}
-            ref={listRef}
-            onScroll={onScroll}
-            aria-live="polite"
-        >
-            {history.atStart ? (
-                <Intro
-                    channel={channelName(state.channels.find(item => item.name === channel))}
-                    intl={intl}
-                />
-            ) : null}
-            {history.loading ? <li className={styles.status}>{intl.formatMessage(messages.loadingOlder)}</li> : null}
-            {groups.map(group => (
-                <MessageGroup
-                    key={group.key}
-                    connection={connection}
-                    group={group}
-                    intl={intl}
-                    onJump={jump}
-                    state={state}
-                />
-            ))}
-        </ol>
-    );
-};
-
-MessageList.propTypes = {
-    connection: PropTypes.object.isRequired,
-    intl: intlShape.isRequired,
-    state: PropTypes.object.isRequired
-};
-
-const Composer = ({connection, intl, state}) => {
-    const [draft, setDraft] = useState('');
-    const [, setTick] = useState(0);
-    const inputRef = useRef(null);
-    const channel = state.channels.find(item => item.name === state.active);
-    const label = intl.formatMessage(messages.placeholder, {channel: channelName(channel)});
-    const typing = activeTyping(state, state.active);
-
-    useEffect(() => {
-        if (!typing.length) return;
-        const timer = setTimeout(() => setTick(tick => tick + 1), 1000);
-        return () => clearTimeout(timer);
-    });
-
-    useLayoutEffect(() => {
-        const input = inputRef.current;
-        if (!input) return;
-        input.style.height = 'auto';
-        input.style.height = `${Math.min(input.scrollHeight, 140)}px`;
-    }, [draft]);
-
-    const submit = event => {
-        event.preventDefault();
-        if (connection.sendMessage(state.active, draft)) setDraft('');
-    };
-
-    let typingText = '';
-    if (typing.length === 1) {
-        typingText = intl.formatMessage(messages.typingOne, {user: typing[0]});
-    } else if (typing.length === 2) {
-        typingText = intl.formatMessage(messages.typingTwo, {first: typing[0], second: typing[1]});
-    } else if (typing.length > 2) {
-        typingText = intl.formatMessage(messages.typingMany);
-    }
-
-    return (
-        <form
-            className={styles.composer}
-            onSubmit={submit}
-        >
-            {state.notice ? (
-                <p
-                    className={styles.notice}
-                    role="alert"
-                >
-                    {state.notice.kind === 'rate_limit' ? intl.formatMessage(messages.slowDown) : state.notice.text}
-                </p>
-            ) : null}
-            <div className={styles.inputRow}>
-                <div className={styles.field}>
-                    <textarea
-                        ref={inputRef}
-                        className={styles.input}
-                        rows={1}
-                        value={draft}
-                        maxLength={Number(state.limits.post_content) || 2000}
-                        placeholder={label}
-                        aria-label={label}
-                        onChange={event => {
-                            setDraft(event.target.value);
-                            connection.clearNotice();
-                            if (event.target.value.trim()) connection.sendTyping(state.active);
-                        }}
-                        onKeyDown={event => {
-                            event.stopPropagation();
-                            const plain = !event.shiftKey && !event.nativeEvent.isComposing;
-                            if (event.key === 'Enter' && plain) submit(event);
-                        }}
-                    />
-                    <button
-                        type="submit"
-                        className={styles.send}
-                        disabled={!draft.trim()}
-                        title={intl.formatMessage(messages.send)}
-                        aria-label={intl.formatMessage(messages.send)}
-                    >
-                        <SendHorizontal size={16} />
-                    </button>
-                </div>
-            </div>
-            <p
-                className={styles.typing}
-                aria-live="polite"
-            >{typingText}</p>
-        </form>
-    );
-};
-
-Composer.propTypes = {
-    connection: PropTypes.object.isRequired,
-    intl: intlShape.isRequired,
-    state: PropTypes.object.isRequired
-};
 
 const HeaderButton = ({icon: Icon, label, onClick}) => (
     <button
@@ -881,11 +155,12 @@ HeaderButton.propTypes = {
     onClick: PropTypes.func.isRequired
 };
 
-const ChannelMenu = ({active, channels, intl, onSelect}) => {
+const ChannelMenu = ({active, channels, intl, onSelect, unread}) => {
     const [open, setOpen] = useState(false);
     const rootRef = useRef(null);
     const current = channels.find(channel => channel.name === active) || channels[0];
     const single = channels.length < 2;
+    const others = channels.some(channel => channel.name !== active && unread[channel.name]);
 
     useEffect(() => {
         if (!open) return;
@@ -923,6 +198,7 @@ const ChannelMenu = ({active, channels, intl, onSelect}) => {
                 />
                 <span className={styles.channelLabel}>{channelName(current)}</span>
                 {single ? null : <ChevronDown size={14} />}
+                {others ? <span className={styles.unreadDot} /> : null}
             </button>
             {open ? (
                 <ul
@@ -936,7 +212,8 @@ const ChannelMenu = ({active, channels, intl, onSelect}) => {
                                 role="option"
                                 aria-selected={channel.name === active}
                                 className={classNames(styles.menuItem, {
-                                    [styles.menuItemActive]: channel.name === active
+                                    [styles.menuItemActive]: channel.name === active,
+                                    [styles.menuItemUnread]: Boolean(unread[channel.name])
                                 })}
                                 onClick={() => {
                                     onSelect(channel.name);
@@ -946,6 +223,9 @@ const ChannelMenu = ({active, channels, intl, onSelect}) => {
                                 <Hash size={14} />
                                 <span>{channelName(channel)}</span>
                                 {channel.name === active ? <Check size={14} /> : null}
+                                {channel.name !== active && unread[channel.name] ? (
+                                    <span className={styles.countBadge}>{unread[channel.name]}</span>
+                                ) : null}
                             </button>
                         </li>
                     ))}
@@ -959,7 +239,8 @@ ChannelMenu.propTypes = {
     active: PropTypes.string,
     channels: PropTypes.arrayOf(PropTypes.object).isRequired,
     intl: intlShape.isRequired,
-    onSelect: PropTypes.func.isRequired
+    onSelect: PropTypes.func.isRequired,
+    unread: PropTypes.object.isRequired
 };
 
 const Presence = ({intl, state}) => {
@@ -980,132 +261,380 @@ Presence.propTypes = {
     state: PropTypes.object.isRequired
 };
 
-const ChatPane = ({canDock, connection, floating, intl, onClose, onLeave, onSignIn, onToggleMode, state}) => {
-    const channels = state.channels.filter(isChatChannel);
-    const ready = state.status === 'ready' && Boolean(state.active);
+const unreadTotal = state => Object.values(state.channelUnread || {}).reduce((sum, count) => sum + count, 0);
+
+const RailButton = ({active, children, intl, label, onClick, unread}) => (
+    <button
+        type="button"
+        className={classNames(styles.railButton, {[styles.railActive]: active})}
+        aria-pressed={active}
+        aria-label={unread ? intl.formatMessage(messages.unreadIn, {name: label, count: unread}) : label}
+        title={label}
+        onClick={onClick}
+    >
+        {children}
+        {unread && !active ? <span className={styles.railBadge}>{unread > 99 ? '99+' : unread}</span> : null}
+    </button>
+);
+
+RailButton.propTypes = {
+    active: PropTypes.bool,
+    children: PropTypes.node,
+    intl: intlShape.isRequired,
+    label: PropTypes.string.isRequired,
+    onClick: PropTypes.func.isRequired,
+    unread: PropTypes.number
+};
+
+const SignedOut = ({intl, onSignIn}) => (
+    <div className={classNames(styles.empty, styles.fill)}>
+        <span className={styles.emptyIcon}><MessagesSquare size={22} /></span>
+        <p className={styles.emptyTitle}>{intl.formatMessage(messages.signedOutTitle)}</p>
+        <p className={styles.emptyBody}>{intl.formatMessage(messages.signedOutBody)}</p>
+        <button
+            type="button"
+            className={styles.primary}
+            onClick={onSignIn}
+        >
+            <LogIn size={16} />
+            {intl.formatMessage(messages.signIn)}
+        </button>
+    </div>
+);
+
+SignedOut.propTypes = {
+    intl: intlShape.isRequired,
+    onSignIn: PropTypes.func.isRequired
+};
+
+const Failed = ({error, intl, onRetry}) => (
+    <div className={classNames(styles.empty, styles.fill)}>
+        <p className={styles.emptyTitle}>{error || intl.formatMessage(messages.connectFailed)}</p>
+        <button
+            type="button"
+            className={styles.primary}
+            onClick={onRetry}
+        >{intl.formatMessage(messages.retry)}</button>
+    </div>
+);
+
+Failed.propTypes = {
+    error: PropTypes.string,
+    intl: intlShape.isRequired,
+    onRetry: PropTypes.func.isRequired
+};
+
+const Conversation = ({canDirect, connection, intl, onDirect, state}) => {
+    const [target, setTarget] = useState(null);
+    useEffect(() => setTarget(null), [state.active]);
+    return (
+        <React.Fragment>
+            <MessageList
+                canDirect={canDirect}
+                connection={connection}
+                intl={intl}
+                onDirect={onDirect}
+                onEdit={message => setTarget({mode: 'edit', message})}
+                onReply={message => setTarget({mode: 'reply', message})}
+                state={state}
+            />
+            <Composer
+                connection={connection}
+                intl={intl}
+                onClearTarget={() => setTarget(null)}
+                onEditLast={message => setTarget({mode: 'edit', message})}
+                state={state}
+                target={target}
+            />
+        </React.Fragment>
+    );
+};
+
+Conversation.propTypes = {
+    canDirect: PropTypes.bool,
+    connection: PropTypes.object.isRequired,
+    intl: intlShape.isRequired,
+    onDirect: PropTypes.func,
+    state: PropTypes.object.isRequired
+};
+
+const acceptsFiles = event => {
+    const types = Array.from((event.dataTransfer && event.dataTransfer.types) || []);
+    return types.includes('Files') && !types.includes(CHAT_DRAG_MIME);
+};
+
+const ChatPane = ({
+    blockDrag,
+    canDock,
+    direct,
+    floating,
+    info,
+    intl,
+    inviteCode,
+    onClose,
+    onDirect,
+    onJoinServer,
+    onLeave,
+    onRetryServer,
+    onSignIn,
+    onSpace,
+    onToggleMode,
+    paneRef,
+    server,
+    space,
+    username
+}) => {
+    const [fileDrag, setFileDrag] = useState(false);
+    const dragDepth = useRef(0);
+    const showingDirect = space === 'dms';
+    const {connection, state} = showingDirect ? direct : server;
+    const ready = state.status === 'ready';
+    const chatting = ready && Boolean(state.active);
+    const serverInfo = (info && info.server) || state.server || server.state.server || {};
+    const serverName = serverInfo.name || intl.formatMessage(messages.title);
 
     let body;
     if (state.status === 'signed_out') {
         body = (
-            <div className={classNames(styles.empty, styles.fill)}>
-                <span className={styles.emptyIcon}><MessagesSquare size={22} /></span>
-                <p className={styles.emptyTitle}>{intl.formatMessage(messages.signedOutTitle)}</p>
-                <p className={styles.emptyBody}>{intl.formatMessage(messages.signedOutBody)}</p>
-                <button
-                    type="button"
-                    className={styles.primary}
-                    onClick={onSignIn}
-                >
-                    <LogIn size={16} />
-                    {intl.formatMessage(messages.signIn)}
-                </button>
-            </div>
+            <SignedOut
+                intl={intl}
+                onSignIn={onSignIn}
+            />
+        );
+    } else if (!showingDirect && state.status === 'denied' && state.denied) {
+        body = (
+            <DeniedCard
+                denied={state.denied}
+                info={info}
+                intl={intl}
+                onJoin={onJoinServer}
+            />
         );
     } else if (state.status === 'error') {
         body = (
-            <div className={classNames(styles.empty, styles.fill)}>
-                <p className={styles.emptyTitle}>{state.error || intl.formatMessage(messages.connectFailed)}</p>
-                <button
-                    type="button"
-                    className={styles.primary}
-                    onClick={() => connection.reconnect()}
-                >{intl.formatMessage(messages.retry)}</button>
-            </div>
+            <Failed
+                error={state.error}
+                intl={intl}
+                onRetry={showingDirect ? () => connection.reconnect() : onRetryServer}
+            />
         );
-    } else if (ready) {
+    } else if (!showingDirect && state.status === 'idle' && state.membership === 'guest') {
         body = (
-            <React.Fragment>
-                <MessageList
-                    connection={connection}
-                    intl={intl}
-                    state={state}
-                />
-                <Composer
-                    connection={connection}
-                    intl={intl}
-                    state={state}
-                />
-            </React.Fragment>
+            <InviteCard
+                info={info}
+                intl={intl}
+                inviteCode={inviteCode}
+                onJoin={onJoinServer}
+                username={username}
+            />
+        );
+    } else if (!showingDirect && state.status === 'idle') {
+        body = <CheckingCard intl={intl} />;
+    } else if (chatting) {
+        body = (
+            <Conversation
+                key={`${space}:${state.active}`}
+                canDirect={!showingDirect}
+                connection={connection}
+                intl={intl}
+                onDirect={onDirect}
+                state={state}
+            />
+        );
+    } else if (ready && showingDirect) {
+        body = (
+            <DirectList
+                connection={connection}
+                intl={intl}
+                state={state}
+            />
         );
     } else {
-        body = (
-            <p className={classNames(styles.status, styles.fill)}>
-                {intl.formatMessage(state.status === 'reconnecting' ? messages.reconnecting : messages.joining)}
-            </p>
-        );
+        let text = messages.joining;
+        if (state.status === 'reconnecting') text = messages.reconnecting;
+        else if (showingDirect) text = messages.directJoining;
+        body = <p className={classNames(styles.status, styles.fill)}>{intl.formatMessage(text)}</p>;
     }
 
     let heading;
-    if (ready) {
+    if (showingDirect && chatting) {
+        const current = state.channels.find(channel => channel.name === state.active);
+        heading = (
+            <div className={styles.directHeading}>
+                <HeaderButton
+                    icon={ArrowLeft}
+                    label={intl.formatMessage(messages.back)}
+                    onClick={() => connection.selectChannel(null)}
+                />
+                {current ? (
+                    <DirectAvatar
+                        channel={current}
+                        size={22}
+                    />
+                ) : null}
+                <h2 className={styles.title}>{channelName(current)}</h2>
+            </div>
+        );
+    } else if (showingDirect) {
+        heading = (
+            <h2 className={styles.title}>
+                <MessageCircle size={16} />
+                {intl.formatMessage(messages.directTitle)}
+            </h2>
+        );
+    } else if (chatting) {
         heading = (
             <ChannelMenu
                 active={state.active}
-                channels={channels}
+                channels={state.channels.filter(isChatChannel)}
                 intl={intl}
                 onSelect={name => connection.selectChannel(name)}
+                unread={state.channelUnread}
             />
         );
     } else {
         heading = (
             <h2 className={styles.title}>
                 <MessagesSquare size={16} />
-                {intl.formatMessage(messages.title)}
+                {serverName}
             </h2>
         );
     }
 
+    const onDragEnter = event => {
+        if (!acceptsFiles(event) || !chatting) return;
+        dragDepth.current += 1;
+        setFileDrag(true);
+    };
+    const onDragLeave = event => {
+        if (!acceptsFiles(event)) return;
+        dragDepth.current = Math.max(0, dragDepth.current - 1);
+        if (!dragDepth.current) setFileDrag(false);
+    };
+    const onDragOver = event => {
+        if (!acceptsFiles(event) || !chatting) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'copy';
+    };
+    const onDrop = event => {
+        dragDepth.current = 0;
+        setFileDrag(false);
+        if (!acceptsFiles(event) || !chatting) return;
+        event.preventDefault();
+        offerFiles(event.dataTransfer.files);
+    };
+
+    const overlay = (blockDrag && chatting) || fileDrag;
+
     return (
         <section
+            ref={paneRef}
             className={classNames(styles.pane, {[styles.floating]: floating})}
             aria-label={intl.formatMessage(messages.title)}
+            onDragEnter={onDragEnter}
+            onDragLeave={onDragLeave}
+            onDragOver={onDragOver}
+            onDrop={onDrop}
         >
-            <header className={styles.header}>
-                {heading}
-                {ready ? (
-                    <Presence
-                        intl={intl}
-                        state={state}
+            <nav
+                className={styles.rail}
+                aria-label={intl.formatMessage(messages.spaces)}
+            >
+                <RailButton
+                    active={!showingDirect}
+                    intl={intl}
+                    label={serverName}
+                    unread={unreadTotal(server.state)}
+                    onClick={() => onSpace('server')}
+                >
+                    <ServerIcon
+                        icon={serverInfo.icon}
+                        name={serverName}
+                        size={32}
                     />
-                ) : null}
-                <div className={styles.headerActions}>
-                    {ready ? (
-                        <HeaderButton
-                            icon={LogOut}
-                            label={intl.formatMessage(messages.leave)}
-                            onClick={onLeave}
+                </RailButton>
+                <RailButton
+                    active={showingDirect}
+                    intl={intl}
+                    label={intl.formatMessage(messages.directTitle)}
+                    unread={unreadTotal(direct.state)}
+                    onClick={() => onSpace('dms')}
+                >
+                    <span className={styles.railIcon}><MessageCircle size={18} /></span>
+                </RailButton>
+            </nav>
+            <div className={styles.main}>
+                <header className={styles.header}>
+                    {heading}
+                    {chatting && !showingDirect ? (
+                        <Presence
+                            intl={intl}
+                            state={state}
                         />
                     ) : null}
-                    {canDock ? (
-                        <HeaderButton
-                            icon={floating ? PanelRight : PictureInPicture2}
-                            label={intl.formatMessage(floating ? messages.dock : messages.popOut)}
-                            onClick={onToggleMode}
-                        />
-                    ) : null}
-                    {floating ? null : (
-                        <HeaderButton
-                            icon={X}
-                            label={intl.formatMessage(messages.close)}
-                            onClick={onClose}
-                        />
-                    )}
+                    <div className={styles.headerActions}>
+                        {ready && !showingDirect ? (
+                            <HeaderButton
+                                icon={LogOut}
+                                label={intl.formatMessage(messages.leave)}
+                                onClick={onLeave}
+                            />
+                        ) : null}
+                        {canDock ? (
+                            <HeaderButton
+                                icon={floating ? PanelRight : PictureInPicture2}
+                                label={intl.formatMessage(floating ? messages.dock : messages.popOut)}
+                                onClick={onToggleMode}
+                            />
+                        ) : null}
+                        {floating ? null : (
+                            <HeaderButton
+                                icon={X}
+                                label={intl.formatMessage(messages.close)}
+                                onClick={onClose}
+                            />
+                        )}
+                    </div>
+                </header>
+                <div className={styles.body}>{body}</div>
+            </div>
+            {overlay ? (
+                <div className={styles.dropOverlay}>
+                    <span className={styles.dropIcon}>
+                        {blockDrag ? <Blocks size={22} /> : <Paperclip size={22} />}
+                    </span>
+                    <p>{intl.formatMessage(blockDrag ? messages.dropScript : messages.dropFiles)}</p>
                 </div>
-            </header>
-            <div className={styles.body}>{body}</div>
+            ) : null}
         </section>
     );
 };
 
-ChatPane.propTypes = {
-    canDock: PropTypes.bool,
+const connectionShape = PropTypes.shape({
     connection: PropTypes.object.isRequired,
-    floating: PropTypes.bool,
-    intl: intlShape.isRequired,
-    onClose: PropTypes.func.isRequired,
-    onLeave: PropTypes.func.isRequired,
-    onSignIn: PropTypes.func.isRequired,
-    onToggleMode: PropTypes.func.isRequired,
     state: PropTypes.object.isRequired
+});
+
+ChatPane.propTypes = {
+    blockDrag: PropTypes.bool,
+    canDock: PropTypes.bool,
+    direct: connectionShape.isRequired,
+    floating: PropTypes.bool,
+    info: PropTypes.object,
+    intl: intlShape.isRequired,
+    inviteCode: PropTypes.string,
+    onClose: PropTypes.func.isRequired,
+    onDirect: PropTypes.func,
+    onJoinServer: PropTypes.func.isRequired,
+    onLeave: PropTypes.func.isRequired,
+    onRetryServer: PropTypes.func.isRequired,
+    onSignIn: PropTypes.func.isRequired,
+    onSpace: PropTypes.func.isRequired,
+    onToggleMode: PropTypes.func.isRequired,
+    paneRef: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
+    server: connectionShape.isRequired,
+    space: PropTypes.oneOf(['server', 'dms']).isRequired,
+    username: PropTypes.string.isRequired
 };
 
 export default injectIntl(ChatPane);

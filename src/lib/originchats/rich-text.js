@@ -86,7 +86,7 @@ const parse = (input, context = {}) => {
     s = s.replace(STICKER_TOKEN, (source, host, id) => (
         add({type: 'sticker', host, id, src: `${hostUrl(host)}/stickers/${id}`})
     ));
-    s = s.replace(BRACKET_LINK, (source, url) => add({type: 'link', url, text: url}));
+    s = s.replace(BRACKET_LINK, (source, url) => add({type: 'link', url, text: url, quiet: true}));
     s = s.replace(URL, match => {
         const url = trimUrl(match);
         return add({type: 'link', url, text: url}) + match.slice(url.length);
