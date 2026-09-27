@@ -16,15 +16,23 @@ import {
     PanelRight,
     Paperclip,
     PictureInPicture2,
+    Users,
     X
 } from 'lucide-react';
 
-import {channelName, isChatChannel, onlineUsers, userDisplayName} from '../../lib/originchats/connection.js';
+import {
+    channelName,
+    groupMembers,
+    isChatChannel,
+    isGroupChannel,
+    onlineUsers,
+    userDisplayName
+} from '../../lib/originchats/connection.js';
 import {offerFiles} from '../../lib/originchats/chat-ui.js';
 import {CHAT_DRAG_MIME} from './chat-actions.js';
 import {CheckingCard, DeniedCard, InviteCard} from './chat-access.jsx';
 import Composer from './chat-composer.jsx';
-import {DirectAvatar, DirectList} from './chat-direct.jsx';
+import {DirectAvatar, DirectList, GroupPanel} from './chat-direct.jsx';
 import {ServerIcon} from './chat-embeds.jsx';
 import {MessageList} from './chat-messages.jsx';
 import styles from './chat-pane.css';
@@ -129,6 +137,11 @@ const messages = defineMessages({
         defaultMessage: 'Drop to attach files',
         description: 'Overlay shown while dragging files over the chat pane',
         id: 'mw.chat.dropFiles'
+    },
+    members: {
+        defaultMessage: '{count, plural, one {# member} other {# members}}',
+        description: 'Button in a group conversation header that opens the member list',
+        id: 'mw.chat.members'
     },
     unreadIn: {
         defaultMessage: '{name}, {count} unread',
@@ -251,7 +264,11 @@ const Presence = ({intl, state}) => {
             title={users.map(user => userDisplayName(state, user.username)).join(', ')}
         >
             <span className={styles.dot} />
-            {intl.formatMessage(messages.online, {count: users.length})}
+            <span className={styles.onlineLong}>{intl.formatMessage(messages.online, {count: users.length})}</span>
+            <span
+                className={styles.onlineShort}
+                aria-hidden="true"
+            >{users.length}</span>
         </span>
     );
 };
@@ -263,21 +280,21 @@ Presence.propTypes = {
 
 const unreadTotal = state => Object.values(state.channelUnread || {}).reduce((sum, count) => sum + count, 0);
 
-const RailButton = ({active, children, intl, label, onClick, unread}) => (
+const SpaceButton = ({active, children, intl, label, onClick, unread}) => (
     <button
         type="button"
-        className={classNames(styles.railButton, {[styles.railActive]: active})}
+        className={classNames(styles.spaceButton, {[styles.spaceActive]: active})}
         aria-pressed={active}
         aria-label={unread ? intl.formatMessage(messages.unreadIn, {name: label, count: unread}) : label}
         title={label}
         onClick={onClick}
     >
         {children}
-        {unread && !active ? <span className={styles.railBadge}>{unread > 99 ? '99+' : unread}</span> : null}
+        {unread && !active ? <span className={styles.spaceBadge}>{unread > 99 ? '99+' : unread}</span> : null}
     </button>
 );
 
-RailButton.propTypes = {
+SpaceButton.propTypes = {
     active: PropTypes.bool,
     children: PropTypes.node,
     intl: intlShape.isRequired,
@@ -385,6 +402,7 @@ const ChatPane = ({
     username
 }) => {
     const [fileDrag, setFileDrag] = useState(false);
+    const [groupPanel, setGroupPanel] = useState(false);
     const dragDepth = useRef(0);
     const showingDirect = space === 'dms';
     const {connection, state} = showingDirect ? direct : server;
@@ -392,6 +410,11 @@ const ChatPane = ({
     const chatting = ready && Boolean(state.active);
     const serverInfo = (info && info.server) || state.server || server.state.server || {};
     const serverName = serverInfo.name || intl.formatMessage(messages.title);
+    const current = state.channels.find(channel => channel.name === state.active);
+    const group = showingDirect && chatting && isGroupChannel(current);
+    const me = state.me && state.me.username;
+
+    useEffect(() => setGroupPanel(false), [state.active, space]);
 
     let body;
     if (state.status === 'signed_out') {
@@ -430,6 +453,16 @@ const ChatPane = ({
         );
     } else if (!showingDirect && state.status === 'idle') {
         body = <CheckingCard intl={intl} />;
+    } else if (group && groupPanel) {
+        body = (
+            <GroupPanel
+                channel={current}
+                connection={connection}
+                intl={intl}
+                state={state}
+                onClose={() => setGroupPanel(false)}
+            />
+        );
     } else if (chatting) {
         body = (
             <Conversation
@@ -458,7 +491,6 @@ const ChatPane = ({
 
     let heading;
     if (showingDirect && chatting) {
-        const current = state.channels.find(channel => channel.name === state.active);
         heading = (
             <div className={styles.directHeading}>
                 <HeaderButton
@@ -469,19 +501,28 @@ const ChatPane = ({
                 {current ? (
                     <DirectAvatar
                         channel={current}
+                        me={me}
                         size={22}
                     />
                 ) : null}
                 <h2 className={styles.title}>{channelName(current)}</h2>
+                {group ? (
+                    <button
+                        type="button"
+                        className={classNames(styles.membersButton, {[styles.membersOpen]: groupPanel})}
+                        aria-pressed={groupPanel}
+                        aria-label={intl.formatMessage(messages.members, {count: groupMembers(current).length})}
+                        title={intl.formatMessage(messages.members, {count: groupMembers(current).length})}
+                        onClick={() => setGroupPanel(value => !value)}
+                    >
+                        <Users size={13} />
+                        {groupMembers(current).length}
+                    </button>
+                ) : null}
             </div>
         );
     } else if (showingDirect) {
-        heading = (
-            <h2 className={styles.title}>
-                <MessageCircle size={16} />
-                {intl.formatMessage(messages.directTitle)}
-            </h2>
-        );
+        heading = <h2 className={styles.title}>{intl.formatMessage(messages.directTitle)}</h2>;
     } else if (chatting) {
         heading = (
             <ChannelMenu
@@ -493,12 +534,7 @@ const ChatPane = ({
             />
         );
     } else {
-        heading = (
-            <h2 className={styles.title}>
-                <MessagesSquare size={16} />
-                {serverName}
-            </h2>
-        );
+        heading = <h2 className={styles.title}>{serverName}</h2>;
     }
 
     const onDragEnter = event => {
@@ -536,68 +572,67 @@ const ChatPane = ({
             onDragOver={onDragOver}
             onDrop={onDrop}
         >
-            <nav
-                className={styles.rail}
-                aria-label={intl.formatMessage(messages.spaces)}
-            >
-                <RailButton
-                    active={!showingDirect}
-                    intl={intl}
-                    label={serverName}
-                    unread={unreadTotal(server.state)}
-                    onClick={() => onSpace('server')}
+            <header className={styles.header}>
+                <div
+                    className={styles.spaces}
+                    role="group"
+                    aria-label={intl.formatMessage(messages.spaces)}
                 >
-                    <ServerIcon
-                        icon={serverInfo.icon}
-                        name={serverName}
-                        size={32}
+                    <SpaceButton
+                        active={!showingDirect}
+                        intl={intl}
+                        label={serverName}
+                        unread={unreadTotal(server.state)}
+                        onClick={() => onSpace('server')}
+                    >
+                        <ServerIcon
+                            icon={serverInfo.icon}
+                            name={serverName}
+                            size={20}
+                        />
+                    </SpaceButton>
+                    <SpaceButton
+                        active={showingDirect}
+                        intl={intl}
+                        label={intl.formatMessage(messages.directTitle)}
+                        unread={unreadTotal(direct.state)}
+                        onClick={() => onSpace('dms')}
+                    >
+                        <MessageCircle size={16} />
+                    </SpaceButton>
+                </div>
+                {heading}
+                {chatting && !showingDirect ? (
+                    <Presence
+                        intl={intl}
+                        state={state}
                     />
-                </RailButton>
-                <RailButton
-                    active={showingDirect}
-                    intl={intl}
-                    label={intl.formatMessage(messages.directTitle)}
-                    unread={unreadTotal(direct.state)}
-                    onClick={() => onSpace('dms')}
-                >
-                    <span className={styles.railIcon}><MessageCircle size={18} /></span>
-                </RailButton>
-            </nav>
-            <div className={styles.main}>
-                <header className={styles.header}>
-                    {heading}
-                    {chatting && !showingDirect ? (
-                        <Presence
-                            intl={intl}
-                            state={state}
+                ) : null}
+                <div className={styles.headerActions}>
+                    {ready && !showingDirect ? (
+                        <HeaderButton
+                            icon={LogOut}
+                            label={intl.formatMessage(messages.leave)}
+                            onClick={onLeave}
                         />
                     ) : null}
-                    <div className={styles.headerActions}>
-                        {ready && !showingDirect ? (
-                            <HeaderButton
-                                icon={LogOut}
-                                label={intl.formatMessage(messages.leave)}
-                                onClick={onLeave}
-                            />
-                        ) : null}
-                        {canDock ? (
-                            <HeaderButton
-                                icon={floating ? PanelRight : PictureInPicture2}
-                                label={intl.formatMessage(floating ? messages.dock : messages.popOut)}
-                                onClick={onToggleMode}
-                            />
-                        ) : null}
-                        {floating ? null : (
-                            <HeaderButton
-                                icon={X}
-                                label={intl.formatMessage(messages.close)}
-                                onClick={onClose}
-                            />
-                        )}
-                    </div>
-                </header>
-                <div className={styles.body}>{body}</div>
-            </div>
+                    {canDock ? (
+                        <HeaderButton
+                            icon={floating ? PanelRight : PictureInPicture2}
+                            label={intl.formatMessage(floating ? messages.dock : messages.popOut)}
+                            onClick={onToggleMode}
+                        />
+                    ) : null}
+                    {floating ? null : (
+                        <HeaderButton
+                            icon={X}
+                            label={intl.formatMessage(messages.close)}
+                            onClick={onClose}
+                        />
+                    )}
+                </div>
+            </header>
+            <div className={styles.body}>{body}</div>
             {overlay ? (
                 <div className={styles.dropOverlay}>
                     <span className={styles.dropIcon}>

@@ -1,7 +1,7 @@
 /* eslint-disable react/jsx-no-bind */
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
-import React, {useContext, useEffect, useState} from 'react';
+import React, {useContext, useEffect, useRef, useState} from 'react';
 import {defineMessages, intlShape} from 'react-intl';
 import {
     Blocks,
@@ -669,6 +669,8 @@ const ScriptAttachment = ({attachment, intl, url}) => {
     const actions = useContext(ChatActions);
     const {loading, data} = useAsync(() => fetchScriptSvg(url), [url]);
     const [added, setAdded] = useState(false);
+    const imageRef = useRef(null);
+    const liveRef = useRef(false);
     const name = attachment.name || 'script.svg';
 
     useEffect(() => {
@@ -690,7 +692,16 @@ const ScriptAttachment = ({attachment, intl, url}) => {
         );
     }
 
+    const onMouseDown = event => {
+        liveRef.current = false;
+        if (event.button !== 0 || !imageRef.current) return;
+        if (actions.startScriptDrag(data, event.nativeEvent, imageRef.current)) liveRef.current = true;
+    };
     const onDragStart = event => {
+        if (liveRef.current) {
+            event.preventDefault();
+            return;
+        }
         event.dataTransfer.effectAllowed = 'copy';
         event.dataTransfer.setData(SCRIPT_MIME, JSON.stringify(data));
         event.dataTransfer.setData(CHAT_DRAG_MIME, '1');
@@ -705,8 +716,10 @@ const ScriptAttachment = ({attachment, intl, url}) => {
                 title={hint}
                 draggable
                 onDragStart={onDragStart}
+                onMouseDown={onMouseDown}
             >
                 <img
+                    ref={imageRef}
                     src={url}
                     alt={hint}
                     loading="lazy"

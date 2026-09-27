@@ -4,6 +4,7 @@ import {
     applyFrame,
     directPeer,
     initialState,
+    isGroupChannel,
     mergeMessages,
     onlineUsers,
     validatorKeyMatches
@@ -285,6 +286,39 @@ describe('ChatConnection', () => {
         expect(socket.sent.pop()).toEqual({cmd: 'message_new', channel: 'cmds', content: 'dm add bob'});
         socket.receive({cmd: 'channels_get', val: [...channels, {name: '401', type: 'chat', display_name: 'bob', description: 'Direct message with bob'}]});
         expect(chat.getState().active).toBe('401');
+    });
+
+    test('group conversations can be created, edited, left and deleted', () => {
+        const {chat, socket} = readyChat({direct: true, signingUrls: DMS_SIGNING_URLS});
+        socket.receive({cmd: 'ready', user: {username: 'me'}});
+        const group = {name: '500', type: 'chat', display_name: 'crew', description: 'Group chat', owner: 'me', members: ['me', 'ann']};
+        socket.receive({cmd: 'channels_get', val: [group]});
+        expect(isGroupChannel(chat.getState().channels[0])).toBe(true);
+        expect(directPeer(group)).toBe(null);
+
+        expect(chat.createGroup('  team ', ['@ann', 'bob', 'ann', ''])).toBe(true);
+        expect(socket.sent.pop()).toEqual({cmd: 'channel_create', type: 'group', name: 'team', members: ['ann', 'bob']});
+        socket.receive({cmd: 'channel_create', val: true, channel: {...group, name: '501', display_name: 'team'}});
+        expect(chat.getState().active).toBe('501');
+
+        chat.addGroupMember('500', '@bob');
+        expect(socket.sent.pop()).toEqual({cmd: 'channel_update', channel: '500', updates: {members: ['ann', 'bob']}});
+        expect(chat.addGroupMember('500', 'ann')).toBe(false);
+        chat.renameGroup('500', 'renamed');
+        expect(socket.sent.pop()).toEqual({cmd: 'channel_update', channel: '500', updates: {name: 'renamed'}});
+        socket.receive({cmd: 'channel_update', val: true, channel: {...group, display_name: 'renamed'}});
+        expect(chat.getState().channels.find(item => item.name === '500').display_name).toBe('renamed');
+        chat.removeGroupMember('500', 'ann');
+        expect(socket.sent.pop()).toEqual({cmd: 'channel_kick', channel: '500', user: 'ann'});
+
+        chat.leaveConversation('501');
+        expect(socket.sent.pop()).toEqual({cmd: 'user_leave', channel: '501'});
+        socket.receive({cmd: 'user_leave', channel: '501', left: true});
+        expect(chat.getState().active).toBe(null);
+        expect(chat.getState().channels.map(item => item.name)).toEqual(['500']);
+        chat.deleteGroup('500');
+        socket.receive({cmd: 'channel_delete', val: true, channel: '500', deleted: true});
+        expect(chat.getState().channels).toEqual([]);
     });
 
     test('unread counts are tracked per channel', () => {

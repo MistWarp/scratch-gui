@@ -303,9 +303,28 @@ const applyFrame = (state, frame) => {
         const channels = Array.isArray(frame.val) ? frame.val : [];
         return {...state, channels, active: pickActive(channels, state.active, state.direct)};
     }
-    case 'channel_create': {
+    case 'channel_delete':
+    case 'user_leave': {
+        if (frame.cmd === 'user_leave' && !frame.left) {
+            const key = userKey(frame.username);
+            if (!key || !state.users[key]) return state;
+            const users = {...state.users};
+            delete users[key];
+            return {...state, users};
+        }
+        const gone = typeof frame.channel === 'string' ? frame.channel : null;
+        if (!gone) return state;
+        return {
+            ...state,
+            channels: state.channels.filter(channel => channel.name !== gone),
+            active: state.active === gone ? null : state.active
+        };
+    }
+    case 'channel_create':
+    case 'channel_update':
+    case 'channel_kick': {
         const channel = frame.channel;
-        if (!channel || !channel.name) return state;
+        if (!channel || typeof channel !== 'object' || !channel.name) return state;
         const channels = state.channels.some(item => item.name === channel.name) ?
             state.channels.map(item => (item.name === channel.name ? {...item, ...channel} : item)) :
             [...state.channels, channel];
@@ -386,13 +405,6 @@ const applyFrame = (state, frame) => {
         const key = userKey(user.username);
         const online = state.online ? state.online.filter(name => name !== key) : null;
         return {...state, online, users: withUser(state.users, user, {status: {status: 'offline'}})};
-    }
-    case 'user_leave': {
-        const key = userKey(frame.username);
-        if (!key || !state.users[key]) return state;
-        const users = {...state.users};
-        delete users[key];
-        return {...state, users};
     }
     case 'typing': {
         const channel = frameChannel(frame);
@@ -492,6 +504,10 @@ const directPeer = channel => {
     const match = /^Direct message with (.+)$/i.exec(String(channel.description || ''));
     return (match && match[1]) || channel.display_name || null;
 };
+
+const isGroupChannel = channel => Boolean(channel) && (Array.isArray(channel.members) || Boolean(channel.owner));
+
+const groupMembers = channel => (channel && Array.isArray(channel.members) ? channel.members.filter(Boolean) : []);
 
 const findDirectChannel = (channels, name) => channels.find(channel => isChatChannel(channel) &&
     userKey(directPeer(channel)) === userKey(name));
@@ -593,6 +609,7 @@ class ChatConnection {
         this.validatorKey = null;
         this.access = {};
         this.pendingDirect = null;
+        this.pendingGroup = false;
         this.membershipFor = null;
     }
 
@@ -802,8 +819,9 @@ class ChatConnection {
             break;
         }
         case 'channel_create':
-            if (frame.channel && frame.channel.name && this.pendingDirect) {
+            if (frame.channel && frame.channel.name && (this.pendingDirect || this.pendingGroup)) {
                 this.pendingDirect = null;
+                this.pendingGroup = false;
                 this.selectChannel(frame.channel.name);
             }
             break;
@@ -924,6 +942,48 @@ class ChatConnection {
                 if (generation === this.generation) this.patch({notice: {kind: 'sign_failed'}});
             });
         return this.sendQueue;
+    }
+
+    createGroup (name, members) {
+        const title = String(name || '').trim();
+        const list = [...new Set((members || []).map(member => String(member).trim()
+            .replace(/^@/, ''))
+            .filter(Boolean))];
+        if (!title || !list.length) return false;
+        this.pendingGroup = true;
+        return this.send({cmd: 'channel_create', type: 'group', name: title, members: list});
+    }
+
+    renameGroup (channel, name) {
+        const title = String(name || '').trim();
+        if (!title) return false;
+        return this.send({cmd: 'channel_update', channel, updates: {name: title}});
+    }
+
+    addGroupMember (channel, username) {
+        const current = this.state.channels.find(item => item.name === channel);
+        const name = String(username || '').trim()
+            .replace(/^@/, '');
+        if (!current || !name) return false;
+        const me = userKey(this.state.me && this.state.me.username);
+        const others = groupMembers(current).filter(member => userKey(member) !== me);
+        if (others.some(member => userKey(member) === userKey(name))) return false;
+        return this.send({cmd: 'channel_update', channel, updates: {members: [...others, name]}});
+    }
+
+    removeGroupMember (channel, username) {
+        if (!channel || !username) return false;
+        return this.send({cmd: 'channel_kick', channel, user: username});
+    }
+
+    leaveConversation (channel) {
+        if (!channel) return false;
+        return this.send({cmd: 'user_leave', channel});
+    }
+
+    deleteGroup (channel) {
+        if (!channel) return false;
+        return this.send({cmd: 'channel_delete', channel});
     }
 
     sendMessage (channel, content, {replyTo, attachments} = {}) {
@@ -1055,6 +1115,8 @@ export {
     channelName,
     checkInvite,
     directPeer,
+    groupMembers,
+    isGroupChannel,
     fetchServerInfo,
     findMessage,
     findUser,

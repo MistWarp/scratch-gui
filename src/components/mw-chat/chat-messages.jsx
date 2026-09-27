@@ -41,6 +41,7 @@ import {firstLine, onlyEmoji, parse} from '../../lib/originchats/rich-text.js';
 import {verifyMessage} from '../../lib/originchats/signing.js';
 import {Attachment, ClientEmbed, LinkEmbed} from './chat-embeds.jsx';
 import {CHAT_DRAG_MIME} from './chat-actions.js';
+import {DirectAvatar} from './chat-direct.jsx';
 import {ProfileLink, RichText, UserPicture, richContext} from './chat-rich-text.jsx';
 import styles from './chat-pane.css';
 
@@ -697,11 +698,11 @@ const Intro = ({channel, intl, state}) => {
         const name = channelName(channel);
         return (
             <li className={styles.intro}>
-                {peer ? (
-                    <UserPicture
-                        rotur
+                {channel ? (
+                    <DirectAvatar
+                        channel={channel}
+                        me={state.me && state.me.username}
                         size={40}
-                        username={peer}
                     />
                 ) : <span className={styles.introIcon}><MessageCircle size={18} /></span>}
                 <p className={styles.introTitle}>{name}</p>

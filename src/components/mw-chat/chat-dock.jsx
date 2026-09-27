@@ -9,6 +9,7 @@ import WindowManager from '../../addons/window-system/window-manager';
 import {CHAT_URL, fetchServerInfo, getChatConnection, getDirectConnection} from '../../lib/originchats/connection.js';
 import {cleanHost} from '../../lib/originchats/embeds.js';
 import {captureScript, renderScriptSvg} from '../../lib/originchats/script-image.js';
+import {chatDragActive, startLiveDrag} from '../../lib/originchats/script-drag.js';
 import {placeInViewport} from '../../lib/backpack/code-payload.js';
 import {
     MAX_WIDTH,
@@ -300,19 +301,17 @@ const ChatDock = ({intl, isRtl, onOpenLogin, username, vm, workspaceMetrics}) =>
         if (!vm) return;
         let outside = false;
         let point = null;
-        const over = () => outside && chattingIn() && pointInside(paneRef.current, point);
+        const over = () => outside && !chatDragActive() && chattingIn() && pointInside(paneRef.current, point);
         const onMove = event => {
             point = {x: event.clientX, y: event.clientY};
             if (outside) setBlockDrag(over());
         };
         const onUpdate = isOutside => {
-            if (isOutside) {
-                outside = true;
-                setBlockDrag(over());
-            }
+            outside = isOutside;
+            setBlockDrag(over());
         };
         const onEnd = (blocks, topBlockId) => {
-            const dropped = over();
+            const dropped = !chatDragActive() && chattingIn() && pointInside(paneRef.current, point);
             outside = false;
             setBlockDrag(false);
             if (!dropped) return;
@@ -333,7 +332,10 @@ const ChatDock = ({intl, isRtl, onOpenLogin, username, vm, workspaceMetrics}) =>
                 .catch(() => null);
         };
         const onPointerUp = () => {
-            if (!outside) setBlockDrag(false);
+            setTimeout(() => {
+                outside = false;
+                setBlockDrag(false);
+            }, 200);
         };
         vm.on('BLOCK_DRAG_UPDATE', onUpdate);
         vm.on('BLOCK_DRAG_END', onEnd);
@@ -401,7 +403,8 @@ const ChatDock = ({intl, isRtl, onOpenLogin, username, vm, workspaceMetrics}) =>
             if (current.membership === 'member' && current.status !== 'idle') return;
             joinServer(code ? {invite: code} : {});
         },
-        openDirect
+        openDirect,
+        startScriptDrag: (payload, event, image) => startLiveDrag(vm, payload, event, image)
     }), [addScript, vm, serverState.membership, joinServer, openDirect]);
 
     if (!ui.open || !username) return null;
