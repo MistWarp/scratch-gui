@@ -2460,5 +2460,6 @@
   "Your projects use {value1} of your {value2} of storage ({value3}%).": "Your projects use {value1} of your {value2} of storage ({value3}%).",
   "Storage covers every project you own, including its assets, version history and anything in the trash. Deleting a project and emptying it from the trash frees its space.": "Storage covers every project you own, including its assets, version history and anything in the trash. Deleting a project and emptying it from the trash frees its space.",
   "View your storage": "View your storage",
-  "Full": "Full"
+  "Full": "Full",
+  "Named history checkpoints": "Named history checkpoints"
 }
