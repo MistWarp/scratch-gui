@@ -220,6 +220,13 @@ class Blocks extends React.Component {
         );
         
         this.workspace = this.ScratchBlocks.inject(this.blocks, workspaceConfig);
+        const isInsideBlocksArea = this.workspace.isInsideBlocksArea.bind(this.workspace);
+        this.workspace.isInsideBlocksArea = event => {
+            if (!isInsideBlocksArea(event)) return false;
+            if (typeof event.clientX !== 'number') return true;
+            const top = this.blocks.ownerDocument.elementFromPoint(event.clientX, event.clientY);
+            return !(top && top.closest && top.closest('[data-chat-pane]'));
+        };
         this.blocks.addEventListener('dragover', this.handleScriptDragOver);
         this.blocks.addEventListener('drop', this.handleScriptDrop);
         AddonHooks.blocklyWorkspace = this.workspace;

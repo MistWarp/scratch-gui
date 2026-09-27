@@ -97,6 +97,7 @@ const fullscreenBackgroundColor = getFullscreenBackgroundColor();
 
 const AUTO_SMALL_STAGE_INNER_WIDTH = Math.round(FIXED_WIDTH);
 const MIN_EDITOR_PANE_WIDTH = 598;
+const MIN_EDITOR_PANE_WIDTH_WITH_CHAT = 460;
 const MIN_TARGET_PANE_HEIGHT = 180;
 const HIDE_STAGE_DRAG_SLOP = 80;
 const NARROW_LAYOUT_WIDTH = 900;
@@ -104,6 +105,11 @@ const STAGE_RESIZER_WIDTH = 6;
 const MIN_STAGE_PANEL_WIDTH = (FIXED_WIDTH * 0.5) + 18;
 
 const cachedStyleValues = new WeakMap();
+
+const minEditorWidth = containerEl => {
+    const next = containerEl && containerEl.nextElementSibling;
+    return next && next.hasAttribute('data-chat-dock') ? MIN_EDITOR_PANE_WIDTH_WITH_CHAT : MIN_EDITOR_PANE_WIDTH;
+};
 
 const getCachedBorderWidth = element => {
     if (!element) return 2;
@@ -389,7 +395,7 @@ const GUIComponent = props => {
         const containerWidth = containerEl ?
             containerEl.getBoundingClientRect().width :
             window.innerWidth;
-        const maxOuterWidth = containerWidth - MIN_EDITOR_PANE_WIDTH - 6;
+        const maxOuterWidth = containerWidth - minEditorWidth(containerEl) - 6;
         if (Number.isFinite(maxOuterWidth) && maxOuterWidth > 0) {
             outerWidth = Math.min(outerWidth, maxOuterWidth);
         }
@@ -498,7 +504,7 @@ const GUIComponent = props => {
 
             const containerWidth = Math.min(measuredWidth, window.innerWidth);
             setIsNarrowLayout(containerWidth < NARROW_LAYOUT_WIDTH);
-            const available = containerWidth - MIN_EDITOR_PANE_WIDTH - STAGE_RESIZER_WIDTH;
+            const available = containerWidth - minEditorWidth(containerEl) - STAGE_RESIZER_WIDTH;
 
             if (available < MIN_STAGE_PANEL_WIDTH) {
                 if (!isStageHiddenRef.current) {
@@ -608,7 +614,7 @@ const GUIComponent = props => {
             e.currentTarget.getBoundingClientRect() : null;
         const resizerWidth = (resizerRect && Number.isFinite(resizerRect.width)) ? resizerRect.width : 6;
 
-        const maxWidthByEditor = Math.max(minWidth, containerWidth - MIN_EDITOR_PANE_WIDTH - resizerWidth);
+        const maxWidthByEditor = Math.max(minWidth, containerWidth - minEditorWidth(containerEl) - resizerWidth);
 
         let stageWrapperEl = el.querySelector('[class*="stage-wrapper_stage-wrapper"]');
         if (!stageWrapperEl) {
