@@ -512,8 +512,23 @@ ActionButton.propTypes = {
 
 const MessageActions = ({connection, intl, menuOpen, message, onDelete, onEdit, onMenu, onReply, state}) => {
     const [picker, setPicker] = useState(false);
+    const [pickerUp, setPickerUp] = useState(false);
     const rootRef = useRef(null);
     const channel = state.active;
+
+    const togglePicker = () => {
+        if (picker) {
+            setPicker(false);
+            return;
+        }
+        const root = rootRef.current;
+        const list = root && root.closest('ol');
+        if (root && list) {
+            const below = list.getBoundingClientRect().bottom - root.getBoundingClientRect().bottom;
+            setPickerUp(below < 96);
+        }
+        setPicker(true);
+    };
 
     useEffect(() => {
         if (!picker) return;
@@ -531,7 +546,7 @@ const MessageActions = ({connection, intl, menuOpen, message, onDelete, onEdit, 
         >
             {picker ? (
                 <div
-                    className={styles.picker}
+                    className={classNames(styles.picker, {[styles.pickerUp]: pickerUp})}
                     role="menu"
                 >
                     {QUICK_REACTIONS.map(emoji => (
@@ -554,7 +569,7 @@ const MessageActions = ({connection, intl, menuOpen, message, onDelete, onEdit, 
                     icon={SmilePlus}
                     label={intl.formatMessage(messages.react)}
                     pressed={picker}
-                    onClick={() => setPicker(value => !value)}
+                    onClick={togglePicker}
                 />
             ) : null}
             {canInChannel(state, channel, 'send') ? (

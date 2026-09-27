@@ -5,6 +5,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import {
     ArrowLeft,
+    Blocks,
     Check,
     ChevronDown,
     Hash,
@@ -156,6 +157,11 @@ const messages = defineMessages({
         defaultMessage: 'Try again',
         description: 'Button that retries the chat connection',
         id: 'mw.chat.retry'
+    },
+    dropScript: {
+        defaultMessage: 'Drop to share this script as an image',
+        description: 'Overlay shown while dragging blocks from the code area over the chat pane',
+        id: 'mw.chat.dropScript'
     },
     dropFiles: {
         defaultMessage: 'Drop to attach files',
@@ -547,6 +553,7 @@ const acceptsFiles = event => {
 };
 
 const ChatPane = ({
+    blockDrag,
     canDock,
     direct,
     floating,
@@ -743,6 +750,7 @@ const ChatPane = ({
     return (
         <section
             ref={paneRef}
+            data-chat-pane
             className={classNames(styles.pane, {[styles.floating]: floating})}
             aria-label={intl.formatMessage(messages.title)}
             onDragEnter={onDragEnter}
@@ -813,10 +821,12 @@ const ChatPane = ({
                 </div>
             </header>
             <div className={styles.body}>{body}</div>
-            {fileDrag ? (
+            {(blockDrag && chatting) || fileDrag ? (
                 <div className={styles.dropOverlay}>
-                    <span className={styles.dropIcon}><Paperclip size={22} /></span>
-                    <p>{intl.formatMessage(messages.dropFiles)}</p>
+                    <span className={styles.dropIcon}>
+                        {blockDrag ? <Blocks size={22} /> : <Paperclip size={22} />}
+                    </span>
+                    <p>{intl.formatMessage(blockDrag ? messages.dropScript : messages.dropFiles)}</p>
                 </div>
             ) : null}
         </section>
@@ -829,6 +839,7 @@ const connectionShape = PropTypes.shape({
 });
 
 ChatPane.propTypes = {
+    blockDrag: PropTypes.bool,
     canDock: PropTypes.bool,
     direct: connectionShape.isRequired,
     floating: PropTypes.bool,

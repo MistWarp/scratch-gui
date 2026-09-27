@@ -75,10 +75,35 @@ const messages = defineMessages({
         description: 'Error when a chat file upload fails',
         id: 'mw.chat.uploadFailed'
     },
+    uploadFailedReason: {
+        defaultMessage: 'Could not upload {name}. The server said: {reason}',
+        description: 'Error when a chat file upload fails, with the reason the chat server gave',
+        id: 'mw.chat.uploadFailedReason'
+    },
+    scriptFailed: {
+        defaultMessage: 'Could not upload the script.',
+        description: 'Error when uploading a script dragged from the code area fails',
+        id: 'mw.chat.scriptFailed'
+    },
+    scriptFailedReason: {
+        defaultMessage: 'Could not upload the script. The server said: {reason}',
+        description: 'Error when uploading a script dragged from the code area fails, with the reason the chat server gave',
+        id: 'mw.chat.scriptFailedReason'
+    },
     script: {
         defaultMessage: 'Script',
         description: 'Label on a pending chat attachment that is a script dragged from the code area',
         id: 'mw.chat.script'
+    },
+    scriptReady: {
+        defaultMessage: 'Ready to send, {size}',
+        description: 'Status under a script dragged into the chat message box once it has uploaded',
+        id: 'mw.chat.scriptReady'
+    },
+    removeScript: {
+        defaultMessage: 'Remove script',
+        description: 'Button that removes a script dragged into the chat message box before sending',
+        id: 'mw.chat.removeScript'
     },
     replyingTo: {
         defaultMessage: 'Replying to {name}',
@@ -188,7 +213,62 @@ const uploadError = (intl, error, item, connection) => {
         const limit = (connection.getState().attachments || {}).max_size;
         return intl.formatMessage(messages.uploadTooLarge, {name: item.name, size: formatBytes(limit)});
     }
-    return intl.formatMessage(messages.uploadFailed, {name: item.name});
+    const reason = error.status && error.message && !/^Upload failed/.test(error.message) ? error.message : '';
+    if (item.script) {
+        return reason ?
+            intl.formatMessage(messages.scriptFailedReason, {reason}) :
+            intl.formatMessage(messages.scriptFailed);
+    }
+    return reason ?
+        intl.formatMessage(messages.uploadFailedReason, {name: item.name, reason}) :
+        intl.formatMessage(messages.uploadFailed, {name: item.name});
+};
+
+const PendingScript = ({intl, item, onRemove}) => {
+    const percent = Math.round(item.progress * 100);
+    let status = null;
+    if (item.status === 'error') status = item.error;
+    else if (item.status === 'uploading') status = intl.formatMessage(messages.uploading, {percent});
+    else if (item.status === 'done') status = intl.formatMessage(messages.scriptReady, {size: formatBytes(item.size)});
+    return (
+        <li
+            className={classNames(styles.pendingScript, {[styles.pendingError]: item.status === 'error'})}
+            title={item.status === 'error' ? item.error : null}
+        >
+            {item.preview ? (
+                <img
+                    className={styles.pendingScriptImage}
+                    src={item.preview}
+                    alt={intl.formatMessage(messages.script)}
+                    draggable={false}
+                />
+            ) : null}
+            <div className={styles.pendingScriptBar}>
+                <span className={styles.pendingMeta}>{status}</span>
+                <button
+                    type="button"
+                    className={styles.pendingRemove}
+                    aria-label={intl.formatMessage(messages.removeScript)}
+                    title={intl.formatMessage(messages.removeScript)}
+                    onClick={() => onRemove(item.key)}
+                >
+                    <X size={12} />
+                </button>
+            </div>
+            {item.status === 'uploading' ? (
+                <span
+                    className={styles.pendingProgress}
+                    style={{width: `${percent}%`}}
+                />
+            ) : null}
+        </li>
+    );
+};
+
+PendingScript.propTypes = {
+    intl: intlShape.isRequired,
+    item: PropTypes.object.isRequired,
+    onRemove: PropTypes.func.isRequired
 };
 
 const PendingUpload = ({intl, item, onRemove}) => {
@@ -398,6 +478,7 @@ const Composer = ({apiRef, connection, intl, onClearReply, onEditLast, onJump, o
                 controller: new AbortController()
             };
             connection.upload(file, {
+                channel: state.active,
                 onProgress: progress => patchUpload(item.key, {progress}),
                 signal: item.controller.signal
             })
@@ -518,14 +599,17 @@ const Composer = ({apiRef, connection, intl, onClearReply, onEditLast, onJump, o
             ) : null}
             {uploads.length ? (
                 <ul className={styles.pendingList}>
-                    {uploads.map(item => (
-                        <PendingUpload
-                            key={item.key}
-                            intl={intl}
-                            item={item}
-                            onRemove={removeUpload}
-                        />
-                    ))}
+                    {uploads.map(item => {
+                        const Item = item.script ? PendingScript : PendingUpload;
+                        return (
+                            <Item
+                                key={item.key}
+                                intl={intl}
+                                item={item}
+                                onRemove={removeUpload}
+                            />
+                        );
+                    })}
                 </ul>
             ) : null}
             <div className={styles.inputRow}>

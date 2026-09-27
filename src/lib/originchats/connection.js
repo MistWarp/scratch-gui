@@ -1132,7 +1132,7 @@ class ChatConnection {
         return uploadProblem(this.state, file);
     }
 
-    async upload (file, {name, onProgress, signal} = {}) {
+    async upload (file, {channel, name, onProgress, signal} = {}) {
         const key = this.validatorKey;
         if (!key || this.state.status !== 'ready') throw new Error('Chat is not connected.');
         const problem = uploadProblem(this.state, file);
@@ -1150,6 +1150,7 @@ class ChatConnection {
         form.append('mime_type', file.type || 'application/octet-stream');
         form.append('validator_key', key);
         form.append('validator', validator);
+        if (channel) form.append('channel', channel);
         return postUpload(this.uploadUrl(), form, onProgress, signal);
     }
 
