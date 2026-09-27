@@ -547,6 +547,7 @@ a.author:hover {
 
 .pinged {
     background: var(--chat-accent-soft);
+    box-shadow: inset 2px 0 0 var(--chat-accent);
 }
 
 .pinged:hover {
@@ -2209,7 +2210,7 @@ a.file-name:hover {
     color: #fff;
 }
 
-.menu {
+.message-menu {
     position: fixed;
     z-index: 20;
     display: flex;
@@ -2224,7 +2225,7 @@ a.file-name:hover {
     font-size: 0.8125rem;
 }
 
-.menu-reactions {
+.message-menu-reactions {
     display: flex;
     justify-content: space-between;
     gap: 0.125rem;
@@ -2233,7 +2234,7 @@ a.file-name:hover {
     border-bottom: 1px solid var(--chat-line);
 }
 
-.menu-reaction {
+.message-menu-reaction {
     flex: 1 1 0;
     min-width: 0;
     height: 1.75rem;
@@ -2246,19 +2247,19 @@ a.file-name:hover {
     cursor: pointer;
 }
 
-.menu-reaction:hover,
-.menu-reaction:focus-visible {
+.message-menu-reaction:hover,
+.message-menu-reaction:focus-visible {
     background: var(--chat-hover);
     outline: none;
 }
 
-.menu-separator {
+.message-menu-separator {
     height: 1px;
     margin: 0.25rem 0.375rem;
     background: var(--chat-line);
 }
 
-.menu-item {
+.message-menu-item {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -2274,24 +2275,24 @@ a.file-name:hover {
     cursor: pointer;
 }
 
-.menu-item svg {
+.message-menu-item svg {
     flex: 0 0 auto;
     color: var(--chat-muted);
 }
 
-.menu-item:hover,
-.menu-item:focus-visible {
+.message-menu-item:hover,
+.message-menu-item:focus-visible {
     background: var(--chat-accent);
     color: var(--chat-on-accent);
     outline: none;
 }
 
-.menu-item:hover svg,
-.menu-item:focus-visible svg {
+.message-menu-item:hover svg,
+.message-menu-item:focus-visible svg {
     color: inherit;
 }
 
-.menu-label {
+.message-menu-label {
     flex: 1 1 auto;
     min-width: 0;
     overflow: hidden;
@@ -2299,18 +2300,18 @@ a.file-name:hover {
     text-overflow: ellipsis;
 }
 
-.menu-hint {
+.message-menu-hint {
     color: var(--chat-faint);
     font-size: 0.6875rem;
 }
 
-.menu-danger,
-.menu-danger svg {
+.message-menu-danger,
+.message-menu-danger svg {
     color: var(--chat-danger);
 }
 
-.menu-danger:hover,
-.menu-danger:focus-visible {
+.message-menu-danger:hover,
+.message-menu-danger:focus-visible {
     background: var(--chat-danger);
     color: #fff;
 }
@@ -2380,7 +2381,7 @@ a.file-name:hover {
     gap: 0.375rem;
 }
 
-.danger-button {
+.delete-confirm {
     background: var(--chat-danger);
     color: #fff;
 }

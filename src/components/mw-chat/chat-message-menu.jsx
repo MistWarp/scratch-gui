@@ -115,7 +115,7 @@ const MessageMenu = ({intl, items, onClose, onReact, reactions, x, y}) => {
     return (
         <div
             ref={ref}
-            className={styles.menu}
+            className={styles.messageMenu}
             role="menu"
             aria-label={intl.formatMessage(messages.menu)}
             style={position ? {left: position.left, top: position.top} : {left: 0, top: 0, visibility: 'hidden'}}
@@ -123,14 +123,14 @@ const MessageMenu = ({intl, items, onClose, onReact, reactions, x, y}) => {
             onContextMenu={event => event.preventDefault()}
         >
             {reactions && reactions.length ? (
-                <div className={styles.menuReactions}>
+                <div className={styles.messageMenuReactions}>
                     {reactions.map(emoji => (
                         <button
                             key={emoji}
                             type="button"
                             role="menuitem"
                             data-reaction="1"
-                            className={styles.menuReaction}
+                            className={styles.messageMenuReaction}
                             aria-label={intl.formatMessage(messages.reactWith, {emoji})}
                             title={intl.formatMessage(messages.reactWith, {emoji})}
                             onClick={() => {
@@ -147,7 +147,7 @@ const MessageMenu = ({intl, items, onClose, onReact, reactions, x, y}) => {
                         <div
                             key={item.key}
                             role="separator"
-                            className={styles.menuSeparator}
+                            className={styles.messageMenuSeparator}
                         />
                     );
                 }
@@ -157,14 +157,14 @@ const MessageMenu = ({intl, items, onClose, onReact, reactions, x, y}) => {
                         key={item.key}
                         type="button"
                         role="menuitem"
-                        className={classNames(styles.menuItem, {[styles.menuDanger]: item.danger})}
+                        className={classNames(styles.messageMenuItem, {[styles.messageMenuDanger]: item.danger})}
                         onClick={event => {
                             onClose(false);
                             item.onSelect(event);
                         }}
                     >
-                        <span className={styles.menuLabel}>{item.label}</span>
-                        {item.hint ? <span className={styles.menuHint}>{item.hint}</span> : null}
+                        <span className={styles.messageMenuLabel}>{item.label}</span>
+                        {item.hint ? <span className={styles.messageMenuHint}>{item.hint}</span> : null}
                         {Icon ? <Icon size={15} /> : null}
                     </button>
                 );
@@ -235,7 +235,7 @@ const DeleteDialog = ({children, intl, onCancel, onConfirm}) => {
                     <button
                         ref={confirmRef}
                         type="button"
-                        className={classNames(styles.cardButton, styles.dangerButton)}
+                        className={classNames(styles.cardButton, styles.deleteConfirm)}
                         onClick={onConfirm}
                     >
                         <Trash2 size={14} />
