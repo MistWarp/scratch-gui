@@ -2,6 +2,9 @@ import {
     ChatConnection,
     activeTyping,
     applyFrame,
+    canDeleteMessage,
+    canEditMessage,
+    canInChannel,
     directPeer,
     initialState,
     isGroupChannel,
@@ -76,6 +79,15 @@ describe('originchats reducer', () => {
         expect(state.messages.general.map(item => item.content)).toEqual(['hi', 'b']);
         state = applyFrame(state, {cmd: 'message_delete', channel: 'general', id: 'b'});
         expect(state.messages.general.map(item => item.id)).toEqual(['a']);
+    });
+
+    test('history pages from the DM server arrive under messages instead of val', () => {
+        const state = applyFrame(initialState(true), {
+            cmd: 'messages_get', channel: 'HoAqvHXhuM', at_start: false, at_end: true,
+            messages: [message('b', 2), message('a', 1)], range: {start: 0, end: 50, limit: 50}
+        });
+        expect(state.messages.HoAqvHXhuM.map(item => item.id)).toEqual(['a', 'b']);
+        expect(state.history.HoAqvHXhuM).toEqual({loaded: true, loading: false, atStart: false});
     });
 
     test('channels_get keeps the stored channel when it still exists', () => {
@@ -249,6 +261,63 @@ describe('ChatConnection', () => {
         expect(edit.timestamp).toBeGreaterThan(future);
     });
 
+    test('replies can opt out of pinging the original author', async () => {
+        const {chat, socket} = readyChat();
+        socket.receive({cmd: 'ready', user: {username: 'me'}});
+        chat.sendMessage('general', 'quiet', {replyTo: 'm1', ping: false});
+        chat.sendMessage('general', 'loud', {replyTo: 'm1'});
+        chat.sendMessage('general', 'plain', {ping: false});
+        await flush();
+        const sent = socket.sent.filter(frame => frame.cmd === 'message_new');
+        expect(sent[0]).toMatchObject({reply_to: 'm1', ping: false});
+        expect(sent[1].reply_to).toBe('m1');
+        expect(sent[1]).not.toHaveProperty('ping');
+        expect(sent[2]).not.toHaveProperty('ping');
+    });
+
+    test('edits show at once, settle on the server copy and roll back when refused', async () => {
+        const {chat, socket} = readyChat();
+        socket.receive({cmd: 'ready', user: {username: 'me'}});
+        socket.receive({cmd: 'messages_get', channel: 'general', val: [
+            {...message('a', 1, 'me', 'old'), signature: 'sig'},
+            message('b', 2, 'me', 'second')
+        ]});
+        const find = id => chat.getState().messages.general.find(item => item.id === id);
+        expect(chat.editMessage('general', 'a', ' old ')).toBe(true);
+        await flush();
+        expect(socket.sent.some(frame => frame.cmd === 'message_edit')).toBe(false);
+
+        expect(chat.editMessage('general', 'a', 'new')).toBe(true);
+        expect(find('a')).toMatchObject({content: 'new', edited: true, pendingEdit: true, signature: null});
+        await flush();
+        const edit = socket.sent.find(frame => frame.cmd === 'message_edit');
+        socket.receive({cmd: 'message_edit', channel: 'general', id: 'a', listener: edit.listener,
+            message: {...message('a', 1, 'me', 'new'), edited: true, edited_at: 5}});
+        expect(find('a')).toMatchObject({content: 'new', pendingEdit: false, edited_at: 5});
+        expect(chat.pendingEdits.size).toBe(0);
+
+        chat.editMessage('general', 'b', 'nope');
+        await flush();
+        const refused = socket.sent.filter(frame => frame.cmd === 'message_edit').pop();
+        socket.receive({cmd: 'error', src: 'message_edit', val: 'Not allowed', listener: refused.listener});
+        expect(find('b').content).toBe('second');
+        expect(find('b').edited).toBeUndefined();
+        expect(chat.getState().notice).toMatchObject({kind: 'error', text: 'Not allowed'});
+        expect(chat.editMessage('general', 'b', '   ')).toBe(false);
+    });
+
+    test('pin frames mark messages even without a channel', () => {
+        const {chat, socket} = readyChat();
+        socket.receive({cmd: 'ready', user: {username: 'me'}});
+        socket.receive({cmd: 'messages_get', channel: 'general', val: [message('a', 1)]});
+        chat.pinMessage('general', 'a', true);
+        expect(socket.sent.pop()).toEqual({cmd: 'message_pin', channel: 'general', id: 'a'});
+        socket.receive({cmd: 'message_pin', id: 'a', pinned: true});
+        expect(chat.getState().messages.general[0].pinned).toBe(true);
+        socket.receive({cmd: 'message_unpin', channel: 'general', id: 'a', pinned: false});
+        expect(chat.getState().messages.general[0].pinned).toBe(false);
+    });
+
     test('reactions toggle for the current user and follow server frames', () => {
         const {chat, socket} = readyChat();
         socket.receive({cmd: 'ready', user: {username: 'me'}});
@@ -333,12 +402,59 @@ describe('ChatConnection', () => {
         expect(chat.getState().channelUnread).toEqual({});
     });
 
+    test('uploads go to the OriginChats url of the connected server', () => {
+        const {chat, socket} = readyChat({socketUrl: 'wss://dms.originchats.com/', serverUrl: 'https://elsewhere.example'});
+        expect(chat.uploadUrl()).toBe('https://dms.originchats.com/attachments/upload');
+        socket.receive({cmd: 'handshake', val: {
+            validator_key: `originChats-${chat.signingUrls[0]}-key`,
+            server: {name: 'DMs', url: 'wss://dms.mistium.com'}
+        }});
+        expect(chat.uploadUrl()).toBe('https://dms.mistium.com/attachments/upload');
+    });
+
     test('upload limits from the handshake are checked before sending', () => {
         const chat = new ChatConnection();
         chat.patch({attachments: {enabled: true, max_size: 10, allowed_types: ['image/*']}});
         expect(chat.uploadProblem({size: 20, type: 'image/png'})).toEqual({code: 'too_large', max: 10});
         expect(chat.uploadProblem({size: 5, type: 'application/zip'})).toEqual({code: 'type'});
         expect(chat.uploadProblem({size: 5, type: 'image/svg+xml'})).toBe(null);
+    });
+});
+
+describe('originchats channel permissions', () => {
+    const state = (roles, permissions) => ({
+        ...initialState(),
+        me: {username: 'Me'},
+        users: {me: {username: 'Me', roles}},
+        channels: [{name: 'general', ...(permissions ? {permissions} : {})}]
+    });
+
+    test('missing rules fall back to the server defaults', () => {
+        expect(canInChannel(state(['user']), 'general', 'edit_own')).toBe(true);
+        expect(canInChannel(state(['user']), 'general', 'delete')).toBe(false);
+        expect(canInChannel(state(['user']), 'general', 'pin')).toBe(false);
+        expect(canInChannel(state(['user', 'moderator']), 'general', 'pin')).toBe(true);
+        expect(canInChannel(state(['owner']), 'general', 'delete')).toBe(true);
+        expect(canInChannel({...state(['user']), me: null}, 'general', 'send')).toBe(false);
+    });
+
+    test('channel rules allow roles and names and denials win', () => {
+        const rules = {send: ['user', '!muted'], edit_own: ['!me'], delete: ['admin', 'me']};
+        expect(canInChannel(state(['user'], rules), 'general', 'send')).toBe(true);
+        expect(canInChannel(state(['user', 'muted'], rules), 'general', 'send')).toBe(false);
+        expect(canInChannel(state(['user'], rules), 'general', 'edit_own')).toBe(false);
+        expect(canInChannel(state(['user'], rules), 'general', 'delete')).toBe(true);
+    });
+
+    test('edit and delete follow ownership', () => {
+        const mine = message('a', 1, 'me');
+        const theirs = message('b', 1, 'ann');
+        expect(canEditMessage(state(['user']), 'general', mine)).toBe(true);
+        expect(canEditMessage(state(['user']), 'general', theirs)).toBe(false);
+        expect(canEditMessage(state(['user']), 'general', {...mine, webhook: {name: 'bot'}})).toBe(false);
+        expect(canDeleteMessage(state(['user']), 'general', mine)).toBe(true);
+        expect(canDeleteMessage(state(['user']), 'general', theirs)).toBe(false);
+        expect(canDeleteMessage(state(['user', 'admin']), 'general', theirs)).toBe(true);
     });
 });
 
