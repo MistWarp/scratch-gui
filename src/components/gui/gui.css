@@ -46,6 +46,11 @@
     overflow: visible;
 }
 
+.flex-wrapper:has(+ [data-chat-dock]) > .editor-wrapper {
+    flex-shrink: 1;
+    min-width: 460px;
+}
+
 .editor-wrapper {
     /*
         This is carefully balanced--  the minimum width at which the GUI will be displayed is 1024px.
