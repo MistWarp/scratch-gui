@@ -117,15 +117,24 @@ FloatingChat.propTypes = {
 const DockedChat = ({children, intl, width}) => {
     const [dragWidth, setDragWidth] = useState(null);
     const dragRef = useRef(null);
+    const layoutFrame = useRef(null);
+    const current = dragWidth === null ? width : dragWidth;
 
     useEffect(() => {
         notifyLayout();
-        return notifyLayout;
+        return () => {
+            cancelAnimationFrame(layoutFrame.current);
+            notifyLayout();
+        };
     }, []);
 
     useEffect(() => {
-        if (dragWidth === null) notifyLayout();
-    }, [width, dragWidth]);
+        if (layoutFrame.current) return;
+        layoutFrame.current = requestAnimationFrame(() => {
+            layoutFrame.current = null;
+            window.dispatchEvent(new Event('resize'));
+        });
+    }, [current]);
 
     const onPointerDown = event => {
         event.preventDefault();
@@ -153,11 +162,11 @@ const DockedChat = ({children, intl, width}) => {
         event.preventDefault();
     };
 
-    const current = dragWidth === null ? width : dragWidth;
     return (
         <aside
             className={styles.dock}
             style={{width: current}}
+            data-chat-dock
         >
             <div
                 className={styles.resizer}
@@ -228,7 +237,6 @@ const ChatDock = ({intl, isRtl, onOpenLogin, username, vm, workspaceMetrics}) =>
     const [info, setInfo] = useState(null);
     const [inviteCode, setInviteCode] = useState(readInviteParam);
     const [dmsUsed, setDmsUsed] = useState(readDmsUsed);
-    const [blockDrag, setBlockDrag] = useState(false);
     const paneRef = useRef(null);
     const pendingDirect = useRef(null);
     const metricsRef = useRef(workspaceMetrics);
@@ -299,21 +307,12 @@ const ChatDock = ({intl, isRtl, onOpenLogin, username, vm, workspaceMetrics}) =>
 
     useEffect(() => {
         if (!vm) return;
-        let outside = false;
         let point = null;
-        const over = () => outside && !chatDragActive() && chattingIn() && pointInside(paneRef.current, point);
         const onMove = event => {
             point = {x: event.clientX, y: event.clientY};
-            if (outside) setBlockDrag(over());
-        };
-        const onUpdate = isOutside => {
-            outside = isOutside;
-            setBlockDrag(over());
         };
         const onEnd = (blocks, topBlockId) => {
             const dropped = !chatDragActive() && chattingIn() && pointInside(paneRef.current, point);
-            outside = false;
-            setBlockDrag(false);
             if (!dropped) return;
             const captured = captureScript(topBlockId);
             if (!captured) return;
@@ -331,25 +330,15 @@ const ChatDock = ({intl, isRtl, onOpenLogin, username, vm, workspaceMetrics}) =>
                 })
                 .catch(() => null);
         };
-        const onPointerUp = () => {
-            setTimeout(() => {
-                outside = false;
-                setBlockDrag(false);
-            }, 200);
-        };
-        vm.on('BLOCK_DRAG_UPDATE', onUpdate);
         vm.on('BLOCK_DRAG_END', onEnd);
         document.addEventListener('pointermove', onMove, true);
         document.addEventListener('mousemove', onMove, true);
         document.addEventListener('touchmove', onMove, true);
-        document.addEventListener('pointerup', onPointerUp, true);
         return () => {
-            vm.removeListener('BLOCK_DRAG_UPDATE', onUpdate);
             vm.removeListener('BLOCK_DRAG_END', onEnd);
             document.removeEventListener('pointermove', onMove, true);
             document.removeEventListener('mousemove', onMove, true);
             document.removeEventListener('touchmove', onMove, true);
-            document.removeEventListener('pointerup', onPointerUp, true);
         };
     }, [vm, chattingIn]);
 
@@ -413,7 +402,6 @@ const ChatDock = ({intl, isRtl, onOpenLogin, username, vm, workspaceMetrics}) =>
     const pane = (
         <ChatActions.Provider value={actions}>
             <ChatPane
-                blockDrag={blockDrag}
                 canDock={viewport >= DOCK_MIN_VIEWPORT}
                 direct={{connection: direct, state: directState}}
                 floating={floating}
