@@ -412,6 +412,35 @@ describe('ChatConnection', () => {
         expect(chat.uploadUrl()).toBe('https://dms.mistium.com/attachments/upload');
     });
 
+    test('uploads name the channel so bridged servers can place the file', async () => {
+        const sent = [];
+        const RealXHR = global.XMLHttpRequest;
+        global.XMLHttpRequest = class {
+            constructor () {
+                this.upload = {};
+            }
+            open (method, url) {
+                this.url = url;
+            }
+            send (form) {
+                sent.push({url: this.url, channel: form.get('channel'), key: form.get('validator_key')});
+                this.status = 200;
+                this.responseText = JSON.stringify({attachment: {id: 'a1'}});
+                this.onload();
+            }
+        };
+        try {
+            const {chat, socket} = readyChat();
+            socket.receive({cmd: 'ready', user: {username: 'me'}});
+            chat.patch({status: 'ready'});
+            const attachment = await chat.upload(new File(['x'], 'a.txt', {type: 'text/plain'}), {channel: 'start-here'});
+            expect(attachment).toEqual({id: 'a1'});
+            expect(sent[0]).toMatchObject({channel: 'start-here', url: 'https://chats.mistwarp.org/attachments/upload'});
+        } finally {
+            global.XMLHttpRequest = RealXHR;
+        }
+    });
+
     test('upload limits from the handshake are checked before sending', () => {
         const chat = new ChatConnection();
         chat.patch({attachments: {enabled: true, max_size: 10, allowed_types: ['image/*']}});

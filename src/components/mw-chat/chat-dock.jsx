@@ -236,6 +236,7 @@ const ChatDock = ({intl, isRtl, onOpenLogin, username, vm, workspaceMetrics}) =>
     const viewport = useViewportWidth();
     const [info, setInfo] = useState(null);
     const [inviteCode, setInviteCode] = useState(readInviteParam);
+    const [blockDrag, setBlockDrag] = useState(false);
     const [dmsUsed, setDmsUsed] = useState(readDmsUsed);
     const paneRef = useRef(null);
     const pendingDirect = useRef(null);
@@ -307,12 +308,21 @@ const ChatDock = ({intl, isRtl, onOpenLogin, username, vm, workspaceMetrics}) =>
 
     useEffect(() => {
         if (!vm) return;
+        let outside = false;
         let point = null;
+        const over = () => outside && !chatDragActive() && chattingIn() && pointInside(paneRef.current, point);
         const onMove = event => {
             point = {x: event.clientX, y: event.clientY};
+            if (outside) setBlockDrag(over());
+        };
+        const onUpdate = isOutside => {
+            outside = isOutside;
+            setBlockDrag(over());
         };
         const onEnd = (blocks, topBlockId) => {
             const dropped = !chatDragActive() && chattingIn() && pointInside(paneRef.current, point);
+            outside = false;
+            setBlockDrag(false);
             if (!dropped) return;
             const captured = captureScript(topBlockId);
             if (!captured) return;
@@ -330,15 +340,25 @@ const ChatDock = ({intl, isRtl, onOpenLogin, username, vm, workspaceMetrics}) =>
                 })
                 .catch(() => null);
         };
+        const onPointerUp = () => {
+            setTimeout(() => {
+                outside = false;
+                setBlockDrag(false);
+            }, 200);
+        };
+        vm.on('BLOCK_DRAG_UPDATE', onUpdate);
         vm.on('BLOCK_DRAG_END', onEnd);
         document.addEventListener('pointermove', onMove, true);
         document.addEventListener('mousemove', onMove, true);
         document.addEventListener('touchmove', onMove, true);
+        document.addEventListener('pointerup', onPointerUp, true);
         return () => {
+            vm.removeListener('BLOCK_DRAG_UPDATE', onUpdate);
             vm.removeListener('BLOCK_DRAG_END', onEnd);
             document.removeEventListener('pointermove', onMove, true);
             document.removeEventListener('mousemove', onMove, true);
             document.removeEventListener('touchmove', onMove, true);
+            document.removeEventListener('pointerup', onPointerUp, true);
         };
     }, [vm, chattingIn]);
 
@@ -402,6 +422,7 @@ const ChatDock = ({intl, isRtl, onOpenLogin, username, vm, workspaceMetrics}) =>
     const pane = (
         <ChatActions.Provider value={actions}>
             <ChatPane
+                blockDrag={blockDrag}
                 canDock={viewport >= DOCK_MIN_VIEWPORT}
                 direct={{connection: direct, state: directState}}
                 floating={floating}
