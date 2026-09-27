@@ -8,7 +8,8 @@ const ChatActions = React.createContext({
     homeServer: null,
     homeMembership: 'unknown',
     joinHomeServer: noop,
-    openDirect: noop
+    openDirect: noop,
+    startScriptDrag: noop
 });
 
 const CHAT_DRAG_MIME = 'application/x-mistwarp-chat';
