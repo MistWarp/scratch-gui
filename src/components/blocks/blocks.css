@@ -107,7 +107,7 @@
         This does not prevent user interaction on the blocks themselves.
     */
     pointer-events: none;
-    z-index: $z-index-drag-layer; /* make blocks match gui drag layer */
+    z-index: $z-index-block-drag-surface;
 }
 
 /*

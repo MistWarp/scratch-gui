@@ -22,7 +22,7 @@ $z-index-toast: 9000; /* transient toasts go over modals but under the loader */
 $z-index-loader: 9500; /* loading/creating project should cover menu-bar */
 
 $z-index-drag-layer: 1000;
-/* Block drag z-index: 1000; default 50 is overriden in blocks.css */
+$z-index-block-drag-surface: 9001;
 $z-index-monitor-dragging: 1010;
 $z-index-dragging-sprite: 1020; /* so it is draggable into other panes */
 
