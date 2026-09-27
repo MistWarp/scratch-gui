@@ -18,8 +18,12 @@ import styles from './PaidPerks.module.css';
 const TIERS = ['Free', 'Lite', 'Plus', 'Pro'];
 const PRICES = {Lite: '15 RC/month', Plus: '£1.75/month', Pro: '£5.75/month'};
 
+const storageSize = value => (value >= 1073741824 ?
+    `${(value / 1073741824).toLocaleString(getCommunityLocale())} GB` :
+    `${Math.round(value / 1048576).toLocaleString(getCommunityLocale())} MB`);
+
 const MISTWARP_ROWS = [
-    ['Weekly uploads', 'weeklyUploadBytes', value => `${Math.round(value / 1048576).toLocaleString(getCommunityLocale())} MB`],
+    ['Storage for all your projects', 'storageBytes', storageSize],
     ['Total project assets', 'maxProjectAssetsBytes', value => `${Math.round(value / 1048576).toLocaleString(getCommunityLocale())} MB`],
     ['Largest project asset', 'maxProjectAssetBytes', value => `${Math.round(value / 1048576).toLocaleString(getCommunityLocale())} MB`],
     ['Deleted project recovery', 'recoveryDays', (value, text) => text('{count} days', {count: value})],
@@ -117,7 +121,7 @@ const PaidPerks = () => {
             action: communityText('Open your Trash')
         }
     ];
-    const storageKeys = ['weeklyUploadBytes', 'maxProjectAssetsBytes', 'maxProjectAssetBytes'];
+    const storageKeys = ['storageBytes', 'maxProjectAssetsBytes', 'maxProjectAssetBytes'];
     const salesKeys = ['salesFeeBasisPoints', 'maxProjectPrice'];
     const rows = MISTWARP_ROWS.filter(([, key]) => {
         if (comparison === 'storage') return storageKeys.includes(key);
@@ -208,14 +212,14 @@ const PaidPerks = () => {
             <section className={styles.section}>
                 <SectionHeading icon={Check} title={communityText('Compare the details')} lead={communityText('Check the tools, allowances, and sales terms included with each membership.')} />
                 <UnderlineTabs
-                    items={[{key: 'tools', label: communityText('Creator tools')}, {key: 'storage', label: communityText('Uploads and storage')}, {key: 'sales', label: communityText('Project sales')}]}
+                    items={[{key: 'tools', label: communityText('Creator tools')}, {key: 'storage', label: communityText('Storage')}, {key: 'sales', label: communityText('Project sales')}]}
                     value={comparison}
                     onChange={setComparison}
                     ariaLabel={communityText('Membership comparison')}
                 />
                 <div role="tabpanel" aria-label={communityText('Membership comparison details')}>
                     <Comparison plans={plans} rows={rows} source="mistwarp" />
-                    {comparison === 'storage' ? <p className={styles.detailNote}>{communityText('Uploads currently use a rolling seven-day allowance. Capacity becomes available as older uploads leave that window. Check your usage and upcoming resets in My stuff.')}{' '}<Link to="/mystuff?section=uploads">{communityText('View your upload usage')} <ArrowRight size={14} /></Link></p> : null}
+                    {comparison === 'storage' ? <p className={styles.detailNote}>{communityText('Storage covers every project you own, including its assets, version history and anything in the trash. Deleting a project and emptying it from the trash frees its space.')}{' '}<Link to="/mystuff?section=uploads">{communityText('View your storage')} <ArrowRight size={14} /></Link></p> : null}
                     {comparison === 'sales' ? <p className={styles.detailNote}>{communityText('Project purchases support individual creators. A membership does not include access to every project offered for purchase.')}{' '}<Link to="/mystuff?section=projects">{communityText('Manage project pricing')} <ArrowRight size={14} /></Link></p> : null}
                 </div>
             </section>

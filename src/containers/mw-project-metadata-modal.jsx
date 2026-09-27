@@ -274,7 +274,7 @@ const ProjectMetadataModal = ({initialView, onRequestClose, projectTitle, roturU
             'MistWarp checks compressed project data when you upload.';
     const perkSummary = perks ?
         `${formatSize(limits.assets)} of assets per project, ${formatSize(limits.asset)} per asset, ` +
-            `${formatSize(perks.mistwarp.weeklyUploadBytes)} of uploads each week.` :
+            `and ${formatSize(perks.mistwarp.storageBytes)} of storage for all your projects.` :
         '';
     const groups = [
         {

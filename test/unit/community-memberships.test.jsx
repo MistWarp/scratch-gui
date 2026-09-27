@@ -12,7 +12,7 @@ jest.mock('../../src/community/UserContext.jsx', () => ({useUser: jest.fn()}));
 const plans = ['Free', 'Lite', 'Plus', 'Pro'].map((tier, index) => ({
     tier,
     mistwarp: {
-        weeklyUploadBytes: [100, 250, 1024, 5120][index] * 1048576,
+        storageBytes: [500, 2048, 10240, 51200][index] * 1048576,
         maxProjectAssetsBytes: [50, 100, 250, 1024][index] * 1048576,
         maxProjectAssetBytes: [10, 25, 50, 100][index] * 1048576,
         recoveryDays: [7, 14, 30, 90][index],
@@ -56,11 +56,11 @@ test('shows actual plan entitlements and keeps checkout on Rotur without marking
         wrapper.unmount();
     });
 
-test('keeps upload allowances and sales fees accessible in the comparison', async () => {
+test('keeps storage allowances and sales fees accessible in the comparison', async () => {
     const wrapper = await renderPage();
     wrapper.find('button[role="tab"]').at(1).simulate('click');
-    expect(wrapper.find('table').text()).toContain('Weekly uploads');
-    expect(wrapper.find('table').text()).toContain('100 MB');
+    expect(wrapper.find('table').text()).toContain('Storage for all your projects');
+    expect(wrapper.find('table').text()).toContain('500 MB2 GB10 GB50 GB');
     expect(wrapper.find('a[href="/mystuff?section=uploads"]')).toHaveLength(1);
     wrapper.find('button[role="tab"]').at(2).simulate('click');
     expect(wrapper.find('table').text()).toContain('10%10%7%5%');

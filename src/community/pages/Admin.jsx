@@ -266,7 +266,7 @@ const QuotaTile = ({quota}) => {
         <div className={styles.statTile}>
             <div className={styles.statTileTop}>
                 <span className={styles.statIcon}><HardDrive size={18} /></span>
-                <span className={styles.statLabel}>{communityText('Upload quota')}</span>
+                <span className={styles.statLabel}>{communityText('Storage')}</span>
             </div>
             <span className={styles.statValue}>{formatBytes(quota.used)}</span>
             <span className={styles.statDetail}>{communityText('of {value1} used', {value1: formatBytes(quota.limit)})}</span>
@@ -583,11 +583,7 @@ const StatsOverview = ({view}) => {
                         ) : null}
                         {quota && (quota.used / quota.limit) * 100 >= 80 ? (
                             <Notice variant="warning">
-                                {communityText('Upload storage is {value1}% full.', {value1: Math.round((quota.used / quota.limit) * 100)})}
-                                {' '}
-                                {quota.used >= quota.limit ?
-                                    communityText('New project uploads are blocked until usage drops.') :
-                                    communityText('Manage projects soon to free up space.')}
+                                {communityText('Your projects use {value1}% of your storage.', {value1: Math.round((quota.used / quota.limit) * 100)})}
                             </Notice>
                         ) : null}
                     </div>
@@ -1172,7 +1168,7 @@ const UserDetailCard = ({username, onBack}) => {
 
                 {data.quota ? (
                     <div className={styles.quota}>
-                        <span className={styles.fieldLabel}>{communityText('Upload quota')}</span>
+                        <span className={styles.fieldLabel}>{communityText('Storage')}</span>
                         <span className={styles.quotaBar}>
                             <span className={styles.quotaFillBg}>
                                 <span
