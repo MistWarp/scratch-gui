@@ -24,8 +24,6 @@ jest.mock('../../src/community/api.js', () => ({
         trash: jest.fn(),
         myProjectPage: jest.fn(),
         deleteProject: jest.fn(),
-        quotaReset: jest.fn(),
-        quotaResetConfirm: jest.fn(),
         mySpaces: jest.fn(),
         library: jest.fn(),
         setLibraryProjectVisibility: jest.fn()
@@ -62,8 +60,6 @@ describe('My Stuff load failures', () => {
             nextOffset: 1
         });
         api.deleteProject.mockResolvedValue({ok: true});
-        api.quotaReset.mockResolvedValue({key: 'reset-key', payTo: 'credits', amount: 20});
-        api.quotaResetConfirm.mockResolvedValue({ok: true});
         api.mySpaces.mockResolvedValue({spaces: []});
         api.library.mockResolvedValue({projects: [], total: 0, nextOffset: 0});
         api.setLibraryProjectVisibility.mockResolvedValue({ok: true, projectId: 'game-1', public: false});
@@ -123,7 +119,7 @@ describe('My Stuff load failures', () => {
         wrapper.unmount();
     });
 
-    test('retries upload usage after quota loading fails', async () => {
+    test('retries storage usage after quota loading fails', async () => {
         api.quota.mockRejectedValueOnce(new Error('Offline'));
         let wrapper;
         await act(async () => {
@@ -139,7 +135,7 @@ describe('My Stuff load failures', () => {
         });
         wrapper.update();
 
-        expect(wrapper.text()).toContain('Could not load upload usage.');
+        expect(wrapper.text()).toContain('Could not load storage usage.');
         await act(async () => {
             wrapper.find(Button).filterWhere(button => button.text() === 'Try again').simulate('click');
             await Promise.resolve();
@@ -147,12 +143,21 @@ describe('My Stuff load failures', () => {
         wrapper.update();
 
         expect(api.quota).toHaveBeenCalledTimes(2);
-        expect(wrapper.text()).toContain('Daily upload volume');
+        expect(wrapper.text()).toContain('Largest projects');
         wrapper.unmount();
     });
 
-    test('shows quota reset failures inside the open confirmation', async () => {
-        api.quotaResetConfirm.mockRejectedValueOnce(new Error('Payment failed'));
+    test('lists the largest projects and explains a full storage allowance', async () => {
+        api.quota.mockResolvedValue({
+            used: 120,
+            pending: 0,
+            limit: 100,
+            remaining: 0,
+            largest: [
+                {id: 'p1', title: 'Big game', bytes: 90, trashed: false},
+                {id: 'p2', title: 'Old draft', bytes: 30, trashed: true}
+            ]
+        });
         let wrapper;
         await act(async () => {
             wrapper = mount(
@@ -167,30 +172,10 @@ describe('My Stuff load failures', () => {
         });
         wrapper.update();
 
-        await act(async () => {
-            wrapper.find(Button).filterWhere(button => button.text() === 'Reset quota').simulate('click');
-            await Promise.resolve();
-        });
-        wrapper.update();
-        await act(async () => {
-            await wrapper.find(Modal).find(Button)
-                .filterWhere(button => button.text() === 'Spend 20 credits')
-                .prop('onClick')();
-        });
-        wrapper.update();
-
-        expect(wrapper.find(Modal)).toHaveLength(1);
-        expect(wrapper.find(Modal).text()).toContain('Payment failed');
-        await act(async () => {
-            await wrapper.find(Modal).find(Button)
-                .filterWhere(button => button.text() === 'Spend 20 credits')
-                .prop('onClick')();
-        });
-        wrapper.update();
-
-        expect(api.quotaResetConfirm).toHaveBeenCalledTimes(2);
-        expect(wrapper.find(Modal)).toHaveLength(0);
-        expect(wrapper.text()).toContain('Quota reset successfully.');
+        expect(wrapper.text()).toContain('Your storage is full');
+        expect(wrapper.text()).toContain('Big game');
+        expect(wrapper.text()).toContain('30 B, in the trash');
+        expect(wrapper.text()).not.toContain('Reset quota');
         wrapper.unmount();
     });
 

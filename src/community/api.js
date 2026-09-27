@@ -304,8 +304,6 @@ const api = {
         request(`/users/${encodeURIComponent(name)}/comments/${commentId}/pin`, {method: 'POST', body: {pinned}}),
     agreement: () => request('/agreement'),
     acceptAgreement: () => request('/agreement/accept', {method: 'POST'}),
-    quotaReset: () => request('/me/quota/reset', {method: 'POST'}),
-    quotaResetConfirm: key => request('/me/quota/reset/confirm', {method: 'POST', body: {key}}),
     report: (type, target, reason, context, targetUser) =>
         request('/reports', {method: 'POST', body: {type, target, reason, context, targetUser}}),
     reportError: payload => request('/errors', {method: 'POST', body: payload}),
