@@ -61,7 +61,7 @@ const BROWSER_EXTENSION_FRAME = /(?:chrome|moz|safari|safari-web)-extension:\/\/
 
 const isUnactionable = (message, stack) => {
     if (message === 'Script error.') return true;
-    if (/^(?:ReferenceError:\s*)?unsandboxed is not defined$/i.test(message)) return true;
+    if (/^(?:(?:ReferenceError:\s*)?unsandboxed is not defined|Can't find variable: unsandboxed)$/i.test(message)) return true;
     const frames = String(stack || '')
         .split('\n')
         .filter(line => /:\d+:\d+\)?\s*$/.test(line));
