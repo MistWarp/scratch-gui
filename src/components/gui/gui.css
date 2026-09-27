@@ -42,6 +42,10 @@
     overflow: hidden;
 }
 
+.body-wrapper:has(:global(.blocklyBlockDragSurface .blocklyDragging)) {
+    overflow: clip;
+}
+
 .flex-wrapper:has(:global(.blocklyBlockDragSurface .blocklyDragging)) {
     overflow: visible;
 }
