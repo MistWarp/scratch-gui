@@ -85,7 +85,11 @@ const startLiveDrag = (vm, payload, event, image) => {
     const dy = (event.clientY - (grabY * scale)) - placed.top;
     if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) block.moveBy(dx / scale, dy / scale);
     try {
-        workspace.startDragWithFakeEvent(event, block);
+        if (workspace.startDragWithFakeEvent(event, block) === false) {
+            block.dispose(false);
+            ScratchBlocks.Events.setGroup(false);
+            return false;
+        }
     } catch (e) {
         block.dispose(false);
         ScratchBlocks.Events.setGroup(false);
