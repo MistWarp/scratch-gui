@@ -547,7 +547,6 @@ a.author:hover {
 
 .pinged {
     background: var(--chat-accent-soft);
-    box-shadow: inset 2px 0 0 var(--chat-accent);
 }
 
 .pinged:hover {
@@ -557,7 +556,6 @@ a.author:hover {
 .row-target,
 .row-target:hover {
     background: var(--chat-accent-soft);
-    box-shadow: inset 2px 0 0 var(--chat-accent);
 }
 
 .row-menu {
@@ -1677,7 +1675,7 @@ a.file-name:hover {
     padding: 0.25rem 0.25rem 0.25rem 0.5rem;
     border-radius: 0.5rem;
     background: var(--chat-surface);
-    box-shadow: inset 2px 0 0 var(--chat-accent), var(--chat-shadow);
+    box-shadow: var(--chat-shadow);
     font-size: 0.75rem;
 }
 
