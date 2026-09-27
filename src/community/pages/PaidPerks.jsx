@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import React, {useEffect, useState} from 'react';
 import PropTypes from 'prop-types';
-import {ArrowRight, BarChart3, Check, Coins, ExternalLink, FileSpreadsheet, Heart, Link2, Palette, Plus, RotateCcw, Server, Sparkles, Users, X} from 'lucide-react';
+import {ArrowRight, BarChart3, Check, Coins, ExternalLink, FileSpreadsheet, Heart, History, Link2, Palette, Plus, RotateCcw, Server, Sparkles, Users, X} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import api from '../api.js';
 import {getCommunityLocale} from '../locale.js';
@@ -18,21 +18,33 @@ import styles from './PaidPerks.module.css';
 const TIERS = ['Free', 'Lite', 'Plus', 'Pro'];
 const PRICES = {Lite: '15 RC/month', Plus: '£1.75/month', Pro: '£5.75/month'};
 
-const storageSize = value => (value >= 1073741824 ?
-    `${(value / 1073741824).toLocaleString(getCommunityLocale())} GB` :
-    `${Math.round(value / 1048576).toLocaleString(getCommunityLocale())} MB`);
+const formatSize = (bytes, unit) => {
+    const locale = getCommunityLocale();
+    const gb = bytes / (unit ** 3);
+    if (gb >= 1) return `${gb.toLocaleString(locale, {maximumFractionDigits: 1})} GB`;
+    return `${Math.round(bytes / (unit ** 2)).toLocaleString(locale)} MB`;
+};
+const binarySize = value => formatSize(value, 1024);
+const decimalSize = value => formatSize(value, 1000);
+const count = value => value.toLocaleString(getCommunityLocale());
 
 const MISTWARP_ROWS = [
-    ['Storage for all your projects', 'storageBytes', storageSize],
-    ['Total project assets', 'maxProjectAssetsBytes', value => `${Math.round(value / 1048576).toLocaleString(getCommunityLocale())} MB`],
-    ['Largest project asset', 'maxProjectAssetBytes', value => `${Math.round(value / 1048576).toLocaleString(getCommunityLocale())} MB`],
-    ['Deleted project recovery', 'recoveryDays', (value, text) => text('{count} days', {count: value})],
-    ['Creator analytics history', 'analyticsDays', (value, text) => (value === 0 ? text('All time') : text('{count} days', {count: value}))],
-    ['Advanced analytics and CSV exports', 'advancedAnalytics', String],
-    ['Custom project branding', 'customProjectBranding', String],
-    ['Custom project URLs', 'vanityProjectUrls', String],
-    ['Project sales fee', 'salesFeeBasisPoints', value => `${value / 100}%`],
-    ['Maximum project price', 'maxProjectPrice', value => `${value} RC`]
+    ['Projects', 'maxProjects', count, 'tools'],
+    ['Spaces', 'maxSpaces', count, 'tools'],
+    ['Releases per project', 'maxProjectReleases', count, 'tools'],
+    ['Named history checkpoints', 'historyCheckpoints', String, 'tools'],
+    ['Deleted project recovery', 'recoveryDays', (value, text) => text('{count} days', {count: value}), 'tools'],
+    ['Creator analytics history', 'analyticsDays', (value, text) => (value === 0 ? text('All time') : text('{count} days', {count: value})), 'tools'],
+    ['Advanced analytics and CSV exports', 'advancedAnalytics', String, 'tools'],
+    ['Custom project branding', 'customProjectBranding', String, 'tools'],
+    ['Custom project URLs', 'vanityProjectUrls', String, 'tools'],
+    ['Storage for all your projects', 'storageBytes', binarySize, 'storage'],
+    ['Total project assets', 'maxProjectAssetsBytes', binarySize, 'storage'],
+    ['Largest project asset', 'maxProjectAssetBytes', binarySize, 'storage'],
+    ['Game save storage', 'gameSaveStorageBytes', decimalSize, 'games'],
+    ['Game inventory items', 'maxGameInventoryItems', count, 'games'],
+    ['Project sales fee', 'salesFeeBasisPoints', value => `${value / 100}%`, 'sales'],
+    ['Maximum project price', 'maxProjectPrice', value => `${value} RC`, 'sales']
 ];
 
 const Cell = ({value, format}) => {
@@ -121,13 +133,7 @@ const PaidPerks = () => {
             action: communityText('Open your Trash')
         }
     ];
-    const storageKeys = ['storageBytes', 'maxProjectAssetsBytes', 'maxProjectAssetBytes'];
-    const salesKeys = ['salesFeeBasisPoints', 'maxProjectPrice'];
-    const rows = MISTWARP_ROWS.filter(([, key]) => {
-        if (comparison === 'storage') return storageKeys.includes(key);
-        if (comparison === 'sales') return salesKeys.includes(key);
-        return !storageKeys.includes(key) && !salesKeys.includes(key);
-    });
+    const rows = MISTWARP_ROWS.filter(([, , , group]) => group === comparison);
     const planDescriptions = {
         Free: communityText('Start creating and find your community.'),
         Lite: communityText('Support MistWarp with Rotur credits.'),
@@ -190,6 +196,7 @@ const PaidPerks = () => {
                                 <p>{planDescriptions[plan.tier]}</p>
                                 <ul>
                                     {plan.tier === 'Free' ? <li><Users size={15} />{communityText('Create, share, and join the community')}</li> : null}
+                                    {plan.mistwarp.historyCheckpoints ? <li><History size={15} />{communityText('Named history checkpoints')}</li> : null}
                                     <li><RotateCcw size={15} />{communityText('{count} days to undo a deletion', {count: plan.mistwarp.recoveryDays})}</li>
                                     <li><BarChart3 size={15} />{plan.mistwarp.analyticsDays === 0 ? communityText('All-time analytics history') : communityText('{count} days of analytics history', {count: plan.mistwarp.analyticsDays})}</li>
                                     {plan.mistwarp.advancedAnalytics ? <li><FileSpreadsheet size={15} />{communityText('Advanced analytics and CSV exports')}</li> : null}
@@ -212,7 +219,7 @@ const PaidPerks = () => {
             <section className={styles.section}>
                 <SectionHeading icon={Check} title={communityText('Compare the details')} lead={communityText('Check the tools, allowances, and sales terms included with each membership.')} />
                 <UnderlineTabs
-                    items={[{key: 'tools', label: communityText('Creator tools')}, {key: 'storage', label: communityText('Storage')}, {key: 'sales', label: communityText('Project sales')}]}
+                    items={[{key: 'tools', label: communityText('Creator tools')}, {key: 'storage', label: communityText('Storage')}, {key: 'games', label: communityText('Games')}, {key: 'sales', label: communityText('Project sales')}]}
                     value={comparison}
                     onChange={setComparison}
                     ariaLabel={communityText('Membership comparison')}
