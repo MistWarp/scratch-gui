@@ -188,7 +188,6 @@ class PackagerWindow extends React.Component {
         return (<React.Fragment>
             <WindowedModal
                 id="mw-packager"
-                modal={false}
                 contentLabel="Packager"
                 width={800}
                 height={700}
@@ -288,7 +287,6 @@ class PackagerWindow extends React.Component {
             </WindowedModal>
             {previewHTML !== null && <WindowedModal
                 id="mw-packager-preview"
-                modal={false}
                 contentLabel={`${projectTitle} preview`}
                 width={640}
                 height={540}

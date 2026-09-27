@@ -54,6 +54,7 @@ const Packager = () => (
 
 const PromptComponent = props => (
     <Modal
+        modal
         className={styles.modalContent}
         contentLabel={props.title}
         onRequestClose={props.onCancel}

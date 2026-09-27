@@ -770,7 +770,7 @@ class AddonWindow {
 
         this.zIndex = isOnTopTier ? ++nextOnTopZIndex : ++nextZIndex;
         this.element.style.zIndex = this.zIndex;
-        if (this.backdrop) this.backdrop.style.zIndex = String(this.zIndex - 0.5);
+        if (this.backdrop) this.backdrop.style.zIndex = String(this.zIndex);
     }
 
     fitToViewport () {
@@ -808,7 +808,7 @@ class AddonWindow {
         Object.assign(this.backdrop.style, {position: 'fixed',
             inset: '0',
             background: 'rgba(0,0,0,0.2)',
-            zIndex: String(this.zIndex - 0.5)});
+            zIndex: String(this.zIndex)});
         this.element.parentNode.insertBefore(this.backdrop, this.element);
         this.element.setAttribute('role', 'dialog');
         this.element.setAttribute('aria-modal', 'true');

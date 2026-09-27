@@ -192,7 +192,7 @@ class WindowedModal extends React.Component {
             closable: true,
             minimizable: false,
             className: `modal-window ${className}`,
-            modal: this.props.modal !== false,
+            modal: this.props.modal === true,
             alwaysOnTop: id === 'unknownPlatformModal' || id === 'securitymanagermodal',
             destroyOnMinimize: true,
             onClose: this.handleWindowClose,
