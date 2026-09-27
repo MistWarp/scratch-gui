@@ -3,12 +3,23 @@ import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React, {useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {defineMessages, intlShape} from 'react-intl';
-import {Blocks, File, Paperclip, Pencil, Reply, SendHorizontal, ShieldCheck, X} from 'lucide-react';
+import {Bell, BellOff, Blocks, CornerUpLeft, File, Paperclip, SendHorizontal, ShieldCheck, X} from 'lucide-react';
 
-import {activeTyping, channelName, directPeer, messageAuthor} from '../../lib/originchats/connection.js';
+import {
+    activeTyping,
+    canEditMessage,
+    channelName,
+    directPeer,
+    findMessage,
+    isRoturUser,
+    messageAuthor,
+    messageAvatar
+} from '../../lib/originchats/connection.js';
 import {subscribeFileOffers} from '../../lib/originchats/chat-ui.js';
+import {firstLine, parse} from '../../lib/originchats/rich-text.js';
 import {formatBytes} from './chat-actions.js';
 import {isMine} from './chat-messages.jsx';
+import {RichText, UserPicture, richContext} from './chat-rich-text.jsx';
 import styles from './chat-pane.css';
 
 const SIGNING_DISMISSED_KEY = 'mw:chat-signing-dismissed';
@@ -28,11 +39,6 @@ const messages = defineMessages({
         defaultMessage: 'Send message',
         description: 'Button that sends a chat message',
         id: 'mw.chat.send'
-    },
-    save: {
-        defaultMessage: 'Save edit',
-        description: 'Button that saves an edited chat message',
-        id: 'mw.chat.save'
     },
     attach: {
         defaultMessage: 'Attach files',
@@ -79,15 +85,35 @@ const messages = defineMessages({
         description: 'Bar above the chat message box while replying to a message',
         id: 'mw.chat.replyingTo'
     },
-    editing: {
-        defaultMessage: 'Editing your message',
-        description: 'Bar above the chat message box while editing a message',
-        id: 'mw.chat.editing'
+    replyJump: {
+        defaultMessage: 'Show the message you are replying to',
+        description: 'Tooltip on the reply bar above the chat message box, which scrolls to the original message',
+        id: 'mw.chat.replyJump'
+    },
+    replyPingOn: {
+        defaultMessage: '{name} will be notified. Click to reply without notifying them.',
+        description: 'Tooltip on the bell toggle in the reply bar while the reply will ping the original author',
+        id: 'mw.chat.replyPingOn'
+    },
+    replyPingOff: {
+        defaultMessage: '{name} will not be notified. Click to notify them.',
+        description: 'Tooltip on the bell toggle in the reply bar while the reply will not ping the original author',
+        id: 'mw.chat.replyPingOff'
+    },
+    replyPingLabel: {
+        defaultMessage: 'Notify {name}',
+        description: 'Accessible label for the toggle that decides whether a reply pings the original author',
+        id: 'mw.chat.replyPingLabel'
+    },
+    noContent: {
+        defaultMessage: 'Attachment',
+        description: 'Shown in the reply bar when the message being replied to has no text',
+        id: 'mw.chat.replyAttachment'
     },
     cancel: {
-        defaultMessage: 'Cancel',
-        description: 'Button that cancels replying to or editing a chat message',
-        id: 'mw.chat.cancel'
+        defaultMessage: 'Cancel reply',
+        description: 'Button that cancels replying to a chat message',
+        id: 'mw.chat.cancelReply'
     },
     typingOne: {
         defaultMessage: '{user} is typing…',
@@ -223,7 +249,85 @@ const typingLabel = (intl, entry) => {
     return intl.formatMessage(entry.provider === 'discord' ? messages.someoneOnDiscord : messages.someone);
 };
 
-const Composer = ({connection, intl, onClearTarget, onEditLast, state, target}) => {
+const ReplyBar = ({connection, intl, onCancel, onJump, onTogglePing, reply, state}) => {
+    const message = findMessage(state, state.active, reply.message.id) || reply.message;
+    const name = messageAuthor(state, message);
+    const person = Boolean(message.user) && !message.webhook && !message.alias;
+    const canPing = person && !isMine(state, message);
+    const tokens = parse(firstLine(message.content || ''), richContext(state, message));
+    return (
+        <div className={styles.replyBar}>
+            <button
+                type="button"
+                className={styles.replyBarMain}
+                title={intl.formatMessage(messages.replyJump)}
+                onClick={() => onJump(message.id)}
+            >
+                <CornerUpLeft
+                    size={14}
+                    className={styles.replyIcon}
+                />
+                <span className={styles.replyBarLabel}>
+                    {intl.formatMessage(messages.replyingTo, {name})}
+                </span>
+                {person ? (
+                    <UserPicture
+                        rotur={isRoturUser(state, message.user)}
+                        size={16}
+                        src={messageAvatar(state, message, connection.serverUrl)}
+                        username={message.user}
+                    />
+                ) : null}
+                <span className={styles.replyText}>
+                    {tokens.length ? (
+                        <RichText
+                            tokens={tokens}
+                            intl={intl}
+                            state={state}
+                            inline
+                        />
+                    ) : intl.formatMessage(messages.noContent)}
+                </span>
+            </button>
+            {canPing ? (
+                <button
+                    type="button"
+                    className={classNames(styles.pingToggle, {[styles.pingToggleOff]: !reply.ping})}
+                    aria-pressed={reply.ping}
+                    aria-label={intl.formatMessage(messages.replyPingLabel, {name})}
+                    title={intl.formatMessage(reply.ping ? messages.replyPingOn : messages.replyPingOff, {name})}
+                    onClick={onTogglePing}
+                >
+                    {reply.ping ? <Bell size={13} /> : <BellOff size={13} />}
+                </button>
+            ) : null}
+            <button
+                type="button"
+                className={styles.pendingRemove}
+                aria-label={intl.formatMessage(messages.cancel)}
+                title={intl.formatMessage(messages.cancel)}
+                onClick={onCancel}
+            >
+                <X size={12} />
+            </button>
+        </div>
+    );
+};
+
+ReplyBar.propTypes = {
+    connection: PropTypes.object.isRequired,
+    intl: intlShape.isRequired,
+    onCancel: PropTypes.func.isRequired,
+    onJump: PropTypes.func.isRequired,
+    onTogglePing: PropTypes.func.isRequired,
+    reply: PropTypes.shape({
+        message: PropTypes.object.isRequired,
+        ping: PropTypes.bool.isRequired
+    }).isRequired,
+    state: PropTypes.object.isRequired
+};
+
+const Composer = ({apiRef, connection, intl, onClearReply, onEditLast, onJump, onTogglePing, reply, state}) => {
     const [draft, setDraft] = useState('');
     const [uploads, setUploads] = useState([]);
     const [dismissed, setDismissed] = useState(readDismissed);
@@ -237,7 +341,6 @@ const Composer = ({connection, intl, onClearTarget, onEditLast, state, target}) 
         intl.formatMessage(messages.directPlaceholder, {name: channelName(channel) || directPeer(channel) || ''}) :
         intl.formatMessage(messages.placeholder, {channel: channelName(channel)});
     const typing = activeTyping(state, state.active);
-    const editing = target && target.mode === 'edit';
     const uploadsEnabled = !state.attachments || state.attachments.enabled !== false;
 
     useEffect(() => {
@@ -254,10 +357,18 @@ const Composer = ({connection, intl, onClearTarget, onEditLast, state, target}) 
     }, [draft]);
 
     useEffect(() => {
-        if (!target) return;
-        if (target.mode === 'edit') setDraft(target.message.content || '');
-        if (inputRef.current) inputRef.current.focus();
-    }, [target]);
+        if (reply && inputRef.current) inputRef.current.focus();
+    }, [reply && reply.message.id]);
+
+    if (apiRef) {
+        apiRef.current = {
+            focus: () => inputRef.current && inputRef.current.focus(),
+            insert: text => {
+                setDraft(value => `${value && !/\s$/.test(value) ? `${value} ` : value}${text}`);
+                if (inputRef.current) inputRef.current.focus();
+            }
+        };
+    }
 
     useEffect(() => () => {
         uploadsRef.current.forEach(item => {
@@ -302,8 +413,8 @@ const Composer = ({connection, intl, onClearTarget, onEditLast, state, target}) 
     };
 
     useEffect(() => subscribeFileOffers(files => {
-        if (!editing && uploadsEnabled) addFiles(files);
-    }), [editing, uploadsEnabled, connection]);
+        if (uploadsEnabled) addFiles(files);
+    }), [uploadsEnabled, connection]);
 
     const removeUpload = key => setUploads(list => list.filter(item => {
         if (item.key !== key) return true;
@@ -318,22 +429,19 @@ const Composer = ({connection, intl, onClearTarget, onEditLast, state, target}) 
         });
         setUploads([]);
         setDraft('');
-        onClearTarget();
+        onClearReply();
     };
 
     const busy = uploads.some(item => item.status === 'uploading');
     const ready = uploads.filter(item => item.status === 'done');
-    const canSend = !busy && (Boolean(draft.trim()) || (!editing && ready.length > 0));
+    const canSend = !busy && (Boolean(draft.trim()) || ready.length > 0);
 
     const submit = event => {
         event.preventDefault();
         if (!canSend) return;
-        if (editing) {
-            if (connection.editMessage(state.active, target.message.id, draft)) reset();
-            return;
-        }
         const sent = connection.sendMessage(state.active, draft, {
-            replyTo: target && target.mode === 'reply' ? target.message.id : null,
+            replyTo: reply ? reply.message.id : null,
+            ping: reply ? reply.ping : true,
             attachments: ready.map(item => item.attachment)
         });
         if (sent) reset();
@@ -394,27 +502,19 @@ const Composer = ({connection, intl, onClearTarget, onEditLast, state, target}) 
                     </div>
                 </div>
             ) : null}
-            {target ? (
-                <div className={styles.targetBar}>
-                    {editing ? <Pencil size={13} /> : <Reply size={13} />}
-                    <span className={styles.targetText}>
-                        {editing ?
-                            intl.formatMessage(messages.editing) :
-                            intl.formatMessage(messages.replyingTo, {name: messageAuthor(state, target.message)})}
-                    </span>
-                    <button
-                        type="button"
-                        className={styles.pendingRemove}
-                        aria-label={intl.formatMessage(messages.cancel)}
-                        title={intl.formatMessage(messages.cancel)}
-                        onClick={() => {
-                            if (editing) setDraft('');
-                            onClearTarget();
-                        }}
-                    >
-                        <X size={12} />
-                    </button>
-                </div>
+            {reply ? (
+                <ReplyBar
+                    connection={connection}
+                    intl={intl}
+                    onCancel={onClearReply}
+                    onJump={onJump}
+                    onTogglePing={() => {
+                        onTogglePing();
+                        if (inputRef.current) inputRef.current.focus();
+                    }}
+                    reply={reply}
+                    state={state}
+                />
             ) : null}
             {uploads.length ? (
                 <ul className={styles.pendingList}>
@@ -430,7 +530,7 @@ const Composer = ({connection, intl, onClearTarget, onEditLast, state, target}) 
             ) : null}
             <div className={styles.inputRow}>
                 <div className={styles.field}>
-                    {uploadsEnabled && !editing ? (
+                    {uploadsEnabled ? (
                         <button
                             type="button"
                             className={styles.attach}
@@ -462,11 +562,11 @@ const Composer = ({connection, intl, onClearTarget, onEditLast, state, target}) 
                         onChange={event => {
                             setDraft(event.target.value);
                             connection.clearNotice();
-                            if (event.target.value.trim() && !editing) connection.sendTyping(state.active);
+                            if (event.target.value.trim()) connection.sendTyping(state.active);
                         }}
                         onPaste={event => {
                             const files = Array.from((event.clipboardData && event.clipboardData.files) || []);
-                            if (!files.length || !uploadsEnabled || editing) return;
+                            if (!files.length || !uploadsEnabled) return;
                             event.preventDefault();
                             addFiles(files);
                         }}
@@ -475,14 +575,14 @@ const Composer = ({connection, intl, onClearTarget, onEditLast, state, target}) 
                             const plain = !event.shiftKey && !event.nativeEvent.isComposing;
                             if (event.key === 'Enter' && plain) {
                                 submit(event);
-                            } else if (event.key === 'Escape' && target) {
+                            } else if (event.key === 'Escape' && reply) {
                                 event.preventDefault();
-                                if (editing) setDraft('');
-                                onClearTarget();
-                            } else if (event.key === 'ArrowUp' && !draft && !target) {
+                                onClearReply();
+                            } else if (event.key === 'ArrowUp' && !draft && !event.altKey && !event.ctrlKey &&
+                                !event.metaKey && !event.shiftKey) {
                                 const list = state.messages[state.active] || [];
                                 const last = list.slice().reverse()
-                                    .find(message => isMine(state, message));
+                                    .find(message => canEditMessage(state, state.active, message));
                                 if (last) {
                                     event.preventDefault();
                                     onEditLast(last);
@@ -494,8 +594,8 @@ const Composer = ({connection, intl, onClearTarget, onEditLast, state, target}) 
                         type="submit"
                         className={styles.send}
                         disabled={!canSend}
-                        title={intl.formatMessage(editing ? messages.save : messages.send)}
-                        aria-label={intl.formatMessage(editing ? messages.save : messages.send)}
+                        title={intl.formatMessage(messages.send)}
+                        aria-label={intl.formatMessage(messages.send)}
                     >
                         <SendHorizontal size={16} />
                     </button>
@@ -510,15 +610,18 @@ const Composer = ({connection, intl, onClearTarget, onEditLast, state, target}) 
 };
 
 Composer.propTypes = {
+    apiRef: PropTypes.shape({current: PropTypes.object}),
     connection: PropTypes.object.isRequired,
     intl: intlShape.isRequired,
-    onClearTarget: PropTypes.func.isRequired,
+    onClearReply: PropTypes.func.isRequired,
     onEditLast: PropTypes.func.isRequired,
-    state: PropTypes.object.isRequired,
-    target: PropTypes.shape({
-        mode: PropTypes.oneOf(['reply', 'edit']).isRequired,
-        message: PropTypes.object.isRequired
-    })
+    onJump: PropTypes.func.isRequired,
+    onTogglePing: PropTypes.func.isRequired,
+    reply: PropTypes.shape({
+        message: PropTypes.object.isRequired,
+        ping: PropTypes.bool.isRequired
+    }),
+    state: PropTypes.object.isRequired
 };
 
 export default Composer;

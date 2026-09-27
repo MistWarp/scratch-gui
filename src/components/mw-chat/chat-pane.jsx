@@ -34,7 +34,8 @@ import {CheckingCard, DeniedCard, InviteCard} from './chat-access.jsx';
 import Composer from './chat-composer.jsx';
 import {DirectAvatar, DirectList, GroupPanel} from './chat-direct.jsx';
 import {ServerIcon} from './chat-embeds.jsx';
-import {MessageList} from './chat-messages.jsx';
+import {DeleteDialog} from './chat-message-menu.jsx';
+import {MessageList, MessagePreview} from './chat-messages.jsx';
 import styles from './chat-pane.css';
 
 const messages = defineMessages({
@@ -342,27 +343,90 @@ Failed.propTypes = {
 };
 
 const Conversation = ({canDirect, connection, intl, onDirect, state}) => {
-    const [target, setTarget] = useState(null);
-    useEffect(() => setTarget(null), [state.active]);
+    const [reply, setReply] = useState(null);
+    const [editingId, setEditingId] = useState(null);
+    const [deleting, setDeleting] = useState(null);
+    const composerRef = useRef(null);
+    const listRef = useRef(null);
+    const channel = state.active;
+    const list = state.messages[channel];
+    const replyGone = Boolean(reply) && Boolean(list) && !list.some(message => message.id === reply.message.id);
+
+    useEffect(() => {
+        setReply(null);
+        setEditingId(null);
+        setDeleting(null);
+    }, [channel]);
+
+    useEffect(() => {
+        if (replyGone) setReply(null);
+    }, [replyGone]);
+
+    const focusComposer = () => composerRef.current && composerRef.current.focus();
+
+    const onDelete = (message, immediate) => {
+        if (immediate) {
+            connection.deleteMessage(channel, message.id);
+            return;
+        }
+        setDeleting(message);
+    };
+
     return (
         <React.Fragment>
             <MessageList
                 canDirect={canDirect}
                 connection={connection}
+                editingId={editingId}
                 intl={intl}
+                listApiRef={listRef}
+                onDelete={onDelete}
                 onDirect={onDirect}
-                onEdit={message => setTarget({mode: 'edit', message})}
-                onReply={message => setTarget({mode: 'reply', message})}
+                onEdit={message => setEditingId(message.id)}
+                onEditDone={() => {
+                    setEditingId(null);
+                    focusComposer();
+                }}
+                onMention={message => composerRef.current && composerRef.current.insert(`@${message.user} `)}
+                onReply={message => {
+                    setReply({message, ping: true});
+                    focusComposer();
+                }}
+                replyId={reply ? reply.message.id : null}
                 state={state}
             />
             <Composer
+                apiRef={composerRef}
                 connection={connection}
                 intl={intl}
-                onClearTarget={() => setTarget(null)}
-                onEditLast={message => setTarget({mode: 'edit', message})}
+                onClearReply={() => setReply(null)}
+                onEditLast={message => setEditingId(message.id)}
+                onJump={id => listRef.current && listRef.current.jump(id)}
+                onTogglePing={() => setReply(value => value && {...value, ping: !value.ping})}
+                reply={reply}
                 state={state}
-                target={target}
             />
+            {deleting ? (
+                <DeleteDialog
+                    intl={intl}
+                    onCancel={() => {
+                        setDeleting(null);
+                        focusComposer();
+                    }}
+                    onConfirm={() => {
+                        connection.deleteMessage(channel, deleting.id);
+                        setDeleting(null);
+                        focusComposer();
+                    }}
+                >
+                    <MessagePreview
+                        connection={connection}
+                        intl={intl}
+                        message={deleting}
+                        state={state}
+                    />
+                </DeleteDialog>
+            ) : null}
         </React.Fragment>
     );
 };
