@@ -133,6 +133,7 @@ class TelemetryModal extends React.PureComponent {
             <FormattedMessage {...messages.settingWasUpdated} />
         );
         return (<Modal
+            modal
             id="telemetry-modal"
             contentLabel={this.props.intl.formatMessage(messages.label)}
             onRequestClose={this.handleCancel}

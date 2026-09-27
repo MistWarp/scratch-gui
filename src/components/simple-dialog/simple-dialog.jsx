@@ -59,6 +59,7 @@ class SimpleDialogComponent extends React.Component {
         
         return (
             <Modal
+                modal
                 className={styles.modalContent}
                 onRequestClose={this.props.onCancel}
                 contentLabel={title}

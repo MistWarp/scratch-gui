@@ -28,6 +28,7 @@ const messages = defineMessages({
 
 const SliderPromptComponent = props => (
     <Modal
+        modal
         className={styles.modalContent}
         contentLabel={props.intl.formatMessage(messages.title)}
         id="sliderPrompt"

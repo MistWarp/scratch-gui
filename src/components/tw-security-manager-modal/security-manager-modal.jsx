@@ -31,6 +31,7 @@ const noop = () => {};
 
 const SecurityManagerModalComponent = props => (
     <Modal
+        modal
         className={styles.modalContent}
         onRequestClose={props.enableButtons ? props.onDenied : noop}
         contentLabel={props.intl.formatMessage(messages.title)}
