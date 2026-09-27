@@ -17,6 +17,7 @@ const messages = defineMessages({
 
 const RecordModal = props => (
     <Modal
+        modal
         className={styles.modalContent}
         contentLabel={props.intl.formatMessage(messages.title)}
         onRequestClose={props.onCancel}

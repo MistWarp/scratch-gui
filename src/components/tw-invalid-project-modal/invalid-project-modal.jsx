@@ -32,6 +32,7 @@ const isJSONValidationError = error => errorMatches(error, /validationError/);
 
 const InvalidProjectModal = props => (
     <Modal
+        modal
         className={styles.modalContent}
         onRequestClose={props.onClose}
         contentLabel={props.intl.formatMessage(messages.title)}
