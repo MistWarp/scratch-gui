@@ -1,5 +1,14 @@
 import {ensureScopes, getRotur} from '../rotur/client.js';
-import {CHAT_INVITE, CHAT_SOCKET, CHAT_URL, DISCORD_INVITE} from './links.js';
+import {SIGNING_CAPABILITY, requestSigningPermission, signMessage, signingStatus} from './signing.js';
+import {
+    CHAT_INVITE,
+    CHAT_SOCKET,
+    CHAT_URL,
+    DISCORD_INVITE,
+    DMS_SIGNING_URLS,
+    DMS_SOCKET,
+    DMS_URL
+} from './links.js';
 const CLIENT_NAME = 'mistwarp';
 const HISTORY_PAGE = 50;
 const MAX_MESSAGES = 400;
@@ -7,13 +16,31 @@ const TYPING_MS = 6000;
 const TYPING_THROTTLE_MS = 4000;
 const MAX_RETRY_MS = 30000;
 const ACTIVE_CHANNEL_KEY = 'mw:chat-channel';
+const ACCESS_REASONS = [
+    'banned',
+    'invite_required',
+    'invite_invalid',
+    'invite_expired',
+    'password_required',
+    'password_incorrect',
+    'application_required',
+    'application_pending',
+    'not_whitelisted'
+];
 
-const initialState = () => ({
+const initialState = (direct = false) => ({
+    direct,
     status: 'idle',
+    membership: 'unknown',
+    denied: null,
     error: null,
     notice: null,
     server: null,
     limits: {},
+    attachments: null,
+    signingUrl: null,
+    clockOffset: 0,
+    signing: 'unknown',
     me: null,
     channels: [],
     active: null,
@@ -26,17 +53,19 @@ const initialState = () => ({
     referenced: {},
     capabilities: [],
     typing: {},
-    unread: 0
+    unread: 0,
+    channelUnread: {}
 });
 
-const validatorKeyMatches = (key, url = CHAT_URL) => {
+const validatorKeyMatches = (key, urls = CHAT_URL) => [].concat(urls).some(url => {
     const prefix = `originChats-${url}-`;
     return typeof key === 'string' && key.startsWith(prefix) && key.length > prefix.length;
-};
+});
 
 const userKey = name => String(name || '').toLowerCase();
 
-const isChatChannel = channel => Boolean(channel) && channel.type === 'text';
+const isChatChannel = channel => Boolean(channel) && (channel.type === 'text' || channel.type === 'chat') &&
+    channel.name !== 'cmds';
 
 const channelName = channel => (channel && (channel.display_name || channel.name)) || '';
 
@@ -51,6 +80,11 @@ const isProviderAccount = name => /^USR:/i.test(String(name || ''));
 
 const isBridgedAccount = name => /^USR:discord_/i.test(String(name || ''));
 
+const providerName = name => {
+    const match = /^USR:([a-z0-9]+)_/i.exec(String(name || ''));
+    return match ? match[1].toLowerCase() : null;
+};
+
 const findUser = (state, name) => state.users[userKey(name)] || null;
 
 const isRoturUser = (state, name) => {
@@ -62,6 +96,13 @@ const isRoturUser = (state, name) => {
 const userDisplayName = (state, name) => {
     const user = findUser(state, name);
     return (user && user.nickname) || formatUsername(name);
+};
+
+const knownDisplayName = (state, name, fallback) => {
+    const user = findUser(state, name);
+    if (user && user.nickname) return user.nickname;
+    if (fallback && fallback !== name) return fallback;
+    return isProviderAccount(name) ? null : formatUsername(name);
 };
 
 const messageAuthor = (state, message) => {
@@ -174,11 +215,40 @@ const QUIET_ERRORS = ['roles_list', 'emoji_list', 'users_online', 'message_get']
 const OPTIONAL_LOADS = ['roles_list', 'emoji_list', 'users_online'];
 const REFERENCE_TTL_MS = 15000;
 
-const pickActive = (channels, preferred) => {
+const pickActive = (channels, preferred, direct) => {
     const chats = channels.filter(isChatChannel);
     const match = chats.find(channel => channel.name === preferred);
     if (match) return match.name;
+    if (direct) return null;
     return chats.length ? chats[0].name : null;
+};
+
+const withReaction = (message, emoji, user, add) => {
+    const reactions = {...(message.reactions || {})};
+    const key = userKey(user);
+    const current = (reactions[emoji] || []).filter(name => userKey(name) !== key);
+    if (add) current.push(user);
+    if (current.length) reactions[emoji] = current;
+    else delete reactions[emoji];
+    return {...message, reactions};
+};
+
+const updateMessage = (state, channel, id, update) => {
+    const list = state.messages[channel];
+    if (!list || !id || !list.some(message => message.id === id)) return state;
+    return {
+        ...state,
+        messages: {...state.messages, [channel]: list.map(message => (message.id === id ? update(message) : message))}
+    };
+};
+
+const touchChannel = (channels, name, message) => {
+    if (!channels.some(channel => channel.name === name)) return channels;
+    return channels.map(channel => (channel.name === name ? {
+        ...channel,
+        last_message: message.timestamp || channel.last_message,
+        last_message_id: message.id || channel.last_message_id
+    } : channel));
 };
 
 const applyFrame = (state, frame) => {
@@ -187,7 +257,15 @@ const applyFrame = (state, frame) => {
     case 'handshake': {
         const val = frame.val || {};
         const capabilities = Array.isArray(val.capabilities) ? val.capabilities : [];
-        return {...state, server: val.server || null, limits: val.limits || {}, capabilities};
+        return {
+            ...state,
+            server: val.server || null,
+            limits: val.limits || {},
+            attachments: val.attachments || null,
+            signingUrl: val.signing_url || null,
+            clockOffset: Number.isFinite(Number(val.server_time)) ? Number(val.server_time) - (Date.now() / 1000) : 0,
+            capabilities
+        };
     }
     case 'roles_list':
         return {...state, roles: frame.roles || frame.val || {}};
@@ -223,7 +301,15 @@ const applyFrame = (state, frame) => {
         return frame.user ? {...state, me: frame.user, users: withUser(state.users, frame.user)} : state;
     case 'channels_get': {
         const channels = Array.isArray(frame.val) ? frame.val : [];
-        return {...state, channels, active: pickActive(channels, state.active)};
+        return {...state, channels, active: pickActive(channels, state.active, state.direct)};
+    }
+    case 'channel_create': {
+        const channel = frame.channel;
+        if (!channel || !channel.name) return state;
+        const channels = state.channels.some(item => item.name === channel.name) ?
+            state.channels.map(item => (item.name === channel.name ? {...item, ...channel} : item)) :
+            [...state.channels, channel];
+        return {...state, channels};
     }
     case 'messages_get': {
         const channel = frameChannel(frame);
@@ -251,21 +337,24 @@ const applyFrame = (state, frame) => {
         return {
             ...state,
             typing: nextTyping,
+            channels: touchChannel(state.channels, channel, frame.message),
             messages: {...state.messages, [channel]: mergeMessages(state.messages[channel], [frame.message])}
         };
     }
     case 'message_edit': {
-        const channel = frameChannel(frame);
-        const list = state.messages[channel];
         const id = frame.id || (frame.message && frame.message.id);
-        if (!list || !id || !list.some(message => message.id === id)) return state;
-        return {
-            ...state,
-            messages: {
-                ...state.messages,
-                [channel]: list.map(message => (message.id === id ? {...message, ...frame.message} : message))
-            }
-        };
+        const patch = frame.message || (typeof frame.content === 'string' ? {content: frame.content} : null);
+        if (!patch) return state;
+        return updateMessage(state, frameChannel(frame), id, message => ({...message, ...patch}));
+    }
+    case 'reaction_add':
+    case 'message_react_add':
+    case 'reaction_remove':
+    case 'message_react_remove': {
+        if (!frame.emoji || !frame.from) return state;
+        const add = frame.cmd === 'reaction_add' || frame.cmd === 'message_react_add';
+        return updateMessage(state, frameChannel(frame), frame.id,
+            message => withReaction(message, frame.emoji, frame.from, add));
     }
     case 'message_delete': {
         const channel = frameChannel(frame);
@@ -313,7 +402,8 @@ const applyFrame = (state, frame) => {
         if (frame.duration === 0) {
             delete current[key];
         } else {
-            current[key] = {name: frame.nickname || frame.user, until: Date.now() + (frame.duration || TYPING_MS)};
+            const until = Date.now() + (frame.duration || TYPING_MS);
+            current[key] = {user: frame.user, name: frame.nickname || null, until};
         }
         return {...state, typing: {...state.typing, [channel]: current}};
     }
@@ -337,7 +427,11 @@ const applyFrame = (state, frame) => {
 
 const activeTyping = (state, channel, now = Date.now()) => Object.values(state.typing[channel] || {})
     .filter(entry => entry.until > now)
-    .map(entry => entry.name);
+    .map(entry => ({
+        user: entry.user,
+        name: knownDisplayName(state, entry.user, entry.name),
+        provider: providerName(entry.user)
+    }));
 
 const onlineUsers = state => Object.values(state.users)
     .filter(user => {
@@ -347,17 +441,19 @@ const onlineUsers = state => Object.values(state.users)
     .filter(user => !user.status || !['offline', 'invisible'].includes(user.status.status))
     .sort((a, b) => userKey(a.username).localeCompare(userKey(b.username)));
 
-const readStoredChannel = () => {
+const readStoredChannel = key => {
+    if (!key) return null;
     try {
-        return localStorage.getItem(ACTIVE_CHANNEL_KEY);
+        return localStorage.getItem(key);
     } catch (e) {
         return null;
     }
 };
 
-const storeChannel = name => {
+const storeChannel = (key, name) => {
+    if (!key) return null;
     try {
-        localStorage.setItem(ACTIVE_CHANNEL_KEY, name);
+        localStorage.setItem(key, name);
     } catch (e) {
         return null;
     }
@@ -378,27 +474,140 @@ const requestValidator = async key => {
     return data.validator;
 };
 
+const makeListener = () => {
+    const random = window.crypto && typeof window.crypto.randomUUID === 'function' ?
+        window.crypto.randomUUID() :
+        `${Date.now().toString(36)}-${Math.random().toString(36)
+            .slice(2)}${Math.random().toString(36)
+            .slice(2)}`;
+    return `mw-${random}`;
+};
+
+const normalizeInvite = code => String(code || '')
+    .trim()
+    .toUpperCase();
+
+const directPeer = channel => {
+    if (!channel || channel.members) return null;
+    const match = /^Direct message with (.+)$/i.exec(String(channel.description || ''));
+    return (match && match[1]) || channel.display_name || null;
+};
+
+const findDirectChannel = (channels, name) => channels.find(channel => isChatChannel(channel) &&
+    userKey(directPeer(channel)) === userKey(name));
+
+const defaultSigner = {
+    status: signingStatus,
+    sign: signMessage,
+    request: requestSigningPermission
+};
+
+const typeAllowed = (allowed, type) => {
+    if (!Array.isArray(allowed) || !allowed.length) return true;
+    const mime = String(type || '').toLowerCase();
+    return allowed.some(pattern => {
+        const rule = String(pattern).toLowerCase();
+        if (rule === '*' || rule === '*/*') return true;
+        if (rule.endsWith('/*')) return mime.startsWith(rule.slice(0, -1));
+        return rule === mime;
+    });
+};
+
+const uploadProblem = (state, file) => {
+    const settings = state.attachments;
+    if (settings && settings.enabled === false) return {code: 'disabled'};
+    const max = settings && Number(settings.max_size);
+    if (max > 0 && file.size > max) return {code: 'too_large', max};
+    if (settings && !typeAllowed(settings.allowed_types, file.type || 'application/octet-stream')) {
+        return {code: 'type'};
+    }
+    return null;
+};
+
+const postUpload = (url, form, onProgress, signal) => new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url);
+    xhr.upload.onprogress = event => {
+        if (event.lengthComputable && onProgress) onProgress(event.loaded / event.total);
+    };
+    xhr.onload = () => {
+        let data = null;
+        try {
+            data = JSON.parse(xhr.responseText);
+        } catch (e) {
+            data = null;
+        }
+        if (xhr.status >= 200 && xhr.status < 300 && data && data.attachment) {
+            resolve(data.attachment);
+            return;
+        }
+        const error = new Error((data && data.error) || `Upload failed (${xhr.status})`);
+        error.status = xhr.status;
+        reject(error);
+    };
+    xhr.onerror = () => reject(new Error('Upload failed.'));
+    xhr.onabort = () => {
+        const error = new Error('Upload cancelled.');
+        error.code = 'aborted';
+        reject(error);
+    };
+    if (signal) signal.addEventListener('abort', () => xhr.abort());
+    xhr.send(form);
+});
+
 class ChatConnection {
-    constructor ({socketUrl = CHAT_SOCKET, serverUrl = CHAT_URL, WebSocketImpl, getValidator = requestValidator} = {}) {
+    constructor ({
+        id = 'server',
+        socketUrl = CHAT_SOCKET,
+        serverUrl = CHAT_URL,
+        signingUrls = [serverUrl],
+        direct = false,
+        checksMembership = false,
+        storageKey = null,
+        WebSocketImpl,
+        fetchImpl,
+        getValidator = requestValidator,
+        signer = defaultSigner
+    } = {}) {
+        this.id = id;
         this.socketUrl = socketUrl;
         this.serverUrl = serverUrl;
+        this.signingUrls = signingUrls;
+        this.direct = direct;
+        this.checksMembership = checksMembership;
+        this.storageKey = storageKey;
         this.WebSocketImpl = WebSocketImpl;
+        this.fetchImpl = fetchImpl;
         this.getValidator = getValidator;
-        this.state = {...initialState(), active: readStoredChannel()};
+        this.signer = signer;
+        this.sendQueue = Promise.resolve();
+        this.state = {...initialState(direct), active: readStoredChannel(storageKey)};
         this.listeners = new Set();
         this.socket = null;
         this.generation = 0;
         this.retries = 0;
         this.retryTimer = null;
         this.typingSentAt = 0;
-        this.listenerId = 0;
         this.viewing = false;
         this.pendingReferences = new Map();
+        this.validatorKey = null;
+        this.access = {};
+        this.pendingDirect = null;
+        this.membershipFor = null;
     }
 
     setViewing (viewing) {
         this.viewing = viewing;
-        if (viewing && this.state.unread) this.patch({unread: 0});
+        if (!viewing) return;
+        const channelUnread = this.clearedChannel(this.state.active);
+        if (this.state.unread || channelUnread !== this.state.channelUnread) this.patch({unread: 0, channelUnread});
+    }
+
+    clearedChannel (name) {
+        if (!name || !this.state.channelUnread[name]) return this.state.channelUnread;
+        const channelUnread = {...this.state.channelUnread};
+        delete channelUnread[name];
+        return channelUnread;
     }
 
     subscribe (listener) {
@@ -420,6 +629,38 @@ class ChatConnection {
         this.setState({...this.state, ...values});
     }
 
+    async checkMembership (username) {
+        if (!this.checksMembership) {
+            this.patch({membership: 'member'});
+            return 'member';
+        }
+        const name = String(username || '');
+        this.membershipFor = name.toLowerCase();
+        this.patch({membership: 'checking', error: null});
+        const request = this.fetchImpl || window.fetch.bind(window);
+        let membership;
+        try {
+            const response = await request(`${this.serverUrl}/user/${encodeURIComponent(name)}`);
+            if (response.status === 404) membership = 'guest';
+            else if (response.ok) membership = 'member';
+            else throw new Error(`Chat server unavailable (${response.status})`);
+        } catch (error) {
+            if (this.membershipFor !== name.toLowerCase()) return null;
+            this.patch({membership: 'unknown', status: 'error', error: error.message});
+            return null;
+        }
+        if (this.membershipFor !== name.toLowerCase()) return null;
+        this.patch({membership});
+        return membership;
+    }
+
+    join (access = {}) {
+        this.access = {...access};
+        if (this.socket) this.disconnect();
+        this.patch({denied: null, error: null});
+        this.connect();
+    }
+
     connect () {
         if (this.socket) return;
         clearTimeout(this.retryTimer);
@@ -427,7 +668,7 @@ class ChatConnection {
         const Impl = this.WebSocketImpl || window.WebSocket;
         const socket = new Impl(this.socketUrl);
         this.socket = socket;
-        this.patch({status: this.retries ? 'reconnecting' : 'connecting', error: null});
+        this.patch({status: this.retries ? 'reconnecting' : 'connecting', error: null, denied: null});
         socket.onmessage = event => {
             if (generation !== this.generation) return;
             let frame;
@@ -441,7 +682,7 @@ class ChatConnection {
         socket.onclose = () => {
             if (generation !== this.generation) return;
             this.socket = null;
-            if (this.state.status === 'error' || this.state.status === 'signed_out') return;
+            if (['error', 'signed_out', 'denied'].includes(this.state.status)) return;
             this.scheduleReconnect();
         };
     }
@@ -453,14 +694,17 @@ class ChatConnection {
         this.retryTimer = setTimeout(() => this.connect(), delay);
     }
 
-    disconnect () {
+    disconnect ({keepMembership = true} = {}) {
         clearTimeout(this.retryTimer);
         this.generation += 1;
         this.retries = 0;
+        this.validatorKey = null;
         const socket = this.socket;
         this.socket = null;
         if (socket) socket.close();
-        this.setState({...initialState(), active: this.state.active});
+        const membership = keepMembership ? this.state.membership : 'unknown';
+        if (!keepMembership) this.membershipFor = null;
+        this.setState({...initialState(this.direct), active: this.state.active, membership});
     }
 
     reconnect () {
@@ -475,15 +719,19 @@ class ChatConnection {
     }
 
     async authenticate (key, generation) {
-        if (!validatorKeyMatches(key, this.serverUrl)) {
+        if (!validatorKeyMatches(key, this.signingUrls)) {
             this.fail('This chat server did not identify itself correctly.');
             return;
         }
+        this.validatorKey = key;
         this.patch({status: 'authenticating'});
         try {
             const validator = await this.getValidator(key);
             if (generation !== this.generation) return;
-            this.send({cmd: 'auth', validator, client: CLIENT_NAME});
+            const access = {};
+            if (this.access.invite) access.invite_code = normalizeInvite(this.access.invite);
+            if (this.access.password) access.server_password = this.access.password;
+            this.send({cmd: 'auth', validator, client: CLIENT_NAME, ...access});
         } catch (error) {
             if (generation !== this.generation) return;
             if (error.code === 'signed_out') {
@@ -504,23 +752,67 @@ class ChatConnection {
         const next = applyFrame(this.state, frame);
         const fromOther = frame.cmd === 'message_new' && !frame.listener && frame.message &&
             !(next.me && userKey(next.me.username) === userKey(frame.message.user));
-        this.setState(fromOther && !this.viewing ? {...next, unread: next.unread + 1} : next);
+        let counted = next;
+        if (fromOther) {
+            const channel = frameChannel(frame);
+            const seen = this.viewing && channel === next.active;
+            counted = {
+                ...next,
+                unread: this.viewing ? next.unread : next.unread + 1,
+                channelUnread: seen ? next.channelUnread : {
+                    ...next.channelUnread,
+                    [channel]: (next.channelUnread[channel] || 0) + 1
+                }
+            };
+        }
+        this.setState(counted);
         switch (frame.cmd) {
         case 'handshake':
             this.authenticate(frame.val && frame.val.validator_key, generation);
             break;
         case 'auth_error':
+            if (ACCESS_REASONS.includes(frame.reason)) {
+                this.patch({
+                    status: 'denied',
+                    denied: {reason: frame.reason, text: frame.val || '', mode: frame.mode || null}
+                });
+                if (this.socket) this.socket.close();
+                break;
+            }
             this.fail(frame.val || 'Chat sign in failed.');
             break;
         case 'ready':
             this.retries = 0;
-            this.patch({status: 'ready'});
+            this.access = {};
+            this.patch({status: 'ready', membership: 'member', denied: null});
+            this.send({cmd: 'capabilities', val: ['server_side_embeds', SIGNING_CAPABILITY]});
+            this.refreshSigning(generation);
             this.send({cmd: 'channels_get'});
             this.send({cmd: 'users_list'});
             OPTIONAL_LOADS.filter(cmd => this.state.capabilities.includes(cmd)).forEach(cmd => this.send({cmd}));
             break;
-        case 'channels_get':
-            if (this.state.active) this.loadHistory(this.state.active);
+        case 'channels_get': {
+            const opened = this.pendingDirect && findDirectChannel(this.state.channels, this.pendingDirect);
+            if (opened) {
+                this.pendingDirect = null;
+                this.selectChannel(opened.name);
+            } else if (this.state.active) {
+                this.loadHistory(this.state.active);
+            }
+            break;
+        }
+        case 'channel_create':
+            if (frame.channel && frame.channel.name && this.pendingDirect) {
+                this.pendingDirect = null;
+                this.selectChannel(frame.channel.name);
+            }
+            break;
+        case 'error':
+            if (frame.src === 'channel_create' && this.pendingDirect) {
+                this.send({cmd: 'message_new', channel: 'cmds', content: `dm add ${this.pendingDirect}`});
+            } else if (frame.src === 'message_new' && this.pendingDirect) {
+                this.pendingDirect = null;
+            }
             break;
         default:
             break;
@@ -557,24 +849,150 @@ class ChatConnection {
     }
 
     selectChannel (name) {
+        if (name === null) {
+            this.patch({active: null, notice: null});
+            return;
+        }
         if (!this.state.channels.some(channel => channel.name === name && isChatChannel(channel))) return;
-        storeChannel(name);
-        this.patch({active: name, notice: null});
+        storeChannel(this.storageKey, name);
+        this.patch({active: name, notice: null, channelUnread: this.clearedChannel(name)});
         this.loadHistory(name);
     }
 
-    sendMessage (channel, content, replyTo) {
+    openDirect (username) {
+        const name = String(username || '')
+            .trim()
+            .replace(/^@/, '');
+        if (!name) return false;
+        const existing = findDirectChannel(this.state.channels, name);
+        if (existing) {
+            this.selectChannel(existing.name);
+            return true;
+        }
+        this.pendingDirect = name;
+        return this.send({cmd: 'channel_create', user: name, listener: makeListener()});
+    }
+
+    async refreshSigning (generation = this.generation) {
+        let signing;
+        try {
+            signing = await this.signer.status(this.state.capabilities);
+        } catch (e) {
+            signing = 'unsupported';
+        }
+        if (generation === this.generation) this.patch({signing});
+        return signing;
+    }
+
+    async enableSigning () {
+        await this.signer.request();
+        return this.refreshSigning();
+    }
+
+    serverNow () {
+        return (Date.now() / 1000) + (this.state.clockOffset || 0);
+    }
+
+    async signed (frame, content, attachments, minimum = 0) {
+        if (this.state.signing !== 'on') return frame;
+        const timestamp = Math.max(this.serverNow(), minimum);
+        try {
+            const proof = await this.signer.sign({
+                content,
+                attachments,
+                timestamp,
+                signingUrl: this.state.signingUrl || this.serverUrl
+            });
+            return {...frame, ...proof};
+        } catch (error) {
+            if (error && (error.name === 'NotSupportedError' || error.name === 'DataError')) {
+                this.patch({signing: 'unsupported'});
+                return frame;
+            }
+            throw error;
+        }
+    }
+
+    enqueue (build) {
+        const generation = this.generation;
+        this.sendQueue = this.sendQueue
+            .then(build)
+            .then(frame => {
+                if (generation === this.generation) this.send(frame);
+            })
+            .catch(() => {
+                if (generation === this.generation) this.patch({notice: {kind: 'sign_failed'}});
+            });
+        return this.sendQueue;
+    }
+
+    sendMessage (channel, content, {replyTo, attachments} = {}) {
         const text = String(content || '').trim();
-        if (!text) return false;
+        const files = (attachments || []).filter(item => item && item.id);
+        if (!text && !files.length) return false;
+        if (!this.socket || this.socket.readyState !== 1) return false;
         this.typingSentAt = 0;
-        this.listenerId += 1;
-        return this.send({
+        const frame = {
             cmd: 'message_new',
             channel,
             content: text,
+            ...(files.length ? {attachments: files} : {}),
             ...(replyTo ? {reply_to: replyTo} : {}),
-            listener: `mw-send-${this.listenerId}`
-        });
+            listener: makeListener()
+        };
+        this.enqueue(() => this.signed(frame, text, files));
+        return true;
+    }
+
+    editMessage (channel, id, content) {
+        const text = String(content || '').trim();
+        const current = findMessage(this.state, channel, id);
+        if (!text || !current) return false;
+        if (!this.socket || this.socket.readyState !== 1) return false;
+        const frame = {cmd: 'message_edit', channel, id, content: text, listener: makeListener()};
+        const minimum = (Number(current.signed_at) || 0) + 0.001;
+        this.enqueue(() => this.signed(frame, text, current.attachments || [], minimum));
+        return true;
+    }
+
+    deleteMessage (channel, id) {
+        if (!id) return false;
+        return this.send({cmd: 'message_delete', channel, id});
+    }
+
+    toggleReaction (channel, id, emoji) {
+        const message = findMessage(this.state, channel, id);
+        const me = this.state.me && this.state.me.username;
+        if (!message || !me || !emoji) return false;
+        const mine = ((message.reactions || {})[emoji] || []).some(name => userKey(name) === userKey(me));
+        const sent = this.send({cmd: mine ? 'message_react_remove' : 'message_react_add', channel, id, emoji});
+        if (sent) this.setState(updateMessage(this.state, channel, id, item => withReaction(item, emoji, me, !mine)));
+        return sent;
+    }
+
+    uploadProblem (file) {
+        return uploadProblem(this.state, file);
+    }
+
+    async upload (file, {name, onProgress, signal} = {}) {
+        const key = this.validatorKey;
+        if (!key || this.state.status !== 'ready') throw new Error('Chat is not connected.');
+        const problem = uploadProblem(this.state, file);
+        if (problem) {
+            const error = new Error(problem.code);
+            error.code = problem.code;
+            error.max = problem.max;
+            throw error;
+        }
+        const validator = await this.getValidator(key);
+        const fileName = name || file.name || 'file';
+        const form = new FormData();
+        form.append('file', file, fileName);
+        form.append('name', fileName);
+        form.append('mime_type', file.type || 'application/octet-stream');
+        form.append('validator_key', key);
+        form.append('validator', validator);
+        return postUpload(`${this.serverUrl}/attachments/upload`, form, onProgress, signal);
     }
 
     sendTyping (channel) {
@@ -595,10 +1013,36 @@ const fetchServerInfo = async (url = CHAT_URL) => {
     return response.json();
 };
 
+const checkInvite = async (serverUrl, code) => {
+    const response = await fetch(`${serverUrl}/invite/${encodeURIComponent(normalizeInvite(code))}/check`);
+    if (!response.ok && response.status !== 404) throw new Error(`Invite unavailable (${response.status})`);
+    return response.json();
+};
+
 let shared = null;
 const getChatConnection = () => {
-    if (!shared) shared = new ChatConnection();
+    if (!shared) {
+        shared = new ChatConnection({
+            id: 'mistwarp',
+            checksMembership: true,
+            storageKey: ACTIVE_CHANNEL_KEY
+        });
+    }
     return shared;
+};
+
+let sharedDirect = null;
+const getDirectConnection = () => {
+    if (!sharedDirect) {
+        sharedDirect = new ChatConnection({
+            id: 'dms',
+            socketUrl: DMS_SOCKET,
+            serverUrl: DMS_URL,
+            signingUrls: DMS_SIGNING_URLS,
+            direct: true
+        });
+    }
+    return sharedDirect;
 };
 
 export {
@@ -609,11 +1053,14 @@ export {
     activeTyping,
     applyFrame,
     channelName,
+    checkInvite,
+    directPeer,
     fetchServerInfo,
     findMessage,
     findUser,
     formatUsername,
     getChatConnection,
+    getDirectConnection,
     initialState,
     isBridgedAccount,
     isChatChannel,
@@ -625,6 +1072,7 @@ export {
     messageAvatar,
     onlineUsers,
     pingsMe,
+    providerName,
     roleById,
     userAvatar,
     userColor,

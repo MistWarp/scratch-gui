@@ -1,23 +1,29 @@
 /* eslint-disable react/jsx-no-bind */
 import PropTypes from 'prop-types';
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import ReactDOM from 'react-dom';
 import {connect} from 'react-redux';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 
 import WindowManager from '../../addons/window-system/window-manager';
-import {getChatConnection} from '../../lib/originchats/connection.js';
+import {CHAT_URL, fetchServerInfo, getChatConnection, getDirectConnection} from '../../lib/originchats/connection.js';
+import {cleanHost} from '../../lib/originchats/embeds.js';
+import {captureScript, renderScriptSvg} from '../../lib/originchats/script-image.js';
+import {placeInViewport} from '../../lib/backpack/code-payload.js';
 import {
     MAX_WIDTH,
     MIN_WIDTH,
     closeChat,
     getChatUi,
+    offerFiles,
     setChatMode,
+    setChatSpace,
     setChatWidth,
     setFloatingBounds,
     subscribeChatUi
 } from '../../lib/originchats/chat-ui.js';
 import {openRoturLoginModal} from '../../reducers/modals.js';
+import {ChatActions} from './chat-actions.js';
 import ChatPane from './chat-pane.jsx';
 import styles from './chat-pane.css';
 
@@ -49,6 +55,9 @@ const useStore = (subscribe, read) => {
 const connection = getChatConnection();
 const subscribeConnection = listener => connection.subscribe(listener);
 const readConnection = () => connection.getState();
+const direct = getDirectConnection();
+const subscribeDirect = listener => direct.subscribe(listener);
+const readDirect = () => direct.getState();
 
 const useViewportWidth = () => {
     const [width, setWidth] = useState(() => window.innerWidth);
@@ -176,47 +185,251 @@ DockedChat.propTypes = {
     width: PropTypes.number.isRequired
 };
 
-const ChatDock = ({intl, onOpenLogin, username}) => {
+const DMS_USED_KEY = 'mw:chat-dms';
+const HOME_SERVER = cleanHost(CHAT_URL);
+
+const readDmsUsed = () => {
+    try {
+        return localStorage.getItem(DMS_USED_KEY) === '1';
+    } catch (e) {
+        return false;
+    }
+};
+
+const rememberDms = () => {
+    try {
+        localStorage.setItem(DMS_USED_KEY, '1');
+    } catch (e) {
+        return null;
+    }
+};
+
+const readInviteParam = () => {
+    try {
+        const code = new URLSearchParams(window.location.search).get('chat-invite');
+        return code && /^[A-Za-z0-9_-]{4,64}$/.test(code) ? code : null;
+    } catch (e) {
+        return null;
+    }
+};
+
+const pointInside = (element, point) => {
+    if (!element || !point) return false;
+    const rect = element.getBoundingClientRect();
+    return point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom;
+};
+
+const ChatDock = ({intl, isRtl, onOpenLogin, username, vm, workspaceMetrics}) => {
     const ui = useStore(subscribeChatUi, getChatUi);
-    const state = useStore(subscribeConnection, readConnection);
+    const serverState = useStore(subscribeConnection, readConnection);
+    const directState = useStore(subscribeDirect, readDirect);
     const viewport = useViewportWidth();
+    const [info, setInfo] = useState(null);
+    const [inviteCode, setInviteCode] = useState(readInviteParam);
+    const [dmsUsed, setDmsUsed] = useState(readDmsUsed);
+    const [blockDrag, setBlockDrag] = useState(false);
+    const paneRef = useRef(null);
+    const pendingDirect = useRef(null);
+    const metricsRef = useRef(workspaceMetrics);
+    metricsRef.current = workspaceMetrics;
+    const space = ui.space;
 
     useEffect(() => {
-        connection.setViewing(ui.open);
-    }, [ui.open]);
+        connection.setViewing(ui.open && space === 'server');
+        direct.setViewing(ui.open && space === 'dms');
+    }, [ui.open, space]);
+
+    useEffect(() => {
+        if (space === 'dms' && !dmsUsed) {
+            rememberDms();
+            setDmsUsed(true);
+        }
+    }, [space, dmsUsed]);
+
+    useEffect(() => {
+        if (!ui.open || !username || info) return;
+        let alive = true;
+        fetchServerInfo(CHAT_URL)
+            .then(data => alive && setInfo(data))
+            .catch(() => null);
+        return () => {
+            alive = false;
+        };
+    }, [ui.open, username, info]);
 
     useEffect(() => {
         if (!username) {
-            if (connection.getState().status !== 'idle') connection.disconnect();
+            if (connection.getState().status !== 'idle' || connection.getState().membership !== 'unknown') {
+                connection.disconnect({keepMembership: false});
+            }
+            if (direct.getState().status !== 'idle') direct.disconnect({keepMembership: false});
             return;
         }
-        if (ui.open && state.status === 'idle') connection.connect();
-    }, [ui.open, username, state.status]);
+        if (!ui.open || serverState.status !== 'idle') return;
+        if (serverState.membership === 'unknown') connection.checkMembership(username);
+        else if (serverState.membership === 'member') connection.connect();
+    }, [ui.open, username, serverState.status, serverState.membership]);
 
     useEffect(() => {
-        const me = state.me && state.me.username;
-        if (me && username && me.toLowerCase() !== username.toLowerCase()) connection.reconnect();
-    }, [state.me, username]);
+        if (!username || !ui.open || directState.status !== 'idle') return;
+        if (space === 'dms' || dmsUsed) direct.connect();
+    }, [ui.open, username, directState.status, space, dmsUsed]);
+
+    useEffect(() => {
+        [connection, direct].forEach(item => {
+            const me = item.getState().me;
+            if (me && username && me.username.toLowerCase() !== username.toLowerCase()) {
+                item.disconnect({keepMembership: false});
+            }
+        });
+    }, [serverState.me, directState.me, username]);
+
+    useEffect(() => {
+        if (directState.status !== 'ready' || !pendingDirect.current) return;
+        direct.openDirect(pendingDirect.current);
+        pendingDirect.current = null;
+    }, [directState.status]);
+
+    const chattingIn = useCallback(() => {
+        const current = getChatUi();
+        const state = current.space === 'dms' ? direct.getState() : connection.getState();
+        return current.open && state.status === 'ready' && Boolean(state.active);
+    }, []);
+
+    useEffect(() => {
+        if (!vm) return;
+        let outside = false;
+        let point = null;
+        const over = () => outside && chattingIn() && pointInside(paneRef.current, point);
+        const onMove = event => {
+            point = {x: event.clientX, y: event.clientY};
+            if (outside) setBlockDrag(over());
+        };
+        const onUpdate = isOutside => {
+            if (isOutside) {
+                outside = true;
+                setBlockDrag(over());
+            }
+        };
+        const onEnd = (blocks, topBlockId) => {
+            const dropped = over();
+            outside = false;
+            setBlockDrag(false);
+            if (!dropped) return;
+            const captured = captureScript(topBlockId);
+            if (!captured) return;
+            let payload;
+            try {
+                payload = vm.exportStandaloneBlocks(blocks);
+            } catch (e) {
+                return;
+            }
+            renderScriptSvg(captured, payload)
+                .then(svg => {
+                    const file = new File([svg], 'script.svg', {type: 'image/svg+xml'});
+                    file.mwScript = true;
+                    offerFiles([file]);
+                })
+                .catch(() => null);
+        };
+        const onPointerUp = () => {
+            if (!outside) setBlockDrag(false);
+        };
+        vm.on('BLOCK_DRAG_UPDATE', onUpdate);
+        vm.on('BLOCK_DRAG_END', onEnd);
+        document.addEventListener('pointermove', onMove, true);
+        document.addEventListener('mousemove', onMove, true);
+        document.addEventListener('touchmove', onMove, true);
+        document.addEventListener('pointerup', onPointerUp, true);
+        return () => {
+            vm.removeListener('BLOCK_DRAG_UPDATE', onUpdate);
+            vm.removeListener('BLOCK_DRAG_END', onEnd);
+            document.removeEventListener('pointermove', onMove, true);
+            document.removeEventListener('mousemove', onMove, true);
+            document.removeEventListener('touchmove', onMove, true);
+            document.removeEventListener('pointerup', onPointerUp, true);
+        };
+    }, [vm, chattingIn]);
 
     const leave = useCallback(() => {
         connection.disconnect();
         closeChat();
     }, []);
 
+    const joinServer = useCallback(access => {
+        setInviteCode(null);
+        connection.join(access || {});
+    }, []);
+
+    const retryServer = useCallback(() => {
+        if (connection.getState().membership === 'unknown') {
+            connection.patch({status: 'idle', error: null});
+        } else {
+            connection.reconnect();
+        }
+    }, []);
+
+    const openDirect = useCallback(name => {
+        setChatSpace('dms');
+        if (direct.getState().status === 'ready') direct.openDirect(name);
+        else pendingDirect.current = name;
+    }, []);
+
+    const addScript = useCallback(async payload => {
+        const target = vm && vm.editingTarget;
+        if (!target) return false;
+        try {
+            const copy = JSON.parse(JSON.stringify(payload));
+            const metrics = metricsRef.current && metricsRef.current.targets[target.id];
+            placeInViewport(copy, metrics, isRtl);
+            await vm.shareBlocksToTarget(copy, target.id);
+            if (vm.editingTarget && vm.editingTarget.id === target.id) vm.refreshWorkspace();
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }, [vm, isRtl]);
+
+    const actions = useMemo(() => ({
+        addScript,
+        canAddScript: Boolean(vm),
+        homeServer: HOME_SERVER,
+        homeMembership: serverState.membership,
+        joinHomeServer: code => {
+            setChatSpace('server');
+            const current = connection.getState();
+            if (current.membership === 'member' && current.status !== 'idle') return;
+            joinServer(code ? {invite: code} : {});
+        },
+        openDirect
+    }), [addScript, vm, serverState.membership, joinServer, openDirect]);
+
     if (!ui.open || !username) return null;
 
     const floating = ui.mode === 'floating' || viewport < DOCK_MIN_VIEWPORT;
     const pane = (
-        <ChatPane
-            connection={connection}
-            state={state}
-            floating={floating}
-            canDock={viewport >= DOCK_MIN_VIEWPORT}
-            onClose={closeChat}
-            onLeave={leave}
-            onSignIn={onOpenLogin}
-            onToggleMode={() => setChatMode(floating ? 'docked' : 'floating')}
-        />
+        <ChatActions.Provider value={actions}>
+            <ChatPane
+                blockDrag={blockDrag}
+                canDock={viewport >= DOCK_MIN_VIEWPORT}
+                direct={{connection: direct, state: directState}}
+                floating={floating}
+                info={info}
+                inviteCode={inviteCode}
+                paneRef={paneRef}
+                server={{connection, state: serverState}}
+                space={space}
+                username={username}
+                onClose={closeChat}
+                onDirect={openDirect}
+                onJoinServer={joinServer}
+                onLeave={leave}
+                onRetryServer={retryServer}
+                onSignIn={onOpenLogin}
+                onSpace={setChatSpace}
+                onToggleMode={() => setChatMode(floating ? 'docked' : 'floating')}
+            />
+        </ChatActions.Provider>
     );
 
     if (floating) {
@@ -232,13 +445,19 @@ const ChatDock = ({intl, onOpenLogin, username}) => {
 
 ChatDock.propTypes = {
     intl: intlShape.isRequired,
+    isRtl: PropTypes.bool,
     onOpenLogin: PropTypes.func.isRequired,
-    username: PropTypes.string
+    username: PropTypes.string,
+    vm: PropTypes.object,
+    workspaceMetrics: PropTypes.object
 };
 
 export default injectIntl(connect(
     state => ({
-        username: state.scratchGui.rotur.username
+        isRtl: state.locales.isRtl,
+        username: state.scratchGui.rotur.username,
+        vm: state.scratchGui.vm,
+        workspaceMetrics: state.scratchGui.workspaceMetrics
     }),
     dispatch => ({
         onOpenLogin: () => dispatch(openRoturLoginModal())

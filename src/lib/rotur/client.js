@@ -44,7 +44,7 @@ const REQUIRED_PERMISSIONS = [...new Set([
     'groups:manage'
 ])];
 const PRESENCE_PERMISSION = 'account:profile';
-const LOGIN_PERMISSIONS = REQUIRED_PERMISSIONS;
+const LOGIN_PERMISSIONS = [...REQUIRED_PERMISSIONS, 'signing:private'];
 const LOGIN_SYSTEM = 'mistwarp';
 const ACTIVITY_ID = 'MistWarp';
 const APP_URL = 'https://mistwarp.org';
