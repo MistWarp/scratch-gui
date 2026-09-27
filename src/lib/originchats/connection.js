@@ -346,10 +346,11 @@ const applyFrame = (state, frame) => {
     case 'user_leave': {
         if (frame.cmd === 'user_leave' && !frame.left) {
             const key = userKey(frame.username);
-            if (!key || !state.users[key]) return state;
+            if (!key) return state;
             const users = {...state.users};
             delete users[key];
-            return {...state, users};
+            const online = state.online ? state.online.filter(name => name !== key) : state.online;
+            return {...state, users, online};
         }
         const gone = typeof frame.channel === 'string' ? frame.channel : null;
         if (!gone) return state;
@@ -432,27 +433,40 @@ const applyFrame = (state, frame) => {
     }
     case 'users_list': {
         const list = Array.isArray(frame.users) ? frame.users : [];
-        const users = {};
+        let users = state.users;
         list.forEach(user => {
-            if (user && user.username) users[userKey(user.username)] = user;
+            if (user && user.username) users = withUser(users, user);
         });
         return {...state, users};
     }
-    case 'user_join':
+    case 'user_join': {
+        if (!frame.user || !frame.user.username) return state;
+        return {...state, users: withUser(state.users, frame.user)};
+    }
     case 'user_connect': {
-        if (!frame.user) return state;
+        if (!frame.user || !frame.user.username) return state;
         const status = frame.user.status || {};
         const users = withUser(state.users, frame.user, {status: {...status, status: status.status || 'online'}});
         const key = userKey(frame.user.username);
         const online = state.online && !state.online.includes(key) ? [...state.online, key] : state.online;
         return {...state, users, online};
     }
+    case 'user_clients': {
+        const key = userKey(frame.username);
+        if (!key || !state.users[key] || !Array.isArray(frame.clients)) return state;
+        return {
+            ...state,
+            users: withUser(state.users, {username: frame.username}, {clients: frame.clients, devices: frame.devices})
+        };
+    }
     case 'user_disconnect': {
-        const user = frame.user || (frame.username ? {username: frame.username} : null);
+        let user = frame.user && frame.user.username ? frame.user : null;
+        if (!user && frame.username) user = {username: frame.username};
         if (!user) return state;
         const key = userKey(user.username);
         const online = state.online ? state.online.filter(name => name !== key) : null;
-        return {...state, online, users: withUser(state.users, user, {status: {status: 'offline'}})};
+        const text = (user.status && user.status.text) || '';
+        return {...state, online, users: withUser(state.users, user, {status: {status: 'offline', text}})};
     }
     case 'typing': {
         const channel = frameChannel(frame);
