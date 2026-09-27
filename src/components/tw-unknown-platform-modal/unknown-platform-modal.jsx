@@ -29,6 +29,7 @@ const platformToString = platform => {
 
 const UnknownPlatformModal = props => (
     <Modal
+        modal
         className={styles.modalContent}
         onRequestClose={props.onClose}
         contentLabel={props.intl.formatMessage(messages.title)}

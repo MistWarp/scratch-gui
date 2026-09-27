@@ -21,6 +21,7 @@ const RoturConsentModal = props => {
     if (type === 'share') {
         return (
             <Modal
+                modal
                 className={styles.modalContent}
                 onRequestClose={props.onShareNo}
                 contentLabel="Rotur"
@@ -68,6 +69,7 @@ const RoturConsentModal = props => {
     }
     return (
         <Modal
+            modal
             className={styles.modalContent}
             onRequestClose={props.onDenied}
             contentLabel="Rotur"
