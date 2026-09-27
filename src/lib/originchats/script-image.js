@@ -117,7 +117,12 @@ const fetchScriptSvg = url => {
                 if (length && length > MAX_SVG_BYTES) return null;
                 return response.text();
             })
-            .then(readScriptSvg)
+            .then(text => {
+                const blocks = readScriptSvg(text);
+                if (!blocks) return null;
+                const image = URL.createObjectURL(new Blob([text], {type: 'image/svg+xml'}));
+                return {blocks, image};
+            })
             .catch(() => null));
     }
     return scriptCache.get(url);
