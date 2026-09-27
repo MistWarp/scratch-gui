@@ -164,6 +164,45 @@ const pingsMe = (state, message) => {
     return null;
 };
 
+const CHANNEL_DEFAULTS = {
+    send: ['user'],
+    edit_own: ['user'],
+    edit: ['owner'],
+    delete_own: ['user'],
+    delete: ['owner', 'admin'],
+    react: ['user'],
+    pin: ['owner', 'admin', 'moderator']
+};
+
+const canInChannel = (state, channelId, action) => {
+    const me = state.me && state.me.username;
+    if (!me) return false;
+    const user = findUser(state, me) || {};
+    const roles = [].concat(user.roles || state.me.roles || []).map(String);
+    if (roles.includes('owner')) return true;
+    const channel = state.channels.find(item => item.name === channelId);
+    const set = channel && channel.permissions && channel.permissions[action];
+    const rules = Array.isArray(set) ? set : (CHANNEL_DEFAULTS[action] || []);
+    const name = userKey(me);
+    const matches = entry => roles.includes(entry) || entry.toLowerCase() === name;
+    if (rules.some(entry => entry.startsWith('!') && matches(entry.slice(1)))) return false;
+    const allowed = rules.filter(entry => !entry.startsWith('!'));
+    return !allowed.length || allowed.some(entry => entry === 'user' || matches(entry));
+};
+
+const canDeleteMessage = (state, channelId, message) => {
+    if (!message || !state.me) return false;
+    const own = !message.webhook && userKey(message.user) === userKey(state.me.username);
+    return canInChannel(state, channelId, 'delete') || (own && canInChannel(state, channelId, 'delete_own'));
+};
+
+const canEditMessage = (state, channelId, message) => {
+    if (!message || !state.me || message.webhook) return false;
+    return userKey(message.user) === userKey(state.me.username) && canInChannel(state, channelId, 'edit_own');
+};
+
+const hasCapability = (state, name) => !state.capabilities.length || state.capabilities.includes(name);
+
 const findMessage = (state, channel, id) => {
     const list = state.messages[channel] || [];
     const found = list.find(message => message.id === id);
@@ -307,10 +346,11 @@ const applyFrame = (state, frame) => {
     case 'user_leave': {
         if (frame.cmd === 'user_leave' && !frame.left) {
             const key = userKey(frame.username);
-            if (!key || !state.users[key]) return state;
+            if (!key) return state;
             const users = {...state.users};
             delete users[key];
-            return {...state, users};
+            const online = state.online ? state.online.filter(name => name !== key) : state.online;
+            return {...state, users, online};
         }
         const gone = typeof frame.channel === 'string' ? frame.channel : null;
         if (!gone) return state;
@@ -332,7 +372,9 @@ const applyFrame = (state, frame) => {
     }
     case 'messages_get': {
         const channel = frameChannel(frame);
-        const incoming = Array.isArray(frame.val) ? frame.val : [];
+        let incoming = [];
+        if (Array.isArray(frame.val)) incoming = frame.val;
+        else if (Array.isArray(frame.messages)) incoming = frame.messages;
         return {
             ...state,
             messages: {...state.messages, [channel]: mergeMessages(state.messages[channel], incoming)},
@@ -364,7 +406,14 @@ const applyFrame = (state, frame) => {
         const id = frame.id || (frame.message && frame.message.id);
         const patch = frame.message || (typeof frame.content === 'string' ? {content: frame.content} : null);
         if (!patch) return state;
-        return updateMessage(state, frameChannel(frame), id, message => ({...message, ...patch}));
+        return updateMessage(state, frameChannel(frame), id, message => ({...message, ...patch, pendingEdit: false}));
+    }
+    case 'message_pin':
+    case 'message_unpin': {
+        const pinned = typeof frame.pinned === 'boolean' ? frame.pinned : frame.cmd === 'message_pin';
+        const channel = frameChannel(frame) || Object.keys(state.messages)
+            .find(name => state.messages[name].some(message => message.id === frame.id));
+        return updateMessage(state, channel, frame.id, message => ({...message, pinned}));
     }
     case 'reaction_add':
     case 'message_react_add':
@@ -384,27 +433,40 @@ const applyFrame = (state, frame) => {
     }
     case 'users_list': {
         const list = Array.isArray(frame.users) ? frame.users : [];
-        const users = {};
+        let users = state.users;
         list.forEach(user => {
-            if (user && user.username) users[userKey(user.username)] = user;
+            if (user && user.username) users = withUser(users, user);
         });
         return {...state, users};
     }
-    case 'user_join':
+    case 'user_join': {
+        if (!frame.user || !frame.user.username) return state;
+        return {...state, users: withUser(state.users, frame.user)};
+    }
     case 'user_connect': {
-        if (!frame.user) return state;
+        if (!frame.user || !frame.user.username) return state;
         const status = frame.user.status || {};
         const users = withUser(state.users, frame.user, {status: {...status, status: status.status || 'online'}});
         const key = userKey(frame.user.username);
         const online = state.online && !state.online.includes(key) ? [...state.online, key] : state.online;
         return {...state, users, online};
     }
+    case 'user_clients': {
+        const key = userKey(frame.username);
+        if (!key || !state.users[key] || !Array.isArray(frame.clients)) return state;
+        return {
+            ...state,
+            users: withUser(state.users, {username: frame.username}, {clients: frame.clients, devices: frame.devices})
+        };
+    }
     case 'user_disconnect': {
-        const user = frame.user || (frame.username ? {username: frame.username} : null);
+        let user = frame.user && frame.user.username ? frame.user : null;
+        if (!user && frame.username) user = {username: frame.username};
         if (!user) return state;
         const key = userKey(user.username);
         const online = state.online ? state.online.filter(name => name !== key) : null;
-        return {...state, online, users: withUser(state.users, user, {status: {status: 'offline'}})};
+        const text = (user.status && user.status.text) || '';
+        return {...state, online, users: withUser(state.users, user, {status: {status: 'offline', text}})};
     }
     case 'typing': {
         const channel = frameChannel(frame);
@@ -540,6 +602,17 @@ const uploadProblem = (state, file) => {
     return null;
 };
 
+const httpOrigin = url => {
+    try {
+        const parsed = new URL(url);
+        if (parsed.protocol === 'wss:') parsed.protocol = 'https:';
+        else if (parsed.protocol === 'ws:') parsed.protocol = 'http:';
+        return /^https?:$/.test(parsed.protocol) ? parsed.origin : null;
+    } catch (e) {
+        return null;
+    }
+};
+
 const postUpload = (url, form, onProgress, signal) => new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', url);
@@ -606,6 +679,7 @@ class ChatConnection {
         this.typingSentAt = 0;
         this.viewing = false;
         this.pendingReferences = new Map();
+        this.pendingEdits = new Map();
         this.validatorKey = null;
         this.access = {};
         this.pendingDirect = null;
@@ -825,7 +899,14 @@ class ChatConnection {
                 this.selectChannel(frame.channel.name);
             }
             break;
+        case 'message_edit':
+            this.pendingEdits.forEach((edit, listener) => {
+                const id = frame.id || (frame.message && frame.message.id);
+                if (listener === frame.listener || edit.id === id) this.pendingEdits.delete(listener);
+            });
+            break;
         case 'error':
+            if (frame.src === 'message_edit') this.revertEdits(frame.listener);
             if (frame.src === 'channel_create' && this.pendingDirect) {
                 this.send({cmd: 'message_new', channel: 'cmds', content: `dm add ${this.pendingDirect}`});
             } else if (frame.src === 'message_new' && this.pendingDirect) {
@@ -931,7 +1012,7 @@ class ChatConnection {
         }
     }
 
-    enqueue (build) {
+    enqueue (build, onFail) {
         const generation = this.generation;
         this.sendQueue = this.sendQueue
             .then(build)
@@ -939,7 +1020,9 @@ class ChatConnection {
                 if (generation === this.generation) this.send(frame);
             })
             .catch(() => {
-                if (generation === this.generation) this.patch({notice: {kind: 'sign_failed'}});
+                if (generation !== this.generation) return;
+                if (onFail) onFail();
+                this.patch({notice: {kind: 'sign_failed'}});
             });
         return this.sendQueue;
     }
@@ -986,7 +1069,7 @@ class ChatConnection {
         return this.send({cmd: 'channel_delete', channel});
     }
 
-    sendMessage (channel, content, {replyTo, attachments} = {}) {
+    sendMessage (channel, content, {replyTo, ping = true, attachments} = {}) {
         const text = String(content || '').trim();
         const files = (attachments || []).filter(item => item && item.id);
         if (!text && !files.length) return false;
@@ -998,6 +1081,7 @@ class ChatConnection {
             content: text,
             ...(files.length ? {attachments: files} : {}),
             ...(replyTo ? {reply_to: replyTo} : {}),
+            ...(replyTo && ping === false ? {ping: false} : {}),
             listener: makeListener()
         };
         this.enqueue(() => this.signed(frame, text, files));
@@ -1007,12 +1091,40 @@ class ChatConnection {
     editMessage (channel, id, content) {
         const text = String(content || '').trim();
         const current = findMessage(this.state, channel, id);
-        if (!text || !current) return false;
+        if (!current) return false;
+        const attachments = current.attachments || [];
+        if (!text && !attachments.length) return false;
+        if (text === String(current.content || '').trim()) return true;
         if (!this.socket || this.socket.readyState !== 1) return false;
-        const frame = {cmd: 'message_edit', channel, id, content: text, listener: makeListener()};
+        const listener = makeListener();
+        const frame = {cmd: 'message_edit', channel, id, content: text, listener};
         const minimum = (Number(current.signed_at) || 0) + 0.001;
-        this.enqueue(() => this.signed(frame, text, current.attachments || [], minimum));
+        this.pendingEdits.set(listener, {channel, id, previous: current});
+        this.setState(updateMessage(this.state, channel, id, message => ({
+            ...message,
+            content: text,
+            edited: true,
+            pendingEdit: true,
+            signature: null
+        })));
+        this.enqueue(() => this.signed(frame, text, attachments, minimum), () => this.revertEdits(listener));
         return true;
+    }
+
+    revertEdits (listener) {
+        const keys = this.pendingEdits.has(listener) ? [listener] : Array.from(this.pendingEdits.keys());
+        let state = this.state;
+        keys.forEach(key => {
+            const edit = this.pendingEdits.get(key);
+            this.pendingEdits.delete(key);
+            state = updateMessage(state, edit.channel, edit.id, () => edit.previous);
+        });
+        this.setState(state);
+    }
+
+    pinMessage (channel, id, pinned) {
+        if (!id) return false;
+        return this.send({cmd: pinned ? 'message_pin' : 'message_unpin', channel, id});
     }
 
     deleteMessage (channel, id) {
@@ -1034,7 +1146,7 @@ class ChatConnection {
         return uploadProblem(this.state, file);
     }
 
-    async upload (file, {name, onProgress, signal} = {}) {
+    async upload (file, {channel, name, onProgress, signal} = {}) {
         const key = this.validatorKey;
         if (!key || this.state.status !== 'ready') throw new Error('Chat is not connected.');
         const problem = uploadProblem(this.state, file);
@@ -1052,7 +1164,14 @@ class ChatConnection {
         form.append('mime_type', file.type || 'application/octet-stream');
         form.append('validator_key', key);
         form.append('validator', validator);
-        return postUpload(`${this.serverUrl}/attachments/upload`, form, onProgress, signal);
+        if (channel) form.append('channel', channel);
+        return postUpload(this.uploadUrl(), form, onProgress, signal);
+    }
+
+    uploadUrl () {
+        const advertised = this.state.server && this.state.server.url;
+        const origin = httpOrigin(advertised) || httpOrigin(this.socketUrl) || this.serverUrl;
+        return `${origin}/attachments/upload`;
     }
 
     sendTyping (channel) {
@@ -1112,6 +1231,9 @@ export {
     ChatConnection,
     activeTyping,
     applyFrame,
+    canDeleteMessage,
+    canEditMessage,
+    canInChannel,
     channelName,
     checkInvite,
     directPeer,
@@ -1123,6 +1245,7 @@ export {
     formatUsername,
     getChatConnection,
     getDirectConnection,
+    hasCapability,
     initialState,
     isBridgedAccount,
     isChatChannel,

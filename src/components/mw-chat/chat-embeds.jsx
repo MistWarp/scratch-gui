@@ -695,7 +695,7 @@ const ScriptAttachment = ({attachment, intl, url}) => {
     const onMouseDown = event => {
         liveRef.current = false;
         if (event.button !== 0 || !imageRef.current) return;
-        if (actions.startScriptDrag(data, event.nativeEvent, imageRef.current)) liveRef.current = true;
+        if (actions.startScriptDrag(data.blocks, event.nativeEvent, imageRef.current)) liveRef.current = true;
     };
     const onDragStart = event => {
         if (liveRef.current) {
@@ -703,7 +703,7 @@ const ScriptAttachment = ({attachment, intl, url}) => {
             return;
         }
         event.dataTransfer.effectAllowed = 'copy';
-        event.dataTransfer.setData(SCRIPT_MIME, JSON.stringify(data));
+        event.dataTransfer.setData(SCRIPT_MIME, JSON.stringify(data.blocks));
         event.dataTransfer.setData(CHAT_DRAG_MIME, '1');
         event.dataTransfer.setData('text/uri-list', url);
     };
@@ -720,7 +720,7 @@ const ScriptAttachment = ({attachment, intl, url}) => {
             >
                 <img
                     ref={imageRef}
-                    src={url}
+                    src={data.image}
                     alt={hint}
                     loading="lazy"
                     draggable={false}
@@ -729,14 +729,14 @@ const ScriptAttachment = ({attachment, intl, url}) => {
             <figcaption className={styles.scriptBar}>
                 <span className={styles.scriptLabel}>
                     <Blocks size={14} />
-                    {intl.formatMessage(messages.scriptBlocks, {count: scriptBlockCount(data)})}
+                    {intl.formatMessage(messages.scriptBlocks, {count: scriptBlockCount(data.blocks)})}
                 </span>
                 {actions.canAddScript ? (
                     <button
                         type="button"
                         className={styles.cardButton}
                         onClick={async () => {
-                            if (await actions.addScript(data)) setAdded(true);
+                            if (await actions.addScript(data.blocks)) setAdded(true);
                         }}
                     >
                         {added ? <Check size={14} /> : <Plus size={14} />}

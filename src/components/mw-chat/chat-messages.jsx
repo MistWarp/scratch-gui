@@ -2,15 +2,22 @@
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React, {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
-import {defineMessages, intlShape} from 'react-intl';
+import {FormattedMessage, defineMessages, intlShape} from 'react-intl';
 import {
     ArrowDown,
+    AtSign,
     BadgeCheck,
+    Copy,
     CornerUpRight,
+    Ellipsis,
     ExternalLink,
     Hash,
+    IdCard,
+    Link,
     MessageCircle,
     Pencil,
+    Pin,
+    PinOff,
     Reply,
     Server,
     SmilePlus,
@@ -22,9 +29,13 @@ import {
 import {
     CHAT_INVITE,
     DISCORD_INVITE,
+    canDeleteMessage,
+    canEditMessage,
+    canInChannel,
     channelName,
     directPeer,
     findMessage,
+    hasCapability,
     isBridgedAccount,
     isRoturUser,
     messageAuthor,
@@ -42,6 +53,7 @@ import {verifyMessage} from '../../lib/originchats/signing.js';
 import {Attachment, ClientEmbed, LinkEmbed} from './chat-embeds.jsx';
 import {CHAT_DRAG_MIME} from './chat-actions.js';
 import {DirectAvatar} from './chat-direct.jsx';
+import {MessageMenu} from './chat-message-menu.jsx';
 import {ProfileLink, RichText, UserPicture, richContext} from './chat-rich-text.jsx';
 import styles from './chat-pane.css';
 
@@ -115,6 +127,36 @@ const messages = defineMessages({
         description: 'Marker after a chat message that was edited',
         id: 'mw.chat.edited'
     },
+    editedAt: {
+        defaultMessage: 'Edited {time}',
+        description: 'Tooltip on the edited marker of a chat message, with the date and time of the edit',
+        id: 'mw.chat.editedAt'
+    },
+    pinned: {
+        defaultMessage: 'Pinned',
+        description: 'Tooltip on the pin mark after a chat message that is pinned in its channel',
+        id: 'mw.chat.pinned'
+    },
+    editLabel: {
+        defaultMessage: 'Edit message',
+        description: 'Accessible label for the text box that edits a chat message in place',
+        id: 'mw.chat.editLabel'
+    },
+    editHint: {
+        defaultMessage: 'Escape to {cancel}, Enter to {save}',
+        description: 'Hint under a chat message being edited. {cancel} and {save} are the editCancel and editSave buttons',
+        id: 'mw.chat.editHint'
+    },
+    editCancel: {
+        defaultMessage: 'cancel',
+        description: 'Link in the edit hint that stops editing a chat message without saving',
+        id: 'mw.chat.editCancel'
+    },
+    editSave: {
+        defaultMessage: 'save',
+        description: 'Link in the edit hint that saves the edited chat message',
+        id: 'mw.chat.editSave'
+    },
     replyTo: {
         defaultMessage: 'Jump to the message this replies to',
         description: 'Accessible label for the reply preview above a chat message',
@@ -165,10 +207,55 @@ const messages = defineMessages({
         description: 'Button on a chat message that deletes it',
         id: 'mw.chat.delete'
     },
-    confirmDelete: {
-        defaultMessage: 'Click again to delete',
-        description: 'Tooltip on the delete button after the first click, asking the user to confirm',
-        id: 'mw.chat.confirmDelete'
+    more: {
+        defaultMessage: 'More options',
+        description: 'Button on a chat message that opens the same menu as right clicking it',
+        id: 'mw.chat.more'
+    },
+    editMessage: {
+        defaultMessage: 'Edit message',
+        description: 'Item in the chat message menu that edits the message in place',
+        id: 'mw.chat.menuEdit'
+    },
+    mention: {
+        defaultMessage: 'Mention',
+        description: 'Item in the chat message menu that adds an @mention of the author to the message box',
+        id: 'mw.chat.menuMention'
+    },
+    copyText: {
+        defaultMessage: 'Copy text',
+        description: 'Item in the chat message menu that copies the message text',
+        id: 'mw.chat.menuCopyText'
+    },
+    copySelection: {
+        defaultMessage: 'Copy selected text',
+        description: 'Item in the chat message menu that copies the text selected inside the message',
+        id: 'mw.chat.menuCopySelection'
+    },
+    copyLink: {
+        defaultMessage: 'Copy link',
+        description: 'Item in the chat message menu, shown when right clicking a link, that copies the link address',
+        id: 'mw.chat.menuCopyLink'
+    },
+    copyId: {
+        defaultMessage: 'Copy message ID',
+        description: 'Item in the chat message menu that copies the message ID',
+        id: 'mw.chat.menuCopyId'
+    },
+    pin: {
+        defaultMessage: 'Pin message',
+        description: 'Item in the chat message menu that pins the message in its channel',
+        id: 'mw.chat.menuPin'
+    },
+    unpin: {
+        defaultMessage: 'Unpin message',
+        description: 'Item in the chat message menu that unpins the message',
+        id: 'mw.chat.menuUnpin'
+    },
+    deleteMessage: {
+        defaultMessage: 'Delete message',
+        description: 'Item in the chat message menu that deletes the message',
+        id: 'mw.chat.menuDelete'
     },
     reactedBy: {
         defaultMessage: '{names} reacted with {emoji}',
@@ -423,17 +510,25 @@ ActionButton.propTypes = {
     pressed: PropTypes.bool
 };
 
-const MessageActions = ({canDirect, connection, intl, message, onDirect, onEdit, onReply, state}) => {
+const MessageActions = ({connection, intl, menuOpen, message, onDelete, onEdit, onMenu, onReply, state}) => {
     const [picker, setPicker] = useState(false);
-    const [confirming, setConfirming] = useState(false);
-    const mine = isMine(state, message);
+    const [pickerUp, setPickerUp] = useState(false);
     const rootRef = useRef(null);
+    const channel = state.active;
 
-    useEffect(() => {
-        if (!confirming) return;
-        const timer = setTimeout(() => setConfirming(false), 3000);
-        return () => clearTimeout(timer);
-    }, [confirming]);
+    const togglePicker = () => {
+        if (picker) {
+            setPicker(false);
+            return;
+        }
+        const root = rootRef.current;
+        const list = root && root.closest('ol');
+        if (root && list) {
+            const below = list.getBoundingClientRect().bottom - root.getBoundingClientRect().bottom;
+            setPickerUp(below < 96);
+        }
+        setPicker(true);
+    };
 
     useEffect(() => {
         if (!picker) return;
@@ -447,11 +542,11 @@ const MessageActions = ({canDirect, connection, intl, message, onDirect, onEdit,
     return (
         <div
             ref={rootRef}
-            className={classNames(styles.actions, {[styles.actionsOpen]: picker || confirming})}
+            className={classNames(styles.actions, {[styles.actionsOpen]: picker || menuOpen})}
         >
             {picker ? (
                 <div
-                    className={styles.picker}
+                    className={classNames(styles.picker, {[styles.pickerUp]: pickerUp})}
                     role="menu"
                 >
                     {QUICK_REACTIONS.map(emoji => (
@@ -462,70 +557,161 @@ const MessageActions = ({canDirect, connection, intl, message, onDirect, onEdit,
                             className={styles.pickerItem}
                             aria-label={intl.formatMessage(messages.reactWith, {emoji})}
                             onClick={() => {
-                                connection.toggleReaction(state.active, message.id, emoji);
+                                connection.toggleReaction(channel, message.id, emoji);
                                 setPicker(false);
                             }}
                         >{emoji}</button>
                     ))}
                 </div>
             ) : null}
-            <ActionButton
-                icon={SmilePlus}
-                label={intl.formatMessage(messages.react)}
-                pressed={picker}
-                onClick={() => setPicker(value => !value)}
-            />
-            <ActionButton
-                icon={Reply}
-                label={intl.formatMessage(messages.reply)}
-                onClick={() => onReply(message)}
-            />
-            {canDirect && !mine && isRoturUser(state, message.user) && !message.webhook && !message.alias ? (
+            {canInChannel(state, channel, 'react') ? (
                 <ActionButton
-                    icon={MessageCircle}
-                    label={intl.formatMessage(messages.message)}
-                    onClick={() => onDirect(message.user)}
+                    icon={SmilePlus}
+                    label={intl.formatMessage(messages.react)}
+                    pressed={picker}
+                    onClick={togglePicker}
                 />
             ) : null}
-            {mine ? (
+            {canInChannel(state, channel, 'send') ? (
+                <ActionButton
+                    icon={Reply}
+                    label={intl.formatMessage(messages.reply)}
+                    onClick={() => onReply(message)}
+                />
+            ) : null}
+            {canEditMessage(state, channel, message) ? (
                 <ActionButton
                     icon={Pencil}
                     label={intl.formatMessage(messages.edit)}
                     onClick={() => onEdit(message)}
                 />
             ) : null}
-            {mine ? (
+            {canDeleteMessage(state, channel, message) ? (
                 <ActionButton
                     danger
                     icon={Trash2}
-                    label={intl.formatMessage(confirming ? messages.confirmDelete : messages.delete)}
-                    pressed={confirming}
-                    onClick={() => {
-                        if (!confirming) {
-                            setConfirming(true);
-                            return;
-                        }
-                        setConfirming(false);
-                        connection.deleteMessage(state.active, message.id);
-                    }}
+                    label={intl.formatMessage(messages.delete)}
+                    onClick={event => onDelete(message, event.shiftKey)}
                 />
             ) : null}
+            <ActionButton
+                icon={Ellipsis}
+                label={intl.formatMessage(messages.more)}
+                pressed={menuOpen}
+                onClick={event => {
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    onMenu(message, {x: rect.left, y: rect.bottom + 4, opener: event.currentTarget});
+                }}
+            />
         </div>
     );
 };
 
 MessageActions.propTypes = {
-    canDirect: PropTypes.bool,
     connection: PropTypes.object.isRequired,
     intl: intlShape.isRequired,
+    menuOpen: PropTypes.bool,
     message: PropTypes.object.isRequired,
-    onDirect: PropTypes.func,
+    onDelete: PropTypes.func.isRequired,
     onEdit: PropTypes.func.isRequired,
+    onMenu: PropTypes.func.isRequired,
     onReply: PropTypes.func.isRequired,
     state: PropTypes.object.isRequired
 };
 
-const MessageBody = ({connection, intl, message, state}) => {
+const InlineEditor = ({connection, intl, message, onDelete, onDone, state}) => {
+    const [draft, setDraft] = useState(message.content || '');
+    const inputRef = useRef(null);
+
+    useLayoutEffect(() => {
+        const input = inputRef.current;
+        if (!input) return;
+        input.style.height = 'auto';
+        input.style.height = `${Math.min(input.scrollHeight, 240)}px`;
+    }, [draft]);
+
+    useEffect(() => {
+        const input = inputRef.current;
+        if (!input) return;
+        input.focus({preventScroll: true});
+        input.setSelectionRange(input.value.length, input.value.length);
+        const row = input.closest('[data-message-id]');
+        if (row) row.scrollIntoView({block: 'nearest'});
+    }, []);
+
+    const save = () => {
+        const text = draft.trim();
+        const attachments = Array.isArray(message.attachments) ? message.attachments : [];
+        if (!text && !attachments.length) {
+            onDone();
+            onDelete(message, false);
+            return;
+        }
+        if (connection.editMessage(state.active, message.id, text)) onDone();
+    };
+
+    const textButton = (label, onClick) => (
+        <button
+            type="button"
+            className={styles.editLink}
+            onClick={onClick}
+        >{label}</button>
+    );
+
+    return (
+        <div className={styles.editor}>
+            <div className={styles.editField}>
+                <textarea
+                    ref={inputRef}
+                    className={styles.editInput}
+                    rows={1}
+                    value={draft}
+                    maxLength={Number(state.limits.post_content) || 2000}
+                    aria-label={intl.formatMessage(messages.editLabel)}
+                    onChange={event => {
+                        setDraft(event.target.value);
+                        connection.clearNotice();
+                    }}
+                    onKeyDown={event => {
+                        event.stopPropagation();
+                        if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+                            event.preventDefault();
+                            save();
+                        } else if (event.key === 'Escape') {
+                            event.preventDefault();
+                            onDone();
+                        }
+                    }}
+                />
+            </div>
+            <p className={styles.editHint}>
+                <FormattedMessage
+                    {...messages.editHint}
+                    values={{
+                        cancel: textButton(intl.formatMessage(messages.editCancel), onDone),
+                        save: textButton(intl.formatMessage(messages.editSave), save)
+                    }}
+                />
+            </p>
+        </div>
+    );
+};
+
+InlineEditor.propTypes = {
+    connection: PropTypes.object.isRequired,
+    intl: intlShape.isRequired,
+    message: PropTypes.object.isRequired,
+    onDelete: PropTypes.func.isRequired,
+    onDone: PropTypes.func.isRequired,
+    state: PropTypes.object.isRequired
+};
+
+const formatFull = seconds => new Date(seconds * 1000).toLocaleString([], {
+    dateStyle: 'medium',
+    timeStyle: 'short'
+});
+
+const MessageBody = ({connection, editor, intl, message, state}) => {
     const tokens = useMemo(() => parse(message.content, richContext(state, message)), [
         message.content, message.pings, state.users, state.roles, state.emojis, state.channels
     ]);
@@ -533,10 +719,17 @@ const MessageBody = ({connection, intl, message, state}) => {
     const fromServer = useMemo(() => serverEmbeds(message, clientEmbeds), [message.embeds, clientEmbeds]);
     const jumbo = onlyEmoji(tokens);
     const attachments = Array.isArray(message.attachments) ? message.attachments : [];
+    const editedAt = Number(message.edited_at);
     return (
         <React.Fragment>
-            {tokens.length ? (
-                <p className={classNames(styles.content, {[styles.jumbo]: jumbo})}>
+            {editor}
+            {!editor && (tokens.length || message.pinned) ? (
+                <p
+                    className={classNames(styles.content, {
+                        [styles.jumbo]: jumbo,
+                        [styles.contentPending]: message.pendingEdit
+                    })}
+                >
                     <RichText
                         tokens={tokens}
                         intl={intl}
@@ -544,7 +737,17 @@ const MessageBody = ({connection, intl, message, state}) => {
                         onChannel={name => connection.selectChannel(name)}
                     />
                     {message.edited ? (
-                        <span className={styles.edited}>{` ${intl.formatMessage(messages.edited)}`}</span>
+                        <span
+                            className={styles.edited}
+                            title={editedAt ? intl.formatMessage(messages.editedAt, {time: formatFull(editedAt)}) : null}
+                        >{` ${intl.formatMessage(messages.edited)}`}</span>
+                    ) : null}
+                    {message.pinned ? (
+                        <span
+                            className={styles.pinnedMark}
+                            title={intl.formatMessage(messages.pinned)}
+                            aria-label={intl.formatMessage(messages.pinned)}
+                        ><Pin size={11} /></span>
                     ) : null}
                 </p>
             ) : null}
@@ -581,114 +784,192 @@ const MessageBody = ({connection, intl, message, state}) => {
 
 MessageBody.propTypes = {
     connection: PropTypes.object.isRequired,
+    editor: PropTypes.node,
     intl: intlShape.isRequired,
     message: PropTypes.object.isRequired,
     state: PropTypes.object.isRequired
 };
 
-const MessageGroup = ({canDirect, connection, group, intl, onDirect, onEdit, onJump, onReply, state}) => {
+const MessagePreview = ({connection, intl, message, state}) => {
+    const person = !message.webhook && !message.alias;
+    const member = person && isRoturUser(state, message.user);
+    const color = person ? userColor(state, message.user) : null;
+    return (
+        <div className={styles.previewRow}>
+            <UserPicture
+                rotur={member}
+                size={24}
+                src={messageAvatar(state, message, connection.serverUrl)}
+                username={message.user}
+            />
+            <div className={styles.rowBody}>
+                <div className={styles.meta}>
+                    <span
+                        className={styles.author}
+                        style={color ? {color} : null}
+                    >{messageAuthor(state, message)}</span>
+                    <time className={styles.time}>{formatTime(message.timestamp || 0)}</time>
+                </div>
+                <MessageBody
+                    connection={connection}
+                    intl={intl}
+                    message={message}
+                    state={state}
+                />
+            </div>
+        </div>
+    );
+};
+
+MessagePreview.propTypes = {
+    connection: PropTypes.object.isRequired,
+    intl: intlShape.isRequired,
+    message: PropTypes.object.isRequired,
+    state: PropTypes.object.isRequired
+};
+
+const MessageGroup = ({
+    connection,
+    editingId,
+    group,
+    intl,
+    menuId,
+    onContextMenu,
+    onDelete,
+    onEdit,
+    onEditDone,
+    onJump,
+    onMenu,
+    onReply,
+    replyId,
+    state
+}) => {
     const first = group.messages[0];
     const person = !first.webhook && !first.alias;
     const member = person && isRoturUser(state, first.user);
     const color = person ? userColor(state, first.user) : null;
     return (
         <li className={styles.group}>
-            {group.messages.map((message, index) => (
-                <div
-                    key={message.id}
-                    data-message-id={message.id}
-                    className={classNames(styles.row, {
-                        [styles.rowFirst]: index === 0,
-                        [styles.pinged]: Boolean(pingsMe(state, message))
-                    })}
-                >
-                    {message.reply_to ? (
-                        <div className={styles.replyRow}>
-                            <ReplyPreview
+            {group.messages.map((message, index) => {
+                const editing = message.id === editingId;
+                return (
+                    <div
+                        key={message.id}
+                        data-message-id={message.id}
+                        className={classNames(styles.row, {
+                            [styles.rowFirst]: index === 0,
+                            [styles.pinged]: Boolean(pingsMe(state, message)),
+                            [styles.rowTarget]: message.id === replyId || editing,
+                            [styles.rowMenu]: message.id === menuId
+                        })}
+                        onContextMenu={event => onContextMenu(event, message)}
+                    >
+                        {message.reply_to ? (
+                            <div className={styles.replyRow}>
+                                <ReplyPreview
+                                    connection={connection}
+                                    intl={intl}
+                                    message={message}
+                                    onJump={onJump}
+                                    state={state}
+                                />
+                            </div>
+                        ) : null}
+                        {index === 0 ? (
+                            <ProfileLink
+                                className={styles.avatar}
+                                member={member}
+                                name={first.user || ''}
+                                tabIndex={-1}
+                            >
+                                <UserPicture
+                                    rotur={member}
+                                    size={28}
+                                    src={messageAvatar(state, first, connection.serverUrl)}
+                                    username={first.user}
+                                />
+                            </ProfileLink>
+                        ) : (
+                            <time className={styles.gutterTime}>{formatClock(message.timestamp || 0)}</time>
+                        )}
+                        <div className={styles.rowBody}>
+                            {index === 0 ? (
+                                <div className={styles.meta}>
+                                    <ProfileLink
+                                        className={styles.author}
+                                        member={member}
+                                        name={first.user || ''}
+                                        style={color ? {color} : null}
+                                    >{messageAuthor(state, first)}</ProfileLink>
+                                    <SourceMark
+                                        intl={intl}
+                                        message={first}
+                                    />
+                                    <SignedMark
+                                        intl={intl}
+                                        message={first}
+                                        signingUrl={state.signingUrl || connection.serverUrl}
+                                    />
+                                    <time className={styles.time}>{formatTime(first.timestamp || 0)}</time>
+                                </div>
+                            ) : null}
+                            <MessageBody
+                                connection={connection}
+                                editor={editing ? (
+                                    <InlineEditor
+                                        connection={connection}
+                                        intl={intl}
+                                        message={message}
+                                        onDelete={onDelete}
+                                        onDone={onEditDone}
+                                        state={state}
+                                    />
+                                ) : null}
+                                intl={intl}
+                                message={message}
+                                state={state}
+                            />
+                            <Reactions
                                 connection={connection}
                                 intl={intl}
                                 message={message}
-                                onJump={onJump}
                                 state={state}
                             />
                         </div>
-                    ) : null}
-                    {index === 0 ? (
-                        <ProfileLink
-                            className={styles.avatar}
-                            member={member}
-                            name={first.user || ''}
-                            tabIndex={-1}
-                        >
-                            <UserPicture
-                                rotur={member}
-                                size={28}
-                                src={messageAvatar(state, first, connection.serverUrl)}
-                                username={first.user}
+                        {editing ? null : (
+                            <MessageActions
+                                connection={connection}
+                                intl={intl}
+                                menuOpen={message.id === menuId}
+                                message={message}
+                                onDelete={onDelete}
+                                onEdit={onEdit}
+                                onMenu={onMenu}
+                                onReply={onReply}
+                                state={state}
                             />
-                        </ProfileLink>
-                    ) : (
-                        <time className={styles.gutterTime}>{formatClock(message.timestamp || 0)}</time>
-                    )}
-                    <div className={styles.rowBody}>
-                        {index === 0 ? (
-                            <div className={styles.meta}>
-                                <ProfileLink
-                                    className={styles.author}
-                                    member={member}
-                                    name={first.user || ''}
-                                    style={color ? {color} : null}
-                                >{messageAuthor(state, first)}</ProfileLink>
-                                <SourceMark
-                                    intl={intl}
-                                    message={first}
-                                />
-                                <SignedMark
-                                    intl={intl}
-                                    message={first}
-                                    signingUrl={state.signingUrl || connection.serverUrl}
-                                />
-                                <time className={styles.time}>{formatTime(first.timestamp || 0)}</time>
-                            </div>
-                        ) : null}
-                        <MessageBody
-                            connection={connection}
-                            intl={intl}
-                            message={message}
-                            state={state}
-                        />
-                        <Reactions
-                            connection={connection}
-                            intl={intl}
-                            message={message}
-                            state={state}
-                        />
+                        )}
                     </div>
-                    <MessageActions
-                        canDirect={canDirect}
-                        connection={connection}
-                        intl={intl}
-                        message={message}
-                        onDirect={onDirect}
-                        onEdit={onEdit}
-                        onReply={onReply}
-                        state={state}
-                    />
-                </div>
-            ))}
+                );
+            })}
         </li>
     );
 };
 
 MessageGroup.propTypes = {
-    canDirect: PropTypes.bool,
     connection: PropTypes.object.isRequired,
+    editingId: PropTypes.string,
     group: PropTypes.object.isRequired,
     intl: intlShape.isRequired,
-    onDirect: PropTypes.func,
+    menuId: PropTypes.string,
+    onContextMenu: PropTypes.func.isRequired,
+    onDelete: PropTypes.func.isRequired,
     onEdit: PropTypes.func.isRequired,
+    onEditDone: PropTypes.func.isRequired,
     onJump: PropTypes.func.isRequired,
+    onMenu: PropTypes.func.isRequired,
     onReply: PropTypes.func.isRequired,
+    replyId: PropTypes.string,
     state: PropTypes.object.isRequired
 };
 
@@ -753,13 +1034,51 @@ const markInternalDrag = event => {
     }
 };
 
-const MessageList = ({canDirect, connection, intl, onDirect, onEdit, onReply, state}) => {
+const copyToClipboard = (element, text) => {
+    const view = element.ownerDocument.defaultView;
+    if (view.navigator.clipboard && view.navigator.clipboard.writeText) {
+        view.navigator.clipboard.writeText(text).catch(() => null);
+        return;
+    }
+    const doc = element.ownerDocument;
+    const area = doc.createElement('textarea');
+    area.value = text;
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    doc.body.appendChild(area);
+    area.select();
+    doc.execCommand('copy');
+    doc.body.removeChild(area);
+};
+
+const tidySeparators = items => items.filter((item, index) => {
+    if (!item.separator) return true;
+    const previous = items[index - 1];
+    return index > 0 && index < items.length - 1 && previous && !previous.separator;
+});
+
+const MessageList = ({
+    canDirect,
+    connection,
+    editingId,
+    intl,
+    listApiRef,
+    onDelete,
+    onDirect,
+    onEdit,
+    onEditDone,
+    onMention,
+    onReply,
+    replyId,
+    state
+}) => {
     const listRef = useRef(null);
     const pinnedRef = useRef(true);
     const heightRef = useRef(0);
     const topRef = useRef(0);
     const seenRef = useRef(0);
     const [pinned, setPinned] = useState(true);
+    const [menu, setMenu] = useState(null);
     const channel = state.active;
     const list = state.messages[channel];
     const history = state.history[channel] || {};
@@ -767,6 +1086,8 @@ const MessageList = ({canDirect, connection, intl, onDirect, onEdit, onReply, st
     const count = (list || []).length;
     const lastId = count ? list[count - 1].id : null;
     const [unseen, setUnseen] = useState(0);
+    const menuMessage = menu && (list || []).find(message => message.id === menu.id);
+    const editingGone = Boolean(editingId) && !(list || []).some(message => message.id === editingId);
 
     useLayoutEffect(() => {
         const element = listRef.current;
@@ -794,7 +1115,12 @@ const MessageList = ({canDirect, connection, intl, onDirect, onEdit, onReply, st
         pinnedRef.current = true;
         setPinned(true);
         setUnseen(0);
+        setMenu(null);
     }, [channel]);
+
+    useEffect(() => {
+        if (editingGone) onEditDone();
+    }, [editingGone]);
 
     useEffect(() => {
         const element = listRef.current;
@@ -808,6 +1134,18 @@ const MessageList = ({canDirect, connection, intl, onDirect, onEdit, onReply, st
         observer.observe(element);
         return () => observer.disconnect();
     }, [groups, history.loaded]);
+
+    const jump = id => {
+        const element = listRef.current && listRef.current.querySelector(`[data-message-id="${id}"]`);
+        if (!element) return;
+        pinnedRef.current = false;
+        setPinned(false);
+        element.scrollIntoView({block: 'center'});
+        element.classList.add(styles.flash);
+        setTimeout(() => element.classList.remove(styles.flash), 1200);
+    };
+
+    if (listApiRef) listApiRef.current = {jump};
 
     if (!history.loaded) {
         return <p className={classNames(styles.status, styles.fill)}>{intl.formatMessage(messages.loading)}</p>;
@@ -826,16 +1164,6 @@ const MessageList = ({canDirect, connection, intl, onDirect, onEdit, onReply, st
         if (element.scrollTop < 80) connection.loadOlder(channel);
     };
 
-    const jump = id => {
-        const element = listRef.current && listRef.current.querySelector(`[data-message-id="${id}"]`);
-        if (!element) return;
-        pinnedRef.current = false;
-        setPinned(false);
-        element.scrollIntoView({block: 'center'});
-        element.classList.add(styles.flash);
-        setTimeout(() => element.classList.remove(styles.flash), 1200);
-    };
-
     const toLatest = () => {
         const element = listRef.current;
         if (!element) return;
@@ -843,6 +1171,80 @@ const MessageList = ({canDirect, connection, intl, onDirect, onEdit, onReply, st
         setPinned(true);
         setUnseen(0);
         element.scrollTop = element.scrollHeight;
+    };
+
+    const openMenu = (message, options) => setMenu({id: message.id, ...options});
+
+    const onContextMenu = (event, message) => {
+        if (event.target.closest('textarea, input')) return;
+        event.preventDefault();
+        const row = event.currentTarget;
+        const selection = row.ownerDocument.getSelection();
+        const selected = selection && !selection.isCollapsed && row.contains(selection.anchorNode) ?
+            selection.toString() : '';
+        const anchor = event.target.closest('a[href]');
+        openMenu(message, {
+            x: event.clientX,
+            y: event.clientY,
+            opener: null,
+            link: anchor && /^https?:/i.test(anchor.href) ? anchor.href : null,
+            selection: selected.trim() ? selected : ''
+        });
+    };
+
+    const closeMenu = restoreFocus => {
+        if (restoreFocus && menu && menu.opener) menu.opener.focus();
+        setMenu(null);
+    };
+
+    const menuItems = message => {
+        const element = listRef.current;
+        const mine = isMine(state, message);
+        const person = Boolean(message.user) && !message.webhook && !message.alias;
+        const canSend = canInChannel(state, channel, 'send');
+        const canPin = hasCapability(state, 'message_pin') && canInChannel(state, channel, 'pin');
+        const items = [];
+        if (canSend) {
+            items.push({key: 'reply', label: intl.formatMessage(messages.reply), icon: Reply, onSelect: () => onReply(message)});
+        }
+        if (canEditMessage(state, channel, message)) {
+            items.push({key: 'edit', label: intl.formatMessage(messages.editMessage), icon: Pencil, onSelect: () => onEdit(message)});
+        }
+        if (canSend && person && !mine) {
+            items.push({key: 'mention', label: intl.formatMessage(messages.mention), icon: AtSign, onSelect: () => onMention(message)});
+        }
+        if (canDirect && person && !mine && isRoturUser(state, message.user)) {
+            items.push({key: 'direct', label: intl.formatMessage(messages.message), icon: MessageCircle, onSelect: () => onDirect(message.user)});
+        }
+        items.push({key: 'copy-separator', separator: true});
+        if (menu.selection) {
+            items.push({key: 'copy-selection', label: intl.formatMessage(messages.copySelection), icon: Copy, onSelect: () => copyToClipboard(element, menu.selection)});
+        } else if (message.content) {
+            items.push({key: 'copy-text', label: intl.formatMessage(messages.copyText), icon: Copy, onSelect: () => copyToClipboard(element, message.content)});
+        }
+        if (menu.link) {
+            items.push({key: 'copy-link', label: intl.formatMessage(messages.copyLink), icon: Link, onSelect: () => copyToClipboard(element, menu.link)});
+        }
+        items.push({key: 'copy-id', label: intl.formatMessage(messages.copyId), icon: IdCard, onSelect: () => copyToClipboard(element, String(message.id))});
+        items.push({key: 'manage-separator', separator: true});
+        if (canPin) {
+            items.push({
+                key: 'pin',
+                label: intl.formatMessage(message.pinned ? messages.unpin : messages.pin),
+                icon: message.pinned ? PinOff : Pin,
+                onSelect: () => connection.pinMessage(channel, message.id, !message.pinned)
+            });
+        }
+        if (canDeleteMessage(state, channel, message)) {
+            items.push({
+                key: 'delete',
+                danger: true,
+                label: intl.formatMessage(messages.deleteMessage),
+                icon: Trash2,
+                onSelect: event => onDelete(message, event.shiftKey)
+            });
+        }
+        return tidySeparators(items);
     };
 
     const current = state.channels.find(item => item.name === channel);
@@ -867,14 +1269,19 @@ const MessageList = ({canDirect, connection, intl, onDirect, onEdit, onReply, st
                 {groups.map(group => (
                     <MessageGroup
                         key={group.key}
-                        canDirect={canDirect}
                         connection={connection}
+                        editingId={editingId}
                         group={group}
                         intl={intl}
-                        onDirect={onDirect}
+                        menuId={menuMessage ? menuMessage.id : null}
+                        onContextMenu={onContextMenu}
+                        onDelete={onDelete}
                         onEdit={onEdit}
+                        onEditDone={onEditDone}
                         onJump={jump}
+                        onMenu={openMenu}
                         onReply={onReply}
+                        replyId={replyId}
                         state={state}
                     />
                 ))}
@@ -891,6 +1298,18 @@ const MessageList = ({canDirect, connection, intl, onDirect, onEdit, onReply, st
                         intl.formatMessage(messages.jumpLatest)}
                 </button>
             )}
+            {menuMessage ? (
+                <MessageMenu
+                    key={`${menu.id}:${menu.x}:${menu.y}`}
+                    intl={intl}
+                    items={menuItems(menuMessage)}
+                    reactions={canInChannel(state, channel, 'react') ? QUICK_REACTIONS : null}
+                    x={menu.x}
+                    y={menu.y}
+                    onClose={closeMenu}
+                    onReact={emoji => connection.toggleReaction(channel, menuMessage.id, emoji)}
+                />
+            ) : null}
         </div>
     );
 };
@@ -898,11 +1317,17 @@ const MessageList = ({canDirect, connection, intl, onDirect, onEdit, onReply, st
 MessageList.propTypes = {
     canDirect: PropTypes.bool,
     connection: PropTypes.object.isRequired,
+    editingId: PropTypes.string,
     intl: intlShape.isRequired,
+    listApiRef: PropTypes.shape({current: PropTypes.object}),
+    onDelete: PropTypes.func.isRequired,
     onDirect: PropTypes.func,
     onEdit: PropTypes.func.isRequired,
+    onEditDone: PropTypes.func.isRequired,
+    onMention: PropTypes.func.isRequired,
     onReply: PropTypes.func.isRequired,
+    replyId: PropTypes.string,
     state: PropTypes.object.isRequired
 };
 
-export {MessageList, isMine};
+export {MessageList, MessagePreview, isMine};

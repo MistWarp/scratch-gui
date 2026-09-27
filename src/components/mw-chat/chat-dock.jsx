@@ -117,15 +117,24 @@ FloatingChat.propTypes = {
 const DockedChat = ({children, intl, width}) => {
     const [dragWidth, setDragWidth] = useState(null);
     const dragRef = useRef(null);
+    const layoutFrame = useRef(null);
+    const current = dragWidth === null ? width : dragWidth;
 
     useEffect(() => {
         notifyLayout();
-        return notifyLayout;
+        return () => {
+            cancelAnimationFrame(layoutFrame.current);
+            notifyLayout();
+        };
     }, []);
 
     useEffect(() => {
-        if (dragWidth === null) notifyLayout();
-    }, [width, dragWidth]);
+        if (layoutFrame.current) return;
+        layoutFrame.current = requestAnimationFrame(() => {
+            layoutFrame.current = null;
+            window.dispatchEvent(new Event('resize'));
+        });
+    }, [current]);
 
     const onPointerDown = event => {
         event.preventDefault();
@@ -153,11 +162,11 @@ const DockedChat = ({children, intl, width}) => {
         event.preventDefault();
     };
 
-    const current = dragWidth === null ? width : dragWidth;
     return (
         <aside
             className={styles.dock}
             style={{width: current}}
+            data-chat-dock
         >
             <div
                 className={styles.resizer}
@@ -227,8 +236,8 @@ const ChatDock = ({intl, isRtl, onOpenLogin, username, vm, workspaceMetrics}) =>
     const viewport = useViewportWidth();
     const [info, setInfo] = useState(null);
     const [inviteCode, setInviteCode] = useState(readInviteParam);
-    const [dmsUsed, setDmsUsed] = useState(readDmsUsed);
     const [blockDrag, setBlockDrag] = useState(false);
+    const [dmsUsed, setDmsUsed] = useState(readDmsUsed);
     const paneRef = useRef(null);
     const pendingDirect = useRef(null);
     const metricsRef = useRef(workspaceMetrics);
