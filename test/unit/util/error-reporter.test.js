@@ -34,6 +34,14 @@ test('skips cross-origin script errors without details', () => {
     expect(request).not.toHaveBeenCalled();
 });
 
+test.each(['unsandboxed is not defined', 'ReferenceError: unsandboxed is not defined'])(
+    'skips external extension error: %s', message => {
+        const {reportSiteError, request} = load();
+        reportSiteError({message, stack: 'ReferenceError: unsandboxed is not defined\n    at hyperSense.js:900:1'});
+        expect(request).not.toHaveBeenCalled();
+    }
+);
+
 test('skips errors thrown by browser extensions', () => {
     const {reportSiteError, request} = load();
     reportSiteError({

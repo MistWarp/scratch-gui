@@ -24,7 +24,7 @@ export default class DevTools {
     async init () {
         this.addContextMenus();
         while (true) {
-            const root = await this.addon.tab.waitForElement('ul[class*=gui_tab-list_]', {
+            const secondTab = await this.addon.tab.waitForElement('ul[class*=gui_tab-list_] > :nth-child(2)', {
                 markAsSeen: true,
                 reduxEvents: [
                     'scratch-gui/mode/SET_PLAYER',
@@ -33,7 +33,7 @@ export default class DevTools {
                 ],
                 reduxCondition: state => !state.scratchGui.mode.isPlayerOnly
             });
-            this.initInner(root);
+            if (secondTab.parentElement) this.initInner(secondTab.parentElement);
         }
     }
     async addContextMenus () {
@@ -767,6 +767,7 @@ export default class DevTools {
 
     initInner (root) {
         const guiTabs = root.childNodes;
+        if (!guiTabs[0] || !guiTabs[1]) return;
 
         if (this.codeTab && guiTabs[0] !== this.codeTab) {
             // We have been CHANGED!!! - Happens when going to project page, and then back inside again!!!
