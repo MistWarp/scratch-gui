@@ -53,6 +53,7 @@ import {
 import AddonHooks from '../addons/hooks.js';
 import LoadScratchBlocksHOC from '../lib/components/tw-load-scratch-blocks-hoc.jsx';
 import {offsetToPosition} from '../lib/backpack/code-payload.js';
+import {acceptsScriptDrop, readScriptDrop} from '../lib/originchats/script-image.js';
 import {gentlyRequestPersistentStorage} from '../lib/utils/storage-request.js';
 import CollaborationService from '../lib/collaboration/index.js';
 import {trackWorkspaceUndo, untrackWorkspaceUndo} from '../lib/undo-history.js';
@@ -118,6 +119,9 @@ class Blocks extends React.Component {
             'handleCategorySelected',
             'handleConnectionModalStart',
             'handleDrop',
+            'handleScriptDragOver',
+            'handleScriptDrop',
+            'placeCode',
             'handleExtensionsChanged',
             'handleStatusButtonUpdate',
             'handleOpenSoundRecorder',
@@ -216,6 +220,8 @@ class Blocks extends React.Component {
         );
         
         this.workspace = this.ScratchBlocks.inject(this.blocks, workspaceConfig);
+        this.blocks.addEventListener('dragover', this.handleScriptDragOver);
+        this.blocks.addEventListener('drop', this.handleScriptDrop);
         AddonHooks.blocklyWorkspace = this.workspace;
         trackWorkspaceUndo(this.workspace);
 
@@ -430,6 +436,8 @@ class Blocks extends React.Component {
         window.removeEventListener(CAT_BLOCKS_CHANGED, this.handleCatBlocksChanged);
         this.detachVM();
         this.unmounted = true;
+        this.blocks.removeEventListener('dragover', this.handleScriptDragOver);
+        this.blocks.removeEventListener('drop', this.handleScriptDrop);
         this.cancelDeferredWorkspaceLoad();
         untrackWorkspaceUndo(this.workspace);
         this.workspace.dispose();
@@ -1335,11 +1343,19 @@ class Blocks extends React.Component {
             if (response.ok === false) throw new Error(`Backpack request failed with status ${response.status}`);
             const payload = await response.json();
             if (!payload || typeof payload !== 'object') throw new Error('Backpack code payload is invalid');
-
+            return this.placeCode(payload, dragInfo.currentOffset, targetId);
+        } catch (error) {
+            log.error(error);
+            this.props.onShowImportError();
+            return false;
+        }
+    }
+    async placeCode (payload, point, targetId) {
+        try {
             // based on https://github.com/ScratchAddons/ScratchAddons/pull/7028
             const metrics = this.props.workspaceMetrics.targets[targetId];
-            if (metrics) {
-                const {x, y} = dragInfo.currentOffset;
+            if (metrics && point) {
+                const {x, y} = point;
                 const {left, right} = this.workspace.scrollbar.hScroll.outerSvg_.getBoundingClientRect();
                 const {top} = this.workspace.scrollbar.vScroll.outerSvg_.getBoundingClientRect();
                 offsetToPosition(
@@ -1361,6 +1377,24 @@ class Blocks extends React.Component {
             this.props.onShowImportError();
             return false;
         }
+    }
+    handleScriptDragOver (event) {
+        if (!acceptsScriptDrop(event.dataTransfer)) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'copy';
+    }
+    async handleScriptDrop (event) {
+        if (!acceptsScriptDrop(event.dataTransfer)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const point = {x: event.clientX, y: event.clientY};
+        const targetId = this.props.vm.editingTarget && this.props.vm.editingTarget.id;
+        const payload = await readScriptDrop(event.dataTransfer);
+        if (!payload || !targetId) {
+            this.props.onShowImportError();
+            return;
+        }
+        await this.placeCode(payload, point, targetId);
     }
     handleEnableProcedureReturns () {
         this.workspace.enableProcedureReturns();

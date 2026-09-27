@@ -9,7 +9,7 @@ import menuBarStyles from './menu-bar.css';
 import notificationStyles from './mw-notifications.css';
 import MwNotifications from './mw-notifications.jsx';
 import {getChatUi, subscribeChatUi, toggleChat} from '../../lib/originchats/chat-ui.js';
-import {getChatConnection} from '../../lib/originchats/connection.js';
+import {getChatConnection, getDirectConnection} from '../../lib/originchats/connection.js';
 import {openProductsModal} from '../../reducers/modals.js';
 
 const messages = defineMessages({
@@ -74,13 +74,16 @@ NavItem.propTypes = {
 
 const useChatButton = () => {
     const [open, setOpen] = useState(() => getChatUi().open);
-    const [unread, setUnread] = useState(() => getChatConnection().getState().unread);
+    const total = () => getChatConnection().getState().unread + getDirectConnection().getState().unread;
+    const [unread, setUnread] = useState(total);
     useEffect(() => {
         const offUi = subscribeChatUi(ui => setOpen(ui.open));
-        const offChat = getChatConnection().subscribe(state => setUnread(state.unread));
+        const offChat = getChatConnection().subscribe(() => setUnread(total()));
+        const offDirect = getDirectConnection().subscribe(() => setUnread(total()));
         return () => {
             offUi();
             offChat();
+            offDirect();
         };
     }, []);
     return {open, unread};
