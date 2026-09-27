@@ -107,6 +107,31 @@ describe('originchats reducer', () => {
         expect(onlineUsers(state).map(user => user.username)).toEqual(['bob']);
     });
 
+    test('users_list merges into known users instead of dropping people learned from user_join', () => {
+        let state = applyFrame(initialState(), {cmd: 'user_join', user: {
+            username: 'USR:discord_42', nickname: 'Pixel', cracked: true, status: {status: 'offline'}
+        }});
+        state = applyFrame(state, {cmd: 'users_list', users: [{username: 'Ann', status: {status: 'online'}}]});
+        expect(state.users['usr:discord_42'].nickname).toBe('Pixel');
+        expect(state.users.ann.status.status).toBe('online');
+        state = applyFrame(state, {cmd: 'users_online', users: [{username: 'Ann'}]});
+        expect(onlineUsers(state).map(user => user.username)).toEqual(['Ann']);
+    });
+
+    test('user_join records a member without marking them online, user_connect does', () => {
+        let state = applyFrame(initialState(), {cmd: 'users_online', users: [{username: 'Ann'}]});
+        state = applyFrame(state, {cmd: 'user_join', user: {username: 'bob', status: {status: 'offline'}}});
+        expect(onlineUsers(state).map(user => user.username)).toEqual(['Ann']);
+        state = applyFrame(state, {cmd: 'user_connect', user: {username: 'bob', nickname: 'Bobby'}});
+        expect(onlineUsers(state).map(user => user.username)).toEqual(['Ann', 'bob']);
+        expect(state.users.bob.nickname).toBe('Bobby');
+        state = applyFrame(state, {cmd: 'user_clients', username: 'bob', clients: ['web'], devices: ['computer']});
+        expect(state.users.bob.clients).toEqual(['web']);
+        state = applyFrame(state, {cmd: 'user_leave', username: 'bob'});
+        expect(state.users.bob).toBeUndefined();
+        expect(onlineUsers(state).map(user => user.username)).toEqual(['Ann']);
+    });
+
     test('typing ignores the current user and clears when they send', () => {
         let state = applyFrame(initialState(), {cmd: 'ready', user: {username: 'me'}});
         state = applyFrame(state, {cmd: 'typing', channel: 'general', user: 'me', duration: 6000});
