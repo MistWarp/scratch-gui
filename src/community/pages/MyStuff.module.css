@@ -895,3 +895,34 @@
     max-height: 50vh;
     overflow-y: auto;
 }
+
+.storageList {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.storageItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-raised);
+    font-size: var(--fs-md);
+}
+
+.storageItem a {
+    color: inherit;
+    font-weight: 500;
+}
+
+.storageSize {
+    flex-shrink: 0;
+    font-size: var(--fs-sm);
+    color: var(--text-dim);
+}

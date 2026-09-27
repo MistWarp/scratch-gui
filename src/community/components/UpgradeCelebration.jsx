@@ -3,6 +3,7 @@ import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {Check, PartyPopper, Sparkles} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
+import {formatBytes} from '../format';
 import {watchTier} from '../tier-watch.js';
 import Modal from './ui/Modal.jsx';
 import Button from './ui/Button.jsx';
@@ -33,8 +34,8 @@ const UpgradeCelebration = () => {
     };
     const limits = perks.mistwarp || {};
     const unlocked = [
-        limits.weeklyUploadBytes && communityText('{size} MB of uploads every week', {
-            size: megabytes(limits.weeklyUploadBytes)
+        limits.storageBytes && communityText('{size} of storage for your projects', {
+            size: formatBytes(limits.storageBytes)
         }),
         limits.maxProjectAssetsBytes && communityText('{size} MB of assets per project', {
             size: megabytes(limits.maxProjectAssetsBytes)
