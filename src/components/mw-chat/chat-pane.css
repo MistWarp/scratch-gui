@@ -124,10 +124,6 @@
     min-width: 0;
 }
 
-.online {
-    flex: 0 0 auto;
-}
-
 .channel-button {
     display: inline-flex;
     align-items: center;
@@ -222,14 +218,6 @@
     font-weight: 600;
 }
 
-.online {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    color: var(--chat-muted);
-    font-size: 0.75rem;
-    white-space: nowrap;
-}
 
 .dot {
     flex: 0 0 auto;
@@ -940,19 +928,6 @@ a.author:hover {
     box-shadow: 0 0 0 2px var(--chat-bg);
 }
 
-.online-short {
-    display: none;
-}
-
-@container (max-width: 420px) {
-    .online-long {
-        display: none;
-    }
-
-    .online-short {
-        display: inline;
-    }
-}
 
 .server-icon {
     display: inline-flex;
@@ -2057,12 +2032,6 @@ a.file-name:hover {
     color: var(--chat-accent);
 }
 
-@container (max-width: 300px) {
-    .online {
-        display: none;
-    }
-}
-
 .group-stack {
     position: relative;
     display: inline-block;
@@ -2416,4 +2385,48 @@ a.file-name:hover {
 .danger-button {
     background: var(--chat-danger);
     color: #fff;
+}
+
+.online-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: var(--chat-accent-soft);
+    color: var(--chat-accent);
+}
+
+.online-avatar {
+    position: relative;
+    display: inline-flex;
+    flex: 0 0 auto;
+    line-height: 0;
+}
+
+.online-dot {
+    position: absolute;
+    right: -1px;
+    bottom: -1px;
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: #3cb371;
+    box-shadow: 0 0 0 2px var(--chat-surface);
+}
+
+a.direct-name {
+    color: inherit;
+    text-decoration: none;
+}
+
+a.direct-name:hover {
+    text-decoration: underline;
+}
+
+@container (max-width: 300px) {
+    .online-button {
+        display: none;
+    }
 }

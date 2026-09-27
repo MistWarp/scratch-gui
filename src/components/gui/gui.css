@@ -42,6 +42,10 @@
     overflow: hidden;
 }
 
+.flex-wrapper:has(:global(.blocklyBlockDragSurface .blocklyDragging)) {
+    overflow: visible;
+}
+
 .editor-wrapper {
     /*
         This is carefully balanced--  the minimum width at which the GUI will be displayed is 1024px.

@@ -25,8 +25,11 @@ import {
     groupMembers,
     isChatChannel,
     isGroupChannel,
+    isRoturUser,
     onlineUsers,
-    userDisplayName
+    userAvatar,
+    userDisplayName,
+    userKey
 } from '../../lib/originchats/connection.js';
 import {offerFiles} from '../../lib/originchats/chat-ui.js';
 import {CHAT_DRAG_MIME} from './chat-actions.js';
@@ -36,6 +39,7 @@ import {DirectAvatar, DirectList, GroupPanel} from './chat-direct.jsx';
 import {ServerIcon} from './chat-embeds.jsx';
 import {DeleteDialog} from './chat-message-menu.jsx';
 import {MessageList, MessagePreview} from './chat-messages.jsx';
+import {ProfileLink, UserPicture} from './chat-rich-text.jsx';
 import styles from './chat-pane.css';
 
 const messages = defineMessages({
@@ -65,9 +69,34 @@ const messages = defineMessages({
         id: 'mw.chat.channel'
     },
     online: {
-        defaultMessage: '{count} online',
-        description: 'Number of people currently connected to the chat server',
+        defaultMessage: '{count, plural, one {# person online} other {# people online}}',
+        description: 'Label of the header button that shows how many people are online and opens the list of them',
         id: 'mw.chat.online'
+    },
+    onlineTitle: {
+        defaultMessage: 'Online now',
+        description: 'Heading of the panel that lists the people currently online in the chat server',
+        id: 'mw.chat.onlineTitle'
+    },
+    onlineEmpty: {
+        defaultMessage: 'Nobody else is online right now.',
+        description: 'Shown in the online panel when no one else is connected to the chat server',
+        id: 'mw.chat.onlineEmpty'
+    },
+    onlineYou: {
+        defaultMessage: '{name} (you)',
+        description: 'Name of the current user in the online panel',
+        id: 'mw.chat.onlineYou'
+    },
+    onlineClose: {
+        defaultMessage: 'Close the online list',
+        description: 'Button that closes the panel listing who is online',
+        id: 'mw.chat.onlineClose'
+    },
+    onlineMessage: {
+        defaultMessage: 'Send {name} a direct message',
+        description: 'Button next to a person in the online panel that opens a direct message with them',
+        id: 'mw.chat.onlineMessage'
     },
     dock: {
         defaultMessage: 'Dock to the side',
@@ -257,25 +286,104 @@ ChannelMenu.propTypes = {
     unread: PropTypes.object.isRequired
 };
 
-const Presence = ({intl, state}) => {
-    const users = onlineUsers(state);
+const OnlineButton = ({intl, onClick, open, state}) => {
+    const count = onlineUsers(state).length;
+    const label = intl.formatMessage(messages.online, {count});
     return (
-        <span
-            className={styles.online}
-            title={users.map(user => userDisplayName(state, user.username)).join(', ')}
+        <button
+            type="button"
+            className={classNames(styles.membersButton, styles.onlineButton, {[styles.membersOpen]: open})}
+            aria-pressed={open}
+            aria-label={label}
+            title={label}
+            onClick={onClick}
         >
-            <span className={styles.dot} />
-            <span className={styles.onlineLong}>{intl.formatMessage(messages.online, {count: users.length})}</span>
-            <span
-                className={styles.onlineShort}
-                aria-hidden="true"
-            >{users.length}</span>
-        </span>
+            <Users size={13} />
+            {count}
+        </button>
     );
 };
 
-Presence.propTypes = {
+OnlineButton.propTypes = {
     intl: intlShape.isRequired,
+    onClick: PropTypes.func.isRequired,
+    open: PropTypes.bool,
+    state: PropTypes.object.isRequired
+};
+
+const OnlinePanel = ({connection, intl, onClose, onDirect, state}) => {
+    const me = userKey(state.me && state.me.username);
+    const users = onlineUsers(state).sort((a, b) => {
+        if (userKey(a.username) === me) return -1;
+        if (userKey(b.username) === me) return 1;
+        return userDisplayName(state, a.username).localeCompare(userDisplayName(state, b.username));
+    });
+    const others = users.filter(user => userKey(user.username) !== me);
+    return (
+        <div className={classNames(styles.groupPanel, styles.fill)}>
+            <div className={styles.groupPanelHead}>
+                <span className={styles.onlineIcon}><Users size={16} /></span>
+                <h3 className={styles.groupPanelTitle}>{intl.formatMessage(messages.onlineTitle)}</h3>
+                <button
+                    type="button"
+                    className={styles.pendingRemove}
+                    aria-label={intl.formatMessage(messages.onlineClose)}
+                    title={intl.formatMessage(messages.onlineClose)}
+                    onClick={onClose}
+                >
+                    <X size={12} />
+                </button>
+            </div>
+            <ul className={styles.memberList}>
+                {users.map(user => {
+                    const name = userDisplayName(state, user.username);
+                    const mine = userKey(user.username) === me;
+                    const rotur = isRoturUser(state, user.username);
+                    return (
+                        <li
+                            key={user.username}
+                            className={styles.memberItem}
+                        >
+                            <span className={styles.onlineAvatar}>
+                                <UserPicture
+                                    rotur={rotur}
+                                    size={28}
+                                    src={userAvatar(state, user.username, connection.serverUrl)}
+                                    username={user.username}
+                                />
+                                <span className={styles.onlineDot} />
+                            </span>
+                            <ProfileLink
+                                className={styles.directName}
+                                member={rotur}
+                                name={user.username}
+                                style={user.color ? {color: user.color} : null}
+                            >{mine ? intl.formatMessage(messages.onlineYou, {name}) : name}</ProfileLink>
+                            {onDirect && !mine && rotur ? (
+                                <button
+                                    type="button"
+                                    className={styles.iconButton}
+                                    title={intl.formatMessage(messages.onlineMessage, {name})}
+                                    aria-label={intl.formatMessage(messages.onlineMessage, {name})}
+                                    onClick={() => onDirect(user.username)}
+                                >
+                                    <MessageCircle size={15} />
+                                </button>
+                            ) : null}
+                        </li>
+                    );
+                })}
+            </ul>
+            {others.length ? null : <p className={styles.groupNote}>{intl.formatMessage(messages.onlineEmpty)}</p>}
+        </div>
+    );
+};
+
+OnlinePanel.propTypes = {
+    connection: PropTypes.object.isRequired,
+    intl: intlShape.isRequired,
+    onClose: PropTypes.func.isRequired,
+    onDirect: PropTypes.func,
     state: PropTypes.object.isRequired
 };
 
@@ -467,6 +575,7 @@ const ChatPane = ({
 }) => {
     const [fileDrag, setFileDrag] = useState(false);
     const [groupPanel, setGroupPanel] = useState(false);
+    const [onlinePanel, setOnlinePanel] = useState(false);
     const dragDepth = useRef(0);
     const showingDirect = space === 'dms';
     const {connection, state} = showingDirect ? direct : server;
@@ -478,7 +587,10 @@ const ChatPane = ({
     const group = showingDirect && chatting && isGroupChannel(current);
     const me = state.me && state.me.username;
 
-    useEffect(() => setGroupPanel(false), [state.active, space]);
+    useEffect(() => {
+        setGroupPanel(false);
+        setOnlinePanel(false);
+    }, [state.active, space]);
 
     let body;
     if (state.status === 'signed_out') {
@@ -517,6 +629,16 @@ const ChatPane = ({
         );
     } else if (!showingDirect && state.status === 'idle') {
         body = <CheckingCard intl={intl} />;
+    } else if (chatting && !showingDirect && onlinePanel) {
+        body = (
+            <OnlinePanel
+                connection={connection}
+                intl={intl}
+                onClose={() => setOnlinePanel(false)}
+                onDirect={onDirect}
+                state={state}
+            />
+        );
     } else if (group && groupPanel) {
         body = (
             <GroupPanel
@@ -667,9 +789,11 @@ const ChatPane = ({
                 </div>
                 {heading}
                 {chatting && !showingDirect ? (
-                    <Presence
+                    <OnlineButton
                         intl={intl}
+                        open={onlinePanel}
                         state={state}
+                        onClick={() => setOnlinePanel(value => !value)}
                     />
                 ) : null}
                 <div className={styles.headerActions}>
