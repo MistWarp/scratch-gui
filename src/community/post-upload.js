@@ -1,3 +1,4 @@
+import {CHAT_URL} from '../lib/originchats/links.js';
 import {getRotur} from '../lib/rotur/client.js';
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
@@ -6,7 +7,7 @@ const ATTACHMENT_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'video/mp4', '
 const randomKey = () => {
     const bytes = new Uint8Array(12);
     crypto.getRandomValues(bytes);
-    return `mistwarp-post-${Array.from(bytes, value => value.toString(16).padStart(2, '0')).join('')}`;
+    return `originChats-${CHAT_URL}-${Array.from(bytes, value => value.toString(16).padStart(2, '0')).join('')}`;
 };
 
 const uploadPostAttachment = async (file, onProgress = () => {}) => {
@@ -24,7 +25,7 @@ const uploadPostAttachment = async (file, onProgress = () => {}) => {
     data.append('mime_type', file.type);
     return new Promise((resolve, reject) => {
         const request = new XMLHttpRequest();
-        request.open('POST', `https://chats.mistium.com/attachments/upload?${query}`);
+        request.open('POST', `${CHAT_URL}/attachments/upload?${query}`);
         request.upload.onprogress = event => {
             if (event.lengthComputable) onProgress(Math.round(event.loaded / event.total * 100));
         };
