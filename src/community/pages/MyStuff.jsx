@@ -6,10 +6,10 @@ import {Link, useSearchParams} from 'react-router-dom';
 import {
     Plus, Trash2, Heart, ThumbsDown, Play, Upload, Star, MoreHorizontal, Pencil, ExternalLink, HardDrive,
     SlidersHorizontal, Coins, Eye, TrendingUp, Wallet, HeartHandshake, FolderOpen, LayoutDashboard,
-    RefreshCw, AlertTriangle, Library, Layers3, RotateCcw, Package, Image, Palette, Bookmark, Clock3
+    AlertTriangle, Library, Layers3, RotateCcw, Package, Image, Palette, Bookmark
 } from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
-import {formatBytes, formatCountdown, formatDate} from '../format';
+import {formatBytes, formatDate} from '../format';
 import {getAccountSummary} from '../../lib/rotur/client.js';
 import {useUser} from '../UserContext.jsx';
 import Button from '../components/ui/Button.jsx';
@@ -288,7 +288,7 @@ const Overview = ({stats, account, quota, username, onNavigate}) => {
                             {pct >= 80 ? <AlertTriangle size={14} /> : null}{communityText('{value1}% full', {value1: Math.round(pct)})}</span>
                         <div className={styles.ovCardActions}>
                             <Button onClick={() => go('uploads')}>
-                                <HardDrive size={14} />{communityText('Manage uploads')}</Button>
+                                <HardDrive size={14} />{communityText('Manage storage')}</Button>
                         </div>
                     </div>
                 ) : null}
@@ -344,92 +344,34 @@ const Inventory = ({items, error, onRetry}) => {
     </section>);
 };
 
-const UploadUsage = ({error, onRetry, quota, onRefresh, perks}) => {
+const UploadUsage = ({error, onRetry, quota, perks}) => {
     const {text: communityText} = useCommunityText();
-    const [showConfirm, setShowConfirm] = useState(false);
-    const [amount, setAmount] = useState(20);
-    const [resetting, setResetting] = useState(false);
-    const [resetKey, setResetKey] = useState('');
-    const [payTo, setPayTo] = useState('');
-    const [resetError, setResetError] = useState('');
-    const [resetDone, setResetDone] = useState(false);
-    const resetInFlight = useRef(false);
-
-    const pct = quota ? (quota.used / quota.limit) * 100 : 0;
-
-    const dailyMap = Object.fromEntries((quota?.daily || []).map(d => [d.day, d.bytes]));
-
-    // shared boilerplate for both reset actions
-    const runReset = useCallback(async (fn, errorPrefix) => {
-        if (resetInFlight.current) return;
-        const releaseReset = () => {
-            resetInFlight.current = false;
-        };
-        resetInFlight.current = true;
-        setResetting(true);
-        setResetError('');
-        try {
-            await fn();
-        } catch (e) {
-            setResetError(e.message || errorPrefix);
-        } finally {
-            releaseReset();
-            setResetting(false);
-        }
-    }, []);
-
-    const handleReset = useCallback(() => {
-        runReset(async () => {
-            const data = await api.quotaReset();
-            setResetKey(data.key);
-            setPayTo(data.payTo);
-            setAmount(data.amount);
-            setShowConfirm(true);
-        }, 'Could not start reset');
-    }, [runReset]);
-
-    const confirmReset = useCallback(() => {
-        runReset(async () => {
-            await api.quotaResetConfirm(resetKey);
-            setShowConfirm(false);
-            setResetDone(true);
-            onRefresh();
-        }, 'Reset failed');
-    }, [runReset, resetKey, onRefresh]);
-
-    const dismiss = useCallback(() => {
-        setShowConfirm(false);
-        setResetKey('');
-        setResetError('');
-    }, []);
-
-    const nextFreesIn = quota && quota.nextExpiryInMs > 0 && quota.nextReleaseBytes > 0 ?
-        communityText('{value1} in {value2}', {value1: formatBytes(quota.nextReleaseBytes), value2: formatCountdown(quota.nextExpiryInMs)}) : null;
 
     if (error) {
-        return <StatusMessage error onRetry={onRetry}>{communityText('Could not load upload usage.')}</StatusMessage>;
+        return <StatusMessage error onRetry={onRetry}>{communityText('Could not load storage usage.')}</StatusMessage>;
     }
     if (!quota) {
-        return <StatusMessage>{communityText('Loading upload info…')}</StatusMessage>;
+        return <StatusMessage>{communityText('Loading storage usage…')}</StatusMessage>;
     }
 
-    const remaining = quota.remaining ?? Math.max(0, (quota.limit || 0) - (quota.used || 0));
-    const releases = (quota.releases || []).slice(0, 5);
+    const pending = quota.pending || 0;
+    const pct = quota.limit > 0 ? ((quota.used + pending) / quota.limit) * 100 : 0;
+    const remaining = quota.remaining ?? Math.max(0, (quota.limit || 0) - (quota.used || 0) - pending);
+    const largest = (quota.largest || []).filter(project => project.bytes > 0);
     const summaryStats = [
         {value: formatBytes(quota.used), label: communityText('Used')},
         {value: formatBytes(quota.limit), label: communityText('Limit')},
         {value: formatBytes(remaining), label: communityText('Remaining')},
-        ...(nextFreesIn ? [{value: nextFreesIn, label: communityText('Frees up next')}] : []),
-        {value: quota.eventCount || 0, label: communityText('Uploads this week')}
+        ...(pending > 0 ? [{value: formatBytes(pending), label: communityText('Waiting for a save')}] : [])
     ];
 
     return (
         <section className={styles.uploads}>
             {perks ? (
                 <Notice variant="info">
-                    {communityText('Your Rotur {value1} membership includes {value2} of weekly uploads, {value3} of assets per project, and {value4} per asset.', {
+                    {communityText('Your Rotur {value1} membership includes {value2} of storage, {value3} of assets per project, and {value4} per asset.', {
                         value1: perks.tier,
-                        value2: formatBytes(perks.mistwarp.weeklyUploadBytes),
+                        value2: formatBytes(perks.mistwarp.storageBytes),
                         value3: formatBytes(perks.mistwarp.maxProjectAssetsBytes),
                         value4: formatBytes(perks.mistwarp.maxProjectAssetBytes)
                     })}
@@ -447,7 +389,7 @@ const UploadUsage = ({error, onRetry, quota, onRefresh, perks}) => {
             <div className={styles.uploadBarSection}>
                 <div className={styles.uploadBarLabel}>
                     {communityText('{value1}% full', {value1: Math.round(pct)})}{pct >= 80 ? (
-                        <span className={styles.uploadWarn}><AlertTriangle size={14} />{communityText('Nearly full')}</span>
+                        <span className={styles.uploadWarn}><AlertTriangle size={14} />{pct >= 100 ? communityText('Full') : communityText('Nearly full')}</span>
                     ) : null}
                 </div>
                 <div className={styles.uploadBarBg}>
@@ -458,71 +400,32 @@ const UploadUsage = ({error, onRetry, quota, onRefresh, perks}) => {
                 </div>
             </div>
 
-            <StatChart
-                title={communityText('Daily upload volume')}
-                rows={historyRows(dailyMap, 14)}
-                format={formatBytes}
-                accent="#4C97FF"
-                emptyText="No uploads in the current window."
-            />
-
-            {releases.length ? (
-                <div className={styles.uploadReset}>
-                    <SectionHeading as="h3" icon={Clock3} title={communityText('When space frees up')} className={styles.cardHeading} />
-                    <p className={styles.uploadResetDesc}>
-                        {communityText('Uploads leave your weekly budget 7 days after each save. The next space back is {value1}.', {value1: nextFreesIn})}
-                    </p>
-                    <ul className={styles.ovRecentList}>
-                        {releases.map(release => (
-                            <li key={release.atMs} className={styles.ovRecentItem}>
-                                <span>{formatBytes(release.bytes)}</span>
-                                <span className={styles.ovRecentMeta}>{communityText('Frees in {value1}', {value1: formatCountdown(release.inMs)})}</span>
+            <div className={styles.uploadReset}>
+                <SectionHeading as="h3" icon={HardDrive} title={communityText('Largest projects')} className={styles.cardHeading} />
+                <p className={styles.uploadResetDesc}>
+                    {communityText('Each project counts its assets, project data and version history, including projects in the trash. When your storage is full you can still save a project at the same size or smaller. To free space, delete projects you no longer need and empty them from the trash.')}
+                </p>
+                {largest.length ? (
+                    <ul className={styles.storageList}>
+                        {largest.map(project => (
+                            <li key={project.id} className={styles.storageItem}>
+                                {project.trashed ? (
+                                    <span>{project.title || communityText('Untitled')}</span>
+                                ) : (
+                                    <Link to={projectUrl(project.id)}>{project.title || communityText('Untitled')}</Link>
+                                )}
+                                <span className={styles.storageSize}>
+                                    {project.trashed ?
+                                        communityText('{value1}, in the trash', {value1: formatBytes(project.bytes)}) :
+                                        formatBytes(project.bytes)}
+                                </span>
                             </li>
                         ))}
                     </ul>
-                    <p className={styles.uploadResetDesc}>{communityText('Saves that fail validation or change nothing are free and never touch this budget.')}</p>
-                </div>
-            ) : (
-                <p className={styles.uploadResetDesc}>{communityText('Nothing on the clock: saves that fail validation or change nothing are free and never touch this budget.')}</p>
-            )}
-
-            <div className={styles.uploadReset}>
-                <SectionHeading as="h3" icon={RefreshCw} title={communityText('Reset upload quota')} className={styles.cardHeading} />
-                <p className={styles.uploadResetDesc}>
-                    {communityText('Reset your weekly upload usage back to zero. This costs {value1} credits.', {value1: amount || 20})}
-                </p>
-
-                {resetDone ? (
-                    <Notice variant="success">{communityText('Quota reset successfully. Your upload usage is now 0.')}</Notice>
-                ) : resetError && !showConfirm ? (
-                    <Notice variant="error" onDismiss={() => setResetError('')}>{resetError}</Notice>
                 ) : (
-                    <Button
-                        variant="primary"
-                        className={styles.uploadResetBtn}
-                        onClick={handleReset}
-                        busy={resetting}
-                        busyLabel={communityText('Starting…')}
-                    >
-                        <RefreshCw size={16} />{communityText('Reset quota')}</Button>
+                    <p className={styles.uploadResetDesc}>{communityText('Your projects are not using any storage yet.')}</p>
                 )}
             </div>
-
-            {showConfirm ? (
-                <ConfirmModal
-                    title={communityText('Reset upload quota?')}
-                    confirmLabel={communityText('Spend {value1} credits', {value1: amount})}
-                    busy={resetting}
-                    busyLabel={communityText('Resetting…')}
-                    error={resetError}
-                    onConfirm={confirmReset}
-                    onCancel={dismiss}
-                >
-                    {payTo ?
-                        communityText('This will cost {value1} credits sent to {value2}. Your upload usage will be reset to zero. Continue?', {value1: amount, value2: payTo}) :
-                        communityText('This will cost {value1} credits. Your upload usage will be reset to zero. Continue?', {value1: amount})}
-                </ConfirmModal>
-            ) : null}
         </section>
     );
 };
@@ -628,7 +531,7 @@ const SECTIONS = [
     {key: 'spaces', label: 'Spaces', icon: Layers3, group: 'Projects'},
     {key: 'themes', label: 'Themes', icon: Palette, group: 'Assets'},
     {key: 'inventory', label: 'Inventory', icon: Package, group: 'Assets'},
-    {key: 'uploads', label: 'Uploads', icon: HardDrive, group: 'Account'},
+    {key: 'uploads', label: 'Storage', icon: HardDrive, group: 'Account'},
     {key: 'trash', label: 'Trash', icon: Trash2, group: 'Account'},
     {key: 'agreement', label: 'Agreement', icon: HeartHandshake, group: 'Account'}
 ];
@@ -1209,8 +1112,8 @@ const MyStuff = () => {
             setActionError('Choose a Scratch .sb3 project file.');
             return;
         }
-        if (quota && quota.used >= quota.limit) {
-            setActionError('Your weekly upload quota is full. Free up space or reset it before uploading.');
+        if (quota && quota.used + (quota.pending || 0) >= quota.limit) {
+            setActionError('Your storage is full. Delete projects you no longer need and empty them from the trash before uploading.');
             return;
         }
         const actionKey = beginAccountAction('upload');
@@ -1385,16 +1288,18 @@ const MyStuff = () => {
                 <Notice variant="error" className={styles.pageNotice} onDismiss={() => setActionError('')}>{actionError}</Notice>
             ) : null}
 
-            {quota && (quota.used / quota.limit) * 100 >= 80 ? (
+            {quota && quota.limit > 0 && (quota.used / quota.limit) * 100 >= 80 ? (
                 <Notice variant="warning" className={styles.pageNotice}>
-                    {communityText('You have used {value1} of your {value2} upload quota ({value3}%).', {
-                        value1: formatBytes(quota.used),
-                        value2: formatBytes(quota.limit),
-                        value3: Math.round((quota.used / quota.limit) * 100)
-                    })}{' '}
                     {quota.used >= quota.limit ?
-                        communityText('You cannot upload new projects until usage drops.') :
-                        communityText('Consider managing your projects to free up space.')}
+                        communityText('Your storage is full: your projects use {value1} of your {value2}. You can still save a project at the same size or smaller. To add more, delete projects you no longer need and empty them from the trash.', {
+                            value1: formatBytes(quota.used),
+                            value2: formatBytes(quota.limit)
+                        }) :
+                        communityText('Your projects use {value1} of your {value2} of storage ({value3}%).', {
+                            value1: formatBytes(quota.used),
+                            value2: formatBytes(quota.limit),
+                            value3: Math.round((quota.used / quota.limit) * 100)
+                        })}
                 </Notice>
             ) : null}
 
@@ -1505,7 +1410,6 @@ const MyStuff = () => {
                             quota={quota}
                             perks={perks}
                             onRetry={() => setUsageAttempt(value => value + 1)}
-                            onRefresh={refreshUsage}
                         />
                     ) : tab === 'agreement' ? (
                         <AgreementTab key={username} />
