@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {connect} from 'react-redux';
 import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
-import {BookOpen, FolderOpen, Play, Sparkles, X} from 'lucide-react';
+import {X} from 'lucide-react';
 
 import {STARTERS} from '../../lib/starter-projects';
 import {DOCS_BASE} from '../../lib/help/index.js';
@@ -95,11 +95,6 @@ const EditorWelcome = ({
         >
             <div className={styles.card}>
                 <div className={styles.header}>
-                    <Sparkles
-                        className={styles.headerIcon}
-                        size={18}
-                        aria-hidden="true"
-                    />
                     <h2 className={styles.heading}>
                         <FormattedMessage
                             defaultMessage="Make your first project"
@@ -134,9 +129,11 @@ const EditorWelcome = ({
                             data-starter={starter.id}
                             onClick={handleStarter}
                         >
-                            <Play size={14} />
-                            <span className={styles.starterTitle}>{starter.title}</span>
-                            <span className={styles.starterKind}>{starter.kind}</span>
+                            <span className={styles.starterTop}>
+                                <span className={styles.starterTitle}>{starter.title}</span>
+                                <span className={styles.starterKind}>{starter.kind}</span>
+                            </span>
+                            <span className={styles.starterDescription}>{starter.description}</span>
                         </button>
                     ))}
                 </div>
@@ -147,7 +144,6 @@ const EditorWelcome = ({
                             className={styles.action}
                             onClick={onOpenFile}
                         >
-                            <FolderOpen size={16} />
                             <FormattedMessage
                                 defaultMessage="Open a file"
                                 // eslint-disable-next-line max-len
@@ -161,7 +157,6 @@ const EditorWelcome = ({
                         className={styles.action}
                         onClick={handleDocs}
                     >
-                        <BookOpen size={16} />
                         <FormattedMessage
                             defaultMessage="Documentation"
                             description="Button in the editor welcome card that opens the MistWarp documentation"
