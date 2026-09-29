@@ -113,7 +113,7 @@ const InvalidProjectModal = props => (
             <p>
                 <FormattedMessage
                     // eslint-disable-next-line max-len
-                    defaultMessage="You may be able to recover an older version of the project from automatic restore points or other backups."
+                    defaultMessage="You may be able to recover an older version of the project from your device backups or other copies."
                     description="Part of modal that appears when a project could not be loaded."
                     id="tw.invalidProject.options"
                 />
@@ -125,7 +125,7 @@ const InvalidProjectModal = props => (
                 onClick={props.onClickRestorePoints}
             >
                 <FormattedMessage
-                    defaultMessage="View Restore Points"
+                    defaultMessage="View device backups"
                     // eslint-disable-next-line max-len
                     description="Part of modal that appears when a project could not be loaded. This is a button that opens the restore point menu."
                     id="tw.invalidProject.restorePoints"

@@ -68,6 +68,7 @@ import {
 import downloadBlob from '../../lib/utils/download-blob.js';
 import {projectFilename} from '../../lib/utils/safe-filename.js';
 import RestorePointAPI from '../../lib/api/restore-points';
+import {getShortcutKey} from '../../lib/shortcuts/registry.js';
 
 import TWDesktopSettings from './tw-desktop-settings.jsx';
 import RoturAccount from './mw-rotur-account.jsx';
@@ -206,6 +207,11 @@ const twMessages = defineMessages({
         id: 'mw.menuBar.gitCommitFailed',
         defaultMessage: 'Commit failed. {error}',
         description: 'Toast shown when committing the project to git fails. {error} is the error message.'
+    },
+    noChanges: {
+        id: 'mw.menuBar.noChanges',
+        defaultMessage: 'There are no new changes to save.',
+        description: 'Tooltip on the disabled Save to MistWarp menu item when nothing changed'
     }
 });
 
@@ -350,6 +356,9 @@ const formatShortcutDisplay = keyCombo => {
         .replace(/Enter/g, '↵')
         .replace(/ /g, '');
 };
+
+const shortcutHint = (shortcutId, customShortcuts) =>
+    formatShortcutDisplay(getShortcutKey(shortcutId, customShortcuts));
 
 const COLLAPSE_MENU_WIDTH = 900;
 const addonMessage = (intl, addonId) => (id, values) => intl.formatMessage({
@@ -1752,7 +1761,7 @@ class MenuBar extends React.Component {
                                             {this.props.canSave && (
                                                 <MenuItem
                                                     onClick={this.handleClickSave}
-                                                    shortcut={formatShortcutDisplay('Ctrl+S')}
+                                                    shortcut={shortcutHint('save', this.props.customShortcuts)}
                                                 >
                                                     {saveNowMessage}
                                                 </MenuItem>
@@ -1760,7 +1769,7 @@ class MenuBar extends React.Component {
                                             {this.props.canCreateCopy && (
                                                 <MenuItem
                                                     onClick={this.handleClickSaveAsCopy}
-                                                    shortcut={formatShortcutDisplay('Ctrl+Shift+S')}
+                                                    shortcut={shortcutHint('saveAsCopy', this.props.customShortcuts)}
                                                 >
                                                     <Save />
                                                     {createCopyMessage}
@@ -1779,8 +1788,9 @@ class MenuBar extends React.Component {
                                                 disabled={!mistwarpAction}
                                                 onClick={this.handleClickMistWarpShare}
                                                 shortcut={this.state.mistwarpProject ?
-                                                    formatShortcutDisplay('Ctrl+S') : null}
-                                                title={mistwarpAction ? null : 'No new changes'}
+                                                    shortcutHint('save', this.props.customShortcuts) : null}
+                                                title={mistwarpAction ?
+                                                    null : this.props.intl.formatMessage(twMessages.noChanges)}
                                             >
                                                 <Globe />
                                                 {mistwarpAction === 'remix' ? (
@@ -1812,7 +1822,7 @@ class MenuBar extends React.Component {
                                     <MenuSection>
                                         <MenuItem
                                             onClick={this.handleClickLoadFromComputer}
-                                            shortcut={formatShortcutDisplay('Ctrl+O')}
+                                            shortcut={shortcutHint('loadFromComputer', this.props.customShortcuts)}
                                         >
                                             <Upload />
                                             {this.props.intl.formatMessage(sharedMessages.loadFromComputerTitle)}
@@ -1820,7 +1830,7 @@ class MenuBar extends React.Component {
                                         <MenuItem
                                             onClick={this.handleClickSaveMwp}
                                             shortcut={this.state.mistwarpProject ?
-                                                null : formatShortcutDisplay('Ctrl+S')}
+                                                null : shortcutHint('save', this.props.customShortcuts)}
                                         >
                                             <Save />
                                             <FormattedMessage
@@ -1888,7 +1898,10 @@ class MenuBar extends React.Component {
                                                         {this.props.onClickPackager ? (
                                                             <MenuItem
                                                                 onClick={this.handleClickPackager}
-                                                                shortcut={formatShortcutDisplay('Ctrl+P')}
+                                                                shortcut={shortcutHint(
+                                                                    'packageProject',
+                                                                    this.props.customShortcuts
+                                                                )}
                                                             >
                                                                 <Package />
                                                                 <FormattedMessage
@@ -1907,7 +1920,7 @@ class MenuBar extends React.Component {
                                     <MenuSection>
                                         <MenuItem
                                             onClick={this.handleClickRestorePoints}
-                                            shortcut={formatShortcutDisplay('Alt+R')}
+                                            shortcut={shortcutHint('restorePoints', this.props.customShortcuts)}
                                         >
                                             <RefreshCcw />
                                             <FormattedMessage
@@ -1969,7 +1982,7 @@ class MenuBar extends React.Component {
                                     <MenuItem
                                         className={classNames({[styles.disabled]: !this.state.canUndo})}
                                         onClick={this.state.canUndo ? this.handleClickUndo : null}
-                                        shortcut={formatShortcutDisplay('Ctrl+Z')}
+                                        shortcut={shortcutHint('undo', this.props.customShortcuts)}
                                     >
                                         <Undo />
 
@@ -1982,7 +1995,7 @@ class MenuBar extends React.Component {
                                     <MenuItem
                                         className={classNames({[styles.disabled]: !this.state.canRedo})}
                                         onClick={this.state.canRedo ? this.handleClickRedo : null}
-                                        shortcut={formatShortcutDisplay('Ctrl+Shift+Z')}
+                                        shortcut={shortcutHint('redo', this.props.customShortcuts)}
                                     >
                                         <Redo />
 
@@ -2197,7 +2210,7 @@ class MenuBar extends React.Component {
                                 <MenuSection>
                                     <MenuItem
                                         onClick={this.handleOpenExtensionLibrary}
-                                        shortcut={formatShortcutDisplay('Ctrl+.')}
+                                        shortcut={shortcutHint('extensionLibrary', this.props.customShortcuts)}
                                     >
                                         <PackagePlus />
                                         <FormattedMessage
@@ -2208,7 +2221,7 @@ class MenuBar extends React.Component {
                                     </MenuItem>
                                     <MenuItem
                                         onClick={this.handleOpenExtensionManager}
-                                        shortcut={formatShortcutDisplay('Ctrl+Alt+E')}
+                                        shortcut={shortcutHint('extensionManager', this.props.customShortcuts)}
                                     >
                                         <FileCog />
                                         <FormattedMessage
@@ -2448,6 +2461,7 @@ MenuBar.propTypes = {
     onRequestCloseErrors: PropTypes.func,
     confirmReadyToReplaceProject: PropTypes.func,
     currentLocale: PropTypes.string.isRequired,
+    customShortcuts: PropTypes.objectOf(PropTypes.string),
     editMenuOpen: PropTypes.bool,
     editorMenuOpen: PropTypes.bool,
     enableCommunity: PropTypes.bool,
@@ -2561,6 +2575,7 @@ const mapStateToProps = (state, ownProps) => {
         aboutMenuOpen: aboutMenuOpen(state),
         accountMenuOpen: accountMenuOpen(state),
         currentLocale: state.locales.locale,
+        customShortcuts: state.scratchGui.shortcuts && state.scratchGui.shortcuts.customShortcuts,
         fileMenuOpen: fileMenuOpen(state),
         editMenuOpen: editMenuOpen(state),
         workspaceBookmarksMenuOpen: workspaceBookmarksMenuOpen(state),

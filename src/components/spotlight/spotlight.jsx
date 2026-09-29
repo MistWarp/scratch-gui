@@ -179,8 +179,8 @@ export default function NativeSpotlight ({vm, locale, activeTabIndex, isPlayerOn
                 },
                 {
                     id: 'restore-points',
-                    label: 'Open Restore Points',
-                    keywords: ['backup', 'recover', 'history', 'version', 'restore'],
+                    label: 'Open Device Backups',
+                    keywords: ['backup', 'recover', 'history', 'version', 'restore', 'restore points'],
                     run: () => dispatchAction(openRestorePointModal())
                 },
                 {

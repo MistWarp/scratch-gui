@@ -54,6 +54,11 @@
 .vol-icon {
     width: 20px;
     height: 20px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
     cursor: pointer;
 }
 

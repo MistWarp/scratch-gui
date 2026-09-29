@@ -22,13 +22,23 @@ const CrashMessage = props => (
                 />
             </p>
             <p>
-                <FormattedMessage
-                    defaultMessage={'We are so sorry, but it looks like the page has crashed.' +
-                        ' Please refresh your page to try' +
-                        ' again.'}
-                    description="Message to inform the user that page has crashed."
-                    id="tw.gui.crashMessage.description"
-                />
+                {props.onDownloadProject ? (
+                    <FormattedMessage
+                        // eslint-disable-next-line max-len
+                        defaultMessage="The editor ran into a problem and stopped. Download your project first, then reload the page to keep working."
+                        // eslint-disable-next-line max-len
+                        description="Message to inform the user that the editor crashed, when the project can still be downloaded"
+                        id="mw.crashMessage.descriptionWithDownload"
+                    />
+                ) : (
+                    <FormattedMessage
+                        // eslint-disable-next-line max-len
+                        defaultMessage="The editor ran into a problem and stopped. Reload the page to keep working. If recent changes are missing, look in File > Device backups."
+                        // eslint-disable-next-line max-len
+                        description="Message to inform the user that the editor crashed. File > Device backups is the menu path to local backups."
+                        id="mw.crashMessage.description"
+                    />
+                )}
             </p>
             {props.errorMessage && (
                 <p className={styles.errorMessage}>
@@ -77,7 +87,8 @@ const CrashMessage = props => (
             {props.downloadState === 'saved' && (
                 <p className={styles.downloadStatus}>
                     <FormattedMessage
-                        defaultMessage="Your project was downloaded. Open it from File after reloading."
+                        // eslint-disable-next-line max-len
+                        defaultMessage="Your project was downloaded. After reloading, open it with File > Load from your computer."
                         description="Shown after the project is saved to the computer from the crash screen"
                         id="mw.crashMessage.downloadSaved"
                     />
@@ -87,7 +98,7 @@ const CrashMessage = props => (
                 <p className={styles.downloadStatus}>
                     <FormattedMessage
                         // eslint-disable-next-line max-len
-                        defaultMessage="The project could not be saved. A device backup may still be available under File after reloading."
+                        defaultMessage="The project could not be downloaded. After reloading, look for a recent copy in File > Device backups."
                         description="Shown when saving the project from the crash screen fails"
                         id="mw.crashMessage.downloadFailed"
                     />
