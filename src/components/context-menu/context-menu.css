@@ -18,10 +18,20 @@
 }
 
 .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     padding: 8px 12px;
     white-space: nowrap;
     cursor: pointer;
     transition: 0.1s ease;
+}
+
+.menu-item-icon {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    color: inherit;
 }
 
 .menu-item:hover,
