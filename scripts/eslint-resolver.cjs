@@ -1,3 +1,4 @@
+const fs = require('fs');
 const path = require('path');
 const {createRequire} = require('module');
 
@@ -17,6 +18,17 @@ module.exports = {
                 return {found: true, path: resolve(source + extension)};
             } catch (error) {
                 // Try the next source extension.
+            }
+        }
+        if (/^(@[^/]+\/)?[^./@][^/]*$/.test(source)) {
+            try {
+                const packageJSONPath = resolve(`${source}/package.json`);
+                const {browser} = JSON.parse(fs.readFileSync(packageJSONPath, 'utf8'));
+                if (typeof browser === 'string') {
+                    return {found: true, path: path.resolve(path.dirname(packageJSONPath), browser)};
+                }
+            } catch (error) {
+                return {found: false};
             }
         }
         return {found: false};

@@ -1,4 +1,4 @@
-import * as bundledModule0 from "../../components/mw-share-modal/share-window.jsx";
+import * as bundledModule0 from '../../components/mw-share-modal/share-window.jsx';
 
 /* eslint-disable react/jsx-filename-extension, react/jsx-no-literals */
 import React from 'react';
@@ -53,41 +53,43 @@ const openMistWarpShareWindow = ({vm, initialTitle, initialError, action = 'save
 
     // Keep the window opening lifecycle asynchronous with the bundled dialog.
     ReactDOM.render(<div style={{padding: 16}}>Loading…</div>, container);
-    Promise.resolve(bundledModule0).then(({default: ShareWindow}) => {
-        // The window may have closed before the callback runs.
-        if (!shareWindow || !container) return;
-        const locales = window.ReduxStore ? window.ReduxStore.getState().locales : null;
-        ReactDOM.render(
-            React.createElement(IntlProvider, {
-                locale: (locales && locales.locale) || 'en',
-                messages: (locales && locales.messages) || {}
-            }, React.createElement(ShareWindow, {
-                vm,
-                initialTitle,
-                initialError,
-                action,
-                onClose: cleanup,
-                onReviewStorage: () => {
-                    cleanup();
-                    if (window.ReduxStore) {
-                        window.ReduxStore.dispatch(openProjectMetadataModal('optimiser'));
+    Promise.resolve(bundledModule0)
+        .then(({default: ShareWindow}) => {
+            // The window may have closed before the callback runs.
+            if (!shareWindow || !container) return;
+            const locales = window.ReduxStore ? window.ReduxStore.getState().locales : null;
+            ReactDOM.render(
+                React.createElement(IntlProvider, {
+                    locale: (locales && locales.locale) || 'en',
+                    messages: (locales && locales.messages) || {}
+                }, React.createElement(ShareWindow, {
+                    vm,
+                    initialTitle,
+                    initialError,
+                    action,
+                    onClose: cleanup,
+                    onReviewStorage: () => {
+                        cleanup();
+                        if (window.ReduxStore) {
+                            window.ReduxStore.dispatch(openProjectMetadataModal('optimiser'));
+                        }
+                    },
+                    onPublished: result => {
+                        if (typeof onPublished === 'function') {
+                            onPublished(result);
+                        }
                     }
-                },
-                onPublished: result => {
-                    if (typeof onPublished === 'function') {
-                        onPublished(result);
-                    }
-                }
-            })),
-            container
-        );
-    }).catch(() => {
-        if (!shareWindow || !container) return;
-        ReactDOM.render(
-            <div style={{padding: 16}}>{'Could not load save dialog. Check connection, retry.'}</div>,
-            container
-        );
-    });
+                })),
+                container
+            );
+        })
+        .catch(() => {
+            if (!shareWindow || !container) return;
+            ReactDOM.render(
+                <div style={{padding: 16}}>{'Could not load save dialog. Check connection, retry.'}</div>,
+                container
+            );
+        });
 
     shareWindow.center();
     shareWindow.show();

@@ -78,7 +78,7 @@ const removeRestore = restoreFun => ({
 /**
  * Add a deletion to the undo history. Passing no restoreFun removes the
  * newest deletion instead.
- * @param {object} state
+ * @param {object} state the deletion to record
  * @param {?function} state.restoreFun puts the deleted item back
  * @param {string} state.deletedItem 'Sprite', 'Costume' or 'Sound'
  * @returns {object} action

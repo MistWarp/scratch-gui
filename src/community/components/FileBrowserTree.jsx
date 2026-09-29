@@ -113,7 +113,11 @@ const FileBrowserTree = ({files, selectedPath, onSelect, showCount, showStats}) 
         <aside className={styles.sidebar}>
             <label className={styles.search}>
                 <Search size={15} />
-                <input value={query} placeholder={communityText('Filter files')} onChange={event => setQuery(event.target.value)} />
+                <input
+                    value={query}
+                    placeholder={communityText('Filter files')}
+                    onChange={event => setQuery(event.target.value)}
+                />
             </label>
             {showCount ? (
                 <div className={styles.fileCount}>

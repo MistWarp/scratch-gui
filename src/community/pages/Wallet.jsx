@@ -281,13 +281,21 @@ const Wallet = () => {
                     {account.donationsReceived > 0 ? (
                         <div className={styles.donationCard}>
                             <HeartHandshake size={16} />
-                            <span>{communityText('{value1} received in donations', {value1: fmtCredits(account.donationsReceived)})}</span>
+                            <span>
+                                {communityText('{value1} received in donations', {
+                                    value1: fmtCredits(account.donationsReceived)
+                                })}
+                            </span>
                         </div>
                     ) : null}
                     {account.donationsGiven > 0 ? (
                         <div className={styles.donationCard}>
                             <Send size={16} />
-                            <span>{communityText('{value1} given in donations', {value1: fmtCredits(account.donationsGiven)})}</span>
+                            <span>
+                                {communityText('{value1} given in donations', {
+                                    value1: fmtCredits(account.donationsGiven)
+                                })}
+                            </span>
                         </div>
                     ) : null}
                 </div>
@@ -295,7 +303,9 @@ const Wallet = () => {
 
             <section className={styles.section}>
                 <h2 className={styles.sectionTitle}>{communityText('Creator earnings')}</h2>
-                <p className={styles.sectionLead}>{communityText('Tips, project sales, revenue shares, and bounties paid to you.')}</p>
+                <p className={styles.sectionLead}>
+                    {communityText('Tips, project sales, revenue shares, and bounties paid to you.')}
+                </p>
                 {earnings ? (
                     <React.Fragment>
                         <div className={styles.earningsGrid}>
@@ -320,7 +330,11 @@ const Wallet = () => {
                                             <strong>
                                                 {entry.note || String(entry.kind || 'earning').replace(/_/g, ' ')}
                                             </strong>
-                                            <small>{entry.payer ? communityText('From {value1}', {value1: entry.payer}) : entry.source}</small>
+                                            <small>
+                                                {entry.payer ?
+                                                    communityText('From {value1}', {value1: entry.payer}) :
+                                                    entry.source}
+                                            </small>
                                         </span>
                                         <strong>+{credits(entry.amount)}</strong>
                                     </li>
@@ -337,7 +351,9 @@ const Wallet = () => {
 
             <section className={styles.section}>
                 <h2 className={styles.sectionTitle}>{communityText('Donation history')}</h2>
-                <p className={styles.sectionLead}>{communityText('Credits you have sent or received through MistWarp profiles.')}</p>
+                <p className={styles.sectionLead}>
+                    {communityText('Credits you have sent or received through MistWarp profiles.')}
+                </p>
                 {account && Array.isArray(account.donations) && account.donations.length ? (
                     <ul className={styles.donations}>
                         {account.donations.map(donation => {
@@ -381,7 +397,9 @@ const Wallet = () => {
 
             <section className={styles.section}>
                 <h2 className={styles.sectionTitle}>{communityText('Buy credits')}</h2>
-                <p className={styles.sectionLead}>{communityText('Top up through Stripe. Credits are added to your Rotur account after checkout.')}</p>
+                <p className={styles.sectionLead}>
+                    {communityText('Top up through Stripe. Credits are added to your Rotur account after checkout.')}
+                </p>
                 {billingMsg ? (
                     <Notice variant={billingMsg === 'success' ? 'success' : 'info'} className={styles.notice}>
                         {billingMsg === 'success' ?
@@ -406,8 +424,12 @@ const Wallet = () => {
                         </button>
                     ))}
                 </div>
-                {checkoutBusy ? <p className={styles.checkoutNote}>{communityText('Opening secure Stripe checkout…')}</p> : null}
-                {!billing ? <p className={styles.checkoutNote}>{communityText('Checking billing availability…')}</p> : null}
+                {checkoutBusy ? (
+                    <p className={styles.checkoutNote}>{communityText('Opening secure Stripe checkout…')}</p>
+                ) : null}
+                {billing ? null : (
+                    <p className={styles.checkoutNote}>{communityText('Checking billing availability…')}</p>
+                )}
                 {checkoutError ? (
                     <Notice variant="error" className={styles.checkoutNotice}>{checkoutError}</Notice>
                 ) : null}

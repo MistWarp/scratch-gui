@@ -52,8 +52,12 @@ const LiveProjectSession = ({project}) => {
     const names = editors.map(editor => `${editor.username} on ${editor.branch}`).join(', ');
     return (
         <div className={styles.visibilityNotice}>
-            <span>{session?.public ? communityText("{value1} has opened a live session on {value2}.", {value1: session.host, value2: session.branch}) :
-                communityText("{value1} working on this project.", {value1: names || session.host})}</span>
+            <span>{session?.public ?
+                communityText('{value1} has opened a live session on {value2}.', {
+                    value1: session.host,
+                    value2: session.branch
+                }) :
+                communityText('{value1} working on this project.', {value1: names || session.host})}</span>
             <a href={editorUrl({platformProject: project.id}).replace('#', '?collaborate=1#')}>
                 {session?.public ? communityText('View live session') : communityText('Open collaboration options')}
             </a>

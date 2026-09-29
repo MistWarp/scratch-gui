@@ -8,8 +8,9 @@ const SectionTabs = ({items, value, onChange, className, itemClassName, activeCl
     const rtl = locales[locale]?.rtl;
     const moveFocus = (event, index) => {
         let nextIndex;
-        if (event.key === (rtl ? 'ArrowLeft' : 'ArrowRight')) nextIndex = (index + 1) % items.length;
-        else if (event.key === (rtl ? 'ArrowRight' : 'ArrowLeft')) nextIndex = (index - 1 + items.length) % items.length;
+        const count = items.length;
+        if (event.key === (rtl ? 'ArrowLeft' : 'ArrowRight')) nextIndex = (index + 1) % count;
+        else if (event.key === (rtl ? 'ArrowRight' : 'ArrowLeft')) nextIndex = (index - 1 + count) % count;
         else if (event.key === 'Home') nextIndex = 0;
         else if (event.key === 'End') nextIndex = items.length - 1;
         else return;

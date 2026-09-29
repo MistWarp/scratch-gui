@@ -94,7 +94,9 @@ const GitGraph = ({graph, currentBranch = 'main', onRestore, restoring, projectI
                                     className={styles.commitHitArea}
                                     to={commitUrl}
                                     aria-current={node.sha === currentHead ? 'page' : null}
-                                    aria-label={communityText("View commit {value1}", {value1: (node.message || node.sha).split('\n')[0]})}
+                                    aria-label={communityText('View commit {value1}', {
+                                        value1: (node.message || node.sha).split('\n')[0]
+                                    })}
                                 />
                             ) : null}
                             <div className={styles.subject}>
@@ -122,7 +124,9 @@ const GitGraph = ({graph, currentBranch = 'main', onRestore, restoring, projectI
                                         disabled={restoring === node.sha}
                                         onClick={() => onRestore(node)}
                                     >
-                                        {restoring === node.sha ? communityText('Restoring…') : communityText('Restore this version')}
+                                        {restoring === node.sha ?
+                                            communityText('Restoring…') :
+                                            communityText('Restore this version')}
                                     </button>
                                 ) : null}
                             </div>
