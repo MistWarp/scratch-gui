@@ -5,6 +5,7 @@ import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-int
 import {X} from 'lucide-react';
 
 import {STARTERS} from '../../lib/starter-projects';
+import fog from '../../lib/default-project/fog.svg';
 import {DOCS_BASE} from '../../lib/help/index.js';
 import {getCommandPaletteKey} from '../../lib/shortcuts/command-palette.js';
 import {getIsShowingWithoutId} from '../../reducers/project-state';
@@ -129,11 +130,15 @@ const EditorWelcome = ({
                             data-starter={starter.id}
                             onClick={handleStarter}
                         >
-                            <span className={styles.starterTop}>
-                                <span className={styles.starterTitle}>{starter.title}</span>
-                                <span className={styles.starterKind}>{starter.kind}</span>
+                            <span className={`${styles.art} ${styles[starter.accent]}`}>
+                                <img
+                                    src={fog}
+                                    alt=""
+                                    draggable={false}
+                                />
                             </span>
-                            <span className={styles.starterDescription}>{starter.description}</span>
+                            <span className={styles.starterTitle}>{starter.title}</span>
+                            <span className={styles.starterKind}>{starter.kind}</span>
                         </button>
                     ))}
                 </div>
