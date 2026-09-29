@@ -110,9 +110,15 @@ export default async function ({ addon, console, msg }) {
   };
 
   const getBackpackFromElement = (el) => {
-    const gui = el.closest('[class*="gui_editor-wrapper"]');
-    if (!gui) throw new Error("cannot find Backpack");
-    return gui[reactInternalKey].child.sibling.child.child.stateNode;
+    let fiber = el[reactInternalKey];
+    while (fiber) {
+      const instance = fiber.stateNode;
+      if (instance && typeof instance.handleDrop === "function" && typeof instance.getContents === "function") {
+        return instance;
+      }
+      fiber = fiber.return;
+    }
+    throw new Error("cannot find Backpack");
   };
 
   const clamp = (n, min, max) => {
@@ -1294,7 +1300,7 @@ export default async function ({ addon, console, msg }) {
         if (!backpackContainer) {
           return;
         }
-        document.removeEventListener("click", clickListener);
+        document.removeEventListener("click", clickListener, true);
         const backpackInstance = getBackpackFromElement(backpackContainer);
         verifyBackpack(backpackInstance);
         patchBackpack(backpackInstance);
