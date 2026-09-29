@@ -18,8 +18,8 @@ for (const name of forks) {
         continue;
     }
     if (!fs.existsSync(sibling)) {
-        console.error(`${sibling} is not checked out, clone MistWarp/${name} next to scratch-gui`);
-        process.exit(1);
+        console.log(`${name} skipped, clone MistWarp/${name} next to scratch-gui to link it`);
+        continue;
     }
     fs.rmSync(installed, {recursive: true, force: true});
     fs.symlinkSync(path.join('..', sibling), installed, 'junction');

@@ -1,10 +1,8 @@
 {
     "plugins": [
         "@babel/plugin-syntax-dynamic-import",
-        "@babel/plugin-transform-object-rest-spread",
-        ["react-intl", {
-            "messagesDir": "./translations/messages/"
-        }]],
+        "@babel/plugin-transform-object-rest-spread"
+    ],
     "presets": [
         ["@babel/preset-env"],
         "@babel/preset-react"
