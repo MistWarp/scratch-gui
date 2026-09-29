@@ -3,8 +3,8 @@ import {applyTheme, applyThemeVisuals} from '../../../src/lib/themes/themePersis
 import {getMenuBarLayout} from '../../../src/lib/mw-menu-bar-layout.js';
 import {getStyleSetting} from '../../../src/lib/mw-style-settings.js';
 
-const savedLayout = {orders: {left: ['edit', 'file']}, hidden: ['feedback']};
-const normalizedSavedLayout = {orders: {left: ['edit', 'file'], right: []}, hidden: ['feedback']};
+const savedLayout = {orders: {left: ['edit', 'file']}, hidden: ['block-count']};
+const normalizedSavedLayout = {orders: {left: ['edit', 'file'], right: []}, hidden: ['block-count']};
 
 const withAppearance = appearance => new Theme(
     Theme.defaults.dark.accent,
