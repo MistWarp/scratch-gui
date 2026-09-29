@@ -32,7 +32,11 @@ const SpaceCard = ({space, to, onClick}) => {
     const componentProps = to ? {to} : {type: 'button', onClick};
     return (
         <article className={styles.card}>
-            <Component className={styles.cardLink} aria-label={communityText("Open {value1}", {value1: space.title})} {...componentProps} />
+            <Component
+                className={styles.cardLink}
+                aria-label={communityText('Open {value1}', {value1: space.title})}
+                {...componentProps}
+            />
             {thumbnailUrl ? <img className={styles.thumbnail} src={thumbnailUrl} alt="" loading="lazy" /> : null}
             <div className={styles.heading}>
                 <span className={styles.icon}><Icon size={17} /></span>
@@ -41,14 +45,21 @@ const SpaceCard = ({space, to, onClick}) => {
             <h3>{space.title}</h3>
             <p>{space.description || communityText('No description yet.')}</p>
             {space.owner ? (
-                <span className={styles.owner}>{communityText('by ')}<UserLink username={space.owner}>{space.owner}</UserLink><GroupTag username={space.owner} compact linked={false} />
+                <span className={styles.owner}>
+                    {communityText('by ')}
+                    <UserLink username={space.owner}>{space.owner}</UserLink>
+                    <GroupTag username={space.owner} compact linked={false} />
                 </span>
             ) : null}
             <div className={styles.meta}>
                 <span>{projectCount} {projectLabel}</span>
-                {space.kind === 'challenge' ? <span>{space.participantCount || 0}{communityText(' joined')}</span> : null}
+                {space.kind === 'challenge' ? (
+                    <span>{space.participantCount || 0}{communityText(' joined')}</span>
+                ) : null}
                 {space.kind !== 'library' ? (
-                    <span>{followerCount} {followerCount === 1 ? communityText('follower') : communityText('followers')}</span>
+                    <span>
+                        {followerCount} {followerCount === 1 ? communityText('follower') : communityText('followers')}
+                    </span>
                 ) : null}
                 {space.kind !== 'challenge' && Number.isFinite(space.totalPlaytimeMs) ? (
                     <span className={styles.playtime}>

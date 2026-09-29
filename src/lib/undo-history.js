@@ -25,6 +25,12 @@ const topSequence = stack => {
     return stack[stack.length - 1][SEQUENCE] || 0;
 };
 
+const untrackWorkspaceUndo = workspace => {
+    if (!workspace || workspace !== trackedWorkspace) return;
+    workspace.removeChangeListener(stampEvent);
+    trackedWorkspace = null;
+};
+
 /**
  * Number every undoable event on the main workspace as it happens.
  * @param {object} workspace scratch-blocks main workspace
@@ -34,12 +40,6 @@ const trackWorkspaceUndo = workspace => {
     untrackWorkspaceUndo(trackedWorkspace);
     trackedWorkspace = workspace;
     workspace.addChangeListener(stampEvent);
-};
-
-const untrackWorkspaceUndo = workspace => {
-    if (!workspace || workspace !== trackedWorkspace) return;
-    workspace.removeChangeListener(stampEvent);
-    trackedWorkspace = null;
 };
 
 /**
@@ -75,7 +75,7 @@ const nextUndoSource = (workspace, deletion) => {
  * Undo the most recent action, whether it was a block edit or a deletion.
  * Presses made while a deletion is being restored share that restore instead
  * of reaching further back in the history.
- * @param {object} options
+ * @param {object} options what to undo and how to report the result
  * @param {?object} options.workspace scratch-blocks main workspace, if loaded
  * @param {?object} options.deletion latest restorable deletion, if any
  * @param {function} options.onRestored called with the restored deletion's restoreFun

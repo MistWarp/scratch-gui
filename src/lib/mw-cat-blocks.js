@@ -59,29 +59,6 @@ const notifyChanged = () => {
     window.dispatchEvent(new CustomEvent(CAT_BLOCKS_CHANGED));
 };
 
-const setCatBlocks = enabled => {
-    migrateFromAddon();
-    try {
-        localStorage.setItem(ENABLED_KEY, String(!!enabled));
-    } catch (err) {
-        // ignore
-    }
-    flagCache.set(ENABLED_KEY, !!enabled);
-    applyCatBlocksToLoadedBlockly();
-    notifyChanged();
-};
-
-const setCatBlocksWatch = enabled => {
-    migrateFromAddon();
-    try {
-        localStorage.setItem(WATCH_KEY, String(!!enabled));
-    } catch (err) {
-        // ignore
-    }
-    flagCache.set(WATCH_KEY, !!enabled);
-    notifyChanged();
-};
-
 let patched = false;
 let originalStatics = null;
 
@@ -271,7 +248,7 @@ const installCatPatches = Blockly => {
                     const dx = mouseLocation.x - xy.x;
                     const dy = mouseLocation.y - xy.y;
                     const theta = Math.atan2(dx, dy);
-                    const delta = Math.sqrt(dx * dx + dy * dy);
+                    const delta = Math.sqrt((dx * dx) + (dy * dy));
                     const scaleFactor = delta / (delta + 1);
                     const a = 2;
                     const b = 5;
@@ -395,6 +372,29 @@ const applyCatBlocksToLoadedBlockly = () => {
         Blockly.BlockSvg.START_HAT_PATH = originalStatics.START_HAT_PATH;
         Blockly.BlockSvg.TOP_LEFT_CORNER_DEFINE_HAT = originalStatics.TOP_LEFT_CORNER_DEFINE_HAT;
     }
+};
+
+const setCatBlocks = enabled => {
+    migrateFromAddon();
+    try {
+        localStorage.setItem(ENABLED_KEY, String(!!enabled));
+    } catch (err) {
+        // ignore
+    }
+    flagCache.set(ENABLED_KEY, !!enabled);
+    applyCatBlocksToLoadedBlockly();
+    notifyChanged();
+};
+
+const setCatBlocksWatch = enabled => {
+    migrateFromAddon();
+    try {
+        localStorage.setItem(WATCH_KEY, String(!!enabled));
+    } catch (err) {
+        // ignore
+    }
+    flagCache.set(WATCH_KEY, !!enabled);
+    notifyChanged();
 };
 
 const initCatBlocks = () => {

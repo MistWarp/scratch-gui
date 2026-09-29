@@ -34,7 +34,7 @@ const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, 
             match: projects.map(project => project.title),
             items: projects.map(project => (
                 <div key={project.id} className={styles.suggestion}>
-                    <button type="button" className={styles.suggestionTarget} aria-label={communityText("Open {value1}", {value1: project.title})} onClick={() => onProject(project)} />
+                    <button type="button" className={styles.suggestionTarget} aria-label={communityText('Open {value1}', {value1: project.title})} onClick={() => onProject(project)} />
                     <ProjectThumbnail project={project} className={styles.suggestionThumb} fallbackClassName={styles.suggestionThumbFallback} />
                     <span>{project.title}</span>
                     <UserLink className={styles.suggestionMeta} username={project.owner}>{communityText('by ')}{project.owner}</UserLink>
@@ -60,7 +60,7 @@ const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, 
             match: spaces.map(space => space.title),
             items: spaces.map(space => (
                 <div key={space._id} className={styles.suggestion}>
-                    <button type="button" className={styles.suggestionTarget} aria-label={communityText("Open {value1}", {value1: space.title})} onClick={() => onSpace(space._id)} />
+                    <button type="button" className={styles.suggestionTarget} aria-label={communityText('Open {value1}', {value1: space.title})} onClick={() => onSpace(space._id)} />
                     <span className={styles.suggestionSpaceIcon}><Layers3 size={15} /></span>
                     <span>{space.title}</span>
                     <span className={styles.suggestionMeta}>{SPACE_KIND_LABELS[space.kind] || communityText('Space')}{communityText(' · by ')}<UserLink username={space.owner}>{space.owner}</UserLink></span>
@@ -102,7 +102,7 @@ const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, 
                 ))}
                 {sections.length ? (
                     <button type="button" className={`${styles.suggestion} ${styles.suggestionAll}`} onClick={onSeeAll}>
-                        {communityText("See all results for \"{value1}\"", {value1: query.trim()})}
+                        {communityText('See all results for "{value1}"', {value1: query.trim()})}
                     </button>
                 ) : null}
             </div>
@@ -472,7 +472,7 @@ const NavBar = () => {
                                 to="/notifications"
                                 className={`${styles.iconLink} ${styles.bellLink}`}
                                 title={communityText('Notifications')}
-                                aria-label={unread > 0 ? communityText("Notifications ({value1} unread)", {value1: unread}) : communityText('Notifications')}
+                                aria-label={unread > 0 ? communityText('Notifications ({value1} unread)', {value1: unread}) : communityText('Notifications')}
                             >
                                 <Bell size={19} />
                                 {unread > 0 ? (
@@ -556,7 +556,7 @@ const NavBar = () => {
                     to="/notifications"
                     className={`${mobileItemClass('/notifications')} ${styles.mobileNotification}`}
                     aria-current={location.pathname.startsWith('/notifications') ? 'page' : null}
-                    aria-label={unread > 0 ? communityText("Notifications ({value1} unread)", {value1: unread}) : communityText('Notifications')}
+                    aria-label={unread > 0 ? communityText('Notifications ({value1} unread)', {value1: unread}) : communityText('Notifications')}
                     title={communityText('Notifications')}
                 >
                     <Bell size={25} />

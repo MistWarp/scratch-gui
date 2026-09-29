@@ -116,7 +116,13 @@ const App = () => {
                 action="community-route"
                 resetKey={pathname}
             >
-                <Suspense fallback={<p className={tokenStyles['mw-route-loading']} role="status">{communityText('Loading page…')}</p>}>
+                <Suspense
+                    fallback={
+                        <p className={tokenStyles['mw-route-loading']} role="status">
+                            {communityText('Loading page…')}
+                        </p>
+                    }
+                >
                     <Routes>
                         <Route path="/" element={<Home />} />
                         <Route path="/explore" element={<Explore />} />
