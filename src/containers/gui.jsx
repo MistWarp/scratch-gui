@@ -125,7 +125,11 @@ class GUI extends React.Component {
                 },
                 setFullScreen: () => {
                     this.props.onSetFullScreen(!this.props.isFullScreen);
-                }
+                },
+                getMode: () => ({
+                    isEmbedded: this.props.isEmbedded,
+                    isPlayerOnly: this.props.isPlayerOnly
+                })
             }
         );
 
@@ -257,6 +261,7 @@ GUI.propTypes = {
     error: PropTypes.oneOfType([PropTypes.object, PropTypes.string]),
     fetchingProject: PropTypes.bool,
     intl: intlShape,
+    isPlayerOnly: PropTypes.bool,
     isError: PropTypes.bool,
     isEmbedded: PropTypes.bool,
     isFullScreen: PropTypes.bool,
