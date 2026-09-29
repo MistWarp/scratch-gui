@@ -17,7 +17,6 @@ const MenuBarHOC = function (WrappedComponent) {
             bindAll(this, [
                 'confirmReadyToReplaceProject',
                 'handleSaveProject',
-                'shouldSaveBeforeTransition',
                 'showToast'
             ]);
         }
@@ -34,9 +33,6 @@ const MenuBarHOC = function (WrappedComponent) {
                     onCancel: () => resolve(false)
                 });
             });
-        }
-        shouldSaveBeforeTransition () {
-            return (this.props.canSave && this.props.projectChanged);
         }
         handleSaveProject () {
             return smartSave({
@@ -61,7 +57,6 @@ const MenuBarHOC = function (WrappedComponent) {
                 <React.Fragment>
                     <WrappedComponent
                         confirmReadyToReplaceProject={this.confirmReadyToReplaceProject}
-                        shouldSaveBeforeTransition={this.shouldSaveBeforeTransition}
                         openSimpleDialog={this.props.openSimpleDialog}
                         showToast={this.showToast}
                         {...{handleSaveProject: this.handleSaveProject}}
@@ -80,8 +75,6 @@ const MenuBarHOC = function (WrappedComponent) {
     }
 
     MenuBarContainer.propTypes = {
-        canCreateNew: PropTypes.bool,
-        canSave: PropTypes.bool,
         confirmWithMessage: PropTypes.func,
         handleHideToast: PropTypes.func.isRequired,
         openSimpleDialog: PropTypes.func.isRequired,

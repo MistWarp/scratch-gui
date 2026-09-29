@@ -14,9 +14,7 @@ const labels = defineMessages({
     'community': {defaultMessage: 'Project page', id: 'mw.settings.menuBar.item.projectPage'},
     'rotur-account': {defaultMessage: 'Rotur profile', id: 'mw.settings.menuBar.item.roturProfile'},
     'feedback': {defaultMessage: 'Feedback', id: 'mw.settings.menuBar.item.feedback'},
-    'collab-presence': {defaultMessage: 'Collaboration', id: 'mw.settings.menuBar.item.collaboration'},
-    'share': {defaultMessage: 'Share', id: 'mw.settings.menuBar.item.share'},
-    'remix': {defaultMessage: 'Remix', id: 'mw.settings.menuBar.item.remix'}
+    'collab-presence': {defaultMessage: 'Collaboration', id: 'mw.settings.menuBar.item.collaboration'}
 });
 
 const humanizeId = id => {
