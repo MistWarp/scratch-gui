@@ -12,7 +12,7 @@
  * authoritative for who sent a message.
  */
 
-const PROTOCOL_VERSION = 3;
+const PROTOCOL_VERSION = 4;
 
 const KIND = {
     OP: 'op',
@@ -67,6 +67,7 @@ const CTRL = {
     USERNAME_CHANGE: 'username-change',
     KICK: 'kick',
     PRIVACY_CHANGED: 'privacy-changed',
+    ROLE_CHANGED: 'role-changed',
     OPS_REQUEST: 'ops-request',
     RESYNC_REQUIRED: 'resync-required',
     SESSION_READY: 'session-ready',
@@ -164,11 +165,15 @@ const isChunkData = value => {
     return false;
 };
 
+const ROLES = ['edit', 'watch'];
+const isRole = value => ROLES.includes(value);
+
 const isUserInfo = value =>
     isPlainObject(value) &&
     isNonEmptyString(value.id, LIMITS.MAX_ID) &&
     isNonEmptyString(value.username, LIMITS.MAX_USERNAME) &&
     isOptionalString(value.handle, LIMITS.MAX_USERNAME) &&
+    (typeof value.role === 'undefined' || isRole(value.role)) &&
     typeof value.isHost === 'boolean';
 
 const isMd5Ext = value =>
@@ -363,6 +368,7 @@ const PAYLOAD_VALIDATORS = {
         }
         if (!isOptionalString(payload.epoch, LIMITS.MAX_TOKEN)) return 'hello epoch must be a string';
         if (!isOptionalString(payload.reconnectToken, LIMITS.MAX_TOKEN)) return 'hello reconnectToken must be a string';
+        if (!isOptionalString(payload.invite, LIMITS.MAX_TOKEN)) return 'hello invite must be a string';
         return null;
     },
     [CTRL.JOIN_REQUEST]: payload =>
@@ -371,6 +377,7 @@ const PAYLOAD_VALIDATORS = {
         if (!isNonEmptyString(payload.hostUsername, LIMITS.MAX_USERNAME)) return 'join-approved requires hostUsername';
         if (!isNonEmptyString(payload.epoch, LIMITS.MAX_TOKEN)) return 'join-approved requires epoch';
         if (!isNonEmptyString(payload.reconnectToken, LIMITS.MAX_TOKEN)) return 'join-approved requires reconnectToken';
+        if (!isRole(payload.role)) return 'join-approved requires a role';
         return null;
     },
     [CTRL.JOIN_DENIED]: payload =>
@@ -393,6 +400,7 @@ const PAYLOAD_VALIDATORS = {
     [CTRL.PRIVACY_CHANGED]: payload =>
         (payload.privacy === 'public' || payload.privacy === 'private' ?
             null : 'privacy-changed requires public|private'),
+    [CTRL.ROLE_CHANGED]: payload => (isRole(payload.role) ? null : 'role-changed requires a role'),
     [CTRL.OPS_REQUEST]: payload =>
         (isNonNegativeInt(payload.fromSeq) ? null : 'ops-request requires fromSeq'),
 
@@ -555,6 +563,7 @@ const makePresence = (type, payload) => makeEnvelope(KIND.PRESENCE, type, payloa
 
 export {
     PROTOCOL_VERSION,
+    ROLES,
     KIND,
     OP,
     CTRL,
