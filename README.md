@@ -1,63 +1,116 @@
 # MistWarp editor
 
-This repository contains the browser editor used by [MistWarp](https://mistwarp.org/). It is based on Scratch GUI and TurboWarp, with MistWarp's community, collaboration, project settings, and developer tools built in.
+This repository is the browser app behind [mistwarp.org](https://mistwarp.org/): the editor, the project player, and the community site. It is a fork of [TurboWarp](https://github.com/TurboWarp/scratch-gui), which is based on Scratch GUI.
+
+Contributor docs, including the code style rules and how the other MistWarp packages fit together, are at [mistwarp.org/docs/contributing](https://mistwarp.org/docs/contributing/overview/).
 
 ## Requirements
 
-- Node.js 20.19 or later
-- pnpm 10.28.2, pinned in `package.json`
-- The sibling `scratch-vm`, `scratch-blocks`, `scratch-render`, and `scratch-paint` repositories when changing linked editor packages
+- Node.js 22, as pinned in `.nvmrc` (20.19 is the minimum)
+- pnpm 10, as pinned in `package.json`. Run `corepack enable` once and Node picks the right version.
+- Git, and an internet connection for the first install and first start
 
-## Run the editor
+## Get started
 
 ```sh
-pnpm install --frozen-lockfile
+git clone https://github.com/MistWarp/scratch-gui.git
+cd scratch-gui
+pnpm install
+cp .env.example .env
 pnpm start
 ```
 
-Open <http://localhost:8601/editor.html>. Vite serves the editor and updates changed React components and styles automatically.
+With the `.env` from `.env.example`, `MW_COMMUNITY=true` turns on the community site:
 
-Run `pnpm run link` after installing when you need the sibling MistWarp packages. `pnpm run reinstall` refreshes dependencies without deleting the lockfile.
+- <http://localhost:8601/> is the community site. It talks to the live API at `api.mistwarp.org`.
+- <http://localhost:8601/editor> is the editor.
 
-## Builds
+Without `.env`, <http://localhost:8601/> is the editor and the community pages are left out.
 
-`pnpm run build` uses Vite to create the site in `build/`. Site builds and deployments compile all selected pages in one pass, sharing JavaScript and CSS between the editor, player, and community. Use `pnpm run build:all` to also build the GUI library in `dist/`, or `pnpm run build:library` for just the library. Use `pnpm run preview` to serve the production site on port 8601. Production pages use JavaScript modules and must be served over HTTP.
+The first start downloads the micro:bit HEX file and writes the generated sources in `src/generated/`. Later starts work offline. Changes to React components and CSS reload automatically.
 
-- `pnpm run build:editor` builds the editor as one JavaScript bundle and creates its index page.
-- `pnpm run build:community` builds the community index page.
-- `MW_COMMUNITY=true pnpm run build` includes the community, editor, player, fullscreen, embed, addon settings, and credits pages.
-- `pnpm run build:library` builds the library alone. It exports ES modules in `dist/scratch-gui.mjs` and UMD in `dist/scratch-gui.js`. Load `dist/scratch-gui.css` alongside the library. React and ReactDOM are external dependencies.
-- `pnpm run build:stats` writes module and asset sizes to `stats.json` in each output directory.
-
-`ROOT` sets the site base URL and must end in `/`. `BUILD_DIR` changes the site output directory, `PORT` changes the server port, and `ONLY_ENTRY` selects an entry by name. `ROUTING_STYLE`, `STATIC_PATH`, `EXTRA_META`, `ENABLE_SERVICE_WORKER`, and the `MW_*` build values remain supported. Environment values come from Vite's `.env` files and the shell. Only the browser values listed in `vite.config.mjs` are exposed to client code.
-
-The [Vite configuration](./vite.config.mjs) preserves the existing CSS module imports and handles the loader requests still shipped by the linked Scratch packages. GUI assets use Vite queries such as `?raw`, `?url`, `?inline`, and `?worker`; `?base64`, `?arraybuffer`, and `?recolor` cover the editor's embedded assets.
-
-Startup loads the block editor first and loads paint, asset catalogues, optional dialogs, and non-English translations on demand. Scratch Blocks is built from its generated Closure sources, so Vite can minify it without a nested development bundle. `pnpm run build:report` measures the initial JavaScript dependency graph in `build/editor.html`, including raw and gzip sizes.
-
-When embedding the library with a non-English initial locale, await the exported `prepareLocale()` before rendering, or `loadLocale(locale)` when selecting the initial locale explicitly. Locale changes through the supplied Redux middleware load their dictionaries automatically.
-
-## Checks
+## Build
 
 ```sh
-pnpm run test:unit:ci
-pnpm run test:smoke
 pnpm run build
+pnpm run preview
 ```
 
-Use `pnpm run test:unit:watch` while working on unit-tested behavior. Use `pnpm run test:unit:addons` for the smaller addon settings suite.
+`pnpm run build` writes the site to `build/`, and `pnpm run preview` serves it on port 8601. A community build (`MW_COMMUNITY=true`) needs more memory than Node's default, so set `NODE_OPTIONS=--max-old-space-size=7168` if it runs out.
 
-The unit command covers every file under `test/unit`. Pull requests run the full unit suite and a production build.
+- `pnpm run build:editor` builds only the editor, as one bundle.
+- `pnpm run build:community` builds only the community site.
+- `pnpm run build:library` builds the GUI library into `dist/`, and `pnpm run build:all` builds the site and the library.
+- `pnpm run build:stats` and `pnpm run build:report` report bundle sizes.
 
-## Where editor code lives
+Production runs on Cloudflare Pages, which builds `develop` with `MW_COMMUNITY=true`, updates the engine forks to their latest `develop`, and adds the docs site under `/docs`.
 
-- `src/components/gui` owns the main editor layout and responsive behavior.
-- `src/components/tw-settings-modal` owns Settings pages and their navigation.
-- `src/components/menu-bar` and `src/lib/mw-menu-bar-layout.js` own menu-bar rendering and saved layout.
-- `src/containers` connects presentational components to the VM and Redux.
-- `test/unit` tests component and library behavior. `test/integration` contains browser workflows against a built editor. `pnpm run test:integration` starts a local Vite preview server for those tests.
+## Check your changes
 
-Keep settings destinations broad. Put related controls in tabs inside a page instead of adding another sidebar item.
+Pull requests run these checks, so run them before pushing:
+
+```sh
+pnpm run deps:check
+pnpm run i18n:community:check
+pnpm run i18n:editor:check
+pnpm run test:unit:ci
+MW_COMMUNITY=true pnpm run build
+node scripts/validate-deploy.mjs build
+```
+
+Also run these when they apply:
+
+- `pnpm run lint` for ESLint, or `npx eslint <files>` for the files you changed. `pnpm run fmt` fixes what it can.
+- `pnpm run check:community-css` after changing CSS in `src/community`.
+- `pnpm run i18n:editor:extract` after adding or changing an editor message, then commit `src/lib/tw-translations/default-messages.json`.
+- `pnpm run i18n:community:extract` after adding a community string.
+- `pnpm run test:unit:watch` while working, or `npx jest <path>` for one file.
+- `pnpm run test:integration` runs the Selenium tests in `test/integration` against `build/`. It needs Chrome and a matching `chromedriver`.
+
+## Work on the engine packages
+
+The editor depends on MistWarp forks of `scratch-vm`, `scratch-blocks`, `scratch-render`, `scratch-paint`, and `scratch-audio`, pinned to commits in `package.json`. To change one, clone it next to `scratch-gui` and link it:
+
+```sh
+cd ..
+git clone https://github.com/MistWarp/scratch-vm.git
+cd scratch-gui
+pnpm run link
+```
+
+`pnpm run link` links every fork that is checked out next to `scratch-gui` and skips the rest. `pnpm run unlink`, or another `pnpm install`, goes back to the pinned copies. `pnpm run reinstall` forces a fresh install and links again. `pnpm run deps:sync` moves the pins to each fork's latest `develop`.
+
+## Environment variables
+
+Set these in `.env` or in the shell.
+
+| Variable | Effect |
+| --- | --- |
+| `MW_COMMUNITY` | `true` adds the community site and makes it the home page. |
+| `PORT` | Port for `pnpm start` and `pnpm run preview`. Defaults to 8601. |
+| `ROOT` | Base URL of the site. Must end in `/`. Defaults to `/`. |
+| `BUILD_DIR` | Output directory for site builds. Defaults to `build`. |
+| `ONLY_ENTRY` | Builds one page: `editor`, `community`, `player`, `fullscreen`, `embed`, `addon-settings`, or `credits`. |
+| `SOURCEMAP` | `true` writes source maps. |
+| `MW_BUILD_DOCS` | Clones and builds MistWarp/docs into `/docs`. A built sibling `../docs/build` is copied in instead when it exists. |
+| `MW_PINNED_FORKS` | On Cloudflare Pages, keeps the fork pins from `package.json` instead of updating them. |
+| `MW_STATUS_URL` | Status service used by the community status page and analytics. |
+| `GOOGLE_FONTS_API_KEY` | Google Fonts API key for the theme font picker. |
+
+`ROUTING_STYLE`, `STATIC_PATH`, `EXTRA_META`, `ENABLE_SERVICE_WORKER`, `DEBUG`, `MW_BUILD_ID`, and `MW_BUILD_TIME` are also read. See `vite.config.mjs` and `scripts/build.mjs`.
+
+## Where things live
+
+- `src/playground` holds the page entry points, and `vite.config.mjs` maps them to URLs.
+- `src/components` and `src/containers` hold the editor UI. `src/components/gui` is the main layout.
+- `src/community` is the community site.
+- `src/addons` holds the built-in addons.
+- `test/unit` holds the Jest tests and `test/integration` the browser tests.
+- `docs/` covers internals such as the [project state machine](docs/project-state.md) and [collaboration](docs/collaboration.md).
+
+## Translations
+
+Editor strings use react-intl. Their English defaults are extracted into `src/lib/tw-translations/default-messages.json`, and other languages come from `@turbowarp/scratch-l10n`. Community strings go through `communityText()` and live in `src/community/translations/`. `pnpm run i18n:community:add <locale>` starts a new community language and `pnpm run i18n:community:coverage` shows how complete each one is.
 
 ## License
 
@@ -81,279 +134,3 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 ```
 
 src/lib/default-project/dango.svg is based on [Twemoji](https://twemoji.twitter.com/) and is licensed under CC BY 4.0 https://creativecommons.org/licenses/by/4.0/
-
-<!--
-
-# scratch-gui
-#### Scratch GUI is a set of React components that comprise the interface for creating and running Scratch 3.0 projects
-
-## Installation
-This requires you to have Git and Node.js installed.
-
-In your own node environment/application:
-```bash
-npm install https://github.com/LLK/scratch-gui.git
-```
-If you want to edit/play yourself:
-```bash
-git clone https://github.com/LLK/scratch-gui.git
-cd scratch-gui
-npm install
-```
-
-**You may want to add `--depth=1` to the `git clone` command because there are some [large files in the git repository history](https://github.com/LLK/scratch-gui/issues/5140).**
-
-## Getting started
-Running the project requires Node.js to be installed.
-
-## Running
-Open a Command Prompt or Terminal in the repository and run:
-```bash
-npm start
-```
-Then go to [http://localhost:8601/](http://localhost:8601/) - the playground outputs the default GUI component
-
-## Developing alongside other Scratch repositories
-
-### Getting another repo to point to this code
-
-
-If you wish to develop `scratch-gui` alongside other scratch repositories that depend on it, you may wish
-to have the other repositories use your local `scratch-gui` build instead of fetching the current production
-version of the scratch-gui that is found by default using `npm install`.
-
-Here's how to link your local `scratch-gui` code to another project's `node_modules/scratch-gui`.
-
-#### Configuration
-
-1. In your local `scratch-gui` repository's top level:
-    1. Make sure you have run `npm install`
-    2. Build the `dist` directory by running `BUILD_MODE=dist npm run build`
-    3. Establish a link to this repository by running `npm link`
-
-2. From the top level of each repository (such as `scratch-www`) that depends on `scratch-gui`:
-    1. Make sure you have run `npm install`
-    2. Run `npm link scratch-gui`
-    3. Build or run the repository
-
-#### Using `npm run watch`
-
-Instead of `BUILD_MODE=dist npm run build`, you can use `BUILD_MODE=dist npm run watch` instead. This will watch for changes to your `scratch-gui` code, and automatically rebuild when there are changes. Sometimes this has been unreliable; if you are having problems, try going back to `BUILD_MODE=dist npm run build` until you resolve them.
-
-#### Oh no! It didn't work!
-
-If you can't get linking to work right, try:
-* Follow the recipe above step by step and don't change the order. It is especially important to run `npm install` _before_ `npm link` as installing after the linking will reset the linking.
-* Make sure the repositories are siblings on your machine's file tree, like `.../.../MY_SCRATCH_DEV_DIRECTORY/scratch-gui/` and `.../.../MY_SCRATCH_DEV_DIRECTORY/scratch-www/`.
-* Consistent node.js version: If you have multiple Terminal tabs or windows open for the different Scratch repositories, make sure to use the same node version in all of them.
-* If nothing else works, unlink the repositories by running `npm unlink` in both, and start over.
-
-## Testing
-### Documentation
-
-You may want to review the documentation for [Jest](https://facebook.github.io/jest/docs/en/api.html) and [Enzyme](http://airbnb.io/enzyme/docs/api/) as you write your tests.
-
-See [jest cli docs](https://facebook.github.io/jest/docs/en/cli.html#content) for more options.
-
-### Running tests
-
-*NOTE: If you're a Windows user, please run these scripts in Windows `cmd.exe`  instead of Git Bash/MINGW64.*
-
-Before running any tests, make sure you have run `npm install` from this (scratch-gui) repository's top level.
-
-#### Main testing command
-
-To run linter, unit tests, build, and integration tests, all at once:
-```bash
-npm test
-```
-
-#### Running unit tests
-
-To run unit tests in isolation:
-```bash
-npm run test:unit
-```
-
-To run unit tests in watch mode (watches for code changes and continuously runs tests):
-```bash
-npm run test:unit -- --watch
-```
-
-You can run a single file of integration tests (in this example, the `button` tests):
-
-```bash
-$(npm bin)/jest --runInBand test/unit/components/button.test.jsx
-```
-
-#### Running integration tests
-
-Integration tests use a headless browser to manipulate the actual HTML and javascript that the repo
-produces. You will not see this activity (though you can hear it when sounds are played!).
-
-Note that integration tests require you to first create a build that can be loaded in a browser:
-
-```bash
-npm run build
-```
-
-Then, you can run all integration tests:
-
-```bash
-npm run test:integration
-```
-
-The tests drive Chrome through the `chromedriver` package, which must match the Chrome major version on your
-machine. If Chrome is not on your `PATH`, or you need a different chromedriver, point the tests at them:
-
-```bash
-CHROME_BIN=/path/to/chrome CHROMEDRIVER_BIN=/path/to/chromedriver npm run test:integration
-```
-
-Or, you can run a single file of integration tests (in this example, the `backpack` tests):
-
-```bash
-$(npm bin)/jest --runInBand test/integration/backpack.test.js
-```
-
-If you want to watch the browser as it runs the test, rather than running headless, use:
-
-```bash
-USE_HEADLESS=no $(npm bin)/jest --runInBand test/integration/backpack.test.js
-```
-
-_Note: If you are seeing failed tests related to `chromedriver` being incompatible with your version of Chrome, you may need to update `chromedriver` with:_
-
-```bash
-npm install chromedriver@{version}
-```
-
-## Troubleshooting
-
-### Ignoring optional dependencies
-
-When running `npm install`, you can get warnings about optional dependencies:
-
-```
-npm WARN optional Skipping failed optional dependency /chokidar/fsevents:
-npm WARN notsup Not compatible with your operating system or architecture: fsevents@1.2.7
-```
-
-You can suppress them by adding the `no-optional` switch:
-
-```
-npm install --no-optional
-```
-
-Further reading: [Stack Overflow](https://stackoverflow.com/questions/36725181/not-compatible-with-your-operating-system-or-architecture-fsevents1-0-11)
-
-### Resolving dependencies
-
-When installing for the first time, you can get warnings that need to be resolved:
-
-```
-npm WARN eslint-config-scratch@5.0.0 requires a peer of babel-eslint@^8.0.1 but none was installed.
-npm WARN eslint-config-scratch@5.0.0 requires a peer of eslint@^4.0 but none was installed.
-npm WARN scratch-paint@0.2.0-prerelease.20190318170811 requires a peer of react-intl-redux@^0.7 but none was installed.
-npm WARN scratch-paint@0.2.0-prerelease.20190318170811 requires a peer of react-responsive@^4 but none was installed.
-```
-
-You can check which versions are available:
-
-```
-npm view react-intl-redux@0.* version
-```
-
-You will need to install the required version:
-
-```
-npm install  --no-optional --save-dev react-intl-redux@^0.7
-```
-
-The dependency itself might have more missing dependencies, which will show up like this:
-
-```
-user@machine:~/sources/scratch/scratch-gui (491-translatable-library-objects)$ npm install  --no-optional --save-dev react-intl-redux@^0.7
-scratch-gui@0.1.0 /media/cuideigin/Linux/sources/scratch/scratch-gui
-├── react-intl-redux@0.7.0
-└── UNMET PEER DEPENDENCY react-responsive@5.0.0
-```
-
-You will need to install those as well:
-
-```
-npm install  --no-optional --save-dev react-responsive@^5.0.0
-```
-
-Further reading: [Stack Overflow](https://stackoverflow.com/questions/46602286/npm-requires-a-peer-of-but-all-peers-are-in-package-json-and-node-modules)
-
-## Troubleshooting
-
-If you run into npm install errors, try these steps:
-1. run `npm cache clean --force`
-2. Delete the node_modules directory
-3. Delete package-lock.json
-4. run `npm install` again
-
-## Understanding the project state machine
-
-Since so much code throughout scratch-gui depends on the state of the project, which goes through many different phases of loading, displaying and saving, we created a "finite state machine" to make it clear which state it is in at any moment. This is contained in the file src/reducers/project-state.js .
-
-It can be hard to understand the code in src/reducers/project-state.js . There are several types of data and functions used, which relate to each other:
-
-### Loading states
-
-These include state constant strings like:
-
-* `NOT_LOADED` (the default state),
-* `ERROR`,
-* `FETCHING_WITH_ID`,
-* `LOADING_VM_WITH_ID`,
-* `REMIXING`,
-* `SHOWING_WITH_ID`,
-* `SHOWING_WITHOUT_ID`,
-* etc.
-
-### Transitions
-
-These are names for the action which causes a state change. Some examples are:
-
-* `START_FETCHING_NEW`,
-* `DONE_FETCHING_WITH_ID`,
-* `DONE_LOADING_VM_WITH_ID`,
-* `SET_PROJECT_ID`,
-* `START_AUTO_UPDATING`,
-
-### How transitions relate to loading states
-
-Like this diagram of the project state machine shows, various transition actions can move us from one loading state to another:
-
-![Project state diagram](docs/project_state_diagram.svg)
-
-_Note: for clarity, the diagram above excludes states and transitions relating to error handling._
-
-#### Example
-
-Here's an example of how states transition.
-
-Suppose a user clicks on a project, and the page starts to load with URL https://scratch.mit.edu/projects/123456 .
-
-Here's what will happen in the project state machine:
-
-![Project state example](docs/project_state_example.png)
-
-1. When the app first mounts, the project state is `NOT_LOADED`.
-2. The `SET_PROJECT_ID` redux action is dispatched (from src/lib/project-fetcher-hoc.jsx), with `projectId` set to `123456`. This transitions the state from `NOT_LOADED` to `FETCHING_WITH_ID`.
-3. The `FETCHING_WITH_ID` state. In src/lib/project-fetcher-hoc.jsx, the `projectId` value `123456` is used to request the data for that project from the server.
-4. When the server responds with the data, src/lib/project-fetcher-hoc.jsx dispatches the `DONE_FETCHING_WITH_ID` action, with `projectData` set. This transitions the state from `FETCHING_WITH_ID` to `LOADING_VM_WITH_ID`.
-5. The `LOADING_VM_WITH_ID` state. In src/lib/vm-manager-hoc.jsx, we load the `projectData` into Scratch's virtual machine ("the vm").
-6. When loading is done, src/lib/vm-manager-hoc.jsx dispatches the `DONE_LOADING_VM_WITH_ID` action. This transitions the state from `LOADING_VM_WITH_ID` to `SHOWING_WITH_ID`
-7. The `SHOWING_WITH_ID` state. Now the project appears normally and is playable and editable.
-
-## Donate
-We provide [Scratch](https://scratch.mit.edu) free of charge, and want to keep it that way! Please consider making a [donation](https://www.scratchfoundation.org/donate) to support our continued engineering, design, community, and resource development efforts. Donations of any size are appreciated. Thank you!
--->
-
-## Community translations
-
-See [TRANSLATING.md](TRANSLATING.md) for catalogs, extraction, validation, and coverage. The community shares the editor language list and preference.
