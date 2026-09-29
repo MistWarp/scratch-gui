@@ -2,9 +2,8 @@ const ZONES = [
     {
         id: 'left',
         items: [
-            '__errors', 'file', 'edit', 'mode', 'tools', 'view',
-            '__divider', 'project-title', '__view-counter', 'community', 'block-count',
-            'feedback'
+            '__errors', 'file', 'edit', 'mode', 'tools', 'view', 'help',
+            '__divider', 'project-title', '__view-counter', 'community', 'block-count'
         ],
         extras: []
     },
@@ -35,17 +34,6 @@ const readJSON = (key, fallback) => {
     return fallback;
 };
 
-const getLegacyHidden = () => {
-    try {
-        const addons = JSON.parse(localStorage.getItem('tw:addons')) || {};
-        const legacy = addons['tw-interface-customization'];
-        return addons['tw-remove-feedback']?.enabled ||
-            (legacy?.enabled && legacy.removeFeedback) ? ['feedback'] : [];
-    } catch (_) {
-        return [];
-    }
-};
-
 const writeJSON = (key, value) => {
     try {
         localStorage.setItem(key, JSON.stringify(value));
@@ -73,7 +61,7 @@ const normalizeLayout = layout => {
 
 const getMenuBarLayout = () => {
     const orders = readJSON(ORDER_KEY, {});
-    const hidden = readJSON(HIDDEN_KEY, getLegacyHidden());
+    const hidden = readJSON(HIDDEN_KEY, []);
     if (Object.keys(orders).length === 0 && hidden.length === 0) return null;
     return normalizeLayout({orders, hidden});
 };
@@ -85,17 +73,24 @@ const hasStoredOrder = zoneId => {
     return Array.isArray(stored) && stored.length > 0;
 };
 
+const fullZoneOrder = (zone, order) => {
+    const result = order.filter(id => zone.items.includes(id));
+    zone.items.forEach((id, index) => {
+        if (result.includes(id)) return;
+        const previous = zone.items.slice(0, index).reverse()
+            .find(item => result.includes(item));
+        result.splice(previous ? result.indexOf(previous) + 1 : result.length, 0, id);
+    });
+    return result;
+};
+
 const getStoredOrder = zoneId => {
     const zone = zoneById(zoneId);
     if (!zone) return [];
-    const stored = (readJSON(ORDER_KEY, {})[zoneId] || []).filter(id => zone.items.includes(id));
-    for (const id of zone.items) {
-        if (!stored.includes(id)) stored.push(id);
-    }
-    return stored;
+    return fullZoneOrder(zone, readJSON(ORDER_KEY, {})[zoneId] || []);
 };
 
-const getHidden = () => readJSON(HIDDEN_KEY, getLegacyHidden())
+const getHidden = () => readJSON(HIDDEN_KEY, [])
     .filter(id => ALL_ITEMS.includes(id) && !ALWAYS_SHOW.includes(id));
 
 const isHidden = id => getHidden().includes(id);
@@ -131,14 +126,6 @@ const getZoneExtras = (zoneId, presentIds) => {
     const zone = zoneById(zoneId);
     if (!zone) return [];
     return zone.extras.filter(id => presentIds.includes(id));
-};
-
-const fullZoneOrder = (zone, order) => {
-    const result = order.filter(id => zone.items.includes(id));
-    for (const id of zone.items) {
-        if (!result.includes(id)) result.push(id);
-    }
-    return result;
 };
 
 // Renders a layout without touching storage, so a theme can be previewed
@@ -230,6 +217,7 @@ export {
     CHANGE_EVENT,
     ORDER_KEY,
     HIDDEN_KEY,
+    fullZoneOrder,
     getStoredOrder,
     setZoneOrder,
     moveMenuItem,

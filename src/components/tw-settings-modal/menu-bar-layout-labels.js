@@ -13,7 +13,7 @@ const labels = defineMessages({
     'project-title': {defaultMessage: 'Project title', id: 'mw.settings.menuBar.item.projectTitle'},
     'community': {defaultMessage: 'Project page', id: 'mw.settings.menuBar.item.projectPage'},
     'rotur-account': {defaultMessage: 'Rotur profile', id: 'mw.settings.menuBar.item.roturProfile'},
-    'feedback': {defaultMessage: 'Feedback', id: 'mw.settings.menuBar.item.feedback'},
+    'help': {defaultMessage: 'Help', id: 'mw.settings.menuBar.item.help'},
     'collab-presence': {defaultMessage: 'Collaboration', id: 'mw.settings.menuBar.item.collaboration'}
 });
 

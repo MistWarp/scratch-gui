@@ -36,6 +36,7 @@ import DeletionRestorer from '../../containers/deletion-restorer.jsx';
 import TurboMode from '../../containers/turbo-mode.jsx';
 import MenuBarHOC from '../../containers/menu-bar-hoc.jsx';
 import SettingsMenu from './settings-menu.jsx';
+import HelpMenu from './help-menu.jsx';
 import TWViewCounter from './tw-view-counter.jsx';
 
 import ChangeUsername from '../../containers/tw-change-username.jsx';
@@ -71,7 +72,7 @@ import RoturAccount from './mw-rotur-account.jsx';
 import MwEditorNav from './mw-editor-nav.jsx';
 import CollabPresence from './mw-collab-presence.jsx';
 
-import {FEEDBACK_URL, APP_NAME} from '../../lib/constants/brand.js';
+import {FEEDBACK_URL} from '../../lib/constants/brand.js';
 
 import {
     openSettingsModal,
@@ -83,7 +84,6 @@ import {
     openVariableManagerModal,
     openProductsModal,
     openGameItemsModal,
-    openHelp,
     openSimpleDialog
 } from '../../reducers/modals';
 import {openCollaborationModal} from '../../reducers/collaboration';
@@ -161,7 +161,7 @@ import {
     Save, ArchiveRestore, UserPen, Cloud, PackagePlus, Puzzle,
     GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Wrench,
     Download, AppWindow, Computer, Shield, Code, Code2,
-    Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, HelpCircle, Video,
+    Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, Video,
     ShoppingBag, Backpack, Check, Zap
 } from 'lucide-react';
 
@@ -345,7 +345,6 @@ class MenuBar extends React.Component {
             'handleClickRedo',
             'handleClickCollaboration',
             'handleClickAddonSettings',
-            'handleClickHelp',
             'handleClickGitModal',
             'handleClickDebugger',
             'handleClickVariableManager',
@@ -595,10 +594,6 @@ class MenuBar extends React.Component {
     handleClickAddonSettings () {
         this.props.onRequestCloseEdit();
         this.props.onClickAddonSettings();
-    }
-    handleClickHelp () {
-        this.props.onClickHelp();
-        this.props.onRequestCloseEdit();
     }
     handleClickGitModal () {
         this.props.onClickGitModal();
@@ -1939,18 +1934,6 @@ class MenuBar extends React.Component {
                                         />
                                     </MenuItem>
                                 </MenuSection>
-                                <MenuSection>
-                                    <MenuItem
-                                        onClick={this.handleClickHelp}
-                                    >
-                                        <HelpCircle />
-                                        <FormattedMessage
-                                            defaultMessage="Help"
-                                            description="Menu bar item that opens the help window"
-                                            id="mw.menuBar.help"
-                                        />
-                                    </MenuItem>
-                                </MenuSection>
                             </MenuBarMenu>
                         </MenuLabel>
                         <MenuLabel
@@ -2073,6 +2056,7 @@ class MenuBar extends React.Component {
                             </MenuBarMenu>
                         </MenuLabel>
                         {(this.props.canChangeTheme || this.props.canChangeLanguage) && <SettingsMenu />}
+                        <HelpMenu />
                     </div>
 
                     {!this.props.isPlayerOnly && (
@@ -2138,27 +2122,6 @@ class MenuBar extends React.Component {
                                 onClick={this.handleClickSeeInside}
                             />
                         ) : [])}
-                    </div>
-                    {/* tw: add a feedback button */}
-                    <div
-                        data-mw-item="feedback"
-                        className={styles.menuBarItem}
-                    >
-                        <Button
-                            className={classNames(styles.feedbackLink, styles.feedbackButton)}
-                            href={FEEDBACK_URL}
-                            rel="noopener noreferrer"
-                            target="_blank"
-                        >
-                            <FormattedMessage
-                                defaultMessage="{APP_NAME} Feedback"
-                                description="Button to give feedback in the menu bar"
-                                id="tw.feedbackButton"
-                                values={{
-                                    APP_NAME
-                                }}
-                            />
-                        </Button>
                     </div>
                 </div>
 
@@ -2297,7 +2260,6 @@ MenuBar.propTypes = {
     onClickNewWindow: PropTypes.func,
     onClickPreferencesModal: PropTypes.func,
     onClickGitModal: PropTypes.func,
-    onClickHelp: PropTypes.func,
 
     onOpenSettingsModal: PropTypes.func,
     onLogOut: PropTypes.func,
@@ -2403,7 +2365,6 @@ const mapDispatchToProps = dispatch => ({
         dispatch(closeEditMenu());
         dispatch(openGitModal());
     },
-    onClickHelp: () => dispatch(openHelp()),
     onOpenSettingsModal: () => dispatch(openSettingsModal()),
     onClickNew: needSave => {
         dispatch(setPlayer(false));

@@ -19,6 +19,7 @@ const MENU_CUSTOM_THEMES = 'customThemesMenu';
 const MENU_WORKSPACE_BOOKMARKS = 'workspaceBookmarksMenu';
 const MENU_EDITOR = 'editorMenu';
 const MENU_TOOLS = 'toolsMenu';
+const MENU_HELP = 'helpMenu';
 const MENU_ICON_PACK = 'iconPackMenu';
 
 class Menu {
@@ -76,6 +77,7 @@ const rootMenu = new Menu('root')
     .addChild(new Menu(MENU_EDIT))
     .addChild(new Menu(MENU_EDITOR))
     .addChild(new Menu(MENU_TOOLS))
+    .addChild(new Menu(MENU_HELP))
     .addChild(new Menu(MENU_SETTINGS))
     .addChild(new Menu(MENU_LOGIN))
     .addChild(new Menu(MENU_ACCOUNT))
@@ -100,6 +102,7 @@ const initialState = {
     [MENU_WORKSPACE_BOOKMARKS]: false,
     [MENU_EDITOR]: false,
     [MENU_TOOLS]: false,
+    [MENU_HELP]: false,
     [MENU_ICON_PACK]: false
 };
 
@@ -213,6 +216,10 @@ const openToolsMenu = () => openMenu(MENU_TOOLS);
 const closeToolsMenu = () => closeMenu(MENU_TOOLS);
 const toolsMenuOpen = state => state.scratchGui.menus[MENU_TOOLS];
 
+const openHelpMenu = () => openMenu(MENU_HELP);
+const closeHelpMenu = () => closeMenu(MENU_HELP);
+const helpMenuOpen = state => state.scratchGui.menus[MENU_HELP];
+
 const openIconPackMenu = () => openMenu(MENU_ICON_PACK);
 const closeIconPackMenu = () => closeMenu(MENU_ICON_PACK);
 const iconPackMenuOpen = state => state.scratchGui.menus[MENU_ICON_PACK];
@@ -274,6 +281,9 @@ export {
     openToolsMenu,
     closeToolsMenu,
     toolsMenuOpen,
+    openHelpMenu,
+    closeHelpMenu,
+    helpMenuOpen,
     openIconPackMenu,
     closeIconPackMenu,
     iconPackMenuOpen
