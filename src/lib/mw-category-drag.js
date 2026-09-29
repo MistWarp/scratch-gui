@@ -81,18 +81,6 @@ const installCategoryDrag = (workspace, options = {}) => {
     let suppressUntil = 0;
     let restoreSelection = null;
 
-    const menuObserver = new MutationObserver(() => {
-        if (!restoreSelection) return;
-        const {id, until} = restoreSelection;
-        if (Date.now() > until) {
-            restoreSelection = null;
-            return;
-        }
-        if (!root.querySelector(`.scratchCategoryId-${id}`)) return;
-        restoreSelection = null;
-        if (toolbox.getSelectedCategoryId() !== id) toolbox.setSelectedCategoryById(id);
-    });
-
     const canDrag = () => Boolean(
         !workspace.options.readOnly &&
         !toolbox.horizontalLayout_ &&
@@ -134,12 +122,12 @@ const installCategoryDrag = (workspace, options = {}) => {
     };
 
     const updateDrag = clientY => {
-        const {entries, startIndex, scroller, scrollTop, startClientY, height, ghost} = drag;
+        const {entries, startIndex, scroller, startClientY, height, ghost, ghostTop} = drag;
         drag.lastClientY = clientY;
         const pointerShift = clientY - startClientY;
         ghost.style.transform = `translateY(${pointerShift}px)`;
-        const dragged = entries[startIndex];
-        const centre = dragged.top + (height / 2) + pointerShift + (scroller.scrollTop - scrollTop);
+        const origin = scroller.getBoundingClientRect().top;
+        const centre = ghostTop + (height / 2) + pointerShift - origin + scroller.scrollTop;
         let targetIndex = 0;
         entries.forEach((entry, index) => {
             if (index !== startIndex && entry.top + (entry.height / 2) < centre) targetIndex += 1;
@@ -175,15 +163,11 @@ const installCategoryDrag = (workspace, options = {}) => {
         if (drag && !drag.raf) drag.raf = requestAnimationFrame(autoScrollStep);
     };
 
-    const startDrag = (event, item, row) => {
-        const menu = row.closest(MENU_SELECTOR);
-        if (!menu) return;
+    const measureRows = menu => {
         const rows = Array.from(menu.querySelectorAll(ROW_SELECTOR)).filter(candidate => {
             const candidateItem = candidate.querySelector(ITEM_SELECTOR);
             return candidateItem && getCategoryId(candidateItem);
         });
-        const startIndex = rows.indexOf(row);
-        if (startIndex < 0) return;
         const scroller = findScroller(menu, root);
         const origin = scroller.getBoundingClientRect().top;
         const scrollTop = scroller.scrollTop;
@@ -196,6 +180,34 @@ const installCategoryDrag = (workspace, options = {}) => {
                 height: rect.height
             };
         });
+        return {scroller, origin, scrollTop, entries};
+    };
+
+    const reattachDrag = () => {
+        if (!drag || drag.menu.isConnected) return true;
+        const menu = root.querySelector(MENU_SELECTOR);
+        const draggedId = drag.entries[drag.startIndex].id;
+        const measured = menu && measureRows(menu);
+        const startIndex = measured ? measured.entries.findIndex(entry => entry.id === draggedId) : -1;
+        if (startIndex < 0) return false;
+        Object.assign(drag, measured, {
+            menu,
+            startIndex,
+            targetIndex: -1,
+            height: measured.entries[startIndex].height
+        });
+        menu.classList.add(REORDERING_CLASS);
+        measured.entries[startIndex].row.classList.add(DRAG_ROW_CLASS);
+        updateDrag(drag.lastClientY);
+        return true;
+    };
+
+    const startDrag = (event, item, row) => {
+        const menu = row.closest(MENU_SELECTOR);
+        if (!menu || !menu.isConnected) return;
+        const {scroller, origin, scrollTop, entries} = measureRows(menu);
+        const startIndex = entries.findIndex(entry => entry.row === row);
+        if (startIndex < 0) return;
         const rowRect = row.getBoundingClientRect();
         drag = {
             pointerId: event.pointerId,
@@ -228,9 +240,10 @@ const installCategoryDrag = (workspace, options = {}) => {
 
     const finishDrag = commit => {
         if (!drag) return;
+        const attached = reattachDrag();
         stopAutoScroll();
         const {menu, entries, startIndex, targetIndex, pointerId, ghost, ghostTop, scroller, origin} = drag;
-        const moved = commit && targetIndex !== startIndex;
+        const moved = commit && attached && targetIndex !== startIndex;
         drag = null;
         suppressUntil = Date.now() + SUPPRESS_MS;
         document.body.style.cursor = '';
@@ -366,6 +379,19 @@ const installCategoryDrag = (workspace, options = {}) => {
             callback: () => resetCategoryOrder(options.vm)
         }], workspace.RTL);
     };
+
+    const menuObserver = new MutationObserver(() => {
+        if (drag && !reattachDrag()) finishDrag(false);
+        if (!restoreSelection) return;
+        const {id, until} = restoreSelection;
+        if (Date.now() > until) {
+            restoreSelection = null;
+            return;
+        }
+        if (!root.querySelector(`.scratchCategoryId-${id}`)) return;
+        restoreSelection = null;
+        if (toolbox.getSelectedCategoryId() !== id) toolbox.setSelectedCategoryById(id);
+    });
 
     menuObserver.observe(root, {childList: true});
     root.addEventListener('pointerdown', onPointerDown);
