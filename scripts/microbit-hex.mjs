@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import nodeCrypto from 'node:crypto';
+import {fileURLToPath} from 'node:url';
 import yauzl from 'yauzl';
 
 const ZIP_URL = 'https://packagerdata.turbowarp.org/scratch-microbit-1.2.0.hex.zip';
@@ -57,3 +58,7 @@ export const ensureMicrobitHex = async (directory, {required = true} = {}) => {
     const source = `const hexUrl = \`\${process.env.ROOT}microbit/${HEX_NAME}\`;\n\nexport default hexUrl;\n`;
     fs.writeFileSync(urlFile, source);
 };
+
+if (process.argv[1] && fs.realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
+    await ensureMicrobitHex(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'));
+}

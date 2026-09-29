@@ -23,6 +23,7 @@
     "build:stats": "MW_BUILD_STATS=true node scripts/build.mjs --site-only",
     "clean": "node -e \"for (const d of ['build', 'dist']) { fs.rmSync(d, {recursive: true, force: true}); fs.mkdirSync(d, {recursive: true}); }\"",
     "reinstall": "pnpm install --force && pnpm run link",
+    "prepublish": "node scripts/microbit-hex.mjs",
     "start": "vite",
     "fmt": "eslint --fix .",
     "lint": "eslint .",
