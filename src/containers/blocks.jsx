@@ -20,7 +20,7 @@ import DropAreaHOC from '../lib/components/drop-area-hoc.jsx';
 import DragConstants from '../lib/constants/drag-constants';
 import SettingsStore from '../addons/settings-store-singleton';
 import {VANILLA_PALETTE_CHANGED} from '../lib/mw-vanilla-palette';
-import {CATEGORY_ORDER_CHANGED} from '../lib/mw-category-order';
+import {CATEGORY_ORDER_CHANGED, getCategoryOrder} from '../lib/mw-category-order';
 import installCategoryDrag from '../lib/mw-category-drag';
 import {CAT_BLOCKS_CHANGED} from '../lib/mw-cat-blocks';
 import defineDynamicBlock from '../lib/utils/define-dynamic-block';
@@ -229,6 +229,7 @@ class Blocks extends React.Component {
         
         this.workspace = this.ScratchBlocks.inject(this.blocks, workspaceConfig);
         this.uninstallCategoryDrag = installCategoryDrag(this.workspace, {
+            vm: this.props.vm,
             ScratchBlocks: this.ScratchBlocks,
             getResetLabel: () => this.props.intl.formatMessage(messages.resetCategoryOrder)
         });
@@ -1115,7 +1116,8 @@ class Blocks extends React.Component {
                 stageCostumes[stageCostumes.length - 1].name,
                 targetSounds.length > 0 ? targetSounds[targetSounds.length - 1].name : '',
                 this.props.theme.getBlockColors(),
-                customAssets.length > 0 ? customAssets[0].name : ''
+                customAssets.length > 0 ? customAssets[0].name : '',
+                getCategoryOrder(this.props.vm)
             );
         } catch {
             return null;

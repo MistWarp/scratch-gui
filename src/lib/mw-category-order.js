@@ -1,31 +1,21 @@
-const STORAGE_KEY = 'mw:category-order';
 const CATEGORY_ORDER_CHANGED = 'mw:category-order-changed';
 
-const getCategoryOrder = () => {
-    try {
-        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
-        return Array.isArray(parsed) ? parsed.filter(id => typeof id === 'string') : [];
-    } catch (err) {
-        return [];
-    }
+const getCategoryOrder = vm => {
+    const runtime = vm && vm.runtime;
+    if (!runtime || typeof runtime.getCategoryOrder !== 'function') return [];
+    return runtime.getCategoryOrder();
 };
 
-const setCategoryOrder = ids => {
-    try {
-        if (ids.length) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
-        } else {
-            localStorage.removeItem(STORAGE_KEY);
-        }
-    } catch (err) {
-        // ignore
-    }
+const setCategoryOrder = (vm, ids) => {
+    const runtime = vm && vm.runtime;
+    if (!runtime || typeof runtime.setCategoryOrder !== 'function') return;
+    runtime.setCategoryOrder(ids);
     window.dispatchEvent(new CustomEvent(CATEGORY_ORDER_CHANGED));
 };
 
-const resetCategoryOrder = () => setCategoryOrder([]);
+const resetCategoryOrder = vm => setCategoryOrder(vm, []);
 
-const applyCategoryOrder = (entries, order = getCategoryOrder()) => {
+const applyCategoryOrder = (entries, order = []) => {
     const rank = new Map(order.map((id, index) => [id, index]));
     const ranked = entries.filter(entry => rank.has(entry.id))
         .sort((a, b) => rank.get(a.id) - rank.get(b.id));
@@ -43,8 +33,8 @@ const applyCategoryOrder = (entries, order = getCategoryOrder()) => {
     return result;
 };
 
-const moveCategory = (currentIds, movedId, beforeId) => {
-    const ids = [...new Set([...getCategoryOrder(), ...currentIds])];
+const moveCategory = (savedOrder, currentIds, movedId, beforeId) => {
+    const ids = [...new Set([...savedOrder, ...currentIds])];
     const visible = new Set(currentIds);
     const without = ids.filter(id => id !== movedId);
     let index = beforeId ? without.indexOf(beforeId) : -1;
