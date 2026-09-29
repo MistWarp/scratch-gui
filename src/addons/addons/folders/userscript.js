@@ -780,6 +780,7 @@ export default async function ({ addon, console, msg }) {
       return [
         {
           className: "sa-folders-rename-folder",
+          icon: "rename",
           label: msg("rename-folder"),
           callback: renameFolder,
           position: "assetContextMenuAfterDelete",
@@ -787,6 +788,7 @@ export default async function ({ addon, console, msg }) {
         },
         {
           className: "sa-folders-remove-folder",
+          icon: "removeFolder",
           label: msg("remove-folder"),
           callback: removeFolder,
           position: "assetContextMenuAfterDelete",
@@ -835,6 +837,7 @@ export default async function ({ addon, console, msg }) {
         {
           border: true,
           className: "sa-folders-create-folder",
+          icon: "createFolder",
           label: msg("create-folder"),
           callback: createFolder,
           position: "assetContextMenuAfterDelete",
@@ -845,6 +848,7 @@ export default async function ({ addon, console, msg }) {
       if (typeof currentFolder === "string") {
         base.push({
           className: "sa-folders-remove-from-folder",
+          icon: "removeFromFolder",
           label: msg("remove-from-folder"),
           callback: () => setFolder(null),
           position: "assetContextMenuAfterDelete",
@@ -857,6 +861,7 @@ export default async function ({ addon, console, msg }) {
           .map((folder, i) => {
             return {
               className: "sa-folders-add-to-folder",
+              icon: "addToFolder",
               label: msg("add-to-folder", {
                 folder,
               }),

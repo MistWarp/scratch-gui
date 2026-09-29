@@ -1570,6 +1570,7 @@ export function initDevInspector (vm, Blockly) {
       items.splice(insertBeforeIndex, 0, {
         enabled: true,
         text: 'Inspect Block',
+        icon: 'inspect',
         callback: () => {
           showInspector(block);
         },

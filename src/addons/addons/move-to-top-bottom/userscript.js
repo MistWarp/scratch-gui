@@ -19,6 +19,7 @@ export default async ({ addon, console, msg }) => {
       types,
       position: "assetContextMenuAfterExport",
       order: 1,
+      icon: "moveToTop",
       label: msg("top"),
       condition: (ctx) => ctx.index !== 0,
     }
@@ -41,6 +42,7 @@ export default async ({ addon, console, msg }) => {
       types,
       position: "assetContextMenuAfterExport",
       order: 2,
+      icon: "moveToBottom",
       label: msg("bottom"),
       condition: (ctx) => ctx.index !== ctx.target.parentNode.parentNode.childElementCount - 1,
     }
