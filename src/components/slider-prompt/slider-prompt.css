@@ -18,6 +18,7 @@
 .min-input, .max-input {
     margin-bottom: 1.5rem;
     width: 100%;
+    box-sizing: border-box;
     border: 1px solid $ui-black-transparent;
     border-radius: 5px;
     padding: 0 1rem;
@@ -46,6 +47,11 @@
     background: $looks-secondary;
     border: $looks-secondary;
     color: white;
+}
+
+.button-row button.ok-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 [dir="ltr"] .button-row button + button {

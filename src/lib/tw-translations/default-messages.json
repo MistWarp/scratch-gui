@@ -718,6 +718,7 @@
   "shortcut-manager.edit": "Change shortcut",
   "shortcut-manager.reset": "Reset to default",
   "shortcut-manager.cancel": "Cancel",
+  "shortcut-manager.needsModifier": "Hold Ctrl or Alt with the key, so it still reaches projects.",
   "shortcut-manager.recording": "Press a shortcut…",
   "shortcut-manager.conflict": "In use by {label}",
   "shortcut-manager.search": "Search shortcuts",

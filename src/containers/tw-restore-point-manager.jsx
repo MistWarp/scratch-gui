@@ -294,6 +294,7 @@ export class TWRestorePointManager extends React.Component {
             })
             .then(() => {
                 this.deleting = false;
+                if (!this.unmounted) this.forceUpdate();
             });
     }
 

@@ -133,6 +133,9 @@ let nextOnTopZIndex = WINDOW_ON_TOP_Z_INDEX_BASE;
 let windowCount = 0;
 const activeWindows = new Map();
 
+const isEscapeHandledByTarget = target => target instanceof Element &&
+    !!target.closest('.blocklyWidgetDiv, .blocklyDropDownDiv');
+
 const IN_PAGE_WINDOW_IDS = new Set([
     'customProceduresModal',
     'mw-chat-window'
@@ -221,6 +224,7 @@ class AddonWindow {
         this.zIndex = this.alwaysOnTop ? ++nextOnTopZIndex : ++nextZIndex;
         
         this.onClose = options.onClose || (() => {});
+        this.onBeforeClose = options.onBeforeClose || null;
         this.onMinimize = options.onMinimize || (() => {});
         this.onMaximize = options.onMaximize || (() => {});
         this.onRestore = options.onRestore || (() => {});
@@ -370,6 +374,8 @@ class AddonWindow {
 
         this.escapeHandler = e => {
             if (e.key !== 'Escape' || !this.closable || !this.isVisible) return;
+            if (e.defaultPrevented || isEscapeHandledByTarget(e.target)) return;
+            if (this.element.querySelector('[aria-expanded="true"]')) return;
             const top = Array.from(activeWindows.values())
                 .filter(w => w.isVisible)
                 .sort((a, b) => b.zIndex - a.zIndex)[0];
@@ -888,6 +894,9 @@ class AddonWindow {
     }
 
     close () {
+        if (this.onBeforeClose && this.onBeforeClose() === false) {
+            return this;
+        }
         this.destroy(true);
     }
     
@@ -918,6 +927,7 @@ class AddonWindow {
                 this.element.style.width = `${this.width}px`;
                 this.element.style.height = `${this.height}px`;
             }
+            this.fitToViewport();
             this.updateMaximizeButton();
         }
         
