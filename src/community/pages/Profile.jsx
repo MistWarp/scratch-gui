@@ -224,7 +224,8 @@ const Profile = () => {
             .catch(fresh(() => setReviews([])));
         loadThemes();
         rotur.followers(name)
-            .then(fresh(data => setFollowers(data && Array.isArray(data.followers) ? data.followers : [])))
+            .then(fresh(data => setFollowers(data && Array.isArray(data.followers) ?
+                data.followers.filter(follower => typeof follower === 'string') : [])))
             .catch(fresh(() => setFollowers([])));
     }, [loadContext, name, beginLoad, loadThemes]);
 
@@ -324,7 +325,7 @@ const Profile = () => {
     const toggleFollow = async () => {
         const context = actionContextRef.current;
         const actionKey = `${context}\u0000follow`;
-        if (!user || !profile || actionLocks.current.has(actionKey)) return;
+        if (!user || !user.username || !profile || actionLocks.current.has(actionKey)) return;
         actionLocks.current.add(actionKey);
         setFollowBusy(true);
         setActionError(null);
