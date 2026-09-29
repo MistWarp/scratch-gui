@@ -27,6 +27,7 @@ import SimpleDialog from '../../containers/simple-dialog.jsx';
 import AddonHooks from '../../addons/hooks.js';
 import NativeFindBar from '../find-bar/find-bar.jsx';
 import StarterGuide from './starter-guide.jsx';
+import EditorWelcome from '../editor-welcome/editor-welcome.jsx';
 import NativeSpotlight from '../../containers/spotlight.jsx';
 import MobileStageControls from '../mobile-stage-controls/mobile-stage-controls.jsx';
 import ChatDock from '../mw-chat/chat-dock.jsx';
@@ -1285,6 +1286,7 @@ const GUIComponent = props => {
                                             <Box className={styles.watermark}>
                                                 <Watermark />
                                             </Box>
+                                            <EditorWelcome onOpenFile={onStartSelectingFileUpload} />
                                         </React.Fragment>
                                     </TabPanel>
                                     <TabPanel className={tabClassNames.tabPanel}>
