@@ -3,7 +3,7 @@ import React, {useState, useEffect, useLayoutEffect, useRef} from 'react';
 import {Link, useLocation, useNavigate} from 'react-router-dom';
 import {
     Search, Compass, Plus, FolderOpen, Bell, LogIn,
-    Layers3, House, Crown, Shuffle
+    Layers3, House, Crown, Shuffle, BookOpen, GraduationCap
 } from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import api, {editorUrl, projectUrl} from '../api';
@@ -15,6 +15,7 @@ import GroupTag from './GroupTag.jsx';
 import UserLink from './UserLink.jsx';
 import setFaviconBadge from '../faviconBadge';
 import searchPath from '../search-path.js';
+import {initialsAvatar} from '../classroom.js';
 import searchFocusIndex from '../search-keyboard.js';
 import {rankSections} from '../search-rank.js';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
@@ -34,7 +35,7 @@ const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, 
             match: projects.map(project => project.title),
             items: projects.map(project => (
                 <div key={project.id} className={styles.suggestion}>
-                    <button type="button" className={styles.suggestionTarget} aria-label={communityText("Open {value1}", {value1: project.title})} onClick={() => onProject(project)} />
+                    <button type="button" className={styles.suggestionTarget} aria-label={communityText('Open {value1}', {value1: project.title})} onClick={() => onProject(project)} />
                     <ProjectThumbnail project={project} className={styles.suggestionThumb} fallbackClassName={styles.suggestionThumbFallback} />
                     <span>{project.title}</span>
                     <UserLink className={styles.suggestionMeta} username={project.owner}>{communityText('by ')}{project.owner}</UserLink>
@@ -60,7 +61,7 @@ const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, 
             match: spaces.map(space => space.title),
             items: spaces.map(space => (
                 <div key={space._id} className={styles.suggestion}>
-                    <button type="button" className={styles.suggestionTarget} aria-label={communityText("Open {value1}", {value1: space.title})} onClick={() => onSpace(space._id)} />
+                    <button type="button" className={styles.suggestionTarget} aria-label={communityText('Open {value1}', {value1: space.title})} onClick={() => onSpace(space._id)} />
                     <span className={styles.suggestionSpaceIcon}><Layers3 size={15} /></span>
                     <span>{space.title}</span>
                     <span className={styles.suggestionMeta}>{SPACE_KIND_LABELS[space.kind] || communityText('Space')}{communityText(' · by ')}<UserLink username={space.owner}>{space.owner}</UserLink></span>
@@ -102,7 +103,7 @@ const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, 
                 ))}
                 {sections.length ? (
                     <button type="button" className={`${styles.suggestion} ${styles.suggestionAll}`} onClick={onSeeAll}>
-                        {communityText("See all results for \"{value1}\"", {value1: query.trim()})}
+                        {communityText('See all results for "{value1}"', {value1: query.trim()})}
                     </button>
                 ) : null}
             </div>
@@ -143,6 +144,13 @@ const NavBar = () => {
     const releaseLogin = () => {
         loginInFlight.current = false;
     };
+    const isStudent = Boolean(user && user.isStudent);
+    const classroomItems = user ? [{
+        key: 'classroom',
+        icon: isStudent ? <BookOpen /> : <GraduationCap />,
+        label: isStudent ? communityText('My class') : communityText('Classroom'),
+        path: '/classroom'
+    }] : [];
 
     // Centre the desktop search in the bar. It needs equal room on both sides, so reserve the wider of the
     // left group (logo and links) and the account area, and fall back to sitting between them when too tight.
@@ -194,7 +202,7 @@ const NavBar = () => {
     }, []);
 
     useEffect(() => {
-        if (!user) {
+        if (!user || user.isStudent) {
             setUnread(0);
             setOpenReports(0);
             setOpenErrors(0);
@@ -458,37 +466,56 @@ const NavBar = () => {
                 />
 
                 <div className={styles.account} ref={accountRef}>
-                    <Link
-                        to="/perks"
-                        className={styles.iconLink}
-                        title={communityText('Memberships')}
-                        aria-label={communityText('Memberships')}
-                    >
-                        <Crown size={19} />
-                    </Link>
+                    {isStudent ? null : (
+                        <Link
+                            to="/perks"
+                            className={styles.iconLink}
+                            title={communityText('Memberships')}
+                            aria-label={communityText('Memberships')}
+                        >
+                            <Crown size={19} />
+                        </Link>
+                    )}
                     {user ? (
                         <>
-                            <Link
-                                to="/notifications"
-                                className={`${styles.iconLink} ${styles.bellLink}`}
-                                title={communityText('Notifications')}
-                                aria-label={unread > 0 ? communityText("Notifications ({value1} unread)", {value1: unread}) : communityText('Notifications')}
-                            >
-                                <Bell size={19} />
-                                {unread > 0 ? (
-                                    <span className={styles.bellBadge}>{unread > 9 ? '9+' : unread}</span>
-                                ) : null}
-                            </Link>
-                            <Link
-                                to="/mystuff"
-                                className={styles.iconLink}
-                                title={communityText('My stuff')}
-                                aria-label={communityText('My stuff')}
-                            >
-                                <FolderOpen size={19} />
-                            </Link>
+                            {isStudent ? null : (
+                                <Link
+                                    to="/notifications"
+                                    className={`${styles.iconLink} ${styles.bellLink}`}
+                                    title={communityText('Notifications')}
+                                    aria-label={unread > 0 ? communityText('Notifications ({value1} unread)', {value1: unread}) : communityText('Notifications')}
+                                >
+                                    <Bell size={19} />
+                                    {unread > 0 ? (
+                                        <span className={styles.bellBadge}>{unread > 9 ? '9+' : unread}</span>
+                                    ) : null}
+                                </Link>
+                            )}
+                            {isStudent ? (
+                                <Link
+                                    to="/classroom"
+                                    className={styles.iconLink}
+                                    title={communityText('My class')}
+                                    aria-label={communityText('My class')}
+                                >
+                                    <BookOpen size={19} />
+                                </Link>
+                            ) : (
+                                <Link
+                                    to="/mystuff"
+                                    className={styles.iconLink}
+                                    title={communityText('My stuff')}
+                                    aria-label={communityText('My stuff')}
+                                >
+                                    <FolderOpen size={19} />
+                                </Link>
+                            )}
                             <RoturAccount
                                 username={user.username}
+                                displayName={isStudent ? user.displayName : null}
+                                avatarSrc={isStudent ? initialsAvatar(user.displayName || user.username) : null}
+                                studentMode={isStudent}
+                                extraItems={classroomItems}
                                 isAdmin={user.isAdmin}
                                 openReports={openReports}
                                 openErrors={openErrors}
@@ -552,19 +579,25 @@ const NavBar = () => {
                 <a href={editorUrl()} className={`${styles.mobileDockItem} ${styles.mobileCreate}`} aria-label={communityText('Create')} title={communityText('Create')}>
                     <span className={styles.mobileCreateIcon}><Plus size={28} /></span>
                 </a>
-                <Link
-                    to="/notifications"
-                    className={`${mobileItemClass('/notifications')} ${styles.mobileNotification}`}
-                    aria-current={location.pathname.startsWith('/notifications') ? 'page' : null}
-                    aria-label={unread > 0 ? communityText("Notifications ({value1} unread)", {value1: unread}) : communityText('Notifications')}
-                    title={communityText('Notifications')}
-                >
-                    <Bell size={25} />
-                    {unread > 0 ? (
-                        <span className={styles.mobileNotificationBadge}>{unread > 9 ? '9+' : unread}</span>
-                    ) : null}
-                </Link>
-                {user ? (
+                {isStudent ? null : (
+                    <Link
+                        to="/notifications"
+                        className={`${mobileItemClass('/notifications')} ${styles.mobileNotification}`}
+                        aria-current={location.pathname.startsWith('/notifications') ? 'page' : null}
+                        aria-label={unread > 0 ? communityText('Notifications ({value1} unread)', {value1: unread}) : communityText('Notifications')}
+                        title={communityText('Notifications')}
+                    >
+                        <Bell size={25} />
+                        {unread > 0 ? (
+                            <span className={styles.mobileNotificationBadge}>{unread > 9 ? '9+' : unread}</span>
+                        ) : null}
+                    </Link>
+                )}
+                {isStudent ? (
+                    <Link to="/classroom" className={mobileItemClass('/classroom')} aria-current={location.pathname.startsWith('/classroom') ? 'page' : null} aria-label={communityText('My class')} title={communityText('My class')}>
+                        <BookOpen size={25} />
+                    </Link>
+                ) : user ? (
                     <Link to="/mystuff" className={mobileItemClass('/mystuff')} aria-current={location.pathname.startsWith('/mystuff') ? 'page' : null} aria-label={communityText('My stuff')} title={communityText('My stuff')}>
                         <FolderOpen size={25} />
                     </Link>

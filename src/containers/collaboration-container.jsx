@@ -6,6 +6,7 @@ import {compose} from 'redux';
 
 import CollaborationModal from '../components/collaboration-modal/collaboration-modal.jsx';
 import ProjectSession from '../components/collaboration-modal/project-session.jsx';
+import ViewerBanner from '../components/collaboration-modal/viewer-banner.jsx';
 import CollaborationService from '../lib/collaboration/index.js';
 import NotificationSystem from '../lib/notification-manager.js';
 import {setGitModalInitialView} from '../lib/git/modal-view.js';
@@ -23,8 +24,10 @@ import {
     setCollaborationHostLoadingProgress,
     setCollaborationReconnecting,
     setUserActivity,
-    removeUserActivity
+    removeUserActivity,
+    setCollaborationViewer
 } from '../reducers/collaboration';
+import {activateTab} from '../reducers/editor-tab';
 
 import {
     setUsername
@@ -80,6 +83,9 @@ class CollaborationContainer extends Component {
         this.handlePresenceEditingChanged = this.handlePresenceEditingChanged.bind(this);
         this.handleReconnecting = this.handleReconnecting.bind(this);
         this.handleReconnected = this.handleReconnected.bind(this);
+        this.handlePresenterActivity = this.handlePresenterActivity.bind(this);
+        this.handleFollowChanged = this.handleFollowChanged.bind(this);
+        this.handleFollowPresenter = this.handleFollowPresenter.bind(this);
     }
 
     componentDidMount () {
@@ -120,6 +126,8 @@ class CollaborationContainer extends Component {
         this.collaborationService.on('presence-editing-changed', this.handlePresenceEditingChanged);
         this.collaborationService.on('reconnecting', this.handleReconnecting);
         this.collaborationService.on('reconnected', this.handleReconnected);
+        this.collaborationService.on('presenter-activity', this.handlePresenterActivity);
+        this.collaborationService.on('follow-changed', this.handleFollowChanged);
 
         this._onEditError = ({error}) => NotificationSystem.error(error, 5000);
         this.collaborationService.on('edit-error', this._onEditError);
@@ -166,6 +174,9 @@ class CollaborationContainer extends Component {
         this.collaborationService.off('presence-editing-changed', this.handlePresenceEditingChanged);
         this.collaborationService.off('reconnecting', this.handleReconnecting);
         this.collaborationService.off('reconnected', this.handleReconnected);
+        this.collaborationService.off('presenter-activity', this.handlePresenterActivity);
+        this.collaborationService.off('follow-changed', this.handleFollowChanged);
+        clearTimeout(this.presenterTargetTimer);
 
         if (this.attachTimeout) {
             clearTimeout(this.attachTimeout);
@@ -184,8 +195,18 @@ class CollaborationContainer extends Component {
         }
     }
 
-    async handleJoinRoom (roomId, username, scope = null) {
-        const accepted = await new Promise(resolve => this.props.openSimpleDialog({
+    async handleJoinRoom (roomId, username, scope = null, options = {}) {
+        const viewer = Boolean(options && options.viewer);
+        const accepted = await new Promise(resolve => this.props.openSimpleDialog(viewer ? {
+            type: 'confirm',
+            title: 'Watch the presentation?',
+            message: 'Watching replaces the editor with the presenter\'s project and follows their view. ' +
+                'You cannot change or save anything while watching. ' +
+                'A device backup keeps your current code first.',
+            choices: [{value: 'join', label: 'Back up and watch'}],
+            onOk: () => resolve(true),
+            onCancel: () => resolve(false)
+        } : {
             type: 'confirm',
             title: 'Join live editing?',
             message: `Joining replaces the editor with the host's project. ` +
@@ -202,7 +223,7 @@ class CollaborationContainer extends Component {
             this.props.onSetError(null);
 
             await this.collaborationService.connectToRoom(
-                roomId, username, false, 'public', this.props.roturHandle, scope
+                roomId, username, false, 'public', this.props.roturHandle, scope, {viewer}
             );
 
             // Don't set connected immediately - wait for connected-to-host event
@@ -350,9 +371,42 @@ class CollaborationContainer extends Component {
         this.props.onSetError('The host has left the collaboration room. The room has been closed.');
     }
 
+    syncViewerState () {
+        const service = this.collaborationService;
+        this.props.onSetViewer(service.isViewer && service.isConnected ? {
+            presenter: service.hostUsername || '',
+            following: service.isFollowingPresenter()
+        } : null);
+    }
+
+    handlePresenterActivity (activity) {
+        const vm = this.props.vm;
+        if (!vm || !activity) return;
+        if (activity.targetId && vm.runtime && vm.runtime.getTargetById(activity.targetId) &&
+            (!vm.editingTarget || vm.editingTarget.id !== activity.targetId)) {
+            vm.setEditingTarget(activity.targetId);
+        }
+        if (typeof activity.tab === 'number' && activity.tab !== this.props.activeTabIndex) {
+            this.props.onActivateTab(activity.tab);
+        }
+        clearTimeout(this.presenterTargetTimer);
+        this.presenterTargetTimer = setTimeout(() => {
+            this.collaborationService.onPresenterTargetShown();
+        }, 300);
+    }
+
+    handleFollowChanged () {
+        this.syncViewerState();
+    }
+
+    handleFollowPresenter () {
+        this.collaborationService.followPresenter();
+    }
+
     handleConnectedToHost () {
         // Now we're actually connected and can show the connected UI
         this.props.onSetConnected(true);
+        this.syncViewerState();
 
         // Sync username with collaboration service (guests only; see handleUsernameChanged)
         const serviceUsername = this.collaborationService.username;
@@ -373,6 +427,7 @@ class CollaborationContainer extends Component {
         NotificationSystem.info('Disconnected from collaboration room', 3000);
 
         this.clearWaitingOverlay();
+        this.props.onSetViewer(null);
 
         this.props.onSetConnected(false);
         this.props.onSetRoomId(null);
@@ -595,6 +650,13 @@ class CollaborationContainer extends Component {
             >
                 {/* eslint-disable-next-line react/jsx-no-bind */}
                 {(projectSessionActive, projectSession) => (<React.Fragment>
+                    {this.props.viewer ? (
+                        <ViewerBanner
+                            presenter={this.props.viewer.presenter}
+                            following={this.props.viewer.following}
+                            onFollow={this.handleFollowPresenter}
+                        />
+                    ) : null}
                     <CollaborationModal
                         projectSessionActive={projectSessionActive}
                         projectSession={projectSession}
@@ -660,6 +722,12 @@ CollaborationContainer.propTypes = {
     onSetUserActivity: PropTypes.func.isRequired,
     onRemoveUserActivity: PropTypes.func.isRequired,
     onOpenChangeUsername: PropTypes.func.isRequired,
+    onSetViewer: PropTypes.func.isRequired,
+    onActivateTab: PropTypes.func.isRequired,
+    viewer: PropTypes.shape({
+        presenter: PropTypes.string,
+        following: PropTypes.bool
+    }),
     activeTabIndex: PropTypes.number,
     // eslint-disable-next-line react/forbid-prop-types
     userActivity: PropTypes.object.isRequired
@@ -673,6 +741,7 @@ const mapStateToProps = state => ({
     roomPrivacy: state.scratchGui.collaboration.roomPrivacy,
     connectedUsers: state.scratchGui.collaboration.connectedUsers,
     userActivity: state.scratchGui.collaboration.activity,
+    viewer: state.scratchGui.collaboration.viewer,
     activeTabIndex: state.scratchGui.editorTab ? state.scratchGui.editorTab.activeTabIndex : 0,
     connectionError: state.scratchGui.collaboration.connectionError,
     // Online identity is the Rotur handle when signed in; the custom name is only a fallback.
@@ -705,6 +774,8 @@ const mapDispatchToProps = dispatch => ({
     onSetUserActivity: activity => dispatch(setUserActivity(activity)),
     onRemoveUserActivity: userId => dispatch(removeUserActivity(userId)),
     onOpenChangeUsername: () => dispatch(openUsernameModal()),
+    onSetViewer: viewer => dispatch(setCollaborationViewer(viewer)),
+    onActivateTab: tab => dispatch(activateTab(tab)),
     onShowToast: (message, type) => dispatch({
         type: 'scratch-gui/SHOW_TOAST',
         message,

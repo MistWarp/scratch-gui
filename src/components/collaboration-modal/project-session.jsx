@@ -234,6 +234,11 @@ class ProjectSession extends React.Component {
             }
             this.setState({session: session.id ? session : null, editors, discoveryError: '', checked: true});
             if (lease && lease.host) {
+                this.props.service.setViewerPeers((session.members || [])
+                    .filter(member => member.viewer && member.peerId)
+                    .map(member => member.peerId));
+            }
+            if (lease && lease.host) {
                 const pending = this.props.service.getPendingJoinRequests();
                 for (const member of session.members || []) {
                     if (member.approved && pending.some(item => item.id === member.peerId)) {
@@ -249,7 +254,7 @@ class ProjectSession extends React.Component {
                     rememberPlatformProject({...current,
                         canSaveDirectly:
                         ['owner', 'maintainer', 'editor'].includes(this.state.project.myRole) || Boolean(
-                            member && member.approved && this.props.service.isConnected &&
+                            member && member.approved && !member.viewer && this.props.service.isConnected &&
                             this.props.service.roomId === lease.roomId)});
                 }
                 if (!member || !session.id) {
@@ -257,6 +262,12 @@ class ProjectSession extends React.Component {
                     this.props.onLeaveRoom();
                     this.setState({error: 'Your session access ended. Your local work is still here.'});
                 }
+            }
+            const role = (this.state.project && this.state.project.myRole) || myRole;
+            if (!lease && role === 'viewer' && session.id && session.public && !this.props.service.isConnected &&
+                this.autoJoinedSession !== session.id) {
+                this.autoJoinedSession = session.id;
+                this.run(() => this.join(), 'joining');
             }
 
         } catch (error) {
@@ -324,7 +335,8 @@ class ProjectSession extends React.Component {
         }
         const context = this.contextKey;
         const scope = {projectId: String(project.id), branch: this.branch};
-        await this.props.onJoinRoom(session.roomId, this.props.username, scope);
+        const viewer = project.myRole === 'viewer';
+        await this.props.onJoinRoom(session.roomId, this.props.username, scope, {viewer});
         try {
             const {session: next} = await this.call(project.id, {
                 action: 'request',
