@@ -72,7 +72,7 @@ export const getDefaultShortcuts = () => [
         actionType: 'redux',
         action: 'openRestorePointModal',
         params: [],
-        label: 'Restore Points'
+        label: 'Device Backups'
     },
     {
         id: 'spotlightSearch',

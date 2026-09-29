@@ -43,6 +43,8 @@ const messages = defineMessages({
 
 const PromptComponent = props => (
     <Modal
+        fitContent
+        width={440}
         modal
         className={styles.modalContent}
         contentLabel={props.title}

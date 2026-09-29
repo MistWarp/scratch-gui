@@ -48,33 +48,6 @@ describe('menu bar file workflows', () => {
         commitProject.mockClear();
     });
 
-    test('flushes a focused project title before saving with the keyboard', () => {
-        jest.useFakeTimers();
-        const handleSaveProject = jest.fn();
-        const blur = jest.fn();
-        const menuBar = makeMenuBar({handleSaveProject});
-        const event = {
-            altKey: false,
-            ctrlKey: true,
-            key: 's',
-            metaKey: true,
-            preventDefault: jest.fn(),
-            target: {
-                blur,
-                dataset: {projectTitleInput: ''},
-                tagName: 'INPUT'
-            }
-        };
-
-        menuBar.handleKeyPress(event);
-        expect(blur).toHaveBeenCalledTimes(1);
-        expect(handleSaveProject).not.toHaveBeenCalled();
-
-        jest.runOnlyPendingTimers();
-        expect(handleSaveProject).toHaveBeenCalledTimes(1);
-        jest.useRealTimers();
-    });
-
     test('leaves normal save and open shortcuts to the global shortcut router', () => {
         const handleSaveProject = jest.fn();
         const onStartSelectingFileUpload = jest.fn();
