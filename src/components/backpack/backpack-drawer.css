@@ -1,0 +1,298 @@
+@import "../../css/units.css";
+@import "../../css/colors.css";
+@import "../../css/z-index.css";
+
+.drawer {
+    position: absolute;
+    top: $stage-menu-height;
+    right: 0;
+    bottom: 0;
+    z-index: 60;
+    display: flex;
+    align-items: stretch;
+    justify-content: flex-end;
+    pointer-events: none;
+    box-sizing: border-box;
+}
+
+.panel {
+    pointer-events: auto;
+    box-sizing: border-box;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 23rem;
+    max-width: 85%;
+    height: 100%;
+    background: $ui-white;
+    border-radius: 0 0 0.5rem 0;
+    box-shadow: 0 0 0 1px $ui-black-transparent, -6px 0 18px $shadow;
+    color: $text-primary;
+    overflow: hidden;
+}
+
+.header {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 0.75rem 0.5rem;
+    flex-shrink: 0;
+}
+
+.header-icon {
+    color: $looks-secondary;
+    flex-shrink: 0;
+}
+
+.title {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: $text-primary;
+}
+
+.count {
+    box-sizing: border-box;
+    min-width: 1.5rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+    background: $ui-primary;
+    color: $text-primary;
+    font-size: 0.7rem;
+    font-weight: 600;
+    line-height: 1.3;
+    text-align: center;
+}
+
+.header-spacer {
+    flex: 1;
+}
+
+.icon-button {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+    border: none;
+    border-radius: 0.375rem;
+    background: transparent;
+    color: $text-primary;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+
+.icon-button:hover {
+    background: $ui-tertiary;
+}
+
+.icon-button:focus-visible {
+    outline: 2px solid $looks-secondary;
+    outline-offset: 1px;
+}
+
+.icon-button-active {
+    background: $looks-secondary;
+    color: $ui-white;
+}
+
+.icon-button-active:hover {
+    background: $looks-secondary-dark;
+}
+
+.toolbar {
+    box-sizing: border-box;
+    padding: 0 0.75rem 0.5rem;
+    flex-shrink: 0;
+}
+
+.toolbar > [class*="filters"] {
+    flex-wrap: wrap;
+}
+
+.search {
+    width: 100%;
+}
+
+.body {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: $ui-primary;
+    box-sizing: border-box;
+}
+
+.list {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.625rem 0.75rem 1rem;
+}
+
+.footer {
+    box-sizing: border-box;
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.375rem 0.75rem;
+    border-top: 1px solid $ui-black-transparent;
+    flex-shrink: 0;
+}
+
+.drop-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    padding: 2.5rem 1.5rem 1rem;
+    box-sizing: border-box;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: center;
+    color: $looks-secondary;
+    background: color-mix(in srgb, $looks-secondary 10%, $ui-white);
+    pointer-events: none;
+    transition: background 0.15s ease;
+}
+
+.drop-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0.5rem;
+    border: 2px dashed color-mix(in srgb, $looks-secondary 45%, transparent);
+    border-radius: 0.75rem;
+    transition: border-color 0.15s ease;
+}
+
+.panel.drag-over .drop-overlay {
+    background: color-mix(in srgb, $looks-secondary 22%, $ui-white);
+    color: $text-primary;
+}
+
+.panel.drag-over .drop-overlay::before {
+    border-color: $looks-secondary;
+    border-style: solid;
+}
+
+.edge-tab {
+    pointer-events: auto;
+    box-sizing: border-box;
+    align-self: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 2.25rem;
+    min-height: 7rem;
+    padding: 0.75rem 0;
+    border: none;
+    border-radius: 0.625rem 0 0 0.625rem;
+    background: $ui-white;
+    color: $text-primary;
+    box-shadow: 0 0 0 1px $ui-black-transparent, -2px 0 8px $shadow;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: width 0.15s ease, min-height 0.15s ease, background 0.15s ease;
+}
+
+.edge-tab:hover {
+    background: $ui-secondary;
+}
+
+.edge-tab:focus-visible {
+    outline: 3px solid $looks-secondary;
+    outline-offset: -3px;
+}
+
+.edge-tab:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
+.edge-tab-label {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    white-space: nowrap;
+    line-height: 1;
+}
+
+.edge-tab-count {
+    box-sizing: border-box;
+    min-width: 1.25rem;
+    padding: 0.15rem 0.3rem;
+    border-radius: 999px;
+    background: $looks-secondary;
+    color: $ui-white;
+    font-size: 0.65rem;
+    line-height: 1;
+    text-align: center;
+}
+
+.edge-tab-drop-zone {
+    align-self: stretch;
+    justify-content: flex-start;
+    width: 10.5rem;
+    margin: 0.75rem 0;
+    padding: 2rem 1rem 1rem;
+    gap: 0.75rem;
+    border: 2px dashed color-mix(in srgb, $looks-secondary 45%, transparent);
+    border-radius: 0.75rem 0 0 0.75rem;
+    background: color-mix(in srgb, $looks-secondary 10%, $ui-white);
+    color: $looks-secondary;
+    box-shadow: none;
+}
+
+.edge-tab-drop-zone:hover {
+    background: color-mix(in srgb, $looks-secondary 10%, $ui-white);
+}
+
+.edge-tab-drop-zone.drag-over,
+.edge-tab-drop-zone.drag-over:hover {
+    background: color-mix(in srgb, $looks-secondary 22%, $ui-white);
+    border-color: $looks-secondary;
+    border-style: solid;
+    color: $text-primary;
+}
+
+.edge-tab-text {
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.3;
+    text-align: center;
+}
+
+.notice {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 1;
+    box-sizing: border-box;
+    padding: 0.4rem 0.75rem;
+    border-radius: 999px;
+    background: $looks-secondary;
+    color: $ui-white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.3;
+    box-shadow: 0 2px 8px $shadow;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.expanded .notice {
+    top: auto;
+    bottom: 3rem;
+    right: 1rem;
+}

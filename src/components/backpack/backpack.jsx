@@ -1,238 +1,91 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import classNames from 'classnames';
-import {FormattedMessage, defineMessages, injectIntl, intlShape} from 'react-intl';
-import DragConstants from '../../lib/constants/drag-constants';
-import SpriteSelectorItem from '../../containers/sprite-selector-item.jsx';
-import styles from './backpack.css';
 
-// TODO make sprite selector item not require onClick
+import BackpackDrawer from './backpack-drawer.jsx';
+import BackpackStrip from './backpack-strip.jsx';
+import {LAYOUTS, DEFAULT_LAYOUT, FILTERS} from '../../lib/backpack/layout.js';
+
 const noop = () => {};
 
-const dragTypeMap = { // Keys correspond with the backpack-server item types
-    costume: DragConstants.BACKPACK_COSTUME,
-    sound: DragConstants.BACKPACK_SOUND,
-    script: DragConstants.BACKPACK_CODE,
-    sprite: DragConstants.BACKPACK_SPRITE
+const Backpack = props => {
+    const Layout = props.layout === 'strip' ? BackpackStrip : BackpackDrawer;
+    return <Layout {...props} />;
 };
 
-const labelMap = defineMessages({
-    costume: {
-        id: 'gui.backpack.costumeLabel',
-        defaultMessage: 'costume',
-        description: 'Label for costume backpack item'
-    },
-    sound: {
-        id: 'gui.backpack.soundLabel',
-        defaultMessage: 'sound',
-        description: 'Label for sound backpack item'
-    },
-    script: {
-        id: 'gui.backpack.scriptLabel',
-        defaultMessage: 'script',
-        description: 'Label for script backpack item'
-    },
-    sprite: {
-        id: 'gui.backpack.spriteLabel',
-        defaultMessage: 'sprite',
-        description: 'Label for sprite backpack item'
-    }
-});
-
-const Backpack = ({
-    blockDragOver,
-    containerRef,
-    contents,
-    dragOver,
-    error,
-    expanded,
-    height,
-    intl,
-    loading,
-    showMore,
-    onToggle,
-    onDelete,
-    onRename,
-    onResizePointerDown,
-    onMouseEnter,
-    onMouseLeave,
-    onMore,
-    searchQuery,
-    onSearchChange
-}) => (
-    <div className={styles.backpackContainer}>
-        {expanded ? (
-            <div
-                className={styles.resizeHandle}
-                onPointerDown={onResizePointerDown}
-            />
-        ) : null}
-        {onToggle ? (
-            <button
-                type="button"
-                className={styles.backpackHeader}
-                aria-expanded={expanded}
-                onClick={onToggle}
-            >
-                <FormattedMessage
-                    defaultMessage="Backpack"
-                    description="Button to open the backpack"
-                    id="gui.backpack.header"
-                />
-            </button>
-        ) : (
-            <div className={styles.backpackHeader}>
-                <FormattedMessage
-                    defaultMessage="Backpack"
-                    description="Button to open the backpack"
-                    id="gui.backpack.header"
-                />
-            </div>
-        )}
-        {expanded ? (
-            <div
-                className={classNames(styles.backpackList, {
-                    [styles.dragOver]: dragOver || blockDragOver
-                })}
-                ref={containerRef}
-                onMouseEnter={onMouseEnter}
-                onMouseLeave={onMouseLeave}
-                style={height ? {height: `${height}px`} : null}
-            >
-                <div className={styles.searchContainer}>
-                    <input
-                        aria-label={intl.formatMessage({
-                            id: 'gui.backpack.searchPlaceholder',
-                            defaultMessage: 'Search backpack...'
-                        })}
-                        autoComplete="off"
-                        className={styles.searchInput}
-                        placeholder={intl.formatMessage({
-                            id: 'gui.backpack.searchPlaceholder',
-                            defaultMessage: 'Search backpack...'
-                        })}
-                        value={searchQuery}
-                        onChange={onSearchChange}
-                    />
-                </div>
-                <div className={styles.itemsScroller}>
-                    {/* eslint-disable-next-line no-negated-condition */}
-                    {error !== false ? (
-                        <div className={styles.statusMessage}>
-                            <FormattedMessage
-                                defaultMessage="Error loading backpack"
-                                description="Error backpack message"
-                                id="gui.backpack.errorBackpack"
-                            />
-                            <div className={styles.errorMessage}>{error}</div>
-                        </div>
-                    ) : (
-                        loading ? (
-                            <div className={styles.statusMessage}>
-                                <FormattedMessage
-                                    defaultMessage="Loading..."
-                                    description="Loading backpack message"
-                                    id="gui.backpack.loadingBackpack"
-                                />
-                            </div>
-                        ) : (
-                            contents.length > 0 ? (
-                                <div className={styles.backpackListInner}>
-                                    {contents.map(item => (
-                                        <SpriteSelectorItem
-                                            className={styles.backpackItem}
-                                            costumeURL={item.thumbnailUrl}
-                                            details={item.name}
-                                            dragPayload={item}
-                                            dragType={dragTypeMap[item.type]}
-                                            id={item.id}
-                                            key={item.id}
-                                            name={intl.formatMessage(labelMap[item.type])}
-                                            selected={false}
-                                            onClick={noop}
-                                            onDeleteButtonClick={onDelete}
-                                            // Currently, renaming sprites is not supported.
-                                            onRenameButtonClick={item.type === 'sprite' ? null : onRename}
-                                        />
-                                    ))}
-                                    {showMore && (
-                                        <button
-                                            type="button"
-                                            className={styles.more}
-                                            onClick={onMore}
-                                        >
-                                            <FormattedMessage
-                                                defaultMessage="More"
-                                                description="Load more from backpack"
-                                                id="gui.backpack.more"
-                                            />
-                                        </button>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className={styles.statusMessage}>
-                                    {searchQuery ? (
-                                        <FormattedMessage
-                                            defaultMessage="No matching backpack items"
-                                            id="gui.backpack.noSearchResults"
-                                        />
-                                    ) : (
-                                        <FormattedMessage
-                                            defaultMessage="Backpack is empty"
-                                            description="Empty backpack message"
-                                            id="gui.backpack.emptyBackpack"
-                                        />
-                                    )}
-                                </div>
-                            )
-                        )
-                    )}
-                </div>
-            </div>
-        ) : null}
-    </div>
-);
-
 Backpack.propTypes = {
-    blockDragOver: PropTypes.bool,
-    containerRef: PropTypes.func,
+    busyId: PropTypes.string,
+    canRename: PropTypes.bool,
+    canToggle: PropTypes.bool,
     contents: PropTypes.arrayOf(PropTypes.shape({
         id: PropTypes.string,
         thumbnailUrl: PropTypes.string,
         type: PropTypes.string,
         name: PropTypes.string
     })),
+    dragActive: PropTypes.bool,
     dragOver: PropTypes.bool,
     error: PropTypes.oneOfType([PropTypes.bool, PropTypes.string]),
     expanded: PropTypes.bool,
+    filter: PropTypes.oneOf(FILTERS),
+    handleRef: PropTypes.func,
     height: PropTypes.number,
-    intl: intlShape,
+    layout: PropTypes.oneOf(LAYOUTS),
     loading: PropTypes.bool,
+    notice: PropTypes.string,
+    panelRef: PropTypes.func,
+    pinned: PropTypes.bool,
+    renamingId: PropTypes.string,
     searchQuery: PropTypes.string,
-    onSearchChange: PropTypes.func,
+    showMore: PropTypes.bool,
+    totalCount: PropTypes.number,
+    onClose: PropTypes.func,
     onDelete: PropTypes.func,
-    onRename: PropTypes.func,
-    onResizePointerDown: PropTypes.func,
+    onFilterChange: PropTypes.func,
+    onInsert: PropTypes.func,
+    onLayoutChange: PropTypes.func,
     onMore: PropTypes.func,
-    onMouseEnter: PropTypes.func,
-    onMouseLeave: PropTypes.func,
-    onToggle: PropTypes.func,
-    showMore: PropTypes.bool
+    onOpen: PropTypes.func,
+    onPanelKeyDown: PropTypes.func,
+    onPinToggle: PropTypes.func,
+    onRenameCancel: PropTypes.func,
+    onRenameStart: PropTypes.func,
+    onRenameSubmit: PropTypes.func,
+    onResizePointerDown: PropTypes.func,
+    onSearchChange: PropTypes.func,
+    onToggle: PropTypes.func
 };
 
 Backpack.defaultProps = {
-    blockDragOver: false,
+    canRename: false,
+    canToggle: true,
     contents: [],
+    dragActive: false,
     dragOver: false,
+    error: false,
     expanded: false,
+    filter: 'all',
     height: null,
+    layout: DEFAULT_LAYOUT,
     loading: false,
+    notice: null,
+    pinned: false,
     searchQuery: '',
-    onSearchChange: null,
     showMore: false,
-    onMore: null,
-    onResizePointerDown: null,
-    onToggle: null
+    totalCount: 0,
+    onClose: noop,
+    onDelete: noop,
+    onFilterChange: noop,
+    onInsert: noop,
+    onLayoutChange: noop,
+    onMore: noop,
+    onOpen: noop,
+    onPinToggle: noop,
+    onRenameCancel: noop,
+    onRenameStart: noop,
+    onRenameSubmit: noop,
+    onResizePointerDown: noop,
+    onSearchChange: noop,
+    onToggle: noop
 };
 
-export default injectIntl(Backpack);
+export default Backpack;

@@ -35,7 +35,6 @@ const makeBackpack = overrides => {
         intl: {formatMessage: jest.fn(message => message.defaultMessage)},
         token: 'token',
         username: 'user',
-        openSimpleDialog: jest.fn(),
         vm: {},
         ...overrides
     });
@@ -122,18 +121,16 @@ describe('backpack workflows', () => {
         await firstDrop;
     });
 
-    test('renames an item through the in-app prompt', async () => {
+    test('renames an item inline and trims the new name', async () => {
         updateBackpackObject.mockResolvedValueOnce({id: 'item', name: 'New name'});
-        const openSimpleDialog = jest.fn(config => config.onOk('  New name  '));
-        const backpack = makeBackpack({openSimpleDialog});
+        const backpack = makeBackpack({host: 'local'});
         backpack.state.contents = [{id: 'item', name: 'Old name', type: 'costume'}];
 
-        await expect(backpack.handleRename('item')).resolves.toBe(true);
+        expect(backpack.handleRenameStart('item')).toBe(true);
+        expect(backpack.state.renamingId).toBe('item');
+        await expect(backpack.handleRenameSubmit('item', '  New name  ')).resolves.toBe(true);
 
-        expect(openSimpleDialog).toHaveBeenCalledWith(expect.objectContaining({
-            type: 'prompt',
-            defaultValue: 'Old name'
-        }));
+        expect(backpack.state.renamingId).toBe(null);
         expect(updateBackpackObject).toHaveBeenCalledWith(expect.objectContaining({
             id: 'item',
             name: 'New name'
@@ -141,14 +138,36 @@ describe('backpack workflows', () => {
         expect(backpack.state.contents[0].name).toBe('New name');
     });
 
-    test('does not rename an item when the prompt is cancelled', async () => {
-        const openSimpleDialog = jest.fn(config => config.onCancel());
-        const backpack = makeBackpack({openSimpleDialog});
+    test('does not rename an item when the new name is empty or unchanged', async () => {
+        const backpack = makeBackpack({host: 'local'});
         backpack.state.contents = [{id: 'item', name: 'Old name', type: 'sound'}];
 
-        await expect(backpack.handleRename('item')).resolves.toBe(false);
+        await expect(backpack.handleRenameSubmit('item', '   ')).resolves.toBe(false);
+        await expect(backpack.handleRenameSubmit('item', 'Old name')).resolves.toBe(false);
 
         expect(updateBackpackObject).not.toHaveBeenCalled();
         expect(backpack.renamingItems.size).toBe(0);
+    });
+
+    test('only offers renaming for the local backpack', () => {
+        const remote = makeBackpack();
+        remote.state.contents = [{id: 'item', name: 'Old name', type: 'sprite'}];
+        expect(remote.handleRenameStart('item')).toBe(false);
+
+        const local = makeBackpack({host: 'local'});
+        local.state.contents = [{id: 'item', name: 'Old name', type: 'sprite'}];
+        expect(local.handleRenameStart('item')).toBe(true);
+    });
+
+    test('filters contents by type before searching', () => {
+        const backpack = makeBackpack();
+        backpack.state.contents = [
+            {id: '1', name: 'Walk', type: 'script'},
+            {id: '2', name: 'Walk', type: 'costume'},
+            {id: '3', name: 'Jump', type: 'script'}
+        ];
+        backpack.state.filter = 'script';
+        backpack.state.searchQuery = 'walk';
+        expect(backpack.getFilteredContents().map(item => item.id)).toEqual(['1']);
     });
 });

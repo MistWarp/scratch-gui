@@ -2,134 +2,243 @@
 @import "../../css/colors.css";
 
 .backpack-container {
-    flex-shrink: 1;
+    flex-shrink: 0;
     position: relative;
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
+    margin-top: 0.5rem;
 }
 
 .resize-handle {
     height: 0.5rem;
+    margin-bottom: -0.25rem;
     cursor: ns-resize;
-    background: $ui-white;
     touch-action: none;
-}
-
-.backpack-header {
-    width: 100%;
-    margin-top: 0.5rem;
-    border: 1px solid $ui-black-transparent;
-    background: $ui-white;
-    padding: 0.25rem;
-    text-align: center;
-    font-size: 0.85rem;
-    color: $text-primary;
-    transition: 0.2s;
-    cursor: pointer;
-    user-select: none;
-    font-family: inherit;
-}
-
-.backpack-header:focus-visible {
-    outline: 3px solid $ui-primary;
-    outline-offset: -3px;
-}
-
-.search-container {
-    padding: 0.5rem;
-    background: $ui-white;
     flex-shrink: 0;
 }
 
-.search-input {
-    width: 100%;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.85rem;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 0.25rem;
-    outline: none;
-}
-
-.search-input:focus {
-    border-color: $ui-primary;
-}
-
-.itemsScroller {
-    flex: 1;
-    position: relative;
-    min-height: 0;
-    height: calc(100% - 40px);
-    overflow-y: auto;
-}
-
-/* Absolute position the inner list to allow scrolling inside flex sized container */
-.backpack-list-inner {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, 4rem);
-    grid-auto-rows: 4.5rem;
-    gap: 0.5rem;
-    align-content: start;
-    justify-content: start;
-    padding: 0.5rem;
-    overflow-y: auto;
-    overflow-x: hidden;
+.backpack-header {
     box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.25rem;
+    padding: 0.25rem 0.5rem;
+    background: $ui-white;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.5rem 0.5rem 0 0;
+    color: $text-primary;
+    transition: min-height 0.15s ease, background 0.15s ease;
 }
 
-.drag-over:after {
-    content: '';
+.backpack-container:not(.expanded) .backpack-header {
+    border-radius: 0.5rem;
+}
+
+.header-toggle {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    padding: 0.25rem 0.375rem;
+    border: none;
+    border-radius: 0.375rem;
+    background: transparent;
+    color: $text-primary;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1.2;
+    cursor: pointer;
+    user-select: none;
+}
+
+.backpack-container:not(.expanded) .header-toggle {
+    flex: 1;
+}
+
+.header-toggle:hover {
+    background: $ui-tertiary;
+}
+
+.header-toggle:focus-visible {
+    outline: 3px solid $looks-secondary;
+    outline-offset: -3px;
+}
+
+.header-toggle:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
+.header-icon {
+    color: $looks-secondary;
+    flex-shrink: 0;
+}
+
+.header-count {
+    box-sizing: border-box;
+    min-width: 1.5rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+    background: $ui-primary;
+    font-size: 0.7rem;
+    font-weight: 600;
+    line-height: 1.3;
+    text-align: center;
+}
+
+.header-filters {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.header-search {
+    flex: 0 1 14rem;
+    min-width: 8rem;
+}
+
+.header-layout-switch {
+    flex-shrink: 0;
+}
+
+.drag-active:not(.expanded) {
+    min-height: 2.25rem;
+}
+
+.header-drop-zone {
     position: absolute;
-    top: 0;
     left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 60;
+    height: 5.5rem;
+    border-radius: 0.5rem;
+    border: 2px dashed color-mix(in srgb, $looks-secondary 45%, transparent);
+    background: color-mix(in srgb, $looks-secondary 10%, $ui-white);
+}
+
+.header-drop-zone .header-toggle {
+    flex: 0 1 auto;
+    align-self: flex-start;
+    color: $looks-secondary;
+}
+
+.header-drop-zone .header-toggle:hover {
+    background: transparent;
+}
+
+.header-drop-zone .header-count,
+.header-drop-zone .header-title {
+    display: none;
+}
+
+.header-drop-zone.drag-over {
+    background: color-mix(in srgb, $looks-secondary 22%, $ui-white);
+    border-color: $looks-secondary;
+    border-style: solid;
+}
+
+.header-drop-zone.drag-over .header-toggle {
+    color: $text-primary;
+}
+
+.header-drop-text {
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.backpack-list {
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    background: $ui-primary;
+    border: 1px solid $ui-black-transparent;
+    border-top: none;
+    border-radius: 0 0 0.5rem 0.5rem;
+}
+
+.backpack-list-inner {
+    box-sizing: border-box;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    align-content: flex-start;
+    gap: 0.5rem;
     width: 100%;
     height: 100%;
-    opacity: 0.75;
-    background-color: $drop-highlight;
-    transition: all 0.25s ease;
+    min-height: 0;
+    padding: 0.5rem;
+    overflow-x: auto;
+    overflow-y: hidden;
 }
 
-.status-message {
-    padding: 1.25rem;
-    width: 100%;
-    text-align: center;
-    font-size: 0.85rem;
-    color: $text-primary;
-    box-sizing: border-box;
-}
-
-.error-message {
-    font-family: monospace;
+.multi-row .backpack-list-inner {
+    flex-wrap: wrap;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 .backpack-item {
-    width: 100%;
-    height: 100%;
-    margin: 0;
-
-    /* Need to hide overflow because of background setting below */
-    overflow: hidden;
+    flex-shrink: 0;
 }
 
-.backpack-item > div {
-    /* Need to set the background to get blend-mode below to work */
-    background: $ui-primary;
+.drop-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    padding: 1rem 1.25rem;
+    box-sizing: border-box;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: $looks-secondary;
+    background: color-mix(in srgb, $looks-secondary 10%, $ui-white);
+    pointer-events: none;
+    transition: background 0.15s ease;
 }
 
-.more {
+.drop-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0.375rem;
+    border: 2px dashed color-mix(in srgb, $looks-secondary 45%, transparent);
+    border-radius: 0.5rem;
+}
+
+.backpack-list.drag-over .drop-overlay {
+    background: color-mix(in srgb, $looks-secondary 22%, $ui-white);
+    color: $text-primary;
+}
+
+.backpack-list.drag-over .drop-overlay::before {
+    border-color: $looks-secondary;
+    border-style: solid;
+}
+
+.notice {
+    position: absolute;
+    right: 0.75rem;
+    top: -0.5rem;
+    transform: translateY(-100%);
+    z-index: 1;
+    box-sizing: border-box;
+    padding: 0.4rem 0.75rem;
+    border-radius: 999px;
     background: $looks-secondary;
     color: $ui-white;
-    border: none;
-    outline: none;
-    font-weight: bold;
-    border-radius: 0.5rem;
-    font-size: 0.85rem;
-    width: 100%;
-    height: 100%;
-    padding: 0.25rem;
-    margin: 0;
-    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.3;
+    box-shadow: 0 2px 8px $shadow;
+    pointer-events: none;
+    white-space: nowrap;
 }

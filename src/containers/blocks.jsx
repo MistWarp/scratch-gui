@@ -225,7 +225,7 @@ class Blocks extends React.Component {
             if (!isInsideBlocksArea(event)) return false;
             if (typeof event.clientX !== 'number') return true;
             const top = this.blocks.ownerDocument.elementFromPoint(event.clientX, event.clientY);
-            return !(top && top.closest && top.closest('[data-chat-pane]'));
+            return !(top && top.closest && top.closest('[data-chat-pane], [data-backpack-drop-zone]'));
         };
         this.blocks.addEventListener('dragover', this.handleScriptDragOver);
         this.blocks.addEventListener('drop', this.handleScriptDrop);
