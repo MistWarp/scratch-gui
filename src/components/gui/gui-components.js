@@ -9,8 +9,6 @@ import BackdropLibrary from '../../containers/backdrop-library.jsx';
 import Watermark from '../../containers/watermark.jsx';
 import Backpack from '../../containers/backpack.jsx';
 import BrowserModal from '../browser-modal/browser-modal.jsx';
-import TipsLibrary from '../../containers/tips-library.jsx';
-import Cards from '../../containers/cards.jsx';
 import DragLayer from '../../containers/drag-layer.jsx';
 import ConnectionModal from '../../containers/connection-modal.jsx';
 import CollaborationContainer from '../../containers/collaboration-container.jsx';
@@ -46,8 +44,6 @@ const components = {
     Watermark,
     Backpack,
     BrowserModal,
-    TipsLibrary,
-    Cards,
     DragLayer,
     ConnectionModal,
     CollaborationContainer,
