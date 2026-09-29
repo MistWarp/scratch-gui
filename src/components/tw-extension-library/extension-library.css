@@ -74,6 +74,45 @@
     font-weight: 700;
 }
 
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 3rem 1rem;
+    color: $text-primary;
+    text-align: center;
+}
+
+.empty-state p {
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+.empty-state-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 8px;
+    background: $looks-secondary;
+    color: $ui-white;
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.empty-state-button:hover {
+    background: $looks-secondary-dark;
+}
+
+.empty-state-button:focus-visible {
+    outline: 2px solid $looks-secondary;
+    outline-offset: 2px;
+}
+
 .card {
     display: flex;
     flex-direction: column;

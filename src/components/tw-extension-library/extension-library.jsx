@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import classNames from 'classnames';
 import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
-import {Search} from 'lucide-react';
+import {PackagePlus, Search} from 'lucide-react';
 
 import Modal from '../../containers/windowed-modal.jsx';
 import {
@@ -11,6 +11,7 @@ import {
     ModalSidebarItem,
     ModalSidebarLayout
 } from '../modal-sidebar/modal-sidebar.jsx';
+import {matchesExtensionQuery} from '../../lib/libraries/extension-search.js';
 import styles from './extension-library.css';
 
 const messages = defineMessages({
@@ -23,18 +24,27 @@ const messages = defineMessages({
         id: 'gui.extensionLibrary.search',
         defaultMessage: 'Search extensions',
         description: 'Placeholder for the extension search field'
+    },
+    groupLabel: {
+        id: 'mw.extensionLibrary.groupLabel',
+        defaultMessage: 'Extensions',
+        description: 'Heading of the filter list in the extension library sidebar'
+    },
+    noMatches: {
+        id: 'mw.extensionLibrary.noMatches',
+        defaultMessage: 'No extensions match your search.',
+        description: 'Shown in the extension library when the search or filter finds nothing'
+    },
+    loadCustom: {
+        id: 'mw.extensionLibrary.loadCustom',
+        defaultMessage: 'Load a custom extension',
+        description: 'Button in the empty extension library search that opens the custom extension dialog'
     }
 });
 
 const ALL = 'all';
 const topExtensionIds = new Set(['tw', 'custom_extension', 'gallery']);
-const sources = [
-    ['mistwarp-games', 'MistWarp Games'],
-    ['scratch', 'Scratch'],
-    ['tw', 'TurboWarp'],
-    ['mistium', 'Mistium'],
-    ['rotur', 'Rotur']
-];
+const sources = ['mistwarp-games', 'scratch', 'tw', 'mistium', 'rotur'];
 
 const labelOf = (tag, intl) => (
     typeof tag.intlLabel === 'string' ? tag.intlLabel : intl.formatMessage(tag.intlLabel)
@@ -198,6 +208,27 @@ ExtensionCard.propTypes = {
     onSelect: PropTypes.func.isRequired
 };
 
+const CustomExtensionButton = ({item, label, onSelect}) => {
+    const handleClick = React.useCallback(() => onSelect(item), [onSelect, item]);
+    return (
+        <button
+            className={styles.emptyStateButton}
+            onClick={handleClick}
+            type="button"
+        >
+            <PackagePlus size={16} />
+            {label}
+        </button>
+    );
+};
+
+CustomExtensionButton.propTypes = {
+    // eslint-disable-next-line react/forbid-prop-types
+    item: PropTypes.object.isRequired,
+    label: PropTypes.string.isRequired,
+    onSelect: PropTypes.func.isRequired
+};
+
 class TWExtensionLibrary extends React.Component {
     constructor (props) {
         super(props);
@@ -225,12 +256,7 @@ class TWExtensionLibrary extends React.Component {
     }
 
     matchesQuery (item) {
-        const query = this.state.query.trim().toLowerCase();
-        if (!query) {
-            return true;
-        }
-        const haystack = `${item.name || ''} ${item.description || ''}`.toLowerCase();
-        return haystack.includes(query);
+        return matchesExtensionQuery(item, this.state.query, this.props.intl);
     }
 
     render () {
@@ -247,8 +273,12 @@ class TWExtensionLibrary extends React.Component {
             (item.tags.includes('mistwarp-games') ? 'mistwarp-games' :
                 item.tags.includes('rotur') ? 'rotur' : item.tags.includes('mistium') ? 'mistium' :
                     item.tags.includes('tw') ? 'tw' : 'scratch');
-        const sections = sources.map(([source, sourceTitle]) => ({
-            title: sourceTitle,
+        const sourceTitle = source => {
+            const tag = tags.find(candidate => candidate.tag === source);
+            return tag ? labelOf(tag, intl) : source;
+        };
+        const sections = sources.map(source => ({
+            title: sourceTitle(source),
             items: visible.filter(item =>
                 !topExtensionIds.has(item.extensionId) && sourceOf(item) === source
             )
@@ -257,6 +287,7 @@ class TWExtensionLibrary extends React.Component {
             (top.length || sections.length > 1);
 
         const sidebarTags = [{tag: ALL, intlLabel: intl.formatMessage(messages.all)}, ...tags];
+        const customExtension = builtIn.find(item => item.extensionId === 'custom_extension');
 
         return (
             <Modal
@@ -274,7 +305,7 @@ class TWExtensionLibrary extends React.Component {
                         ariaLabel={title}
                         width="wide"
                     >
-                        <ModalSidebarCollapsibleGroup label="Extensions">
+                        <ModalSidebarCollapsibleGroup label={intl.formatMessage(messages.groupLabel)}>
                             {sidebarTags.map(tag => (
                                 <TagItem
                                     key={tag.tag}
@@ -296,13 +327,25 @@ class TWExtensionLibrary extends React.Component {
                             <input
                                 className={styles.search}
                                 placeholder={intl.formatMessage(messages.search)}
+                                aria-label={intl.formatMessage(messages.search)}
                                 value={this.state.query}
                                 onChange={this.handleQuery}
                                 autoFocus
                             />
                         </div>
                         <div className={styles.scroll}>
-                            {showSections ? (
+                            {visible.length === 0 ? (
+                                <div className={styles.emptyState}>
+                                    <p>{intl.formatMessage(messages.noMatches)}</p>
+                                    {customExtension ? (
+                                        <CustomExtensionButton
+                                            item={customExtension}
+                                            label={intl.formatMessage(messages.loadCustom)}
+                                            onSelect={onItemSelected}
+                                        />
+                                    ) : null}
+                                </div>
+                            ) : showSections ? (
                                 <React.Fragment>
                                     {top.length ? (
                                         <div className={styles.grid}>

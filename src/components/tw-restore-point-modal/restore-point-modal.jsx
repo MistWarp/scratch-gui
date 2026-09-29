@@ -107,13 +107,27 @@ const RestorePointModal = props => (
                                 size="small"
                                 disabled={props.confirmationBusy}
                                 onClick={props.onCancelConfirmation}
-                            >{'Cancel'}</Button>
+                            >
+                                <FormattedMessage
+                                    defaultMessage="Cancel"
+                                    description="Button that dismisses a device backup confirmation"
+                                    id="mw.restorePoints.cancel"
+                                />
+                            </Button>
                             <Button
                                 variant="danger"
                                 size="small"
                                 disabled={props.confirmationBusy}
                                 onClick={props.onConfirm}
-                            >{props.confirmationBusy ? 'Working…' : props.confirmation.action}</Button>
+                            >
+                                {props.confirmationBusy ? (
+                                    <FormattedMessage
+                                        defaultMessage="Working…"
+                                        description="Shown on a device backup confirmation button while it runs"
+                                        id="mw.restorePoints.working"
+                                    />
+                                ) : props.confirmation.action}
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -144,7 +158,7 @@ const RestorePointModal = props => (
                 <div className={styles.warning}>
                     <AlertTriangle />
                     <FormattedMessage
-                        defaultMessage="Automatic restore points are off. Manual restore points are still available."
+                        defaultMessage="Automatic device backups are off. You can still create one yourself."
                         id="tw.restorePoints.off"
                     />
                 </div>
@@ -202,7 +216,7 @@ const RestorePointModal = props => (
                     <AlertTriangle />
                     <strong>
                         <FormattedMessage
-                            defaultMessage="Restore points could not be loaded"
+                            defaultMessage="Device backups could not be loaded."
                             id="tw.restorePoints.error"
                         />
                     </strong>
@@ -223,7 +237,7 @@ const RestorePointModal = props => (
                 <div className={styles.state}>
                     <RefreshCw className={styles.spinner} />
                     <FormattedMessage
-                        defaultMessage="Loading restore points…"
+                        defaultMessage="Loading device backups…"
                         id="tw.restorePoints.loading"
                     />
                 </div>
@@ -231,7 +245,7 @@ const RestorePointModal = props => (
                 <div className={styles.state}>
                     <strong>
                         <FormattedMessage
-                            defaultMessage="No restore points yet"
+                            defaultMessage="No device backups yet"
                             id="tw.restorePoints.empty"
                         />
                     </strong>
