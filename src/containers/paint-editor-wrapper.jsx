@@ -55,6 +55,7 @@ class PaintEditorWrapper extends React.Component {
         });
     }
     handleUpdateName (name) {
+        if (!name.trim()) return;
         this.props.vm.renameCostume(this.props.selectedCostumeIndex, name);
     }
     handleUpdateImage (isVector, image, rotationCenterX, rotationCenterY) {

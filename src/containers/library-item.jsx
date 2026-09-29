@@ -59,6 +59,7 @@ export class LibraryItem extends React.PureComponent {
         }
     }
     handleKeyDown (e) {
+        if (e.target !== e.currentTarget) return;
         if (e.key === ' ' || e.key === 'Enter') {
             this.handleClick(e);
         }
