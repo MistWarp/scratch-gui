@@ -23,10 +23,40 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 const messages = defineMessages({
     confirmLoad: {
-        defaultMessage: 'Open this backup in a new workspace? Your current code will be kept in Device backups. ' +
-            'Your saved MistWarp project will stay unchanged. Cancel keeps the current workspace open.',
-        description: 'Confirmation that appears when loading a restore point to confirm overwriting unsaved changes.',
-        id: 'tw.restorePoints.confirmLoad'
+        // eslint-disable-next-line max-len
+        defaultMessage: 'Your current code will be kept in Device backups first. Your saved MistWarp project will stay unchanged. Cancel keeps the current workspace open.',
+        description: 'Confirmation that appears when loading a device backup to confirm overwriting unsaved changes.',
+        id: 'mw.restorePoints.confirmLoad'
+    },
+    confirmLoadTitle: {
+        defaultMessage: 'Open this backup in a new workspace?',
+        description: 'Title of the confirmation that appears when loading a device backup',
+        id: 'mw.restorePoints.confirmLoadTitle'
+    },
+    confirmLoadAction: {
+        defaultMessage: 'Back up and open workspace',
+        description: 'Button that confirms loading a device backup',
+        id: 'mw.restorePoints.confirmLoadAction'
+    },
+    confirmDeleteTitle: {
+        defaultMessage: 'Delete this device backup?',
+        description: 'Title of the confirmation that appears when deleting one device backup',
+        id: 'mw.restorePoints.confirmDeleteTitle'
+    },
+    confirmDeleteAction: {
+        defaultMessage: 'Delete',
+        description: 'Button that confirms deleting one device backup',
+        id: 'mw.restorePoints.confirmDeleteAction'
+    },
+    confirmDeleteAllTitle: {
+        defaultMessage: 'Delete all device backups?',
+        description: 'Title of the confirmation that appears when deleting every device backup',
+        id: 'mw.restorePoints.confirmDeleteAllTitle'
+    },
+    confirmDeleteAllAction: {
+        defaultMessage: 'Delete all',
+        description: 'Button that confirms deleting every device backup',
+        id: 'mw.restorePoints.confirmDeleteAllAction'
     },
     confirmDelete: {
         defaultMessage: 'Are you sure you want to delete "{projectTitle}"? This cannot be undone.',
@@ -34,8 +64,8 @@ const messages = defineMessages({
         id: 'tw.restorePoints.confirmDelete'
     },
     confirmDeleteAll: {
-        defaultMessage: 'Are you sure you want to delete ALL restore points? This cannot be undone.',
-        description: 'Confirmation that appears when deleting ALL restore points.',
+        defaultMessage: 'Are you sure you want to delete ALL device backups? This cannot be undone.',
+        description: 'Confirmation that appears when deleting ALL device backups.',
         id: 'tw.restorePoints.confirmDeleteAll'
     }
 });
@@ -132,9 +162,9 @@ export class TWRestorePointManager extends React.Component {
             confirmation: {
                 type: 'delete',
                 id,
-                title: 'Delete restore point?',
+                title: this.props.intl.formatMessage(messages.confirmDeleteTitle),
                 message: this.props.intl.formatMessage(messages.confirmDelete, {projectTitle: restorePoint.title}),
-                action: 'Delete'
+                action: this.props.intl.formatMessage(messages.confirmDeleteAction)
             },
             confirmationError: ''
         });
@@ -145,9 +175,9 @@ export class TWRestorePointManager extends React.Component {
         this.setState({
             confirmation: {
                 type: 'delete-all',
-                title: 'Delete all restore points?',
+                title: this.props.intl.formatMessage(messages.confirmDeleteAllTitle),
                 message: this.props.intl.formatMessage(messages.confirmDeleteAll),
-                action: 'Delete all'
+                action: this.props.intl.formatMessage(messages.confirmDeleteAllAction)
             },
             confirmationError: ''
         });
@@ -200,9 +230,9 @@ export class TWRestorePointManager extends React.Component {
             confirmation: {
                 type: 'load',
                 id,
-                title: 'Open backup in a new workspace?',
+                title: this.props.intl.formatMessage(messages.confirmLoadTitle),
                 message: this.props.intl.formatMessage(messages.confirmLoad),
-                action: 'Back up and open workspace'
+                action: this.props.intl.formatMessage(messages.confirmLoadAction)
             },
             confirmationError: ''
         });

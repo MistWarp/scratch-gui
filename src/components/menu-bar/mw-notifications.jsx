@@ -2,13 +2,27 @@ import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
+import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import {Bell} from 'lucide-react';
 
 import menuBarStyles from './menu-bar.css';
 import styles from './mw-notifications.css';
 import {fetchNotifications} from '../../lib/rotur/client.js';
 
-const MwNotifications = ({username}) => {
+const messages = defineMessages({
+    notifications: {
+        id: 'mw.notifications.label',
+        defaultMessage: 'Notifications',
+        description: 'Label of the notifications bell in the menu bar'
+    },
+    unread: {
+        id: 'mw.notifications.unreadLabel',
+        defaultMessage: 'Notifications ({count} unread)',
+        description: 'Accessible label of the notifications bell when there are unread notifications'
+    }
+});
+
+const MwNotifications = ({intl, username}) => {
     const [unread, setUnread] = React.useState(0);
 
     React.useEffect(() => {
@@ -51,8 +65,10 @@ const MwNotifications = ({username}) => {
         <a
             className={classNames(menuBarStyles.menuBarItem, menuBarStyles.hoverable, styles.bellLink)}
             href="/notifications"
-            title="Notifications"
-            aria-label={unread > 0 ? `Notifications (${unread} unread)` : 'Notifications'}
+            title={intl.formatMessage(messages.notifications)}
+            aria-label={unread > 0 ?
+                intl.formatMessage(messages.unread, {count: unread}) :
+                intl.formatMessage(messages.notifications)}
         >
             <span className={styles.bellWrap}>
                 <Bell size={18} />
@@ -65,9 +81,10 @@ const MwNotifications = ({username}) => {
 };
 
 MwNotifications.propTypes = {
+    intl: intlShape.isRequired,
     username: PropTypes.string
 };
 
-export default connect(state => ({
+export default injectIntl(connect(state => ({
     username: state.scratchGui.rotur.username
-}))(MwNotifications);
+}))(MwNotifications));
