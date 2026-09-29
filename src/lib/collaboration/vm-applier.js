@@ -5,10 +5,11 @@ import {createStorageAsset} from './vm-assets';
 
 /** Apply VM edits, independent of Blockly and the current editor selection. */
 class VMApplier {
-    constructor ({vm}) {
+    constructor ({vm, isLocalClient}) {
         this.vm = vm;
         this.queue = new CommandQueue();
-        this.isApplyingRemote = false;
+        this.isLocalClient = isLocalClient || (() => false);
+        this.applyingLocal = false;
     }
 
     validate (type, payload) {
@@ -16,17 +17,22 @@ class VMApplier {
         if (!payload.command && !payload.commit) throw new Error('Missing edit command');
     }
 
-    apply (type, payload) {
+    apply (type, payload, meta = {}) {
         this.validate(type, payload);
         return this.queue.run(async active => {
             const engine = this.vm.editingCommands;
-            if (payload.commit) {
-                await engine.apply(payload.commit, id => createStorageAsset(this.vm, id), active);
-                return payload;
+            this.applyingLocal = this.isLocalClient(meta.clientId);
+            try {
+                if (payload.commit) {
+                    await engine.apply(payload.commit, id => createStorageAsset(this.vm, id), active);
+                    return payload;
+                }
+                const commit = await engine.execute(decodeCommand(this.vm, payload.command), active);
+                if (!active()) throw new Error('Collaboration session ended');
+                return {commit, assetRefs: commit.assetRefs};
+            } finally {
+                this.applyingLocal = false;
             }
-            const commit = await engine.execute(decodeCommand(this.vm, payload.command), active);
-            if (!active()) throw new Error('Collaboration session ended');
-            return {commit, assetRefs: commit.assetRefs};
         });
     }
 

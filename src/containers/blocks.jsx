@@ -1112,7 +1112,8 @@ class Blocks extends React.Component {
         const targetId = this.props.vm.editingTarget && this.props.vm.editingTarget.id;
         if (commandEditing && this.lastWorkspaceTargetId === targetId &&
             ((this.workspace.isDragging && this.workspace.isDragging()) ||
-                (this.ScratchBlocks.WidgetDiv && this.ScratchBlocks.WidgetDiv.isVisible()))) {
+                (this.ScratchBlocks.WidgetDiv && this.ScratchBlocks.WidgetDiv.isVisible()) ||
+                (this.ScratchBlocks.DropDownDiv && this.ScratchBlocks.DropDownDiv.isVisible()))) {
             clearTimeout(this.collabRefreshTimer);
             this.collabRefreshTimer = setTimeout(() => {
                 this.collabRefreshTimer = null;
