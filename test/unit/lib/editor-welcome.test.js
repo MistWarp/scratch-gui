@@ -1,12 +1,17 @@
 import {
     STORAGE_KEY,
     dismissEditorWelcome,
+    hasNoOwnProjects,
     isEditorWelcomeDismissed,
     shouldShowEditorWelcome
 } from '../../../src/lib/editor-welcome.js';
+import {request} from '../../../src/lib/community/api.js';
+
+jest.mock('../../../src/lib/community/api.js', () => ({request: jest.fn()}));
 
 const base = {
     dismissed: false,
+    hasNoProjects: true,
     hash: '',
     isEmbedded: false,
     isPlayerOnly: false,
@@ -55,4 +60,25 @@ test('remembers a dismissal in localStorage', () => {
     dismissEditorWelcome();
     expect(localStorage.getItem(STORAGE_KEY)).toBe('dismissed');
     expect(isEditorWelcomeDismissed()).toBe(true);
+});
+
+test('only shows for someone signed in with no projects', () => {
+    expect(shouldShowEditorWelcome({...base, hasNoProjects: false})).toBe(false);
+    expect(shouldShowEditorWelcome({...base, hasNoProjects: undefined})).toBe(false);
+});
+
+test('counts every project the signed in user owns, including unshared ones', async () => {
+    request.mockImplementation(path => Promise.resolve(path === '/me' ?
+        {username: 'new user'} :
+        {total: 0}));
+    await expect(hasNoOwnProjects()).resolves.toBe(true);
+    expect(request).toHaveBeenLastCalledWith('/users/new%20user/projects?all=true&limit=1', {cache: false});
+
+    request.mockImplementation(path => Promise.resolve(path === '/me' ? {username: 'maker'} : {total: 3}));
+    await expect(hasNoOwnProjects()).resolves.toBe(false);
+});
+
+test('treats a signed out visitor as not eligible', async () => {
+    request.mockImplementation(() => Promise.reject(new Error('not authenticated')));
+    await expect(hasNoOwnProjects()).rejects.toThrow();
 });

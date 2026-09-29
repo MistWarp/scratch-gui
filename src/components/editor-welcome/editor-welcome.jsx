@@ -2,14 +2,16 @@ import PropTypes from 'prop-types';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {connect} from 'react-redux';
 import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
-import {BookOpen, FolderOpen, Play, Sparkles, X} from 'lucide-react';
+import {X} from 'lucide-react';
 
 import {STARTERS} from '../../lib/starter-projects';
+import fog from '../../lib/default-project/fog.svg';
 import {DOCS_BASE} from '../../lib/help/index.js';
 import {getCommandPaletteKey} from '../../lib/shortcuts/command-palette.js';
 import {getIsShowingWithoutId} from '../../reducers/project-state';
 import {
     dismissEditorWelcome,
+    hasNoOwnProjects,
     isEditorWelcomeDismissed,
     shouldShowEditorWelcome
 } from '../../lib/editor-welcome.js';
@@ -47,20 +49,39 @@ const EditorWelcome = ({
     isPlayerOnly,
     isShowingDefaultProject,
     projectChanged,
+    username,
     onOpenFile
 }) => {
     const [dismissed, setDismissed] = useState(isEditorWelcomeDismissed);
+    const [hasNoProjects, setHasNoProjects] = useState(false);
     const [initialLocation] = useState(readLocation);
     const wasShown = useRef(false);
 
-    const visible = shouldShowEditorWelcome({
+    const eligible = shouldShowEditorWelcome({
         dismissed,
+        hasNoProjects: true,
         isEmbedded,
         isPlayerOnly,
         isShowingDefaultProject,
         projectChanged,
         ...initialLocation
     });
+
+    useEffect(() => {
+        setHasNoProjects(false);
+        if (!username || !eligible) return;
+        let active = true;
+        hasNoOwnProjects()
+            .then(result => {
+                if (active) setHasNoProjects(result);
+            })
+            .catch(() => {});
+        return () => {
+            active = false;
+        };
+    }, [username, eligible]);
+
+    const visible = eligible && hasNoProjects;
 
     const dismiss = useCallback(() => {
         dismissEditorWelcome();
@@ -70,7 +91,7 @@ const EditorWelcome = ({
     useEffect(() => {
         if (visible) {
             wasShown.current = true;
-        } else if (wasShown.current && !dismissed) {
+        } else if (wasShown.current && hasNoProjects && !dismissed) {
             dismiss();
         }
     }, [visible, dismissed, dismiss]);
@@ -95,11 +116,6 @@ const EditorWelcome = ({
         >
             <div className={styles.card}>
                 <div className={styles.header}>
-                    <Sparkles
-                        className={styles.headerIcon}
-                        size={18}
-                        aria-hidden="true"
-                    />
                     <h2 className={styles.heading}>
                         <FormattedMessage
                             defaultMessage="Make your first project"
@@ -134,7 +150,13 @@ const EditorWelcome = ({
                             data-starter={starter.id}
                             onClick={handleStarter}
                         >
-                            <Play size={14} />
+                            <span className={`${styles.art} ${styles[starter.accent]}`}>
+                                <img
+                                    src={fog}
+                                    alt=""
+                                    draggable={false}
+                                />
+                            </span>
                             <span className={styles.starterTitle}>{starter.title}</span>
                             <span className={styles.starterKind}>{starter.kind}</span>
                         </button>
@@ -147,7 +169,6 @@ const EditorWelcome = ({
                             className={styles.action}
                             onClick={onOpenFile}
                         >
-                            <FolderOpen size={16} />
                             <FormattedMessage
                                 defaultMessage="Open a file"
                                 // eslint-disable-next-line max-len
@@ -161,7 +182,6 @@ const EditorWelcome = ({
                         className={styles.action}
                         onClick={handleDocs}
                     >
-                        <BookOpen size={16} />
                         <FormattedMessage
                             defaultMessage="Documentation"
                             description="Button in the editor welcome card that opens the MistWarp documentation"
@@ -193,6 +213,7 @@ EditorWelcome.propTypes = {
     isPlayerOnly: PropTypes.bool,
     isShowingDefaultProject: PropTypes.bool,
     projectChanged: PropTypes.bool,
+    username: PropTypes.string,
     onOpenFile: PropTypes.func
 };
 
@@ -200,7 +221,8 @@ const mapStateToProps = state => ({
     isEmbedded: state.scratchGui.mode.isEmbedded,
     isPlayerOnly: state.scratchGui.mode.isPlayerOnly,
     isShowingDefaultProject: getIsShowingWithoutId(state.scratchGui.projectState.loadingState),
-    projectChanged: state.scratchGui.projectChanged
+    projectChanged: state.scratchGui.projectChanged,
+    username: state.scratchGui.rotur.username
 });
 
 export {EditorWelcome};
