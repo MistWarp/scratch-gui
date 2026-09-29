@@ -1,18 +1,152 @@
 {
   "a11y.skip": [
-    "src/community/App.jsx:107"
+    "src/community/App.jsx:119"
   ],
   "Loading page…": [
-    "src/community/App.jsx:119"
+    "src/community/App.jsx:131"
+  ],
+  "Cat": [
+    "src/community/classroom.js:28"
+  ],
+  "Dog": [
+    "src/community/classroom.js:29"
+  ],
+  "Fish": [
+    "src/community/classroom.js:30"
+  ],
+  "Bird": [
+    "src/community/classroom.js:31"
+  ],
+  "Rabbit": [
+    "src/community/classroom.js:32"
+  ],
+  "Turtle": [
+    "src/community/classroom.js:33"
+  ],
+  "Squirrel": [
+    "src/community/classroom.js:34"
+  ],
+  "Snail": [
+    "src/community/classroom.js:35"
+  ],
+  "Star": [
+    "src/community/classroom.js:36"
+  ],
+  "Moon": [
+    "src/community/classroom.js:37"
+  ],
+  "Sun": [
+    "src/community/classroom.js:38"
+  ],
+  "Tree": [
+    "src/community/classroom.js:39"
+  ],
+  "Apple": [
+    "src/community/classroom.js:40"
+  ],
+  "Rocket": [
+    "src/community/classroom.js:41"
+  ],
+  "Boat": [
+    "src/community/classroom.js:42"
+  ],
+  "Car": [
+    "src/community/classroom.js:43"
+  ],
+  "Not started": [
+    "src/community/classroom.js:53"
+  ],
+  "In progress": [
+    "src/community/classroom.js:54",
+    "src/community/pages/Roadmap.jsx:33"
+  ],
+  "Turned in": [
+    "src/community/classroom.js:55"
+  ],
+  "Turned in late": [
+    "src/community/classroom.js:56"
+  ],
+  "Returned": [
+    "src/community/classroom.js:57"
+  ],
+  "{actor} created the class.": [
+    "src/community/classroom.js:145"
+  ],
+  "{actor} updated the class settings.": [
+    "src/community/classroom.js:146"
+  ],
+  "{actor} archived the class.": [
+    "src/community/classroom.js:147"
+  ],
+  "{actor} unarchived the class.": [
+    "src/community/classroom.js:148"
+  ],
+  "{actor} reset the class code.": [
+    "src/community/classroom.js:149"
+  ],
+  "{actor} added {count, plural, one {# student} other {# students}}.": [
+    "src/community/classroom.js:150"
+  ],
+  "{actor} updated {student}.": [
+    "src/community/classroom.js:151"
+  ],
+  "{actor} disabled {student}.": [
+    "src/community/classroom.js:152"
+  ],
+  "{actor} enabled {student}.": [
+    "src/community/classroom.js:153"
+  ],
+  "{actor} unlocked {student}.": [
+    "src/community/classroom.js:154"
+  ],
+  "{actor} renamed {student}.": [
+    "src/community/classroom.js:155"
+  ],
+  "{actor} reset the sign-in for {student}.": [
+    "src/community/classroom.js:156"
+  ],
+  "{actor} moved {student} to another class.": [
+    "src/community/classroom.js:157"
+  ],
+  "{actor} deleted {student}.": [
+    "src/community/classroom.js:158"
+  ],
+  "{actor} created the assignment {title}.": [
+    "src/community/classroom.js:159"
+  ],
+  "{actor} updated the assignment {title}.": [
+    "src/community/classroom.js:160"
+  ],
+  "{actor} deleted the assignment {title}.": [
+    "src/community/classroom.js:161"
+  ],
+  "{actor} reviewed the work of {student}.": [
+    "src/community/classroom.js:162"
+  ],
+  "{actor} returned the work of {student}.": [
+    "src/community/classroom.js:163"
+  ],
+  "{actor} added {username} as a co-teacher.": [
+    "src/community/classroom.js:164"
+  ],
+  "{actor} removed {username} as a co-teacher.": [
+    "src/community/classroom.js:165"
+  ],
+  "{actor} transferred the class to {username}.": [
+    "src/community/classroom.js:166"
+  ],
+  "A teacher": [
+    "src/community/classroom.js:185"
   ],
   "Activity": [
     "src/community/components/ActivityCard.jsx:29",
     "src/community/pages/Admin.jsx:32",
     "src/community/pages/Admin.jsx:477",
+    "src/community/pages/ClassroomSchool.jsx:230",
     "src/community/pages/ManageProject.jsx:76",
     "src/community/pages/ManageProject.jsx:864",
     "src/community/pages/ManageProject.jsx:899",
-    "src/community/pages/Profile.jsx:925"
+    "src/community/pages/Profile.jsx:926"
   ],
   "On {value1}": [
     "src/community/components/ActivityCard.jsx:77"
@@ -130,7 +264,9 @@
     "src/community/components/CommentThread.jsx:225",
     "src/community/components/ProjectInfoPanel.jsx:390",
     "src/community/components/SocialPost.jsx:266",
-    "src/community/components/SocialPost.jsx:308"
+    "src/community/components/SocialPost.jsx:308",
+    "src/community/components/classroom/ClassSettings.jsx:207",
+    "src/community/pages/ClassroomAssignment.jsx:65"
   ],
   "Saving…": [
     "src/community/components/CollectionSaveModal.jsx:167",
@@ -139,7 +275,10 @@
     "src/community/components/NewsItem.jsx:275",
     "src/community/components/ProfileBadges.jsx:204",
     "src/community/components/ProjectInfoPanel.jsx:388",
+    "src/community/components/classroom/AssignmentModal.jsx:129",
+    "src/community/components/classroom/ClassSettings.jsx:205",
     "src/community/pages/Challenge.jsx:146",
+    "src/community/pages/ClassroomAssignment.jsx:63",
     "src/community/pages/Commit.jsx:386",
     "src/community/pages/Group.jsx:284",
     "src/community/pages/ManageProject.jsx:648",
@@ -157,7 +296,8 @@
   ],
   "Saved": [
     "src/community/components/CollectionSaveModal.jsx:168",
-    "src/community/components/SocialPost.jsx:308"
+    "src/community/components/SocialPost.jsx:308",
+    "src/community/components/classroom/ClassSettings.jsx:207"
   ],
   "Save to a collection": [
     "src/community/components/CollectionSaveModal.jsx:192"
@@ -177,6 +317,8 @@
   "Creating…": [
     "src/community/components/CollectionSaveModal.jsx:228",
     "src/community/components/ProjectBranches.jsx:255",
+    "src/community/components/classroom/ClassGroups.jsx:96",
+    "src/community/pages/Classroom.jsx:209",
     "src/community/pages/ManageProject.jsx:712",
     "src/community/pages/Spaces.jsx:275"
   ],
@@ -271,7 +413,14 @@
     "src/community/components/RoturConsentModal.jsx:75",
     "src/community/components/SocialPost.jsx:218",
     "src/community/components/SocialPost.jsx:264",
+    "src/community/components/classroom/AssignmentModal.jsx:128",
+    "src/community/components/classroom/ClassGroups.jsx:95",
+    "src/community/components/classroom/ClassStudents.jsx:78",
+    "src/community/components/classroom/ClassStudents.jsx:122",
+    "src/community/components/classroom/PresentControls.jsx:72",
     "src/community/components/ui/ConfirmModal.jsx:22",
+    "src/community/pages/Classroom.jsx:70",
+    "src/community/pages/Classroom.jsx:208",
     "src/community/pages/ManageProject.jsx:1189",
     "src/community/pages/ManageSpace.jsx:729",
     "src/community/pages/MyStuff.jsx:1317",
@@ -378,8 +527,8 @@
     "src/community/pages/Admin.jsx:1572",
     "src/community/pages/Explore.jsx:217",
     "src/community/pages/MyStuff.jsx:1617",
-    "src/community/pages/Profile.jsx:447",
-    "src/community/pages/Profile.jsx:626",
+    "src/community/pages/Profile.jsx:448",
+    "src/community/pages/Profile.jsx:627",
     "src/community/pages/Project.jsx:1441",
     "src/community/pages/RemixTree.jsx:244",
     "src/community/pages/Search.jsx:203",
@@ -563,18 +712,21 @@
   ],
   "Projects": [
     "src/community/components/ExploreNav.jsx:8",
-    "src/community/components/NavBar.jsx:33",
+    "src/community/components/NavBar.jsx:34",
+    "src/community/components/classroom/ClassStudents.jsx:225",
     "src/community/pages/Admin.jsx:36",
     "src/community/pages/Admin.jsx:602",
     "src/community/pages/Admin.jsx:742",
     "src/community/pages/Admin.jsx:749",
     "src/community/pages/Admin.jsx:909",
+    "src/community/pages/ClassroomStudent.jsx:88",
+    "src/community/pages/ClassroomStudent.jsx:97",
     "src/community/pages/Collection.jsx:37",
     "src/community/pages/Group.jsx:201",
     "src/community/pages/ManageSpace.jsx:27",
     "src/community/pages/ManageSpace.jsx:737",
-    "src/community/pages/Profile.jsx:544",
-    "src/community/pages/Profile.jsx:612",
+    "src/community/pages/Profile.jsx:545",
+    "src/community/pages/Profile.jsx:613",
     "src/community/pages/Search.jsx:158",
     "src/community/pages/Settings.jsx:74",
     "src/community/pages/Space.jsx:246",
@@ -590,6 +742,8 @@
   ],
   "Groups": [
     "src/community/components/ExploreNav.jsx:10",
+    "src/community/components/classroom/ClassGroups.jsx:175",
+    "src/community/pages/ClassroomClass.jsx:91",
     "src/community/pages/Groups.jsx:80"
   ],
   "Studios": [
@@ -620,7 +774,7 @@
     "src/community/components/Footer.jsx:41",
     "src/community/components/MyStuffThemes.jsx:217",
     "src/community/pages/MyStuff.jsx:532",
-    "src/community/pages/Profile.jsx:546",
+    "src/community/pages/Profile.jsx:547",
     "src/community/pages/Themes.jsx:176"
   ],
   "Explore sections": [
@@ -633,6 +787,7 @@
   ],
   "Project page": [
     "src/community/components/FeaturedProject.jsx:68",
+    "src/community/pages/ClassroomStudent.jsx:117",
     "src/community/pages/ManageProject.jsx:72",
     "src/community/pages/ManageProject.jsx:625",
     "src/community/pages/MyStuff.jsx:1564"
@@ -661,8 +816,8 @@
   ],
   "MistWarp": [
     "src/community/components/Footer.jsx:25",
-    "src/community/components/NavBar.jsx:397",
     "src/community/components/NavBar.jsx:405",
+    "src/community/components/NavBar.jsx:413",
     "src/community/components/RichText.jsx:116",
     "src/community/pages/Roadmap.jsx:511"
   ],
@@ -671,8 +826,8 @@
   ],
   "Create": [
     "src/community/components/Footer.jsx:32",
-    "src/community/components/NavBar.jsx:552",
-    "src/community/components/NavBar.jsx:552",
+    "src/community/components/NavBar.jsx:579",
+    "src/community/components/NavBar.jsx:579",
     "src/community/pages/Spaces.jsx:275"
   ],
   "Editor": [
@@ -683,10 +838,10 @@
   ],
   "My stuff": [
     "src/community/components/Footer.jsx:34",
-    "src/community/components/NavBar.jsx:485",
-    "src/community/components/NavBar.jsx:486",
-    "src/community/components/NavBar.jsx:568",
-    "src/community/components/NavBar.jsx:568",
+    "src/community/components/NavBar.jsx:507",
+    "src/community/components/NavBar.jsx:508",
+    "src/community/components/NavBar.jsx:601",
+    "src/community/components/NavBar.jsx:601",
     "src/community/pages/ManageProject.jsx:486",
     "src/community/pages/MyStuff.jsx:1264"
   ],
@@ -698,8 +853,8 @@
   ],
   "Explore": [
     "src/community/components/Footer.jsx:38",
-    "src/community/components/NavBar.jsx:549",
-    "src/community/components/NavBar.jsx:549",
+    "src/community/components/NavBar.jsx:576",
+    "src/community/components/NavBar.jsx:576",
     "src/community/pages/Explore.jsx:177"
   ],
   "Leaderboard": [
@@ -737,8 +892,8 @@
   ],
   "Memberships": [
     "src/community/components/Footer.jsx:57",
-    "src/community/components/NavBar.jsx:464",
-    "src/community/components/NavBar.jsx:465"
+    "src/community/components/NavBar.jsx:473",
+    "src/community/components/NavBar.jsx:474"
   ],
   "Documentation": [
     "src/community/components/Footer.jsx:58"
@@ -888,14 +1043,14 @@
     "src/community/components/HomeDiscovery.jsx:76",
     "src/community/pages/Collection.jsx:75",
     "src/community/pages/Home.jsx:386",
-    "src/community/pages/Profile.jsx:854",
+    "src/community/pages/Profile.jsx:855",
     "src/community/pages/Space.jsx:183",
     "src/community/pages/Studio.jsx:119"
   ],
   "Follow": [
     "src/community/components/HomeDiscovery.jsx:76",
     "src/community/pages/Collection.jsx:75",
-    "src/community/pages/Profile.jsx:854",
+    "src/community/pages/Profile.jsx:855",
     "src/community/pages/Space.jsx:183"
   ],
   "Featured today": [
@@ -1118,7 +1273,7 @@
     "src/community/components/ProjectCard.jsx:48",
     "src/community/components/SpaceProjectPicker.jsx:230",
     "src/community/pages/Challenge.jsx:459",
-    "src/community/pages/Profile.jsx:583"
+    "src/community/pages/Profile.jsx:584"
   ],
   "Hidden": [
     "src/community/components/MyStuffLibrary.jsx:70"
@@ -1174,7 +1329,7 @@
   ],
   "Spaces": [
     "src/community/components/MyStuffSpaces.jsx:59",
-    "src/community/components/NavBar.jsx:59",
+    "src/community/components/NavBar.jsx:60",
     "src/community/pages/MyStuff.jsx:531"
   ],
   "Studios you curate or follow, and challenges you host, join, judge, or follow.": [
@@ -1213,10 +1368,12 @@
   "Apply": [
     "src/community/components/MyStuffThemes.jsx:145",
     "src/community/pages/Admin.jsx:1151",
-    "src/community/pages/Profile.jsx:969"
+    "src/community/pages/Profile.jsx:970"
   ],
   "Remove {value1}": [
     "src/community/components/MyStuffThemes.jsx:149",
+    "src/community/components/classroom/ClassSettings.jsx:265",
+    "src/community/pages/ClassroomSchool.jsx:96",
     "src/community/pages/Commit.jsx:365",
     "src/community/pages/ManageProject.jsx:1025",
     "src/community/pages/ManageSpace.jsx:676"
@@ -1274,111 +1431,131 @@
     "src/community/components/MyStuffThemes.jsx:254"
   ],
   "Open {value1}": [
-    "src/community/components/NavBar.jsx:37",
-    "src/community/components/NavBar.jsx:63",
+    "src/community/components/NavBar.jsx:38",
+    "src/community/components/NavBar.jsx:64",
     "src/community/components/ProjectCard.jsx:21",
     "src/community/components/SharedProjects.jsx:50",
     "src/community/components/SpaceCard.jsx:35",
     "src/community/components/ThemeCard.jsx:20",
     "src/community/pages/Home.jsx:174",
     "src/community/pages/ManageProject.jsx:641",
-    "src/community/pages/Profile.jsx:574"
+    "src/community/pages/Profile.jsx:575"
   ],
   "by ": [
-    "src/community/components/NavBar.jsx:40",
+    "src/community/components/NavBar.jsx:41",
     "src/community/components/SpaceCard.jsx:44",
     "src/community/components/ThemeCard.jsx:27",
     "src/community/pages/ManageSpace.jsx:742"
   ],
   "People": [
-    "src/community/components/NavBar.jsx:46",
+    "src/community/components/NavBar.jsx:47",
     "src/community/pages/Search.jsx:159"
   ],
   " followers · ": [
-    "src/community/components/NavBar.jsx:53"
+    "src/community/components/NavBar.jsx:54"
   ],
   " projects": [
-    "src/community/components/NavBar.jsx:53"
+    "src/community/components/NavBar.jsx:54"
   ],
   "Space": [
-    "src/community/components/NavBar.jsx:66"
+    "src/community/components/NavBar.jsx:67"
   ],
   " · by ": [
-    "src/community/components/NavBar.jsx:66"
+    "src/community/components/NavBar.jsx:67"
   ],
   "Searching…": [
-    "src/community/components/NavBar.jsx:94",
+    "src/community/components/NavBar.jsx:95",
     "src/community/components/SpaceProjectPicker.jsx:202",
     "src/community/pages/ManageSpace.jsx:693",
     "src/community/pages/ManageSpace.jsx:714",
     "src/community/pages/Search.jsx:173"
   ],
   "Could not load quick results. Press Enter to search.": [
-    "src/community/components/NavBar.jsx:95"
-  ],
-  "No quick matches. Press Enter to search everything.": [
     "src/community/components/NavBar.jsx:96"
   ],
+  "No quick matches. Press Enter to search everything.": [
+    "src/community/components/NavBar.jsx:97"
+  ],
   "See all results for \"{value1}\"": [
-    "src/community/components/NavBar.jsx:105"
+    "src/community/components/NavBar.jsx:106"
+  ],
+  "My class": [
+    "src/community/components/NavBar.jsx:151",
+    "src/community/components/NavBar.jsx:498",
+    "src/community/components/NavBar.jsx:499",
+    "src/community/components/NavBar.jsx:597",
+    "src/community/components/NavBar.jsx:597"
+  ],
+  "Classroom": [
+    "src/community/components/NavBar.jsx:151",
+    "src/community/pages/Classroom.jsx:260",
+    "src/community/pages/Classroom.jsx:380",
+    "src/community/pages/Classroom.jsx:400",
+    "src/community/pages/Classroom.jsx:419",
+    "src/community/pages/ClassroomClass.jsx:75",
+    "src/community/pages/ClassroomClass.jsx:98",
+    "src/community/pages/ClassroomSchool.jsx:213",
+    "src/community/pages/ClassroomSchool.jsx:237"
   ],
   "Beta": [
-    "src/community/components/NavBar.jsx:406",
+    "src/community/components/NavBar.jsx:414",
     "src/community/pages/Project.jsx:2846"
   ],
   "nav.main": [
-    "src/community/components/NavBar.jsx:410"
+    "src/community/components/NavBar.jsx:418"
   ],
   "nav.create": [
-    "src/community/components/NavBar.jsx:411",
-    "src/community/components/NavBar.jsx:413"
-  ],
-  "nav.explore": [
-    "src/community/components/NavBar.jsx:418",
+    "src/community/components/NavBar.jsx:419",
     "src/community/components/NavBar.jsx:421"
   ],
-  "nav.random": [
+  "nav.explore": [
     "src/community/components/NavBar.jsx:426",
     "src/community/components/NavBar.jsx:429"
   ],
+  "nav.random": [
+    "src/community/components/NavBar.jsx:434",
+    "src/community/components/NavBar.jsx:437"
+  ],
   "nav.search": [
-    "src/community/components/NavBar.jsx:456",
-    "src/community/components/NavBar.jsx:542"
+    "src/community/components/NavBar.jsx:464",
+    "src/community/components/NavBar.jsx:569"
   ],
   "Notifications": [
-    "src/community/components/NavBar.jsx:474",
-    "src/community/components/NavBar.jsx:475",
-    "src/community/components/NavBar.jsx:559",
-    "src/community/components/NavBar.jsx:560",
+    "src/community/components/NavBar.jsx:485",
+    "src/community/components/NavBar.jsx:486",
+    "src/community/components/NavBar.jsx:587",
+    "src/community/components/NavBar.jsx:588",
     "src/community/pages/Home.jsx:392",
     "src/community/pages/Notifications.jsx:556",
     "src/community/pages/Settings.jsx:104",
     "src/community/pages/Settings.jsx:634"
   ],
   "Notifications ({value1} unread)": [
-    "src/community/components/NavBar.jsx:475",
-    "src/community/components/NavBar.jsx:559"
+    "src/community/components/NavBar.jsx:486",
+    "src/community/components/NavBar.jsx:587"
   ],
   "Signing in…": [
-    "src/community/components/NavBar.jsx:509"
+    "src/community/components/NavBar.jsx:536",
+    "src/community/pages/ClassroomJoin.jsx:254"
   ],
   "Signing in": [
-    "src/community/components/NavBar.jsx:510",
-    "src/community/components/NavBar.jsx:572",
-    "src/community/components/NavBar.jsx:572"
+    "src/community/components/NavBar.jsx:537",
+    "src/community/components/NavBar.jsx:605",
+    "src/community/components/NavBar.jsx:605"
   ],
   "Sign in": [
-    "src/community/components/NavBar.jsx:510",
-    "src/community/components/NavBar.jsx:513",
-    "src/community/components/NavBar.jsx:572",
-    "src/community/components/NavBar.jsx:572"
+    "src/community/components/NavBar.jsx:537",
+    "src/community/components/NavBar.jsx:540",
+    "src/community/components/NavBar.jsx:605",
+    "src/community/components/NavBar.jsx:605",
+    "src/community/pages/ClassroomJoin.jsx:257"
   ],
   "Mobile navigation": [
-    "src/community/components/NavBar.jsx:545"
+    "src/community/components/NavBar.jsx:572"
   ],
   "Home": [
-    "src/community/components/NavBar.jsx:546",
-    "src/community/components/NavBar.jsx:546"
+    "src/community/components/NavBar.jsx:573",
+    "src/community/components/NavBar.jsx:573"
   ],
   "Could not delete update.": [
     "src/community/components/NewsItem.jsx:74"
@@ -1430,7 +1607,8 @@
   ],
   "Delete {value1}": [
     "src/community/components/NewsItem.jsx:178",
-    "src/community/components/ProjectBranches.jsx:366"
+    "src/community/components/ProjectBranches.jsx:366",
+    "src/community/components/classroom/ClassGroups.jsx:215"
   ],
   "By": [
     "src/community/components/NewsItem.jsx:196"
@@ -1477,6 +1655,9 @@
   ],
   "Archived": [
     "src/community/components/NewsItem.jsx:278",
+    "src/community/pages/Classroom.jsx:228",
+    "src/community/pages/ClassroomClass.jsx:108",
+    "src/community/pages/ClassroomSchool.jsx:283",
     "src/community/pages/News.jsx:329"
   ],
   "Liked by {value1}": [
@@ -1503,7 +1684,7 @@
   ],
   "This user has chosen not to share what they play.": [
     "src/community/components/PlaytimeLibrary.jsx:39",
-    "src/community/pages/Profile.jsx:603"
+    "src/community/pages/Profile.jsx:604"
   ],
   "No library games with playtime yet": [
     "src/community/components/PlaytimeLibrary.jsx:46"
@@ -1519,7 +1700,7 @@
   ],
   "Only visible to you": [
     "src/community/components/PlaytimeLibrary.jsx:61",
-    "src/community/pages/Profile.jsx:566"
+    "src/community/pages/Profile.jsx:567"
   ],
   "Open attachment": [
     "src/community/components/PostAttachment.jsx:20"
@@ -1961,7 +2142,8 @@
     "src/community/components/ProjectInfoPanel.jsx:145"
   ],
   "Instructions": [
-    "src/community/components/ProjectInfoPanel.jsx:148"
+    "src/community/components/ProjectInfoPanel.jsx:148",
+    "src/community/components/classroom/AssignmentModal.jsx:95"
   ],
   "How do you play or use this project?": [
     "src/community/components/ProjectInfoPanel.jsx:155"
@@ -1980,6 +2162,8 @@
   ],
   "Project": [
     "src/community/components/ProjectInfoPanel.jsx:188",
+    "src/community/components/classroom/PresentControls.jsx:94",
+    "src/community/components/classroom/PresentControls.jsx:98",
     "src/community/pages/PullRequest.jsx:489",
     "src/community/pages/PullRequest.jsx:505"
   ],
@@ -1996,6 +2180,8 @@
   ],
   "Owner": [
     "src/community/components/ProjectInfoPanel.jsx:202",
+    "src/community/components/classroom/ClassSettings.jsx:253",
+    "src/community/pages/ClassroomSchool.jsx:272",
     "src/community/pages/ManageSpace.jsx:726",
     "src/community/pages/Studio.jsx:157"
   ],
@@ -2111,14 +2297,15 @@
   ],
   "Done": [
     "src/community/components/ReportModal.jsx:86",
+    "src/community/components/classroom/CredentialsResult.jsx:48",
     "src/community/pages/ManageProject.jsx:929",
-    "src/community/pages/Profile.jsx:1117",
+    "src/community/pages/Profile.jsx:1118",
     "src/community/pages/Project.jsx:1722",
     "src/community/pages/Roadmap.jsx:34"
   ],
   "Sending…": [
     "src/community/components/ReportModal.jsx:93",
-    "src/community/pages/Profile.jsx:1143",
+    "src/community/pages/Profile.jsx:1144",
     "src/community/pages/Project.jsx:1729",
     "src/community/pages/Project.jsx:3089",
     "src/community/pages/Support.jsx:141"
@@ -2248,6 +2435,9 @@
   ],
   "Open project": [
     "src/community/components/SharedProjects.jsx:53",
+    "src/community/components/classroom/ClassGroups.jsx:212",
+    "src/community/pages/ClassroomAssignment.jsx:110",
+    "src/community/pages/ClassroomStudent.jsx:150",
     "src/community/pages/RemixTree.jsx:270"
   ],
   "Could not load shared projects.": [
@@ -2340,19 +2530,23 @@
   ],
   "Copy link": [
     "src/community/components/SocialPost.jsx:310",
+    "src/community/components/classroom/ReleaseSection.jsx:69",
     "src/community/pages/Project.jsx:1601"
   ],
   "Edit": [
-    "src/community/components/SocialPost.jsx:314"
+    "src/community/components/SocialPost.jsx:314",
+    "src/community/pages/ClassroomAssignment.jsx:232"
   ],
   "Pin": [
     "src/community/components/SocialPost.jsx:322"
   ],
   "Delete": [
     "src/community/components/SocialPost.jsx:326",
+    "src/community/components/classroom/ClassStudents.jsx:306",
     "src/community/pages/Admin.jsx:945",
     "src/community/pages/Admin.jsx:1202",
     "src/community/pages/Admin.jsx:1989",
+    "src/community/pages/ClassroomAssignment.jsx:240",
     "src/community/pages/MyStuff.jsx:1604",
     "src/community/pages/Project.jsx:2733",
     "src/community/pages/Theme.jsx:223"
@@ -2360,7 +2554,7 @@
   "Report": [
     "src/community/components/SocialPost.jsx:332",
     "src/community/pages/Bounty.jsx:139",
-    "src/community/pages/Profile.jsx:892",
+    "src/community/pages/Profile.jsx:893",
     "src/community/pages/Project.jsx:1693"
   ],
   "Unblocked {value1}.": [
@@ -2402,7 +2596,7 @@
   ],
   "followers": [
     "src/community/components/SpaceCard.jsx:51",
-    "src/community/pages/Profile.jsx:839"
+    "src/community/pages/Profile.jsx:840"
   ],
   "Ends ": [
     "src/community/components/SpaceCard.jsx:59"
@@ -2452,7 +2646,10 @@
     "src/community/components/SpaceProjectPicker.jsx:219"
   ],
   "Adding…": [
-    "src/community/components/SpaceProjectPicker.jsx:237"
+    "src/community/components/SpaceProjectPicker.jsx:237",
+    "src/community/components/classroom/ClassSettings.jsx:278",
+    "src/community/components/classroom/ClassStudents.jsx:79",
+    "src/community/pages/ClassroomSchool.jsx:111"
   ],
   "Add": [
     "src/community/components/SpaceProjectPicker.jsx:240",
@@ -2461,7 +2658,7 @@
   "Load more projects": [
     "src/community/components/SpaceProjectPicker.jsx:247",
     "src/community/pages/MyStuff.jsx:1619",
-    "src/community/pages/Profile.jsx:628"
+    "src/community/pages/Profile.jsx:629"
   ],
   "Could not load more projects. Try again.": [
     "src/community/components/SpaceProjectPicker.jsx:250"
@@ -2541,6 +2738,708 @@
   "Project visibility": [
     "src/community/components/VisibilityMenu.jsx:26"
   ],
+  "Could not save the assignment.": [
+    "src/community/components/classroom/AssignmentModal.jsx:70"
+  ],
+  "No starter project": [
+    "src/community/components/classroom/AssignmentModal.jsx:76"
+  ],
+  "Edit assignment": [
+    "src/community/components/classroom/AssignmentModal.jsx:83"
+  ],
+  "New assignment": [
+    "src/community/components/classroom/AssignmentModal.jsx:83",
+    "src/community/components/classroom/ClassAssignments.jsx:85"
+  ],
+  "Title": [
+    "src/community/components/classroom/AssignmentModal.jsx:91",
+    "src/community/pages/ManageProject.jsx:630",
+    "src/community/pages/Roadmap.jsx:494"
+  ],
+  "Due date (optional)": [
+    "src/community/components/classroom/AssignmentModal.jsx:99"
+  ],
+  "Date": [
+    "src/community/components/classroom/AssignmentModal.jsx:102",
+    "src/community/pages/Admin.jsx:245",
+    "src/community/pages/Admin.jsx:800"
+  ],
+  "Time": [
+    "src/community/components/classroom/AssignmentModal.jsx:106"
+  ],
+  "Starter project": [
+    "src/community/components/classroom/AssignmentModal.jsx:112",
+    "src/community/components/classroom/AssignmentModal.jsx:114",
+    "src/community/pages/ClassroomAssignment.jsx:251"
+  ],
+  "Your projects could not be loaded, so no starter can be chosen right now.": [
+    "src/community/components/classroom/AssignmentModal.jsx:122"
+  ],
+  "Students start from a copy of one of your projects. Leave this empty to let them start from a blank project.": [
+    "src/community/components/classroom/AssignmentModal.jsx:123"
+  ],
+  "Save changes": [
+    "src/community/components/classroom/AssignmentModal.jsx:131",
+    "src/community/pages/ManageProject.jsx:651",
+    "src/community/pages/ManageSpace.jsx:648",
+    "src/community/pages/News.jsx:298",
+    "src/community/pages/Theme.jsx:253"
+  ],
+  "Create assignment": [
+    "src/community/components/classroom/AssignmentModal.jsx:131"
+  ],
+  "{value1, plural, one {# returned} other {# returned}}, {value2, plural, one {# waiting for review} other {# waiting for review}}, {value3, plural, one {# in progress} other {# in progress}}, and {value4, plural, one {# not started} other {# not started}}.": [
+    "src/community/components/classroom/ClassAssignments.jsx:37"
+  ],
+  "No due date": [
+    "src/community/components/classroom/ClassAssignments.jsx:58"
+  ],
+  "Was due {value1}": [
+    "src/community/components/classroom/ClassAssignments.jsx:64"
+  ],
+  "Due {value1}": [
+    "src/community/components/classroom/ClassAssignments.jsx:65"
+  ],
+  "Assignments": [
+    "src/community/components/classroom/ClassAssignments.jsx:90",
+    "src/community/components/classroom/StudentHome.jsx:189",
+    "src/community/pages/ClassroomAssignment.jsx:203",
+    "src/community/pages/ClassroomAssignment.jsx:225",
+    "src/community/pages/ClassroomClass.jsx:90",
+    "src/community/pages/ClassroomStudent.jsx:128"
+  ],
+  "No assignments yet": [
+    "src/community/components/classroom/ClassAssignments.jsx:104",
+    "src/community/components/classroom/StudentHome.jsx:202"
+  ],
+  "Set a task with instructions, a due date, and an optional starter project.": [
+    "src/community/components/classroom/ClassAssignments.jsx:105"
+  ],
+  "Could not create the group.": [
+    "src/community/components/classroom/ClassGroups.jsx:48"
+  ],
+  "New group": [
+    "src/community/components/classroom/ClassGroups.jsx:53",
+    "src/community/components/classroom/ClassGroups.jsx:148",
+    "src/community/pages/Groups.jsx:82"
+  ],
+  "Group name": [
+    "src/community/components/classroom/ClassGroups.jsx:56"
+  ],
+  "Members": [
+    "src/community/components/classroom/ClassGroups.jsx:60",
+    "src/community/pages/Group.jsx:205"
+  ],
+  "{value1, plural, =0 {Nobody picked yet.} one {# student picked.} other {# students picked.}}": [
+    "src/community/components/classroom/ClassGroups.jsx:62"
+  ],
+  "Pick between {value1} and {value2} students.": [
+    "src/community/components/classroom/ClassGroups.jsx:64"
+  ],
+  "Assignment (optional)": [
+    "src/community/components/classroom/ClassGroups.jsx:81",
+    "src/community/components/classroom/ClassGroups.jsx:83"
+  ],
+  "No assignment": [
+    "src/community/components/classroom/ClassGroups.jsx:87"
+  ],
+  "When linked to an assignment, the group turns in one shared project together.": [
+    "src/community/components/classroom/ClassGroups.jsx:91"
+  ],
+  "Create group": [
+    "src/community/components/classroom/ClassGroups.jsx:98"
+  ],
+  "Could not delete the group.": [
+    "src/community/components/classroom/ClassGroups.jsx:164"
+  ],
+  "A group shares one project and works on it together.": [
+    "src/community/components/classroom/ClassGroups.jsx:177"
+  ],
+  "Groups can share a project, but editing it together live needs a Classroom plan.": [
+    "src/community/components/classroom/ClassGroups.jsx:182"
+  ],
+  "Could not load the groups.": [
+    "src/community/components/classroom/ClassGroups.jsx:185"
+  ],
+  "No groups yet": [
+    "src/community/components/classroom/ClassGroups.jsx:188"
+  ],
+  "Put two to six students together so they can build one project as a team.": [
+    "src/community/components/classroom/ClassGroups.jsx:189"
+  ],
+  "Members: {value1}.": [
+    "src/community/components/classroom/ClassGroups.jsx:199"
+  ],
+  "Working on {value1}.": [
+    "src/community/components/classroom/ClassGroups.jsx:203"
+  ],
+  "Delete the group {value1}?": [
+    "src/community/components/classroom/ClassGroups.jsx:238"
+  ],
+  "Delete group": [
+    "src/community/components/classroom/ClassGroups.jsx:239"
+  ],
+  "The shared project stays with its members, but they stop working on it as a group.": [
+    "src/community/components/classroom/ClassGroups.jsx:245"
+  ],
+  "Copied": [
+    "src/community/components/classroom/ClassSettings.jsx:31"
+  ],
+  "Could not rename the class.": [
+    "src/community/components/classroom/ClassSettings.jsx:106"
+  ],
+  "Could not change the archive setting.": [
+    "src/community/components/classroom/ClassSettings.jsx:120"
+  ],
+  "Could not add that co-teacher.": [
+    "src/community/components/classroom/ClassSettings.jsx:137"
+  ],
+  "Could not remove that co-teacher.": [
+    "src/community/components/classroom/ClassSettings.jsx:151"
+  ],
+  "That change did not save. Please try again.": [
+    "src/community/components/classroom/ClassSettings.jsx:176",
+    "src/community/components/classroom/ClassStudents.jsx:192",
+    "src/community/pages/ClassroomSchool.jsx:43"
+  ],
+  "a student": [
+    "src/community/components/classroom/ClassSettings.jsx:184",
+    "src/community/pages/ClassroomSchool.jsx:306"
+  ],
+  "an assignment": [
+    "src/community/components/classroom/ClassSettings.jsx:188",
+    "src/community/pages/ClassroomSchool.jsx:307"
+  ],
+  "Class name": [
+    "src/community/components/classroom/ClassSettings.jsx:198",
+    "src/community/components/classroom/ClassSettings.jsx:201",
+    "src/community/pages/Classroom.jsx:176"
+  ],
+  "Class code": [
+    "src/community/components/classroom/ClassSettings.jsx:212",
+    "src/community/pages/ClassroomJoin.jsx:172"
+  ],
+  "Students enter this code on the sign-in page. It is printed on every login card.": [
+    "src/community/components/classroom/ClassSettings.jsx:212"
+  ],
+  "Copy class code": [
+    "src/community/components/classroom/ClassSettings.jsx:215"
+  ],
+  "Copy join link": [
+    "src/community/components/classroom/ClassSettings.jsx:219"
+  ],
+  "Reset code": [
+    "src/community/components/classroom/ClassSettings.jsx:224",
+    "src/community/components/classroom/ClassSettings.jsx:340"
+  ],
+  "Archive": [
+    "src/community/components/classroom/ClassSettings.jsx:229"
+  ],
+  "Archive this class": [
+    "src/community/components/classroom/ClassSettings.jsx:231"
+  ],
+  "An archived class is kept for your records and marked as finished. Unarchive it to keep working with it.": [
+    "src/community/components/classroom/ClassSettings.jsx:232"
+  ],
+  "Co-teachers": [
+    "src/community/components/classroom/ClassSettings.jsx:243"
+  ],
+  "Co-teachers can manage students and assignments. Only you can change these settings.": [
+    "src/community/components/classroom/ClassSettings.jsx:245"
+  ],
+  "Only the class owner can add or remove co-teachers.": [
+    "src/community/components/classroom/ClassSettings.jsx:246"
+  ],
+  "Co-teacher": [
+    "src/community/components/classroom/ClassSettings.jsx:261",
+    "src/community/pages/Classroom.jsx:227",
+    "src/community/pages/ClassroomClass.jsx:107"
+  ],
+  "Leave this class": [
+    "src/community/components/classroom/ClassSettings.jsx:265"
+  ],
+  "Rotur username": [
+    "src/community/components/classroom/ClassSettings.jsx:277",
+    "src/community/components/classroom/ClassSettings.jsx:277",
+    "src/community/components/classroom/ClassSettings.jsx:289",
+    "src/community/pages/ClassroomSchool.jsx:110",
+    "src/community/pages/ClassroomSchool.jsx:110",
+    "src/community/pages/Commit.jsx:377",
+    "src/community/pages/Commit.jsx:378",
+    "src/community/pages/ManageProject.jsx:855",
+    "src/community/pages/ManageProject.jsx:978",
+    "src/community/pages/ManageSpace.jsx:635",
+    "src/community/pages/Support.jsx:137"
+  ],
+  "Add co-teacher": [
+    "src/community/components/classroom/ClassSettings.jsx:280"
+  ],
+  "Transfer ownership": [
+    "src/community/components/classroom/ClassSettings.jsx:287"
+  ],
+  "The new owner must have seats for these students on their plan.": [
+    "src/community/components/classroom/ClassSettings.jsx:287"
+  ],
+  "New owner": [
+    "src/community/components/classroom/ClassSettings.jsx:289"
+  ],
+  "Transfer": [
+    "src/community/components/classroom/ClassSettings.jsx:292",
+    "src/community/components/classroom/ClassSettings.jsx:353",
+    "src/community/pages/ManageProject.jsx:856",
+    "src/community/pages/ManageSpace.jsx:635"
+  ],
+  "Keep me as a co-teacher": [
+    "src/community/components/classroom/ClassSettings.jsx:297"
+  ],
+  "Recent activity": [
+    "src/community/components/classroom/ClassSettings.jsx:302",
+    "src/community/pages/ClassroomSchool.jsx:294",
+    "src/community/pages/Profile.jsx:564"
+  ],
+  "Could not load the activity log.": [
+    "src/community/components/classroom/ClassSettings.jsx:304",
+    "src/community/pages/ClassroomSchool.jsx:296"
+  ],
+  "No activity yet": [
+    "src/community/components/classroom/ClassSettings.jsx:305",
+    "src/community/pages/ClassroomSchool.jsx:297"
+  ],
+  "Delete class": [
+    "src/community/components/classroom/ClassSettings.jsx:323",
+    "src/community/components/classroom/ClassSettings.jsx:331",
+    "src/community/components/classroom/ClassSettings.jsx:368"
+  ],
+  "Move or delete every student before deleting the class. It still has {value1, plural, one {# student} other {# students}}.": [
+    "src/community/components/classroom/ClassSettings.jsx:325"
+  ],
+  "This class has no students, so it can be deleted. This cannot be undone.": [
+    "src/community/components/classroom/ClassSettings.jsx:326"
+  ],
+  "Reset the class code?": [
+    "src/community/components/classroom/ClassSettings.jsx:338"
+  ],
+  "Printed login cards show the old code and will stop working. Students need the new code to sign in.": [
+    "src/community/components/classroom/ClassSettings.jsx:346"
+  ],
+  "Transfer this class to {value1}?": [
+    "src/community/components/classroom/ClassSettings.jsx:351"
+  ],
+  "{value1} becomes the owner and you stay on as a co-teacher.": [
+    "src/community/components/classroom/ClassSettings.jsx:360"
+  ],
+  "{value1} becomes the owner and you lose access to this class.": [
+    "src/community/components/classroom/ClassSettings.jsx:361"
+  ],
+  "Delete this class?": [
+    "src/community/components/classroom/ClassSettings.jsx:367"
+  ],
+  "The class, its assignments, and its activity log are deleted permanently.": [
+    "src/community/components/classroom/ClassSettings.jsx:374"
+  ],
+  "Could not add the students.": [
+    "src/community/components/classroom/ClassStudents.jsx:39"
+  ],
+  "Login details": [
+    "src/community/components/classroom/ClassStudents.jsx:46"
+  ],
+  "Add students": [
+    "src/community/components/classroom/ClassStudents.jsx:58",
+    "src/community/components/classroom/ClassStudents.jsx:179"
+  ],
+  "Student names, one per line": [
+    "src/community/components/classroom/ClassStudents.jsx:61"
+  ],
+  "{value1, plural, =0 {No names yet.} one {# name entered.} other {# names entered.}}": [
+    "src/community/components/classroom/ClassStudents.jsx:71"
+  ],
+  "{value1, plural, one {# seat is} other {# seats are}} free on your plan.": [
+    "src/community/components/classroom/ClassStudents.jsx:73"
+  ],
+  "Remove some names or ask your school for more seats.": [
+    "src/community/components/classroom/ClassStudents.jsx:75"
+  ],
+  "{value1, plural, =0 {Add students} one {Add # student} other {Add # students}}": [
+    "src/community/components/classroom/ClassStudents.jsx:81"
+  ],
+  "Could not move the student.": [
+    "src/community/components/classroom/ClassStudents.jsx:110"
+  ],
+  "Move {value1}": [
+    "src/community/components/classroom/ClassStudents.jsx:116"
+  ],
+  "Moving…": [
+    "src/community/components/classroom/ClassStudents.jsx:123",
+    "src/community/pages/ClassroomClaim.jsx:113"
+  ],
+  "Move": [
+    "src/community/components/classroom/ClassStudents.jsx:125"
+  ],
+  "Move to class": [
+    "src/community/components/classroom/ClassStudents.jsx:132",
+    "src/community/components/classroom/ClassStudents.jsx:134"
+  ],
+  "Only classes with the same sign-in method are listed. The login card keeps working with the new class code.": [
+    "src/community/components/classroom/ClassStudents.jsx:139"
+  ],
+  "There is no other class with the same sign-in method to move this student to.": [
+    "src/community/components/classroom/ClassStudents.jsx:142"
+  ],
+  "Disabled": [
+    "src/community/components/classroom/ClassStudents.jsx:159"
+  ],
+  "Locked": [
+    "src/community/components/classroom/ClassStudents.jsx:160"
+  ],
+  "Active": [
+    "src/community/components/classroom/ClassStudents.jsx:161",
+    "src/community/pages/ClassroomSchool.jsx:283"
+  ],
+  "Students": [
+    "src/community/components/classroom/ClassStudents.jsx:215",
+    "src/community/pages/ClassroomAssignment.jsx:257",
+    "src/community/pages/ClassroomClass.jsx:89",
+    "src/community/pages/ClassroomSchool.jsx:68",
+    "src/community/pages/ClassroomSchool.jsx:273"
+  ],
+  "Name": [
+    "src/community/components/classroom/ClassStudents.jsx:222",
+    "src/community/pages/Admin.jsx:1285",
+    "src/community/pages/ManageSpace.jsx:630",
+    "src/community/pages/ManageSpace.jsx:676",
+    "src/community/pages/Spaces.jsx:233",
+    "src/community/pages/Theme.jsx:258",
+    "src/community/pages/Themes.jsx:214"
+  ],
+  "Username": [
+    "src/community/components/classroom/ClassStudents.jsx:223",
+    "src/community/pages/Admin.jsx:2135",
+    "src/community/pages/Admin.jsx:2437",
+    "src/community/pages/ManageProject.jsx:974"
+  ],
+  "Last sign-in": [
+    "src/community/components/classroom/ClassStudents.jsx:224",
+    "src/community/pages/ClassroomStudent.jsx:84"
+  ],
+  "Storage": [
+    "src/community/components/classroom/ClassStudents.jsx:226",
+    "src/community/components/classroom/StudentHome.jsx:237",
+    "src/community/pages/Admin.jsx:269",
+    "src/community/pages/Admin.jsx:1171",
+    "src/community/pages/Classroom.jsx:294",
+    "src/community/pages/ClassroomSchool.jsx:258",
+    "src/community/pages/ClassroomStudent.jsx:92",
+    "src/community/pages/MyStuff.jsx:276",
+    "src/community/pages/MyStuff.jsx:534",
+    "src/community/pages/PaidPerks.jsx:222"
+  ],
+  "Status": [
+    "src/community/components/classroom/ClassStudents.jsx:227",
+    "src/community/pages/ClassroomSchool.jsx:274"
+  ],
+  "Actions": [
+    "src/community/components/classroom/ClassStudents.jsx:228",
+    "src/community/pages/ClassroomSchool.jsx:70",
+    "src/community/pages/News.jsx:320"
+  ],
+  "Never": [
+    "src/community/components/classroom/ClassStudents.jsx:241",
+    "src/community/pages/ClassroomStudent.jsx:85",
+    "src/community/pages/Settings.jsx:56",
+    "src/community/pages/Settings.jsx:70"
+  ],
+  "Actions for {value1}": [
+    "src/community/components/classroom/ClassStudents.jsx:249",
+    "src/community/pages/MyStuff.jsx:1546"
+  ],
+  "Reset sign-in": [
+    "src/community/components/classroom/ClassStudents.jsx:268",
+    "src/community/components/classroom/ClassStudents.jsx:337"
+  ],
+  "Enable": [
+    "src/community/components/classroom/ClassStudents.jsx:277"
+  ],
+  "Disable": [
+    "src/community/components/classroom/ClassStudents.jsx:277"
+  ],
+  "Unlock": [
+    "src/community/components/classroom/ClassStudents.jsx:287"
+  ],
+  "Move to another class": [
+    "src/community/components/classroom/ClassStudents.jsx:297"
+  ],
+  "No students yet": [
+    "src/community/components/classroom/ClassStudents.jsx:318",
+    "src/community/pages/ClassroomAssignment.jsx:271"
+  ],
+  "Add your students by name. Each one gets a login card to print.": [
+    "src/community/components/classroom/ClassStudents.jsx:319"
+  ],
+  "Reset sign-in for {value1}?": [
+    "src/community/components/classroom/ClassStudents.jsx:335"
+  ],
+  "{value1} will be signed out everywhere and get three new pictures. The old login card stops working.": [
+    "src/community/components/classroom/ClassStudents.jsx:342"
+  ],
+  "{value1} will be signed out everywhere and get a new password. The old login card stops working.": [
+    "src/community/components/classroom/ClassStudents.jsx:343"
+  ],
+  "Delete {value1}?": [
+    "src/community/components/classroom/ClassStudents.jsx:349"
+  ],
+  "Delete account and projects": [
+    "src/community/components/classroom/ClassStudents.jsx:350"
+  ],
+  "This permanently deletes the account of {value1} and every project in it. This cannot be undone.": [
+    "src/community/components/classroom/ClassStudents.jsx:354"
+  ],
+  "New login details": [
+    "src/community/components/classroom/ClassStudents.jsx:370"
+  ],
+  "Print or write these down now. Picture sequences are not shown again.": [
+    "src/community/components/classroom/CredentialsResult.jsx:20"
+  ],
+  "Print or write these down now. Passwords are not shown again.": [
+    "src/community/components/classroom/CredentialsResult.jsx:21"
+  ],
+  "Picture sequence": [
+    "src/community/components/classroom/CredentialsResult.jsx:31"
+  ],
+  "Print login cards": [
+    "src/community/components/classroom/CredentialsResult.jsx:51"
+  ],
+  "Login cards": [
+    "src/community/components/classroom/LoginCards.jsx:24"
+  ],
+  "Go to {value1}.": [
+    "src/community/components/classroom/LoginCards.jsx:29"
+  ],
+  "Class code: {value1}": [
+    "src/community/components/classroom/LoginCards.jsx:31"
+  ],
+  "Tap your name, then tap these three pictures in order.": [
+    "src/community/components/classroom/LoginCards.jsx:35"
+  ],
+  "Tap your name, then type this password.": [
+    "src/community/components/classroom/LoginCards.jsx:50"
+  ],
+  "Could not start presenting.": [
+    "src/community/components/classroom/PresentControls.jsx:59"
+  ],
+  "Present to the class": [
+    "src/community/components/classroom/PresentControls.jsx:66"
+  ],
+  "Starting…": [
+    "src/community/components/classroom/PresentControls.jsx:73"
+  ],
+  "Start presenting": [
+    "src/community/components/classroom/PresentControls.jsx:75"
+  ],
+  "Students see a Join card on their class page and follow your view in the editor. They can look but not change anything.": [
+    "src/community/components/classroom/PresentControls.jsx:80"
+  ],
+  "Whose project": [
+    "src/community/components/classroom/PresentControls.jsx:82",
+    "src/community/components/classroom/PresentControls.jsx:84"
+  ],
+  "One of my projects": [
+    "src/community/components/classroom/PresentControls.jsx:88"
+  ],
+  "The projects could not be loaded.": [
+    "src/community/components/classroom/PresentControls.jsx:106"
+  ],
+  "There are no projects to choose from here.": [
+    "src/community/components/classroom/PresentControls.jsx:106"
+  ],
+  "Could not stop presenting.": [
+    "src/community/components/classroom/PresentControls.jsx:134"
+  ],
+  "Presenting {value1}": [
+    "src/community/components/classroom/PresentControls.jsx:142"
+  ],
+  "Open": [
+    "src/community/components/classroom/PresentControls.jsx:147",
+    "src/community/components/classroom/StudentHome.jsx:65",
+    "src/community/components/classroom/StudentHome.jsx:220",
+    "src/community/pages/Admin.jsx:1947",
+    "src/community/pages/ManageProject.jsx:927",
+    "src/community/pages/PullRequest.jsx:496"
+  ],
+  "Stopping…": [
+    "src/community/components/classroom/PresentControls.jsx:149"
+  ],
+  "Stop": [
+    "src/community/components/classroom/PresentControls.jsx:151"
+  ],
+  "{value1} is presenting. Students follow along in their editor.": [
+    "src/community/components/classroom/PresentControls.jsx:156"
+  ],
+  "Could not create the link.": [
+    "src/community/components/classroom/ReleaseSection.jsx:29"
+  ],
+  "Could not cancel the link.": [
+    "src/community/components/classroom/ReleaseSection.jsx:43"
+  ],
+  "Move to their own account": [
+    "src/community/components/classroom/ReleaseSection.jsx:51",
+    "src/community/components/classroom/ReleaseSection.jsx:58"
+  ],
+  "Open this link and sign in with a Rotur account to move the projects of {value1} out of the class.": [
+    "src/community/components/classroom/ReleaseSection.jsx:51"
+  ],
+  "The link works until {value1}.": [
+    "src/community/components/classroom/ReleaseSection.jsx:51",
+    "src/community/components/classroom/ReleaseSection.jsx:71"
+  ],
+  "The projects of {value1} move to a Rotur account of their choice.": [
+    "src/community/components/classroom/ReleaseSection.jsx:60"
+  ],
+  "The school keeps a copy of every project that was turned in.": [
+    "src/community/components/classroom/ReleaseSection.jsx:61"
+  ],
+  "The class account is removed once the move is complete.": [
+    "src/community/components/classroom/ReleaseSection.jsx:62"
+  ],
+  "The link works for 14 days and can be used once.": [
+    "src/community/components/classroom/ReleaseSection.jsx:63"
+  ],
+  "Print": [
+    "src/community/components/classroom/ReleaseSection.jsx:75"
+  ],
+  "Cancelling…": [
+    "src/community/components/classroom/ReleaseSection.jsx:77",
+    "src/community/pages/ManageSpace.jsx:729"
+  ],
+  "Cancel link": [
+    "src/community/components/classroom/ReleaseSection.jsx:79"
+  ],
+  "Create link": [
+    "src/community/components/classroom/ReleaseSection.jsx:87",
+    "src/community/components/classroom/ReleaseSection.jsx:96"
+  ],
+  "Create a move link for {value1}?": [
+    "src/community/components/classroom/ReleaseSection.jsx:94"
+  ],
+  "Give the link to {value1} or their parent or guardian. Whoever opens it and signs in with Rotur receives the projects.": [
+    "src/community/components/classroom/ReleaseSection.jsx:101"
+  ],
+  "That did not work. Please try again.": [
+    "src/community/components/classroom/StudentHome.jsx:57"
+  ],
+  "This was due on {value1}.": [
+    "src/community/components/classroom/StudentHome.jsx:77"
+  ],
+  "Due on {value1}.": [
+    "src/community/components/classroom/StudentHome.jsx:78"
+  ],
+  "There is no due date.": [
+    "src/community/components/classroom/StudentHome.jsx:79"
+  ],
+  "Working with {value1} in {value2}.": [
+    "src/community/components/classroom/StudentHome.jsx:86"
+  ],
+  "and": [
+    "src/community/components/classroom/StudentHome.jsx:86"
+  ],
+  "You are in the group {value1}.": [
+    "src/community/components/classroom/StudentHome.jsx:87"
+  ],
+  "From your teacher": [
+    "src/community/components/classroom/StudentHome.jsx:94"
+  ],
+  "Grade: {value1}": [
+    "src/community/components/classroom/StudentHome.jsx:97",
+    "src/community/pages/ClassroomStudent.jsx:140"
+  ],
+  "Opening…": [
+    "src/community/components/classroom/StudentHome.jsx:103",
+    "src/community/pages/Classroom.jsx:128",
+    "src/community/pages/MyStuff.jsx:247",
+    "src/community/pages/Profile.jsx:1144",
+    "src/community/pages/Project.jsx:1900"
+  ],
+  "Start": [
+    "src/community/components/classroom/StudentHome.jsx:105"
+  ],
+  "Turning in…": [
+    "src/community/components/classroom/StudentHome.jsx:111"
+  ],
+  "Turn in again": [
+    "src/community/components/classroom/StudentHome.jsx:113"
+  ],
+  "Turn in": [
+    "src/community/components/classroom/StudentHome.jsx:113"
+  ],
+  "Taking back…": [
+    "src/community/components/classroom/StudentHome.jsx:120"
+  ],
+  "Take back": [
+    "src/community/components/classroom/StudentHome.jsx:122"
+  ],
+  "Hi, {value1}!": [
+    "src/community/components/classroom/StudentHome.jsx:166",
+    "src/community/pages/ClassroomJoin.jsx:214"
+  ],
+  "You are in {value1}. Your teacher is {value2}.": [
+    "src/community/components/classroom/StudentHome.jsx:168"
+  ],
+  "You are in {value1}.": [
+    "src/community/components/classroom/StudentHome.jsx:169"
+  ],
+  "Presentation": [
+    "src/community/components/classroom/StudentHome.jsx:172"
+  ],
+  "Your class is watching {value1}.": [
+    "src/community/components/classroom/StudentHome.jsx:175"
+  ],
+  "{value1} is presenting. Join to follow along.": [
+    "src/community/components/classroom/StudentHome.jsx:178"
+  ],
+  "Join to follow along.": [
+    "src/community/components/classroom/StudentHome.jsx:179"
+  ],
+  "Join": [
+    "src/community/components/classroom/StudentHome.jsx:184"
+  ],
+  "When your teacher sets an assignment, it will show up here.": [
+    "src/community/components/classroom/StudentHome.jsx:203"
+  ],
+  "My projects": [
+    "src/community/components/classroom/StudentHome.jsx:208"
+  ],
+  "Edited {value1}.": [
+    "src/community/components/classroom/StudentHome.jsx:215",
+    "src/community/pages/ClassroomStudent.jsx:105"
+  ],
+  "View": [
+    "src/community/components/classroom/StudentHome.jsx:224",
+    "src/community/pages/ManageSpace.jsx:742"
+  ],
+  "No projects yet": [
+    "src/community/components/classroom/StudentHome.jsx:231",
+    "src/community/pages/ClassroomStudent.jsx:124",
+    "src/community/pages/Group.jsx:242",
+    "src/community/pages/MyStuff.jsx:219",
+    "src/community/pages/MyStuff.jsx:1629",
+    "src/community/pages/Space.jsx:253",
+    "src/community/pages/Studio.jsx:142"
+  ],
+  "Start an assignment or make something new in the editor.": [
+    "src/community/components/classroom/StudentHome.jsx:232"
+  ],
+  "Space used": [
+    "src/community/components/classroom/StudentHome.jsx:240"
+  ],
+  "{value1} of {value2}": [
+    "src/community/components/classroom/StudentHome.jsx:243",
+    "src/community/pages/Admin.jsx:1180",
+    "src/community/pages/Classroom.jsx:291",
+    "src/community/pages/Classroom.jsx:297",
+    "src/community/pages/Classroom.jsx:303",
+    "src/community/pages/ClassroomSchool.jsx:257",
+    "src/community/pages/ClassroomSchool.jsx:258",
+    "src/community/pages/ClassroomSchool.jsx:259"
+  ],
   "Confirm": [
     "src/community/components/ui/ConfirmModal.jsx:30"
   ],
@@ -2548,7 +3447,8 @@
     "src/community/components/ui/EmptyState.jsx:36"
   ],
   "Sign in with Rotur": [
-    "src/community/components/ui/EmptyState.jsx:43"
+    "src/community/components/ui/EmptyState.jsx:43",
+    "src/community/pages/ClassroomClaim.jsx:91"
   ],
   "Back": [
     "src/community/components/ui/PageHeader.jsx:17"
@@ -2618,17 +3518,6 @@
   "Estimated end of today: {value1}": [
     "src/community/pages/Admin.jsx:205",
     "src/community/pages/Admin.jsx:231"
-  ],
-  "Date": [
-    "src/community/pages/Admin.jsx:245",
-    "src/community/pages/Admin.jsx:800"
-  ],
-  "Storage": [
-    "src/community/pages/Admin.jsx:269",
-    "src/community/pages/Admin.jsx:1171",
-    "src/community/pages/MyStuff.jsx:276",
-    "src/community/pages/MyStuff.jsx:534",
-    "src/community/pages/PaidPerks.jsx:222"
   ],
   "of {value1} used": [
     "src/community/pages/Admin.jsx:272",
@@ -3000,11 +3889,11 @@
   ],
   "Standing updated.": [
     "src/community/pages/Admin.jsx:1017",
-    "src/community/pages/Profile.jsx:967"
+    "src/community/pages/Profile.jsx:968"
   ],
   "Message sent.": [
     "src/community/pages/Admin.jsx:1030",
-    "src/community/pages/Profile.jsx:983"
+    "src/community/pages/Profile.jsx:984"
   ],
   "Back to list": [
     "src/community/pages/Admin.jsx:1100",
@@ -3024,7 +3913,7 @@
   ],
   "Account standing": [
     "src/community/pages/Admin.jsx:1138",
-    "src/community/pages/Profile.jsx:950"
+    "src/community/pages/Profile.jsx:951"
   ],
   "Reason (shown to the user)": [
     "src/community/pages/Admin.jsx:1147"
@@ -3046,9 +3935,6 @@
   "Disable profile comments": [
     "src/community/pages/Admin.jsx:1166"
   ],
-  "{value1} of {value2}": [
-    "src/community/pages/Admin.jsx:1180"
-  ],
   "Not shared": [
     "src/community/pages/Admin.jsx:1195"
   ],
@@ -3057,14 +3943,6 @@
   ],
   "Sort users": [
     "src/community/pages/Admin.jsx:1278"
-  ],
-  "Name": [
-    "src/community/pages/Admin.jsx:1285",
-    "src/community/pages/ManageSpace.jsx:630",
-    "src/community/pages/ManageSpace.jsx:676",
-    "src/community/pages/Spaces.jsx:233",
-    "src/community/pages/Theme.jsx:258",
-    "src/community/pages/Themes.jsx:214"
   ],
   "Most followed": [
     "src/community/pages/Admin.jsx:1287"
@@ -3099,6 +3977,7 @@
   ],
   "Next": [
     "src/community/pages/Admin.jsx:1367",
+    "src/community/pages/ClassroomJoin.jsx:186",
     "src/community/pages/Roadmap.jsx:570"
   ],
   "Title:": [
@@ -3222,7 +4101,7 @@
   ],
   "Unblock": [
     "src/community/pages/Admin.jsx:1724",
-    "src/community/pages/Profile.jsx:884",
+    "src/community/pages/Profile.jsx:885",
     "src/community/pages/Settings.jsx:750"
   ],
   "No extensions": [
@@ -3259,11 +4138,6 @@
   "Search errors": [
     "src/community/pages/Admin.jsx:1939",
     "src/community/pages/Admin.jsx:1940"
-  ],
-  "Open": [
-    "src/community/pages/Admin.jsx:1947",
-    "src/community/pages/ManageProject.jsx:927",
-    "src/community/pages/PullRequest.jsx:496"
   ],
   "Resolved": [
     "src/community/pages/Admin.jsx:1948"
@@ -3336,15 +4210,10 @@
     "src/community/pages/Admin.jsx:2130",
     "src/community/pages/Admin.jsx:2132",
     "src/community/pages/Admin.jsx:2352",
-    "src/community/pages/Profile.jsx:1006"
+    "src/community/pages/Profile.jsx:1007"
   ],
   "The user will be locked out of MistWarp until an admin unbans them.": [
     "src/community/pages/Admin.jsx:2131"
-  ],
-  "Username": [
-    "src/community/pages/Admin.jsx:2135",
-    "src/community/pages/Admin.jsx:2437",
-    "src/community/pages/ManageProject.jsx:974"
   ],
   "Enter a reply.": [
     "src/community/pages/Admin.jsx:2156"
@@ -3363,7 +4232,8 @@
   ],
   "Admin": [
     "src/community/pages/Admin.jsx:2260",
-    "src/community/pages/Admin.jsx:2456"
+    "src/community/pages/Admin.jsx:2456",
+    "src/community/pages/ClassroomSchool.jsx:84"
   ],
   "{value1} request from @{value2}": [
     "src/community/pages/Admin.jsx:2292"
@@ -3766,6 +4636,426 @@
   "Submissions will appear here after the deadline.": [
     "src/community/pages/Challenge.jsx:465"
   ],
+  "Classroom plan": [
+    "src/community/pages/Classroom.jsx:22"
+  ],
+  "School plan": [
+    "src/community/pages/Classroom.jsx:23"
+  ],
+  "Trial plan": [
+    "src/community/pages/Classroom.jsx:24"
+  ],
+  "Password": [
+    "src/community/pages/Classroom.jsx:30",
+    "src/community/pages/ClassroomJoin.jsx:235"
+  ],
+  "Pictures": [
+    "src/community/pages/Classroom.jsx:31",
+    "src/community/pages/ClassroomJoin.jsx:36"
+  ],
+  "Checkout could not be started.": [
+    "src/community/pages/Classroom.jsx:55",
+    "src/community/pages/Classroom.jsx:58"
+  ],
+  "Upgrade to Classroom": [
+    "src/community/pages/Classroom.jsx:64"
+  ],
+  "Opening checkout…": [
+    "src/community/pages/Classroom.jsx:71"
+  ],
+  "Continue to checkout": [
+    "src/community/pages/Classroom.jsx:73"
+  ],
+  "Seats come in packs of {value1}. Pick how many packs your classes need. You can change this later from Manage billing.": [
+    "src/community/pages/Classroom.jsx:78"
+  ],
+  "Seat packs": [
+    "src/community/pages/Classroom.jsx:80"
+  ],
+  "{value1, plural, one {# pack} other {# packs}}": [
+    "src/community/pages/Classroom.jsx:86"
+  ],
+  "{value1, plural, one {# seat} other {# seats}}": [
+    "src/community/pages/Classroom.jsx:87"
+  ],
+  "Billing could not be opened.": [
+    "src/community/pages/Classroom.jsx:109",
+    "src/community/pages/Classroom.jsx:112"
+  ],
+  "Managed by {value1}.": [
+    "src/community/pages/Classroom.jsx:120"
+  ],
+  "Manage billing": [
+    "src/community/pages/Classroom.jsx:130",
+    "src/community/pages/Wallet.jsx:427"
+  ],
+  "Upgrade": [
+    "src/community/pages/Classroom.jsx:136"
+  ],
+  "Plan changes are handled by our team.": [
+    "src/community/pages/Classroom.jsx:141"
+  ],
+  "Contact support to add seats or upgrade.": [
+    "src/community/pages/Classroom.jsx:143"
+  ],
+  "Could not create the class.": [
+    "src/community/pages/Classroom.jsx:168"
+  ],
+  "New class": [
+    "src/community/pages/Classroom.jsx:173",
+    "src/community/pages/Classroom.jsx:253"
+  ],
+  "Year 5 Coding Club": [
+    "src/community/pages/Classroom.jsx:181"
+  ],
+  "Sign-in method": [
+    "src/community/pages/Classroom.jsx:186"
+  ],
+  "Create class": [
+    "src/community/pages/Classroom.jsx:211"
+  ],
+  "{value1, plural, one {# student} other {# students}}": [
+    "src/community/pages/Classroom.jsx:233"
+  ],
+  "{value1, plural, one {# assignment} other {# assignments}}": [
+    "src/community/pages/Classroom.jsx:234"
+  ],
+  "Picture sign-in": [
+    "src/community/pages/Classroom.jsx:235"
+  ],
+  "Password sign-in": [
+    "src/community/pages/Classroom.jsx:235"
+  ],
+  "Create classes, add students, and set assignments.": [
+    "src/community/pages/Classroom.jsx:261"
+  ],
+  "Thanks, your plan is updated. New seats can take a minute to show up.": [
+    "src/community/pages/Classroom.jsx:266"
+  ],
+  "Checkout was cancelled and nothing was charged.": [
+    "src/community/pages/Classroom.jsx:271"
+  ],
+  "Plan summary": [
+    "src/community/pages/Classroom.jsx:274",
+    "src/community/pages/ClassroomSchool.jsx:251"
+  ],
+  "Renews on {value1}.": [
+    "src/community/pages/Classroom.jsx:277",
+    "src/community/pages/ClassroomSchool.jsx:254"
+  ],
+  "Manage the school": [
+    "src/community/pages/Classroom.jsx:281"
+  ],
+  "Seats": [
+    "src/community/pages/Classroom.jsx:288",
+    "src/community/pages/ClassroomSchool.jsx:257"
+  ],
+  "Classes": [
+    "src/community/pages/Classroom.jsx:300",
+    "src/community/pages/Classroom.jsx:307",
+    "src/community/pages/ClassroomSchool.jsx:67",
+    "src/community/pages/ClassroomSchool.jsx:229",
+    "src/community/pages/ClassroomSchool.jsx:259",
+    "src/community/pages/ClassroomSchool.jsx:265"
+  ],
+  "No classes yet": [
+    "src/community/pages/Classroom.jsx:313",
+    "src/community/pages/ClassroomSchool.jsx:289"
+  ],
+  "Create your first class to add students and print their login cards.": [
+    "src/community/pages/Classroom.jsx:314"
+  ],
+  "Your plan allows {value1, plural, one {# class} other {# classes}}. Archive or delete a class to make room for another.": [
+    "src/community/pages/Classroom.jsx:319"
+  ],
+  "Teachers sign in with Rotur to manage their classes.": [
+    "src/community/pages/Classroom.jsx:381",
+    "src/community/pages/ClassroomAssignment.jsx:198",
+    "src/community/pages/ClassroomClass.jsx:68",
+    "src/community/pages/ClassroomSchool.jsx:208",
+    "src/community/pages/ClassroomStudent.jsx:51"
+  ],
+  "Students sign in with a class code.": [
+    "src/community/pages/Classroom.jsx:384"
+  ],
+  "Student sign-in": [
+    "src/community/pages/Classroom.jsx:388"
+  ],
+  "Ask your teacher for the class code on your login card.": [
+    "src/community/pages/Classroom.jsx:392"
+  ],
+  "Could not load Classroom.": [
+    "src/community/pages/Classroom.jsx:401"
+  ],
+  "Classroom is not enabled for this account.": [
+    "src/community/pages/Classroom.jsx:422"
+  ],
+  "Contact support": [
+    "src/community/pages/Classroom.jsx:423",
+    "src/community/pages/Settings.jsx:802"
+  ],
+  "Classroom is licensed to schools. Ask your school to add you to its plan, or contact support to set one up.": [
+    "src/community/pages/Classroom.jsx:425"
+  ],
+  "Could not save the review.": [
+    "src/community/pages/ClassroomAssignment.jsx:40"
+  ],
+  "Feedback": [
+    "src/community/pages/ClassroomAssignment.jsx:53",
+    "src/community/pages/ManageProject.jsx:866",
+    "src/community/pages/ManageProject.jsx:901"
+  ],
+  "Grade": [
+    "src/community/pages/ClassroomAssignment.jsx:57"
+  ],
+  "Optional": [
+    "src/community/pages/ClassroomAssignment.jsx:58",
+    "src/community/pages/Project.jsx:3071"
+  ],
+  "Returning…": [
+    "src/community/pages/ClassroomAssignment.jsx:67"
+  ],
+  "Return again": [
+    "src/community/pages/ClassroomAssignment.jsx:69"
+  ],
+  "Return to student": [
+    "src/community/pages/ClassroomAssignment.jsx:69"
+  ],
+  "Group work": [
+    "src/community/pages/ClassroomAssignment.jsx:100"
+  ],
+  "Hide review": [
+    "src/community/pages/ClassroomAssignment.jsx:116"
+  ],
+  "Review": [
+    "src/community/pages/ClassroomAssignment.jsx:116"
+  ],
+  "Could not delete the assignment.": [
+    "src/community/pages/ClassroomAssignment.jsx:191"
+  ],
+  "Assignment": [
+    "src/community/pages/ClassroomAssignment.jsx:203",
+    "src/community/pages/ClassroomStudent.jsx:137"
+  ],
+  "Could not load this assignment.": [
+    "src/community/pages/ClassroomAssignment.jsx:204"
+  ],
+  "There are no instructions for this assignment.": [
+    "src/community/pages/ClassroomAssignment.jsx:247"
+  ],
+  "Add students to the class to see their work here.": [
+    "src/community/pages/ClassroomAssignment.jsx:272"
+  ],
+  "Delete this assignment?": [
+    "src/community/pages/ClassroomAssignment.jsx:290"
+  ],
+  "Delete assignment": [
+    "src/community/pages/ClassroomAssignment.jsx:291"
+  ],
+  "Students keep their projects, but the assignment and its feedback are removed permanently.": [
+    "src/community/pages/ClassroomAssignment.jsx:297"
+  ],
+  "This link has expired or was already used.": [
+    "src/community/pages/ClassroomClaim.jsx:34"
+  ],
+  "The move did not complete. Please try again.": [
+    "src/community/pages/ClassroomClaim.jsx:49"
+  ],
+  "MistWarp Classroom": [
+    "src/community/pages/ClassroomClaim.jsx:59",
+    "src/community/pages/ClassroomJoin.jsx:165"
+  ],
+  "This link cannot be used": [
+    "src/community/pages/ClassroomClaim.jsx:63"
+  ],
+  "All moved!": [
+    "src/community/pages/ClassroomClaim.jsx:70"
+  ],
+  "{value1, plural, one {# project now belongs} other {# projects now belong}} to {value2}. The class account has been removed.": [
+    "src/community/pages/ClassroomClaim.jsx:72"
+  ],
+  "Go to My stuff": [
+    "src/community/pages/ClassroomClaim.jsx:76"
+  ],
+  "Move the projects of {value1} to your own account": [
+    "src/community/pages/ClassroomClaim.jsx:83"
+  ],
+  "{value1, plural, one {# project} other {# projects}} from the class of {value2} will move to the Rotur account you sign in with. The link works until {value3}.": [
+    "src/community/pages/ClassroomClaim.jsx:85"
+  ],
+  "If you are under 13, ask a parent or guardian to do this with you.": [
+    "src/community/pages/ClassroomClaim.jsx:87"
+  ],
+  "You are signed in as a class account.": [
+    "src/community/pages/ClassroomClaim.jsx:98"
+  ],
+  "Sign out": [
+    "src/community/pages/ClassroomClaim.jsx:102"
+  ],
+  "Sign out, then open this link again and sign in with your own Rotur account.": [
+    "src/community/pages/ClassroomClaim.jsx:106"
+  ],
+  "You are signed in as {value1}.": [
+    "src/community/pages/ClassroomClaim.jsx:111"
+  ],
+  "Move the projects to my account": [
+    "src/community/pages/ClassroomClaim.jsx:115"
+  ],
+  "Class": [
+    "src/community/pages/ClassroomClass.jsx:75",
+    "src/community/pages/ClassroomSchool.jsx:271",
+    "src/community/pages/ClassroomStudent.jsx:56",
+    "src/community/pages/ClassroomStudent.jsx:76"
+  ],
+  "This class does not exist or you are not one of its teachers.": [
+    "src/community/pages/ClassroomClass.jsx:77"
+  ],
+  "Could not load this class.": [
+    "src/community/pages/ClassroomClass.jsx:77"
+  ],
+  "Settings": [
+    "src/community/pages/ClassroomClass.jsx:92",
+    "src/community/pages/Settings.jsx:519"
+  ],
+  "{value1, plural, one {# student signs} other {# students sign}} in with pictures.": [
+    "src/community/pages/ClassroomClass.jsx:102"
+  ],
+  "{value1, plural, one {# student signs} other {# students sign}} in with a password.": [
+    "src/community/pages/ClassroomClass.jsx:103"
+  ],
+  "Present": [
+    "src/community/pages/ClassroomClass.jsx:113"
+  ],
+  "Class sections": [
+    "src/community/pages/ClassroomClass.jsx:119"
+  ],
+  "That class code was not found.": [
+    "src/community/pages/ClassroomJoin.jsx:100",
+    "src/community/pages/ClassroomJoin.jsx:119"
+  ],
+  "That sign-in did not match. Check with your teacher and try again.": [
+    "src/community/pages/ClassroomJoin.jsx:142"
+  ],
+  "Enter your class code": [
+    "src/community/pages/ClassroomJoin.jsx:169"
+  ],
+  "It is on your login card. Ask your teacher if you do not have one.": [
+    "src/community/pages/ClassroomJoin.jsx:170"
+  ],
+  "Checking…": [
+    "src/community/pages/ClassroomJoin.jsx:185",
+    "src/community/pages/Status.jsx:89"
+  ],
+  "Finding your class…": [
+    "src/community/pages/ClassroomJoin.jsx:192"
+  ],
+  "Who are you?": [
+    "src/community/pages/ClassroomJoin.jsx:197"
+  ],
+  "There is nobody in this class yet. Ask your teacher to add you.": [
+    "src/community/pages/ClassroomJoin.jsx:206"
+  ],
+  "Not your class? Enter a different code.": [
+    "src/community/pages/ClassroomJoin.jsx:208"
+  ],
+  "Tap your three pictures in order.": [
+    "src/community/pages/ClassroomJoin.jsx:217"
+  ],
+  "Chosen pictures": [
+    "src/community/pages/ClassroomJoin.jsx:218"
+  ],
+  "Clear": [
+    "src/community/pages/ClassroomJoin.jsx:227"
+  ],
+  "Not you? Pick another name.": [
+    "src/community/pages/ClassroomJoin.jsx:260"
+  ],
+  "Teachers": [
+    "src/community/pages/ClassroomSchool.jsx:60",
+    "src/community/pages/ClassroomSchool.jsx:228"
+  ],
+  "Teacher": [
+    "src/community/pages/ClassroomSchool.jsx:66",
+    "src/community/pages/ClassroomSchool.jsx:84"
+  ],
+  "Role": [
+    "src/community/pages/ClassroomSchool.jsx:69",
+    "src/community/pages/ManageProject.jsx:986"
+  ],
+  "Remove admin": [
+    "src/community/pages/ClassroomSchool.jsx:93"
+  ],
+  "Make admin": [
+    "src/community/pages/ClassroomSchool.jsx:93"
+  ],
+  "Add teacher": [
+    "src/community/pages/ClassroomSchool.jsx:113"
+  ],
+  "Remove {value1} from the school?": [
+    "src/community/pages/ClassroomSchool.jsx:119"
+  ],
+  "Remove teacher": [
+    "src/community/pages/ClassroomSchool.jsx:120"
+  ],
+  "{value1} loses access to the school plan. Their classes stay with them.": [
+    "src/community/pages/ClassroomSchool.jsx:128"
+  ],
+  "The download could not be prepared.": [
+    "src/community/pages/ClassroomSchool.jsx:196",
+    "src/community/pages/ClassroomSchool.jsx:200"
+  ],
+  "School": [
+    "src/community/pages/ClassroomSchool.jsx:213",
+    "src/community/pages/ClassroomSchool.jsx:239"
+  ],
+  "Only school admins can open this page.": [
+    "src/community/pages/ClassroomSchool.jsx:215"
+  ],
+  "Could not load the school.": [
+    "src/community/pages/ClassroomSchool.jsx:216"
+  ],
+  "Everyone on the school plan shares these seats and this storage.": [
+    "src/community/pages/ClassroomSchool.jsx:240"
+  ],
+  "Preparing…": [
+    "src/community/pages/ClassroomSchool.jsx:242",
+    "src/community/pages/Settings.jsx:840"
+  ],
+  "Download data": [
+    "src/community/pages/ClassroomSchool.jsx:244"
+  ],
+  "School sections": [
+    "src/community/pages/ClassroomSchool.jsx:248"
+  ],
+  "In {value1}.": [
+    "src/community/pages/ClassroomSchool.jsx:312"
+  ],
+  "Student": [
+    "src/community/pages/ClassroomStudent.jsx:56"
+  ],
+  "Could not load this student.": [
+    "src/community/pages/ClassroomStudent.jsx:57"
+  ],
+  "This account is disabled, so the student cannot sign in.": [
+    "src/community/pages/ClassroomStudent.jsx:69"
+  ],
+  "This account is locked after too many failed sign-ins. Unlock it from the class list.": [
+    "src/community/pages/ClassroomStudent.jsx:70"
+  ],
+  "The username is {value1}.": [
+    "src/community/pages/ClassroomStudent.jsx:79"
+  ],
+  "{value1} used.": [
+    "src/community/pages/ClassroomStudent.jsx:107"
+  ],
+  "Open in editor": [
+    "src/community/pages/ClassroomStudent.jsx:113",
+    "src/community/pages/MyStuff.jsx:1562",
+    "src/community/pages/Project.jsx:1977"
+  ],
+  "No assignments started yet": [
+    "src/community/pages/ClassroomStudent.jsx:159"
+  ],
   "Discussion": [
     "src/community/pages/Collection.jsx:38",
     "src/community/pages/Collection.jsx:103"
@@ -3871,14 +5161,6 @@
   "No co-authors attached.": [
     "src/community/pages/Commit.jsx:374"
   ],
-  "Rotur username": [
-    "src/community/pages/Commit.jsx:377",
-    "src/community/pages/Commit.jsx:378",
-    "src/community/pages/ManageProject.jsx:855",
-    "src/community/pages/ManageProject.jsx:978",
-    "src/community/pages/ManageSpace.jsx:635",
-    "src/community/pages/Support.jsx:137"
-  ],
   "MistWarp compared with Scratch and TurboWarp": [
     "src/community/pages/Compare.jsx:69"
   ],
@@ -3913,7 +5195,7 @@
   "Could not load more projects.": [
     "src/community/pages/Explore.jsx:163",
     "src/community/pages/MyStuff.jsx:1623",
-    "src/community/pages/Profile.jsx:632",
+    "src/community/pages/Profile.jsx:633",
     "src/community/pages/Search.jsx:111"
   ],
   "Could not load projects.": [
@@ -3938,7 +5220,7 @@
   ],
   "No followers yet": [
     "src/community/pages/Followers.jsx:30",
-    "src/community/pages/Profile.jsx:724"
+    "src/community/pages/Profile.jsx:725"
   ],
   "Could not load who this user follows.": [
     "src/community/pages/Followers.jsx:44"
@@ -3976,9 +5258,6 @@
   "Loading group…": [
     "src/community/pages/Group.jsx:187"
   ],
-  "Members": [
-    "src/community/pages/Group.jsx:205"
-  ],
   "All groups": [
     "src/community/pages/Group.jsx:231"
   ],
@@ -3987,13 +5266,6 @@
   ],
   "Assign a project from its metadata settings.": [
     "src/community/pages/Group.jsx:241"
-  ],
-  "No projects yet": [
-    "src/community/pages/Group.jsx:242",
-    "src/community/pages/MyStuff.jsx:219",
-    "src/community/pages/MyStuff.jsx:1629",
-    "src/community/pages/Space.jsx:253",
-    "src/community/pages/Studio.jsx:142"
   ],
   "Projects assigned to this group will appear here.": [
     "src/community/pages/Group.jsx:242"
@@ -4088,9 +5360,6 @@
   ],
   "Organisations that share projects, spaces, members, and funding.": [
     "src/community/pages/Groups.jsx:81"
-  ],
-  "New group": [
-    "src/community/pages/Groups.jsx:82"
   ],
   "Search groups": [
     "src/community/pages/Groups.jsx:97",
@@ -4257,7 +5526,7 @@
   ],
   "Followers": [
     "src/community/pages/Leaderboard.jsx:22",
-    "src/community/pages/Profile.jsx:703",
+    "src/community/pages/Profile.jsx:704",
     "src/community/pages/Studio.jsx:124"
   ],
   "{count} loves": [
@@ -4280,7 +5549,7 @@
   ],
   "Account #{value1}": [
     "src/community/pages/Leaderboard.jsx:153",
-    "src/community/pages/Profile.jsx:921"
+    "src/community/pages/Profile.jsx:922"
   ],
   "Account number unavailable": [
     "src/community/pages/Leaderboard.jsx:154"
@@ -4393,10 +5662,6 @@
   "Name and address": [
     "src/community/pages/ManageProject.jsx:627"
   ],
-  "Title": [
-    "src/community/pages/ManageProject.jsx:630",
-    "src/community/pages/Roadmap.jsx:494"
-  ],
   "Vanity URL": [
     "src/community/pages/ManageProject.jsx:639"
   ],
@@ -4411,12 +5676,6 @@
   ],
   "Vanity project URLs are included with Rotur Pro.": [
     "src/community/pages/ManageProject.jsx:641"
-  ],
-  "Save changes": [
-    "src/community/pages/ManageProject.jsx:651",
-    "src/community/pages/ManageSpace.jsx:648",
-    "src/community/pages/News.jsx:298",
-    "src/community/pages/Theme.jsx:253"
   ],
   "Branding": [
     "src/community/pages/ManageProject.jsx:656"
@@ -4456,7 +5715,7 @@
   ],
   "Turn off comments": [
     "src/community/pages/ManageProject.jsx:700",
-    "src/community/pages/Profile.jsx:743",
+    "src/community/pages/Profile.jsx:744",
     "src/community/pages/Project.jsx:2148"
   ],
   "Save publishing settings": [
@@ -4558,17 +5817,9 @@
   "New owner username": [
     "src/community/pages/ManageProject.jsx:855"
   ],
-  "Transfer": [
-    "src/community/pages/ManageProject.jsx:856",
-    "src/community/pages/ManageSpace.jsx:635"
-  ],
   "Review player feedback and recent runtime health.": [
     "src/community/pages/ManageProject.jsx:864",
     "src/community/pages/ManageProject.jsx:899"
-  ],
-  "Feedback": [
-    "src/community/pages/ManageProject.jsx:866",
-    "src/community/pages/ManageProject.jsx:901"
   ],
   "Diagnostics": [
     "src/community/pages/ManageProject.jsx:866",
@@ -4630,9 +5881,6 @@
   ],
   "Add teammate": [
     "src/community/pages/ManageProject.jsx:966"
-  ],
-  "Role": [
-    "src/community/pages/ManageProject.jsx:986"
   ],
   "Sale share": [
     "src/community/pages/ManageProject.jsx:1003"
@@ -4879,9 +6127,6 @@
     "src/community/pages/ManageSpace.jsx:727",
     "src/community/pages/Studio.jsx:157"
   ],
-  "Cancelling…": [
-    "src/community/pages/ManageSpace.jsx:729"
-  ],
   "Review entries or remove one that breaks the rules.": [
     "src/community/pages/ManageSpace.jsx:738"
   ],
@@ -4889,9 +6134,6 @@
     "src/community/pages/ManageSpace.jsx:738"
   ],
   "Score submitted": [
-    "src/community/pages/ManageSpace.jsx:742"
-  ],
-  "View": [
     "src/community/pages/ManageSpace.jsx:742"
   ],
   "No projects have been added yet.": [
@@ -4952,14 +6194,9 @@
   "Balance": [
     "src/community/pages/MyStuff.jsx:243"
   ],
-  "Opening…": [
-    "src/community/pages/MyStuff.jsx:247",
-    "src/community/pages/Profile.jsx:1143",
-    "src/community/pages/Project.jsx:1900"
-  ],
   "Buy credits": [
     "src/community/pages/MyStuff.jsx:248",
-    "src/community/pages/Profile.jsx:1146",
+    "src/community/pages/Profile.jsx:1147",
     "src/community/pages/Project.jsx:1896",
     "src/community/pages/Wallet.jsx:383"
   ],
@@ -5145,13 +6382,6 @@
   "Share": [
     "src/community/pages/MyStuff.jsx:1538"
   ],
-  "Actions for {value1}": [
-    "src/community/pages/MyStuff.jsx:1546"
-  ],
-  "Open in editor": [
-    "src/community/pages/MyStuff.jsx:1562",
-    "src/community/pages/Project.jsx:1977"
-  ],
   "Manage & analytics": [
     "src/community/pages/MyStuff.jsx:1567",
     "src/community/pages/Project.jsx:1654"
@@ -5246,9 +6476,6 @@
     "src/community/pages/News.jsx:315"
   ],
   "Published": [
-    "src/community/pages/News.jsx:320"
-  ],
-  "Actions": [
     "src/community/pages/News.jsx:320"
   ],
   "Posts from MistWarp will show up here.": [
@@ -5454,220 +6681,217 @@
     "src/community/pages/Post.jsx:47"
   ],
   "Moderation action failed.": [
-    "src/community/pages/Profile.jsx:295"
+    "src/community/pages/Profile.jsx:296"
   ],
   "Banned from MistWarp by site admins.": [
-    "src/community/pages/Profile.jsx:454"
+    "src/community/pages/Profile.jsx:455"
   ],
   "Could not load this profile.": [
-    "src/community/pages/Profile.jsx:463"
+    "src/community/pages/Profile.jsx:464"
   ],
   "User not found": [
-    "src/community/pages/Profile.jsx:467"
+    "src/community/pages/Profile.jsx:468"
   ],
   "Browse projects": [
-    "src/community/pages/Profile.jsx:468",
+    "src/community/pages/Profile.jsx:469",
     "src/community/pages/Project.jsx:1418",
     "src/community/pages/Project.jsx:1430"
   ],
   "This user does not exist on Rotur.": [
-    "src/community/pages/Profile.jsx:469"
+    "src/community/pages/Profile.jsx:470"
   ],
   "Block {value1}?": [
-    "src/community/pages/Profile.jsx:504"
-  ],
-  "Block user": [
     "src/community/pages/Profile.jsx:505"
   ],
+  "Block user": [
+    "src/community/pages/Profile.jsx:506"
+  ],
   "Blocking…": [
-    "src/community/pages/Profile.jsx:507"
+    "src/community/pages/Profile.jsx:508"
   ],
   "You will stop receiving MistWarp comments and notifications from each other.": [
-    "src/community/pages/Profile.jsx:511"
+    "src/community/pages/Profile.jsx:512"
   ],
   "Not on MistWarp yet. This is {value1}'s Rotur profile.": [
-    "src/community/pages/Profile.jsx:534"
+    "src/community/pages/Profile.jsx:535"
   ],
   "Posts": [
-    "src/community/pages/Profile.jsx:545"
-  ],
-  "Recent activity": [
-    "src/community/pages/Profile.jsx:563"
+    "src/community/pages/Profile.jsx:546"
   ],
   "View game library": [
-    "src/community/pages/Profile.jsx:565"
+    "src/community/pages/Profile.jsx:566"
   ],
   "Activity is private": [
-    "src/community/pages/Profile.jsx:599"
-  ],
-  "No recent activity": [
     "src/community/pages/Profile.jsx:600"
   ],
+  "No recent activity": [
+    "src/community/pages/Profile.jsx:601"
+  ],
   "Games added to the library will appear here after they are played.": [
-    "src/community/pages/Profile.jsx:604"
+    "src/community/pages/Profile.jsx:605"
   ],
   "Unshared projects": [
-    "src/community/pages/Profile.jsx:641"
-  ],
-  "Only admins can see these projects.": [
     "src/community/pages/Profile.jsx:642"
   ],
+  "Only admins can see these projects.": [
+    "src/community/pages/Profile.jsx:643"
+  ],
   "Recent reviews": [
-    "src/community/pages/Profile.jsx:657"
+    "src/community/pages/Profile.jsx:658"
   ],
   "Loading reviews…": [
-    "src/community/pages/Profile.jsx:658",
+    "src/community/pages/Profile.jsx:659",
     "src/community/pages/Project.jsx:2739"
   ],
   "No reviews yet": [
-    "src/community/pages/Profile.jsx:660",
+    "src/community/pages/Profile.jsx:661",
     "src/community/pages/Project.jsx:2742"
   ],
   "Reviews this user writes on projects will appear here.": [
-    "src/community/pages/Profile.jsx:661"
+    "src/community/pages/Profile.jsx:662"
   ],
   "{value1} out of 5 stars": [
-    "src/community/pages/Profile.jsx:678",
+    "src/community/pages/Profile.jsx:679",
     "src/community/pages/Project.jsx:2569"
   ],
   "No written review.": [
-    "src/community/pages/Profile.jsx:691"
+    "src/community/pages/Profile.jsx:692"
   ],
   "People who follow this user will appear here.": [
-    "src/community/pages/Profile.jsx:725"
+    "src/community/pages/Profile.jsx:726"
   ],
   "Comments": [
-    "src/community/pages/Profile.jsx:734",
+    "src/community/pages/Profile.jsx:735",
     "src/community/pages/Project.jsx:1449",
     "src/community/pages/Space.jsx:259",
     "src/community/pages/Studio.jsx:85",
     "src/community/pages/Studio.jsx:150"
   ],
   "Turning on…": [
-    "src/community/pages/Profile.jsx:740"
+    "src/community/pages/Profile.jsx:741"
   ],
   "Turning off…": [
-    "src/community/pages/Profile.jsx:740"
+    "src/community/pages/Profile.jsx:741"
   ],
   "Turn on comments": [
-    "src/community/pages/Profile.jsx:743",
+    "src/community/pages/Profile.jsx:744",
     "src/community/pages/Project.jsx:2148"
   ],
   "Published themes": [
-    "src/community/pages/Profile.jsx:777"
+    "src/community/pages/Profile.jsx:778"
   ],
   "Loading themes…": [
-    "src/community/pages/Profile.jsx:779",
+    "src/community/pages/Profile.jsx:780",
     "src/community/pages/Themes.jsx:199"
   ],
   "Could not load published themes.": [
-    "src/community/pages/Profile.jsx:781"
+    "src/community/pages/Profile.jsx:782"
   ],
   "No published themes yet": [
-    "src/community/pages/Profile.jsx:787"
-  ],
-  "Themes this user publishes will appear here.": [
     "src/community/pages/Profile.jsx:788"
   ],
+  "Themes this user publishes will appear here.": [
+    "src/community/pages/Profile.jsx:789"
+  ],
   "following": [
-    "src/community/pages/Profile.jsx:840"
+    "src/community/pages/Profile.jsx:841"
   ],
   "Unfollowing…": [
-    "src/community/pages/Profile.jsx:850"
+    "src/community/pages/Profile.jsx:851"
   ],
   "Following…": [
-    "src/community/pages/Profile.jsx:850"
+    "src/community/pages/Profile.jsx:851"
   ],
   "Send credits to {value1}": [
-    "src/community/pages/Profile.jsx:859"
+    "src/community/pages/Profile.jsx:860"
   ],
   "Donate": [
-    "src/community/pages/Profile.jsx:862"
+    "src/community/pages/Profile.jsx:863"
   ],
   "Unmute": [
-    "src/community/pages/Profile.jsx:873",
+    "src/community/pages/Profile.jsx:874",
     "src/community/pages/Settings.jsx:768"
   ],
   "Mute": [
-    "src/community/pages/Profile.jsx:873"
+    "src/community/pages/Profile.jsx:874"
   ],
   "Block": [
-    "src/community/pages/Profile.jsx:884"
+    "src/community/pages/Profile.jsx:885"
   ],
   "Sign in to follow": [
-    "src/community/pages/Profile.jsx:897"
+    "src/community/pages/Profile.jsx:898"
   ],
   "Edit profile": [
-    "src/community/pages/Profile.jsx:908"
+    "src/community/pages/Profile.jsx:909"
   ],
   "About me": [
-    "src/community/pages/Profile.jsx:912"
+    "src/community/pages/Profile.jsx:913"
   ],
   "No bio yet.": [
-    "src/community/pages/Profile.jsx:914"
+    "src/community/pages/Profile.jsx:915"
   ],
   "Joined {value1}": [
-    "src/community/pages/Profile.jsx:919"
+    "src/community/pages/Profile.jsx:920"
   ],
   "Moderate @{value1}": [
-    "src/community/pages/Profile.jsx:940"
-  ],
-  "Only admins can see these tools.": [
     "src/community/pages/Profile.jsx:941"
   ],
+  "Only admins can see these tools.": [
+    "src/community/pages/Profile.jsx:942"
+  ],
   "Banned": [
-    "src/community/pages/Profile.jsx:944"
+    "src/community/pages/Profile.jsx:945"
   ],
   "Good standing": [
-    "src/community/pages/Profile.jsx:944"
+    "src/community/pages/Profile.jsx:945"
   ],
   "Reason shown to the user": [
-    "src/community/pages/Profile.jsx:958"
+    "src/community/pages/Profile.jsx:959"
   ],
   "Private moderation message": [
-    "src/community/pages/Profile.jsx:973"
+    "src/community/pages/Profile.jsx:974"
   ],
   "Send message": [
-    "src/community/pages/Profile.jsx:985"
+    "src/community/pages/Profile.jsx:986"
   ],
   "Profile comments enabled.": [
-    "src/community/pages/Profile.jsx:994"
+    "src/community/pages/Profile.jsx:995"
   ],
   "Profile comments disabled.": [
-    "src/community/pages/Profile.jsx:994"
+    "src/community/pages/Profile.jsx:995"
   ],
   "Enable comments": [
-    "src/community/pages/Profile.jsx:996"
+    "src/community/pages/Profile.jsx:997"
   ],
   "Disable comments": [
-    "src/community/pages/Profile.jsx:996"
+    "src/community/pages/Profile.jsx:997"
   ],
   "User unbanned.": [
-    "src/community/pages/Profile.jsx:1004"
+    "src/community/pages/Profile.jsx:1005"
   ],
   "User banned.": [
-    "src/community/pages/Profile.jsx:1004"
+    "src/community/pages/Profile.jsx:1005"
   ],
   "Unban user": [
-    "src/community/pages/Profile.jsx:1006"
+    "src/community/pages/Profile.jsx:1007"
   ],
   "Donate to {value1}": [
-    "src/community/pages/Profile.jsx:1108"
+    "src/community/pages/Profile.jsx:1109"
   ],
   "Sent {value1} credits to {value2}.": [
-    "src/community/pages/Profile.jsx:1113"
+    "src/community/pages/Profile.jsx:1114"
   ],
   "Send Rotur credits straight to {value1}. This transfers directly from your account.": [
-    "src/community/pages/Profile.jsx:1122"
+    "src/community/pages/Profile.jsx:1123"
   ],
   "Amount in credits": [
-    "src/community/pages/Profile.jsx:1129"
+    "src/community/pages/Profile.jsx:1130"
   ],
   "Not enough credits in your balance. Top up through Stripe, then send again.": [
-    "src/community/pages/Profile.jsx:1137"
+    "src/community/pages/Profile.jsx:1138"
   ],
   "Send credits": [
-    "src/community/pages/Profile.jsx:1146"
+    "src/community/pages/Profile.jsx:1147"
   ],
   "Project not found": [
     "src/community/pages/Project.jsx:1417",
@@ -6165,9 +7389,6 @@
     "src/community/pages/Project.jsx:3071",
     "src/community/pages/Project.jsx:3083"
   ],
-  "Optional": [
-    "src/community/pages/Project.jsx:3071"
-  ],
   "No bounty": [
     "src/community/pages/Project.jsx:3074"
   ],
@@ -6365,9 +7586,6 @@
   ],
   "Descendants": [
     "src/community/pages/RemixTree.jsx:282"
-  ],
-  "In progress": [
-    "src/community/pages/Roadmap.jsx:33"
   ],
   "Planned": [
     "src/community/pages/Roadmap.jsx:35"
@@ -6611,10 +7829,6 @@
   "Always allow": [
     "src/community/pages/Settings.jsx:55"
   ],
-  "Never": [
-    "src/community/pages/Settings.jsx:56",
-    "src/community/pages/Settings.jsx:70"
-  ],
   "All projects": [
     "src/community/pages/Settings.jsx:67"
   ],
@@ -6652,9 +7866,6 @@
   "Identity": [
     "src/community/pages/Settings.jsx:108",
     "src/community/pages/Settings.jsx:686"
-  ],
-  "Settings": [
-    "src/community/pages/Settings.jsx:519"
   ],
   "These settings apply across all of MistWarp, including the editor and site.": [
     "src/community/pages/Settings.jsx:520"
@@ -6773,9 +7984,6 @@
   "Contact MistWarp support for immediate safety concerns.": [
     "src/community/pages/Settings.jsx:800"
   ],
-  "Contact support": [
-    "src/community/pages/Settings.jsx:802"
-  ],
   "Your MistWarp data": [
     "src/community/pages/Settings.jsx:811"
   ],
@@ -6797,9 +8005,6 @@
   ],
   "Get a JSON copy of your MistWarp profile, project metadata, comments, activity, settings, notifications, and safety list.": [
     "src/community/pages/Settings.jsx:836"
-  ],
-  "Preparing…": [
-    "src/community/pages/Settings.jsx:840"
   ],
   "Download": [
     "src/community/pages/Settings.jsx:843"
@@ -7087,9 +8292,6 @@
   ],
   "status.failed": [
     "src/community/pages/Status.jsx:81"
-  ],
-  "Checking…": [
-    "src/community/pages/Status.jsx:89"
   ],
   "status.retry": [
     "src/community/pages/Status.jsx:91"
@@ -7514,9 +8716,6 @@
   ],
   "Opening billing…": [
     "src/community/pages/Wallet.jsx:425"
-  ],
-  "Manage billing": [
-    "src/community/pages/Wallet.jsx:427"
   ],
   "Purchase history": [
     "src/community/pages/Wallet.jsx:432"

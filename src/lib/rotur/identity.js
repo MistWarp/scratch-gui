@@ -12,11 +12,13 @@ import {
     onBanned,
     loadSession,
     storeSession,
+    request as mistRequest,
     logout as mistLogout
 } from '../community/api.js';
 
 const ROTUR_TOKEN_KEY = 'mw:rotur-token';
 const MIST_SESSION_KEY = 'mw:mistwarp-session';
+const STUDENT_SESSION_KEY = 'mw:classroom-student';
 
 let state = {status: 'idle', user: null, banMessage: null};
 const listeners = new Set();
@@ -49,6 +51,55 @@ const readRoturToken = () => {
     } catch (_) {
         return null;
     }
+};
+
+const readStudentFlag = () => {
+    try {
+        return localStorage.getItem(STUDENT_SESSION_KEY) === '1';
+    } catch (_) {
+        return false;
+    }
+};
+
+const writeStudentFlag = active => {
+    try {
+        if (active) localStorage.setItem(STUDENT_SESSION_KEY, '1');
+        else localStorage.removeItem(STUDENT_SESSION_KEY);
+    } catch (_) {
+        return;
+    }
+};
+
+const studentUser = me => ({
+    username: me.username,
+    displayName: me.displayName || me.username,
+    isStudent: true
+});
+
+const forgetRoturToken = () => {
+    try {
+        localStorage.removeItem(ROTUR_TOKEN_KEY);
+        return true;
+    } catch (_) {
+        return false;
+    }
+};
+
+const restoreStudent = async () => {
+    if (!readStudentFlag()) return {user: null};
+    if (!loadSession()) {
+        writeStudentFlag(false);
+        return {user: null};
+    }
+    try {
+        const me = await mistRequest('/me', {cache: false});
+        if (me && me.isStudent && me.username) return {user: studentUser(me)};
+    } catch (error) {
+        if (loadSession() && !(error && error.status)) return {user: null, retry: true};
+    }
+    writeStudentFlag(false);
+    storeSession(null);
+    return {user: null};
 };
 
 const adoptUrlToken = () => {
@@ -111,6 +162,15 @@ const restoreWithRetry = async () => {
 const doRestore = async () => {
     setState({status: 'restoring'});
     adoptUrlToken();
+    const student = await restoreStudent();
+    if (student.user) {
+        setState({status: 'ready', user: student.user, banMessage: null});
+        return student.user;
+    }
+    if (student.retry) {
+        setState({status: 'idle', user: null});
+        return null;
+    }
     let user = null;
     try {
         user = await restoreWithRetry();
@@ -142,6 +202,16 @@ const restore = () => {
     return restoreInFlight;
 };
 
+const loginStudent = ({token, username, displayName}) => {
+    roturLogout();
+    forgetRoturToken();
+    storeSession(token);
+    writeStudentFlag(true);
+    const user = studentUser({username, displayName});
+    setState({status: 'ready', user, banMessage: null});
+    return user;
+};
+
 const login = async () => {
     const previousUser = state.user;
     setState({status: 'logging-in'});
@@ -152,6 +222,7 @@ const login = async () => {
         setState({status: previousUser ? 'ready' : 'idle', user: previousUser});
         throw error;
     }
+    writeStudentFlag(false);
     storeSession(null);
     try {
         await ensureMistSession();
@@ -176,11 +247,13 @@ const logout = () => {
         // ignore
     }
     roturLogout();
+    writeStudentFlag(false);
     storeSession(null);
     setState({status: 'idle', user: null, banMessage: null});
 };
 
 const getMistSession = () => loadSession();
+const isStudentSession = () => readStudentFlag();
 const getRoturToken = () => getRotur().token || readRoturToken();
 
 const getMistWarpAuthor = async () => {
@@ -224,7 +297,14 @@ if (typeof window !== 'undefined') {
             return;
         }
         const token = readRoturToken();
-        if (!token) {
+        if (readStudentFlag()) {
+            if (!loadSession() && state.user) {
+                writeStudentFlag(false);
+                setState({status: 'idle', user: null});
+            } else if (loadSession() && !state.user) {
+                restore();
+            }
+        } else if (!token) {
             if (state.user) {
                 roturLogout();
                 storeSession(null);
@@ -243,9 +323,11 @@ export {
     subscribe,
     restore,
     login,
+    loginStudent,
     logout,
     ensureMistSession,
     getMistSession,
+    isStudentSession,
     getRoturToken,
     getMistWarpAuthor
 };

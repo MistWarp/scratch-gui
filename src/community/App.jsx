@@ -53,6 +53,13 @@ const Themes = lazy(() => import('./pages/Themes.jsx'));
 const Theme = lazy(() => import('./pages/Theme.jsx'));
 const Groups = lazy(() => import('./pages/Groups.jsx'));
 const Group = lazy(() => import('./pages/Group.jsx'));
+const Classroom = lazy(() => import('./pages/Classroom.jsx'));
+const ClassroomClass = lazy(() => import('./pages/ClassroomClass.jsx'));
+const ClassroomStudent = lazy(() => import('./pages/ClassroomStudent.jsx'));
+const ClassroomAssignment = lazy(() => import('./pages/ClassroomAssignment.jsx'));
+const ClassroomJoin = lazy(() => import('./pages/ClassroomJoin.jsx'));
+const ClassroomClaim = lazy(() => import('./pages/ClassroomClaim.jsx'));
+const ClassroomSchool = lazy(() => import('./pages/ClassroomSchool.jsx'));
 
 const ROUTE_TITLES = [
     ['/bounties', 'Project bounties'],
@@ -63,6 +70,11 @@ const ROUTE_TITLES = [
     ['/themes', 'Themes'],
     ['/groups/', 'Group'],
     ['/groups', 'Groups'],
+    ['/classroom/join', 'Student sign-in'],
+    ['/classroom/claim', 'Move to your own account'],
+    ['/classroom/school', 'School'],
+    ['/classroom/', 'Class'],
+    ['/classroom', 'Classroom'],
     ['/settings', 'Settings'],
     ['/perks', 'Memberships'],
     ['/mystuff/project/', 'Manage project'],
@@ -116,7 +128,14 @@ const App = () => {
                 action="community-route"
                 resetKey={pathname}
             >
-                <Suspense fallback={<p className={tokenStyles['mw-route-loading']} role="status">{communityText('Loading page…')}</p>}>
+                <Suspense
+                    fallback={
+                        <p
+                            className={tokenStyles['mw-route-loading']}
+                            role="status"
+                        >{communityText('Loading page…')}</p>
+                    }
+                >
                     <Routes>
                         <Route path="/" element={<Home />} />
                         <Route path="/explore" element={<Explore />} />
@@ -128,6 +147,14 @@ const App = () => {
                         <Route path="/themes/:id" element={<Theme />} />
                         <Route path="/groups" element={<Groups />} />
                         <Route path="/groups/:tag" element={<Group />} />
+                        <Route path="/classroom" element={<Classroom />} />
+                        <Route path="/classroom/join" element={<ClassroomJoin />} />
+                        <Route path="/classroom/join/:code" element={<ClassroomJoin />} />
+                        <Route path="/classroom/claim/:code" element={<ClassroomClaim />} />
+                        <Route path="/classroom/school" element={<ClassroomSchool />} />
+                        <Route path="/classroom/:id" element={<ClassroomClass />} />
+                        <Route path="/classroom/:id/students/:sid" element={<ClassroomStudent />} />
+                        <Route path="/classroom/:id/assignments/:aid" element={<ClassroomAssignment />} />
                         <Route path="/p/:slug" element={<Project />} />
                         <Route path="/p/:slug/remixes" element={<RemixTree />} />
                         <Route path="/p/:slug/pulls" element={<PullRequests />} />

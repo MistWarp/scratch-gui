@@ -1,0 +1,104 @@
+.host {
+    display: none;
+}
+
+.sheet {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8mm;
+    color: #111111;
+    font-family: var(--sans, 'Helvetica Neue', Helvetica, Arial, sans-serif);
+}
+
+.card {
+    display: grid;
+    gap: 3mm;
+    padding: 7mm;
+    border: 1px dashed #9a9a9a;
+    border-radius: var(--radius-sm);
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.card p {
+    margin: 0;
+}
+
+.classLabel {
+    color: #555555;
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    text-transform: none;
+}
+
+.name {
+    font-size: var(--fs-2xl);
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.step {
+    color: #333333;
+    font-size: var(--fs-sm);
+    line-height: 1.4;
+}
+
+.code,
+.password {
+    padding: 2mm 3mm;
+    border-radius: var(--radius-xs);
+    background: #f0f0f0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: var(--fs-2xl);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.password {
+    letter-spacing: 0.02em;
+}
+
+.small {
+    color: #555555;
+    font-size: var(--fs-xs);
+}
+
+.pictures {
+    display: flex;
+    gap: 4mm;
+}
+
+.pictureCell {
+    display: grid;
+    justify-items: center;
+    gap: 1mm;
+}
+
+.pictureName {
+    font-size: var(--fs-xs);
+    font-weight: 600;
+}
+
+.picture {
+    border: 1px solid #cccccc;
+    background: #ffffff;
+    color: #111111;
+}
+
+@media print {
+    :global(#app) {
+        display: none !important;
+    }
+
+    :global(body) {
+        background: #ffffff !important;
+    }
+
+    .host {
+        display: block;
+    }
+
+    @page {
+        margin: 12mm;
+    }
+}

@@ -103,7 +103,7 @@ const RoturAccount = props => {
 
     return (
         <MenuLabel
-            ariaLabel={props.username}
+            ariaLabel={props.displayName || props.username}
             open={props.menuOpen}
             onOpen={props.onOpenMenu}
             onClose={props.onCloseMenu}
@@ -111,10 +111,11 @@ const RoturAccount = props => {
             <Avatar
                 className={accountNavStyles.avatar}
                 username={props.username}
+                src={props.avatarSrc}
                 size={32}
             />
             <span className={accountNavStyles.profileName}>
-                {props.username}
+                {props.displayName || props.username}
             </span>
             <ChevronDown size={8} />
             <MenuBarMenu
@@ -122,15 +123,26 @@ const RoturAccount = props => {
                 open={props.menuOpen}
                 place={props.isRtl ? 'right' : 'left'}
             >
-                <MenuItemContainer onClick={go(`/users/${encodeURIComponent(props.username)}`)}>
-                    <User />
-                    <FormattedMessage
-                        defaultMessage="Profile"
-                        description="Text to link to my user profile, in the account navigation menu"
-                        id="gui.accountMenu.profile"
-                    />
-                </MenuItemContainer>
-                {props.showEditorItems ? null : (
+                {props.studentMode ? null : (
+                    <MenuItemContainer onClick={go(`/users/${encodeURIComponent(props.username)}`)}>
+                        <User />
+                        <FormattedMessage
+                            defaultMessage="Profile"
+                            description="Text to link to my user profile, in the account navigation menu"
+                            id="gui.accountMenu.profile"
+                        />
+                    </MenuItemContainer>
+                )}
+                {(props.extraItems || []).map(item => (
+                    <MenuItemContainer
+                        key={item.key}
+                        onClick={go(item.path)}
+                    >
+                        {item.icon}
+                        <span>{item.label}</span>
+                    </MenuItemContainer>
+                ))}
+                {props.showEditorItems || props.studentMode ? null : (
                     <React.Fragment>
                         <MenuItemContainer onClick={go('/leaderboard')}>
                             <Trophy />
@@ -166,7 +178,7 @@ const RoturAccount = props => {
                         />
                     </MenuItemContainer>
                 ) : null}
-                {props.showEditorItems && !communityEnabled ? null : (
+                {(props.showEditorItems && !communityEnabled) || props.studentMode ? null : (
                     <MenuItemContainer onClick={go('/settings')}>
                         {props.showEditorItems ? <UserCog /> : <Settings />}
                         {props.showEditorItems ? (
@@ -185,16 +197,18 @@ const RoturAccount = props => {
                     </MenuItemContainer>
                 )}
                 <MenuSection>
-                    <MenuItemContainer
-                        onClick={handleSwitchAccount}
-                    >
-                        <Users />
-                        <FormattedMessage
-                            defaultMessage="Switch account"
-                            description="Account menu item that signs out and opens the Rotur auth page"
-                            id="mw.rotur.accountMenu.switchAccount"
-                        />
-                    </MenuItemContainer>
+                    {props.studentMode ? null : (
+                        <MenuItemContainer
+                            onClick={handleSwitchAccount}
+                        >
+                            <Users />
+                            <FormattedMessage
+                                defaultMessage="Switch account"
+                                description="Account menu item that signs out and opens the Rotur auth page"
+                                id="mw.rotur.accountMenu.switchAccount"
+                            />
+                        </MenuItemContainer>
+                    )}
                     <MenuItemContainer
                         onClick={handleLogout}
                     >
@@ -212,6 +226,14 @@ const RoturAccount = props => {
 };
 
 RoturAccount.propTypes = {
+    avatarSrc: PropTypes.string,
+    displayName: PropTypes.string,
+    extraItems: PropTypes.arrayOf(PropTypes.shape({
+        icon: PropTypes.node,
+        key: PropTypes.string.isRequired,
+        label: PropTypes.node.isRequired,
+        path: PropTypes.string.isRequired
+    })),
     isAdmin: PropTypes.bool,
     isRtl: PropTypes.bool,
     menuOpen: PropTypes.bool,
@@ -223,11 +245,14 @@ RoturAccount.propTypes = {
     openReports: PropTypes.number,
     openErrors: PropTypes.number,
     showEditorItems: PropTypes.bool,
+    studentMode: PropTypes.bool,
     username: PropTypes.string
 };
 
 RoturAccount.defaultProps = {
+    extraItems: [],
     isAdmin: false,
+    studentMode: false,
     openReports: 0,
     openErrors: 0,
     showEditorItems: true

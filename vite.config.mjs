@@ -351,6 +351,7 @@ export default defineConfig(({mode}) => {
         MW_BUILD_ID: env.MW_BUILD_ID || env.GITHUB_SHA || execSync('git rev-parse HEAD', {encoding: 'utf8'}).trim(),
         MW_BUILD_TIME: env.MW_BUILD_TIME || '',
         MW_STATUS_URL: env.MW_STATUS_URL || 'https://status.warp.mistium.com',
+        MW_API_BASE: env.MW_API_BASE || '',
         GOOGLE_FONTS_API_KEY: env.GOOGLE_FONTS_API_KEY || 'demo'
     };
     values.MW_PACKAGER_BUILD_ID = createHash('sha256')
