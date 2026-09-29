@@ -948,10 +948,12 @@ const xmlClose = '</xml>';
  * @param {?string} soundName -  The name of the default selected sound dropdown.
  * @param {?object} colors - The colors for the theme.
  * @param {?string} assetName - The name of the default selected custom asset dropdown.
+ * @param {?Array.<string>} categoryOrder - Category ids in the order saved with the project.
  * @returns {string} - a ScratchBlocks-style XML document for the contents of the toolbox.
  */
 const makeToolboxXML = function (isInitialSetup, isStage = true, targetId, categoriesXML = [],
-    costumeName = '', backdropName = '', soundName = '', colors = defaultBlockColors, assetName = '') {
+    costumeName = '', backdropName = '', soundName = '', colors = defaultBlockColors, assetName = '',
+    categoryOrder = []) {
     isStage = isInitialSetup || isStage;
     const vanilla = getVanillaPalette();
     const gap = [categorySeparator];
@@ -1009,7 +1011,7 @@ const makeToolboxXML = function (isInitialSetup, isStage = true, targetId, categ
         {id: 'variables', xml: variablesXML},
         {id: 'myBlocks', xml: myBlocksXML},
         ...categoriesXML
-    ]);
+    ], categoryOrder);
 
     const everything = [xmlOpen];
     categories.forEach((category, index) => {

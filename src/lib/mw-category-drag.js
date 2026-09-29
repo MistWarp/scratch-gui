@@ -251,7 +251,12 @@ const installCategoryDrag = (workspace, options = {}) => {
         const before = others[targetIndex] ? others[targetIndex].id : null;
         const selectedId = toolbox.getSelectedItem() ? toolbox.getSelectedCategoryId() : null;
         restoreSelection = selectedId ? {id: selectedId, until: Date.now() + RESTORE_MS} : null;
-        setCategoryOrder(moveCategory(entries.map(entry => entry.id), dragged.id, before));
+        setCategoryOrder(options.vm, moveCategory(
+            getCategoryOrder(options.vm),
+            entries.map(entry => entry.id),
+            dragged.id,
+            before
+        ));
     };
 
     const onPointerDown = event => {
@@ -351,8 +356,8 @@ const installCategoryDrag = (workspace, options = {}) => {
         event.stopPropagation();
         showContextMenu(ScratchBlocks, event, [{
             text: getResetLabel(),
-            enabled: getCategoryOrder().length > 0,
-            callback: resetCategoryOrder
+            enabled: getCategoryOrder(options.vm).length > 0,
+            callback: () => resetCategoryOrder(options.vm)
         }], workspace.RTL);
     };
 
