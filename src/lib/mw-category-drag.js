@@ -202,8 +202,11 @@ const installCategoryDrag = (workspace, options = {}) => {
         return true;
     };
 
-    const startDrag = (event, item, row) => {
-        const menu = row.closest(MENU_SELECTOR);
+    const startDrag = (event, pressedItem) => {
+        const item = pressedItem.isConnected ? pressedItem :
+            root.querySelector(`${MENU_SELECTOR} .scratchCategoryId-${getCategoryId(pressedItem)}`);
+        const row = item && item.closest(ROW_SELECTOR);
+        const menu = row && row.closest(MENU_SELECTOR);
         if (!menu || !menu.isConnected) return;
         const {scroller, origin, scrollTop, entries} = measureRows(menu);
         const startIndex = entries.findIndex(entry => entry.row === row);
@@ -283,14 +286,11 @@ const installCategoryDrag = (workspace, options = {}) => {
         if (event.pointerType === 'mouse' && event.button !== 0) return;
         if (!canDrag()) return;
         const item = event.target.closest(ITEM_SELECTOR);
-        if (!item || !root.contains(item) || !getCategoryId(item)) return;
-        const row = item.closest(ROW_SELECTOR);
-        if (!row) return;
+        if (!item || !root.contains(item) || !getCategoryId(item) || !item.closest(ROW_SELECTOR)) return;
         clearPending();
         pending = {
             pointerId: event.pointerId,
             item,
-            row,
             startX: event.clientX,
             startY: event.clientY,
             touch: event.pointerType === 'touch',
@@ -299,9 +299,9 @@ const installCategoryDrag = (workspace, options = {}) => {
         if (pending.touch) {
             pending.timer = setTimeout(() => {
                 if (!pending) return;
-                const {item: pressedItem, row: pressedRow, startX, startY} = pending;
+                const {item: pressedItem, startX, startY} = pending;
                 clearPending();
-                startDrag({pointerId: event.pointerId, clientX: startX, clientY: startY}, pressedItem, pressedRow);
+                startDrag({pointerId: event.pointerId, clientX: startX, clientY: startY}, pressedItem);
             }, TOUCH_HOLD_MS);
             item.classList.add(PRESSED_CLASS);
         }
@@ -321,9 +321,9 @@ const installCategoryDrag = (workspace, options = {}) => {
             clearPending();
             return;
         }
-        const {item, row} = pending;
+        const {item} = pending;
         clearPending();
-        startDrag(event, item, row);
+        startDrag(event, item);
     };
 
     const onPointerUp = event => {
