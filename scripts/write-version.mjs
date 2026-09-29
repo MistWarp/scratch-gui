@@ -1,18 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import {execSync} from 'node:child_process';
+import {resolveBuildId} from './build-id.mjs';
 
 const outputDir = path.resolve(process.argv[2] || 'build');
-
-const resolveSha = () => {
-    if (process.env.MW_BUILD_ID) return process.env.MW_BUILD_ID;
-    if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA;
-    try {
-        return execSync('git rev-parse HEAD', {encoding: 'utf8'}).trim();
-    } catch (e) {
-        return 'dev';
-    }
-};
 
 const FORK_TARBALL = /^https:\/\/codeload\.github\.com\/MistWarp\/[\w.-]+\/tar\.gz\/([0-9a-f]{40})$/;
 
@@ -29,7 +19,7 @@ const forkCommits = () => {
 };
 
 const version = {
-    id: resolveSha(),
+    id: resolveBuildId(process.env),
     forks: forkCommits(),
     runId: process.env.GITHUB_RUN_ID || null,
     time: process.env.MW_BUILD_TIME || new Date().toISOString()

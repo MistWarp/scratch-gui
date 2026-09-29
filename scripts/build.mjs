@@ -3,12 +3,12 @@ import {execFileSync} from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import {resolveBuildId} from './build-id.mjs';
 
 const env = {...loadEnv('production', process.cwd(), ''), ...process.env};
 // Capture once: HEAD can change during a long build. The Vite builds and the
 // version.json child process must identify the same build, even after a commit.
-process.env.MW_BUILD_ID = env.MW_BUILD_ID || env.GITHUB_SHA ||
-    execFileSync('git', ['rev-parse', 'HEAD'], {encoding: 'utf8'}).trim();
+process.env.MW_BUILD_ID = resolveBuildId(env);
 process.env.MW_BUILD_TIME = env.MW_BUILD_TIME || new Date().toISOString();
 if (env.CF_PAGES && !env.MW_PINNED_FORKS) {
     execFileSync(process.execPath, ['scripts/sync-forks.mjs'], {stdio: 'inherit'});
