@@ -554,6 +554,7 @@ describe('reconnection catch-up', () => {
             transport, applier, roomId: 'room', username: 'anna'
         });
         session.lastAppliedSeq = seqBeforeDrop;
+        session._epoch = client.session._epoch;
         await session.connect();
         await room.hub.flush();
 

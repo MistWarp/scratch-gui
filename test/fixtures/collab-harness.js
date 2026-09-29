@@ -175,10 +175,16 @@ class FakeCollabTransport extends Emitter {
 
     closeConnection (peerId) {
         this.hub.enqueueClose(this.isHost ? peerId : this._id);
+        return Promise.resolve();
     }
 
     destroy () {
         this.destroyed = true;
+    }
+
+    destroyGracefully () {
+        this.destroy();
+        return Promise.resolve();
     }
 }
 

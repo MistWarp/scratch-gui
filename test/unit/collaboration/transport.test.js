@@ -76,6 +76,100 @@ describe('hosting', () => {
         expect(peers[0].reconnectCalls).toBe(1);
         transport.destroy();
     });
+
+    test('losing the broker keeps the room open and reports when it is back', async () => {
+        jest.useFakeTimers();
+        try {
+            const {transport, peers} = makeTransport();
+            const hostPromise = transport.host('room1');
+            peers[0].simulateOpen();
+            await hostPromise;
+            const conn = peers[0].simulateIncomingConnection('client-1', {});
+            conn.simulateOpen();
+
+            const fatal = jest.fn();
+            const offline = jest.fn();
+            const online = jest.fn();
+            transport.on('fatal', fatal);
+            transport.on('broker-offline', offline);
+            transport.on('broker-online', online);
+
+            peers[0].trigger('error', Object.assign(new Error('Lost connection to server.'), {type: 'network'}));
+            peers[0].trigger('disconnected');
+            expect(fatal).not.toHaveBeenCalled();
+            expect(offline).toHaveBeenCalledTimes(1);
+            expect(peers[0].reconnectCalls).toBe(1);
+            expect(transport.isOpen('client-1')).toBe(true);
+
+            peers[0].trigger('error', Object.assign(new Error('taken'), {type: 'unavailable-id'}));
+            peers[0].trigger('disconnected');
+            expect(peers[0].reconnectCalls).toBe(1);
+            jest.advanceTimersByTime(1000);
+            expect(peers[0].reconnectCalls).toBe(2);
+            expect(fatal).not.toHaveBeenCalled();
+
+            peers[0].simulateOpen();
+            expect(online).toHaveBeenCalledTimes(1);
+            transport.destroy();
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+
+    test('a failed negotiation with one peer does not end the room', async () => {
+        const {transport, peers} = makeTransport();
+        const hostPromise = transport.host('room1');
+        peers[0].simulateOpen();
+        await hostPromise;
+        const fatal = jest.fn();
+        transport.on('fatal', fatal);
+        peers[0].trigger('error', Object.assign(new Error('bad candidate'), {type: 'webrtc'}));
+        peers[0].trigger('error', Object.assign(new Error('socket'), {type: 'socket-error'}));
+        expect(fatal).not.toHaveBeenCalled();
+        peers[0].trigger('error', Object.assign(new Error('no webrtc'), {type: 'browser-incompatible'}));
+        expect(fatal).toHaveBeenCalledTimes(1);
+        transport.destroy();
+    });
+
+    test('a hello from another protocol version is reported, not dropped', async () => {
+        const {transport, peers} = makeTransport();
+        const hostPromise = transport.host('room1');
+        peers[0].simulateOpen();
+        await hostPromise;
+        const conn = peers[0].simulateIncomingConnection('old-client', {});
+        conn.simulateOpen();
+        const mismatch = jest.fn();
+        const invalid = jest.fn();
+        transport.on('version-mismatch', mismatch);
+        transport.on('invalid-message', invalid);
+        conn.simulateData({v: 2, kind: KIND.CTRL, type: CTRL.HELLO, payload: {}});
+        expect(mismatch).toHaveBeenCalledWith({peerId: 'old-client', version: 2, type: CTRL.HELLO});
+        expect(invalid).not.toHaveBeenCalled();
+        transport.destroy();
+    });
+
+    test('a graceful close waits for queued messages to leave', async () => {
+        jest.useFakeTimers();
+        try {
+            const {transport, peers} = makeTransport();
+            const hostPromise = transport.host('room1');
+            peers[0].simulateOpen();
+            await hostPromise;
+            const conn = peers[0].simulateIncomingConnection('client-1', {});
+            conn.simulateOpen();
+            conn.bufferSize = 4096;
+            const closed = transport.closeConnection('client-1', {graceful: true});
+            jest.advanceTimersByTime(200);
+            expect(conn.closed).toBe(false);
+            conn.bufferSize = 0;
+            jest.advanceTimersByTime(200);
+            await closed;
+            expect(conn.closed).toBe(true);
+            transport.destroy();
+        } finally {
+            jest.useRealTimers();
+        }
+    });
 });
 
 describe('joining', () => {
@@ -349,6 +443,50 @@ describe('client reconnection', () => {
             redialConn.simulateOpen();
             await flush();
             expect(reconnected).toHaveBeenCalled();
+            transport.destroy();
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+
+    test('treats a host that stays unregistered as having closed the room', async () => {
+        jest.useFakeTimers();
+        try {
+            const {transport, peers} = await openClient();
+            const fatal = jest.fn();
+            transport.on('fatal', fatal);
+            peers[0].lastConnection.close();
+            for (const delay of [1000, 2000, 4000]) {
+                jest.advanceTimersByTime(delay);
+                await flush();
+                peers[0].trigger('error', Object.assign(new Error('Could not connect to peer'), {
+                    type: 'peer-unavailable'
+                }));
+                await flush();
+            }
+            expect(fatal).toHaveBeenCalledTimes(1);
+            expect(fatal.mock.calls[0][0].error.collabCode).toBe('HOST_GONE');
+            transport.destroy();
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+
+    test('redials that time out also count as the host being gone', async () => {
+        jest.useFakeTimers();
+        try {
+            const {transport, peers} = await openClient();
+            const fatal = jest.fn();
+            transport.on('fatal', fatal);
+            peers[0].lastConnection.close();
+            for (const delay of [1000, 2000, 4000]) {
+                jest.advanceTimersByTime(delay);
+                await flush();
+                jest.advanceTimersByTime(15000);
+                await flush();
+            }
+            expect(fatal).toHaveBeenCalledTimes(1);
+            expect(fatal.mock.calls[0][0].error.collabCode).toBe('HOST_GONE');
             transport.destroy();
         } finally {
             jest.useRealTimers();
