@@ -1,4 +1,10 @@
-import {getCategoryOrder, moveCategory, resetCategoryOrder, setCategoryOrder} from './mw-category-order';
+import {
+    getCategoryOrder,
+    hasCustomCategoryOrder,
+    moveCategory,
+    resetCategoryOrder,
+    setCategoryOrder
+} from './mw-category-order';
 
 const DRAG_THRESHOLD = 5;
 const TOUCH_HOLD_MS = 320;
@@ -256,7 +262,7 @@ const installCategoryDrag = (workspace, options = {}) => {
             entries.map(entry => entry.id),
             dragged.id,
             before
-        ));
+        ), Boolean(options.useProjectOrder && options.useProjectOrder()));
     };
 
     const onPointerDown = event => {
@@ -356,7 +362,7 @@ const installCategoryDrag = (workspace, options = {}) => {
         event.stopPropagation();
         showContextMenu(ScratchBlocks, event, [{
             text: getResetLabel(),
-            enabled: getCategoryOrder(options.vm).length > 0,
+            enabled: hasCustomCategoryOrder(options.vm),
             callback: () => resetCategoryOrder(options.vm)
         }], workspace.RTL);
     };
