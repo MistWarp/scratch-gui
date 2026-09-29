@@ -11,6 +11,7 @@ import {getCommandPaletteKey} from '../../lib/shortcuts/command-palette.js';
 import {getIsShowingWithoutId} from '../../reducers/project-state';
 import {
     dismissEditorWelcome,
+    hasNoOwnProjects,
     isEditorWelcomeDismissed,
     shouldShowEditorWelcome
 } from '../../lib/editor-welcome.js';
@@ -48,20 +49,39 @@ const EditorWelcome = ({
     isPlayerOnly,
     isShowingDefaultProject,
     projectChanged,
+    username,
     onOpenFile
 }) => {
     const [dismissed, setDismissed] = useState(isEditorWelcomeDismissed);
+    const [hasNoProjects, setHasNoProjects] = useState(false);
     const [initialLocation] = useState(readLocation);
     const wasShown = useRef(false);
 
-    const visible = shouldShowEditorWelcome({
+    const eligible = shouldShowEditorWelcome({
         dismissed,
+        hasNoProjects: true,
         isEmbedded,
         isPlayerOnly,
         isShowingDefaultProject,
         projectChanged,
         ...initialLocation
     });
+
+    useEffect(() => {
+        setHasNoProjects(false);
+        if (!username || !eligible) return;
+        let active = true;
+        hasNoOwnProjects()
+            .then(result => {
+                if (active) setHasNoProjects(result);
+            })
+            .catch(() => {});
+        return () => {
+            active = false;
+        };
+    }, [username, eligible]);
+
+    const visible = eligible && hasNoProjects;
 
     const dismiss = useCallback(() => {
         dismissEditorWelcome();
@@ -71,7 +91,7 @@ const EditorWelcome = ({
     useEffect(() => {
         if (visible) {
             wasShown.current = true;
-        } else if (wasShown.current && !dismissed) {
+        } else if (wasShown.current && hasNoProjects && !dismissed) {
             dismiss();
         }
     }, [visible, dismissed, dismiss]);
@@ -193,6 +213,7 @@ EditorWelcome.propTypes = {
     isPlayerOnly: PropTypes.bool,
     isShowingDefaultProject: PropTypes.bool,
     projectChanged: PropTypes.bool,
+    username: PropTypes.string,
     onOpenFile: PropTypes.func
 };
 
@@ -200,7 +221,8 @@ const mapStateToProps = state => ({
     isEmbedded: state.scratchGui.mode.isEmbedded,
     isPlayerOnly: state.scratchGui.mode.isPlayerOnly,
     isShowingDefaultProject: getIsShowingWithoutId(state.scratchGui.projectState.loadingState),
-    projectChanged: state.scratchGui.projectChanged
+    projectChanged: state.scratchGui.projectChanged,
+    username: state.scratchGui.rotur.username
 });
 
 export {EditorWelcome};
