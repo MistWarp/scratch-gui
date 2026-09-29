@@ -2,6 +2,7 @@ import LazyScratchBlocks from './tw-lazy-scratch-blocks';
 import {defaultBlockColors} from './themes';
 import {getVanillaPalette} from './mw-vanilla-palette';
 import {MULTIPLAYER_ENABLED} from './mistwarp-games/config.js';
+import {applyCategoryOrder} from './mw-category-order';
 
 const categorySeparator = '<sep gap="36"/>';
 
@@ -995,24 +996,26 @@ const makeToolboxXML = function (isInitialSetup, isStage = true, targetId, categ
         };
     }
 
-    const everything = [
-        xmlOpen,
-        motionXML, gap,
-        looksXML, gap,
-        soundXML, gap,
-        ...(vanilla ? [] : [assetsXML, gap]),
-        eventsXML, gap,
-        controlXML, gap,
-        sensingXML, gap,
-        operatorsXML, gap,
-        stringsXML, gap,
-        variablesXML, gap,
-        myBlocksXML
-    ];
+    const categories = applyCategoryOrder([
+        {id: 'motion', xml: motionXML},
+        {id: 'looks', xml: looksXML},
+        {id: 'sound', xml: soundXML},
+        ...(vanilla ? [] : [{id: 'assets', xml: assetsXML}]),
+        {id: 'events', xml: eventsXML},
+        {id: 'control', xml: controlXML},
+        {id: 'sensing', xml: sensingXML},
+        {id: 'operators', xml: operatorsXML},
+        {id: 'mwStrings', xml: stringsXML},
+        {id: 'variables', xml: variablesXML},
+        {id: 'myBlocks', xml: myBlocksXML},
+        ...categoriesXML
+    ]);
 
-    for (const extensionCategory of categoriesXML) {
-        everything.push(gap, extensionCategory.xml);
-    }
+    const everything = [xmlOpen];
+    categories.forEach((category, index) => {
+        if (index > 0) everything.push(gap);
+        everything.push(category.xml);
+    });
 
     everything.push(xmlClose);
     return everything.join('\n');

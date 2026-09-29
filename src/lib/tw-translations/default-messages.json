@@ -1238,6 +1238,7 @@
   "tw.blocks.PROCEDURES_TO_REPORTER": "Change To Reporter",
   "tw.blocks.PROCEDURES_TO_STATEMENT": "Change To Statement",
   "tw.blocks.PROCEDURES_DOCS": "How to use return",
+  "mw.blocks.resetCategoryOrder": "Reset category order",
   "gui.costumeLibrary.chooseACostume": "Choose a Costume",
   "gui.costumeTab.addBackdropFromLibrary": "Choose a Backdrop",
   "gui.costumeTab.addCostumeFromLibrary": "Choose a Costume",
