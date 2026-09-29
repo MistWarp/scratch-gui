@@ -2,7 +2,7 @@ import tokenStyles from './styles/tokens.module.css';
 import React, {Suspense, useEffect, useRef} from 'react';
 import {lazyWithReload as lazy} from '../lib/lazy-with-retry.js';
 import {Navigate, Routes, Route, useLocation, useNavigationType} from 'react-router-dom';
-import {UserProvider} from './UserContext.jsx';
+import {UserProvider, useUser} from './UserContext.jsx';
 import {setRouteMeta} from './page-meta.js';
 import {initSiteErrorReporting} from '../lib/error-reporter.js';
 import NavBar from './components/NavBar.jsx';
@@ -55,6 +55,13 @@ const Themes = lazy(() => import('./pages/Themes.jsx'));
 const Theme = lazy(() => import('./pages/Theme.jsx'));
 const Groups = lazy(() => import('./pages/Groups.jsx'));
 const Group = lazy(() => import('./pages/Group.jsx'));
+const Classroom = lazy(() => import('./pages/Classroom.jsx'));
+const ClassroomClass = lazy(() => import('./pages/ClassroomClass.jsx'));
+const ClassroomStudent = lazy(() => import('./pages/ClassroomStudent.jsx'));
+const ClassroomAssignment = lazy(() => import('./pages/ClassroomAssignment.jsx'));
+const ClassroomJoin = lazy(() => import('./pages/ClassroomJoin.jsx'));
+const ClassroomClaim = lazy(() => import('./pages/ClassroomClaim.jsx'));
+const ClassroomSchool = lazy(() => import('./pages/ClassroomSchool.jsx'));
 
 const ROUTE_TITLES = [
     ['/bounties', 'Project bounties'],
@@ -65,6 +72,11 @@ const ROUTE_TITLES = [
     ['/themes', 'Themes'],
     ['/groups/', 'Group'],
     ['/groups', 'Groups'],
+    ['/classroom/join', 'Student sign-in'],
+    ['/classroom/claim', 'Move to your own account'],
+    ['/classroom/school', 'School'],
+    ['/classroom/', 'Class'],
+    ['/classroom', 'Classroom'],
     ['/settings', 'Settings'],
     ['/perks', 'Memberships'],
     ['/mystuff/project/', 'Manage project'],
@@ -88,6 +100,18 @@ const ROUTE_TITLES = [
     ['/p/', 'Project'],
     ['/project/', 'Project']
 ];
+
+const STUDENT_PREFIXES = ['/classroom/join', '/classroom/claim/', '/trust'];
+
+const studentAllowed = pathname => pathname === '/classroom' ||
+    STUDENT_PREFIXES.some(prefix => pathname === prefix || pathname.startsWith(prefix));
+
+const StudentGuard = ({children}) => {
+    const {user} = useUser();
+    const {pathname} = useLocation();
+    if (user && user.isStudent && !studentAllowed(pathname)) return <Navigate to="/classroom" replace />;
+    return children;
+};
 
 // Scroll positions by history entry, so Back and Forward return to where the reader was.
 const scrollPositions = new Map();
@@ -177,59 +201,69 @@ const App = () => {
         <div className={tokenStyles['mw-app-content']} id="mw-main-content" tabIndex="-1">
             <RouteErrorBoundary resetKey={pathname}>
                 <Suspense fallback={<RouteLoading />}>
-                    <Routes>
-                        <Route path="/" element={<Home />} />
-                        <Route path="/explore" element={<Explore />} />
-                        <Route path="/search" element={<Search />} />
-                        <Route path="/random" element={<Random />} />
-                        <Route path="/bounties/:id" element={<Bounty />} />
-                        <Route path="/bounties" element={<Bounties />} />
-                        <Route path="/themes" element={<Themes />} />
-                        <Route path="/themes/:id" element={<Theme />} />
-                        <Route path="/groups" element={<Groups />} />
-                        <Route path="/groups/:tag" element={<Group />} />
-                        <Route path="/p/:slug" element={<Project />} />
-                        <Route path="/p/:slug/remixes" element={<RemixTree />} />
-                        <Route path="/p/:slug/pulls" element={<PullRequests />} />
-                        <Route path="/p/:slug/pulls/:index" element={<PullRequest />} />
-                        <Route path="/p/:slug/commits/:sha" element={<Commit />} />
-                        <Route path="/project/:id" element={<Project />} />
-                        <Route path="/project/:id/remixes" element={<RemixTree />} />
-                        <Route path="/project/:id/pulls/:index" element={<PullRequest />} />
-                        <Route path="/project/:id/pulls" element={<PullRequests />} />
-                        <Route path="/project/:id/commits/:sha" element={<Commit />} />
-                        <Route path="/users/:name" element={<Profile />} />
-                        <Route path="/users/:name/library" element={<UserLibrary />} />
-                        <Route path="/users/:name/followers" element={<Navigate to=".." relative="path" replace />} />
-                        <Route path="/users/:name/following" element={<Following />} />
-                        <Route path="/settings" element={<Settings />} />
-                        <Route path="/mystuff" element={<MyStuff />} />
-                        <Route path="/mystuff/project/:id" element={<ManageProject />} />
-                        <Route path="/wallet" element={<Wallet />} />
-                        <Route path="/purchases" element={<Navigate to="/wallet?tab=purchases" replace />} />
-                        <Route path="/notifications" element={<Notifications />} />
-                        <Route path="/posts" element={<Posts />} />
-                        <Route path="/posts/:id" element={<Post />} />
-                        <Route path="/news" element={<News />} />
-                        <Route path="/news/manage" element={<News manager />} />
-                        <Route path="/news/:id" element={<NewsPost />} />
-                        <Route path="/stats" element={<Stats />} />
-                        <Route path="/leaderboard" element={<Leaderboard />} />
-                        <Route path="/spaces" element={<Spaces />} />
-                        <Route path="/spaces/:id" element={<Space />} />
-                        <Route path="/spaces/:id/manage" element={<ManageSpace />} />
-                        <Route path="/roadmap" element={<Roadmap />} />
-                        <Route path="/roadmap/changes" element={<Roadmap changes />} />
-                        <Route path="/roadmap/entry/:entryId" element={<Roadmap />} />
-                        <Route path="/roadmap/:status" element={<Roadmap />} />
-                        <Route path="/compare" element={<Compare />} />
-                        <Route path="/trust" element={<Trust />} />
-                        <Route path="/support" element={<Support />} />
-                        <Route path="/status" element={<Status />} />
-                        <Route path="/perks" element={<PaidPerks />} />
-                        <Route path="/admin" element={<Admin />} />
-                        <Route path="*" element={<NotFound />} />
-                    </Routes>
+                    <StudentGuard>
+                        <Routes>
+                            <Route path="/" element={<Home />} />
+                            <Route path="/explore" element={<Explore />} />
+                            <Route path="/search" element={<Search />} />
+                            <Route path="/random" element={<Random />} />
+                            <Route path="/bounties/:id" element={<Bounty />} />
+                            <Route path="/bounties" element={<Bounties />} />
+                            <Route path="/themes" element={<Themes />} />
+                            <Route path="/themes/:id" element={<Theme />} />
+                            <Route path="/groups" element={<Groups />} />
+                            <Route path="/groups/:tag" element={<Group />} />
+                            <Route path="/classroom" element={<Classroom />} />
+                            <Route path="/classroom/join" element={<ClassroomJoin />} />
+                            <Route path="/classroom/join/:code" element={<ClassroomJoin />} />
+                            <Route path="/classroom/claim/:code" element={<ClassroomClaim />} />
+                            <Route path="/classroom/school" element={<ClassroomSchool />} />
+                            <Route path="/classroom/:id" element={<ClassroomClass />} />
+                            <Route path="/classroom/:id/students/:sid" element={<ClassroomStudent />} />
+                            <Route path="/classroom/:id/assignments/:aid" element={<ClassroomAssignment />} />
+                            <Route path="/p/:slug" element={<Project />} />
+                            <Route path="/p/:slug/remixes" element={<RemixTree />} />
+                            <Route path="/p/:slug/pulls" element={<PullRequests />} />
+                            <Route path="/p/:slug/pulls/:index" element={<PullRequest />} />
+                            <Route path="/p/:slug/commits/:sha" element={<Commit />} />
+                            <Route path="/project/:id" element={<Project />} />
+                            <Route path="/project/:id/remixes" element={<RemixTree />} />
+                            <Route path="/project/:id/pulls/:index" element={<PullRequest />} />
+                            <Route path="/project/:id/pulls" element={<PullRequests />} />
+                            <Route path="/project/:id/commits/:sha" element={<Commit />} />
+                            <Route path="/users/:name" element={<Profile />} />
+                            <Route path="/users/:name/library" element={<UserLibrary />} />
+                            <Route path="/users/:name/followers" element={<Navigate to=".." relative="path" replace />} />
+                            <Route path="/users/:name/following" element={<Following />} />
+                            <Route path="/settings" element={<Settings />} />
+                            <Route path="/mystuff" element={<MyStuff />} />
+                            <Route path="/mystuff/project/:id" element={<ManageProject />} />
+                            <Route path="/wallet" element={<Wallet />} />
+                            <Route path="/purchases" element={<Navigate to="/wallet?tab=purchases" replace />} />
+                            <Route path="/notifications" element={<Notifications />} />
+                            <Route path="/posts" element={<Posts />} />
+                            <Route path="/posts/:id" element={<Post />} />
+                            <Route path="/news" element={<News />} />
+                            <Route path="/news/manage" element={<News manager />} />
+                            <Route path="/news/:id" element={<NewsPost />} />
+                            <Route path="/stats" element={<Stats />} />
+                            <Route path="/leaderboard" element={<Leaderboard />} />
+                            <Route path="/spaces" element={<Spaces />} />
+                            <Route path="/spaces/:id" element={<Space />} />
+                            <Route path="/spaces/:id/manage" element={<ManageSpace />} />
+                            <Route path="/roadmap" element={<Roadmap />} />
+                            <Route path="/roadmap/changes" element={<Roadmap changes />} />
+                            <Route path="/roadmap/entry/:entryId" element={<Roadmap />} />
+                            <Route path="/roadmap/:status" element={<Roadmap />} />
+                            <Route path="/compare" element={<Compare />} />
+                            <Route path="/trust" element={<Trust />} />
+                            <Route path="/support" element={<Support />} />
+                            <Route path="/status" element={<Status />} />
+                            <Route path="/perks" element={<PaidPerks />} />
+                            <Route path="/admin" element={<Admin />} />
+                            <Route path="*" element={<NotFound />} />
+                        </Routes>
+                    </StudentGuard>
                 </Suspense>
             </RouteErrorBoundary>
         </div>
@@ -237,4 +271,5 @@ const App = () => {
     </UserProvider>);
 };
 
+export {StudentGuard, studentAllowed};
 export default App;

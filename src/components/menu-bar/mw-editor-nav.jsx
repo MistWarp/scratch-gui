@@ -108,8 +108,8 @@ ChatNavItem.propTypes = {
     intl: intlShape.isRequired
 };
 
-const MwEditorNav = ({intl, username, projectId, onOpenAnalytics}) => {
-    if (!username) {
+const MwEditorNav = ({intl, isStudent, username, projectId, onOpenAnalytics}) => {
+    if (!username || isStudent) {
         return null;
     }
     const hasSavedProject = Boolean(projectId && projectId !== '0' && projectId !== 0);
@@ -135,14 +135,17 @@ const MwEditorNav = ({intl, username, projectId, onOpenAnalytics}) => {
 
 MwEditorNav.propTypes = {
     intl: intlShape.isRequired,
+    isStudent: PropTypes.bool,
     onOpenAnalytics: PropTypes.func.isRequired,
     projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     username: PropTypes.string
 };
 
+export {MwEditorNav};
 export default injectIntl(connect(
     state => ({
         username: state.scratchGui.rotur.username,
+        isStudent: Boolean(state.scratchGui.rotur.isStudent),
         projectId: state.scratchGui.projectState.projectId
     }),
     dispatch => ({

@@ -13,6 +13,7 @@ const SET_COLLABORATION_RECONNECTING = 'scratch-gui/collaboration/SET_RECONNECTI
 const SET_USER_ACTIVITY = 'scratch-gui/collaboration/SET_USER_ACTIVITY';
 const REMOVE_USER_ACTIVITY = 'scratch-gui/collaboration/REMOVE_USER_ACTIVITY';
 const SET_COLLABORATION_INVITE = 'scratch-gui/collaboration/SET_INVITE';
+const SET_COLLABORATION_VIEWER = 'scratch-gui/collaboration/SET_VIEWER';
 
 const initialState = {
     projectPresence: null,
@@ -31,7 +32,8 @@ const initialState = {
     hostLoadingProgress: 0,
     // Where each remote peer is working, keyed by user id:
     // {username, handle, targetId, tab, assetIndex}. Never contains us.
-    activity: {}
+    activity: {},
+    viewer: null
 };
 
 const reducer = function (state, action) {
@@ -136,6 +138,9 @@ const reducer = function (state, action) {
             })
         });
 
+    case SET_COLLABORATION_VIEWER:
+        return Object.assign({}, state, {viewer: action.viewer || null});
+
     case REMOVE_USER_ACTIVITY: {
         if (!state.activity[action.userId]) return state;
         const activity = Object.assign({}, state.activity);
@@ -238,6 +243,13 @@ const setUserActivity = function ({userId, username, handle, targetId, tab, asse
     };
 };
 
+const setCollaborationViewer = function (viewer) {
+    return {
+        type: SET_COLLABORATION_VIEWER,
+        viewer
+    };
+};
+
 const removeUserActivity = function (userId) {
     return {
         type: REMOVE_USER_ACTIVITY,
@@ -260,5 +272,6 @@ export {
     setCollaborationHostLoadingProgress,
     setCollaborationReconnecting,
     setUserActivity,
-    removeUserActivity
+    removeUserActivity,
+    setCollaborationViewer
 };

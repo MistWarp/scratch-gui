@@ -5,7 +5,8 @@ const COOKIE_NAMES = {
     'mw:rotur-token': 'rotur-token',
     'mw:mistwarp-session': 'mistwarp-session',
     'mw:minor-account': 'minor-account',
-    'mw:rotur-settings': 'rotur-settings'
+    'mw:rotur-settings': 'rotur-settings',
+    'mw:classroom-student': 'classroom-student'
 };
 const SHARED_KEYS = Object.keys(COOKIE_NAMES);
 const STAMPS_KEY = 'mw:shared-stamps';

@@ -2,6 +2,7 @@ import Emitter from './emitter.js';
 import {PRESENCE, makePresence} from './protocol.js';
 
 const CURSOR_MIN_INTERVAL_MS = 50; // 20Hz
+const VIEWPORT_MIN_INTERVAL_MS = 100;
 
 const sameActivity = (a, b) => (
     a === b ||
@@ -27,14 +28,18 @@ class PresenceChannel extends Emitter {
      * @param {object} options Options.
      * @param {HostSession|ClientSession} options.session The session.
      */
-    constructor ({session}) {
+    constructor ({session, silent = false}) {
         super();
         this.session = session;
+        this.silent = silent;
         this.activities = new Map(); // userId -> {targetId, tab, assetIndex}
 
         this._lastCursorSentAt = 0;
         this._pendingCursor = null;
         this._cursorTimer = null;
+        this._lastViewportSentAt = 0;
+        this._pendingViewport = null;
+        this._viewportTimer = null;
 
         this._onPresence = (userId, envelope) => {
             if (!userId || userId === this.session.id) return;
@@ -48,6 +53,14 @@ class PresenceChannel extends Emitter {
                 break;
             case PRESENCE.CURSOR_CHAT:
                 this.emit('cursor-chat', userId, payload.text || null);
+                break;
+            case PRESENCE.VIEWPORT:
+                this.emit('viewport', userId, {
+                    scrollX: payload.scrollX,
+                    scrollY: payload.scrollY,
+                    scale: payload.scale,
+                    targetId: payload.targetId || null
+                });
                 break;
             case PRESENCE.EDITING_TARGET: {
                 const previous = this.activities.get(userId) || null;
@@ -86,6 +99,10 @@ class PresenceChannel extends Emitter {
             clearTimeout(this._cursorTimer);
             this._cursorTimer = null;
         }
+        if (this._viewportTimer) {
+            clearTimeout(this._viewportTimer);
+            this._viewportTimer = null;
+        }
         this.activities.clear();
         this.removeAllListeners();
     }
@@ -95,7 +112,30 @@ class PresenceChannel extends Emitter {
     }
 
     _send (type, payload) {
+        if (this.silent) return;
         this.session.submitLocalPresence(makePresence(type, payload));
+    }
+
+    sendViewport (payload) {
+        const now = Date.now();
+        const elapsed = now - this._lastViewportSentAt;
+        if (elapsed >= VIEWPORT_MIN_INTERVAL_MS) {
+            this._pendingViewport = null;
+            if (this._viewportTimer) clearTimeout(this._viewportTimer);
+            this._viewportTimer = null;
+            this._lastViewportSentAt = now;
+            this._send(PRESENCE.VIEWPORT, payload);
+            return;
+        }
+        this._pendingViewport = payload;
+        if (this._viewportTimer) return;
+        this._viewportTimer = setTimeout(() => {
+            this._viewportTimer = null;
+            if (!this._pendingViewport) return;
+            this._lastViewportSentAt = Date.now();
+            this._send(PRESENCE.VIEWPORT, this._pendingViewport);
+            this._pendingViewport = null;
+        }, VIEWPORT_MIN_INTERVAL_MS - elapsed);
     }
 
     /**
