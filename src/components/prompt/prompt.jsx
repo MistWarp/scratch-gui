@@ -41,17 +41,6 @@ const messages = defineMessages({
     }
 });
 
-const Packager = () => (
-    <a
-        href="https://packager.turbowarp.org"
-        target="_blank"
-        rel="noopener noreferrer"
-    >
-        {/* Should not be translated */}
-        {'TurboWarp Packager'}
-    </a>
-);
-
 const PromptComponent = props => (
     <Modal
         modal
@@ -156,23 +145,18 @@ const PromptComponent = props => (
                     {isScratchDesktop() ? (
                         <FormattedMessage
                             // eslint-disable-next-line max-len
-                            defaultMessage="In the desktop app, cloud variables sync between all desktop app windows on this computer. Upload the project to Scratch or use a tool like the {packager} for them to sync globally."
-                            description="Appears when creating a cloud variable in the desktop app"
-                            values={{
-                                packager: <Packager />
-                            }}
-                            id="tw.desktopCloud"
+                            defaultMessage="In the desktop app, cloud variables sync between all desktop app windows on this computer. To sync them for everyone, save the project to MistWarp or package it with File > Export > Package project."
+                            // eslint-disable-next-line max-len
+                            description="Appears when creating a cloud variable in the desktop app. File > Export > Package project is the menu path to the built-in packager."
+                            id="mw.desktopCloud"
                         />
                     ) : (
                         <FormattedMessage
-                            /* eslint-disable-next-line max-len */
-                            defaultMessage="Although you can create cloud variables, they won't work unless this project is uploaded to Scratch or converted using a tool like the {packager}."
                             // eslint-disable-next-line max-len
-                            description="Reminder that cloud variables may not work when the editor is open. {packager} is replaced with a link to open the TurboWarp Packager, always English."
-                            values={{
-                                packager: <Packager />
-                            }}
-                            id="tw.cantUseCloud"
+                            defaultMessage="Cloud variables do not sync while you edit. Save the project to MistWarp and play it from its project page, or package it with File > Export > Package project."
+                            // eslint-disable-next-line max-len
+                            description="Reminder that cloud variables do not work in the editor. File > Export > Package project is the menu path to the built-in packager."
+                            id="mw.cantUseCloud"
                         />
                     )}
                 </Box>

@@ -4,6 +4,7 @@ import bindAll from 'lodash.bindall';
 import classNames from 'classnames';
 import VM from 'scratch-vm';
 import {Camera} from 'lucide-react';
+import {defineMessages, injectIntl, intlShape} from 'react-intl';
 
 import Button from '../button/button.jsx';
 import {
@@ -12,6 +13,29 @@ import {
     onSettingChanged
 } from '../../lib/mw-stage-controls/settings.js';
 import styles from './stage-controls.css';
+
+const messages = defineMessages({
+    takeScreenshot: {
+        id: 'mw.stageControls.takeScreenshot',
+        defaultMessage: 'Take stage screenshot',
+        description: 'Label of the stage header button that captures the stage as an image'
+    },
+    preview: {
+        id: 'mw.stageControls.screenshotPreview',
+        defaultMessage: 'Stage screenshot',
+        description: 'Alternative text of the stage screenshot preview image'
+    },
+    copied: {
+        id: 'mw.stageControls.screenshotCopied',
+        defaultMessage: 'Screenshot copied to clipboard.',
+        description: 'Caption under the stage screenshot preview when it was copied'
+    },
+    notCopied: {
+        id: 'mw.stageControls.screenshotNotCopied',
+        defaultMessage: 'Screenshot taken, but your browser did not allow copying it to the clipboard.',
+        description: 'Caption under the stage screenshot preview when copying to the clipboard failed'
+    }
+});
 
 class ScreenshotButton extends React.Component {
     constructor (props) {
@@ -22,7 +46,8 @@ class ScreenshotButton extends React.Component {
         ]);
         this.state = {
             visible: getSetting('screenshot'),
-            previewUrl: null
+            previewUrl: null,
+            copied: false
         };
         this.previewTimeout = null;
     }
@@ -53,11 +78,11 @@ class ScreenshotButton extends React.Component {
             // Audio creation failed - ignore silently
         }
     }
-    showPreview (dataUrl) {
+    showPreview (dataUrl, copied) {
         if (!getSetting('screenshot_notifications') || !dataUrl) {
             return;
         }
-        this.setState({previewUrl: dataUrl});
+        this.setState({previewUrl: dataUrl, copied});
         if (this.previewTimeout) {
             clearTimeout(this.previewTimeout);
         }
@@ -77,6 +102,7 @@ class ScreenshotButton extends React.Component {
         if (!dataUrl) {
             return;
         }
+        let copied = false;
         try {
             const response = await fetch(dataUrl);
             const blob = await response.blob();
@@ -85,6 +111,7 @@ class ScreenshotButton extends React.Component {
                     await navigator.clipboard.write([
                         new ClipboardItem({'image/png': blob})
                     ]);
+                    copied = true;
                 } catch (err) {
                     // Clipboard write failed; preview still shows the capture
                 }
@@ -92,7 +119,7 @@ class ScreenshotButton extends React.Component {
         } catch (err) {
             // Conversion failed; preview still shows the capture
         }
-        this.showPreview(dataUrl);
+        this.showPreview(dataUrl, copied);
         this.playSoundEffect();
     }
     handleClick (e) {
@@ -104,12 +131,13 @@ class ScreenshotButton extends React.Component {
         if (!this.state.visible) {
             return null;
         }
+        const {intl} = this.props;
         return (
             <React.Fragment>
                 <div className={styles.screenshotButton}>
                     <Button
-                        aria-label="Take stage screenshot"
-                        title="Take stage screenshot"
+                        aria-label={intl.formatMessage(messages.takeScreenshot)}
+                        title={intl.formatMessage(messages.takeScreenshot)}
                         iconElem={Camera}
                         className={this.props.buttonClassName}
                         iconClassName={this.props.buttonIconClassName}
@@ -121,11 +149,11 @@ class ScreenshotButton extends React.Component {
                         <div className={styles.screenshotPreviewImage}>
                             <img
                                 src={this.state.previewUrl}
-                                alt="Stage screenshot"
+                                alt={intl.formatMessage(messages.preview)}
                             />
                         </div>
                         <div className={styles.screenshotPreviewCaption}>
-                            {'Screenshot copied to clipboard!'}
+                            {intl.formatMessage(this.state.copied ? messages.copied : messages.notCopied)}
                         </div>
                     </div>
                 )}
@@ -135,9 +163,10 @@ class ScreenshotButton extends React.Component {
 }
 
 ScreenshotButton.propTypes = {
+    intl: intlShape.isRequired,
     vm: PropTypes.instanceOf(VM).isRequired,
     buttonClassName: PropTypes.string,
     buttonIconClassName: PropTypes.string
 };
 
-export default ScreenshotButton;
+export default injectIntl(ScreenshotButton);
