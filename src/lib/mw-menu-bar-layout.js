@@ -4,7 +4,7 @@ const ZONES = [
         items: [
             '__errors', 'file', 'edit', 'mode', 'tools', 'view',
             '__divider', 'project-title', '__view-counter', 'community', 'block-count',
-            'share', 'remix', 'feedback'
+            'feedback'
         ],
         extras: []
     },

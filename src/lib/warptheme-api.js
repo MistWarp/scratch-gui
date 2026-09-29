@@ -1,8 +1,8 @@
 import {ensureScopes} from './rotur/client.js';
+import {ROTUR_TOKEN_KEY} from './rotur/token-key.js';
 
 const WARPTHEME_API_BASE = 'https://warptheme.mistium.com/api';
 const WARPTHEME_SESSION_KEY = 'mw:warptheme-session';
-const ROTUR_TOKEN_KEY = 'mw:rotur-token';
 const likedThemes = new Set();
 
 const clearSession = () => {
