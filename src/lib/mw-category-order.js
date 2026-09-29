@@ -1,19 +1,57 @@
+const STORAGE_KEY = 'mw:category-order';
 const CATEGORY_ORDER_CHANGED = 'mw:category-order-changed';
 
-const getCategoryOrder = vm => {
-    const runtime = vm && vm.runtime;
-    if (!runtime || typeof runtime.getCategoryOrder !== 'function') return [];
-    return runtime.getCategoryOrder();
+const cleanOrder = order => (Array.isArray(order) ? order.filter(id => typeof id === 'string') : []);
+
+const supportsProjectOrder = vm => Boolean(
+    vm && vm.runtime &&
+    typeof vm.runtime.getCategoryOrder === 'function' &&
+    typeof vm.runtime.setCategoryOrder === 'function'
+);
+
+const getProjectOrder = vm => (supportsProjectOrder(vm) ? cleanOrder(vm.runtime.getCategoryOrder()) : []);
+
+const getLocalOrder = () => {
+    try {
+        return cleanOrder(JSON.parse(localStorage.getItem(STORAGE_KEY)));
+    } catch (err) {
+        return [];
+    }
 };
 
-const setCategoryOrder = (vm, ids) => {
-    const runtime = vm && vm.runtime;
-    if (!runtime || typeof runtime.setCategoryOrder !== 'function') return;
-    runtime.setCategoryOrder(ids);
+const setLocalOrder = ids => {
+    try {
+        if (ids.length) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+        } else {
+            localStorage.removeItem(STORAGE_KEY);
+        }
+    } catch (err) {
+        // ignore
+    }
+};
+
+const getCategoryOrder = vm => {
+    const projectOrder = getProjectOrder(vm);
+    return projectOrder.length ? projectOrder : getLocalOrder();
+};
+
+const setCategoryOrder = (vm, ids, useProject) => {
+    if (useProject && supportsProjectOrder(vm)) {
+        vm.runtime.setCategoryOrder(ids);
+    } else {
+        setLocalOrder(ids);
+    }
     window.dispatchEvent(new CustomEvent(CATEGORY_ORDER_CHANGED));
 };
 
-const resetCategoryOrder = vm => setCategoryOrder(vm, []);
+const hasCustomCategoryOrder = vm => getProjectOrder(vm).length > 0 || getLocalOrder().length > 0;
+
+const resetCategoryOrder = vm => {
+    if (getProjectOrder(vm).length) vm.runtime.setCategoryOrder([]);
+    setLocalOrder([]);
+    window.dispatchEvent(new CustomEvent(CATEGORY_ORDER_CHANGED));
+};
 
 const applyCategoryOrder = (entries, order = []) => {
     const rank = new Map(order.map((id, index) => [id, index]));
@@ -49,6 +87,7 @@ const moveCategory = (savedOrder, currentIds, movedId, beforeId) => {
 export {
     applyCategoryOrder,
     getCategoryOrder,
+    hasCustomCategoryOrder,
     moveCategory,
     resetCategoryOrder,
     setCategoryOrder,

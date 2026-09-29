@@ -21,6 +21,7 @@ import DragConstants from '../lib/constants/drag-constants';
 import SettingsStore from '../addons/settings-store-singleton';
 import {VANILLA_PALETTE_CHANGED} from '../lib/mw-vanilla-palette';
 import {CATEGORY_ORDER_CHANGED, getCategoryOrder} from '../lib/mw-category-order';
+import {LoadingState} from '../reducers/project-state';
 import installCategoryDrag from '../lib/mw-category-drag';
 import {CAT_BLOCKS_CHANGED} from '../lib/mw-cat-blocks';
 import defineDynamicBlock from '../lib/utils/define-dynamic-block';
@@ -230,6 +231,7 @@ class Blocks extends React.Component {
         this.workspace = this.ScratchBlocks.inject(this.blocks, workspaceConfig);
         this.uninstallCategoryDrag = installCategoryDrag(this.workspace, {
             vm: this.props.vm,
+            useProjectOrder: () => this.hasCurrentProject(),
             ScratchBlocks: this.ScratchBlocks,
             getResetLabel: () => this.props.intl.formatMessage(messages.resetCategoryOrder)
         });
@@ -626,6 +628,14 @@ class Blocks extends React.Component {
         window.removeEventListener('pointercancel', this.handlePaletteResizePointerUp);
         window.removeEventListener('mousemove', this.handlePaletteResizePointerMove);
         window.removeEventListener('mouseup', this.handlePaletteResizePointerUp);
+    }
+
+    hasCurrentProject () {
+        return !(
+            this.props.projectLoadingState === LoadingState.SHOWING_WITHOUT_ID &&
+            this.props.isNewDefaultProject &&
+            !this.props.hasFileHandle
+        );
     }
 
     handleToolboxPreferenceChanged () {
@@ -1519,6 +1529,9 @@ class Blocks extends React.Component {
 
 Blocks.propTypes = {
     intl: intlShape,
+    hasFileHandle: PropTypes.bool,
+    isNewDefaultProject: PropTypes.bool,
+    projectLoadingState: PropTypes.string,
     anyModalVisible: PropTypes.bool,
     canUseCloud: PropTypes.bool,
     customStageSize: PropTypes.shape({
@@ -1602,7 +1615,10 @@ const mapStateToProps = state => ({
     toolboxXML: state.scratchGui.toolbox.toolboxXML,
     customProceduresVisible: state.scratchGui.customProcedures.active,
     workspaceMetrics: state.scratchGui.workspaceMetrics,
-    useCatBlocks: isTimeTravel2020(state)
+    useCatBlocks: isTimeTravel2020(state),
+    projectLoadingState: state.scratchGui.projectState.loadingState,
+    isNewDefaultProject: state.scratchGui.projectState.isNewDefault,
+    hasFileHandle: Boolean(state.scratchGui.tw.fileHandle)
 });
 
 const mapDispatchToProps = dispatch => ({
