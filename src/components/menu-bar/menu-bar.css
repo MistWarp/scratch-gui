@@ -259,18 +259,6 @@
     height: $menu-bar-button-size;
 }
 
-.remix-button {
-    background-color: $pen-primary
-}
-
-.remix-button-icon {
-    height: 1.25rem;
-}
-
-.coming-soon >:not(.coming-soon-tooltip) {
-    opacity: 0.5;
-}
-
 /* Always flex so right-align does not stack Login under the bar */
 .account-info-group {
     display: flex;

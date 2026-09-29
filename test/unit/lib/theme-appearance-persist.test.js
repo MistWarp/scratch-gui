@@ -36,25 +36,25 @@ test('previewing a theme without an appearance leaves the saved layout alone', (
 
 test('previewing a theme with its own appearance renders it without saving it', () => {
     applyThemeVisuals(withAppearance({
-        menuBarLayout: {orders: {left: ['tools']}, hidden: ['share']},
+        menuBarLayout: {orders: {left: ['tools']}, hidden: ['about']},
         styles: {'tab-style': 'scratchbox'}
     }));
 
     expect(getMenuBarLayout()).toEqual(normalizedSavedLayout);
     expect(getStyleSetting('tab-style')).toBe('turbowarp');
-    expect(layoutCss()).toContain('[data-mw-item="share"]{display:none !important;}');
+    expect(layoutCss()).toContain('[data-mw-item="about"]{display:none !important;}');
     expect(layoutCss()).toContain('[data-mw-item="tools"]{order:0;}');
 });
 
 test('choosing a theme persists its appearance', () => {
     applyTheme(withAppearance({
-        menuBarLayout: {orders: {left: ['tools']}, hidden: ['share']},
+        menuBarLayout: {orders: {left: ['tools']}, hidden: ['about']},
         styles: {'tab-style': 'scratchbox'}
     }));
 
     expect(getMenuBarLayout()).toEqual({
         orders: {left: ['tools'], right: []},
-        hidden: ['share']
+        hidden: ['about']
     });
     expect(getStyleSetting('tab-style')).toBe('scratchbox');
 });

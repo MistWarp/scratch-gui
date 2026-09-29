@@ -157,7 +157,6 @@
     ],
     "globalSetup": "<rootDir>/test/helpers/jest-global-setup.mjs",
     "testPathIgnorePatterns": [
-      "src/test.js",
       "<rootDir>/.claude/"
     ],
     "moduleNameMapper": {
