@@ -11,7 +11,11 @@ const publicIdentity = state => {
         user: user ? {
             username: String(user.username || ''),
             id: user.id === null || typeof user.id === 'undefined' ? '' : String(user.id),
-            bio: typeof user.bio === 'string' ? user.bio : null
+            bio: typeof user.bio === 'string' ? user.bio : null,
+            ...(user.isStudent ? {
+                isStudent: true,
+                displayName: String(user.displayName || user.username || '')
+            } : {})
         } : null,
         banMessage: state && state.banMessage ? String(state.banMessage) : null
     };

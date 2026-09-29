@@ -134,7 +134,8 @@ describe('CollaborationContainer', () => {
         await container.handleJoinRoom('test-room', 'Alice');
 
         expect(mockCollaborationService.connectToRoom)
-            .toHaveBeenCalledWith('test-room', 'Alice', false, 'private', ROTUR_HANDLE, null, {invite: undefined});
+            .toHaveBeenCalledWith('test-room', 'Alice', false, 'private', ROTUR_HANDLE, null,
+                {invite: undefined, viewer: false});
         expect(collaborationState().roomId).toBe('test-room');
         // guests only become "connected" once the host answers
         expect(collaborationState().isConnected).toBe(false);
@@ -177,7 +178,7 @@ describe('CollaborationContainer', () => {
         await container.handleJoinRoom('test-room', 'Alice', null, {invite: 'secret'});
 
         expect(mockCollaborationService.connectToRoom)
-            .toHaveBeenCalledWith('test-room', 'Alice', false, 'private', ROTUR_HANDLE, null, {invite: 'secret'});
+            .toHaveBeenCalledWith('test-room', 'Alice', false, 'private', ROTUR_HANDLE, null, {invite: 'secret', viewer: false});
         expect(collaborationState().pendingInvite).toBe(null);
     });
 

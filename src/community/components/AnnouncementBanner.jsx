@@ -3,6 +3,7 @@ import React, {useState} from 'react';
 import {Megaphone, X} from 'lucide-react';
 import {track} from '../analytics.js';
 import JoinCommunityModal from './JoinCommunityModal.jsx';
+import {useUser} from '../UserContext.jsx';
 import styles from './AnnouncementBanner.module.css';
 
 const DISMISS_KEY = 'mw:community-server-banner-dismissed';
@@ -17,6 +18,7 @@ const wasDismissed = () => {
 
 const AnnouncementBanner = () => {
     const {text: communityText} = useCommunityText();
+    const {user} = useUser();
     const [dismissed, setDismissed] = useState(wasDismissed);
     const [joinOpen, setJoinOpen] = useState(false);
     const dismiss = () => {
@@ -31,6 +33,7 @@ const AnnouncementBanner = () => {
         track('community_join_open');
         setJoinOpen(true);
     };
+    if (user && user.isStudent) return null;
     return (
         <>
             {dismissed ? null : (

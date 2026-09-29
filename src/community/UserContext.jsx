@@ -11,13 +11,14 @@ import {
     subscribe as subscribeIdentity,
     restore as identityRestore,
     login as identityLogin,
+    loginStudent as identityLoginStudent,
     logout as identityLogout
 } from '../lib/rotur/identity.js';
 import {takeRedirectError} from '../lib/rotur/oauth.js';
 
 const UserContext = createContext({user: null, login: () => {}, loginOrThrow: () => {}, logout: () => {}});
 
-const normalizeUser = user => user && {...user, isAdmin: user.isAdmin === true};
+const normalizeUser = user => user && {...user, isAdmin: user.isAdmin === true, isStudent: user.isStudent === true};
 const signInErrorMessage = error => (
     error && /popup|blocked|window/i.test(String(error.message || '')) ?
         'Sign-in window was blocked. Allow popups for this site and try again.' :
@@ -70,14 +71,19 @@ const UserProvider = ({children}) => {
     }, []);
 
     const applyLoggedIn = useCallback(async (identityUser, version) => {
+        const student = Boolean(identityUser && identityUser.isStudent);
         let me = null;
         let roturProfile = null;
         [me, roturProfile] = await Promise.all([
             optionalRequest(() => api.me()),
-            identityUser?.username ? optionalRequest(() => rotur.profile(identityUser.username)) : null
+            identityUser?.username && !student ? optionalRequest(() => rotur.profile(identityUser.username)) : null
         ]);
         if (version !== identityVersion.current) return;
         if (me) setMinorAccount(me.minor === true);
+        if (student) {
+            setUser(normalizeUser({...identityUser, ...(me || {})}));
+            return;
+        }
         let applied = false;
         try {
             applied = (await onRoturLogin()).applied;
@@ -112,7 +118,7 @@ const UserProvider = ({children}) => {
         const username = user.username;
         const [me, roturProfile] = await Promise.all([
             optionalRequest(() => api.me()),
-            optionalRequest(() => rotur.profile(username))
+            user.isStudent ? null : optionalRequest(() => rotur.profile(username))
         ]);
         if (version !== identityVersion.current) return null;
         if (me) setMinorAccount(me.minor === true);
@@ -132,8 +138,11 @@ const UserProvider = ({children}) => {
         setReconnect(Boolean(state.user && state.reconnect));
         if (state.user) {
             const username = state.user.username;
-            setUser(current => (current && current.username === username ? current : normalizeUser({username})));
-            if (!notificationsUnsub.current) {
+            const isStudent = Boolean(state.user.isStudent);
+            setUser(current => (
+                current && current.username === username ? current : normalizeUser({username, isStudent})
+            ));
+            if (!notificationsUnsub.current && !isStudent) {
                 notificationsUnsub.current = subscribeNotifications(handleNotificationPush);
                 removalsUnsub.current = subscribeNotificationRemovals(handleNotificationRemoved);
             }
@@ -184,6 +193,11 @@ const UserProvider = ({children}) => {
         }
     }, [loginOrThrow]);
 
+    const loginStudent = useCallback(session => {
+        setSignInError('');
+        return identityLoginStudent(session);
+    }, []);
+
     const logout = useCallback(async () => {
         await identityLogout();
     }, []);
@@ -195,6 +209,7 @@ const UserProvider = ({children}) => {
                 loading,
                 login,
                 loginOrThrow,
+                loginStudent,
                 logout,
                 refreshUser,
                 setSubscription: subscription => setUser(current => current && {...current, subscription}),

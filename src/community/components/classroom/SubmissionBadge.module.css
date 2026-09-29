@@ -1,0 +1,48 @@
+.badge {
+    --badge-color: var(--text-dim);
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    gap: 6px;
+    padding: 3px 9px;
+    border-radius: var(--radius-2xs);
+    background: color-mix(in srgb, var(--badge-color) 14%, transparent);
+    color: color-mix(in srgb, var(--badge-color) 62%, var(--mw-text));
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+
+.badge::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.large {
+    padding: 6px 12px;
+    font-size: var(--fs-sm);
+}
+
+.not_started {
+    --badge-color: var(--text-dim);
+}
+
+.started {
+    --badge-color: var(--status-open);
+}
+
+.turned_in {
+    --badge-color: var(--status-shipped);
+}
+
+.late {
+    --badge-color: var(--status-building);
+}
+
+.returned {
+    --badge-color: var(--status-planned);
+}

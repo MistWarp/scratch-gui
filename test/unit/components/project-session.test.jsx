@@ -21,7 +21,8 @@ const makeCoordinator = (role = 'owner') => {
         off: jest.fn(),
         getPendingJoinRequests: jest.fn(() => []),
         approveJoinRequest: jest.fn(() => true),
-        kickUser: jest.fn()
+        kickUser: jest.fn(),
+        setViewerPeers: jest.fn()
     };
     const props = {
         service,
@@ -140,6 +141,18 @@ describe('opt-in project collaboration', () => {
             ]}});
         await instance.tick();
         expect(instance.props.service.approveJoinRequest.mock.calls).toEqual([['tester-peer', 'watch']]);
+    });
+
+    test('tells the host which approved peers are only watching', async () => {
+        const instance = makeCoordinator();
+        instance.lease = {id: 'live', projectId: 'p1', branch: 'main', roomId: 'room', host: true};
+        instance.props.service.isConnected = true;
+        api.request.mockResolvedValue({session: {id: 'live', members: [
+            {username: 'friend', peerId: 'editor-peer', approved: true},
+            {username: 'student', peerId: 'viewer-peer', approved: true, viewer: true}
+        ]}});
+        await instance.tick();
+        expect(instance.props.service.setViewerPeers).toHaveBeenCalledWith(['viewer-peer']);
     });
 
     test('provides explicit project controls in the room window', () => {
