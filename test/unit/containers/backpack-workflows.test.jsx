@@ -1,7 +1,9 @@
 import {Backpack} from '../../../src/containers/backpack.jsx';
 import {
+    codePayload,
     costumePayload,
     saveBackpackObject,
+    spritePayload,
     updateBackpackObject
 } from '../../../src/lib/api/backpack';
 import storage from '../../../src/lib/persistence/storage';
@@ -29,13 +31,14 @@ jest.mock('../../../src/lib/persistence/storage', () => ({
     store: jest.fn(() => Promise.resolve())
 }));
 
+const flushPromises = () => new Promise(resolve => setImmediate(resolve));
+
 const makeBackpack = overrides => {
     const backpack = new Backpack({
         host: 'https://backpack.example',
         intl: {formatMessage: jest.fn(message => message.defaultMessage)},
         token: 'token',
         username: 'user',
-        openSimpleDialog: jest.fn(),
         vm: {},
         ...overrides
     });
@@ -113,8 +116,7 @@ describe('backpack workflows', () => {
 
         const firstDrop = backpack.handleDrop(dragInfo);
         const secondDrop = backpack.handleDrop(dragInfo);
-        await Promise.resolve();
-        await Promise.resolve();
+        await flushPromises();
         expect(saveBackpackObject).toHaveBeenCalledTimes(1);
         expect(secondDrop).toBe(firstDrop);
 
@@ -122,18 +124,80 @@ describe('backpack workflows', () => {
         await firstDrop;
     });
 
-    test('renames an item through the in-app prompt', async () => {
+    test('queues a different save made while the first is pending', async () => {
+        let finishSave;
+        saveBackpackObject
+            .mockImplementationOnce(() => new Promise(resolve => {
+                finishSave = resolve;
+            }))
+            .mockImplementationOnce(() => Promise.resolve({id: 'second', name: 'Second'}));
+        const backpack = makeBackpack();
+
+        const firstDrop = backpack.handleDrop({dragType: DragConstants.COSTUME, payload: {asset: {clean: true}}});
+        const secondDrop = backpack.handleDrop({dragType: DragConstants.COSTUME, payload: {asset: {clean: true}}});
+        await flushPromises();
+        expect(saveBackpackObject).toHaveBeenCalledTimes(1);
+
+        finishSave({id: 'first', name: 'First'});
+        await expect(firstDrop).resolves.toBe(true);
+        await expect(secondDrop).resolves.toBe(true);
+        expect(saveBackpackObject).toHaveBeenCalledTimes(2);
+        expect(backpack.state.contents.map(item => item.id)).toEqual(['second', 'first']);
+    });
+
+    test('saves a right-clicked script with every block below and inside it', async () => {
+        codePayload.mockResolvedValueOnce({type: 'script', name: 'code'});
+        const stored = {
+            top: {id: 'top', opcode: 'event_whenflagclicked', next: 'move', parent: null, topLevel: true,
+                inputs: {}, fields: {}, x: 5, y: 6},
+            move: {id: 'move', opcode: 'motion_movesteps', next: null, parent: 'top', topLevel: false,
+                inputs: {STEPS: {name: 'STEPS', block: 'steps', shadow: 'steps'}}, fields: {}},
+            steps: {id: 'steps', opcode: 'math_number', next: null, parent: 'move', topLevel: false,
+                shadow: true, inputs: {}, fields: {NUM: {name: 'NUM', value: '10'}}}
+        };
+        const exportStandaloneBlocks = jest.fn(blocks => blocks);
+        const backpack = makeBackpack({
+            vm: {
+                editingTarget: {blocks: {getBlock: id => stored[id]}},
+                exportStandaloneBlocks
+            }
+        });
+
+        await expect(backpack.handleSaveRequest({kind: 'script', blockId: 'top'})).resolves.toBe(true);
+
+        expect(exportStandaloneBlocks.mock.calls[0][0].map(block => block.id)).toEqual(['top', 'move', 'steps']);
+        expect(codePayload).toHaveBeenCalledWith(
+            expect.objectContaining({topBlockId: 'top'}),
+            expect.anything()
+        );
+        expect(saveBackpackObject).toHaveBeenCalledTimes(1);
+    });
+
+    test('passes right-clicked sprites, costumes and sounds to the drop path', async () => {
+        spritePayload.mockResolvedValueOnce({type: 'sprite', name: 'Sprite1'});
+        const vm = {};
+        const backpack = makeBackpack({vm});
+
+        await expect(backpack.handleSaveRequest({dragType: DragConstants.SPRITE, payload: 'sprite-id'}))
+            .resolves.toBe(true);
+        expect(spritePayload).toHaveBeenCalledWith('sprite-id', vm);
+
+        await expect(backpack.handleSaveRequest({dragType: DragConstants.BACKPACK_CODE, payload: {}}))
+            .resolves.toBe(false);
+        await expect(backpack.handleSaveRequest({kind: 'script', blockId: 'missing'})).resolves.toBe(false);
+        expect(saveBackpackObject).toHaveBeenCalledTimes(1);
+    });
+
+    test('renames an item inline and trims the new name', async () => {
         updateBackpackObject.mockResolvedValueOnce({id: 'item', name: 'New name'});
-        const openSimpleDialog = jest.fn(config => config.onOk('  New name  '));
-        const backpack = makeBackpack({openSimpleDialog});
+        const backpack = makeBackpack({host: 'local'});
         backpack.state.contents = [{id: 'item', name: 'Old name', type: 'costume'}];
 
-        await expect(backpack.handleRename('item')).resolves.toBe(true);
+        expect(backpack.handleRenameStart('item')).toBe(true);
+        expect(backpack.state.renamingId).toBe('item');
+        await expect(backpack.handleRenameSubmit('item', '  New name  ')).resolves.toBe(true);
 
-        expect(openSimpleDialog).toHaveBeenCalledWith(expect.objectContaining({
-            type: 'prompt',
-            defaultValue: 'Old name'
-        }));
+        expect(backpack.state.renamingId).toBe(null);
         expect(updateBackpackObject).toHaveBeenCalledWith(expect.objectContaining({
             id: 'item',
             name: 'New name'
@@ -141,14 +205,36 @@ describe('backpack workflows', () => {
         expect(backpack.state.contents[0].name).toBe('New name');
     });
 
-    test('does not rename an item when the prompt is cancelled', async () => {
-        const openSimpleDialog = jest.fn(config => config.onCancel());
-        const backpack = makeBackpack({openSimpleDialog});
+    test('does not rename an item when the new name is empty or unchanged', async () => {
+        const backpack = makeBackpack({host: 'local'});
         backpack.state.contents = [{id: 'item', name: 'Old name', type: 'sound'}];
 
-        await expect(backpack.handleRename('item')).resolves.toBe(false);
+        await expect(backpack.handleRenameSubmit('item', '   ')).resolves.toBe(false);
+        await expect(backpack.handleRenameSubmit('item', 'Old name')).resolves.toBe(false);
 
         expect(updateBackpackObject).not.toHaveBeenCalled();
         expect(backpack.renamingItems.size).toBe(0);
+    });
+
+    test('only offers renaming for the local backpack', () => {
+        const remote = makeBackpack();
+        remote.state.contents = [{id: 'item', name: 'Old name', type: 'sprite'}];
+        expect(remote.handleRenameStart('item')).toBe(false);
+
+        const local = makeBackpack({host: 'local'});
+        local.state.contents = [{id: 'item', name: 'Old name', type: 'sprite'}];
+        expect(local.handleRenameStart('item')).toBe(true);
+    });
+
+    test('filters contents by type before searching', () => {
+        const backpack = makeBackpack();
+        backpack.state.contents = [
+            {id: '1', name: 'Walk', type: 'script'},
+            {id: '2', name: 'Walk', type: 'costume'},
+            {id: '3', name: 'Jump', type: 'script'}
+        ];
+        backpack.state.filter = 'script';
+        backpack.state.searchQuery = 'walk';
+        expect(backpack.getFilteredContents().map(item => item.id)).toEqual(['1']);
     });
 });

@@ -18,6 +18,8 @@ const SpriteSelectorItem = props => {
         contextMenuIdRef.current = `sprite-selector-${contextMenuId++}`;
     }
     const menuId = contextMenuIdRef.current;
+    const hasContextMenu = Boolean(props.onDuplicateButtonClick || props.onDeleteButtonClick ||
+        props.onExportButtonClick || props.onAddToBackpackButtonClick);
 
     return (
         <div
@@ -82,7 +84,7 @@ const SpriteSelectorItem = props => {
                     onClick={props.onDeleteButtonClick}
                 />
             ) : null }
-            {props.onDuplicateButtonClick || props.onDeleteButtonClick || props.onExportButtonClick ? (
+            {hasContextMenu ? (
                 <ContextMenu id={menuId}>
                     {props.onDuplicateButtonClick ? (
                         <MenuItem
@@ -108,6 +110,18 @@ const SpriteSelectorItem = props => {
                             />
                         </MenuItem>
                     ) : null }
+                    {props.onAddToBackpackButtonClick ? (
+                        <MenuItem
+                            icon="backpack"
+                            onClick={props.onAddToBackpackButtonClick}
+                        >
+                            <FormattedMessage
+                                defaultMessage="add to backpack"
+                                description="Menu item to save a sprite, costume or sound to the backpack"
+                                id="mw.spriteSelectorItem.contextMenuAddToBackpack"
+                            />
+                        </MenuItem>
+                    ) : null}
                     {props.onRenameButtonClick ? (
                         <MenuItem
                             icon="rename"
@@ -153,6 +167,7 @@ SpriteSelectorItem.propTypes = {
     number: PropTypes.number,
     onClick: PropTypes.func,
     onDeleteButtonClick: PropTypes.func,
+    onAddToBackpackButtonClick: PropTypes.func,
     onDuplicateButtonClick: PropTypes.func,
     onExportButtonClick: PropTypes.func,
     onRenameButtonClick: PropTypes.func,
