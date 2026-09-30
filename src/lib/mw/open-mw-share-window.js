@@ -7,7 +7,7 @@ import {IntlProvider} from 'react-intl';
 
 import WindowManager from '../../addons/window-system/window-manager';
 import {openProjectMetadataModal} from '../../reducers/modals';
-import {isStudentSession} from '../rotur/identity.js';
+import {isStudentSession} from '../rotur/student-flag.js';
 
 let shareWindow = null;
 let container = null;

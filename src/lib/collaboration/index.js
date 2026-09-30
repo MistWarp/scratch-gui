@@ -70,6 +70,7 @@ class CollabService extends Emitter {
      * @param {string} [privacy] 'public' | 'private' (host only).
      * @param {string} [handle] Rotur handle, for avatars.
      * @param {object|null} [scope] Project ID and branch required by this room.
+     * @param {object} [options] Join options; `viewer` joins read only.
      * @returns {Promise<string>} Our peer id.
      */
     async connectToRoom (

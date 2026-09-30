@@ -1,4 +1,4 @@
-import {isStudentSession} from '../rotur/identity.js';
+import {isStudentSession} from '../rotur/student-flag.js';
 
 const LAYOUT_KEY = 'mw:chat-layout';
 const OPEN_KEY = 'mw:chat-open';

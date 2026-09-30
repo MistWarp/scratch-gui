@@ -123,16 +123,18 @@ class HelpMenu extends React.Component {
                             />
                         </MenuItem>
                     </MenuSection>
-                    <MenuSection>
-                        <MenuItem onClick={this.handleClickFeedback}>
-                            <MessageSquare />
-                            <FormattedMessage
-                                defaultMessage="Send feedback"
-                                description="Help menu item that opens the MistWarp roadmap and feedback page"
-                                id="mw.menuBar.sendFeedback"
-                            />
-                        </MenuItem>
-                    </MenuSection>
+                    {this.props.isStudent ? null : (
+                        <MenuSection>
+                            <MenuItem onClick={this.handleClickFeedback}>
+                                <MessageSquare />
+                                <FormattedMessage
+                                    defaultMessage="Send feedback"
+                                    description="Help menu item that opens the MistWarp roadmap and feedback page"
+                                    id="mw.menuBar.sendFeedback"
+                                />
+                            </MenuItem>
+                        </MenuSection>
+                    )}
                 </MenuBarMenu>
             </MenuLabel>
         );
@@ -142,6 +144,7 @@ class HelpMenu extends React.Component {
 HelpMenu.propTypes = {
     intl: intlShape.isRequired,
     isRtl: PropTypes.bool,
+    isStudent: PropTypes.bool,
     open: PropTypes.bool,
     onOpenHelp: PropTypes.func.isRequired,
     onOpenShortcuts: PropTypes.func.isRequired,
@@ -151,6 +154,7 @@ HelpMenu.propTypes = {
 
 const mapStateToProps = state => ({
     isRtl: state.locales.isRtl,
+    isStudent: Boolean(state.scratchGui.rotur && state.scratchGui.rotur.isStudent),
     open: helpMenuOpen(state)
 });
 

@@ -13,8 +13,7 @@ jest.mock('../../src/lib/rotur/client.js', () => ({
 }));
 
 jest.mock('../../src/lib/rotur/identity.js', () => ({
-    getState: jest.fn(() => ({user: {username: 'user'}})),
-    isStudentSession: jest.fn(() => false)
+    getState: jest.fn(() => ({user: {username: 'user'}}))
 }));
 
 import {callRotur, commitGrant} from '../../src/lib/rotur/extension-bridge.js';

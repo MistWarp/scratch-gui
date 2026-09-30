@@ -265,7 +265,9 @@ const mapStateToProps = state => ({
     username: state.scratchGui.rotur.username,
     studentMode: Boolean(state.scratchGui.rotur.isStudent),
     displayName: state.scratchGui.rotur.isStudent ? state.scratchGui.rotur.displayName : null,
-    avatarSrc: state.scratchGui.rotur.isStudent ? initialsAvatar(state.scratchGui.rotur.displayName || state.scratchGui.rotur.username) : null
+    avatarSrc: state.scratchGui.rotur.isStudent ?
+        initialsAvatar(state.scratchGui.rotur.displayName || state.scratchGui.rotur.username) :
+        null
 });
 
 const mapDispatchToProps = dispatch => ({

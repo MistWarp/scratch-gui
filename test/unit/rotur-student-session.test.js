@@ -2,7 +2,7 @@ import reducer, {roturInitialState, setRoturUser, clearRoturUser} from '../../sr
 
 let mockStudent = false;
 
-jest.mock('../../src/lib/rotur/identity.js', () => ({
+jest.mock('../../src/lib/rotur/student-flag.js', () => ({
     isStudentSession: () => mockStudent
 }));
 

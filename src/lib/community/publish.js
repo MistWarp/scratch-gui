@@ -1,5 +1,5 @@
 import JSZip from '@turbowarp/jszip';
-import {isStudentSession} from '../rotur/identity.js';
+import {isStudentSession} from '../rotur/student-flag.js';
 import {withProjectOperation} from '../project-operation.js';
 import {
     createProject, uploadProject, publishProject, updateProject, checkProjectAssets, getProject, getProjectCommits,

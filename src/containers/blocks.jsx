@@ -57,7 +57,7 @@ import AddonHooks from '../addons/hooks.js';
 import LoadScratchBlocksHOC from '../lib/components/tw-load-scratch-blocks-hoc.jsx';
 import {offsetToPosition} from '../lib/backpack/code-payload.js';
 import {acceptsScriptDrop, readScriptDrop} from '../lib/originchats/script-image.js';
-import {isStudentSession} from '../lib/rotur/identity.js';
+import {isStudentSession} from '../lib/rotur/student-flag.js';
 import {gentlyRequestPersistentStorage} from '../lib/utils/storage-request.js';
 import CollaborationService from '../lib/collaboration/index.js';
 import {trackWorkspaceUndo, untrackWorkspaceUndo} from '../lib/undo-history.js';
