@@ -98,7 +98,8 @@ const PRESENCE = {
     CURSOR: 'cursor',
     CURSOR_LEAVE: 'cursor-leave',
     CURSOR_CHAT: 'cursor-chat',
-    EDITING_TARGET: 'editing-target'
+    EDITING_TARGET: 'editing-target',
+    VIEWPORT: 'viewport'
 };
 
 const KIND_TYPES = {
@@ -128,7 +129,8 @@ const LIMITS = {
     // A sprite-add carries one ref per costume and sound, so this has to
     // clear a realistically fat sprite, not just a costume or two.
     MAX_ASSET_REFS: 512,
-    MAX_USERS: 128
+    MAX_USERS: 128,
+    MAX_SCALE: 16
 };
 
 const isPlainObject = value =>
@@ -484,6 +486,16 @@ const PAYLOAD_VALIDATORS = {
         (isOptionalString(payload.text, LIMITS.MAX_CHAT) ? null : 'cursor-chat text too long'),
     // Where a peer is working: which sprite, which tab, and which costume or
     // sound within that tab. Peers on older builds send targetId alone.
+    [PRESENCE.VIEWPORT]: payload => {
+        if (!isFiniteNumber(payload.scrollX) || !isFiniteNumber(payload.scrollY)) {
+            return 'viewport requires scrollX/scrollY';
+        }
+        if (!isFiniteNumber(payload.scale) || payload.scale <= 0 || payload.scale > LIMITS.MAX_SCALE) {
+            return 'viewport invalid scale';
+        }
+        if (!isOptionalString(payload.targetId, LIMITS.MAX_ID)) return 'viewport invalid targetId';
+        return null;
+    },
     [PRESENCE.EDITING_TARGET]: payload => {
         if (!isOptionalString(payload.targetId, LIMITS.MAX_ID)) return 'editing-target invalid targetId';
         if (typeof payload.tab !== 'undefined' && !isNonNegativeInt(payload.tab)) {

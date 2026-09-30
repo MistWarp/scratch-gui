@@ -11,6 +11,8 @@ const initialState = {
     avatarUrl: null,
     bio: null,
     usernameOverride: null,
+    displayName: null,
+    isStudent: false,
     error: null
 };
 
@@ -29,6 +31,8 @@ const reducer = function (state, action) {
             id: action.id || null,
             avatarUrl: action.avatarUrl,
             bio: action.bio || null,
+            displayName: action.displayName || null,
+            isStudent: action.isStudent === true,
             error: null
         });
     case SET_USERNAME_OVERRIDE:
@@ -52,12 +56,14 @@ const setRoturStatus = status => ({
     status
 });
 
-const setRoturUser = ({username, id, avatarUrl, bio}) => ({
+const setRoturUser = ({username, id, avatarUrl, bio, displayName, isStudent}) => ({
     type: SET_USER,
     username,
     id: id || null,
     avatarUrl,
-    bio: bio || null
+    bio: bio || null,
+    displayName: displayName || null,
+    isStudent: isStudent === true
 });
 
 const setRoturUsernameOverride = username => ({

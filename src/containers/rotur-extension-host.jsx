@@ -10,6 +10,7 @@ import {
 import {getRoturSettings, setRoturSetting} from '../lib/rotur/settings.js';
 import {isLoggedIn} from '../lib/rotur/client.js';
 import {getState as getRoturIdentityState} from '../lib/rotur/identity.js';
+import {isStudentSession} from '../lib/rotur/student-flag.js';
 import ProjectActivityScope from '../lib/rotur/project-activity-scope.js';
 import {
     blockProjectPrompts,
@@ -144,6 +145,7 @@ class RoturExtensionHost extends React.Component {
     }
 
     async ensureActivitySharing () {
+        if (isStudentSession()) return false;
         const mode = getRoturSettings().activitySharing;
         const key = this.activityKey();
         const decision = activityAllowed(mode, key);
@@ -189,10 +191,12 @@ class RoturExtensionHost extends React.Component {
     }
 
     getUser () {
+        if (isStudentSession()) return null;
         return this.currentUser();
     }
 
     async ensureConsent (scopes, meta) {
+        if (isStudentSession()) return false;
         if (!this.currentUser().loggedIn) {
             throw new Error('Log in to Rotur to let this project connect');
         }
@@ -221,6 +225,7 @@ class RoturExtensionHost extends React.Component {
     }
 
     async call (method, args, opts) {
+        if (isStudentSession()) throw new Error('Rotur extensions are not available for class accounts.');
         if (isActivityMethod(method)) {
             const allowed = await this.ensureActivitySharing();
             if (!allowed) {

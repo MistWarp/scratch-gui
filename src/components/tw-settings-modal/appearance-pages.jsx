@@ -1,4 +1,5 @@
 import classNames from 'classnames';
+import {isStudentSession} from '../../lib/rotur/student-flag.js';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {FormattedMessage, defineMessages, injectIntl, intlShape} from 'react-intl';
@@ -726,7 +727,7 @@ const UnconnectedCustomThemesSettingsPage = ({theme, onChangeTheme}) => (
         <CustomThemesPage
             theme={theme}
             onChangeTheme={onChangeTheme}
-            onOpenThemeMarketplace={communityEnabled ? openThemeMarketplace : null}
+            onOpenThemeMarketplace={communityEnabled && !isStudentSession() ? openThemeMarketplace : null}
         />
     </Box>
 );

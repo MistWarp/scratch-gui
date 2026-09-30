@@ -2,14 +2,17 @@ import {serializeEvent, shouldSyncEvent} from './block-serialization';
 import {encodeCommand} from './command-codec';
 import {OP} from './protocol';
 
+const READ_ONLY_MESSAGE = 'You are watching this project and cannot edit it.';
+
 /** Connect the editor's VM command boundary to a session. Blockly edits reach
  * this through VM.blockListener, before they mutate the VM. */
-export default class VMAdapter {
-    constructor ({vm, onLocalOp}) {
+class VMAdapter {
+    constructor ({vm, onLocalOp, readOnly = false}) {
         this.vm = vm;
         this.onLocalOp = onLocalOp;
         this.workspace = null;
         this._suppressed = false;
+        this._readOnly = readOnly;
         this._destroyed = false;
         this._seen = new WeakSet();
         this._pending = 0;
@@ -17,6 +20,7 @@ export default class VMAdapter {
         if (!engine) throw new Error('This version of scratch-vm does not support collaboration commands.');
         engine.snapshot();
         engine.handler = command => {
+            if (this._readOnly) return Promise.reject(new Error(READ_ONLY_MESSAGE));
             if (this._suppressed || this._destroyed) return Promise.reject(new Error('The project is synchronizing.'));
             const payload = encodeCommand(vm, command);
             payload.requestId = Array.from(window.crypto.getRandomValues(new Uint32Array(4)),
@@ -45,6 +49,10 @@ export default class VMAdapter {
             if (this._seen.has(event)) return true;
             this._seen.add(event);
             if (event._syncOriginated) return true;
+            if (this._readOnly) {
+                vm.emit('EDIT_COMMAND_ERROR', new Error(READ_ONLY_MESSAGE));
+                return true;
+            }
             // Rebuild events are marked at creation by the blocks renderer.
             if (event.recordUndo === false && event._mwRenderEvent) return true;
             const target = globalVariable && !event.isLocal ? vm.runtime.getTargetForStage() :
@@ -57,6 +65,9 @@ export default class VMAdapter {
         };
     }
 
+    isReadOnly () {
+        return this._readOnly;
+    }
     setSuppressed (value) {
         this._suppressed = value;
         this.vm.editingCommands.loadingSnapshot = value;
@@ -109,3 +120,6 @@ export default class VMAdapter {
         this.detach();
     }
 }
+
+export {READ_ONLY_MESSAGE};
+export default VMAdapter;

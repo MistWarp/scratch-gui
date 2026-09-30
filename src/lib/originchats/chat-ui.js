@@ -1,3 +1,5 @@
+import {isStudentSession} from '../rotur/student-flag.js';
+
 const LAYOUT_KEY = 'mw:chat-layout';
 const OPEN_KEY = 'mw:chat-open';
 const MIN_WIDTH = 280;
@@ -21,6 +23,7 @@ const readLayout = () => {
 };
 
 const requestedByUrl = () => {
+    if (isStudentSession()) return false;
     try {
         const params = new URLSearchParams(window.location.search);
         return params.has('chat') || window.location.hash === '#chat';
@@ -30,6 +33,7 @@ const requestedByUrl = () => {
 };
 
 const readOpen = () => {
+    if (isStudentSession()) return false;
     if (requestedByUrl()) return true;
     try {
         return sessionStorage.getItem(OPEN_KEY) === '1';
@@ -78,9 +82,15 @@ const offerFiles = files => {
     return true;
 };
 
-const openChat = () => update({open: true});
+const openChat = () => {
+    if (isStudentSession()) return;
+    update({open: true});
+};
 const closeChat = () => update({open: false});
-const toggleChat = () => update({open: !state.open});
+const toggleChat = () => {
+    if (isStudentSession()) return;
+    update({open: !state.open});
+};
 const setChatSpace = space => update({space: space === 'dms' ? 'dms' : 'server'});
 const setChatMode = mode => update({mode: mode === 'floating' ? 'floating' : 'docked'});
 const setChatWidth = width => update({width: clampWidth(width)});

@@ -7,6 +7,7 @@ import {IntlProvider} from 'react-intl';
 
 import WindowManager from '../../addons/window-system/window-manager';
 import {openProjectMetadataModal} from '../../reducers/modals';
+import {isStudentSession} from '../rotur/student-flag.js';
 
 let shareWindow = null;
 let container = null;
@@ -38,8 +39,9 @@ const openMistWarpShareWindow = ({vm, initialTitle, initialError, action = 'save
 
     shareWindow = WindowManager.createWindow({
         id: 'mw-share-window',
-        title: action === 'remix' ? 'Remix to MistWarp' :
-            action === 'update' ? 'Update MistWarp project' : 'Save to MistWarp',
+        title: isStudentSession() ? 'Save to my class' :
+            action === 'remix' ? 'Remix to MistWarp' :
+                action === 'update' ? 'Update MistWarp project' : 'Save to MistWarp',
         width: 460,
         height: 430,
         minWidth: 360,
@@ -73,6 +75,7 @@ const openMistWarpShareWindow = ({vm, initialTitle, initialError, action = 'save
                 initialTitle,
                 initialError,
                 action,
+                student: isStudentSession(),
                 onClose: cleanup,
                 onRegisterBusyCheck: check => {
                     isBusy = check;

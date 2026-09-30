@@ -1,4 +1,5 @@
 import JSZip from '@turbowarp/jszip';
+import {isStudentSession} from '../rotur/student-flag.js';
 import {withProjectOperation} from '../project-operation.js';
 import {
     createProject, uploadProject, publishProject, updateProject, checkProjectAssets, getProject, getProjectCommits,
@@ -373,7 +374,7 @@ const publishWorkspace = async ({
     const remoteWarnings = remoteSync.filter(remote => !remote.ok);
 
     let shared = Boolean(platformProject && platformProject.shared);
-    if (share && !shared && platformProject.isOwner) {
+    if (share && !shared && platformProject.isOwner && !isStudentSession()) {
         onProgress({phase: 'publish', message: 'Sharing'});
         await publishProject(platformId);
         shared = true;

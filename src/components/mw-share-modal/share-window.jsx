@@ -403,10 +403,11 @@ class ShareWindow extends React.Component {
                 <div className={styles.root}>
                     <div className={styles.body}>
                         <p className={styles.doneMessage}>
-                            {this.state.done.shared ?
-                                'Your project is saved and shared.' :
-                                'Your project is saved to MistWarp. ' +
-                                'It stays private until you share it from its project page.'}
+                            {this.props.student ? 'Your project is saved to your class.' :
+                                this.state.done.shared ?
+                                    'Your project is saved and shared.' :
+                                    'Your project is saved to MistWarp. ' +
+                                    'It stays private until you share it from its project page.'}
                         </p>
                         {this.state.notice ? <div className={styles.notice}>{this.state.notice}</div> : null}
                     </div>
@@ -416,14 +417,16 @@ class ShareWindow extends React.Component {
                             variant="secondary"
                             onClick={this.props.onClose}
                         >{intl.formatMessage(messages.close)}</Button>
-                        <Button
-                            type="button"
-                            variant="primary"
-                            onClick={() => {
-                                window.open(this.state.done.url, '_blank', 'noopener');
-                                this.props.onClose();
-                            }}
-                        >{intl.formatMessage(messages.openProjectPage)}</Button>
+                        {this.props.student ? null : (
+                            <Button
+                                type="button"
+                                variant="primary"
+                                onClick={() => {
+                                    window.open(this.state.done.url, '_blank', 'noopener');
+                                    this.props.onClose();
+                                }}
+                            >{intl.formatMessage(messages.openProjectPage)}</Button>
+                        )}
                     </div>
                 </div>
             );
@@ -568,6 +571,7 @@ ShareWindow.propTypes = {
     }),
     initialTitle: PropTypes.string,
     action: PropTypes.oneOf(['save', 'remix', 'update']),
+    student: PropTypes.bool,
     onClose: PropTypes.func.isRequired,
     onReviewStorage: PropTypes.func.isRequired,
     onPublished: PropTypes.func.isRequired,
