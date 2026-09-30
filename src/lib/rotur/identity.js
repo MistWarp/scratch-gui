@@ -15,6 +15,7 @@ import {
     logout as mistLogout
 } from '../community/api.js';
 import {ROTUR_TOKEN_KEY} from './token-key.js';
+import {setMinorAccount} from '../minor-account.js';
 
 const MIST_SESSION_KEY = 'mw:mistwarp-session';
 
@@ -88,6 +89,7 @@ const invalidateFailedValidator = error => {
     if (!error || error.code !== 'VALIDATOR_GENERATION_FAILED') return false;
     roturLogout();
     storeSession(null);
+    setMinorAccount(false);
     setState({status: 'idle', user: null});
     return true;
 };
@@ -177,6 +179,7 @@ const logout = () => {
     }
     roturLogout();
     storeSession(null);
+    setMinorAccount(false);
     setState({status: 'idle', user: null, banMessage: null});
 };
 
@@ -200,6 +203,7 @@ onAuthInvalid(() => invalidateFailedValidator({code: 'VALIDATOR_GENERATION_FAILE
 onBanned((message, redirectUrl) => {
     roturLogout();
     storeSession(null);
+    setMinorAccount(false);
     try {
         clearGitAuth();
     } catch (_) {
@@ -228,6 +232,7 @@ if (typeof window !== 'undefined') {
             if (state.user) {
                 roturLogout();
                 storeSession(null);
+                setMinorAccount(false);
                 setState({status: 'idle', user: null});
             }
         } else if (!state.user) {
