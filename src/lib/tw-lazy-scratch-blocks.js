@@ -69,11 +69,32 @@ const set = ScratchBlocks => {
         ToolboxProto.setFlyoutWidth = function (flyoutWidth) {
             const CATEGORY_MENU_WIDTH = 60;
             if (!(typeof flyoutWidth === 'number' && Number.isFinite(flyoutWidth))) return;
+            if (typeof this.twLayoutWidth_ !== 'number') this.twLayoutWidth_ = this.width;
             this.width = CATEGORY_MENU_WIDTH + flyoutWidth;
             if (this.flyout_ && typeof this.flyout_.setWidth === 'function') {
                 this.flyout_.setWidth(flyoutWidth);
             }
         };
+    }
+
+    const WorkspaceSvg = _ScratchBlocks.WorkspaceSvg;
+    const originalTopLevelMetrics = WorkspaceSvg && WorkspaceSvg.getTopLevelWorkspaceMetrics_;
+    if (typeof originalTopLevelMetrics === 'function' && !originalTopLevelMetrics.twFixedPalette) {
+        WorkspaceSvg.getTopLevelWorkspaceMetrics_ = function () {
+            const toolbox = this.toolbox_;
+            const layoutWidth = toolbox && toolbox.twLayoutWidth_;
+            if (typeof layoutWidth !== 'number' || toolbox.width === layoutWidth) {
+                return originalTopLevelMetrics.call(this);
+            }
+            const paletteWidth = toolbox.width;
+            toolbox.width = layoutWidth;
+            try {
+                return originalTopLevelMetrics.call(this);
+            } finally {
+                toolbox.width = paletteWidth;
+            }
+        };
+        WorkspaceSvg.getTopLevelWorkspaceMetrics_.twFixedPalette = true;
     }
 
     const verticalFlyoutProto = _ScratchBlocks.VerticalFlyout && _ScratchBlocks.VerticalFlyout.prototype;
