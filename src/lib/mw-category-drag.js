@@ -375,6 +375,7 @@ const installCategoryDrag = (workspace, options = {}) => {
         event.stopPropagation();
         showContextMenu(ScratchBlocks, event, [{
             text: getResetLabel(),
+            icon: 'reset',
             enabled: hasCustomCategoryOrder(options.vm),
             callback: () => resetCategoryOrder(options.vm)
         }], workspace.RTL);
