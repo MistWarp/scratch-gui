@@ -16,7 +16,7 @@ import {MULTIPLAYER_ENABLED} from '../../lib/mistwarp-games/config.js';
 import {cachedFetchBuffer, preloadContent} from '../../lib/community/cached-fetch.js';
 import {buyProject} from '../purchase';
 import {
-    isInsufficientFunds, openCreditCheckout, CREDIT_PACKS, sendCommercePayment, listCommerceBounties
+    isInsufficientFunds, sendCommercePayment, listCommerceBounties
 } from '../credits';
 import RoturConsentModal from '../components/RoturConsentModal.jsx';
 import GameMarketplaceModal from '../components/GameMarketplaceModal.jsx';
@@ -257,7 +257,6 @@ const Project = () => {
     const [unsandboxed, setUnsandboxed] = useState(false);
     const [confirmUnsandboxed, setConfirmUnsandboxed] = useState(false);
     const [buying, setBuying] = useState(false);
-    const [checkoutBusy, setCheckoutBusy] = useState(false);
     const [confirmBuy, setConfirmBuy] = useState(false);
     const [confirmBalance, setConfirmBalance] = useState(null);
     const [supportOpen, setSupportOpen] = useState(false);
@@ -413,7 +412,6 @@ const Project = () => {
         setDeletingProject(false);
         setConfirmUnsandboxed(false);
         setBuying(false);
-        setCheckoutBusy(false);
         setSavingTitle(false);
         setSavingLibrary(false);
         setSavingFeatured(false);
@@ -1123,26 +1121,6 @@ const Project = () => {
         }
     };
 
-    const openCheckout = async () => {
-        const context = actionContextRef.current;
-        const actionKey = beginAction('checkout');
-        if (!actionKey) return;
-        setCheckoutBusy(true);
-        setActionError(null);
-        try {
-            await openCreditCheckout(CREDIT_PACKS[1]);
-        } catch (e) {
-            if (actionContextRef.current === context) {
-                setActionError(e.needsReauth ?
-                    'Your current login cannot buy credits. Log out and back in, then try again.' :
-                    (e.message || 'Could not open checkout.'));
-            }
-        } finally {
-            releaseAction(actionKey);
-            if (actionContextRef.current === context) setCheckoutBusy(false);
-        }
-    };
-
     const doBuy = async () => {
         const context = actionContextRef.current;
         const actionKey = beginAction('buy');
@@ -1159,7 +1137,7 @@ const Project = () => {
             if (actionContextRef.current !== context) return;
             setConfirmBuy(false);
             if (isInsufficientFunds(e)) {
-                openCheckout();
+                setActionError(communityText('You do not have enough credits. Claim your daily credits in your wallet, then try again.'));
             } else if (e.needsReauth) {
                 setActionError('Your current login cannot send credits. Log out and back in, then try again.');
             } else {
@@ -1197,7 +1175,7 @@ const Project = () => {
             if (actionContextRef.current !== context) return;
             if (isInsufficientFunds(e)) {
                 setSupportOpen(false);
-                openCheckout();
+                setActionError(communityText('You do not have enough credits. Claim your daily credits in your wallet, then try again.'));
             } else {
                 setActionError(e.needsReauth ?
                     'Your current login cannot send credits. Log out and back in, then try again.' :
@@ -1893,12 +1871,12 @@ const Project = () => {
                     confirmLabel={(
                         <React.Fragment>
                             <Coins size={15} />
-                            {needsCredits ? communityText('Buy credits') : communityText('Pay {value1} credits', {value1: price})}
+                            {needsCredits ? communityText('Open wallet') : communityText('Pay {value1} credits', {value1: price})}
                         </React.Fragment>
                     )}
-                    busy={needsCredits ? checkoutBusy : buying}
-                    busyLabel={needsCredits ? communityText('Opening…') : communityText('Processing…')}
-                    onConfirm={needsCredits ? openCheckout : doBuy}
+                    busy={needsCredits ? false : buying}
+                    busyLabel={communityText('Processing…')}
+                    onConfirm={needsCredits ? () => navigate('/wallet') : doBuy}
                     onCancel={() => setConfirmBuy(false)}
                 >
                     <p className={styles.confirmText}>
@@ -1906,6 +1884,9 @@ const Project = () => {
                     </p>
                     {confirmBalance !== null ? (
                         <p className={styles.confirmBalance}>{communityText('Your balance: {value1} credits', {value1: confirmBalance})}</p>
+                    ) : null}
+                    {needsCredits ? (
+                        <p className={styles.confirmBalance}>{communityText('You do not have enough credits. Claim your daily credits in your wallet, then try again.')}</p>
                     ) : null}
                 </ConfirmModal>
             ) : null}
