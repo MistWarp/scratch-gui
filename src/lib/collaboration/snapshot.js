@@ -4,6 +4,7 @@ import {SNAPSHOT, makeSnapshot} from './protocol.js';
 const CHUNK_SIZE = 64 * 1024;
 const SEND_WINDOW = 4;
 const RECEIVE_TIMEOUT_MS = 60 * 1000;
+const REQUEST_COOLDOWN_MS = 5 * 1000;
 
 const toArrayBuffer = data => {
     if (data instanceof ArrayBuffer) return data;
@@ -55,21 +56,28 @@ class HostSnapshotService extends Emitter {
             if (envelope.type === SNAPSHOT.ACK) {
                 this._onAck(peerId, envelope.payload);
             } else if (envelope.type === SNAPSHOT.REQUEST) {
+                const current = this._transfers.get(peerId);
+                if (current && Date.now() - current.startedAt < REQUEST_COOLDOWN_MS) return;
                 this.startTransfer(peerId);
             }
         };
         this._onUserLeft = user => {
             this._transfers.delete(user.id);
         };
+        this._onHistoryRestarted = () => {
+            this._transfers.clear();
+        };
         session.on('snapshot-needed', this._onSnapshotNeeded);
         session.on('snapshot-message', this._onSnapshotMessage);
         session.on('user-left', this._onUserLeft);
+        session.on('history-restarted', this._onHistoryRestarted);
     }
 
     destroy () {
         this.session.off('snapshot-needed', this._onSnapshotNeeded);
         this.session.off('snapshot-message', this._onSnapshotMessage);
         this.session.off('user-left', this._onUserLeft);
+        this.session.off('history-restarted', this._onHistoryRestarted);
         this._transfers.clear();
         this.removeAllListeners();
     }
@@ -83,7 +91,8 @@ class HostSnapshotService extends Emitter {
         this._transferCounter++;
         const transferId = `snapshot-${this._transferCounter}`;
         // Claim the slot first so a re-request supersedes an older transfer.
-        this._transfers.set(peerId, {transferId, starting: true});
+        const startedAt = Date.now();
+        this._transfers.set(peerId, {transferId, starting: true, startedAt});
         this.emit('upload-start', {peerId});
 
         let buffer;
@@ -128,6 +137,7 @@ class HostSnapshotService extends Emitter {
         const chunkCount = Math.max(1, Math.ceil(buffer.byteLength / CHUNK_SIZE));
         const transfer = {
             transferId,
+            startedAt,
             buffer,
             chunkCount,
             nextIndex: 0,

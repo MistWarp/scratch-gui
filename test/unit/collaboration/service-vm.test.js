@@ -98,3 +98,57 @@ test('real facade onboards a VM and commits edits from both peers without echoin
         client.disconnect(); host.disconnect(); hostVM.quit(); clientVM.quit();
     }
 });
+
+const joinPair = async () => {
+    mockHub = new FakeHub();
+    const host = new CollabService();
+    const client = new CollabService();
+    const hostVM = makeVM();
+    const clientVM = makeVM();
+    host.init(hostVM); client.init(clientVM);
+    await host.connectToRoom('test', 'host', true);
+    await client.connectToRoom('test', 'guest');
+    await pumpUntil(() => client._session && client._session.lastAppliedSeq !== null);
+    return {host, client, hostVM, clientVM};
+};
+
+test('a guest who opens another project leaves the session first', async () => {
+    const {host, client, hostVM, clientVM} = await joinPair();
+    try {
+        const project = await hostVM.saveProjectSb3('arraybuffer');
+        const left = jest.fn();
+        client.on('left-for-other-project', left);
+        await clientVM.loadProject(project);
+        expect(left).toHaveBeenCalledTimes(1);
+        expect(client.isConnected).toBe(false);
+        expect(clientVM.editingCommands.handler).toBeNull();
+    } finally {
+        client.disconnect(); host.disconnect(); hostVM.quit(); clientVM.quit();
+    }
+});
+
+test('a host who opens another project sends it to everyone', async () => {
+    const {host, client, hostVM, clientVM} = await joinPair();
+    try {
+        const other = makeVM();
+        other.runtime.targets[1].sprite.name = 'Replacement';
+        const project = await other.saveProjectSb3('arraybuffer');
+        other.quit();
+        await hostVM.loadProject(project);
+        expect(host.isConnected).toBe(true);
+        await pumpUntil(() => clientVM.runtime.targets.some(target => target.getName() === 'Replacement') &&
+            client._session.lastAppliedSeq !== null);
+        expect(clientVM.editingCommands.snapshot()).toEqual(hostVM.editingCommands.snapshot());
+    } finally {
+        client.disconnect(); host.disconnect(); hostVM.quit(); clientVM.quit();
+    }
+});
+
+test('ending the session restores the original loadProject', async () => {
+    const {host, client, hostVM, clientVM} = await joinPair();
+    const wrapped = hostVM.loadProject;
+    host.disconnect();
+    expect(hostVM.loadProject).not.toBe(wrapped);
+    expect(Object.prototype.hasOwnProperty.call(hostVM, 'loadProject')).toBe(false);
+    client.disconnect(); hostVM.quit(); clientVM.quit();
+});

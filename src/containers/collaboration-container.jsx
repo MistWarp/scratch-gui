@@ -36,6 +36,9 @@ import {
     openGitModal
 } from '../reducers/modals';
 
+const MAX_ATTACH_ATTEMPTS = 20;
+const BROKER_OFFLINE_NOTICE_DELAY_MS = 5000;
+
 class CollaborationContainer extends Component {
     constructor (props) {
         super(props);
@@ -72,11 +75,11 @@ class CollaborationContainer extends Component {
         this.handleProjectSyncApplyStart = this.handleProjectSyncApplyStart.bind(this);
         this.handleProjectSyncApplyComplete = this.handleProjectSyncApplyComplete.bind(this);
         this.handleProjectSyncDownloadError = this.handleProjectSyncDownloadError.bind(this);
-        this.handleHostLoadingStart = this.handleHostLoadingStart.bind(this);
-        this.handleHostLoadingProgress = this.handleHostLoadingProgress.bind(this);
-        this.handleHostLoadingComplete = this.handleHostLoadingComplete.bind(this);
-        this.handleProjectSyncWait = this.handleProjectSyncWait.bind(this);
-        this.handleSessionReady = this.handleSessionReady.bind(this);
+        this.handleHostRestarted = this.handleHostRestarted.bind(this);
+        this.handleLeftForOtherProject = this.handleLeftForOtherProject.bind(this);
+        this.handleExtensionsSkipped = this.handleExtensionsSkipped.bind(this);
+        this.handleSnapshotUploadFailed = this.handleSnapshotUploadFailed.bind(this);
+        this.handleBrokerStatus = this.handleBrokerStatus.bind(this);
         this.handlePresenceEditingChanged = this.handlePresenceEditingChanged.bind(this);
         this.handleReconnecting = this.handleReconnecting.bind(this);
         this.handleReconnected = this.handleReconnected.bind(this);
@@ -112,11 +115,11 @@ class CollaborationContainer extends Component {
         this.collaborationService.on('project-sync-apply-start', this.handleProjectSyncApplyStart);
         this.collaborationService.on('project-sync-apply-complete', this.handleProjectSyncApplyComplete);
         this.collaborationService.on('project-sync-download-error', this.handleProjectSyncDownloadError);
-        this.collaborationService.on('host-loading-start', this.handleHostLoadingStart);
-        this.collaborationService.on('host-loading-progress', this.handleHostLoadingProgress);
-        this.collaborationService.on('host-loading-complete', this.handleHostLoadingComplete);
-        this.collaborationService.on('project-sync-wait', this.handleProjectSyncWait);
-        this.collaborationService.on('session-ready', this.handleSessionReady);
+        this.collaborationService.on('host-restarted', this.handleHostRestarted);
+        this.collaborationService.on('left-for-other-project', this.handleLeftForOtherProject);
+        this.collaborationService.on('extensions-skipped', this.handleExtensionsSkipped);
+        this.collaborationService.on('snapshot-upload-failed', this.handleSnapshotUploadFailed);
+        this.collaborationService.on('broker-status', this.handleBrokerStatus);
         this.collaborationService.on('presence-editing-changed', this.handlePresenceEditingChanged);
         this.collaborationService.on('reconnecting', this.handleReconnecting);
         this.collaborationService.on('reconnected', this.handleReconnected);
@@ -158,11 +161,11 @@ class CollaborationContainer extends Component {
         this.collaborationService.off('project-sync-apply-start', this.handleProjectSyncApplyStart);
         this.collaborationService.off('project-sync-apply-complete', this.handleProjectSyncApplyComplete);
         this.collaborationService.off('project-sync-download-error', this.handleProjectSyncDownloadError);
-        this.collaborationService.off('host-loading-start', this.handleHostLoadingStart);
-        this.collaborationService.off('host-loading-progress', this.handleHostLoadingProgress);
-        this.collaborationService.off('host-loading-complete', this.handleHostLoadingComplete);
-        this.collaborationService.off('project-sync-wait', this.handleProjectSyncWait);
-        this.collaborationService.off('session-ready', this.handleSessionReady);
+        this.collaborationService.off('host-restarted', this.handleHostRestarted);
+        this.collaborationService.off('left-for-other-project', this.handleLeftForOtherProject);
+        this.collaborationService.off('extensions-skipped', this.handleExtensionsSkipped);
+        this.collaborationService.off('snapshot-upload-failed', this.handleSnapshotUploadFailed);
+        this.collaborationService.off('broker-status', this.handleBrokerStatus);
         this.collaborationService.off('presence-editing-changed', this.handlePresenceEditingChanged);
         this.collaborationService.off('reconnecting', this.handleReconnecting);
         this.collaborationService.off('reconnected', this.handleReconnected);
@@ -171,9 +174,7 @@ class CollaborationContainer extends Component {
             clearTimeout(this.attachTimeout);
             this.attachTimeout = null;
         }
-
-        // Clear waiting overlay if it exists
-        this.clearWaitingOverlay();
+        clearTimeout(this.brokerOfflineTimer);
 
         // Cleanup notification manager
         NotificationSystem.cleanup();
@@ -250,7 +251,7 @@ class CollaborationContainer extends Component {
         }
     }
 
-    tryAttachToWorkspace () {
+    tryAttachToWorkspace (attempt = 0) {
         if (this.attachTimeout) {
             clearTimeout(this.attachTimeout);
             this.attachTimeout = null;
@@ -262,10 +263,10 @@ class CollaborationContainer extends Component {
             // Fallback to global Blockly workspace
             const workspace = window.Blockly.getMainWorkspace();
             this.collaborationService.attachToWorkspace(workspace);
-        } else if (this.collaborationService.isConnected) {
+        } else if (this.collaborationService.isConnected && attempt < MAX_ATTACH_ATTEMPTS) {
             this.attachTimeout = setTimeout(() => {
                 this.attachTimeout = null;
-                this.tryAttachToWorkspace();
+                this.tryAttachToWorkspace(attempt + 1);
             }, 500);
         }
     }
@@ -275,6 +276,7 @@ class CollaborationContainer extends Component {
     }
 
     handleLeaveRoom () {
+        this.endNoticeShown = true;
         this.collaborationService.disconnect();
         this.props.onSetConnected(false);
         this.props.onSetRoomId(null);
@@ -307,12 +309,19 @@ class CollaborationContainer extends Component {
         this.updateUsersList();
     }
 
-    handleConnectionFailed (data) {
-        // Immediately clear connection state and show error
+    resetSessionState () {
         this.props.onSetConnected(false);
         this.props.onSetRoomId(null);
         this.props.onSetUsers([]);
+        this.props.onSetCollabLoading(false);
+        this.props.onSetReconnecting(false);
+    }
+
+    handleConnectionFailed (data) {
+        this.endNoticeShown = true;
+        this.resetSessionState();
         this.props.onSetError(data.error);
+        NotificationSystem.error(data.error, 8000);
     }
 
     handleUsernameChanged (user) {
@@ -328,26 +337,20 @@ class CollaborationContainer extends Component {
     }
 
     handleKickedFromRoom () {
-        // Disconnect from the collaboration service but don't clear the error
+        const message = 'The host removed you from the room. Your copy of the project is still here.';
+        this.endNoticeShown = true;
         this.collaborationService.disconnect();
-
-        // Set connection state to false and clear room/users
-        this.props.onSetConnected(false);
-        this.props.onSetRoomId(null);
-        this.props.onSetUsers([]);
-
-        // Set a specific kick message AFTER clearing the room state
-        this.props.onSetError('You have been removed from the collaboration room by the host.');
+        this.resetSessionState();
+        this.props.onSetError(message);
+        NotificationSystem.warning(message, 8000);
     }
 
     handleHostLeft () {
-        this.props.onSetConnected(false);
-        this.props.onSetRoomId(null);
-        this.props.onSetUsers([]);
-
-        NotificationSystem.warning('The host has left the collaboration room. The room has been closed.', 5000);
-
-        this.props.onSetError('The host has left the collaboration room. The room has been closed.');
+        const message = 'The host closed the room. Your copy of the project is still here.';
+        this.endNoticeShown = true;
+        this.resetSessionState();
+        NotificationSystem.warning(message, 8000);
+        this.props.onSetError(message);
     }
 
     handleConnectedToHost () {
@@ -370,18 +373,15 @@ class CollaborationContainer extends Component {
     }
 
     handleDisconnected () {
-        NotificationSystem.info('Disconnected from collaboration room', 3000);
-
-        this.clearWaitingOverlay();
-
-        this.props.onSetConnected(false);
-        this.props.onSetRoomId(null);
+        if (!this.endNoticeShown) NotificationSystem.info('You left the live session.', 3000);
+        this.endNoticeShown = false;
+        clearTimeout(this.brokerOfflineTimer);
+        this.resetSessionState();
         this.props.onSetRoomPrivacy('public');
-        this.props.onSetUsers([]);
     }
 
     handleCancelConnection () {
-        // Disconnect from the collaboration service
+        this.endNoticeShown = true;
         this.collaborationService.disconnect();
 
         // Clear any connection state
@@ -431,9 +431,11 @@ class CollaborationContainer extends Component {
     }
 
     handleJoinDenied (data) {
+        this.endNoticeShown = true;
         this.props.onSetError(data || 'Your join request was denied');
         this.props.onSetConnected(false);
         this.props.onSetRoomId(null);
+        this.props.onSetCollabLoading(false);
     }
 
     async handleChangeRoomPrivacy (newPrivacy) {
@@ -495,73 +497,38 @@ class CollaborationContainer extends Component {
         this.props.onSetCollabLoading(false);
     }
 
-    handleHostLoadingStart () {
-        this.props.onSetCollabLoading(true, 'Waiting for host to load project...');
-        this.props.onSetHostLoadingProgress(0);
+    handleHostRestarted () {
+        NotificationSystem.info('The host reopened the room, so their project is loading again.', 5000);
     }
 
-    handleHostLoadingProgress (data) {
-        if (data && typeof data.progress === 'number') {
-            this.props.onSetHostLoadingProgress(data.progress);
+    handleLeftForOtherProject () {
+        this.endNoticeShown = true;
+        NotificationSystem.info('You opened another project, so you left the live session.', 5000);
+    }
+
+    handleExtensionsSkipped ({ids}) {
+        NotificationSystem.warning(`These extensions from the host were not loaded: ${ids.join(', ')}. ` +
+            'Blocks that use them will not work for you.', 8000);
+    }
+
+    handleSnapshotUploadFailed ({username}) {
+        NotificationSystem.warning(`The project could not be sent to ${username || 'someone joining'}. ` +
+            'They will try again automatically.', 6000);
+    }
+
+    handleBrokerStatus ({online}) {
+        clearTimeout(this.brokerOfflineTimer);
+        if (online) {
+            if (this.brokerOfflineShown) NotificationSystem.info('New people can join the room again.', 3000);
+            this.brokerOfflineShown = false;
+            return;
         }
-    }
-
-    handleHostLoadingComplete () {
-        this.props.onSetCollabLoading(false);
-        this.props.onSetHostLoadingProgress(0);
-    }
-
-    // New handler for barrier wait
-    handleProjectSyncWait (data) {
-        // Show a blocking overlay while waiting for host/other clients
-        if (!this.waitingOverlay) {
-            const overlay = document.createElement('div');
-            overlay.className = 'response-wait-overlay';
-            overlay.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0, 0, 0, 0.8);
-                z-index: 10000;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                flex-direction: column;
-                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-            `;
-
-            const message = document.createElement('div');
-            message.textContent = data.message || 'Waiting for host...';
-            message.style.fontSize = '24px';
-            message.style.fontWeight = 'bold';
-
-            // Add a spinner or similar
-            const subtext = document.createElement('div');
-            subtext.textContent = 'Synchronizing with all clients...';
-            subtext.style.marginTop = '10px';
-            subtext.style.opacity = '0.7';
-
-            overlay.appendChild(message);
-            overlay.appendChild(subtext);
-            document.body.appendChild(overlay);
-            this.waitingOverlay = overlay;
-        }
-    }
-
-    clearWaitingOverlay () {
-        if (this.waitingOverlay) {
-            if (this.waitingOverlay.parentNode) {
-                this.waitingOverlay.parentNode.removeChild(this.waitingOverlay);
-            }
-            this.waitingOverlay = null;
-        }
-    }
-
-    handleSessionReady () {
-        this.clearWaitingOverlay();
+        if (!this.collaborationService.isHost) return;
+        this.brokerOfflineTimer = setTimeout(() => {
+            this.brokerOfflineShown = true;
+            NotificationSystem.warning('New people cannot join right now. ' +
+                'Everyone already in the room can keep editing.', 6000);
+        }, BROKER_OFFLINE_NOTICE_DELAY_MS);
     }
 
     handleReconnecting () {
