@@ -8,7 +8,18 @@ import Box from '../box/box.jsx';
 import Button from '../button/button.jsx';
 import Input from '../forms/input.jsx';
 
-import {Handshake as CollaborationIcon, User, Crown, UserMinus, Copy, AlertTriangle, PenLine} from 'lucide-react';
+import {
+    Handshake as CollaborationIcon,
+    User,
+    Crown,
+    UserMinus,
+    Copy,
+    AlertTriangle,
+    PenLine,
+    Link,
+    Eye,
+    Pencil
+} from 'lucide-react';
 
 import CollaborationService from '../../lib/collaboration/index.js';
 import {avatarForCollabUser} from '../../lib/collaboration/avatar.js';
@@ -17,41 +28,135 @@ import describeActivity from '../../lib/collaboration/describe-activity.js';
 import styles from './collaboration-modal.css';
 
 const messages = defineMessages({
-    roomUrlCopied: {
-        defaultMessage: 'Room link copied to clipboard',
-        description: 'Toast shown after the collaboration room link is copied',
-        id: 'mw.collaboration.roomUrlCopied'
+    inviteLinkCopied: {
+        defaultMessage: 'Invite link copied to clipboard',
+        description: 'Toast shown after the collaboration invite link is copied',
+        id: 'mw.collaboration.inviteLinkCopied'
     },
-    roomUrlPromptTitle: {
-        defaultMessage: 'Copy room link',
-        description: 'Title of the dialog showing the collaboration room link when it could not be copied',
-        id: 'mw.collaboration.roomUrlPromptTitle'
+    inviteLinkPromptTitle: {
+        defaultMessage: 'Copy invite link',
+        description: 'Title of the dialog showing the collaboration invite link when it could not be copied',
+        id: 'mw.collaboration.inviteLinkPromptTitle'
     },
-    roomUrlPromptMessage: {
+    inviteLinkPromptMessage: {
         defaultMessage: 'The link could not be copied automatically. Copy it from the field below.',
-        description: 'Message of the dialog showing the collaboration room link when it could not be copied',
-        id: 'mw.collaboration.roomUrlPromptMessage'
+        description: 'Message of the dialog showing the collaboration invite link when it could not be copied',
+        id: 'mw.collaboration.inviteLinkPromptMessage'
+    },
+    inviteLinkTitle: {
+        defaultMessage: 'Invite link',
+        description: 'Heading of the section with the collaboration invite link',
+        id: 'mw.collaboration.inviteLinkTitle'
+    },
+    inviteLinkFieldLabel: {
+        defaultMessage: 'Invite link',
+        description: 'Accessible label of the read-only field holding the collaboration invite link',
+        id: 'mw.collaboration.inviteLinkFieldLabel'
+    },
+    copyInviteLink: {
+        defaultMessage: 'Copy',
+        description: 'Button that copies the collaboration invite link',
+        id: 'mw.collaboration.copyInviteLink'
+    },
+    inviteRoleLabel: {
+        defaultMessage: 'People with the link can',
+        description: 'Label of the control choosing what the collaboration invite link allows',
+        id: 'mw.collaboration.inviteRoleLabel'
+    },
+    inviteRoleWatch: {
+        defaultMessage: 'Watch',
+        description: 'Invite link option letting people only watch the session',
+        id: 'mw.collaboration.inviteRoleWatch'
+    },
+    inviteRoleEdit: {
+        defaultMessage: 'Edit',
+        description: 'Invite link option letting people edit the project',
+        id: 'mw.collaboration.inviteRoleEdit'
+    },
+    inviteWatchHelp: {
+        defaultMessage: 'They can see every change and follow along, but cannot edit.',
+        description: 'Help text shown when the collaboration invite link only allows watching',
+        id: 'mw.collaboration.inviteWatchHelp'
+    },
+    inviteEditHelp: {
+        defaultMessage: 'They can change the project, just like you.',
+        description: 'Help text shown when the collaboration invite link allows editing',
+        id: 'mw.collaboration.inviteEditHelp'
+    },
+    roleEditing: {
+        defaultMessage: 'Editing',
+        description: 'Pill shown next to a collaborator who can edit the project',
+        id: 'mw.collaboration.roleEditing'
+    },
+    roleWatching: {
+        defaultMessage: 'Watching',
+        description: 'Pill shown next to a collaborator who can only watch',
+        id: 'mw.collaboration.roleWatching'
+    },
+    letEdit: {
+        defaultMessage: 'Let edit',
+        description: 'Button that lets a watching collaborator edit the project',
+        id: 'mw.collaboration.letEdit'
+    },
+    makeWatcher: {
+        defaultMessage: 'Make watcher',
+        description: 'Button that turns an editing collaborator into a watcher',
+        id: 'mw.collaboration.makeWatcher'
+    },
+    letWatch: {
+        defaultMessage: 'Let watch',
+        description: 'Button that approves a join request as a watcher',
+        id: 'mw.collaboration.letWatch'
+    },
+    letUserEdit: {
+        defaultMessage: 'Let {name} edit',
+        description: 'Accessible label of the button letting a named collaborator edit',
+        id: 'mw.collaboration.letUserEdit'
+    },
+    letUserWatch: {
+        defaultMessage: 'Let {name} watch',
+        description: 'Accessible label of the button approving a named join request as a watcher',
+        id: 'mw.collaboration.letUserWatch'
+    },
+    makeUserWatcher: {
+        defaultMessage: 'Make {name} a watcher',
+        description: 'Accessible label of the button turning a named collaborator into a watcher',
+        id: 'mw.collaboration.makeUserWatcher'
+    },
+    removeUser: {
+        defaultMessage: 'Remove {name}',
+        description: 'Accessible label of the button removing a named collaborator from the room',
+        id: 'mw.collaboration.removeUser'
+    },
+    denyUser: {
+        defaultMessage: 'Deny {name}',
+        description: 'Accessible label of the button denying a named join request',
+        id: 'mw.collaboration.denyUser'
+    },
+    watcherNotice: {
+        // eslint-disable-next-line max-len
+        defaultMessage: 'You are watching. You can look around and follow along, but changes are made by the host and editors.',
+        description: 'Notice shown to a collaborator who can only watch the session',
+        id: 'mw.collaboration.watcherNotice'
     }
 });
+
+const INVITE_ROLES = ['watch', 'edit'];
 
 class CollaborationModal extends Component {
     constructor (props) {
         super(props);
 
         this.state = {
-            confirmProjectJoin: null,
             roomId: props.roomId || '',
             isConnecting: false,
             connectionStep: props.isConnected ? 'connected' : 'join',
             error: null,
             pendingRequests: [],
-            showJoinRequest: false,
-            privacyBusy: false,
-            newRoomPrivacy: 'private'
+            showJoinRequest: false
         };
 
         this._autoJoinKey = null;
-        this._privacyPromise = null;
 
         this.handleRoomIdChange = this.handleRoomIdChange.bind(this);
         this.handleRoomIdKeyPress = this.handleRoomIdKeyPress.bind(this);
@@ -60,7 +165,11 @@ class CollaborationModal extends Component {
         this.handleCreateRoom = this.handleCreateRoom.bind(this);
         this.handleLeaveRoom = this.handleLeaveRoom.bind(this);
         this.handleKickUser = this.handleKickUser.bind(this);
-        this.handleCopyRoomUrl = this.handleCopyRoomUrl.bind(this);
+        this.handleCopyInviteLink = this.handleCopyInviteLink.bind(this);
+        this.handleInviteLinkFocus = this.handleInviteLinkFocus.bind(this);
+        this.handleSelectInviteWatch = this.handleSelectInviteWatch.bind(this);
+        this.handleSelectInviteEdit = this.handleSelectInviteEdit.bind(this);
+        this.handleInviteRoleKeyDown = this.handleInviteRoleKeyDown.bind(this);
         this.fallbackCopyToClipboard = this.fallbackCopyToClipboard.bind(this);
         this.showUrlPrompt = this.showUrlPrompt.bind(this);
         this.generateRoomCode = this.generateRoomCode.bind(this);
@@ -68,18 +177,12 @@ class CollaborationModal extends Component {
         this.handleApproveRequest = this.handleApproveRequest.bind(this);
         this.handleDenyRequest = this.handleDenyRequest.bind(this);
         this.handleCancelJoinRequest = this.handleCancelJoinRequest.bind(this);
-        this.handleChangeCurrentRoomPrivacy = this.handleChangeCurrentRoomPrivacy.bind(this);
         this.handleJoinRequestEvent = this.handleJoinRequestEvent.bind(this);
         this.handleAwaitingApproval = this.handleAwaitingApproval.bind(this);
         this.handleApprovalResolved = this.handleApprovalResolved.bind(this);
         this.handleJoinDenied = this.handleJoinDenied.bind(this);
         this.resetToJoinScreen = this.resetToJoinScreen.bind(this);
         this.handleCancelClick = this.handleCancelClick.bind(this);
-        this.handleSelectPublicPrivacy = this.handleSelectPublicPrivacy.bind(this);
-        this.handleSelectPrivatePrivacy = this.handleSelectPrivatePrivacy.bind(this);
-        this.handleSelectNewRoomPrivacy = this.handleSelectNewRoomPrivacy.bind(this);
-        this.handleSelectPrivateNewRoom = this.handleSelectPrivateNewRoom.bind(this);
-        this.handleSelectPublicNewRoom = this.handleSelectPublicNewRoom.bind(this);
     }
 
     componentDidMount () {
@@ -100,6 +203,7 @@ class CollaborationModal extends Component {
         }
     }
 
+    /* eslint-disable react/no-did-update-set-state */
     componentDidUpdate (prevProps) {
         if (prevProps.isConnected !== this.props.isConnected) {
             this.setState({
@@ -145,6 +249,7 @@ class CollaborationModal extends Component {
             }
         }
     }
+    /* eslint-enable react/no-did-update-set-state */
 
     componentWillUnmount () {
         if (CollaborationService) {
@@ -177,26 +282,6 @@ class CollaborationModal extends Component {
         this.props.onCancelConnection();
     }
 
-    handleSelectPublicPrivacy () {
-        return this.handleChangeCurrentRoomPrivacy('public');
-    }
-
-    handleSelectPrivatePrivacy () {
-        return this.handleChangeCurrentRoomPrivacy('private');
-    }
-
-    handleSelectNewRoomPrivacy (newRoomPrivacy) {
-        this.setState({newRoomPrivacy});
-    }
-
-    handleSelectPrivateNewRoom () {
-        this.handleSelectNewRoomPrivacy('private');
-    }
-
-    handleSelectPublicNewRoom () {
-        this.handleSelectNewRoomPrivacy('public');
-    }
-
     handleRoomIdChange (event) {
         this.setState({roomId: event.target.value});
     }
@@ -222,6 +307,10 @@ class CollaborationModal extends Component {
         try {
             await this.props.onJoinRoom(roomId, this.props.currentUsername);
         } catch (error) {
+            if (error && error.cancelled) {
+                this.resetToJoinScreen();
+                return;
+            }
             this.setState({
                 error: error.collabCode === 'ROOM_NOT_FOUND' ?
                     `Nobody is hosting room "${roomId}" yet. You can create it below.` :
@@ -243,7 +332,7 @@ class CollaborationModal extends Component {
         });
 
         try {
-            await this.props.onCreateRoom(roomCode, this.props.currentUsername, this.state.newRoomPrivacy);
+            await this.props.onCreateRoom(roomCode, this.props.currentUsername, 'private');
 
             const currentUrl = new URL(window.location.href);
             currentUrl.searchParams.set('room', roomCode);
@@ -275,23 +364,54 @@ class CollaborationModal extends Component {
         this.props.onKickUser(userId);
     }
 
-    handleCopyRoomUrl () {
-        const currentUrl = new URL(window.location.href);
-        currentUrl.searchParams.set('room', this.props.roomId);
-        currentUrl.searchParams.delete('username');
-        const roomUrl = currentUrl.toString();
+    handleChangeUserRole (userId, role) {
+        if (this.props.onChangeUserRole) this.props.onChangeUserRole(userId, role);
+    }
+
+    handleCopyInviteLink () {
+        const inviteLink = this.props.inviteLink;
+        if (!inviteLink) return;
 
         if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(roomUrl).then(() => {
-                this.props.onShowToast(this.props.intl.formatMessage(messages.roomUrlCopied), 'success');
+            navigator.clipboard.writeText(inviteLink).then(() => {
+                this.props.onShowToast(this.props.intl.formatMessage(messages.inviteLinkCopied), 'success');
             })
                 .catch(err => {
-                    console.error('Failed to copy room URL:', err);
-                    this.fallbackCopyToClipboard(roomUrl);
+                    console.error('Failed to copy invite link:', err);
+                    this.fallbackCopyToClipboard(inviteLink);
                 });
         } else {
-            this.fallbackCopyToClipboard(roomUrl);
+            this.fallbackCopyToClipboard(inviteLink);
         }
+    }
+
+    handleInviteLinkFocus (event) {
+        event.target.select();
+    }
+
+    handleSelectInviteWatch () {
+        this.changeInviteRole('watch');
+    }
+
+    handleSelectInviteEdit () {
+        this.changeInviteRole('edit');
+    }
+
+    changeInviteRole (role) {
+        if (role === this.props.inviteRole) return;
+        if (this.props.onChangeInviteRole) this.props.onChangeInviteRole(role);
+    }
+
+    handleInviteRoleKeyDown (event) {
+        const step = {ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1}[event.key];
+        if (!step) return;
+        event.preventDefault();
+        const current = Math.max(0, INVITE_ROLES.indexOf(this.props.inviteRole || 'watch'));
+        const next = INVITE_ROLES[(current + step + INVITE_ROLES.length) % INVITE_ROLES.length];
+        this.changeInviteRole(next);
+        const group = event.currentTarget;
+        const target = group.querySelector(`[data-role="${next}"]`);
+        if (target) target.focus();
     }
 
     fallbackCopyToClipboard (text) {
@@ -307,7 +427,7 @@ class CollaborationModal extends Component {
             textArea.select();
             const successful = document.execCommand('copy');
             if (successful) {
-                this.props.onShowToast(this.props.intl.formatMessage(messages.roomUrlCopied), 'success');
+                this.props.onShowToast(this.props.intl.formatMessage(messages.inviteLinkCopied), 'success');
             } else {
                 console.warn('Fallback copy failed');
                 this.showUrlPrompt(text);
@@ -323,8 +443,8 @@ class CollaborationModal extends Component {
     showUrlPrompt (text) {
         this.props.openSimpleDialog({
             type: 'prompt',
-            title: this.props.intl.formatMessage(messages.roomUrlPromptTitle),
-            message: this.props.intl.formatMessage(messages.roomUrlPromptMessage),
+            title: this.props.intl.formatMessage(messages.inviteLinkPromptTitle),
+            message: this.props.intl.formatMessage(messages.inviteLinkPromptMessage),
             defaultValue: text
         });
     }
@@ -342,7 +462,7 @@ class CollaborationModal extends Component {
     }
 
     maybeAutoJoin () {
-        if (this.props.projectSession || this.props.projectSessionActive) return;
+        if (this.props.projectSessionActive) return;
         const {roomId, currentUsername, isConnected} = this.props;
         if (!roomId || !currentUsername || isConnected) return;
         if (CollaborationService.getInstance().roomId) return;
@@ -360,8 +480,13 @@ class CollaborationModal extends Component {
         });
 
         try {
-            await this.props.onJoinRoom(roomCode, username);
+            await this.props.onJoinRoom(roomCode, username, null, {invite: this.props.pendingInvite});
         } catch (error) {
+            if (error && error.cancelled) {
+                this.setState({roomId: roomCode});
+                this.resetToJoinScreen();
+                return;
+            }
             this.setState({
                 roomId: roomCode,
                 error: error.collabCode === 'ROOM_NOT_FOUND' ?
@@ -373,10 +498,9 @@ class CollaborationModal extends Component {
         }
     }
 
-
-    async handleApproveRequest (requesterId, requesterUsername) {
+    async handleApproveRequest (requesterId, requesterUsername, role) {
         try {
-            await this.props.onApproveJoinRequest(requesterId, requesterUsername);
+            await this.props.onApproveJoinRequest(requesterId, requesterUsername, role);
             this.setState(prevState => ({
                 pendingRequests: prevState.pendingRequests.filter(req => req.id !== requesterId)
             }));
@@ -447,23 +571,6 @@ class CollaborationModal extends Component {
         });
     }
 
-    async handleChangeCurrentRoomPrivacy (newPrivacy) {
-        if (this._privacyPromise || newPrivacy === this.props.roomPrivacy) return this._privacyPromise;
-
-        this.setState({privacyBusy: true, error: null});
-        const request = Promise.resolve().then(() => this.props.onChangeRoomPrivacy(newPrivacy));
-        this._privacyPromise = request;
-        try {
-            await request;
-        } catch (error) {
-            console.error('Failed to change room privacy:', error);
-            this.setState({error: 'Failed to change room privacy'});
-        } finally {
-            if (this._privacyPromise === request) this._privacyPromise = null;
-            this.setState({privacyBusy: false});
-        }
-    }
-
     handleJoinRequestEvent () {
         if (CollaborationService?.getInstance().scope) return;
         if (CollaborationService) {
@@ -515,6 +622,115 @@ class CollaborationModal extends Component {
         );
     }
 
+    renderRolePill (user) {
+        const watching = user.role === 'watch';
+        return (
+            <span
+                className={classNames(styles.rolePill, {
+                    [styles.rolePillWatching]: watching
+                })}
+            >
+                {watching ? <Eye size={11} /> : <Pencil size={11} />}
+                {this.props.intl.formatMessage(watching ? messages.roleWatching : messages.roleEditing)}
+            </span>
+        );
+    }
+
+    renderInviteSection () {
+        const {intl, inviteLink} = this.props;
+        if (!inviteLink) return null;
+        const inviteRole = this.props.inviteRole || 'watch';
+        return (
+            <div className={styles.inviteSection}>
+                <h3 className={styles.sectionTitle}>
+                    <Link
+                        className={styles.sectionIcon}
+                        size={16}
+                    />
+                    {intl.formatMessage(messages.inviteLinkTitle)}
+                </h3>
+                <div className={styles.inviteRow}>
+                    <input
+                        className={classNames(styles.input, styles.inviteInput)}
+                        type="text"
+                        readOnly
+                        value={inviteLink}
+                        aria-label={intl.formatMessage(messages.inviteLinkFieldLabel)}
+                        onFocus={this.handleInviteLinkFocus}
+                    />
+                    <Button
+                        className={classNames(styles.primaryButton, styles.copyButton)}
+                        onClick={this.handleCopyInviteLink}
+                        iconElem={Copy}
+                        iconClassName={styles.buttonIcon}
+                    >
+                        {intl.formatMessage(messages.copyInviteLink)}
+                    </Button>
+                </div>
+                <div className={styles.inviteRoleRow}>
+                    <span
+                        className={styles.inviteRoleLabel}
+                        id="collaborationInviteRoleLabel"
+                    >
+                        {intl.formatMessage(messages.inviteRoleLabel)}
+                    </span>
+                    <div
+                        className={styles.segmented}
+                        role="radiogroup"
+                        aria-labelledby="collaborationInviteRoleLabel"
+                        onKeyDown={this.handleInviteRoleKeyDown}
+                    >
+                        <button
+                            className={classNames(styles.segment, {
+                                [styles.segmentActive]: inviteRole === 'watch'
+                            })}
+                            type="button"
+                            role="radio"
+                            data-role="watch"
+                            aria-checked={inviteRole === 'watch'}
+                            tabIndex={inviteRole === 'watch' ? 0 : -1}
+                            onClick={this.handleSelectInviteWatch}
+                        >
+                            <Eye size={14} />
+                            {intl.formatMessage(messages.inviteRoleWatch)}
+                        </button>
+                        <button
+                            className={classNames(styles.segment, {
+                                [styles.segmentActive]: inviteRole === 'edit'
+                            })}
+                            type="button"
+                            role="radio"
+                            data-role="edit"
+                            aria-checked={inviteRole === 'edit'}
+                            tabIndex={inviteRole === 'edit' ? 0 : -1}
+                            onClick={this.handleSelectInviteEdit}
+                        >
+                            <Pencil size={14} />
+                            {intl.formatMessage(messages.inviteRoleEdit)}
+                        </button>
+                    </div>
+                </div>
+                <div className={styles.inviteHelp}>
+                    {intl.formatMessage(inviteRole === 'edit' ? messages.inviteEditHelp : messages.inviteWatchHelp)}
+                </div>
+            </div>
+        );
+    }
+
+    renderWatcherNotice () {
+        return (
+            <div
+                className={styles.watchNotice}
+                role="status"
+            >
+                <div className={styles.privacyNoticeIcon}>
+                    <Eye size={14} />
+                </div>
+                <div>{this.props.intl.formatMessage(messages.watcherNotice)}</div>
+            </div>
+        );
+    }
+
     renderJoinStep () {
         const typedRoomId = this.state.roomId.trim();
         return (
@@ -528,7 +744,7 @@ class CollaborationModal extends Component {
                     />
                     <div className={styles.headerText}>
                         <FormattedMessage
-                            defaultMessage="Live Collaboration"
+                            defaultMessage="Live collaboration"
                             description="Title for collaboration modal"
                             id="gui.collaboration.title"
                         />
@@ -559,7 +775,7 @@ class CollaborationModal extends Component {
                     <div className={styles.joinSection}>
                         <h3 className={styles.sectionTitle}>
                             <FormattedMessage
-                                defaultMessage="Join an Existing Room"
+                                defaultMessage="Join a room"
                                 description="Join room section title"
                                 id="gui.collaboration.joinTitle"
                             />
@@ -586,7 +802,7 @@ class CollaborationModal extends Component {
                             disabled={this.state.isConnecting}
                         >
                             <FormattedMessage
-                                defaultMessage="Join Room"
+                                defaultMessage="Join room"
                                 description="Button to join collaboration room"
                                 id="gui.collaboration.joinRoom"
                             />
@@ -615,52 +831,18 @@ class CollaborationModal extends Component {
                     <div className={styles.createSection}>
                         <h3 className={styles.sectionTitle}>
                             <FormattedMessage
-                                defaultMessage="Create a New Room"
+                                defaultMessage="Create a room"
                                 description="Create room section title"
                                 id="gui.collaboration.createTitle"
                             />
                         </h3>
                         <div className={styles.createDescription}>
                             <FormattedMessage
-                                defaultMessage={'Private rooms require your approval. ' +
-                                    'Share the invite URL when you are ready.'}
+                                // eslint-disable-next-line max-len
+                                defaultMessage="Anyone with the invite link can join. People who only have the room code ask you first."
                                 description="Create room description"
                                 id="gui.collaboration.createDescription"
                             />
-                        </div>
-                        <div
-                            className={styles.privacySelector}
-                            role="radiogroup"
-                            aria-label="New room privacy"
-                        >
-                            <button
-                                className={classNames(styles.privacyOption, {
-                                    [styles.privacyOptionActive]: this.state.newRoomPrivacy === 'private'
-                                })}
-                                role="radio"
-                                aria-checked={this.state.newRoomPrivacy === 'private'}
-                                onClick={this.handleSelectPrivateNewRoom}
-                                type="button"
-                            >
-                                <div className={styles.privacyCardTitle}>{'Private room'}</div>
-                                <div className={styles.privacyCardDesc}>
-                                    {'Approve each person who asks to join.'}
-                                </div>
-                            </button>
-                            <button
-                                className={classNames(styles.privacyOption, {
-                                    [styles.privacyOptionActive]: this.state.newRoomPrivacy === 'public'
-                                })}
-                                role="radio"
-                                aria-checked={this.state.newRoomPrivacy === 'public'}
-                                onClick={this.handleSelectPublicNewRoom}
-                                type="button"
-                            >
-                                <div className={styles.privacyCardTitle}>{'Public room'}</div>
-                                <div className={styles.privacyCardDesc}>
-                                    {'Anyone with the room link can join.'}
-                                </div>
-                            </button>
                         </div>
                         <Button
                             className={styles.secondaryButton}
@@ -669,7 +851,7 @@ class CollaborationModal extends Component {
                         >
                             {typedRoomId ? `Host room "${typedRoomId}"` : (
                                 <FormattedMessage
-                                    defaultMessage="Create New Room"
+                                    defaultMessage="Create new room"
                                     description="Button to create new collaboration room"
                                     id="gui.collaboration.createRoom"
                                 />
@@ -696,7 +878,6 @@ class CollaborationModal extends Component {
     renderConnectingStep () {
         return (
             <Box className={styles.content}>
-                {this.renderAlphaBanner()}
                 <div className={styles.connecting}>
                     <div className={styles.spinner} />
                     <FormattedMessage
@@ -721,6 +902,144 @@ class CollaborationModal extends Component {
         );
     }
 
+    /* eslint-disable react/jsx-no-bind */
+    renderUserRow (user, isHost) {
+        const {intl} = this.props;
+        const isMe = user.id === this.props.currentUserId;
+        const watching = user.role === 'watch';
+        return (
+            <div
+                key={user.id}
+                className={classNames(styles.userItem, {
+                    [styles.currentUser]: isMe
+                })}
+            >
+                {this.renderUserIcon(user, user.isHost)}
+                <span className={styles.username}>
+                    {user.username}
+                    {user.isHost && (
+                        <span className={styles.hostBadge}>
+                            <FormattedMessage
+                                defaultMessage="Host"
+                                description="Host badge"
+                                id="gui.collaboration.host"
+                            />
+                        </span>
+                    )}
+                    {isMe && (
+                        <span className={styles.youBadge}>
+                            <FormattedMessage
+                                defaultMessage="You"
+                                description="You badge"
+                                id="gui.collaboration.you"
+                            />
+                        </span>
+                    )}
+                    {this.renderRolePill(user)}
+                    {this.describeActivity(user.id) && (
+                        <span className={styles.userActivity}>
+                            {this.describeActivity(user.id)}
+                        </span>
+                    )}
+                </span>
+
+                {isHost && !isMe && (
+                    <div className={styles.userActions}>
+                        <button
+                            type="button"
+                            className={styles.roleButton}
+                            aria-label={intl.formatMessage(
+                                watching ? messages.letUserEdit : messages.makeUserWatcher,
+                                {name: user.username}
+                            )}
+                            onClick={this.handleChangeUserRole.bind(this, user.id, watching ? 'edit' : 'watch')}
+                        >
+                            {intl.formatMessage(watching ? messages.letEdit : messages.makeWatcher)}
+                        </button>
+                        <Button
+                            className={styles.kickButton}
+                            aria-label={intl.formatMessage(messages.removeUser, {name: user.username})}
+                            onClick={this.handleKickUser.bind(this, user.id)}
+                            iconElem={UserMinus}
+                            iconClassName={styles.kickIcon}
+                        >
+                            <FormattedMessage
+                                defaultMessage="Kick"
+                                description="Kick user button"
+                                id="gui.collaboration.kick"
+                            />
+                        </Button>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    renderPendingRequests (pendingRequests) {
+        const {intl} = this.props;
+        return (
+            <div className={styles.requestsSection}>
+                <h3 className={styles.sectionTitle}>
+                    <FormattedMessage
+                        defaultMessage="Join requests ({count})"
+                        description="Pending requests section title"
+                        id="gui.collaboration.pendingRequests"
+                        values={{count: pendingRequests.length}}
+                    />
+                </h3>
+
+                <div className={styles.requestsList}>
+                    {pendingRequests.map(request => (
+                        <div
+                            key={request.id}
+                            className={styles.requestItem}
+                        >
+                            <div className={styles.requesterInfo}>
+                                {this.renderUserIcon(request, false)}
+                                <span className={styles.username}>
+                                    {request.username}
+                                </span>
+                            </div>
+
+                            <div className={styles.requestActions}>
+                                <Button
+                                    className={styles.approveButton}
+                                    aria-label={intl.formatMessage(messages.letUserWatch, {name: request.username})}
+                                    onClick={this.handleApproveRequest.bind(
+                                        this, request.id, request.username, 'watch'
+                                    )}
+                                >
+                                    {intl.formatMessage(messages.letWatch)}
+                                </Button>
+                                <Button
+                                    className={styles.approveButton}
+                                    aria-label={intl.formatMessage(messages.letUserEdit, {name: request.username})}
+                                    onClick={this.handleApproveRequest.bind(
+                                        this, request.id, request.username, 'edit'
+                                    )}
+                                >
+                                    {intl.formatMessage(messages.letEdit)}
+                                </Button>
+                                <Button
+                                    className={styles.denyButton}
+                                    aria-label={intl.formatMessage(messages.denyUser, {name: request.username})}
+                                    onClick={this.handleDenyRequest.bind(this, request.id)}
+                                >
+                                    <FormattedMessage
+                                        defaultMessage="Deny"
+                                        description="Deny join request button"
+                                        id="gui.collaboration.deny"
+                                    />
+                                </Button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+    /* eslint-enable react/jsx-no-bind */
+
     renderConnectedStep () {
         const users = this.props.connectedUsers || [];
         const currentUser = users.find(user => user.id === this.props.currentUserId);
@@ -730,8 +1049,6 @@ class CollaborationModal extends Component {
 
         return (
             <Box className={styles.content}>
-                {this.renderAlphaBanner()}
-
                 <div className={styles.header}>
                     <CollaborationIcon
                         className={styles.headerIcon}
@@ -751,6 +1068,7 @@ class CollaborationModal extends Component {
                     <div className={styles.status}>
                         <span className={styles.statusIndicator} />
                         <FormattedMessage
+                            // eslint-disable-next-line max-len
                             defaultMessage="Connected - {userCount} {userCount, plural, one {user} other {users}} online"
                             description="Connection status"
                             id="gui.collaboration.status"
@@ -759,218 +1077,39 @@ class CollaborationModal extends Component {
                     </div>
                 </div>
 
+                {!isHost && this.props.myRole === 'watch' && (
+                    <div className={styles.usersSectionWrapper}>
+                        {this.renderWatcherNotice()}
+                    </div>
+                )}
+
                 <div className={styles.usersSectionWrapper}>
                     <div className={styles.usersSection}>
                         <h3 className={styles.sectionTitle}>
                             <FormattedMessage
-                                defaultMessage="Connected Users"
+                                defaultMessage="People here"
                                 description="Users section title"
                                 id="gui.collaboration.connectedUsers"
                             />
                         </h3>
 
                         <div className={styles.usersList}>
-                            {users.map(user => (
-                                <div
-                                    key={user.id}
-                                    className={classNames(styles.userItem, {
-                                        [styles.currentUser]: user.id === this.props.currentUserId
-                                    })}
-                                >
-                                    {this.renderUserIcon(user, user.isHost)}
-                                    <span className={styles.username}>
-                                        {user.username}
-                                        {user.isHost && (
-                                            <span className={styles.hostBadge}>
-                                                <FormattedMessage
-                                                    defaultMessage="Host"
-                                                    description="Host badge"
-                                                    id="gui.collaboration.host"
-                                                />
-                                            </span>
-                                        )}
-                                        {user.id === this.props.currentUserId && (
-                                            <span className={styles.youBadge}>
-                                                <FormattedMessage
-                                                    defaultMessage="You"
-                                                    description="You badge"
-                                                    id="gui.collaboration.you"
-                                                />
-                                            </span>
-                                        )}
-                                        {this.describeActivity(user.id) && (
-                                            <span className={styles.userActivity}>
-                                                {this.describeActivity(user.id)}
-                                            </span>
-                                        )}
-                                    </span>
-
-                                    {isHost && user.id !== this.props.currentUserId && (
-                                        <Button
-                                            className={styles.kickButton}
-                                            onClick={this.handleKickUser.bind(this, user.id)}
-                                            iconElem={UserMinus}
-                                            iconClassName={styles.kickIcon}
-                                        >
-                                            <FormattedMessage
-                                                defaultMessage="Kick"
-                                                description="Kick user button"
-                                                id="gui.collaboration.kick"
-                                            />
-                                        </Button>
-                                    )}
-                                </div>
-                            ))}
+                            {users.map(user => this.renderUserRow(user, isHost))}
                         </div>
                     </div>
                 </div>
 
-                {isHost && pendingRequests.length > 0 && (
-                    <>
-                        <div className={styles.requestsSection}>
-                            <h3 className={styles.sectionTitle}>
-                                <FormattedMessage
-                                    defaultMessage="Pending Join Requests ({count})"
-                                    description="Pending requests section title"
-                                    id="gui.collaboration.pendingRequests"
-                                    values={{count: pendingRequests.length}}
-                                />
-                            </h3>
+                {isHost && pendingRequests.length > 0 && this.renderPendingRequests(pendingRequests)}
 
-                            <div className={styles.requestsList}>
-                                {pendingRequests.map(request => (
-                                    <div
-                                        key={request.id}
-                                        className={styles.requestItem}
-                                    >
-                                        <div className={styles.requesterInfo}>
-                                            {this.renderUserIcon(request, false)}
-                                            <span className={styles.username}>
-                                                {request.username}
-                                            </span>
-                                        </div>
-
-                                        <div className={styles.requestActions}>
-                                            <Button
-                                                className={styles.approveButton}
-                                                onClick={this.handleApproveRequest.bind(this, request.id, request.username)}
-                                            >
-                                                <FormattedMessage
-                                                    defaultMessage="Approve"
-                                                    description="Approve join request button"
-                                                    id="gui.collaboration.approve"
-                                                />
-                                            </Button>
-                                            <Button
-                                                className={styles.denyButton}
-                                                onClick={this.handleDenyRequest.bind(this, request.id)}
-                                            >
-                                                <FormattedMessage
-                                                    defaultMessage="Deny"
-                                                    description="Deny join request button"
-                                                    id="gui.collaboration.deny"
-                                                />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </>
-                )}
-
-                {isHost && (
-                    <div className={styles.privacySection}>
-                        <h3 className={styles.sectionTitle}>
-                            <FormattedMessage
-                                defaultMessage="Room Privacy"
-                                description="Room privacy section title"
-                                id="gui.collaboration.roomPrivacySettings"
-                            />
-                        </h3>
-
-                        <div
-                            className={styles.privacySelector}
-                            role="radiogroup"
-                        >
-                            <button
-                                className={classNames(styles.privacyOption, {
-                                    [styles.privacyOptionActive]: this.props.roomPrivacy === 'public'
-                                })}
-                                disabled={this.state.privacyBusy}
-                                role="radio"
-                                aria-checked={this.props.roomPrivacy === 'public'}
-                                aria-busy={this.state.privacyBusy || null}
-                                onClick={this.handleSelectPublicPrivacy}
-                                type="button"
-                            >
-                                <div className={styles.privacyCardTitle}>
-                                    <FormattedMessage
-                                        defaultMessage="Public Room"
-                                        description="Public room card title"
-                                        id="gui.collaboration.publicRoom"
-                                    />
-                                </div>
-                                <div className={styles.privacyCardDesc}>
-                                    <FormattedMessage
-                                        defaultMessage="Anyone can join this room without approval"
-                                        description="Public room explanation"
-                                        id="gui.collaboration.publicRoomDesc"
-                                    />
-                                </div>
-                            </button>
-                            <button
-                                className={classNames(styles.privacyOption, {
-                                    [styles.privacyOptionActive]: this.props.roomPrivacy === 'private'
-                                })}
-                                disabled={this.state.privacyBusy}
-                                role="radio"
-                                aria-checked={this.props.roomPrivacy === 'private'}
-                                aria-busy={this.state.privacyBusy || null}
-                                onClick={this.handleSelectPrivatePrivacy}
-                                type="button"
-                            >
-                                <div className={styles.privacyCardTitle}>
-                                    <FormattedMessage
-                                        defaultMessage="Private Room"
-                                        description="Private room card title"
-                                        id="gui.collaboration.privateRoom"
-                                    />
-                                </div>
-                                <div className={styles.privacyCardDesc}>
-                                    <FormattedMessage
-                                        defaultMessage="Users must request approval to join this room"
-                                        description="Private room explanation"
-                                        id="gui.collaboration.privateRoomDesc"
-                                    />
-                                </div>
-                            </button>
-                        </div>
-                    </div>
-                )}
+                {isHost && this.renderInviteSection()}
 
                 <div className={styles.connectedActions}>
-                    <div className={styles.primaryActions}>
-                        <Button
-                            className={styles.primaryButton}
-                            onClick={this.handleCopyRoomUrl}
-                            iconElem={Copy}
-                            iconClassName={styles.buttonIcon}
-                        >
-                            <FormattedMessage
-                                defaultMessage="Copy Room URL to Share"
-                                description="Button to copy room URL for sharing"
-                                id="gui.collaboration.copyRoomUrl"
-                            />
-                        </Button>
-                    </div>
-
                     <Button
                         className={styles.dangerButton}
                         onClick={this.handleLeaveRoom}
                     >
                         <FormattedMessage
-                            defaultMessage="Leave Room"
+                            defaultMessage="Leave room"
                             description="Button to leave collaboration room"
                             id="gui.collaboration.leaveRoom"
                         />
@@ -983,7 +1122,6 @@ class CollaborationModal extends Component {
     renderPendingApprovalStep () {
         return (
             <Box className={styles.content}>
-                {this.renderAlphaBanner()}
                 <div className={styles.header}>
                     <CollaborationIcon
                         className={styles.headerIcon}
@@ -991,7 +1129,7 @@ class CollaborationModal extends Component {
                     />
                     <div className={styles.headerText}>
                         <FormattedMessage
-                            defaultMessage="Waiting for Host Approval"
+                            defaultMessage="Waiting for the host"
                             description="Title for pending approval state"
                             id="gui.collaboration.waitingApproval"
                         />
@@ -1000,6 +1138,7 @@ class CollaborationModal extends Component {
 
                 <div className={styles.description}>
                     <FormattedMessage
+                        // eslint-disable-next-line max-len
                         defaultMessage="Your request to join this private room has been sent to the host. Please wait for approval."
                         description="Description for pending approval"
                         id="gui.collaboration.pendingApprovalDescription"
@@ -1012,7 +1151,7 @@ class CollaborationModal extends Component {
                         onClick={this.handleCancelJoinRequest}
                     >
                         <FormattedMessage
-                            defaultMessage="Cancel Request"
+                            defaultMessage="Cancel request"
                             description="Button to cancel join request"
                             id="gui.collaboration.cancelRequest"
                         />
@@ -1028,7 +1167,7 @@ class CollaborationModal extends Component {
         );
     }
 
-    /* eslint-disable react/jsx-no-bind, react/jsx-handler-names */
+    /* eslint-disable react/jsx-handler-names */
     renderProjectSession () {
         const users = this.props.connectedUsers || [];
         const project = this.props.projectSession || {};
@@ -1053,13 +1192,18 @@ class CollaborationModal extends Component {
         const others = (project.editors || []).filter(editor =>
             editor.username !== project.username?.toLowerCase());
         const otherNames = others.map(editor => editor.username).join(', ');
-        const confirming = session && this.state.confirmProjectJoin === session.id;
         let leaveLabel = project.isHost ? 'End live session for everyone' : 'Leave live session';
         if (project.phase === 'joining') leaveLabel = 'Cancel joining';
         if (project.busy) leaveLabel = 'Disconnecting…';
         return (
-            <Box className={styles.content}>
-                <h2 className={styles.headerText}>{'Project collaboration'}</h2>
+            <Box className={classNames(styles.content, styles.projectContent)}>
+                <div className={styles.header}>
+                    <CollaborationIcon
+                        className={styles.headerIcon}
+                        draggable={false}
+                    />
+                    <h2 className={styles.headerText}>{'Project collaboration'}</h2>
+                </div>
                 {project.branch && <p>{`Branch: ${project.branch}`}</p>}
                 <div
                     className={styles.projectStatus}
@@ -1095,28 +1239,12 @@ class CollaborationModal extends Component {
                             onClick={project.onHost}
                         >{project.phase === 'opening' ? 'Opening session…' : 'Open to collaborators'}</Button>
                     )}
-                    {!project.active && session?.public && project.canJoin && !confirming && (
+                    {!project.active && session?.public && project.canJoin && (
                         <Button
                             className={styles.primaryButton}
                             disabled={disabled}
-                            onClick={() => this.setState({confirmProjectJoin: session.id})}
+                            onClick={project.onJoin}
                         >{'Join session…'}</Button>
-                    )}
-                    {!project.active && session?.public && project.canJoin && confirming && (
-                        <div className={styles.projectConfirm}>
-                            <p>{"Joining replaces this editor's project with the host's version. " +
-                                'Save your changes or put them on a branch first.'}</p>
-                            <Button
-                                className={styles.primaryButton}
-                                disabled={disabled}
-                                onClick={project.onJoin}
-                            >{'Join and load host project'}</Button>
-                            <Button
-                                className={styles.secondaryButton}
-                                disabled={pending}
-                                onClick={() => this.setState({confirmProjectJoin: null})}
-                            >{'Keep working independently'}</Button>
-                        </div>
                     )}
                     {!project.active && (
                         <Button
@@ -1130,35 +1258,21 @@ class CollaborationModal extends Component {
                     <p>{"Live sessions are open only to this project's collaborators. " +
                         'To work separately, create a branch in Project history.'}</p>
                 )}
+                {project.active && !project.isHost && this.props.myRole === 'watch' && this.renderWatcherNotice()}
                 {project.active && project.phase === 'live' && (
                     <p>{users.length < 2 ? 'No one else has joined yet.' :
                         `${users.length} people in this session.`}</p>
                 )}
                 {project.active && (
                     <div className={styles.usersList}>
-                        {users.map(user => (
-                            <div
-                                className={styles.userItem}
-                                key={user.id}
-                            >
-                                {this.renderUserIcon(user, false)}
-                                <span className={styles.username}>
-                                    {user.username}
-                                    {user.id === this.props.currentUserId && (
-                                        <span className={styles.youBadge}>{'You'}</span>
-                                    )}
-                                    {this.describeActivity(user.id) && (
-                                        <span className={styles.userActivity}>{this.describeActivity(user.id)}</span>
-                                    )}
-                                </span>
-                            </div>
-                        ))}
+                        {users.map(user => this.renderUserRow(user, project.isHost))}
                     </div>
                 )}
+                {project.active && project.isHost && this.renderInviteSection()}
             </Box>
         );
     }
-    /* eslint-enable react/jsx-no-bind, react/jsx-handler-names */
+    /* eslint-enable react/jsx-handler-names */
 
     render () {
         let content;
@@ -1215,12 +1329,16 @@ CollaborationModal.propTypes = {
     currentUserId: PropTypes.string,
     isConnected: PropTypes.bool,
     roomId: PropTypes.string,
-    roomPrivacy: PropTypes.string,
+    inviteLink: PropTypes.string,
+    inviteRole: PropTypes.oneOf(['watch', 'edit']),
+    myRole: PropTypes.oneOf(['watch', 'edit']),
+    pendingInvite: PropTypes.string,
     connectedUsers: PropTypes.arrayOf(PropTypes.shape({
         id: PropTypes.string.isRequired,
         username: PropTypes.string.isRequired,
         handle: PropTypes.string,
-        isHost: PropTypes.bool
+        isHost: PropTypes.bool,
+        role: PropTypes.oneOf(['watch', 'edit'])
     })),
     connectionError: PropTypes.string,
     roturHandle: PropTypes.string,
@@ -1237,7 +1355,9 @@ CollaborationModal.propTypes = {
     onApproveJoinRequest: PropTypes.func,
     onDenyJoinRequest: PropTypes.func,
     onCancelJoinRequest: PropTypes.func,
-    onChangeRoomPrivacy: PropTypes.func
+    onChangeInviteRole: PropTypes.func,
+    onChangeUserRole: PropTypes.func,
+    onOpenChangeUsername: PropTypes.func
 };
 
 export default injectIntl(CollaborationModal);

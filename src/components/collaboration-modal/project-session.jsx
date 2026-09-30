@@ -8,6 +8,8 @@ import {
     getRememberedPlatformProjectState, rememberPlatformProject
 } from '../../lib/community/publish.js';
 
+const memberRole = member => (member.access === 'watch' ? 'watch' : 'edit');
+
 // The API authenticates requests. Peer display names never confer save access.
 class ProjectSession extends React.Component {
     constructor (props) {
@@ -237,7 +239,7 @@ class ProjectSession extends React.Component {
                 const pending = this.props.service.getPendingJoinRequests();
                 for (const member of session.members || []) {
                     if (member.approved && pending.some(item => item.id === member.peerId)) {
-                        this.props.service.approveJoinRequest(member.peerId);
+                        this.props.service.approveJoinRequest(member.peerId, memberRole(member));
                     }
                 }
             }
@@ -249,8 +251,8 @@ class ProjectSession extends React.Component {
                     rememberPlatformProject({...current,
                         canSaveDirectly:
                         ['owner', 'maintainer', 'editor'].includes(this.state.project.myRole) || Boolean(
-                            member && member.approved && this.props.service.isConnected &&
-                            this.props.service.roomId === lease.roomId)});
+                            member && member.approved && memberRole(member) === 'edit' &&
+                            this.props.service.isConnected && this.props.service.roomId === lease.roomId)});
                 }
                 if (!member || !session.id) {
                     this.release();
@@ -319,7 +321,7 @@ class ProjectSession extends React.Component {
     async join () {
         const {project, session} = this.state;
         if (!this.props.isReady || this.paused || this.props.service.isConnected || !session?.public ||
-            project.myRole === 'tester') {
+            !project?.myRole) {
             throw new Error('This session is not available to join.');
         }
         const context = this.contextKey;
@@ -368,7 +370,8 @@ class ProjectSession extends React.Component {
             username: this.props.username,
             canHost: ['owner', 'maintainer', 'editor'].includes(project?.myRole) &&
                 !this.props.service.isConnected,
-            canJoin: Boolean(project?.myRole) && project.myRole !== 'tester' && !this.props.service.isConnected,
+            canJoin: Boolean(project?.myRole) && !this.props.service.isConnected,
+            joinsAsWatcher: project?.myRole === 'tester',
             onHost: () => this.run(() => this.host(), 'opening'),
             onJoin: () => this.run(() => this.join(), 'joining'),
             onLeave: () => this.run(async () => {
