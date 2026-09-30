@@ -2266,33 +2266,35 @@ class MenuBar extends React.Component {
                                             />
                                         </MenuItem>
                                     )}</ChangeUsername>
-                                    <CloudVariablesToggler>{(toggleCloudVariables, {enabled, canUseCloudVariables}) => (
-                                        canUseCloudVariables ? (
-                                            <MenuItem onClick={toggleCloudVariables}>
-                                                <Cloud />
-                                                {enabled ? (
-                                                    <FormattedMessage
-                                                        defaultMessage="Disable Cloud Variables"
-                                                        description="Menu bar item for disabling cloud variables"
-                                                        id="tw.menuBar.cloudOff"
-                                                    />
-                                                ) : (
-                                                    <FormattedMessage
-                                                        defaultMessage="Enable Cloud Variables"
-                                                        description="Menu bar item for enabling cloud variables"
-                                                        id="tw.menuBar.cloudOn"
-                                                    />
-                                                )}
-                                            </MenuItem>
-                                        ) : (
-                                            // The editor decides cloud variables when a project opens,
-                                            // so this opens the setting that controls it instead.
-                                            <MenuItem onClick={this.handleRestoreOption(toggleCloudVariables)}>
-                                                <Cloud />
-                                                {this.props.intl.formatMessage(twMessages.cloudSettings)}
-                                            </MenuItem>
-                                        )
-                                    )}</CloudVariablesToggler>
+                                    {this.props.isStudent ? null : (
+                                        <CloudVariablesToggler>{(toggleCloudVariables, {enabled, canUseCloudVariables}) => (
+                                            canUseCloudVariables ? (
+                                                <MenuItem onClick={toggleCloudVariables}>
+                                                    <Cloud />
+                                                    {enabled ? (
+                                                        <FormattedMessage
+                                                            defaultMessage="Disable Cloud Variables"
+                                                            description="Menu bar item for disabling cloud variables"
+                                                            id="tw.menuBar.cloudOff"
+                                                        />
+                                                    ) : (
+                                                        <FormattedMessage
+                                                            defaultMessage="Enable Cloud Variables"
+                                                            description="Menu bar item for enabling cloud variables"
+                                                            id="tw.menuBar.cloudOn"
+                                                        />
+                                                    )}
+                                                </MenuItem>
+                                            ) : (
+                                                // The editor decides cloud variables when a project opens,
+                                                // so this opens the setting that controls it instead.
+                                                <MenuItem onClick={this.handleRestoreOption(toggleCloudVariables)}>
+                                                    <Cloud />
+                                                    {this.props.intl.formatMessage(twMessages.cloudSettings)}
+                                                </MenuItem>
+                                            )
+                                        )}</CloudVariablesToggler>
+                                    )}
                                 </MenuSection>
                                 {hasRotur() && <MenuSection>
                                     <MenuItem onClick={this.handleClickProducts}>

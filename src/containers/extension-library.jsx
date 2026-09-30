@@ -14,6 +14,7 @@ import extensionLibraryContent, {
 } from '../lib/libraries/extensions/index.jsx';
 import extensionTags from '../lib/libraries/tw-extension-tags';
 import {getVanillaPalette} from '../lib/mw-vanilla-palette';
+import {isStudentSession} from '../lib/rotur/student-flag.js';
 
 import LibraryComponent from '../components/tw-extension-library/extension-library.jsx';
 import extensionIcon from '../components/action-menu/icon--sprite.svg';
@@ -213,7 +214,7 @@ class ExtensionLibrary extends React.PureComponent {
         const extensionId = item.extensionId;
 
         if (extensionId === 'custom_extension') {
-            this.props.onOpenCustomExtensionModal();
+            if (!isStudentSession()) this.props.onOpenCustomExtensionModal();
             return;
         }
 
@@ -265,8 +266,10 @@ class ExtensionLibrary extends React.PureComponent {
         const vanilla = getVanillaPalette();
         let library = null;
         if (vanilla || this.state.gallery || this.state.galleryError || this.state.galleryTimedOut) {
+            const student = isStudentSession();
             library = extensionLibraryContent
                 .filter(extension => !vanilla || (extension.tags.includes('scratch') && !extension.extensionURL))
+                .filter(extension => !student || extension.extensionId !== 'custom_extension')
                 .map(toLibraryItem);
             if (!vanilla) {
                 library.push('---');

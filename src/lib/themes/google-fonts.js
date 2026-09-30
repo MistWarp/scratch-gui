@@ -2,6 +2,8 @@
  * Google Fonts integration utility
  */
 
+import {isStudentSession} from '../rotur/student-flag.js';
+
 const GOOGLE_FONTS_API_KEY = process.env.GOOGLE_FONTS_API_KEY || 'demo'; // Can be set via environment
 const GOOGLE_FONTS_API_URL = 'https://www.googleapis.com/webfonts/v1/webfonts';
 const GOOGLE_FONTS_METADATA_URL = 'https://fonts.google.com/metadata/fonts';
@@ -99,7 +101,7 @@ const fetchGoogleFontsMetadata = async () => {
  */
 const loadGoogleFont = (fontFamily, weightsOrOptions) => new Promise((resolve, reject) => {
     const family = normalizeFamily(fontFamily);
-    if (!family) {
+    if (!family || isStudentSession()) {
         resolve();
         return;
     }
@@ -130,6 +132,10 @@ const loadGoogleFont = (fontFamily, weightsOrOptions) => new Promise((resolve, r
  * @returns {Promise<Array>} Array of font objects with family, category, variants
  */
 const getGoogleFontsList = () => {
+    if (isStudentSession()) {
+        return Promise.resolve([]);
+    }
+
     if (fontsCache) {
         return fontsCache;
     }
@@ -208,7 +214,7 @@ const isGoogleFont = async fontFamily => {
  * Get popular Google Fonts for quick selection
  * @returns {Array<string>} Array of popular font family names
  */
-const getPopularGoogleFonts = () => [...POPULAR_GOOGLE_FONTS];
+const getPopularGoogleFonts = () => (isStudentSession() ? [] : [...POPULAR_GOOGLE_FONTS]);
 
 /**
  * Remove a Google Font from the document

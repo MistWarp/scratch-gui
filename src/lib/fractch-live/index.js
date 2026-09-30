@@ -1,3 +1,4 @@
+import {isStudentSession} from '../rotur/student-flag.js';
 import {getFractchClient} from '../code-mode/fractch-client.js';
 import {getTextController} from '../code-mode/text-controller.js';
 import {ask, confirmBackupFailure, confirmImpact} from '../code-mode/code-dialogs.js';
@@ -61,7 +62,7 @@ const waitForProject = vm => new Promise(resolve => {
 });
 
 const startFractchLiveReload = (vm, {dispatch, intl}) => {
-    if (typeof window === 'undefined' || typeof WebSocket === 'undefined') return null;
+    if (typeof window === 'undefined' || typeof WebSocket === 'undefined' || isStudentSession()) return null;
     let query;
     try {
         query = new URLSearchParams(window.location.search);
