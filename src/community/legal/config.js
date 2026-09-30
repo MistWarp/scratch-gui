@@ -2,6 +2,7 @@
 const LEGAL = {
     ownerName: 'Sophie',
     tradingName: 'MistWarp',
+    parentName: 'Rotur',
     country: 'United Kingdom',
     email: 'privacy@mistwarp.org',
     postalAddress: '',
@@ -11,7 +12,7 @@ const LEGAL = {
     effectiveDate: '1 October 2026'
 };
 
-const operatorSentence = () => `${LEGAL.tradingName} is run by ${LEGAL.ownerName}, a sole trader in the ${LEGAL.country}.`;
+const operatorSentence = () => `${LEGAL.tradingName} is part of ${LEGAL.parentName}. Both are run by ${LEGAL.ownerName}, a sole trader in the ${LEGAL.country}.`;
 
 const contactLines = () => [
     `Email: ${LEGAL.email}`,
