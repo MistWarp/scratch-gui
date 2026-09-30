@@ -205,7 +205,7 @@ describe('CollaborationContainer', () => {
         expect(collaborationState().isConnected).toBe(false);
         expect(collaborationState().roomId).toBe(null);
         expect(collaborationState().connectionError)
-            .toBe('You have been removed from the collaboration room by the host.');
+            .toBe('The host removed you from the room. Your copy of the project is still here.');
     });
 
     test('handleHostLeft closes the room and warns the user', () => {
@@ -216,7 +216,7 @@ describe('CollaborationContainer', () => {
         expect(NotificationSystem.warning).toHaveBeenCalled();
         expect(collaborationState().isConnected).toBe(false);
         expect(collaborationState().roomId).toBe(null);
-        expect(collaborationState().connectionError).toMatch(/host has left/i);
+        expect(collaborationState().connectionError).toMatch(/host closed the room/i);
     });
 
     test('handleConnectedToHost marks the session connected', () => {

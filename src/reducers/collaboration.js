@@ -51,7 +51,8 @@ const reducer = function (state, action) {
         return Object.assign({}, state, {
             isConnected: action.connected,
             isReconnecting: action.connected ? state.isReconnecting : false,
-            connectionError: action.connected ? null : state.connectionError
+            connectionError: action.connected ? null : state.connectionError,
+            activity: action.connected ? state.activity : {}
         });
 
     case SET_COLLABORATION_RECONNECTING:
@@ -59,10 +60,18 @@ const reducer = function (state, action) {
             isReconnecting: action.isReconnecting
         });
     
-    case SET_COLLABORATION_USERS:
-        return Object.assign({}, state, {
-            connectedUsers: action.users || []
+    case SET_COLLABORATION_USERS: {
+        const users = action.users || [];
+        const present = new Set(users.map(user => user.id));
+        const activity = {};
+        Object.keys(state.activity || {}).forEach(userId => {
+            if (present.has(userId)) activity[userId] = state.activity[userId];
         });
+        return Object.assign({}, state, {
+            connectedUsers: users,
+            activity
+        });
+    }
     
     case SET_COLLABORATION_ERROR:
         return Object.assign({}, state, {

@@ -11,6 +11,34 @@ import {
 } from './protocol.js';
 
 const OP_LOG_SIZE = 512;
+const RECONNECT_GRACE_MS = 2 * 60 * 1000;
+const KICK_BAN_MS = 10 * 60 * 1000;
+const COMMAND_TIMEOUT_MS = 20 * 1000;
+const OPS_REQUEST_INTERVAL_MS = 1000;
+const PRESENCE_WINDOW_MS = 1000;
+const PRESENCE_PER_WINDOW = 40;
+const VERSION_MISMATCH_REASON = 'This room is running a different version of MistWarp. ' +
+    'Reload the page on both computers, then try again.';
+
+const randomToken = () => {
+    const bytes = new Uint32Array(4);
+    if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
+        window.crypto.getRandomValues(bytes);
+    } else {
+        for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 0x100000000);
+    }
+    return Array.from(bytes, n => n.toString(16).padStart(8, '0')).join('');
+};
+
+const withTimeout = (promise, ms, message) => {
+    let timer = null;
+    return Promise.race([
+        promise,
+        new Promise((resolve, reject) => {
+            timer = setTimeout(() => reject(new Error(message)), ms);
+        })
+    ]).finally(() => clearTimeout(timer));
+};
 
 /**
  * The room authority. Runs on the host peer: sequences every operation,
@@ -51,6 +79,7 @@ class HostSession extends Emitter {
         this.username = username;
         this.handle = handle || null;
         this.privacy = privacy === 'private' ? 'private' : 'public';
+        this.epoch = randomToken();
 
         this.queue = new CommandQueue();
         this._receipts = new Map();
@@ -61,9 +90,15 @@ class HostSession extends Emitter {
         this.pendingSyncs = new Set();
         this._clientOpCounter = 0;
         this._started = false;
+        this._tokens = new Map();
+        this._bannedTokens = new Map();
+        this._bannedPeers = new Map();
+        this._opsRequestedAt = new Map();
+        this._presenceBudget = new Map();
 
         this._onMessage = this._onMessage.bind(this);
         this._onPeerDisconnected = this._onPeerDisconnected.bind(this);
+        this._onVersionMismatch = this._onVersionMismatch.bind(this);
     }
 
     /**
@@ -75,6 +110,7 @@ class HostSession extends Emitter {
         this._started = true;
         this.transport.on('message', this._onMessage);
         this.transport.on('peer-disconnected', this._onPeerDisconnected);
+        this.transport.on('version-mismatch', this._onVersionMismatch);
 
         const hostUser = {id, username: this.username, isHost: true};
         if (this.handle) hostUser.handle = this.handle;
@@ -84,22 +120,36 @@ class HostSession extends Emitter {
         return id;
     }
 
+    /**
+     * Tell every client the room is closing. Safe to call before destroy,
+     * and again from a page unload handler.
+     */
+    announceClose () {
+        if (!this._started) return;
+        const notice = makeCtrl(CTRL.USER_LEFT, {id: this.id});
+        for (const peerId of this.users.keys()) {
+            if (peerId !== this.id) this.transport.send(peerId, notice);
+        }
+        for (const peerId of this.pendingJoinRequests.keys()) {
+            this.transport.send(peerId, makeCtrl(CTRL.JOIN_DENIED, {reason: 'The host closed the room.'}));
+        }
+    }
+
     destroy () {
-        if (this._started) {
-            // Tell clients the room is over; they surface "host left".
-            try {
-                this._broadcast(makeCtrl(CTRL.USER_LEFT, {id: this.id}));
-            } catch (e) {
-                // Transport already gone.
-            }
+        try {
+            this.announceClose();
+        } catch (e) {
+            this._started = false;
         }
         this._started = false;
         this.queue.cancel();
         this.transport.off('message', this._onMessage);
         this.transport.off('peer-disconnected', this._onPeerDisconnected);
+        this.transport.off('version-mismatch', this._onVersionMismatch);
         this.users.clear();
         this.pendingJoinRequests.clear();
         this.pendingSyncs.clear();
+        this._tokens.clear();
         this.removeAllListeners();
     }
 
@@ -149,7 +199,11 @@ class HostSession extends Emitter {
             }
             if (peerId !== this.id && !this.isClientApproved(peerId)) return null;
             if (typeof this.applier.validate === 'function') this.applier.validate(envelope.type, envelope.payload);
-            const result = await this.applier.apply(envelope.type, envelope.payload, {clientId: peerId});
+            const result = await withTimeout(
+                this.applier.apply(envelope.type, envelope.payload, {clientId: peerId}),
+                COMMAND_TIMEOUT_MS,
+                'That edit took too long to apply, so it was cancelled.'
+            );
             if (!active()) return null;
             const payload = result || envelope.payload;
             if (envelope.payload.requestId) payload.requestId = envelope.payload.requestId;
@@ -187,15 +241,39 @@ class HostSession extends Emitter {
         const request = this.pendingJoinRequests.get(requesterId);
         if (!request) return;
         this.pendingJoinRequests.delete(requesterId);
-        this.transport.send(requesterId, makeCtrl(CTRL.JOIN_DENIED, {reason}));
-        this.transport.closeConnection(requesterId);
+        this._deny(requesterId, reason);
     }
 
     kickUser (peerId, reason = 'You were removed from the room') {
         if (!this.isClientApproved(peerId)) return;
+        const now = Date.now();
+        this._bannedPeers.set(peerId, now + KICK_BAN_MS);
+        for (const [token, entry] of this._tokens) {
+            if (entry.peerId === peerId) {
+                this._tokens.delete(token);
+                this._bannedTokens.set(token, now + KICK_BAN_MS);
+            }
+        }
         this.transport.send(peerId, makeCtrl(CTRL.KICK, {reason}));
-        this.transport.closeConnection(peerId);
+        this.transport.closeConnection(peerId, {graceful: true});
         this._removeClient(peerId);
+    }
+
+    _deny (peerId, reason, version) {
+        const denial = makeCtrl(CTRL.JOIN_DENIED, {reason});
+        if (typeof version === 'number') denial.v = version;
+        this.transport.send(peerId, denial);
+        this.transport.closeConnection(peerId, {graceful: true});
+    }
+
+    _isBanned (peerId, token) {
+        const now = Date.now();
+        const expired = map => map.forEach((until, key) => {
+            if (until <= now) map.delete(key);
+        });
+        expired(this._bannedPeers);
+        expired(this._bannedTokens);
+        return this._bannedPeers.has(peerId) || Boolean(token && this._bannedTokens.has(token));
     }
 
     changeRoomPrivacy (privacy) {
@@ -229,10 +307,8 @@ class HostSession extends Emitter {
     markClientSynced (peerId) {
         if (!this.pendingSyncs.has(peerId)) return;
         this.pendingSyncs.delete(peerId);
-        if (this.pendingSyncs.size === 0) {
-            this._broadcast(makeCtrl(CTRL.SESSION_READY, {}));
-            this.emit('session-ready');
-        }
+        if (this.users.has(peerId)) this.transport.send(peerId, makeCtrl(CTRL.SESSION_READY, {}));
+        if (this.pendingSyncs.size === 0) this.emit('session-ready');
     }
 
     /**
@@ -242,10 +318,25 @@ class HostSession extends Emitter {
      * @returns {Array.<object>|null} Op envelopes, or null.
      */
     opsSince (fromSeq) {
-        if (fromSeq > this.seq) return [];
+        if (fromSeq > this.seq + 1) return null;
+        if (fromSeq === this.seq + 1) return [];
         const oldest = this.opLog.length > 0 ? this.opLog[0].seq : this.seq + 1;
         if (fromSeq < oldest) return null;
         return this.opLog.filter(op => op.seq >= fromSeq);
+    }
+
+    /**
+     * The host loaded a different project. Old log entries no longer apply,
+     * so every client reloads the project from a fresh snapshot.
+     */
+    restartHistory () {
+        this.opLog = [];
+        this.emit('history-restarted');
+        for (const peerId of this.users.keys()) {
+            if (peerId === this.id) continue;
+            this.pendingSyncs.add(peerId);
+            this.transport.send(peerId, makeCtrl(CTRL.RESYNC_REQUIRED, {}));
+        }
     }
 
     _appendToLog (op) {
@@ -323,6 +414,9 @@ class HostSession extends Emitter {
         }
         case CTRL.OPS_REQUEST: {
             if (!this.isClientApproved(peerId)) return;
+            const now = Date.now();
+            if (now - (this._opsRequestedAt.get(peerId) || 0) < OPS_REQUEST_INTERVAL_MS) return;
+            this._opsRequestedAt.set(peerId, now);
             const ops = this.opsSince(envelope.payload.fromSeq);
             if (ops === null) {
                 this.transport.send(peerId, makeCtrl(CTRL.RESYNC_REQUIRED, {}));
@@ -346,32 +440,48 @@ class HostSession extends Emitter {
             return;
         }
         if (payload.protocolVersion !== PROTOCOL_VERSION) {
-            this.transport.send(peerId, makeCtrl(CTRL.JOIN_DENIED, {
-                reason: 'This room is running a different version of the app. ' +
-                    'Make sure everyone is on the latest version.'
-            }));
-            this.transport.closeConnection(peerId);
+            this._deny(peerId, VERSION_MISMATCH_REASON);
             return;
         }
-        if (this.users.has(peerId)) {
-            this._admitClient(peerId, payload.username, payload.lastAppliedSeq, payload.handle);
+        const token = payload.reconnectToken || null;
+        if (this._isBanned(peerId, token)) {
+            this._deny(peerId, 'The host removed you from this room.');
             return;
         }
+        const sameRoom = payload.epoch === this.epoch;
+        const lastAppliedSeq = sameRoom ? payload.lastAppliedSeq : null;
+        const request = {
+            id: peerId,
+            username: payload.username,
+            handle: payload.handle || null,
+            lastAppliedSeq
+        };
+        if (this.users.has(peerId) || this.privacy === 'public' || (sameRoom && this._takeToken(token))) {
+            this._admitClient(peerId, request.username, lastAppliedSeq, request.handle);
+            return;
+        }
+        this.pendingJoinRequests.set(peerId, request);
+        this.transport.send(peerId, makeCtrl(CTRL.JOIN_PENDING, {}));
+        this.emit('join-request-received', {
+            requesterId: peerId,
+            requesterUsername: payload.username
+        });
+    }
 
-        if (this.privacy === 'public') {
-            this._admitClient(peerId, payload.username, payload.lastAppliedSeq, payload.handle);
-        } else {
-            this.pendingJoinRequests.set(peerId, {
-                id: peerId,
-                username: payload.username,
-                handle: payload.handle || null,
-                lastAppliedSeq: payload.lastAppliedSeq
-            });
-            this.emit('join-request-received', {
-                requesterId: peerId,
-                requesterUsername: payload.username
-            });
+    _takeToken (token) {
+        if (!token) return false;
+        const entry = this._tokens.get(token);
+        if (!entry) return false;
+        if (entry.expiresAt !== null && entry.expiresAt <= Date.now()) {
+            this._tokens.delete(token);
+            return false;
         }
+        this._tokens.delete(token);
+        return true;
+    }
+
+    _onVersionMismatch ({peerId, version}) {
+        this._deny(peerId, VERSION_MISMATCH_REASON, version);
     }
 
     _admitClient (peerId, username, lastAppliedSeq, handle) {
@@ -379,7 +489,17 @@ class HostSession extends Emitter {
         if (handle) user.handle = handle;
         this.users.set(peerId, user);
 
-        this.transport.send(peerId, makeCtrl(CTRL.JOIN_APPROVED, {hostUsername: this.username}));
+        for (const [existing, entry] of this._tokens) {
+            if (entry.peerId === peerId) this._tokens.delete(existing);
+        }
+        const reconnectToken = randomToken();
+        this._tokens.set(reconnectToken, {peerId, expiresAt: null});
+
+        this.transport.send(peerId, makeCtrl(CTRL.JOIN_APPROVED, {
+            hostUsername: this.username,
+            epoch: this.epoch,
+            reconnectToken
+        }));
         this.transport.send(peerId, makeCtrl(CTRL.PRIVACY_CHANGED, {privacy: this.privacy}));
         this.transport.send(peerId, makeCtrl(CTRL.USERS_LIST, {users: this.getUsers()}));
         this._broadcast(makeCtrl(CTRL.USER_JOINED, {user}), peerId);
@@ -403,7 +523,10 @@ class HostSession extends Emitter {
     }
 
     _onPropose (peerId, envelope) {
-        if (!this.isClientApproved(peerId)) return;
+        if (!this.isClientApproved(peerId)) {
+            this.transport.send(peerId, makeReject(envelope.clientOpId, 'You are not in the room yet.'));
+            return;
+        }
         if (envelope.payload.commit) {
             this.transport.send(peerId, makeReject(envelope.clientOpId, 'Clients must submit edit requests'));
             return;
@@ -416,6 +539,13 @@ class HostSession extends Emitter {
 
     _onPresence (peerId, envelope) {
         if (!this.isClientApproved(peerId)) return;
+        const now = Date.now();
+        const budget = this._presenceBudget.get(peerId);
+        if (!budget || now - budget.start >= PRESENCE_WINDOW_MS) {
+            this._presenceBudget.set(peerId, {start: now, count: 1});
+        } else if (++budget.count > PRESENCE_PER_WINDOW) {
+            return;
+        }
         // Stamp the originator; never trust what the client wrote.
         envelope.payload.userId = peerId;
         this._broadcast(envelope, peerId);
@@ -439,6 +569,11 @@ class HostSession extends Emitter {
         const user = this.users.get(peerId);
         if (!user) return;
         this.users.delete(peerId);
+        this._opsRequestedAt.delete(peerId);
+        this._presenceBudget.delete(peerId);
+        for (const entry of this._tokens.values()) {
+            if (entry.peerId === peerId && entry.expiresAt === null) entry.expiresAt = Date.now() + RECONNECT_GRACE_MS;
+        }
         this.markClientSynced(peerId);
         this._broadcast(makeCtrl(CTRL.USER_LEFT, {id: peerId}));
         this.emit('user-left', user);
