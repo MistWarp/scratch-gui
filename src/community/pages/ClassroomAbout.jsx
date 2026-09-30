@@ -59,19 +59,22 @@ const plansCopy = communityText => [
     {
         key: 'free',
         title: communityText('Free'),
-        lead: communityText('For trying Classroom with a small group.'),
-        items: [communityText('1 class'), communityText('Up to 5 students'), communityText('1 GB of storage'), communityText('Assignments, feedback, and grades')]
+        price: communityText('Free for one class'),
+        lead: communityText('Enough to run a whole class, at no cost.'),
+        items: [communityText('1 class of up to 35 students'), communityText('1 GB of storage'), communityText('Assignments, feedback, and grades'), communityText('Picture and password sign-in')]
     },
     {
         key: 'classroom',
         title: communityText('Classroom'),
-        lead: communityText('Free for 30 days, then paid.'),
-        items: [communityText('Up to 12 classes'), communityText('35 students, with more seats in packs of 10'), communityText('25 GB of storage'), communityText('Group projects that students edit together live'), communityText('Present mode to show one project to the whole class')]
+        price: communityText('£45 a year, or £5 a month'),
+        lead: communityText('Try it free for 30 days. In the US it costs $50 a year, or $6 a month.'),
+        items: [communityText('Up to 12 classes'), communityText('35 students, plus packs of 10 more seats for £10 a year'), communityText('25 GB of storage'), communityText('Group projects that students edit together live'), communityText('Present mode to show one project to the whole class')]
     },
     {
         key: 'school',
         title: communityText('School'),
-        lead: communityText('For several teachers sharing one plan.'),
+        price: communityText('From £300 a year'),
+        lead: communityText('For several teachers sharing one plan. Includes 150 students, then £2 a year for each extra student.'),
         items: [communityText('Seats and storage sized for your school'), communityText('A school admin page for teachers and classes'), communityText('A data download for records requests'), communityText('Invoices instead of card payments')]
     }
 ];
@@ -200,6 +203,7 @@ const ClassroomAbout = ({showStudentSignIn}) => {
                     {plansCopy(communityText).map(plan => (
                         <div key={plan.key} className={plan.key === 'classroom' ? styles.planFeatured : styles.plan}>
                             <h3>{plan.title}</h3>
+                            <p className={styles.planPrice}>{plan.price}</p>
                             <p className={styles.planLead}>{plan.lead}</p>
                             <ul>
                                 {plan.items.map(item => <li key={item}>{item}</li>)}
