@@ -152,3 +152,38 @@ test('ending the session restores the original loadProject', async () => {
     expect(Object.prototype.hasOwnProperty.call(hostVM, 'loadProject')).toBe(false);
     client.disconnect(); hostVM.quit(); clientVM.quit();
 });
+
+test('a guest who joins through the invite link watches until the host lets them edit', async () => {
+    mockHub = new FakeHub();
+    const host = new CollabService();
+    const client = new CollabService();
+    const hostVM = makeVM();
+    const clientVM = makeVM();
+    host.init(hostVM); client.init(clientVM);
+    try {
+        await host.connectToRoom('test', 'host', true, 'private', null, null, {inviteRole: 'watch'});
+        const link = new URL(host.getInviteLink());
+        expect(link.searchParams.get('room')).toBe('test');
+        const invite = link.searchParams.get('invite');
+        expect(invite).toBe(host._session.inviteKey);
+        await client.connectToRoom('test', 'guest', false, 'private', null, null, {invite});
+        await pumpUntil(() => client._session && client._session.lastAppliedSeq !== null);
+        expect(client.getMyRole()).toBe('watch');
+
+        const id = clientVM.editingTarget.id;
+        await expect(clientVM.renameSprite(id, 'Nope')).rejects.toThrow(/watching/);
+        await mockHub.flush();
+        expect(hostVM.runtime.getTargetById(id).getName()).toBe('Sprite');
+
+        host.setInviteRole('edit');
+        await pumpUntil(() => client.getMyRole() === 'edit');
+        let done = false;
+        clientVM.renameSprite(id, 'Allowed').then(() => {
+            done = true;
+        });
+        await pumpUntil(() => done);
+        expect(hostVM.runtime.getTargetById(id).getName()).toBe('Allowed');
+    } finally {
+        client.disconnect(); host.disconnect(); hostVM.quit(); clientVM.quit();
+    }
+});

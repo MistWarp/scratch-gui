@@ -30,6 +30,7 @@ const VERSION_MISMATCH_REASON = 'This room is running a different version of Mis
  *  - 'awaiting-approval' () — hello sent, waiting on the host
  *  - 'join-pending' () — the host is asking its user to approve us
  *  - 'host-restarted' () — the host reopened the room; the project reloads
+ *  - 'role-changed' (role) — we can now edit ('edit') or only watch ('watch')
  *  - 'join-approved' ({hostUsername}) / 'join-denied' (reason)
  *  - 'users-updated' ({users}) / 'user-joined' (user) / 'user-left' (user)
  *  - 'op-applied' (envelope) — a remote op mutated the local doc
@@ -50,7 +51,7 @@ class ClientSession extends Emitter {
      * @param {string} options.roomId Room id.
      * @param {string} options.username Display name.
      */
-    constructor ({transport, applier, roomId, username, handle, hasAsset, scope = null}) {
+    constructor ({transport, applier, roomId, username, handle, hasAsset, scope = null, invite = null}) {
         super();
         this.transport = transport;
         this.applier = applier;
@@ -58,6 +59,8 @@ class ClientSession extends Emitter {
         this.scope = scope;
         this.username = username;
         this.handle = handle || null;
+        this.invite = invite || null;
+        this.role = null;
         // Optional md5ext => boolean; when provided, ops carrying assetRefs
         // block the apply queue until their assets are locally present.
         this._hasAsset = hasAsset || null;
@@ -245,6 +248,7 @@ class ClientSession extends Emitter {
         }
         if (this._epoch) payload.epoch = this._epoch;
         if (this._reconnectToken) payload.reconnectToken = this._reconnectToken;
+        if (this.invite) payload.invite = this.invite;
         clearTimeout(this._answerTimer);
         this._answerTimer = setTimeout(() => {
             this.emit('connection-failed', {error: 'The host did not answer. ' +
@@ -397,9 +401,13 @@ class ClientSession extends Emitter {
                 this.emit('host-restarted');
             }
             this.isApproved = true;
-            this.emit('join-approved', {hostUsername: payload.hostUsername});
+            this._setRole(payload.role);
+            this.emit('join-approved', {hostUsername: payload.hostUsername, role: payload.role});
             break;
         }
+        case CTRL.ROLE_CHANGED:
+            this._setRole(payload.role);
+            break;
         case CTRL.JOIN_DENIED:
             clearTimeout(this._answerTimer);
             this.emit('join-denied', payload.reason || 'Join request was denied');
@@ -444,6 +452,12 @@ class ClientSession extends Emitter {
         default:
             break;
         }
+    }
+
+    _setRole (role) {
+        if (this.role === role) return;
+        this.role = role;
+        this.emit('role-changed', role);
     }
 
     _scheduleGapRecovery () {

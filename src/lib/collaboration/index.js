@@ -20,6 +20,8 @@ import log from '../utils/log.js';
  * together and translates engine events into the event vocabulary the
  * containers already use.
  */
+const EDIT_ERROR_REPEAT_MS = 4000;
+
 class CollabService extends Emitter {
     constructor () {
         super();
@@ -53,7 +55,14 @@ class CollabService extends Emitter {
     init (vm) {
         if (this.vm && this._onEditError) this.vm.removeListener('EDIT_COMMAND_ERROR', this._onEditError);
         this.vm = vm;
-        this._onEditError = error => this.emit('edit-error', {error: error.message || String(error)});
+        this._onEditError = error => {
+            const message = error.message || String(error);
+            const now = Date.now();
+            if (message === this._lastEditError && now - this._lastEditErrorAt < EDIT_ERROR_REPEAT_MS) return;
+            this._lastEditError = message;
+            this._lastEditErrorAt = now;
+            this.emit('edit-error', {error: message});
+        };
         vm.on('EDIT_COMMAND_ERROR', this._onEditError);
         if (vm.editingCommands && vm.securityManager) {
             vm.editingCommands.canLoadExtension = url => {
@@ -71,10 +80,13 @@ class CollabService extends Emitter {
      * @param {string} [privacy] 'public' | 'private' (host only).
      * @param {string} [handle] Rotur handle, for avatars.
      * @param {object|null} [scope] Project ID and branch required by this room.
+     * @param {object} [options] Options.
+     * @param {string} [options.invite] Invite key from a link (guests).
+     * @param {string} [options.inviteRole] What the invite link allows (host).
      * @returns {Promise<string>} Our peer id.
      */
     async connectToRoom (
-        roomId, username, isHost = false, privacy = 'public', handle = null, scope = null
+        roomId, username, isHost = false, privacy = 'public', handle = null, scope = null, options = {}
     ) {
         if (!roomId) throw new Error('roomId is required to connect to a room');
         if (!this.vm) throw new Error('CollabService.init(vm) must be called first');
@@ -100,8 +112,8 @@ class CollabService extends Emitter {
 
         try {
             const id = isHost ?
-                await this._connectAsHost(roomId, privacy) :
-                await this._connectAsClient(roomId);
+                await this._connectAsHost(roomId, privacy, options.inviteRole) :
+                await this._connectAsClient(roomId, options.invite);
             if (this._transport !== transport) throw new Error('Collaboration connection cancelled');
             this.isConnected = true;
             this._watchProjectLoads();
@@ -115,8 +127,9 @@ class CollabService extends Emitter {
         }
     }
 
-    async _connectAsHost (roomId, privacy) {
+    async _connectAsHost (roomId, privacy, inviteRole) {
         const session = new HostSession({
+            inviteRole,
             transport: this._transport,
             applier: this._applier,
             roomId,
@@ -149,7 +162,8 @@ class CollabService extends Emitter {
             'join-request-received': 'join-request-received',
             'join-request-cancelled': 'join-request-cancelled',
             'room-privacy-changed': 'room-privacy-changed',
-            'session-ready': 'session-ready'
+            'session-ready': 'session-ready',
+            'invite-changed': 'invite-changed'
         });
         session.on('op-applied', op => {
             this._releaseCommandAssets(op);
@@ -179,8 +193,9 @@ class CollabService extends Emitter {
         return id;
     }
 
-    _connectAsClient (roomId) {
+    _connectAsClient (roomId, invite) {
         const session = new ClientSession({
+            invite,
             transport: this._transport,
             applier: this._applier,
             roomId,
@@ -216,7 +231,8 @@ class CollabService extends Emitter {
             'reconnecting': 'reconnecting',
             'reconnected': 'reconnected',
             'join-pending': 'join-pending',
-            'host-restarted': 'host-restarted'
+            'host-restarted': 'host-restarted',
+            'role-changed': 'role-changed'
         });
         this._watchTransport(this._transport);
 
@@ -332,6 +348,10 @@ class CollabService extends Emitter {
         const isHost = this.isHost;
         if (!session || !this.isConnected || (!isHost && (!this._approved || session.lastAppliedSeq === null))) {
             return Promise.reject(new Error('Wait for the collaboration project to finish loading.'));
+        }
+        if (!isHost && session.role !== 'edit') {
+            return Promise.reject(new Error('You are watching this session, so your changes were not kept. ' +
+                'Ask the host to let you edit.'));
         }
         const send = this._sendChain.then(async () => {
             if (this._session !== session) throw new Error('Collaboration session ended');
@@ -591,6 +611,42 @@ class CollabService extends Emitter {
         return this._session ? this._session.getUsers() : [];
     }
 
+    /**
+     * What we can do in the current session.
+     * @returns {string|null} 'edit', 'watch', or null when not in a session.
+     */
+    getMyRole () {
+        if (!this._session) return null;
+        return this.isHost ? 'edit' : this._session.role;
+    }
+
+    /**
+     * A link that lets someone join straight away, with the invite role.
+     * @returns {string|null} The link, or null when not hosting.
+     */
+    getInviteLink () {
+        if (!this.isHost || !this._session || typeof window === 'undefined') return null;
+        const url = new URL(window.location.href);
+        url.search = '';
+        url.hash = '';
+        url.searchParams.set('room', this.roomId);
+        url.searchParams.set('invite', this._session.inviteKey);
+        return url.toString();
+    }
+
+    getInviteRole () {
+        return this.isHost && this._session ? this._session.inviteRole : null;
+    }
+
+    setInviteRole (role) {
+        if (!this.isHost || !this._session) throw new Error('Only the host can change the invite link');
+        this._session.setInviteRole(role);
+    }
+
+    setUserRole (userId, role) {
+        return Boolean(this.isHost && this._session && this._session.setUserRole(userId, role));
+    }
+
     getRoomPrivacy () {
         if (this._session) return this._session.privacy || 'public';
         return 'public';
@@ -609,8 +665,8 @@ class CollabService extends Emitter {
         if (this._session && this.isHost) this._session.kickUser(userId);
     }
 
-    approveJoinRequest (requesterId) {
-        return Boolean(this._session && this.isHost && this._session.approveJoinRequest(requesterId));
+    approveJoinRequest (requesterId, role) {
+        return Boolean(this._session && this.isHost && this._session.approveJoinRequest(requesterId, role));
     }
 
     denyJoinRequest (requesterId, reason) {

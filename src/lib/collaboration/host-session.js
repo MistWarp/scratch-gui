@@ -5,6 +5,8 @@ import {
     KIND,
     CTRL,
     SNAPSHOT,
+    ASSET,
+    ROLES,
     makeOp,
     makeReject,
     makeCtrl
@@ -17,8 +19,15 @@ const COMMAND_TIMEOUT_MS = 20 * 1000;
 const OPS_REQUEST_INTERVAL_MS = 1000;
 const PRESENCE_WINDOW_MS = 1000;
 const PRESENCE_PER_WINDOW = 40;
+const WATCH_ONLY_REASON = 'You can watch this session but not edit it. Ask the host to let you edit.';
 const VERSION_MISMATCH_REASON = 'This room is running a different version of MistWarp. ' +
     'Reload the page on both computers, then try again.';
+
+const publicUser = user => {
+    const shared = Object.assign({}, user);
+    delete shared.via;
+    return shared;
+};
 
 const randomToken = () => {
     const bytes = new Uint32Array(4);
@@ -60,6 +69,7 @@ const withTimeout = (promise, ms, message) => {
  *  - 'op-applied' (envelope) — a client op was sequenced and applied locally
  *  - 'session-ready' () — every approved client finished onboarding
  *  - 'room-privacy-changed' (privacy)
+ *  - 'invite-changed' ({role}) — what the invite link lets people do
  */
 class HostSession extends Emitter {
     /**
@@ -68,9 +78,11 @@ class HostSession extends Emitter {
      * @param {VMApplier} options.applier Applies sequenced ops to the host doc.
      * @param {string} options.roomId Room id.
      * @param {string} options.username Host's display name.
-     * @param {string} [options.privacy] 'public' or 'private'.
+     * @param {string} [options.privacy] 'public' admits anyone with the code
+     * as an editor; 'private' asks the host unless they have the invite link.
+     * @param {string} [options.inviteRole] What the invite link allows.
      */
-    constructor ({transport, applier, roomId, username, handle, privacy, scope = null}) {
+    constructor ({transport, applier, roomId, username, handle, privacy, scope = null, inviteRole = 'watch'}) {
         super();
         this.transport = transport;
         this.applier = applier;
@@ -80,6 +92,8 @@ class HostSession extends Emitter {
         this.handle = handle || null;
         this.privacy = privacy === 'private' ? 'private' : 'public';
         this.epoch = randomToken();
+        this.inviteKey = randomToken();
+        this.inviteRole = ROLES.includes(inviteRole) ? inviteRole : 'watch';
 
         this.queue = new CommandQueue();
         this._receipts = new Map();
@@ -112,7 +126,7 @@ class HostSession extends Emitter {
         this.transport.on('peer-disconnected', this._onPeerDisconnected);
         this.transport.on('version-mismatch', this._onVersionMismatch);
 
-        const hostUser = {id, username: this.username, isHost: true};
+        const hostUser = {id, username: this.username, isHost: true, role: 'edit'};
         if (this.handle) hostUser.handle = this.handle;
         this.users.set(id, hostUser);
         this.emit('user-joined', hostUser);
@@ -158,7 +172,7 @@ class HostSession extends Emitter {
     }
 
     getUsers () {
-        return Array.from(this.users.values());
+        return Array.from(this.users.values(), publicUser);
     }
 
     _broadcast (envelope, exceptPeerId) {
@@ -191,6 +205,7 @@ class HostSession extends Emitter {
     _commit (peerId, envelope) {
         return this.queue.run(async active => {
             if (peerId !== this.id && !this.isClientApproved(peerId)) return null;
+            if (!this.canEdit(peerId)) throw new Error(WATCH_ONLY_REASON);
             const key = envelope.payload.requestId || `${peerId}:${envelope.clientOpId}`;
             if (this._receipts.has(key)) {
                 const receipt = this._receipts.get(key);
@@ -229,12 +244,57 @@ class HostSession extends Emitter {
         this._broadcast(envelope);
     }
 
-    approveJoinRequest (requesterId) {
+    approveJoinRequest (requesterId, role = this.inviteRole) {
         const request = this.pendingJoinRequests.get(requesterId);
         if (!request) return false;
         this.pendingJoinRequests.delete(requesterId);
-        this._admitClient(requesterId, request.username, request.lastAppliedSeq, request.handle);
+        this._admitClient(requesterId, request, {role: ROLES.includes(role) ? role : 'watch', via: 'request'});
         return true;
+    }
+
+    /**
+     * Change what the invite link lets people do. Everyone who came in
+     * through the link follows the change.
+     * @param {string} role 'watch' or 'edit'.
+     */
+    setInviteRole (role) {
+        if (!ROLES.includes(role)) throw new Error('Invite role must be "watch" or "edit"');
+        this.inviteRole = role;
+        for (const user of this.users.values()) {
+            if (user.via === 'link' && user.role !== role) this._applyRole(user, role);
+        }
+        this._broadcastUsersList();
+        this._emitUsersUpdated();
+        this.emit('invite-changed', {role});
+    }
+
+    /**
+     * Let one person edit, or make them watch only.
+     * @param {string} peerId The person.
+     * @param {string} role 'watch' or 'edit'.
+     * @returns {boolean} Whether their role changed.
+     */
+    setUserRole (peerId, role) {
+        const user = this.users.get(peerId);
+        if (!user || user.isHost || !ROLES.includes(role) || user.role === role) return false;
+        user.via = 'host';
+        this._applyRole(user, role);
+        this._broadcastUsersList();
+        this._emitUsersUpdated();
+        return true;
+    }
+
+    _applyRole (user, role) {
+        user.role = role;
+        for (const entry of this._tokens.values()) {
+            if (entry.peerId === user.id) entry.role = role;
+        }
+        this.transport.send(user.id, makeCtrl(CTRL.ROLE_CHANGED, {role}));
+    }
+
+    canEdit (peerId) {
+        const user = this.users.get(peerId);
+        return Boolean(user && (user.isHost || user.role === 'edit'));
     }
 
     denyJoinRequest (requesterId, reason = 'Host denied your request') {
@@ -379,6 +439,7 @@ class HostSession extends Emitter {
             break;
         case KIND.ASSET:
             if (!this.isClientApproved(peerId)) return;
+            if (envelope.type !== ASSET.REQUEST && !this.canEdit(peerId)) return;
             this.emit('asset-message', peerId, envelope);
             break;
         default:
@@ -431,7 +492,8 @@ class HostSession extends Emitter {
     }
 
     _onHello (peerId, payload) {
-        if (this.scope && (payload.scope?.projectId !== this.scope.projectId ||
+        const invited = Boolean(payload.invite) && payload.invite === this.inviteKey;
+        if (this.scope && !invited && (payload.scope?.projectId !== this.scope.projectId ||
             payload.scope?.branch !== this.scope.branch)) {
             this.transport.send(peerId, makeCtrl(CTRL.JOIN_DENIED, {
                 reason: 'Open the same project and branch before joining this editing session.'
@@ -456,8 +518,22 @@ class HostSession extends Emitter {
             handle: payload.handle || null,
             lastAppliedSeq
         };
-        if (this.users.has(peerId) || this.privacy === 'public' || (sameRoom && this._takeToken(token))) {
-            this._admitClient(peerId, request.username, lastAppliedSeq, request.handle);
+        const existing = this.users.get(peerId);
+        if (existing) {
+            this._admitClient(peerId, request, {role: existing.role, via: existing.via});
+            return;
+        }
+        const reconnect = sameRoom ? this._takeToken(token) : null;
+        if (reconnect) {
+            this._admitClient(peerId, request, reconnect);
+            return;
+        }
+        if (invited) {
+            this._admitClient(peerId, request, {role: this.inviteRole, via: 'link'});
+            return;
+        }
+        if (this.privacy === 'public') {
+            this._admitClient(peerId, request, {role: 'edit', via: 'code'});
             return;
         }
         this.pendingJoinRequests.set(peerId, request);
@@ -469,23 +545,20 @@ class HostSession extends Emitter {
     }
 
     _takeToken (token) {
-        if (!token) return false;
+        if (!token) return null;
         const entry = this._tokens.get(token);
-        if (!entry) return false;
-        if (entry.expiresAt !== null && entry.expiresAt <= Date.now()) {
-            this._tokens.delete(token);
-            return false;
-        }
+        if (!entry) return null;
         this._tokens.delete(token);
-        return true;
+        if (entry.expiresAt !== null && entry.expiresAt <= Date.now()) return null;
+        return {role: entry.role, via: entry.via};
     }
 
     _onVersionMismatch ({peerId, version}) {
         this._deny(peerId, VERSION_MISMATCH_REASON, version);
     }
 
-    _admitClient (peerId, username, lastAppliedSeq, handle) {
-        const user = {id: peerId, username, isHost: false};
+    _admitClient (peerId, {username, handle, lastAppliedSeq}, {role, via}) {
+        const user = {id: peerId, username, isHost: false, role, via};
         if (handle) user.handle = handle;
         this.users.set(peerId, user);
 
@@ -493,17 +566,19 @@ class HostSession extends Emitter {
             if (entry.peerId === peerId) this._tokens.delete(existing);
         }
         const reconnectToken = randomToken();
-        this._tokens.set(reconnectToken, {peerId, expiresAt: null});
+        this._tokens.set(reconnectToken, {peerId, role, via, expiresAt: null});
 
         this.transport.send(peerId, makeCtrl(CTRL.JOIN_APPROVED, {
             hostUsername: this.username,
             epoch: this.epoch,
-            reconnectToken
+            reconnectToken,
+            role
         }));
         this.transport.send(peerId, makeCtrl(CTRL.PRIVACY_CHANGED, {privacy: this.privacy}));
         this.transport.send(peerId, makeCtrl(CTRL.USERS_LIST, {users: this.getUsers()}));
-        this._broadcast(makeCtrl(CTRL.USER_JOINED, {user}), peerId);
-        this.emit('user-joined', user);
+        const joined = publicUser(user);
+        this._broadcast(makeCtrl(CTRL.USER_JOINED, {user: joined}), peerId);
+        this.emit('user-joined', joined);
         this._emitUsersUpdated();
 
         this.pendingSyncs.add(peerId);
@@ -529,6 +604,10 @@ class HostSession extends Emitter {
         }
         if (envelope.payload.commit) {
             this.transport.send(peerId, makeReject(envelope.clientOpId, 'Clients must submit edit requests'));
+            return;
+        }
+        if (!this.canEdit(peerId)) {
+            this.transport.send(peerId, makeReject(envelope.clientOpId, WATCH_ONLY_REASON));
             return;
         }
         this._commit(peerId, envelope).catch(error => {
