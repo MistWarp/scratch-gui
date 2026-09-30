@@ -146,6 +146,12 @@
     font-size: var(--fs-xl);
 }
 
+.planPrice {
+    margin: 0 0 6px;
+    font-size: var(--fs-lg);
+    font-weight: 700;
+}
+
 .planLead {
     margin: 0 0 12px;
     color: var(--text-dim);

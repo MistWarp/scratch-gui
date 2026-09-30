@@ -41,11 +41,31 @@ const sortClasses = classes => [...classes].sort((a, b) => {
 
 const notEnabled = error => Boolean(error) && [402, 403, 404].includes(error.status);
 
-const SEAT_PACK_CHOICES = [1, 2, 3, 5, 10];
+const SEAT_PACK_CHOICES = [0, 1, 2, 3, 5, 10];
+
+const BILLING_INTERVAL_KEYS = ['year', 'month'];
+
+const billingIntervalCopy = communityText => ({
+    year: {label: communityText('Yearly'), description: communityText('£45 a year, about three months free. $50 in the US.')},
+    month: {label: communityText('Monthly'), description: communityText('£5 a month. $6 in the US. Cancel any time.')}
+});
+
+const billingIntervals = billing => {
+    const listed = Array.isArray(billing.intervals) ? billing.intervals.filter(key => BILLING_INTERVAL_KEYS.includes(key)) : [];
+    return listed.length ? listed : ['month'];
+};
+
+const seatPacksFor = (billing, interval) => (
+    Array.isArray(billing.seatPackIntervals) ? billing.seatPackIntervals.includes(interval) : Boolean(billing.seatPacksAvailable)
+);
 
 const UpgradeModal = ({billing, onClose}) => {
     const {text: communityText} = useCommunityText();
-    const [packs, setPacks] = useState(1);
+    const intervals = billingIntervals(billing);
+    const intervalCopy = billingIntervalCopy(communityText);
+    const [billingInterval, setBillingInterval] = useState(intervals[0]);
+    const [packs, setPacks] = useState(0);
+    const canAddSeats = seatPacksFor(billing, billingInterval);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
     const packSize = Number(billing.seatPackSize) || 10;
@@ -54,7 +74,7 @@ const UpgradeModal = ({billing, onClose}) => {
         setBusy(true);
         setError('');
         try {
-            const data = await api.classroom.billingCheckout(packs);
+            const data = await api.classroom.billingCheckout(canAddSeats ? packs : 0, billingInterval);
             if (!data.url) throw new Error(communityText('Checkout could not be started.'));
             window.location.href = data.url;
         } catch (e) {
@@ -78,21 +98,41 @@ const UpgradeModal = ({billing, onClose}) => {
                 </React.Fragment>
             )}
         >
-            <p className={styles.hint}>{communityText('Seats come in packs of {value1}. Pick how many packs your classes need. You can change this later from Manage billing.', {value1: packSize})}</p>
-            <fieldset className={styles.choices}>
-                <legend>{communityText('Seat packs')}</legend>
-                <div className={styles.packChoices}>
-                    {SEAT_PACK_CHOICES.map(count => (
-                        <label key={count} className={packs === count ? styles.choiceActive : styles.choice}>
-                            <input type="radio" name="seatPacks" value={count} checked={packs === count} onChange={() => setPacks(count)} />
-                            <span>
-                                <strong>{communityText('{value1, plural, one {# pack} other {# packs}}', {value1: count})}</strong>
-                                <small>{communityText('{value1, plural, one {# seat} other {# seats}}', {value1: count * packSize})}</small>
-                            </span>
-                        </label>
-                    ))}
-                </div>
-            </fieldset>
+            {intervals.length > 1 ? (
+                <fieldset className={styles.choices}>
+                    <legend>{communityText('Billing')}</legend>
+                    <div>
+                        {intervals.map(key => (
+                            <label key={key} className={billingInterval === key ? styles.choiceActive : styles.choice}>
+                                <input type="radio" name="billingInterval" value={key} checked={billingInterval === key} onChange={() => setBillingInterval(key)} />
+                                <span>
+                                    <strong>{intervalCopy[key].label}</strong>
+                                    <small>{intervalCopy[key].description}</small>
+                                </span>
+                            </label>
+                        ))}
+                    </div>
+                </fieldset>
+            ) : null}
+            {canAddSeats ? (
+                <React.Fragment>
+                    <p className={styles.hint}>{communityText('The plan includes 35 seats. Add packs of {value1} if your classes need more. You can change this later from Manage billing.', {value1: packSize})}</p>
+                    <fieldset className={styles.choices}>
+                        <legend>{communityText('Extra seats')}</legend>
+                        <div className={styles.packChoices}>
+                            {SEAT_PACK_CHOICES.map(count => (
+                                <label key={count} className={packs === count ? styles.choiceActive : styles.choice}>
+                                    <input type="radio" name="seatPacks" value={count} checked={packs === count} onChange={() => setPacks(count)} />
+                                    <span>
+                                        <strong>{count ? communityText('{value1, plural, one {# pack} other {# packs}}', {value1: count}) : communityText('None')}</strong>
+                                        <small>{communityText('{value1, plural, one {# seat} other {# seats}} in total', {value1: 35 + (count * packSize)})}</small>
+                                    </span>
+                                </label>
+                            ))}
+                        </div>
+                    </fieldset>
+                </React.Fragment>
+            ) : null}
             {error ? <Notice variant="error">{error}</Notice> : null}
         </Modal>
     );
@@ -126,7 +166,7 @@ const TrialOffer = ({days, onStarted}) => {
                 </Button>
             )}
         >
-            {communityText('Get 35 seats, 12 classes, group projects, and present mode. Nothing is charged. When the trial ends you go back to the Free plan, and your students and their work stay.')}
+            {communityText('Get up to 12 classes, group projects, present mode, and 25 GB of storage. Nothing is charged. When the trial ends you go back to the Free plan, and your students and their work stay.')}
             {error ? <span className={styles.trialError} role="alert">{error}</span> : null}
         </Notice>
     );
@@ -520,5 +560,5 @@ const Classroom = () => {
     );
 };
 
-export {BillingActions, LOGIN_MODES, SEAT_PACK_CHOICES, UpgradeModal, notEnabled, sortClasses, tierLabel};
+export {BillingActions, LOGIN_MODES, SEAT_PACK_CHOICES, UpgradeModal, billingIntervals, seatPacksFor, notEnabled, sortClasses, tierLabel};
 export default Classroom;
