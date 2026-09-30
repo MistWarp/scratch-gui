@@ -2745,7 +2745,6 @@
   "Cancel link": "Cancel link",
   "Create link": "Create link",
   "Create a move link for {value1}?": "Create a move link for {value1}?",
-  "Give the link to {value1} or their parent or guardian. Whoever opens it and signs in with Rotur receives the projects.": "Give the link to {value1} or their parent or guardian. Whoever opens it and signs in with Rotur receives the projects.",
   "Working with {value1} in {value2}.": "Working with {value1} in {value2}.",
   "and": "and",
   "You are in the group {value1}.": "You are in the group {value1}.",
@@ -2779,7 +2778,6 @@
   "Go to My stuff": "Go to My stuff",
   "Move the projects of {value1} to your own account": "Move the projects of {value1} to your own account",
   "{value1, plural, one {# project} other {# projects}} from the class of {value2} will move to the Rotur account you sign in with. The link works until {value3}.": "{value1, plural, one {# project} other {# projects}} from the class of {value2} will move to the Rotur account you sign in with. The link works until {value3}.",
-  "If you are under 13, ask a parent or guardian to do this with you.": "If you are under 13, ask a parent or guardian to do this with you.",
   "You are signed in as a class account.": "You are signed in as a class account.",
   "Sign out, then open this link again and sign in with your own Rotur account.": "Sign out, then open this link again and sign in with your own Rotur account.",
   "You are signed in as {value1}.": "You are signed in as {value1}.",
@@ -2961,5 +2959,7 @@
   "For several teachers sharing one plan. Includes 150 students, then £2 a year for each extra student.": "For several teachers sharing one plan. Includes 150 students, then £2 a year for each extra student.",
   "£45 a year, about three months free. $50 in the US.": "£45 a year, about three months free. $50 in the US.",
   "£5 a month. $6 in the US. Cancel any time.": "£5 a month. $6 in the US. Cancel any time.",
-  "MistWarp is part of Rotur. Both are run by {value1}, a sole trader in the {value2}, who decides how the data described on this page is used.": "MistWarp is part of Rotur. Both are run by {value1}, a sole trader in the {value2}, who decides how the data described on this page is used."
+  "MistWarp is part of Rotur. Both are run by {value1}, a sole trader in the {value2}, who decides how the data described on this page is used.": "MistWarp is part of Rotur. Both are run by {value1}, a sole trader in the {value2}, who decides how the data described on this page is used.",
+  "Give the link to {value1} if they are 13 or over, or to their parent or guardian if they are younger, because Rotur accounts are for people aged 13 and over. Whoever opens it and signs in with Rotur receives the projects.": "Give the link to {value1} if they are 13 or over, or to their parent or guardian if they are younger, because Rotur accounts are for people aged 13 and over. Whoever opens it and signs in with Rotur receives the projects.",
+  "Rotur accounts are for people aged 13 and over. If you are under 13, a parent or guardian can sign in with their own Rotur account and keep your projects for you.": "Rotur accounts are for people aged 13 and over. If you are under 13, a parent or guardian can sign in with their own Rotur account and keep your projects for you."
 }
