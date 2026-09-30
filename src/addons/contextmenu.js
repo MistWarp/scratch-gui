@@ -3,15 +3,28 @@
 
 /* eslint-disable */
 
+import {createContextMenuIconElement} from "../lib/context-menu-icons";
+
 let initialized = false;
 let hasDynamicContextMenu = false;
 let contextMenus = [];
+
+const findDragTypeProps = (fiber) => {
+  for (let depth = 0; fiber && depth < 8; depth++, fiber = fiber.return) {
+    const props = fiber.stateNode?.props?.dragType ? fiber.stateNode.props : fiber.memoizedProps;
+    if (props?.dragType) return props;
+  }
+  return null;
+};
 
 const onReactContextMenu = function (e) {
   if (!e.target) return;
   const ctxTarget = e.target.closest(".react-contextmenu-wrapper");
   if (!ctxTarget) return;
   let ctxMenu = ctxTarget.querySelector("nav.react-contextmenu");
+  if (!ctxMenu && ctxTarget.parentElement) {
+    ctxMenu = ctxTarget.parentElement.querySelector(":scope > nav.react-contextmenu");
+  }
   let type;
   const extra = {};
   if (false && !ctxMenu && ctxTarget.closest(".monitor-overlay")) {
@@ -32,9 +45,9 @@ const onReactContextMenu = function (e) {
     extra.itemId = props.id;
     extra.targetId = props.targetId;
     type = `monitor_${props.mode}`;
-  } else if (ctxTarget[this.traps.getInternalKey(ctxTarget)]?.return?.return?.return?.stateNode?.props?.dragType) {
+  } else if (findDragTypeProps(ctxTarget[this.traps.getInternalKey(ctxTarget)])) {
     // SpriteSelectorItem which despite its name is used for costumes, sounds, backpacked script etc
-    const props = ctxTarget[this.traps.getInternalKey(ctxTarget)].return.return.return.stateNode.props;
+    const props = findDragTypeProps(ctxTarget[this.traps.getInternalKey(ctxTarget)]);
     type = props.dragType.toLowerCase();
     extra.name = props.name;
     extra.itemId = props.id;
@@ -51,9 +64,16 @@ const onReactContextMenu = function (e) {
   Array.from(ctxMenu.children).forEach((existing) => {
     if (existing.classList.contains("sa-ctx-menu")) existing.remove();
   });
-  for (const item of hasDynamicContextMenu
-    ? contextMenus.flatMap((menu) => (typeof menu === "function" ? menu(type, ctx) : menu))
-    : contextMenus) {
+  const resolveMenu = (menu) => {
+    if (typeof menu !== "function") return menu;
+    try {
+      return menu(type, ctx);
+    } catch (e) {
+      console.error("Error while building editor context menu: ", e);
+      return [];
+    }
+  };
+  for (const item of hasDynamicContextMenu ? contextMenus.flatMap(resolveMenu) : contextMenus) {
     if (!item) continue;
     if (item.types && !item.types.some((itemType) => type === itemType)) continue;
     if (item.condition && !item.condition(ctx)) continue;
@@ -64,11 +84,12 @@ const onReactContextMenu = function (e) {
     itemElem.className = this.scratchClass(...classes, {
       others: ["react-contextmenu-item", "sa-ctx-menu", item.className || ""],
     });
+    itemElem.append(createContextMenuIconElement(item.icon));
     const label = document.createElement("span");
     label.textContent = item.label;
     itemElem.append(label);
     this.displayNoneWhileDisabled(itemElem, {
-      display: "block",
+      display: "flex",
     });
 
     itemElem.addEventListener("click", (e) => {
