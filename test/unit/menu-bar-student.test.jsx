@@ -5,6 +5,7 @@ import {IntlProvider} from 'react-intl';
 
 import {MwEditorNav} from '../../src/components/menu-bar/mw-editor-nav.jsx';
 import {RoturAccount} from '../../src/components/menu-bar/mw-rotur-account.jsx';
+import {HelpMenu} from '../../src/components/menu-bar/help-menu.jsx';
 
 jest.mock('../../src/components/menu-bar/mw-notifications.jsx', () => () => <div id="notifications" />);
 jest.mock('../../src/lib/originchats/chat-ui.js', () => ({
@@ -28,7 +29,15 @@ jest.mock('../../src/containers/menu-item.jsx', () => ({children, onClick}) => (
         onClick={onClick}
     >{children}</button>
 ));
-jest.mock('../../src/components/menu/menu.jsx', () => ({MenuSection: ({children}) => <div>{children}</div>}));
+jest.mock('../../src/components/menu/menu.jsx', () => ({
+    MenuSection: ({children}) => <div>{children}</div>,
+    MenuItem: ({children, onClick}) => (
+        <button
+            type="button"
+            onClick={onClick}
+        >{children}</button>
+    )
+}));
 
 const intl = {formatMessage: message => message.defaultMessage};
 
@@ -90,6 +99,29 @@ describe('editor menu bar for students', () => {
         const teacherLabels = teacher.find('button').map(node => node.text());
         expect(teacherLabels)
             .toEqual(expect.arrayContaining(['Profile', 'Account settings', 'Switch account', 'Sign out']));
+        teacher.unmount();
+    });
+
+    test('the help menu leaves out feedback for a student', () => {
+        const props = {
+            open: true,
+            onOpenHelp: () => {},
+            onOpenShortcuts: () => {},
+            onRequestClose: () => {},
+            onRequestOpen: () => {}
+        };
+        const student = renderIntl(<HelpMenu
+            {...props}
+            isStudent
+        />);
+        expect(student.text()).toContain('Documentation');
+        expect(student.text()).not.toContain('Send feedback');
+        student.unmount();
+        const teacher = renderIntl(<HelpMenu
+            {...props}
+            isStudent={false}
+        />);
+        expect(teacher.text()).toContain('Send feedback');
         teacher.unmount();
     });
 });

@@ -16,9 +16,9 @@ import {
     logout as mistLogout
 } from '../community/api.js';
 import {ROTUR_TOKEN_KEY} from './token-key.js';
+import {isStudentSession, readStudentFlag, writeStudentFlag} from './student-flag.js';
 
 const MIST_SESSION_KEY = 'mw:mistwarp-session';
-const STUDENT_SESSION_KEY = 'mw:classroom-student';
 
 let state = {status: 'idle', user: null, banMessage: null};
 const listeners = new Set();
@@ -50,23 +50,6 @@ const readRoturToken = () => {
         return localStorage.getItem(ROTUR_TOKEN_KEY);
     } catch (_) {
         return null;
-    }
-};
-
-const readStudentFlag = () => {
-    try {
-        return localStorage.getItem(STUDENT_SESSION_KEY) === '1';
-    } catch (_) {
-        return false;
-    }
-};
-
-const writeStudentFlag = active => {
-    try {
-        if (active) localStorage.setItem(STUDENT_SESSION_KEY, '1');
-        else localStorage.removeItem(STUDENT_SESSION_KEY);
-    } catch (_) {
-        return;
     }
 };
 
@@ -253,7 +236,6 @@ const logout = () => {
 };
 
 const getMistSession = () => loadSession();
-const isStudentSession = () => readStudentFlag();
 const getRoturToken = () => getRotur().token || readRoturToken();
 
 const getMistWarpAuthor = async () => {

@@ -9,7 +9,8 @@ import {
 } from '../lib/rotur/extension-bridge.js';
 import {getRoturSettings, setRoturSetting} from '../lib/rotur/settings.js';
 import {isLoggedIn} from '../lib/rotur/client.js';
-import {getState as getRoturIdentityState, isStudentSession} from '../lib/rotur/identity.js';
+import {getState as getRoturIdentityState} from '../lib/rotur/identity.js';
+import {isStudentSession} from '../lib/rotur/student-flag.js';
 import ProjectActivityScope from '../lib/rotur/project-activity-scope.js';
 import {
     blockProjectPrompts,

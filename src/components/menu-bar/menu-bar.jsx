@@ -1611,7 +1611,7 @@ class MenuBar extends React.Component {
                                             />
                                         </MenuItem>
                                     )}
-                                    {this.props.roturReady ? (
+                                    {this.props.roturReady && !(this.props.isStudent && mistwarpAction === 'remix') ? (
                                         <MenuSection>
                                             <MenuItem
                                                 disabled={!mistwarpAction}
