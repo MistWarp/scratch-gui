@@ -1065,6 +1065,7 @@
   "mw.settingsModal.noBlockedProjects": "No projects are blocked from asking for permission.",
   "mw.settingsModal.usageData": "Usage data",
   "mw.settingsModal.analytics": "Share anonymous product analytics",
+  "mw.settingsModal.analyticsMinor": "Anonymous analytics stay off for accounts under 18.",
   "mw.settingsModal.analyticsHelp": "Records creation and return milestones for 31 days. MistWarp does not send usernames, project IDs, page URLs, IP addresses, or browser details.",
   "tw.settingsModal.help": "Click for help",
   "gui.alerts.cloudInfoLearnMore": "Learn more.",

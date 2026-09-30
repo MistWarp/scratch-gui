@@ -6,6 +6,7 @@ import {onRoturLogin} from '../lib/rotur/cloud-sync.js';
 import {subscribeNotifications, subscribeNotificationRemovals} from '../lib/rotur/client.js';
 import rotur from './rotur.js';
 import {track} from './analytics.js';
+import {setMinorAccount} from '../lib/minor-account.js';
 import {
     subscribe as subscribeIdentity,
     restore as identityRestore,
@@ -74,6 +75,7 @@ const UserProvider = ({children}) => {
             identityUser?.username ? optionalRequest(() => rotur.profile(identityUser.username)) : null
         ]);
         if (version !== identityVersion.current) return;
+        if (me) setMinorAccount(me.minor === true);
         let applied = false;
         try {
             applied = (await onRoturLogin()).applied;
@@ -111,6 +113,7 @@ const UserProvider = ({children}) => {
             optionalRequest(() => rotur.profile(username))
         ]);
         if (version !== identityVersion.current) return null;
+        if (me) setMinorAccount(me.minor === true);
         const nextUser = normalizeUser({
             ...user,
             ...(me || {}),

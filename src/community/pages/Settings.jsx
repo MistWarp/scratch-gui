@@ -31,7 +31,7 @@ import {
     setMenuBarText,
     MENU_BAR_TEXT_OPTIONS
 } from '../../lib/themes/menu-bar-accent.js';
-import {getRoturSettings, updateRoturSettings} from '../../lib/rotur/settings.js';
+import {getRoturSettings, subscribeRoturSettings, updateRoturSettings} from '../../lib/rotur/settings.js';
 import {readActivityGrants, writeActivityGrants} from '../../lib/rotur/extension-bridge.js';
 import {presenceSupported} from '../../lib/rotur/client.js';
 import styles from './Settings.module.css';
@@ -156,6 +156,7 @@ const Settings = () => {
     const {text: communityText} = useCommunityIntl();
     const {user, login, loginOrThrow, logout} = useUser();
     const viewerName = (user && user.username) || '';
+    const minorAccount = Boolean(user && user.minor === true);
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const {t} = useCommunityIntl();
@@ -193,7 +194,8 @@ const Settings = () => {
     const [deleteConfirmation, setDeleteConfirmation] = useState('');
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [shareAnalytics, setShareAnalytics] = useState(analyticsEnabled());
-    const [showRecentActivity, setShowRecentActivity] = useState(true);
+    const [showRecentActivity, setShowRecentActivity] = useState(!minorAccount);
+    const [profileComments, setProfileComments] = useState(!minorAccount);
     const [privacyBusy, setPrivacyBusy] = useState(false);
     const [privacyStatus, setPrivacyStatus] = useState('');
     const [privacyLoadError, setPrivacyLoadError] = useState(false);
@@ -295,14 +297,17 @@ const Settings = () => {
         setPrivacyStatus('');
         setPrivacyLoadError(false);
         setPrivacyBusy(false);
-        setShowRecentActivity(true);
+        setShowRecentActivity(!minorAccount);
+        setProfileComments(!minorAccount);
         if (!viewerName) {
             return () => {};
         }
         let cancelled = false;
         api.getUser(viewerName)
             .then(data => {
-                if (!cancelled) setShowRecentActivity(data.recentActivityVisible !== false);
+                if (cancelled) return;
+                setShowRecentActivity(typeof data.recentActivityVisible === 'boolean' ? data.recentActivityVisible : !minorAccount);
+                setProfileComments(typeof data.commentsOff === 'boolean' ? !data.commentsOff : !minorAccount);
             })
             .catch(() => {
                 if (!cancelled) {
@@ -313,7 +318,7 @@ const Settings = () => {
         return () => {
             cancelled = true;
         };
-    }, [privacyAttempt, viewerName]);
+    }, [minorAccount, privacyAttempt, viewerName]);
 
     useEffect(() => {
         if (!user) {
@@ -361,7 +366,10 @@ const Settings = () => {
         setAccentMenuBarState(getAccentMenuBar());
         setMenuBarTextState(getMenuBarText());
         setPresence(getRoturSettings());
+        setShareAnalytics(analyticsEnabled());
     }, [user]);
+
+    useEffect(() => subscribeRoturSettings(next => setPresence(next)), []);
 
     const applyAndPersist = next => {
         applyTheme(next);
@@ -403,6 +411,25 @@ const Settings = () => {
     const changeAnalytics = enabled => {
         setAnalyticsEnabled(enabled);
         setShareAnalytics(enabled);
+    };
+    const changeProfileComments = async enabled => {
+        if (!user || privacyBusy) return;
+        const context = dataContext.current;
+        setPrivacyBusy(true);
+        setPrivacyStatus('');
+        try {
+            await api.updateProfile({commentsOff: !enabled});
+            if (dataContext.current === context) {
+                setProfileComments(enabled);
+                setPrivacyStatus(enabled ?
+                    communityText('Other users can comment on your profile.') :
+                    communityText('Comments on your profile are turned off.'));
+            }
+        } catch (e) {
+            if (dataContext.current === context) setPrivacyStatus(e.message || communityText('Could not update your privacy setting.'));
+        } finally {
+            if (dataContext.current === context) setPrivacyBusy(false);
+        }
     };
     const changeRecentActivityPrivacy = async enabled => {
         if (!user || privacyBusy) return;
@@ -580,7 +607,7 @@ const Settings = () => {
                     {activeSection === 'presence' ? (
                         <section className={styles.card}>
                             <SectionHeading icon={Radio} title={communityText('Presence')} />
-                            {user && !presenceOk ? (
+                            {user && !presenceOk && !minorAccount ? (
                                 <Notice
                                     variant="warning"
                                     className={styles.noticeBefore}
@@ -654,6 +681,14 @@ const Settings = () => {
                                 title={communityText('Privacy')}
                                 lead={communityText('Choose which MistWarp activity appears publicly on your profile.')}
                             />
+                            {minorAccount ? (
+                                <Notice
+                                    variant="info"
+                                    className={styles.noticeBefore}
+                                >
+                                    {communityText('Your Rotur account is under 18, so MistWarp keeps your profile out of user search and creator leaderboards, and keeps your hearts and saves out of activity feeds. Game activity and profile comments start turned off.')}
+                                </Notice>
+                            ) : null}
                             {!user ? <p className={styles.note}>{communityText('Sign in to manage profile privacy.')}</p> : (
                                 <div className={styles.settingRows}>
                                     <SwitchRow
@@ -662,6 +697,13 @@ const Settings = () => {
                                         label={communityText('Show game activity and library')}
                                         description={communityText('Display playtime for games you have added to your public library.')}
                                         onChange={changeRecentActivityPrivacy}
+                                    />
+                                    <SwitchRow
+                                        checked={profileComments}
+                                        disabled={privacyBusy}
+                                        label={communityText('Allow comments on your profile')}
+                                        description={communityText('Let other users post on your profile wall.')}
+                                        onChange={changeProfileComments}
                                     />
                                 </div>
                             )}
@@ -816,11 +858,14 @@ const Settings = () => {
                                 <div className={styles.dataAction}>
                                     <div>
                                         <h3>{t('settings.analytics')}</h3>
-                                        <p>{t('settings.analyticsHelp')}</p>
+                                        <p>{minorAccount ?
+                                            communityText('Anonymous analytics stay off for accounts under 18.') :
+                                            t('settings.analyticsHelp')}</p>
                                     </div>
                                     <Switch
                                         ariaLabel={t('settings.analytics')}
-                                        checked={shareAnalytics}
+                                        checked={shareAnalytics && !minorAccount}
+                                        disabled={minorAccount}
                                         onChange={changeAnalytics}
                                     />
                                 </div>
