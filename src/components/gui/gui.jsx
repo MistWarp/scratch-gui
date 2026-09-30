@@ -49,6 +49,7 @@ import {isRendererSupported, isBrowserSupported} from '../../lib/utils/tw-enviro
 
 import styles from './gui.css';
 import {getGuiComponents} from './gui-components';
+import {isStudentSession} from '../../lib/rotur/student-flag.js';
 
 const messages = defineMessages({
     addExtension: {
@@ -853,7 +854,7 @@ const GUIComponent = props => {
     const alwaysEnabledModals = useMemo(() => (
         <React.Fragment>
             <RoturSession />
-            {!isEmbedded && !isStudent && <RoturExtensionHost />}
+            {!isEmbedded && <RoturExtensionHost />}
             <MistWarpGameHost />
             <NotificationsProvider />
             <TWSecurityManager securityManager={securityManager} />
@@ -872,7 +873,7 @@ const GUIComponent = props => {
                         visible={settingsModalVisible}
                     />
                 )}
-                {customExtensionModalVisible && <TWCustomExtensionModal />}
+                {customExtensionModalVisible && !isStudentSession() && <TWCustomExtensionModal />}
                 {fontsModalVisible && <TWFontsModal />}
                 {assetsModalVisible && <MWAssetsModal />}
                 {projectMetadataModalVisible && <MWProjectMetadataModal />}

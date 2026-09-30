@@ -150,8 +150,9 @@ class GitModalComponent extends React.Component {
     constructor (props) {
         super(props);
         const requestedView = takeGitModalInitialView();
+        const views = props.remotesDisabled ? ['history', 'branches'] : ['history', 'branches', 'remote'];
         this.state = {
-            currentView: ['history', 'branches', 'remote'].includes(requestedView) ? requestedView : 'history'
+            currentView: views.includes(requestedView) ? requestedView : 'history'
         };
         this.handleNavigate = this.handleNavigate.bind(this);
         this.handleNavigateClick = this.handleNavigateClick.bind(this);
@@ -254,81 +255,85 @@ class GitModalComponent extends React.Component {
                         id="mw.git.empty.init"
                     />
                 </button>
-                <div className={styles.emptyDivider}>
-                    <FormattedMessage
-                        defaultMessage="or clone an existing fractch project"
-                        description="Divider between init and clone"
-                        id="mw.git.empty.or"
-                    />
-                </div>
-                <Box className={styles.cloneForm}>
-                    <input
-                        className={styles.input}
-                        type="text"
-                        value={this.props.cloneUrl}
-                        onChange={this.props.onChangeCloneUrl}
-                        disabled={this.props.busy}
-                        placeholder="https://git.example.com/user/project.git"
-                    />
-                    <button
-                        type="button"
-                        className={styles.button}
-                        disabled={this.props.busy || !this.props.cloneUrl || !this.props.cloneUrl.trim()}
-                        onClick={this.props.onClone}
-                    >
-                        <Download className={styles.buttonIcon} />
-                        <FormattedMessage
-                            defaultMessage="Clone"
-                            description="Clone button"
-                            id="mw.git.empty.clone"
-                        />
-                    </button>
-                </Box>
-                {this.props.cloneConfirm ? (
-                    <Box className={styles.cloneConfirm}>
-                        <p>
+                {this.props.remotesDisabled ? null : (
+                    <React.Fragment>
+                        <div className={styles.emptyDivider}>
                             <FormattedMessage
-                                // eslint-disable-next-line max-len
-                                defaultMessage="Cloning replaces your current project. A device backup is saved first. Discard unsaved changes and clone?"
-                                description="Clone overwrite confirmation"
-                                id="mw.git.empty.cloneConfirm"
+                                defaultMessage="or clone an existing fractch project"
+                                description="Divider between init and clone"
+                                id="mw.git.empty.or"
                             />
-                        </p>
-                        <Box className={styles.rowButtons}>
-                            <button
-                                type="button"
-                                className={classNames(styles.button, styles.dangerButton)}
+                        </div>
+                        <Box className={styles.cloneForm}>
+                            <input
+                                className={styles.input}
+                                type="text"
+                                value={this.props.cloneUrl}
+                                onChange={this.props.onChangeCloneUrl}
                                 disabled={this.props.busy}
-                                onClick={this.props.onClone}
-                            >
-                                <FormattedMessage
-                                    defaultMessage="Clone anyway"
-                                    description="Confirm clone button"
-                                    id="mw.git.empty.cloneAnyway"
-                                />
-                            </button>
+                                placeholder="https://git.example.com/user/project.git"
+                            />
                             <button
                                 type="button"
                                 className={styles.button}
-                                disabled={this.props.busy}
-                                onClick={this.props.onCancelClone}
+                                disabled={this.props.busy || !this.props.cloneUrl || !this.props.cloneUrl.trim()}
+                                onClick={this.props.onClone}
                             >
+                                <Download className={styles.buttonIcon} />
                                 <FormattedMessage
-                                    defaultMessage="Cancel"
-                                    description="Cancel clone button"
-                                    id="mw.git.empty.cloneCancel"
+                                    defaultMessage="Clone"
+                                    description="Clone button"
+                                    id="mw.git.empty.clone"
                                 />
                             </button>
                         </Box>
-                    </Box>
-                ) : (
-                    <p className={styles.muted}>
-                        <FormattedMessage
-                            defaultMessage="Private repos use your token (Remote) and author name (Settings)."
-                            description="Clone auth hint"
-                            id="mw.git.empty.cloneHint"
-                        />
-                    </p>
+                        {this.props.cloneConfirm ? (
+                            <Box className={styles.cloneConfirm}>
+                                <p>
+                                    <FormattedMessage
+                                        // eslint-disable-next-line max-len
+                                        defaultMessage="Cloning replaces your current project. A device backup is saved first. Discard unsaved changes and clone?"
+                                        description="Clone overwrite confirmation"
+                                        id="mw.git.empty.cloneConfirm"
+                                    />
+                                </p>
+                                <Box className={styles.rowButtons}>
+                                    <button
+                                        type="button"
+                                        className={classNames(styles.button, styles.dangerButton)}
+                                        disabled={this.props.busy}
+                                        onClick={this.props.onClone}
+                                    >
+                                        <FormattedMessage
+                                            defaultMessage="Clone anyway"
+                                            description="Confirm clone button"
+                                            id="mw.git.empty.cloneAnyway"
+                                        />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={styles.button}
+                                        disabled={this.props.busy}
+                                        onClick={this.props.onCancelClone}
+                                    >
+                                        <FormattedMessage
+                                            defaultMessage="Cancel"
+                                            description="Cancel clone button"
+                                            id="mw.git.empty.cloneCancel"
+                                        />
+                                    </button>
+                                </Box>
+                            </Box>
+                        ) : (
+                            <p className={styles.muted}>
+                                <FormattedMessage
+                                    defaultMessage="Private repos use your token (Remote) and author name (Settings)."
+                                    description="Clone auth hint"
+                                    id="mw.git.empty.cloneHint"
+                                />
+                            </p>
+                        )}
+                    </React.Fragment>
                 )}
             </Box>
         );
@@ -1413,7 +1418,7 @@ class GitModalComponent extends React.Component {
         case 'branches':
             return this.renderBranches();
         case 'remote':
-            return this.renderRemote();
+            return this.props.remotesDisabled ? this.renderHistory() : this.renderRemote();
         default:
             return this.renderHistory();
         }
@@ -1425,7 +1430,7 @@ class GitModalComponent extends React.Component {
             {id: 'history', label: intl.formatMessage(messages.history), icon: History},
             {id: 'branches', label: intl.formatMessage(messages.branches), icon: GitBranch},
             {id: 'remote', label: intl.formatMessage(messages.remote), icon: Cloud}
-        ];
+        ].filter(cat => !this.props.remotesDisabled || cat.id !== 'remote');
 
         return (
             <Modal
@@ -1496,6 +1501,7 @@ class GitModalComponent extends React.Component {
 
 GitModalComponent.propTypes = {
     intl: intlShape,
+    remotesDisabled: PropTypes.bool,
     busy: PropTypes.bool,
     busyMessage: PropTypes.string,
     busyProgress: PropTypes.number,

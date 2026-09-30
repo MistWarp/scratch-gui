@@ -6,6 +6,7 @@ import {withProjectReplacement} from '../project-replacement.js';
 import {detachWorkspace} from '../workspace-state.js';
 import {importRepoFromSb3} from '../git/browser-git.js';
 import {openSimpleDialog} from '../../reducers/modals';
+import {canStudentSessionLoadUrl} from '../rotur/student-flag.js';
 
 /**
  * Higher Order Component to handle postMessage events for loading SB3 files.
@@ -147,6 +148,10 @@ const SB3PostMessageHOC = function (WrappedComponent) {
 
             try {
                 if (typeof message.data === 'string') {
+                    if (!canStudentSessionLoadUrl(message.data)) {
+                        this.sendResponse(request, 'error', 'SB3 URLs cannot be loaded here', message.title);
+                        return false;
+                    }
                     // Data is a URL
                     return this.loadSB3FromUrl(message.data, message.title, request);
                 }

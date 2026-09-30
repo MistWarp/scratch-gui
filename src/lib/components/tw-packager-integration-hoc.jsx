@@ -6,13 +6,14 @@ import {getIsShowingProject} from '../../reducers/project-state';
 import {openSimpleDialog} from '../../reducers/modals';
 import PackagerWindow from '../../containers/packager.jsx';
 import windowManager from '../../addons/window-system/window-manager';
+import {isStudentSession} from '../rotur/student-flag.js';
 
 const PackagerIntegrationHOC = WrappedComponent => {
     class PackagerIntegrationComponent extends React.Component {
         state = {open: false};
 
         handleClickPackager = () => {
-            if (!this.props.canOpenPackager) return;
+            if (!this.props.canOpenPackager || isStudentSession()) return;
             const existing = windowManager.getWindow('mw-packager');
             if (existing) {
                 existing.show();
@@ -27,9 +28,9 @@ const PackagerIntegrationHOC = WrappedComponent => {
                 <WrappedComponent
                     {...props}
                     vm={vm}
-                    onClickPackager={this.handleClickPackager}
+                    onClickPackager={isStudentSession() ? null : this.handleClickPackager}
                 />
-                {this.state.open && <PackagerWindow
+                {this.state.open && !isStudentSession() && <PackagerWindow
                     key={this.props.projectId || 'local'}
                     vm={vm}
                     projectTitle={reduxProjectTitle}
