@@ -4,7 +4,7 @@ import classNames from 'classnames';
 import bindAll from 'lodash.bindall';
 import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
-import {BookOpen, CircleHelp, Keyboard, MessageSquare, Search} from 'lucide-react';
+import {CircleHelp, Keyboard, MessageSquare, Search} from 'lucide-react';
 
 import ChevronDown from './ChevronDown.jsx';
 import MenuBarMenu from './menu-bar-menu.jsx';
@@ -12,7 +12,6 @@ import MenuLabel from './tw-menu-label.jsx';
 import {MenuItem, MenuSection} from '../menu/menu.jsx';
 import {openHelp, openShortcutManagerModal} from '../../reducers/modals.js';
 import {openHelpMenu, closeHelpMenu, helpMenuOpen} from '../../reducers/menus.js';
-import {DOCS_BASE} from '../../lib/help/index.js';
 import {FEEDBACK_URL} from '../../lib/constants/brand.js';
 import {getCommandPaletteKey, openCommandPalette} from '../../lib/shortcuts/command-palette.js';
 
@@ -35,7 +34,6 @@ class HelpMenu extends React.Component {
         super(props);
         bindAll(this, [
             'handleClickHelp',
-            'handleClickDocs',
             'handleClickShortcuts',
             'handleClickCommandPalette',
             'handleClickFeedback'
@@ -44,10 +42,6 @@ class HelpMenu extends React.Component {
     handleClickHelp () {
         this.props.onRequestClose();
         this.props.onOpenHelp();
-    }
-    handleClickDocs () {
-        this.props.onRequestClose();
-        openInNewTab(`${DOCS_BASE}/`);
     }
     handleClickShortcuts () {
         this.props.onRequestClose();
@@ -91,14 +85,6 @@ class HelpMenu extends React.Component {
                                 defaultMessage="Open help"
                                 description="Help menu item that opens the help window inside the editor"
                                 id="mw.menuBar.openHelp"
-                            />
-                        </MenuItem>
-                        <MenuItem onClick={this.handleClickDocs}>
-                            <BookOpen />
-                            <FormattedMessage
-                                defaultMessage="Documentation"
-                                description="Help menu item that opens the MistWarp documentation in a new tab"
-                                id="mw.menuBar.documentation"
                             />
                         </MenuItem>
                     </MenuSection>
