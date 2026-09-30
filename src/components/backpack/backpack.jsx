@@ -54,7 +54,6 @@ const Backpack = ({
     height,
     intl,
     loading,
-    notice,
     panelRef,
     renamingId,
     searchQuery,
@@ -113,7 +112,17 @@ const Backpack = ({
                         <FormattedMessage {...messages.title} />
                     </span>
                     <span className={styles.headerCount}>{totalCount}</span>
-                    {expanded ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+                    {expanded ? (
+                        <ChevronDown
+                            className={styles.headerChevron}
+                            size={16}
+                        />
+                    ) : (
+                        <ChevronUp
+                            className={styles.headerChevron}
+                            size={16}
+                        />
+                    )}
                 </button>
                 {expanded ? (
                     <React.Fragment>
@@ -168,15 +177,6 @@ const Backpack = ({
                     {dragActive ? <div className={styles.dropOverlay} /> : null}
                 </div>
             ) : null}
-            {notice ? (
-                <div
-                    aria-live="polite"
-                    className={styles.notice}
-                    role="status"
-                >
-                    {notice}
-                </div>
-            ) : null}
         </div>
     );
 };
@@ -200,7 +200,6 @@ Backpack.propTypes = {
     height: PropTypes.number,
     intl: intlShape,
     loading: PropTypes.bool,
-    notice: PropTypes.string,
     panelRef: PropTypes.func,
     renamingId: PropTypes.string,
     searchQuery: PropTypes.string,
@@ -229,7 +228,6 @@ Backpack.defaultProps = {
     filter: 'all',
     height: null,
     loading: false,
-    notice: null,
     searchQuery: '',
     showMore: false,
     totalCount: 0,

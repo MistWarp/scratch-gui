@@ -37,6 +37,8 @@ const makeBackpack = overrides => {
     const backpack = new Backpack({
         host: 'https://backpack.example',
         intl: {formatMessage: jest.fn(message => message.defaultMessage)},
+        onCloseAlert: jest.fn(),
+        onShowAlert: jest.fn(),
         token: 'token',
         username: 'user',
         vm: {},
@@ -143,6 +145,7 @@ describe('backpack workflows', () => {
         await expect(secondDrop).resolves.toBe(true);
         expect(saveBackpackObject).toHaveBeenCalledTimes(2);
         expect(backpack.state.contents.map(item => item.id)).toEqual(['second', 'first']);
+        expect(backpack.props.onShowAlert).toHaveBeenCalledWith('backpackSaved');
     });
 
     test('saves a right-clicked script with every block below and inside it', async () => {
