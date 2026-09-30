@@ -3,17 +3,14 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {
-    ArrowDownLeft, ArrowUpRight, Coins, Wallet as WalletIcon, HeartHandshake, Send, ExternalLink, CalendarCheck
+    ArrowDownLeft, ArrowUpRight, Coins, Wallet as WalletIcon, HeartHandshake, Send, CalendarCheck
 } from 'lucide-react';
 import api, {projectUrl} from '../api';
 import {getAccountSummary, claimDaily} from '../../lib/rotur/client.js';
-import {
-    CREDIT_PACKS, getBillingStatus, openCreditCheckout, openBillingPortal, consumeBillingResult, getCommerceEarnings
-} from '../credits';
+import {getCommerceEarnings} from '../credits';
 import {useUser} from '../UserContext.jsx';
 import Button from '../components/ui/Button.jsx';
 import EmptyState, {SignInPrompt} from '../components/ui/EmptyState.jsx';
-import Notice from '../components/ui/Notice.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import {formatDate, safeDate} from '../format';
@@ -48,25 +45,11 @@ const Wallet = () => {
     const [earningsAttempt, setEarningsAttempt] = useState(0);
     const [claiming, setClaiming] = useState(false);
     const [claimMsg, setClaimMsg] = useState('');
-    const [billing, setBilling] = useState(null);
-    const [checkoutBusy, setCheckoutBusy] = useState(false);
-    const [checkoutError, setCheckoutError] = useState('');
-    const [billingResult, setBillingResult] = useState(null);
-    const billingResultConsumed = useRef(false);
     const actionLocks = useRef(new Set());
-
-    useEffect(() => {
-        if (loading || !viewerName || billingResultConsumed.current) return;
-        billingResultConsumed.current = true;
-        const value = consumeBillingResult();
-        if (value) setBillingResult({viewerName, value});
-    }, [loading, viewerName]);
 
     useEffect(() => {
         setClaimMsg('');
         setClaiming(false);
-        setCheckoutBusy(false);
-        setCheckoutError('');
     }, [viewerName]);
 
     useEffect(() => {
@@ -136,21 +119,6 @@ const Wallet = () => {
         };
     }, [earningsAttempt, viewerName]);
 
-    useEffect(() => {
-        if (!viewerName) {
-            setBilling(null);
-            return () => {};
-        }
-        let stale = false;
-        setBilling(null);
-        getBillingStatus()
-            .then(data => !stale && setBilling(data))
-            .catch(() => !stale && setBilling({billing_configured: false}));
-        return () => {
-            stale = true;
-        };
-    }, [viewerName]);
-
     if (loading) {
         return <main className={styles.page}><StatusMessage /></main>;
     }
@@ -163,8 +131,6 @@ const Wallet = () => {
     }
 
     const balance = account && account.balance !== null ? account.balance : null;
-    const billingReady = Boolean(billing && billing.billing_configured);
-    const billingMsg = billingResult && billingResult.viewerName === viewerName ? billingResult.value : null;
 
     const doClaimDaily = async () => {
         const context = walletContext.current;
@@ -199,45 +165,6 @@ const Wallet = () => {
         }
     };
 
-    const buy = async pack => {
-        const context = walletContext.current;
-        const actionKey = `${context}\u0000billing`;
-        if (actionLocks.current.has(actionKey)) return;
-        actionLocks.current.add(actionKey);
-        setCheckoutBusy(true);
-        setCheckoutError('');
-        try {
-            await openCreditCheckout(pack);
-        } catch (e) {
-            if (walletContext.current === context) {
-                setCheckoutError(e.needsReauth ?
-                    communityText('Your current login cannot buy credits. Log out and back in, then try again.') :
-                    (e.message || 'Could not open checkout.'));
-            }
-        } finally {
-            actionLocks.current.delete(actionKey);
-            if (walletContext.current === context) setCheckoutBusy(false);
-        }
-    };
-
-    const manageBilling = async () => {
-        const context = walletContext.current;
-        const actionKey = `${context}\u0000billing`;
-        if (actionLocks.current.has(actionKey)) return;
-        actionLocks.current.add(actionKey);
-        setCheckoutBusy(true);
-        setCheckoutError('');
-        try {
-            await openBillingPortal();
-        } catch (e) {
-            if (walletContext.current === context) {
-                setCheckoutError(e.message || 'Could not open billing.');
-            }
-        } finally {
-            actionLocks.current.delete(actionKey);
-            if (walletContext.current === context) setCheckoutBusy(false);
-        }
-    };
 
     return (
         <main className={styles.page}>
@@ -377,55 +304,6 @@ const Wallet = () => {
                 ) : (
                     <StatusMessage compact>{communityText('Loading donation history…')}</StatusMessage>
                 )}
-            </section>
-
-            <section className={styles.section}>
-                <h2 className={styles.sectionTitle}>{communityText('Buy credits')}</h2>
-                <p className={styles.sectionLead}>{communityText('Top up through Stripe. Credits are added to your Rotur account after checkout.')}</p>
-                {billingMsg ? (
-                    <Notice variant={billingMsg === 'success' ? 'success' : 'info'} className={styles.notice}>
-                        {billingMsg === 'success' ?
-                            communityText('Payment successful. Credits will appear in your balance shortly.') :
-                            communityText('Checkout cancelled.')}
-                    </Notice>
-                ) : null}
-                <div className={styles.tiers}>
-                    {CREDIT_PACKS.map(pack => (
-                        <button
-                            key={pack.lookupKey}
-                            type="button"
-                            className={styles.tier}
-                            onClick={() => buy(pack)}
-                            disabled={checkoutBusy || !billingReady}
-                        >
-                            <span className={styles.tierCredits}>
-                                {pack.credits.toLocaleString(getCommunityLocale())}
-                                <span>{communityText('credits')}</span>
-                            </span>
-                            <span className={styles.tierPrice}>${pack.price.toFixed(2)}</span>
-                        </button>
-                    ))}
-                </div>
-                {checkoutBusy ? <p className={styles.checkoutNote}>{communityText('Opening secure Stripe checkout…')}</p> : null}
-                {!billing ? <p className={styles.checkoutNote}>{communityText('Checking billing availability…')}</p> : null}
-                {checkoutError ? (
-                    <Notice variant="error" className={styles.checkoutNotice}>{checkoutError}</Notice>
-                ) : null}
-                {billing && !billing.billing_configured ? (
-                    <Notice variant="warning" className={styles.checkoutNotice}>
-                        {communityText('Stripe billing is currently unavailable. Try again later.')}
-                    </Notice>
-                ) : null}
-                {billing && billing.stripe_portal ? (
-                    <Button
-                        variant="secondary"
-                        className={styles.portalButton}
-                        onClick={manageBilling}
-                        busy={checkoutBusy}
-                        busyLabel={communityText('Opening billing…')}
-                    >
-                        <ExternalLink size={14} />{communityText('Manage billing')}</Button>
-                ) : null}
             </section>
 
             <section className={styles.section}>

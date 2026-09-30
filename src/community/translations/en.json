@@ -2468,5 +2468,8 @@
   "Your Rotur account is under 18, so MistWarp keeps your profile out of user search and creator leaderboards, and keeps your hearts and saves out of activity feeds. Game activity and profile comments start turned off.": "Your Rotur account is under 18, so MistWarp keeps your profile out of user search and creator leaderboards, and keeps your hearts and saves out of activity feeds. Game activity and profile comments start turned off.",
   "Allow comments on your profile": "Allow comments on your profile",
   "Let other users post on your profile wall.": "Let other users post on your profile wall.",
-  "Anonymous analytics stay off for accounts under 18.": "Anonymous analytics stay off for accounts under 18."
+  "Anonymous analytics stay off for accounts under 18.": "Anonymous analytics stay off for accounts under 18.",
+  "Open wallet": "Open wallet",
+  "Not enough credits in your balance. Claim your daily credits in your wallet, then send again.": "Not enough credits in your balance. Claim your daily credits in your wallet, then send again.",
+  "You do not have enough credits. Claim your daily credits in your wallet, then try again.": "You do not have enough credits. Claim your daily credits in your wallet, then try again."
 }
