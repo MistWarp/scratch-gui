@@ -32,6 +32,7 @@ const Footer = () => {
                 <div className={styles.columns}>
                     <div className={styles.column}>
                         <span className={styles.columnTitle}>{communityText('Help and safety')}</span>
+                        <Link to="/classroom/privacy">{communityText('Student data')}</Link>
                         <Link to="/trust">{communityText('Trust, privacy, and terms')}</Link>
                     </div>
                 </div>
@@ -84,6 +85,7 @@ const Footer = () => {
                 <div className={styles.column}>
                     <span className={styles.columnTitle}>{communityText('More')}</span>
                     <Link to="/perks">{communityText('Memberships')}</Link>
+                    <Link to="/classroom/about">{communityText('Classroom for schools')}</Link>
                     <a href="/docs/">{communityText('Documentation')}</a>
                     <a href="https://packager.warp.mistium.com/">{communityText('Packager')}</a>
                     <a
@@ -104,6 +106,7 @@ const Footer = () => {
                     <span className={styles.columnTitle}>{communityText('Help and safety')}</span>
                     <Link to="/support">{communityText('Support')}</Link>
                     <Link to="/trust">{communityText('Trust, privacy, and terms')}</Link>
+                    <Link to="/classroom/privacy">{communityText('Student data in Classroom')}</Link>
                     <Link to="/status">{communityText('Service status')}</Link>
                 </div>
             </div>

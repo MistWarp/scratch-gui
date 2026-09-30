@@ -930,3 +930,10 @@
 .formAfter {
     margin-top: 14px;
 }
+
+.trialError {
+    display: block;
+    margin-top: 6px;
+    color: var(--mw-danger);
+    font-weight: 600;
+}
