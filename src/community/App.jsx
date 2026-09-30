@@ -3,6 +3,7 @@ import React, {Suspense, useEffect, useRef} from 'react';
 import {lazyWithReload as lazy} from '../lib/lazy-with-retry.js';
 import {Navigate, Routes, Route, useLocation, useNavigationType} from 'react-router-dom';
 import {UserProvider, useUser} from './UserContext.jsx';
+import {isStudentSession} from '../lib/rotur/student-flag.js';
 import {setRouteMeta} from './page-meta.js';
 import {initSiteErrorReporting} from '../lib/error-reporter.js';
 import NavBar from './components/NavBar.jsx';
@@ -64,6 +65,7 @@ const ClassroomClaim = lazy(() => import('./pages/ClassroomClaim.jsx'));
 const ClassroomSchool = lazy(() => import('./pages/ClassroomSchool.jsx'));
 const ClassroomAbout = lazy(() => import('./pages/ClassroomAbout.jsx'));
 const ClassroomPrivacy = lazy(() => import('./pages/ClassroomPrivacy.jsx'));
+const ClassroomLegal = lazy(() => import('./pages/ClassroomLegal.jsx'));
 
 const ROUTE_TITLES = [
     ['/bounties', 'Project bounties'],
@@ -79,6 +81,9 @@ const ROUTE_TITLES = [
     ['/classroom/school', 'School'],
     ['/classroom/about', 'MistWarp Classroom'],
     ['/classroom/privacy', 'Student data in Classroom'],
+    ['/classroom/terms', 'Classroom Terms for Schools'],
+    ['/classroom/dpa', 'Classroom Data Processing Agreement'],
+    ['/classroom/subprocessors', 'Classroom sub-processors'],
     ['/classroom/', 'Class'],
     ['/classroom', 'Classroom'],
     ['/settings', 'Settings'],
@@ -113,7 +118,8 @@ const studentAllowed = pathname => pathname === '/classroom' ||
 const StudentGuard = ({children}) => {
     const {user} = useUser();
     const {pathname} = useLocation();
-    if (user && user.isStudent && !studentAllowed(pathname)) return <Navigate to="/classroom" replace />;
+    const student = user ? Boolean(user.isStudent) : isStudentSession();
+    if (student && !studentAllowed(pathname)) return <Navigate to="/classroom" replace />;
     return children;
 };
 
@@ -224,6 +230,12 @@ const App = () => {
                             <Route path="/classroom/school" element={<ClassroomSchool />} />
                             <Route path="/classroom/about" element={<ClassroomAbout />} />
                             <Route path="/classroom/privacy" element={<ClassroomPrivacy />} />
+                            <Route path="/classroom/terms" element={<ClassroomLegal document="terms" />} />
+                            <Route path="/classroom/dpa" element={<ClassroomLegal document="dpa" />} />
+                            <Route
+                                path="/classroom/subprocessors"
+                                element={<ClassroomLegal document="subprocessors" />}
+                            />
                             <Route path="/classroom/:id" element={<ClassroomClass />} />
                             <Route path="/classroom/:id/students/:sid" element={<ClassroomStudent />} />
                             <Route path="/classroom/:id/assignments/:aid" element={<ClassroomAssignment />} />

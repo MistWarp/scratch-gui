@@ -158,10 +158,20 @@ const ClassroomAbout = ({showStudentSignIn}) => {
                         </div>
                     ))}
                 </div>
-                <Link to="/classroom/privacy" className={styles.moreLink}>
-                    {communityText('Read how Classroom handles student data')}
-                    <ArrowRight size={14} aria-hidden="true" />
-                </Link>
+                <div className={styles.moreLinks}>
+                    <Link to="/classroom/privacy" className={styles.moreLink}>
+                        {communityText('Read how Classroom handles student data')}
+                        <ArrowRight size={14} aria-hidden="true" />
+                    </Link>
+                    <Link to="/classroom/terms" className={styles.moreLink}>
+                        {communityText('Read the terms for schools')}
+                        <ArrowRight size={14} aria-hidden="true" />
+                    </Link>
+                    <Link to="/classroom/dpa" className={styles.moreLink}>
+                        {communityText('Read the data processing agreement')}
+                        <ArrowRight size={14} aria-hidden="true" />
+                    </Link>
+                </div>
             </section>
 
             <section className={styles.section}>
