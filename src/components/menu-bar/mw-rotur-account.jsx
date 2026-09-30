@@ -22,6 +22,7 @@ import {
 } from '../../reducers/menus.js';
 import {openRoturLoginModal, openSettingsModal} from '../../reducers/modals.js';
 import communityEnabled from '../../lib/community/enabled.js';
+import {initialsAvatar} from '../../community/classroom.js';
 
 const logout = onLogout => {
     if (onLogout) {
@@ -261,7 +262,10 @@ RoturAccount.defaultProps = {
 const mapStateToProps = state => ({
     isRtl: state.locales.isRtl,
     menuOpen: accountMenuOpen(state),
-    username: state.scratchGui.rotur.username
+    username: state.scratchGui.rotur.username,
+    studentMode: Boolean(state.scratchGui.rotur.isStudent),
+    displayName: state.scratchGui.rotur.isStudent ? state.scratchGui.rotur.displayName : null,
+    avatarSrc: state.scratchGui.rotur.isStudent ? initialsAvatar(state.scratchGui.rotur.displayName || state.scratchGui.rotur.username) : null
 });
 
 const mapDispatchToProps = dispatch => ({

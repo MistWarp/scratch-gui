@@ -3,6 +3,7 @@ import React from 'react';
 import {Link} from 'react-router-dom';
 import {Github} from 'lucide-react';
 import {editorUrl} from '../api';
+import {useUser} from '../UserContext.jsx';
 import {DISCORD_INVITE} from '../../lib/originchats/links.js';
 import {BUILD_ID, BUILD_TIME, shortId} from '../../lib/build-version.js';
 import logo from '../assets/mistwarp-logo.png';
@@ -13,6 +14,34 @@ const commitUrl = BUILD_ID && BUILD_ID !== 'dev' ?
 
 const Footer = () => {
     const {text: communityText} = useCommunityText();
+    const {user} = useUser();
+    if (user && user.isStudent) {
+        return (<footer className={styles.footer}>
+            <div className={styles.inner}>
+                <div className={styles.brand}>
+                    <img
+                        className={styles.logo}
+                        src={logo}
+                        alt=""
+                    />
+                    <div>
+                        <span className={styles.wordmark}>{communityText('MistWarp Classroom')}</span>
+                        <p className={styles.tagline}>{communityText('Build projects with your class.')}</p>
+                    </div>
+                </div>
+                <div className={styles.columns}>
+                    <div className={styles.column}>
+                        <span className={styles.columnTitle}>{communityText('Help and safety')}</span>
+                        <Link to="/trust">{communityText('Trust, privacy, and terms')}</Link>
+                    </div>
+                </div>
+            </div>
+            <div className={styles.legal}>{communityText(
+                // eslint-disable-next-line max-len
+                'MistWarp is a mod of TurboWarp and Scratch. Not affiliated with Scratch or the Scratch Foundation.'
+            )}</div>
+        </footer>);
+    }
     return (<footer className={styles.footer}>
         <div className={styles.inner}>
             <div className={styles.brand}>

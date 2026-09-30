@@ -1625,7 +1625,7 @@ class MenuBar extends React.Component {
                     )}
                 >
                     <a
-                        href="/"
+                        href={this.props.isStudent ? '/classroom' : '/'}
                         className={classNames(styles.menuBarItem, styles.hoverable, styles.homeLink)}
                         title={this.props.intl.formatMessage(menuLabelMessages.home)}
                         data-mw-item="__home"
@@ -1677,22 +1677,24 @@ class MenuBar extends React.Component {
                                     open={this.props.errorsMenuOpen}
                                     place={this.props.isRtl ? 'left' : 'right'}
                                 >
-                                    <MenuSection>
-                                        <MenuItemLink href={FEEDBACK_URL}>
-                                            <FormattedMessage
-                                                defaultMessage="Some scripts encountered errors."
-                                                description="Link in error menu"
-                                                id="tw.menuBar.reportError1"
-                                            />
-                                        </MenuItemLink>
-                                        <MenuItemLink href={FEEDBACK_URL}>
-                                            <FormattedMessage
-                                                defaultMessage="This is a bug. Please report it."
-                                                description="Link in error menu"
-                                                id="tw.menuBar.reportError2"
-                                            />
-                                        </MenuItemLink>
-                                    </MenuSection>
+                                    {this.props.isStudent ? null : (
+                                        <MenuSection>
+                                            <MenuItemLink href={FEEDBACK_URL}>
+                                                <FormattedMessage
+                                                    defaultMessage="Some scripts encountered errors."
+                                                    description="Link in error menu"
+                                                    id="tw.menuBar.reportError1"
+                                                />
+                                            </MenuItemLink>
+                                            <MenuItemLink href={FEEDBACK_URL}>
+                                                <FormattedMessage
+                                                    defaultMessage="This is a bug. Please report it."
+                                                    description="Link in error menu"
+                                                    id="tw.menuBar.reportError2"
+                                                />
+                                            </MenuItemLink>
+                                        </MenuSection>
+                                    )}
                                     <MenuSection>
                                         {this.props.errors.map(({id, sprite, error}) => (
                                             <MenuItem key={id}>
@@ -1782,7 +1784,7 @@ class MenuBar extends React.Component {
                                             )}
                                         </MenuSection>
                                     )}
-                                    {this.props.roturReady ? (
+                                    {this.props.roturReady && !(this.props.isStudent && mistwarpAction === 'remix') ? (
                                         <MenuSection>
                                             <MenuItem
                                                 disabled={!mistwarpAction}
@@ -1807,7 +1809,7 @@ class MenuBar extends React.Component {
                                                     />
                                                 )}
                                             </MenuItem>
-                                            {this.state.mistwarpProject ? (
+                                            {this.state.mistwarpProject && !this.props.isStudent ? (
                                                 <MenuItem onClick={this.handleClickSeeMistWarpPage}>
                                                     <ExternalLink />
                                                     <FormattedMessage
@@ -2266,7 +2268,7 @@ class MenuBar extends React.Component {
                                 />
                             </MenuBarItemTooltip>
                         </div>
-                    ) : (this.props.authorUsername ? (
+                    ) : (this.props.authorUsername && !this.props.isStudent ? (
                         <AuthorInfo
                             className={styles.authorInfo}
                             imageUrl={this.props.authorThumbnailUrl}
@@ -2277,7 +2279,7 @@ class MenuBar extends React.Component {
                         />
                     ) : null)}
 
-                    {(this.props.isShowingProject || this.props.isUpdating) &&
+                    {(this.props.isShowingProject || this.props.isUpdating) && !this.props.isStudent &&
                         this.props.projectId && this.props.projectId !== '0' ? (
                             <div
                                 data-mw-item="__view-counter"
@@ -2286,7 +2288,7 @@ class MenuBar extends React.Component {
                                 <TWViewCounter projectId={this.props.projectId} />
                             </div>
                         ) : null}
-                    {this.props.canShare ? (
+                    {this.props.canShare && !this.props.isStudent ? (
                         (this.props.isShowingProject || this.props.isUpdating) && (
                             <div
                                 data-mw-item="share"
@@ -2331,7 +2333,7 @@ class MenuBar extends React.Component {
                         data-mw-item="community"
                         className={classNames(styles.menuBarItem, styles.communityButtonWrapper)}
                     >
-                        {this.props.enableCommunity ? (
+                        {this.props.isStudent ? null : this.props.enableCommunity ? (
                             this.state.mistwarpProject ? (
                                 <CommunityButton
                                     className={styles.menuBarButton}
@@ -2355,7 +2357,7 @@ class MenuBar extends React.Component {
                         data-mw-item="feedback"
                         className={styles.menuBarItem}
                     >
-                        <Button
+                        {this.props.isStudent ? null : <Button
                             className={classNames(styles.feedbackLink, styles.feedbackButton)}
                             href={FEEDBACK_URL}
                             rel="noopener noreferrer"
@@ -2369,7 +2371,7 @@ class MenuBar extends React.Component {
                                     APP_NAME
                                 }}
                             />
-                        </Button>
+                        </Button>}
                     </div>
                 </div>
 
@@ -2545,6 +2547,7 @@ MenuBar.propTypes = {
     projectTitle: PropTypes.string,
     projectChanged: PropTypes.bool,
     roturReady: PropTypes.bool,
+    isStudent: PropTypes.bool,
     onProjectUnchanged: PropTypes.func,
     onShowGitStatus: PropTypes.func,
     onCloseGitStatus: PropTypes.func,
@@ -2592,6 +2595,7 @@ const mapStateToProps = (state, ownProps) => {
         projectChanged: state.scratchGui.projectChanged,
         restoreDeletion: state.scratchGui.restoreDeletion,
         roturReady: state.scratchGui.rotur && state.scratchGui.rotur.status === 'ready',
+        isStudent: Boolean(state.scratchGui.rotur && state.scratchGui.rotur.isStudent),
         theme: state.scratchGui.theme.theme,
         vm: state.scratchGui.vm
     };

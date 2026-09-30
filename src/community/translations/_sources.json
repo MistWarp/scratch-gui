@@ -1,9 +1,9 @@
 {
   "a11y.skip": [
-    "src/community/App.jsx:119"
+    "src/community/App.jsx:131"
   ],
   "Loading page…": [
-    "src/community/App.jsx:131"
+    "src/community/App.jsx:148"
   ],
   "Cat": [
     "src/community/classroom.js:28"
@@ -152,14 +152,14 @@
     "src/community/components/ActivityCard.jsx:77"
   ],
   "MistWarp now has a community server, bridged between OriginChats and Discord.": [
-    "src/community/components/AnnouncementBanner.jsx:44"
+    "src/community/components/AnnouncementBanner.jsx:47"
   ],
   "Join our community": [
-    "src/community/components/AnnouncementBanner.jsx:51",
+    "src/community/components/AnnouncementBanner.jsx:54",
     "src/community/components/JoinCommunityModal.jsx:33"
   ],
   "Dismiss": [
-    "src/community/components/AnnouncementBanner.jsx:57",
+    "src/community/components/AnnouncementBanner.jsx:60",
     "src/community/components/StandingBanner.jsx:35",
     "src/community/components/StandingBanner.jsx:55",
     "src/community/components/ui/Notice.jsx:35",
@@ -748,7 +748,7 @@
   ],
   "Studios": [
     "src/community/components/ExploreNav.jsx:11",
-    "src/community/components/Footer.jsx:39",
+    "src/community/components/Footer.jsx:68",
     "src/community/components/MyStuffSpaces.jsx:65",
     "src/community/pages/Group.jsx:202",
     "src/community/pages/Search.jsx:160",
@@ -756,7 +756,7 @@
   ],
   "Challenges": [
     "src/community/components/ExploreNav.jsx:12",
-    "src/community/components/Footer.jsx:40",
+    "src/community/components/Footer.jsx:69",
     "src/community/components/MyStuffSpaces.jsx:79",
     "src/community/pages/Group.jsx:203",
     "src/community/pages/Home.jsx:460",
@@ -771,7 +771,7 @@
   ],
   "Themes": [
     "src/community/components/ExploreNav.jsx:14",
-    "src/community/components/Footer.jsx:41",
+    "src/community/components/Footer.jsx:70",
     "src/community/components/MyStuffThemes.jsx:217",
     "src/community/pages/MyStuff.jsx:532",
     "src/community/pages/Profile.jsx:547",
@@ -814,128 +814,139 @@
   "Project files": [
     "src/community/components/FileBrowserTree.jsx:123"
   ],
+  "MistWarp Classroom": [
+    "src/community/components/Footer.jsx:28",
+    "src/community/pages/ClassroomClaim.jsx:59",
+    "src/community/pages/ClassroomJoin.jsx:165"
+  ],
+  "Build projects with your class.": [
+    "src/community/components/Footer.jsx:29"
+  ],
+  "Help and safety": [
+    "src/community/components/Footer.jsx:34",
+    "src/community/components/Footer.jsx:104"
+  ],
+  "Trust, privacy, and terms": [
+    "src/community/components/Footer.jsx:35",
+    "src/community/components/Footer.jsx:106",
+    "src/community/pages/Trust.jsx:31"
+  ],
+  "MistWarp is a mod of TurboWarp and Scratch. Not affiliated with Scratch or the Scratch Foundation.": [
+    "src/community/components/Footer.jsx:41",
+    "src/community/components/Footer.jsx:113"
+  ],
   "MistWarp": [
-    "src/community/components/Footer.jsx:25",
+    "src/community/components/Footer.jsx:54",
     "src/community/components/NavBar.jsx:405",
     "src/community/components/NavBar.jsx:413",
     "src/community/components/RichText.jsx:116",
     "src/community/pages/Roadmap.jsx:511"
   ],
   "Build, share, and remix projects together.": [
-    "src/community/components/Footer.jsx:26"
+    "src/community/components/Footer.jsx:55"
   ],
   "Create": [
-    "src/community/components/Footer.jsx:32",
-    "src/community/components/NavBar.jsx:579",
-    "src/community/components/NavBar.jsx:579",
+    "src/community/components/Footer.jsx:61",
+    "src/community/components/NavBar.jsx:583",
+    "src/community/components/NavBar.jsx:583",
     "src/community/pages/Spaces.jsx:275"
   ],
   "Editor": [
-    "src/community/components/Footer.jsx:33",
+    "src/community/components/Footer.jsx:62",
     "src/community/components/SharedProjects.jsx:19",
     "src/community/pages/ManageProject.jsx:995",
     "src/community/pages/Roadmap.jsx:497"
   ],
   "My stuff": [
-    "src/community/components/Footer.jsx:34",
-    "src/community/components/NavBar.jsx:507",
-    "src/community/components/NavBar.jsx:508",
-    "src/community/components/NavBar.jsx:601",
-    "src/community/components/NavBar.jsx:601",
+    "src/community/components/Footer.jsx:63",
+    "src/community/components/NavBar.jsx:511",
+    "src/community/components/NavBar.jsx:512",
+    "src/community/components/NavBar.jsx:605",
+    "src/community/components/NavBar.jsx:605",
     "src/community/pages/ManageProject.jsx:486",
     "src/community/pages/MyStuff.jsx:1264"
   ],
   "Community": [
-    "src/community/components/Footer.jsx:37",
+    "src/community/components/Footer.jsx:66",
     "src/community/pages/Challenge.jsx:439",
     "src/community/pages/Roadmap.jsx:497",
     "src/community/pages/Roadmap.jsx:511"
   ],
   "Explore": [
-    "src/community/components/Footer.jsx:38",
-    "src/community/components/NavBar.jsx:576",
-    "src/community/components/NavBar.jsx:576",
+    "src/community/components/Footer.jsx:67",
+    "src/community/components/NavBar.jsx:580",
+    "src/community/components/NavBar.jsx:580",
     "src/community/pages/Explore.jsx:177"
   ],
   "Leaderboard": [
-    "src/community/components/Footer.jsx:42"
+    "src/community/components/Footer.jsx:71"
   ],
   "News": [
-    "src/community/components/Footer.jsx:43",
+    "src/community/components/Footer.jsx:72",
     "src/community/pages/Home.jsx:67",
     "src/community/pages/Home.jsx:444",
     "src/community/pages/News.jsx:166"
   ],
   "Stats": [
-    "src/community/components/Footer.jsx:44"
+    "src/community/components/Footer.jsx:73"
   ],
   "Roadmap": [
-    "src/community/components/Footer.jsx:45",
+    "src/community/components/Footer.jsx:74",
     "src/community/pages/Home.jsx:165",
     "src/community/pages/Home.jsx:452",
     "src/community/pages/Roadmap.jsx:478"
   ],
   "Compare with Scratch": [
-    "src/community/components/Footer.jsx:46"
+    "src/community/components/Footer.jsx:75"
   ],
   "Report a bug": [
-    "src/community/components/Footer.jsx:47"
+    "src/community/components/Footer.jsx:76"
   ],
   "Chat": [
-    "src/community/components/Footer.jsx:48"
+    "src/community/components/Footer.jsx:77"
   ],
   "Discord": [
-    "src/community/components/Footer.jsx:53"
+    "src/community/components/Footer.jsx:82"
   ],
   "More": [
-    "src/community/components/Footer.jsx:56"
+    "src/community/components/Footer.jsx:85"
   ],
   "Memberships": [
-    "src/community/components/Footer.jsx:57",
-    "src/community/components/NavBar.jsx:473",
-    "src/community/components/NavBar.jsx:474"
+    "src/community/components/Footer.jsx:86",
+    "src/community/components/NavBar.jsx:486",
+    "src/community/components/NavBar.jsx:487"
   ],
   "Documentation": [
-    "src/community/components/Footer.jsx:58"
+    "src/community/components/Footer.jsx:87"
   ],
   "Packager": [
-    "src/community/components/Footer.jsx:59"
+    "src/community/components/Footer.jsx:88"
   ],
   "GitHub": [
-    "src/community/components/Footer.jsx:66"
+    "src/community/components/Footer.jsx:95"
   ],
   "Rotur": [
-    "src/community/components/Footer.jsx:71"
+    "src/community/components/Footer.jsx:100"
   ],
   "Credits": [
-    "src/community/components/Footer.jsx:72",
+    "src/community/components/Footer.jsx:101",
     "src/community/components/ProjectInfoPanel.jsx:224",
     "src/community/pages/Group.jsx:262"
   ],
-  "Help and safety": [
-    "src/community/components/Footer.jsx:75"
-  ],
   "Support": [
-    "src/community/components/Footer.jsx:76",
+    "src/community/components/Footer.jsx:105",
     "src/community/pages/Group.jsx:206",
     "src/community/pages/Project.jsx:1542",
     "src/community/pages/Support.jsx:101"
   ],
-  "Trust, privacy, and terms": [
-    "src/community/components/Footer.jsx:77",
-    "src/community/pages/Trust.jsx:31"
-  ],
   "Service status": [
-    "src/community/components/Footer.jsx:78"
-  ],
-  "MistWarp is a mod of TurboWarp and Scratch. Not affiliated with Scratch or the Scratch Foundation.": [
-    "src/community/components/Footer.jsx:84"
+    "src/community/components/Footer.jsx:107"
   ],
   "Deployed {value1}": [
-    "src/community/components/Footer.jsx:87"
+    "src/community/components/Footer.jsx:116"
   ],
   "Version": [
-    "src/community/components/Footer.jsx:89"
+    "src/community/components/Footer.jsx:118"
   ],
   "Could not load this game shop.": [
     "src/community/components/GameMarketplaceModal.jsx:118"
@@ -1481,10 +1492,10 @@
   ],
   "My class": [
     "src/community/components/NavBar.jsx:151",
-    "src/community/components/NavBar.jsx:498",
-    "src/community/components/NavBar.jsx:499",
-    "src/community/components/NavBar.jsx:597",
-    "src/community/components/NavBar.jsx:597"
+    "src/community/components/NavBar.jsx:425",
+    "src/community/components/NavBar.jsx:427",
+    "src/community/components/NavBar.jsx:601",
+    "src/community/components/NavBar.jsx:601"
   ],
   "Classroom": [
     "src/community/components/NavBar.jsx:151",
@@ -1504,58 +1515,66 @@
   "nav.main": [
     "src/community/components/NavBar.jsx:418"
   ],
+  "New project": [
+    "src/community/components/NavBar.jsx:421",
+    "src/community/components/NavBar.jsx:423",
+    "src/community/components/NavBar.jsx:583",
+    "src/community/components/NavBar.jsx:583",
+    "src/community/pages/MyStuff.jsx:1282",
+    "src/community/pages/MyStuff.jsx:1632"
+  ],
   "nav.create": [
-    "src/community/components/NavBar.jsx:419",
-    "src/community/components/NavBar.jsx:421"
+    "src/community/components/NavBar.jsx:431",
+    "src/community/components/NavBar.jsx:433"
   ],
   "nav.explore": [
-    "src/community/components/NavBar.jsx:426",
-    "src/community/components/NavBar.jsx:429"
+    "src/community/components/NavBar.jsx:439",
+    "src/community/components/NavBar.jsx:442"
   ],
   "nav.random": [
-    "src/community/components/NavBar.jsx:434",
-    "src/community/components/NavBar.jsx:437"
+    "src/community/components/NavBar.jsx:447",
+    "src/community/components/NavBar.jsx:450"
   ],
   "nav.search": [
-    "src/community/components/NavBar.jsx:464",
-    "src/community/components/NavBar.jsx:569"
+    "src/community/components/NavBar.jsx:477",
+    "src/community/components/NavBar.jsx:573"
   ],
   "Notifications": [
-    "src/community/components/NavBar.jsx:485",
-    "src/community/components/NavBar.jsx:486",
-    "src/community/components/NavBar.jsx:587",
-    "src/community/components/NavBar.jsx:588",
+    "src/community/components/NavBar.jsx:498",
+    "src/community/components/NavBar.jsx:499",
+    "src/community/components/NavBar.jsx:591",
+    "src/community/components/NavBar.jsx:592",
     "src/community/pages/Home.jsx:392",
     "src/community/pages/Notifications.jsx:556",
     "src/community/pages/Settings.jsx:104",
     "src/community/pages/Settings.jsx:634"
   ],
   "Notifications ({value1} unread)": [
-    "src/community/components/NavBar.jsx:486",
-    "src/community/components/NavBar.jsx:587"
+    "src/community/components/NavBar.jsx:499",
+    "src/community/components/NavBar.jsx:591"
   ],
   "Signing in…": [
-    "src/community/components/NavBar.jsx:536",
+    "src/community/components/NavBar.jsx:540",
     "src/community/pages/ClassroomJoin.jsx:254"
   ],
   "Signing in": [
-    "src/community/components/NavBar.jsx:537",
-    "src/community/components/NavBar.jsx:605",
-    "src/community/components/NavBar.jsx:605"
+    "src/community/components/NavBar.jsx:541",
+    "src/community/components/NavBar.jsx:609",
+    "src/community/components/NavBar.jsx:609"
   ],
   "Sign in": [
-    "src/community/components/NavBar.jsx:537",
-    "src/community/components/NavBar.jsx:540",
-    "src/community/components/NavBar.jsx:605",
-    "src/community/components/NavBar.jsx:605",
+    "src/community/components/NavBar.jsx:541",
+    "src/community/components/NavBar.jsx:544",
+    "src/community/components/NavBar.jsx:609",
+    "src/community/components/NavBar.jsx:609",
     "src/community/pages/ClassroomJoin.jsx:257"
   ],
   "Mobile navigation": [
-    "src/community/components/NavBar.jsx:572"
+    "src/community/components/NavBar.jsx:576"
   ],
   "Home": [
-    "src/community/components/NavBar.jsx:573",
-    "src/community/components/NavBar.jsx:573"
+    "src/community/components/NavBar.jsx:577",
+    "src/community/components/NavBar.jsx:577"
   ],
   "Could not delete update.": [
     "src/community/components/NewsItem.jsx:74"
@@ -2802,7 +2821,7 @@
   ],
   "Assignments": [
     "src/community/components/classroom/ClassAssignments.jsx:90",
-    "src/community/components/classroom/StudentHome.jsx:189",
+    "src/community/components/classroom/StudentHome.jsx:188",
     "src/community/pages/ClassroomAssignment.jsx:203",
     "src/community/pages/ClassroomAssignment.jsx:225",
     "src/community/pages/ClassroomClass.jsx:90",
@@ -2810,7 +2829,7 @@
   ],
   "No assignments yet": [
     "src/community/components/classroom/ClassAssignments.jsx:104",
-    "src/community/components/classroom/StudentHome.jsx:202"
+    "src/community/components/classroom/StudentHome.jsx:201"
   ],
   "Set a task with instructions, a due date, and an optional starter project.": [
     "src/community/components/classroom/ClassAssignments.jsx:105"
@@ -3123,7 +3142,7 @@
   ],
   "Storage": [
     "src/community/components/classroom/ClassStudents.jsx:226",
-    "src/community/components/classroom/StudentHome.jsx:237",
+    "src/community/components/classroom/StudentHome.jsx:232",
     "src/community/pages/Admin.jsx:269",
     "src/community/pages/Admin.jsx:1171",
     "src/community/pages/Classroom.jsx:294",
@@ -3259,8 +3278,8 @@
   ],
   "Open": [
     "src/community/components/classroom/PresentControls.jsx:147",
-    "src/community/components/classroom/StudentHome.jsx:65",
-    "src/community/components/classroom/StudentHome.jsx:220",
+    "src/community/components/classroom/StudentHome.jsx:64",
+    "src/community/components/classroom/StudentHome.jsx:219",
     "src/community/pages/Admin.jsx:1947",
     "src/community/pages/ManageProject.jsx:927",
     "src/community/pages/PullRequest.jsx:496"
@@ -3324,99 +3343,95 @@
     "src/community/components/classroom/ReleaseSection.jsx:101"
   ],
   "That did not work. Please try again.": [
-    "src/community/components/classroom/StudentHome.jsx:57"
+    "src/community/components/classroom/StudentHome.jsx:56"
   ],
   "This was due on {value1}.": [
-    "src/community/components/classroom/StudentHome.jsx:77"
+    "src/community/components/classroom/StudentHome.jsx:76"
   ],
   "Due on {value1}.": [
-    "src/community/components/classroom/StudentHome.jsx:78"
+    "src/community/components/classroom/StudentHome.jsx:77"
   ],
   "There is no due date.": [
-    "src/community/components/classroom/StudentHome.jsx:79"
+    "src/community/components/classroom/StudentHome.jsx:78"
   ],
   "Working with {value1} in {value2}.": [
-    "src/community/components/classroom/StudentHome.jsx:86"
+    "src/community/components/classroom/StudentHome.jsx:85"
   ],
   "and": [
-    "src/community/components/classroom/StudentHome.jsx:86"
+    "src/community/components/classroom/StudentHome.jsx:85"
   ],
   "You are in the group {value1}.": [
-    "src/community/components/classroom/StudentHome.jsx:87"
+    "src/community/components/classroom/StudentHome.jsx:86"
   ],
   "From your teacher": [
-    "src/community/components/classroom/StudentHome.jsx:94"
+    "src/community/components/classroom/StudentHome.jsx:93"
   ],
   "Grade: {value1}": [
-    "src/community/components/classroom/StudentHome.jsx:97",
+    "src/community/components/classroom/StudentHome.jsx:96",
     "src/community/pages/ClassroomStudent.jsx:140"
   ],
   "Opening…": [
-    "src/community/components/classroom/StudentHome.jsx:103",
+    "src/community/components/classroom/StudentHome.jsx:102",
     "src/community/pages/Classroom.jsx:128",
     "src/community/pages/MyStuff.jsx:247",
     "src/community/pages/Profile.jsx:1144",
     "src/community/pages/Project.jsx:1900"
   ],
   "Start": [
-    "src/community/components/classroom/StudentHome.jsx:105"
+    "src/community/components/classroom/StudentHome.jsx:104"
   ],
   "Turning in…": [
-    "src/community/components/classroom/StudentHome.jsx:111"
+    "src/community/components/classroom/StudentHome.jsx:110"
   ],
   "Turn in again": [
-    "src/community/components/classroom/StudentHome.jsx:113"
+    "src/community/components/classroom/StudentHome.jsx:112"
   ],
   "Turn in": [
-    "src/community/components/classroom/StudentHome.jsx:113"
+    "src/community/components/classroom/StudentHome.jsx:112"
   ],
   "Taking back…": [
-    "src/community/components/classroom/StudentHome.jsx:120"
+    "src/community/components/classroom/StudentHome.jsx:119"
   ],
   "Take back": [
-    "src/community/components/classroom/StudentHome.jsx:122"
+    "src/community/components/classroom/StudentHome.jsx:121"
   ],
   "Hi, {value1}!": [
-    "src/community/components/classroom/StudentHome.jsx:166",
+    "src/community/components/classroom/StudentHome.jsx:165",
     "src/community/pages/ClassroomJoin.jsx:214"
   ],
   "You are in {value1}. Your teacher is {value2}.": [
-    "src/community/components/classroom/StudentHome.jsx:168"
+    "src/community/components/classroom/StudentHome.jsx:167"
   ],
   "You are in {value1}.": [
-    "src/community/components/classroom/StudentHome.jsx:169"
+    "src/community/components/classroom/StudentHome.jsx:168"
   ],
   "Presentation": [
-    "src/community/components/classroom/StudentHome.jsx:172"
+    "src/community/components/classroom/StudentHome.jsx:171"
   ],
   "Your class is watching {value1}.": [
-    "src/community/components/classroom/StudentHome.jsx:175"
+    "src/community/components/classroom/StudentHome.jsx:174"
   ],
   "{value1} is presenting. Join to follow along.": [
-    "src/community/components/classroom/StudentHome.jsx:178"
+    "src/community/components/classroom/StudentHome.jsx:177"
   ],
   "Join to follow along.": [
-    "src/community/components/classroom/StudentHome.jsx:179"
+    "src/community/components/classroom/StudentHome.jsx:178"
   ],
   "Join": [
-    "src/community/components/classroom/StudentHome.jsx:184"
+    "src/community/components/classroom/StudentHome.jsx:183"
   ],
   "When your teacher sets an assignment, it will show up here.": [
-    "src/community/components/classroom/StudentHome.jsx:203"
+    "src/community/components/classroom/StudentHome.jsx:202"
   ],
   "My projects": [
-    "src/community/components/classroom/StudentHome.jsx:208"
+    "src/community/components/classroom/StudentHome.jsx:207"
   ],
   "Edited {value1}.": [
-    "src/community/components/classroom/StudentHome.jsx:215",
+    "src/community/components/classroom/StudentHome.jsx:214",
     "src/community/pages/ClassroomStudent.jsx:105"
   ],
-  "View": [
-    "src/community/components/classroom/StudentHome.jsx:224",
-    "src/community/pages/ManageSpace.jsx:742"
-  ],
   "No projects yet": [
-    "src/community/components/classroom/StudentHome.jsx:231",
+    "src/community/components/classroom/StudentHome.jsx:226",
     "src/community/pages/ClassroomStudent.jsx:124",
     "src/community/pages/Group.jsx:242",
     "src/community/pages/MyStuff.jsx:219",
@@ -3425,13 +3440,13 @@
     "src/community/pages/Studio.jsx:142"
   ],
   "Start an assignment or make something new in the editor.": [
-    "src/community/components/classroom/StudentHome.jsx:232"
+    "src/community/components/classroom/StudentHome.jsx:227"
   ],
   "Space used": [
-    "src/community/components/classroom/StudentHome.jsx:240"
+    "src/community/components/classroom/StudentHome.jsx:235"
   ],
   "{value1} of {value2}": [
-    "src/community/components/classroom/StudentHome.jsx:243",
+    "src/community/components/classroom/StudentHome.jsx:238",
     "src/community/pages/Admin.jsx:1180",
     "src/community/pages/Classroom.jsx:291",
     "src/community/pages/Classroom.jsx:297",
@@ -4861,10 +4876,6 @@
   "The move did not complete. Please try again.": [
     "src/community/pages/ClassroomClaim.jsx:49"
   ],
-  "MistWarp Classroom": [
-    "src/community/pages/ClassroomClaim.jsx:59",
-    "src/community/pages/ClassroomJoin.jsx:165"
-  ],
   "This link cannot be used": [
     "src/community/pages/ClassroomClaim.jsx:63"
   ],
@@ -6136,6 +6147,9 @@
   "Score submitted": [
     "src/community/pages/ManageSpace.jsx:742"
   ],
+  "View": [
+    "src/community/pages/ManageSpace.jsx:742"
+  ],
   "No projects have been added yet.": [
     "src/community/pages/ManageSpace.jsx:743"
   ],
@@ -6326,10 +6340,6 @@
   ],
   "Upload .sb3": [
     "src/community/pages/MyStuff.jsx:1280"
-  ],
-  "New project": [
-    "src/community/pages/MyStuff.jsx:1282",
-    "src/community/pages/MyStuff.jsx:1632"
   ],
   "Your storage is full: your projects use {value1} of your {value2}. You can still save a project at the same size or smaller. To add more, delete projects you no longer need and empty them from the trash.": [
     "src/community/pages/MyStuff.jsx:1294"
