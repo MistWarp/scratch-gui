@@ -43,11 +43,10 @@ import {
     User,
     Variable
 } from 'lucide-react';
-import './context-menu-icons.css';
+import styles from './context-menu-icons.css';
 
 const ICON_SIZE = 16;
 const ICON_STROKE = 1.75;
-const ICON_CLASS = 'mw-context-menu-icon';
 
 const contextMenuIcons = {
     addComment: MessageSquarePlus,
@@ -147,7 +146,7 @@ const createContextMenuIconElement = icon => {
         ReactDOM.render(React.createElement(Icon, {
             'size': ICON_SIZE,
             'strokeWidth': ICON_STROKE,
-            'className': ICON_CLASS,
+            'className': styles.icon,
             'aria-hidden': true
         }), container);
         markupCache.set(Icon, container.firstChild.cloneNode(true));
