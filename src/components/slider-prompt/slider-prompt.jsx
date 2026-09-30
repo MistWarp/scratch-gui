@@ -28,6 +28,8 @@ const messages = defineMessages({
 
 const SliderPromptComponent = props => (
     <Modal
+        fitContent
+        width={440}
         modal
         className={styles.modalContent}
         contentLabel={props.intl.formatMessage(messages.title)}
@@ -78,6 +80,7 @@ const SliderPromptComponent = props => (
                 <button
                     type="button"
                     className={styles.okButton}
+                    disabled={!props.valid}
                     onClick={props.onOk}
                 >
                     <FormattedMessage
@@ -99,7 +102,8 @@ SliderPromptComponent.propTypes = {
     onChangeMax: PropTypes.func.isRequired,
     onChangeMin: PropTypes.func.isRequired,
     onKeyPress: PropTypes.func.isRequired,
-    onOk: PropTypes.func.isRequired
+    onOk: PropTypes.func.isRequired,
+    valid: PropTypes.bool
 };
 
 export default injectIntl(SliderPromptComponent);

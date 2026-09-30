@@ -99,8 +99,11 @@ class SoundEditor extends React.Component {
         document.removeEventListener('keydown', this.handleKeyPress);
     }
     handleKeyPress (event) {
-        if (event.target instanceof HTMLInputElement) {
-            // Ignore keyboard shortcuts if a text input field is focused
+        if (event.defaultPrevented) return;
+        const target = event.target;
+        if (target instanceof Element && target.closest(
+            'input, textarea, select, [contenteditable="true"], .ReactModal__Overlay, .addon-window'
+        )) {
             return;
         }
         if (this.props.isFullScreen) {
@@ -209,6 +212,7 @@ class SoundEditor extends React.Component {
         this.setState({playhead});
     }
     handleChangeName (name) {
+        if (!name.trim()) return;
         this.props.vm.renameSound(this.props.soundIndex, name);
     }
     handleDelete () {

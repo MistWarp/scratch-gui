@@ -11,11 +11,15 @@ import {isStudentSession} from '../rotur/identity.js';
 
 let shareWindow = null;
 let container = null;
+let isBusy = null;
 
 const openMistWarpShareWindow = ({vm, initialTitle, initialError, action = 'save', onPublished}) => {
     if (shareWindow) {
-        shareWindow.show().bringToFront();
-        return;
+        if (isBusy && isBusy()) {
+            shareWindow.show().bringToFront();
+            return;
+        }
+        shareWindow.close();
     }
 
     container = document.createElement('div');
@@ -26,10 +30,11 @@ const openMistWarpShareWindow = ({vm, initialTitle, initialError, action = 'save
             ReactDOM.unmountComponentAtNode(container);
         }
         if (shareWindow) {
-            shareWindow.close();
+            shareWindow.destroy(false);
         }
         shareWindow = null;
         container = null;
+        isBusy = null;
     };
 
     shareWindow = WindowManager.createWindow({
@@ -42,12 +47,14 @@ const openMistWarpShareWindow = ({vm, initialTitle, initialError, action = 'save
         minWidth: 360,
         minHeight: 300,
         className: 'mw-share-window',
+        onBeforeClose: () => !(isBusy && isBusy()),
         onClose: () => {
             if (container) {
                 ReactDOM.unmountComponentAtNode(container);
             }
             shareWindow = null;
             container = null;
+            isBusy = null;
         }
     });
 
@@ -70,6 +77,9 @@ const openMistWarpShareWindow = ({vm, initialTitle, initialError, action = 'save
                 action,
                 student: isStudentSession(),
                 onClose: cleanup,
+                onRegisterBusyCheck: check => {
+                    isBusy = check;
+                },
                 onReviewStorage: () => {
                     cleanup();
                     if (window.ReduxStore) {

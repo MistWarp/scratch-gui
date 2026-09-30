@@ -20,7 +20,7 @@ $fill-hover: color-mix(in srgb, var(--looks-secondary) 16%, var(--ui-secondary))
     top: 1rem;
     inset-inline-end: 1.5rem;
     box-sizing: border-box;
-    width: min(21rem, calc(100% - 2.5rem));
+    width: min(22rem, calc(100% - 2.5rem));
     padding: 0.875rem 1rem 1rem;
     border-radius: 0.75rem;
     border: 1px solid $ui-black-transparent;
@@ -36,11 +36,6 @@ $fill-hover: color-mix(in srgb, var(--looks-secondary) 16%, var(--ui-secondary))
     display: flex;
     align-items: center;
     gap: 0.5rem;
-}
-
-.header-icon {
-    flex-shrink: 0;
-    color: $looks-secondary;
 }
 
 .heading {
@@ -61,56 +56,99 @@ $fill-hover: color-mix(in srgb, var(--looks-secondary) 16%, var(--ui-secondary))
     border: none;
     border-radius: 0.5rem;
     background: transparent;
-    color: $text-primary;
+    color: $text-primary-transparent;
     cursor: pointer;
 }
 
 .close:hover {
     background: $ui-black-transparent;
+    color: $text-primary;
 }
 
 .text,
 .hint {
-    margin: 0.5rem 0 0;
+    margin: 0.25rem 0 0;
     font-size: 0.8125rem;
-}
-
-.hint {
     color: $text-primary-transparent;
 }
 
-.starters {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
+.hint {
     margin-top: 0.75rem;
+    font-size: 0.75rem;
+}
+
+.starters {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.875rem;
 }
 
 .starter {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    box-sizing: border-box;
-    width: 100%;
-    padding: 0.5rem 0.625rem;
+    flex-direction: column;
+    min-width: 0;
+    padding: 0;
     border: none;
-    border-radius: 0.5rem;
-    background: $fill;
+    border-radius: 0.625rem;
+    background: transparent;
     color: $text-primary;
     font: inherit;
     text-align: start;
     cursor: pointer;
 }
 
-.starter:hover,
-.action:hover {
-    background: $fill-hover;
+.art {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 4.25rem;
+    margin-bottom: 0.4375rem;
+    border-radius: 0.625rem;
+    overflow: hidden;
+    transition: filter 0.15s;
+}
+
+.art img {
+    width: 2.75rem;
+    height: 2.75rem;
+    transform: rotate(-8deg);
+    transition: transform 0.2s;
+}
+
+.blue img {
+    transform: rotate(8deg);
+}
+
+.pink img {
+    transform: rotate(20deg);
+}
+
+.purple {
+    background: color-mix(in srgb, #8b5cf6 26%, var(--ui-secondary));
+}
+
+.blue {
+    background: color-mix(in srgb, #0ea5e9 24%, var(--ui-secondary));
+}
+
+.pink {
+    background: color-mix(in srgb, #ec4899 22%, var(--ui-secondary));
+}
+
+.starter:hover .art {
+    filter: brightness(1.08);
+}
+
+.starter:hover .art img {
+    transform: scale(1.08) rotate(0deg);
 }
 
 .starter-title {
-    flex: 1;
+    overflow: hidden;
     font-weight: 600;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .starter-kind {
@@ -120,17 +158,12 @@ $fill-hover: color-mix(in srgb, var(--looks-secondary) 16%, var(--ui-secondary))
 
 .actions {
     display: flex;
-    flex-wrap: wrap;
     gap: 0.5rem;
-    margin-top: 0.75rem;
+    margin-top: 1rem;
 }
 
 .action {
-    display: inline-flex;
     flex: 1;
-    align-items: center;
-    justify-content: center;
-    gap: 0.375rem;
     padding: 0.4375rem 0.625rem;
     border: none;
     border-radius: 0.5rem;
@@ -142,10 +175,15 @@ $fill-hover: color-mix(in srgb, var(--looks-secondary) 16%, var(--ui-secondary))
     cursor: pointer;
 }
 
-.action svg,
-.starter svg {
-    flex-shrink: 0;
-    color: $looks-secondary;
+.action:hover {
+    background: $fill-hover;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .art,
+    .art img {
+        transition: none;
+    }
 }
 
 .close:focus-visible,
