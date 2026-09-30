@@ -2,6 +2,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import bindAll from 'lodash.bindall';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
+import {connect} from 'react-redux';
+import VM from 'scratch-vm';
+
 import BackpackComponent from '../components/backpack/backpack.jsx';
 import {
     getBackpackContents,
@@ -12,25 +15,70 @@ import {
     costumePayload,
     spritePayload,
     codePayload,
+    fetchCode,
+    fetchSprite,
     LOCAL_API
 } from '../lib/api/backpack';
 import DragConstants from '../lib/constants/drag-constants';
-import DropAreaHOC from '../lib/components/drop-area-hoc.jsx';
-
-import {connect} from 'react-redux';
 import storage from '../lib/persistence/storage';
-import VM from 'scratch-vm';
 import {updateCallbacks} from '../lib/shortcuts/event-router.js';
-import {openSimpleDialog} from '../reducers/modals';
+import {placeInViewport} from '../lib/backpack/code-payload.js';
+import {describeBlocks, humanizeOpcode, getWorkspaceBlockText} from '../lib/backpack/script-name.js';
+import {getBackpackHeight, setBackpackHeight} from '../lib/backpack/preferences.js';
+import {ensurePatched, subscribeBlockDrag} from '../lib/backpack/block-drag-hooks.js';
+import installBlockContextMenu from '../lib/backpack/block-context-menu.js';
+import collectStackBlocks from '../lib/backpack/script-stack.js';
+import {registerBackpackSaver} from '../lib/backpack/save-to-backpack.js';
+import lazyScratchBlocks from '../lib/tw-lazy-scratch-blocks';
+import log from '../lib/utils/log';
 
-const dragTypes = [DragConstants.COSTUME, DragConstants.SOUND, DragConstants.SPRITE];
-const DroppableBackpack = DropAreaHOC(dragTypes)(BackpackComponent);
+const incomingDragTypes = [DragConstants.COSTUME, DragConstants.SOUND, DragConstants.SPRITE];
+
+const STRIP_MIN_HEIGHT = 8.75 * 16;
+const STRIP_DEFAULT_HEIGHT = STRIP_MIN_HEIGHT;
+const MIN_WORKSPACE_HEIGHT = 240;
+const NOTICE_DURATION = 2200;
 
 const messages = defineMessages({
-    rename: {
-        defaultMessage: 'New name:',
-        description: 'Renaming a backpack item',
-        id: 'tw.backpack.rename'
+    scriptAutoName: {
+        defaultMessage: '{block} · {count, plural, one {# block} other {# blocks}}',
+        description: 'Automatic name for a script saved to the backpack, showing its first block and block count',
+        id: 'mw.backpack.scriptAutoName'
+    },
+    scriptAutoNameNoBlock: {
+        defaultMessage: 'Script · {count, plural, one {# block} other {# blocks}}',
+        description: 'Automatic name for a script saved to the backpack when its first block has no text',
+        id: 'mw.backpack.scriptAutoNameNoBlock'
+    },
+    saved: {
+        defaultMessage: 'Saved to backpack.',
+        description: 'Confirmation shown after dropping something into the backpack',
+        id: 'mw.backpack.savedNotice'
+    },
+    insertedScript: {
+        defaultMessage: 'Script added to {sprite}.',
+        description: 'Confirmation shown after a backpack script was added to a sprite',
+        id: 'mw.backpack.insertedScript'
+    },
+    insertedCostume: {
+        defaultMessage: 'Costume added to {sprite}.',
+        description: 'Confirmation shown after a backpack costume was added to a sprite',
+        id: 'mw.backpack.insertedCostume'
+    },
+    insertedSound: {
+        defaultMessage: 'Sound added to {sprite}.',
+        description: 'Confirmation shown after a backpack sound was added to a sprite',
+        id: 'mw.backpack.insertedSound'
+    },
+    addToBackpack: {
+        defaultMessage: 'Add to backpack',
+        description: 'Right-click menu item that saves a script, sprite, costume or sound to the backpack',
+        id: 'mw.backpack.addToBackpack'
+    },
+    insertedSprite: {
+        defaultMessage: 'Sprite added to the project.',
+        description: 'Confirmation shown after a backpack sprite was added to the project',
+        id: 'mw.backpack.insertedSprite'
     }
 });
 
@@ -65,71 +113,84 @@ const filterBackpackContents = (contents, value) => {
         .map(result => result.item);
 };
 
+const isIncomingAssetDrag = dragInfo => Boolean(
+    dragInfo && dragInfo.dragging && incomingDragTypes.includes(dragInfo.dragType)
+);
+
+const pointInElement = (element, x, y) => {
+    if (!element || !element.isConnected) return false;
+    const rect = element.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return false;
+    return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+};
+
 class Backpack extends React.Component {
     constructor (props) {
         super(props);
         bindAll(this, [
             'handleDrop',
             'handleToggle',
+            'handleFilterChange',
             'handleDelete',
-            'handleRename',
+            'handleInsert',
+            'handleRenameStart',
+            'handleRenameSubmit',
+            'handleRenameCancel',
             'getBackpackAssetURL',
             'getContents',
-            'handleMouseEnter',
-            'handleMouseLeave',
             'handleBlockDragEnd',
             'handleBlockDragUpdate',
+            'handleBlockDragHook',
             'handleResizePointerDown',
             'handleResizePointerMove',
             'handleResizePointerUp',
             'handleGlobalPointerMove',
-            'setDropAreaRef',
-            'isPointerOverDropArea',
+            'handleSaveRequest',
+            'getAddToBackpackLabel',
+            'setPanelRef',
+            'setHandleRef',
             'handleMore',
             'handleSearchChange'
         ]);
 
-        this.dropAreaRef = null;
+        this.dropZones = {panel: null, handle: null};
         this.lastPointer = {x: null, y: null};
         this.resizeSession = null;
         this.contentsRequest = null;
         this.loadAllContents = false;
+        this.hasLoaded = false;
         this.dropRequest = null;
+        this.dropRequestInfo = null;
         this.deletingItems = new Set();
+        this.insertingItems = new Set();
         this.renamingItems = new Set();
+        this.pendingBlockDrop = false;
+        this.pendingBlockDropTimer = null;
+        this.noticeTimer = null;
+        this.shortcutTimer = null;
+        this.unsubscribeBlockDrag = null;
+        this.unregisterSaver = registerBackpackSaver(this.handleSaveRequest);
         this.unmounted = false;
 
-        const DEFAULT_HEIGHT = 5.5 * 16;
-        const MIN_HEIGHT = DEFAULT_HEIGHT;
-        let persistedHeight = null;
-        try {
-            const raw = localStorage.getItem('mw:backpackHeight');
-            const parsed = raw ? Number(raw) : null;
-            if (Number.isFinite(parsed) && parsed >= MIN_HEIGHT) {
-                persistedHeight = parsed;
-            }
-        } catch (e) {
-            // ignore
-        }
-
         this.state = {
-            // While the DroppableHOC manages drop interactions for asset tiles,
-            // we still need to micromanage drops coming from the block workspace.
-            // TODO this may be refactorable with the share-the-love logic in SpriteSelectorItem
+            blockDragActive: false,
             blockDragOutsideWorkspace: false,
             blockDragOverBackpack: false,
+            assetDragOver: false,
             error: false,
             itemsPerPage: 100,
             moreToLoad: false,
             loading: false,
             expanded: false,
             contents: [],
-            height: persistedHeight || DEFAULT_HEIGHT,
-            searchQuery: ''
+            height: getBackpackHeight(STRIP_MIN_HEIGHT) || STRIP_DEFAULT_HEIGHT,
+            searchQuery: '',
+            filter: 'all',
+            renamingId: null,
+            busyId: null,
+            notice: null
         };
 
-        // If a host is given, add it as a web source to the storage module
-        // TODO remove the hacky flag that prevents double adding
         if (props.host && !storage._hasAddedBackpackSource && props.host !== LOCAL_API) {
             storage.addWebSource(
                 [storage.AssetType.ImageVector, storage.AssetType.ImageBitmap, storage.AssetType.Sound],
@@ -146,7 +207,32 @@ class Backpack extends React.Component {
         document.addEventListener('pointermove', this.handleGlobalPointerMove);
         document.addEventListener('mousemove', this.handleGlobalPointerMove);
 
+        this.unsubscribeBlockDrag = subscribeBlockDrag(this.handleBlockDragHook);
+        installBlockContextMenu(this.getAddToBackpackLabel);
         updateCallbacks({toggleBackpack: this.handleToggle});
+        this.shortcutTimer = setTimeout(() => {
+            updateCallbacks({toggleBackpack: this.handleToggle});
+        }, 0);
+        this.getContents();
+    }
+    UNSAFE_componentWillReceiveProps (nextProps) {
+        const previous = this.props.dragInfo;
+        const next = nextProps.dragInfo;
+        if (previous === next) return;
+
+        const wasIncoming = isIncomingAssetDrag(previous);
+        const isIncoming = isIncomingAssetDrag(next);
+
+        if (isIncoming && next.currentOffset) {
+            const over = this.isPointOverDropZones(next.currentOffset.x, next.currentOffset.y);
+            if (over !== this.state.assetDragOver) {
+                this.setState({assetDragOver: over});
+            }
+        }
+        if (wasIncoming && !isIncoming && this.state.assetDragOver) {
+            this.handleDrop(previous);
+            this.setState({assetDragOver: false});
+        }
     }
     componentWillUnmount () {
         this.unmounted = true;
@@ -159,10 +245,38 @@ class Backpack extends React.Component {
         window.removeEventListener('pointermove', this.handleResizePointerMove);
         window.removeEventListener('pointerup', this.handleResizePointerUp);
         window.removeEventListener('pointercancel', this.handleResizePointerUp);
+
+        if (this.unsubscribeBlockDrag) this.unsubscribeBlockDrag();
+        this.unregisterSaver();
+        clearTimeout(this.shortcutTimer);
+        clearTimeout(this.noticeTimer);
+        clearTimeout(this.pendingBlockDropTimer);
+        this.setPanelRef(null);
+        this.setHandleRef(null);
     }
 
-    setDropAreaRef (el) {
-        this.dropAreaRef = el;
+    setDropZone (name, element) {
+        this.dropZones[name] = element;
+    }
+    setPanelRef (element) {
+        this.setDropZone('panel', element);
+    }
+    setHandleRef (element) {
+        this.setDropZone('handle', element);
+    }
+
+    isPointOverDropZones (x, y) {
+        if (typeof x !== 'number' || typeof y !== 'number') return false;
+        return pointInElement(this.dropZones.panel, x, y) || pointInElement(this.dropZones.handle, x, y);
+    }
+    isPointerOverDropArea () {
+        return this.isPointOverDropZones(this.lastPointer.x, this.lastPointer.y);
+    }
+    isBlockDragActive () {
+        return this.state.blockDragActive || this.state.blockDragOutsideWorkspace;
+    }
+    isDragActive () {
+        return this.isBlockDragActive() || isIncomingAssetDrag(this.props.dragInfo);
     }
 
     handleGlobalPointerMove (e) {
@@ -170,8 +284,10 @@ class Backpack extends React.Component {
         if (typeof e.clientX === 'number' && typeof e.clientY === 'number') {
             this.lastPointer = {x: e.clientX, y: e.clientY};
         }
+        ensurePatched();
+        installBlockContextMenu();
 
-        if (this.state.blockDragOutsideWorkspace) {
+        if (this.isBlockDragActive()) {
             const over = this.isPointerOverDropArea();
             if (over !== this.state.blockDragOverBackpack) {
                 this.setState({blockDragOverBackpack: over});
@@ -179,37 +295,116 @@ class Backpack extends React.Component {
         }
     }
 
-    isPointerOverDropArea () {
-        if (!this.state.expanded) return false;
-        if (!this.dropAreaRef) return false;
-        const {x, y} = this.lastPointer;
-        if (x === null || y === null) return false;
-        const rect = this.dropAreaRef.getBoundingClientRect();
-        return x > rect.left && x < rect.right && y > rect.top && y < rect.bottom;
-    }
     getBackpackAssetURL (asset) {
         return `${this.props.host}/${asset.assetId}.${asset.dataFormat}`;
     }
-    handleToggle () {
-        const newState = !this.state.expanded;
-        this.setState({expanded: newState, contents: []}, () => {
-            // Emit resize on window to get blocks to resize
-            window.dispatchEvent(new Event('resize'));
-        });
-        if (newState) {
+    emitResize () {
+        window.dispatchEvent(new Event('resize'));
+    }
+    getWorkspaceHeight () {
+        if (!lazyScratchBlocks.isLoaded()) return null;
+        try {
+            const workspace = lazyScratchBlocks.get().getMainWorkspace();
+            const svg = workspace && workspace.getParentSvg();
+            return svg ? svg.getBoundingClientRect().height : null;
+        } catch (e) {
+            return null;
+        }
+    }
+    getMaxHeight (availableHeight) {
+        const byWindow = Math.floor(window.innerHeight * 0.75);
+        const byWorkspace = typeof availableHeight === 'number' ?
+            Math.floor(availableHeight - MIN_WORKSPACE_HEIGHT) :
+            byWindow;
+        return Math.max(STRIP_MIN_HEIGHT, Math.min(byWindow, byWorkspace));
+    }
+    setExpanded (expanded) {
+        if (expanded === this.state.expanded) return;
+        const nextState = {expanded, renamingId: null};
+        if (expanded) {
+            const workspaceHeight = this.getWorkspaceHeight();
+            if (workspaceHeight) {
+                nextState.height = Math.min(this.state.height, this.getMaxHeight(workspaceHeight));
+            }
+        }
+        this.setState(nextState, this.emitResize);
+        if (expanded && !this.hasLoaded) {
             this.getContents();
         }
     }
+    handleToggle () {
+        this.setExpanded(!this.state.expanded);
+    }
+    handleFilterChange (filter) {
+        this.setState({filter});
+    }
+    showNotice (notice) {
+        clearTimeout(this.noticeTimer);
+        this.setState({notice});
+        this.noticeTimer = setTimeout(() => {
+            if (this.unmounted) return;
+            this.setState({notice: null});
+        }, NOTICE_DURATION);
+    }
     handleError (error) {
         if (this.unmounted) return false;
+        log.error(error);
         this.setState({
             error: `${error}`,
-            loading: false
+            loading: false,
+            busyId: null
         });
         return false;
     }
+    getAddToBackpackLabel () {
+        return this.props.intl.formatMessage(messages.addToBackpack);
+    }
+    handleSaveRequest (request) {
+        if (!request) return Promise.resolve(false);
+        if (request.kind === 'script') {
+            const target = this.props.vm.editingTarget;
+            if (!target) return Promise.resolve(false);
+            const blocks = collectStackBlocks(target.blocks, request.blockId);
+            if (blocks.length === 0) return Promise.resolve(false);
+            return this.handleDrop({
+                dragType: DragConstants.CODE,
+                payload: {
+                    blockObjects: this.props.vm.exportStandaloneBlocks(blocks),
+                    topBlockId: request.blockId
+                }
+            });
+        }
+        if (!incomingDragTypes.includes(request.dragType)) return Promise.resolve(false);
+        return this.handleDrop({dragType: request.dragType, payload: request.payload});
+    }
+    getScriptName (dragPayload, payload) {
+        const {opcode, blockCount} = describeBlocks(dragPayload.blockObjects);
+        const block = getWorkspaceBlockText(dragPayload.topBlockId) || humanizeOpcode(opcode);
+        if (block) {
+            return this.props.intl.formatMessage(messages.scriptAutoName, {block, count: blockCount});
+        }
+        if (blockCount > 0) {
+            return this.props.intl.formatMessage(messages.scriptAutoNameNoBlock, {count: blockCount});
+        }
+        return payload.name;
+    }
     handleDrop (dragInfo) {
-        if (this.dropRequest) return this.dropRequest;
+        if (this.dropRequest && this.dropRequestInfo === dragInfo) return this.dropRequest;
+        const previous = this.dropRequest || Promise.resolve();
+        const request = previous
+            .then(() => this.saveDrop(dragInfo))
+            .then(result => {
+                if (this.dropRequest === request) {
+                    this.dropRequest = null;
+                    this.dropRequestInfo = null;
+                }
+                return result;
+            });
+        this.dropRequest = request;
+        this.dropRequestInfo = dragInfo;
+        return request;
+    }
+    saveDrop (dragInfo) {
         let payloader = null;
         let presaveAsset = null;
         switch (dragInfo.dragType) {
@@ -230,12 +425,12 @@ class Backpack extends React.Component {
         }
         if (!payloader) return Promise.resolve(false);
 
-        // Creating the payload is async, so set loading before starting
         this.setState({loading: true, error: false});
-        this.dropRequest = payloader(dragInfo.payload, this.props.vm)
+        return payloader(dragInfo.payload, this.props.vm)
             .then(payload => {
-                // Force the asset to save to the asset server before storing in backpack
-                // Ensures any asset present in the backpack is also on the asset server
+                if (dragInfo.dragType === DragConstants.CODE) {
+                    payload.name = this.getScriptName(dragInfo.payload, payload);
+                }
                 if (presaveAsset && !presaveAsset.clean && this.props.host !== LOCAL_API) {
                     return storage.store(
                         presaveAsset.assetType,
@@ -258,14 +453,10 @@ class Backpack extends React.Component {
                     loading: false,
                     contents: [item].concat(oldState.contents.filter(existing => existing.id !== item.id))
                 }));
+                this.showNotice(this.props.intl.formatMessage(messages.saved));
                 return true;
             })
-            .catch(error => this.handleError(error))
-            .then(result => {
-                this.dropRequest = null;
-                return result;
-            });
-        return this.dropRequest;
+            .catch(error => this.handleError(error));
     }
     handleDelete (id) {
         if (this.deletingItems.has(id)) return Promise.resolve(false);
@@ -281,7 +472,8 @@ class Backpack extends React.Component {
                 if (this.unmounted) return false;
                 this.setState(oldState => ({
                     loading: false,
-                    contents: oldState.contents.filter(o => o.id !== id)
+                    contents: oldState.contents.filter(o => o.id !== id),
+                    renamingId: oldState.renamingId === id ? null : oldState.renamingId
                 }));
                 return true;
             })
@@ -294,26 +486,82 @@ class Backpack extends React.Component {
     findItemById (id) {
         return this.state.contents.find(i => i.id === id);
     }
-    async handleRename (id) {
+    getViewport () {
+        if (!lazyScratchBlocks.isLoaded()) return null;
+        try {
+            const workspace = lazyScratchBlocks.get().getMainWorkspace();
+            const metrics = workspace && workspace.getMetrics();
+            if (!metrics) return null;
+            return {width: metrics.viewWidth, height: metrics.viewHeight};
+        } catch (e) {
+            return null;
+        }
+    }
+    async handleInsert (id) {
+        if (this.insertingItems.has(id)) return false;
+        const item = this.findItemById(id);
+        const vm = this.props.vm;
+        const target = vm.editingTarget;
+        if (!item || !target) return false;
+
+        this.insertingItems.add(id);
+        this.setState({busyId: id, error: false});
+        try {
+            const targetId = target.id;
+            const spriteName = target.sprite ? target.sprite.name : '';
+            let notice = null;
+            if (item.type === 'script') {
+                const payload = await fetchCode(item.bodyUrl);
+                const metrics = this.props.workspaceMetrics.targets[targetId];
+                placeInViewport(payload, metrics, this.props.isRtl, this.getViewport());
+                await vm.shareBlocksToTarget(payload, targetId);
+                vm.refreshWorkspace();
+                notice = this.props.intl.formatMessage(messages.insertedScript, {sprite: spriteName});
+            } else if (item.type === 'costume') {
+                await vm.addCostume(item.body, {name: item.name}, targetId);
+                notice = this.props.intl.formatMessage(messages.insertedCostume, {sprite: spriteName});
+            } else if (item.type === 'sound') {
+                await vm.addSound({md5: item.body, name: item.name}, targetId);
+                notice = this.props.intl.formatMessage(messages.insertedSound, {sprite: spriteName});
+            } else if (item.type === 'sprite') {
+                const sprite3Zip = await fetchSprite(item.bodyUrl);
+                await vm.addSprite(sprite3Zip);
+                const added = vm.editingTarget;
+                if (added && added.sprite && item.name && added.sprite.name !== item.name) {
+                    vm.renameSprite(added.id, item.name);
+                }
+                notice = this.props.intl.formatMessage(messages.insertedSprite);
+            }
+            if (this.unmounted) return false;
+            this.setState({busyId: null});
+            if (notice) this.showNotice(notice);
+            return true;
+        } catch (error) {
+            return this.handleError(error);
+        } finally {
+            this.insertingItems.delete(id);
+        }
+    }
+    handleRenameStart (id) {
+        if (!this.canRename() || !this.findItemById(id)) return false;
+        this.setState({renamingId: id});
+        return true;
+    }
+    handleRenameCancel () {
+        this.setState({renamingId: null});
+    }
+    async handleRenameSubmit (id, value) {
+        if (this.state.renamingId === id) {
+            this.setState({renamingId: null});
+        }
         if (this.renamingItems.has(id)) return false;
         const item = this.findItemById(id);
         if (!item) return false;
+        const newName = `${value === null || typeof value === 'undefined' ? '' : value}`.trim();
+        if (!newName || newName === item.name) return false;
+
         this.renamingItems.add(id);
         try {
-            const response = await new Promise(resolve => {
-                this.props.openSimpleDialog({
-                    type: 'prompt',
-                    title: this.props.intl.formatMessage(messages.rename),
-                    message: this.props.intl.formatMessage(messages.rename),
-                    defaultValue: item.name,
-                    onOk: resolve,
-                    onCancel: () => resolve(null)
-                });
-            });
-            if (response === null || this.unmounted) return false;
-            const newName = `${response}`.trim();
-            if (!newName || newName === item.name) return false;
-
             this.setState({loading: true, error: false});
             const newItem = await updateBackpackObject({
                 host: this.props.host,
@@ -332,12 +580,16 @@ class Backpack extends React.Component {
             this.renamingItems.delete(id);
         }
     }
+    canRename () {
+        return this.props.host === LOCAL_API;
+    }
     getContents (loadAll = false) {
         if ((!this.props.token || !this.props.username) && this.props.host !== LOCAL_API) return;
 
         this.loadAllContents = this.loadAllContents || loadAll;
         if (this.contentsRequest) return;
 
+        this.hasLoaded = true;
         this.setState({loading: true, error: false});
         const loaded = this.state.contents.slice();
         const loadPage = () => getBackpackContents({
@@ -378,24 +630,32 @@ class Backpack extends React.Component {
                 this.loadAllContents = false;
             });
     }
+    handleBlockDragHook (type) {
+        if (this.unmounted) return;
+        if (type === 'start') {
+            clearTimeout(this.pendingBlockDropTimer);
+            this.pendingBlockDrop = false;
+            this.setState({blockDragActive: true});
+            return;
+        }
+        this.pendingBlockDrop = this.state.blockDragOverBackpack || this.isPointerOverDropArea();
+        clearTimeout(this.pendingBlockDropTimer);
+        this.pendingBlockDropTimer = setTimeout(() => {
+            this.pendingBlockDrop = false;
+        }, 500);
+        this.setState({blockDragActive: false});
+    }
     handleBlockDragUpdate (isOutsideWorkspace) {
         this.setState({
             blockDragOutsideWorkspace: isOutsideWorkspace,
-            blockDragOverBackpack: isOutsideWorkspace ? this.isPointerOverDropArea() : false
-        });
-    }
-    handleMouseEnter () {
-        if (this.state.blockDragOutsideWorkspace) {
-            this.setState({blockDragOverBackpack: true});
-        }
-    }
-    handleMouseLeave () {
-        this.setState({
-            blockDragOverBackpack: false
+            blockDragOverBackpack: (isOutsideWorkspace || this.state.blockDragActive) ?
+                this.isPointerOverDropArea() : false
         });
     }
     handleBlockDragEnd (blocks, topBlockId) {
-        const shouldDrop = this.state.blockDragOverBackpack || this.isPointerOverDropArea();
+        const shouldDrop = this.pendingBlockDrop || this.state.blockDragOverBackpack || this.isPointerOverDropArea();
+        this.pendingBlockDrop = false;
+        clearTimeout(this.pendingBlockDropTimer);
         if (shouldDrop) {
             this.handleDrop({
                 dragType: DragConstants.CODE,
@@ -407,7 +667,8 @@ class Backpack extends React.Component {
         }
         this.setState({
             blockDragOverBackpack: false,
-            blockDragOutsideWorkspace: false
+            blockDragOutsideWorkspace: false,
+            blockDragActive: false
         });
     }
 
@@ -416,9 +677,11 @@ class Backpack extends React.Component {
         if (!this.state.expanded) return;
         if (typeof e.preventDefault === 'function') e.preventDefault();
 
+        const workspaceHeight = this.getWorkspaceHeight();
         this.resizeSession = {
             startY: e.clientY,
-            startHeight: this.state.height
+            startHeight: this.state.height,
+            maxHeight: this.getMaxHeight(workspaceHeight === null ? null : workspaceHeight + this.state.height)
         };
 
         window.addEventListener('pointermove', this.handleResizePointerMove);
@@ -428,14 +691,14 @@ class Backpack extends React.Component {
 
     handleResizePointerMove (e) {
         if (!this.resizeSession) return;
-        const MIN_HEIGHT = 5.5 * 16;
-        const maxHeight = Math.max(MIN_HEIGHT, Math.floor(window.innerHeight * 0.75));
+        const maxHeight = this.resizeSession.maxHeight;
         const delta = this.resizeSession.startY - e.clientY;
-        const next = Math.max(MIN_HEIGHT, Math.min(maxHeight, Math.round(this.resizeSession.startHeight + delta)));
+        const next = Math.max(
+            STRIP_MIN_HEIGHT,
+            Math.min(maxHeight, Math.round(this.resizeSession.startHeight + delta))
+        );
         if (next !== this.state.height) {
-            this.setState({height: next}, () => {
-                window.dispatchEvent(new Event('resize'));
-            });
+            this.setState({height: next}, this.emitResize);
         }
     }
 
@@ -444,12 +707,7 @@ class Backpack extends React.Component {
         window.removeEventListener('pointermove', this.handleResizePointerMove);
         window.removeEventListener('pointerup', this.handleResizePointerUp);
         window.removeEventListener('pointercancel', this.handleResizePointerUp);
-
-        try {
-            localStorage.setItem('mw:backpackHeight', String(this.state.height));
-        } catch (e) {
-            // ignore
-        }
+        setBackpackHeight(this.state.height);
     }
     handleMore () {
         this.getContents();
@@ -460,53 +718,82 @@ class Backpack extends React.Component {
         if (value.trim() && (this.state.moreToLoad || this.contentsRequest)) this.getContents(true);
     }
     getFilteredContents () {
-        return filterBackpackContents(this.state.contents, this.state.searchQuery);
+        const byType = this.state.filter === 'all' ?
+            this.state.contents :
+            this.state.contents.filter(item => item.type === this.state.filter);
+        return filterBackpackContents(byType, this.state.searchQuery);
     }
     render () {
+        const dragOver = this.state.assetDragOver || this.state.blockDragOverBackpack;
         return (
-            <DroppableBackpack
-                blockDragOver={this.state.blockDragOverBackpack}
+            <BackpackComponent
+                busyId={this.state.busyId}
+                canRename={this.canRename()}
+                canToggle={Boolean(this.props.host)}
                 contents={this.getFilteredContents()}
+                dragActive={this.isDragActive()}
+                dragOver={dragOver}
                 error={this.state.error}
                 expanded={this.state.expanded}
+                filter={this.state.filter}
+                handleRef={this.setHandleRef}
                 height={this.state.height}
                 loading={this.state.loading && this.state.contents.length === 0}
+                notice={this.state.notice}
+                panelRef={this.setPanelRef}
+                renamingId={this.state.renamingId}
                 searchQuery={this.state.searchQuery}
-                onSearchChange={this.handleSearchChange}
                 showMore={!this.state.searchQuery && this.state.moreToLoad}
+                totalCount={this.state.contents.length}
                 onDelete={this.handleDelete}
-                onRename={this.handleRename}
-                onDrop={this.handleDrop}
+                onFilterChange={this.handleFilterChange}
+                onInsert={this.handleInsert}
                 onMore={this.handleMore}
-                onMouseEnter={this.handleMouseEnter}
-                onMouseLeave={this.handleMouseLeave}
+                onRenameCancel={this.handleRenameCancel}
+                onRenameStart={this.handleRenameStart}
+                onRenameSubmit={this.handleRenameSubmit}
                 onResizePointerDown={this.handleResizePointerDown}
-                onToggle={this.props.host ? this.handleToggle : null}
-                componentRef={this.setDropAreaRef}
+                onSearchChange={this.handleSearchChange}
+                onToggle={this.handleToggle}
             />
         );
     }
 }
 
 Backpack.propTypes = {
-    intl: intlShape,
+    dragInfo: PropTypes.shape({
+        currentOffset: PropTypes.shape({
+            x: PropTypes.number,
+            y: PropTypes.number
+        }),
+        dragType: PropTypes.string,
+        dragging: PropTypes.bool,
+        payload: PropTypes.object
+    }),
     host: PropTypes.string,
+    intl: intlShape,
+    isRtl: PropTypes.bool,
     token: PropTypes.string,
     username: PropTypes.string,
-    openSimpleDialog: PropTypes.func.isRequired,
-    vm: PropTypes.instanceOf(VM)
+    vm: PropTypes.instanceOf(VM),
+    workspaceMetrics: PropTypes.shape({
+        targets: PropTypes.objectOf(PropTypes.object)
+    })
+};
+
+Backpack.defaultProps = {
+    dragInfo: {dragging: false, currentOffset: null},
+    isRtl: false,
+    workspaceMetrics: {targets: {}}
 };
 
 const getTokenAndUsername = state => {
-    // Look for the session state provided by scratch-www
     if (state.session && state.session.session && state.session.session.user) {
         return {
             token: state.session.session.user.token,
             username: state.session.session.user.username
         };
     }
-    // Otherwise try to pull testing params out of the URL, or return nulls
-    // TODO a hack for testing the backpack
     const tokenMatches = window.location.href.match(/[?&]token=([^&]*)&?/);
     const usernameMatches = window.location.href.match(/[?&]username=([^&]*)&?/);
     return {
@@ -518,15 +805,12 @@ const getTokenAndUsername = state => {
 const mapStateToProps = state => Object.assign(
     {
         dragInfo: state.scratchGui.assetDrag,
+        isRtl: state.locales.isRtl,
         vm: state.scratchGui.vm,
-        blockDrag: state.scratchGui.blockDrag
+        workspaceMetrics: state.scratchGui.workspaceMetrics
     },
     getTokenAndUsername(state)
 );
 
-const mapDispatchToProps = dispatch => ({
-    openSimpleDialog: config => dispatch(openSimpleDialog(config))
-});
-
 export {Backpack, filterBackpackContents};
-export default injectIntl(connect(mapStateToProps, mapDispatchToProps)(Backpack));
+export default injectIntl(connect(mapStateToProps)(Backpack));
