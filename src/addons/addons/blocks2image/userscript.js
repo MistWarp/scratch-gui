@@ -55,6 +55,7 @@ export default async function ({ addon, console, msg }) {
         {
           enabled: !!svgchild?.childNodes?.length,
           text: msg("export_all_to_SVG"),
+          icon: "exportImage",
           callback: () => {
             exportBlock(false);
           },
@@ -63,6 +64,7 @@ export default async function ({ addon, console, msg }) {
         {
           enabled: !!svgchild?.childNodes?.length,
           text: msg("export_all_to_PNG"),
+          icon: "exportImage",
           callback: () => {
             exportBlock(true);
           },
@@ -91,6 +93,7 @@ export default async function ({ addon, console, msg }) {
         {
           enabled: true,
           text: msg("export_selected_to_SVG"),
+          icon: "exportImage",
           callback: () => {
             exportBlock(false, block);
           },
@@ -99,6 +102,7 @@ export default async function ({ addon, console, msg }) {
         {
           enabled: true,
           text: msg("export_selected_to_PNG"),
+          icon: "exportImage",
           callback: () => {
             exportBlock(true, block);
           },

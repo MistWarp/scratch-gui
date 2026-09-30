@@ -379,14 +379,17 @@ export default async function ({ addon, msg, console }) {
           if (items.length > 0) {
             if (items[0].text === ScratchBlocks.ScratchMsgs.translate("RENAME_VARIABLE")) {
               items[0].text = msg("edit-variable-option");
+              items[0].icon = "edit";
             } else if (items[0].text === ScratchBlocks.ScratchMsgs.translate("RENAME_LIST")) {
               items[0].text = msg("edit-list-option");
+              items[0].icon = "edit";
             }
           }
           items.push({
             enabled: true,
             separator: true,
             text: msg(`to-${variable.isLocal ? "global" : "local"}`),
+            icon: variable.isLocal ? "global" : "local",
             callback: () => convertVariable(variable, !variable.isLocal, variable.isCloud),
           });
         }
