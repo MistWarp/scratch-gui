@@ -9,7 +9,7 @@ This Data Processing Agreement is part of the [Classroom Terms for Schools](/cla
 ## 1. Roles
 
 1. For student accounts and everything made or recorded in them, the School is the controller and we are the processor.
-2. For teachers' own sign-in (through Rotur) and for billing, we are a separate controller, as described on the [Trust page](/trust).
+2. For teachers' own Rotur accounts and for billing, we are the controller, as described on the [Trust page](/trust).
 3. Annex 1 describes the processing.
 
 ## 2. Instructions
