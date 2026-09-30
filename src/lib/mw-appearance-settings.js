@@ -11,7 +11,7 @@ const APPEARANCE_SETTINGS = [
     },
     {
         id: 'hide-extension-button',
-        css: '[class*="extension-button"]{display:none !important;}'
+        css: 'button:has(> [class*="extension-button"]){display:none !important;}'
     },
     {
         id: 'hide-backpack',
