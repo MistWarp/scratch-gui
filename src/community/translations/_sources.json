@@ -8908,7 +8908,7 @@
   "Who is responsible for your data": [
     "src/community/pages/Trust.jsx:56"
   ],
-  "MistWarp is run by {value1}, a sole trader in the {value2}, who decides how the data described on this page is used.": [
+  "MistWarp is part of Rotur. Both are run by {value1}, a sole trader in the {value2}, who decides how the data described on this page is used.": [
     "src/community/pages/Trust.jsx:57"
   ],
   "To ask for a copy of your data, to have it corrected or deleted, or with any other privacy question, email {value1}.": [

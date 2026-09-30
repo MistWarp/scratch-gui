@@ -12,6 +12,7 @@ This page lists every company that handles student data for MistWarp Classroom, 
 
 ## Run by MistWarp
 
+- **Rotur** (rotur.dev), MistWarp's parent service, run by the same operator. It provides teachers' accounts, sign-in and notifications outside Classroom. It receives no student data: student accounts are not Rotur accounts, and classroom notifications stay inside MistWarp.
 - **The MistWarp API and database**, on MistWarp's own server in the United Kingdom. It stores accounts, classes, assignments, submissions and project records.
 - **The live collaboration broker** at collab_warp.mistium.com. It passes connection details between browsers in the same live session. In live group work and presentations, the browsers in a session then connect directly to each other, so they can see each other's IP addresses. Only students in the class and its teachers can join.
 
@@ -35,9 +36,8 @@ A few Scratch blocks work by sending what is in the block to an outside service.
 
 ## Services used for teachers only
 
-For these, MistWarp is the controller of the teacher's own information. They receive no student data.
+For this service, MistWarp is the controller of the teacher's own information. It receives no student data.
 
-- **Rotur** (rotur.dev), which provides teachers' accounts, sign-in and notifications outside Classroom.
 - **Stripe, Inc.**, which takes card payments for Classroom plans. It receives the teacher's MistWarp user ID and the payment details the teacher enters on Stripe's own checkout page.
 `.trim();
 

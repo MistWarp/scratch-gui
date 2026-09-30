@@ -2937,10 +2937,10 @@
   "The full notice below is for parents, carers and schools. It is in English, and the English version is the one that applies.": "The full notice below is for parents, carers and schools. It is in English, and the English version is the one that applies.",
   "Download their data": "Download their data",
   "Who is responsible for your data": "Who is responsible for your data",
-  "MistWarp is run by {value1}, a sole trader in the {value2}, who decides how the data described on this page is used.": "MistWarp is run by {value1}, a sole trader in the {value2}, who decides how the data described on this page is used.",
   "To ask for a copy of your data, to have it corrected or deleted, or with any other privacy question, email {value1}.": "To ask for a copy of your data, to have it corrected or deleted, or with any other privacy question, email {value1}.",
   "If you are unhappy with how we handle your data, you can complain to the Information Commissioner's Office.": "If you are unhappy with how we handle your data, you can complain to the Information Commissioner's Office.",
   "Complain to the ICO": "Complain to the ICO",
   "Student accounts in Classroom belong to the school that created them, and MistWarp handles their data for the school.": "Student accounts in Classroom belong to the school that created them, and MistWarp handles their data for the school.",
-  "Sub-processors": "Sub-processors"
+  "Sub-processors": "Sub-processors",
+  "MistWarp is part of Rotur. Both are run by {value1}, a sole trader in the {value2}, who decides how the data described on this page is used.": "MistWarp is part of Rotur. Both are run by {value1}, a sole trader in the {value2}, who decides how the data described on this page is used."
 }
