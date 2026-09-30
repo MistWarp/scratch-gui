@@ -21,12 +21,11 @@ const renderMenu = props => mountWithIntl(
 );
 
 describe('HelpMenu', () => {
-    test('lists help, documentation, shortcuts, the command palette, and feedback', () => {
+    test('lists help, shortcuts, the command palette, and feedback', () => {
         const wrapper = renderMenu();
         const items = wrapper.find('[role="menuitem"]').map(item => item.text());
         expect(items).toEqual([
             'Open help',
-            'Documentation',
             'Keyboard shortcuts',
             'Command paletteCtrl+K',
             'Send feedback'
@@ -42,21 +41,19 @@ describe('HelpMenu', () => {
         const wrapper = renderMenu({onOpenHelp, onOpenShortcuts, onRequestClose});
         wrapper.find('[role="menuitem"]').at(0)
             .simulate('click');
-        wrapper.find('[role="menuitem"]').at(2)
+        wrapper.find('[role="menuitem"]').at(1)
             .simulate('click');
         expect(onRequestClose).toHaveBeenCalledTimes(2);
         expect(onOpenHelp).toHaveBeenCalledTimes(1);
         expect(onOpenShortcuts).toHaveBeenCalledTimes(1);
     });
 
-    test('opens the documentation and feedback pages in a new tab', () => {
+    test('opens the feedback page in a new tab', () => {
         const open = jest.spyOn(window, 'open').mockImplementation(() => null);
         const wrapper = renderMenu();
-        wrapper.find('[role="menuitem"]').at(1)
+        wrapper.find('[role="menuitem"]').at(3)
             .simulate('click');
-        wrapper.find('[role="menuitem"]').at(4)
-            .simulate('click');
-        expect(open.mock.calls.map(call => call[0])).toEqual(['/docs/', '/roadmap']);
+        expect(open.mock.calls.map(call => call[0])).toEqual(['/roadmap']);
         open.mockRestore();
     });
 });
