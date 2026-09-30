@@ -31,13 +31,14 @@ import collectStackBlocks from '../lib/backpack/script-stack.js';
 import {registerBackpackSaver} from '../lib/backpack/save-to-backpack.js';
 import lazyScratchBlocks from '../lib/tw-lazy-scratch-blocks';
 import log from '../lib/utils/log';
+import {closeAlertWithId, showStandardAlert} from '../reducers/alerts';
 
 const incomingDragTypes = [DragConstants.COSTUME, DragConstants.SOUND, DragConstants.SPRITE];
 
 const STRIP_MIN_HEIGHT = 8.75 * 16;
 const STRIP_DEFAULT_HEIGHT = STRIP_MIN_HEIGHT;
 const MIN_WORKSPACE_HEIGHT = 240;
-const NOTICE_DURATION = 2200;
+const ALERT_DURATION = 3000;
 
 const messages = defineMessages({
     scriptAutoName: {
@@ -50,35 +51,10 @@ const messages = defineMessages({
         description: 'Automatic name for a script saved to the backpack when its first block has no text',
         id: 'mw.backpack.scriptAutoNameNoBlock'
     },
-    saved: {
-        defaultMessage: 'Saved to backpack.',
-        description: 'Confirmation shown after dropping something into the backpack',
-        id: 'mw.backpack.savedNotice'
-    },
-    insertedScript: {
-        defaultMessage: 'Script added to {sprite}.',
-        description: 'Confirmation shown after a backpack script was added to a sprite',
-        id: 'mw.backpack.insertedScript'
-    },
-    insertedCostume: {
-        defaultMessage: 'Costume added to {sprite}.',
-        description: 'Confirmation shown after a backpack costume was added to a sprite',
-        id: 'mw.backpack.insertedCostume'
-    },
-    insertedSound: {
-        defaultMessage: 'Sound added to {sprite}.',
-        description: 'Confirmation shown after a backpack sound was added to a sprite',
-        id: 'mw.backpack.insertedSound'
-    },
     addToBackpack: {
         defaultMessage: 'Add to backpack',
         description: 'Right-click menu item that saves a script, sprite, costume or sound to the backpack',
         id: 'mw.backpack.addToBackpack'
-    },
-    insertedSprite: {
-        defaultMessage: 'Sprite added to the project.',
-        description: 'Confirmation shown after a backpack sprite was added to the project',
-        id: 'mw.backpack.insertedSprite'
     }
 });
 
@@ -166,9 +142,10 @@ class Backpack extends React.Component {
         this.renamingItems = new Set();
         this.pendingBlockDrop = false;
         this.pendingBlockDropTimer = null;
-        this.noticeTimer = null;
         this.shortcutTimer = null;
         this.unsubscribeBlockDrag = null;
+        this.alertTimer = null;
+        this.shownAlert = null;
         this.unregisterSaver = registerBackpackSaver(this.handleSaveRequest);
         this.unmounted = false;
 
@@ -187,8 +164,7 @@ class Backpack extends React.Component {
             searchQuery: '',
             filter: 'all',
             renamingId: null,
-            busyId: null,
-            notice: null
+            busyId: null
         };
 
         if (props.host && !storage._hasAddedBackpackSource && props.host !== LOCAL_API) {
@@ -249,8 +225,8 @@ class Backpack extends React.Component {
         if (this.unsubscribeBlockDrag) this.unsubscribeBlockDrag();
         this.unregisterSaver();
         clearTimeout(this.shortcutTimer);
-        clearTimeout(this.noticeTimer);
         clearTimeout(this.pendingBlockDropTimer);
+        clearTimeout(this.alertTimer);
         this.setPanelRef(null);
         this.setHandleRef(null);
     }
@@ -338,13 +314,15 @@ class Backpack extends React.Component {
     handleFilterChange (filter) {
         this.setState({filter});
     }
-    showNotice (notice) {
-        clearTimeout(this.noticeTimer);
-        this.setState({notice});
-        this.noticeTimer = setTimeout(() => {
-            if (this.unmounted) return;
-            this.setState({notice: null});
-        }, NOTICE_DURATION);
+    showAlert (alertId) {
+        clearTimeout(this.alertTimer);
+        if (this.shownAlert && this.shownAlert !== alertId) this.props.onCloseAlert(this.shownAlert);
+        this.shownAlert = alertId;
+        this.props.onShowAlert(alertId);
+        this.alertTimer = setTimeout(() => {
+            this.props.onCloseAlert(alertId);
+            this.shownAlert = null;
+        }, ALERT_DURATION);
     }
     handleError (error) {
         if (this.unmounted) return false;
@@ -453,7 +431,7 @@ class Backpack extends React.Component {
                     loading: false,
                     contents: [item].concat(oldState.contents.filter(existing => existing.id !== item.id))
                 }));
-                this.showNotice(this.props.intl.formatMessage(messages.saved));
+                this.showAlert('backpackSaved');
                 return true;
             })
             .catch(error => this.handleError(error));
@@ -508,21 +486,16 @@ class Backpack extends React.Component {
         this.setState({busyId: id, error: false});
         try {
             const targetId = target.id;
-            const spriteName = target.sprite ? target.sprite.name : '';
-            let notice = null;
             if (item.type === 'script') {
                 const payload = await fetchCode(item.bodyUrl);
                 const metrics = this.props.workspaceMetrics.targets[targetId];
                 placeInViewport(payload, metrics, this.props.isRtl, this.getViewport());
                 await vm.shareBlocksToTarget(payload, targetId);
                 vm.refreshWorkspace();
-                notice = this.props.intl.formatMessage(messages.insertedScript, {sprite: spriteName});
             } else if (item.type === 'costume') {
                 await vm.addCostume(item.body, {name: item.name}, targetId);
-                notice = this.props.intl.formatMessage(messages.insertedCostume, {sprite: spriteName});
             } else if (item.type === 'sound') {
                 await vm.addSound({md5: item.body, name: item.name}, targetId);
-                notice = this.props.intl.formatMessage(messages.insertedSound, {sprite: spriteName});
             } else if (item.type === 'sprite') {
                 const sprite3Zip = await fetchSprite(item.bodyUrl);
                 await vm.addSprite(sprite3Zip);
@@ -530,11 +503,10 @@ class Backpack extends React.Component {
                 if (added && added.sprite && item.name && added.sprite.name !== item.name) {
                     vm.renameSprite(added.id, item.name);
                 }
-                notice = this.props.intl.formatMessage(messages.insertedSprite);
             }
             if (this.unmounted) return false;
             this.setState({busyId: null});
-            if (notice) this.showNotice(notice);
+            this.showAlert('backpackInserted');
             return true;
         } catch (error) {
             return this.handleError(error);
@@ -739,7 +711,6 @@ class Backpack extends React.Component {
                 handleRef={this.setHandleRef}
                 height={this.state.height}
                 loading={this.state.loading && this.state.contents.length === 0}
-                notice={this.state.notice}
                 panelRef={this.setPanelRef}
                 renamingId={this.state.renamingId}
                 searchQuery={this.state.searchQuery}
@@ -773,6 +744,8 @@ Backpack.propTypes = {
     host: PropTypes.string,
     intl: intlShape,
     isRtl: PropTypes.bool,
+    onCloseAlert: PropTypes.func,
+    onShowAlert: PropTypes.func,
     token: PropTypes.string,
     username: PropTypes.string,
     vm: PropTypes.instanceOf(VM),
@@ -784,6 +757,8 @@ Backpack.propTypes = {
 Backpack.defaultProps = {
     dragInfo: {dragging: false, currentOffset: null},
     isRtl: false,
+    onCloseAlert: () => {},
+    onShowAlert: () => {},
     workspaceMetrics: {targets: {}}
 };
 
@@ -812,5 +787,10 @@ const mapStateToProps = state => Object.assign(
     getTokenAndUsername(state)
 );
 
+const mapDispatchToProps = dispatch => ({
+    onCloseAlert: alertId => dispatch(closeAlertWithId(alertId)),
+    onShowAlert: alertId => dispatch(showStandardAlert(alertId))
+});
+
 export {Backpack, filterBackpackContents};
-export default injectIntl(connect(mapStateToProps)(Backpack));
+export default injectIntl(connect(mapStateToProps, mapDispatchToProps)(Backpack));

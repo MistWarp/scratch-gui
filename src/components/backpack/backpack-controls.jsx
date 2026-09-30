@@ -2,10 +2,17 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import {FormattedMessage, defineMessages, injectIntl, intlShape} from 'react-intl';
-import {Search} from 'lucide-react';
+import {
+    Blocks,
+    Images,
+    LayoutGrid,
+    PaintbrushVertical,
+    Search,
+    Volume2
+} from 'lucide-react';
 
 import BackpackItem from '../../containers/backpack-item.jsx';
-import FilterButton from './backpack-filter-button.jsx';
+import ToggleButtons from '../toggle-buttons/toggle-buttons.jsx';
 import {FILTERS} from '../../lib/backpack/preferences.js';
 import styles from './backpack-controls.css';
 
@@ -50,21 +57,30 @@ const messages = defineMessages({
     }
 });
 
+const filterIcons = {
+    all: LayoutGrid,
+    script: Blocks,
+    sprite: Images,
+    costume: PaintbrushVertical,
+    sound: Volume2
+};
+
 const BackpackFiltersComponent = ({className, filter, intl, onFilterChange}) => (
     <div
         aria-label={intl.formatMessage(messages.filters)}
-        className={classNames(styles.filters, className)}
+        className={className}
         role="group"
     >
-        {FILTERS.map(value => (
-            <FilterButton
-                active={filter === value}
-                key={value}
-                label={intl.formatMessage(filterMessages[value])}
-                value={value}
-                onSelect={onFilterChange}
-            />
-        ))}
+        <ToggleButtons
+            buttons={FILTERS.map(value => ({
+                id: value,
+                title: intl.formatMessage(filterMessages[value]),
+                icon: filterIcons[value],
+                iconClassName: styles.filterIcon,
+                isSelected: filter === value,
+                handleClick: () => onFilterChange(value)
+            }))}
+        />
     </div>
 );
 

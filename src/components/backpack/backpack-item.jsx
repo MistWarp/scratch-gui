@@ -4,9 +4,9 @@ import bindAll from 'lodash.bindall';
 import classNames from 'classnames';
 import {FormattedMessage, defineMessages, injectIntl, intlShape} from 'react-intl';
 import {ContextMenuTrigger} from 'react-contextmenu';
-import {X} from 'lucide-react';
 
 import {DangerousMenuItem, ContextMenu, MenuItem} from '../context-menu/context-menu.jsx';
+import DeleteButton from '../delete-button/delete-button.jsx';
 import {isUnnamedScript} from '../../lib/backpack/script-name.js';
 import styles from './backpack-item.css';
 
@@ -52,11 +52,6 @@ const messages = defineMessages({
         id: 'mw.backpack.renameField',
         defaultMessage: 'New name for {name}',
         description: 'Accessible label for the inline rename field on a backpack item'
-    },
-    renameHint: {
-        id: 'mw.backpack.renameHint',
-        defaultMessage: 'Double-click to rename.',
-        description: 'Tooltip on a backpack item name explaining how to rename it'
     }
 });
 
@@ -262,7 +257,7 @@ class BackpackItem extends React.Component {
                         ) : (
                             <div
                                 className={styles.name}
-                                title={canRename ? intl.formatMessage(messages.renameHint) : name}
+                                title={name}
                                 onClick={this.handleNameClick}
                                 onDoubleClick={this.handleNameDoubleClick}
                             >
@@ -272,15 +267,16 @@ class BackpackItem extends React.Component {
                         <div className={styles.type}>{typeLabel}</div>
                     </div>
                 </ContextMenuTrigger>
-                <button
-                    aria-label={intl.formatMessage(messages.deleteItem, {name})}
-                    className={styles.deleteButton}
-                    type="button"
-                    onClick={this.handleDeleteClick}
+                <div
+                    className={styles.deleteButtonWrapper}
+                    title={intl.formatMessage(messages.deleteItem, {name})}
                     onMouseDown={stopEvent}
                 >
-                    <X size={12} />
-                </button>
+                    <DeleteButton
+                        className={styles.deleteButton}
+                        onClick={this.handleDeleteClick}
+                    />
+                </div>
                 <ContextMenu id={this.menuId}>
                     <MenuItem
                         icon="insert"
