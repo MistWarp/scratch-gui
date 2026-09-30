@@ -1,0 +1,21 @@
+:global(.blocklyWidgetDiv .blocklyContextMenu .goog-menuitem) {
+    padding-left: 12px;
+}
+
+:global(.blocklyWidgetDiv .blocklyContextMenu .goog-menuitem.goog-menuitem-rtl) {
+    padding-left: 7em;
+    padding-right: 12px;
+}
+
+:global(.blocklyWidgetDiv .blocklyContextMenu .goog-menuitem-content) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.icon {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    color: inherit;
+}

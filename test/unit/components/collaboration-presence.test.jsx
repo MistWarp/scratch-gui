@@ -1,7 +1,8 @@
 import React from 'react';
 import {Provider} from 'react-redux';
 import {createStore} from 'redux';
-import {mount, shallow} from 'enzyme';
+import {shallow} from 'enzyme';
+import {mountWithIntl} from '../../helpers/intl-helpers.jsx';
 import CollabPresence from '../../../src/components/menu-bar/mw-collab-presence.jsx';
 import CollaborationSpriteIndicator from '../../../src/components/collaboration-sprite-indicator.jsx';
 import reducer from '../../../src/reducers/collaboration.js';
@@ -22,7 +23,7 @@ test('menu avatars open the collaboration window', () => {
     const store = createStore((current = {scratchGui: {collaboration: state}}, action) => ({
         scratchGui: {collaboration: reducer(current.scratchGui.collaboration, action)}
     }));
-    const wrapper = mount(<Provider store={store}><CollabPresence /></Provider>);
+    const wrapper = mountWithIntl(<Provider store={store}><CollabPresence /></Provider>);
     wrapper.find('button[aria-label="Show current collaborators"]').simulate('click');
     expect(store.getState().scratchGui.collaboration.modalVisible).toBe(true);
     wrapper.unmount();
@@ -45,7 +46,7 @@ test.each([
 ])('presence shows discovery and connection progress accurately: %s', (projectPresence, label) => {
     const state = {...reducer(undefined, {}), projectPresence};
     const store = createStore(() => ({scratchGui: {collaboration: state}}));
-    const wrapper = mount(<Provider store={store}><CollabPresence /></Provider>);
+    const wrapper = mountWithIntl(<Provider store={store}><CollabPresence /></Provider>);
     expect(wrapper.find('button').text()).toBe(label);
     wrapper.unmount();
 });

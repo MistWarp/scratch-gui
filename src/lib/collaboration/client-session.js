@@ -47,7 +47,7 @@ class ClientSession extends Emitter {
     /**
      * @param {object} options Options.
      * @param {Transport} options.transport Transport (not yet started).
-     * @param {OpApplier} options.applier Applies sequenced ops locally.
+     * @param {VMApplier} options.applier Applies sequenced ops locally.
      * @param {string} options.roomId Room id.
      * @param {string} options.username Display name.
      */

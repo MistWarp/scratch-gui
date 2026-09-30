@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
 import classNames from 'classnames';
+import {defineMessages, injectIntl, intlShape} from 'react-intl';
 
 import {openCollaborationModal} from '../../reducers/collaboration';
 import {avatarForCollabUser} from '../../lib/collaboration/avatar.js';
@@ -11,16 +12,61 @@ import styles from './mw-collab-presence.css';
 
 const MAX_FACES = 4;
 
+const messages = defineMessages({
+    opening: {
+        id: 'mw.collabPresence.opening',
+        defaultMessage: 'Opening session…',
+        description: 'Menu bar collaboration status while a live session is being opened'
+    },
+    joining: {
+        id: 'mw.collabPresence.joining',
+        defaultMessage: 'Joining session…',
+        description: 'Menu bar collaboration status while joining a live session'
+    },
+    reconnecting: {
+        id: 'mw.collabPresence.reconnecting',
+        defaultMessage: 'Reconnecting…',
+        description: 'Menu bar collaboration status while reconnecting to a live session'
+    },
+    leaving: {
+        id: 'mw.collabPresence.leaving',
+        defaultMessage: 'Leaving session…',
+        description: 'Menu bar collaboration status while leaving a live session'
+    },
+    unavailable: {
+        id: 'mw.collabPresence.unavailable',
+        defaultMessage: 'Online status unavailable',
+        description: 'Menu bar collaboration status when presence could not be loaded'
+    },
+    sessionOpen: {
+        id: 'mw.collabPresence.sessionOpen',
+        defaultMessage: 'Session open',
+        description: 'Menu bar collaboration status when you are hosting a public live session'
+    },
+    sessionAvailable: {
+        id: 'mw.collabPresence.sessionAvailable',
+        defaultMessage: 'Live session available',
+        description: 'Menu bar collaboration status when someone else hosts a live session you can join'
+    },
+    editorsOnBranch: {
+        id: 'mw.collabPresence.editorsOnBranch',
+        defaultMessage: '{count} on this branch',
+        description: 'Menu bar collaboration status. {count} is how many people have this project branch open.'
+    },
+    showCollaborators: {
+        id: 'mw.collabPresence.showCollaborators',
+        defaultMessage: 'Show current collaborators',
+        description: 'Accessible label for the collaborator avatars button in the menu bar'
+    }
+});
+
 const initialFor = username => (username || '?').replace(/^@/, '').charAt(0)
     .toUpperCase();
 
-const CollabPresence = ({isConnected, users, onOpen, projectPresence}) => {
-    const progress = {
-        opening: 'Opening session…',
-        joining: 'Joining session…',
-        reconnecting: 'Reconnecting…',
-        leaving: 'Leaving session…'
-    }[projectPresence?.phase];
+const CollabPresence = ({intl, isConnected, users, onOpen, projectPresence}) => {
+    const phase = projectPresence?.phase;
+    const progress = ['opening', 'joining', 'reconnecting', 'leaving'].includes(phase) ?
+        intl.formatMessage(messages[phase]) : null;
     if (progress || !isConnected || users.length < 2) {
         const editors = projectPresence?.editors || [];
         if (!progress && !editors.length && !projectPresence?.isPublic && !projectPresence?.unavailable) return null;
@@ -29,9 +75,11 @@ const CollabPresence = ({isConnected, users, onOpen, projectPresence}) => {
             className={styles.presence}
             onClick={onOpen}
             title={editors.map(editor => editor.username).join(', ')}
-        >{progress || (projectPresence?.unavailable ? 'Online status unavailable' :
-                projectPresence?.isPublic ? (projectPresence.hosting ? 'Session open' : 'Live session available') :
-                    `${editors.length} on this branch`)}</button>);
+        >{progress || (projectPresence?.unavailable ? intl.formatMessage(messages.unavailable) :
+                projectPresence?.isPublic ? intl.formatMessage(
+                    projectPresence.hosting ? messages.sessionOpen : messages.sessionAvailable
+                ) :
+                    intl.formatMessage(messages.editorsOnBranch, {count: editors.length}))}</button>);
     }
 
     const currentUserId = CollaborationService.getInstance().getCurrentUserId();
@@ -45,7 +93,7 @@ const CollabPresence = ({isConnected, users, onOpen, projectPresence}) => {
             type="button"
             className={styles.presence}
             onClick={onOpen}
-            aria-label="Show current collaborators"
+            aria-label={intl.formatMessage(messages.showCollaborators)}
             title={ordered.map(user => user.username).join(', ')}
         >
             <span className={styles.faces}>
@@ -79,6 +127,7 @@ const CollabPresence = ({isConnected, users, onOpen, projectPresence}) => {
 };
 
 CollabPresence.propTypes = {
+    intl: intlShape.isRequired,
     projectPresence: PropTypes.object,
     isConnected: PropTypes.bool,
     users: PropTypes.arrayOf(PropTypes.shape({
@@ -100,4 +149,4 @@ const mapDispatchToProps = dispatch => ({
     onOpen: () => dispatch(openCollaborationModal())
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(CollabPresence);
+export default injectIntl(connect(mapStateToProps, mapDispatchToProps)(CollabPresence));

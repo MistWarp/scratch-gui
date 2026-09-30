@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import bindAll from 'lodash.bindall';
 import VM from 'scratch-vm';
+import {defineMessages, injectIntl, intlShape} from 'react-intl';
 
 import {getSetting, onSettingChanged} from '../../lib/mw-stage-controls/settings.js';
 import {
@@ -17,6 +18,24 @@ import muteIcon from './icons/mute.svg';
 import quietIcon from './icons/quiet.svg';
 import loudIcon from './icons/loud.svg';
 import styles from './stage-controls.css';
+
+const messages = defineMessages({
+    mute: {
+        id: 'mw.stageControls.mute',
+        defaultMessage: 'Mute project',
+        description: 'Label of the stage volume button when the project can be muted'
+    },
+    unmute: {
+        id: 'mw.stageControls.unmute',
+        defaultMessage: 'Unmute project',
+        description: 'Label of the stage volume button when the project is muted'
+    },
+    volume: {
+        id: 'mw.stageControls.volume',
+        defaultMessage: 'Project volume',
+        description: 'Accessible label of the stage volume slider'
+    }
+});
 
 class VolumeSlider extends React.Component {
     constructor (props) {
@@ -35,10 +54,11 @@ class VolumeSlider extends React.Component {
         };
     }
     componentDidMount () {
-        onVolumeChanged(this.handleVolumeChanged);
+        this.removeVolumeListener = onVolumeChanged(this.handleVolumeChanged);
         this.removeSettingListener = onSettingChanged(this.handleSettingChanged);
     }
     componentWillUnmount () {
+        this.removeVolumeListener();
         if (this.removeSettingListener) {
             this.removeSettingListener();
         }
@@ -64,21 +84,26 @@ class VolumeSlider extends React.Component {
         if (!this.state.visible) {
             return null;
         }
+        const {intl} = this.props;
         const {volume} = this.state;
         const icon = volume === 0 ? muteIcon : volume < 0.5 ? quietIcon : loudIcon;
+        const muteLabel = intl.formatMessage(isMuted() ? messages.unmute : messages.mute);
         return (
             <div className={styles.volSlider}>
-                <span
+                <button
+                    type="button"
                     className={styles.volIcon}
                     onClick={this.handleIconClick}
-                    title={isMuted() ? 'Unmute' : 'Mute'}
+                    title={muteLabel}
+                    aria-label={muteLabel}
+                    aria-pressed={isMuted()}
                 >
                     <img
                         draggable={false}
                         src={icon}
-                        alt={isMuted() ? 'Muted' : 'Volume'}
+                        alt=""
                     />
-                </span>
+                </button>
                 <input
                     className={styles.volInput}
                     type="range"
@@ -88,7 +113,7 @@ class VolumeSlider extends React.Component {
                     value={volume}
                     onInput={this.handleSliderInput}
                     onChange={this.handleSliderChange}
-                    aria-label="Project volume"
+                    aria-label={intl.formatMessage(messages.volume)}
                 />
             </div>
         );
@@ -96,7 +121,8 @@ class VolumeSlider extends React.Component {
 }
 
 VolumeSlider.propTypes = {
+    intl: intlShape.isRequired,
     vm: PropTypes.instanceOf(VM).isRequired
 };
 
-export default VolumeSlider;
+export default injectIntl(VolumeSlider);

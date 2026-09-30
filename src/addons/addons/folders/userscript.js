@@ -110,9 +110,15 @@ export default async function ({ addon, console, msg }) {
   };
 
   const getBackpackFromElement = (el) => {
-    const gui = el.closest('[class*="gui_editor-wrapper"]');
-    if (!gui) throw new Error("cannot find Backpack");
-    return gui[reactInternalKey].child.sibling.child.child.stateNode;
+    let fiber = el[reactInternalKey];
+    while (fiber) {
+      const instance = fiber.stateNode;
+      if (instance && typeof instance.handleDrop === "function" && typeof instance.getContents === "function") {
+        return instance;
+      }
+      fiber = fiber.return;
+    }
+    throw new Error("cannot find Backpack");
   };
 
   const clamp = (n, min, max) => {
@@ -780,6 +786,7 @@ export default async function ({ addon, console, msg }) {
       return [
         {
           className: "sa-folders-rename-folder",
+          icon: "rename",
           label: msg("rename-folder"),
           callback: renameFolder,
           position: "assetContextMenuAfterDelete",
@@ -787,6 +794,7 @@ export default async function ({ addon, console, msg }) {
         },
         {
           className: "sa-folders-remove-folder",
+          icon: "removeFolder",
           label: msg("remove-folder"),
           callback: removeFolder,
           position: "assetContextMenuAfterDelete",
@@ -835,6 +843,7 @@ export default async function ({ addon, console, msg }) {
         {
           border: true,
           className: "sa-folders-create-folder",
+          icon: "createFolder",
           label: msg("create-folder"),
           callback: createFolder,
           position: "assetContextMenuAfterDelete",
@@ -845,6 +854,7 @@ export default async function ({ addon, console, msg }) {
       if (typeof currentFolder === "string") {
         base.push({
           className: "sa-folders-remove-from-folder",
+          icon: "removeFromFolder",
           label: msg("remove-from-folder"),
           callback: () => setFolder(null),
           position: "assetContextMenuAfterDelete",
@@ -857,6 +867,7 @@ export default async function ({ addon, console, msg }) {
           .map((folder, i) => {
             return {
               className: "sa-folders-add-to-folder",
+              icon: "addToFolder",
               label: msg("add-to-folder", {
                 folder,
               }),
@@ -1294,7 +1305,7 @@ export default async function ({ addon, console, msg }) {
         if (!backpackContainer) {
           return;
         }
-        document.removeEventListener("click", clickListener);
+        document.removeEventListener("click", clickListener, true);
         const backpackInstance = getBackpackFromElement(backpackContainer);
         verifyBackpack(backpackInstance);
         patchBackpack(backpackInstance);

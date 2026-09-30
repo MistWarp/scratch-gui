@@ -18,6 +18,8 @@ const SpriteSelectorItem = props => {
         contextMenuIdRef.current = `sprite-selector-${contextMenuId++}`;
     }
     const menuId = contextMenuIdRef.current;
+    const hasContextMenu = Boolean(props.onDuplicateButtonClick || props.onDeleteButtonClick ||
+        props.onExportButtonClick || props.onAddToBackpackButtonClick);
 
     return (
         <div
@@ -82,10 +84,13 @@ const SpriteSelectorItem = props => {
                     onClick={props.onDeleteButtonClick}
                 />
             ) : null }
-            {props.onDuplicateButtonClick || props.onDeleteButtonClick || props.onExportButtonClick ? (
+            {hasContextMenu ? (
                 <ContextMenu id={menuId}>
                     {props.onDuplicateButtonClick ? (
-                        <MenuItem onClick={props.onDuplicateButtonClick}>
+                        <MenuItem
+                            icon="duplicate"
+                            onClick={props.onDuplicateButtonClick}
+                        >
                             <FormattedMessage
                                 defaultMessage="duplicate"
                                 description="Menu item to duplicate in the right click menu"
@@ -94,7 +99,10 @@ const SpriteSelectorItem = props => {
                         </MenuItem>
                     ) : null}
                     {props.onExportButtonClick ? (
-                        <MenuItem onClick={props.onExportButtonClick}>
+                        <MenuItem
+                            icon="export"
+                            onClick={props.onExportButtonClick}
+                        >
                             <FormattedMessage
                                 defaultMessage="export"
                                 description="Menu item to export the selected item"
@@ -102,8 +110,23 @@ const SpriteSelectorItem = props => {
                             />
                         </MenuItem>
                     ) : null }
+                    {props.onAddToBackpackButtonClick ? (
+                        <MenuItem
+                            icon="backpack"
+                            onClick={props.onAddToBackpackButtonClick}
+                        >
+                            <FormattedMessage
+                                defaultMessage="add to backpack"
+                                description="Menu item to save a sprite, costume or sound to the backpack"
+                                id="mw.spriteSelectorItem.contextMenuAddToBackpack"
+                            />
+                        </MenuItem>
+                    ) : null}
                     {props.onRenameButtonClick ? (
-                        <MenuItem onClick={props.onRenameButtonClick}>
+                        <MenuItem
+                            icon="rename"
+                            onClick={props.onRenameButtonClick}
+                        >
                             <FormattedMessage
                                 defaultMessage="rename"
                                 description="Menu item to rename an item"
@@ -112,7 +135,10 @@ const SpriteSelectorItem = props => {
                         </MenuItem>
                     ) : null}
                     {props.onDeleteButtonClick ? (
-                        <DangerousMenuItem onClick={props.onDeleteButtonClick}>
+                        <DangerousMenuItem
+                            icon="delete"
+                            onClick={props.onDeleteButtonClick}
+                        >
                             <FormattedMessage
                                 defaultMessage="delete"
                                 description="Menu item to delete in the right click menu"
@@ -141,6 +167,7 @@ SpriteSelectorItem.propTypes = {
     number: PropTypes.number,
     onClick: PropTypes.func,
     onDeleteButtonClick: PropTypes.func,
+    onAddToBackpackButtonClick: PropTypes.func,
     onDuplicateButtonClick: PropTypes.func,
     onExportButtonClick: PropTypes.func,
     onRenameButtonClick: PropTypes.func,

@@ -119,7 +119,7 @@ const fetchLibrary = async () => {
             extensionURL: `https://extensions.mistium.com/featured/${extension.name}.js`,
             iconURL: `https://extensions.mistium.com/${extension.image || 'images/unknown.svg'}`,
             source: 'mistium',
-            tags: ['mistium', 'tw'],
+            tags: ['mistium'],
             credits: [
                 ...(extension.by || []),
                 ...(extension.original || [])

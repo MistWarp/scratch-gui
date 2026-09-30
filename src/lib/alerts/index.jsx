@@ -3,6 +3,7 @@ import {FormattedMessage} from 'react-intl';
 import keyMirror from 'keymirror';
 
 import successImage from '../assets/icon--success.svg';
+import {DOCS_BASE} from '../help/index.js';
 
 const AlertTypes = keyMirror({
     STANDARD: null,
@@ -139,9 +140,11 @@ const alerts = [
         closeButton: true,
         content: (
             <FormattedMessage
-                defaultMessage="Project could not save."
-                description="Message indicating that project could not be saved"
-                id="gui.alerts.savingError"
+                // eslint-disable-next-line max-len
+                defaultMessage="Your project could not be saved. Choose Download to keep a copy on your computer, or look for a recent copy in File > Device backups."
+                // eslint-disable-next-line max-len
+                description="Message indicating that project could not be saved. Download is the button next to it. File > Device backups is the menu path."
+                id="mw.alerts.savingError"
             />
         ),
         level: AlertLevels.WARN
@@ -254,6 +257,36 @@ const alerts = [
                 defaultMessage="Saved to your computer."
                 description="Message indicating that project was successfully saved to the user's disk"
                 id="tw.alerts.savedToDisk"
+            />
+        ),
+        iconURL: successImage,
+        level: AlertLevels.SUCCESS,
+        maxDisplaySecs: 3
+    },
+    {
+        alertId: 'backpackSaved',
+        alertType: AlertTypes.STANDARD,
+        clearList: ['backpackSaved', 'backpackInserted'],
+        content: (
+            <FormattedMessage
+                defaultMessage="Saved to your backpack."
+                description="Message shown after something is saved to the backpack"
+                id="mw.alerts.backpackSaved"
+            />
+        ),
+        iconURL: successImage,
+        level: AlertLevels.SUCCESS,
+        maxDisplaySecs: 3
+    },
+    {
+        alertId: 'backpackInserted',
+        alertType: AlertTypes.STANDARD,
+        clearList: ['backpackSaved', 'backpackInserted'],
+        content: (
+            <FormattedMessage
+                defaultMessage="Added from your backpack."
+                description="Message shown after a backpack item is added to the project"
+                id="mw.alerts.backpackInserted"
             />
         ),
         iconURL: successImage,
@@ -382,8 +415,8 @@ const alerts = [
         clearList: ['twRestorePointSuccess', 'twRestorePointError'],
         content: (
             <FormattedMessage
-                defaultMessage="Creating restore point…"
-                description="Menu bar message indicating that a restore point is being automatically created"
+                defaultMessage="Creating device backup…"
+                description="Menu bar message indicating that a device backup is being automatically created"
                 id="tw.alerts.creatingRestorePoint"
             />
         ),
@@ -396,10 +429,10 @@ const alerts = [
         clearList: ['twCreatingRestorePoint', 'twRestorePointError'],
         content: (
             <FormattedMessage
-                defaultMessage="Access restore points in &quot;File&quot;"
+                defaultMessage="Device backup created. Find it in File > Device backups."
                 // eslint-disable-next-line max-len
-                description="Menu bar message indicating that a restore point was successfully created. File refers to the file dropdown menu."
-                id="tw.alerts.restorePointSuccess"
+                description="Menu bar message indicating that a device backup was created. File > Device backups is the menu path to the backup list."
+                id="mw.alerts.deviceBackupCreated"
             />
         ),
         iconURL: successImage,
@@ -412,9 +445,8 @@ const alerts = [
         clearList: ['twCreatingRestorePoint', 'twRestorePointSuccess'],
         content: (
             <FormattedMessage
-                defaultMessage="Could not create restore point"
-                // eslint-disable-next-line max-len
-                description="Menu bar message indicating that a restore point could not be created."
+                defaultMessage="Could not create a device backup."
+                description="Menu bar message indicating that a device backup could not be created."
                 id="tw.alerts.restorePointError"
             />
         ),
@@ -429,8 +461,8 @@ const alerts = [
         closeButton: true,
         content: (
             <FormattedMessage
-                defaultMessage="Could not export the restore point. Try again."
-                description="Message shown when a restore point cannot be exported"
+                defaultMessage="Could not export the device backup. Try again."
+                description="Message shown when a device backup cannot be exported"
                 id="tw.alerts.restorePointExportError"
             />
         ),
@@ -443,8 +475,8 @@ const alerts = [
         closeButton: true,
         content: (
             <FormattedMessage
-                defaultMessage="Could not load the restore point. Your current project was not replaced."
-                description="Message shown when a restore point cannot be loaded"
+                defaultMessage="Could not load the device backup. Your current project was not replaced."
+                description="Message shown when a device backup cannot be loaded"
                 id="tw.alerts.restorePointLoadError"
             />
         ),
@@ -462,7 +494,7 @@ const alerts = [
                 values={{
                     learnMoreLink: (
                         <a
-                            href="https://scratch.mit.edu/info/faq/#clouddata"
+                            href={`${DOCS_BASE}/advanced/cloud-variables/`}
                             rel="noopener noreferrer"
                             target="_blank"
                         >

@@ -11,3 +11,4 @@ run('git', ['clone', '--depth', '1', '--branch', 'master', 'https://github.com/M
 run('npm', ['ci', '--no-audit', '--no-fund'], checkout);
 run('npm', ['run', 'build'], checkout);
 if (!fs.existsSync(path.join(output, 'index.html'))) throw new Error(`The docs build did not produce ${output}`);
+for (const file of ['docs-build.tar.gz', 'docs-build.json']) fs.rmSync(path.join(output, file), {force: true});

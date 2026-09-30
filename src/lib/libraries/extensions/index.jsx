@@ -550,12 +550,9 @@ export default [
 export const galleryLoading = {
     name: (
         <FormattedMessage
-            defaultMessage="TurboWarp Extension Gallery"
-            description="Name of extensions.turbowarp.org in extension library"
-            id="tw.extensionGallery.name"
-            values={{
-                APP_NAME
-            }}
+            defaultMessage="More extensions from TurboWarp"
+            description="Name of the extension library card that opens the TurboWarp extension gallery website"
+            id="mw.extensionGallery.name"
         />
     ),
     href: 'https://extensions.turbowarp.org/',
@@ -563,10 +560,9 @@ export const galleryLoading = {
     iconURL: galleryIcon,
     description: (
         <FormattedMessage
-            // eslint-disable-next-line max-len
-            defaultMessage="Loading extension gallery..."
-            description="Appears while loading extension list from the custom extension gallery"
-            id="tw.extensionGallery.loading"
+            defaultMessage="Loading extensions from the TurboWarp extension gallery…"
+            description="Appears while loading extension list from the TurboWarp extension gallery"
+            id="mw.extensionGallery.loading"
         />
     ),
     tags: ['tw'],
@@ -576,12 +572,9 @@ export const galleryLoading = {
 export const galleryMore = {
     name: (
         <FormattedMessage
-            defaultMessage="TurboWarp Extension Gallery"
-            description="Name of extensions.turbowarp.org in extension library"
-            id="tw.extensionGallery.name"
-            values={{
-                APP_NAME
-            }}
+            defaultMessage="More extensions from TurboWarp"
+            description="Name of the extension library card that opens the TurboWarp extension gallery website"
+            id="mw.extensionGallery.name"
         />
     ),
     href: 'https://extensions.turbowarp.org/',
@@ -590,9 +583,9 @@ export const galleryMore = {
     description: (
         <FormattedMessage
             // eslint-disable-next-line max-len
-            defaultMessage="Learn more about extensions at extensions.turbowarp.org."
-            description="Appears after the extension list from the gallery was loaded successfully"
-            id="tw.extensionGallery.more"
+            defaultMessage="Opens the TurboWarp extension gallery website in a new tab. Its extensions are also listed under TurboWarp."
+            description="Appears after the extension list from the TurboWarp gallery was loaded successfully"
+            id="mw.extensionGallery.more"
         />
     ),
     tags: ['tw'],
@@ -602,12 +595,9 @@ export const galleryMore = {
 export const galleryError = {
     name: (
         <FormattedMessage
-            defaultMessage="TurboWarp Extension Gallery"
-            description="Name of extensions.turbowarp.org in extension library"
-            id="tw.extensionGallery.name"
-            values={{
-                APP_NAME
-            }}
+            defaultMessage="More extensions from TurboWarp"
+            description="Name of the extension library card that opens the TurboWarp extension gallery website"
+            id="mw.extensionGallery.name"
         />
     ),
     href: 'https://extensions.turbowarp.org/',
@@ -616,9 +606,9 @@ export const galleryError = {
     description: (
         <FormattedMessage
             // eslint-disable-next-line max-len
-            defaultMessage="Error loading extension gallery. Visit extensions.turbowarp.org to find more extensions."
-            description="Appears when an error occurred loading extension list from the custom extension gallery"
-            id="tw.extensionGallery.error"
+            defaultMessage="The TurboWarp extension gallery could not be loaded. Select this card to browse it on extensions.turbowarp.org."
+            description="Appears when an error occurred loading extension list from the TurboWarp extension gallery"
+            id="mw.extensionGallery.error"
         />
     ),
     tags: ['tw'],

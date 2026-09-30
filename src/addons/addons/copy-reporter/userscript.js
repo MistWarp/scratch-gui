@@ -21,6 +21,7 @@ export default function ({addon, msg}) {
             types: ['monitor_default', 'monitor_large', 'monitor_slider'],
             position: 'monitor',
             order: 0,
+            icon: 'copy',
             label: msg('copy-value')
         }
     );

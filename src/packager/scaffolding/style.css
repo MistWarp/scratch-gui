@@ -308,7 +308,9 @@
   transition: .2s opacity;
 }
 .context-menu-item {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   width: 100%;
   background-color: white;
   border: none;
@@ -320,6 +322,9 @@
   padding: 8px 12px;
   margin: 0;
   transition: .1s background-color, .1s color;
+}
+.context-menu-item-icon {
+  flex: none;
 }
 .context-menu-item:focus {
   outline: 2px solid black;

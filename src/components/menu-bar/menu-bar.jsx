@@ -17,7 +17,6 @@ import VM from 'scratch-vm';
 import Box from '../box/box.jsx';
 import Button from '../button/button.jsx';
 import CommunityButton from './community-button.jsx';
-import ShareButton from './share-button.jsx';
 import openMistWarpShareWindow from '../../lib/mw/open-mw-share-window.js';
 import {
     getRememberedPlatformProjectState,
@@ -26,10 +25,7 @@ import {
 } from '../../lib/community/publish.js';
 import {getProject as getMistWarpProject} from '../../lib/community/api.js';
 import communityEnabled from '../../lib/community/enabled.js';
-import {ComingSoonTooltip} from '../coming-soon/coming-soon.jsx';
 import Divider from '../divider/divider.jsx';
-// import SaveStatus from './save-status.jsx';
-import ProjectWatcher from '../../containers/project-watcher.jsx';
 import MenuBarMenu from './menu-bar-menu.jsx';
 import MenuLabel from './tw-menu-label.jsx';
 import {MenuItem, MenuSection, Submenu} from '../menu/menu.jsx';
@@ -40,6 +36,7 @@ import DeletionRestorer from '../../containers/deletion-restorer.jsx';
 import TurboMode from '../../containers/turbo-mode.jsx';
 import MenuBarHOC from '../../containers/menu-bar-hoc.jsx';
 import SettingsMenu from './settings-menu.jsx';
+import HelpMenu from './help-menu.jsx';
 import TWViewCounter from './tw-view-counter.jsx';
 
 import ChangeUsername from '../../containers/tw-change-username.jsx';
@@ -68,16 +65,16 @@ import {
 import downloadBlob from '../../lib/utils/download-blob.js';
 import {projectFilename} from '../../lib/utils/safe-filename.js';
 import RestorePointAPI from '../../lib/api/restore-points';
+import {getShortcutKey} from '../../lib/shortcuts/registry.js';
 
 import TWDesktopSettings from './tw-desktop-settings.jsx';
 import RoturAccount from './mw-rotur-account.jsx';
 import MwEditorNav from './mw-editor-nav.jsx';
 import CollabPresence from './mw-collab-presence.jsx';
 
-import {FEEDBACK_URL, APP_NAME} from '../../lib/constants/brand.js';
+import {FEEDBACK_URL} from '../../lib/constants/brand.js';
 
 import {
-    openTipsLibrary,
     openSettingsModal,
     openRestorePointModal,
     openProjectMetadataModal,
@@ -87,19 +84,14 @@ import {
     openVariableManagerModal,
     openProductsModal,
     openGameItemsModal,
-    openHelp,
     openSimpleDialog
 } from '../../reducers/modals';
 import {openCollaborationModal} from '../../reducers/collaboration';
 import {setPlayer} from '../../reducers/mode';
 import {
-    autoUpdateProject,
     getIsUpdating,
     getIsShowingProject,
-    manualUpdateProject,
-    requestNewProject,
-    remixProject,
-    saveProjectAsCopy
+    requestNewProject
 } from '../../reducers/project-state';
 import {
     openAboutMenu,
@@ -156,7 +148,6 @@ import {
 
 import styles from './menu-bar.css';
 
-// import helpIcon from '../../lib/assets/icon--tutorials.svg';
 // import mystuffIcon from './icon--mystuff.png';
 // import profileIcon from './icon--profile.png';
 
@@ -165,26 +156,18 @@ import ChevronDown from './ChevronDown.jsx';
 import mistwarpLogo from '../../community/assets/mistwarp-logo.png';
 
 import {
-    FilePen, PencilRuler, TriangleAlert, Info, Shuffle,
+    FilePen, PencilRuler, TriangleAlert, Info,
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, PackagePlus, Puzzle,
     GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Wrench,
     Download, AppWindow, Computer, Shield, Code, Code2,
-    Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, HelpCircle, Video,
+    Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, Video,
     ShoppingBag, Backpack, Check, Zap
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
 
 import SeeInsideButton from './tw-see-inside.jsx';
-
-/* const ariaMessages = defineMessages({
-    tutorials: {
-        id: 'gui.menuBar.tutorialsLibrary',
-        defaultMessage: 'Tutorials',
-        description: 'accessibility text for the tutorials button'
-    }
-}); */
 
 const twMessages = defineMessages({
     compileError: {
@@ -206,6 +189,11 @@ const twMessages = defineMessages({
         id: 'mw.menuBar.gitCommitFailed',
         defaultMessage: 'Commit failed. {error}',
         description: 'Toast shown when committing the project to git fails. {error} is the error message.'
+    },
+    noChanges: {
+        id: 'mw.menuBar.noChanges',
+        defaultMessage: 'There are no new changes to save.',
+        description: 'Tooltip on the disabled Save to MistWarp menu item when nothing changed'
     }
 });
 
@@ -254,60 +242,6 @@ const menuLabelMessages = defineMessages({
     }
 });
 
-const MenuBarItemTooltip = ({
-    children,
-    className,
-    enable,
-    id,
-    place = 'bottom'
-}) => {
-    if (enable) {
-        return (
-            <React.Fragment>
-                {children}
-            </React.Fragment>
-        );
-    }
-    return (
-        <ComingSoonTooltip
-            className={classNames(styles.comingSoon, className)}
-            place={place}
-            tooltipClassName={styles.comingSoonTooltip}
-            tooltipId={id}
-        >
-            {children}
-        </ComingSoonTooltip>
-    );
-};
-
-
-MenuBarItemTooltip.propTypes = {
-    children: PropTypes.node,
-    className: PropTypes.string,
-    enable: PropTypes.bool,
-    id: PropTypes.string,
-    place: PropTypes.oneOf(['top', 'bottom', 'left', 'right'])
-};
-
-const MenuItemTooltip = ({id, isRtl, children, className}) => (
-    <ComingSoonTooltip
-        className={classNames(styles.comingSoon, className)}
-        isRtl={isRtl}
-        place={isRtl ? 'left' : 'right'}
-        tooltipClassName={styles.comingSoonTooltip}
-        tooltipId={id}
-    >
-        {children}
-    </ComingSoonTooltip>
-);
-
-MenuItemTooltip.propTypes = {
-    children: PropTypes.node,
-    className: PropTypes.string,
-    id: PropTypes.string,
-    isRtl: PropTypes.bool
-};
-
 const AboutButton = props => (
     <Button
         className={classNames(styles.menuBarItem, styles.hoverable)}
@@ -350,6 +284,9 @@ const formatShortcutDisplay = keyCombo => {
         .replace(/Enter/g, '↵')
         .replace(/ /g, '');
 };
+
+const shortcutHint = (shortcutId, customShortcuts) =>
+    formatShortcutDisplay(getShortcutKey(shortcutId, customShortcuts));
 
 const COLLAPSE_MENU_WIDTH = 900;
 const addonMessage = (intl, addonId) => (id, values) => intl.formatMessage({
@@ -395,16 +332,12 @@ class MenuBar extends React.Component {
             'handleClickSeeInside',
             'handleClickNew',
             'handleClickNewWindow',
-            'handleClickRemix',
-            'handleClickSave',
-            'handleClickSaveAsCopy',
             'handleClickLoadFromComputer',
             'handleClickPackager',
             'handleToggleExportMenu',
             'handleCloseExportMenu',
             'handleClickRestorePoints',
             'handleClickProjectMetadata',
-            'handleClickShare',
             'handleClickMistWarpShare',
             'handleClickSeeMistWarpPage',
             'refreshMistWarpShared',
@@ -412,7 +345,6 @@ class MenuBar extends React.Component {
             'handleClickRedo',
             'handleClickCollaboration',
             'handleClickAddonSettings',
-            'handleClickHelp',
             'handleClickGitModal',
             'handleClickDebugger',
             'handleClickVariableManager',
@@ -634,18 +566,6 @@ class MenuBar extends React.Component {
         this.props.onClickNewWindow();
         this.props.onRequestCloseFile();
     }
-    handleClickRemix () {
-        this.props.onClickRemix();
-        this.props.onRequestCloseFile();
-    }
-    handleClickSave () {
-        this.props.onClickSave();
-        this.props.onRequestCloseFile();
-    }
-    handleClickSaveAsCopy () {
-        this.props.onClickSaveAsCopy();
-        this.props.onRequestCloseFile();
-    }
     handleClickLoadFromComputer () {
         this.props.onRequestCloseFile();
         this.props.onStartSelectingFileUpload();
@@ -666,20 +586,8 @@ class MenuBar extends React.Component {
         if (this.props.vm) {
             this.props.vm.emit('TRIGGER_MANUAL_RESTORE_POINT');
         }
+        this.props.onRequestCloseFile();
     };
-    handleClickShare (waitForUpdate) {
-        if (!this.props.isShared) {
-            if (this.props.canShare) { // save before transitioning to project page
-                this.props.onShare();
-            }
-            if (this.props.canSave) { // save before transitioning to project page
-                this.props.autoUpdateProject();
-                waitForUpdate(true); // queue the transition to project page
-            } else {
-                waitForUpdate(false); // immediately transition to project page
-            }
-        }
-    }
     handleClickCollaboration () {
         this.props.onClickCollaboration();
         this.props.onRequestCloseTools();
@@ -687,10 +595,6 @@ class MenuBar extends React.Component {
     handleClickAddonSettings () {
         this.props.onRequestCloseEdit();
         this.props.onClickAddonSettings();
-    }
-    handleClickHelp () {
-        this.props.onClickHelp();
-        this.props.onRequestCloseEdit();
     }
     handleClickGitModal () {
         this.props.onClickGitModal();
@@ -1034,14 +938,6 @@ class MenuBar extends React.Component {
                 void this.handleAddWorkspaceBookmark();
                 return;
             }
-        }
-
-        const modifier = isMac ? event.metaKey : event.ctrlKey;
-        if (modifier && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 's' &&
-            target && target.dataset && 'projectTitleInput' in target.dataset) {
-            event.preventDefault();
-            target.blur();
-            setTimeout(() => this.props.handleSaveProject(), 0);
         }
     }
 
@@ -1552,46 +1448,12 @@ class MenuBar extends React.Component {
         const mistwarpAction = communityEnabled ?
             getMistWarpAction(this.state.mistwarpProject, this.props.projectChanged) :
             null;
-        const saveNowMessage = (
-            <FormattedMessage
-                defaultMessage="Save now"
-                description="Menu bar item for saving now"
-                id="gui.menuBar.saveNow"
-            />
-        );
-        const createCopyMessage = (
-            <FormattedMessage
-                defaultMessage="Save as a copy"
-                description="Menu bar item for saving as a copy"
-                id="gui.menuBar.saveAsCopy"
-            />
-        );
-        const remixMessage = (
-            <FormattedMessage
-                defaultMessage="Remix"
-                description="Menu bar item for remixing"
-                id="gui.menuBar.remix"
-            />
-        );
         const newProjectMessage = (
             <FormattedMessage
                 defaultMessage="New"
                 description="Menu bar item for creating a new project"
                 id="gui.menuBar.new"
             />
-        );
-        const remixButton = (
-            <Button
-                className={classNames(
-                    styles.menuBarButton,
-                    styles.remixButton
-                )}
-                iconClassName={styles.remixButtonIcon}
-                iconElem={Shuffle}
-                onClick={this.handleClickRemix}
-            >
-                {remixMessage}
-            </Button>
         );
         // Show the About button only if we have a handler for it (like in the desktop app)
         const aboutButton = this.buildAboutMenu(this.props.onClickAbout);
@@ -1747,40 +1609,15 @@ class MenuBar extends React.Component {
                                             />
                                         </MenuItem>
                                     )}
-                                    {(this.props.canSave || this.props.canCreateCopy || this.props.canRemix) && (
-                                        <MenuSection>
-                                            {this.props.canSave && (
-                                                <MenuItem
-                                                    onClick={this.handleClickSave}
-                                                    shortcut={formatShortcutDisplay('Ctrl+S')}
-                                                >
-                                                    {saveNowMessage}
-                                                </MenuItem>
-                                            )}
-                                            {this.props.canCreateCopy && (
-                                                <MenuItem
-                                                    onClick={this.handleClickSaveAsCopy}
-                                                    shortcut={formatShortcutDisplay('Ctrl+Shift+S')}
-                                                >
-                                                    <Save />
-                                                    {createCopyMessage}
-                                                </MenuItem>
-                                            )}
-                                            {this.props.canRemix && (
-                                                <MenuItem onClick={this.handleClickRemix}>
-                                                    {remixMessage}
-                                                </MenuItem>
-                                            )}
-                                        </MenuSection>
-                                    )}
                                     {this.props.roturReady ? (
                                         <MenuSection>
                                             <MenuItem
                                                 disabled={!mistwarpAction}
                                                 onClick={this.handleClickMistWarpShare}
                                                 shortcut={this.state.mistwarpProject ?
-                                                    formatShortcutDisplay('Ctrl+S') : null}
-                                                title={mistwarpAction ? null : 'No new changes'}
+                                                    shortcutHint('save', this.props.customShortcuts) : null}
+                                                title={mistwarpAction ?
+                                                    null : this.props.intl.formatMessage(twMessages.noChanges)}
                                             >
                                                 <Globe />
                                                 {mistwarpAction === 'remix' ? (
@@ -1812,7 +1649,7 @@ class MenuBar extends React.Component {
                                     <MenuSection>
                                         <MenuItem
                                             onClick={this.handleClickLoadFromComputer}
-                                            shortcut={formatShortcutDisplay('Ctrl+O')}
+                                            shortcut={shortcutHint('loadFromComputer', this.props.customShortcuts)}
                                         >
                                             <Upload />
                                             {this.props.intl.formatMessage(sharedMessages.loadFromComputerTitle)}
@@ -1820,7 +1657,7 @@ class MenuBar extends React.Component {
                                         <MenuItem
                                             onClick={this.handleClickSaveMwp}
                                             shortcut={this.state.mistwarpProject ?
-                                                null : formatShortcutDisplay('Ctrl+S')}
+                                                null : shortcutHint('save', this.props.customShortcuts)}
                                         >
                                             <Save />
                                             <FormattedMessage
@@ -1888,7 +1725,10 @@ class MenuBar extends React.Component {
                                                         {this.props.onClickPackager ? (
                                                             <MenuItem
                                                                 onClick={this.handleClickPackager}
-                                                                shortcut={formatShortcutDisplay('Ctrl+P')}
+                                                                shortcut={shortcutHint(
+                                                                    'packageProject',
+                                                                    this.props.customShortcuts
+                                                                )}
                                                             >
                                                                 <Package />
                                                                 <FormattedMessage
@@ -1907,7 +1747,7 @@ class MenuBar extends React.Component {
                                     <MenuSection>
                                         <MenuItem
                                             onClick={this.handleClickRestorePoints}
-                                            shortcut={formatShortcutDisplay('Alt+R')}
+                                            shortcut={shortcutHint('restorePoints', this.props.customShortcuts)}
                                         >
                                             <RefreshCcw />
                                             <FormattedMessage
@@ -1969,7 +1809,7 @@ class MenuBar extends React.Component {
                                     <MenuItem
                                         className={classNames({[styles.disabled]: !this.state.canUndo})}
                                         onClick={this.state.canUndo ? this.handleClickUndo : null}
-                                        shortcut={formatShortcutDisplay('Ctrl+Z')}
+                                        shortcut={shortcutHint('undo', this.props.customShortcuts)}
                                     >
                                         <Undo />
 
@@ -1982,7 +1822,7 @@ class MenuBar extends React.Component {
                                     <MenuItem
                                         className={classNames({[styles.disabled]: !this.state.canRedo})}
                                         onClick={this.state.canRedo ? this.handleClickRedo : null}
-                                        shortcut={formatShortcutDisplay('Ctrl+Shift+Z')}
+                                        shortcut={shortcutHint('redo', this.props.customShortcuts)}
                                     >
                                         <Redo />
 
@@ -2087,18 +1927,6 @@ class MenuBar extends React.Component {
                                         />
                                     </MenuItem>
                                 </MenuSection>
-                                <MenuSection>
-                                    <MenuItem
-                                        onClick={this.handleClickHelp}
-                                    >
-                                        <HelpCircle />
-                                        <FormattedMessage
-                                            defaultMessage="Help"
-                                            description="Menu bar item that opens the help window"
-                                            id="mw.menuBar.help"
-                                        />
-                                    </MenuItem>
-                                </MenuSection>
                             </MenuBarMenu>
                         </MenuLabel>
                         <MenuLabel
@@ -2197,7 +2025,7 @@ class MenuBar extends React.Component {
                                 <MenuSection>
                                     <MenuItem
                                         onClick={this.handleOpenExtensionLibrary}
-                                        shortcut={formatShortcutDisplay('Ctrl+.')}
+                                        shortcut={shortcutHint('extensionLibrary', this.props.customShortcuts)}
                                     >
                                         <PackagePlus />
                                         <FormattedMessage
@@ -2208,7 +2036,7 @@ class MenuBar extends React.Component {
                                     </MenuItem>
                                     <MenuItem
                                         onClick={this.handleOpenExtensionManager}
-                                        shortcut={formatShortcutDisplay('Ctrl+Alt+E')}
+                                        shortcut={shortcutHint('extensionManager', this.props.customShortcuts)}
                                     >
                                         <FileCog />
                                         <FormattedMessage
@@ -2221,6 +2049,7 @@ class MenuBar extends React.Component {
                             </MenuBarMenu>
                         </MenuLabel>
                         {(this.props.canChangeTheme || this.props.canChangeLanguage) && <SettingsMenu />}
+                        <HelpMenu />
                     </div>
 
                     {!this.props.isPlayerOnly && (
@@ -2244,14 +2073,9 @@ class MenuBar extends React.Component {
                             data-mw-item="project-title"
                             className={classNames(styles.menuBarItem, styles.growable)}
                         >
-                            <MenuBarItemTooltip
-                                enable
-                                id="title-field"
-                            >
-                                <ProjectTitleInput
-                                    className={classNames(styles.titleFieldGrowable)}
-                                />
-                            </MenuBarItemTooltip>
+                            <ProjectTitleInput
+                                className={classNames(styles.titleFieldGrowable)}
+                            />
                         </div>
                     ) : (this.props.authorUsername ? (
                         <AuthorInfo
@@ -2273,47 +2097,6 @@ class MenuBar extends React.Component {
                                 <TWViewCounter projectId={this.props.projectId} />
                             </div>
                         ) : null}
-                    {this.props.canShare ? (
-                        (this.props.isShowingProject || this.props.isUpdating) && (
-                            <div
-                                data-mw-item="share"
-                                className={classNames(styles.menuBarItem)}
-                            >
-                                <ProjectWatcher onDoneUpdating={this.props.onSeeCommunity}>
-                                    {
-                                        waitForUpdate => (
-                                            <ShareButton
-                                                className={styles.menuBarButton}
-                                                isShared={this.props.isShared}
-                                                /* eslint-disable react/jsx-no-bind */
-                                                onClick={() => {
-                                                    this.handleClickShare(waitForUpdate);
-                                                }}
-                                            /* eslint-enable react/jsx-no-bind */
-                                            />
-                                        )
-                                    }
-                                </ProjectWatcher>
-                            </div>
-                        )
-                    ) : this.props.showComingSoon ? (
-                        <div
-                            data-mw-item="share"
-                            className={classNames(styles.menuBarItem)}
-                        >
-                            <MenuBarItemTooltip id="share-button">
-                                <ShareButton className={styles.menuBarButton} />
-                            </MenuBarItemTooltip>
-                        </div>
-                    ) : null}
-                    {this.props.canRemix && (
-                        <div
-                            data-mw-item="remix"
-                            className={classNames(styles.menuBarItem)}
-                        >
-                            {remixButton}
-                        </div>
-                    )}
                     <div
                         data-mw-item="community"
                         className={classNames(styles.menuBarItem, styles.communityButtonWrapper)}
@@ -2326,37 +2109,12 @@ class MenuBar extends React.Component {
                                     onClick={this.handleClickSeeMistWarpPage}
                                 />
                             ) : null
-                        ) : (this.props.showComingSoon ? (
-                            <MenuBarItemTooltip id="community-button">
-                                <CommunityButton className={styles.menuBarButton} />
-                            </MenuBarItemTooltip>
                         ) : (this.props.enableSeeInside ? (
                             <SeeInsideButton
                                 className={styles.menuBarButton}
                                 onClick={this.handleClickSeeInside}
                             />
-                        ) : []))}
-                    </div>
-                    {/* tw: add a feedback button */}
-                    <div
-                        data-mw-item="feedback"
-                        className={styles.menuBarItem}
-                    >
-                        <Button
-                            className={classNames(styles.feedbackLink, styles.feedbackButton)}
-                            href={FEEDBACK_URL}
-                            rel="noopener noreferrer"
-                            target="_blank"
-                        >
-                            <FormattedMessage
-                                defaultMessage="{APP_NAME} Feedback"
-                                description="Button to give feedback in the menu bar"
-                                id="tw.feedbackButton"
-                                values={{
-                                    APP_NAME
-                                }}
-                            />
-                        </Button>
+                        ) : [])}
                     </div>
                 </div>
 
@@ -2426,16 +2184,10 @@ MenuBar.propTypes = {
     authorId: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]),
     authorThumbnailUrl: PropTypes.string,
     authorUsername: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]),
-    autoUpdateProject: PropTypes.func,
     canChangeLanguage: PropTypes.bool,
     canChangeTheme: PropTypes.bool,
-    canCreateCopy: PropTypes.bool,
-    canCreateNew: PropTypes.bool,
     canEditTitle: PropTypes.bool,
     canManageFiles: PropTypes.bool,
-    canRemix: PropTypes.bool,
-    canSave: PropTypes.bool,
-    canShare: PropTypes.bool,
     className: PropTypes.string,
     logo: PropTypes.string,
     errors: PropTypes.arrayOf(PropTypes.shape({
@@ -2448,6 +2200,7 @@ MenuBar.propTypes = {
     onRequestCloseErrors: PropTypes.func,
     confirmReadyToReplaceProject: PropTypes.func,
     currentLocale: PropTypes.string.isRequired,
+    customShortcuts: PropTypes.objectOf(PropTypes.string),
     editMenuOpen: PropTypes.bool,
     editorMenuOpen: PropTypes.bool,
     enableCommunity: PropTypes.bool,
@@ -2464,7 +2217,6 @@ MenuBar.propTypes = {
         restoreFun: PropTypes.func,
         sequence: PropTypes.number
     }),
-    isShared: PropTypes.bool,
     isShowingProject: PropTypes.bool,
     isUpdating: PropTypes.bool,
     locale: PropTypes.string.isRequired,
@@ -2499,19 +2251,14 @@ MenuBar.propTypes = {
     onClickLogin: PropTypes.func,
     onClickNew: PropTypes.func,
     onClickNewWindow: PropTypes.func,
-    onClickRemix: PropTypes.func,
-    onClickSave: PropTypes.func,
-    onClickSaveAsCopy: PropTypes.func,
     onClickPreferencesModal: PropTypes.func,
     onClickGitModal: PropTypes.func,
-    onClickHelp: PropTypes.func,
 
     onOpenSettingsModal: PropTypes.func,
     onLogOut: PropTypes.func,
     onOpenExtensionLibrary: PropTypes.func,
     onOpenExtensionManagerModal: PropTypes.func,
     onOpenRegistration: PropTypes.func,
-    onOpenTipLibrary: PropTypes.func,
     onProjectTelemetryEvent: PropTypes.func,
     onRequestCloseAbout: PropTypes.func,
     onRequestCloseAccount: PropTypes.func,
@@ -2523,8 +2270,6 @@ MenuBar.propTypes = {
     onClickTools: PropTypes.func,
     onRequestCloseTools: PropTypes.func,
     onRequestOpenAbout: PropTypes.func,
-    onSeeCommunity: PropTypes.func,
-    onShare: PropTypes.func,
     onStartSelectingFileUpload: PropTypes.func,
     onToggleLoginOpen: PropTypes.func,
     projectId: PropTypes.string,
@@ -2535,9 +2280,7 @@ MenuBar.propTypes = {
     onShowGitStatus: PropTypes.func,
     onCloseGitStatus: PropTypes.func,
     onGitStatusDone: PropTypes.func,
-    renderLogin: PropTypes.func,
     showSaveFilePicker: PropTypes.func,
-    showComingSoon: PropTypes.bool,
     theme: PropTypes.shape({
         menuBarAlign: PropTypes.string
     }),
@@ -2546,10 +2289,6 @@ MenuBar.propTypes = {
 
 MenuBar.contextTypes = {
     store: PropTypes.object
-};
-
-MenuBar.defaultProps = {
-    onShare: () => { }
 };
 
 const mapStateToProps = (state, ownProps) => {
@@ -2561,6 +2300,7 @@ const mapStateToProps = (state, ownProps) => {
         aboutMenuOpen: aboutMenuOpen(state),
         accountMenuOpen: accountMenuOpen(state),
         currentLocale: state.locales.locale,
+        customShortcuts: state.scratchGui.shortcuts && state.scratchGui.shortcuts.customShortcuts,
         fileMenuOpen: fileMenuOpen(state),
         editMenuOpen: editMenuOpen(state),
         workspaceBookmarksMenuOpen: workspaceBookmarksMenuOpen(state),
@@ -2584,8 +2324,6 @@ const mapStateToProps = (state, ownProps) => {
 
 const mapDispatchToProps = dispatch => ({
     onClickSeeInside: () => dispatch(setPlayer(false)),
-    autoUpdateProject: () => dispatch(autoUpdateProject()),
-    onOpenTipLibrary: () => dispatch(openTipsLibrary()),
     onOpenExtensionLibrary: () => dispatch(openExtensionLibrary()),
     onClickAccount: () => dispatch(openAccountMenu()),
     onRequestCloseAccount: () => dispatch(closeAccountMenu()),
@@ -2620,17 +2358,12 @@ const mapDispatchToProps = dispatch => ({
         dispatch(closeEditMenu());
         dispatch(openGitModal());
     },
-    onClickHelp: () => dispatch(openHelp()),
     onOpenSettingsModal: () => dispatch(openSettingsModal()),
     onClickNew: needSave => {
         dispatch(setPlayer(false));
         dispatch(requestNewProject(needSave));
         dispatch(setFileHandle(null));
-    },
-    onClickRemix: () => dispatch(remixProject()),
-    onClickSave: () => dispatch(manualUpdateProject()),
-    onClickSaveAsCopy: () => dispatch(saveProjectAsCopy()),
-    onSeeCommunity: () => dispatch(setPlayer(true))
+    }
 });
 
 export default compose(

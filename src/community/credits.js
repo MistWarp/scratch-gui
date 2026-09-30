@@ -1,7 +1,7 @@
 import {ensureScopes} from '../lib/rotur/client.js';
+import {ROTUR_TOKEN_KEY} from '../lib/rotur/token-key.js';
 
 const ROTUR_API = 'https://api.rotur.dev/v2';
-const TOKEN_KEY = 'mw:rotur-token';
 
 // Stripe credit top-up tiers (shared with the Rotur wallet). Buying opens a
 // Stripe checkout session; the credits are credited to the account once the
@@ -29,7 +29,7 @@ const isPermissionError = message => {
 
 const getToken = () => {
     try {
-        return localStorage.getItem(TOKEN_KEY);
+        return localStorage.getItem(ROTUR_TOKEN_KEY);
     } catch (_) {
         return null;
     }
