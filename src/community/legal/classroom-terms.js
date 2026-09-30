@@ -43,7 +43,7 @@ We use student data only to run Classroom for the School, on the School's instru
 
 1. The Free plan is free. Its limits are shown on the Classroom page.
 2. A teacher who has not had a paid plan can try the Classroom plan free for 30 days, once. Nothing is charged. When the trial ends the teacher returns to the Free plan unless they subscribe.
-3. The Classroom plan is a subscription paid by card through Stripe. The price is shown at checkout before you pay. It renews each billing period until cancelled. You can cancel at any time from Manage billing and the plan continues until the end of the period you have paid for. We do not refund part periods unless the law requires it.
+3. The Classroom plan is a subscription paid by card through Stripe, monthly or yearly. The price is shown at checkout before you pay. It renews each billing period until cancelled. You can cancel at any time from Manage billing and the plan continues until the end of the period you have paid for. We do not refund part periods unless the law requires it.
 4. School plans are agreed with us in writing and paid by invoice.
 5. When a paid plan or trial ends, students and their work stay, but you cannot add students, classes or storage beyond the Free plan limits until you upgrade or remove some.
 6. We may change prices for future billing periods. We will tell you at least 30 days before a price change affects you.
