@@ -2,13 +2,13 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useState} from 'react';
 import {Link, useNavigate, useSearchParams} from 'react-router-dom';
-import {Archive, ArrowUpCircle, Building2, ClipboardList, CreditCard, GraduationCap, Images, KeyRound, LogIn, Plus, School, Users} from 'lucide-react';
+import {Archive, ArrowUpCircle, Building2, ClipboardList, CreditCard, GraduationCap, Images, KeyRound, Plus, School, Sparkles, Users} from 'lucide-react';
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
 import {formatBytes, formatDate} from '../format.js';
 import Button from '../components/ui/Button.jsx';
 import CardGrid from '../components/ui/CardGrid.jsx';
-import EmptyState, {SignInPrompt} from '../components/ui/EmptyState.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import Notice from '../components/ui/Notice.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
@@ -16,9 +16,11 @@ import SectionHeading from '../components/ui/SectionHeading.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import UsageMeter from '../components/classroom/UsageMeter.jsx';
 import StudentHome from '../components/classroom/StudentHome.jsx';
+import ClassroomAbout from './ClassroomAbout.jsx';
 import styles from './Classroom.module.css';
 
 const TIER_LABELS = {
+    free: {label: 'Free plan'},
     classroom: {label: 'Classroom plan'},
     school: {label: 'School plan'},
     trial: {label: 'Trial plan'}
@@ -92,6 +94,40 @@ const UpgradeModal = ({billing, onClose}) => {
             </fieldset>
             {error ? <Notice variant="error">{error}</Notice> : null}
         </Modal>
+    );
+};
+
+const TrialOffer = ({days, onStarted}) => {
+    const {text: communityText} = useCommunityText();
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState('');
+    const start = async () => {
+        if (busy) return;
+        setBusy(true);
+        setError('');
+        try {
+            await api.classroom.startTrial();
+            onStarted();
+        } catch (e) {
+            setError(e.message || communityText('The trial could not be started.'));
+            setBusy(false);
+        }
+    };
+    return (
+        <Notice
+            className={styles.noticeBefore}
+            icon={Sparkles}
+            title={communityText('Try the Classroom plan free for {value1} days', {value1: days})}
+            action={(
+                <Button variant="primary" onClick={start} busy={busy} busyLabel={communityText('Starting…')}>
+                    <Sparkles size={16} aria-hidden="true" />
+                    {communityText('Start free trial')}
+                </Button>
+            )}
+        >
+            {communityText('Get 35 seats, 12 classes, group projects, and present mode. Nothing is charged. When the trial ends you go back to the Free plan, and your students and their work stay.')}
+            {error ? <span className={styles.trialError} role="alert">{error}</span> : null}
+        </Notice>
     );
 };
 
@@ -245,6 +281,9 @@ const TeacherDashboard = ({billingOutcome, data, onDismissBilling, onReload}) =>
     const plan = data.plan || {};
     const usage = data.usage || {};
     const school = data.school || null;
+    const billing = data.billing || {};
+    const trialEndsAt = Number(billing.trialEndsAt) || 0;
+    const offerTrial = Boolean(billing.trialAvailable) && !school;
     const classes = sortClasses(data.classes || []);
     const classLimitReached = Number(plan.maxClasses) > 0 && Number(usage.classes || classes.length) >= Number(plan.maxClasses);
     const newClassButton = (
@@ -271,10 +310,12 @@ const TeacherDashboard = ({billingOutcome, data, onDismissBilling, onReload}) =>
                     {communityText('Checkout was cancelled and nothing was charged.')}
                 </Notice>
             ) : null}
+            {offerTrial ? <TrialOffer days={Number(billing.trialDays) || 30} onStarted={onReload} /> : null}
             <section className={styles.planCard} aria-label={communityText('Plan summary')}>
                 <div className={styles.planTier}>
-                    <span className={styles.planTierName}>{communityText(tierLabel(plan.tier))}</span>
-                    {plan.expiresAt ? <span className={styles.planTierMeta}>{communityText('Renews on {value1}.', {value1: formatDate(plan.expiresAt)})}</span> : null}
+                    <span className={styles.planTierName}>{trialEndsAt ? communityText('Classroom trial') : communityText(tierLabel(plan.tier))}</span>
+                    {trialEndsAt ? <span className={styles.planTierMeta}>{communityText('Your trial ends on {value1}.', {value1: formatDate(trialEndsAt)})}</span> : null}
+                    {plan.expiresAt && !trialEndsAt ? <span className={styles.planTierMeta}>{communityText('Renews on {value1}.', {value1: formatDate(plan.expiresAt)})}</span> : null}
                     {school && school.isAdmin ? (
                         <Link to="/classroom/school" className={styles.inlineLink}>
                             <Building2 size={14} aria-hidden="true" />
@@ -312,6 +353,8 @@ const TeacherDashboard = ({billingOutcome, data, onDismissBilling, onReload}) =>
             ) : (
                 <EmptyState icon={School} title={communityText('No classes yet')} action={newClassButton}>
                     {communityText('Create your first class to add students and print their login cards.')}
+                    {' '}
+                    <Link to="/classroom/about" className={styles.inlineLink}>{communityText('See what Classroom includes')}</Link>
                 </EmptyState>
             )}
             {classLimitReached ? (
@@ -335,7 +378,7 @@ const TeacherDashboard = ({billingOutcome, data, onDismissBilling, onReload}) =>
 
 const Classroom = () => {
     const {text: communityText} = useCommunityText();
-    const {user, loading, login} = useUser();
+    const {user, loading} = useUser();
     const [searchParams, setSearchParams] = useSearchParams();
     const [billingOutcome, setBillingOutcome] = useState(() => (
         ['success', 'cancelled'].includes(searchParams.get('billing')) ? searchParams.get('billing') : ''
@@ -375,24 +418,7 @@ const Classroom = () => {
 
     if (!user) {
         if (loading) return <main className={styles.page}><StatusMessage /></main>;
-        return (
-            <main className={styles.page}>
-                <PageHeader icon={GraduationCap} title={communityText('Classroom')} />
-                <SignInPrompt title={communityText('Teachers sign in with Rotur to manage their classes.')} onSignIn={login} />
-                <EmptyState
-                    icon={LogIn}
-                    title={communityText('Students sign in with a class code.')}
-                    action={(
-                        <Button as={Link} to="/classroom/join" variant="primary">
-                            <LogIn size={16} aria-hidden="true" />
-                            {communityText('Student sign-in')}
-                        </Button>
-                    )}
-                >
-                    {communityText('Ask your teacher for the class code on your login card.')}
-                </EmptyState>
-            </main>
-        );
+        return <ClassroomAbout showStudentSignIn />;
     }
     if (error && !notEnabled(error)) {
         return (
