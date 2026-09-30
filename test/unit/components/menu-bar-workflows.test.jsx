@@ -122,8 +122,6 @@ describe('menu bar file workflows', () => {
         }));
         const onClickNew = jest.fn();
         const menuBar = makeMenuBar({
-            canCreateNew: true,
-            canSave: true,
             confirmReadyToReplaceProject,
             intl: {formatMessage: message => message.defaultMessage},
             onClickNew,

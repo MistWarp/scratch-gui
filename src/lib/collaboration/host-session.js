@@ -37,7 +37,7 @@ class HostSession extends Emitter {
     /**
      * @param {object} options Options.
      * @param {Transport} options.transport Transport (must not be started yet).
-     * @param {OpApplier} options.applier Applies sequenced ops to the host doc.
+     * @param {VMApplier} options.applier Applies sequenced ops to the host doc.
      * @param {string} options.roomId Room id.
      * @param {string} options.username Host's display name.
      * @param {string} [options.privacy] 'public' or 'private'.
