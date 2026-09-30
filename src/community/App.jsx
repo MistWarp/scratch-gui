@@ -60,6 +60,8 @@ const ClassroomAssignment = lazy(() => import('./pages/ClassroomAssignment.jsx')
 const ClassroomJoin = lazy(() => import('./pages/ClassroomJoin.jsx'));
 const ClassroomClaim = lazy(() => import('./pages/ClassroomClaim.jsx'));
 const ClassroomSchool = lazy(() => import('./pages/ClassroomSchool.jsx'));
+const ClassroomAbout = lazy(() => import('./pages/ClassroomAbout.jsx'));
+const ClassroomPrivacy = lazy(() => import('./pages/ClassroomPrivacy.jsx'));
 
 const ROUTE_TITLES = [
     ['/bounties', 'Project bounties'],
@@ -73,6 +75,8 @@ const ROUTE_TITLES = [
     ['/classroom/join', 'Student sign-in'],
     ['/classroom/claim', 'Move to your own account'],
     ['/classroom/school', 'School'],
+    ['/classroom/about', 'MistWarp Classroom'],
+    ['/classroom/privacy', 'Student data in Classroom'],
     ['/classroom/', 'Class'],
     ['/classroom', 'Classroom'],
     ['/settings', 'Settings'],
@@ -97,7 +101,7 @@ const ROUTE_TITLES = [
     ['/project/', 'Project']
 ];
 
-const STUDENT_PREFIXES = ['/classroom/join', '/classroom/claim/', '/trust'];
+const STUDENT_PREFIXES = ['/classroom/join', '/classroom/claim/', '/classroom/privacy', '/trust'];
 
 const studentAllowed = pathname => pathname === '/classroom' ||
     STUDENT_PREFIXES.some(prefix => pathname === prefix || pathname.startsWith(prefix));
@@ -165,6 +169,8 @@ const App = () => {
                             <Route path="/classroom/join/:code" element={<ClassroomJoin />} />
                             <Route path="/classroom/claim/:code" element={<ClassroomClaim />} />
                             <Route path="/classroom/school" element={<ClassroomSchool />} />
+                            <Route path="/classroom/about" element={<ClassroomAbout />} />
+                            <Route path="/classroom/privacy" element={<ClassroomPrivacy />} />
                             <Route path="/classroom/:id" element={<ClassroomClass />} />
                             <Route path="/classroom/:id/students/:sid" element={<ClassroomStudent />} />
                             <Route path="/classroom/:id/assignments/:aid" element={<ClassroomAssignment />} />
