@@ -1,5 +1,31 @@
 import styles from './style.css';
 
+const ICON_PATHS = {
+  import: ['M12 3v12', 'm17 8-5-5-5 5', 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'],
+  export: ['M12 15V3', 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4', 'm7 10 5 5 5-5']
+};
+
+const createIcon = (name) => {
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('class', styles.contextMenuItemIcon);
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('width', '16');
+  svg.setAttribute('height', '16');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '1.75');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  svg.setAttribute('aria-hidden', 'true');
+  for (const d of ICON_PATHS[name] || []) {
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('d', d);
+    svg.appendChild(path);
+  }
+  return svg;
+};
+
 class ContextMenu {
   constructor (parent) {
     this.parent = parent;
@@ -29,7 +55,10 @@ class ContextMenu {
   add (option) {
     const item = document.createElement('button');
     item.className = styles.contextMenuItem;
-    item.textContent = option.text;
+    if (option.icon) {
+      item.appendChild(createIcon(option.icon));
+    }
+    item.appendChild(document.createTextNode(option.text));
     item.addEventListener('click', () => {
       this.destroy();
       option.callback();

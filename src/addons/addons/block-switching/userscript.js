@@ -1061,6 +1061,7 @@ export default async function ({ addon, console, msg }) {
           items.splice(insertBeforeIndex, 0, {
             enabled: true,
             text,
+            icon: "switch",
             callback: menuCallbackFactory(block, opcodeData),
             separator: i === 0,
           });

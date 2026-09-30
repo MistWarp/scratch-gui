@@ -586,6 +586,7 @@ class MenuBar extends React.Component {
         if (this.props.vm) {
             this.props.vm.emit('TRIGGER_MANUAL_RESTORE_POINT');
         }
+        this.props.onRequestCloseFile();
     };
     handleClickCollaboration () {
         this.props.onClickCollaboration();
@@ -937,14 +938,6 @@ class MenuBar extends React.Component {
                 void this.handleAddWorkspaceBookmark();
                 return;
             }
-        }
-
-        const modifier = isMac ? event.metaKey : event.ctrlKey;
-        if (modifier && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 's' &&
-            target && target.dataset && 'projectTitleInput' in target.dataset) {
-            event.preventDefault();
-            target.blur();
-            setTimeout(() => this.props.handleSaveProject(), 0);
         }
     }
 

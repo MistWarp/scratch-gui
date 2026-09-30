@@ -474,10 +474,12 @@ class ListMonitor extends Monitor {
     const menu = new ContextMenu(this.parent);
     menu.add({
       text: this.parent.getMessage('list-import'),
+      icon: 'import',
       callback: this.handleImport
     });
     menu.add({
       text: this.parent.getMessage('list-export'),
+      icon: 'export',
       callback: this.handleExport
     });
     menu.show(e);

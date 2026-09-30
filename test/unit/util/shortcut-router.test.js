@@ -1,15 +1,13 @@
 import {dispose, executeShortcut, initialize, updateCallbacks} from '../../../src/lib/shortcuts/event-router.js';
 
-const pressSave = () => {
-    const event = new KeyboardEvent('keydown', {
-        bubbles: true,
-        ctrlKey: true,
-        key: 's',
-        metaKey: true
-    });
-    Object.defineProperty(event, 'keyCode', {value: 83});
-    document.dispatchEvent(event);
+const press = (target, key, keyCode, modifiers = {}) => {
+    const event = new KeyboardEvent('keydown', {bubbles: true, cancelable: true, key, ...modifiers});
+    Object.defineProperty(event, 'keyCode', {value: keyCode});
+    target.dispatchEvent(event);
+    return event;
 };
+
+const pressSave = (target = document) => press(target, 's', 83, {ctrlKey: true, metaKey: true});
 
 const pressUndo = () => {
     const event = new KeyboardEvent('keydown', {
@@ -163,5 +161,70 @@ describe('shortcut router lifecycle', () => {
         pressFullscreen();
 
         expect(setFullScreen).toHaveBeenCalledTimes(1);
+    });
+
+    test('Ctrl+S in a text field commits the field, then saves', () => {
+        jest.useFakeTimers();
+        const saveSmart = jest.fn();
+        initialize({}, {}, {saveSmart});
+        const input = document.createElement('input');
+        document.body.appendChild(input);
+        input.focus();
+        try {
+            const event = pressSave(input);
+
+            expect(event.defaultPrevented).toBe(true);
+            expect(document.activeElement).not.toBe(input);
+            expect(saveSmart).not.toHaveBeenCalled();
+            jest.runOnlyPendingTimers();
+            expect(saveSmart).toHaveBeenCalledTimes(1);
+        } finally {
+            input.remove();
+            jest.useRealTimers();
+        }
+    });
+
+    test('other shortcuts are left alone while typing', () => {
+        const undo = jest.fn();
+        initialize({}, {}, {undo});
+        const textarea = document.createElement('textarea');
+        document.body.appendChild(textarea);
+        try {
+            const event = press(textarea, 'z', 90, {ctrlKey: true, metaKey: true});
+
+            expect(undo).not.toHaveBeenCalled();
+            expect(event.defaultPrevented).toBe(false);
+        } finally {
+            textarea.remove();
+        }
+    });
+
+    test('the player only runs player shortcuts', () => {
+        const deleteSprite = jest.fn();
+        const setFullScreen = jest.fn();
+        initialize({}, {}, {
+            deleteSprite,
+            setFullScreen,
+            getMode: () => ({isEmbedded: false, isPlayerOnly: true})
+        });
+
+        press(document, 'x', 88, {ctrlKey: true, metaKey: true, shiftKey: true});
+        press(document, 'F11', 122);
+
+        expect(deleteSprite).not.toHaveBeenCalled();
+        expect(setFullScreen).toHaveBeenCalledTimes(1);
+    });
+
+    test('embeds ignore editor shortcuts', () => {
+        const saveSmart = jest.fn();
+        initialize({}, {}, {
+            saveSmart,
+            getMode: () => ({isEmbedded: true, isPlayerOnly: true})
+        });
+
+        const event = pressSave();
+
+        expect(saveSmart).not.toHaveBeenCalled();
+        expect(event.defaultPrevented).toBe(false);
     });
 });

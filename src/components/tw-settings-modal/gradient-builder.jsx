@@ -117,7 +117,10 @@ const GradientBuilder = props => {
     };
 
     const handleKeyDown = e => {
-        if (e.key === 'Escape' && props.onCancel) props.onCancel();
+        if (e.key === 'Escape' && props.onCancel) {
+            e.preventDefault();
+            props.onCancel();
+        }
         if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmit();
     };
 

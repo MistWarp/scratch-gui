@@ -85,7 +85,10 @@ const SpriteSelectorItem = props => {
             {props.onDuplicateButtonClick || props.onDeleteButtonClick || props.onExportButtonClick ? (
                 <ContextMenu id={menuId}>
                     {props.onDuplicateButtonClick ? (
-                        <MenuItem onClick={props.onDuplicateButtonClick}>
+                        <MenuItem
+                            icon="duplicate"
+                            onClick={props.onDuplicateButtonClick}
+                        >
                             <FormattedMessage
                                 defaultMessage="duplicate"
                                 description="Menu item to duplicate in the right click menu"
@@ -94,7 +97,10 @@ const SpriteSelectorItem = props => {
                         </MenuItem>
                     ) : null}
                     {props.onExportButtonClick ? (
-                        <MenuItem onClick={props.onExportButtonClick}>
+                        <MenuItem
+                            icon="export"
+                            onClick={props.onExportButtonClick}
+                        >
                             <FormattedMessage
                                 defaultMessage="export"
                                 description="Menu item to export the selected item"
@@ -103,7 +109,10 @@ const SpriteSelectorItem = props => {
                         </MenuItem>
                     ) : null }
                     {props.onRenameButtonClick ? (
-                        <MenuItem onClick={props.onRenameButtonClick}>
+                        <MenuItem
+                            icon="rename"
+                            onClick={props.onRenameButtonClick}
+                        >
                             <FormattedMessage
                                 defaultMessage="rename"
                                 description="Menu item to rename an item"
@@ -112,7 +121,10 @@ const SpriteSelectorItem = props => {
                         </MenuItem>
                     ) : null}
                     {props.onDeleteButtonClick ? (
-                        <DangerousMenuItem onClick={props.onDeleteButtonClick}>
+                        <DangerousMenuItem
+                            icon="delete"
+                            onClick={props.onDeleteButtonClick}
+                        >
                             <FormattedMessage
                                 defaultMessage="delete"
                                 description="Menu item to delete in the right click menu"

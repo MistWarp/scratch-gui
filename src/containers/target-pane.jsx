@@ -77,6 +77,7 @@ class TargetPane extends React.Component {
         this.props.vm.postSpriteInfo({rotationStyle});
     }
     handleChangeSpriteName (name) {
+        if (!name.trim()) return;
         this.props.vm.renameSprite(this.props.editingTarget, name);
     }
     handleChangeSpriteSize (size) {
@@ -227,7 +228,9 @@ class TargetPane extends React.Component {
         this.fileInput = input;
     }
     async handleBlockDragEnd (blocks) {
-        if (this.props.hoveredTarget.sprite && this.props.hoveredTarget.sprite !== this.props.editingTarget) {
+        const hoveredId = this.props.hoveredTarget.sprite;
+        if (hoveredId && hoveredId !== this.props.editingTarget &&
+            this.props.vm.runtime.getTargetById(hoveredId)) {
             try {
                 await this.shareBlocks(blocks, this.props.hoveredTarget.sprite, this.props.editingTarget);
                 this.props.onReceivedBlocks(true);

@@ -20,6 +20,9 @@ import DropAreaHOC from '../lib/components/drop-area-hoc.jsx';
 import DragConstants from '../lib/constants/drag-constants';
 import SettingsStore from '../addons/settings-store-singleton';
 import {VANILLA_PALETTE_CHANGED} from '../lib/mw-vanilla-palette';
+import {CATEGORY_ORDER_CHANGED, getCategoryOrder} from '../lib/mw-category-order';
+import {LoadingState} from '../reducers/project-state';
+import installCategoryDrag from '../lib/mw-category-drag';
 import {CAT_BLOCKS_CHANGED} from '../lib/mw-cat-blocks';
 import defineDynamicBlock from '../lib/utils/define-dynamic-block';
 import {Theme} from '../lib/themes';
@@ -84,6 +87,11 @@ const messages = defineMessages({
         // eslint-disable-next-line max-len
         description: 'Button in extension list to learn how to use the "return" block from the Custom Reporters extension.',
         id: 'tw.blocks.PROCEDURES_DOCS'
+    },
+    resetCategoryOrder: {
+        defaultMessage: 'Reset category order',
+        description: 'Context menu item on the block category list that restores the default category order.',
+        id: 'mw.blocks.resetCategoryOrder'
     }
 });
 
@@ -156,7 +164,7 @@ class Blocks extends React.Component {
         this.setFlyoutWidth = this.setFlyoutWidth.bind(this);
 
         this.handleAddonSettingChanged = this.handleAddonSettingChanged.bind(this);
-        this.handleVanillaPaletteChanged = this.handleVanillaPaletteChanged.bind(this);
+        this.handleToolboxPreferenceChanged = this.handleToolboxPreferenceChanged.bind(this);
         this.handleCatBlocksChanged = this.handleCatBlocksChanged.bind(this);
         this.applyPaletteResizeEnabledState = this.applyPaletteResizeEnabledState.bind(this);
         this.updateBlockColors = this.updateBlockColors.bind(this);
@@ -179,7 +187,8 @@ class Blocks extends React.Component {
     }
     componentDidMount () {
         SettingsStore.addEventListener('setting-changed', this.handleAddonSettingChanged);
-        window.addEventListener(VANILLA_PALETTE_CHANGED, this.handleVanillaPaletteChanged);
+        window.addEventListener(VANILLA_PALETTE_CHANGED, this.handleToolboxPreferenceChanged);
+        window.addEventListener(CATEGORY_ORDER_CHANGED, this.handleToolboxPreferenceChanged);
         window.addEventListener(CAT_BLOCKS_CHANGED, this.handleCatBlocksChanged);
 
         this.ScratchBlocks = VMScratchBlocks(this.props.vm, this.props.useCatBlocks);
@@ -221,6 +230,12 @@ class Blocks extends React.Component {
         );
         
         this.workspace = this.ScratchBlocks.inject(this.blocks, workspaceConfig);
+        this.uninstallCategoryDrag = installCategoryDrag(this.workspace, {
+            vm: this.props.vm,
+            useProjectOrder: () => this.hasCurrentProject(),
+            ScratchBlocks: this.ScratchBlocks,
+            getResetLabel: () => this.props.intl.formatMessage(messages.resetCategoryOrder)
+        });
         const isInsideBlocksArea = this.workspace.isInsideBlocksArea.bind(this.workspace);
         this.workspace.isInsideBlocksArea = event => {
             if (!isInsideBlocksArea(event)) return false;
@@ -440,7 +455,8 @@ class Blocks extends React.Component {
         this.props.setScriptLoadProgress(null);
         clearTimeout(this.collabRefreshTimer);
         SettingsStore.removeEventListener('setting-changed', this.handleAddonSettingChanged);
-        window.removeEventListener(VANILLA_PALETTE_CHANGED, this.handleVanillaPaletteChanged);
+        window.removeEventListener(VANILLA_PALETTE_CHANGED, this.handleToolboxPreferenceChanged);
+        window.removeEventListener(CATEGORY_ORDER_CHANGED, this.handleToolboxPreferenceChanged);
         window.removeEventListener(CAT_BLOCKS_CHANGED, this.handleCatBlocksChanged);
         this.detachVM();
         this.unmounted = true;
@@ -448,6 +464,7 @@ class Blocks extends React.Component {
         this.blocks.removeEventListener('drop', this.handleScriptDrop);
         this.cancelDeferredWorkspaceLoad();
         untrackWorkspaceUndo(this.workspace);
+        if (this.uninstallCategoryDrag) this.uninstallCategoryDrag();
         this.workspace.dispose();
         clearTimeout(this.toolboxUpdateTimeout);
         clearTimeout(this.toolboxStateUpdateTimeout);
@@ -614,7 +631,15 @@ class Blocks extends React.Component {
         window.removeEventListener('mouseup', this.handlePaletteResizePointerUp);
     }
 
-    handleVanillaPaletteChanged () {
+    hasCurrentProject () {
+        return !(
+            this.props.projectLoadingState === LoadingState.SHOWING_WITHOUT_ID &&
+            this.props.isNewDefaultProject &&
+            !this.props.hasFileHandle
+        );
+    }
+
+    handleToolboxPreferenceChanged () {
         const toolboxXML = this.getToolboxXML();
         if (toolboxXML) {
             this.props.updateToolboxState(toolboxXML);
@@ -1102,7 +1127,8 @@ class Blocks extends React.Component {
                 stageCostumes[stageCostumes.length - 1].name,
                 targetSounds.length > 0 ? targetSounds[targetSounds.length - 1].name : '',
                 this.props.theme.getBlockColors(),
-                customAssets.length > 0 ? customAssets[0].name : ''
+                customAssets.length > 0 ? customAssets[0].name : '',
+                getCategoryOrder(this.props.vm)
             );
         } catch {
             return null;
@@ -1504,6 +1530,9 @@ class Blocks extends React.Component {
 
 Blocks.propTypes = {
     intl: intlShape,
+    hasFileHandle: PropTypes.bool,
+    isNewDefaultProject: PropTypes.bool,
+    projectLoadingState: PropTypes.string,
     anyModalVisible: PropTypes.bool,
     canUseCloud: PropTypes.bool,
     customStageSize: PropTypes.shape({
@@ -1587,7 +1616,10 @@ const mapStateToProps = state => ({
     toolboxXML: state.scratchGui.toolbox.toolboxXML,
     customProceduresVisible: state.scratchGui.customProcedures.active,
     workspaceMetrics: state.scratchGui.workspaceMetrics,
-    useCatBlocks: isTimeTravel2020(state)
+    useCatBlocks: isTimeTravel2020(state),
+    projectLoadingState: state.scratchGui.projectState.loadingState,
+    isNewDefaultProject: state.scratchGui.projectState.isNewDefault,
+    hasFileHandle: Boolean(state.scratchGui.tw.fileHandle)
 });
 
 const mapDispatchToProps = dispatch => ({

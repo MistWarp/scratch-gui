@@ -79,7 +79,10 @@ const MonitorComponent = props => (
             // http://meyerweb.com/eric/thoughts/2011/09/12/un-fixing-fixed-elements-with-css-transforms/
             <ContextMenu id={`monitor-${props.id}`}>
                 {props.draggable && props.onSetModeToDefault &&
-                    <MenuItem onClick={props.onSetModeToDefault}>
+                    <MenuItem
+                        icon="normalReadout"
+                        onClick={props.onSetModeToDefault}
+                    >
                         <FormattedMessage
                             defaultMessage="normal readout"
                             description="Menu item to switch to the default monitor"
@@ -87,7 +90,10 @@ const MonitorComponent = props => (
                         />
                     </MenuItem>}
                 {props.draggable && props.onSetModeToLarge &&
-                    <MenuItem onClick={props.onSetModeToLarge}>
+                    <MenuItem
+                        icon="largeReadout"
+                        onClick={props.onSetModeToLarge}
+                    >
                         <FormattedMessage
                             defaultMessage="large readout"
                             description="Menu item to switch to the large monitor"
@@ -95,7 +101,10 @@ const MonitorComponent = props => (
                         />
                     </MenuItem>}
                 {props.draggable && props.onSetModeToSlider &&
-                    <MenuItem onClick={props.onSetModeToSlider}>
+                    <MenuItem
+                        icon="slider"
+                        onClick={props.onSetModeToSlider}
+                    >
                         <FormattedMessage
                             defaultMessage="slider"
                             description="Menu item to switch to the slider monitor"
@@ -103,7 +112,10 @@ const MonitorComponent = props => (
                         />
                     </MenuItem>}
                 {props.draggable && props.onSliderPromptOpen && props.mode === 'slider' &&
-                    <BorderedMenuItem onClick={props.onSliderPromptOpen}>
+                    <BorderedMenuItem
+                        icon="sliderRange"
+                        onClick={props.onSliderPromptOpen}
+                    >
                         <FormattedMessage
                             defaultMessage="change slider range"
                             description="Menu item to change the slider range"
@@ -111,7 +123,10 @@ const MonitorComponent = props => (
                         />
                     </BorderedMenuItem>}
                 {props.onImport &&
-                    <MenuItem onClick={props.onImport}>
+                    <MenuItem
+                        icon="import"
+                        onClick={props.onImport}
+                    >
                         <FormattedMessage
                             defaultMessage="import"
                             description="Menu item to import into list monitors"
@@ -119,7 +134,10 @@ const MonitorComponent = props => (
                         />
                     </MenuItem>}
                 {props.onExport &&
-                    <MenuItem onClick={props.onExport}>
+                    <MenuItem
+                        icon="export"
+                        onClick={props.onExport}
+                    >
                         <FormattedMessage
                             defaultMessage="export"
                             description="Menu item to export from list monitors"
@@ -127,7 +145,10 @@ const MonitorComponent = props => (
                         />
                     </MenuItem>}
                 {props.draggable && props.onHide &&
-                    <BorderedMenuItem onClick={props.onHide}>
+                    <BorderedMenuItem
+                        icon="hide"
+                        onClick={props.onHide}
+                    >
                         <FormattedMessage
                             defaultMessage="hide"
                             description="Menu item to hide the monitor"
