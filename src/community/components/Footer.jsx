@@ -107,6 +107,7 @@ const Footer = () => {
                     <Link to="/support">{communityText('Support')}</Link>
                     <Link to="/trust">{communityText('Trust, privacy, and terms')}</Link>
                     <Link to="/classroom/privacy">{communityText('Student data in Classroom')}</Link>
+                    <Link to="/classroom/terms">{communityText('Classroom terms')}</Link>
                     <Link to="/status">{communityText('Service status')}</Link>
                 </div>
             </div>

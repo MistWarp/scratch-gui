@@ -165,7 +165,12 @@ const AUDIT_SENTENCES = {
     submission_returned: {label: '{actor} returned the work of {student}.'},
     teacher_added: {label: '{actor} added {username} as a co-teacher.'},
     teacher_removed: {label: '{actor} removed {username} as a co-teacher.'},
-    class_transferred: {label: '{actor} transferred the class to {username}.'}
+    class_transferred: {label: '{actor} transferred the class to {username}.'},
+    class_exported: {label: '{actor} downloaded the class data.'},
+    student_exported: {label: '{actor} downloaded the data of {student}.'},
+    retention_warning: {
+        label: 'MistWarp warned that this class will be deleted because no teacher has opened it for 11 months.'
+    }
 };
 
 const auditKey = event => {
