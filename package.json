@@ -1,13 +1,17 @@
 {
   "name": "scratch-gui",
   "version": "3.2.37",
-  "description": "Graphical User Interface for creating and running Scratch 3.0 projects",
-  "author": "Massachusetts Institute of Technology",
+  "private": true,
+  "description": "MistWarp editor, player, and community site",
+  "author": "MistWarp contributors",
   "license": "GPL-3.0",
-  "homepage": "https://github.com/LLK/scratch-gui#readme",
+  "homepage": "https://mistwarp.org/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/LLK/scratch-gui.git"
+    "url": "https://github.com/MistWarp/scratch-gui.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MistWarp/scratch-gui/issues"
   },
   "main": "./dist/scratch-gui.js",
   "packageManager": "pnpm@10.28.2",
@@ -18,17 +22,13 @@
     "build:community": "MW_COMMUNITY=true ONLY_ENTRY=community node scripts/build.mjs",
     "build:stats": "MW_BUILD_STATS=true node scripts/build.mjs --site-only",
     "clean": "node -e \"for (const d of ['build', 'dist']) { fs.rmSync(d, {recursive: true, force: true}); fs.mkdirSync(d, {recursive: true}); }\"",
-    "setup": "pnpm install",
     "reinstall": "pnpm install --force && pnpm run link",
-    "prepublish": "node scripts/prepublish.mjs",
-    "i18n:push": "tx-push-src scratch-editor interface translations/en.json",
-    "i18n:src": "node -e \"fs.rmSync('translations/messages/src', {recursive: true, force: true})\" && babel src > tmp.js && node -e \"fs.rmSync('tmp.js', {force: true})\" && build-i18n-src ./translations/messages/src ./translations/",
+    "prepublish": "node scripts/microbit-hex.mjs",
     "start": "vite",
     "fmt": "eslint --fix .",
     "lint": "eslint .",
     "test": "pnpm run test:unit:ci && pnpm run build && pnpm run test:integration",
     "test:integration": "node scripts/test-integration.mjs",
-    "test:lint": "eslint . --ext .js,.jsx",
     "check:community-css": "node scripts/check-community-css.mjs",
     "deps:sync": "node scripts/sync-forks.mjs",
     "deps:check": "node scripts/sync-forks.mjs --check",
@@ -37,7 +37,6 @@
     "test:unit:ci": "jest --ci test[\\\\/]unit",
     "test:unit:addons": "jest test[\\\\/]unit[\\\\/]addons",
     "test:unit:watch": "jest test[\\\\/]unit --watch",
-    "watch": "vite build --watch",
     "link": "node scripts/link-forks.mjs",
     "unlink": "node scripts/link-forks.mjs --unlink",
     "build:library": "BUILD_MODE=dist vite build",
@@ -50,11 +49,6 @@
     "i18n:community:check": "node scripts/community-extract.mjs --check && node scripts/community-translations.mjs check",
     "i18n:editor:extract": "node scripts/editor-default-messages.mjs",
     "i18n:editor:check": "node scripts/editor-default-messages.mjs --check"
-  },
-  "config": {
-    "commitizen": {
-      "path": "cz-conventional-changelog"
-    }
   },
   "dependencies": {
     "@fiahfy/icns": "0.0.7",
@@ -122,7 +116,6 @@
     "xhr": "2.5.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.28.6",
     "@babel/core": "^7.28.6",
     "@babel/eslint-parser": "^7.28.6",
     "@babel/plugin-syntax-dynamic-import": "^7.8.3",
@@ -164,7 +157,6 @@
     ],
     "globalSetup": "<rootDir>/test/helpers/jest-global-setup.mjs",
     "testPathIgnorePatterns": [
-      "src/test.js",
       "<rootDir>/.claude/"
     ],
     "moduleNameMapper": {

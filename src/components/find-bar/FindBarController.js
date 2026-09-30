@@ -4,6 +4,12 @@ import {getCodeSearch, setFindBarApi} from '../../lib/find-bar/api';
 
 import Dropdown from './Dropdown';
 
+const isEditingText = element => !!element && (
+    element.tagName === 'INPUT' ||
+    element.tagName === 'TEXTAREA' ||
+    element.isContentEditable
+);
+
 const getMessages = (ScratchBlocks, blockJson) => [
     ScratchBlocks.Msg,
     Object.fromEntries(
@@ -605,7 +611,7 @@ export default class FindBarController {
         }
 
         if (key === 'ArrowLeft' && ctrlKey) {
-            if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+            if (isEditingText(document.activeElement)) {
                 return;
             }
 
@@ -618,7 +624,7 @@ export default class FindBarController {
         }
 
         if (key === 'ArrowRight' && ctrlKey) {
-            if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+            if (isEditingText(document.activeElement)) {
                 return;
             }
 

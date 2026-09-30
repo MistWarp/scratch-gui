@@ -179,8 +179,8 @@ export default function NativeSpotlight ({vm, locale, activeTabIndex, isPlayerOn
                 },
                 {
                     id: 'restore-points',
-                    label: 'Open Restore Points',
-                    keywords: ['backup', 'recover', 'history', 'version', 'restore'],
+                    label: 'Open Device Backups',
+                    keywords: ['backup', 'recover', 'history', 'version', 'restore', 'restore points'],
                     run: () => dispatchAction(openRestorePointModal())
                 },
                 {
@@ -276,7 +276,7 @@ export default function NativeSpotlight ({vm, locale, activeTabIndex, isPlayerOn
 
             function openPopup (centered = false) {
                 if (isPlayerOnlyRef.current) return;
-                if (activeTabIndexRef.current !== 0) return;
+                if (!centered && activeTabIndexRef.current !== 0) return;
 
                 const workspace = Blockly.getMainWorkspace();
                 if (!workspace) {
@@ -716,6 +716,11 @@ export default function NativeSpotlight ({vm, locale, activeTabIndex, isPlayerOn
                 }
 
                 if (!selectedPreview.block) return;
+
+                if (activeTabIndexRef.current !== 0) {
+                    dispatchAction(activateTab(0));
+                    return;
+                }
 
                 if (searchMode === 'everything' && selectedPreview.autocompleteFactory) {
                     pushRecent('block', selectedPreview.autocompleteFactory(false));

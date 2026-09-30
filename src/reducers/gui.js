@@ -2,7 +2,6 @@ import {applyMiddleware, compose, combineReducers} from 'redux';
 import {localeMiddleware} from './locales';
 import alertsReducer, {alertsInitialState} from './alerts';
 import assetDragReducer, {assetDragInitialState} from './asset-drag';
-import cardsReducer, {cardsInitialState} from './cards';
 import colorPickerReducer, {colorPickerInitialState} from './color-picker';
 import collaborationReducer, {collaborationInitialState} from './collaboration';
 import connectionModalReducer, {connectionModalInitialState} from './connection-modal';
@@ -39,15 +38,12 @@ import shortcutsReducer, {shortcutsInitialState} from './shortcuts';
 import roturReducer, {roturInitialState} from './rotur';
 import throttle from 'redux-throttle';
 
-import decks from '../lib/libraries/decks/index.jsx';
-
 const guiMiddleware = compose(applyMiddleware(localeMiddleware, throttle(300, {leading: true, trailing: true})));
 
 const guiInitialState = {
     alerts: alertsInitialState,
     assetDrag: assetDragInitialState,
     blockDrag: blockDragInitialState,
-    cards: cardsInitialState,
     colorPicker: colorPickerInitialState,
     toast: toastInitialState,
     collaboration: collaborationInitialState,
@@ -124,25 +120,6 @@ const initEmbedded = function (currentState) {
     );
 };
 
-const initTutorialCard = function (currentState, deckId) {
-    return Object.assign(
-        {},
-        currentState,
-        {
-            cards: {
-                visible: true,
-                content: decks,
-                activeDeckId: deckId,
-                expanded: true,
-                step: 0,
-                x: 0,
-                y: 0,
-                dragging: false
-            }
-        }
-    );
-};
-
 const initTelemetryModal = function (currentState) {
     return Object.assign(
         {},
@@ -159,7 +136,6 @@ const guiReducer = combineReducers({
     alerts: alertsReducer,
     assetDrag: assetDragReducer,
     blockDrag: blockDragReducer,
-    cards: cardsReducer,
     colorPicker: colorPickerReducer,
     toast: toastReducer,
     collaboration: collaborationReducer,
@@ -202,6 +178,5 @@ export {
     initEmbedded,
     initFullScreen,
     initPlayer,
-    initTelemetryModal,
-    initTutorialCard
+    initTelemetryModal
 };

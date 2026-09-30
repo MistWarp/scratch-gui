@@ -2,11 +2,25 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import bindAll from 'lodash.bindall';
 import VM from 'scratch-vm';
+import {defineMessages, injectIntl, intlShape} from 'react-intl';
 
 import {getSetting, onSettingChanged} from '../../lib/mw-stage-controls/settings.js';
 import catIcon from './icons/cat.svg';
 import fullIcon from './icons/300cats.svg';
 import styles from './stage-controls.css';
+
+const messages = defineMessages({
+    clones: {
+        id: 'mw.stageControls.cloneCount',
+        defaultMessage: '{count, plural, one {# clone} other {# clones}}',
+        description: 'Tooltip of the stage clone counter. {count} is the number of clones.'
+    },
+    clonesOfMax: {
+        id: 'mw.stageControls.cloneCountFull',
+        defaultMessage: '{count} of {max} clones. The clone limit has been reached.',
+        description: 'Tooltip of the stage clone counter when the clone limit is reached'
+    }
+});
 
 class CloneCounter extends React.Component {
     constructor (props) {
@@ -68,7 +82,9 @@ class CloneCounter extends React.Component {
             <div
                 className={styles.cloneCounter}
                 data-count={isFull ? 'full' : ''}
-                title={isFull ? `${count} / ${maxClones} clones` : `${count} clones`}
+                title={isFull ?
+                    this.props.intl.formatMessage(messages.clonesOfMax, {count, max: maxClones}) :
+                    this.props.intl.formatMessage(messages.clones, {count})}
             >
                 <span
                     className={styles.cloneIcon}
@@ -81,7 +97,8 @@ class CloneCounter extends React.Component {
 }
 
 CloneCounter.propTypes = {
+    intl: intlShape.isRequired,
     vm: PropTypes.instanceOf(VM).isRequired
 };
 
-export default CloneCounter;
+export default injectIntl(CloneCounter);

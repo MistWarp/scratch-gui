@@ -85,7 +85,9 @@ class AssetFile extends React.Component {
         if (e.key === 'Enter') {
             e.target.blur();
         } else if (e.key === 'Escape') {
-            this.setState({fileName: this.props.fileName}, () => e.target.blur());
+            e.preventDefault();
+            const input = e.target;
+            this.setState({fileName: this.props.fileName}, () => input.blur());
         }
     }
 

@@ -3,14 +3,16 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-const runBuild = async (initialEnv = {}, args = ['--site-only'], siblingDocs = false) => {
-    let head = 'commit-at-build-start';
+const runBuild = async (initialEnv = {}, args = ['--site-only'], siblingDocs = false, gitHead = 'commit-at-build-start') => {
+    let head = gitHead;
     const identities = [];
     const builds = [];
     const steps = [];
     const environment = {...initialEnv};
-    const source = fs.readFileSync(path.resolve(__dirname, '../../../scripts/build.mjs'), 'utf8')
-        .replace(/^import .*;\n/gm, '');
+    const script = name => fs.readFileSync(path.resolve(__dirname, `../../../scripts/${name}`), 'utf8')
+        .replace(/^import .*;\n/gm, '')
+        .replace(/^export /gm, '');
+    const source = script('build-id.mjs') + script('build.mjs');
     const context = {
         process: {env: environment, argv: ['node', 'build.mjs', ...args],
             cwd: () => '/test', execPath: '/node'},
@@ -24,10 +26,13 @@ const runBuild = async (initialEnv = {}, args = ['--site-only'], siblingDocs = f
             identities.push(environment.MW_BUILD_ID || environment.GITHUB_SHA || head);
             // A commit made while the first compilation is running must not
             // change the identity of the library build or version.json.
-            head = 'commit-made-during-build';
+            if (head !== null) head = 'commit-made-during-build';
         },
         execFileSync: (command, args) => {
-            if (command === 'git') return head;
+            if (command === 'git') {
+                if (head === null) throw new Error('not a git repository');
+                return head;
+            }
             if (command === 'pnpm') steps.push(`pnpm ${args.join(' ')}`);
             if (args[0] === 'scripts/sync-forks.mjs') steps.push('sync-forks');
             if (args[0] === 'scripts/build-docs.mjs') steps.push(`build-docs ${args[1]}`);
@@ -56,6 +61,12 @@ test('CI identity takes precedence over the checkout commit', async () => {
     expect(identities).toEqual(Array(2).fill('ci-commit'));
 });
 
+test('builds outside a git checkout fall back to a dev identity', async () => {
+    const {identities, environment} = await runBuild({}, ['--site-only'], false, null);
+    expect(environment.MW_BUILD_ID).toBe('dev');
+    expect(identities).toEqual(Array(2).fill('dev'));
+});
+
 test('deployment compiles every site entry in one pass', async () => {
     const {builds} = await runBuild({BUILD_DIR: 'deploy-build', MW_COMMUNITY: 'true'});
     expect(builds).toHaveLength(1);
@@ -79,16 +90,9 @@ test('standalone editor builds retain their selected entry without building the 
     expect(builds[0].BUILD_MODE).toBeUndefined();
 });
 
-test('Cloudflare Pages builds move every fork to its latest develop commit before compiling', async () => {
-    const {steps} = await runBuild({CF_PAGES: '1'});
-    expect(steps).toEqual(['sync-forks', 'pnpm install --no-frozen-lockfile',
-        'build-docs /tmp/mistwarp-docs/build', 'build']);
-});
-
-test('other builds keep the committed fork pins', async () => {
+test('Cloudflare Pages builds leave the fork pins to scripts/cloudflare-build.mjs', async () => {
     expect((await runBuild()).steps).toEqual(['build']);
-    expect((await runBuild({CF_PAGES: '1', MW_PINNED_FORKS: '1'})).steps)
-        .toEqual(['build-docs /tmp/mistwarp-docs/build', 'build']);
+    expect((await runBuild({CF_PAGES: '1'})).steps).toEqual(['build-docs /tmp/mistwarp-docs/build', 'build']);
 });
 
 test('Cloudflare Pages builds hand the docs site to the site build', async () => {

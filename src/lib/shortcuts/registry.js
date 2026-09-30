@@ -72,7 +72,7 @@ export const getDefaultShortcuts = () => [
         actionType: 'redux',
         action: 'openRestorePointModal',
         params: [],
-        label: 'Restore Points'
+        label: 'Device Backups'
     },
     {
         id: 'spotlightSearch',
@@ -365,7 +365,21 @@ const applyCustomShortcuts = (defaultShortcuts, customShortcuts) => {
     });
 };
 
+let defaultKeys = null;
+
+const getShortcutKey = (shortcutId, customShortcuts) => {
+    if (!defaultKeys) {
+        defaultKeys = new Map(getDefaultShortcuts().map(shortcut => [shortcut.id, shortcut.defaultKey]));
+    }
+    if (!defaultKeys.has(shortcutId)) {
+        return '';
+    }
+    const custom = customShortcuts && customShortcuts[shortcutId];
+    return custom || defaultKeys.get(shortcutId);
+};
+
 export {
+    getShortcutKey,
     normalizeKey,
     parseKeyCombo,
     formatKeyCombo,
