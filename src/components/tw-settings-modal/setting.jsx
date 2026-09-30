@@ -93,7 +93,7 @@ UnwrappedSetting.propTypes = {
 
 const Setting = injectIntl(UnwrappedSetting);
 
-const BooleanSetting = ({value, onChange, label, ...props}) => (
+const BooleanSetting = ({value, onChange, label, disabled, ...props}) => (
     <Setting
         {...props}
         active={value}
@@ -102,6 +102,7 @@ const BooleanSetting = ({value, onChange, label, ...props}) => (
                 <FancyCheckbox
                     className={styles.checkbox}
                     checked={value}
+                    disabled={disabled}
                     onChange={onChange}
                 />
                 {label}
@@ -111,6 +112,7 @@ const BooleanSetting = ({value, onChange, label, ...props}) => (
 );
 
 BooleanSetting.propTypes = {
+    disabled: PropTypes.bool,
     label: PropTypes.node.isRequired,
     onChange: PropTypes.func.isRequired,
     value: PropTypes.bool.isRequired
