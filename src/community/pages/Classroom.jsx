@@ -2,7 +2,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useState} from 'react';
 import {Link, useNavigate, useSearchParams} from 'react-router-dom';
-import {Archive, ArrowUpCircle, Building2, ClipboardList, CreditCard, GraduationCap, Images, KeyRound, Plus, School, Sparkles, Users} from 'lucide-react';
+import {Archive, ArrowUpCircle, Building2, Check, ClipboardList, CreditCard, FileSignature, GraduationCap, Images, KeyRound, Plus, School, Sparkles, Users} from 'lucide-react';
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
 import {formatBytes, formatDate} from '../format.js';
@@ -15,6 +15,7 @@ import PageHeader from '../components/ui/PageHeader.jsx';
 import SectionHeading from '../components/ui/SectionHeading.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import UsageMeter from '../components/classroom/UsageMeter.jsx';
+import {LEGAL} from '../legal/config.js';
 import StudentHome from '../components/classroom/StudentHome.jsx';
 import ClassroomAbout from './ClassroomAbout.jsx';
 import styles from './Classroom.module.css';
@@ -128,6 +129,69 @@ const TrialOffer = ({days, onStarted}) => {
             {communityText('Get 35 seats, 12 classes, group projects, and present mode. Nothing is charged. When the trial ends you go back to the Free plan, and your students and their work stay.')}
             {error ? <span className={styles.trialError} role="alert">{error}</span> : null}
         </Notice>
+    );
+};
+
+const TermsAgreement = ({onAccepted}) => {
+    const {text: communityText} = useCommunityText();
+    const [organisation, setOrganisation] = useState('');
+    const [agreed, setAgreed] = useState(false);
+    const [authorised, setAuthorised] = useState(false);
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState('');
+    const ready = organisation.trim().length >= 2 && agreed && authorised;
+    const submit = async event => {
+        event.preventDefault();
+        if (!ready || busy) return;
+        setBusy(true);
+        setError('');
+        try {
+            await api.classroom.acceptTerms({version: LEGAL.classroomTermsVersion, organisation: organisation.trim(), authorised: true});
+            onAccepted();
+        } catch (e) {
+            setError(e.message || communityText('The terms could not be saved.'));
+            setBusy(false);
+        }
+    };
+    return (
+        <section className={styles.termsCard} aria-labelledby="classroom-terms-heading">
+            <SectionHeading id="classroom-terms-heading" icon={FileSignature} title={communityText('Agree to the Classroom terms for your school')} />
+            <p className={styles.termsLead}>
+                {communityText('Before you add classes or students, confirm that you are using Classroom for a school or organisation and agree to its terms on that organisation\'s behalf.')}
+            </p>
+            <p className={styles.termsLinks}>
+                <Link to="/classroom/terms">{communityText('Classroom Terms for Schools')}</Link>
+                <Link to="/classroom/dpa">{communityText('Data Processing Agreement')}</Link>
+                <Link to="/classroom/privacy">{communityText('Student data notice')}</Link>
+            </p>
+            <form className={styles.form} onSubmit={submit}>
+                <label className={styles.field}>
+                    <span>{communityText('School or organisation')}</span>
+                    <input
+                        value={organisation}
+                        maxLength={120}
+                        autoComplete="organization"
+                        placeholder={communityText('Riverside Primary School')}
+                        onChange={event => setOrganisation(event.target.value)}
+                    />
+                </label>
+                <label className={styles.checkRow}>
+                    <input type="checkbox" checked={agreed} onChange={event => setAgreed(event.target.checked)} />
+                    <span>{communityText('I have read and agree to the Classroom Terms for Schools and the Data Processing Agreement on behalf of this school or organisation.')}</span>
+                </label>
+                <label className={styles.checkRow}>
+                    <input type="checkbox" checked={authorised} onChange={event => setAuthorised(event.target.checked)} />
+                    <span>{communityText('I am 18 or over, this school or organisation has authorised me to use Classroom with its students, and it has given parents any notice, or collected any consent, that it needs.')}</span>
+                </label>
+                {error ? <Notice variant="error">{error}</Notice> : null}
+                <div className={styles.formActions}>
+                    <Button type="submit" variant="primary" disabled={!ready} busy={busy} busyLabel={communityText('Saving…')}>
+                        <Check size={16} aria-hidden="true" />
+                        {communityText('Agree and continue')}
+                    </Button>
+                </div>
+            </form>
+        </section>
     );
 };
 
@@ -283,11 +347,12 @@ const TeacherDashboard = ({billingOutcome, data, onDismissBilling, onReload}) =>
     const school = data.school || null;
     const billing = data.billing || {};
     const trialEndsAt = Number(billing.trialEndsAt) || 0;
-    const offerTrial = Boolean(billing.trialAvailable) && !school;
+    const termsAccepted = !data.terms || Boolean(data.terms.accepted);
+    const offerTrial = Boolean(billing.trialAvailable) && !school && termsAccepted;
     const classes = sortClasses(data.classes || []);
     const classLimitReached = Number(plan.maxClasses) > 0 && Number(usage.classes || classes.length) >= Number(plan.maxClasses);
     const newClassButton = (
-        <Button variant="primary" onClick={() => setCreating(true)} disabled={classLimitReached}>
+        <Button variant="primary" onClick={() => setCreating(true)} disabled={classLimitReached || !termsAccepted}>
             <Plus size={16} aria-hidden="true" />
             {communityText('New class')}
         </Button>
@@ -310,6 +375,7 @@ const TeacherDashboard = ({billingOutcome, data, onDismissBilling, onReload}) =>
                     {communityText('Checkout was cancelled and nothing was charged.')}
                 </Notice>
             ) : null}
+            {termsAccepted ? null : <TermsAgreement onAccepted={onReload} />}
             {offerTrial ? <TrialOffer days={Number(billing.trialDays) || 30} onStarted={onReload} /> : null}
             <section className={styles.planCard} aria-label={communityText('Plan summary')}>
                 <div className={styles.planTier}>

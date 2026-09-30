@@ -6,9 +6,10 @@ import {Link} from 'react-router-dom';
 import {
     AppWindow, AtSign, Bell, Coins, ExternalLink, Flag, Gavel, GitFork, Heart, Megaphone,
     MessageCircle, Reply, ShieldAlert, UserPlus, Users, GitPullRequest, GitMerge, Layers3,
-    Lightbulb, Star
+    Lightbulb, Star, GraduationCap
 } from 'lucide-react';
 import {projectUrl} from '../api';
+import {formatDate} from '../format.js';
 import Avatar from '../components/Avatar.jsx';
 import Button from '../components/ui/Button.jsx';
 import EmptyState, {SignInPrompt} from '../components/ui/EmptyState.jsx';
@@ -31,6 +32,12 @@ import {getNotificationPreferences, categoryForNotification} from '../notificati
 
 const TYPE_STYLE = {
     project_shared: {icon: Users, color: '#38b8a5'},
+    classroom_retention_warning: {icon: GraduationCap, color: '#e35d6a'},
+    classroom_turned_in: {icon: GraduationCap, color: '#855cd6'},
+    classroom_released: {icon: GraduationCap, color: '#855cd6'},
+    classroom_co_teacher: {icon: GraduationCap, color: '#855cd6'},
+    classroom_transferred: {icon: GraduationCap, color: '#855cd6'},
+    classroom_returned: {icon: GraduationCap, color: '#855cd6'},
     love: {icon: Heart, color: '#e5639c'},
     like: {icon: Heart, color: '#e5639c'},
     like_milestone: {icon: Heart, color: '#e5639c'},
@@ -77,7 +84,18 @@ const TYPE_STYLE = {
 
 const typeStyle = type => TYPE_STYLE[type] || TYPE_STYLE.notification;
 
-const SYSTEM_TYPES = ['standing', 'moderation', 'news', 'report_update'];
+const SYSTEM_TYPES = [
+    'standing',
+    'moderation',
+    'news',
+    'report_update',
+    'classroom_retention_warning',
+    'classroom_turned_in',
+    'classroom_released',
+    'classroom_co_teacher',
+    'classroom_transferred',
+    'classroom_returned'
+];
 
 const GROUP_TYPES = [
     'group_invite',
@@ -279,6 +297,34 @@ const describe = n => {
     case 'project_feedback': return <span>sent {n.feedbackType} feedback for <strong>{n.projectTitle}</strong></span>;
     case 'project_review': return <span>rated <strong>{n.projectTitle}</strong> {n.rating} out of 5</span>;
     case 'roadmap_comment': return <span>commented on <strong>{n.roadmapTitle}</strong></span>;
+    case 'classroom_retention_warning': return (
+        <span>
+            <strong>{n.className || 'A class'}</strong>
+            {' will be deleted on '}{formatDate(n.deleteAt, 'a date soon')}
+            {' because no teacher has opened it for 11 months. Open the class to keep it.'}
+        </span>
+    );
+    case 'classroom_turned_in': return (
+        <span>
+            <strong>{n.studentName || 'A student'}</strong>
+            {' turned in '}
+            <strong>{n.assignmentTitle || 'an assignment'}</strong>
+        </span>
+    );
+    case 'classroom_released': return (
+        <span>
+            <strong>{n.studentName || 'A student'}</strong>
+            {' moved to their own account from '}
+            <strong>{n.className}</strong>
+        </span>
+    );
+    case 'classroom_co_teacher': return (
+        <span>You were added as a co-teacher of <strong>{n.className}</strong></span>
+    );
+    case 'classroom_transferred': return <span>You are now the owner of <strong>{n.className}</strong></span>;
+    case 'classroom_returned': return (
+        <span>Your teacher returned <strong>{n.assignmentTitle || 'your work'}</strong></span>
+    );
     default: return <span>did something</span>;
     }
 };
@@ -394,6 +440,11 @@ const targetFor = (n, viewerName) => {
         return {to: `/users/${n.profile || viewerName}${commentAnchor(n)}`};
     }
     if (n.type === 'news' && n.newsId) return {to: '/news'};
+    if (n.type && n.type.startsWith('classroom_')) {
+        if (n.classId && n.assignmentId) return {to: `/classroom/${n.classId}/assignments/${n.assignmentId}`};
+        if (n.classId) return {to: `/classroom/${n.classId}`};
+        return {to: '/classroom'};
+    }
     return null;
 };
 
@@ -430,7 +481,7 @@ const NotificationRow = ({n, viewerName}) => {
         );
     }
 
-    const actor = actorFor(n);
+    const actor = SYSTEM_TYPES.includes(n.type) ? null : actorFor(n);
     const visual = actor ? (
         <span className={styles.avatarWrap}>
             <Link to={`/users/${actor}`}>
