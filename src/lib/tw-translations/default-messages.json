@@ -32,7 +32,6 @@
   "mw.backpack.expandStrip": "Show backpack items",
   "mw.backpack.collapseStrip": "Hide backpack items",
   "mw.backpack.resizeStrip": "Resize the backpack",
-  "mw.backpack.dropHere": "Drop here to save it to your backpack.",
   "gui.unsupportedBrowser.label": "Browser is not supported",
   "tw.browserModal.desktopTitle": "System is not supported",
   "tw.browserModal.webgl1": "{APP_NAME} requires WebGL, however your computer does not seem to support it. This is often a temporary error that can be fixed by restarting your computer.",
