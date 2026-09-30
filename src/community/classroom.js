@@ -70,6 +70,8 @@ const normalizeClassCode = value => String(value || '')
     .replace(/[\s-]+/g, '')
     .replace(/[^A-Z0-9]/g, '');
 
+const aboutUrl = () => `${JOIN_ORIGIN}/classroom/about`;
+
 const joinUrl = code => `${JOIN_ORIGIN}/classroom/join/${normalizeClassCode(code)}`;
 
 const parseStudentNames = value => {
@@ -197,6 +199,7 @@ export {
     PICTURE_LABELS,
     SUBMISSION_LABELS,
     SUBMISSION_STATES,
+    aboutUrl,
     auditKey,
     auditSentence,
     freeSeats,

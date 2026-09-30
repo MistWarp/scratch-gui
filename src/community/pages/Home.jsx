@@ -2,7 +2,7 @@
 import {isMilestoneNotification, milestoneText, milestoneLink} from '../milestone-notifications.js';
 import React, {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {ArrowRight, Bell, Bug, Clock, Gamepad2, Rocket, UserPlus, GitFork, Globe, Heart, Lightbulb, Megaphone, MessageCircle, Sparkles, Star, Trophy, Users} from 'lucide-react';
+import {ArrowRight, Bell, Bug, Clock, Gamepad2, GraduationCap, Rocket, UserPlus, GitFork, Globe, Heart, Lightbulb, Megaphone, MessageCircle, Sparkles, Star, Trophy, Users} from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
 import rotur from '../rotur';
 import {fetchFollowingFeed, fetchNotifications} from '../../lib/rotur/client.js';
@@ -19,6 +19,7 @@ import HomeDiscovery from '../components/HomeDiscovery.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import ScratchImport from '../components/ScratchImport.jsx';
 import ChallengeCalendar from '../components/ChallengeCalendar.jsx';
+import ClassroomPromo from '../components/classroom/ClassroomPromo.jsx';
 import ReactionButtons from '../components/ReactionButtons.jsx';
 import UserLink from '../components/UserLink.jsx';
 import {roadmapStatusMatches} from '../roadmap-filters';
@@ -462,6 +463,14 @@ const Home = () => {
                         link: '/spaces?kind=challenge',
                         linkLabel: communityText('All challenges'),
                         render: () => <ChallengeCalendar bare />
+                    },
+                    {
+                        key: 'classroom',
+                        title: communityText('Classroom'),
+                        icon: GraduationCap,
+                        link: '/classroom/about',
+                        linkLabel: communityText('About Classroom'),
+                        render: () => <ClassroomPromo />
                     }
                 ]}
             />

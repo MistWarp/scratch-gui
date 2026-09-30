@@ -78,10 +78,10 @@ describe('student community chrome', () => {
         wrapper.unmount();
     });
 
-    test('the student footer keeps only the legal link and the banner never renders', () => {
+    test('the student footer keeps only the privacy and legal links and the banner never renders', () => {
         const footer = renderIn(<Footer />);
         const hrefs = footer.find('a').map(node => node.prop('href'));
-        expect(hrefs).toEqual(['/trust']);
+        expect(hrefs).toEqual(['/classroom/privacy', '/trust']);
         expect(footer.text()).not.toContain('Discord');
         expect(footer.text()).not.toContain('Chat');
         footer.unmount();
