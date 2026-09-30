@@ -54,7 +54,7 @@ const Trust = () => {
             </section>
             <section className={styles.section}>
                 <SectionHeading icon={Mail} title={communityText('Who is responsible for your data')} />
-                <p>{communityText('MistWarp is run by {value1}, a sole trader in the {value2}, who decides how the data described on this page is used.', {value1: LEGAL.ownerName, value2: LEGAL.country})}</p>
+                <p>{communityText('MistWarp is part of Rotur. Both are run by {value1}, a sole trader in the {value2}, who decides how the data described on this page is used.', {value1: LEGAL.ownerName, value2: LEGAL.country})}</p>
                 <p>{communityText('To ask for a copy of your data, to have it corrected or deleted, or with any other privacy question, email {value1}.', {value1: LEGAL.email})}</p>
                 <p>{communityText('If you are unhappy with how we handle your data, you can complain to the Information Commissioner\'s Office.')}{' '}<a href="https://ico.org.uk/make-a-complaint/" target="_blank" rel="noreferrer">{communityText('Complain to the ICO')}</a></p>
             </section>
