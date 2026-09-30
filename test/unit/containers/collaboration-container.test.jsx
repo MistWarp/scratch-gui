@@ -135,7 +135,7 @@ describe('CollaborationContainer', () => {
 
         expect(mockCollaborationService.connectToRoom)
             .toHaveBeenCalledWith('test-room', 'Alice', false, 'private', ROTUR_HANDLE, null,
-                {invite: undefined, viewer: false});
+                {invite: undefined, viewer: false, classroom: false});
         expect(collaborationState().roomId).toBe('test-room');
         // guests only become "connected" once the host answers
         expect(collaborationState().isConnected).toBe(false);
@@ -155,7 +155,7 @@ describe('CollaborationContainer', () => {
         await container.handleCreateRoom('test-room', 'Alice', 'private');
 
         expect(mockCollaborationService.connectToRoom)
-            .toHaveBeenCalledWith('test-room', 'Alice', true, 'private', ROTUR_HANDLE, null, {inviteRole: 'watch'});
+            .toHaveBeenCalledWith('test-room', 'Alice', true, 'private', ROTUR_HANDLE, null, {inviteRole: 'watch', classroom: false});
         expect(collaborationState().roomId).toBe('test-room');
         expect(collaborationState().roomPrivacy).toBe('private');
         // the host is connected straight away
@@ -168,7 +168,7 @@ describe('CollaborationContainer', () => {
         await container.handleCreateRoom('test-room', 'Alice', 'public');
 
         expect(mockCollaborationService.connectToRoom)
-            .toHaveBeenCalledWith('test-room', 'Alice', true, 'private', ROTUR_HANDLE, null, {inviteRole: 'watch'});
+            .toHaveBeenCalledWith('test-room', 'Alice', true, 'private', ROTUR_HANDLE, null, {inviteRole: 'watch', classroom: false});
         expect(collaborationState().roomPrivacy).toBe('private');
     });
 
@@ -178,7 +178,7 @@ describe('CollaborationContainer', () => {
         await container.handleJoinRoom('test-room', 'Alice', null, {invite: 'secret'});
 
         expect(mockCollaborationService.connectToRoom)
-            .toHaveBeenCalledWith('test-room', 'Alice', false, 'private', ROTUR_HANDLE, null, {invite: 'secret', viewer: false});
+            .toHaveBeenCalledWith('test-room', 'Alice', false, 'private', ROTUR_HANDLE, null, {invite: 'secret', viewer: false, classroom: false});
         expect(collaborationState().pendingInvite).toBe(null);
     });
 
@@ -380,7 +380,7 @@ describe('CollaborationContainer', () => {
         await expect(container.handleCreateRoom('mine', 'Alice')).rejects.toThrow(/server/);
         await container.handleRetry();
         expect(mockCollaborationService.connectToRoom).toHaveBeenLastCalledWith(
-            'mine', 'Alice', true, 'private', ROTUR_HANDLE, null, {inviteRole: 'watch'});
+            'mine', 'Alice', true, 'private', ROTUR_HANDLE, null, {inviteRole: 'watch', classroom: false});
     });
 
     test('project sessions never offer the room Try again', async () => {

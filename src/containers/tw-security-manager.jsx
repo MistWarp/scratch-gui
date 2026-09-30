@@ -10,6 +10,7 @@ import isTrustedExtensionUrl, {isGalleryExtensionUrl} from '../lib/trusted-exten
 import {getRememberedPlatformProjectState} from '../lib/community/publish.js';
 import {extensionSourceUrl, hashExtensionUrl} from '../lib/community/api.js';
 import {blockProjectPrompts, isProjectPromptBlocked} from '../lib/project-prompt-blocking.js';
+import {isStudentSession} from '../lib/rotur/student-flag.js';
 
 /* eslint-disable require-atomic-updates */
 
@@ -162,6 +163,31 @@ const withSecurityBypass = (method, implementation, allowAll) => (...args) => {
     return allowAll(args) ? (method === 'getSandboxMode' ? 'unsandboxed' : true) : implementation(...args);
 };
 
+const isStudentGalleryExtension = url => typeof url === 'string' &&
+    isGalleryExtensionUrl(url) && !jsExecutionExtension(url);
+
+const denyForStudents = () => Promise.resolve(false);
+
+const STUDENT_SECURITY_POLICY = {
+    getSandboxMode: url => {
+        if (isStudentGalleryExtension(url)) return Promise.resolve('unsandboxed');
+        return Promise.reject(new Error(`Custom extensions are not available for class accounts: ${url}`));
+    },
+    canLoadExtensionFromProject: url => Promise.resolve(isStudentGalleryExtension(url)),
+    canFetch: denyForStudents,
+    canOpenWindow: denyForStudents,
+    canRedirect: denyForStudents,
+    canEmbed: denyForStudents,
+    canGeolocate: denyForStudents,
+    canNotify: denyForStudents
+};
+
+const withStudentPolicy = (method, implementation) => (...args) => (
+    isStudentSession() && STUDENT_SECURITY_POLICY[method] ?
+        STUDENT_SECURITY_POLICY[method](...args) :
+        implementation(...args)
+);
+
 class TWSecurityManagerComponent extends React.Component {
     constructor (props) {
         super(props);
@@ -187,11 +213,11 @@ class TWSecurityManagerComponent extends React.Component {
         const vmSecurityManager = this.props.vm.extensionManager.securityManager;
         const propsSecurityManager = this.props.securityManager;
         for (const method of SECURITY_MANAGER_METHODS) {
-            vmSecurityManager[method] = withSecurityBypass(
+            vmSecurityManager[method] = withStudentPolicy(method, withSecurityBypass(
                 method,
                 propsSecurityManager[method] || this[method],
-                args => this.isSecurityBypassed(method, args)
-            );
+                args => !isStudentSession() && this.isSecurityBypassed(method, args)
+            ));
         }
         this.props.vm.on('LOAD_PROGRESS', this.handleProjectLoading);
     }
@@ -563,7 +589,7 @@ class TWSecurityManagerComponent extends React.Component {
                 <SecurityManagerModal
                     type={this.state.type}
                     data={this.state.data}
-                    showLoadAll={Boolean(this.state.data && this.state.data.wholeProject) &&
+                    showLoadAll={!isStudentSession() && Boolean(this.state.data && this.state.data.wholeProject) &&
                         canTrustLoadedProject(this.props.vm)}
                     onAllowed={this.handleAllowed}
                     onBlocked={this.handleBlocked}
@@ -623,5 +649,6 @@ export {
     isPlatformTrustedExtension,
     isOwnedPlatformProject,
     isLocalProjectUrl,
-    canTrustLoadedProject
+    canTrustLoadedProject,
+    STUDENT_SECURITY_POLICY
 };

@@ -12,6 +12,7 @@ import CollaborationService from '../lib/collaboration/index.js';
 import NotificationSystem from '../lib/notification-manager.js';
 import {formatCollabError, isRetryableCollabError} from '../lib/collaboration/describe-error.js';
 import {setGitModalInitialView} from '../lib/git/modal-view.js';
+import {isStudentSession} from '../lib/rotur/student-flag.js';
 
 import {
     setProjectPresence,
@@ -401,6 +402,10 @@ class CollaborationContainer extends Component {
         }
     }
 
+    isStudent () {
+        return this.props.isStudent || isStudentSession();
+    }
+
     async handleJoinRoom (roomId, username, scope = null, options = {}) {
         // A retry repeats a join the user already agreed to.
         const {intl} = this.props;
@@ -435,7 +440,8 @@ class CollaborationContainer extends Component {
             this.props.onSetError(null);
 
             await this.collaborationService.connectToRoom(
-                roomId, username, false, 'private', this.props.roturHandle, scope, {invite: options.invite, viewer}
+                roomId, username, false, 'private', this.props.roturHandle, scope,
+                {invite: options.invite, viewer, classroom: Boolean(options && options.classroom)}
             );
             this.throwIfAbandoned(attempt);
             if (options.invite) this.props.onSetInvite(null);
@@ -453,7 +459,7 @@ class CollaborationContainer extends Component {
         }
     }
 
-    async handleCreateRoom (roomId, username, _privacy, scope = null) {
+    async handleCreateRoom (roomId, username, _privacy, scope = null, options = {}) {
 
         if (!roomId) throw new Error('Room ID is required to create a room');
 
@@ -470,7 +476,7 @@ class CollaborationContainer extends Component {
                 'private',
                 this.props.roturHandle,
                 scope,
-                {inviteRole: 'watch'}
+                {inviteRole: 'watch', classroom: Boolean(options && options.classroom)}
             );
             this.throwIfAbandoned(attempt);
             this.setSessionState({reclaimingRoom: false});
@@ -1012,6 +1018,7 @@ class CollaborationContainer extends Component {
                         projectSession={projectSession}
                         onOpenBranches={this.props.onOpenBranches}
                         visible={this.props.isVisible}
+                        isStudent={this.isStudent()}
                         currentUsername={this.props.currentUsername}
                         currentUserId={this.getCurrentUserId()}
                         roturHandle={this.props.roturHandle}
@@ -1062,6 +1069,7 @@ CollaborationContainer.propTypes = {
     intl: intlShape.isRequired,
     isReconnecting: PropTypes.bool,
     reconnectReason: PropTypes.string,
+    isStudent: PropTypes.bool,
     roomId: PropTypes.string,
     roomPrivacy: PropTypes.string,
     connectedUsers: PropTypes.array.isRequired,
@@ -1104,6 +1112,7 @@ const mapStateToProps = state => ({
     isConnected: state.scratchGui.collaboration.isConnected,
     isReconnecting: state.scratchGui.collaboration.isReconnecting,
     reconnectReason: state.scratchGui.collaboration.reconnectReason,
+    isStudent: Boolean(state.scratchGui.rotur && state.scratchGui.rotur.isStudent),
     roomId: state.scratchGui.collaboration.roomId,
     roomPrivacy: state.scratchGui.collaboration.roomPrivacy,
     pendingInvite: state.scratchGui.collaboration.pendingInvite,

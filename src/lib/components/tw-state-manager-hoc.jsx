@@ -29,6 +29,7 @@ import {
 } from '../../reducers/mode';
 import {generateRandomUsername} from '../utils/tw-username';
 import CollaborationService from '../collaboration/index.js';
+import {isClassroomUsername, isStudentSession, markStudentFrame} from '../rotur/student-flag.js';
 import {setSearchParams} from '../utils/navigation';
 import {defaultStageSize} from '../../reducers/custom-stage-size';
 import {openSimpleDialog} from '../../reducers/modals';
@@ -408,23 +409,29 @@ const TWStateManager = function (WrappedComponent) {
                 });
             }
 
-            for (const extension of urlParams.getAll('extension')) {
-                const manager = this.props.vm.extensionManager;
-                const allowed = extension === 'patching' ?
-                    Promise.resolve(manager.securityManager.canLoadExtensionFromProject('builtin:patching')) :
-                    Promise.resolve(true);
-                allowed.then(ok => (ok ? manager.loadExtensionURL(extension) : null)).catch(error => {
-                    log.error(`Could not load extension from URL parameter: ${extension}`, error);
-                    this.props.onExtensionLoadError();
-                });
+            const student = isStudentSession();
+
+            if (!student) {
+                for (const extension of urlParams.getAll('extension')) {
+                    const manager = this.props.vm.extensionManager;
+                    const allowed = extension === 'patching' ?
+                        Promise.resolve(manager.securityManager.canLoadExtensionFromProject('builtin:patching')) :
+                        Promise.resolve(true);
+                    allowed.then(ok => (ok ? manager.loadExtensionURL(extension) : null)).catch(error => {
+                        log.error(`Could not load extension from URL parameter: ${extension}`, error);
+                        this.props.onExtensionLoadError();
+                    });
+                }
             }
 
             // Handle room codes for automatic collaboration
             if (urlParams.has('room')) {
                 const roomCode = urlParams.get('room');
 
-                this.pendingRoomCode = roomCode;
-                this.props.onSetCollaborationInvite(urlParams.get('invite'));
+                if (!student) {
+                    this.pendingRoomCode = roomCode;
+                    this.props.onSetCollaborationInvite(urlParams.get('invite'));
+                }
 
                 const currentUrl = new URL(location.href);
                 currentUrl.searchParams.delete('room');
@@ -432,7 +439,7 @@ const TWStateManager = function (WrappedComponent) {
                 currentUrl.searchParams.delete('username');
                 history.replaceState(null, null, currentUrl.toString());
 
-                if (this.props.username) {
+                if (this.props.username && !student) {
                     this.handleRoomCode(roomCode);
                 }
             }
@@ -613,6 +620,11 @@ const TWStateManager = function (WrappedComponent) {
         handleParentIdentity (event) {
             const data = event.data;
             if (!data || data.type !== 'mw:rotur-user' || event.source !== window.parent) return;
+            if (data.user && isClassroomUsername(data.user.username)) {
+                markStudentFrame();
+                this.props.onSetCloud(false);
+                return;
+            }
             const name = data.user && data.user.loggedIn ?
                 (data.displayName || `@${data.user.username}`) :
                 null;
@@ -678,6 +690,7 @@ const TWStateManager = function (WrappedComponent) {
             this.props.onSetUsername(nickname === null ? generateRandomUsername() : nickname);
         }
         handleRoomCode (roomCode) {
+            if (isStudentSession()) return;
             const username = this.props.username;
             if (username && roomCode) {
                 this.props.onSetCollaborationRoomId(roomCode);

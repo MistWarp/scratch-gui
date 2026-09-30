@@ -13,6 +13,14 @@ import CursorOverlay from './cursor-overlay.js';
 import {getAssetData, storeAssetData, releaseAssetData, hasAssetData, clearAssetCache} from './vm-assets.js';
 import {avatarForCollabUser} from './avatar.js';
 import log from '../utils/log.js';
+import {isClassroomUsername, isStudentSession} from '../rotur/student-flag.js';
+import {isGalleryExtensionUrl} from '../trusted-extension.js';
+
+const roomCodeError = () => {
+    const error = new Error('Class accounts can only join live sessions for class projects.');
+    error.collabCode = 'CLASSROOM_ROOM_CODE';
+    return error;
+};
 
 /**
  * The collaboration engine facade — the only module the React layer talks
@@ -106,6 +114,7 @@ class CollabService extends Emitter {
     ) {
         if (!roomId) throw new Error('roomId is required to connect to a room');
         if (!this.vm) throw new Error('CollabService.init(vm) must be called first');
+        if (!scope && isStudentSession()) throw roomCodeError();
         if (this._transport) this.disconnect();
 
         this.roomId = roomId;
@@ -116,7 +125,10 @@ class CollabService extends Emitter {
         this.isViewer = Boolean(options && options.viewer) && !isHost;
         this._following = this.isViewer;
 
-        const transport = new Transport();
+        const transport = new Transport({
+            restricted: isStudentSession() || isClassroomUsername(this.username) ||
+                Boolean(scope && options && options.classroom)
+        });
         this._transport = transport;
         this._applier = new VMApplier({
             vm: this.vm,
@@ -494,6 +506,10 @@ class CollabService extends Emitter {
         const skipped = [];
         for (const {id, url} of extensions) {
             if (manager.isExtensionLoaded(id)) continue;
+            if (url && isStudentSession() && !isGalleryExtensionUrl(url)) {
+                skipped.push(id);
+                continue;
+            }
             const builtin = typeof manager.isBuiltinExtension === 'function' && manager.isBuiltinExtension(id);
             if (!builtin && !url) {
                 skipped.push(id);

@@ -4,6 +4,8 @@ import {isSplitEditor} from '../account/origins.js';
 const STUDENT_SESSION_KEY = 'mw:classroom-student';
 const STUDENT_HINT_PARAM = 'classroom';
 
+let studentFrame = false;
+
 const readStudentFlag = () => {
     try {
         return sharedCredentials.getItem(STUDENT_SESSION_KEY) === '1';
@@ -37,7 +39,24 @@ const adoptStudentHint = () => {
 
 adoptStudentHint();
 
-const isStudentSession = () => readStudentFlag();
+const markStudentFrame = () => {
+    studentFrame = true;
+};
+
+const isStudentSession = () => studentFrame || readStudentFlag();
+
+const isClassroomUsername = username => typeof username === 'string' && username.includes('~');
+
+const isDeviceOrSameOriginUrl = url => {
+    try {
+        const parsed = new URL(url, location.href);
+        return ['data:', 'blob:'].includes(parsed.protocol) || parsed.origin === location.origin;
+    } catch (_) {
+        return false;
+    }
+};
+
+const canStudentSessionLoadUrl = url => !isStudentSession() || isDeviceOrSameOriginUrl(url);
 
 export {
     STUDENT_HINT_PARAM,
@@ -45,5 +64,8 @@ export {
     readStudentFlag,
     writeStudentFlag,
     setSplitStudent,
-    isStudentSession
+    markStudentFrame,
+    isStudentSession,
+    isClassroomUsername,
+    canStudentSessionLoadUrl
 };
