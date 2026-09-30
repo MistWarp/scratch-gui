@@ -47,7 +47,7 @@ Nobody outside the class can see a student's projects. Students cannot publish, 
 ## Who we share it with
 
 - **Cloudflare**, which hosts the website, carries all traffic and stores project files. It is our only sub-processor. See the [sub-processor list](/classroom/subprocessors).
-- **The School.** If a teacher moves a student to their own Rotur account, the student's projects go to that account and work they turned in is copied to the class owner.
+- **The School.** If a teacher moves a student to their own Rotur account, the student's projects go to that account and work they turned in is copied to the class owner. Rotur accounts are for people aged 13 and over, so for a younger student the projects go to a parent or guardian's account instead.
 - **Anyone the law requires**, such as a court order. We will tell the School unless the law forbids it.
 
 The editor also downloads extension code and library images from a few public services, which see the device's IP address but no student details. A few Scratch blocks, such as Text to Speech and Translate, send the words in the block to an outside service when a project uses them. All of these are listed on the sub-processor page.

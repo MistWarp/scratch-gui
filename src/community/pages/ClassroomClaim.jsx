@@ -84,7 +84,7 @@ const ClassroomClaim = () => {
                     <p className={styles.lead}>
                         {communityText('{value1, plural, one {# project} other {# projects}} from the class of {value2} will move to the Rotur account you sign in with. The link works until {value3}.', {value1: claim.projectCount || 0, value2: claim.teacher, value3: formatDate(claim.expiresAt)})}
                     </p>
-                    <Notice>{communityText('If you are under 13, ask a parent or guardian to do this with you.')}</Notice>
+                    <Notice>{communityText('Rotur accounts are for people aged 13 and over. If you are under 13, a parent or guardian can sign in with their own Rotur account and keep your projects for you.')}</Notice>
                     {!user && !loading ? (
                         <Button variant="primary" className={styles.bigButton} onClick={login}>
                             <LogIn size={20} aria-hidden="true" />
