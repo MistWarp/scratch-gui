@@ -3397,7 +3397,7 @@
   "Create a move link for {value1}?": [
     "src/community/components/classroom/ReleaseSection.jsx:94"
   ],
-  "Give the link to {value1} or their parent or guardian. Whoever opens it and signs in with Rotur receives the projects.": [
+  "Give the link to {value1} if they are 13 or over, or to their parent or guardian if they are younger, because Rotur accounts are for people aged 13 and over. Whoever opens it and signs in with Rotur receives the projects.": [
     "src/community/components/classroom/ReleaseSection.jsx:101"
   ],
   "MistWarp Classroom lets a class build Scratch projects in a private space that the teacher runs.": [
@@ -5195,7 +5195,7 @@
   "{value1, plural, one {# project} other {# projects}} from the class of {value2} will move to the Rotur account you sign in with. The link works until {value3}.": [
     "src/community/pages/ClassroomClaim.jsx:85"
   ],
-  "If you are under 13, ask a parent or guardian to do this with you.": [
+  "Rotur accounts are for people aged 13 and over. If you are under 13, a parent or guardian can sign in with their own Rotur account and keep your projects for you.": [
     "src/community/pages/ClassroomClaim.jsx:87"
   ],
   "You are signed in as a class account.": [
