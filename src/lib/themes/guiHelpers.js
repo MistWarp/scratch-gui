@@ -7,6 +7,7 @@ import {
 } from './menu-bar-accent.js';
 import AddonHooks from '../../addons/hooks';
 import {applyThemeFonts} from '../themes/fonts';
+import {canStudentSessionLoadUrl} from '../rotur/student-flag.js';
 import {ensureColorContrast, parseColor} from './color-contrast';
 import themeStyles from './global-styles.module.css';
 
@@ -224,7 +225,7 @@ const applyWallpaper = wallpaper => {
         return;
     }
 
-    if (wallpaper.url) {
+    if (wallpaper.url && canStudentSessionLoadUrl(wallpaper.url)) {
         // Apply opacity by creating a semi-transparent overlay
         const opacity = Math.max(0.1, Math.min(1, wallpaper.opacity || 0.3));
         const overlayOpacity = 1 - opacity;

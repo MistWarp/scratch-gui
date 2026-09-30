@@ -5,6 +5,7 @@ import bindAll from 'lodash.bindall';
 
 import VM from 'scratch-vm';
 import CloudProvider from '../api/cloud-provider';
+import {isStudentSession} from '../rotur/student-flag.js';
 
 import {
     getIsShowingWithId
@@ -77,6 +78,7 @@ const cloudManagerHOC = function (WrappedComponent) {
         }
         canUseCloud (props) {
             return !!(
+                !isStudentSession() &&
                 props.reduxCloudHost &&
                 props.username &&
                 props.vm &&

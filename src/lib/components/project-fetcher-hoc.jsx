@@ -48,6 +48,12 @@ import {hasBridge, bridgeFetch} from '../community/embed-bridge.js';
 import {cachedFetchBuffer} from '../community/cached-fetch.js';
 import {createStarterProject, getStarter} from '../starter-projects.js';
 import RestorePointAPI from '../api/restore-points';
+import {isStudentSession} from '../rotur/student-flag.js';
+import {isGalleryExtensionUrl} from '../trusted-extension.js';
+
+const isGallerySampleUrl = url => typeof url === 'string' && (
+    isGalleryExtensionUrl(url) || url.startsWith('https://extensions-mistium.pages.dev/')
+);
 
 const cloneProjectFromRepo = async url => {
     const {fs, dir} = await cloneRepo({url, onAuth: getRoturGitAuth});
@@ -252,16 +258,17 @@ const ProjectFetcherHOC = function (WrappedComponent) {
             const searchParams = typeof URLSearchParams === 'undefined' ?
                 null :
                 new URLSearchParams(location.search);
-            const cloneUrl = searchParams && searchParams.get('clone');
+            const student = isStudentSession();
+            const cloneUrl = !student && searchParams && searchParams.get('clone');
             const platformProject = searchParams && searchParams.get('platform_project');
             const hashMatch = typeof location === 'undefined' ?
                 null :
                 location.hash.match(/^#mw-([\w-]+)/);
             const hashProjectId = hashMatch && hashMatch[1];
-            const mistwarpAssets = searchParams && searchParams.get('mw_assets');
+            const mistwarpAssets = !student && searchParams && searchParams.get('mw_assets');
             let mistwarpTrustedExtensions = [];
             try {
-                mistwarpTrustedExtensions = JSON.parse((searchParams && searchParams.get('mw_te')) || '[]');
+                mistwarpTrustedExtensions = JSON.parse((!student && searchParams && searchParams.get('mw_te')) || '[]');
             } catch (e) {
                 mistwarpTrustedExtensions = [];
             }
@@ -269,6 +276,7 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 storage.addMistWarpAssetStore(mistwarpAssets);
             }
             let projectUrl = searchParams && searchParams.get('project_url');
+            if (student && !isGallerySampleUrl(projectUrl)) projectUrl = null;
             let sourceProvidesHistory = false;
             if (hashProjectId || platformProject) {
                 sourceProvidesHistory = true;

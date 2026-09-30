@@ -9,6 +9,7 @@ import {applyThemeVisuals, detectTheme, onSystemPreferenceChange} from '../lib/t
 import {CustomTheme} from '../lib/themes/custom-themes.js';
 import render from './app-target.js';
 import tokenStyles from '../community/styles/tokens.module.css';
+import {canStudentSessionLoadUrl} from '../lib/rotur/student-flag.js';
 
 document.documentElement.classList.add(tokenStyles.root);
 
@@ -38,7 +39,7 @@ if (embedMatch) {
 } else {
     applyThemeVisuals(detectTheme());
     const previewURL = new URLSearchParams(location.search).get('theme');
-    if (previewURL) {
+    if (previewURL && canStudentSessionLoadUrl(previewURL)) {
         Promise.resolve().then(async () => {
             const url = new URL(previewURL);
             if (!['https:', 'http:'].includes(url.protocol)) throw new Error('Unsupported theme URL');

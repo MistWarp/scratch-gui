@@ -15,6 +15,7 @@ import SectionHeading from '../components/ui/SectionHeading.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import SubmissionBadge from '../components/classroom/SubmissionBadge.jsx';
 import ReleaseSection from '../components/classroom/ReleaseSection.jsx';
+import DownloadDataButton from '../components/classroom/DownloadDataButton.jsx';
 import styles from './Classroom.module.css';
 
 const ClassroomStudent = () => {
@@ -77,6 +78,13 @@ const ClassroomStudent = () => {
                 icon={User}
                 title={student.displayName || ''}
                 lead={communityText('The username is {value1}.', {value1: student.username || ''})}
+                actions={(
+                    <DownloadDataButton
+                        filename={`mistwarp-student-${sid}.json`}
+                        label={communityText('Download their data')}
+                        load={() => api.classroom.exportStudent(id, sid)}
+                    />
+                )}
             />
             {statusText ? <Notice variant="warning" className={styles.noticeBefore}>{statusText}</Notice> : null}
             <div className={styles.statRow}>

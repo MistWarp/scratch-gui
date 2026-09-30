@@ -28,6 +28,7 @@ import {
 } from '../../reducers/mode';
 import {generateRandomUsername} from '../utils/tw-username';
 import CollaborationService from '../collaboration/index.js';
+import {isClassroomUsername, isStudentSession, markStudentFrame} from '../rotur/student-flag.js';
 import {setSearchParams} from '../utils/navigation';
 import {defaultStageSize} from '../../reducers/custom-stage-size';
 import {openSimpleDialog} from '../../reducers/modals';
@@ -401,22 +402,26 @@ const TWStateManager = function (WrappedComponent) {
                 });
             }
 
-            for (const extension of urlParams.getAll('extension')) {
-                this.props.vm.extensionManager.loadExtensionURL(extension);
+            const student = isStudentSession();
+
+            if (!student) {
+                for (const extension of urlParams.getAll('extension')) {
+                    this.props.vm.extensionManager.loadExtensionURL(extension);
+                }
             }
 
             // Handle room codes for automatic collaboration
             if (urlParams.has('room')) {
                 const roomCode = urlParams.get('room');
 
-                this.pendingRoomCode = roomCode;
+                if (!student) this.pendingRoomCode = roomCode;
 
                 const currentUrl = new URL(location.href);
                 currentUrl.searchParams.delete('room');
                 currentUrl.searchParams.delete('username');
                 history.replaceState(null, null, currentUrl.toString());
 
-                if (this.props.username) {
+                if (this.props.username && !student) {
                     this.handleRoomCode(roomCode);
                 }
             }
@@ -597,6 +602,11 @@ const TWStateManager = function (WrappedComponent) {
         handleParentIdentity (event) {
             const data = event.data;
             if (!data || data.type !== 'mw:rotur-user' || event.source !== window.parent) return;
+            if (data.user && isClassroomUsername(data.user.username)) {
+                markStudentFrame();
+                this.props.onSetCloud(false);
+                return;
+            }
             const name = data.user && data.user.loggedIn ?
                 (data.displayName || `@${data.user.username}`) :
                 null;
@@ -662,6 +672,7 @@ const TWStateManager = function (WrappedComponent) {
             this.props.onSetUsername(nickname === null ? generateRandomUsername() : nickname);
         }
         handleRoomCode (roomCode) {
+            if (isStudentSession()) return;
             const username = this.props.username;
             if (username && roomCode) {
                 this.props.onSetCollaborationRoomId(roomCode);

@@ -102,6 +102,7 @@ class CollaborationModal extends Component {
 
     componentDidUpdate (prevProps) {
         if (prevProps.isConnected !== this.props.isConnected) {
+            // eslint-disable-next-line react/no-did-update-set-state
             this.setState({
                 connectionStep: this.props.isConnected ? 'connected' : 'join',
                 isConnecting: false,
@@ -111,6 +112,7 @@ class CollaborationModal extends Component {
 
         if (prevProps.roomId !== this.props.roomId) {
             if (this.props.roomId) {
+                // eslint-disable-next-line react/no-did-update-set-state
                 this.setState({roomId: this.props.roomId});
             } else {
                 this._autoJoinKey = null;
@@ -119,6 +121,7 @@ class CollaborationModal extends Component {
         }
 
         if (prevProps.connectionError !== this.props.connectionError && this.props.connectionError) {
+            // eslint-disable-next-line react/no-did-update-set-state
             this.setState({
                 error: this.props.connectionError,
                 isConnecting: false,
@@ -137,6 +140,7 @@ class CollaborationModal extends Component {
                         JSON.stringify(pendingRequests) !== JSON.stringify(this.state.pendingRequests);
 
                     if (hasChanged) {
+                        // eslint-disable-next-line react/no-did-update-set-state
                         this.setState({pendingRequests});
                     }
                 }
@@ -206,6 +210,7 @@ class CollaborationModal extends Component {
     }
 
     async handleJoinRoom () {
+        if (this.props.isStudent) return;
         const roomId = this.state.roomId.trim();
         if (!roomId) {
             this.setState({error: 'Please enter a room ID'});
@@ -233,6 +238,7 @@ class CollaborationModal extends Component {
     }
 
     async handleCreateRoom () {
+        if (this.props.isStudent) return;
         const roomCode = this.state.roomId.trim() || this.generateRoomCode();
         this._autoJoinKey = `${roomCode}-${this.props.currentUsername}`;
 
@@ -342,7 +348,7 @@ class CollaborationModal extends Component {
     }
 
     maybeAutoJoin () {
-        if (this.props.projectSession || this.props.projectSessionActive) return;
+        if (this.props.isStudent || this.props.projectSession || this.props.projectSessionActive) return;
         const {roomId, currentUsername, isConnected} = this.props;
         if (!roomId || !currentUsername || isConnected) return;
         if (CollaborationService.getInstance().roomId) return;
@@ -751,6 +757,7 @@ class CollaborationModal extends Component {
                     <div className={styles.status}>
                         <span className={styles.statusIndicator} />
                         <FormattedMessage
+                            // eslint-disable-next-line max-len
                             defaultMessage="Connected - {userCount} {userCount, plural, one {user} other {users}} online"
                             description="Connection status"
                             id="gui.collaboration.status"
@@ -808,6 +815,7 @@ class CollaborationModal extends Component {
                                     {isHost && user.id !== this.props.currentUserId && (
                                         <Button
                                             className={styles.kickButton}
+                                            // eslint-disable-next-line react/jsx-no-bind
                                             onClick={this.handleKickUser.bind(this, user.id)}
                                             iconElem={UserMinus}
                                             iconClassName={styles.kickIcon}
@@ -853,6 +861,7 @@ class CollaborationModal extends Component {
                                         <div className={styles.requestActions}>
                                             <Button
                                                 className={styles.approveButton}
+                                                // eslint-disable-next-line max-len, react/jsx-no-bind
                                                 onClick={this.handleApproveRequest.bind(this, request.id, request.username)}
                                             >
                                                 <FormattedMessage
@@ -863,6 +872,7 @@ class CollaborationModal extends Component {
                                             </Button>
                                             <Button
                                                 className={styles.denyButton}
+                                                // eslint-disable-next-line react/jsx-no-bind
                                                 onClick={this.handleDenyRequest.bind(this, request.id)}
                                             >
                                                 <FormattedMessage
@@ -1000,6 +1010,7 @@ class CollaborationModal extends Component {
 
                 <div className={styles.description}>
                     <FormattedMessage
+                        // eslint-disable-next-line max-len
                         defaultMessage="Your request to join this private room has been sent to the host. Please wait for approval."
                         description="Description for pending approval"
                         id="gui.collaboration.pendingApprovalDescription"
@@ -1162,7 +1173,7 @@ class CollaborationModal extends Component {
 
     render () {
         let content;
-        const projectMode = this.props.projectSession || this.props.projectSessionActive;
+        const projectMode = this.props.isStudent || this.props.projectSession || this.props.projectSessionActive;
         switch (projectMode ? 'project' : this.state.connectionStep) {
         case 'project':
             content = this.renderProjectSession();
@@ -1209,6 +1220,7 @@ CollaborationModal.propTypes = {
     projectSession: PropTypes.object,
     onOpenBranches: PropTypes.func,
     projectSessionActive: PropTypes.bool,
+    isStudent: PropTypes.bool,
     projectPeerIds: PropTypes.arrayOf(PropTypes.string),
     visible: PropTypes.bool,
     currentUsername: PropTypes.string,
@@ -1234,6 +1246,7 @@ CollaborationModal.propTypes = {
     onLeaveRoom: PropTypes.func.isRequired,
     onKickUser: PropTypes.func.isRequired,
     onCancelConnection: PropTypes.func.isRequired,
+    onOpenChangeUsername: PropTypes.func,
     onApproveJoinRequest: PropTypes.func,
     onDenyJoinRequest: PropTypes.func,
     onCancelJoinRequest: PropTypes.func,

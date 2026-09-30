@@ -1,17 +1,21 @@
 import React, {useState, useEffect, useCallback} from 'react';
 import PropTypes from 'prop-types';
+import {initialsAvatar} from '../../community/classroom.js';
 import styles from './avatar.css';
 
 const AVATARS = 'https://avatars.rotur.dev';
 
 const overlayStatus = new Map();
 
+const isStudentName = username => String(username || '').includes('~');
+
 const Avatar = ({username, src, size = 40, className}) => {
+    const student = isStudentName(username);
     const name = encodeURIComponent((username || '').toLowerCase());
-    const [overlayFailed, setOverlayFailed] = useState(() => !name || overlayStatus.get(name) === false);
+    const [overlayFailed, setOverlayFailed] = useState(() => student || !name || overlayStatus.get(name) === false);
     useEffect(() => {
-        setOverlayFailed(!name || overlayStatus.get(name) === false);
-    }, [name]);
+        setOverlayFailed(student || !name || overlayStatus.get(name) === false);
+    }, [name, student]);
     const handleOverlayError = useCallback(() => {
         overlayStatus.set(name, false);
         setOverlayFailed(true);
@@ -19,7 +23,8 @@ const Avatar = ({username, src, size = 40, className}) => {
     const handleOverlayLoad = useCallback(() => overlayStatus.set(name, true), [name]);
     const imageSize = Math.max(64, size * 2);
     const imageRadius = Math.max(32, size);
-    const imageSource = src || `${AVATARS}/${name}?s=${imageSize}&radius=${imageRadius}`;
+    const remote = `${AVATARS}/${name}?s=${imageSize}&radius=${imageRadius}`;
+    const imageSource = src || (student ? initialsAvatar(String(username).split('~')[0]) : remote);
     return (
         <span
             className={className ? `${styles.wrapper} ${className}` : styles.wrapper}

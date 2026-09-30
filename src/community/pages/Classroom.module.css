@@ -937,3 +937,57 @@
     color: var(--mw-danger);
     font-weight: 600;
 }
+
+.termsCard {
+    margin-bottom: 20px;
+    padding: 22px 24px;
+    border-radius: var(--radius);
+    background: var(--accent-soft);
+}
+
+.termsLead {
+    margin: 0 0 10px;
+    color: var(--text-dim);
+    font-size: var(--fs-md);
+    line-height: 1.55;
+}
+
+.termsLinks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin: 0 0 16px;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+}
+
+.termsLinks a {
+    color: var(--accent-strong);
+    text-decoration: underline;
+}
+
+.termsCard .field {
+    max-width: 420px;
+}
+
+.checkRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: var(--mw-text);
+    font-size: var(--fs-md);
+    line-height: 1.45;
+    cursor: pointer;
+}
+
+.checkRow input {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    margin: 1px 0 0;
+    accent-color: var(--accent);
+}
+
+.termsCard .formActions {
+    justify-content: flex-start;
+}

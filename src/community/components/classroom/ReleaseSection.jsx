@@ -98,7 +98,7 @@ const ReleaseSection = ({classId, onChange, release, student}) => {
                     onCancel={() => setConfirming(false)}
                     onConfirm={create}
                 >
-                    {communityText('Give the link to {value1} or their parent or guardian. Whoever opens it and signs in with Rotur receives the projects.', {value1: name})}
+                    {communityText('Give the link to {value1} if they are 13 or over, or to their parent or guardian if they are younger, because Rotur accounts are for people aged 13 and over. Whoever opens it and signs in with Rotur receives the projects.', {value1: name})}
                 </ConfirmModal>
             ) : null}
         </section>

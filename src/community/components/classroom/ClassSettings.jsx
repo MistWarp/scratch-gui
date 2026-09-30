@@ -2,11 +2,12 @@ import {useCommunityIntl as useCommunityText} from '../../i18n.jsx';
 /* eslint-disable max-len */
 import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
-import {Archive, ArrowRightLeft, Check, Copy, Hash, History, Pencil, RefreshCw, Trash2, UserPlus, Users, X} from 'lucide-react';
+import {Archive, ArrowRightLeft, Check, Copy, Download, Hash, History, Pencil, RefreshCw, Trash2, UserPlus, Users, X} from 'lucide-react';
 import api from '../../api';
 import {auditSentence, joinUrl, relativeTime} from '../../classroom.js';
 import copyText from '../../copy-text.js';
 import Avatar from '../Avatar.jsx';
+import DownloadDataButton from './DownloadDataButton.jsx';
 import UserLink from '../UserLink.jsx';
 import Button from '../ui/Button.jsx';
 import ConfirmModal from '../ui/ConfirmModal.jsx';
@@ -298,6 +299,22 @@ const ClassSettings = ({assignments, classInfo, onDeleted, onReload, students, v
                     </label>
                 </section>
             ) : null}
+            <section className={styles.card} aria-labelledby="classroom-download-heading">
+                <SectionHeading
+                    as="h3"
+                    id="classroom-download-heading"
+                    icon={Download}
+                    title={communityText('Download class data')}
+                    lead={communityText('A file with the class, its students and their project lists, assignments, submissions, groups and activity. Use it to answer a request for a student\'s data or to keep a record. It never includes passwords.')}
+                />
+                <div className={styles.cardActions}>
+                    <DownloadDataButton
+                        filename={`mistwarp-class-${classInfo.id}.json`}
+                        label={communityText('Download class data')}
+                        load={() => api.classroom.exportClass(classInfo.id)}
+                    />
+                </div>
+            </section>
             <section className={styles.card} aria-labelledby="classroom-activity-heading">
                 <SectionHeading as="h3" id="classroom-activity-heading" icon={History} title={communityText('Recent activity')} />
                 {events === null && !eventsError ? <StatusMessage compact /> : null}

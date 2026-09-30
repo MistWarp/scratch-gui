@@ -549,6 +549,10 @@ const api = {
         billingCheckout: seatPacks => request('/classroom/billing/checkout', {method: 'POST', body: {seatPacks}}),
         billingPortal: () => request('/classroom/billing/portal', {method: 'POST'}),
         startTrial: () => request('/classroom/trial', {method: 'POST'}),
+        acceptTerms: body => request('/classroom/terms/accept', {method: 'POST', body}),
+        exportClass: id => request(`/classroom/classes/${encodeURIComponent(id)}/export`, {cache: false}),
+        exportStudent: (id, studentId) =>
+            request(`/classroom/classes/${encodeURIComponent(id)}/students/${encodeURIComponent(studentId)}/export`, {cache: false}),
         groups: id => request(`/classroom/classes/${encodeURIComponent(id)}/groups`, {cache: false}),
         createGroup: (id, group) =>
             request(`/classroom/classes/${encodeURIComponent(id)}/groups`, {method: 'POST', body: group}),

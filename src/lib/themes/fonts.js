@@ -3,6 +3,7 @@
  */
 
 import {loadGoogleFont} from './google-fonts';
+import {isStudentSession} from '../rotur/student-flag.js';
 
 let currentFontStyleElement = null;
 
@@ -35,17 +36,19 @@ const applyThemeFonts = async fonts => {
         setCurrentFontStyleEl(null);
     }
 
+    const googleFonts = isStudentSession() ? [] : (fonts?.google || []);
+
     // Load Google Fonts first
-    if (fonts?.google?.length) {
-        await Promise.all(fonts.google.map(fontName => loadGoogleFont(fontName, ['400', '700'])));
+    if (googleFonts.length) {
+        await Promise.all(googleFonts.map(fontName => loadGoogleFont(fontName, ['400', '700'])));
     }
 
     // Create CSS for theme fonts
     const fontStack = [];
     
     // Add Google Fonts first (they have priority)
-    if (fonts?.google?.length) {
-        fontStack.push(...fonts.google.map(font => `"${font}"`));
+    if (googleFonts.length) {
+        fontStack.push(...googleFonts.map(font => `"${font}"`));
     }
     
     // Add system fonts
@@ -113,7 +116,7 @@ const getFontFamilyString = fonts => {
 
     const fontStack = [];
     
-    if (fonts.google?.length) {
+    if (fonts.google?.length && !isStudentSession()) {
         fontStack.push(...fonts.google.map(font => `"${font}"`));
     }
     

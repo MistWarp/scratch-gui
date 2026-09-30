@@ -7,6 +7,9 @@ import {isProjectHistoryHydrated} from '../../lib/git/project-history.js';
 import {
     getRememberedPlatformProjectState, rememberPlatformProject
 } from '../../lib/community/publish.js';
+import {isClassroomUsername, isStudentSession} from '../../lib/rotur/student-flag.js';
+
+const usernamesOf = list => (Array.isArray(list) ? list.map(item => item && item.username) : []);
 
 // The API authenticates requests. Peer display names never confer save access.
 class ProjectSession extends React.Component {
@@ -299,6 +302,18 @@ class ProjectSession extends React.Component {
         }
     }
 
+    isClassroomSession (session) {
+        const project = this.state.project || {};
+        return isStudentSession() || [
+            this.props.username,
+            project.owner,
+            session && session.host,
+            ...usernamesOf(project.collaborators),
+            ...usernamesOf(this.state.editors),
+            ...usernamesOf(session && session.members)
+        ].some(isClassroomUsername);
+    }
+
     async host () {
         const project = this.state.project;
         if (!this.props.isReady || this.paused || this.props.service.isConnected || this.state.session ||
@@ -310,7 +325,9 @@ class ProjectSession extends React.Component {
         window.crypto.getRandomValues(bytes);
         const roomId = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
         const scope = {projectId: String(project.id), branch: this.branch};
-        await this.props.onCreateRoom(roomId, this.props.username, 'private', scope);
+        await this.props.onCreateRoom(roomId, this.props.username, 'private', scope, {
+            classroom: this.isClassroomSession(this.state.session)
+        });
         try {
             const {session} = await this.call(project.id, {action: 'host', roomId, branch: scope.branch, public: true});
             if (this.disposed || context !== this.contextKey || !this.props.service.isConnected) {
@@ -336,7 +353,10 @@ class ProjectSession extends React.Component {
         const context = this.contextKey;
         const scope = {projectId: String(project.id), branch: this.branch};
         const viewer = project.myRole === 'viewer';
-        await this.props.onJoinRoom(session.roomId, this.props.username, scope, {viewer});
+        await this.props.onJoinRoom(session.roomId, this.props.username, scope, {
+            viewer,
+            classroom: this.isClassroomSession(session)
+        });
         try {
             const {session: next} = await this.call(project.id, {
                 action: 'request',
