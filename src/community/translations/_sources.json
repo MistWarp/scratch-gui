@@ -287,7 +287,7 @@
     "src/community/components/classroom/AssignmentModal.jsx:129",
     "src/community/components/classroom/ClassSettings.jsx:206",
     "src/community/pages/Challenge.jsx:146",
-    "src/community/pages/Classroom.jsx:188",
+    "src/community/pages/Classroom.jsx:228",
     "src/community/pages/ClassroomAssignment.jsx:63",
     "src/community/pages/Commit.jsx:386",
     "src/community/pages/Group.jsx:284",
@@ -328,7 +328,7 @@
     "src/community/components/CollectionSaveModal.jsx:228",
     "src/community/components/ProjectBranches.jsx:255",
     "src/community/components/classroom/ClassGroups.jsx:96",
-    "src/community/pages/Classroom.jsx:309",
+    "src/community/pages/Classroom.jsx:349",
     "src/community/pages/ManageProject.jsx:712",
     "src/community/pages/Spaces.jsx:275"
   ],
@@ -429,8 +429,8 @@
     "src/community/components/classroom/ClassStudents.jsx:122",
     "src/community/components/classroom/PresentControls.jsx:72",
     "src/community/components/ui/ConfirmModal.jsx:22",
-    "src/community/pages/Classroom.jsx:73",
-    "src/community/pages/Classroom.jsx:308",
+    "src/community/pages/Classroom.jsx:93",
+    "src/community/pages/Classroom.jsx:348",
     "src/community/pages/ManageProject.jsx:1189",
     "src/community/pages/ManageSpace.jsx:729",
     "src/community/pages/MyStuff.jsx:1317",
@@ -827,7 +827,7 @@
   "MistWarp Classroom": [
     "src/community/components/Footer.jsx:28",
     "src/community/components/classroom/ShareWithTeacher.jsx:26",
-    "src/community/pages/ClassroomAbout.jsx:113",
+    "src/community/pages/ClassroomAbout.jsx:116",
     "src/community/pages/ClassroomClaim.jsx:59",
     "src/community/pages/ClassroomJoin.jsx:165",
     "src/community/pages/Trust.jsx:62"
@@ -1524,10 +1524,10 @@
   ],
   "Classroom": [
     "src/community/components/NavBar.jsx:151",
-    "src/community/pages/Classroom.jsx:364",
-    "src/community/pages/Classroom.jsx:492",
-    "src/community/pages/Classroom.jsx:511",
-    "src/community/pages/ClassroomAbout.jsx:67",
+    "src/community/pages/Classroom.jsx:404",
+    "src/community/pages/Classroom.jsx:532",
+    "src/community/pages/Classroom.jsx:551",
+    "src/community/pages/ClassroomAbout.jsx:68",
     "src/community/pages/ClassroomClass.jsx:75",
     "src/community/pages/ClassroomClass.jsx:98",
     "src/community/pages/ClassroomSchool.jsx:213",
@@ -1700,7 +1700,7 @@
   ],
   "Archived": [
     "src/community/components/NewsItem.jsx:278",
-    "src/community/pages/Classroom.jsx:328",
+    "src/community/pages/Classroom.jsx:368",
     "src/community/pages/ClassroomClass.jsx:108",
     "src/community/pages/ClassroomSchool.jsx:283",
     "src/community/pages/News.jsx:329"
@@ -2958,7 +2958,7 @@
   "Class name": [
     "src/community/components/classroom/ClassSettings.jsx:199",
     "src/community/components/classroom/ClassSettings.jsx:202",
-    "src/community/pages/Classroom.jsx:276"
+    "src/community/pages/Classroom.jsx:316"
   ],
   "Class code": [
     "src/community/components/classroom/ClassSettings.jsx:213",
@@ -2997,7 +2997,7 @@
   ],
   "Co-teacher": [
     "src/community/components/classroom/ClassSettings.jsx:262",
-    "src/community/pages/Classroom.jsx:327",
+    "src/community/pages/Classroom.jsx:367",
     "src/community/pages/ClassroomClass.jsx:107"
   ],
   "Leave this class": [
@@ -3178,7 +3178,7 @@
     "src/community/components/classroom/StudentHome.jsx:234",
     "src/community/pages/Admin.jsx:269",
     "src/community/pages/Admin.jsx:1171",
-    "src/community/pages/Classroom.jsx:401",
+    "src/community/pages/Classroom.jsx:441",
     "src/community/pages/ClassroomSchool.jsx:258",
     "src/community/pages/ClassroomStudent.jsx:100",
     "src/community/pages/MyStuff.jsx:276",
@@ -3307,7 +3307,7 @@
   ],
   "Starting…": [
     "src/community/components/classroom/PresentControls.jsx:73",
-    "src/community/pages/Classroom.jsx:123"
+    "src/community/pages/Classroom.jsx:163"
   ],
   "Start presenting": [
     "src/community/components/classroom/PresentControls.jsx:75"
@@ -3442,7 +3442,7 @@
   ],
   "Opening…": [
     "src/community/components/classroom/StudentHome.jsx:102",
-    "src/community/pages/Classroom.jsx:228",
+    "src/community/pages/Classroom.jsx:268",
     "src/community/pages/MyStuff.jsx:247",
     "src/community/pages/Profile.jsx:1144",
     "src/community/pages/Project.jsx:1900"
@@ -3518,9 +3518,9 @@
   "{value1} of {value2}": [
     "src/community/components/classroom/StudentHome.jsx:240",
     "src/community/pages/Admin.jsx:1180",
-    "src/community/pages/Classroom.jsx:398",
-    "src/community/pages/Classroom.jsx:404",
-    "src/community/pages/Classroom.jsx:410",
+    "src/community/pages/Classroom.jsx:438",
+    "src/community/pages/Classroom.jsx:444",
+    "src/community/pages/Classroom.jsx:450",
     "src/community/pages/ClassroomSchool.jsx:257",
     "src/community/pages/ClassroomSchool.jsx:258",
     "src/community/pages/ClassroomSchool.jsx:259"
@@ -4741,191 +4741,209 @@
     "src/community/pages/Classroom.jsx:34",
     "src/community/pages/ClassroomJoin.jsx:36"
   ],
+  "Yearly": [
+    "src/community/pages/Classroom.jsx:49"
+  ],
+  "£45 a year, about three months free. $50 in the US.": [
+    "src/community/pages/Classroom.jsx:49"
+  ],
+  "Monthly": [
+    "src/community/pages/Classroom.jsx:50"
+  ],
+  "£5 a month. $6 in the US. Cancel any time.": [
+    "src/community/pages/Classroom.jsx:50"
+  ],
   "Checkout could not be started.": [
-    "src/community/pages/Classroom.jsx:58",
-    "src/community/pages/Classroom.jsx:61"
-  ],
-  "Upgrade to Classroom": [
-    "src/community/pages/Classroom.jsx:67"
-  ],
-  "Opening checkout…": [
-    "src/community/pages/Classroom.jsx:74"
-  ],
-  "Continue to checkout": [
-    "src/community/pages/Classroom.jsx:76"
-  ],
-  "Seats come in packs of {value1}. Pick how many packs your classes need. You can change this later from Manage billing.": [
+    "src/community/pages/Classroom.jsx:78",
     "src/community/pages/Classroom.jsx:81"
   ],
-  "Seat packs": [
-    "src/community/pages/Classroom.jsx:83"
+  "Upgrade to Classroom": [
+    "src/community/pages/Classroom.jsx:87"
   ],
-  "{value1, plural, one {# pack} other {# packs}}": [
-    "src/community/pages/Classroom.jsx:89"
+  "Opening checkout…": [
+    "src/community/pages/Classroom.jsx:94"
   ],
-  "{value1, plural, one {# seat} other {# seats}}": [
-    "src/community/pages/Classroom.jsx:90"
+  "Continue to checkout": [
+    "src/community/pages/Classroom.jsx:96"
   ],
-  "The trial could not be started.": [
-    "src/community/pages/Classroom.jsx:113"
+  "Billing": [
+    "src/community/pages/Classroom.jsx:103"
   ],
-  "Try the Classroom plan free for {value1} days": [
+  "The plan includes 35 seats. Add packs of {value1} if your classes need more. You can change this later from Manage billing.": [
+    "src/community/pages/Classroom.jsx:119"
+  ],
+  "Extra seats": [
     "src/community/pages/Classroom.jsx:121"
   ],
-  "Start free trial": [
-    "src/community/pages/Classroom.jsx:125"
+  "{value1, plural, one {# pack} other {# packs}}": [
+    "src/community/pages/Classroom.jsx:127"
   ],
-  "Get 35 seats, 12 classes, group projects, and present mode. Nothing is charged. When the trial ends you go back to the Free plan, and your students and their work stay.": [
-    "src/community/pages/Classroom.jsx:129"
+  "None": [
+    "src/community/pages/Classroom.jsx:127"
+  ],
+  "{value1, plural, one {# seat} other {# seats}} in total": [
+    "src/community/pages/Classroom.jsx:128"
+  ],
+  "The trial could not be started.": [
+    "src/community/pages/Classroom.jsx:153"
+  ],
+  "Try the Classroom plan free for {value1} days": [
+    "src/community/pages/Classroom.jsx:161"
+  ],
+  "Start free trial": [
+    "src/community/pages/Classroom.jsx:165"
+  ],
+  "Get up to 12 classes, group projects, present mode, and 25 GB of storage. Nothing is charged. When the trial ends you go back to the Free plan, and your students and their work stay.": [
+    "src/community/pages/Classroom.jsx:169"
   ],
   "The terms could not be saved.": [
-    "src/community/pages/Classroom.jsx:152"
+    "src/community/pages/Classroom.jsx:192"
   ],
   "Agree to the Classroom terms for your school": [
-    "src/community/pages/Classroom.jsx:158"
+    "src/community/pages/Classroom.jsx:198"
   ],
   "Before you add classes or students, confirm that you are using Classroom for a school or organisation and agree to its terms on that organisation's behalf.": [
-    "src/community/pages/Classroom.jsx:160"
+    "src/community/pages/Classroom.jsx:200"
   ],
   "Classroom Terms for Schools": [
-    "src/community/pages/Classroom.jsx:163",
+    "src/community/pages/Classroom.jsx:203",
     "src/community/pages/ClassroomLegal.jsx:22",
     "src/community/pages/Trust.jsx:66"
   ],
   "Data Processing Agreement": [
-    "src/community/pages/Classroom.jsx:164",
+    "src/community/pages/Classroom.jsx:204",
     "src/community/pages/Trust.jsx:67"
   ],
   "Student data notice": [
-    "src/community/pages/Classroom.jsx:165",
+    "src/community/pages/Classroom.jsx:205",
     "src/community/pages/Trust.jsx:65"
   ],
   "School or organisation": [
-    "src/community/pages/Classroom.jsx:169"
+    "src/community/pages/Classroom.jsx:209"
   ],
   "Riverside Primary School": [
-    "src/community/pages/Classroom.jsx:174"
+    "src/community/pages/Classroom.jsx:214"
   ],
   "I have read and agree to the Classroom Terms for Schools and the Data Processing Agreement on behalf of this school or organisation.": [
-    "src/community/pages/Classroom.jsx:180"
-  ],
-  "I am 18 or over, this school or organisation has authorised me to use Classroom with its students, and it has given parents any notice, or collected any consent, that it needs.": [
-    "src/community/pages/Classroom.jsx:184"
-  ],
-  "Agree and continue": [
-    "src/community/pages/Classroom.jsx:190"
-  ],
-  "Billing could not be opened.": [
-    "src/community/pages/Classroom.jsx:209",
-    "src/community/pages/Classroom.jsx:212"
-  ],
-  "Managed by {value1}.": [
     "src/community/pages/Classroom.jsx:220"
   ],
+  "I am 18 or over, this school or organisation has authorised me to use Classroom with its students, and it has given parents any notice, or collected any consent, that it needs.": [
+    "src/community/pages/Classroom.jsx:224"
+  ],
+  "Agree and continue": [
+    "src/community/pages/Classroom.jsx:230"
+  ],
+  "Billing could not be opened.": [
+    "src/community/pages/Classroom.jsx:249",
+    "src/community/pages/Classroom.jsx:252"
+  ],
+  "Managed by {value1}.": [
+    "src/community/pages/Classroom.jsx:260"
+  ],
   "Manage billing": [
-    "src/community/pages/Classroom.jsx:230",
+    "src/community/pages/Classroom.jsx:270",
     "src/community/pages/Wallet.jsx:427"
   ],
   "Upgrade": [
-    "src/community/pages/Classroom.jsx:236"
+    "src/community/pages/Classroom.jsx:276"
   ],
   "Plan changes are handled by our team.": [
-    "src/community/pages/Classroom.jsx:241"
-  ],
-  "Contact support to add seats or upgrade.": [
-    "src/community/pages/Classroom.jsx:243"
-  ],
-  "Could not create the class.": [
-    "src/community/pages/Classroom.jsx:268"
-  ],
-  "New class": [
-    "src/community/pages/Classroom.jsx:273",
-    "src/community/pages/Classroom.jsx:357"
-  ],
-  "Year 5 Coding Club": [
     "src/community/pages/Classroom.jsx:281"
   ],
+  "Contact support to add seats or upgrade.": [
+    "src/community/pages/Classroom.jsx:283"
+  ],
+  "Could not create the class.": [
+    "src/community/pages/Classroom.jsx:308"
+  ],
+  "New class": [
+    "src/community/pages/Classroom.jsx:313",
+    "src/community/pages/Classroom.jsx:397"
+  ],
+  "Year 5 Coding Club": [
+    "src/community/pages/Classroom.jsx:321"
+  ],
   "Sign-in method": [
-    "src/community/pages/Classroom.jsx:286"
+    "src/community/pages/Classroom.jsx:326"
   ],
   "Create class": [
-    "src/community/pages/Classroom.jsx:311"
+    "src/community/pages/Classroom.jsx:351"
   ],
   "{value1, plural, one {# student} other {# students}}": [
-    "src/community/pages/Classroom.jsx:333"
+    "src/community/pages/Classroom.jsx:373"
   ],
   "{value1, plural, one {# assignment} other {# assignments}}": [
-    "src/community/pages/Classroom.jsx:334"
+    "src/community/pages/Classroom.jsx:374"
   ],
   "Picture sign-in": [
-    "src/community/pages/Classroom.jsx:335"
-  ],
-  "Password sign-in": [
-    "src/community/pages/Classroom.jsx:335"
-  ],
-  "Create classes, add students, and set assignments.": [
-    "src/community/pages/Classroom.jsx:365"
-  ],
-  "Thanks, your plan is updated. New seats can take a minute to show up.": [
-    "src/community/pages/Classroom.jsx:370"
-  ],
-  "Checkout was cancelled and nothing was charged.": [
     "src/community/pages/Classroom.jsx:375"
   ],
+  "Password sign-in": [
+    "src/community/pages/Classroom.jsx:375"
+  ],
+  "Create classes, add students, and set assignments.": [
+    "src/community/pages/Classroom.jsx:405"
+  ],
+  "Thanks, your plan is updated. New seats can take a minute to show up.": [
+    "src/community/pages/Classroom.jsx:410"
+  ],
+  "Checkout was cancelled and nothing was charged.": [
+    "src/community/pages/Classroom.jsx:415"
+  ],
   "Plan summary": [
-    "src/community/pages/Classroom.jsx:380",
+    "src/community/pages/Classroom.jsx:420",
     "src/community/pages/ClassroomSchool.jsx:251"
   ],
   "Classroom trial": [
-    "src/community/pages/Classroom.jsx:382"
+    "src/community/pages/Classroom.jsx:422"
   ],
   "Your trial ends on {value1}.": [
-    "src/community/pages/Classroom.jsx:383"
+    "src/community/pages/Classroom.jsx:423"
   ],
   "Renews on {value1}.": [
-    "src/community/pages/Classroom.jsx:384",
+    "src/community/pages/Classroom.jsx:424",
     "src/community/pages/ClassroomSchool.jsx:254"
   ],
   "Manage the school": [
-    "src/community/pages/Classroom.jsx:388"
+    "src/community/pages/Classroom.jsx:428"
   ],
   "Seats": [
-    "src/community/pages/Classroom.jsx:395",
+    "src/community/pages/Classroom.jsx:435",
     "src/community/pages/ClassroomSchool.jsx:257"
   ],
   "Classes": [
-    "src/community/pages/Classroom.jsx:407",
-    "src/community/pages/Classroom.jsx:414",
+    "src/community/pages/Classroom.jsx:447",
+    "src/community/pages/Classroom.jsx:454",
     "src/community/pages/ClassroomSchool.jsx:67",
     "src/community/pages/ClassroomSchool.jsx:229",
     "src/community/pages/ClassroomSchool.jsx:259",
     "src/community/pages/ClassroomSchool.jsx:265"
   ],
   "No classes yet": [
-    "src/community/pages/Classroom.jsx:420",
+    "src/community/pages/Classroom.jsx:460",
     "src/community/pages/ClassroomSchool.jsx:289"
   ],
   "Create your first class to add students and print their login cards.": [
-    "src/community/pages/Classroom.jsx:421"
+    "src/community/pages/Classroom.jsx:461"
   ],
   "See what Classroom includes": [
-    "src/community/pages/Classroom.jsx:423"
+    "src/community/pages/Classroom.jsx:463"
   ],
   "Your plan allows {value1, plural, one {# class} other {# classes}}. Archive or delete a class to make room for another.": [
-    "src/community/pages/Classroom.jsx:428"
+    "src/community/pages/Classroom.jsx:468"
   ],
   "Could not load Classroom.": [
-    "src/community/pages/Classroom.jsx:493"
+    "src/community/pages/Classroom.jsx:533"
   ],
   "Classroom is not enabled for this account.": [
-    "src/community/pages/Classroom.jsx:514"
+    "src/community/pages/Classroom.jsx:554"
   ],
   "Contact support": [
-    "src/community/pages/Classroom.jsx:515",
+    "src/community/pages/Classroom.jsx:555",
     "src/community/pages/Settings.jsx:802"
   ],
   "Classroom is licensed to schools. Ask your school to add you to its plan, or contact support to set one up.": [
-    "src/community/pages/Classroom.jsx:517"
+    "src/community/pages/Classroom.jsx:557"
   ],
   "Make the class": [
     "src/community/pages/ClassroomAbout.jsx:20"
@@ -4969,116 +4987,125 @@
   "Free": [
     "src/community/pages/ClassroomAbout.jsx:61"
   ],
-  "For trying Classroom with a small group.": [
+  "Free for one class": [
     "src/community/pages/ClassroomAbout.jsx:62"
   ],
-  "1 class": [
+  "Enough to run a whole class, at no cost.": [
     "src/community/pages/ClassroomAbout.jsx:63"
   ],
-  "Up to 5 students": [
-    "src/community/pages/ClassroomAbout.jsx:63"
+  "1 class of up to 35 students": [
+    "src/community/pages/ClassroomAbout.jsx:64"
   ],
   "1 GB of storage": [
-    "src/community/pages/ClassroomAbout.jsx:63"
+    "src/community/pages/ClassroomAbout.jsx:64"
   ],
   "Assignments, feedback, and grades": [
-    "src/community/pages/ClassroomAbout.jsx:63"
+    "src/community/pages/ClassroomAbout.jsx:64"
   ],
-  "Free for 30 days, then paid.": [
-    "src/community/pages/ClassroomAbout.jsx:68"
+  "Picture and password sign-in": [
+    "src/community/pages/ClassroomAbout.jsx:64"
+  ],
+  "£45 a year, or £5 a month": [
+    "src/community/pages/ClassroomAbout.jsx:69"
+  ],
+  "Try it free for 30 days. In the US it costs $50 a year, or $6 a month.": [
+    "src/community/pages/ClassroomAbout.jsx:70"
   ],
   "Up to 12 classes": [
-    "src/community/pages/ClassroomAbout.jsx:69"
+    "src/community/pages/ClassroomAbout.jsx:71"
   ],
-  "35 students, with more seats in packs of 10": [
-    "src/community/pages/ClassroomAbout.jsx:69"
+  "35 students, plus packs of 10 more seats for £10 a year": [
+    "src/community/pages/ClassroomAbout.jsx:71"
   ],
   "25 GB of storage": [
-    "src/community/pages/ClassroomAbout.jsx:69"
+    "src/community/pages/ClassroomAbout.jsx:71"
   ],
   "Group projects that students edit together live": [
-    "src/community/pages/ClassroomAbout.jsx:69"
+    "src/community/pages/ClassroomAbout.jsx:71"
   ],
   "Present mode to show one project to the whole class": [
-    "src/community/pages/ClassroomAbout.jsx:69"
+    "src/community/pages/ClassroomAbout.jsx:71"
   ],
   "School": [
-    "src/community/pages/ClassroomAbout.jsx:73",
+    "src/community/pages/ClassroomAbout.jsx:75",
     "src/community/pages/ClassroomSchool.jsx:213",
     "src/community/pages/ClassroomSchool.jsx:239"
   ],
-  "For several teachers sharing one plan.": [
-    "src/community/pages/ClassroomAbout.jsx:74"
+  "From £300 a year": [
+    "src/community/pages/ClassroomAbout.jsx:76"
+  ],
+  "For several teachers sharing one plan. Includes 150 students, then £2 a year for each extra student.": [
+    "src/community/pages/ClassroomAbout.jsx:77"
   ],
   "Seats and storage sized for your school": [
-    "src/community/pages/ClassroomAbout.jsx:75"
+    "src/community/pages/ClassroomAbout.jsx:78"
   ],
   "A school admin page for teachers and classes": [
-    "src/community/pages/ClassroomAbout.jsx:75"
+    "src/community/pages/ClassroomAbout.jsx:78"
   ],
   "A data download for records requests": [
-    "src/community/pages/ClassroomAbout.jsx:75"
+    "src/community/pages/ClassroomAbout.jsx:78"
   ],
   "Invoices instead of card payments": [
-    "src/community/pages/ClassroomAbout.jsx:75"
+    "src/community/pages/ClassroomAbout.jsx:78"
   ],
   "Start a free class": [
-    "src/community/pages/ClassroomAbout.jsx:87"
+    "src/community/pages/ClassroomAbout.jsx:90"
   ],
   "Sign in to start a class": [
-    "src/community/pages/ClassroomAbout.jsx:98"
+    "src/community/pages/ClassroomAbout.jsx:101"
   ],
   "A private place for your class to build Scratch projects. You create the student accounts, set the work, and see everything they make.": [
-    "src/community/pages/ClassroomAbout.jsx:114"
+    "src/community/pages/ClassroomAbout.jsx:117"
   ],
   "Student sign-in": [
-    "src/community/pages/ClassroomAbout.jsx:123",
-    "src/community/pages/ClassroomAbout.jsx:127"
+    "src/community/pages/ClassroomAbout.jsx:126",
+    "src/community/pages/ClassroomAbout.jsx:130"
   ],
   "Already in a class? Sign in with the class code on your login card.": [
-    "src/community/pages/ClassroomAbout.jsx:124"
+    "src/community/pages/ClassroomAbout.jsx:127"
   ],
   "How it works": [
-    "src/community/pages/ClassroomAbout.jsx:133"
+    "src/community/pages/ClassroomAbout.jsx:136"
   ],
   "Safe for children": [
-    "src/community/pages/ClassroomAbout.jsx:149"
+    "src/community/pages/ClassroomAbout.jsx:152"
   ],
   "Read how Classroom handles student data": [
-    "src/community/pages/ClassroomAbout.jsx:163"
+    "src/community/pages/ClassroomAbout.jsx:166"
   ],
   "Read the terms for schools": [
-    "src/community/pages/ClassroomAbout.jsx:167"
+    "src/community/pages/ClassroomAbout.jsx:170"
   ],
   "Read the data processing agreement": [
-    "src/community/pages/ClassroomAbout.jsx:171"
+    "src/community/pages/ClassroomAbout.jsx:174"
   ],
   "Working together": [
-    "src/community/pages/ClassroomAbout.jsx:178"
+    "src/community/pages/ClassroomAbout.jsx:181"
   ],
   "Group projects": [
-    "src/community/pages/ClassroomAbout.jsx:183"
+    "src/community/pages/ClassroomAbout.jsx:186"
   ],
   "Put two to six students in a group. They share one project and can edit it at the same time from their own computers.": [
-    "src/community/pages/ClassroomAbout.jsx:184"
+    "src/community/pages/ClassroomAbout.jsx:187"
   ],
   "Present mode": [
-    "src/community/pages/ClassroomAbout.jsx:190"
+    "src/community/pages/ClassroomAbout.jsx:193"
   ],
   "Show your project, or a student's, on every screen in the class. Students follow along without being able to change it.": [
-    "src/community/pages/ClassroomAbout.jsx:191"
+    "src/community/pages/ClassroomAbout.jsx:194"
   ],
   "Plans": [
-    "src/community/pages/ClassroomAbout.jsx:198"
+    "src/community/pages/ClassroomAbout.jsx:201"
   ],
   "Contact us about a School plan": [
-    "src/community/pages/ClassroomAbout.jsx:209"
+    "src/community/pages/ClassroomAbout.jsx:213"
   ],
   "Want to use MistWarp at school?": [
-    "src/community/pages/ClassroomAbout.jsx:222"
+    "src/community/pages/ClassroomAbout.jsx:226"
   ],
   "Send this page to your teacher. Setting up a class takes about five minutes.": [
-    "src/community/pages/ClassroomAbout.jsx:224"
+    "src/community/pages/ClassroomAbout.jsx:228"
   ],
   "Could not save the review.": [
     "src/community/pages/ClassroomAssignment.jsx:40"

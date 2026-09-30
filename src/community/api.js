@@ -546,7 +546,8 @@ const api = {
             request(`/classroom/assignments/${encodeURIComponent(assignmentId)}/turn-in`, {method: 'POST'}),
         unsubmit: assignmentId =>
             request(`/classroom/assignments/${encodeURIComponent(assignmentId)}/unsubmit`, {method: 'POST'}),
-        billingCheckout: seatPacks => request('/classroom/billing/checkout', {method: 'POST', body: {seatPacks}}),
+        billingCheckout: (seatPacks, interval) =>
+            request('/classroom/billing/checkout', {method: 'POST', body: {seatPacks, interval}}),
         billingPortal: () => request('/classroom/billing/portal', {method: 'POST'}),
         startTrial: () => request('/classroom/trial', {method: 'POST'}),
         acceptTerms: body => request('/classroom/terms/accept', {method: 'POST', body}),
