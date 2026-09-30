@@ -127,6 +127,7 @@ class RoturSession extends React.Component {
         if (next.user && !hadUser) {
             this.editingSince = Date.now();
             this.props.onSetUser(next.user);
+            if (next.user.isStudent) return;
             this.applyCloudPreferences().then(() => this.syncCurrentActivity());
             this.ensureNotificationSubscription();
             this.unsubscribeTier = watchTier(next.user.username, () => {});
@@ -272,7 +273,7 @@ class RoturSession extends React.Component {
     }
 
     syncCurrentActivity () {
-        if (!this.props.loggedIn) return;
+        if (!this.props.loggedIn || this.props.isStudent) return;
         this.refreshPlatformProjectLink().then(() => {
             syncActivity(this.currentActivityContext());
         });
@@ -306,6 +307,7 @@ class RoturSession extends React.Component {
 }
 
 RoturSession.propTypes = {
+    isStudent: PropTypes.bool,
     loggedIn: PropTypes.bool,
     projectTitle: PropTypes.string,
     isCollaborating: PropTypes.bool,
@@ -325,6 +327,7 @@ RoturSession.propTypes = {
 };
 
 const mapStateToProps = state => ({
+    isStudent: Boolean(state.scratchGui.rotur.isStudent),
     loggedIn: Boolean(state.scratchGui.rotur && state.scratchGui.rotur.username),
     projectTitle: state.scratchGui.projectTitle,
     roturUsername: (state.scratchGui.rotur && state.scratchGui.rotur.username) || null,

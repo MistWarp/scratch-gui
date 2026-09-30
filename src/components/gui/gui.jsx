@@ -765,6 +765,7 @@ const GUIComponent = props => {
         isPlayerOnly,
         isRtl,
         isShared,
+        isStudent,
         isWindowFullScreen,
         isTelemetryEnabled,
         loading,
@@ -865,7 +866,7 @@ const GUIComponent = props => {
     const alwaysEnabledModals = useMemo(() => (
         <React.Fragment>
             <RoturSession />
-            {!isEmbedded && <RoturExtensionHost />}
+            {!isEmbedded && !isStudent && <RoturExtensionHost />}
             <MistWarpGameHost />
             <NotificationsProvider />
             <TWSecurityManager securityManager={securityManager} />
@@ -1409,7 +1410,7 @@ const GUIComponent = props => {
                                 </React.Fragment>
                             )}
                         </Box>
-                        <ChatDock />
+                        {isStudent ? null : <ChatDock />}
                     </Box>
                     <React.Suspense fallback={null}>
                         {extensionLibraryVisible ? (
@@ -1480,6 +1481,7 @@ GUIComponent.propTypes = {
     intl: intlShape.isRequired,
     isCreating: PropTypes.bool,
     isEmbedded: PropTypes.bool,
+    isStudent: PropTypes.bool,
     isFullScreen: PropTypes.bool,
     isPlayerOnly: PropTypes.bool,
     isRtl: PropTypes.bool,
@@ -1566,6 +1568,7 @@ GUIComponent.defaultProps = {
 };
 
 const mapStateToProps = state => ({
+    isStudent: Boolean(state.scratchGui.rotur && state.scratchGui.rotur.isStudent),
     customStageSize: state.scratchGui.customStageSize,
     isWindowFullScreen: state.scratchGui.tw.isWindowFullScreen,
     blocksId: state.scratchGui.timeTravel.year.toString(),

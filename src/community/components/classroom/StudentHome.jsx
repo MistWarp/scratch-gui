@@ -2,9 +2,8 @@ import {useCommunityIntl as useCommunityText} from '../../i18n.jsx';
 /* eslint-disable max-len */
 import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
-import {Link} from 'react-router-dom';
-import {ClipboardList, ExternalLink, FolderOpen, HardDrive, MessageSquareText, MonitorPlay, Play, Send, Undo2, Pencil, Users2} from 'lucide-react';
-import api, {editorUrl, projectUrl} from '../../api';
+import {ClipboardList, FolderOpen, HardDrive, MessageSquareText, MonitorPlay, Play, Send, Undo2, Pencil, Users2} from 'lucide-react';
+import api, {editorUrl} from '../../api';
 import {isOverdue, relativeTime, submissionState} from '../../classroom.js';
 import {formatBytes, formatDateTime} from '../../format.js';
 import Button from '../ui/Button.jsx';
@@ -211,17 +210,15 @@ const StudentHome = ({data, onReload}) => {
                         {projects.map(project => (
                             <li key={project.id} className={styles.projectRow}>
                                 <span className={styles.projectText}>
-                                    <Link to={projectUrl(project)} className={styles.projectTitle}>{project.title}</Link>
+                                    <a href={editorUrl({platformProject: project.id})} className={styles.projectTitle}>
+                                        {project.title}
+                                    </a>
                                     {project.edited ? <span className={styles.projectMeta}>{communityText('Edited {value1}.', {value1: relativeTime(project.edited)})}</span> : null}
                                 </span>
                                 <span className={styles.projectActions}>
                                     <Button as="a" href={editorUrl({platformProject: project.id})}>
                                         <Pencil size={16} aria-hidden="true" />
                                         {communityText('Open')}
-                                    </Button>
-                                    <Button as={Link} to={projectUrl(project)}>
-                                        <ExternalLink size={16} aria-hidden="true" />
-                                        {communityText('View')}
                                     </Button>
                                 </span>
                             </li>

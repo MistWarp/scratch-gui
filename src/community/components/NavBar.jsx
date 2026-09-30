@@ -400,7 +400,7 @@ const NavBar = () => {
         <header className={styles.bar}>
             <div className={styles.inner} ref={innerRef}>
                 <Link
-                    to="/"
+                    to={isStudent ? '/classroom' : '/'}
                     className={styles.brand}
                     aria-label={communityText('MistWarp')}
                 >
@@ -416,29 +416,42 @@ const NavBar = () => {
                 </Link>
 
                 <nav className={styles.links} ref={linksRef} aria-label={t('nav.main')}>
-                    <a href={editorUrl()} className={styles.link} aria-label={t('nav.create')}>
-                        <Plus size={17} />
-                        <span className={styles.linkLabel}>{t('nav.create')}</span>
-                    </a>
-                    <Link
+                    {isStudent ? (
+                        <React.Fragment>
+                            <a href={editorUrl()} className={styles.link} aria-label={communityText('New project')}>
+                                <Plus size={17} />
+                                <span className={styles.linkLabel}>{communityText('New project')}</span>
+                            </a>
+                            <Link to="/classroom" className={styles.link} aria-label={communityText('My class')}>
+                                <BookOpen size={17} />
+                                <span className={styles.linkLabel}>{communityText('My class')}</span>
+                            </Link>
+                        </React.Fragment>
+                    ) : (
+                        <a href={editorUrl()} className={styles.link} aria-label={t('nav.create')}>
+                            <Plus size={17} />
+                            <span className={styles.linkLabel}>{t('nav.create')}</span>
+                        </a>
+                    )}
+                    {isStudent ? null : <Link
                         to="/explore"
                         className={styles.link}
                         aria-label={t('nav.explore')}
                     >
                         <Compass size={17} />
                         <span className={styles.linkLabel}>{t('nav.explore')}</span>
-                    </Link>
-                    <Link
+                    </Link>}
+                    {isStudent ? null : <Link
                         to="/random"
                         className={styles.link}
                         aria-label={t('nav.random')}
                     >
                         <Shuffle size={17} />
                         <span className={styles.linkLabel}>{t('nav.random')}</span>
-                    </Link>
+                    </Link>}
                 </nav>
 
-                <SearchBox
+                {isStudent ? null : <SearchBox
                     className={styles.desktopSearch}
                     containerRef={desktopSearchRef}
                     inputRef={desktopSearchInputRef}
@@ -463,7 +476,7 @@ const NavBar = () => {
                     onSeeAll={runSearch}
                     searchLabel={t('nav.search')}
                     suggestionId="mw-search-suggestions-desktop"
-                />
+                />}
 
                 <div className={styles.account} ref={accountRef}>
                     {isStudent ? null : (
@@ -491,16 +504,7 @@ const NavBar = () => {
                                     ) : null}
                                 </Link>
                             )}
-                            {isStudent ? (
-                                <Link
-                                    to="/classroom"
-                                    className={styles.iconLink}
-                                    title={communityText('My class')}
-                                    aria-label={communityText('My class')}
-                                >
-                                    <BookOpen size={19} />
-                                </Link>
-                            ) : (
+                            {isStudent ? null : (
                                 <Link
                                     to="/mystuff"
                                     className={styles.iconLink}
@@ -515,7 +519,7 @@ const NavBar = () => {
                                 displayName={isStudent ? user.displayName : null}
                                 avatarSrc={isStudent ? initialsAvatar(user.displayName || user.username) : null}
                                 studentMode={isStudent}
-                                extraItems={classroomItems}
+                                extraItems={isStudent ? [] : classroomItems}
                                 isAdmin={user.isAdmin}
                                 openReports={openReports}
                                 openErrors={openErrors}
@@ -542,7 +546,7 @@ const NavBar = () => {
                     )}
                 </div>
             </div>
-            <SearchBox
+            {isStudent ? null : <SearchBox
                 className={`${styles.mobileSearch} ${user ? styles.mobileSearchLoggedIn : ''}`}
                 containerRef={mobileSearchRef}
                 inputRef={mobileSearchInputRef}
@@ -568,15 +572,15 @@ const NavBar = () => {
                 placeholderLabel="Search"
                 searchLabel={t('nav.search')}
                 suggestionId="mw-search-suggestions-mobile"
-            />
+            />}
             <nav className={styles.mobileDock} aria-label={communityText('Mobile navigation')}>
-                <Link to="/" className={mobileItemClass('/')} aria-current={location.pathname === '/' ? 'page' : null} aria-label={communityText('Home')} title={communityText('Home')}>
+                {isStudent ? null : <Link to="/" className={mobileItemClass('/')} aria-current={location.pathname === '/' ? 'page' : null} aria-label={communityText('Home')} title={communityText('Home')}>
                     <House size={25} />
-                </Link>
-                <Link to="/explore" className={`${styles.mobileDockItem} ${location.pathname.startsWith('/explore') || location.pathname.startsWith('/spaces') || location.pathname.startsWith('/themes') ? styles.mobileDockItemActive : ''}`} aria-current={location.pathname.startsWith('/explore') || location.pathname.startsWith('/spaces') || location.pathname.startsWith('/themes') ? 'page' : null} aria-label={communityText('Explore')} title={communityText('Explore')}>
+                </Link>}
+                {isStudent ? null : <Link to="/explore" className={`${styles.mobileDockItem} ${location.pathname.startsWith('/explore') || location.pathname.startsWith('/spaces') || location.pathname.startsWith('/themes') ? styles.mobileDockItemActive : ''}`} aria-current={location.pathname.startsWith('/explore') || location.pathname.startsWith('/spaces') || location.pathname.startsWith('/themes') ? 'page' : null} aria-label={communityText('Explore')} title={communityText('Explore')}>
                     <Compass size={25} />
-                </Link>
-                <a href={editorUrl()} className={`${styles.mobileDockItem} ${styles.mobileCreate}`} aria-label={communityText('Create')} title={communityText('Create')}>
+                </Link>}
+                <a href={editorUrl()} className={`${styles.mobileDockItem} ${styles.mobileCreate}`} aria-label={isStudent ? communityText('New project') : communityText('Create')} title={isStudent ? communityText('New project') : communityText('Create')}>
                     <span className={styles.mobileCreateIcon}><Plus size={28} /></span>
                 </a>
                 {isStudent ? null : (

@@ -2,8 +2,8 @@ import tokenStyles from './styles/tokens.module.css';
 import React, {Suspense, useEffect} from 'react';
 import {lazyWithReload as lazy} from '../lib/lazy-with-retry.js';
 import ErrorBoundary from '../containers/error-boundary.jsx';
-import {Routes, Route, useLocation} from 'react-router-dom';
-import {UserProvider} from './UserContext.jsx';
+import {Routes, Route, Navigate, useLocation} from 'react-router-dom';
+import {UserProvider, useUser} from './UserContext.jsx';
 import setPageMeta from './page-meta.js';
 import {initSiteErrorReporting} from '../lib/error-reporter.js';
 import NavBar from './components/NavBar.jsx';
@@ -97,6 +97,18 @@ const ROUTE_TITLES = [
     ['/project/', 'Project']
 ];
 
+const STUDENT_PREFIXES = ['/classroom/join', '/classroom/claim/', '/trust'];
+
+const studentAllowed = pathname => pathname === '/classroom' ||
+    STUDENT_PREFIXES.some(prefix => pathname === prefix || pathname.startsWith(prefix));
+
+const StudentGuard = ({children}) => {
+    const {user} = useUser();
+    const {pathname} = useLocation();
+    if (user && user.isStudent && !studentAllowed(pathname)) return <Navigate to="/classroom" replace />;
+    return children;
+};
+
 const RouteMeta = () => {
     const {text} = useCommunityIntl();
     const {pathname} = useLocation();
@@ -136,65 +148,67 @@ const App = () => {
                         >{communityText('Loading page…')}</p>
                     }
                 >
-                    <Routes>
-                        <Route path="/" element={<Home />} />
-                        <Route path="/explore" element={<Explore />} />
-                        <Route path="/search" element={<Search />} />
-                        <Route path="/random" element={<Random />} />
-                        <Route path="/bounties/:id" element={<Bounty />} />
-                        <Route path="/bounties" element={<Bounties />} />
-                        <Route path="/themes" element={<Themes />} />
-                        <Route path="/themes/:id" element={<Theme />} />
-                        <Route path="/groups" element={<Groups />} />
-                        <Route path="/groups/:tag" element={<Group />} />
-                        <Route path="/classroom" element={<Classroom />} />
-                        <Route path="/classroom/join" element={<ClassroomJoin />} />
-                        <Route path="/classroom/join/:code" element={<ClassroomJoin />} />
-                        <Route path="/classroom/claim/:code" element={<ClassroomClaim />} />
-                        <Route path="/classroom/school" element={<ClassroomSchool />} />
-                        <Route path="/classroom/:id" element={<ClassroomClass />} />
-                        <Route path="/classroom/:id/students/:sid" element={<ClassroomStudent />} />
-                        <Route path="/classroom/:id/assignments/:aid" element={<ClassroomAssignment />} />
-                        <Route path="/p/:slug" element={<Project />} />
-                        <Route path="/p/:slug/remixes" element={<RemixTree />} />
-                        <Route path="/p/:slug/pulls" element={<PullRequests />} />
-                        <Route path="/p/:slug/pulls/:index" element={<PullRequest />} />
-                        <Route path="/p/:slug/commits/:sha" element={<Commit />} />
-                        <Route path="/project/:id" element={<Project />} />
-                        <Route path="/project/:id/remixes" element={<RemixTree />} />
-                        <Route path="/project/:id/pulls/:index" element={<PullRequest />} />
-                        <Route path="/project/:id/pulls" element={<PullRequests />} />
-                        <Route path="/project/:id/commits/:sha" element={<Commit />} />
-                        <Route path="/users/:name" element={<Profile />} />
-                        <Route path="/users/:name/library" element={<UserLibrary />} />
-                        <Route path="/users/:name/followers" element={<Followers />} />
-                        <Route path="/users/:name/following" element={<Followers mode="following" />} />
-                        <Route path="/settings" element={<Settings />} />
-                        <Route path="/mystuff" element={<MyStuff />} />
-                        <Route path="/mystuff/project/:id" element={<ManageProject />} />
-                        <Route path="/wallet" element={<Wallet />} />
-                        <Route path="/notifications" element={<Notifications />} />
-                        <Route path="/posts/:id" element={<Post />} />
-                        <Route path="/news" element={<News />} />
-                        <Route path="/news/manage" element={<News manager />} />
-                        <Route path="/news/:id" element={<NewsPost />} />
-                        <Route path="/stats" element={<Stats />} />
-                        <Route path="/leaderboard" element={<Leaderboard />} />
-                        <Route path="/spaces" element={<Spaces />} />
-                        <Route path="/spaces/:id" element={<Space />} />
-                        <Route path="/spaces/:id/manage" element={<ManageSpace />} />
-                        <Route path="/roadmap" element={<Roadmap />} />
-                        <Route path="/roadmap/changes" element={<Roadmap changes />} />
-                        <Route path="/roadmap/entry/:entryId" element={<Roadmap />} />
-                        <Route path="/roadmap/:status" element={<Roadmap />} />
-                        <Route path="/compare" element={<Compare />} />
-                        <Route path="/trust" element={<Trust />} />
-                        <Route path="/support" element={<Support />} />
-                        <Route path="/status" element={<Status />} />
-                        <Route path="/perks" element={<PaidPerks />} />
-                        <Route path="/admin" element={<Admin />} />
-                        <Route path="*" element={<NotFound />} />
-                    </Routes>
+                    <StudentGuard>
+                        <Routes>
+                            <Route path="/" element={<Home />} />
+                            <Route path="/explore" element={<Explore />} />
+                            <Route path="/search" element={<Search />} />
+                            <Route path="/random" element={<Random />} />
+                            <Route path="/bounties/:id" element={<Bounty />} />
+                            <Route path="/bounties" element={<Bounties />} />
+                            <Route path="/themes" element={<Themes />} />
+                            <Route path="/themes/:id" element={<Theme />} />
+                            <Route path="/groups" element={<Groups />} />
+                            <Route path="/groups/:tag" element={<Group />} />
+                            <Route path="/classroom" element={<Classroom />} />
+                            <Route path="/classroom/join" element={<ClassroomJoin />} />
+                            <Route path="/classroom/join/:code" element={<ClassroomJoin />} />
+                            <Route path="/classroom/claim/:code" element={<ClassroomClaim />} />
+                            <Route path="/classroom/school" element={<ClassroomSchool />} />
+                            <Route path="/classroom/:id" element={<ClassroomClass />} />
+                            <Route path="/classroom/:id/students/:sid" element={<ClassroomStudent />} />
+                            <Route path="/classroom/:id/assignments/:aid" element={<ClassroomAssignment />} />
+                            <Route path="/p/:slug" element={<Project />} />
+                            <Route path="/p/:slug/remixes" element={<RemixTree />} />
+                            <Route path="/p/:slug/pulls" element={<PullRequests />} />
+                            <Route path="/p/:slug/pulls/:index" element={<PullRequest />} />
+                            <Route path="/p/:slug/commits/:sha" element={<Commit />} />
+                            <Route path="/project/:id" element={<Project />} />
+                            <Route path="/project/:id/remixes" element={<RemixTree />} />
+                            <Route path="/project/:id/pulls/:index" element={<PullRequest />} />
+                            <Route path="/project/:id/pulls" element={<PullRequests />} />
+                            <Route path="/project/:id/commits/:sha" element={<Commit />} />
+                            <Route path="/users/:name" element={<Profile />} />
+                            <Route path="/users/:name/library" element={<UserLibrary />} />
+                            <Route path="/users/:name/followers" element={<Followers />} />
+                            <Route path="/users/:name/following" element={<Followers mode="following" />} />
+                            <Route path="/settings" element={<Settings />} />
+                            <Route path="/mystuff" element={<MyStuff />} />
+                            <Route path="/mystuff/project/:id" element={<ManageProject />} />
+                            <Route path="/wallet" element={<Wallet />} />
+                            <Route path="/notifications" element={<Notifications />} />
+                            <Route path="/posts/:id" element={<Post />} />
+                            <Route path="/news" element={<News />} />
+                            <Route path="/news/manage" element={<News manager />} />
+                            <Route path="/news/:id" element={<NewsPost />} />
+                            <Route path="/stats" element={<Stats />} />
+                            <Route path="/leaderboard" element={<Leaderboard />} />
+                            <Route path="/spaces" element={<Spaces />} />
+                            <Route path="/spaces/:id" element={<Space />} />
+                            <Route path="/spaces/:id/manage" element={<ManageSpace />} />
+                            <Route path="/roadmap" element={<Roadmap />} />
+                            <Route path="/roadmap/changes" element={<Roadmap changes />} />
+                            <Route path="/roadmap/entry/:entryId" element={<Roadmap />} />
+                            <Route path="/roadmap/:status" element={<Roadmap />} />
+                            <Route path="/compare" element={<Compare />} />
+                            <Route path="/trust" element={<Trust />} />
+                            <Route path="/support" element={<Support />} />
+                            <Route path="/status" element={<Status />} />
+                            <Route path="/perks" element={<PaidPerks />} />
+                            <Route path="/admin" element={<Admin />} />
+                            <Route path="*" element={<NotFound />} />
+                        </Routes>
+                    </StudentGuard>
                 </Suspense>
             </ErrorBoundary>
         </div>
@@ -202,4 +216,5 @@ const App = () => {
     </UserProvider>);
 };
 
+export {StudentGuard, studentAllowed};
 export default App;
