@@ -56,6 +56,7 @@ import {
 import AddonHooks from '../addons/hooks.js';
 import LoadScratchBlocksHOC from '../lib/components/tw-load-scratch-blocks-hoc.jsx';
 import {offsetToPosition} from '../lib/backpack/code-payload.js';
+import installWorkspacePaneGuards from '../lib/workspace-pane-guards.js';
 import {acceptsScriptDrop, readScriptDrop} from '../lib/originchats/script-image.js';
 import {gentlyRequestPersistentStorage} from '../lib/utils/storage-request.js';
 import CollaborationService from '../lib/collaboration/index.js';
@@ -235,13 +236,7 @@ class Blocks extends React.Component {
             ScratchBlocks: this.ScratchBlocks,
             getResetLabel: () => this.props.intl.formatMessage(messages.resetCategoryOrder)
         });
-        const isInsideBlocksArea = this.workspace.isInsideBlocksArea.bind(this.workspace);
-        this.workspace.isInsideBlocksArea = event => {
-            if (!isInsideBlocksArea(event)) return false;
-            if (typeof event.clientX !== 'number') return true;
-            const top = this.blocks.ownerDocument.elementFromPoint(event.clientX, event.clientY);
-            return !(top && top.closest && top.closest('[data-chat-pane]'));
-        };
+        installWorkspacePaneGuards(this.workspace, this.blocks.ownerDocument);
         this.blocks.addEventListener('dragover', this.handleScriptDragOver);
         this.blocks.addEventListener('drop', this.handleScriptDrop);
         AddonHooks.blocklyWorkspace = this.workspace;

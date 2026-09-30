@@ -2,237 +2,245 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import {FormattedMessage, defineMessages, injectIntl, intlShape} from 'react-intl';
-import DragConstants from '../../lib/constants/drag-constants';
-import SpriteSelectorItem from '../../containers/sprite-selector-item.jsx';
+import {Backpack as BackpackIcon, ChevronDown, ChevronUp} from 'lucide-react';
+
+import {
+    BackpackFilters,
+    BackpackSearch,
+    BackpackStatus,
+    BackpackItems
+} from './backpack-controls.jsx';
+import {FILTERS} from '../../lib/backpack/preferences.js';
 import styles from './backpack.css';
 
-// TODO make sprite selector item not require onClick
-const noop = () => {};
-
-const dragTypeMap = { // Keys correspond with the backpack-server item types
-    costume: DragConstants.BACKPACK_COSTUME,
-    sound: DragConstants.BACKPACK_SOUND,
-    script: DragConstants.BACKPACK_CODE,
-    sprite: DragConstants.BACKPACK_SPRITE
-};
-
-const labelMap = defineMessages({
-    costume: {
-        id: 'gui.backpack.costumeLabel',
-        defaultMessage: 'costume',
-        description: 'Label for costume backpack item'
+const messages = defineMessages({
+    title: {
+        id: 'gui.backpack.header',
+        defaultMessage: 'Backpack',
+        description: 'Button to open the backpack'
     },
-    sound: {
-        id: 'gui.backpack.soundLabel',
-        defaultMessage: 'sound',
-        description: 'Label for sound backpack item'
+    expand: {
+        id: 'mw.backpack.expandStrip',
+        defaultMessage: 'Show backpack items',
+        description: 'Accessible label of the button that expands the backpack strip'
     },
-    script: {
-        id: 'gui.backpack.scriptLabel',
-        defaultMessage: 'script',
-        description: 'Label for script backpack item'
+    collapse: {
+        id: 'mw.backpack.collapseStrip',
+        defaultMessage: 'Hide backpack items',
+        description: 'Accessible label of the button that collapses the backpack strip'
     },
-    sprite: {
-        id: 'gui.backpack.spriteLabel',
-        defaultMessage: 'sprite',
-        description: 'Label for sprite backpack item'
+    resize: {
+        id: 'mw.backpack.resizeStrip',
+        defaultMessage: 'Resize the backpack',
+        description: 'Accessible label of the handle that resizes the backpack strip'
     }
 });
 
+const MULTI_ROW_HEIGHT = 17 * 16;
+
+const noop = () => {};
+
 const Backpack = ({
-    blockDragOver,
-    containerRef,
+    busyId,
+    canRename,
+    canToggle,
     contents,
+    dragActive,
     dragOver,
     error,
     expanded,
+    filter,
+    handleRef,
     height,
     intl,
     loading,
-    showMore,
-    onToggle,
-    onDelete,
-    onRename,
-    onResizePointerDown,
-    onMouseEnter,
-    onMouseLeave,
-    onMore,
+    panelRef,
+    renamingId,
     searchQuery,
-    onSearchChange
-}) => (
-    <div className={styles.backpackContainer}>
-        {expanded ? (
-            <div
-                className={styles.resizeHandle}
-                onPointerDown={onResizePointerDown}
-            />
-        ) : null}
-        {onToggle ? (
-            <button
-                type="button"
-                className={styles.backpackHeader}
-                aria-expanded={expanded}
-                onClick={onToggle}
-            >
-                <FormattedMessage
-                    defaultMessage="Backpack"
-                    description="Button to open the backpack"
-                    id="gui.backpack.header"
+    showMore,
+    totalCount,
+    onDelete,
+    onFilterChange,
+    onInsert,
+    onMore,
+    onRenameCancel,
+    onRenameStart,
+    onRenameSubmit,
+    onResizePointerDown,
+    onSearchChange,
+    onToggle
+}) => {
+    const collapsedDropZone = !expanded && dragActive;
+    const multiRow = height >= MULTI_ROW_HEIGHT;
+    return (
+        <div
+            className={classNames(styles.backpackContainer, {
+                [styles.expanded]: expanded,
+                [styles.dragActive]: dragActive
+            })}
+        >
+            {expanded ? (
+                <div
+                    aria-label={intl.formatMessage(messages.resize)}
+                    className={styles.resizeHandle}
+                    role="separator"
+                    aria-orientation="horizontal"
+                    onPointerDown={onResizePointerDown}
                 />
-            </button>
-        ) : (
-            <div className={styles.backpackHeader}>
-                <FormattedMessage
-                    defaultMessage="Backpack"
-                    description="Button to open the backpack"
-                    id="gui.backpack.header"
-                />
-            </div>
-        )}
-        {expanded ? (
+            ) : null}
             <div
-                className={classNames(styles.backpackList, {
-                    [styles.dragOver]: dragOver || blockDragOver
+                className={classNames(styles.backpackHeader, {
+                    [styles.headerDropZone]: collapsedDropZone,
+                    [styles.dragOver]: collapsedDropZone && dragOver
                 })}
-                ref={containerRef}
-                onMouseEnter={onMouseEnter}
-                onMouseLeave={onMouseLeave}
-                style={height ? {height: `${height}px`} : null}
+                data-backpack-drop-zone="true"
+                ref={expanded ? null : handleRef}
             >
-                <div className={styles.searchContainer}>
-                    <input
-                        aria-label={intl.formatMessage({
-                            id: 'gui.backpack.searchPlaceholder',
-                            defaultMessage: 'Search backpack...'
-                        })}
-                        autoComplete="off"
-                        className={styles.searchInput}
-                        placeholder={intl.formatMessage({
-                            id: 'gui.backpack.searchPlaceholder',
-                            defaultMessage: 'Search backpack...'
-                        })}
-                        value={searchQuery}
-                        onChange={onSearchChange}
+                <button
+                    aria-expanded={expanded}
+                    aria-label={intl.formatMessage(expanded ? messages.collapse : messages.expand)}
+                    className={styles.headerToggle}
+                    disabled={!canToggle}
+                    type="button"
+                    onClick={onToggle}
+                >
+                    <BackpackIcon
+                        className={styles.headerIcon}
+                        size={16}
                     />
-                </div>
-                <div className={styles.itemsScroller}>
-                    {/* eslint-disable-next-line no-negated-condition */}
-                    {error !== false ? (
-                        <div className={styles.statusMessage}>
-                            <FormattedMessage
-                                defaultMessage="Error loading backpack"
-                                description="Error backpack message"
-                                id="gui.backpack.errorBackpack"
-                            />
-                            <div className={styles.errorMessage}>{error}</div>
-                        </div>
+                    <span className={styles.headerTitle}>
+                        <FormattedMessage {...messages.title} />
+                    </span>
+                    <span className={styles.headerCount}>{totalCount}</span>
+                    {expanded ? (
+                        <ChevronDown
+                            className={styles.headerChevron}
+                            size={16}
+                        />
                     ) : (
-                        loading ? (
-                            <div className={styles.statusMessage}>
-                                <FormattedMessage
-                                    defaultMessage="Loading..."
-                                    description="Loading backpack message"
-                                    id="gui.backpack.loadingBackpack"
-                                />
-                            </div>
-                        ) : (
-                            contents.length > 0 ? (
-                                <div className={styles.backpackListInner}>
-                                    {contents.map(item => (
-                                        <SpriteSelectorItem
-                                            className={styles.backpackItem}
-                                            costumeURL={item.thumbnailUrl}
-                                            details={item.name}
-                                            dragPayload={item}
-                                            dragType={dragTypeMap[item.type]}
-                                            id={item.id}
-                                            key={item.id}
-                                            name={intl.formatMessage(labelMap[item.type])}
-                                            selected={false}
-                                            onClick={noop}
-                                            onDeleteButtonClick={onDelete}
-                                            // Currently, renaming sprites is not supported.
-                                            onRenameButtonClick={item.type === 'sprite' ? null : onRename}
-                                        />
-                                    ))}
-                                    {showMore && (
-                                        <button
-                                            type="button"
-                                            className={styles.more}
-                                            onClick={onMore}
-                                        >
-                                            <FormattedMessage
-                                                defaultMessage="More"
-                                                description="Load more from backpack"
-                                                id="gui.backpack.more"
-                                            />
-                                        </button>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className={styles.statusMessage}>
-                                    {searchQuery ? (
-                                        <FormattedMessage
-                                            defaultMessage="No matching backpack items"
-                                            id="gui.backpack.noSearchResults"
-                                        />
-                                    ) : (
-                                        <FormattedMessage
-                                            defaultMessage="Backpack is empty"
-                                            description="Empty backpack message"
-                                            id="gui.backpack.emptyBackpack"
-                                        />
-                                    )}
-                                </div>
-                            )
-                        )
+                        <ChevronUp
+                            className={styles.headerChevron}
+                            size={16}
+                        />
                     )}
-                </div>
+                </button>
+                {expanded ? (
+                    <React.Fragment>
+                        <BackpackFilters
+                            className={styles.headerFilters}
+                            filter={filter}
+                            onFilterChange={onFilterChange}
+                        />
+                        <BackpackSearch
+                            className={styles.headerSearch}
+                            searchQuery={searchQuery}
+                            onSearchChange={onSearchChange}
+                        />
+                    </React.Fragment>
+                ) : null}
             </div>
-        ) : null}
-    </div>
-);
+            {expanded ? (
+                <div
+                    className={classNames(styles.backpackList, {
+                        [styles.dragOver]: dragOver,
+                        [styles.multiRow]: multiRow
+                    })}
+                    data-backpack-drop-zone="true"
+                    ref={panelRef}
+                    style={height ? {height: `${height}px`} : null}
+                >
+                    <BackpackStatus
+                        error={error}
+                        filter={filter}
+                        hasItems={contents.length > 0}
+                        loading={loading}
+                        searchQuery={searchQuery}
+                    />
+                    {contents.length > 0 || showMore ? (
+                        <div className={styles.backpackListInner}>
+                            <BackpackItems
+                                busyId={busyId}
+                                canRename={canRename}
+                                contents={contents}
+                                itemClassName={styles.backpackItem}
+                                renamingId={renamingId}
+                                showMore={showMore}
+                                onDelete={onDelete}
+                                onInsert={onInsert}
+                                onMore={onMore}
+                                onRenameCancel={onRenameCancel}
+                                onRenameStart={onRenameStart}
+                                onRenameSubmit={onRenameSubmit}
+                            />
+                        </div>
+                    ) : null}
+                    {dragActive ? <div className={styles.dropOverlay} /> : null}
+                </div>
+            ) : null}
+        </div>
+    );
+};
 
 Backpack.propTypes = {
-    blockDragOver: PropTypes.bool,
-    containerRef: PropTypes.func,
+    busyId: PropTypes.string,
+    canRename: PropTypes.bool,
+    canToggle: PropTypes.bool,
     contents: PropTypes.arrayOf(PropTypes.shape({
         id: PropTypes.string,
         thumbnailUrl: PropTypes.string,
         type: PropTypes.string,
         name: PropTypes.string
     })),
+    dragActive: PropTypes.bool,
     dragOver: PropTypes.bool,
     error: PropTypes.oneOfType([PropTypes.bool, PropTypes.string]),
     expanded: PropTypes.bool,
+    filter: PropTypes.oneOf(FILTERS),
+    handleRef: PropTypes.func,
     height: PropTypes.number,
     intl: intlShape,
     loading: PropTypes.bool,
+    panelRef: PropTypes.func,
+    renamingId: PropTypes.string,
     searchQuery: PropTypes.string,
-    onSearchChange: PropTypes.func,
+    showMore: PropTypes.bool,
+    totalCount: PropTypes.number,
     onDelete: PropTypes.func,
-    onRename: PropTypes.func,
-    onResizePointerDown: PropTypes.func,
+    onFilterChange: PropTypes.func,
+    onInsert: PropTypes.func,
     onMore: PropTypes.func,
-    onMouseEnter: PropTypes.func,
-    onMouseLeave: PropTypes.func,
-    onToggle: PropTypes.func,
-    showMore: PropTypes.bool
+    onRenameCancel: PropTypes.func,
+    onRenameStart: PropTypes.func,
+    onRenameSubmit: PropTypes.func,
+    onResizePointerDown: PropTypes.func,
+    onSearchChange: PropTypes.func,
+    onToggle: PropTypes.func
 };
 
 Backpack.defaultProps = {
-    blockDragOver: false,
+    canRename: false,
+    canToggle: true,
     contents: [],
+    dragActive: false,
     dragOver: false,
+    error: false,
     expanded: false,
+    filter: 'all',
     height: null,
     loading: false,
     searchQuery: '',
-    onSearchChange: null,
     showMore: false,
-    onMore: null,
-    onResizePointerDown: null,
-    onToggle: null
+    totalCount: 0,
+    onDelete: noop,
+    onFilterChange: noop,
+    onInsert: noop,
+    onMore: noop,
+    onRenameCancel: noop,
+    onRenameStart: noop,
+    onRenameSubmit: noop,
+    onResizePointerDown: noop,
+    onSearchChange: noop,
+    onToggle: noop
 };
 
 export default injectIntl(Backpack);

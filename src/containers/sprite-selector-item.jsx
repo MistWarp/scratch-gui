@@ -8,10 +8,14 @@ import {updateAssetDrag} from '../reducers/asset-drag';
 import VM from 'scratch-vm';
 import getCostumeUrl from '../lib/utils/get-costume-url';
 import DragRecognizer from '../lib/utils/drag-recognizer.js';
+import DragConstants from '../lib/constants/drag-constants';
+import {isBackpackAvailable, saveToBackpack} from '../lib/backpack/save-to-backpack.js';
 import {getEventXY} from '../lib/utils/touch';
 import {usersInSprite, usersOnAsset} from '../lib/collaboration/presence-selectors.js';
 
 import SpriteSelectorItemComponent from '../components/sprite-selector-item/sprite-selector-item.jsx';
+
+const backpackDragTypes = [DragConstants.SPRITE, DragConstants.COSTUME, DragConstants.SOUND];
 
 class SpriteSelectorItem extends React.PureComponent {
     constructor (props) {
@@ -23,6 +27,7 @@ class SpriteSelectorItem extends React.PureComponent {
             'handleDelete',
             'handleDuplicate',
             'handleExport',
+            'handleAddToBackpack',
             'handleRename',
             'handleMouseEnter',
             'handleMouseLeave',
@@ -104,6 +109,15 @@ class SpriteSelectorItem extends React.PureComponent {
         e.stopPropagation();
         this.props.onExportButtonClick(this.props.id);
     }
+    handleAddToBackpack (e) {
+        e.stopPropagation();
+        saveToBackpack({dragType: this.props.dragType, payload: this.props.dragPayload});
+    }
+    canAddToBackpack () {
+        return backpackDragTypes.includes(this.props.dragType) &&
+            typeof this.props.dragPayload !== 'undefined' &&
+            isBackpackAvailable();
+    }
     handleRename (e) {
         e.stopPropagation();
         this.props.onRenameButtonClick(this.props.id);
@@ -146,6 +160,7 @@ class SpriteSelectorItem extends React.PureComponent {
                 onClick={this.handleClick}
                 onDeleteButtonClick={onDeleteButtonClick ? this.handleDelete : null}
                 onDuplicateButtonClick={onDuplicateButtonClick ? this.handleDuplicate : null}
+                onAddToBackpackButtonClick={this.canAddToBackpack() ? this.handleAddToBackpack : null}
                 onExportButtonClick={onExportButtonClick ? this.handleExport : null}
                 onRenameButtonClick={onRenameButtonClick ? this.handleRename : null}
                 onMouseDown={this.handleMouseDown}
