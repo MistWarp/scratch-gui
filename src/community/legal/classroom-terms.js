@@ -63,6 +63,7 @@ Students and the School keep ownership of the projects they make. The School giv
 3. If no teacher of a class has opened it for 11 months, we notify its teachers. If still nobody opens it, we delete the class, its students and their work 12 months after a teacher last opened it, and never less than 14 days after the notice.
 4. If the School asks us to delete its data by writing to ${LEGAL.email}, we will do so within 30 days.
 5. Deleted records are removed from our live database straight away. Project files are removed from storage once no other project uses the same file.
+6. When a student leaves, a teacher can move their projects to a Rotur account. Rotur accounts are for people aged 13 and over, so for a younger student the teacher should give the link to a parent or guardian.
 
 ## 9. Availability and changes
 
