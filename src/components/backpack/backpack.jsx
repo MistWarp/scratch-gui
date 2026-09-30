@@ -107,21 +107,12 @@ const Backpack = ({
                 >
                     <BackpackIcon
                         className={styles.headerIcon}
-                        size={collapsedDropZone ? 24 : 16}
+                        size={16}
                     />
                     <span className={styles.headerTitle}>
                         <FormattedMessage {...messages.title} />
                     </span>
                     <span className={styles.headerCount}>{totalCount}</span>
-                    {collapsedDropZone ? (
-                        <span className={styles.headerDropText}>
-                            <FormattedMessage
-                                defaultMessage="Drop here to save it to your backpack."
-                                description="Text shown over the backpack while something is being dragged"
-                                id="mw.backpack.dropHere"
-                            />
-                        </span>
-                    ) : null}
                     {expanded ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
                 </button>
                 {expanded ? (
@@ -174,16 +165,7 @@ const Backpack = ({
                             />
                         </div>
                     ) : null}
-                    {dragActive ? (
-                        <div className={styles.dropOverlay}>
-                            <BackpackIcon size={24} />
-                            <FormattedMessage
-                                defaultMessage="Drop here to save it to your backpack."
-                                description="Text shown over the backpack while something is being dragged"
-                                id="mw.backpack.dropHere"
-                            />
-                        </div>
-                    ) : null}
+                    {dragActive ? <div className={styles.dropOverlay} /> : null}
                 </div>
             ) : null}
             {notice ? (
