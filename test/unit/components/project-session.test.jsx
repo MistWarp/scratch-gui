@@ -148,7 +148,7 @@ describe('opt-in project collaboration', () => {
         api.request.mockResolvedValue({session: {id: 'live', branch: 'main', public: true}});
         await ProjectSession.prototype.host.call(instance);
         expect(instance.props.onCreateRoom).toHaveBeenCalledWith(
-            expect.any(String), 'mist', 'private', {projectId: 'p1', branch: 'main'}
+            expect.any(String), 'mist', 'private', {projectId: 'p1', branch: 'main'}, {classroom: false}
         );
         expect(api.request).toHaveBeenCalledWith('/projects/p1/live', expect.objectContaining({
             body: expect.objectContaining({action: 'host', public: true})

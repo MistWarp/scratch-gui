@@ -1,5 +1,6 @@
 import log from '../utils/log.js';
 import throttle from 'lodash.throttle';
+import {isStudentSession} from '../rotur/student-flag.js';
 
 const anonymizeUsername = username => {
     if (/^player\d{2,7}$/i.test(username)) {
@@ -44,6 +45,10 @@ class CloudProvider {
      * @param {string} cloudHost The cloud data server to connect to.
      */
     openConnection () {
+        if (isStudentSession()) {
+            this.connection = null;
+            return;
+        }
         this.connectionAttempts += 1;
 
         try {

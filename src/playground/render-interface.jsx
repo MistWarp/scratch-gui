@@ -46,6 +46,7 @@ import runAddons from '../addons/entry';
 import {APP_NAME, FEEDBACK_URL, GITHUB_URL} from '../lib/constants/brand.js';
 
 import windowManager from '../addons/window-system/window-manager';
+import {isStudentSession} from '../lib/rotur/student-flag.js';
 
 import styles from './interface.css';
 
@@ -431,9 +432,11 @@ class Interface extends React.Component {
                                     />
                                 </p>
                             </div>
-                            <div className={styles.section}>
-                                <FeaturedProjects studio="50866201" />
-                            </div>
+                            {isStudentSession() ? null : (
+                                <div className={styles.section}>
+                                    <FeaturedProjects studio="50866201" />
+                                </div>
+                            )}
                         </React.Fragment>
                     ) : null}
                 </div>

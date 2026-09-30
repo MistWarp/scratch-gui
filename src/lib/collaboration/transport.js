@@ -3,6 +3,7 @@ import {resolvePeerConstructor} from './peer-constructor.js';
 import Emitter from './emitter.js';
 import {validateEnvelope, makeCtrl, KIND, CTRL} from './protocol.js';
 import {APP_NAME} from '../constants/brand.js';
+import {isClassroomUsername, isStudentSession} from '../rotur/student-flag.js';
 
 const DEFAULT_PEER_CONFIG = {
     host: 'collab_warp.mistium.com',
@@ -24,6 +25,18 @@ const DEFAULT_PEER_CONFIG = {
     },
     debug: 1
 };
+
+const CLASSROOM_ICE_SERVERS = [{urls: 'stun:stun.cloudflare.com:3478'}];
+
+const CLASSROOM_PEER_CONFIG = Object.assign({}, DEFAULT_PEER_CONFIG, {
+    config: Object.assign({}, DEFAULT_PEER_CONFIG.config, {iceServers: CLASSROOM_ICE_SERVERS})
+});
+
+const isClassroomMetadata = metadata => Boolean(metadata) && (
+    metadata.classroom === true || isClassroomUsername(metadata.username) || isClassroomUsername(metadata.handle)
+);
+
+const OFFER_MESSAGE = 'OFFER';
 
 const HEARTBEAT_INTERVAL_MS = 10 * 1000;
 const DEAD_PEER_TIMEOUT_MS = 30 * 1000;
@@ -76,7 +89,8 @@ const generateClientPeerId = roomId => {
 class Transport extends Emitter {
     constructor (options = {}) {
         super();
-        this._peerConfig = options.peerConfig || DEFAULT_PEER_CONFIG;
+        this.restricted = options.restricted === true || isStudentSession();
+        this._peerConfig = this.restricted ? CLASSROOM_PEER_CONFIG : (options.peerConfig || DEFAULT_PEER_CONFIG);
         this._createPeer = options.createPeer || ((id, config) => new (resolvePeerConstructor(PeerModule))(id, config));
         this._heartbeatIntervalMs = options.heartbeatIntervalMs || HEARTBEAT_INTERVAL_MS;
         this._deadPeerTimeoutMs = options.deadPeerTimeoutMs || DEAD_PEER_TIMEOUT_MS;
@@ -167,7 +181,7 @@ class Transport extends Emitter {
         this.isHost = false;
         this.roomId = roomId;
         this.hostPeerId = generateHostPeerId(roomId);
-        this._joinMetadata = metadata || {};
+        this._joinMetadata = Object.assign({}, metadata, this.restricted ? {classroom: true} : {});
         return this._openPeer(generateClientPeerId(roomId))
             .then(() => this._dialHost())
             .then(() => {
@@ -283,6 +297,7 @@ class Transport extends Emitter {
             }
             const peer = this._createPeer(peerId, this._peerConfig);
             this.peer = peer;
+            this._restrictClassroomOffers(peer);
             const disposePeer = () => {
                 if (this.peer === peer) this.peer = null;
                 try {
@@ -348,6 +363,25 @@ class Transport extends Emitter {
                 }
             });
         });
+    }
+
+    _restrictClassroomOffers (peer) {
+        if (this.restricted || !peer || typeof peer._handleMessage !== 'function' || !peer.options) return;
+        const handleMessage = peer._handleMessage;
+        peer._handleMessage = message => {
+            const payload = message && message.payload;
+            if (!message || message.type !== OFFER_MESSAGE || !isClassroomMetadata(payload && payload.metadata)) {
+                return handleMessage.call(peer, message);
+            }
+            const options = peer.options;
+            const previous = options.config;
+            options.config = CLASSROOM_PEER_CONFIG.config;
+            try {
+                return handleMessage.call(peer, message);
+            } finally {
+                options.config = previous;
+            }
+        };
     }
 
     _dialHost () {
@@ -595,6 +629,8 @@ class Transport extends Emitter {
 export {
     Transport,
     DEFAULT_PEER_CONFIG,
+    CLASSROOM_PEER_CONFIG,
+    CLASSROOM_ICE_SERVERS,
     sanitizeRoomId,
     generateHostPeerId,
     generateClientPeerId,

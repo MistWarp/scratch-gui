@@ -55,6 +55,7 @@ import {
     computeLineDiff
 } from '../lib/git/git-diff.js';
 import {TOKEN_KEY, authForRemoteUrl} from '../lib/git/sync-remotes.js';
+import {isStudentSession} from '../lib/rotur/student-flag.js';
 import {
     ensureProjectHistoryHydrated,
     getProjectHistoryState,
@@ -1323,6 +1324,7 @@ export class TWGitModal extends React.Component {
                 onToggleAutoCommit={this.handleToggleAutoCommit}
                 onClose={this.handleClose}
                 roturUsername={this.props.roturUsername}
+                remotesDisabled={this.props.isStudent || isStudentSession()}
                 roturRepos={this.state.roturRepos}
                 roturReposLoaded={this.state.roturReposLoaded}
                 roturReposLoading={this.state.roturReposLoading}
@@ -1354,12 +1356,14 @@ TWGitModal.propTypes = {
     onClose: PropTypes.func.isRequired,
     vm: PropTypes.instanceOf(VM).isRequired,
     projectTitle: PropTypes.string,
+    isStudent: PropTypes.bool,
     roturUsername: PropTypes.string
 };
 
 const mapStateToProps = state => ({
     vm: state.scratchGui.vm,
     projectTitle: state.scratchGui.projectTitle,
+    isStudent: Boolean(state.scratchGui.rotur && state.scratchGui.rotur.isStudent),
     roturUsername: (state.scratchGui.rotur && state.scratchGui.rotur.username) || null
 });
 

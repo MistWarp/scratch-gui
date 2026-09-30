@@ -1880,36 +1880,40 @@ class MenuBar extends React.Component {
                                             />
                                         </MenuItem>
                                     )}</ChangeUsername>
-                                    <CloudVariablesToggler>{(toggleCloudVariables, {enabled, canUseCloudVariables}) => (
-                                        <MenuItem
-                                            className={classNames({[styles.disabled]: !canUseCloudVariables})}
-                                            onClick={toggleCloudVariables}
-                                        >
-                                            <Cloud />
-                                            {canUseCloudVariables ? (
-                                                enabled ? (
-                                                    <FormattedMessage
-                                                        defaultMessage="Disable Cloud Variables"
-                                                        description="Menu bar item for disabling cloud variables"
-                                                        id="tw.menuBar.cloudOff"
-                                                    />
+                                    {this.props.isStudent ? null : (
+                                        <CloudVariablesToggler>{(
+                                            toggleCloudVariables, {enabled, canUseCloudVariables}
+                                        ) => (
+                                            <MenuItem
+                                                className={classNames({[styles.disabled]: !canUseCloudVariables})}
+                                                onClick={toggleCloudVariables}
+                                            >
+                                                <Cloud />
+                                                {canUseCloudVariables ? (
+                                                    enabled ? (
+                                                        <FormattedMessage
+                                                            defaultMessage="Disable Cloud Variables"
+                                                            description="Menu bar item for disabling cloud variables"
+                                                            id="tw.menuBar.cloudOff"
+                                                        />
+                                                    ) : (
+                                                        <FormattedMessage
+                                                            defaultMessage="Enable Cloud Variables"
+                                                            description="Menu bar item for enabling cloud variables"
+                                                            id="tw.menuBar.cloudOn"
+                                                        />
+                                                    )
                                                 ) : (
                                                     <FormattedMessage
-                                                        defaultMessage="Enable Cloud Variables"
-                                                        description="Menu bar item for enabling cloud variables"
-                                                        id="tw.menuBar.cloudOn"
+                                                        defaultMessage="Cloud Variables are not Available"
+                                                        // eslint-disable-next-line max-len
+                                                        description="Menu bar item for when cloud variables are not available"
+                                                        id="tw.menuBar.cloudUnavailable"
                                                     />
-                                                )
-                                            ) : (
-                                                <FormattedMessage
-                                                    defaultMessage="Cloud Variables are not Available"
-                                                    // eslint-disable-next-line max-len
-                                                    description="Menu bar item for when cloud variables are not available"
-                                                    id="tw.menuBar.cloudUnavailable"
-                                                />
-                                            )}
-                                        </MenuItem>
-                                    )}</CloudVariablesToggler>
+                                                )}
+                                            </MenuItem>
+                                        )}</CloudVariablesToggler>
+                                    )}
                                 </MenuSection>
                                 <MenuSection>
                                     <MenuItem onClick={this.handleClickProducts}>

@@ -1,3 +1,4 @@
+import {isStudentSession} from '../rotur/student-flag.js';
 import {
     hotPatchProject,
     parseProjectBuffer,
@@ -98,7 +99,7 @@ const waitForProject = vm => new Promise(resolve => {
 });
 
 const startFractchLiveReload = vm => {
-    if (typeof window === 'undefined' || typeof WebSocket === 'undefined') return null;
+    if (typeof window === 'undefined' || typeof WebSocket === 'undefined' || isStudentSession()) return null;
     const query = getQuery();
     const projectUrl = query.get('project_url');
     const liveParam = query.get('fractch_live');

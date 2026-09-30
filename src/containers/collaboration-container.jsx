@@ -10,6 +10,7 @@ import ViewerBanner from '../components/collaboration-modal/viewer-banner.jsx';
 import CollaborationService from '../lib/collaboration/index.js';
 import NotificationSystem from '../lib/notification-manager.js';
 import {setGitModalInitialView} from '../lib/git/modal-view.js';
+import {isStudentSession} from '../lib/rotur/student-flag.js';
 
 import {
     setProjectPresence,
@@ -195,6 +196,10 @@ class CollaborationContainer extends Component {
         }
     }
 
+    isStudent () {
+        return this.props.isStudent || isStudentSession();
+    }
+
     async handleJoinRoom (roomId, username, scope = null, options = {}) {
         const viewer = Boolean(options && options.viewer);
         const accepted = await new Promise(resolve => this.props.openSimpleDialog(viewer ? {
@@ -223,7 +228,8 @@ class CollaborationContainer extends Component {
             this.props.onSetError(null);
 
             await this.collaborationService.connectToRoom(
-                roomId, username, false, 'public', this.props.roturHandle, scope, {viewer}
+                roomId, username, false, 'public', this.props.roturHandle, scope,
+                {viewer, classroom: Boolean(options && options.classroom)}
             );
 
             // Don't set connected immediately - wait for connected-to-host event
@@ -239,7 +245,7 @@ class CollaborationContainer extends Component {
         }
     }
 
-    async handleCreateRoom (roomId, username, privacy = 'public', scope = null) {
+    async handleCreateRoom (roomId, username, privacy = 'public', scope = null, options = {}) {
 
         if (!roomId) throw new Error('Room ID is required to create a room');
 
@@ -252,7 +258,8 @@ class CollaborationContainer extends Component {
                 true,
                 privacy,
                 this.props.roturHandle,
-                scope
+                scope,
+                {classroom: Boolean(options && options.classroom)}
             );
 
             // For hosts, set connected immediately since they're always connected
@@ -662,6 +669,7 @@ class CollaborationContainer extends Component {
                         projectSession={projectSession}
                         onOpenBranches={this.props.onOpenBranches}
                         visible={this.props.isVisible}
+                        isStudent={this.isStudent()}
                         currentUsername={this.props.currentUsername}
                         currentUserId={this.getCurrentUserId()}
                         roturHandle={this.props.roturHandle}
@@ -699,6 +707,7 @@ CollaborationContainer.propTypes = {
     onOpen: PropTypes.func.isRequired,
     isVisible: PropTypes.bool.isRequired,
     isConnected: PropTypes.bool.isRequired,
+    isStudent: PropTypes.bool,
     roomId: PropTypes.string,
     roomPrivacy: PropTypes.string,
     connectedUsers: PropTypes.array.isRequired,
@@ -737,6 +746,7 @@ const mapStateToProps = state => ({
     isProjectReady: getIsShowingProject(state.scratchGui.projectState?.loadingState),
     isVisible: state.scratchGui.collaboration.modalVisible,
     isConnected: state.scratchGui.collaboration.isConnected,
+    isStudent: Boolean(state.scratchGui.rotur && state.scratchGui.rotur.isStudent),
     roomId: state.scratchGui.collaboration.roomId,
     roomPrivacy: state.scratchGui.collaboration.roomPrivacy,
     connectedUsers: state.scratchGui.collaboration.connectedUsers,

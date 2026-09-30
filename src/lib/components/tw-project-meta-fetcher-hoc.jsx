@@ -5,8 +5,12 @@ import log from '../utils/log';
 
 import {setProjectTitle} from '../../reducers/project-title';
 import {setAuthor, setDescription} from '../../reducers/tw';
+import {isStudentSession} from '../rotur/student-flag.js';
 
 export const fetchProjectMeta = async projectId => {
+    if (isStudentSession()) {
+        throw new Error('Scratch projects are not available for class accounts.');
+    }
     const urls = [
         `https://trampoline.turbowarp.org/api/projects/${projectId}`,
         `https://trampoline.turbowarp.xyz/api/projects/${projectId}`
