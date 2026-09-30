@@ -2,11 +2,11 @@ import JSZip from '@turbowarp/jszip';
 import {clearContentCache} from './cached-fetch.js';
 import {isGalleryExtensionUrl} from '../trusted-extension.js';
 import {trackApiSuccess} from '../../community/analytics.js';
+import {ROTUR_TOKEN_KEY} from '../rotur/token-key.js';
 
 const API_BASE = process.env.MW_API_BASE || 'https://api.mistwarp.org/v1';
 
 const SESSION_KEY = 'mw:mistwarp-session';
-const ROTUR_TOKEN_KEY = 'mw:rotur-token';
 const GET_CACHE_PREFIX = 'mw:api-cache:';
 const GET_CACHE_TTL = 60 * 1000;
 

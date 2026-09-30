@@ -15,8 +15,8 @@ import {
     request as mistRequest,
     logout as mistLogout
 } from '../community/api.js';
+import {ROTUR_TOKEN_KEY} from './token-key.js';
 
-const ROTUR_TOKEN_KEY = 'mw:rotur-token';
 const MIST_SESSION_KEY = 'mw:mistwarp-session';
 const STUDENT_SESSION_KEY = 'mw:classroom-student';
 

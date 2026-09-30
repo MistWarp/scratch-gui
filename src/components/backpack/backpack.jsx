@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import {FormattedMessage, defineMessages, injectIntl, intlShape} from 'react-intl';
 import DragConstants from '../../lib/constants/drag-constants';
-import {ComingSoonTooltip} from '../coming-soon/coming-soon.jsx';
 import SpriteSelectorItem from '../../containers/sprite-selector-item.jsx';
 import styles from './backpack.css';
 
@@ -83,16 +82,11 @@ const Backpack = ({
             </button>
         ) : (
             <div className={styles.backpackHeader}>
-                <ComingSoonTooltip
-                    place="top"
-                    tooltipId="backpack-tooltip"
-                >
-                    <FormattedMessage
-                        defaultMessage="Backpack"
-                        description="Button to open the backpack"
-                        id="gui.backpack.header"
-                    />
-                </ComingSoonTooltip>
+                <FormattedMessage
+                    defaultMessage="Backpack"
+                    description="Button to open the backpack"
+                    id="gui.backpack.header"
+                />
             </div>
         )}
         {expanded ? (

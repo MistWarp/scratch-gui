@@ -3,7 +3,6 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {createRequire} from 'node:module';
 import {Script} from 'node:vm';
-import {execSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {defineConfig, loadEnv, build, transformWithEsbuild} from 'vite';
 import react from '@vitejs/plugin-react';
@@ -20,6 +19,8 @@ import {scratchDependencies} from './scripts/vite-dependencies.mjs';
 import {writeEditorLocales} from './scripts/vite-locales.mjs';
 import {writeCommunityLocales} from './scripts/community-translations.mjs';
 import {writeScratchBlocks} from './scripts/vite-blocks.mjs';
+import {ensureMicrobitHex} from './scripts/microbit-hex.mjs';
+import {resolveBuildId} from './scripts/build-id.mjs';
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
@@ -263,8 +264,7 @@ const pagesAndAssets = (env, root, library, generatedInputs) => {
             build: {rollupOptions: {input: (env.ONLY_ENTRY === 'editor' ?
                 ['editor.html'] : [...pages.keys()]).map(absolute)}},
             optimizeDeps: {entries: [
-                ...[...pages.values()].map(page => `src/playground/${page.entry}`),
-                '!deploy-build/**'
+                ...[...pages.values()].map(page => `src/playground/${page.entry}`)
             ]}
         }),
         resolveId: id => (pages.has(path.relative(directory, id)) ? id : null),
@@ -331,8 +331,9 @@ const pagesAndAssets = (env, root, library, generatedInputs) => {
     };
 };
 
-export default defineConfig(({mode}) => {
+export default defineConfig(async ({mode, command}) => {
     const env = {...loadEnv(mode, directory, ''), ...process.env};
+    await ensureMicrobitHex(directory, {required: command === 'build'});
     writeEditorLocales(directory);
     writeCommunityLocales(directory);
     const generatedInputs = [...writeScratchBlocks(directory),
@@ -348,7 +349,7 @@ export default defineConfig(({mode}) => {
         ROOT: root,
         ROUTING_STYLE: env.ROUTING_STYLE || 'wildcard',
         MW_COMMUNITY: env.MW_COMMUNITY === 'true' ? 'true' : '',
-        MW_BUILD_ID: env.MW_BUILD_ID || env.GITHUB_SHA || execSync('git rev-parse HEAD', {encoding: 'utf8'}).trim(),
+        MW_BUILD_ID: resolveBuildId(env),
         MW_BUILD_TIME: env.MW_BUILD_TIME || '',
         MW_STATUS_URL: env.MW_STATUS_URL || 'https://status.warp.mistium.com',
         MW_API_BASE: env.MW_API_BASE || '',
@@ -380,7 +381,6 @@ export default defineConfig(({mode}) => {
             }},
         postcss: {plugins: [postcssImport(), postcssVars(), autoprefixer()]}},
         server: {host: '0.0.0.0', port: Number(env.PORT || 8601), cors: true,
-            watch: {ignored: ['**/deploy-build/**']},
             fs: {allow: [path.dirname(directory)]}},
         preview: {port: Number(env.PORT || 8601)},
         optimizeDeps: {

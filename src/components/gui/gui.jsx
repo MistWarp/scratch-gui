@@ -27,6 +27,7 @@ import SimpleDialog from '../../containers/simple-dialog.jsx';
 import AddonHooks from '../../addons/hooks.js';
 import NativeFindBar from '../find-bar/find-bar.jsx';
 import StarterGuide from './starter-guide.jsx';
+import EditorWelcome from '../editor-welcome/editor-welcome.jsx';
 import NativeSpotlight from '../../containers/spotlight.jsx';
 import MobileStageControls from '../mobile-stage-controls/mobile-stage-controls.jsx';
 import ChatDock from '../mw-chat/chat-dock.jsx';
@@ -141,8 +142,6 @@ const GUIComponent = props => {
         Watermark,
         Backpack,
         BrowserModal,
-        TipsLibrary,
-        Cards,
         DragLayer,
         ConnectionModal,
         CollaborationContainer,
@@ -739,16 +738,11 @@ const GUIComponent = props => {
         backpackVisible,
         blocksId,
         blocksTabVisible,
-        cardsVisible,
         canChangeLanguage,
         canChangeTheme,
-        canCreateNew,
         canEditTitle,
         canManageFiles,
-        canRemix,
         canSave,
-        canCreateCopy,
-        canShare,
         canUseCloud,
         children,
         connectionModalVisible,
@@ -764,14 +758,12 @@ const GUIComponent = props => {
         isFullScreen,
         isPlayerOnly,
         isRtl,
-        isShared,
         isStudent,
         isWindowFullScreen,
         isTelemetryEnabled,
         loading,
         locale,
         logo,
-        renderLogin,
         onClickAbout,
         onClickAccountNav,
         onCloseAccountNav,
@@ -785,7 +777,6 @@ const GUIComponent = props => {
         onOpenRegistration,
         onToggleLoginOpen,
         onActivateTab,
-        onClickLogo,
         onExtensionButtonClick,
         onOpenCustomExtensionModal,
         onProjectTelemetryEvent,
@@ -794,17 +785,14 @@ const GUIComponent = props => {
         onRequestCloseExtensionLibrary,
         onRequestCloseSoundLibrary,
         onRequestCloseTelemetryModal,
-        onSeeCommunity,
         onSetStageSize: _onSetStageSize,
         onSetFullScreen: _onSetFullScreen,
-        onShare,
         onShowPrivacyPolicy,
         onStartSelectingFileUpload,
         onTelemetryModalCancel,
         onTelemetryModalOptIn,
         onTelemetryModalOptOut,
         securityManager,
-        showComingSoon,
         showOpenFilePicker,
         showSaveFilePicker,
         soundsTabVisible,
@@ -813,7 +801,6 @@ const GUIComponent = props => {
         targetIsStage,
         telemetryModalVisible,
         theme,
-        tipsLibraryVisible,
         usernameModalVisible,
         settingsModalVisible,
         customExtensionModalVisible,
@@ -1023,12 +1010,6 @@ const GUIComponent = props => {
                             onClickDesktopSettings={onClickDesktopSettings}
                         />
                     )}
-                    {tipsLibraryVisible ? (
-                        <TipsLibrary />
-                    ) : null}
-                    {cardsVisible ? (
-                        <Cards />
-                    ) : null}
                     {alertsVisible ? (
                         <Alerts className={styles.alertsContainer} />
                     ) : null}
@@ -1064,19 +1045,11 @@ const GUIComponent = props => {
                         authorUsername={authorUsername}
                         canChangeLanguage={canChangeLanguage}
                         canChangeTheme={canChangeTheme}
-                        canCreateCopy={canCreateCopy}
-                        canCreateNew={canCreateNew}
                         canEditTitle={canEditTitle}
                         canManageFiles={canManageFiles}
-                        canRemix={canRemix}
-                        canSave={canSave}
-                        canShare={canShare}
                         className={styles.menuBarPosition}
                         enableCommunity={enableCommunity}
-                        isShared={isShared}
                         logo={logo}
-                        renderLogin={renderLogin}
-                        showComingSoon={showComingSoon}
                         showOpenFilePicker={showOpenFilePicker}
                         showSaveFilePicker={showSaveFilePicker}
                         onClickAbout={onClickAbout}
@@ -1085,15 +1058,12 @@ const GUIComponent = props => {
                         onClickDesktopSettings={onClickDesktopSettings}
                         onClickNewWindow={onClickNewWindow}
                         onClickPackager={onClickPackager}
-                        onClickLogo={onClickLogo}
                         onCloseAccountNav={onCloseAccountNav}
                         onLogOut={onLogOut}
                         onOpenExtensionLibrary={onOpenExtensionLibrary}
                         onOpenExtensionManagerModal={onOpenExtensionManagerModal}
                         onOpenRegistration={onOpenRegistration}
                         onProjectTelemetryEvent={onProjectTelemetryEvent}
-                        onSeeCommunity={onSeeCommunity}
-                        onShare={onShare}
                         onStartSelectingFileUpload={onStartSelectingFileUpload}
                         onToggleLoginOpen={onToggleLoginOpen}
                     />
@@ -1317,6 +1287,7 @@ const GUIComponent = props => {
                                             <Box className={styles.watermark}>
                                                 <Watermark />
                                             </Box>
+                                            <EditorWelcome onOpenFile={onStartSelectingFileUpload} />
                                         </React.Fragment>
                                     </TabPanel>
                                     <TabPanel className={tabClassNames.tabPanel}>
@@ -1459,15 +1430,10 @@ GUIComponent.propTypes = {
     blocksId: PropTypes.string,
     canChangeLanguage: PropTypes.bool,
     canChangeTheme: PropTypes.bool,
-    canCreateCopy: PropTypes.bool,
-    canCreateNew: PropTypes.bool,
     canEditTitle: PropTypes.bool,
     canManageFiles: PropTypes.bool,
-    canRemix: PropTypes.bool,
     canSave: PropTypes.bool,
-    canShare: PropTypes.bool,
     canUseCloud: PropTypes.bool,
-    cardsVisible: PropTypes.bool,
     children: PropTypes.node,
     costumeLibraryVisible: PropTypes.bool,
     soundLibraryVisible: PropTypes.bool,
@@ -1485,7 +1451,6 @@ GUIComponent.propTypes = {
     isFullScreen: PropTypes.bool,
     isPlayerOnly: PropTypes.bool,
     isRtl: PropTypes.bool,
-    isShared: PropTypes.bool,
     isWindowFullScreen: PropTypes.bool,
     loading: PropTypes.bool,
     logo: PropTypes.string,
@@ -1495,7 +1460,6 @@ GUIComponent.propTypes = {
     onClickDesktopSettings: PropTypes.func,
     onClickPackager: PropTypes.func,
     onClickNewWindow: PropTypes.func,
-    onClickLogo: PropTypes.func,
     onCloseAccountNav: PropTypes.func,
     onExtensionButtonClick: PropTypes.func,
     onOpenCustomExtensionModal: PropTypes.func,
@@ -1508,8 +1472,6 @@ GUIComponent.propTypes = {
     onRequestCloseSoundLibrary: PropTypes.func,
     onRequestCloseExtensionLibrary: PropTypes.func,
     onRequestCloseTelemetryModal: PropTypes.func,
-    onSeeCommunity: PropTypes.func,
-    onShare: PropTypes.func,
     onShowPrivacyPolicy: PropTypes.func,
     onStartSelectingFileUpload: PropTypes.func,
     onTabSelect: PropTypes.func,
@@ -1519,9 +1481,7 @@ GUIComponent.propTypes = {
     onToggleLoginOpen: PropTypes.func,
     onSetStageSize: PropTypes.func,
     onSetFullScreen: PropTypes.func,
-    renderLogin: PropTypes.func,
     securityManager: PropTypes.shape({}),
-    showComingSoon: PropTypes.bool,
     showOpenFilePicker: PropTypes.func,
     showSaveFilePicker: PropTypes.func,
     soundsTabVisible: PropTypes.bool,
@@ -1530,7 +1490,6 @@ GUIComponent.propTypes = {
     targetIsStage: PropTypes.bool,
     telemetryModalVisible: PropTypes.bool,
     theme: PropTypes.instanceOf(Theme),
-    tipsLibraryVisible: PropTypes.bool,
     usernameModalVisible: PropTypes.bool,
     roturLoginModalVisible: PropTypes.bool,
     onRequestCloseRoturLogin: PropTypes.func,
@@ -1551,19 +1510,13 @@ GUIComponent.defaultProps = {
     blocksId: 'original',
     canChangeLanguage: true,
     canChangeTheme: true,
-    canCreateNew: false,
     canEditTitle: false,
     canManageFiles: true,
-    canRemix: false,
     canSave: false,
-    canCreateCopy: false,
-    canShare: false,
     canUseCloud: false,
     enableCommunity: false,
     isCreating: false,
-    isShared: false,
     loading: false,
-    showComingSoon: false,
     stageSizeMode: STAGE_SIZE_MODES.large
 };
 
