@@ -1,3 +1,5 @@
+import {isMinorAccount} from '../lib/minor-account.js';
+
 const STATUS_BASE = process.env.MW_STATUS_URL || '';
 const ANALYTICS_KEY = 'mw:anonymous-analytics';
 const SESSION_KEY = 'mw:analytics-session';
@@ -11,6 +13,7 @@ const storage = () => {
 };
 
 export const analyticsEnabled = () => {
+    if (isMinorAccount()) return false;
     const saved = storage()?.getItem(ANALYTICS_KEY);
     if (saved === 'off') return false;
     if (typeof navigator !== 'undefined' && navigator.doNotTrack === '1') return false;

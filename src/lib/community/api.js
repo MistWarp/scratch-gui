@@ -3,6 +3,7 @@ import {clearContentCache} from './cached-fetch.js';
 import {isGalleryExtensionUrl} from '../trusted-extension.js';
 import {trackApiSuccess} from '../../community/analytics.js';
 import {ROTUR_TOKEN_KEY} from '../rotur/token-key.js';
+import {setMinorAccount} from '../minor-account.js';
 
 const API_BASE = 'https://api.mistwarp.org/v1';
 
@@ -129,6 +130,7 @@ const exchangeValidator = async (roturToken, appKey = 'mistwarp') => {
     );
     const authData = await parseResponse(authResponse);
     storeSession(authData.token);
+    setMinorAccount(authData.minor === true);
     return authData;
 };
 

@@ -2461,5 +2461,12 @@
   "Storage covers every project you own, including its assets, version history and anything in the trash. Deleting a project and emptying it from the trash frees its space.": "Storage covers every project you own, including its assets, version history and anything in the trash. Deleting a project and emptying it from the trash frees its space.",
   "View your storage": "View your storage",
   "Full": "Full",
-  "Named history checkpoints": "Named history checkpoints"
+  "Named history checkpoints": "Named history checkpoints",
+  "Other users can comment on your profile.": "Other users can comment on your profile.",
+  "Comments on your profile are turned off.": "Comments on your profile are turned off.",
+  "Could not update your privacy setting.": "Could not update your privacy setting.",
+  "Your Rotur account is under 18, so MistWarp keeps your profile out of user search and creator leaderboards, and keeps your hearts and saves out of activity feeds. Game activity and profile comments start turned off.": "Your Rotur account is under 18, so MistWarp keeps your profile out of user search and creator leaderboards, and keeps your hearts and saves out of activity feeds. Game activity and profile comments start turned off.",
+  "Allow comments on your profile": "Allow comments on your profile",
+  "Let other users post on your profile wall.": "Let other users post on your profile wall.",
+  "Anonymous analytics stay off for accounts under 18.": "Anonymous analytics stay off for accounts under 18."
 }
