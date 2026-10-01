@@ -76,14 +76,14 @@
         flex: 1 1 auto;
     }
 
-    .header > div > div:last-child {
+    .header > div > div:not(:first-child) {
         width: auto;
         flex: 0 1 auto;
         flex-wrap: nowrap;
         gap: 6px;
     }
 
-    .header > div > div:last-child > * {
+    .header > div > div:not(:first-child) > * {
         flex: 0 0 auto;
         min-height: 36px;
         padding: 7px 12px;
