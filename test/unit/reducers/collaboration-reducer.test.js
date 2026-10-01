@@ -238,3 +238,21 @@ test('full collaboration workflow', () => {
     state = collaborationReducer(state, setCollaborationRoomId(null));
     expect(state.roomId).toBe(null);
 });
+
+test('setCollaborationUsers drops activity for users who left', () => {
+    const initialState = {
+        connectedUsers: [{id: '1', username: 'Alice'}, {id: '2', username: 'Bob'}],
+        activity: {1: {userId: '1', targetId: 'a'}, 2: {userId: '2', targetId: 'b'}}
+    };
+    const resultState = collaborationReducer(initialState, setCollaborationUsers([{id: '1', username: 'Alice'}]));
+    expect(Object.keys(resultState.activity)).toEqual(['1']);
+});
+
+test('leaving the session clears everyone\'s activity', () => {
+    const initialState = {
+        isConnected: true,
+        activity: {1: {userId: '1', targetId: 'a'}}
+    };
+    const resultState = collaborationReducer(initialState, setCollaborationConnected(false));
+    expect(resultState.activity).toEqual({});
+});

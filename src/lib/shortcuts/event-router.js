@@ -118,10 +118,15 @@ const isTypingTarget = target => {
     return false;
 };
 
-const shouldIgnoreEvent = event => {
-    if (isTypingTarget(event.target)) return true;
-    if (event.repeat) return true;
-    return false;
+const PLAYER_SHORTCUTS = ['greenFlag', 'stopAll', 'fullScreen', 'stageFullScreen'];
+const EMBED_SHORTCUTS = ['greenFlag', 'stopAll'];
+
+const isAllowedInMode = shortcut => {
+    const mode = callbacks && callbacks.getMode ? callbacks.getMode() : null;
+    if (!mode) return true;
+    if (mode.isEmbedded) return EMBED_SHORTCUTS.includes(shortcut.id);
+    if (mode.isPlayerOnly) return PLAYER_SHORTCUTS.includes(shortcut.id);
+    return true;
 };
 
 const getModifierKeys = event => ({
@@ -382,29 +387,37 @@ const executeShortcut = shortcut => {
 };
 
 const handleKeyDown = event => {
-    if (shouldIgnoreEvent(event)) return;
+    if (event.repeat) return;
 
     const keyCombo = normalizeEventKey(event);
     const matchingShortcut = findMatchingShortcut(keyCombo);
+    if (!matchingShortcut || !isAllowedInMode(matchingShortcut)) return;
 
-    if (matchingShortcut) {
-        if (matchingShortcut.actionType === 'callback') {
-            // The sound and paint editors handle their own undo and redo keys, so a callback
-            // that returns false leaves the event for them.
-            if (executeShortcut(matchingShortcut) !== false) {
-                event.preventDefault();
-                event.stopImmediatePropagation();
-            }
-            return;
-        }
-        if (matchingShortcut.actionType !== null) {
-            // The router owns this key. scratch-blocks listens on the same
-            // document, so stop it from running its own copy of the action.
+    if (isTypingTarget(event.target)) {
+        if (matchingShortcut.id !== 'save') return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        event.target.blur();
+        setTimeout(() => executeShortcut(matchingShortcut), 0);
+        return;
+    }
+
+    if (matchingShortcut.actionType === 'callback') {
+        // The sound and paint editors handle their own undo and redo keys, so a callback
+        // that returns false leaves the event for them.
+        if (executeShortcut(matchingShortcut) !== false) {
             event.preventDefault();
             event.stopImmediatePropagation();
         }
-        executeShortcut(matchingShortcut);
+        return;
     }
+    if (matchingShortcut.actionType !== null) {
+        // The router owns this key. scratch-blocks listens on the same
+        // document, so stop it from running its own copy of the action.
+        event.preventDefault();
+        event.stopImmediatePropagation();
+    }
+    executeShortcut(matchingShortcut);
 };
 
 const updateShortcuts = customShortcuts => {

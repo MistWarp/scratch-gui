@@ -3,8 +3,8 @@ import {applyTheme, applyThemeVisuals} from '../../../src/lib/themes/themePersis
 import {getMenuBarLayout} from '../../../src/lib/mw-menu-bar-layout.js';
 import {getStyleSetting} from '../../../src/lib/mw-style-settings.js';
 
-const savedLayout = {orders: {left: ['edit', 'file']}, hidden: ['feedback']};
-const normalizedSavedLayout = {orders: {left: ['edit', 'file'], right: []}, hidden: ['feedback']};
+const savedLayout = {orders: {left: ['edit', 'file']}, hidden: ['block-count']};
+const normalizedSavedLayout = {orders: {left: ['edit', 'file'], right: []}, hidden: ['block-count']};
 
 const withAppearance = appearance => new Theme(
     Theme.defaults.dark.accent,
@@ -36,25 +36,25 @@ test('previewing a theme without an appearance leaves the saved layout alone', (
 
 test('previewing a theme with its own appearance renders it without saving it', () => {
     applyThemeVisuals(withAppearance({
-        menuBarLayout: {orders: {left: ['tools']}, hidden: ['share']},
+        menuBarLayout: {orders: {left: ['tools']}, hidden: ['about']},
         styles: {'tab-style': 'scratchbox'}
     }));
 
     expect(getMenuBarLayout()).toEqual(normalizedSavedLayout);
     expect(getStyleSetting('tab-style')).toBe('turbowarp');
-    expect(layoutCss()).toContain('[data-mw-item="share"]{display:none !important;}');
+    expect(layoutCss()).toContain('[data-mw-item="about"]{display:none !important;}');
     expect(layoutCss()).toContain('[data-mw-item="tools"]{order:0;}');
 });
 
 test('choosing a theme persists its appearance', () => {
     applyTheme(withAppearance({
-        menuBarLayout: {orders: {left: ['tools']}, hidden: ['share']},
+        menuBarLayout: {orders: {left: ['tools']}, hidden: ['about']},
         styles: {'tab-style': 'scratchbox'}
     }));
 
     expect(getMenuBarLayout()).toEqual({
         orders: {left: ['tools'], right: []},
-        hidden: ['share']
+        hidden: ['about']
     });
     expect(getStyleSetting('tab-style')).toBe('scratchbox');
 });

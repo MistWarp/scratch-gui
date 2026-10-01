@@ -8,6 +8,7 @@
  */
 
 const sessionCaches = new WeakMap(); // vm -> Map<md5ext, Uint8Array>
+const MAX_CACHE_BYTES = 256 * 1024 * 1024;
 
 const cacheFor = vm => {
     let cache = sessionCaches.get(vm);
@@ -40,10 +41,9 @@ const findAssetInTargets = (vm, md5ext) => {
  * @returns {Uint8Array|null} The bytes, or null when unknown.
  */
 const getAssetData = (vm, md5ext) => {
-    const cached = cacheFor(vm).get(md5ext);
-    if (cached) return cached;
     const asset = findAssetInTargets(vm, md5ext);
-    return asset && asset.data ? asset.data : null;
+    if (asset && asset.data) return asset.data;
+    return cacheFor(vm).get(md5ext) || null;
 };
 
 /**
@@ -54,6 +54,14 @@ const getAssetData = (vm, md5ext) => {
  */
 const hasAssetData = (vm, md5ext) => getAssetData(vm, md5ext) !== null;
 
+const cacheBytes = cache => {
+    let total = 0;
+    cache.forEach(data => {
+        total += data.byteLength;
+    });
+    return total;
+};
+
 /**
  * Store received asset bytes in the session cache for the applier.
  * @param {VirtualMachine} vm The VM.
@@ -61,7 +69,34 @@ const hasAssetData = (vm, md5ext) => getAssetData(vm, md5ext) !== null;
  * @param {Uint8Array} data The bytes.
  */
 const storeAssetData = (vm, md5ext, data) => {
-    cacheFor(vm).set(md5ext, data);
+    if (findAssetInTargets(vm, md5ext)) return;
+    const cache = cacheFor(vm);
+    cache.delete(md5ext);
+    cache.set(md5ext, data);
+    let total = cacheBytes(cache);
+    for (const [key, value] of cache) {
+        if (total <= MAX_CACHE_BYTES || key === md5ext) break;
+        cache.delete(key);
+        total -= value.byteLength;
+    }
+};
+
+/**
+ * Forget cached bytes. Called once the edit that needed them has landed,
+ * or for bytes a target now owns.
+ * @param {VirtualMachine} vm The VM.
+ * @param {Array.<string>} [md5exts] Specific assets; omit to drop every
+ * cached asset that a target already references.
+ */
+const releaseAssetData = (vm, md5exts) => {
+    const cache = cacheFor(vm);
+    if (md5exts) {
+        md5exts.forEach(md5ext => cache.delete(md5ext));
+        return;
+    }
+    for (const md5ext of Array.from(cache.keys())) {
+        if (findAssetInTargets(vm, md5ext)) cache.delete(md5ext);
+    }
 };
 
 /**
@@ -109,6 +144,7 @@ export {
     getAssetData,
     hasAssetData,
     storeAssetData,
+    releaseAssetData,
     createStorageAsset,
     clearAssetCache
 };

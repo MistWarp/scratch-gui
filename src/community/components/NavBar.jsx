@@ -132,6 +132,7 @@ const NavBar = () => {
     const [openErrors, setOpenErrors] = useState(0);
     const navigate = useNavigate();
     const location = useLocation();
+    const exploreActive = ['/explore', '/spaces', '/themes', '/groups', '/bounties'].some(path => location.pathname.startsWith(path));
     const innerRef = useRef(null);
     const linksRef = useRef(null);
     const accountRef = useRef(null);
@@ -546,7 +547,7 @@ const NavBar = () => {
                 <Link to="/" className={mobileItemClass('/')} aria-current={location.pathname === '/' ? 'page' : null} aria-label={communityText('Home')} title={communityText('Home')}>
                     <House size={25} />
                 </Link>
-                <Link to="/explore" className={`${styles.mobileDockItem} ${location.pathname.startsWith('/explore') || location.pathname.startsWith('/spaces') || location.pathname.startsWith('/themes') ? styles.mobileDockItemActive : ''}`} aria-current={location.pathname.startsWith('/explore') || location.pathname.startsWith('/spaces') || location.pathname.startsWith('/themes') ? 'page' : null} aria-label={communityText('Explore')} title={communityText('Explore')}>
+                <Link to="/explore" className={`${styles.mobileDockItem} ${exploreActive ? styles.mobileDockItemActive : ''}`} aria-current={exploreActive ? 'page' : null} aria-label={communityText('Explore')} title={communityText('Explore')}>
                     <Compass size={25} />
                 </Link>
                 <a href={editorUrl()} className={`${styles.mobileDockItem} ${styles.mobileCreate}`} aria-label={communityText('Create')} title={communityText('Create')}>

@@ -27,6 +27,7 @@
 .variable-name-text-input {
     margin-bottom: 1.5rem;
     width: 100%;
+    box-sizing: border-box;
     border: 1px solid $ui-black-transparent;
     border-radius: 5px;
     padding: 0 1rem;

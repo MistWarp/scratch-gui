@@ -12,7 +12,7 @@
  * authoritative for who sent a message.
  */
 
-const PROTOCOL_VERSION = 2;
+const PROTOCOL_VERSION = 4;
 
 const KIND = {
     OP: 'op',
@@ -57,6 +57,7 @@ const CTRL = {
     HELLO: 'hello',
     COMMAND_ACK: 'command-ack',
     JOIN_REQUEST: 'join-request',
+    JOIN_PENDING: 'join-pending',
     JOIN_APPROVED: 'join-approved',
     JOIN_DENIED: 'join-denied',
     JOIN_CANCELLED: 'join-cancelled',
@@ -66,12 +67,10 @@ const CTRL = {
     USERNAME_CHANGE: 'username-change',
     KICK: 'kick',
     PRIVACY_CHANGED: 'privacy-changed',
+    ROLE_CHANGED: 'role-changed',
     OPS_REQUEST: 'ops-request',
     RESYNC_REQUIRED: 'resync-required',
     SESSION_READY: 'session-ready',
-    HOST_LOADING_START: 'host-loading-start',
-    HOST_LOADING_PROGRESS: 'host-loading-progress',
-    HOST_LOADING_COMPLETE: 'host-loading-complete',
     PING: 'ping',
     PONG: 'pong'
 };
@@ -120,6 +119,8 @@ const LIMITS = {
     MAX_CHAT: 500,
     MAX_REASON: 200,
     MAX_ID: 128,
+    MAX_TOKEN: 64,
+    MAX_EXTENSION_URL: 4 * 1024 * 1024,
     MAX_XML: 1024 * 1024,
     MAX_DATA_URL: 8 * 1024 * 1024,
     MAX_CHUNK_BYTES: 256 * 1024,
@@ -164,11 +165,15 @@ const isChunkData = value => {
     return false;
 };
 
+const ROLES = ['edit', 'watch'];
+const isRole = value => ROLES.includes(value);
+
 const isUserInfo = value =>
     isPlainObject(value) &&
     isNonEmptyString(value.id, LIMITS.MAX_ID) &&
     isNonEmptyString(value.username, LIMITS.MAX_USERNAME) &&
     isOptionalString(value.handle, LIMITS.MAX_USERNAME) &&
+    (typeof value.role === 'undefined' || isRole(value.role)) &&
     typeof value.isHost === 'boolean';
 
 const isMd5Ext = value =>
@@ -361,12 +366,18 @@ const PAYLOAD_VALIDATORS = {
         if (typeof payload.lastAppliedSeq !== 'undefined' && !isNonNegativeInt(payload.lastAppliedSeq)) {
             return 'hello lastAppliedSeq must be a non-negative integer';
         }
+        if (!isOptionalString(payload.epoch, LIMITS.MAX_TOKEN)) return 'hello epoch must be a string';
+        if (!isOptionalString(payload.reconnectToken, LIMITS.MAX_TOKEN)) return 'hello reconnectToken must be a string';
+        if (!isOptionalString(payload.invite, LIMITS.MAX_TOKEN)) return 'hello invite must be a string';
         return null;
     },
     [CTRL.JOIN_REQUEST]: payload =>
         (isNonEmptyString(payload.username, LIMITS.MAX_USERNAME) ? null : 'join-request requires username'),
     [CTRL.JOIN_APPROVED]: payload => {
         if (!isNonEmptyString(payload.hostUsername, LIMITS.MAX_USERNAME)) return 'join-approved requires hostUsername';
+        if (!isNonEmptyString(payload.epoch, LIMITS.MAX_TOKEN)) return 'join-approved requires epoch';
+        if (!isNonEmptyString(payload.reconnectToken, LIMITS.MAX_TOKEN)) return 'join-approved requires reconnectToken';
+        if (!isRole(payload.role)) return 'join-approved requires a role';
         return null;
     },
     [CTRL.JOIN_DENIED]: payload =>
@@ -389,10 +400,9 @@ const PAYLOAD_VALIDATORS = {
     [CTRL.PRIVACY_CHANGED]: payload =>
         (payload.privacy === 'public' || payload.privacy === 'private' ?
             null : 'privacy-changed requires public|private'),
+    [CTRL.ROLE_CHANGED]: payload => (isRole(payload.role) ? null : 'role-changed requires a role'),
     [CTRL.OPS_REQUEST]: payload =>
         (isNonNegativeInt(payload.fromSeq) ? null : 'ops-request requires fromSeq'),
-    [CTRL.HOST_LOADING_PROGRESS]: payload =>
-        (isFiniteNumber(payload.progress) ? null : 'host-loading-progress requires progress'),
 
     [SNAPSHOT.BEGIN]: payload => {
         if (!isNonEmptyString(payload.transferId, LIMITS.MAX_ID)) return 'snapshot-begin requires transferId';
@@ -427,7 +437,7 @@ const PAYLOAD_VALIDATORS = {
             for (const entry of payload.extensions) {
                 if (!isPlainObject(entry) ||
                     !isNonEmptyString(entry.id, LIMITS.MAX_STRING) ||
-                    !isOptionalString(entry.url, LIMITS.MAX_STRING)) {
+                    !isOptionalString(entry.url, LIMITS.MAX_EXTENSION_URL)) {
                     return 'snapshot-begin invalid extensions entry';
                 }
             }
@@ -553,6 +563,7 @@ const makePresence = (type, payload) => makeEnvelope(KIND.PRESENCE, type, payloa
 
 export {
     PROTOCOL_VERSION,
+    ROLES,
     KIND,
     OP,
     CTRL,

@@ -83,7 +83,7 @@
 
 .font-dropdown-outer {
     position: absolute;
-    z-index: $z-index-modal;
+    z-index: $z-index-context-menu;
     background-color: $ui-white;
     color: $text-primary;
     border-radius: 0.25rem;

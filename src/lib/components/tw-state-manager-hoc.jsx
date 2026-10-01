@@ -20,6 +20,7 @@ import {
 } from '../../reducers/project-state';
 import {
     setCollaborationRoomId,
+    setCollaborationInvite,
     openCollaborationModal
 } from '../../reducers/collaboration.js';
 import {
@@ -410,9 +411,11 @@ const TWStateManager = function (WrappedComponent) {
                 const roomCode = urlParams.get('room');
 
                 this.pendingRoomCode = roomCode;
+                this.props.onSetCollaborationInvite(urlParams.get('invite'));
 
                 const currentUrl = new URL(location.href);
                 currentUrl.searchParams.delete('room');
+                currentUrl.searchParams.delete('invite');
                 currentUrl.searchParams.delete('username');
                 history.replaceState(null, null, currentUrl.toString());
 
@@ -694,6 +697,7 @@ const TWStateManager = function (WrappedComponent) {
                 onSetUsername,
                 onSetCloud,
                 onSetCollaborationRoomId,
+                onSetCollaborationInvite,
                 onOpenCollaborationModal,
                 reduxProjectId,
                 routingStyle,
@@ -742,6 +746,7 @@ const TWStateManager = function (WrappedComponent) {
         roturUsername: PropTypes.string,
         usernameOverride: PropTypes.string,
         onSetCollaborationRoomId: PropTypes.func,
+        onSetCollaborationInvite: PropTypes.func,
         onOpenCollaborationModal: PropTypes.func,
         openSimpleDialog: PropTypes.func.isRequired,
         confirmWithMessage: PropTypes.func,
@@ -778,6 +783,7 @@ const TWStateManager = function (WrappedComponent) {
         onSetUsername: username => dispatch(setUsername(username)),
         onSetCloud: cloud => dispatch(setCloud(cloud)),
         onSetCollaborationRoomId: roomId => dispatch(setCollaborationRoomId(roomId)),
+        onSetCollaborationInvite: invite => dispatch(setCollaborationInvite(invite)),
         onOpenCollaborationModal: () => dispatch(openCollaborationModal()),
         openSimpleDialog: config => dispatch(openSimpleDialog(config))
     });

@@ -16,8 +16,8 @@ import {
     MENU_BAR_TEXT_OPTIONS
 } from '../themes/menu-bar-accent.js';
 import {
-    getRoturSettings,
-    updateRoturSettings,
+    getRoturSettingsSnapshot,
+    applyRoturSettingsSnapshot,
     subscribeRoturSettings
 } from './settings.js';
 
@@ -88,7 +88,7 @@ const collectLocalSnapshot = () => {
         })(),
         settings: Object.assign(
             {
-                rotur: getRoturSettings(),
+                rotur: getRoturSettingsSnapshot(),
                 menuBar: {
                     order: readLocalJson(MENU_BAR_ORDER_KEY, {}),
                     hidden: readLocalJson(MENU_BAR_HIDDEN_KEY, []),
@@ -123,7 +123,7 @@ const applySnapshotLocally = snapshot => {
         }
         if (snapshot.settings && typeof snapshot.settings === 'object') {
             if (snapshot.settings.rotur) {
-                updateRoturSettings(snapshot.settings.rotur);
+                applyRoturSettingsSnapshot(snapshot.settings.rotur);
             }
             try {
                 if (typeof snapshot.settings.username === 'string' && snapshot.settings.username) {

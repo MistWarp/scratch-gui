@@ -62,10 +62,12 @@ describe('custom asset filename editing', () => {
         file.handleNameFocus();
         file.handleNameChange({target: {value: 'mistake.png'}});
 
-        file.handleNameKeyDown({key: 'Escape', target});
+        const preventDefault = jest.fn();
+        file.handleNameKeyDown({key: 'Escape', preventDefault, target});
 
         expect(file.state.fileName).toBe('cat.png');
         expect(target.blur).toHaveBeenCalledTimes(1);
+        expect(preventDefault).toHaveBeenCalledTimes(1);
     });
 });
 

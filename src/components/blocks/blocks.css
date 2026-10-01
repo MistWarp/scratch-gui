@@ -148,3 +148,63 @@
         padding-bottom: 6.8rem;
     }
 }
+
+.blocks :global(.mwCategoryReordering .scratchCategoryMenuItem) {
+    cursor: grabbing;
+}
+
+.blocks :global(.mwCategoryReordering .scratchCategoryMenuRow) {
+    transition: transform 0.16s ease;
+}
+
+.blocks :global(.mwCategoryReordering .scratchCategoryMenuItem:hover) {
+    color: inherit !important;
+}
+
+.blocks :global(.mwCategoryDragRow .scratchCategoryMenuItem) {
+    visibility: hidden;
+}
+
+.blocks :global(.scratchCategoryMenu.mwCategoryDragGhost) {
+    position: fixed;
+    z-index: $z-index-drag-layer;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    background: transparent;
+    pointer-events: none;
+    will-change: transform;
+}
+
+.blocks :global(.mwCategoryDragGhostSettling) {
+    transition: transform 0.16s ease;
+}
+
+.blocks :global(.mwCategoryDragGhost .scratchCategoryMenuItem) {
+    background: $ui-white;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.25rem 0.75rem $ui-black-transparent, 0 0 0 1px $ui-black-transparent;
+    animation: mw-category-lift 0.12s ease forwards;
+}
+
+.blocks :global(.mwCategoryDragGhostSettling .scratchCategoryMenuItem) {
+    animation: none;
+    transform: none;
+    box-shadow: none;
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.blocks :global(.scratchCategoryMenuItem.mwCategoryPressed) {
+    background: $ui-tertiary;
+    border-radius: 0.5rem;
+}
+
+@keyframes mw-category-lift {
+    from {
+        transform: scale(1);
+    }
+
+    to {
+        transform: scale(1.06);
+    }
+}

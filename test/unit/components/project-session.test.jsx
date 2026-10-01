@@ -111,7 +111,19 @@ describe('opt-in project collaboration', () => {
             {username: 'friend', peerId: 'verified', approved: true}
         ]}});
         await instance.tick();
-        expect(instance.props.service.approveJoinRequest.mock.calls).toEqual([['verified']]);
+        expect(instance.props.service.approveJoinRequest.mock.calls).toEqual([['verified', 'edit']]);
+    });
+
+    test('admits testers verified by the API as watchers', async () => {
+        const instance = makeCoordinator();
+        instance.lease = {id: 'live', projectId: 'p1', branch: 'main', roomId: 'room', host: true};
+        instance.props.service.isConnected = true;
+        instance.props.service.getPendingJoinRequests.mockReturnValue([{id: 'tester-peer'}]);
+        api.request.mockResolvedValue({session: {id: 'live', members: [
+            {username: 'qa', peerId: 'tester-peer', approved: true, access: 'watch'}
+        ]}});
+        await instance.tick();
+        expect(instance.props.service.approveJoinRequest.mock.calls).toEqual([['tester-peer', 'watch']]);
     });
 
     test('provides explicit project controls in the room window', () => {

@@ -29,13 +29,10 @@ class SliderPrompt extends React.Component {
     }
     handleOk () {
         const {minValue, maxValue} = this.state;
-        if (!this.validates(minValue, maxValue)) {
-            this.props.onCancel();
-            return;
-        }
+        if (!this.validates(minValue, maxValue)) return;
         this.props.onOk(
-            parseFloat(minValue),
-            parseFloat(maxValue),
+            Number(minValue),
+            Number(maxValue),
             this.shouldBeDiscrete(minValue, maxValue));
     }
     handleCancel () {
@@ -51,13 +48,14 @@ class SliderPrompt extends React.Component {
         return min.indexOf('.') + max.indexOf('.') === -2; // Both -1
     }
     validates (min, max) {
-        return isFinite(min) && isFinite(max);
+        return [min, max].every(value => String(value).trim() !== '' && Number.isFinite(Number(value)));
     }
     render () {
         return (
             <SliderPromptComponent
                 maxValue={this.state.maxValue}
                 minValue={this.state.minValue}
+                valid={this.validates(this.state.minValue, this.state.maxValue)}
                 onCancel={this.handleCancel}
                 onChangeMax={this.handleChangeMax}
                 onChangeMin={this.handleChangeMin}

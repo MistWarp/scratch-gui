@@ -41,6 +41,10 @@ const setMuted = newMuted => {
 
 const onVolumeChanged = callback => {
     callbacks.push(callback);
+    return () => {
+        const index = callbacks.indexOf(callback);
+        if (index !== -1) callbacks.splice(index, 1);
+    };
 };
 
 const gotAudioEngine = audioEngine => {

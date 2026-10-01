@@ -25,6 +25,7 @@ export default class VMAdapter {
             engine.deferRefresh = true;
             if (command.method === 'blockEvent') engine.refreshPending = true;
             return Promise.resolve(onLocalOp(OP.VM_EDIT, payload)).then(result => {
+                if (result && result.commit && result.commit.error) throw new Error(result.commit.error);
                 const created = result && result.commit && result.commit.patches.find(patch => patch.create);
                 if (created && !this._destroyed) vm.setEditingTarget(created.id);
                 return created ? created.id : null;
@@ -44,9 +45,6 @@ export default class VMAdapter {
             if (!shouldSyncEvent(event)) return false;
             if (this._seen.has(event)) return true;
             this._seen.add(event);
-            if (event._syncOriginated) return true;
-            // Rebuild events are marked at creation by the blocks renderer.
-            if (event.recordUndo === false && event._mwRenderEvent) return true;
             const target = globalVariable && !event.isLocal ? vm.runtime.getTargetForStage() :
                 event._mwTargetId ? vm.runtime.getTargetById(event._mwTargetId) : vm.editingTarget;
             if (!target) return true;
@@ -62,9 +60,6 @@ export default class VMAdapter {
         this.vm.editingCommands.loadingSnapshot = value;
     }
     isSuppressed () {
-        return this._suppressed;
-    }
-    isMutationSuppressed () {
         return this._suppressed;
     }
     attach (workspace) {
@@ -87,7 +82,6 @@ export default class VMAdapter {
     detach () {
         this.workspace = null;
     }
-    flush () {}
 
     syncProcedureBlocks () {
         if (!this.workspace || this._suppressed) return;
@@ -103,9 +97,13 @@ export default class VMAdapter {
     destroy () {
         this._destroyed = true;
         if (this._events && this._events.fire === this._fire) this._events.fire = this._originalFire;
-        this.vm.editingCommands.handler = null;
-        this.vm.editingCommands.captureEvent = null;
-        this.vm.editingCommands.deferRefresh = false;
+        const engine = this.vm.editingCommands;
+        const stale = this._pending > 0 || engine.refreshPending;
+        engine.handler = null;
+        engine.captureEvent = null;
+        engine.deferRefresh = false;
+        engine.refreshPending = false;
         this.detach();
+        if (stale) this.vm.emitWorkspaceUpdate();
     }
 }

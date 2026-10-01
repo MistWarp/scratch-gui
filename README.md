@@ -43,7 +43,7 @@ pnpm run preview
 - `pnpm run build:library` builds the GUI library into `dist/`, and `pnpm run build:all` builds the site and the library.
 - `pnpm run build:stats` and `pnpm run build:report` report bundle sizes.
 
-Production runs on Cloudflare Pages, which builds `develop` with `MW_COMMUNITY=true`, updates the engine forks to their latest `develop`, and adds the docs site under `/docs`.
+Production runs on Cloudflare Pages, which builds `develop` with `MW_COMMUNITY=true`, updates the engine forks to their latest `develop`, and adds the docs site under `/docs`. Its build command is `node scripts/cloudflare-build.mjs`. That script installs once with the forks already updated and skips their build scripts, since the site compiles the forks from source. It downloads `/docs` from the archive that the MistWarp/docs deployment publishes, and builds the docs from source only when that archive is behind docs `master`.
 
 ## Check your changes
 
@@ -94,6 +94,7 @@ Set these in `.env` or in the shell.
 | `SOURCEMAP` | `true` writes source maps. |
 | `MW_BUILD_DOCS` | Clones and builds MistWarp/docs into `/docs`. A built sibling `../docs/build` is copied in instead when it exists. |
 | `MW_PINNED_FORKS` | On Cloudflare Pages, keeps the fork pins from `package.json` instead of updating them. |
+| `MW_DOCS_ORIGIN` | Docs deployment that Cloudflare Pages builds download `/docs` from. Defaults to `https://docs.warp.mistium.com`. |
 | `MW_STATUS_URL` | Status service used by the community status page and analytics. |
 | `GOOGLE_FONTS_API_KEY` | Google Fonts API key for the theme font picker. |
 

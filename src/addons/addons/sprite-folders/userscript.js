@@ -1,3 +1,5 @@
+import {createContextMenuIconElement} from '../../../lib/context-menu-icons';
+
 export default async ({addon, console, msg}) => {
     const DIVIDER = '//';
     
@@ -512,7 +514,7 @@ export default async ({addon, console, msg}) => {
         
         const btnRename = document.createElement('div');
         btnRename.className = 'sa-context-menu-item';
-        btnRename.textContent = 'Rename';
+        btnRename.append(createContextMenuIconElement('rename'), 'Rename');
         btnRename.addEventListener('click', () => {
             menu.remove();
             renameFolder(foldername);
@@ -520,7 +522,7 @@ export default async ({addon, console, msg}) => {
         
         const btnDelete = document.createElement('div');
         btnDelete.className = 'sa-context-menu-item';
-        btnDelete.textContent = hasSprites ? 'Delete' : 'Remove Folder';
+        btnDelete.append(createContextMenuIconElement(hasSprites ? 'delete' : 'removeFolder'), hasSprites ? 'Delete' : 'Remove Folder');
         btnDelete.addEventListener('click', () => {
             menu.remove();
             deleteFolder(foldername);
@@ -549,7 +551,7 @@ export default async ({addon, console, msg}) => {
         
         const duplicateBtn = document.createElement('div');
         duplicateBtn.className = 'sa-context-menu-item';
-        duplicateBtn.textContent = 'Duplicate';
+        duplicateBtn.append(createContextMenuIconElement('duplicate'), 'Duplicate');
         duplicateBtn.addEventListener('click', () => {
             menu.remove();
             vm.duplicateSprite(sprite.id);
@@ -557,7 +559,7 @@ export default async ({addon, console, msg}) => {
         
         const exportBtn = document.createElement('div');
         exportBtn.className = 'sa-context-menu-item';
-        exportBtn.textContent = 'Export';
+        exportBtn.append(createContextMenuIconElement('export'), 'Export');
         exportBtn.addEventListener('click', () => {
             menu.remove();
             // Find the original wrapper and call its export handler
@@ -578,7 +580,7 @@ export default async ({addon, console, msg}) => {
         
         const renameBtn = document.createElement('div');
         renameBtn.className = 'sa-context-menu-item';
-        renameBtn.textContent = 'Rename';
+        renameBtn.append(createContextMenuIconElement('rename'), 'Rename');
         renameBtn.addEventListener('click', async () => {
             menu.remove();
             const newName = await addon.tab.prompt(
@@ -593,7 +595,7 @@ export default async ({addon, console, msg}) => {
         
         const deleteBtn = document.createElement('div');
         deleteBtn.className = 'sa-context-menu-item sa-context-menu-danger';
-        deleteBtn.textContent = 'Delete';
+        deleteBtn.append(createContextMenuIconElement('delete'), 'Delete');
         deleteBtn.addEventListener('click', () => {
             if (confirm('Delete this sprite?')) {
                 menu.remove();

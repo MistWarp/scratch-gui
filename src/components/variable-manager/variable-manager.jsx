@@ -379,6 +379,7 @@ const ListEditor = ({intl, maxLength, onChange, onConfirm, record}) => {
     const handleItemKeyDown = event => {
         if (event.key === 'Enter') event.currentTarget.blur();
         if (event.key === 'Escape') {
+            event.preventDefault();
             setItems(Array.isArray(record.value) ? record.value.map(String) : []);
             event.currentTarget.blur();
         }
@@ -545,6 +546,7 @@ const DetailPanel = ({intl, onConfirm, onDelete, onMonitorChange, onRename, onVa
 
     const saveValue = () => {
         editingValue.current = false;
+        if (value === String(record.value)) return;
         try {
             onValueChange(record, value);
             setError('');
@@ -555,11 +557,18 @@ const DetailPanel = ({intl, onConfirm, onDelete, onMonitorChange, onRename, onVa
 
     const handleNameKey = event => {
         if (event.key === 'Enter') saveName();
-        if (event.key === 'Escape') setName(record.name);
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            setName(record.name);
+        }
     };
 
     const handleValueKey = event => {
         if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') saveValue();
+        if (event.key === 'Escape' && value !== String(record.value)) {
+            event.preventDefault();
+            setValue(String(record.value));
+        }
     };
 
     const requestDelete = async () => {
@@ -790,6 +799,10 @@ const VariableManager = props => {
 
     const targets = useMemo(() => getOriginalTargets(vm), [vm, records]);
     const editingTarget = vm.runtime.getEditingTarget();
+    const canShowLocal = !!editingTarget && !editingTarget.isStage;
+    useEffect(() => {
+        if (scope === 'local' && !canShowLocal) setScope('all');
+    }, [scope, canShowLocal]);
     const selected = records.find(record => record.id === selectedId) || null;
     const counts = useMemo(() => ({
         all: records.length,
@@ -880,10 +893,10 @@ const VariableManager = props => {
     const scopeOptions = [
         {value: 'all', label: intl.formatMessage(messages.all)},
         {value: 'global', label: intl.formatMessage(messages.global)},
-        ...(!editingTarget || editingTarget.isStage ? [] : [{
+        ...(canShowLocal ? [{
             value: 'local',
             label: intl.formatMessage(messages.local)
-        }])
+        }] : [])
     ];
 
     return (

@@ -26,14 +26,6 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
-.alert.warn {
-    border-inline-start: 4px solid $status-warning;
-}
-
-.alert.success {
-    border-inline-start: 4px solid $status-success;
-}
-
 .alert-spinner {
     self-align: center;
 }

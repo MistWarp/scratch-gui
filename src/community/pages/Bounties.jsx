@@ -1,14 +1,13 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {Coins, Search} from 'lucide-react';
+import {Coins} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import api, {projectUrl} from '../api.js';
 import {listCommerceBounties} from '../credits.js';
-import ExploreNav from '../components/ExploreNav.jsx';
+import ExploreHeader, {ExploreSearch} from '../components/ExploreHeader.jsx';
 import Button from '../components/ui/Button.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
-import PageHeader from '../components/ui/PageHeader.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import UserLink from '../components/UserLink.jsx';
 import styles from './Bounties.module.css';
@@ -71,15 +70,9 @@ const Bounties = () => {
 
     return (
         <main className={styles.page}>
-            <PageHeader
-                icon={Coins}
-                title={communityText('Project bounties')}
-                lead={communityText('Funded improvements open across public MistWarp projects.')}
-                actions={(
-                    <label className={styles.search}><Search size={16} /><input value={query} placeholder={communityText('Search bounties')} onChange={event => setQuery(event.target.value)} /></label>
-                )}
-            />
-            <ExploreNav active="bounties" />
+            <ExploreHeader active="bounties" lead={communityText('Funded improvements open across public MistWarp projects.')}>
+                <ExploreSearch ariaLabel={communityText('Search bounties')} value={query} onChange={setQuery} />
+            </ExploreHeader>
             {entries === null ? <StatusMessage>{communityText('Loading bounties…')}</StatusMessage> : error ? (
                 <StatusMessage error onRetry={load}>{error}</StatusMessage>
             ) : visible.length ? (

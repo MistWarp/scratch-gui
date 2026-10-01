@@ -19,6 +19,7 @@ import {
     setCollaborationError,
     setCollaborationRoomId,
     setCollaborationRoomPrivacy,
+    setCollaborationInvite,
     setCollaborationLoading,
     setCollaborationHostLoadingProgress,
     setCollaborationReconnecting,
@@ -36,11 +37,15 @@ import {
     openGitModal
 } from '../reducers/modals';
 
+const MAX_ATTACH_ATTEMPTS = 20;
+const BROKER_OFFLINE_NOTICE_DELAY_MS = 5000;
+
 class CollaborationContainer extends Component {
     constructor (props) {
         super(props);
 
         this.collaborationService = CollaborationService.getInstance();
+        this.state = {inviteLink: null, inviteRole: null, myRole: null};
 
         this.handleJoinRoom = this.handleJoinRoom.bind(this);
         this.handleCreateRoom = this.handleCreateRoom.bind(this);
@@ -63,7 +68,6 @@ class CollaborationContainer extends Component {
         this.handleJoinRequestReceived = this.handleJoinRequestReceived.bind(this);
         this.handleJoinApproved = this.handleJoinApproved.bind(this);
         this.handleJoinDenied = this.handleJoinDenied.bind(this);
-        this.handleChangeRoomPrivacy = this.handleChangeRoomPrivacy.bind(this);
         this.handleRoomPrivacyChanged = this.handleRoomPrivacyChanged.bind(this);
         this.handleWorkspaceReattach = this.handleWorkspaceReattach.bind(this);
         this.handleProjectSyncDownloadStart = this.handleProjectSyncDownloadStart.bind(this);
@@ -72,11 +76,15 @@ class CollaborationContainer extends Component {
         this.handleProjectSyncApplyStart = this.handleProjectSyncApplyStart.bind(this);
         this.handleProjectSyncApplyComplete = this.handleProjectSyncApplyComplete.bind(this);
         this.handleProjectSyncDownloadError = this.handleProjectSyncDownloadError.bind(this);
-        this.handleHostLoadingStart = this.handleHostLoadingStart.bind(this);
-        this.handleHostLoadingProgress = this.handleHostLoadingProgress.bind(this);
-        this.handleHostLoadingComplete = this.handleHostLoadingComplete.bind(this);
-        this.handleProjectSyncWait = this.handleProjectSyncWait.bind(this);
-        this.handleSessionReady = this.handleSessionReady.bind(this);
+        this.handleHostRestarted = this.handleHostRestarted.bind(this);
+        this.handleLeftForOtherProject = this.handleLeftForOtherProject.bind(this);
+        this.handleExtensionsSkipped = this.handleExtensionsSkipped.bind(this);
+        this.handleSnapshotUploadFailed = this.handleSnapshotUploadFailed.bind(this);
+        this.handleBrokerStatus = this.handleBrokerStatus.bind(this);
+        this.handleRoleChanged = this.handleRoleChanged.bind(this);
+        this.handleChangeInviteRole = this.handleChangeInviteRole.bind(this);
+        this.handleChangeUserRole = this.handleChangeUserRole.bind(this);
+        this.syncSessionInfo = this.syncSessionInfo.bind(this);
         this.handlePresenceEditingChanged = this.handlePresenceEditingChanged.bind(this);
         this.handleReconnecting = this.handleReconnecting.bind(this);
         this.handleReconnected = this.handleReconnected.bind(this);
@@ -112,11 +120,13 @@ class CollaborationContainer extends Component {
         this.collaborationService.on('project-sync-apply-start', this.handleProjectSyncApplyStart);
         this.collaborationService.on('project-sync-apply-complete', this.handleProjectSyncApplyComplete);
         this.collaborationService.on('project-sync-download-error', this.handleProjectSyncDownloadError);
-        this.collaborationService.on('host-loading-start', this.handleHostLoadingStart);
-        this.collaborationService.on('host-loading-progress', this.handleHostLoadingProgress);
-        this.collaborationService.on('host-loading-complete', this.handleHostLoadingComplete);
-        this.collaborationService.on('project-sync-wait', this.handleProjectSyncWait);
-        this.collaborationService.on('session-ready', this.handleSessionReady);
+        this.collaborationService.on('host-restarted', this.handleHostRestarted);
+        this.collaborationService.on('left-for-other-project', this.handleLeftForOtherProject);
+        this.collaborationService.on('extensions-skipped', this.handleExtensionsSkipped);
+        this.collaborationService.on('snapshot-upload-failed', this.handleSnapshotUploadFailed);
+        this.collaborationService.on('broker-status', this.handleBrokerStatus);
+        this.collaborationService.on('role-changed', this.handleRoleChanged);
+        this.collaborationService.on('invite-changed', this.syncSessionInfo);
         this.collaborationService.on('presence-editing-changed', this.handlePresenceEditingChanged);
         this.collaborationService.on('reconnecting', this.handleReconnecting);
         this.collaborationService.on('reconnected', this.handleReconnected);
@@ -158,11 +168,13 @@ class CollaborationContainer extends Component {
         this.collaborationService.off('project-sync-apply-start', this.handleProjectSyncApplyStart);
         this.collaborationService.off('project-sync-apply-complete', this.handleProjectSyncApplyComplete);
         this.collaborationService.off('project-sync-download-error', this.handleProjectSyncDownloadError);
-        this.collaborationService.off('host-loading-start', this.handleHostLoadingStart);
-        this.collaborationService.off('host-loading-progress', this.handleHostLoadingProgress);
-        this.collaborationService.off('host-loading-complete', this.handleHostLoadingComplete);
-        this.collaborationService.off('project-sync-wait', this.handleProjectSyncWait);
-        this.collaborationService.off('session-ready', this.handleSessionReady);
+        this.collaborationService.off('host-restarted', this.handleHostRestarted);
+        this.collaborationService.off('left-for-other-project', this.handleLeftForOtherProject);
+        this.collaborationService.off('extensions-skipped', this.handleExtensionsSkipped);
+        this.collaborationService.off('snapshot-upload-failed', this.handleSnapshotUploadFailed);
+        this.collaborationService.off('broker-status', this.handleBrokerStatus);
+        this.collaborationService.off('role-changed', this.handleRoleChanged);
+        this.collaborationService.off('invite-changed', this.syncSessionInfo);
         this.collaborationService.off('presence-editing-changed', this.handlePresenceEditingChanged);
         this.collaborationService.off('reconnecting', this.handleReconnecting);
         this.collaborationService.off('reconnected', this.handleReconnected);
@@ -171,9 +183,7 @@ class CollaborationContainer extends Component {
             clearTimeout(this.attachTimeout);
             this.attachTimeout = null;
         }
-
-        // Clear waiting overlay if it exists
-        this.clearWaitingOverlay();
+        clearTimeout(this.brokerOfflineTimer);
 
         // Cleanup notification manager
         NotificationSystem.cleanup();
@@ -184,26 +194,30 @@ class CollaborationContainer extends Component {
         }
     }
 
-    async handleJoinRoom (roomId, username, scope = null) {
+    async handleJoinRoom (roomId, username, scope = null, options = {}) {
         const accepted = await new Promise(resolve => this.props.openSimpleDialog({
             type: 'confirm',
-            title: 'Join live editing?',
-            message: `Joining replaces the editor with the host's project. ` +
-                'Everyone in the room can change that code. ' +
-                `A device backup keeps your current code before each full synchronization. ${
-                    scope ? 'Shared edits can be saved to this MistWarp project.' :
-                        'Your current MistWarp save destination will be disconnected.'}`,
-            choices: [{value: 'join', label: 'Back up and join live editing'}],
+            title: 'Join the live session?',
+            message: `The host's project will replace the one you have open. ` +
+                `A device backup of your current project is saved first. ${
+                    scope ? 'Your edits can be saved to this MistWarp project.' :
+                        'This project stops saving to MistWarp until you leave the session.'}`,
+            choices: [{value: 'join', label: 'Join'}],
             onOk: () => resolve(true),
             onCancel: () => resolve(false)
         }));
-        if (!accepted) throw new Error('Joining canceled. Your current project is unchanged.');
+        if (!accepted) {
+            const cancelled = new Error('Joining was cancelled. Your project is unchanged.');
+            cancelled.cancelled = true;
+            throw cancelled;
+        }
         try {
             this.props.onSetError(null);
 
             await this.collaborationService.connectToRoom(
-                roomId, username, false, 'public', this.props.roturHandle, scope
+                roomId, username, false, 'private', this.props.roturHandle, scope, {invite: options.invite}
             );
+            if (options.invite) this.props.onSetInvite(null);
 
             // Don't set connected immediately - wait for connected-to-host event
             this.props.onSetRoomId(roomId);
@@ -218,7 +232,7 @@ class CollaborationContainer extends Component {
         }
     }
 
-    async handleCreateRoom (roomId, username, privacy = 'public', scope = null) {
+    async handleCreateRoom (roomId, username, _privacy, scope = null) {
 
         if (!roomId) throw new Error('Room ID is required to create a room');
 
@@ -229,15 +243,15 @@ class CollaborationContainer extends Component {
                 roomId,
                 username,
                 true,
-                privacy,
+                'private',
                 this.props.roturHandle,
-                scope
+                scope,
+                {inviteRole: 'watch'}
             );
 
-            // For hosts, set connected immediately since they're always connected
             this.props.onSetConnected(true);
             this.props.onSetRoomId(roomId);
-            this.props.onSetRoomPrivacy(privacy);
+            this.props.onSetRoomPrivacy('private');
             this.updateUsersList();
 
             // Try to attach to workspace if it exists
@@ -250,7 +264,7 @@ class CollaborationContainer extends Component {
         }
     }
 
-    tryAttachToWorkspace () {
+    tryAttachToWorkspace (attempt = 0) {
         if (this.attachTimeout) {
             clearTimeout(this.attachTimeout);
             this.attachTimeout = null;
@@ -262,10 +276,10 @@ class CollaborationContainer extends Component {
             // Fallback to global Blockly workspace
             const workspace = window.Blockly.getMainWorkspace();
             this.collaborationService.attachToWorkspace(workspace);
-        } else if (this.collaborationService.isConnected) {
+        } else if (this.collaborationService.isConnected && attempt < MAX_ATTACH_ATTEMPTS) {
             this.attachTimeout = setTimeout(() => {
                 this.attachTimeout = null;
-                this.tryAttachToWorkspace();
+                this.tryAttachToWorkspace(attempt + 1);
             }, 500);
         }
     }
@@ -275,6 +289,7 @@ class CollaborationContainer extends Component {
     }
 
     handleLeaveRoom () {
+        this.endNoticeShown = true;
         this.collaborationService.disconnect();
         this.props.onSetConnected(false);
         this.props.onSetRoomId(null);
@@ -307,12 +322,19 @@ class CollaborationContainer extends Component {
         this.updateUsersList();
     }
 
-    handleConnectionFailed (data) {
-        // Immediately clear connection state and show error
+    resetSessionState () {
         this.props.onSetConnected(false);
         this.props.onSetRoomId(null);
         this.props.onSetUsers([]);
+        this.props.onSetCollabLoading(false);
+        this.props.onSetReconnecting(false);
+    }
+
+    handleConnectionFailed (data) {
+        this.endNoticeShown = true;
+        this.resetSessionState();
         this.props.onSetError(data.error);
+        NotificationSystem.error(data.error, 8000);
     }
 
     handleUsernameChanged (user) {
@@ -328,26 +350,20 @@ class CollaborationContainer extends Component {
     }
 
     handleKickedFromRoom () {
-        // Disconnect from the collaboration service but don't clear the error
+        const message = 'The host removed you from the room. Your copy of the project is still here.';
+        this.endNoticeShown = true;
         this.collaborationService.disconnect();
-
-        // Set connection state to false and clear room/users
-        this.props.onSetConnected(false);
-        this.props.onSetRoomId(null);
-        this.props.onSetUsers([]);
-
-        // Set a specific kick message AFTER clearing the room state
-        this.props.onSetError('You have been removed from the collaboration room by the host.');
+        this.resetSessionState();
+        this.props.onSetError(message);
+        NotificationSystem.warning(message, 8000);
     }
 
     handleHostLeft () {
-        this.props.onSetConnected(false);
-        this.props.onSetRoomId(null);
-        this.props.onSetUsers([]);
-
-        NotificationSystem.warning('The host has left the collaboration room. The room has been closed.', 5000);
-
-        this.props.onSetError('The host has left the collaboration room. The room has been closed.');
+        const message = 'The host closed the room. Your copy of the project is still here.';
+        this.endNoticeShown = true;
+        this.resetSessionState();
+        NotificationSystem.warning(message, 8000);
+        this.props.onSetError(message);
     }
 
     handleConnectedToHost () {
@@ -370,18 +386,16 @@ class CollaborationContainer extends Component {
     }
 
     handleDisconnected () {
-        NotificationSystem.info('Disconnected from collaboration room', 3000);
-
-        this.clearWaitingOverlay();
-
-        this.props.onSetConnected(false);
-        this.props.onSetRoomId(null);
+        this.syncSessionInfo();
+        if (!this.endNoticeShown) NotificationSystem.info('You left the live session.', 3000);
+        this.endNoticeShown = false;
+        clearTimeout(this.brokerOfflineTimer);
+        this.resetSessionState();
         this.props.onSetRoomPrivacy('public');
-        this.props.onSetUsers([]);
     }
 
     handleCancelConnection () {
-        // Disconnect from the collaboration service
+        this.endNoticeShown = true;
         this.collaborationService.disconnect();
 
         // Clear any connection state
@@ -392,9 +406,9 @@ class CollaborationContainer extends Component {
         this.props.onSetError(null);
     }
 
-    async handleApproveJoinRequest (requesterId, requesterUsername) {
+    async handleApproveJoinRequest (requesterId, requesterUsername, role) {
         try {
-            await this.collaborationService.approveJoinRequest(requesterId, requesterUsername);
+            await this.collaborationService.approveJoinRequest(requesterId, role);
         } catch (error) {
             console.error('Failed to approve join request:', error);
             this.props.onSetError(error.message || 'Failed to approve join request');
@@ -431,21 +445,13 @@ class CollaborationContainer extends Component {
     }
 
     handleJoinDenied (data) {
+        this.endNoticeShown = true;
         this.props.onSetError(data || 'Your join request was denied');
         this.props.onSetConnected(false);
         this.props.onSetRoomId(null);
+        this.props.onSetCollabLoading(false);
     }
 
-    async handleChangeRoomPrivacy (newPrivacy) {
-        try {
-            await this.collaborationService.changeRoomPrivacy(newPrivacy);
-            this.props.onSetRoomPrivacy(newPrivacy);
-        } catch (error) {
-            console.error('Failed to change room privacy:', error);
-            this.props.onSetError(error.message || 'Failed to change room privacy');
-            throw error;
-        }
-    }
 
     handleRoomPrivacyChanged (privacy) {
         this.props.onSetRoomPrivacy(privacy);
@@ -454,6 +460,36 @@ class CollaborationContainer extends Component {
     updateUsersList () {
         const users = this.collaborationService.getConnectedUsers();
         this.props.onSetUsers(users);
+        this.syncSessionInfo();
+    }
+
+    syncSessionInfo () {
+        const service = this.collaborationService;
+        const next = {
+            inviteLink: service.getInviteLink(),
+            inviteRole: service.getInviteRole(),
+            myRole: service.getMyRole()
+        };
+        if (Object.keys(next).some(key => next[key] !== this.state[key])) this.setState(next);
+    }
+
+    handleRoleChanged (role) {
+        this.syncSessionInfo();
+        this.updateUsersList();
+        if (!this.collaborationService.isConnectedToHostPeer()) return;
+        NotificationSystem.info(role === 'edit' ?
+            'The host let you edit. Your changes now reach everyone.' :
+            'The host set you to watch. You can follow along, but your changes will not be kept.', 5000);
+    }
+
+    handleChangeInviteRole (role) {
+        this.collaborationService.setInviteRole(role);
+        this.syncSessionInfo();
+    }
+
+    handleChangeUserRole (userId, role) {
+        this.collaborationService.setUserRole(userId, role);
+        this.updateUsersList();
     }
 
     getCurrentUserId () {
@@ -495,73 +531,38 @@ class CollaborationContainer extends Component {
         this.props.onSetCollabLoading(false);
     }
 
-    handleHostLoadingStart () {
-        this.props.onSetCollabLoading(true, 'Waiting for host to load project...');
-        this.props.onSetHostLoadingProgress(0);
+    handleHostRestarted () {
+        NotificationSystem.info('The host reopened the room, so their project is loading again.', 5000);
     }
 
-    handleHostLoadingProgress (data) {
-        if (data && typeof data.progress === 'number') {
-            this.props.onSetHostLoadingProgress(data.progress);
+    handleLeftForOtherProject () {
+        this.endNoticeShown = true;
+        NotificationSystem.info('You opened another project, so you left the live session.', 5000);
+    }
+
+    handleExtensionsSkipped ({ids}) {
+        NotificationSystem.warning(`These extensions from the host were not loaded: ${ids.join(', ')}. ` +
+            'Blocks that use them will not work for you.', 8000);
+    }
+
+    handleSnapshotUploadFailed ({username}) {
+        NotificationSystem.warning(`The project could not be sent to ${username || 'someone joining'}. ` +
+            'They will try again automatically.', 6000);
+    }
+
+    handleBrokerStatus ({online}) {
+        clearTimeout(this.brokerOfflineTimer);
+        if (online) {
+            if (this.brokerOfflineShown) NotificationSystem.info('New people can join the room again.', 3000);
+            this.brokerOfflineShown = false;
+            return;
         }
-    }
-
-    handleHostLoadingComplete () {
-        this.props.onSetCollabLoading(false);
-        this.props.onSetHostLoadingProgress(0);
-    }
-
-    // New handler for barrier wait
-    handleProjectSyncWait (data) {
-        // Show a blocking overlay while waiting for host/other clients
-        if (!this.waitingOverlay) {
-            const overlay = document.createElement('div');
-            overlay.className = 'response-wait-overlay';
-            overlay.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0, 0, 0, 0.8);
-                z-index: 10000;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                flex-direction: column;
-                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-            `;
-
-            const message = document.createElement('div');
-            message.textContent = data.message || 'Waiting for host...';
-            message.style.fontSize = '24px';
-            message.style.fontWeight = 'bold';
-
-            // Add a spinner or similar
-            const subtext = document.createElement('div');
-            subtext.textContent = 'Synchronizing with all clients...';
-            subtext.style.marginTop = '10px';
-            subtext.style.opacity = '0.7';
-
-            overlay.appendChild(message);
-            overlay.appendChild(subtext);
-            document.body.appendChild(overlay);
-            this.waitingOverlay = overlay;
-        }
-    }
-
-    clearWaitingOverlay () {
-        if (this.waitingOverlay) {
-            if (this.waitingOverlay.parentNode) {
-                this.waitingOverlay.parentNode.removeChild(this.waitingOverlay);
-            }
-            this.waitingOverlay = null;
-        }
-    }
-
-    handleSessionReady () {
-        this.clearWaitingOverlay();
+        if (!this.collaborationService.isHost) return;
+        this.brokerOfflineTimer = setTimeout(() => {
+            this.brokerOfflineShown = true;
+            NotificationSystem.warning('New people cannot join right now. ' +
+                'Everyone already in the room can keep editing.', 6000);
+        }, BROKER_OFFLINE_NOTICE_DELAY_MS);
     }
 
     handleReconnecting () {
@@ -607,6 +608,12 @@ class CollaborationContainer extends Component {
                         roomId={projectSessionActive ? null : this.props.roomId}
                         roomPrivacy={this.props.roomPrivacy}
                         connectedUsers={this.props.connectedUsers}
+                        inviteLink={this.state.inviteLink}
+                        inviteRole={this.state.inviteRole}
+                        myRole={this.state.myRole}
+                        pendingInvite={this.props.pendingInvite}
+                        onChangeInviteRole={this.handleChangeInviteRole}
+                        onChangeUserRole={this.handleChangeUserRole}
                         userActivity={this.props.userActivity}
                         vm={this.props.vm}
                         connectionError={projectSessionActive ? null : this.props.connectionError}
@@ -620,7 +627,6 @@ class CollaborationContainer extends Component {
                         onApproveJoinRequest={this.handleApproveJoinRequest}
                         onDenyJoinRequest={this.handleDenyJoinRequest}
                         onCancelJoinRequest={this.handleCancelJoinRequest}
-                        onChangeRoomPrivacy={this.handleChangeRoomPrivacy}
                         onOpenChangeUsername={this.props.onOpenChangeUsername}
                         onShowToast={this.props.onShowToast}
                         openSimpleDialog={this.props.openSimpleDialog}
@@ -641,6 +647,8 @@ CollaborationContainer.propTypes = {
     roomPrivacy: PropTypes.string,
     connectedUsers: PropTypes.array.isRequired,
     connectionError: PropTypes.string,
+    pendingInvite: PropTypes.string,
+    onSetInvite: PropTypes.func.isRequired,
     currentUsername: PropTypes.string,
     roturHandle: PropTypes.string,
     isProjectReady: PropTypes.bool,
@@ -671,6 +679,7 @@ const mapStateToProps = state => ({
     isConnected: state.scratchGui.collaboration.isConnected,
     roomId: state.scratchGui.collaboration.roomId,
     roomPrivacy: state.scratchGui.collaboration.roomPrivacy,
+    pendingInvite: state.scratchGui.collaboration.pendingInvite,
     connectedUsers: state.scratchGui.collaboration.connectedUsers,
     userActivity: state.scratchGui.collaboration.activity,
     activeTabIndex: state.scratchGui.editorTab ? state.scratchGui.editorTab.activeTabIndex : 0,
@@ -698,6 +707,7 @@ const mapDispatchToProps = dispatch => ({
     onSetError: error => dispatch(setCollaborationError(error)),
     onSetRoomId: roomId => dispatch(setCollaborationRoomId(roomId)),
     onSetRoomPrivacy: privacy => dispatch(setCollaborationRoomPrivacy(privacy)),
+    onSetInvite: invite => dispatch(setCollaborationInvite(invite)),
     onSetUsername: username => dispatch(setUsername(username)),
     onSetCollabLoading: (isLoading, message) => dispatch(setCollaborationLoading(isLoading, message)),
     onSetHostLoadingProgress: progress => dispatch(setCollaborationHostLoadingProgress(progress)),

@@ -9,7 +9,7 @@ import {
 import api, {projectUrl} from '../api';
 import rotur from '../rotur';
 import {payUser} from '../../lib/rotur/client.js';
-import {isInsufficientFunds, openCreditCheckout, CREDIT_PACKS} from '../credits';
+import {isInsufficientFunds} from '../credits';
 import {useUser} from '../UserContext.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import CommentThread from '../components/CommentThread.jsx';
@@ -1074,30 +1074,9 @@ export const DonateModal = ({recipient, onClose}) => {
         }
     };
 
-    const buyCredits = async () => {
-        const actionRecipient = recipient;
-        const actionKey = `${recipient}\u0000payment`;
-        if (actionLocks.current.has(actionKey)) return;
-        actionLocks.current.add(actionKey);
-        setBusy(true);
-        setStatus(null);
-        try {
-            await openCreditCheckout(CREDIT_PACKS[1]);
-        } catch (e) {
-            if (currentRecipient.current === actionRecipient) {
-                setStatus(e.needsReauth ?
-                    'Your current login cannot buy credits. Log out and back in, then try again.' :
-                    (e.message || 'Could not open checkout.'));
-            }
-        } finally {
-            actionLocks.current.delete(actionKey);
-            if (currentRecipient.current === actionRecipient) setBusy(false);
-        }
-    };
-
     const submit = event => {
         event.preventDefault();
-        return insufficient ? buyCredits() : send();
+        return send();
     };
 
     return (
@@ -1135,16 +1114,19 @@ export const DonateModal = ({recipient, onClose}) => {
                     />
                     {status ? <Notice variant="error">{status}</Notice> : null}
                     {insufficient ? (
-                        <Notice variant="warning">{communityText('Not enough credits in your balance. Top up through Stripe, then send again.')}</Notice>
+                        <Notice variant="warning">
+                            {communityText('Not enough credits in your balance. Claim your daily credits in your wallet, then send again.')}{' '}
+                            <Link to="/wallet">{communityText('Open wallet')}</Link>
+                        </Notice>
                     ) : null}
                     <Button
                         variant="primary"
                         type="submit"
                         busy={busy}
-                        busyLabel={insufficient ? communityText('Opening…') : communityText('Sending…')}
+                        busyLabel={communityText('Sending…')}
                     >
                         <Coins size={16} />
-                        {insufficient ? communityText('Buy credits') : communityText('Send credits')}
+                        {communityText('Send credits')}
                     </Button>
                 </form>
             )}

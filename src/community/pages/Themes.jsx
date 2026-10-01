@@ -4,13 +4,12 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {ArrowLeft, FileJson, Palette, Plus, Search, Upload} from 'lucide-react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
 import api from '../api.js';
-import ExploreNav from '../components/ExploreNav.jsx';
+import ExploreHeader, {ExploreSearch} from '../components/ExploreHeader.jsx';
 import ThemeCard from '../components/ThemeCard.jsx';
 import Button from '../components/ui/Button.jsx';
 import CardGrid from '../components/ui/CardGrid.jsx';
 import EmptyState, {SignInPrompt} from '../components/ui/EmptyState.jsx';
 import Notice from '../components/ui/Notice.jsx';
-import PageHeader from '../components/ui/PageHeader.jsx';
 import SectionHeading from '../components/ui/SectionHeading.jsx';
 import SelectMenu from '../components/ui/SelectMenu.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
@@ -171,9 +170,8 @@ const Themes = () => {
 
     return (
         <main className={styles.page}>
-            <PageHeader
-                icon={tab === 'publish' ? Upload : Palette}
-                title={tab === 'publish' ? communityText('Publish a theme') : communityText('Themes')}
+            <ExploreHeader
+                active="themes"
                 lead={tab === 'publish' ? communityText('Share your current look with the WarpTheme community.') : communityText('Discover community-made looks for MistWarp.')}
                 actions={tab === 'publish' ? (
                     <Button variant="secondary" onClick={() => setTab('browse')}><ArrowLeft size={16} />{communityText('Browse themes')}</Button>
@@ -182,19 +180,20 @@ const Themes = () => {
                 )}
             >
                 {tab === 'browse' ? (
-                    <div className={styles.tools}>
-                        <div className={styles.search}><Search size={17} /><input aria-label={communityText('Search themes')} placeholder={communityText('Search by theme or creator')} type="search" value={query} onChange={event => setSearch(event.target.value)} /></div>
+                    <React.Fragment>
+                        <ExploreSearch ariaLabel={communityText('Search themes')} placeholder={communityText('Search by theme or creator')} value={query} onChange={setSearch} />
+                        <span className={styles.resultCount}>{loading ? communityText('Loading…') : browseError ? communityText('Unavailable') : communityText('{count, plural, one {# theme} other {# themes}}', {count: visible.length})}</span>
                         <SelectMenu
+                            align="right"
+                            className={styles.sort}
                             ariaLabel={communityText('Sort themes')}
                             value={sort}
                             onChange={setSort}
                             options={SORTS.map(item => ({value: item.key, label: communityText(item.label)}))}
                         />
-                        <span className={styles.resultCount}>{loading ? communityText('Loading…') : browseError ? communityText('Unavailable') : communityText('{count, plural, one {# theme} other {# themes}}', {count: visible.length})}</span>
-                    </div>
+                    </React.Fragment>
                 ) : null}
-            </PageHeader>
-            <ExploreNav active="themes" />
+            </ExploreHeader>
             {tab === 'browse' ? (
                 loading ? <StatusMessage>{communityText('Loading themes…')}</StatusMessage> : browseError ? (
                     <StatusMessage error onRetry={() => setLoadAttempt(value => value + 1)}>{browseError}</StatusMessage>

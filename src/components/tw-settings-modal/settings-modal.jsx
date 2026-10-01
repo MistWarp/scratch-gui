@@ -1920,10 +1920,10 @@ class SettingsModalComponent extends React.Component {
             'handleMobileBack'
         ]);
 
-        const requestedView = takeSettingsModalInitialView() || 'general';
+        const requestedView = takeSettingsModalInitialView();
         this.state = {
-            currentView: requestedView,
-            mobileView: 'list'
+            currentView: requestedView || 'general',
+            mobileView: requestedView ? 'content' : 'list'
         };
     }
 

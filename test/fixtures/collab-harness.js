@@ -10,7 +10,6 @@
  * asserted with deep equality across any number of peers.
  */
 import Emitter from '../../src/lib/collaboration/emitter';
-import {OpApplier} from '../../src/lib/collaboration/op-applier';
 import HostSession from '../../src/lib/collaboration/host-session';
 import ClientSession from '../../src/lib/collaboration/client-session';
 import {validateEnvelope, makeSnapshot, OP, SNAPSHOT} from '../../src/lib/collaboration/protocol';
@@ -175,10 +174,16 @@ class FakeCollabTransport extends Emitter {
 
     closeConnection (peerId) {
         this.hub.enqueueClose(this.isHost ? peerId : this._id);
+        return Promise.resolve();
     }
 
     destroy () {
         this.destroyed = true;
+    }
+
+    destroyGracefully () {
+        this.destroy();
+        return Promise.resolve();
     }
 }
 
@@ -187,9 +192,8 @@ class FakeCollabTransport extends Emitter {
  * Deletes of missing entities throw (the host turns that into a reject);
  * edits of missing entities no-op (identical outcome on every peer).
  */
-class DocApplier extends OpApplier {
+class DocApplier {
     constructor () {
-        super();
         this.doc = {
             targets: {},
             blocks: {},
@@ -205,7 +209,7 @@ class DocApplier extends OpApplier {
         this.doc = clone(docSnapshot);
     }
 
-    _apply (type, payload) {
+    apply (type, payload) {
         const doc = this.doc;
         switch (type) {
         case OP.BLOCK_EVENT: {

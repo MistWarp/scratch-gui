@@ -56,10 +56,10 @@ const normalizeCollaborators = team => team
         share: Math.max(0, Math.min(50, Number(member.share) || 0))
     }));
 const ROLE_DESCRIPTIONS = {
-    editor: 'Can edit and save anytime, including when you are offline. Joins live editing on the same branch.',
-    maintainer: 'Can edit, publish, and merge changes.',
-    contributor: 'Can work through pull requests.',
-    tester: 'Can open and test private drafts.'
+    editor: 'Can edit and save anytime, including when you are offline. Can host and join live sessions.',
+    maintainer: 'Can edit, publish, and merge changes. Can host and join live sessions.',
+    contributor: 'Works through pull requests. While in a live session, can edit and save with everyone else.',
+    tester: 'Can open and test private drafts, and watch live sessions without editing.'
 };
 const projectTransferConfirmation = (project, nextOwner) => ({
     title: 'Transfer project?',

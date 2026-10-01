@@ -90,16 +90,9 @@ test('standalone editor builds retain their selected entry without building the 
     expect(builds[0].BUILD_MODE).toBeUndefined();
 });
 
-test('Cloudflare Pages builds move every fork to its latest develop commit before compiling', async () => {
-    const {steps} = await runBuild({CF_PAGES: '1'});
-    expect(steps).toEqual(['sync-forks', 'pnpm install --no-frozen-lockfile',
-        'build-docs /tmp/mistwarp-docs/build', 'build']);
-});
-
-test('other builds keep the committed fork pins', async () => {
+test('Cloudflare Pages builds leave the fork pins to scripts/cloudflare-build.mjs', async () => {
     expect((await runBuild()).steps).toEqual(['build']);
-    expect((await runBuild({CF_PAGES: '1', MW_PINNED_FORKS: '1'})).steps)
-        .toEqual(['build-docs /tmp/mistwarp-docs/build', 'build']);
+    expect((await runBuild({CF_PAGES: '1'})).steps).toEqual(['build-docs /tmp/mistwarp-docs/build', 'build']);
 });
 
 test('Cloudflare Pages builds hand the docs site to the site build', async () => {

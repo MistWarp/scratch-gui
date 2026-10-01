@@ -18,7 +18,7 @@ const HELP_ENTRIES = [
         howTo: [
             'Drag the divider between the workspace and the stage to resize either side.',
             'Use the tabs above the palette to switch between Code, Costumes, and Sounds.',
-            'Open the Settings menu to change the theme, layout, and performance options.'
+            'Click Settings in the menu bar to change the theme, layout, and performance options.'
         ],
         docsPath: '/editor/interface'
     },
@@ -26,12 +26,12 @@ const HELP_ENTRIES = [
         id: 'menu-bar',
         title: 'Menu bar',
         category: 'Editor',
-        keywords: ['file', 'edit', 'tools', 'top bar'],
-        short: 'The menu bar holds the File, Edit, Project, and Settings menus. Saving and project tools start here.',
+        keywords: ['file', 'edit', 'project', 'help', 'top bar'],
+        short: 'The menu bar holds the File, Edit, Project, and Help menus and the Settings button. Saving and project tools start here.',
         howTo: [
-            'File holds New, Save to MistWarp (push), Save to your computer (.mwp, with history), Package, and Device backups.',
-            'Tools holds Project history, Live Collaboration, Debugger, and Variable Manager.',
-            'Edit holds Undo, Redo, Addons, and the tutorial.'
+            'File holds New, Load from your computer, Save to your computer (.mwp, with history), Export (Scratch project and Package project), and Device backups. When you are signed in it also holds Save to MistWarp.',
+            'Edit holds Restore, Undo, Redo, Turbo Mode, and Addons. Project holds Project history, Live Collaboration, Project metadata, the Debugger, the Variable Manager, and extensions.',
+            'Help opens this help, the documentation, the keyboard shortcuts, the command palette, and feedback.'
         ],
         docsPath: '/editor/menu-bar'
     },
@@ -44,7 +44,7 @@ const HELP_ENTRIES = [
         howTo: [
             'Press the green flag to run every "when green flag clicked" script.',
             'Press the stop sign to halt all scripts.',
-            'Use the fullscreen button for a distraction free view, or set a custom stage size in Settings.'
+            'Use the fullscreen button for a distraction free view, or set a custom stage size on the General page of Settings.'
         ],
         docsPath: '/editor/stage'
     },
@@ -95,7 +95,7 @@ const HELP_ENTRIES = [
         short: 'The workspace is the canvas where you assemble blocks into scripts. Drag blocks out of the palette and snap them together.',
         howTo: [
             'Drag a block from the palette into the workspace to add it.',
-            'Right-click for Clean Up Blocks, Add Comment, and to toggle inline help.',
+            'Right-click an empty part of the workspace for Clean up Blocks and Add Comment.',
             'Use the zoom controls in the corner, or scroll to pan around large projects.'
         ],
         docsPath: '/editor/workspace'
@@ -122,7 +122,7 @@ const HELP_ENTRIES = [
         howTo: [
             'Click Make a Variable or Make a List and choose For all sprites or For this sprite only.',
             'Tick the checkbox next to a variable to show it on the stage as a monitor.',
-            'For bulk editing, open the Variable Manager from the Tools menu.'
+            'For bulk editing, open the Variable Manager from the Project menu.'
         ],
         docsPath: '/editor/variables'
     },
@@ -159,9 +159,9 @@ const HELP_ENTRIES = [
         keywords: ['preferences', 'options', 'fps', 'stage size'],
         short: 'The Settings window collects appearance, interface, stage, performance, and advanced options. Many performance settings are saved into the project.',
         howTo: [
-            'Open Settings from the menu bar to change theme, accent color, and layout.',
-            'Adjust frame rate, stage size, and rendering under the Stage section.',
-            'The Remove Limits section unlocks clone, list, and fencing limits.'
+            'Click Settings in the menu bar, then pick a page from the sidebar, such as Theme for light or dark mode and the accent color.',
+            'Adjust frame rate, interpolation, and pen quality under Playback, and the stage size under Saved project settings, on the General page.',
+            'The Project compatibility section on the General page removes the clone, fencing, and other limits.'
         ],
         docsPath: '/editor/settings'
     },
@@ -183,10 +183,10 @@ const HELP_ENTRIES = [
         title: 'Themes and appearance',
         category: 'Editor',
         keywords: ['dark mode', 'accent', 'custom theme', 'colors'],
-        short: 'MistWarp lets you restyle the editor and the blocks. The editor Settings choose the block color scheme, while the overall light or dark theme and accent are set in your account settings on the community site.',
+        short: 'MistWarp lets you restyle the editor and the blocks. Settings has pages for the light or dark theme, the accent color, block colors, custom themes, wallpaper, and fonts.',
         howTo: [
-            'Choose a block color scheme (such as High Contrast) in the editor Theme settings.',
-            'Set the overall light or dark theme and accent color in your account settings.',
+            'Choose light or dark mode and an accent color on the Theme page of Settings.',
+            'Choose a block color scheme, such as High Contrast, on the Blocks page of Settings.',
             'Signed in, your theme choices sync between devices.'
         ],
         docsPath: '/editor/themes'
@@ -198,7 +198,7 @@ const HELP_ENTRIES = [
         keywords: ['logs', 'inspect', 'threads', 'console'],
         short: 'The debugger shows log output, running threads, and variable state so you can trace what a project is doing.',
         howTo: [
-            'Open the Debugger from the Tools menu.',
+            'Open the Debugger from the Project menu.',
             'Read log, warn, and error output as scripts run.',
             'Inspect variables and threads to find where behavior diverges.'
         ],
@@ -211,7 +211,7 @@ const HELP_ENTRIES = [
         keywords: ['bulk edit', 'inspect data'],
         short: 'The variable manager is a single window for viewing and editing every variable and list in the project at once.',
         howTo: [
-            'Open it from the Tools menu.',
+            'Open it from the Project menu.',
             'Search, edit, and delete variables and list items in bulk.',
             'Useful for inspecting large lists that are awkward to read on the stage.'
         ],
@@ -225,7 +225,7 @@ const HELP_ENTRIES = [
         short: 'Device backups are local snapshots on this browser only. Autosave creates them on a schedule so you can recover after a crash or mistake. Pushed history lives under Project history; .mwp files export with full history.',
         howTo: [
             'Create a device backup manually from the File menu at any time.',
-            'Open Device Backups to load an earlier snapshot.',
+            'Open Device backups from the File menu to load an earlier snapshot.',
             'Turn autosave on, and change its interval, from Settings under Autosave.'
         ],
         docsPath: '/editor/restore-points'
@@ -237,7 +237,7 @@ const HELP_ENTRIES = [
         keywords: ['git', 'commit', 'push', 'pull', 'diff', 'history'],
         short: 'Saving to MistWarp pushes your history, like git push. You get a full pushed history with commits and restores. .mwp files carry that same history for export.',
         howTo: [
-            'Open Project history from the Tools menu.',
+            'Open Project history from the Project menu.',
             'Save a version with a message to push it to MistWarp.',
             'Device backups stay local and are separate from pushed history.'
         ],
@@ -250,7 +250,7 @@ const HELP_ENTRIES = [
         keywords: ['multiplayer', 'realtime', 'share editing'],
         short: 'Live collaboration lets several people edit the same project at once, with edits syncing between everyone in the session.',
         howTo: [
-            'Start a session from the Tools menu and share the link.',
+            'Start a session with Live Collaboration in the Project menu and share the link.',
             'Others join through that link and edit alongside you.',
             'Changes to blocks, sprites, and assets propagate to everyone live.'
         ],
@@ -263,7 +263,7 @@ const HELP_ENTRIES = [
         keywords: ['packager', 'export', 'html', 'standalone', 'exe'],
         short: 'The packager turns a project into a standalone HTML file or a native application you can distribute without the editor.',
         howTo: [
-            'Choose Package project from the File menu to open the packager with your project.',
+            'Open the File menu, choose Export, then Package project to open the packager with your project.',
             'Pick a target such as plain HTML or an executable, and adjust options.',
             'See the Packager guide for embedding, offline use, and cloud behavior.'
         ],
@@ -276,7 +276,7 @@ const HELP_ENTRIES = [
         keywords: ['search blocks', 'jump', 'definition'],
         short: 'The find bar searches your scripts and jumps straight to a block, variable, or custom block definition.',
         howTo: [
-            'Open the find bar and type part of a block or variable name.',
+            'Click Find next to the Code, Costumes, and Sounds tabs, or press Ctrl+F, and type part of a block or variable name.',
             'Select a result to scroll the workspace to it.',
             'Use it to jump to a custom block definition quickly.'
         ],
@@ -286,11 +286,12 @@ const HELP_ENTRIES = [
         id: 'shortcuts',
         title: 'Keyboard shortcuts',
         category: 'Editor',
-        keywords: ['hotkeys', 'keybindings'],
-        short: 'MistWarp has keyboard shortcuts for common actions, and a shortcut manager where you can view and change them.',
+        keywords: ['hotkeys', 'keybindings', 'command palette', 'ctrl+k'],
+        short: 'MistWarp has keyboard shortcuts for common actions, a command palette that searches every command, and a Keyboard Shortcuts page where you can view and change them.',
         howTo: [
             'Save with Ctrl/Cmd plus S and open a project with Ctrl/Cmd plus O.',
-            'Open the shortcut manager from Settings to see the full list.',
+            'Choose Keyboard shortcuts in the Help menu, or Keyboard Shortcuts in Settings, to see the full list.',
+            'Press Ctrl/Cmd plus K, or choose Command palette in the Help menu, to search every command.',
             'Rebind shortcuts that clash with your own habits.'
         ],
         docsPath: '/editor/shortcuts'
@@ -653,7 +654,7 @@ const HELP_ENTRIES = [
         keywords: ['performance', 'compile', 'window.vm'],
         short: 'MistWarp compiles blocks into JavaScript for speed. Advanced users can also access the running project through window.vm.',
         howTo: [
-            'The compiler runs automatically; disable it in Settings to compare behavior.',
+            'The compiler runs automatically. To compare behavior, turn on Disable compiler in editor on the Editor page of Settings.',
             'Open the browser console and use window.vm to inspect the running project.',
             'The Patching extension can inject custom JavaScript into compiled projects.'
         ],

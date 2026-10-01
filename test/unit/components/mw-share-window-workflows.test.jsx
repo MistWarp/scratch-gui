@@ -5,7 +5,6 @@ import {ShareWindow} from '../../../src/components/mw-share-modal/share-window.j
 import {publishToMistWarp} from '../../../src/lib/community/publish.js';
 import {request} from '../../../src/lib/community/api.js';
 import {getRepoChanges} from '../../../src/lib/git/browser-git.js';
-import {generateCommitName} from '../../../src/lib/sable/smart-features.js';
 
 jest.mock('../../../src/lib/community/publish.js', () => ({
     getRememberedPlatformProjectState: jest.fn(() => null),
@@ -21,9 +20,6 @@ jest.mock('../../../src/lib/git/browser-git.js', () => ({
 }));
 jest.mock('../../../src/lib/git/project-history.js', () => ({
     ensureProjectHistoryHydrated: jest.fn(() => Promise.resolve())
-}));
-jest.mock('../../../src/lib/sable/smart-features.js', () => ({
-    generateCommitName: jest.fn()
 }));
 
 const makeWindow = (action = 'update') => shallow(
@@ -44,7 +40,6 @@ describe('MistWarp share window workflows', () => {
         publishToMistWarp.mockReset();
         request.mockResolvedValue({agreement: {accepted: true, version: 1}});
         getRepoChanges.mockResolvedValue([{filepath: 'Stage.fractch', description: 'modified'}]);
-        generateCommitName.mockResolvedValue({name: 'Fix stage movement', balance: 9.98});
     });
 
     test('an immediate second publish click cannot start another upload', async () => {
@@ -112,7 +107,6 @@ describe('MistWarp share window workflows', () => {
 
         expect(wrapper.text()).toContain('Write the name yourself.');
         expect(wrapper.find('button').filterWhere(button => button.text() === 'Generate name')).toHaveLength(0);
-        expect(generateCommitName).not.toHaveBeenCalled();
         wrapper.unmount();
     });
 

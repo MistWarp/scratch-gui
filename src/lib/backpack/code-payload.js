@@ -58,15 +58,17 @@ const offsetToPosition = (payload, x, y) => {
     return payload;
 };
 
-const placeInViewport = (payload, workspaceMetrics, isRtl) => {
+const placeInViewport = (payload, workspaceMetrics, isRtl, viewport) => {
     const {scrollX, scrollY, scale} = workspaceMetrics || {
         scrollX: 0,
         scrollY: 0,
         scale: BLOCKS_DEFAULT_SCALE
     };
 
-    const posY = -scrollY + 30;
-    const posX = isRtl ? scrollX + 30 : -scrollX + 30;
+    const insetX = viewport && viewport.width > 0 ? Math.max(30, (viewport.width / 2) - 120) : 30;
+    const insetY = viewport && viewport.height > 0 ? Math.max(30, (viewport.height / 2) - 60) : 30;
+    const posY = -scrollY + insetY;
+    const posX = isRtl ? scrollX + insetX : -scrollX + insetX;
 
     return offsetToPosition(payload, posX / scale, posY / scale);
 };

@@ -13,6 +13,7 @@ import {
 } from '../../src/lib/community/publish.js';
 import rotur from '../../src/community/rotur.js';
 import api from '../../src/community/api.js';
+import {isMinorAccount, setMinorAccount} from '../../src/lib/minor-account.js';
 
 test('a rejected /me request clears the saved session', async () => {
     localStorage.setItem('mw:mistwarp-session', 'expired');
@@ -45,6 +46,25 @@ test('a Rotur outage while generating a validator keeps the login', async () => 
     await expect(exchangeValidator('good-token')).rejects.toMatchObject({
         code: 'VALIDATOR_UNAVAILABLE'
     });
+});
+
+test('signing in remembers whether Rotur reports an under-18 account', async () => {
+    const signIn = minor => {
+        window.fetch = jest.fn(url => Promise.resolve(String(url).includes('generate_validator') ? {
+            status: 200,
+            json: () => Promise.resolve({validator: 'v'})
+        } : {
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve({ok: true, token: 'session', username: 'sam', minor})
+        }));
+        return exchangeValidator('rotur-token');
+    };
+    await signIn(true);
+    expect(isMinorAccount()).toBe(true);
+    await signIn(undefined);
+    expect(isMinorAccount()).toBe(false);
+    setMinorAccount(false);
 });
 
 test('MistWarp project identity controls share, remix, and update actions', () => {

@@ -3,6 +3,7 @@ import {
     setAnalyticsEnabled,
     trackApiSuccess
 } from '../../src/community/analytics.js';
+import {setMinorAccount} from '../../src/lib/minor-account.js';
 
 describe('community analytics privacy controls', () => {
     beforeEach(() => {
@@ -13,6 +14,14 @@ describe('community analytics privacy controls', () => {
         setAnalyticsEnabled(false);
         expect(analyticsEnabled()).toBe(false);
         setAnalyticsEnabled(true);
+        expect(analyticsEnabled()).toBe(true);
+    });
+
+    test('analytics stay off for accounts under 18', () => {
+        setAnalyticsEnabled(true);
+        setMinorAccount(true);
+        expect(analyticsEnabled()).toBe(false);
+        setMinorAccount(false);
         expect(analyticsEnabled()).toBe(true);
     });
 

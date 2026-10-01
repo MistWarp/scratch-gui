@@ -76,12 +76,13 @@ class WindowedModal extends React.Component {
 
     componentWillUnmount () {
         this.removeEventListeners();
+        this.disconnectContentObserver();
         if (this.blocklyWidgetRepositionRaf_) {
             window.cancelAnimationFrame(this.blocklyWidgetRepositionRaf_);
             this.blocklyWidgetRepositionRaf_ = null;
         }
         if (this.window && this.createdWindow) {
-            this.window.close();
+            this.window.destroy(false);
         }
     }
 
@@ -117,9 +118,20 @@ class WindowedModal extends React.Component {
         this.scheduleBlocklyWidgetReposition();
     }
 
+    disconnectContentObserver () {
+        if (this.contentResizeObserver) {
+            this.contentResizeObserver.disconnect();
+            this.contentResizeObserver = null;
+        }
+    }
+
+    fitsContent () {
+        return this.props.fitContent || this.props.id === 'mwProjectThemeModal';
+    }
+
     resizeToContentIfNeeded () {
         if (!this.window || !this.contentContainer) return;
-        if (this.props.id !== 'mwProjectThemeModal') return;
+        if (!this.fitsContent()) return;
 
         window.requestAnimationFrame(() => {
             if (!this.window || !this.contentContainer) return;
@@ -195,6 +207,7 @@ class WindowedModal extends React.Component {
             modal: this.props.modal === true,
             alwaysOnTop: id === 'unknownPlatformModal' || id === 'securitymanagermodal',
             destroyOnMinimize: true,
+            onBeforeClose: this.handleBeforeWindowClose,
             onClose: this.handleWindowClose,
             onMinimize: this.handleWindowMinimize,
             onMove: this.handleWindowMove,
@@ -221,10 +234,15 @@ class WindowedModal extends React.Component {
             min-height: 0;
         `;
 
-        if (id === 'mwProjectThemeModal') {
+        if (this.fitsContent()) {
             this.contentContainer.style.height = 'auto';
             this.contentContainer.style.maxHeight = 'none';
             this.contentContainer.style.overflow = 'visible';
+            this.contentContainer.style.flexShrink = '0';
+            if (window.ResizeObserver) {
+                this.contentResizeObserver = new ResizeObserver(() => this.resizeToContentIfNeeded());
+                this.contentResizeObserver.observe(this.contentContainer);
+            }
         }
         
         this.window.setContent(this.contentContainer);
@@ -349,7 +367,14 @@ class WindowedModal extends React.Component {
         return ReactDOM.createPortal(wrappedContent, this.contentContainer);
     }
     
+    handleBeforeWindowClose = () => {
+        if (!this.props.onRequestClose) return true;
+        this.props.onRequestClose();
+        return false;
+    };
+
     handleWindowClose = () => {
+        this.disconnectContentObserver();
         this.window = null;
         this.contentContainer = null;
         this.createdWindow = false;
@@ -360,6 +385,7 @@ class WindowedModal extends React.Component {
     };
     
     handleWindowMinimize = () => {
+        this.disconnectContentObserver();
         this.window = null;
         this.contentContainer = null;
         this.createdWindow = false;
@@ -409,6 +435,7 @@ WindowedModal.propTypes = {
         PropTypes.string,
         PropTypes.object
     ]).isRequired,
+    fitContent: PropTypes.bool,
     fullScreen: PropTypes.bool,
     headerImage: PropTypes.string,
     onHelp: PropTypes.func,

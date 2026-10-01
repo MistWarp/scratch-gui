@@ -60,6 +60,7 @@ export default class DevTools {
                 items.push({
                     enabled: blockly.clipboardXml_,
                     text: this.m('paste'),
+                    icon: 'paste',
                     separator: true,
                     _isDevtoolsFirstItem: true,
                     callback: () => {
@@ -90,6 +91,7 @@ export default class DevTools {
                     const cleanUpDetachedOption = {
                         enabled: true,
                         text: this.m('clean-up-detached'),
+                        icon: 'cleanUp',
                         callback: () => {
                             this.cleanUpDetachedScripts();
                         }
@@ -114,6 +116,7 @@ export default class DevTools {
                     {
                         enabled: true,
                         text: this.m('make-space'),
+                        icon: 'makeSpace',
                         _isDevtoolsFirstItem: true,
                         callback: () => {
                             this.doCleanUp(block);
@@ -123,6 +126,7 @@ export default class DevTools {
                     {
                         enabled: true,
                         text: this.m('copy-all'),
+                        icon: 'copy',
                         callback: () => {
                             this.eventCopyClick(block);
                         },
@@ -131,6 +135,7 @@ export default class DevTools {
                     {
                         enabled: true,
                         text: this.m('copy-block'),
+                        icon: 'copy',
                         callback: () => {
                             this.eventCopyClick(block, 1);
                         }
@@ -138,6 +143,7 @@ export default class DevTools {
                     {
                         enabled: true,
                         text: this.m('cut-block'),
+                        icon: 'cut',
                         callback: () => {
                             this.eventCopyClick(block, 2);
                         }
@@ -171,6 +177,7 @@ export default class DevTools {
                     items.push({
                         enabled: true,
                         text: this.m('swap', {var: block.getCategory() === 'data' ? this.m('variables') : this.m('lists')}),
+                        icon: 'swap',
                         callback: async () => {
                             const wksp = this.getWorkspace();
                             const v = wksp.getVariableById(this.selVarID);

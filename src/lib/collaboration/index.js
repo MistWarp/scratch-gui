@@ -10,8 +10,9 @@ import {HostSnapshotService, ClientSnapshotService} from './snapshot.js';
 import AssetChannel from './assets.js';
 import PresenceChannel from './presence.js';
 import CursorOverlay from './cursor-overlay.js';
-import {getAssetData, storeAssetData, hasAssetData, clearAssetCache} from './vm-assets.js';
+import {getAssetData, storeAssetData, releaseAssetData, hasAssetData, clearAssetCache} from './vm-assets.js';
 import {avatarForCollabUser} from './avatar.js';
+import log from '../utils/log.js';
 
 /**
  * The collaboration engine facade — the only module the React layer talks
@@ -19,6 +20,8 @@ import {avatarForCollabUser} from './avatar.js';
  * together and translates engine events into the event vocabulary the
  * containers already use.
  */
+const EDIT_ERROR_REPEAT_MS = 4000;
+
 class CollabService extends Emitter {
     constructor () {
         super();
@@ -41,13 +44,32 @@ class CollabService extends Emitter {
         this._approved = false;
         this._sendChain = Promise.resolve();
         this._activity = {targetId: null, tab: 0, assetIndex: 0};
+        this._ownLoads = 0;
+        this._backedUp = false;
+        this._originalLoadProject = null;
+        this._onPageHide = () => {
+            if (this.isHost && this._session) this._session.announceClose();
+        };
     }
 
     init (vm) {
         if (this.vm && this._onEditError) this.vm.removeListener('EDIT_COMMAND_ERROR', this._onEditError);
         this.vm = vm;
-        this._onEditError = error => this.emit('edit-error', {error: error.message || String(error)});
+        this._onEditError = error => {
+            const message = error.message || String(error);
+            const now = Date.now();
+            if (message === this._lastEditError && now - this._lastEditErrorAt < EDIT_ERROR_REPEAT_MS) return;
+            this._lastEditError = message;
+            this._lastEditErrorAt = now;
+            this.emit('edit-error', {error: message});
+        };
         vm.on('EDIT_COMMAND_ERROR', this._onEditError);
+        if (vm.editingCommands && vm.securityManager) {
+            vm.editingCommands.canLoadExtension = url => {
+                if (this._applier && this._applier.applyingLocal) return Promise.resolve(true);
+                return vm.securityManager.canLoadExtensionFromProject(url);
+            };
+        }
     }
 
     /**
@@ -58,10 +80,13 @@ class CollabService extends Emitter {
      * @param {string} [privacy] 'public' | 'private' (host only).
      * @param {string} [handle] Rotur handle, for avatars.
      * @param {object|null} [scope] Project ID and branch required by this room.
+     * @param {object} [options] Options.
+     * @param {string} [options.invite] Invite key from a link (guests).
+     * @param {string} [options.inviteRole] What the invite link allows (host).
      * @returns {Promise<string>} Our peer id.
      */
     async connectToRoom (
-        roomId, username, isHost = false, privacy = 'public', handle = null, scope = null
+        roomId, username, isHost = false, privacy = 'public', handle = null, scope = null, options = {}
     ) {
         if (!roomId) throw new Error('roomId is required to connect to a room');
         if (!this.vm) throw new Error('CollabService.init(vm) must be called first');
@@ -77,7 +102,7 @@ class CollabService extends Emitter {
         this._transport = transport;
         this._applier = new VMApplier({
             vm: this.vm,
-            getWorkspace: () => this._workspace
+            isLocalClient: clientId => Boolean(clientId) && clientId === this.getCurrentUserId()
         });
         this._adapter = new VMAdapter({
             vm: this.vm,
@@ -87,10 +112,12 @@ class CollabService extends Emitter {
 
         try {
             const id = isHost ?
-                await this._connectAsHost(roomId, privacy) :
-                await this._connectAsClient(roomId);
+                await this._connectAsHost(roomId, privacy, options.inviteRole) :
+                await this._connectAsClient(roomId, options.invite);
             if (this._transport !== transport) throw new Error('Collaboration connection cancelled');
             this.isConnected = true;
+            this._watchProjectLoads();
+            if (typeof window !== 'undefined') window.addEventListener('pagehide', this._onPageHide);
             this.onEditingTargetChange();
             if (this._workspace) this._adapter.attach(this._workspace);
             return id;
@@ -100,8 +127,9 @@ class CollabService extends Emitter {
         }
     }
 
-    async _connectAsHost (roomId, privacy) {
+    async _connectAsHost (roomId, privacy, inviteRole) {
         const session = new HostSession({
+            inviteRole,
             transport: this._transport,
             applier: this._applier,
             roomId,
@@ -134,9 +162,21 @@ class CollabService extends Emitter {
             'join-request-received': 'join-request-received',
             'join-request-cancelled': 'join-request-cancelled',
             'room-privacy-changed': 'room-privacy-changed',
-            'session-ready': 'session-ready'
+            'session-ready': 'session-ready',
+            'invite-changed': 'invite-changed'
         });
-        session.on('op-applied', () => this._projectChanged());
+        session.on('op-applied', op => {
+            this._releaseCommandAssets(op);
+            this._projectChanged();
+        });
+        this._snapshot.on('upload-error', ({peerId, error}) => {
+            const user = session.users.get(peerId);
+            this.emit('snapshot-upload-failed', {
+                username: user ? user.username : '',
+                error: error && error.message ? error.message : String(error)
+            });
+        });
+        this._watchTransport(this._transport);
 
         this._transport.on('fatal', ({error}) => {
             this.emit('connection-failed', {
@@ -153,8 +193,9 @@ class CollabService extends Emitter {
         return id;
     }
 
-    _connectAsClient (roomId) {
+    _connectAsClient (roomId, invite) {
         const session = new ClientSession({
+            invite,
             transport: this._transport,
             applier: this._applier,
             roomId,
@@ -187,12 +228,13 @@ class CollabService extends Emitter {
             'users-updated': 'users-updated',
             'room-privacy-changed': 'room-privacy-changed',
             'session-ready': 'session-ready',
-            'host-loading-start': 'host-loading-start',
-            'host-loading-progress': 'host-loading-progress',
-            'host-loading-complete': 'host-loading-complete',
             'reconnecting': 'reconnecting',
-            'reconnected': 'reconnected'
+            'reconnected': 'reconnected',
+            'join-pending': 'join-pending',
+            'host-restarted': 'host-restarted',
+            'role-changed': 'role-changed'
         });
+        this._watchTransport(this._transport);
 
         session.on('join-approved', () => {
             this._approved = true;
@@ -206,8 +248,8 @@ class CollabService extends Emitter {
         });
         session.on('join-denied', reason => {
             this.emit('approval-resolved');
-            this.disconnect();
             this.emit('join-denied', reason);
+            this.disconnect();
         });
         session.on('kicked', () => {
             this.emit('kicked-from-room', {});
@@ -217,8 +259,10 @@ class CollabService extends Emitter {
             this.emit('host-left');
             this.disconnect();
         });
-        session.on('op-applied', () => this._projectChanged());
-        session.on('op-rejected', ({reason}) => this.vm.emit('EDIT_COMMAND_ERROR', new Error(reason)));
+        session.on('op-applied', op => {
+            this._releaseCommandAssets(op);
+            this._projectChanged();
+        });
         session.on('assets-needed', md5exts => this._assets.requestFromHost(md5exts));
         this._assets.on('asset-received', () => session.resumeApply());
         session.on('connection-failed', payload => {
@@ -246,6 +290,21 @@ class CollabService extends Emitter {
         this._setupPresence(session);
 
         return session.connect();
+    }
+
+    _watchTransport (transport) {
+        transport.on('broker-offline', () => this.emit('broker-status', {online: false}));
+        transport.on('broker-online', () => this.emit('broker-status', {online: true}));
+        transport.on('invalid-message', ({peerId, error}) => {
+            log.warn(`Dropped a collaboration message from ${peerId}: ${error}`);
+        });
+    }
+
+    _releaseCommandAssets (op) {
+        if (!this.vm) return;
+        const refs = op && op.payload && Array.isArray(op.payload.assetRefs) ? op.payload.assetRefs : [];
+        releaseAssetData(this.vm, refs.filter(ref => ref.endsWith('.bin')));
+        releaseAssetData(this.vm);
     }
 
     _relay (source, eventMap) {
@@ -290,6 +349,10 @@ class CollabService extends Emitter {
         if (!session || !this.isConnected || (!isHost && (!this._approved || session.lastAppliedSeq === null))) {
             return Promise.reject(new Error('Wait for the collaboration project to finish loading.'));
         }
+        if (!isHost && session.role !== 'edit') {
+            return Promise.reject(new Error('You are watching this session, so your changes were not kept. ' +
+                'Ask the host to let you edit.'));
+        }
         const send = this._sendChain.then(async () => {
             if (this._session !== session) throw new Error('Collaboration session ended');
             if (!isHost && payload.assetRefs) await assets.sendAssets('host', payload.assetRefs);
@@ -298,7 +361,10 @@ class CollabService extends Emitter {
                 {completion: session.submitCommand(type, payload)};
         });
         this._sendChain = send.then(() => {}, () => {});
-        return send.then(({completion}) => completion);
+        const binaryRefs = (payload.assetRefs || []).filter(ref => ref.endsWith('.bin'));
+        return send.then(({completion}) => completion).finally(() => {
+            if (this.vm && binaryRefs.length) releaseAssetData(this.vm, binaryRefs);
+        });
     }
 
     /**
@@ -326,33 +392,96 @@ class CollabService extends Emitter {
     async _loadMissingExtensions (extensions) {
         const manager = this.vm.extensionManager;
         if (!manager) return;
+        const skipped = [];
         for (const {id, url} of extensions) {
             if (manager.isExtensionLoaded(id)) continue;
-            const load = this.vm.editingCommands.extensions.loadExtensionURL;
-            await load(url || id);
+            const builtin = typeof manager.isBuiltinExtension === 'function' && manager.isBuiltinExtension(id);
+            if (!builtin && !url) {
+                skipped.push(id);
+                continue;
+            }
+            try {
+                if (!builtin && this.vm.securityManager &&
+                    !(await this.vm.securityManager.canLoadExtensionFromProject(url))) {
+                    skipped.push(id);
+                    continue;
+                }
+                await this.vm.editingCommands.extensions.loadExtensionURL(builtin ? id : url);
+            } catch (error) {
+                log.warn(`Could not load extension ${id} for collaboration`, error);
+                skipped.push(id);
+            }
         }
+        if (skipped.length) this.emit('extensions-skipped', {ids: skipped});
     }
 
     async _loadProjectSuppressed (buffer, active = () => true) {
         const adapter = this._adapter;
         const scope = this.scope;
         if (!active()) return;
-        if (!active()) return;
         this.emit('project-sync-apply-start');
         adapter.setSuppressed(true);
+        this._ownLoads++;
         try {
-            await withProjectReplacement(this.vm, 'Before live synchronization', async () => {
-                await this.vm.loadProject(buffer, {
-                    mwPreserveProjectSource: true, skipGitImport: true, editSessionActive: active
-                });
+            const load = () => this.vm.loadProject(buffer, {
+                mwPreserveProjectSource: true, skipGitImport: true, editSessionActive: active
             });
+            if (this._backedUp) {
+                await load();
+            } else {
+                await withProjectReplacement(this.vm, 'Before live synchronization', load);
+                this._backedUp = true;
+            }
             if (!scope && active()) detachWorkspace(this.vm);
         } finally {
+            this._ownLoads--;
             if (adapter === this._adapter) adapter.setSuppressed(false);
-            if (active()) this.emit('project-sync-apply-complete');
+            this.emit('project-sync-apply-complete');
         }
         // Loading rebuilt the workspace contents; re-hook capture.
         if (active()) this.emit('request-workspace-reattach');
+    }
+
+    _watchProjectLoads () {
+        const vm = this.vm;
+        if (this._originalLoadProject) return;
+        const original = vm.loadProject;
+        this._originalLoadProject = original;
+        this._ownedLoadProject = Object.prototype.hasOwnProperty.call(vm, 'loadProject');
+        this._loadProjectWrapper = (...args) => {
+            if (this._ownLoads > 0 || !this.isConnected) return original.apply(vm, args);
+            return this._onOtherProjectLoad(original, args);
+        };
+        vm.loadProject = this._loadProjectWrapper;
+    }
+
+    _unwatchProjectLoads () {
+        if (!this._originalLoadProject) return;
+        if (this.vm.loadProject === this._loadProjectWrapper) {
+            if (this._ownedLoadProject) this.vm.loadProject = this._originalLoadProject;
+            else delete this.vm.loadProject;
+        }
+        this._originalLoadProject = null;
+        this._loadProjectWrapper = null;
+    }
+
+    async _onOtherProjectLoad (original, args) {
+        const vm = this.vm;
+        if (!this.isHost) {
+            this.disconnect();
+            this.emit('left-for-other-project');
+            return original.apply(vm, args);
+        }
+        const session = this._session;
+        const adapter = this._adapter;
+        adapter.setSuppressed(true);
+        try {
+            const result = await session.queue.run(() => original.apply(vm, args));
+            if (this._session === session) session.restartHistory();
+            return result;
+        } finally {
+            if (adapter === this._adapter) adapter.setSuppressed(false);
+        }
     }
 
     _projectChanged () {
@@ -372,7 +501,9 @@ class CollabService extends Emitter {
         this.scope = null;
         this._sendChain = Promise.resolve();
         this._approved = false;
-        this._backedUpBeforeSync = false;
+        this._backedUp = false;
+        if (typeof window !== 'undefined') window.removeEventListener('pagehide', this._onPageHide);
+        if (this.vm) this._unwatchProjectLoads();
         if (this._adapter) {
             this._adapter.destroy();
             this._adapter = null;
@@ -399,7 +530,11 @@ class CollabService extends Emitter {
             this._session = null;
         }
         if (this._transport) {
-            this._transport.destroy();
+            if (this.isHost) {
+                this._transport.destroyGracefully().catch(() => {});
+            } else {
+                this._transport.destroy();
+            }
             this._transport = null;
         }
         if (this._applier) {
@@ -434,10 +569,7 @@ class CollabService extends Emitter {
      * blocks that Blockly created with events disabled.
      */
     flushProcedureBlocks () {
-        if (this._adapter && this.isConnected) {
-            this._adapter.syncProcedureBlocks();
-            this._adapter.flush();
-        }
+        if (this._adapter && this.isConnected) this._adapter.syncProcedureBlocks();
     }
 
     /**
@@ -479,6 +611,42 @@ class CollabService extends Emitter {
         return this._session ? this._session.getUsers() : [];
     }
 
+    /**
+     * What we can do in the current session.
+     * @returns {string|null} 'edit', 'watch', or null when not in a session.
+     */
+    getMyRole () {
+        if (!this._session) return null;
+        return this.isHost ? 'edit' : this._session.role;
+    }
+
+    /**
+     * A link that lets someone join straight away, with the invite role.
+     * @returns {string|null} The link, or null when not hosting.
+     */
+    getInviteLink () {
+        if (!this.isHost || !this._session || typeof window === 'undefined') return null;
+        const url = new URL(window.location.href);
+        url.search = '';
+        url.hash = '';
+        url.searchParams.set('room', this.roomId);
+        url.searchParams.set('invite', this._session.inviteKey);
+        return url.toString();
+    }
+
+    getInviteRole () {
+        return this.isHost && this._session ? this._session.inviteRole : null;
+    }
+
+    setInviteRole (role) {
+        if (!this.isHost || !this._session) throw new Error('Only the host can change the invite link');
+        this._session.setInviteRole(role);
+    }
+
+    setUserRole (userId, role) {
+        return Boolean(this.isHost && this._session && this._session.setUserRole(userId, role));
+    }
+
     getRoomPrivacy () {
         if (this._session) return this._session.privacy || 'public';
         return 'public';
@@ -497,8 +665,8 @@ class CollabService extends Emitter {
         if (this._session && this.isHost) this._session.kickUser(userId);
     }
 
-    approveJoinRequest (requesterId) {
-        return Boolean(this._session && this.isHost && this._session.approveJoinRequest(requesterId));
+    approveJoinRequest (requesterId, role) {
+        return Boolean(this._session && this.isHost && this._session.approveJoinRequest(requesterId, role));
     }
 
     denyJoinRequest (requesterId, reason) {

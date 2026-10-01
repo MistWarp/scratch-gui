@@ -6,6 +6,7 @@ import Box from '../box/box.jsx';
 import {BooleanSetting} from './setting.jsx';
 import {PageHeader} from './theme-accent-panel.jsx';
 import {analyticsEnabled, setAnalyticsEnabled} from '../../community/analytics.js';
+import {isMinorAccount, subscribeMinorAccount} from '../../lib/minor-account.js';
 import {
     readBlockedProjectPrompts,
     unblockProjectPrompts
@@ -25,9 +26,23 @@ class PrivacyPage extends React.Component {
         super(props);
         this.state = {
             analytics: analyticsEnabled(),
+            minor: isMinorAccount(),
             blocked: readBlockedProjectPrompts()
         };
         this.handleAnalyticsChange = this.handleAnalyticsChange.bind(this);
+        this.handleMinorChange = this.handleMinorChange.bind(this);
+    }
+
+    componentDidMount () {
+        this.unsubscribeMinor = subscribeMinorAccount(this.handleMinorChange);
+    }
+
+    componentWillUnmount () {
+        if (this.unsubscribeMinor) this.unsubscribeMinor();
+    }
+
+    handleMinorChange (minor) {
+        this.setState({analytics: analyticsEnabled(), minor});
     }
 
     handleAnalyticsChange (event) {
@@ -94,15 +109,23 @@ class PrivacyPage extends React.Component {
                 </PageHeader>
                 <BooleanSetting
                     value={this.state.analytics}
+                    disabled={this.state.minor}
                     onChange={this.handleAnalyticsChange}
                     label={<FormattedMessage
                         defaultMessage="Share anonymous product analytics"
                         id="mw.settingsModal.analytics"
                     />}
-                    help={<FormattedMessage
-                        defaultMessage="Records creation and return milestones for 31 days. MistWarp does not send usernames, project IDs, page URLs, IP addresses, or browser details."
-                        id="mw.settingsModal.analyticsHelp"
-                    />}
+                    help={this.state.minor ? (
+                        <FormattedMessage
+                            defaultMessage="Anonymous analytics stay off for accounts under 18."
+                            id="mw.settingsModal.analyticsMinor"
+                        />
+                    ) : (
+                        <FormattedMessage
+                            defaultMessage="Records creation and return milestones for 31 days. MistWarp does not send usernames, project IDs, page URLs, IP addresses, or browser details."
+                            id="mw.settingsModal.analyticsHelp"
+                        />
+                    )}
                 />
             </Box>
         );

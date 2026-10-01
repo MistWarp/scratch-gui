@@ -109,7 +109,8 @@ const initialState = {
     error: null,
     projectData: null,
     projectId: null,
-    loadingState: LoadingState.NOT_LOADED
+    loadingState: LoadingState.NOT_LOADED,
+    isNewDefault: false
 };
 
 const reducer = function (state, action) {
@@ -147,7 +148,8 @@ const reducer = function (state, action) {
             state.loadingState === LoadingState.LOADING_VM_NEW_DEFAULT) {
             return Object.assign({}, state, {
                 loadingState: LoadingState.SHOWING_WITHOUT_ID,
-                projectId: defaultProjectId
+                projectId: defaultProjectId,
+                isNewDefault: state.loadingState === LoadingState.LOADING_VM_NEW_DEFAULT
             });
         }
         return state;

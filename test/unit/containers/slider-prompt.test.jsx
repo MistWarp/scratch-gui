@@ -106,6 +106,25 @@ describe('Slider Prompt Container', () => {
         componentProps.onChangeMin({target: {value: 'hello'}});
         componentProps.onOk();
         expect(onOk).not.toHaveBeenCalled();
-        expect(onCancel).toHaveBeenCalled();
+        expect(onCancel).not.toHaveBeenCalled();
+        expect(wrapper.find(SliderPromptComponent).props().valid).toBe(false);
+    });
+
+    test('Treats an empty field as invalid instead of submitting NaN', () => {
+        const wrapper = shallow(
+            <SliderPrompt
+                isDiscrete
+                maxValue={100}
+                minValue={0}
+                onCancel={onCancel}
+                onOk={onOk}
+            />
+        );
+        wrapper.find(SliderPromptComponent).props()
+            .onChangeMin({target: {value: '  '}});
+        wrapper.find(SliderPromptComponent).props()
+            .onOk();
+        expect(onOk).not.toHaveBeenCalled();
+        expect(wrapper.find(SliderPromptComponent).props().valid).toBe(false);
     });
 });

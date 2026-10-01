@@ -19,7 +19,6 @@
     background: $ui-modal-background;
     color: $text-primary;
     border: 1px solid $ui-black-transparent;
-    border-inline-start: 4px solid $status-info;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     z-index: $z-index-alerts;
 }

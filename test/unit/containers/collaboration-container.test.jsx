@@ -28,7 +28,13 @@ const mockCollaborationService = {
     changeRoomPrivacy: jest.fn(() => Promise.resolve()),
     attachToWorkspace: jest.fn(),
     disconnect: jest.fn(),
-    cancelJoinRequest: jest.fn()
+    cancelJoinRequest: jest.fn(),
+    getInviteLink: jest.fn(() => null),
+    getInviteRole: jest.fn(() => null),
+    getMyRole: jest.fn(() => null),
+    setInviteRole: jest.fn(),
+    setUserRole: jest.fn(() => true),
+    isConnectedToHostPeer: jest.fn(() => false)
 };
 
 CollaborationService.getInstance.mockReturnValue(mockCollaborationService);
@@ -118,7 +124,7 @@ describe('CollaborationContainer', () => {
     test('canceling live editing leaves the current workspace disconnected', async () => {
         const container = instanceOf(mountContainer());
         container.props = {...container.props, openSimpleDialog: config => config.onCancel()};
-        await expect(container.handleJoinRoom('room', 'Alice')).rejects.toThrow('Joining canceled');
+        await expect(container.handleJoinRoom('room', 'Alice')).rejects.toMatchObject({cancelled: true});
         expect(mockCollaborationService.connectToRoom).not.toHaveBeenCalled();
     });
 
@@ -128,7 +134,7 @@ describe('CollaborationContainer', () => {
         await container.handleJoinRoom('test-room', 'Alice');
 
         expect(mockCollaborationService.connectToRoom)
-            .toHaveBeenCalledWith('test-room', 'Alice', false, 'public', ROTUR_HANDLE, null);
+            .toHaveBeenCalledWith('test-room', 'Alice', false, 'private', ROTUR_HANDLE, null, {invite: undefined});
         expect(collaborationState().roomId).toBe('test-room');
         // guests only become "connected" once the host answers
         expect(collaborationState().isConnected).toBe(false);
@@ -148,21 +154,41 @@ describe('CollaborationContainer', () => {
         await container.handleCreateRoom('test-room', 'Alice', 'private');
 
         expect(mockCollaborationService.connectToRoom)
-            .toHaveBeenCalledWith('test-room', 'Alice', true, 'private', ROTUR_HANDLE, null);
+            .toHaveBeenCalledWith('test-room', 'Alice', true, 'private', ROTUR_HANDLE, null, {inviteRole: 'watch'});
         expect(collaborationState().roomId).toBe('test-room');
         expect(collaborationState().roomPrivacy).toBe('private');
         // the host is connected straight away
         expect(collaborationState().isConnected).toBe(true);
     });
 
-    test('handleCreateRoom defaults to a public room', async () => {
+    test('handleCreateRoom always opens a room that invite links can join', async () => {
         const container = instanceOf(mountContainer());
 
-        await container.handleCreateRoom('test-room', 'Alice');
+        await container.handleCreateRoom('test-room', 'Alice', 'public');
 
         expect(mockCollaborationService.connectToRoom)
-            .toHaveBeenCalledWith('test-room', 'Alice', true, 'public', ROTUR_HANDLE, null);
-        expect(collaborationState().roomPrivacy).toBe('public');
+            .toHaveBeenCalledWith('test-room', 'Alice', true, 'private', ROTUR_HANDLE, null, {inviteRole: 'watch'});
+        expect(collaborationState().roomPrivacy).toBe('private');
+    });
+
+    test('an invite link from the URL is used once and then cleared', async () => {
+        const container = instanceOf(mountContainer());
+
+        await container.handleJoinRoom('test-room', 'Alice', null, {invite: 'secret'});
+
+        expect(mockCollaborationService.connectToRoom)
+            .toHaveBeenCalledWith('test-room', 'Alice', false, 'private', ROTUR_HANDLE, null, {invite: 'secret'});
+        expect(collaborationState().pendingInvite).toBe(null);
+    });
+
+    test('host role controls go through the service', () => {
+        const container = instanceOf(mountContainer());
+
+        container.handleChangeInviteRole('edit');
+        container.handleChangeUserRole('guest-1', 'edit');
+
+        expect(mockCollaborationService.setInviteRole).toHaveBeenCalledWith('edit');
+        expect(mockCollaborationService.setUserRole).toHaveBeenCalledWith('guest-1', 'edit');
     });
 
     test('handleCreateRoom rejects an empty room id without calling the service', async () => {
@@ -205,7 +231,7 @@ describe('CollaborationContainer', () => {
         expect(collaborationState().isConnected).toBe(false);
         expect(collaborationState().roomId).toBe(null);
         expect(collaborationState().connectionError)
-            .toBe('You have been removed from the collaboration room by the host.');
+            .toBe('The host removed you from the room. Your copy of the project is still here.');
     });
 
     test('handleHostLeft closes the room and warns the user', () => {
@@ -216,7 +242,7 @@ describe('CollaborationContainer', () => {
         expect(NotificationSystem.warning).toHaveBeenCalled();
         expect(collaborationState().isConnected).toBe(false);
         expect(collaborationState().roomId).toBe(null);
-        expect(collaborationState().connectionError).toMatch(/host has left/i);
+        expect(collaborationState().connectionError).toMatch(/host closed the room/i);
     });
 
     test('handleConnectedToHost marks the session connected', () => {
@@ -237,30 +263,15 @@ describe('CollaborationContainer', () => {
         expect(collaborationState().roomId).toBe(null);
     });
 
-    test('handleChangeRoomPrivacy updates privacy through the service', async () => {
-        const container = instanceOf(mountContainer());
 
-        await container.handleChangeRoomPrivacy('private');
-
-        expect(mockCollaborationService.changeRoomPrivacy).toHaveBeenCalledWith('private');
-        expect(collaborationState().roomPrivacy).toBe('private');
-    });
-
-    test('handleChangeRoomPrivacy reports failures and rethrows', async () => {
-        mockCollaborationService.changeRoomPrivacy.mockRejectedValueOnce(new Error('denied'));
-        const container = instanceOf(mountContainer());
-
-        await expect(container.handleChangeRoomPrivacy('private')).rejects.toThrow('denied');
-        expect(collaborationState().connectionError).toBe('denied');
-    });
 
     test('handleApproveJoinRequest and handleDenyJoinRequest delegate to the service', async () => {
         const container = instanceOf(mountContainer());
 
-        await container.handleApproveJoinRequest('req-1', 'Alice');
+        await container.handleApproveJoinRequest('req-1', 'Alice', 'edit');
         await container.handleDenyJoinRequest('req-2');
 
-        expect(mockCollaborationService.approveJoinRequest).toHaveBeenCalledWith('req-1', 'Alice');
+        expect(mockCollaborationService.approveJoinRequest).toHaveBeenCalledWith('req-1', 'edit');
         expect(mockCollaborationService.denyJoinRequest).toHaveBeenCalledWith('req-2');
     });
 

@@ -9,6 +9,7 @@ const CHUNK_SIZE = 64 * 1024;
 // made mid-transfer waits for a small backlog instead of the entire asset.
 const MAX_BUFFERED_BYTES = 128 * 1024;
 const DRAIN_POLL_MS = 50;
+const MAX_INCOMING = 64;
 
 const toArrayBuffer = data => {
     if (data instanceof ArrayBuffer) return data;
@@ -145,7 +146,11 @@ class AssetChannel extends Emitter {
     requestFromHost (md5exts) {
         const wanted = md5exts.filter(md5ext => !this._requestedFromHost.has(md5ext));
         if (wanted.length === 0) return;
-        wanted.forEach(md5ext => this._requestedFromHost.add(md5ext));
+        const now = Date.now();
+        wanted.forEach(md5ext => {
+            this._requestedFromHost.add(md5ext);
+            this._progressAt.set(md5ext, now);
+        });
         this.transport.sendToHost(makeAsset(ASSET.REQUEST, {md5exts: wanted}));
     }
 
@@ -157,9 +162,12 @@ class AssetChannel extends Emitter {
             this._retries.set(md5ext, attempts);
             if (attempts >= 3) {
                 this._requestedFromHost.delete(md5ext);
-                this.session.emit('connection-failed', {error: `Could not download asset ${md5ext}. Rejoin to retry.`});
+                this.session.emit('connection-failed', {
+                    error: 'A costume or sound from the host would not download. Join the room again to retry.'
+                });
                 return;
             }
+            this._progressAt.set(md5ext, Date.now());
             this.transport.sendToHost(makeAsset(ASSET.REQUEST, {md5exts: [md5ext]}));
         }
     }
@@ -183,6 +191,7 @@ class AssetChannel extends Emitter {
         }
         case ASSET.BEGIN: {
             const {md5ext, totalBytes, chunkCount} = envelope.payload;
+            if (this._incoming.size >= MAX_INCOMING && !this._incoming.has(`${peerId}:${md5ext}`)) return;
             this._incoming.set(`${peerId}:${md5ext}`, {
                 md5ext,
                 totalBytes,

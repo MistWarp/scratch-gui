@@ -39,9 +39,7 @@ describe('projectSaverHOC', () => {
             <WrappedComponent
                 isShowingWithId
                 canSave={false}
-                isCreatingNew={false}
                 isShowingSaveable={false} // set explicitly because it relies on ownProps.canSave
-                isShowingWithoutId={false}
                 isUpdating={false}
                 loadingState={LoadingState.SHOWING_WITH_ID}
                 store={store}
@@ -63,9 +61,7 @@ describe('projectSaverHOC', () => {
         const mounted = mount(
             <WrappedComponent
                 canSave
-                isCreatingNew={false}
                 isShowingWithId={false}
-                isShowingWithoutId={false}
                 isUpdating={false}
                 loadingState={LoadingState.LOADING_VM_WITH_ID}
                 store={store}
@@ -81,105 +77,6 @@ describe('projectSaverHOC', () => {
         expect(mockedSaveProject).not.toHaveBeenCalled();
     });
 
-    test('if canSave is false when showing a project without an id, project will NOT be created', () => {
-        const mockedCreateProject = jest.fn();
-        const Component = () => <div />;
-        const WrappedComponent = projectSaverHOC(Component);
-        const mounted = mount(
-            <WrappedComponent
-                isShowingWithoutId
-                canSave={false}
-                isCreatingNew={false}
-                isShowingWithId={false}
-                isUpdating={false}
-                loadingState={LoadingState.LOADING_VM_NEW_DEFAULT}
-                store={store}
-                vm={vm}
-                onCreateProject={mockedCreateProject}
-            />
-        );
-        mounted.setProps({
-            isShowingWithoutId: true,
-            loadingState: LoadingState.SHOWING_WITHOUT_ID
-        });
-        expect(mockedCreateProject).not.toHaveBeenCalled();
-    });
-
-    test('if canCreateNew becomes true when showing a project without an id, project will be created', () => {
-        const mockedCreateProject = jest.fn();
-        const Component = () => <div />;
-        const WrappedComponent = projectSaverHOC(Component);
-        const mounted = mount(
-            <WrappedComponent
-                isShowingWithoutId
-                canCreateNew={false}
-                isCreatingNew={false}
-                isShowingWithId={false}
-                isUpdating={false}
-                loadingState={LoadingState.SHOWING_WITHOUT_ID}
-                store={store}
-                vm={vm}
-                onCreateProject={mockedCreateProject}
-            />
-        );
-        mounted.setProps({
-            canCreateNew: true
-        });
-        expect(mockedCreateProject).toHaveBeenCalled();
-    });
-
-    test('if canCreateNew is true and we transition to showing new project, project will be created', () => {
-        const mockedCreateProject = jest.fn();
-        const Component = () => <div />;
-        const WrappedComponent = projectSaverHOC(Component);
-        const mounted = mount(
-            <WrappedComponent
-                canCreateNew
-                isCreatingNew={false}
-                isShowingWithId={false}
-                isShowingWithoutId={false}
-                isUpdating={false}
-                loadingState={LoadingState.LOADING_VM_NEW_DEFAULT}
-                store={store}
-                vm={vm}
-                onCreateProject={mockedCreateProject}
-            />
-        );
-        mounted.setProps({
-            isShowingWithoutId: true,
-            loadingState: LoadingState.SHOWING_WITHOUT_ID
-        });
-        expect(mockedCreateProject).toHaveBeenCalled();
-    });
-
-    test('if we enter creating new state, vm project should be requested', () => {
-        const Component = () => <div />;
-        const WrappedComponent = projectSaverHOC(Component);
-        const mockedStoreProject = jest.fn(() => Promise.resolve());
-        // The first wrapper is redux's Connect HOC
-        WrappedComponent.WrappedComponent.prototype.storeProject = mockedStoreProject;
-        const mounted = mount(
-            <WrappedComponent
-                canSave
-                isCreatingCopy={false}
-                isCreatingNew={false}
-                isRemixing={false}
-                isShowingWithId={false}
-                isShowingWithoutId={false}
-                isUpdating={false}
-                loadingState={LoadingState.LOADING_VM_NEW_DEFAULT}
-                reduxProjectId={'100'}
-                store={store}
-                vm={vm}
-            />
-        );
-        mounted.setProps({
-            isCreatingNew: true,
-            loadingState: LoadingState.CREATING_NEW
-        });
-        expect(mockedStoreProject).toHaveBeenCalled();
-    });
-
     test('if we enter remixing state, vm project should be requested, and alert should show', () => {
         const mockedShowCreatingRemixAlert = jest.fn();
         const Component = () => <div />;
@@ -191,10 +88,8 @@ describe('projectSaverHOC', () => {
             <WrappedComponent
                 canSave
                 isCreatingCopy={false}
-                isCreatingNew={false}
                 isRemixing={false}
                 isShowingWithId={false}
-                isShowingWithoutId={false}
                 isUpdating={false}
                 loadingState={LoadingState.SHOWING_WITH_ID}
                 reduxProjectId={'100'}
@@ -222,10 +117,8 @@ describe('projectSaverHOC', () => {
             <WrappedComponent
                 canSave
                 isCreatingCopy={false}
-                isCreatingNew={false}
                 isRemixing={false}
                 isShowingWithId={false}
-                isShowingWithoutId={false}
                 isUpdating={false}
                 loadingState={LoadingState.SHOWING_WITH_ID}
                 reduxProjectId={'100'}
@@ -251,9 +144,7 @@ describe('projectSaverHOC', () => {
         const mounted = mount(
             <WrappedComponent
                 canSave
-                isCreatingNew={false}
                 isShowingWithId={false}
-                isShowingWithoutId={false}
                 isUpdating={false}
                 loadingState={LoadingState.LOADING_VM_WITH_ID}
                 reduxProjectId={'100'}
@@ -280,9 +171,7 @@ describe('projectSaverHOC', () => {
             <WrappedComponent
                 canSave
                 isUpdating
-                isCreatingNew={false}
                 isShowingWithId={false}
-                isShowingWithoutId={false}
                 loadingState={LoadingState.MANUAL_UPDATING}
                 reduxProjectId={'100'}
                 store={store}
@@ -306,9 +195,6 @@ describe('projectSaverHOC', () => {
         const mounted = mount(
             <WrappedComponent
                 canSave
-                isShowingWithoutId
-                canCreateNew={false}
-                isCreatingNew={false}
                 isManualUpdating={false}
                 isShowingWithId={false}
                 isUpdating={false}

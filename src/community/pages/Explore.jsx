@@ -8,10 +8,9 @@ import useLatest from '../use-latest.js';
 import ProjectCard from '../components/ProjectCard.jsx';
 import Button from '../components/ui/Button.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
-import PageHeader from '../components/ui/PageHeader.jsx';
+import SelectMenu from '../components/ui/SelectMenu.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
-import SectionTabs from '../components/SectionTabs.jsx';
-import ExploreNav from '../components/ExploreNav.jsx';
+import ExploreHeader from '../components/ExploreHeader.jsx';
 import searchPath from '../search-path.js';
 import {useUser} from '../UserContext.jsx';
 import styles from './Explore.module.css';
@@ -24,6 +23,11 @@ const SORTS = [
 ];
 
 const CATEGORIES = ['games', 'animation', 'art', 'music', 'tools', 'tutorial', 'multiplayer', 'mobile'];
+const FILTERS = [
+    {key: '', label: 'All'},
+    {key: 'feedback', label: 'Looking for feedback'},
+    ...CATEGORIES.map(key => ({key}))
+];
 const PAGE_SIZE = 24;
 const MAX_RESTORED_PAGES = 10;
 
@@ -171,30 +175,29 @@ const Explore = () => {
 
     return (
         <main className={styles.page}>
-            <PageHeader
-                compact
-                icon={Compass}
-                title={communityText('Explore')}
-                actions={(
-                    <SectionTabs
-                        items={SORTS}
-                        value={sort}
-                        onChange={setSort}
-                        className={styles.tabs}
-                        itemClassName={styles.tab}
-                        activeClassName={styles.tabActive}
-                        ariaLabel="Project sorting"
-                    />
-                )}
-            />
-            <ExploreNav active="projects" />
-            <div className={styles.categories}>
-                <button type="button" className={!tag ? styles.categoryActive : styles.category} onClick={() => setTag('')}>{communityText('All')}</button>
-                <button type="button" className={tag === 'feedback' ? styles.categoryActive : styles.category} onClick={() => setTag('feedback')}>{communityText('Looking for feedback')}</button>
-                {CATEGORIES.map(category => (
-                    <button type="button" key={category} className={tag === category ? styles.categoryActive : styles.category} onClick={() => setTag(category)}>#{category}</button>
-                ))}
-            </div>
+            <ExploreHeader active="projects">
+                <div className={styles.categories} role="group" aria-label={communityText('Filter by category')}>
+                    {FILTERS.map(filter => (
+                        <button
+                            type="button"
+                            key={filter.key}
+                            aria-pressed={tag === filter.key}
+                            className={tag === filter.key ? styles.categoryActive : styles.category}
+                            onClick={() => setTag(filter.key)}
+                        >
+                            {filter.label ? communityText(filter.label) : `#${filter.key}`}
+                        </button>
+                    ))}
+                </div>
+                <SelectMenu
+                    align="right"
+                    ariaLabel={communityText('Sort projects')}
+                    className={styles.sort}
+                    value={sort}
+                    onChange={setSort}
+                    options={SORTS.map(option => ({value: option.key, label: communityText(option.label)}))}
+                />
+            </ExploreHeader>
             {loading ? (
                 <StatusMessage />
             ) : failed ? (

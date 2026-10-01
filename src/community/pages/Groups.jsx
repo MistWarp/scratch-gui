@@ -1,15 +1,14 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable react/jsx-no-bind, max-len */
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {Building2, Plus, Search, Users} from 'lucide-react';
+import {Building2, Plus, Users} from 'lucide-react';
 import {Link, useSearchParams} from 'react-router-dom';
 import rotur from '../rotur.js';
 import {useUser} from '../UserContext.jsx';
 import Button from '../components/ui/Button.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
-import PageHeader from '../components/ui/PageHeader.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
-import ExploreNav from '../components/ExploreNav.jsx';
+import ExploreHeader, {ExploreSearch} from '../components/ExploreHeader.jsx';
 import styles from './Groups.module.css';
 
 const ROTUR_GROUP_CREATION_URL = 'https://rotur.dev/groups?create=1';
@@ -75,28 +74,25 @@ const Groups = () => {
 
     const cards = query.trim() ? groups : [...mine, ...groups.filter(group => !mineTags.has(group.tag))];
     return (<main className={styles.page}>
-        <PageHeader
-            icon={Building2}
-            title={communityText('Groups')}
+        <ExploreHeader
+            active="groups"
             lead={communityText('Organisations that share projects, spaces, members, and funding.')}
             actions={<Button variant="primary" onClick={() => window.location.assign(ROTUR_GROUP_CREATION_URL)}><Plus size={16} />{communityText('New group')}</Button>}
-        />
-        <ExploreNav active="groups" />
-
-        <form
-            className={styles.search} onSubmit={event => {
-                event.preventDefault();
-                const normalized = query.trim();
-                if (normalized !== requestedQuery) {
-                    submittedQuery.current = normalized;
-                    setSearchParams(withGroupQuery(searchParams, normalized));
-                }
-                load(normalized);
-            }}
         >
-            <label><Search size={16} /><input aria-label={communityText('Search groups')} value={query} onChange={event => setQuery(event.target.value)} placeholder={communityText('Search groups')} /></label>
-            <Button type="submit">{communityText('Search')}</Button>
-        </form>
+            <ExploreSearch
+                ariaLabel={communityText('Search groups')}
+                value={query}
+                onChange={setQuery}
+                onSubmit={value => {
+                    const normalized = value.trim();
+                    if (normalized !== requestedQuery) {
+                        submittedQuery.current = normalized;
+                        setSearchParams(withGroupQuery(searchParams, normalized));
+                    }
+                    load(normalized);
+                }}
+            />
+        </ExploreHeader>
         {error ? <StatusMessage error onRetry={() => load(requestedQuery)}>{error}</StatusMessage> : null}
         {loading ? <StatusMessage>{communityText('Loading groups…')}</StatusMessage> : null}
         {!loading && !error && !cards.length ? (

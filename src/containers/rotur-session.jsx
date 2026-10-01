@@ -19,7 +19,8 @@ import {subscribeRoturSettings} from '../lib/rotur/settings.js';
 import {onRoturLogin, getUsernameOverride} from '../lib/rotur/cloud-sync.js';
 import {getRememberedPlatformProject} from '../lib/community/publish.js';
 import {watchTier} from '../community/tier-watch.js';
-import {getProject as getMistWarpProject} from '../lib/community/api.js';
+import {getProject as getMistWarpProject, request as mistWarpRequest} from '../lib/community/api.js';
+import {setMinorAccount} from '../lib/minor-account.js';
 import {setRoturSessionApi} from '../lib/rotur/session-api.js';
 import {
     setRoturStatus,
@@ -55,7 +56,8 @@ class RoturSession extends React.Component {
             'refreshPlatformProjectLink',
             'syncProjectAuthor',
             'handleSettingsChanged',
-            'applyCloudPreferences'
+            'applyCloudPreferences',
+            'refreshMinorAccount'
         ]);
         this.unsubscribeSettings = null;
         this.unsubscribeIdentity = null;
@@ -127,6 +129,7 @@ class RoturSession extends React.Component {
         if (next.user && !hadUser) {
             this.editingSince = Date.now();
             this.props.onSetUser(next.user);
+            this.refreshMinorAccount();
             this.applyCloudPreferences().then(() => this.syncCurrentActivity());
             this.ensureNotificationSubscription();
             this.unsubscribeTier = watchTier(next.user.username, () => {});
@@ -172,6 +175,14 @@ class RoturSession extends React.Component {
             this.unsubscribeNotificationRemovals();
             this.unsubscribeNotificationRemovals = null;
         }
+    }
+
+    refreshMinorAccount () {
+        return mistWarpRequest('/me')
+            .then(me => {
+                if (me && typeof me.minor === 'boolean') setMinorAccount(me.minor);
+            })
+            .catch(() => null);
     }
 
     handleSettingsChanged () {
