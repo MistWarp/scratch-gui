@@ -2471,5 +2471,7 @@
   "Anonymous analytics stay off for accounts under 18.": "Anonymous analytics stay off for accounts under 18.",
   "Open wallet": "Open wallet",
   "Not enough credits in your balance. Claim your daily credits in your wallet, then send again.": "Not enough credits in your balance. Claim your daily credits in your wallet, then send again.",
-  "You do not have enough credits. Claim your daily credits in your wallet, then try again.": "You do not have enough credits. Claim your daily credits in your wallet, then try again."
+  "You do not have enough credits. Claim your daily credits in your wallet, then try again.": "You do not have enough credits. Claim your daily credits in your wallet, then try again.",
+  "Filter by category": "Filter by category",
+  "Sort projects": "Sort projects"
 }
