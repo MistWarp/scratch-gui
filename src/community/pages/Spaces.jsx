@@ -2,19 +2,18 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Link, useNavigate, useSearchParams} from 'react-router-dom';
-import {Layers3, Trophy, Library, Plus, Search} from 'lucide-react';
+import {Layers3, Trophy, Library, Plus} from 'lucide-react';
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
 import Button from '../components/ui/Button.jsx';
 import CardGrid from '../components/ui/CardGrid.jsx';
 import EmptyState, {SignInPrompt} from '../components/ui/EmptyState.jsx';
 import Notice from '../components/ui/Notice.jsx';
-import PageHeader from '../components/ui/PageHeader.jsx';
 import SectionHeading from '../components/ui/SectionHeading.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import ChallengeCalendar from '../components/ChallengeCalendar.jsx';
 import SpaceCard from '../components/SpaceCard.jsx';
-import ExploreNav from '../components/ExploreNav.jsx';
+import ExploreHeader, {ExploreSearch} from '../components/ExploreHeader.jsx';
 import styles from './Spaces.module.css';
 
 const KINDS = [
@@ -208,9 +207,8 @@ const Spaces = () => {
 
     return (
         <main className={styles.page}>
-            <PageHeader
-                icon={KIND_ICONS[kind] || Layers3}
-                title={communityText(KINDS.find(item => item.key === kind).label)}
+            <ExploreHeader
+                active={kind === 'mine' ? 'studios' : `${kind}s`}
                 lead={kind === 'mine' ? communityText('Spaces you own, curate, follow, or have been invited to.') : communityText(KIND_DESCRIPTIONS[kind])}
                 actions={(
                     <React.Fragment>
@@ -223,8 +221,17 @@ const Spaces = () => {
                             <Plus size={16} />{communityText('New space')}</Button>
                     </React.Fragment>
                 )}
-            />
-            <ExploreNav active={kind === 'mine' ? 'studios' : `${kind}s`} />
+            >
+                <ExploreSearch
+                    ariaLabel={kind === 'mine' ? communityText('Search your spaces') : communityText('Search spaces')}
+                    value={query}
+                    onChange={setQuery}
+                    onSubmit={value => {
+                        if (value.trim() === requestedQuery) load(requestedQuery);
+                        else setSearchParams(withSpaceQuery(searchParams, value));
+                    }}
+                />
+            </ExploreHeader>
 
             {creating ? (
                 <form className={styles.form} onSubmit={create} aria-busy={createBusy}>
@@ -278,21 +285,6 @@ const Spaces = () => {
                 </form>
             ) : null}
 
-            <div className={styles.browseTools}>
-                <form
-                    className={styles.spaceSearch}
-                    onSubmit={event => {
-                        event.preventDefault();
-                        const normalized = query.trim();
-                        if (normalized === requestedQuery) load(requestedQuery);
-                        else setSearchParams(withSpaceQuery(searchParams, query));
-                    }}
-                >
-                    <Search size={16} />
-                    <input aria-label={kind === 'mine' ? communityText('Search your spaces') : communityText('Search spaces')} value={query} onChange={event => setQuery(event.target.value)} placeholder={kind === 'mine' ? communityText('Search your spaces') : communityText('Search spaces')} />
-                    <button type="submit">{communityText('Search')}</button>
-                </form>
-            </div>
 
             {loading ? <StatusMessage>{communityText('Loading spaces…')}</StatusMessage> : null}
             {failed ? <StatusMessage error onRetry={() => load(requestedQuery)}>{communityText('Could not load spaces.')}</StatusMessage> : null}
