@@ -160,52 +160,6 @@
     color: var(--mw-danger);
 }
 
-.browseTools {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 22px;
-}
-
-.spaceSearch {
-    display: flex;
-    min-width: min(340px, 100%);
-    align-items: center;
-    gap: 8px;
-    padding: 4px 5px 4px 11px;
-    border-radius: var(--radius-sm);
-    background: var(--bg-field);
-}
-
-.spaceSearch svg {
-    flex: 0 0 auto;
-    color: var(--text-faint);
-}
-
-.spaceSearch input {
-    min-width: 0;
-    padding: 6px 0;
-    border: 0;
-    outline: 0;
-    color: var(--mw-text);
-    background: transparent;
-    font: inherit;
-    flex: 1;
-}
-
-.spaceSearch button {
-    padding: 7px 11px;
-    border: 0;
-    border-radius: var(--radius-xs);
-    color: var(--text-dim);
-    background: var(--bg-raised);
-    font: inherit;
-    font-size: var(--fs-xs);
-    font-weight: 700;
-    cursor: pointer;
-}
-
 .spaceOwner {
     display: flex;
     align-items: center;
@@ -980,14 +934,9 @@
         grid-template-columns: 1fr;
     }
 
-    .browseTools,
     .curatorStrip {
         align-items: stretch;
         flex-direction: column;
-    }
-
-    .spaceSearch {
-        box-sizing: border-box;
     }
 
     .spaceOverview {
