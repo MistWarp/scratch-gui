@@ -331,9 +331,9 @@ if (blockedStorage.length) {
     });
 
     try {
-        const params = new URLSearchParams(window.location.search);
-        const theme = params.get('theme');
-        const themeCustom = params.get('theme_custom');
+        const themeParams = new URLSearchParams(window.location.search);
+        const theme = themeParams.get('theme');
+        const themeCustom = themeParams.get('theme_custom');
         if (theme) window.localStorage.setItem('tw:theme', theme);
         if (themeCustom) window.localStorage.setItem('tw:custom-themes', themeCustom);
     } catch (e) {

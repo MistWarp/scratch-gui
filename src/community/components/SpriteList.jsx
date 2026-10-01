@@ -62,7 +62,11 @@ const SpriteRow = ({sprite, thumb, active, onSelect}) => {
         )}
         <span className={styles.rowText}>
             <strong>{spriteLabel(sprite.name)}</strong>
-            <span>{sprite.files.length}{communityText(' changed file')}{sprite.files.length === 1 ? '' : communityText('s')}</span>
+            <span>
+                {sprite.files.length}
+                {communityText(' changed file')}
+                {sprite.files.length === 1 ? '' : communityText('s')}
+            </span>
         </span>
     </button>);
 };

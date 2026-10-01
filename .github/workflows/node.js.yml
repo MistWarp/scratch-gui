@@ -37,4 +37,5 @@ jobs:
         NODE_ENV: production
         MW_COMMUNITY: 'true'
         NODE_OPTIONS: --max-old-space-size=7168
+    - run: pnpm lint
     - run: node scripts/validate-deploy.mjs build

@@ -22,7 +22,8 @@ const SKIP_PATHS = new Set([
 const STATIC_META = {
     '/': {
         title: 'MistWarp',
-        description: 'MistWarp is a powerful Scratch mod. Create, share, and explore projects on the MistWarp community.'
+        description:
+            'MistWarp is a powerful Scratch mod. Create, share, and explore projects on the MistWarp community.'
     },
     '/explore': {
         title: 'Explore - MistWarp',
@@ -150,11 +151,11 @@ class HeadAppender {
         const description = escapeAttribute(this.meta.description);
         const image = escapeAttribute(this.meta.image);
         const url = escapeAttribute(this.url);
+        const robots = this.meta.noindex ? '<meta name="robots" content="noindex">' : '';
         el.append(`<meta name="twitter:title" content="${title}">` +
             `<meta name="twitter:description" content="${description}">` +
             `<meta name="twitter:image" content="${image}">` +
-            (this.meta.noindex ? '<meta name="robots" content="noindex">' : '') +
-            `<link rel="canonical" href="${url}">`, {html: true});
+            `${robots}<link rel="canonical" href="${url}">`, {html: true});
     }
 }
 
@@ -260,6 +261,17 @@ const pullMeta = async (id, index) => {
         image: details ? details.image : null,
         card: details && details.image ? 'summary_large_image' : 'summary'
     };
+};
+
+const vanityPullMeta = async (slug, index) => {
+    const data = await apiJson(`/vanity/${encodeURIComponent(slug)}`);
+    if (!data || !data.id) {
+        return {
+            title: 'Pull request - MistWarp',
+            description: 'View this MistWarp pull request.'
+        };
+    }
+    return pullMeta(data.id, index);
 };
 
 const userMeta = async (name, suffix) => {
@@ -485,17 +497,6 @@ const metaForPath = pathname => {
     }
 
     return NOT_FOUND_META;
-};
-
-const vanityPullMeta = async (slug, index) => {
-    const data = await apiJson(`/vanity/${encodeURIComponent(slug)}`);
-    if (!data || !data.id) {
-        return {
-            title: 'Pull request - MistWarp',
-            description: 'View this MistWarp pull request.'
-        };
-    }
-    return pullMeta(data.id, index);
 };
 
 export const onRequest = async context => {
