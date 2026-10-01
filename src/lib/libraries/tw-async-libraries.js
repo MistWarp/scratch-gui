@@ -1,7 +1,7 @@
-import * as bundledModule0 from "./backdrops.json";
-import * as bundledModule1 from "./costumes.json";
-import * as bundledModule2 from "./sounds.json";
-import * as bundledModule3 from "./sprites.json";
+import * as bundledModule0 from './backdrops.json';
+import * as bundledModule1 from './costumes.json';
+import * as bundledModule2 from './sounds.json';
+import * as bundledModule3 from './sprites.json';
 
 const libraryData = {};
 

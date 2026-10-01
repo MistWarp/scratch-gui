@@ -208,7 +208,9 @@ const News = ({manager = false}) => {
                         onChange={e => setTitle(e.target.value)}
                     />
                     {preview ? (
-                        <Markdown className={styles.preview}>{body || communityText('*Nothing to preview yet.*')}</Markdown>
+                        <Markdown className={styles.preview}>
+                            {body || communityText('*Nothing to preview yet.*')}
+                        </Markdown>
                     ) : (
                         <textarea
                             className={styles.bodyInput}
@@ -317,7 +319,10 @@ const News = ({manager = false}) => {
                     {manager ? (
                         <div className={styles.managerTable} role="table" aria-label={communityText('News posts')}>
                             <div className={styles.managerTableHead} role="row">
-                                <span>{communityText('Post')}</span><span>{communityText('Published')}</span><span>{communityText('Performance')}</span><span>{communityText('Actions')}</span>
+                                <span>{communityText('Post')}</span>
+                                <span>{communityText('Published')}</span>
+                                <span>{communityText('Performance')}</span>
+                                <span>{communityText('Actions')}</span>
                             </div>
                             {visibleItems.map(item => (
                                 <div className={styles.managerRow} role="row" key={item.id}>
@@ -326,20 +331,28 @@ const News = ({manager = false}) => {
                                         <UserLink username={item.author}>
                                             <Avatar username={item.author} size={21} /> {item.author}
                                         </UserLink>
-                                        {item.archived ? <span className={styles.archivedBadge}>{communityText('Archived')}</span> : null}
+                                        {item.archived ? (
+                                            <span className={styles.archivedBadge}>{communityText('Archived')}</span>
+                                        ) : null}
                                     </div>
                                     <span className={styles.managerDate} role="cell">
                                         {formatDate(item.created)}
                                     </span>
                                     <div className={styles.managerPerformance} role="cell">
-                                        <span><Eye size={14} />{(item.views || 0).toLocaleString(getCommunityLocale())}</span>
+                                        <span>
+                                            <Eye size={14} />
+                                            {(item.views || 0).toLocaleString(getCommunityLocale())}
+                                        </span>
                                         <span>
                                             <Heart size={14} />
                                             {(item.reactionCounts?.heart || 0).toLocaleString(getCommunityLocale())}
                                         </span>
                                     </div>
                                     <div className={styles.managerActions} role="cell">
-                                        <IconButton label={communityText('Edit {value1}', {value1: item.title})} onClick={() => edit(item)}>
+                                        <IconButton
+                                            label={communityText('Edit {value1}', {value1: item.title})}
+                                            onClick={() => edit(item)}
+                                        >
                                             <Pencil size={15} />
                                         </IconButton>
                                         <IconButton
