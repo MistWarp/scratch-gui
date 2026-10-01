@@ -119,9 +119,14 @@ const getCommerceEarnings = async () => {
     return billingRequest('/me/earnings');
 };
 
-const listCommerceBounties = (filters = {}) => {
+const listCommerceBounties = async (filters = {}) => {
     const query = new URLSearchParams(filters);
-    return commerceRequest(`/bounties?${query.toString()}`);
+    const path = `/bounties?${query.toString()}`;
+    if (getToken()) return commerceRequest(path);
+    const response = await fetch(`${ROTUR_API}/commerce${path}`);
+    const data = await response.json().catch(() => null);
+    if (!response.ok) throw new Error((data && data.error) || `Billing request failed (${response.status})`);
+    return data;
 };
 
 const createCommerceBounty = bounty => commerceRequest('/bounties', {
