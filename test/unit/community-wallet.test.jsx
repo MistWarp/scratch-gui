@@ -3,7 +3,7 @@ import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
 import {MemoryRouter} from 'react-router-dom';
 
-import {consumeBillingResult, getCommerceEarnings} from '../../src/community/credits.js';
+import {getCommerceEarnings} from '../../src/community/credits.js';
 import {getAccountSummary} from '../../src/lib/rotur/client.js';
 import api from '../../src/community/api';
 import Wallet from '../../src/community/pages/Wallet.jsx';
@@ -27,18 +27,13 @@ jest.mock('../../src/lib/rotur/client.js', () => ({
     })
 }));
 jest.mock('../../src/community/credits.js', () => ({
-    CREDIT_PACKS: [],
-    consumeBillingResult: jest.fn(() => 'success'),
     getCommerceEarnings: jest.fn().mockResolvedValue({
         totals: {today: 0, last_30_days: 0, lifetime: 0},
         history: []
-    }),
-    getBillingStatus: jest.fn().mockResolvedValue({billing_configured: true}),
-    openBillingPortal: jest.fn(),
-    openCreditCheckout: jest.fn()
+    })
 }));
 
-describe('Wallet billing result', () => {
+describe('Wallet', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         getAccountSummary.mockResolvedValue({
@@ -54,7 +49,7 @@ describe('Wallet billing result', () => {
         });
     });
 
-    test('keeps the checkout result through later state updates', async () => {
+    test('does not sell credits', async () => {
         const wrapper = mount(
             <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
                 <Wallet />
@@ -66,8 +61,9 @@ describe('Wallet billing result', () => {
         });
         wrapper.update();
 
-        expect(wrapper.text()).toContain('Payment successful');
-        expect(consumeBillingResult).toHaveBeenCalledTimes(1);
+        expect(wrapper.text()).toContain('Claim daily');
+        expect(wrapper.text()).not.toContain('Buy credits');
+        expect(wrapper.text()).not.toContain('Stripe');
         wrapper.unmount();
     });
 
