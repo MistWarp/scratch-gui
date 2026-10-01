@@ -1,6 +1,6 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, {useEffect, useRef} from 'react';
 import {Link} from 'react-router-dom';
 import {Building2, Coins, Gamepad2, Layers3, Library, Palette, Trophy} from 'lucide-react';
 import styles from './ExploreNav.module.css';
@@ -17,7 +17,14 @@ const ITEMS = [
 
 const ExploreNav = ({active}) => {
     const {text: communityText} = useCommunityText();
-    return (<nav className={styles.nav} aria-label={communityText('Explore sections')}>
+    const navRef = useRef(null);
+    useEffect(() => {
+        const nav = navRef.current;
+        const current = nav && nav.querySelector('[aria-current="page"]');
+        if (!current || nav.scrollWidth <= nav.clientWidth) return;
+        nav.scrollLeft = current.offsetLeft - nav.offsetLeft - ((nav.clientWidth - current.offsetWidth) / 2);
+    }, [active]);
+    return (<nav className={styles.nav} ref={navRef} aria-label={communityText('Explore sections')}>
         {ITEMS.map(({icon: Icon, ...item}) => (
             <Link
                 aria-current={active === item.key ? 'page' : null}
