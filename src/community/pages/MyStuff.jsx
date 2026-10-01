@@ -31,7 +31,6 @@ import MyStuffLibrary from '../components/MyStuffLibrary.jsx';
 import SharedProjects from '../components/SharedProjects.jsx';
 import StatChart, {historyRows} from '../components/StatChart.jsx';
 import Markdown from '../components/Markdown.jsx';
-import {CREDIT_PACKS, openCreditCheckout} from '../credits';
 import Sidebar from '../components/Sidebar.jsx';
 import useLatest from '../use-latest.js';
 import styles from './MyStuff.module.css';
@@ -79,11 +78,8 @@ const visibilityLabel = project => {
 
 const Overview = ({stats, account, quota, username, onNavigate}) => {
     const {text: communityText} = useCommunityText();
-    const [buyBusy, setBuyBusy] = useState(false);
-    const [buyError, setBuyError] = useState('');
     const [recent, setRecent] = useState(null);
     const [recentFailed, setRecentFailed] = useState(false);
-    const buyInFlight = useRef(false);
     const rows14 = historyRows(stats.viewHistory, 14);
     const weekViews = rows14.slice(7).reduce((sum, row) => sum + row.value, 0);
     const prevWeekViews = rows14.slice(0, 7).reduce((sum, row) => sum + row.value, 0);
@@ -116,25 +112,6 @@ const Overview = ({stats, account, quota, username, onNavigate}) => {
         };
     }, [username]);
 
-    const buyCredits = async () => {
-        if (buyInFlight.current) return;
-        const releaseBuy = () => {
-            buyInFlight.current = false;
-        };
-        buyInFlight.current = true;
-        setBuyBusy(true);
-        setBuyError('');
-        try {
-            await openCreditCheckout(CREDIT_PACKS[1]);
-        } catch (e) {
-            setBuyError(e.needsReauth ?
-                'Your current login cannot buy credits. Log out and back in, then try again.' :
-                (e.message || 'Could not open checkout.'));
-        } finally {
-            releaseBuy();
-            setBuyBusy(false);
-        }
-    };
     return (
         <section className={styles.overview}>
             <div className={styles.ovMain}>
@@ -241,12 +218,7 @@ const Overview = ({stats, account, quota, username, onNavigate}) => {
                                 {fmtCredits(account.balance)}
                             </span>
                             <span className={styles.ovStatLabel}>{communityText('Balance')}</span>
-                            <Button
-                                onClick={buyCredits}
-                                busy={buyBusy}
-                                busyLabel={communityText('Opening…')}
-                            ><Coins size={14} />{communityText('Buy credits')}</Button>
-                            {buyError ? <Notice variant="error">{buyError}</Notice> : null}
+                            <Button as={Link} to="/wallet"><Coins size={14} />{communityText('Open wallet')}</Button>
                         </div>
                     ) : null}
                     <div className={styles.ovWalletRows}>

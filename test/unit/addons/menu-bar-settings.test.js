@@ -1,5 +1,5 @@
 import {getSetting} from '../../../src/lib/menu-bar/settings.js';
-import {moveMenuItem} from '../../../src/lib/mw-menu-bar-layout.js';
+import {fullZoneOrder, moveMenuItem} from '../../../src/lib/mw-menu-bar-layout.js';
 import {getMenuBarItemLabel} from '../../../src/components/tw-settings-modal/menu-bar-layout-labels.js';
 
 beforeEach(() => {
@@ -38,7 +38,16 @@ test('moves menu bar items one position for keyboard and touch controls', () => 
 
 test('menu bar layout never exposes internal identifiers as labels', () => {
     const intl = {formatMessage: message => message.defaultMessage};
-    expect(getMenuBarItemLabel(intl, 'feedback')).toBe('Feedback');
+    expect(getMenuBarItemLabel(intl, 'help')).toBe('Help');
     expect(getMenuBarItemLabel(intl, 'collab-presence')).toBe('Collaboration');
     expect(getMenuBarItemLabel(intl, 'future-item')).toBe('Future item');
+});
+
+test('places menu bar items missing from a saved order next to their default neighbours', () => {
+    const zone = {items: ['file', 'edit', 'view', 'help', 'project-title']};
+    expect(fullZoneOrder(zone, ['project-title', 'view', 'file', 'edit'])).toEqual(
+        ['project-title', 'view', 'help', 'file', 'edit']
+    );
+    expect(fullZoneOrder(zone, ['edit'])).toEqual(['edit', 'view', 'help', 'project-title', 'file']);
+    expect(fullZoneOrder(zone, [])).toEqual(zone.items);
 });

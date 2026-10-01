@@ -54,10 +54,11 @@ class VolumeSlider extends React.Component {
         };
     }
     componentDidMount () {
-        onVolumeChanged(this.handleVolumeChanged);
+        this.removeVolumeListener = onVolumeChanged(this.handleVolumeChanged);
         this.removeSettingListener = onSettingChanged(this.handleSettingChanged);
     }
     componentWillUnmount () {
+        this.removeVolumeListener();
         if (this.removeSettingListener) {
             this.removeSettingListener();
         }

@@ -25,12 +25,19 @@ const messages = defineMessages({
         description: 'Tooltip for the button that cancels recording a shortcut',
         id: 'shortcut-manager.cancel'
     },
+    needsModifier: {
+        defaultMessage: 'Hold Ctrl or Alt with the key, so it still reaches projects.',
+        description: 'Shown when a new shortcut is a single key without Ctrl or Alt',
+        id: 'shortcut-manager.needsModifier'
+    },
     recording: {
         defaultMessage: 'Press a shortcut…',
         description: 'Prompt shown while recording a new keyboard shortcut',
         id: 'shortcut-manager.recording'
     }
 });
+
+let activeRecorder = null;
 
 class ShortcutItem extends React.Component {
     constructor (props) {
@@ -52,14 +59,21 @@ class ShortcutItem extends React.Component {
     }
 
     addListener () {
-        document.addEventListener('keydown', this.handleKeyDown, true);
+        window.addEventListener('keydown', this.handleKeyDown, true);
     }
 
     removeListener () {
-        document.removeEventListener('keydown', this.handleKeyDown, true);
+        window.removeEventListener('keydown', this.handleKeyDown, true);
+        if (activeRecorder === this) {
+            activeRecorder = null;
+        }
     }
 
     handleStartRecording () {
+        if (activeRecorder && activeRecorder !== this) {
+            activeRecorder.handleStopRecording();
+        }
+        activeRecorder = this;
         this.setState({recording: true, conflict: null});
         this.addListener();
     }
@@ -87,6 +101,11 @@ class ShortcutItem extends React.Component {
             return;
         }
 
+        if (!/^(Ctrl|Alt)\+/.test(combo) && !/(^|\+)F\d{1,2}$/.test(combo)) {
+            this.setState({conflict: {combo, needsModifier: true}});
+            return;
+        }
+
         const conflict = this.props.getConflict(combo, this.props.shortcut.id);
         if (conflict) {
             this.setState({conflict: {combo, label: conflict}});
@@ -111,14 +130,16 @@ class ShortcutItem extends React.Component {
                             <div className={styles.recordConflict}>
                                 <KeyCombo keyCombo={conflict.combo} />
                                 <span className={styles.conflictText}>
-                                    {intl.formatMessage(
-                                        {
-                                            defaultMessage: 'In use by {label}',
-                                            description: 'Message shown when a chosen shortcut is already assigned',
-                                            id: 'shortcut-manager.conflict'
-                                        },
-                                        {label: conflict.label}
-                                    )}
+                                    {conflict.needsModifier ?
+                                        intl.formatMessage(messages.needsModifier) :
+                                        intl.formatMessage(
+                                            {
+                                                defaultMessage: 'In use by {label}',
+                                                description: 'Message shown when a chosen shortcut is already assigned',
+                                                id: 'shortcut-manager.conflict'
+                                            },
+                                            {label: conflict.label}
+                                        )}
                                 </span>
                             </div>
                         ) : (

@@ -4,6 +4,8 @@
  * (native start_time — never written into title/status strings).
  */
 
+import {isMinorAccount, subscribeMinorAccount} from '../minor-account.js';
+
 const STORAGE_KEY = 'mw:rotur-settings';
 const APP_NAME = 'MistWarp';
 
@@ -15,33 +17,54 @@ const DEFAULTS = {
     activitySharing: 'ask'
 };
 
+const MINOR_DEFAULTS = {
+    ...DEFAULTS,
+    presenceEnabled: false,
+    includeEditDuration: false
+};
+
+const SETTING_KEYS = Object.keys(DEFAULTS);
 const SHARING_MODES = ['ask', 'all', 'off'];
 
 /** @type {Set<(settings: typeof DEFAULTS) => void>} */
 const listeners = new Set();
 
-const readAll = () => {
+const defaultsFor = minor => (minor ? MINOR_DEFAULTS : DEFAULTS);
+
+const normalizeValue = (key, value) => {
+    if (key === 'activitySharing') return SHARING_MODES.includes(value) ? value : DEFAULTS.activitySharing;
+    return value !== false;
+};
+
+const legacyChoices = parsed => SETTING_KEYS.filter(key => (
+    Object.prototype.hasOwnProperty.call(parsed, key) &&
+    normalizeValue(key, parsed[key]) !== DEFAULTS[key]
+));
+
+const readStored = () => {
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return {...DEFAULTS};
+        if (!raw) return {values: {}, chosen: []};
         const parsed = JSON.parse(raw);
-        return {
-            presenceEnabled: parsed.presenceEnabled !== false,
-            includeEditDuration: parsed.includeEditDuration !== false,
-            activitySharing: SHARING_MODES.includes(parsed.activitySharing) ?
-                parsed.activitySharing : 'ask'
-        };
+        if (!parsed || typeof parsed !== 'object') return {values: {}, chosen: []};
+        const chosen = Array.isArray(parsed.chosen) ?
+            parsed.chosen.filter(key => SETTING_KEYS.includes(key)) :
+            legacyChoices(parsed);
+        const values = {};
+        for (const key of chosen) {
+            values[key] = normalizeValue(key, parsed[key]);
+        }
+        return {values, chosen};
     } catch (_) {
-        return {...DEFAULTS};
+        return {values: {}, chosen: []};
     }
 };
 
-const writeAll = next => {
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    } catch (_) {
-        // ignore
-    }
+const effectiveSettings = stored => ({...defaultsFor(isMinorAccount()), ...stored.values});
+
+const readAll = () => effectiveSettings(readStored());
+
+const notify = next => {
     for (const handler of listeners) {
         try {
             handler(next);
@@ -51,24 +74,61 @@ const writeAll = next => {
     }
 };
 
+const writeStored = stored => {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({...stored.values, chosen: stored.chosen}));
+    } catch (_) {
+        // ignore
+    }
+    notify(effectiveSettings(stored));
+};
+
 const getRoturSettings = () => readAll();
 
+const chooseSettings = patch => {
+    const stored = readStored();
+    const values = {...stored.values};
+    const chosen = [...stored.chosen];
+    for (const key of Object.keys(patch)) {
+        if (SETTING_KEYS.includes(key)) {
+            values[key] = normalizeValue(key, patch[key]);
+            if (!chosen.includes(key)) chosen.push(key);
+        }
+    }
+    writeStored({values, chosen});
+};
+
 const setRoturSetting = (key, value) => {
-    if (!Object.prototype.hasOwnProperty.call(DEFAULTS, key)) {
+    if (!SETTING_KEYS.includes(key)) {
         return;
     }
-    writeAll({...readAll(), [key]: value});
+    chooseSettings({[key]: value});
 };
 
 const updateRoturSettings = patch => {
-    const next = {...readAll()};
-    for (const key of Object.keys(patch)) {
-        if (Object.prototype.hasOwnProperty.call(DEFAULTS, key)) {
-            next[key] = patch[key];
-        }
-    }
-    writeAll(next);
+    chooseSettings(patch || {});
 };
+
+const getRoturSettingsSnapshot = () => {
+    const stored = readStored();
+    return {...effectiveSettings(stored), chosen: stored.chosen};
+};
+
+const applyRoturSettingsSnapshot = snapshot => {
+    if (!snapshot || typeof snapshot !== 'object') return;
+    const chosen = Array.isArray(snapshot.chosen) ?
+        snapshot.chosen.filter(key => SETTING_KEYS.includes(key)) :
+        legacyChoices(snapshot);
+    const values = {};
+    for (const key of chosen) {
+        values[key] = normalizeValue(key, snapshot[key]);
+    }
+    writeStored({values, chosen});
+};
+
+subscribeMinorAccount(() => {
+    notify(readAll());
+});
 
 /**
  * @param {object|string} [ctx] - Activity context.
@@ -105,6 +165,8 @@ const subscribeRoturSettings = handler => {
 
 export {
     getRoturSettings,
+    getRoturSettingsSnapshot,
+    applyRoturSettingsSnapshot,
     setRoturSetting,
     updateRoturSettings,
     formatActivityTitle,

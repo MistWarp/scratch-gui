@@ -1,7 +1,7 @@
 import PeerModule from 'peerjs';
 import {resolvePeerConstructor} from './peer-constructor.js';
 import Emitter from './emitter.js';
-import {validateEnvelope, makeCtrl, KIND, CTRL} from './protocol.js';
+import {validateEnvelope, makeCtrl, KIND, CTRL, PROTOCOL_VERSION} from './protocol.js';
 import {APP_NAME} from '../constants/brand.js';
 
 const DEFAULT_PEER_CONFIG = {
@@ -31,6 +31,11 @@ const DIAL_TIMEOUT_MS = 15 * 1000;
 const MAX_RECONNECT_ATTEMPTS = 10;
 const RECONNECT_BASE_DELAY_MS = 1000;
 const RECONNECT_MAX_DELAY_MS = 16 * 1000;
+const BROKER_RECONNECT_MAX_DELAY_MS = 30 * 1000;
+const HOST_GONE_ATTEMPTS = 3;
+const GRACEFUL_CLOSE_TIMEOUT_MS = 1500;
+const GRACEFUL_CLOSE_POLL_MS = 50;
+const FATAL_PEER_ERRORS = new Set(['browser-incompatible', 'invalid-id', 'invalid-key', 'ssl-unavailable']);
 
 const sanitizeRoomId = roomId => String(roomId || '').replace(/[^a-zA-Z0-9]/g, '')
     .toLowerCase();
@@ -71,6 +76,10 @@ const generateClientPeerId = roomId => {
  *  - 'reconnecting' ({attempt, delayMs}) — (client) redial scheduled
  *  - 'reconnected' () — (client) redial succeeded
  *  - 'invalid-message' ({peerId, error}) — dropped inbound message
+ *  - 'version-mismatch' ({peerId, version, type}) — a hello or join denial
+ *    from a different protocol version
+ *  - 'broker-offline' () / 'broker-online' () — registration with the
+ *    signalling server was lost or restored; open channels keep working
  *  - 'fatal' ({error}) — unrecoverable; the session should shut down
  */
 class Transport extends Emitter {
@@ -94,6 +103,10 @@ class Transport extends Emitter {
         this._heartbeatTimer = null;
         this._reconnectTimer = null;
         this._reconnectAttempts = 0;
+        this._hostMissingAttempts = 0;
+        this._brokerTimer = null;
+        this._brokerAttempts = 0;
+        this._brokerOffline = false;
         this._joinMetadata = null;
         this._onPeerUnavailable = null;
     }
@@ -207,10 +220,7 @@ class Transport extends Emitter {
      */
     bufferedAmount (peerId) {
         const entry = this._connections.get(peerId === 'host' ? this.hostPeerId : peerId);
-        if (!entry) return 0;
-        // PeerJS buffers internally before the channel exists; count both.
-        const channel = entry.conn.dataChannel;
-        return (channel ? channel.bufferedAmount : 0) + (entry.conn.bufferSize || 0);
+        return entry ? this._queuedBytes(entry.conn) : 0;
     }
 
     /**
@@ -233,45 +243,94 @@ class Transport extends Emitter {
     /**
      * Close the channel to one peer (host-side kick).
      * @param {string} peerId Peer to disconnect.
+     * @param {object} [options] Options.
+     * @param {boolean} [options.graceful] Let queued messages leave first.
+     * @returns {Promise} Resolves once the channel is closed.
      */
-    closeConnection (peerId) {
+    closeConnection (peerId, {graceful = false} = {}) {
         const entry = this._connections.get(peerId);
-        if (!entry) return;
+        if (!entry) return Promise.resolve();
         this._connections.delete(peerId);
+        if (!graceful) {
+            this._closeConn(entry.conn);
+            return Promise.resolve();
+        }
+        return this._drain(entry.conn).then(() => this._closeConn(entry.conn));
+    }
+
+    _closeConn (conn) {
         try {
-            entry.conn.close();
+            conn.close();
         } catch (error) {
-            // Already closed.
+            return;
+        }
+    }
+
+    _queuedBytes (conn) {
+        const channel = conn.dataChannel;
+        return (channel ? channel.bufferedAmount : 0) + (conn.bufferSize || 0);
+    }
+
+    _drain (conn) {
+        const deadline = Date.now() + GRACEFUL_CLOSE_TIMEOUT_MS;
+        return new Promise(resolve => {
+            const check = () => {
+                if (!conn.open || this._queuedBytes(conn) === 0 || Date.now() >= deadline) {
+                    setTimeout(resolve, GRACEFUL_CLOSE_POLL_MS);
+                    return;
+                }
+                setTimeout(check, GRACEFUL_CLOSE_POLL_MS);
+            };
+            check();
+        });
+    }
+
+    _stopTimers () {
+        this._pendingConnections.forEach(cancel => cancel());
+        this._pendingConnections.clear();
+        this._onPeerUnavailable = null;
+        this._stopHeartbeat();
+        clearTimeout(this._reconnectTimer);
+        this._reconnectTimer = null;
+        clearTimeout(this._brokerTimer);
+        this._brokerTimer = null;
+    }
+
+    _destroyPeer (peer) {
+        if (!peer) return;
+        try {
+            peer.destroy();
+        } catch (error) {
+            return;
         }
     }
 
     destroy () {
         this.destroyed = true;
-        this._pendingConnections.forEach(cancel => cancel());
-        this._pendingConnections.clear();
-        this._onPeerUnavailable = null;
-        this._stopHeartbeat();
-        if (this._reconnectTimer) {
-            clearTimeout(this._reconnectTimer);
-            this._reconnectTimer = null;
-        }
-        this._connections.forEach(entry => {
-            try {
-                entry.conn.close();
-            } catch (error) {
-                // Already closed.
-            }
-        });
+        this._stopTimers();
+        this._connections.forEach(entry => this._closeConn(entry.conn));
         this._connections.clear();
-        if (this.peer) {
-            try {
-                this.peer.destroy();
-            } catch (error) {
-                // Already destroyed.
-            }
-            this.peer = null;
-        }
+        this._destroyPeer(this.peer);
+        this.peer = null;
         this.removeAllListeners();
+    }
+
+    /**
+     * Stop immediately, but give messages already queued on each channel
+     * (a final "room closed" notice, for example) a moment to leave before
+     * the channels close.
+     * @returns {Promise} Resolves once every channel and the peer are closed.
+     */
+    destroyGracefully () {
+        this.destroyed = true;
+        this._stopTimers();
+        this.removeAllListeners();
+        const entries = Array.from(this._connections.values());
+        this._connections.clear();
+        const peer = this.peer;
+        this.peer = null;
+        return Promise.all(entries.map(entry => this._drain(entry.conn).then(() => this._closeConn(entry.conn))))
+            .then(() => this._destroyPeer(peer));
     }
 
     _openPeer (peerId) {
@@ -316,6 +375,12 @@ class Transport extends Emitter {
                     clearTimeout(pending.timer);
                     this._pendingConnections.delete(cancel);
                     resolve(id);
+                    return;
+                }
+                this._brokerAttempts = 0;
+                if (this._brokerOffline) {
+                    this._brokerOffline = false;
+                    this.emit('broker-online');
                 }
             });
 
@@ -329,25 +394,45 @@ class Transport extends Emitter {
                     reject(this._describeError(error));
                     return;
                 }
-                if (this.destroyed) return;
-                if (error && error.type === 'peer-unavailable') {
+                const type = error && error.type;
+                if (type === 'peer-unavailable') {
                     if (this._onPeerUnavailable) this._onPeerUnavailable();
                     return;
                 }
-                this.emit('fatal', {error: this._describeError(error)});
+                if (FATAL_PEER_ERRORS.has(type)) this.emit('fatal', {error: this._describeError(error)});
             });
 
-            // The broker connection dropped. PeerJS keeps datachannels
-            // alive but we can no longer accept new dials; re-register.
             peer.on('disconnected', () => {
                 if (this.destroyed || peer.destroyed || this.peer !== peer) return;
-                try {
-                    peer.reconnect();
-                } catch (error) {
-                    this.emit('fatal', {error});
-                }
+                this._scheduleBrokerReconnect(peer);
             });
         });
+    }
+
+    _scheduleBrokerReconnect (peer) {
+        if (this._brokerTimer) return;
+        if (!this._brokerOffline) {
+            this._brokerOffline = true;
+            this.emit('broker-offline');
+        }
+        const attempt = this._brokerAttempts++;
+        const retry = () => {
+            this._brokerTimer = null;
+            if (this.destroyed || peer.destroyed || this.peer !== peer) return;
+            try {
+                peer.reconnect();
+            } catch (error) {
+                this._scheduleBrokerReconnect(peer);
+            }
+        };
+        if (attempt === 0) {
+            retry();
+            return;
+        }
+        this._brokerTimer = setTimeout(retry, Math.min(
+            RECONNECT_BASE_DELAY_MS * Math.pow(2, attempt - 1),
+            BROKER_RECONNECT_MAX_DELAY_MS
+        ));
     }
 
     _dialHost () {
@@ -471,6 +556,11 @@ class Transport extends Emitter {
 
             const error = validateEnvelope(data);
             if (error) {
+                const mismatch = this._versionMismatch(data);
+                if (mismatch) {
+                    this.emit('version-mismatch', Object.assign({peerId: conn.peer}, mismatch));
+                    return;
+                }
                 this.droppedMessageCount++;
                 this.emit('invalid-message', {peerId: conn.peer, error});
                 return;
@@ -491,6 +581,14 @@ class Transport extends Emitter {
         conn.on('error', () => {
             this._handleConnectionDown(conn.peer, conn);
         });
+    }
+
+    _versionMismatch (data) {
+        if (!data || typeof data !== 'object' || data.kind !== KIND.CTRL) return null;
+        if (typeof data.v !== 'number' || data.v === PROTOCOL_VERSION || !Number.isInteger(data.v)) return null;
+        const expected = this.isHost ? CTRL.HELLO : CTRL.JOIN_DENIED;
+        if (data.type !== expected) return null;
+        return {version: data.v, type: data.type};
     }
 
     _handleConnectionDown (peerId, conn) {
@@ -515,9 +613,9 @@ class Transport extends Emitter {
         this._reconnectAttempts++;
         if (this._reconnectAttempts > MAX_RECONNECT_ATTEMPTS) {
             this.emit('fatal', {
-                error: new Error(
-                    'Unable to establish a stable connection after multiple attempts. ' +
-                    'Please check your network connection and try again.'
+                error: collabError(
+                    'RECONNECT_FAILED',
+                    'Lost the connection to the host. Check your internet connection, then join again.'
                 )
             });
             return;
@@ -538,6 +636,7 @@ class Transport extends Emitter {
     _redial () {
         const attemptDial = () => this._dialHost().then(() => {
             this._reconnectAttempts = 0;
+            this._hostMissingAttempts = 0;
             this.emit('reconnected');
         });
 
@@ -547,8 +646,17 @@ class Transport extends Emitter {
         } else {
             dialPromise = attemptDial();
         }
-        dialPromise.catch(() => {
+        dialPromise.catch(error => {
             if (this.destroyed) return;
+            if (error && (error.collabCode === 'ROOM_NOT_FOUND' || error.collabCode === 'DIAL_TIMEOUT')) {
+                this._hostMissingAttempts++;
+                if (this._hostMissingAttempts >= HOST_GONE_ATTEMPTS) {
+                    this.emit('fatal', {error: collabError('HOST_GONE', 'The host closed the room.')});
+                    return;
+                }
+            } else {
+                this._hostMissingAttempts = 0;
+            }
             this._scheduleReconnect();
         });
     }
@@ -599,5 +707,6 @@ export {
     generateHostPeerId,
     generateClientPeerId,
     HEARTBEAT_INTERVAL_MS,
-    DEAD_PEER_TIMEOUT_MS
+    DEAD_PEER_TIMEOUT_MS,
+    HOST_GONE_ATTEMPTS
 };

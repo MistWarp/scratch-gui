@@ -12,6 +12,7 @@ const SET_COLLABORATION_HOST_LOADING_PROGRESS = 'scratch-gui/collaboration/SET_H
 const SET_COLLABORATION_RECONNECTING = 'scratch-gui/collaboration/SET_RECONNECTING';
 const SET_USER_ACTIVITY = 'scratch-gui/collaboration/SET_USER_ACTIVITY';
 const REMOVE_USER_ACTIVITY = 'scratch-gui/collaboration/REMOVE_USER_ACTIVITY';
+const SET_COLLABORATION_INVITE = 'scratch-gui/collaboration/SET_INVITE';
 
 const initialState = {
     projectPresence: null,
@@ -20,6 +21,7 @@ const initialState = {
     isReconnecting: false,
     roomId: null,
     roomPrivacy: 'public',
+    pendingInvite: null,
     connectedUsers: [],
     connectionError: null,
     isCollabLoading: false,
@@ -51,7 +53,8 @@ const reducer = function (state, action) {
         return Object.assign({}, state, {
             isConnected: action.connected,
             isReconnecting: action.connected ? state.isReconnecting : false,
-            connectionError: action.connected ? null : state.connectionError
+            connectionError: action.connected ? null : state.connectionError,
+            activity: action.connected ? state.activity : {}
         });
 
     case SET_COLLABORATION_RECONNECTING:
@@ -59,10 +62,18 @@ const reducer = function (state, action) {
             isReconnecting: action.isReconnecting
         });
     
-    case SET_COLLABORATION_USERS:
-        return Object.assign({}, state, {
-            connectedUsers: action.users || []
+    case SET_COLLABORATION_USERS: {
+        const users = action.users || [];
+        const present = new Set(users.map(user => user.id));
+        const activity = {};
+        Object.keys(state.activity || {}).forEach(userId => {
+            if (present.has(userId)) activity[userId] = state.activity[userId];
         });
+        return Object.assign({}, state, {
+            connectedUsers: users,
+            activity
+        });
+    }
     
     case SET_COLLABORATION_ERROR:
         return Object.assign({}, state, {
@@ -74,6 +85,11 @@ const reducer = function (state, action) {
             roomId: action.roomId
         });
     
+    case SET_COLLABORATION_INVITE:
+        return Object.assign({}, state, {
+            pendingInvite: action.invite || null
+        });
+
     case SET_COLLABORATION_ROOM_PRIVACY:
         return Object.assign({}, state, {
             roomPrivacy: action.privacy
@@ -158,6 +174,13 @@ const setCollaborationRoomId = function (roomId) {
     };
 };
 
+const setCollaborationInvite = function (invite) {
+    return {
+        type: SET_COLLABORATION_INVITE,
+        invite
+    };
+};
+
 const setCollaborationRoomPrivacy = function (privacy) {
     return {
         type: SET_COLLABORATION_ROOM_PRIVACY,
@@ -216,6 +239,7 @@ export {
     setCollaborationError,
     setCollaborationRoomId,
     setCollaborationRoomPrivacy,
+    setCollaborationInvite,
     setCollaborationLoading,
     setCollaborationHostLoadingProgress,
     setCollaborationReconnecting,

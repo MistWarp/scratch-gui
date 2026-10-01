@@ -67,6 +67,7 @@ class ShareWindow extends React.Component {
         this.agreementPromise = null;
         this.agreementInFlight = false;
         this.publishInFlight = false;
+        this.pendingPublish = null;
         this.initialDestination = getRememberedPlatformProjectState()?.id;
         this.thumbnailPreparation = null;
         this.thumbnailPreparationSource = null;
@@ -89,6 +90,9 @@ class ShareWindow extends React.Component {
         };
     }
     componentDidMount () {
+        if (this.props.onRegisterBusyCheck) {
+            this.props.onRegisterBusyCheck(() => this.publishInFlight || this.state.agreeBusy);
+        }
         this.agreementPromise = request('/agreement').then(
             data => ({data}),
             error => ({error})
@@ -168,6 +172,7 @@ class ShareWindow extends React.Component {
         }
         const isUpdate = this.props.action === 'update';
         this.publishInFlight = true;
+        this.pendingPublish = {commitChanges, changeMessage};
         const destination = getRememberedPlatformProjectState()?.id;
         const onSaved = guardSavedCallback(this.props.vm, this.props.onPublished);
 
@@ -281,7 +286,10 @@ class ShareWindow extends React.Component {
             await request('/agreement/accept', {method: 'POST'});
             this.agreementPromise = Promise.resolve({data: {agreement: {version: 0, accepted: true}}});
             this.releaseAgreement();
-            this.setState({agreeBusy: false, agreement: null}, this.handlePublish);
+            const pending = this.pendingPublish;
+            this.setState({agreeBusy: false, agreement: null}, () => (
+                pending ? this.runPublish(pending) : this.handlePublish()
+            ));
         } catch (e) {
             this.releaseAgreement();
             this.setState({agreeBusy: false, agreeError: e.message || 'Could not accept agreement.'});
@@ -562,7 +570,8 @@ ShareWindow.propTypes = {
     action: PropTypes.oneOf(['save', 'remix', 'update']),
     onClose: PropTypes.func.isRequired,
     onReviewStorage: PropTypes.func.isRequired,
-    onPublished: PropTypes.func.isRequired
+    onPublished: PropTypes.func.isRequired,
+    onRegisterBusyCheck: PropTypes.func
 };
 
 ShareWindow.defaultProps = {

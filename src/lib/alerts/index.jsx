@@ -264,6 +264,36 @@ const alerts = [
         maxDisplaySecs: 3
     },
     {
+        alertId: 'backpackSaved',
+        alertType: AlertTypes.STANDARD,
+        clearList: ['backpackSaved', 'backpackInserted'],
+        content: (
+            <FormattedMessage
+                defaultMessage="Saved to your backpack."
+                description="Message shown after something is saved to the backpack"
+                id="mw.alerts.backpackSaved"
+            />
+        ),
+        iconURL: successImage,
+        level: AlertLevels.SUCCESS,
+        maxDisplaySecs: 3
+    },
+    {
+        alertId: 'backpackInserted',
+        alertType: AlertTypes.STANDARD,
+        clearList: ['backpackSaved', 'backpackInserted'],
+        content: (
+            <FormattedMessage
+                defaultMessage="Added from your backpack."
+                description="Message shown after a backpack item is added to the project"
+                id="mw.alerts.backpackInserted"
+            />
+        ),
+        iconURL: successImage,
+        level: AlertLevels.SUCCESS,
+        maxDisplaySecs: 3
+    },
+    {
         alertId: 'savingMwp',
         alertType: AlertTypes.INLINE,
         clearList: ['saveSuccess', 'saving', 'savingError', 'savingMwp', 'twSaveToDiskSuccess'],

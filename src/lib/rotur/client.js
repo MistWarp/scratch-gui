@@ -7,8 +7,8 @@ import {
     formatActivityTitle,
     formatActivityStatus
 } from './settings.js';
+import {ROTUR_TOKEN_KEY} from './token-key.js';
 
-const TOKEN_KEY = 'mw:rotur-token';
 const REQUIRED_PERMISSIONS = [...new Set([
     ...resolvePermissions([
         'me.checkAuth',
@@ -68,7 +68,7 @@ const getClient = () => {
 
 const loadStoredToken = () => {
     try {
-        return localStorage.getItem(TOKEN_KEY);
+        return localStorage.getItem(ROTUR_TOKEN_KEY);
     } catch (_) {
         return null;
     }
@@ -77,9 +77,9 @@ const loadStoredToken = () => {
 const storeToken = token => {
     try {
         if (token) {
-            localStorage.setItem(TOKEN_KEY, token);
+            localStorage.setItem(ROTUR_TOKEN_KEY, token);
         } else {
-            localStorage.removeItem(TOKEN_KEY);
+            localStorage.removeItem(ROTUR_TOKEN_KEY);
         }
     } catch (_) {
         // ignore private-mode / quota failures

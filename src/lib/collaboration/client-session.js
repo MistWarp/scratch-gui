@@ -13,6 +13,10 @@ const GAP_RESYNC_DELAY_MS = 10000;
 const PENDING_OP_TIMEOUT_MS = 30000;
 const PENDING_PRUNE_INTERVAL_MS = 10000;
 const MAX_BUFFERED_OPS = 5000;
+const MAX_COMMAND_RETRIES = 3;
+const HOST_ANSWER_TIMEOUT_MS = 15000;
+const VERSION_MISMATCH_REASON = 'This room is running a different version of MistWarp. ' +
+    'Reload the page on both computers, then try again.';
 
 /**
  * A client's view of the room. Sends local edits to the host as proposals
@@ -24,13 +28,15 @@ const MAX_BUFFERED_OPS = 5000;
  *
  * Events:
  *  - 'awaiting-approval' () — hello sent, waiting on the host
+ *  - 'join-pending' () — the host is asking its user to approve us
+ *  - 'host-restarted' () — the host reopened the room; the project reloads
+ *  - 'role-changed' (role) — we can now edit ('edit') or only watch ('watch')
  *  - 'join-approved' ({hostUsername}) / 'join-denied' (reason)
  *  - 'users-updated' ({users}) / 'user-joined' (user) / 'user-left' (user)
  *  - 'op-applied' (envelope) — a remote op mutated the local doc
  *  - 'op-rejected' ({clientOpId, reason})
  *  - 'kicked' (reason) / 'host-left' () / 'session-ready' ()
  *  - 'room-privacy-changed' (privacy)
- *  - 'host-loading-start/progress/complete'
  *  - 'snapshot-message' (envelope) / 'asset-message' (envelope)
  *  - 'presence' (userId, envelope)
  *  - 'resync-needed' (reason) — ordered apply is broken; re-onboard
@@ -41,11 +47,11 @@ class ClientSession extends Emitter {
     /**
      * @param {object} options Options.
      * @param {Transport} options.transport Transport (not yet started).
-     * @param {OpApplier} options.applier Applies sequenced ops locally.
+     * @param {VMApplier} options.applier Applies sequenced ops locally.
      * @param {string} options.roomId Room id.
      * @param {string} options.username Display name.
      */
-    constructor ({transport, applier, roomId, username, handle, hasAsset, scope = null}) {
+    constructor ({transport, applier, roomId, username, handle, hasAsset, scope = null, invite = null}) {
         super();
         this.transport = transport;
         this.applier = applier;
@@ -53,6 +59,8 @@ class ClientSession extends Emitter {
         this.scope = scope;
         this.username = username;
         this.handle = handle || null;
+        this.invite = invite || null;
+        this.role = null;
         // Optional md5ext => boolean; when provided, ops carrying assetRefs
         // block the apply queue until their assets are locally present.
         this._hasAsset = hasAsset || null;
@@ -68,6 +76,9 @@ class ClientSession extends Emitter {
         this.isApproved = false;
 
         this._opBuffer = new Map();
+        this._needsReplay = false;
+        this._epoch = null;
+        this._reconnectToken = null;
         this._clientOpCounter = 0;
         this._gapRequestTimer = null;
         this._gapResyncTimer = null;
@@ -78,6 +89,7 @@ class ClientSession extends Emitter {
         this._onReconnecting = this._onReconnecting.bind(this);
         this._onReconnected = this._onReconnected.bind(this);
         this._onFatal = this._onFatal.bind(this);
+        this._onVersionMismatch = this._onVersionMismatch.bind(this);
     }
 
     /**
@@ -92,6 +104,7 @@ class ClientSession extends Emitter {
         this.transport.on('reconnecting', this._onReconnecting);
         this.transport.on('reconnected', this._onReconnected);
         this.transport.on('fatal', this._onFatal);
+        this.transport.on('version-mismatch', this._onVersionMismatch);
 
         this._pruneTimer = setInterval(() => this._prunePendingOps(), PENDING_PRUNE_INTERVAL_MS);
 
@@ -100,7 +113,7 @@ class ClientSession extends Emitter {
     }
 
     destroy () {
-        clearTimeout(this._approvalTimer);
+        clearTimeout(this._answerTimer);
         this.queue.cancel();
         this._destroyed = true;
         this.pendingOps.forEach(op => op.reject(new Error('Collaboration session ended')));
@@ -109,6 +122,7 @@ class ClientSession extends Emitter {
         this.transport.off('reconnecting', this._onReconnecting);
         this.transport.off('reconnected', this._onReconnected);
         this.transport.off('fatal', this._onFatal);
+        this.transport.off('version-mismatch', this._onVersionMismatch);
         this._clearGapTimers();
         if (this._pruneTimer) {
             clearInterval(this._pruneTimer);
@@ -145,7 +159,8 @@ class ClientSession extends Emitter {
             payload,
             resolve: () => {},
             reject: () => {},
-            submittedAt: Date.now()
+            submittedAt: Date.now(),
+            retries: 0
         });
         this.transport.sendToHost(makePropose(type, payload, clientOpId));
         return clientOpId;
@@ -157,9 +172,9 @@ class ClientSession extends Emitter {
         return new Promise((resolve, reject) => Object.assign(pending, {resolve, reject}));
     }
 
-    _retryPending () {
+    _retryPending (ops = this.pendingOps) {
         if (!this.isApproved || this.lastAppliedSeq === null) return;
-        this.pendingOps.forEach(op => {
+        ops.forEach(op => {
             this.transport.sendToHost(makePropose(op.type, op.payload, op.clientOpId));
             op.submittedAt = Date.now();
         });
@@ -189,6 +204,10 @@ class ClientSession extends Emitter {
      */
     setBaseSeq (atSeq) {
         this.lastAppliedSeq = atSeq;
+        if (this._needsReplay) {
+            this._needsReplay = false;
+            this.transport.sendToHost(makeCtrl(CTRL.OPS_REQUEST, {fromSeq: atSeq + 1}));
+        }
         this._retryPending();
         this._drainBuffer();
     }
@@ -212,6 +231,7 @@ class ClientSession extends Emitter {
         if (this.applier.queue) this.applier.queue.cancel();
         this._blockedOp = null;
         this._opBuffer.clear();
+        this._needsReplay = false;
         this._clearGapTimers();
     }
 
@@ -226,11 +246,14 @@ class ClientSession extends Emitter {
         if (this.lastAppliedSeq !== null) {
             payload.lastAppliedSeq = this.lastAppliedSeq;
         }
-        clearTimeout(this._approvalTimer);
-        this._approvalTimer = setTimeout(() => {
-            this.emit('connection-failed', {error: 'The host did not approve the connection. ' +
-                'Check that both editors are up to date and try again.'});
-        }, 120000);
+        if (this._epoch) payload.epoch = this._epoch;
+        if (this._reconnectToken) payload.reconnectToken = this._reconnectToken;
+        if (this.invite) payload.invite = this.invite;
+        clearTimeout(this._answerTimer);
+        this._answerTimer = setTimeout(() => {
+            this.emit('connection-failed', {error: 'The host did not answer. ' +
+                'You may be using different versions of MistWarp, so reload the page on both computers.'});
+        }, HOST_ANSWER_TIMEOUT_MS);
         this.transport.sendToHost(makeCtrl(CTRL.HELLO, payload));
         this.emit('awaiting-approval');
     }
@@ -267,6 +290,11 @@ class ClientSession extends Emitter {
             return;
         }
         if (this._opBuffer.size >= MAX_BUFFERED_OPS) {
+            if (this.lastAppliedSeq === null) {
+                this._opBuffer.clear();
+                this._needsReplay = true;
+                return;
+            }
             this.emit('resync-needed', 'op buffer overflow');
             return;
         }
@@ -355,13 +383,33 @@ class ClientSession extends Emitter {
             if (index !== -1) this.pendingOps.splice(index, 1)[0].resolve({});
             break;
         }
-        case CTRL.JOIN_APPROVED:
-            clearTimeout(this._approvalTimer);
+        case CTRL.JOIN_PENDING:
+            clearTimeout(this._answerTimer);
+            this.emit('join-pending');
+            break;
+        case CTRL.JOIN_APPROVED: {
+            clearTimeout(this._answerTimer);
+            const restarted = this._epoch !== null && payload.epoch !== this._epoch;
+            this._epoch = payload.epoch;
+            this._reconnectToken = payload.reconnectToken;
+            if (restarted) {
+                const dropped = this.pendingOps;
+                this.pendingOps = [];
+                dropped.forEach(op => op.reject(new Error('The host reopened the room before your edit was saved.')));
+                this.beginResync();
+                this._rejoining = false;
+                this.emit('host-restarted');
+            }
             this.isApproved = true;
-            this.emit('join-approved', {hostUsername: payload.hostUsername});
+            this._setRole(payload.role);
+            this.emit('join-approved', {hostUsername: payload.hostUsername, role: payload.role});
+            break;
+        }
+        case CTRL.ROLE_CHANGED:
+            this._setRole(payload.role);
             break;
         case CTRL.JOIN_DENIED:
-            clearTimeout(this._approvalTimer);
+            clearTimeout(this._answerTimer);
             this.emit('join-denied', payload.reason || 'Join request was denied');
             break;
         case CTRL.USERS_LIST:
@@ -401,18 +449,15 @@ class ClientSession extends Emitter {
             this._ready = true;
             this._drainBuffer();
             break;
-        case CTRL.HOST_LOADING_START:
-            this.emit('host-loading-start');
-            break;
-        case CTRL.HOST_LOADING_PROGRESS:
-            this.emit('host-loading-progress', {progress: payload.progress});
-            break;
-        case CTRL.HOST_LOADING_COMPLETE:
-            this.emit('host-loading-complete');
-            break;
         default:
             break;
         }
+    }
+
+    _setRole (role) {
+        if (this.role === role) return;
+        this.role = role;
+        this.emit('role-changed', role);
     }
 
     _scheduleGapRecovery () {
@@ -444,7 +489,19 @@ class ClientSession extends Emitter {
     }
 
     _prunePendingOps () {
-        if (this.pendingOps.some(op => Date.now() - op.submittedAt >= PENDING_OP_TIMEOUT_MS)) this._retryPending();
+        if (!this.isApproved || this.lastAppliedSeq === null) return;
+        const now = Date.now();
+        const stale = this.pendingOps.filter(op => now - op.submittedAt >= PENDING_OP_TIMEOUT_MS);
+        const expired = stale.filter(op => op.retries >= MAX_COMMAND_RETRIES);
+        expired.forEach(op => {
+            this.pendingOps.splice(this.pendingOps.indexOf(op), 1);
+            op.reject(new Error('The host did not confirm that edit, so it was undone.'));
+        });
+        const retry = stale.filter(op => op.retries < MAX_COMMAND_RETRIES);
+        retry.forEach(op => {
+            op.retries++;
+        });
+        this._retryPending(retry);
     }
 
     _onPeerDisconnected (peerId) {
@@ -467,9 +524,18 @@ class ClientSession extends Emitter {
     }
 
     _onFatal ({error}) {
+        if (error && error.collabCode === 'HOST_GONE') {
+            this.emit('host-left');
+            return;
+        }
         this.emit('connection-failed', {
             error: error && error.message ? error.message : String(error)
         });
+    }
+
+    _onVersionMismatch () {
+        clearTimeout(this._answerTimer);
+        this.emit('join-denied', VERSION_MISMATCH_REASON);
     }
 }
 
