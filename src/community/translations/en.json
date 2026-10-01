@@ -2468,5 +2468,7 @@
   "Your Rotur account is under 18, so MistWarp keeps your profile out of user search and creator leaderboards, and keeps your hearts and saves out of activity feeds. Game activity and profile comments start turned off.": "Your Rotur account is under 18, so MistWarp keeps your profile out of user search and creator leaderboards, and keeps your hearts and saves out of activity feeds. Game activity and profile comments start turned off.",
   "Allow comments on your profile": "Allow comments on your profile",
   "Let other users post on your profile wall.": "Let other users post on your profile wall.",
-  "Anonymous analytics stay off for accounts under 18.": "Anonymous analytics stay off for accounts under 18."
+  "Anonymous analytics stay off for accounts under 18.": "Anonymous analytics stay off for accounts under 18.",
+  "Filter by category": "Filter by category",
+  "Sort projects": "Sort projects"
 }
