@@ -1,13 +1,12 @@
 import {ensureScopes, getRotur} from '../rotur/client.js';
+import {signContent} from './device-key.js';
 
-const SIGNING_SCOPE = 'signing:private';
+const SIGNING_SCOPE = 'signing:keys';
 const SIGNING_CAPABILITY = 'message_signatures_v1';
 const MESSAGE_CONTEXT = 'originchats.message.v1';
 const SKEW_SECONDS = 300;
 
 let nativeSupport = null;
-let scopeCheck = null;
-let scopeToken = null;
 const verifications = new Map();
 
 const hasEd25519 = () => {
@@ -20,21 +19,7 @@ const hasEd25519 = () => {
     return nativeSupport;
 };
 
-const scopeGranted = () => {
-    const client = getRotur();
-    if (!client.loggedIn) return Promise.resolve(false);
-    if (!scopeCheck || scopeToken !== client.token) {
-        scopeToken = client.token;
-        scopeCheck = client.me.abilities()
-            .then(abilities => {
-                if (!abilities || abilities.error || abilities.token_type === 'main') return true;
-                const granted = Array.isArray(abilities.permissions) ? abilities.permissions : [];
-                return granted.includes('full') || granted.includes(SIGNING_SCOPE);
-            })
-            .catch(() => false);
-    }
-    return scopeCheck;
-};
+const scopeGranted = () => (getRotur().loggedIn ? ensureScopes([SIGNING_SCOPE]) : Promise.resolve(false));
 
 const signingStatus = async capabilities => {
     if (!Array.isArray(capabilities) || !capabilities.includes(SIGNING_CAPABILITY)) return 'off';
@@ -44,7 +29,6 @@ const signingStatus = async capabilities => {
 
 const requestSigningPermission = async () => {
     await ensureScopes([SIGNING_SCOPE], {prompt: true});
-    scopeCheck = null;
     return scopeGranted();
 };
 
@@ -53,7 +37,10 @@ const messageSigningContent = (authorId, content, attachments, timestamp, signin
 ];
 
 const signMessage = async ({content, attachments, timestamp, signingUrl}) => {
-    const proof = await getRotur().signing.sign(authorId => messageSigningContent(
+    if (!await scopeGranted()) {
+        throw Object.assign(new Error('Message signing permission was not granted'), {signingUnavailable: true});
+    }
+    const proof = await signContent(authorId => messageSigningContent(
         authorId, content || '', attachments || [], timestamp, signingUrl
     ));
     return {timestamp, author_id: proof.author_id, key_id: proof.key_id, signature: proof.signature};

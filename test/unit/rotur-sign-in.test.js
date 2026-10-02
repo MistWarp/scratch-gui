@@ -60,7 +60,7 @@ test('signing in asks for nothing that spends credits, changes settings or reads
     ]) {
         expect(asked).not.toContain(scope);
     }
-    expect(asked).toEqual(expect.arrayContaining(['offline_access', 'account:view', 'notifications:view']));
+    expect(asked).toEqual(expect.arrayContaining(['offline_access', 'account:view', 'notifications:view', 'signing:keys']));
     expect(new Set(asked).size).toBe(asked.length);
     // The sign-in buttons may fall back to a redirect.
     expect(mockOauth.signIn.mock.calls[0][1]).toEqual({redirectFallback: true});
