@@ -11,7 +11,7 @@ const confirmWhilePaying = async (popup, confirm) => {
       return await confirm();
     } catch (e) {
       if (e.status !== 402) throw e;
-      if (closed) throw new Error('You didn\'t finish paying on Rotur.');
+      if (closed) throw new Error('Payment cancelled.');
     }
     await sleep(2000);
   }

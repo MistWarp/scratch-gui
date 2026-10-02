@@ -2465,5 +2465,6 @@
   "New bounties are paused while MistWarp moves payments to Rotur. Bounties already funded still pay out when you merge a linked pull request, and you can cancel them for a refund.": "New bounties are paused while MistWarp moves payments to Rotur. Bounties already funded still pay out when you merge a linked pull request, and you can cancel them for a refund.",
   "Send {value1} credits on Rotur": "Send {value1} credits on Rotur",
   "Waiting for Rotur…": "Waiting for Rotur…",
-  "Rotur opens in a new window to take the payment.": "Rotur opens in a new window to take the payment."
+  "Rotur opens in a new window to take the payment.": "Rotur opens in a new window to take the payment.",
+  "Payment cancelled.": "Payment cancelled."
 }
