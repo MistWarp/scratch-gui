@@ -32,7 +32,7 @@ import {
     ModalSidebarLayout
 } from '../modal-sidebar/modal-sidebar.jsx';
 import {takeGitModalInitialView} from '../../lib/git/modal-view.js';
-import {GIT_HOST, parseRepoUrl} from '../../lib/rotur/git-api.js';
+import {GIT_HOST, ROTUR_GIT_SYNC_AVAILABLE, parseRepoUrl} from '../../lib/rotur/git-api.js';
 
 import styles from './git-modal.css';
 
@@ -1021,7 +1021,7 @@ class GitModalComponent extends React.Component {
                     type="button"
                     className={styles.iconButton}
                     data-repo-key={repoKey}
-                    disabled={this.props.busy}
+                    disabled={this.props.busy || !ROTUR_GIT_SYNC_AVAILABLE}
                     onClick={this.handleRoturPush}
                     title={this.props.intl.formatMessage({
                         defaultMessage: 'Push project to this repo',
@@ -1035,7 +1035,7 @@ class GitModalComponent extends React.Component {
                     type="button"
                     className={styles.iconButton}
                     data-repo-key={repoKey}
-                    disabled={this.props.busy || repo.isEmpty}
+                    disabled={this.props.busy || repo.isEmpty || !ROTUR_GIT_SYNC_AVAILABLE}
                     onClick={this.handleRoturClone}
                     title={this.props.intl.formatMessage({
                         defaultMessage: 'Clone this repo as your project',
@@ -1135,6 +1135,16 @@ class GitModalComponent extends React.Component {
                         }}
                     />
                 </p>
+                {ROTUR_GIT_SYNC_AVAILABLE ? null : (
+                    <p className={styles.muted}>
+                        <FormattedMessage
+                            // eslint-disable-next-line max-len
+                            defaultMessage="Pushing to and cloning from Rotur Git is turned off for now. It comes back once git.rotur.dev accepts a direct connection, so your sign-in never passes through another service. You can still create, open and delete repositories."
+                            description="Rotur Git note while Git transfers are turned off"
+                            id="mw.git.rotur.syncPaused"
+                        />
+                    </p>
+                )}
                 {connected && (
                     <ul className={styles.remoteList}>
                         <li className={styles.remoteRow}>
@@ -1162,7 +1172,7 @@ class GitModalComponent extends React.Component {
                                 type="button"
                                 className={styles.iconButton}
                                 data-repo-key={getRoturRepoKey(connected)}
-                                disabled={this.props.busy}
+                                disabled={this.props.busy || !ROTUR_GIT_SYNC_AVAILABLE}
                                 onClick={this.handleRoturPush}
                                 title={this.props.intl.formatMessage({
                                     defaultMessage: 'Push project to this repo',
@@ -1323,7 +1333,9 @@ class GitModalComponent extends React.Component {
                         <button
                             type="button"
                             className={styles.button}
-                            disabled={this.props.busy || !this.props.roturCloneOther.trim()}
+                            disabled={
+                                this.props.busy || !this.props.roturCloneOther.trim() || !ROTUR_GIT_SYNC_AVAILABLE
+                            }
                             onClick={this.props.onRoturCloneOther}
                         >
                             <Download className={styles.buttonIcon} />
