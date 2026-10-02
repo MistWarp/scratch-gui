@@ -57,17 +57,17 @@ test('extensions in an export cannot reach the token or unlisted SDK methods', a
 
 test('a payment is confirmed with the real amount even when the caller says it is not sensitive', async () => {
   const sdk = client();
-  sdk.gifts = {create: jest.fn()};
+  sdk.gifts = {claim: jest.fn()};
   const runtime = runtimeFor('roturEconomy_pay');
   const host = createAccountHost(runtime, {title: 'Game'}, function () { return sdk; });
   const ready = host.prepare();
   await document.querySelector('button').onclick();
   await ready;
   const confirm = jest.spyOn(window, 'confirm').mockReturnValue(false);
-  await expect(runtime.roturHost.call('gifts.create', [500], {sensitive: false}))
+  await expect(runtime.roturHost.call('gifts.claim', ['CODE'], {sensitive: false}))
     .rejects.toThrow('cancelled');
-  expect(confirm).toHaveBeenCalledWith('Allow Game to create a gift of 500 credits?');
-  expect(sdk.gifts.create).not.toHaveBeenCalled();
+  expect(confirm).toHaveBeenCalledWith('Allow Game to claim gift code CODE?');
+  expect(sdk.gifts.claim).not.toHaveBeenCalled();
 });
 
 test('failed authentication keeps project gated and permits retry', async () => {
@@ -114,16 +114,16 @@ test('published game data uses a player capability and the authenticated session
 
 test('sensitive Rotur actions retain a separate confirmation after login', async () => {
     const sdk = client();
-    sdk.gifts = {create: jest.fn()};
+    sdk.gifts = {claim: jest.fn()};
     const runtime = runtimeFor('roturEconomy_transfer');
     const host = createAccountHost(runtime, {}, function () { return sdk; });
     const ready = host.prepare();
     await document.querySelector('button').onclick();
     await ready;
     jest.spyOn(window, 'confirm').mockReturnValue(false);
-    await expect(runtime.roturHost.call('gifts.create', [5], {sensitive: true}))
+    await expect(runtime.roturHost.call('gifts.claim', ['CODE'], {sensitive: true}))
         .rejects.toThrow('cancelled');
-    expect(sdk.gifts.create).not.toHaveBeenCalled();
+    expect(sdk.gifts.claim).not.toHaveBeenCalled();
 });
 
 test('preview storage supports browser storage methods and property access without sharing data', () => {

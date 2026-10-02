@@ -49,8 +49,6 @@ test('every method the built-in Rotur extensions call is allowlisted with its sc
     const calls = await recordExtensionCalls();
     expect(calls.length).toBeGreaterThan(80);
     for (const {method, opts, scopes} of calls) {
-        // The "send credits" block: projects can't send credits any more.
-        if (method === 'me.transfer') continue;
         const spec = projectMethod(method);
         expect({method, allowed: Boolean(spec)}).toEqual({method, allowed: true});
         // A block's scope is what the host grants for it, after mapping.
@@ -85,6 +83,14 @@ test.each([
     'admin.transferCredits',
     'me.transfer',
     'me.transfer.call',
+    'me.claimTime',
+    'me.transactions',
+    'gifts.create',
+    'keys.buy',
+    'groups.sendTip',
+    'groups.purchaseProduct',
+    'items.buy',
+    'cosmetics.purchase',
     'socket.token',
     'socket.send',
     ''
@@ -114,15 +120,11 @@ test('a scoped method needs a grant for one of its scopes', () => {
     expect(authorizeProjectCall('profiles.get', ['someone'], [], 'p').args).toEqual(['someone']);
 });
 
-test('spending methods are confirmed with text the host builds from the arguments', () => {
-    expect(authorizeProjectCall('gifts.create', ['999'], [], 'p').confirm.label)
-        .toBe('create a gift of 999 credits');
-    expect(authorizeProjectCall('groups.sendTip', ['tag', '5'], [], 'p').confirm.label)
-        .toBe('tip 5 credits to group tag');
+test('actions that give something away or destroy it are confirmed with text the host builds', () => {
+    expect(authorizeProjectCall('items.transfer', ['hat', 'sam'], [], 'p').confirm.label).toBe('give item hat to @sam');
+    expect(authorizeProjectCall('gifts.claim', ['CODE'], [], 'p').confirm.label).toBe('claim gift code CODE');
     for (const method of [
-        'gifts.create', 'gifts.claim', 'keys.buy', 'keys.cancel', 'keys.delete',
-        'posts.delete', 'items.buy', 'items.transfer', 'cosmetics.purchase',
-        'groups.sendTip', 'groups.purchaseProduct'
+        'gifts.claim', 'keys.cancel', 'keys.delete', 'posts.delete', 'items.transfer'
     ]) {
         expect({method, confirm: Boolean(projectMethod(method).confirm)}).toEqual({method, confirm: true});
     }
@@ -149,7 +151,7 @@ test('projects may only ask for scopes their blocks can use', () => {
 
 test('only read scopes and per-call-confirmed scopes are granted without asking', () => {
     expect(grantsSilently(['credits:view', 'account:view'])).toBe(true);
-    expect(grantsSilently(['gifts:create'])).toBe(true);
+    expect(grantsSilently(['gifts:claim'])).toBe(true);
     expect(grantsSilently(['posts:delete'])).toBe(true);
     expect(grantsSilently(['posts:create'])).toBe(false);
     expect(grantsSilently(['keys:manage'])).toBe(false);
