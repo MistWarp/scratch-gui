@@ -116,7 +116,8 @@ test('a scoped method needs a grant for one of its scopes', () => {
     expect(() => authorizeProjectCall('posts.create', ['hi'], [], 'p')).toThrow('not granted');
     expect(() => authorizeProjectCall('posts.create', ['hi'], ['posts:like'], 'p')).toThrow('not granted');
     expect(authorizeProjectCall('posts.create', ['hi'], ['posts:create'], 'p').args).toEqual(['hi']);
-    expect(authorizeProjectCall('me.get', [], ['credits:view'], 'p').confirm).toBeNull();
+    expect(authorizeProjectCall('me.get', [], ['account:view'], 'p').confirm).toBeNull();
+    expect(() => authorizeProjectCall('me.get', [], ['credits:view'], 'p')).toThrow('not granted');
     expect(authorizeProjectCall('profiles.get', ['someone'], [], 'p').args).toEqual(['someone']);
 });
 
@@ -140,9 +141,9 @@ test('project storage always uses the host project id', () => {
 });
 
 test('projects may only ask for scopes their blocks can use', () => {
-    expect(validateProjectScopes(['posts:create', 'posts:create', 'credits:view']))
-        .toEqual(['posts:create', 'credits:view']);
-    for (const scope of ['tokens:manage', 'account:delete', 'signing:private', 'account:settings',
+    expect(validateProjectScopes(['posts:create', 'posts:create', 'account:view']))
+        .toEqual(['posts:create', 'account:view']);
+    for (const scope of ['credits:view', 'credits:daily', 'tokens:manage', 'account:delete', 'signing:private', 'account:settings',
         'validators:generate', 'full', 'constructor', 7]) {
         expect(validateProjectScopes(['posts:create', scope])).toBeNull();
     }
@@ -150,12 +151,12 @@ test('projects may only ask for scopes their blocks can use', () => {
 });
 
 test('only read scopes and per-call-confirmed scopes are granted without asking', () => {
-    expect(grantsSilently(['credits:view', 'account:view'])).toBe(true);
+    expect(grantsSilently(['account:view'])).toBe(true);
     expect(grantsSilently(['gifts:claim'])).toBe(true);
     expect(grantsSilently(['posts:delete'])).toBe(true);
     expect(grantsSilently(['posts:create'])).toBe(false);
     expect(grantsSilently(['keys:manage'])).toBe(false);
-    expect(grantsSilently(['credits:view', 'storage:manage'])).toBe(false);
+    expect(grantsSilently(['account:view', 'storage:manage'])).toBe(false);
 });
 
 describe('project files stay in MistWarp\'s own Origin FS folder', () => {

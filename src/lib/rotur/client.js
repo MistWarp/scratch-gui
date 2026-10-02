@@ -21,8 +21,6 @@ const SIGN_IN_SCOPES = [
     'account:view', // Your Rotur ID, and the badge editor on your profile.
     'account:profile', // Reorder or hide badges, and show what you're editing.
     'signing:keys', // Register this device's public key to sign chat messages.
-    'credits:view', // Wallet balance, donation history, earnings, bounties.
-    'credits:daily', // The daily credits button in the wallet.
     'notifications:view', // Notifications, live and on the notifications page.
     'posts:view', // Posts from people you follow, on Home.
     'posts:create', // The composer on your profile's Posts tab.
@@ -735,77 +733,6 @@ const isPaymentPermissionError = error => {
         message.includes('token');
 };
 
-// Read the current Rotur credit balance, or null if the token can't see it.
-const getBalance = async () => {
-    const rotur = getClient();
-    if (!rotur.loggedIn) {
-        return null;
-    }
-    try {
-        const me = await rotur.me.get();
-        return me && typeof me['sys.currency'] === 'number' ? me['sys.currency'] : null;
-    } catch (_) {
-        return null;
-    }
-};
-
-export const donationTransactions = transactions => {
-    if (!Array.isArray(transactions)) return [];
-    return transactions.reduce((donations, transaction, index) => {
-        const note = String((transaction && transaction.note) || '');
-        if (!note.toLowerCase().includes('donation')) return donations;
-        const direction = transaction.type === 'in' ? 'received' :
-            transaction.type === 'out' ? 'given' : null;
-        const amount = Math.round((Number(transaction.amount) || 0) * 100) / 100;
-        if (!direction || amount <= 0) return donations;
-        const rawTime = Number(transaction.time || transaction.timestamp || 0);
-        const time = rawTime > 0 && rawTime < 10000000000 ? rawTime * 1000 : rawTime;
-        donations.push({
-            id: String(transaction.id || `${direction}-${rawTime}-${index}`),
-            direction,
-            amount,
-            user: String(transaction.user || transaction.from || transaction.to || ''),
-            note,
-            time: Number.isFinite(time) ? time : 0
-        });
-        return donations;
-    }, []).sort((left, right) => right.time - left.time);
-};
-
-// Read balance plus donation totals and history from the account's transactions.
-// Returns null if the token can't see credits. Fields default to 0/null.
-const getAccountSummary = async () => {
-    const rotur = getClient();
-    if (!rotur.loggedIn) {
-        return null;
-    }
-    try {
-        const me = await rotur.me.get();
-        if (!me || me.error) {
-            return null;
-        }
-        const balance = typeof me['sys.currency'] === 'number' ? me['sys.currency'] : null;
-        const txns = me['sys.transactions'] || me.transactions || [];
-        const donations = donationTransactions(txns);
-        let donationsReceived = 0;
-        let donationsGiven = 0;
-        for (const donation of donations) {
-            if (donation.direction === 'received') donationsReceived += donation.amount;
-            else donationsGiven += donation.amount;
-        }
-        const round = value => Math.round(value * 100) / 100;
-        return {
-            balance,
-            donationsReceived: round(donationsReceived),
-            donationsGiven: round(donationsGiven),
-            donations,
-            hasTransactions: Array.isArray(txns)
-        };
-    } catch (_) {
-        return null;
-    }
-};
-
 // Transfer credits to another Rotur user. Throws an Error; if the failure is a
 // missing-permission on the current (sub-)token, the error carries needsReauth.
 const payUser = async (to, amount, note) => {
@@ -820,30 +747,6 @@ const payUser = async (to, amount, note) => {
         const error = new Error(result.error);
         if (isPaymentPermissionError(result.error)) {
             error.needsReauth = true;
-        }
-        throw error;
-    }
-    return result;
-};
-
-// Claim the account's daily credits. Throws on failure; the error carries
-// needsReauth when the token lacks the credits:daily permission, and waitHours
-// when the daily claim is not yet available.
-const claimDaily = async () => {
-    const rotur = getClient();
-    if (!rotur.loggedIn) {
-        const error = new Error('Log in to claim daily credits');
-        error.needsReauth = true;
-        throw error;
-    }
-    const result = await rotur.me.claimDaily();
-    if (result && result.error) {
-        const error = new Error(result.error);
-        if (isPaymentPermissionError(result.error)) {
-            error.needsReauth = true;
-        }
-        if (result.wait_hours) {
-            error.waitHours = result.wait_hours;
         }
         throw error;
     }
@@ -869,10 +772,7 @@ export {
     presenceSupported,
     getRotur,
     fetchCurrentUser,
-    getBalance,
-    getAccountSummary,
     payUser,
-    claimDaily,
     ensureScopes,
     getAccessToken,
     needsReconnect,

@@ -1115,8 +1115,8 @@ export const DonateModal = ({recipient, onClose}) => {
                     {status ? <Notice variant="error">{status}</Notice> : null}
                     {insufficient ? (
                         <Notice variant="warning">
-                            {communityText('Not enough credits in your balance. Claim your daily credits in your wallet, then send again.')}{' '}
-                            <Link to="/wallet">{communityText('Open wallet')}</Link>
+                            {communityText('Not enough credits in your balance. Claim your daily credits on Rotur, then send again.')}{' '}
+                            <a href="https://rotur.dev/me" target="_blank" rel="noopener noreferrer">{communityText('Open Rotur')}</a>
                         </Notice>
                     ) : null}
                     <Button
