@@ -65,6 +65,44 @@ describe('community api GET cache', () => {
         expect(global.fetch).toHaveBeenCalledTimes(3);
     });
 
+    test('mutations invalidate every cached GET when removing reorders storage keys', async () => {
+        // Browsers can reorder sessionStorage keys when one is removed.
+        const items = new Map();
+        const reorderingStorage = {
+            get length () {
+                return items.size;
+            },
+            key: index => Array.from(items.keys())[index] ?? null,
+            getItem: key => (items.has(key) ? items.get(key) : null),
+            setItem: (key, value) => items.set(key, String(value)),
+            removeItem: key => {
+                items.delete(key);
+                const [first] = items;
+                if (!first) return;
+                items.delete(first[0]);
+                items.set(first[0], first[1]);
+            },
+            clear: () => items.clear()
+        };
+        const realStorage = Object.getOwnPropertyDescriptor(window, 'sessionStorage');
+        Object.defineProperty(window, 'sessionStorage', {configurable: true, value: reorderingStorage});
+        try {
+            reorderingStorage.setItem('mw:rotur-restore', '{}');
+            const paths = ['/me', '/me/settings', '/projects/abc/pulls', '/projects/abc/related',
+                '/projects/abc/remixtree', '/projects/abc/comments?offset=0&limit=20'];
+            for (const path of paths) await request(path);
+            await request('/projects/abc/comments', {method: 'POST', body: {content: 'hello'}});
+
+            expect(Array.from(items.keys())).toEqual(['mw:rotur-restore']);
+            await request('/projects/abc/comments?offset=0&limit=20');
+            expect(global.fetch.mock.calls.filter(call => call[0].endsWith('/comments?offset=0&limit=20')))
+                .toHaveLength(2);
+        } finally {
+            if (realStorage) Object.defineProperty(window, 'sessionStorage', realStorage);
+            else delete window.sessionStorage;
+        }
+    });
+
     test('view pings do not invalidate the cache', async () => {
         await request('/projects/abc');
         await request('/projects/abc/view', {method: 'POST'});
