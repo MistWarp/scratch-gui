@@ -57,6 +57,37 @@ describe('backpack workflows', () => {
         jest.clearAllMocks();
     });
 
+    test('highlights only block drags over the backpack, ignoring asset drags', () => {
+        const backpack = makeBackpack({
+            dragInfo: {dragging: true, dragType: DragConstants.SPRITE}
+        });
+        backpack.state.assetDragOver = true;
+        expect(backpack.render().props.dragActive).toBe(false);
+        expect(backpack.render().props.dragOver).toBe(false);
+
+        const handle = document.createElement('div');
+        document.body.appendChild(handle);
+        handle.getBoundingClientRect = () => ({left: 10, right: 310, top: 700, bottom: 740,
+            width: 300, height: 40});
+        backpack.setHandleRef(handle);
+        backpack.handleBlockDragHook('start');
+        expect(backpack.render().props.dragActive).toBe(true);
+        expect(backpack.render().props.dragOver).toBe(false);
+
+        backpack.handleGlobalPointerMove({clientX: 100, clientY: 699});
+        expect(backpack.render().props.dragOver).toBe(false);
+        backpack.handleGlobalPointerMove({clientX: 100, clientY: 720});
+        expect(backpack.render().props.dragOver).toBe(true);
+        backpack.handleGlobalPointerMove({clientX: 100, clientY: 741});
+        expect(backpack.render().props.dragOver).toBe(false);
+        backpack.handleGlobalPointerMove({clientX: 100, clientY: 720});
+        backpack.handleBlockDragHook('end');
+        expect(backpack.render().props.dragOver).toBe(false);
+        expect(backpack.pendingBlockDrop).toBe(true);
+        clearTimeout(backpack.pendingBlockDropTimer);
+        handle.remove();
+    });
+
     test('pre-saves a dirty remote asset before adding it to the backpack', async () => {
         const asset = {
             assetId: 'asset',
