@@ -5,7 +5,8 @@ import {
     grantsSilently,
     invokeProjectMethod,
     projectMethod,
-    validateProjectScopes
+    validateProjectScopes,
+    appFilePath
 } from '../../src/lib/rotur/project-methods.js';
 
 const roturExtensions = require('scratch-vm/src/extensions/rotur/index.js');
@@ -52,7 +53,8 @@ test('every method the built-in Rotur extensions call is allowlisted with its sc
         if (method === 'me.transfer') continue;
         const spec = projectMethod(method);
         expect({method, allowed: Boolean(spec)}).toEqual({method, allowed: true});
-        for (const scope of scopes) {
+        // A block's scope is what the host grants for it, after mapping.
+        for (const scope of validateProjectScopes(scopes)) {
             expect({method, scope, covered: spec.scopes.includes(scope)})
                 .toEqual({method, scope, covered: true});
         }
@@ -152,4 +154,48 @@ test('only read scopes and per-call-confirmed scopes are granted without asking'
     expect(grantsSilently(['posts:create'])).toBe(false);
     expect(grantsSilently(['keys:manage'])).toBe(false);
     expect(grantsSilently(['credits:view', 'storage:manage'])).toBe(false);
+});
+
+describe('project files stay in MistWarp\'s own Origin FS folder', () => {
+    const root = '/application data/app_1938b6a87799f862@mist';
+    const home = 'origin/(c) users/sam/application data/app_1938b6a87799f862@mist';
+    const client = () => ({
+        files: {
+            pathIndex: jest.fn(() => Promise.resolve({root, username: 'Sam', index: {}})),
+            getByPath: jest.fn(path => Promise.resolve({path}))
+        }
+    });
+
+    test('a whole-drive request gets the app folder instead', () => {
+        expect(validateProjectScopes(['files:view', 'files:manage', 'posts:create']))
+            .toEqual(['files:app', 'posts:create']);
+        expect(projectMethod('files.getByPath').scopes).toEqual(['files:app']);
+        expect(grantsSilently(['files:app'])).toBe(false);
+    });
+
+    test.each([
+        '/save.txt', 'save.txt', 'Save.TXT', `${root}/save.txt`, `${home}/save.txt`
+    ])('%j is the folder\'s save.txt', async path => {
+        await expect(appFilePath(client(), path)).resolves.toBe(`${home}/save.txt`);
+    });
+
+    test.each([
+        '../secrets.txt', '/levels/../../x', 'origin/(c) users/sam/documents/diary.txt',
+        'origin/(c) users/kit/application data/app_1938b6a87799f862@mist/save.txt', '', '/'
+    ])('%j outside the folder is refused', async path => {
+        await expect(appFilePath(client(), path)).rejects.toThrow(`Projects can only read files in MistWarp's folder, ${root}`);
+    });
+
+    test('a token Rotur gives no folder to reads nothing', async () => {
+        const unscoped = {files: {pathIndex: () => Promise.resolve({index: {}, username: 'sam'})}};
+        await expect(appFilePath(unscoped, '/save.txt')).rejects.toThrow('folder of its own');
+    });
+
+    test('the bridge reads by path inside the folder', async () => {
+        const rotur = client();
+        await invokeProjectMethod(rotur, 'files.getByPath', ['/levels/1.json']);
+        expect(rotur.files.getByPath).toHaveBeenCalledWith(`${home}/levels/1.json`);
+        await expect(invokeProjectMethod(rotur, 'files.getByPath', ['../x'])).rejects.toThrow('MistWarp\'s folder');
+        expect(rotur.files.getByPath).toHaveBeenCalledTimes(1);
+    });
 });

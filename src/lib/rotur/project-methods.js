@@ -143,10 +143,11 @@ const PROJECT_METHODS = Object.freeze({
         confirm: args => ({label: `buy product ${text(args[1])} in group ${text(args[0])}`})
     },
 
-    'files.index': {scopes: ['files:view']},
-    'files.getByPath': {scopes: ['files:view']},
-    'files.getByUUID': {scopes: ['files:view']},
-    'files.usage': {scopes: ['files:view']}
+    // Projects only reach MistWarp's own Origin FS folder, never the whole drive.
+    'files.index': {scopes: ['files:app']},
+    'files.getByPath': {scopes: ['files:app']},
+    'files.getByUUID': {scopes: ['files:app']},
+    'files.usage': {scopes: ['files:app']}
 });
 
 const has = (object, key) => typeof key === 'string' && Object.prototype.hasOwnProperty.call(object, key);
@@ -158,6 +159,8 @@ const has = (object, key) => typeof key === 'string' && Object.prototype.hasOwnP
 const projectMethod = method => (has(PROJECT_METHODS, method) ? PROJECT_METHODS[method] : null);
 
 // Every scope some project block can use. A project may only ask for these.
+const WHOLE_DRIVE_SCOPES = ['files:view', 'files:manage', 'files:delete'];
+
 const PROJECT_SCOPES = new Set(Object.values(PROJECT_METHODS).flatMap(spec => spec.scopes));
 
 // Scopes whose only methods ask for confirmation on every call, so granting
@@ -182,7 +185,8 @@ const grantsSilently = scopes => scopes.every(scope => scope.endsWith(':view') |
  */
 const validateProjectScopes = scopes => {
     if (!Array.isArray(scopes)) return null;
-    const list = [...new Set(scopes)];
+    // Older projects ask for the whole drive; they get MistWarp's folder.
+    const list = [...new Set(scopes.map(scope => (WHOLE_DRIVE_SCOPES.includes(scope) ? 'files:app' : scope)))];
     return list.every(scope => typeof scope === 'string' && PROJECT_SCOPES.has(scope)) ? list : null;
 };
 
@@ -218,6 +222,37 @@ const authorizeProjectCall = (method, args, granted, storageId) => {
  * @param {Array} args Arguments.
  * @returns {Promise<unknown>} The SDK result.
  */
+const OFS_HOME = 'origin/(c) users/';
+
+/**
+ * Turn a path a project gave into the Origin FS path Rotur indexes, inside
+ * MistWarp's own folder. Rotur picks the folder (/application data/<app>@<creator>)
+ * and says which in the path index. "/save.txt", "save.txt", the folder's own
+ * "/application data/..." path and the full "origin/(c) users/..." path all work.
+ * @param {object} client Rotur SDK client.
+ * @param {unknown} path What the project asked for.
+ * @returns {Promise<string>} The full, lower-case path.
+ */
+const appFilePath = async (client, path) => {
+    const {root, username} = await client.files.pathIndex();
+    if (typeof root !== 'string' || !root || !username) {
+        throw new Error('Rotur did not give this project a folder of its own');
+    }
+    const folder = root.replace(/\/+$/, '').toLowerCase();
+    const base = `${OFS_HOME}${String(username).toLowerCase()}${folder}`;
+    let asked = String(path || '').trim()
+        .toLowerCase();
+    if (asked.startsWith(`${folder}/`)) asked = asked.slice(folder.length);
+    const full = asked.startsWith(OFS_HOME) ? asked : `${base}/${asked.replace(/^\/+/, '')}`;
+    const inside = full.startsWith(`${base}/`) &&
+        full.slice(base.length + 1).split('/')
+            .every(part => part && part !== '.' && part !== '..' && !part.includes('\\'));
+    if (!inside) {
+        throw new Error(`Projects can only read files in MistWarp's folder, ${root}`);
+    }
+    return full;
+};
+
 const invokeProjectMethod = async (client, method, args) => {
     if (!projectMethod(method)) {
         throw new Error(`Projects cannot call Rotur method: ${String(method).slice(0, 80)}`);
@@ -231,6 +266,9 @@ const invokeProjectMethod = async (client, method, args) => {
     if (typeof fn !== 'function') {
         throw new Error(`Rotur method is unavailable: ${method}`);
     }
+    if (method === 'files.getByPath') {
+        return fn.call(owner, await appFilePath(client, args[0]));
+    }
     return fn.apply(owner, args);
 };
 
@@ -241,5 +279,6 @@ export {
     grantsSilently,
     validateProjectScopes,
     authorizeProjectCall,
-    invokeProjectMethod
+    invokeProjectMethod,
+    appFilePath
 };
