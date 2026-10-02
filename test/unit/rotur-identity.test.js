@@ -2,7 +2,10 @@ jest.mock('../../src/lib/rotur/client.js', () => ({
     restoreSession: jest.fn(),
     login: jest.fn(() => Promise.resolve({username: 'new-user'})),
     logout: jest.fn(),
-    getRotur: () => ({token: 'new-rotur-token'})
+    getRotur: () => ({token: 'new-rotur-token'}),
+    getAccessToken: () => Promise.resolve('new-rotur-token'),
+    needsReconnect: () => false,
+    onSessionChange: jest.fn()
 }));
 
 jest.mock('../../src/lib/community/api.js', () => {
@@ -17,7 +20,8 @@ jest.mock('../../src/lib/community/api.js', () => {
             if (token) global.localStorage.setItem('mw:mistwarp-session', token);
             else global.localStorage.removeItem('mw:mistwarp-session');
         },
-        logout: jest.fn()
+        logout: jest.fn(),
+        setRoturTokenGetter: jest.fn()
     };
 });
 

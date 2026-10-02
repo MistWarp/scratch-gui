@@ -1,6 +1,6 @@
 import * as bundledModule0 from '../../community/api.js';
 
-import {Rotur, resolvePermissions} from 'rotur-sdk';
+import {Rotur} from 'rotur-sdk';
 import {loadSession} from '../community/api.js';
 import {
     getRoturSettings,
@@ -8,43 +8,38 @@ import {
     formatActivityStatus
 } from './settings.js';
 import {ROTUR_TOKEN_KEY} from './token-key.js';
+import * as oauth from './oauth.js';
+import {onSessionChange} from './oauth.js';
 
-const REQUIRED_PERMISSIONS = [...new Set([
-    ...resolvePermissions([
-        'me.checkAuth',
-        'following.follow',
-        'following.unfollow',
-        'validators.generate',
-        'me.transfer',
-        'me.claimDaily',
-        'notifications.list',
-        'posts.followingFeed'
-    ]),
-    'account:view',
-    'account:profile',
-    'account:settings',
-    'credits:view',
-    'credits:manage',
-    'credits:transfer',
-    'credits:daily',
-    'notifications:view',
-    'posts:create',
-    'posts:delete',
-    'posts:like',
-    'posts:manage',
+// What MistWarp asks for when someone signs in with Rotur. Nothing here can
+// spend credits, change account settings or read secrets: payments go through
+// Rotur's own approval page, and the rest is asked for when someone turns it on.
+const SIGN_IN_SCOPES = [
+    'offline_access', // Stay signed in past the hour an access token lasts.
+    'validators:generate', // Sign in to MistWarp's own server, which also learns
+    // whether the account is under 18; OriginChats and WarpTheme sign-in.
+    'account:view', // Your Rotur ID, and the badge editor on your profile.
+    'account:profile', // Reorder or hide badges, and show what you're editing.
+    'credits:view', // Wallet balance, donation history, earnings, bounties.
+    'credits:daily', // The daily credits button in the wallet.
+    'notifications:view', // Notifications, live and on the notifications page.
+    'posts:view', // Posts from people you follow, on Home.
+    'posts:create', // The composer on your profile's Posts tab.
     'posts:reply',
     'posts:repost',
-    'blocked:view',
+    'posts:like',
+    'posts:delete',
+    'posts:manage', // Edit and pin your own posts.
+    'blocked:view', // Block and unblock people from a post.
     'blocked:manage',
-    'groups:view',
+    'following:follow', // Follow buttons on profiles and Home.
+    'following:unfollow',
+    'groups:view', // The Groups pages.
     'groups:members.view',
     'groups:join',
-    'groups:leave',
-    'groups:manage'
-])];
+    'groups:leave'
+];
 const PRESENCE_PERMISSION = 'account:profile';
-const LOGIN_PERMISSIONS = [...REQUIRED_PERMISSIONS, 'signing:private'];
-const LOGIN_SYSTEM = 'mistwarp';
 const ACTIVITY_ID = 'MistWarp';
 const APP_URL = 'https://mistwarp.org';
 const APP_IMAGE = 'https://raw.githubusercontent.com/MistWarp/desktop/master/art/icon.png';
@@ -66,7 +61,9 @@ const getClient = () => {
     return client;
 };
 
-const loadStoredToken = () => {
+// A token from the old Rotur sign-in, kept until its owner reconnects with
+// Sign in with Rotur so nobody is signed out without warning.
+const loadLegacyToken = () => {
     try {
         return localStorage.getItem(ROTUR_TOKEN_KEY);
     } catch (_) {
@@ -74,16 +71,67 @@ const loadStoredToken = () => {
     }
 };
 
-const storeToken = token => {
+// The desktop app's editor runs on tw-editor://, not a web origin, and Sign in
+// with Rotur only returns to registered web origins. Until the desktop app has
+// its own sign-in, it keeps Rotur's older one, asking for the same permissions.
+const webOrigin = typeof location !== 'undefined' && /^https?:$/.test(location.protocol);
+
+const legacyLogin = async scopes => {
+    const rotur = getClient();
+    await rotur.login({
+        system: 'mistwarp',
+        timeout: 120000,
+        requires: scopes.filter(scope => scope.includes(':'))
+    });
     try {
-        if (token) {
-            localStorage.setItem(ROTUR_TOKEN_KEY, token);
-        } else {
-            localStorage.removeItem(ROTUR_TOKEN_KEY);
-        }
+        localStorage.setItem(ROTUR_TOKEN_KEY, rotur.token);
     } catch (_) {
-        // ignore private-mode / quota failures
+        // ignore private-mode failures
     }
+    return rotur.token;
+};
+
+const dropLegacyToken = () => {
+    try {
+        localStorage.removeItem(ROTUR_TOKEN_KEY);
+    } catch (_) {
+        // ignore private-mode failures
+    }
+};
+
+const useToken = token => {
+    const rotur = getClient();
+    rotur.setToken(token);
+    // The socket reconnects with the token it was opened with, and a refresh
+    // revokes that one.
+    if (rotur.socket) rotur.socket.token = token;
+};
+
+// Keep the client on the newest token when any tab refreshes it.
+oauth.onSessionChange(session => {
+    if (session) useToken(session.accessToken);
+});
+
+/**
+ * A stable key for whoever is signed in, readable before the session is
+ * restored: their Rotur ID, or the old sign-in's token.
+ * @returns {string} The key, or '' when signed out.
+ */
+const accountKey = () => {
+    const session = oauth.readSession();
+    return (session && session.subject) || loadLegacyToken() || '';
+};
+
+/**
+ * Whether the person should sign in with Rotur again: they are on the old
+ * sign-in, or MistWarp now needs a permission their sign-in doesn't have.
+ * @returns {boolean} True to offer reconnecting.
+ */
+const needsReconnect = () => {
+    if (!webOrigin) return false;
+    const session = oauth.readSession();
+    if (!session) return Boolean(loadLegacyToken());
+    return SIGN_IN_SCOPES.some(scope => !session.scopes.includes(scope));
 };
 
 /**
@@ -146,28 +194,6 @@ const fetchCurrentUser = async () => {
     return null;
 };
 
-const tokenHasRequiredPermissions = async () => {
-    const rotur = getClient();
-    try {
-        const abilities = await rotur.me.abilities();
-        if (!abilities || abilities.error || abilities.token_type === 'main') {
-            return true;
-        }
-        const granted = Array.isArray(abilities.permissions) ? abilities.permissions : [];
-        if (granted.includes('full')) {
-            return true;
-        }
-        for (const permission of REQUIRED_PERMISSIONS) {
-            if (!granted.includes(permission)) {
-                return false;
-            }
-        }
-        return true;
-    } catch (_) {
-        return true;
-    }
-};
-
 /** Whether the current token may publish status/activity over the status socket. */
 const presenceSupported = async () => {
     const rotur = getClient();
@@ -189,22 +215,21 @@ const presenceSupported = async () => {
 const RESTORE_CACHE_KEY = 'mw:rotur-restore';
 const RESTORE_CACHE_TTL = 5 * 60 * 1000;
 
-const readRestoreCache = token => {
+// Who is signed in, for five minutes, so each page load doesn't ask Rotur
+// again. It holds no token, and is cleared whenever the session changes.
+const readRestoreCache = () => {
     try {
-        const raw = sessionStorage.getItem(RESTORE_CACHE_KEY);
-        if (!raw) return null;
-        const {user, at, token: cachedToken} = JSON.parse(raw);
-        if (cachedToken !== token || !at || Date.now() - at > RESTORE_CACHE_TTL) return null;
-        return user || null;
+        const {user, at} = JSON.parse(sessionStorage.getItem(RESTORE_CACHE_KEY) || '{}');
+        return user && at && Date.now() - at <= RESTORE_CACHE_TTL ? user : null;
     } catch (_) {
         return null;
     }
 };
 
-const writeRestoreCache = (token, user) => {
+const writeRestoreCache = user => {
     try {
         if (user) {
-            sessionStorage.setItem(RESTORE_CACHE_KEY, JSON.stringify({user, token, at: Date.now()}));
+            sessionStorage.setItem(RESTORE_CACHE_KEY, JSON.stringify({user, at: Date.now()}));
         } else {
             sessionStorage.removeItem(RESTORE_CACHE_KEY);
         }
@@ -213,49 +238,57 @@ const writeRestoreCache = (token, user) => {
     }
 };
 
-/** Restore a previous session from localStorage. */
+/**
+ * The token to call Rotur with: the Sign in with Rotur session, refreshed if
+ * needed, or a token from the old sign-in.
+ * @returns {Promise<string|null>} The token, or null when signed out.
+ */
+const getAccessToken = async () => (await oauth.getAccessToken()) || loadLegacyToken();
+
+/** Restore a previous session. */
 const restoreSession = async () => {
-    const token = loadStoredToken();
+    await oauth.completeRedirect();
+    const token = await getAccessToken();
     if (!token) {
         return null;
     }
-    const rotur = getClient();
-    rotur.setToken(token);
-    const cached = readRestoreCache(token);
-    const hasPermissions = await tokenHasRequiredPermissions();
-    if (!hasPermissions) {
-        rotur.logout();
-        storeToken(null);
-        return null;
-    }
+    useToken(token);
+    const cached = readRestoreCache();
     if (cached) {
         return cached;
     }
     const user = await fetchCurrentUser();
     if (!user) {
-        rotur.logout();
-        storeToken(null);
+        getClient().logout();
+        oauth.signOut();
+        dropLegacyToken();
         return null;
     }
-    storeToken(rotur.token);
-    writeRestoreCache(rotur.token, user);
+    writeRestoreCache(user);
     return user;
 };
 
-/** Open the Rotur login flow (popup, with iframe fallback for Electron). */
-const login = async () => {
-    const rotur = getClient();
-    await rotur.login({
-        system: LOGIN_SYSTEM,
-        timeout: 120000,
-        requires: LOGIN_PERMISSIONS
-    });
-    storeToken(rotur.token);
+/**
+ * Sign in with Rotur, asking for SIGN_IN_SCOPES and anything extra. Call it
+ * straight from a click, so the popup isn't blocked.
+ * @param {string[]} [extraScopes] More permissions to ask for.
+ * @returns {Promise<object>} The signed-in user.
+ */
+const login = async (extraScopes = []) => {
+    const scopes = [...new Set([...SIGN_IN_SCOPES, ...extraScopes])];
+    if (webOrigin) {
+        const session = await oauth.signIn(scopes);
+        dropLegacyToken();
+        useToken(session.accessToken);
+    } else {
+        useToken(await legacyLogin(scopes));
+    }
+    writeRestoreCache(null);
     const user = await fetchCurrentUser();
     if (!user) {
-        throw new Error('Logged in but could not load Rotur profile');
+        throw new Error('Signed in, but could not load your Rotur profile');
     }
-    writeRestoreCache(rotur.token, user);
+    writeRestoreCache(user);
     return user;
 };
 
@@ -288,8 +321,9 @@ const logout = () => {
     visibleNotificationIds.clear();
     notificationFetches.clear();
     rotur.logout();
-    storeToken(null);
-    writeRestoreCache(null, null);
+    oauth.signOut();
+    dropLegacyToken();
+    writeRestoreCache(null);
 };
 
 const ensureSocket = async () => {
@@ -566,7 +600,7 @@ const fetchNotifications = afterDays => {
     if (!rotur.loggedIn) {
         return Promise.resolve([]);
     }
-    const key = `${loadStoredToken() || ''}:${loadSession() || ''}:${afterDays}`;
+    const key = `${getClient().token || ''}:${loadSession() || ''}:${afterDays}`;
     if (notificationFetches.has(key)) {
         return notificationFetches.get(key);
     }
@@ -652,44 +686,16 @@ const markNotificationsRead = async () => {
     }
 };
 
-// Ensure the current session token can exercise every scope in `scopes`. If the
-// token is already sufficient (or is a full-access main token) this is a no-op;
-// otherwise it re-runs the Rotur login popup requesting the union of the existing
-// login scopes plus the requested ones, broadening the same session in place. No
-// separate per-project sub-token is minted.
-const ensureScopes = async scopes => {
-    const rotur = getClient();
-    if (!rotur.loggedIn) {
-        return false;
-    }
+// Make sure the session holds every scope in `scopes`, asking Rotur for any
+// missing ones. Call it straight from a click when a scope may be missing.
+// The old sign-in's tokens already hold everything MistWarp used to ask for.
+const ensureScopes = scopes => {
     const wanted = Array.isArray(scopes) ? scopes.filter(Boolean) : [];
-    if (!wanted.length) {
-        return true;
+    const session = oauth.readSession();
+    if (!wanted.length || !session || wanted.every(scope => session.scopes.includes(scope))) {
+        return Promise.resolve(Boolean(session || loadLegacyToken() || !wanted.length));
     }
-    let granted = null;
-    try {
-        const abilities = await rotur.me.abilities();
-        if (!abilities || abilities.error || abilities.token_type === 'main') {
-            return true;
-        }
-        granted = Array.isArray(abilities.permissions) ? abilities.permissions : [];
-    } catch (_) {
-        return true;
-    }
-    if (granted.includes('full')) {
-        return true;
-    }
-    const missing = wanted.filter(scope => !granted.includes(scope));
-    if (!missing.length) {
-        return true;
-    }
-    await rotur.login({
-        system: LOGIN_SYSTEM,
-        timeout: 120000,
-        requires: [...new Set([...LOGIN_PERMISSIONS, ...granted, ...wanted])]
-    });
-    storeToken(rotur.token);
-    return true;
+    return login(session.scopes.filter(scope => scope !== 'profile').concat(wanted)).then(() => true);
 };
 
 const isPaymentPermissionError = error => {
@@ -817,6 +823,7 @@ const claimDaily = async () => {
 };
 
 export {
+    SIGN_IN_SCOPES,
     ACTIVITY_ID,
     APP_URL,
     APP_IMAGE,
@@ -838,6 +845,10 @@ export {
     payUser,
     claimDaily,
     ensureScopes,
+    getAccessToken,
+    needsReconnect,
+    onSessionChange,
+    accountKey,
     isVisibleNotification,
     fetchNotifications,
     fetchFollowingFeed,
