@@ -408,6 +408,6 @@ test('a full Rotur profile response also satisfies group tag profile reads', asy
 
     expect(window.fetch).toHaveBeenCalledTimes(1);
     expect(window.fetch.mock.calls[0][0]).toBe(
-        'https://api.rotur.dev/profile/profilecachecase?include_posts=1'
+        'https://api.rotur.dev/profile/profilecachecase?include_posts=1&app=app_1938b6a87799f862'
     );
 });
