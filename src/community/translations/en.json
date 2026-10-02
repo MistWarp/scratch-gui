@@ -2461,5 +2461,9 @@
   "You do not have enough credits. Claim your daily credits on Rotur, then try again.": "You do not have enough credits. Claim your daily credits on Rotur, then try again.",
   "Sign in to see your purchases.": "Sign in to see your purchases.",
   "Your credits are on Rotur": "Your credits are on Rotur",
-  "See your balance, claim daily credits and check your transactions on rotur.dev.": "See your balance, claim daily credits and check your transactions on rotur.dev."
+  "See your balance, claim daily credits and check your transactions on rotur.dev.": "See your balance, claim daily credits and check your transactions on rotur.dev.",
+  "New bounties are paused while MistWarp moves payments to Rotur. Bounties already funded still pay out when you merge a linked pull request, and you can cancel them for a refund.": "New bounties are paused while MistWarp moves payments to Rotur. Bounties already funded still pay out when you merge a linked pull request, and you can cancel them for a refund.",
+  "Send {value1} credits on Rotur": "Send {value1} credits on Rotur",
+  "Waiting for Rotur…": "Waiting for Rotur…",
+  "Rotur opens in a new window to take the payment.": "Rotur opens in a new window to take the payment."
 }

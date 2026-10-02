@@ -234,25 +234,26 @@ const api = {
     publish: id => request(`/projects/${id}/publish`, {method: 'POST'}),
     unpublish: id => request(`/projects/${id}/unpublish`, {method: 'POST'}),
     setVisibility: (id, visibility) => request(`/projects/${id}/visibility`, {method: 'POST', body: {visibility}}),
-    purchaseIntent: id => request(`/projects/${id}/purchase/intent`, {method: 'POST'}),
-    purchaseConfirm: (id, key, paymentId) => request(`/projects/${id}/purchase/confirm`, {
-        method: 'POST', body: {key, paymentId}
-    }),
+    purchaseIntent: (id, returnUrl) => request(`/projects/${id}/purchase/intent`, {method: 'POST', body: {returnUrl}}),
+    purchaseConfirm: (id, key) => request(`/projects/${id}/purchase/confirm`, {method: 'POST', body: {key}}),
     gameProducts: id => request(`/projects/${id}/products`, {cache: false}),
     ownsGameProduct: (id, product) => request(`/projects/${id}/products/${encodeURIComponent(product)}/owns`, {
         cache: false
     }),
-    gameProductIntent: (id, product) => request(`/projects/${id}/products/${encodeURIComponent(product)}/purchase/intent`, {
-        method: 'POST'
+    gameProductIntent: (id, product, returnUrl) => request(`/projects/${id}/products/${encodeURIComponent(product)}/purchase/intent`, {
+        method: 'POST', body: {returnUrl}
     }),
-    gameProductConfirm: (id, product, key, paymentId) => request(`/projects/${id}/products/${encodeURIComponent(product)}/purchase/confirm`, {
-        method: 'POST', body: {key, paymentId}
+    gameProductConfirm: (id, product, key) => request(`/projects/${id}/products/${encodeURIComponent(product)}/purchase/confirm`, {
+        method: 'POST', body: {key}
+    }),
+    gameProductRefundIntent: (id, product, username, returnUrl) => request(`/projects/${id}/products/${encodeURIComponent(product)}/refund/intent`, {
+        method: 'POST', body: {username, returnUrl}
     }),
     grantGameProduct: (id, product, username) => request(`/projects/${id}/products/${encodeURIComponent(product)}/grant`, {
         method: 'POST', body: {username}
     }),
-    revokeGameProduct: (id, product, {username, paymentId, noRefund}) => request(`/projects/${id}/products/${encodeURIComponent(product)}/revoke`, {
-        method: 'POST', body: {username, paymentId, noRefund}
+    revokeGameProduct: (id, product, {username, refundKey, noRefund}) => request(`/projects/${id}/products/${encodeURIComponent(product)}/revoke`, {
+        method: 'POST', body: {username, refundKey, noRefund}
     }),
     createGameDataCapability: (id, context) => request(`/projects/${id}/data-capability`, {
         method: 'POST', body: {context}
@@ -281,8 +282,8 @@ const api = {
     getComments: (id, options) => request(`/projects/${id}/comments?${commentQuery(options)}`),
     addComment: (id, content, parent, kind = 'comment', donation = null) =>
         request(`/projects/${id}/comments`, {method: 'POST', body: {content, parent, kind, donation}}),
-    commentDonationIntent: (id, amount) => request(`/projects/${id}/comments/donation/intent`, {
-        method: 'POST', body: {amount}
+    commentDonationIntent: (id, amount, returnUrl) => request(`/projects/${id}/comments/donation/intent`, {
+        method: 'POST', body: {amount, returnUrl}
     }),
     deleteComment: (id, commentId) => request(`/projects/${id}/comments/${commentId}`, {method: 'DELETE'}),
     editComment: (id, commentId, content) => request(`/projects/${id}/comments/${commentId}`, {method: 'PUT', body: {content}}),
@@ -333,8 +334,6 @@ const api = {
             `/admin/users?q=${encodeURIComponent(q)}&offset=${encodeURIComponent(offset)}` +
             `&limit=${encodeURIComponent(limit)}&sort=${encodeURIComponent(sort)}`
         ),
-        payouts: () => request('/admin/payouts'),
-        retryPayouts: () => request('/admin/payouts/retry', {method: 'POST'}),
         extensions: () => request('/admin/extensions', {cache: false}),
         setExtensionPolicy: (hash, status) =>
             request('/admin/extensions/policy', {method: 'POST', body: {hash, status}}),

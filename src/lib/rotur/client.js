@@ -723,36 +723,6 @@ const ensureScopes = async (scopes, {prompt = false} = {}) => {
     return !oauth.readSession() || hasScopes(wanted);
 };
 
-
-const isPaymentPermissionError = error => {
-    const message = String((error && error.message) || error || '').toLowerCase();
-    return message.includes('permission') ||
-        message.includes('scope') ||
-        message.includes('not allowed') ||
-        message.includes('unauthorized') ||
-        message.includes('token');
-};
-
-// Transfer credits to another Rotur user. Throws an Error; if the failure is a
-// missing-permission on the current (sub-)token, the error carries needsReauth.
-const payUser = async (to, amount, note) => {
-    const rotur = getClient();
-    if (!rotur.loggedIn) {
-        const error = new Error('Log in to send credits');
-        error.needsReauth = true;
-        throw error;
-    }
-    const result = await rotur.me.transfer(to, amount, note);
-    if (result && result.error) {
-        const error = new Error(result.error);
-        if (isPaymentPermissionError(result.error)) {
-            error.needsReauth = true;
-        }
-        throw error;
-    }
-    return result;
-};
-
 const onSessionChange = oauth.onSessionChange;
 
 export {
@@ -772,7 +742,6 @@ export {
     presenceSupported,
     getRotur,
     fetchCurrentUser,
-    payUser,
     ensureScopes,
     getAccessToken,
     needsReconnect,

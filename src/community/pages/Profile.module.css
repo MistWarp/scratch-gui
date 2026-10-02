@@ -577,59 +577,6 @@
     }
 }
 
-.donateModal {
-    max-width: 400px;
-}
-
-.donateBody {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.donateText {
-    margin: 0;
-    font-size: var(--fs-md);
-    line-height: 1.5;
-    color: var(--text-dim);
-}
-
-.donateInput {
-    width: 100%;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: var(--bg-field);
-    color: var(--mw-text);
-    font: inherit;
-    font-size: var(--fs-lg);
-    padding: 11px 13px;
-}
-
-.donateInput:focus {
-    outline: none;
-    border-color: var(--accent);
-}
-
-.donateDone {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 12px;
-    color: var(--mw-text);
-}
-
-.donateDoneIcon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 56px;
-    height: 56px;
-    border-radius: var(--radius);
-    background: var(--accent-soft);
-    color: var(--accent-strong);
-}
-
 .adminPanel {
     margin-bottom: 18px;
     padding: 16px;
