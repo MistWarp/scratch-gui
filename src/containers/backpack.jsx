@@ -251,9 +251,6 @@ class Backpack extends React.Component {
     isBlockDragActive () {
         return this.state.blockDragActive || this.state.blockDragOutsideWorkspace;
     }
-    isDragActive () {
-        return this.isBlockDragActive() || isIncomingAssetDrag(this.props.dragInfo);
-    }
 
     handleGlobalPointerMove (e) {
         if (!e) return;
@@ -607,7 +604,10 @@ class Backpack extends React.Component {
         if (type === 'start') {
             clearTimeout(this.pendingBlockDropTimer);
             this.pendingBlockDrop = false;
-            this.setState({blockDragActive: true});
+            this.setState({
+                blockDragActive: true,
+                blockDragOverBackpack: this.isPointerOverDropArea()
+            });
             return;
         }
         this.pendingBlockDrop = this.state.blockDragOverBackpack || this.isPointerOverDropArea();
@@ -615,7 +615,7 @@ class Backpack extends React.Component {
         this.pendingBlockDropTimer = setTimeout(() => {
             this.pendingBlockDrop = false;
         }, 500);
-        this.setState({blockDragActive: false});
+        this.setState({blockDragActive: false, blockDragOverBackpack: false});
     }
     handleBlockDragUpdate (isOutsideWorkspace) {
         this.setState({
@@ -696,14 +696,14 @@ class Backpack extends React.Component {
         return filterBackpackContents(byType, this.state.searchQuery);
     }
     render () {
-        const dragOver = this.state.assetDragOver || this.state.blockDragOverBackpack;
+        const dragOver = this.state.blockDragOverBackpack;
         return (
             <BackpackComponent
                 busyId={this.state.busyId}
                 canRename={this.canRename()}
                 canToggle={Boolean(this.props.host)}
                 contents={this.getFilteredContents()}
-                dragActive={this.isDragActive()}
+                dragActive={this.isBlockDragActive()}
                 dragOver={dragOver}
                 error={this.state.error}
                 expanded={this.state.expanded}
