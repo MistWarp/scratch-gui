@@ -14,6 +14,7 @@ import {getRoturSettings, setRoturSetting} from '../lib/rotur/settings.js';
 import {isLoggedIn} from '../lib/rotur/client.js';
 import {getState as getRoturIdentityState} from '../lib/rotur/identity.js';
 import ProjectActivityScope from '../lib/rotur/project-activity-scope.js';
+import {hasRotur, roturOfflineError} from '../lib/rotur/availability.js';
 import {
     blockProjectPrompts,
     isProjectPromptBlocked
@@ -202,6 +203,7 @@ class RoturExtensionHost extends React.Component {
     }
 
     async ensureConsent (requested) {
+        if (!hasRotur()) throw roturOfflineError();
         const scopes = validateProjectScopes(requested);
         if (!scopes) {
             throw new Error('Projects cannot ask for that Rotur permission');
@@ -235,6 +237,7 @@ class RoturExtensionHost extends React.Component {
     }
 
     async call (method, args) {
+        if (!hasRotur()) throw roturOfflineError();
         const call = authorizeProjectCall(
             method,
             args,
