@@ -1139,7 +1139,7 @@ const Project = () => {
         } catch (e) {
             if (actionContextRef.current !== context) return;
             setConfirmBuy(false);
-            if (!e.cancelled) setActionError(e.message || 'Could not complete the purchase.');
+            setActionError(e.cancelled ? communityText('Payment cancelled.') : (e.message || 'Could not complete the purchase.'));
         } finally {
             releaseAction(actionKey);
             if (actionContextRef.current === context) setBuying(false);

@@ -602,7 +602,9 @@ const CommentThread = ({
             setReplyTo(null);
         } catch (e) {
             if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {
-                setError(e.cancelled ? null : (e.message || communityText('Could not post comment.')));
+                setError(e.cancelled ?
+                    communityText('Payment cancelled.') :
+                    (e.message || communityText('Could not post comment.')));
             }
         } finally {
             releaseAction();

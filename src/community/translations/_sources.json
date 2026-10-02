@@ -253,14 +253,14 @@
   ],
   "Delete comment": [
     "src/community/components/CommentThread.jsx:186",
-    "src/community/components/CommentThread.jsx:1028",
+    "src/community/components/CommentThread.jsx:1030",
     "src/community/pages/Bounty.jsx:152",
     "src/community/pages/PullRequest.jsx:536"
   ],
   "Cancel": [
     "src/community/components/CommentThread.jsx:202",
     "src/community/components/CommentThread.jsx:297",
-    "src/community/components/GameMarketplaceModal.jsx:224",
+    "src/community/components/GameMarketplaceModal.jsx:226",
     "src/community/components/ProjectInfoPanel.jsx:382",
     "src/community/components/ReportModal.jsx:106",
     "src/community/components/RoturConsentModal.jsx:70",
@@ -300,68 +300,73 @@
   "Enter a donation between 0.01 and 100000 credits.": [
     "src/community/components/CommentThread.jsx:570"
   ],
+  "Payment cancelled.": [
+    "src/community/components/CommentThread.jsx:606",
+    "src/community/components/GameMarketplaceModal.jsx:156",
+    "src/community/pages/Project.jsx:1142"
+  ],
   "Could not post comment.": [
-    "src/community/components/CommentThread.jsx:605"
+    "src/community/components/CommentThread.jsx:607"
   ],
   "Could not delete comment.": [
-    "src/community/components/CommentThread.jsx:640"
+    "src/community/components/CommentThread.jsx:642"
   ],
   "Could not edit comment.": [
-    "src/community/components/CommentThread.jsx:668"
+    "src/community/components/CommentThread.jsx:670"
   ],
   "Could not react.": [
-    "src/community/components/CommentThread.jsx:691",
+    "src/community/components/CommentThread.jsx:693",
     "src/community/components/NewsItem.jsx:51"
   ],
   "Could not pin comment.": [
-    "src/community/components/CommentThread.jsx:714"
+    "src/community/components/CommentThread.jsx:716"
   ],
   "Comments are turned off.": [
-    "src/community/components/CommentThread.jsx:778"
+    "src/community/components/CommentThread.jsx:780"
   ],
   "Add a comment": [
-    "src/community/components/CommentThread.jsx:786"
+    "src/community/components/CommentThread.jsx:788"
   ],
   "Search comments": [
-    "src/community/components/CommentThread.jsx:806",
-    "src/community/components/CommentThread.jsx:807"
+    "src/community/components/CommentThread.jsx:808",
+    "src/community/components/CommentThread.jsx:809"
   ],
   "All types": [
-    "src/community/components/CommentThread.jsx:817",
+    "src/community/components/CommentThread.jsx:819",
     "src/community/pages/Roadmap.jsx:509"
   ],
   "Filter comments by type": [
-    "src/community/components/CommentThread.jsx:822"
+    "src/community/components/CommentThread.jsx:824"
   ],
   "Newest": [
-    "src/community/components/CommentThread.jsx:832",
+    "src/community/components/CommentThread.jsx:834",
     "src/community/pages/Admin.jsx:1243",
     "src/community/pages/Themes.jsx:23"
   ],
   "Highest donations": [
-    "src/community/components/CommentThread.jsx:833"
+    "src/community/components/CommentThread.jsx:835"
   ],
   "Sort comments": [
-    "src/community/components/CommentThread.jsx:837"
+    "src/community/components/CommentThread.jsx:839"
   ],
   "Show 1 more reply": [
-    "src/community/components/CommentThread.jsx:934"
+    "src/community/components/CommentThread.jsx:936"
   ],
   "Show {value1} more replies": [
-    "src/community/components/CommentThread.jsx:935"
+    "src/community/components/CommentThread.jsx:937"
   ],
   "Hide replies": [
-    "src/community/components/CommentThread.jsx:942"
+    "src/community/components/CommentThread.jsx:944"
   ],
   "Reply to {value1}": [
-    "src/community/components/CommentThread.jsx:955"
+    "src/community/components/CommentThread.jsx:957"
   ],
   "Show {value1} more comments": [
-    "src/community/components/CommentThread.jsx:969",
-    "src/community/components/CommentThread.jsx:981"
+    "src/community/components/CommentThread.jsx:971",
+    "src/community/components/CommentThread.jsx:983"
   ],
   "Loading…": [
-    "src/community/components/CommentThread.jsx:980",
+    "src/community/components/CommentThread.jsx:982",
     "src/community/components/MyStuffLibrary.jsx:123",
     "src/community/components/PlaytimeLibrary.jsx:94",
     "src/community/components/SpaceProjectPicker.jsx:247",
@@ -378,32 +383,32 @@
     "src/community/pages/Themes.jsx:185"
   ],
   "Could not load more comments. Try again.": [
-    "src/community/components/CommentThread.jsx:988"
+    "src/community/components/CommentThread.jsx:990"
   ],
   "Loading comments…": [
-    "src/community/components/CommentThread.jsx:995"
+    "src/community/components/CommentThread.jsx:997"
   ],
   "Comments could not be loaded right now.": [
-    "src/community/components/CommentThread.jsx:999"
+    "src/community/components/CommentThread.jsx:1001"
   ],
   "No matching comments": [
-    "src/community/components/CommentThread.jsx:1003"
+    "src/community/components/CommentThread.jsx:1005"
   ],
   "No comments match those filters.": [
-    "src/community/components/CommentThread.jsx:1004"
+    "src/community/components/CommentThread.jsx:1006"
   ],
   "No comments yet": [
-    "src/community/components/CommentThread.jsx:1008",
+    "src/community/components/CommentThread.jsx:1010",
     "src/community/pages/Bounty.jsx:155"
   ],
   "Be the first to leave a comment.": [
-    "src/community/components/CommentThread.jsx:1009"
+    "src/community/components/CommentThread.jsx:1011"
   ],
   "Delete comment?": [
-    "src/community/components/CommentThread.jsx:1027"
+    "src/community/components/CommentThread.jsx:1029"
   ],
   "Deleting…": [
-    "src/community/components/CommentThread.jsx:1030",
+    "src/community/components/CommentThread.jsx:1032",
     "src/community/components/NewsItem.jsx:132",
     "src/community/components/ProfilePosts.jsx:220",
     "src/community/pages/ManageSpace.jsx:753",
@@ -416,10 +421,10 @@
     "src/community/pages/Theme.jsx:234"
   ],
   "This comment will be deleted permanently.": [
-    "src/community/components/CommentThread.jsx:1037"
+    "src/community/components/CommentThread.jsx:1039"
   ],
   "This comment and its replies will be deleted permanently.": [
-    "src/community/components/CommentThread.jsx:1038"
+    "src/community/components/CommentThread.jsx:1040"
   ],
   "Code": [
     "src/community/components/DiffView.jsx:18"
@@ -774,42 +779,42 @@
     "src/community/components/GameMarketplaceModal.jsx:118"
   ],
   "Could not complete the purchase.": [
-    "src/community/components/GameMarketplaceModal.jsx:155"
+    "src/community/components/GameMarketplaceModal.jsx:157"
   ],
   "Purchase game content": [
-    "src/community/components/GameMarketplaceModal.jsx:171"
+    "src/community/components/GameMarketplaceModal.jsx:173"
   ],
   "Game shop": [
-    "src/community/components/GameMarketplaceModal.jsx:171"
+    "src/community/components/GameMarketplaceModal.jsx:173"
   ],
   "Block this project": [
-    "src/community/components/GameMarketplaceModal.jsx:179",
+    "src/community/components/GameMarketplaceModal.jsx:181",
     "src/community/components/RoturConsentModal.jsx:32",
     "src/community/components/RoturConsentModal.jsx:68"
   ],
   "Loading shop…": [
-    "src/community/components/GameMarketplaceModal.jsx:182"
-  ],
-  "No matching products": [
     "src/community/components/GameMarketplaceModal.jsx:184"
   ],
+  "No matching products": [
+    "src/community/components/GameMarketplaceModal.jsx:186"
+  ],
   "This project does not have any matching products.": [
-    "src/community/components/GameMarketplaceModal.jsx:185"
+    "src/community/components/GameMarketplaceModal.jsx:187"
   ],
   "Would you like to buy {value1} for {value2} credits?": [
-    "src/community/components/GameMarketplaceModal.jsx:190"
+    "src/community/components/GameMarketplaceModal.jsx:192"
   ],
   "This is a test purchase, so no credits are charged.": [
-    "src/community/components/GameMarketplaceModal.jsx:193"
+    "src/community/components/GameMarketplaceModal.jsx:195"
   ],
   "Processing…": [
-    "src/community/components/GameMarketplaceModal.jsx:211"
+    "src/community/components/GameMarketplaceModal.jsx:213"
   ],
   "Already owned": [
-    "src/community/components/GameMarketplaceModal.jsx:217"
+    "src/community/components/GameMarketplaceModal.jsx:219"
   ],
   "Buy ({value1} credits)": [
-    "src/community/components/GameMarketplaceModal.jsx:218"
+    "src/community/components/GameMarketplaceModal.jsx:220"
   ],
   "Could not load GIFs.": [
     "src/community/components/GifPicker.jsx:31"
