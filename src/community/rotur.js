@@ -3,6 +3,10 @@ import {ensureScopes, getRotur} from '../lib/rotur/client.js';
 
 const ROTUR_API = 'https://api.rotur.dev';
 const AVATARS = 'https://avatars.rotur.dev';
+// Rotur shows an app's badges only in that app. A request made with
+// MistWarp's sign-in token already counts as MistWarp; `app` names it for the
+// rest (signed out, or a legacy Rotur key).
+const ROTUR_APP_ID = 'app_1938b6a87799f862';
 
 const roturToken = () => getRoturToken();
 
@@ -97,10 +101,10 @@ const cachedGet = (path, params = {}) => {
 const getProfile = (username, {includePosts = false} = {}) => {
     const canonicalUsername = String(username || '').trim().toLowerCase();
     const path = `/profile/${encodeURIComponent(canonicalUsername)}`;
-    const params = {include_posts: includePosts ? '1' : '0'};
+    const params = {include_posts: includePosts ? '1' : '0', app: ROTUR_APP_ID};
     return cachedGet(path, params).then(data => {
         if (includePosts) {
-            cache.set(cacheKey(path, {include_posts: '0'}), {time: Date.now(), data});
+            cache.set(cacheKey(path, {...params, include_posts: '0'}), {time: Date.now(), data});
             pruneCache();
         }
         return data;
@@ -184,10 +188,13 @@ const rotur = {
     }),
     followers: username => cachedGet('/followers', {name: username}),
     following: username => cachedGet('/following', {name: username}),
-    badgePreferences: () => authenticatedAction(['account:view'], client => client.me.badgePreferences()),
+    badgePreferences: () => authenticatedAction(
+        ['account:view'],
+        () => get('/v2/me/badges/preferences', {app: ROTUR_APP_ID})
+    ),
     updateBadgePreferences: preferences => authenticatedAction(
         ['account:profile'],
-        client => client.me.updateBadgePreferences(preferences)
+        () => mutate('/v2/me/badges/preferences', {method: 'PUT', params: {app: ROTUR_APP_ID}, body: preferences})
     ),
     createProfilePost: content => authenticatedAction(
         ['posts:create'],
