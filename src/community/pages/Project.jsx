@@ -22,9 +22,12 @@ import RoturConsentModal from '../components/RoturConsentModal.jsx';
 import GameMarketplaceModal from '../components/GameMarketplaceModal.jsx';
 import {getBalance} from '../../lib/rotur/client.js';
 import {
-    hasFullGrant, commitGrant, callRotur,
-    activityAllowed, rememberActivityDecision, isActivityMethod
+    hasFullGrant, commitGrant, callRotur, grantedScopesFor,
+    activityAllowed, rememberActivityDecision
 } from '../../lib/rotur/extension-bridge.js';
+import {
+    authorizeProjectCall, grantsSilently, validateProjectScopes
+} from '../../lib/rotur/project-methods.js';
 import {getRoturSettings, setRoturSetting} from '../../lib/rotur/settings.js';
 import ProjectActivityScope from '../../lib/rotur/project-activity-scope.js';
 import {getUsernameOverride} from '../../lib/rotur/cloud-sync.js';
@@ -817,9 +820,20 @@ const Project = () => {
                 return;
             }
 
+            // The grant key, the project name and whether to ask all come from
+            // this page. Anything the frame sends besides the scopes and the
+            // method is ignored, because custom extensions can post here too.
+            const meta = {
+                projectId: gamesProjectId,
+                name: (project && (project.title || project.name)) || ''
+            };
+
             if (data.kind === 'consent') {
-                const scopes = data.scopes || [];
-                const meta = data.meta || {};
+                const scopes = validateProjectScopes(data.scopes);
+                if (!scopes) {
+                    reply({id: data.id, ok: false, error: 'Projects cannot ask for that Rotur permission'});
+                    return;
+                }
                 if (!identity.loggedIn) {
                     reply({id: data.id, ok: true, result: false});
                     return;
@@ -828,7 +842,7 @@ const Project = () => {
                     reply({id: data.id, ok: true, result: true});
                     return;
                 }
-                if (meta.authenticatedOnly) {
+                if (grantsSilently(scopes)) {
                     try {
                         await commitGrant(meta, scopes);
                         reply({id: data.id, ok: true, result: true});
@@ -867,7 +881,16 @@ const Project = () => {
             }
 
             if (data.kind === 'call') {
-                const {method, args, opts} = data;
+                const method = data.method;
+                let call;
+                try {
+                    if (!identity.loggedIn) throw new Error('Log in to Rotur to use this block');
+                    call = authorizeProjectCall(method, data.args, grantedScopesFor(meta), gamesProjectId);
+                } catch (e) {
+                    reply({id: data.id, ok: false, error: String((e && e.message) || e)});
+                    return;
+                }
+                const args = call.args;
                 const perform = async () => {
                     try {
                         const scope = roturActivityScope.current;
@@ -877,7 +900,7 @@ const Project = () => {
                         reply({id: data.id, ok: false, error: String((e && e.message) || e)});
                     }
                 };
-                if (isActivityMethod(method)) {
+                if (call.spec.activity) {
                     const key = (project && project.id) || id || `name:${(project && project.title) || ''}`;
                     const decision = activityAllowed(getRoturSettings().activitySharing, key);
                     if (decision === true) {
@@ -919,7 +942,7 @@ const Project = () => {
                     });
                     return;
                 }
-                if (opts && opts.sensitive) {
+                if (call.confirm) {
                     if (isProjectPromptBlocked({id: gamesProjectId})) {
                         reply({id: data.id, ok: false, error: 'You blocked prompts from this project'});
                         return;
@@ -927,8 +950,8 @@ const Project = () => {
                     setRoturModal({
                         type: 'confirm',
                         data: {
-                            label: (opts && opts.label) || method,
-                            confirmation: (opts && opts.confirmation) || null,
+                            label: call.confirm.label,
+                            confirmation: call.confirm.confirmation || null,
                             username: identity.username
                         },
                         onAllow: () => {

@@ -1,9 +1,12 @@
 import {getRotur, ensureScopes} from './client.js';
+import {invokeProjectMethod} from './project-methods.js';
 
 const GRANTS_KEY = 'mw:rotur-grants';
 
 // Per-project consent grants: {[projectKey]: string[] scopes}. The key is the
-// platform project id when known, else a name-based fallback.
+// platform project id when known, else a name-based fallback. Hosts that know
+// the project (the community project page) pass meta.projectId themselves, so
+// the project cannot pick which grant it reads.
 const readGrants = () => {
     try {
         return JSON.parse(localStorage.getItem(GRANTS_KEY) || '{}') || {};
@@ -21,6 +24,9 @@ const writeGrants = grants => {
 };
 
 const projectKey = meta => {
+    if (meta && meta.projectId) {
+        return `id:${meta.projectId}`;
+    }
     try {
         const stored = sessionStorage.getItem('mw:mistwarp-current-project');
         if (stored) {
@@ -104,36 +110,15 @@ const isActivityMethod = method => (
     method === 'socket.removeActivity'
 );
 
-// Dispatch a dotted method path (e.g. "me.transfer", "posts.feed",
-// "socket.setStatus") on the shared Rotur client. The token lives inside the
-// client and is never returned. socket.* methods lazily connect the status
-// websocket first.
-const callRotur = async (method, args) => {
+// Run an allowlisted Rotur method (see project-methods.js) on the shared
+// client. The token lives inside the client and is never returned. Anything
+// outside the allowlist, such as "_http.getToken", is rejected.
+const callRotur = (method, args) => {
     const rotur = getRotur();
     if (!rotur.loggedIn) {
-        throw new Error('Log in to Rotur to use this block');
+        return Promise.reject(new Error('Log in to Rotur to use this block'));
     }
-    const parts = method.split('.');
-    if (parts[0] === 'socket') {
-        if (!rotur.socket || !rotur.socket.connected) {
-            await rotur.connectSocket();
-        }
-        const fn = rotur.socket && rotur.socket[parts[1]];
-        if (typeof fn !== 'function') {
-            throw new Error(`Unknown Rotur socket method: ${method}`);
-        }
-        return fn.apply(rotur.socket, args);
-    }
-    let ctx = rotur;
-    let fn = rotur;
-    for (const part of parts) {
-        ctx = fn;
-        fn = fn && fn[part];
-    }
-    if (typeof fn !== 'function') {
-        throw new Error(`Unknown Rotur method: ${method}`);
-    }
-    return fn.apply(ctx, args || []);
+    return invokeProjectMethod(rotur, method, args || []);
 };
 
 export {
