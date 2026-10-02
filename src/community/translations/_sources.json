@@ -3,7 +3,7 @@
     "src/community/App.jsx:107"
   ],
   "Loading page…": [
-    "src/community/App.jsx:119"
+    "src/community/App.jsx:122"
   ],
   "Activity": [
     "src/community/components/ActivityCard.jsx:29",
@@ -150,8 +150,8 @@
     "src/community/pages/ManageSpace.jsx:648",
     "src/community/pages/ManageSpace.jsx:661",
     "src/community/pages/ManageSpace.jsx:685",
-    "src/community/pages/News.jsx:297",
-    "src/community/pages/Project.jsx:2700",
+    "src/community/pages/News.jsx:299",
+    "src/community/pages/Project.jsx:2723",
     "src/community/pages/Theme.jsx:220",
     "src/community/pages/Theme.jsx:253"
   ],
@@ -217,7 +217,7 @@
     "src/community/components/ProjectDonationAnalytics.jsx:49",
     "src/community/components/ProjectDonationAnalytics.jsx:70",
     "src/community/pages/ManageProject.jsx:795",
-    "src/community/pages/Project.jsx:2261",
+    "src/community/pages/Project.jsx:2284",
     "src/community/pages/Wallet.jsx:31"
   ],
   "Edited": [
@@ -267,7 +267,7 @@
     "src/community/components/CommentThread.jsx:312",
     "src/community/components/GameMarketplaceModal.jsx:224",
     "src/community/components/ProjectInfoPanel.jsx:382",
-    "src/community/components/ReportModal.jsx:89",
+    "src/community/components/ReportModal.jsx:106",
     "src/community/components/RoturConsentModal.jsx:75",
     "src/community/components/SocialPost.jsx:218",
     "src/community/components/SocialPost.jsx:264",
@@ -275,9 +275,9 @@
     "src/community/pages/ManageProject.jsx:1189",
     "src/community/pages/ManageSpace.jsx:729",
     "src/community/pages/MyStuff.jsx:1289",
-    "src/community/pages/News.jsx:291",
-    "src/community/pages/Project.jsx:1703",
-    "src/community/pages/Project.jsx:1820",
+    "src/community/pages/News.jsx:293",
+    "src/community/pages/Project.jsx:1726",
+    "src/community/pages/Project.jsx:1843",
     "src/community/pages/Roadmap.jsx:501",
     "src/community/pages/Spaces.jsx:283",
     "src/community/pages/Theme.jsx:252"
@@ -285,7 +285,7 @@
   "Post": [
     "src/community/components/CommentThread.jsx:253",
     "src/community/components/PostComposer.jsx:251",
-    "src/community/pages/News.jsx:320",
+    "src/community/pages/News.jsx:322",
     "src/community/pages/Post.jsx:50"
   ],
   "Sign in to post": [
@@ -380,7 +380,7 @@
     "src/community/pages/MyStuff.jsx:1589",
     "src/community/pages/Profile.jsx:448",
     "src/community/pages/Profile.jsx:627",
-    "src/community/pages/Project.jsx:1419",
+    "src/community/pages/Project.jsx:1442",
     "src/community/pages/RemixTree.jsx:244",
     "src/community/pages/Search.jsx:203",
     "src/community/pages/Spaces.jsx:311",
@@ -418,8 +418,8 @@
     "src/community/pages/ManageSpace.jsx:753",
     "src/community/pages/MyStuff.jsx:1315",
     "src/community/pages/MyStuff.jsx:1331",
-    "src/community/pages/Project.jsx:1750",
-    "src/community/pages/Project.jsx:2749",
+    "src/community/pages/Project.jsx:1773",
+    "src/community/pages/Project.jsx:2772",
     "src/community/pages/Settings.jsx:992",
     "src/community/pages/Settings.jsx:1007",
     "src/community/pages/Theme.jsx:234"
@@ -617,8 +617,8 @@
     "src/community/components/ExploreNav.jsx:14",
     "src/community/pages/ManageProject.jsx:944",
     "src/community/pages/ManageProject.jsx:1058",
-    "src/community/pages/Project.jsx:1431",
-    "src/community/pages/Project.jsx:2242"
+    "src/community/pages/Project.jsx:1454",
+    "src/community/pages/Project.jsx:2265"
   ],
   "Themes": [
     "src/community/components/ExploreNav.jsx:15",
@@ -633,7 +633,7 @@
   "by {value1}": [
     "src/community/components/FeaturedProject.jsx:62",
     "src/community/components/RelatedProjects.jsx:100",
-    "src/community/pages/Project.jsx:1504"
+    "src/community/pages/Project.jsx:1527"
   ],
   "Project page": [
     "src/community/components/FeaturedProject.jsx:68",
@@ -646,22 +646,22 @@
   ],
   "Loading project…": [
     "src/community/components/FeaturedProject.jsx:103",
-    "src/community/pages/Project.jsx:1987"
+    "src/community/pages/Project.jsx:2010"
   ],
   "Play project": [
     "src/community/components/FeaturedProject.jsx:103"
   ],
   "Filter files": [
-    "src/community/components/FileBrowserTree.jsx:116"
+    "src/community/components/FileBrowserTree.jsx:118"
   ],
   "file": [
-    "src/community/components/FileBrowserTree.jsx:120"
+    "src/community/components/FileBrowserTree.jsx:124"
   ],
   "files": [
-    "src/community/components/FileBrowserTree.jsx:120"
+    "src/community/components/FileBrowserTree.jsx:124"
   ],
   "Project files": [
-    "src/community/components/FileBrowserTree.jsx:123"
+    "src/community/components/FileBrowserTree.jsx:127"
   ],
   "MistWarp": [
     "src/community/components/Footer.jsx:25",
@@ -761,7 +761,7 @@
   "Support": [
     "src/community/components/Footer.jsx:76",
     "src/community/pages/Group.jsx:206",
-    "src/community/pages/Project.jsx:1520",
+    "src/community/pages/Project.jsx:1543",
     "src/community/pages/Support.jsx:101"
   ],
   "Trust, privacy, and terms": [
@@ -814,7 +814,7 @@
   ],
   "Processing…": [
     "src/community/components/GameMarketplaceModal.jsx:211",
-    "src/community/pages/Project.jsx:1878"
+    "src/community/pages/Project.jsx:1901"
   ],
   "Already owned": [
     "src/community/components/GameMarketplaceModal.jsx:217"
@@ -864,11 +864,11 @@
     "src/community/components/GitGraph.jsx:97"
   ],
   "Restoring…": [
-    "src/community/components/GitGraph.jsx:125",
-    "src/community/pages/Project.jsx:2410"
+    "src/community/components/GitGraph.jsx:128",
+    "src/community/pages/Project.jsx:2433"
   ],
   "Restore this version": [
-    "src/community/components/GitGraph.jsx:125"
+    "src/community/components/GitGraph.jsx:129"
   ],
   "Creators to follow": [
     "src/community/components/HomeDiscovery.jsx:54"
@@ -1005,19 +1005,19 @@
     "src/community/components/LiveProjectSession.jsx:47"
   ],
   "{value1} has opened a live session on {value2}.": [
-    "src/community/components/LiveProjectSession.jsx:55"
-  ],
-  "{value1} working on this project.": [
     "src/community/components/LiveProjectSession.jsx:56"
   ],
+  "{value1} working on this project.": [
+    "src/community/components/LiveProjectSession.jsx:60"
+  ],
   "View live session": [
-    "src/community/components/LiveProjectSession.jsx:58"
+    "src/community/components/LiveProjectSession.jsx:62"
   ],
   "Open collaboration options": [
-    "src/community/components/LiveProjectSession.jsx:58"
+    "src/community/components/LiveProjectSession.jsx:62"
   ],
   "Open branches…": [
-    "src/community/components/LiveProjectSession.jsx:62"
+    "src/community/components/LiveProjectSession.jsx:66"
   ],
   "Views": [
     "src/community/components/MembershipPreviews.jsx:24",
@@ -1045,7 +1045,7 @@
   ],
   "Last 30 days": [
     "src/community/components/MembershipPreviews.jsx:44",
-    "src/community/pages/Wallet.jsx:234"
+    "src/community/pages/Wallet.jsx:244"
   ],
   "Export CSV": [
     "src/community/components/MembershipPreviews.jsx:45",
@@ -1091,7 +1091,7 @@
   ],
   "Not played yet": [
     "src/community/components/MyStuffLibrary.jsx:20",
-    "src/community/pages/Project.jsx:2052"
+    "src/community/pages/Project.jsx:2075"
   ],
   "{duration} played": [
     "src/community/components/MyStuffLibrary.jsx:21",
@@ -1132,7 +1132,7 @@
   ],
   "Remove from library": [
     "src/community/components/MyStuffLibrary.jsx:109",
-    "src/community/pages/Project.jsx:1545"
+    "src/community/pages/Project.jsx:1568"
   ],
   "Load more games": [
     "src/community/components/MyStuffLibrary.jsx:126",
@@ -1275,7 +1275,7 @@
     "src/community/components/NavBar.jsx:63",
     "src/community/components/ProjectCard.jsx:21",
     "src/community/components/SharedProjects.jsx:50",
-    "src/community/components/SpaceCard.jsx:35",
+    "src/community/components/SpaceCard.jsx:37",
     "src/community/components/ThemeCard.jsx:20",
     "src/community/pages/Home.jsx:174",
     "src/community/pages/ManageProject.jsx:641",
@@ -1283,8 +1283,8 @@
   ],
   "by ": [
     "src/community/components/NavBar.jsx:40",
-    "src/community/components/SpaceCard.jsx:44",
-    "src/community/components/ThemeCard.jsx:27",
+    "src/community/components/SpaceCard.jsx:49",
+    "src/community/components/ThemeCard.jsx:28",
     "src/community/pages/ManageSpace.jsx:742"
   ],
   "People": [
@@ -1321,7 +1321,7 @@
   ],
   "Beta": [
     "src/community/components/NavBar.jsx:407",
-    "src/community/pages/Project.jsx:2827"
+    "src/community/pages/Project.jsx:2850"
   ],
   "nav.main": [
     "src/community/components/NavBar.jsx:411"
@@ -1385,17 +1385,17 @@
   ],
   "Release": [
     "src/community/components/NewsItem.jsx:109",
-    "src/community/pages/News.jsx:231"
+    "src/community/pages/News.jsx:233"
   ],
   "Event": [
     "src/community/components/NewsItem.jsx:110",
     "src/community/pages/Group.jsx:265",
-    "src/community/pages/News.jsx:232"
+    "src/community/pages/News.jsx:234"
   ],
   "Poll": [
     "src/community/components/NewsItem.jsx:111",
     "src/community/components/PostComposer.jsx:240",
-    "src/community/pages/News.jsx:233"
+    "src/community/pages/News.jsx:235"
   ],
   "Open link": [
     "src/community/components/NewsItem.jsx:116"
@@ -1415,15 +1415,15 @@
   "Edit {value1}": [
     "src/community/components/NewsItem.jsx:154",
     "src/community/components/SharedProjects.jsx:49",
-    "src/community/pages/News.jsx:342"
+    "src/community/pages/News.jsx:353"
   ],
   "Restore {value1}": [
     "src/community/components/NewsItem.jsx:166",
-    "src/community/pages/News.jsx:347"
+    "src/community/pages/News.jsx:360"
   ],
   "Archive {value1}": [
     "src/community/components/NewsItem.jsx:167",
-    "src/community/pages/News.jsx:348"
+    "src/community/pages/News.jsx:361"
   ],
   "Delete {value1}": [
     "src/community/components/NewsItem.jsx:178",
@@ -1448,7 +1448,7 @@
   ],
   "{value1} likes": [
     "src/community/components/NewsItem.jsx:215",
-    "src/community/components/ThemeCard.jsx:29"
+    "src/community/components/ThemeCard.jsx:32"
   ],
   "{value1} dislikes": [
     "src/community/components/NewsItem.jsx:218"
@@ -1474,7 +1474,7 @@
   ],
   "Archived": [
     "src/community/components/NewsItem.jsx:278",
-    "src/community/pages/News.jsx:329"
+    "src/community/pages/News.jsx:335"
   ],
   "Liked by {value1}": [
     "src/community/components/NewsItem.jsx:292"
@@ -1553,14 +1553,14 @@
   ],
   "Option {value1}": [
     "src/community/components/PostComposer.jsx:183",
-    "src/community/pages/News.jsx:266"
+    "src/community/pages/News.jsx:268"
   ],
   "Remove option {value1}": [
     "src/community/components/PostComposer.jsx:195"
   ],
   "Add option": [
     "src/community/components/PostComposer.jsx:203",
-    "src/community/pages/News.jsx:285"
+    "src/community/pages/News.jsx:287"
   ],
   "Publish at": [
     "src/community/components/PostComposer.jsx:211"
@@ -1720,7 +1720,7 @@
   ],
   "Branches": [
     "src/community/components/ProjectBranches.jsx:232",
-    "src/community/pages/Project.jsx:2144"
+    "src/community/pages/Project.jsx:2167"
   ],
   "Each branch points to its latest saved project version.": [
     "src/community/components/ProjectBranches.jsx:233"
@@ -1830,9 +1830,9 @@
   ],
   "Remix": [
     "src/community/components/ProjectCard.jsx:87",
-    "src/community/pages/Project.jsx:1535",
-    "src/community/pages/Project.jsx:1643",
-    "src/community/pages/Project.jsx:2249"
+    "src/community/pages/Project.jsx:1558",
+    "src/community/pages/Project.jsx:1666",
+    "src/community/pages/Project.jsx:2272"
   ],
   "Touch": [
     "src/community/components/ProjectCompatibility.jsx:7"
@@ -2067,73 +2067,106 @@
   "More like this": [
     "src/community/components/RelatedProjects.jsx:81"
   ],
-  "Inappropriate or explicit content": [
-    "src/community/components/ReportModal.jsx:23"
-  ],
-  "Harassment or bullying": [
-    "src/community/components/ReportModal.jsx:24"
-  ],
   "Spam or misleading": [
-    "src/community/components/ReportModal.jsx:25"
-  ],
-  "Hateful or abusive behaviour": [
-    "src/community/components/ReportModal.jsx:26"
-  ],
-  "Dangerous or illegal activity": [
-    "src/community/components/ReportModal.jsx:27"
-  ],
-  "Copyright or credit problem": [
-    "src/community/components/ReportModal.jsx:28"
-  ],
-  "Something else": [
-    "src/community/components/ReportModal.jsx:29"
-  ],
-  "Report this project": [
-    "src/community/components/ReportModal.jsx:32"
-  ],
-  "Report this user": [
+    "src/community/components/ReportModal.jsx:13",
     "src/community/components/ReportModal.jsx:33"
   ],
-  "Report this comment": [
+  "Harassment or bullying": [
+    "src/community/components/ReportModal.jsx:14",
     "src/community/components/ReportModal.jsx:34"
   ],
-  "Report this bounty": [
+  "Hate against people for who they are": [
+    "src/community/components/ReportModal.jsx:15",
     "src/community/components/ReportModal.jsx:35"
   ],
+  "Sexual or explicit content": [
+    "src/community/components/ReportModal.jsx:16",
+    "src/community/components/ReportModal.jsx:36"
+  ],
+  "Violence or gore": [
+    "src/community/components/ReportModal.jsx:17",
+    "src/community/components/ReportModal.jsx:37"
+  ],
+  "A scam": [
+    "src/community/components/ReportModal.jsx:18",
+    "src/community/components/ReportModal.jsx:38"
+  ],
+  "Copyright or credit problem": [
+    "src/community/components/ReportModal.jsx:19",
+    "src/community/components/ReportModal.jsx:39"
+  ],
+  "Something else": [
+    "src/community/components/ReportModal.jsx:20",
+    "src/community/components/ReportModal.jsx:40"
+  ],
+  "Sexual content involving a child": [
+    "src/community/components/ReportModal.jsx:23",
+    "src/community/components/ReportModal.jsx:41"
+  ],
+  "A threat to someone's life": [
+    "src/community/components/ReportModal.jsx:24",
+    "src/community/components/ReportModal.jsx:42"
+  ],
+  "Encouraging suicide or self-harm": [
+    "src/community/components/ReportModal.jsx:25",
+    "src/community/components/ReportModal.jsx:43"
+  ],
+  "Terrorism": [
+    "src/community/components/ReportModal.jsx:26",
+    "src/community/components/ReportModal.jsx:44"
+  ],
+  "Report this project": [
+    "src/community/components/ReportModal.jsx:47"
+  ],
+  "Report this user": [
+    "src/community/components/ReportModal.jsx:48"
+  ],
+  "Report this comment": [
+    "src/community/components/ReportModal.jsx:49"
+  ],
+  "Report this bounty": [
+    "src/community/components/ReportModal.jsx:50"
+  ],
   "Could not send the report.": [
-    "src/community/components/ReportModal.jsx:68"
+    "src/community/components/ReportModal.jsx:85"
   ],
   "Report this content": [
-    "src/community/components/ReportModal.jsx:79"
+    "src/community/components/ReportModal.jsx:96"
   ],
   "Done": [
-    "src/community/components/ReportModal.jsx:86",
+    "src/community/components/ReportModal.jsx:103",
     "src/community/pages/ManageProject.jsx:929",
     "src/community/pages/Profile.jsx:1097",
-    "src/community/pages/Project.jsx:1700",
+    "src/community/pages/Project.jsx:1723",
     "src/community/pages/Roadmap.jsx:34"
   ],
   "Sending…": [
-    "src/community/components/ReportModal.jsx:93",
+    "src/community/components/ReportModal.jsx:110",
     "src/community/pages/Profile.jsx:1126",
-    "src/community/pages/Project.jsx:1707",
-    "src/community/pages/Project.jsx:3070",
+    "src/community/pages/Project.jsx:1730",
+    "src/community/pages/Project.jsx:3093",
     "src/community/pages/Support.jsx:141"
   ],
   "Send report": [
-    "src/community/components/ReportModal.jsx:95"
+    "src/community/components/ReportModal.jsx:112"
   ],
   "Thanks. Your report was sent to the moderators.": [
-    "src/community/components/ReportModal.jsx:100"
+    "src/community/components/ReportModal.jsx:117"
   ],
   "What is wrong?": [
-    "src/community/components/ReportModal.jsx:103"
+    "src/community/components/ReportModal.jsx:120"
+  ],
+  "Urgent": [
+    "src/community/components/ReportModal.jsx:134"
+  ],
+  "Rotur's safety team sees this report straight away. If someone is in danger right now, contact your local emergency services.": [
+    "src/community/components/ReportModal.jsx:147"
   ],
   "Details (optional)": [
-    "src/community/components/ReportModal.jsx:118"
+    "src/community/components/ReportModal.jsx:151"
   ],
   "Add anything that helps a moderator understand the problem.": [
-    "src/community/components/ReportModal.jsx:124"
+    "src/community/components/ReportModal.jsx:157"
   ],
   "This project": [
     "src/community/components/RoturConsentModal.jsx:24"
@@ -2337,7 +2370,7 @@
   ],
   "Copy link": [
     "src/community/components/SocialPost.jsx:310",
-    "src/community/pages/Project.jsx:1579"
+    "src/community/pages/Project.jsx:1602"
   ],
   "Edit": [
     "src/community/components/SocialPost.jsx:314"
@@ -2351,14 +2384,14 @@
     "src/community/pages/Admin.jsx:1202",
     "src/community/pages/Admin.jsx:1989",
     "src/community/pages/MyStuff.jsx:1576",
-    "src/community/pages/Project.jsx:2714",
+    "src/community/pages/Project.jsx:2737",
     "src/community/pages/Theme.jsx:223"
   ],
   "Report": [
     "src/community/components/SocialPost.jsx:332",
     "src/community/pages/Bounty.jsx:139",
     "src/community/pages/Profile.jsx:893",
-    "src/community/pages/Project.jsx:1671"
+    "src/community/pages/Project.jsx:1694"
   ],
   "Unblocked {value1}.": [
     "src/community/components/SocialPost.jsx:341"
@@ -2385,24 +2418,24 @@
     "src/community/components/SocialPost.jsx:395"
   ],
   "No description yet.": [
-    "src/community/components/SpaceCard.jsx:42",
+    "src/community/components/SpaceCard.jsx:46",
     "src/community/pages/Collection.jsx:72",
     "src/community/pages/Group.jsx:277",
     "src/community/pages/Space.jsx:178",
     "src/community/pages/Studio.jsx:117"
   ],
   " joined": [
-    "src/community/components/SpaceCard.jsx:49"
+    "src/community/components/SpaceCard.jsx:57"
   ],
   "follower": [
-    "src/community/components/SpaceCard.jsx:51"
+    "src/community/components/SpaceCard.jsx:61"
   ],
   "followers": [
-    "src/community/components/SpaceCard.jsx:51",
+    "src/community/components/SpaceCard.jsx:61",
     "src/community/pages/Profile.jsx:840"
   ],
   "Ends ": [
-    "src/community/components/SpaceCard.jsx:59"
+    "src/community/components/SpaceCard.jsx:70"
   ],
   "Could not search projects.": [
     "src/community/components/SpaceProjectPicker.jsx:133"
@@ -2462,13 +2495,13 @@
     "src/community/components/SpaceProjectPicker.jsx:250"
   ],
   " changed file": [
-    "src/community/components/SpriteList.jsx:65"
+    "src/community/components/SpriteList.jsx:67"
   ],
   "s": [
-    "src/community/components/SpriteList.jsx:65"
+    "src/community/components/SpriteList.jsx:68"
   ],
   "Changed sprites": [
-    "src/community/components/SpriteList.jsx:118"
+    "src/community/components/SpriteList.jsx:122"
   ],
   "View on rotur.dev": [
     "src/community/components/StandingBanner.jsx:29",
@@ -2490,7 +2523,7 @@
     "src/community/components/StatChart.jsx:81"
   ],
   "{value1} downloads": [
-    "src/community/components/ThemeCard.jsx:32"
+    "src/community/components/ThemeCard.jsx:35"
   ],
   "{size} of storage for your projects": [
     "src/community/components/UpgradeCelebration.jsx:37"
@@ -2599,7 +2632,7 @@
   ],
   "Today": [
     "src/community/pages/Admin.jsx:180",
-    "src/community/pages/Wallet.jsx:230"
+    "src/community/pages/Wallet.jsx:240"
   ],
   "Latest": [
     "src/community/pages/Admin.jsx:180"
@@ -2785,7 +2818,7 @@
   ],
   "News posts": [
     "src/community/pages/Admin.jsx:652",
-    "src/community/pages/News.jsx:318"
+    "src/community/pages/News.jsx:320"
   ],
   "Operational insights": [
     "src/community/pages/Admin.jsx:664"
@@ -2953,7 +2986,7 @@
     "src/community/pages/Admin.jsx:868",
     "src/community/pages/Admin.jsx:1065",
     "src/community/pages/MyStuff.jsx:1312",
-    "src/community/pages/Project.jsx:1747"
+    "src/community/pages/Project.jsx:1770"
   ],
   "Delete {value1} permanently?": [
     "src/community/pages/Admin.jsx:869",
@@ -2967,8 +3000,8 @@
     "src/community/pages/Admin.jsx:870",
     "src/community/pages/Admin.jsx:1067",
     "src/community/pages/MyStuff.jsx:1313",
-    "src/community/pages/Project.jsx:1684",
-    "src/community/pages/Project.jsx:1748"
+    "src/community/pages/Project.jsx:1707",
+    "src/community/pages/Project.jsx:1771"
   ],
   "Project deleted.": [
     "src/community/pages/Admin.jsx:887",
@@ -3424,7 +3457,7 @@
     "src/community/pages/ManageSpace.jsx:696",
     "src/community/pages/ManageSpace.jsx:727",
     "src/community/pages/ManageSpace.jsx:742",
-    "src/community/pages/News.jsx:277"
+    "src/community/pages/News.jsx:279"
   ],
   "Could not load bounties.": [
     "src/community/pages/Bounties.jsx:54"
@@ -3815,7 +3848,7 @@
   ],
   "Finding project…": [
     "src/community/pages/Commit.jsx:262",
-    "src/community/pages/Project.jsx:1419",
+    "src/community/pages/Project.jsx:1442",
     "src/community/pages/PullRequest.jsx:462",
     "src/community/pages/PullRequests.jsx:58",
     "src/community/pages/RemixTree.jsx:193"
@@ -4031,7 +4064,7 @@
   ],
   "Contribute": [
     "src/community/pages/Group.jsx:262",
-    "src/community/pages/Project.jsx:1432"
+    "src/community/pages/Project.jsx:1455"
   ],
   "No active fundraisers": [
     "src/community/pages/Group.jsx:262"
@@ -4109,11 +4142,11 @@
   ],
   "Couldn't load news.": [
     "src/community/pages/Home.jsx:69",
-    "src/community/pages/News.jsx:304"
+    "src/community/pages/News.jsx:306"
   ],
   "No updates yet": [
     "src/community/pages/Home.jsx:70",
-    "src/community/pages/News.jsx:371"
+    "src/community/pages/News.jsx:384"
   ],
   "News from MistWarp will show up here.": [
     "src/community/pages/Home.jsx:70"
@@ -4133,7 +4166,7 @@
   ],
   "Explore projects": [
     "src/community/pages/Home.jsx:113",
-    "src/community/pages/Wallet.jsx:345"
+    "src/community/pages/Wallet.jsx:361"
   ],
   "Find a project you like and follow its creator.": [
     "src/community/pages/Home.jsx:113"
@@ -4410,7 +4443,7 @@
   "Save changes": [
     "src/community/pages/ManageProject.jsx:651",
     "src/community/pages/ManageSpace.jsx:648",
-    "src/community/pages/News.jsx:298",
+    "src/community/pages/News.jsx:300",
     "src/community/pages/Theme.jsx:253"
   ],
   "Branding": [
@@ -4434,7 +4467,7 @@
   "Visibility": [
     "src/community/pages/ManageProject.jsx:686",
     "src/community/pages/ManageSpace.jsx:639",
-    "src/community/pages/Project.jsx:1811",
+    "src/community/pages/Project.jsx:1834",
     "src/community/pages/Spaces.jsx:263"
   ],
   "This remix includes a project offered for purchase, so it stays private. You can support the original creator by sending your changes from the Contribute tab.": [
@@ -4452,7 +4485,7 @@
   "Turn off comments": [
     "src/community/pages/ManageProject.jsx:700",
     "src/community/pages/Profile.jsx:744",
-    "src/community/pages/Project.jsx:2129"
+    "src/community/pages/Project.jsx:2152"
   ],
   "Save publishing settings": [
     "src/community/pages/ManageProject.jsx:705"
@@ -4673,7 +4706,7 @@
   ],
   "General": [
     "src/community/pages/ManageSpace.jsx:25",
-    "src/community/pages/News.jsx:234"
+    "src/community/pages/News.jsx:236"
   ],
   "Curators": [
     "src/community/pages/ManageSpace.jsx:26",
@@ -4858,7 +4891,7 @@
   ],
   "Publishing…": [
     "src/community/pages/ManageSpace.jsx:702",
-    "src/community/pages/Project.jsx:2837",
+    "src/community/pages/Project.jsx:2860",
     "src/community/pages/Themes.jsx:216"
   ],
   "Publish results": [
@@ -4904,7 +4937,7 @@
   ],
   "Performance": [
     "src/community/pages/MyStuff.jsx:121",
-    "src/community/pages/News.jsx:320"
+    "src/community/pages/News.jsx:324"
   ],
   "{value1}{value2}% vs prior week": [
     "src/community/pages/MyStuff.jsx:127"
@@ -4953,7 +4986,7 @@
   "Open wallet": [
     "src/community/pages/MyStuff.jsx:221",
     "src/community/pages/Profile.jsx:1119",
-    "src/community/pages/Project.jsx:1874"
+    "src/community/pages/Project.jsx:1897"
   ],
   "Donations received": [
     "src/community/pages/MyStuff.jsx:233"
@@ -4991,7 +5024,7 @@
   ],
   "From {value1}": [
     "src/community/pages/MyStuff.jsx:306",
-    "src/community/pages/Wallet.jsx:250"
+    "src/community/pages/Wallet.jsx:262"
   ],
   "Your inventory is empty": [
     "src/community/pages/MyStuff.jsx:312"
@@ -5142,23 +5175,23 @@
   ],
   "Open in editor": [
     "src/community/pages/MyStuff.jsx:1534",
-    "src/community/pages/Project.jsx:1958"
+    "src/community/pages/Project.jsx:1981"
   ],
   "Manage & analytics": [
     "src/community/pages/MyStuff.jsx:1539",
-    "src/community/pages/Project.jsx:1632"
+    "src/community/pages/Project.jsx:1655"
   ],
   "Save to collection": [
     "src/community/pages/MyStuff.jsx:1547",
-    "src/community/pages/Project.jsx:1602"
+    "src/community/pages/Project.jsx:1625"
   ],
   "Remove profile feature": [
     "src/community/pages/MyStuff.jsx:1562",
-    "src/community/pages/Project.jsx:1659"
+    "src/community/pages/Project.jsx:1682"
   ],
   "Feature on profile": [
     "src/community/pages/MyStuff.jsx:1562",
-    "src/community/pages/Project.jsx:1659"
+    "src/community/pages/Project.jsx:1682"
   ],
   "Add at least two poll options.": [
     "src/community/pages/News.jsx:115"
@@ -5200,51 +5233,51 @@
     "src/community/pages/News.jsx:204"
   ],
   "*Nothing to preview yet.*": [
-    "src/community/pages/News.jsx:211"
+    "src/community/pages/News.jsx:212"
   ],
   "Write in Markdown…": [
-    "src/community/pages/News.jsx:215"
+    "src/community/pages/News.jsx:217"
   ],
   "Post type": [
-    "src/community/pages/News.jsx:224"
+    "src/community/pages/News.jsx:226"
   ],
   "Update": [
-    "src/community/pages/News.jsx:230"
+    "src/community/pages/News.jsx:232"
   ],
   "Button label": [
-    "src/community/pages/News.jsx:238"
+    "src/community/pages/News.jsx:240"
   ],
   "Read more": [
-    "src/community/pages/News.jsx:243"
+    "src/community/pages/News.jsx:245"
   ],
   "Button link": [
-    "src/community/pages/News.jsx:248"
+    "src/community/pages/News.jsx:250"
   ],
   "https:// or /project/...": [
-    "src/community/pages/News.jsx:253"
+    "src/community/pages/News.jsx:255"
   ],
   "Poll options": [
-    "src/community/pages/News.jsx:260"
+    "src/community/pages/News.jsx:262"
   ],
   "Posting…": [
-    "src/community/pages/News.jsx:297",
+    "src/community/pages/News.jsx:299",
     "src/community/pages/PullRequest.jsx:563",
     "src/community/pages/Roadmap.jsx:500"
   ],
   "Publish post": [
-    "src/community/pages/News.jsx:298"
+    "src/community/pages/News.jsx:300"
   ],
   "Show archived posts": [
-    "src/community/pages/News.jsx:315"
+    "src/community/pages/News.jsx:317"
   ],
   "Published": [
-    "src/community/pages/News.jsx:320"
+    "src/community/pages/News.jsx:323"
   ],
   "Actions": [
-    "src/community/pages/News.jsx:320"
+    "src/community/pages/News.jsx:325"
   ],
   "Posts from MistWarp will show up here.": [
-    "src/community/pages/News.jsx:372"
+    "src/community/pages/News.jsx:385"
   ],
   "Could not load this post.": [
     "src/community/pages/NewsPost.jsx:23",
@@ -5459,8 +5492,8 @@
   ],
   "Browse projects": [
     "src/community/pages/Profile.jsx:469",
-    "src/community/pages/Project.jsx:1396",
-    "src/community/pages/Project.jsx:1408"
+    "src/community/pages/Project.jsx:1419",
+    "src/community/pages/Project.jsx:1431"
   ],
   "This user does not exist on Rotur.": [
     "src/community/pages/Profile.jsx:470"
@@ -5509,18 +5542,18 @@
   ],
   "Loading reviews…": [
     "src/community/pages/Profile.jsx:659",
-    "src/community/pages/Project.jsx:2720"
+    "src/community/pages/Project.jsx:2743"
   ],
   "No reviews yet": [
     "src/community/pages/Profile.jsx:661",
-    "src/community/pages/Project.jsx:2723"
+    "src/community/pages/Project.jsx:2746"
   ],
   "Reviews this user writes on projects will appear here.": [
     "src/community/pages/Profile.jsx:662"
   ],
   "{value1} out of 5 stars": [
     "src/community/pages/Profile.jsx:679",
-    "src/community/pages/Project.jsx:2550"
+    "src/community/pages/Project.jsx:2573"
   ],
   "No written review.": [
     "src/community/pages/Profile.jsx:692"
@@ -5530,7 +5563,7 @@
   ],
   "Comments": [
     "src/community/pages/Profile.jsx:735",
-    "src/community/pages/Project.jsx:1427",
+    "src/community/pages/Project.jsx:1450",
     "src/community/pages/Space.jsx:259",
     "src/community/pages/Studio.jsx:85",
     "src/community/pages/Studio.jsx:150"
@@ -5543,7 +5576,7 @@
   ],
   "Turn on comments": [
     "src/community/pages/Profile.jsx:744",
-    "src/community/pages/Project.jsx:2129"
+    "src/community/pages/Project.jsx:2152"
   ],
   "Published themes": [
     "src/community/pages/Profile.jsx:778"
@@ -5662,523 +5695,523 @@
     "src/community/pages/Profile.jsx:1129"
   ],
   "You do not have enough credits. Claim your daily credits in your wallet, then try again.": [
-    "src/community/pages/Project.jsx:1140",
-    "src/community/pages/Project.jsx:1178",
-    "src/community/pages/Project.jsx:1889"
-  ],
-  "Project not found": [
-    "src/community/pages/Project.jsx:1395",
-    "src/community/pages/Project.jsx:1407"
-  ],
-  "This project link does not exist.": [
-    "src/community/pages/Project.jsx:1397"
-  ],
-  "This project may have been deleted or unshared.": [
-    "src/community/pages/Project.jsx:1409"
-  ],
-  "Could not load this project.": [
-    "src/community/pages/Project.jsx:1411"
-  ],
-  "Files": [
-    "src/community/pages/Project.jsx:1428"
-  ],
-  "Reviews": [
-    "src/community/pages/Project.jsx:1429"
-  ],
-  "Version control": [
-    "src/community/pages/Project.jsx:1430"
-  ],
-  "Project title": [
-    "src/community/pages/Project.jsx:1492"
-  ],
-  "for @": [
-    "src/community/pages/Project.jsx:1506"
-  ],
-  "Sign in to remix": [
-    "src/community/pages/Project.jsx:1533"
-  ],
-  "Save to library": [
-    "src/community/pages/Project.jsx:1545"
-  ],
-  "See inside": [
-    "src/community/pages/Project.jsx:1554"
-  ],
-  "More actions": [
-    "src/community/pages/Project.jsx:1561"
-  ],
-  "Copy embed code": [
-    "src/community/pages/Project.jsx:1592"
-  ],
-  "Use stage as thumbnail": [
-    "src/community/pages/Project.jsx:1614"
-  ],
-  "Upload thumbnail": [
-    "src/community/pages/Project.jsx:1625"
-  ],
-  "Support {value1}": [
-    "src/community/pages/Project.jsx:1696"
-  ],
-  "Send {value1} credits": [
-    "src/community/pages/Project.jsx:1710"
-  ],
-  "{value1} credits sent to {value2}.": [
-    "src/community/pages/Project.jsx:1716"
-  ],
-  "This project stays free. Your credits go to its creator.": [
-    "src/community/pages/Project.jsx:1720"
-  ],
-  "Custom support amount": [
-    "src/community/pages/Project.jsx:1731"
-  ],
-  "{value1} will be deleted permanently. This cannot be undone.": [
-    "src/community/pages/Project.jsx:1754"
-  ],
-  "Run custom extensions without the sandbox?": [
-    "src/community/pages/Project.jsx:1760"
-  ],
-  "Keep sandbox": [
-    "src/community/pages/Project.jsx:1761"
-  ],
-  "Run anyway": [
-    "src/community/pages/Project.jsx:1762"
-  ],
-  "This gives the project full access to your MistWarp account. It could read your login session, act as you, or change your data. Continue only if you trust the creator.": [
-    "src/community/pages/Project.jsx:1765"
-  ],
-  "Set up your fork": [
-    "src/community/pages/Project.jsx:1771"
-  ],
-  "MistWarp will create a private working copy. Edit and save it, then open its project page and send your changes back.": [
-    "src/community/pages/Project.jsx:1779"
-  ],
-  "Working on a bounty": [
-    "src/community/pages/Project.jsx:1781"
-  ],
-  "{value1} credits, paid if the project owner merges your pull request.": [
-    "src/community/pages/Project.jsx:1783"
-  ],
-  "Project name": [
-    "src/community/pages/Project.jsx:1787"
-  ],
-  "Working branch": [
-    "src/community/pages/Project.jsx:1798"
-  ],
-  "Forked from": [
-    "src/community/pages/Project.jsx:1809"
-  ],
-  "Base commit": [
-    "src/community/pages/Project.jsx:1810"
-  ],
-  "Current version": [
-    "src/community/pages/Project.jsx:1810"
-  ],
-  "Private draft": [
-    "src/community/pages/Project.jsx:1811"
-  ],
-  "Creating fork…": [
-    "src/community/pages/Project.jsx:1825"
-  ],
-  "Create fork": [
-    "src/community/pages/Project.jsx:1827"
-  ],
-  "Confirm purchase": [
-    "src/community/pages/Project.jsx:1870"
-  ],
-  "Pay {value1} credits": [
-    "src/community/pages/Project.jsx:1874"
-  ],
-  "Buy {value1} for a one-time payment of {value2} credits and support its creator?": [
-    "src/community/pages/Project.jsx:1883"
-  ],
-  "Your balance: {value1} credits": [
-    "src/community/pages/Project.jsx:1886"
-  ],
-  "Copied to clipboard.": [
-    "src/community/pages/Project.jsx:1897"
-  ],
-  "Saving thumbnail…": [
-    "src/community/pages/Project.jsx:1900"
-  ],
-  "Thumbnail updated.": [
-    "src/community/pages/Project.jsx:1900"
-  ],
-  "Unlisted. Hidden from search and profiles, but anyone with the link can open it.": [
-    "src/community/pages/Project.jsx:1906"
-  ],
-  "This remix of a project offered for purchase stays private. You can contribute your changes back to the original creator.": [
+    "src/community/pages/Project.jsx:1163",
+    "src/community/pages/Project.jsx:1201",
     "src/community/pages/Project.jsx:1912"
   ],
+  "Project not found": [
+    "src/community/pages/Project.jsx:1418",
+    "src/community/pages/Project.jsx:1430"
+  ],
+  "This project link does not exist.": [
+    "src/community/pages/Project.jsx:1420"
+  ],
+  "This project may have been deleted or unshared.": [
+    "src/community/pages/Project.jsx:1432"
+  ],
+  "Could not load this project.": [
+    "src/community/pages/Project.jsx:1434"
+  ],
+  "Files": [
+    "src/community/pages/Project.jsx:1451"
+  ],
+  "Reviews": [
+    "src/community/pages/Project.jsx:1452"
+  ],
+  "Version control": [
+    "src/community/pages/Project.jsx:1453"
+  ],
+  "Project title": [
+    "src/community/pages/Project.jsx:1515"
+  ],
+  "for @": [
+    "src/community/pages/Project.jsx:1529"
+  ],
+  "Sign in to remix": [
+    "src/community/pages/Project.jsx:1556"
+  ],
+  "Save to library": [
+    "src/community/pages/Project.jsx:1568"
+  ],
+  "See inside": [
+    "src/community/pages/Project.jsx:1577"
+  ],
+  "More actions": [
+    "src/community/pages/Project.jsx:1584"
+  ],
+  "Copy embed code": [
+    "src/community/pages/Project.jsx:1615"
+  ],
+  "Use stage as thumbnail": [
+    "src/community/pages/Project.jsx:1637"
+  ],
+  "Upload thumbnail": [
+    "src/community/pages/Project.jsx:1648"
+  ],
+  "Support {value1}": [
+    "src/community/pages/Project.jsx:1719"
+  ],
+  "Send {value1} credits": [
+    "src/community/pages/Project.jsx:1733"
+  ],
+  "{value1} credits sent to {value2}.": [
+    "src/community/pages/Project.jsx:1739"
+  ],
+  "This project stays free. Your credits go to its creator.": [
+    "src/community/pages/Project.jsx:1743"
+  ],
+  "Custom support amount": [
+    "src/community/pages/Project.jsx:1754"
+  ],
+  "{value1} will be deleted permanently. This cannot be undone.": [
+    "src/community/pages/Project.jsx:1777"
+  ],
+  "Run custom extensions without the sandbox?": [
+    "src/community/pages/Project.jsx:1783"
+  ],
+  "Keep sandbox": [
+    "src/community/pages/Project.jsx:1784"
+  ],
+  "Run anyway": [
+    "src/community/pages/Project.jsx:1785"
+  ],
+  "This gives the project full access to your MistWarp account. It could read your login session, act as you, or change your data. Continue only if you trust the creator.": [
+    "src/community/pages/Project.jsx:1788"
+  ],
+  "Set up your fork": [
+    "src/community/pages/Project.jsx:1794"
+  ],
+  "MistWarp will create a private working copy. Edit and save it, then open its project page and send your changes back.": [
+    "src/community/pages/Project.jsx:1802"
+  ],
+  "Working on a bounty": [
+    "src/community/pages/Project.jsx:1804"
+  ],
+  "{value1} credits, paid if the project owner merges your pull request.": [
+    "src/community/pages/Project.jsx:1806"
+  ],
+  "Project name": [
+    "src/community/pages/Project.jsx:1810"
+  ],
+  "Working branch": [
+    "src/community/pages/Project.jsx:1821"
+  ],
+  "Forked from": [
+    "src/community/pages/Project.jsx:1832"
+  ],
+  "Base commit": [
+    "src/community/pages/Project.jsx:1833"
+  ],
+  "Current version": [
+    "src/community/pages/Project.jsx:1833"
+  ],
+  "Private draft": [
+    "src/community/pages/Project.jsx:1834"
+  ],
+  "Creating fork…": [
+    "src/community/pages/Project.jsx:1848"
+  ],
+  "Create fork": [
+    "src/community/pages/Project.jsx:1850"
+  ],
+  "Confirm purchase": [
+    "src/community/pages/Project.jsx:1893"
+  ],
+  "Pay {value1} credits": [
+    "src/community/pages/Project.jsx:1897"
+  ],
+  "Buy {value1} for a one-time payment of {value2} credits and support its creator?": [
+    "src/community/pages/Project.jsx:1906"
+  ],
+  "Your balance: {value1} credits": [
+    "src/community/pages/Project.jsx:1909"
+  ],
+  "Copied to clipboard.": [
+    "src/community/pages/Project.jsx:1920"
+  ],
+  "Saving thumbnail…": [
+    "src/community/pages/Project.jsx:1923"
+  ],
+  "Thumbnail updated.": [
+    "src/community/pages/Project.jsx:1923"
+  ],
+  "Unlisted. Hidden from search and profiles, but anyone with the link can open it.": [
+    "src/community/pages/Project.jsx:1929"
+  ],
+  "This remix of a project offered for purchase stays private. You can contribute your changes back to the original creator.": [
+    "src/community/pages/Project.jsx:1935"
+  ],
   "Unshared. Only you can see this project.": [
-    "src/community/pages/Project.jsx:1913"
+    "src/community/pages/Project.jsx:1936"
   ],
   "Available for a one-time purchase of {value1} credits.": [
-    "src/community/pages/Project.jsx:1919"
+    "src/community/pages/Project.jsx:1942"
   ],
   "Thanks for supporting this creator. You have access to play this project.": [
-    "src/community/pages/Project.jsx:1921"
+    "src/community/pages/Project.jsx:1944"
   ],
   "Support this creator with a one-time purchase of {value1} credits to play.": [
-    "src/community/pages/Project.jsx:1922"
+    "src/community/pages/Project.jsx:1945"
   ],
   "Use my theme": [
-    "src/community/pages/Project.jsx:1937"
+    "src/community/pages/Project.jsx:1960"
   ],
   "Preferences": [
-    "src/community/pages/Project.jsx:1938"
+    "src/community/pages/Project.jsx:1961"
   ],
   "This project applied its own theme.": [
-    "src/community/pages/Project.jsx:1941"
+    "src/community/pages/Project.jsx:1964"
   ],
   "Nothing here yet": [
-    "src/community/pages/Project.jsx:1955"
+    "src/community/pages/Project.jsx:1978"
   ],
   "No content yet. Open it in the editor and save to upload.": [
-    "src/community/pages/Project.jsx:1962"
+    "src/community/pages/Project.jsx:1985"
   ],
   "This project has not been uploaded yet.": [
-    "src/community/pages/Project.jsx:1963"
+    "src/community/pages/Project.jsx:1986"
   ],
   "Support this creator": [
-    "src/community/pages/Project.jsx:1970"
+    "src/community/pages/Project.jsx:1993"
   ],
   "Buy for {value1} credits": [
-    "src/community/pages/Project.jsx:1973"
+    "src/community/pages/Project.jsx:1996"
   ],
   "Your purchase supports the creator and gives you access to play {value1}. Pay once, with no recurring charge.": [
-    "src/community/pages/Project.jsx:1976"
+    "src/community/pages/Project.jsx:1999"
   ],
   "Sign in to purchase and support this creator.": [
-    "src/community/pages/Project.jsx:1977"
+    "src/community/pages/Project.jsx:2000"
   ],
   "Project unavailable": [
-    "src/community/pages/Project.jsx:1982"
+    "src/community/pages/Project.jsx:2005"
   ],
   "The project file could not be loaded. The creator may need to save it again.": [
-    "src/community/pages/Project.jsx:1983"
+    "src/community/pages/Project.jsx:2006"
   ],
   "Back to sandbox": [
-    "src/community/pages/Project.jsx:2012"
+    "src/community/pages/Project.jsx:2035"
   ],
   "Run without sandbox": [
-    "src/community/pages/Project.jsx:2014"
-  ],
-  "Running with full access to your account. Only for projects you trust.": [
-    "src/community/pages/Project.jsx:2018"
-  ],
-  "Uses custom extensions, running in a sandbox. Saved data can persist to browser storage.": [
-    "src/community/pages/Project.jsx:2019"
-  ],
-  "Remove from your library": [
-    "src/community/pages/Project.jsx:2035"
-  ],
-  "Save to your library": [
-    "src/community/pages/Project.jsx:2035"
-  ],
-  "Sign in to save to your library": [
-    "src/community/pages/Project.jsx:2036"
-  ],
-  "{value1} library, {value2} saves": [
     "src/community/pages/Project.jsx:2037"
   ],
+  "Running with full access to your account. Only for projects you trust.": [
+    "src/community/pages/Project.jsx:2041"
+  ],
+  "Uses custom extensions, running in a sandbox. Saved data can persist to browser storage.": [
+    "src/community/pages/Project.jsx:2042"
+  ],
+  "Remove from your library": [
+    "src/community/pages/Project.jsx:2058"
+  ],
+  "Save to your library": [
+    "src/community/pages/Project.jsx:2058"
+  ],
+  "Sign in to save to your library": [
+    "src/community/pages/Project.jsx:2059"
+  ],
+  "{value1} library, {value2} saves": [
+    "src/community/pages/Project.jsx:2060"
+  ],
   "Your playtime on this project": [
-    "src/community/pages/Project.jsx:2049"
+    "src/community/pages/Project.jsx:2072"
   ],
   "{value1} played": [
-    "src/community/pages/Project.jsx:2052"
+    "src/community/pages/Project.jsx:2075"
   ],
   "{value1} blocks": [
-    "src/community/pages/Project.jsx:2074"
+    "src/community/pages/Project.jsx:2097"
   ],
   "History": [
-    "src/community/pages/Project.jsx:2143"
+    "src/community/pages/Project.jsx:2166"
   ],
   "Pull requests": [
-    "src/community/pages/Project.jsx:2145",
+    "src/community/pages/Project.jsx:2168",
     "src/community/pages/PullRequests.jsx:70",
     "src/community/pages/Roadmap.jsx:134"
   ],
   "Releases": [
-    "src/community/pages/Project.jsx:2146"
+    "src/community/pages/Project.jsx:2169"
   ],
   "Bounties on the parent project": [
-    "src/community/pages/Project.jsx:2242"
+    "src/community/pages/Project.jsx:2265"
   ],
   "New bounty": [
-    "src/community/pages/Project.jsx:2246"
+    "src/community/pages/Project.jsx:2269"
   ],
   "Open parent": [
-    "src/community/pages/Project.jsx:2264"
+    "src/community/pages/Project.jsx:2287"
   ],
   "Use this bounty": [
-    "src/community/pages/Project.jsx:2271"
+    "src/community/pages/Project.jsx:2294"
   ],
   "Work on this": [
-    "src/community/pages/Project.jsx:2271"
+    "src/community/pages/Project.jsx:2294"
   ],
   "No open bounties": [
-    "src/community/pages/Project.jsx:2279"
+    "src/community/pages/Project.jsx:2302"
   ],
   "Fund a specific change when you want contributors to pick it up.": [
-    "src/community/pages/Project.jsx:2281"
+    "src/community/pages/Project.jsx:2304"
   ],
   "There are no funded tasks right now. You can still fork the project and send an improvement.": [
-    "src/community/pages/Project.jsx:2282"
+    "src/community/pages/Project.jsx:2305"
   ],
   "Could not load remixes.": [
-    "src/community/pages/Project.jsx:2309"
+    "src/community/pages/Project.jsx:2332"
   ],
   "Remix tree": [
-    "src/community/pages/Project.jsx:2318"
+    "src/community/pages/Project.jsx:2341"
   ],
   "{value1} projects branch from the same original.": [
-    "src/community/pages/Project.jsx:2319"
+    "src/community/pages/Project.jsx:2342"
   ],
   "See this project alongside its Git history.": [
-    "src/community/pages/Project.jsx:2319"
+    "src/community/pages/Project.jsx:2342"
   ],
   "Explore tree": [
-    "src/community/pages/Project.jsx:2321"
+    "src/community/pages/Project.jsx:2344"
   ],
   "Could not load version history.": [
-    "src/community/pages/Project.jsx:2383"
+    "src/community/pages/Project.jsx:2406"
   ],
   "No version history yet": [
-    "src/community/pages/Project.jsx:2388"
+    "src/community/pages/Project.jsx:2411"
   ],
   "Saved versions of this project will appear here.": [
-    "src/community/pages/Project.jsx:2389"
+    "src/community/pages/Project.jsx:2412"
   ],
   "Restore this version?": [
-    "src/community/pages/Project.jsx:2407"
+    "src/community/pages/Project.jsx:2430"
   ],
   "Restore version": [
-    "src/community/pages/Project.jsx:2408"
+    "src/community/pages/Project.jsx:2431"
   ],
   "{value1} will become the current project. Newer versions will stay in the history.": [
-    "src/community/pages/Project.jsx:2415"
+    "src/community/pages/Project.jsx:2438"
   ],
   "Saved version": [
-    "src/community/pages/Project.jsx:2416"
+    "src/community/pages/Project.jsx:2439"
   ],
   "Loading pull requests…": [
-    "src/community/pages/Project.jsx:2465",
+    "src/community/pages/Project.jsx:2488",
     "src/community/pages/PullRequests.jsx:61"
   ],
   "Could not load pull requests.": [
-    "src/community/pages/Project.jsx:2466",
+    "src/community/pages/Project.jsx:2489",
     "src/community/pages/PullRequests.jsx:38"
   ],
   "Search pull requests": [
-    "src/community/pages/Project.jsx:2477",
+    "src/community/pages/Project.jsx:2500",
     "src/community/pages/PullRequests.jsx:73",
     "src/community/pages/Roadmap.jsx:524"
   ],
   "New pull request": [
-    "src/community/pages/Project.jsx:2478",
+    "src/community/pages/Project.jsx:2501",
     "src/community/pages/PullRequests.jsx:71"
   ],
   "{value1} open": [
-    "src/community/pages/Project.jsx:2482"
+    "src/community/pages/Project.jsx:2505"
   ],
   "{value1} closed": [
-    "src/community/pages/Project.jsx:2483"
+    "src/community/pages/Project.jsx:2506"
   ],
   "#{value1} opened {value2} by": [
-    "src/community/pages/Project.jsx:2490"
+    "src/community/pages/Project.jsx:2513"
   ],
   "No open pull requests": [
-    "src/community/pages/Project.jsx:2499"
+    "src/community/pages/Project.jsx:2522"
   ],
   "No closed pull requests": [
-    "src/community/pages/Project.jsx:2499"
+    "src/community/pages/Project.jsx:2522"
   ],
   "No pull requests match your search.": [
-    "src/community/pages/Project.jsx:2501"
+    "src/community/pages/Project.jsx:2524"
   ],
   "Pull requests sent to this project will appear here.": [
-    "src/community/pages/Project.jsx:2501"
+    "src/community/pages/Project.jsx:2524"
   ],
   "Open pull requests from this project": [
-    "src/community/pages/Project.jsx:2536"
+    "src/community/pages/Project.jsx:2559"
   ],
   "into {value1}": [
-    "src/community/pages/Project.jsx:2539"
+    "src/community/pages/Project.jsx:2562"
   ],
   "{value1} stars": [
-    "src/community/pages/Project.jsx:2554"
+    "src/community/pages/Project.jsx:2577"
   ],
   "Choose a star rating first.": [
-    "src/community/pages/Project.jsx:2616"
-  ],
-  "Review saved.": [
-    "src/community/pages/Project.jsx:2636"
-  ],
-  "Could not save your review.": [
     "src/community/pages/Project.jsx:2639"
   ],
+  "Review saved.": [
+    "src/community/pages/Project.jsx:2659"
+  ],
+  "Could not save your review.": [
+    "src/community/pages/Project.jsx:2662"
+  ],
   "Review deleted.": [
-    "src/community/pages/Project.jsx:2666"
+    "src/community/pages/Project.jsx:2689"
   ],
   "Could not delete your review.": [
-    "src/community/pages/Project.jsx:2670"
-  ],
-  "review": [
-    "src/community/pages/Project.jsx:2684"
-  ],
-  "reviews": [
-    "src/community/pages/Project.jsx:2684"
-  ],
-  "Your review": [
-    "src/community/pages/Project.jsx:2690"
-  ],
-  "Review this project": [
-    "src/community/pages/Project.jsx:2690"
-  ],
-  "What worked well? What should change?": [
     "src/community/pages/Project.jsx:2693"
   ],
+  "review": [
+    "src/community/pages/Project.jsx:2707"
+  ],
+  "reviews": [
+    "src/community/pages/Project.jsx:2707"
+  ],
+  "Your review": [
+    "src/community/pages/Project.jsx:2713"
+  ],
+  "Review this project": [
+    "src/community/pages/Project.jsx:2713"
+  ],
+  "What worked well? What should change?": [
+    "src/community/pages/Project.jsx:2716"
+  ],
   "Save review": [
-    "src/community/pages/Project.jsx:2703"
+    "src/community/pages/Project.jsx:2726"
   ],
   "Sign in to review": [
-    "src/community/pages/Project.jsx:2703"
+    "src/community/pages/Project.jsx:2726"
   ],
   "You cannot review your own project.": [
-    "src/community/pages/Project.jsx:2719"
+    "src/community/pages/Project.jsx:2742"
   ],
   "Could not load reviews.": [
-    "src/community/pages/Project.jsx:2721"
+    "src/community/pages/Project.jsx:2744"
   ],
   "Reviews from players will appear here.": [
-    "src/community/pages/Project.jsx:2724"
-  ],
-  "Delete your review?": [
-    "src/community/pages/Project.jsx:2746"
-  ],
-  "Delete review": [
     "src/community/pages/Project.jsx:2747"
   ],
+  "Delete your review?": [
+    "src/community/pages/Project.jsx:2769"
+  ],
+  "Delete review": [
+    "src/community/pages/Project.jsx:2770"
+  ],
   "Your rating and review text will be removed.": [
-    "src/community/pages/Project.jsx:2753"
+    "src/community/pages/Project.jsx:2776"
   ],
   "Enter a version before publishing.": [
-    "src/community/pages/Project.jsx:2796"
+    "src/community/pages/Project.jsx:2819"
   ],
   "Could not create the release.": [
-    "src/community/pages/Project.jsx:2809"
+    "src/community/pages/Project.jsx:2832"
   ],
   "Publish a release": [
-    "src/community/pages/Project.jsx:2821"
+    "src/community/pages/Project.jsx:2844"
   ],
   "Version, such as 1.2.0": [
-    "src/community/pages/Project.jsx:2823"
-  ],
-  "Stable": [
-    "src/community/pages/Project.jsx:2826"
-  ],
-  "Development": [
-    "src/community/pages/Project.jsx:2828"
-  ],
-  "Release channel": [
-    "src/community/pages/Project.jsx:2833"
-  ],
-  "What changed?": [
-    "src/community/pages/Project.jsx:2836"
-  ],
-  "Publish release": [
-    "src/community/pages/Project.jsx:2838"
-  ],
-  "Loading releases…": [
-    "src/community/pages/Project.jsx:2842"
-  ],
-  "Could not load releases.": [
-    "src/community/pages/Project.jsx:2843"
-  ],
-  "No releases yet": [
-    "src/community/pages/Project.jsx:2845"
-  ],
-  "Published releases will appear here.": [
     "src/community/pages/Project.jsx:2846"
   ],
-  "Play this release": [
+  "Stable": [
+    "src/community/pages/Project.jsx:2849"
+  ],
+  "Development": [
+    "src/community/pages/Project.jsx:2851"
+  ],
+  "Release channel": [
+    "src/community/pages/Project.jsx:2856"
+  ],
+  "What changed?": [
+    "src/community/pages/Project.jsx:2859"
+  ],
+  "Publish release": [
     "src/community/pages/Project.jsx:2861"
   ],
+  "Loading releases…": [
+    "src/community/pages/Project.jsx:2865"
+  ],
+  "Could not load releases.": [
+    "src/community/pages/Project.jsx:2866"
+  ],
+  "No releases yet": [
+    "src/community/pages/Project.jsx:2868"
+  ],
+  "Published releases will appear here.": [
+    "src/community/pages/Project.jsx:2869"
+  ],
+  "Play this release": [
+    "src/community/pages/Project.jsx:2884"
+  ],
   "Add a fork project ID and title before sending.": [
-    "src/community/pages/Project.jsx:2962"
+    "src/community/pages/Project.jsx:2985"
   ],
   "Could not send the contribution.": [
-    "src/community/pages/Project.jsx:2979"
+    "src/community/pages/Project.jsx:3002"
   ],
   "Send changes back": [
-    "src/community/pages/Project.jsx:2989"
+    "src/community/pages/Project.jsx:3012"
   ],
   "This creates a pull request for the parent project. The owner can review your changes before merging them.": [
-    "src/community/pages/Project.jsx:2992"
+    "src/community/pages/Project.jsx:3015"
   ],
   "Choose one of your remixes, then describe the changes you want the project owner to review.": [
-    "src/community/pages/Project.jsx:2993"
+    "src/community/pages/Project.jsx:3016"
   ],
   "Loading your remixes…": [
-    "src/community/pages/Project.jsx:2997"
+    "src/community/pages/Project.jsx:3020"
   ],
   "Could not load your remixes.": [
-    "src/community/pages/Project.jsx:3000"
-  ],
-  "Remix to contribute": [
-    "src/community/pages/Project.jsx:3005",
-    "src/community/pages/Project.jsx:3014"
-  ],
-  "No remix yet": [
     "src/community/pages/Project.jsx:3023"
   ],
-  "Create a remix": [
-    "src/community/pages/Project.jsx:3026"
+  "Remix to contribute": [
+    "src/community/pages/Project.jsx:3028",
+    "src/community/pages/Project.jsx:3037"
   ],
-  "You do not have a remix of this project yet.": [
-    "src/community/pages/Project.jsx:3028"
-  ],
-  "Sign in to choose one of your remixes.": [
-    "src/community/pages/Project.jsx:3031"
-  ],
-  "Pull request #{value1} is open for this remix": [
-    "src/community/pages/Project.jsx:3038"
-  ],
-  "Remix the project": [
-    "src/community/pages/Project.jsx:3044"
-  ],
-  "Edit and save your remix": [
-    "src/community/pages/Project.jsx:3045"
-  ],
-  "Describe your work and send it": [
+  "No remix yet": [
     "src/community/pages/Project.jsx:3046"
   ],
-  "What did you change?": [
-    "src/community/pages/Project.jsx:3048"
-  ],
-  "Anything the creator should know": [
+  "Create a remix": [
     "src/community/pages/Project.jsx:3049"
   ],
-  "Bounty to claim": [
-    "src/community/pages/Project.jsx:3052",
-    "src/community/pages/Project.jsx:3064"
+  "You do not have a remix of this project yet.": [
+    "src/community/pages/Project.jsx:3051"
   ],
-  "Optional": [
-    "src/community/pages/Project.jsx:3052"
+  "Sign in to choose one of your remixes.": [
+    "src/community/pages/Project.jsx:3054"
   ],
-  "No bounty": [
-    "src/community/pages/Project.jsx:3055"
+  "Pull request #{value1} is open for this remix": [
+    "src/community/pages/Project.jsx:3061"
   ],
-  "{value1} credits: {value2}": [
-    "src/community/pages/Project.jsx:3058"
-  ],
-  "The reward is paid when the project owner merges this pull request.": [
+  "Remix the project": [
     "src/community/pages/Project.jsx:3067"
   ],
-  "Create pull request": [
+  "Edit and save your remix": [
+    "src/community/pages/Project.jsx:3068"
+  ],
+  "Describe your work and send it": [
+    "src/community/pages/Project.jsx:3069"
+  ],
+  "What did you change?": [
+    "src/community/pages/Project.jsx:3071"
+  ],
+  "Anything the creator should know": [
     "src/community/pages/Project.jsx:3072"
   ],
+  "Bounty to claim": [
+    "src/community/pages/Project.jsx:3075",
+    "src/community/pages/Project.jsx:3087"
+  ],
+  "Optional": [
+    "src/community/pages/Project.jsx:3075"
+  ],
+  "No bounty": [
+    "src/community/pages/Project.jsx:3078"
+  ],
+  "{value1} credits: {value2}": [
+    "src/community/pages/Project.jsx:3081"
+  ],
+  "The reward is paid when the project owner merges this pull request.": [
+    "src/community/pages/Project.jsx:3090"
+  ],
+  "Create pull request": [
+    "src/community/pages/Project.jsx:3095"
+  ],
   "Sign in to contribute": [
-    "src/community/pages/Project.jsx:3072"
+    "src/community/pages/Project.jsx:3095"
   ],
   "Pull request": [
     "src/community/pages/PullRequest.jsx:474"
@@ -7457,63 +7490,63 @@
     "src/community/pages/Wallet.jsx:198"
   ],
   "{value1} received in donations": [
-    "src/community/pages/Wallet.jsx:211"
+    "src/community/pages/Wallet.jsx:212"
   ],
   "{value1} given in donations": [
-    "src/community/pages/Wallet.jsx:217"
+    "src/community/pages/Wallet.jsx:222"
   ],
   "Creator earnings": [
-    "src/community/pages/Wallet.jsx:224"
+    "src/community/pages/Wallet.jsx:232"
   ],
   "Tips, project sales, revenue shares, and bounties paid to you.": [
-    "src/community/pages/Wallet.jsx:225"
+    "src/community/pages/Wallet.jsx:234"
   ],
   "Recorded total": [
-    "src/community/pages/Wallet.jsx:238"
+    "src/community/pages/Wallet.jsx:248"
   ],
   "No creator earnings yet": [
-    "src/community/pages/Wallet.jsx:256"
+    "src/community/pages/Wallet.jsx:270"
   ],
   "Loading creator earnings…": [
-    "src/community/pages/Wallet.jsx:262"
+    "src/community/pages/Wallet.jsx:276"
   ],
   "Donation history": [
-    "src/community/pages/Wallet.jsx:266"
+    "src/community/pages/Wallet.jsx:280"
   ],
   "Credits you have sent or received through MistWarp profiles.": [
-    "src/community/pages/Wallet.jsx:267"
+    "src/community/pages/Wallet.jsx:282"
   ],
   "Received": [
-    "src/community/pages/Wallet.jsx:279"
+    "src/community/pages/Wallet.jsx:295"
   ],
   "Sent": [
-    "src/community/pages/Wallet.jsx:279"
+    "src/community/pages/Wallet.jsx:295"
   ],
   "From": [
-    "src/community/pages/Wallet.jsx:282"
+    "src/community/pages/Wallet.jsx:298"
   ],
   "To": [
-    "src/community/pages/Wallet.jsx:282"
+    "src/community/pages/Wallet.jsx:298"
   ],
   "Donation history unavailable": [
-    "src/community/pages/Wallet.jsx:299"
+    "src/community/pages/Wallet.jsx:315"
   ],
   "Try loading your wallet data again above.": [
-    "src/community/pages/Wallet.jsx:300"
+    "src/community/pages/Wallet.jsx:316"
   ],
   "No profile donations yet": [
-    "src/community/pages/Wallet.jsx:303"
+    "src/community/pages/Wallet.jsx:319"
   ],
   "Loading donation history…": [
-    "src/community/pages/Wallet.jsx:305"
+    "src/community/pages/Wallet.jsx:321"
   ],
   "Purchase history": [
-    "src/community/pages/Wallet.jsx:310"
+    "src/community/pages/Wallet.jsx:326"
   ],
   "No purchases yet": [
-    "src/community/pages/Wallet.jsx:344"
+    "src/community/pages/Wallet.jsx:360"
   ],
   "You have not bought any projects yet.": [
-    "src/community/pages/Wallet.jsx:347"
+    "src/community/pages/Wallet.jsx:363"
   ]
 }

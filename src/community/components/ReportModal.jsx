@@ -7,26 +7,41 @@ import Button from './ui/Button.jsx';
 import Notice from './ui/Notice.jsx';
 import styles from './ReportModal.module.css';
 
+// Rotur's report categories. MistWarp files every report with Rotur too, and
+// the urgent ones go to Rotur's safety team as soon as they're sent.
 const REASONS = [
-    'Inappropriate or explicit content',
-    'Harassment or bullying',
-    'Spam or misleading',
-    'Hateful or abusive behaviour',
-    'Dangerous or illegal activity',
-    'Copyright or credit problem',
-    'Something else'
+    {id: 'spam', category: 'spam', label: 'Spam or misleading'},
+    {id: 'harassment', category: 'harassment', label: 'Harassment or bullying'},
+    {id: 'hate', category: 'hate', label: 'Hate against people for who they are'},
+    {id: 'sexual', category: 'sexual', label: 'Sexual or explicit content'},
+    {id: 'violence', category: 'violence', label: 'Violence or gore'},
+    {id: 'scam', category: 'scam', label: 'A scam'},
+    {id: 'copyright', category: 'other', label: 'Copyright or credit problem'},
+    {id: 'other', category: 'other', label: 'Something else'}
 ];
+const URGENT_REASONS = [
+    {id: 'csea', category: 'csea', label: 'Sexual content involving a child'},
+    {id: 'threat_to_life', category: 'threat_to_life', label: "A threat to someone's life"},
+    {id: 'self_harm', category: 'self_harm', label: 'Encouraging suicide or self-harm'},
+    {id: 'terrorism', category: 'terrorism', label: 'Terrorism'}
+];
+const ALL_REASONS = REASONS.concat(URGENT_REASONS);
 
 const ReportModal = ({type, target, context, targetUser, onClose}) => {
     const {text: communityText} = useCommunityText();
     const reasonLabels = {
-        'Inappropriate or explicit content': communityText('Inappropriate or explicit content'),
-        'Harassment or bullying': communityText('Harassment or bullying'),
         'Spam or misleading': communityText('Spam or misleading'),
-        'Hateful or abusive behaviour': communityText('Hateful or abusive behaviour'),
-        'Dangerous or illegal activity': communityText('Dangerous or illegal activity'),
+        'Harassment or bullying': communityText('Harassment or bullying'),
+        'Hate against people for who they are': communityText('Hate against people for who they are'),
+        'Sexual or explicit content': communityText('Sexual or explicit content'),
+        'Violence or gore': communityText('Violence or gore'),
+        'A scam': communityText('A scam'),
         'Copyright or credit problem': communityText('Copyright or credit problem'),
-        'Something else': communityText('Something else')
+        'Something else': communityText('Something else'),
+        'Sexual content involving a child': communityText('Sexual content involving a child'),
+        "A threat to someone's life": communityText("A threat to someone's life"),
+        'Encouraging suicide or self-harm': communityText('Encouraging suicide or self-harm'),
+        'Terrorism': communityText('Terrorism')
     };
     const titles = {
         project: communityText('Report this project'),
@@ -34,7 +49,9 @@ const ReportModal = ({type, target, context, targetUser, onClose}) => {
         comment: communityText('Report this comment'),
         bounty: communityText('Report this bounty')
     };
-    const [category, setCategory] = useState(REASONS[0]);
+    const [reasonId, setReasonId] = useState(REASONS[0].id);
+    const chosen = ALL_REASONS.find(item => item.id === reasonId) || REASONS[0];
+    const urgent = URGENT_REASONS.includes(chosen);
     const [details, setDetails] = useState('');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
@@ -47,7 +64,7 @@ const ReportModal = ({type, target, context, targetUser, onClose}) => {
 
     useEffect(() => {
         if (firstRef.current) firstRef.current.focus();
-        setCategory(REASONS[0]);
+        setReasonId(REASONS[0].id);
         setDetails('');
         setBusy(false);
         setError('');
@@ -59,9 +76,9 @@ const ReportModal = ({type, target, context, targetUser, onClose}) => {
         submitLocks.current.add(requestKey);
         setBusy(true);
         setError('');
-        const reason = details.trim() ? `${category}: ${details.trim()}` : category;
+        const reason = details.trim() ? `${chosen.label}: ${details.trim()}` : chosen.label;
         try {
-            await api.report(type, target, reason, context, targetUser);
+            await api.report(type, target, reason, context, targetUser, chosen.category);
             if (currentRequestKey.current === requestKey) setSent(true);
         } catch (e) {
             if (currentRequestKey.current === requestKey) {
@@ -104,17 +121,33 @@ const ReportModal = ({type, target, context, targetUser, onClose}) => {
                     <select
                         ref={firstRef}
                         className={styles.select}
-                        value={category}
+                        value={reasonId}
                         disabled={busy}
-                        onChange={e => setCategory(e.target.value)}
+                        onChange={e => setReasonId(e.target.value)}
                     >
                         {REASONS.map(reason => (
                             <option
-                                key={reason}
-                                value={reason}
-                            >{reasonLabels[reason] || reason}</option>
+                                key={reason.id}
+                                value={reason.id}
+                            >{reasonLabels[reason.label]}</option>
                         ))}
+                        <optgroup label={communityText('Urgent')}>
+                            {URGENT_REASONS.map(reason => (
+                                <option
+                                    key={reason.id}
+                                    value={reason.id}
+                                >{reasonLabels[reason.label]}</option>
+                            ))}
+                        </optgroup>
                     </select>
+                    {urgent ? (
+                        <Notice variant="warning">
+                            {communityText(
+                                // eslint-disable-next-line max-len
+                                'Rotur\'s safety team sees this report straight away. If someone is in danger right now, contact your local emergency services.'
+                            )}
+                        </Notice>
+                    ) : null}
                     <label className={styles.label}>{communityText('Details (optional)')}</label>
                     <textarea
                         className={styles.textarea}
