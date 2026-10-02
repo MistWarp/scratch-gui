@@ -70,7 +70,8 @@ const Backpack = ({
     onSearchChange,
     onToggle
 }) => {
-    const collapsedDropZone = !expanded && dragActive;
+    const showDropHighlight = dragActive && dragOver;
+    const collapsedDropZone = !expanded && showDropHighlight;
     const multiRow = height >= MULTI_ROW_HEIGHT;
     return (
         <div
@@ -174,7 +175,7 @@ const Backpack = ({
                             />
                         </div>
                     ) : null}
-                    {dragActive ? <div className={styles.dropOverlay} /> : null}
+                    {showDropHighlight ? <div className={styles.dropOverlay} /> : null}
                 </div>
             ) : null}
         </div>

@@ -44,7 +44,7 @@
     border-bottom: 1px solid $ui-black-transparent;
 }
 
-.backpack-container:not(.expanded) .backpack-header:not(.header-drop-zone) {
+.backpack-container:not(.expanded) .backpack-header {
     min-height: 0;
     padding: calc($space / 2);
 }
@@ -117,21 +117,6 @@
 }
 
 .header-drop-zone {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 60;
-    height: 5.5rem;
-    align-items: flex-start;
-    background-color: color-mix(in srgb, $drop-highlight 75%, $ui-white);
-}
-
-.header-drop-zone .header-toggle:hover {
-    border-color: transparent;
-}
-
-.header-drop-zone.drag-over {
     background-color: $drop-highlight;
 }
 
