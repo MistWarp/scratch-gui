@@ -1,10 +1,12 @@
 import JSZip from '@turbowarp/jszip';
 import {
     exchangeValidator,
+    onBanned,
     getPerks,
     getEditorProject,
     prepareSparseProjectUpload,
-    request
+    request,
+    runExchange
 } from '../../src/lib/community/api.js';
 import {
     getMistWarpAction,
@@ -84,11 +86,72 @@ test('the Rotur token is sent in a header, never in a URL', async () => {
     expect(validatorInit).toMatchObject({
         method: 'POST',
         headers: {Authorization: 'Bearer rotur_secret-token'},
-        body: JSON.stringify({key: 'mistwarp'})
+        body: JSON.stringify({key: 'app_1938b6a87799f862'})
     });
     for (const [url] of window.fetch.mock.calls) {
         expect(String(url)).not.toContain('rotur_secret-token');
     }
+});
+
+test('a server that only knows the old validator key gets one next', async () => {
+    let authCalls = 0;
+    window.fetch = jest.fn(url => {
+        if (String(url).includes('/v2/validators')) {
+            return Promise.resolve({status: 200, json: () => Promise.resolve({validator: 'v'})});
+        }
+        authCalls++;
+        // The server live today checks only the old key, and answers 403.
+        const refusal = {ok: false, code: 'invalid_validator', error: 'Validator expired or not valid'};
+        return Promise.resolve(authCalls === 1 ?
+            {ok: false, status: 403, json: () => Promise.resolve(refusal), clone: () => ({json: () => Promise.resolve(refusal)})} :
+            {ok: true, status: 200, json: () => Promise.resolve({ok: true, token: 'session'})});
+    });
+    await expect(exchangeValidator('rotur-token')).resolves.toMatchObject({token: 'session'});
+    const keys = window.fetch.mock.calls.filter(([url]) => String(url).includes('/v2/validators'))
+        .map(([, init]) => JSON.parse(init.body).key);
+    expect(keys).toEqual(['app_1938b6a87799f862', 'mistwarp']);
+});
+
+test('a token that can\'t make app-ID validators uses the old key, and isn\'t taken for a ban', async () => {
+    // Rotur only lets MistWarp's own sign-in token make app-ID validators; the
+    // desktop app's token and older ones get 403, with no code.
+    window.fetch = jest.fn((url, init) => {
+        if (String(url).includes('/v2/validators')) {
+            return Promise.resolve(JSON.parse(init.body).key === 'mistwarp' ?
+                {status: 200, json: () => Promise.resolve({validator: 'v-old'})} :
+                {status: 403, json: () => Promise.resolve({error: 'Token lacks permission: validators:generate'})});
+        }
+        return Promise.resolve({ok: true, status: 200, json: () => Promise.resolve({ok: true, token: 'session'})});
+    });
+    await expect(exchangeValidator('rotur-legacy')).resolves.toMatchObject({token: 'session'});
+    expect(String(window.fetch.mock.calls[2][0])).toContain('v=v-old');
+
+    // Without validators:generate either, the old key's own error is what's reported.
+    window.fetch = jest.fn(() => Promise.resolve({
+        status: 403, json: () => Promise.resolve({error: 'Token lacks permission: validators:generate'})
+    }));
+    await expect(exchangeValidator('rotur-legacy')).rejects.toThrow('Token lacks permission');
+    expect(window.fetch).toHaveBeenCalledTimes(2);
+});
+
+test('a ban from MistWarp\'s Rotur App shows the banned screen with Rotur\'s reason', async () => {
+    const until = Date.UTC(2026, 9, 3, 12);
+    const refusal = {
+        ok: false, code: 'app_banned', error: 'You\'ve been banned from MistWarp.',
+        reason: 'Cheating in races', until, redirectUrl: 'https://rotur.dev/me'
+    };
+    const refused = {ok: false, status: 403, json: () => Promise.resolve(refusal)};
+    refused.clone = () => refused;
+    window.fetch = jest.fn(url => Promise.resolve(String(url).includes('/v2/validators') ?
+        {status: 200, json: () => Promise.resolve({validator: 'v'})} : refused));
+    const banned = jest.fn();
+    onBanned(banned);
+    await expect(runExchange('rotur-token')).rejects.toMatchObject({code: 'app_banned'});
+    expect(banned).toHaveBeenCalledWith(
+        `You've been banned from MistWarp until ${new Date(until).toLocaleDateString()}. Reason: Cheating in races`,
+        'https://rotur.dev/me'
+    );
+    onBanned(null);
 });
 
 test('MistWarp project identity controls share, remix, and update actions', () => {

@@ -37,7 +37,7 @@ const cache = new Map();
 const cacheKey = (path, params) => `${path}|${JSON.stringify(params)}|${roturToken() || ''}`;
 
 const mutate = async (path, {method = 'POST', params = {}, body, scopes = []} = {}) => {
-    if (scopes.length) await ensureScopes(scopes);
+    if (scopes.length) await ensureScopes(scopes, {prompt: true});
     const query = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
         if (value !== null && typeof value !== 'undefined') query.set(key, String(value));
@@ -263,16 +263,7 @@ const rotur = {
         requestJoin: (tag, message = '') => mutate(`/groups/${encodeURIComponent(tag)}/join_requests`, {
             params: {message}, scopes: ['groups:join']
         }),
-        leave: tag => mutate(`/groups/${encodeURIComponent(tag)}/leave`, {scopes: ['groups:leave']}),
-        represent: tag => mutate(`/groups/${encodeURIComponent(tag)}/rep`, {scopes: ['account:settings']}),
-        stopRepresenting: tag => mutate(`/groups/${encodeURIComponent(tag)}/disrep`, {
-            scopes: ['account:settings']
-        }),
-        create: group => mutate('/groups/create', {params: group, scopes: ['groups:manage']}),
-        contribute: (tag, campaign, amount, note = '') => mutate(
-            `/groups/${encodeURIComponent(tag)}/campaigns/${encodeURIComponent(campaign)}/contribute`,
-            {params: {amount, note}, scopes: ['credits:manage']}
-        )
+        leave: tag => mutate(`/groups/${encodeURIComponent(tag)}/leave`, {scopes: ['groups:leave']})
     }
 };
 

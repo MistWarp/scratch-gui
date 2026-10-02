@@ -2,7 +2,6 @@ import JSZip from '@turbowarp/jszip';
 import {clearContentCache} from './cached-fetch.js';
 import {isGalleryExtensionUrl} from '../trusted-extension.js';
 import {trackApiSuccess} from '../../community/analytics.js';
-import {ROTUR_TOKEN_KEY} from '../rotur/token-key.js';
 import {setMinorAccount} from '../minor-account.js';
 
 const API_BASE = 'https://api.mistwarp.org/v1';
@@ -14,12 +13,11 @@ const GET_CACHE_TTL = 60 * 1000;
 let cacheGeneration = 0;
 const inFlightGets = new Map();
 
-const loadRoturToken = () => {
-    try {
-        return localStorage.getItem(ROTUR_TOKEN_KEY) || null;
-    } catch (e) {
-        return null;
-    }
+// Where to get a Rotur token for re-signing in to MistWarp after a 401. The
+// Rotur session sets it, so this file doesn't depend on it.
+let roturTokenGetter = () => Promise.resolve(null);
+const setRoturTokenGetter = getter => {
+    roturTokenGetter = getter;
 };
 
 let exchangeInFlight = null;
@@ -92,13 +90,24 @@ const writeApiCache = (key, data) => {
     }
 };
 
+// Codes that mean the account can't use MistWarp at all: a MistWarp ban, a
+// Rotur restriction, or a ban from MistWarp's Rotur App.
+const RESTRICTED_CODES = ['banned', 'account_blocked', 'app_banned'];
+
+// A ban from MistWarp's Rotur App comes with Rotur's reason and end date.
+const banMessage = ({message, data}) => {
+    const {reason, until} = data || {};
+    const ends = until ? `${message.replace(/\.$/, '')} until ${new Date(until).toLocaleDateString()}.` : message;
+    return reason ? `${ends} Reason: ${reason}` : ends;
+};
+
 const parseResponse = async response => {
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data.ok === false || data.error) {
         const error = new Error(data.error || `Request failed (${response.status})`);
         error.status = response.status;
         error.code = data.code;
-        const isRestricted = data.code === 'banned' || data.code === 'account_blocked';
+        const isRestricted = RESTRICTED_CODES.includes(data.code);
         error.redirectUrl = data.redirectUrl || data.redirect_url || (isRestricted ? 'https://rotur.dev/me' : null);
         error.data = data;
         throw error;
@@ -127,12 +136,33 @@ const requestValidator = async (roturToken, key) => {
     throw error;
 };
 
-const exchangeValidator = async (roturToken, appKey = 'mistwarp') => {
-    const validator = await requestValidator(roturToken, appKey);
-    const authResponse = await fetch(
-        `${API_BASE}/auth?v=${encodeURIComponent(validator)}`,
-        {method: 'POST'}
-    );
+// Validators keyed to MistWarp's Rotur App can be made by MistWarp's own
+// sign-in token, and Rotur then refuses anyone the app has banned. A server
+// that only knows the old key refuses them, so that key is tried next.
+const VALIDATOR_KEYS = ['app_1938b6a87799f862', 'mistwarp'];
+
+const exchangeValidator = async roturToken => {
+    let authResponse;
+    for (const key of VALIDATOR_KEYS) {
+        let validator;
+        try {
+            validator = await requestValidator(roturToken, key);
+        } catch (error) {
+            // Only MistWarp's own sign-in token can make app-ID validators, so
+            // the desktop app's and older tokens get 403 and use the old key.
+            // That needs validators:generate; without it, keep an earlier 401.
+            if (authResponse) break;
+            if (key === VALIDATOR_KEYS[VALIDATOR_KEYS.length - 1]) throw error;
+            continue;
+        }
+        authResponse = await fetch(`${API_BASE}/auth?v=${encodeURIComponent(validator)}`, {method: 'POST'});
+        // Today's server answers a validator for a key it doesn't check with
+        // 403 invalid_validator; one that tries both keys never does.
+        const refused = authResponse.status === 401 || (authResponse.status === 403 &&
+            (await authResponse.clone().json()
+                .catch(() => ({}))).code === 'invalid_validator');
+        if (!refused) break;
+    }
     const authData = await parseResponse(authResponse);
     storeSession(authData.token);
     setMinorAccount(authData.minor === true);
@@ -156,8 +186,8 @@ const runExchange = token => {
                 if (error.code === 'VALIDATOR_GENERATION_FAILED' && authInvalidHandler) {
                     authInvalidHandler();
                 }
-                if ((error.code === 'banned' || error.code === 'account_blocked') && bannedHandler) {
-                    bannedHandler(error.message, error.redirectUrl || 'https://rotur.dev/me');
+                if (RESTRICTED_CODES.includes(error.code) && bannedHandler) {
+                    bannedHandler(banMessage(error), error.redirectUrl || 'https://rotur.dev/me');
                 }
                 throw error;
             })
@@ -215,7 +245,7 @@ const request = async (path, {method = 'GET', body, headers = {}, raw = false, c
             !path.startsWith('/logout')
         ) {
             storeSession(null);
-            const roturToken = loadRoturToken();
+            const roturToken = await roturTokenGetter();
             if (roturToken) {
                 try {
                     await runExchange(roturToken);
@@ -432,7 +462,7 @@ const uploadProject = async (id, sb3Blob, thumbnailBlob, onUploadProgress, {
     } catch (e) {
         if (e.status !== 401) throw e;
         storeSession(null);
-        const roturToken = loadRoturToken();
+        const roturToken = await roturTokenGetter();
         if (!roturToken) throw e;
         await runExchange(roturToken);
         return uploadXhr(path, form, onUploadProgress);
@@ -496,6 +526,7 @@ export {
     exchangeValidator,
     requestValidator,
     runExchange,
+    setRoturTokenGetter,
     onAuthInvalid,
     onBanned,
     logout,

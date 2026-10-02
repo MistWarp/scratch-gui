@@ -27,9 +27,10 @@ import {
     setRoturUser,
     setRoturUsernameOverride,
     setRoturError,
+    setRoturReconnect,
     clearRoturUser
 } from '../reducers/rotur.js';
-import {closeModal} from '../reducers/modals.js';
+import {closeModal, openRoturLoginModal} from '../reducers/modals.js';
 import {setTheme} from '../reducers/theme.js';
 import {detectTheme, applyThemeVisuals} from '../lib/themes/themePersistance.js';
 import {customThemeManager} from '../lib/themes/custom-themes.js';
@@ -125,6 +126,13 @@ class RoturSession extends React.Component {
 
     handleIdentityChange (next) {
         this.props.onSetStatus(next.status);
+        const reconnect = Boolean(next.user && next.reconnect);
+        this.props.onSetReconnect(reconnect);
+        if (reconnect && !this.offeredReconnect) {
+            // Once per page load, so it never nags while someone works.
+            this.offeredReconnect = true;
+            this.props.onOpenLoginModal();
+        }
         const hadUser = this.props.loggedIn;
         if (next.user && !hadUser) {
             this.editingSince = Date.now();
@@ -298,7 +306,8 @@ class RoturSession extends React.Component {
             const message = error && error.message ? error.message : String(error);
             const code = error && error.code;
             // Soft-cancel: user closed the popup or it timed out
-            if (code === 'aborted' || code === 'timeout' || /abort|timeout|closed|popup/i.test(message)) {
+            if (['aborted', 'timeout', 'closed', 'access_denied'].includes(code) ||
+                /abort|timeout|closed|popup/i.test(message)) {
                 this.props.onSetStatus(this.props.loggedIn ? 'ready' : 'idle');
                 return null;
             }
@@ -331,6 +340,8 @@ RoturSession.propTypes = {
     onSetError: PropTypes.func.isRequired,
     onClear: PropTypes.func.isRequired,
     onCloseLoginModal: PropTypes.func.isRequired,
+    onOpenLoginModal: PropTypes.func.isRequired,
+    onSetReconnect: PropTypes.func.isRequired,
     onSetTheme: PropTypes.func.isRequired,
     roturUsername: PropTypes.string
 };
@@ -353,6 +364,8 @@ const mapDispatchToProps = dispatch => ({
     onSetError: error => dispatch(setRoturError(error)),
     onClear: () => dispatch(clearRoturUser()),
     onCloseLoginModal: () => dispatch(closeModal('roturLoginModal')),
+    onOpenLoginModal: () => dispatch(openRoturLoginModal()),
+    onSetReconnect: reconnect => dispatch(setRoturReconnect(reconnect)),
     onSetTheme: theme => dispatch(setTheme(theme))
 });
 

@@ -41,6 +41,7 @@ const UserProvider = ({children}) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [banMessage, setBanMessage] = useState(null);
+    const [reconnect, setReconnect] = useState(false);
     const [signInError, setSignInError] = useState('');
     const notificationsUnsub = useRef(null);
     const removalsUnsub = useRef(null);
@@ -127,6 +128,7 @@ const UserProvider = ({children}) => {
     const handleIdentity = useCallback(state => {
         const version = ++identityVersion.current;
         setBanMessage(state.banMessage || null);
+        setReconnect(Boolean(state.user && state.reconnect));
         if (state.user) {
             const username = state.user.username;
             setUser(current => (current && current.username === username ? current : normalizeUser({username})));
@@ -192,6 +194,8 @@ const UserProvider = ({children}) => {
                 setSubscription: subscription => setUser(current => current && {...current, subscription}),
                 banMessage,
                 dismissBan: () => setBanMessage(null),
+                reconnect,
+                dismissReconnect: () => setReconnect(false),
                 signInError,
                 dismissSignInError: () => setSignInError('')
             }}

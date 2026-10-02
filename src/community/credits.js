@@ -1,5 +1,4 @@
-import {ensureScopes} from '../lib/rotur/client.js';
-import {ROTUR_TOKEN_KEY} from '../lib/rotur/token-key.js';
+import {ensureScopes, getAccessToken} from '../lib/rotur/client.js';
 
 const ROTUR_API = 'https://api.rotur.dev/v2';
 
@@ -18,16 +17,8 @@ const isPermissionError = message => {
         text.includes('token');
 };
 
-const getToken = () => {
-    try {
-        return localStorage.getItem(ROTUR_TOKEN_KEY);
-    } catch (_) {
-        return null;
-    }
-};
-
 const billingRequest = async (path, init = {}) => {
-    const token = getToken();
+    const token = await getAccessToken();
     if (!token) {
         const error = new Error('Log in to use credits');
         error.needsReauth = true;
@@ -60,7 +51,9 @@ const randomIdempotencyKey = prefix => {
 };
 
 const commerceRequest = async (path, init = {}) => {
-    await ensureScopes(init.scope || ['credits:view']);
+    const scope = init.scope || ['credits:view'];
+    // Spending is asked for when someone pays, from their click.
+    await ensureScopes(scope, {prompt: scope.some(name => !name.endsWith(':view'))});
     const next = {...init};
     delete next.scope;
     return billingRequest(`/commerce${path}`, next);
@@ -91,7 +84,7 @@ const getCommerceEarnings = async () => {
 const listCommerceBounties = async (filters = {}) => {
     const query = new URLSearchParams(filters);
     const path = `/bounties?${query.toString()}`;
-    if (getToken()) return commerceRequest(path);
+    if (await getAccessToken()) return commerceRequest(path);
     const response = await fetch(`${ROTUR_API}/commerce${path}`);
     const data = await response.json().catch(() => null);
     if (!response.ok) throw new Error((data && data.error) || `Billing request failed (${response.status})`);
