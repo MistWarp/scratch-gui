@@ -57,9 +57,12 @@ const hasFullGrant = (meta, scopes) => {
 };
 
 // Broaden the session to cover the granted scopes, then persist the grant.
+// Only a grant the person actually gave is saved, so unticked scopes are
+// asked for again next time.
 const commitGrant = async (meta, scopes) => {
-    await ensureScopes(scopes, {prompt: true});
-    saveGrant(meta, [...new Set([...grantedScopesFor(meta), ...scopes])]);
+    const granted = await ensureScopes(scopes, {prompt: true});
+    if (granted) saveGrant(meta, [...new Set([...grantedScopesFor(meta), ...scopes])]);
+    return granted;
 };
 
 // Per-project decisions on whether a project may show activity on the user's

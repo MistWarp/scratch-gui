@@ -255,12 +255,16 @@ const completeRedirect = async () => {
     // link can't sign someone in.
     if (!pending || pending.state !== params.get('state')) return null;
     let session = null;
-    if (params.has('code')) {
-        session = await exchangeCode(params.get('code'), pending.verifier, redirectUriFor(false));
-        writeSession(session);
+    try {
+        if (params.has('code')) {
+            session = await exchangeCode(params.get('code'), pending.verifier, redirectUriFor(false));
+            writeSession(session);
+        }
+    } finally {
+        // A full load of the page they were on, so the router sees it too,
+        // and the code never stays in the address bar.
+        config.replace(pending.returnTo || '/');
     }
-    // A full load of the page they were on, so the router sees it too.
-    config.replace(pending.returnTo || '/');
     return session;
 };
 
