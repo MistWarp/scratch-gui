@@ -137,9 +137,12 @@ const exchangeValidator = async roturToken => {
         try {
             validator = await requestValidator(roturToken, key);
         } catch (error) {
-            // The old key needs validators:generate; without it, keep the 401.
-            if (!authResponse) throw error;
-            break;
+            // Only MistWarp's own sign-in token can make app-ID validators, so
+            // the desktop app's and older tokens get 403 and use the old key.
+            // That needs validators:generate; without it, keep an earlier 401.
+            if (authResponse) break;
+            if (key === VALIDATOR_KEYS[VALIDATOR_KEYS.length - 1]) throw error;
+            continue;
         }
         authResponse = await fetch(`${API_BASE}/auth?v=${encodeURIComponent(validator)}`, {method: 'POST'});
         // Today's server answers a validator for a key it doesn't check with
