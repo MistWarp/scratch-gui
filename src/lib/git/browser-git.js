@@ -9,6 +9,7 @@ import {
     buildSb3FromFractchTree
 } from './fractch-tree.js';
 import RestorePointAPI from '../api/restore-points.js';
+import {ROTUR_GIT_SYNC_AVAILABLE} from '../rotur/git-api.js';
 
 const FS_NAME = 'mistwarp-git';
 const REPO_DIR = '/repo';
@@ -621,29 +622,45 @@ const getRemotes = async vm => {
 
 const DEFAULT_CORS_PROXY = 'https://cors.isomorphic-git.org';
 const DIRECT_CORS_HOSTS = [];
+const ROTUR_GIT_HOSTNAME = 'git.rotur.dev';
+const ROTUR_GIT_SYNC_PAUSED = 'Pushing, pulling and cloning Rotur Git repositories from the browser is ' +
+    'turned off for now. You can still create, open and delete them.';
 
-const corsProxyForUrl = url => {
+const hostnameOf = url => {
     try {
-        if (DIRECT_CORS_HOSTS.includes(new URL(url).host)) {
-            return null;
-        }
+        return new URL(url).hostname.toLowerCase();
     } catch (e) {
-        // ignore
+        return '';
+    }
+};
+
+// Rotur Git's password is the Rotur token, so it must never go through the
+// public proxy. Its Git endpoints do not send CORS headers yet, so there is no
+// direct route either: refuse until there is (see ROTUR_GIT_SYNC_AVAILABLE).
+const corsProxyForUrl = url => {
+    const hostname = hostnameOf(url);
+    if (hostname === ROTUR_GIT_HOSTNAME) {
+        if (!ROTUR_GIT_SYNC_AVAILABLE) {
+            throw new Error(ROTUR_GIT_SYNC_PAUSED);
+        }
+        return null;
+    }
+    if (DIRECT_CORS_HOSTS.includes(hostname)) {
+        return null;
     }
     return DEFAULT_CORS_PROXY;
 };
 
 const corsProxyForRemote = async (fs, remoteName) => {
+    let url = '';
     try {
         const remotes = await git.listRemotes({fs, dir: REPO_DIR});
         const match = remotes.find(r => (r.remote || r.name) === remoteName);
-        if (match && match.url) {
-            return corsProxyForUrl(match.url);
-        }
+        url = (match && match.url) || '';
     } catch (e) {
         // ignore
     }
-    return DEFAULT_CORS_PROXY;
+    return url ? corsProxyForUrl(url) : DEFAULT_CORS_PROXY;
 };
 
 const push = async ({vm, remote, branch, ref, setUpstream = true, onProgress, ...options}) => {
@@ -1429,6 +1446,7 @@ const cloneRepo = async ({url, ref, onAuth, onProgress} = {}) => {
         throw new Error('Repository URL is required');
     }
 
+    const corsProxy = corsProxyForUrl(url.trim());
     const fs = getFs();
     const pfs = fs.promises;
     const tmpDir = `${REPO_DIR}-clone-${Date.now()}`;
@@ -1440,7 +1458,7 @@ const cloneRepo = async ({url, ref, onAuth, onProgress} = {}) => {
             http,
             dir: tmpDir,
             url: url.trim(),
-            corsProxy: corsProxyForUrl(url.trim()),
+            corsProxy,
             singleBranch: false,
             onAuth,
             onProgress: evt => {
@@ -1665,6 +1683,7 @@ export {
     embedRepoIntoSb3Blob,
     importRepoFromSb3,
     cloneRepo,
+    corsProxyForUrl,
     repoHasFractch,
     startEditorMerge,
     completeEditorMerge,
