@@ -57,7 +57,7 @@ export const openGameShop = async (projectId, productId, {request}) => {
         close.disabled = true;
         error.textContent = '';
         try {
-          const intent = await request(`${path}/${encodeURIComponent(product.id)}/purchase/intent`, 'POST', {});
+          const intent = await request(`${path}/${encodeURIComponent(product.id)}/purchase/intent`, 'POST', {returnUrl: ''});
           if (intent.already) {
             popup.close();
             return finish({status: 'owned', product: intent.product});
