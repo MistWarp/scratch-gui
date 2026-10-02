@@ -17,7 +17,8 @@ const PERMISSION_DESCRIPTIONS = {
     'posts:view': 'See posts you can access',
     'posts:create': 'Create posts as you',
     'posts:like': 'Like posts on your behalf',
-    'posts:reply': 'Reply to posts as you'
+    'posts:reply': 'Reply to posts as you',
+    'files:app': 'Read files in MistWarp\'s own folder on your Origin drive'
 };
 
 // Group label per category (the part before the colon).
@@ -28,6 +29,7 @@ const CATEGORY_LABELS = {
     following: 'Following',
     friends: 'Friends',
     posts: 'Social',
+    files: 'Files',
     status: 'Status'
 };
 
