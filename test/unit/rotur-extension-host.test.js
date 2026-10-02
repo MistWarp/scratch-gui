@@ -49,18 +49,18 @@ test('trusted projects still confirm sensitive Rotur actions', async () => {
     const showModal = jest.fn(() => Promise.resolve(true));
     host.acquireModalLock = jest.fn(() => Promise.resolve({showModal}));
 
-    await host.call('me.transfer', ['other-user', 10, ''], {
+    await host.call('gifts.create', [10], {
         sensitive: false,
         label: 'claim a free hat',
         confirmation: {type: 'payment', amount: 1, recipient: 'friend'}
     });
 
     expect(showModal).toHaveBeenCalledWith('confirm', {
-        label: 'send 10 credits to @other-user',
-        confirmation: {type: 'payment', amount: 10, recipient: 'other-user'},
+        label: 'create a gift of 10 credits',
+        confirmation: null,
         username: 'user'
     });
-    expect(callRotur).toHaveBeenCalledWith('me.transfer', ['other-user', 10, '']);
+    expect(callRotur).toHaveBeenCalledWith('gifts.create', [10]);
 });
 
 test('authenticated reads expand scopes without prompting', async () => {
@@ -120,9 +120,9 @@ test('blocked projects cannot reopen Rotur prompts', async () => {
 
     await expect(host.ensureConsent(['posts:create'], {name: 'Blocked project'})).resolves.toBe(false);
     await expect(host.ensureActivitySharing()).resolves.toBe(false);
-    await expect(host.call('me.transfer', ['other-user', 10], {
+    await expect(host.call('gifts.create', [10], {
         sensitive: true,
-        label: 'me.transfer'
+        label: 'gifts.create'
     })).rejects.toThrow('cancelled');
 
     expect(host.state.type).toBe(null);
