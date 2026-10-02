@@ -7,6 +7,8 @@
 //   web_message). If the browser blocks the popup it can fall back to a
 //   full-page redirect, and completeRedirect() finishes the sign-in when the
 //   page loads again.
+// - signInLoopback() is the desktop app's: Rotur redirects to a listener the
+//   app runs on 127.0.0.1.
 // - With offline_access the session carries a refresh token. Refresh tokens
 //   work once, so tabs refresh under a Web Lock and share the result over a
 //   BroadcastChannel (or the storage event where there is none).
@@ -224,6 +226,34 @@ const signIn = async (scopes, {redirectFallback = true} = {}) => {
     return session;
 };
 
+// The desktop app's editor isn't on a web origin, so Rotur can't hand the code
+// back to it. It signs in through a loopback redirect instead (RFC 8252):
+// `authorize` belongs to the desktop app. It opens this URL in the browser
+// with redirect_uri moved to a listener on a free port of 127.0.0.1, and
+// answers with what Rotur sent there: {redirectUri, state, code} or
+// {redirectUri, state, error}.
+const LOOPBACK_REDIRECT = 'http://127.0.0.1/';
+
+/**
+ * Sign in through the desktop app's loopback listener, and keep the session.
+ * @param {string[]} scopes Permissions besides profile.
+ * @param {function(string): Promise<object>} authorize The desktop app's.
+ * @returns {Promise<object>} The new session.
+ */
+const signInLoopback = async (scopes, authorize) => {
+    const {verifier, challenge} = await pkce();
+    const state = randomString();
+    const result = await authorize(authorizeUrl({scopes, state, challenge, redirectUri: LOOPBACK_REDIRECT}));
+    if (!result || result.state !== state) throw oauthError('invalid_state', 'Rotur sign-in did not finish');
+    if (result.error || !result.code) {
+        throw oauthError(result.error || 'invalid_request', result.error_description || 'Rotur sign-in was cancelled');
+    }
+    const session = await exchangeCode(result.code, verifier, result.redirectUri);
+    writeSession(session);
+    scheduleRefresh(session);
+    return session;
+};
+
 /**
  * Finish a sign-in that fell back to a full-page redirect, or hand an error
  * from inside the popup back to the page that opened it. Call it once, early,
@@ -377,5 +407,6 @@ export {
     onSessionChange,
     readSession,
     signIn,
+    signInLoopback,
     signOut
 };
