@@ -37,7 +37,7 @@ const cache = new Map();
 const cacheKey = (path, params) => `${path}|${JSON.stringify(params)}|${roturToken() || ''}`;
 
 const mutate = async (path, {method = 'POST', params = {}, body, scopes = []} = {}) => {
-    if (scopes.length) await ensureScopes(scopes);
+    if (scopes.length) await ensureScopes(scopes, {prompt: true});
     const query = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
         if (value !== null && typeof value !== 'undefined') query.set(key, String(value));

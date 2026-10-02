@@ -9,12 +9,16 @@ jest.mock('../../src/lib/rotur/oauth.js', () => ({
     completeRedirect: () => Promise.resolve(null),
     onSessionChange: jest.fn()
 }));
+const mockRotur = {abilities: null, me: {'username': 'sam', 'sys.id': 'id-1'}};
 jest.mock('rotur-sdk', () => ({
     Rotur: class {
         constructor () {
             this.token = null;
             this.socket = {};
-            this.me = {get: () => Promise.resolve({'username': 'sam', 'sys.id': 'id-1'})};
+            this.me = {
+                get: jest.fn(() => Promise.resolve(mockRotur.me)),
+                abilities: () => Promise.resolve(mockRotur.abilities)
+            };
         }
         get loggedIn () {
             return Boolean(this.token);
@@ -30,24 +34,36 @@ jest.mock('rotur-sdk', () => ({
 
 const client = require('../../src/lib/rotur/client.js');
 
+const signInWith = scopes => {
+    mockOauth.signIn.mockImplementation(asked => {
+        mockOauth.session = {accessToken: 'rotur_st_new', scopes: ['profile', ...(scopes || asked)], subject: 'id-1'};
+        return Promise.resolve(mockOauth.session);
+    });
+};
+
 beforeEach(() => {
     localStorage.clear();
     sessionStorage.clear();
     mockOauth.session = null;
     mockOauth.signIn.mockReset();
+    mockRotur.abilities = null;
+    mockRotur.me = {'username': 'sam', 'sys.id': 'id-1'};
 });
 
-test('signing in asks for nothing that spends credits, changes settings or reads secrets', () => {
+test('signing in asks for nothing that spends credits, changes settings or reads secrets', async () => {
+    signInWith();
+    await client.login();
+    const asked = mockOauth.signIn.mock.calls[0][0];
     for (const scope of [
         'credits:transfer', 'credits:manage', 'gifts:create', 'items:buy', 'cosmetics:buy', 'cosmetics:gift',
         'account:settings', 'signing:private', 'tokens:manage', 'account:delete', 'groups:manage', 'email'
     ]) {
-        expect(client.SIGN_IN_SCOPES).not.toContain(scope);
+        expect(asked).not.toContain(scope);
     }
-    expect(client.SIGN_IN_SCOPES).toEqual(expect.arrayContaining([
-        'offline_access', 'validators:generate', 'account:view', 'notifications:view', 'credits:view'
-    ]));
-    expect(new Set(client.SIGN_IN_SCOPES).size).toBe(client.SIGN_IN_SCOPES.length);
+    expect(asked).toEqual(expect.arrayContaining(['offline_access', 'account:view', 'notifications:view']));
+    expect(new Set(asked).size).toBe(asked.length);
+    // The sign-in buttons may fall back to a redirect.
+    expect(mockOauth.signIn.mock.calls[0][1]).toEqual({redirectFallback: true});
 });
 
 test('someone on the old sign-in stays signed in and is offered a reconnect', async () => {
@@ -60,12 +76,8 @@ test('someone on the old sign-in stays signed in and is offered a reconnect', as
 
 test('reconnecting replaces the old token with a Sign in with Rotur session', async () => {
     localStorage.setItem('mw:rotur-token', 'rotur_legacy');
-    mockOauth.signIn.mockImplementation(scopes => {
-        mockOauth.session = {accessToken: 'rotur_st_new', scopes: ['profile', ...scopes], subject: 'id-1'};
-        return Promise.resolve(mockOauth.session);
-    });
+    signInWith();
     await client.login();
-    expect(mockOauth.signIn).toHaveBeenCalledWith(client.SIGN_IN_SCOPES);
     expect(localStorage.getItem('mw:rotur-token')).toBeNull();
     expect(client.getRotur().token).toBe('rotur_st_new');
     expect(client.needsReconnect()).toBe(false);
@@ -73,15 +85,36 @@ test('reconnecting replaces the old token with a Sign in with Rotur session', as
     expect(JSON.stringify(sessionStorage)).not.toContain('rotur_st_new');
 });
 
-test('extra permissions are only asked for when the session lacks them', async () => {
-    mockOauth.session = {accessToken: 'rotur_st_a', scopes: ['profile', ...client.SIGN_IN_SCOPES], subject: 'id-1'};
-    await expect(client.ensureScopes(['account:view'])).resolves.toBe(true);
+test('switching scopes off on the consent screen never nags or leaves the page', async () => {
+    // They turned off groups on Rotur's consent screen.
+    mockOauth.session = {accessToken: 'rotur_st_a', scopes: ['profile', 'account:view'], subject: 'id-1'};
+    expect(client.needsReconnect()).toBe(false);
+    await expect(client.ensureScopes(['groups:view'])).resolves.toBe(false);
     expect(mockOauth.signIn).not.toHaveBeenCalled();
+    await expect(client.ensureScopes(['account:view'])).resolves.toBe(true);
 
-    mockOauth.signIn.mockImplementation(scopes => {
-        mockOauth.session = {accessToken: 'rotur_st_b', scopes: ['profile', ...scopes], subject: 'id-1'};
-        return Promise.resolve(mockOauth.session);
-    });
+    // A click can still ask, in a popup only.
+    signInWith(['account:view', 'groups:view']);
+    await expect(client.ensureScopes(['groups:view'], {prompt: true})).resolves.toBe(true);
+    expect(mockOauth.signIn.mock.calls[0][0]).toEqual(expect.arrayContaining(['groups:view', 'account:view']));
+    expect(mockOauth.signIn.mock.calls[0][1]).toEqual({redirectFallback: false});
+});
+
+test('the old sign-in reports the permissions its token really has', async () => {
+    localStorage.setItem('mw:rotur-token', 'rotur_legacy');
+    await client.restoreSession();
+    mockRotur.abilities = {token_type: 'sub', permissions: ['account:view', 'credits:view']};
+    await expect(client.ensureScopes(['credits:view'])).resolves.toBe(true);
+    await expect(client.ensureScopes(['signing:private'])).resolves.toBe(false);
+    mockRotur.abilities = {token_type: 'main', permissions: []};
     await expect(client.ensureScopes(['signing:private'])).resolves.toBe(true);
-    expect(mockOauth.signIn.mock.calls[0][0]).toEqual(expect.arrayContaining(['signing:private', 'account:view']));
+});
+
+test('the cached profile only counts for the account it was saved for', async () => {
+    mockOauth.session = {accessToken: 'rotur_st_a', scopes: ['profile'], subject: 'id-1'};
+    await expect(client.restoreSession()).resolves.toMatchObject({username: 'sam'});
+    // Another tab switched account.
+    mockOauth.session = {accessToken: 'rotur_st_b', scopes: ['profile'], subject: 'id-2'};
+    mockRotur.me = {'username': 'kit', 'sys.id': 'id-2'};
+    await expect(client.restoreSession()).resolves.toMatchObject({username: 'kit', id: 'id-2'});
 });

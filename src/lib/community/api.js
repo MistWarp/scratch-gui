@@ -125,12 +125,30 @@ const requestValidator = async (roturToken, key) => {
     throw error;
 };
 
-const exchangeValidator = async (roturToken, appKey = 'mistwarp') => {
-    const validator = await requestValidator(roturToken, appKey);
-    const authResponse = await fetch(
-        `${API_BASE}/auth?v=${encodeURIComponent(validator)}`,
-        {method: 'POST'}
-    );
+// Validators keyed to MistWarp's Rotur App can be made by MistWarp's own
+// sign-in token, and Rotur then refuses anyone the app has banned. A server
+// that only knows the old key refuses them, so that key is tried next.
+const VALIDATOR_KEYS = ['app_1938b6a87799f862', 'mistwarp'];
+
+const exchangeValidator = async roturToken => {
+    let authResponse;
+    for (const key of VALIDATOR_KEYS) {
+        let validator;
+        try {
+            validator = await requestValidator(roturToken, key);
+        } catch (error) {
+            // The old key needs validators:generate; without it, keep the 401.
+            if (!authResponse) throw error;
+            break;
+        }
+        authResponse = await fetch(`${API_BASE}/auth?v=${encodeURIComponent(validator)}`, {method: 'POST'});
+        // Today's server answers a validator for a key it doesn't check with
+        // 403 invalid_validator; one that tries both keys never does.
+        const refused = authResponse.status === 401 || (authResponse.status === 403 &&
+            (await authResponse.clone().json()
+                .catch(() => ({}))).code === 'invalid_validator');
+        if (!refused) break;
+    }
     const authData = await parseResponse(authResponse);
     storeSession(authData.token);
     setMinorAccount(authData.minor === true);

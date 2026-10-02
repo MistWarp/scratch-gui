@@ -8,8 +8,14 @@ if (!global.TextEncoder) global.TextEncoder = TextEncoder;
 
 const oauth = require('../../src/lib/rotur/oauth.js');
 
-const flush = async () => {
-    for (let i = 0; i < 5; i++) await new Promise(resolve => setTimeout(resolve, 0));
+// Wait for a condition rather than a number of ticks: PKCE hashing and fetches
+// settle on their own schedule.
+const waitFor = async check => {
+    for (let i = 0; i < 400; i++) {
+        if (check()) return;
+        await new Promise(resolve => setTimeout(resolve, 5));
+    }
+    throw new Error('timed out waiting');
 };
 
 const tokenResponse = (body, ok = true, status = 200) => Promise.resolve({
@@ -39,6 +45,8 @@ const fakePopup = () => {
     return {popup, answer};
 };
 
+const store = session => localStorage.setItem('mw:rotur-oauth', JSON.stringify(session));
+
 beforeEach(() => {
     localStorage.clear();
     sessionStorage.clear();
@@ -48,6 +56,7 @@ beforeEach(() => {
 
 afterEach(() => {
     jest.restoreAllMocks();
+    jest.useRealTimers();
 });
 
 test('signs in through the popup with PKCE and keeps a refreshable session', async () => {
@@ -57,8 +66,8 @@ test('signs in through the popup with PKCE and keeps a refreshable session', asy
         scope: 'profile offline_access account:view'
     }));
 
-    const signedIn = oauth.signIn(['account:view']);
-    await flush();
+    const signedIn = oauth.signIn(['account:view', 'offline_access']);
+    await waitFor(() => popup.location.href);
     const url = new URL(popup.location.href);
     expect(url.origin + url.pathname).toBe('https://api.rotur.dev/oauth/authorize');
     expect(Object.fromEntries(url.searchParams)).toMatchObject({
@@ -99,50 +108,60 @@ test('signs in through the popup with PKCE and keeps a refreshable session', asy
 test('a cancelled or closed popup rejects without storing anything', async () => {
     const first = fakePopup();
     const denied = oauth.signIn([]);
-    await flush();
+    await waitFor(() => first.popup.location.href);
     first.answer({error: 'access_denied'});
     await expect(denied).rejects.toMatchObject({code: 'access_denied'});
 
     const second = fakePopup();
     const closed = oauth.signIn([]);
-    await flush();
+    await waitFor(() => second.popup.location.href);
     second.popup.closed = true;
     await expect(closed).rejects.toMatchObject({code: 'closed'});
     expect(oauth.readSession()).toBeNull();
     expect(global.fetch).not.toHaveBeenCalled();
 });
 
-test('falls back to a redirect when the popup is blocked, and only finishes the sign-in this tab started', async () => {
+test('a blocked popup only goes to Rotur in this tab when the caller allows it', async () => {
     jest.spyOn(window, 'open').mockReturnValue(null);
     const navigate = jest.fn();
     oauth.configure({navigate});
+    await expect(oauth.signIn(['groups:view'], {redirectFallback: false})).rejects.toMatchObject({code: 'popup_blocked'});
+    expect(navigate).not.toHaveBeenCalled();
+});
+
+test('the redirect fallback comes back to the same page, and only for the sign-in this tab started', async () => {
+    jest.spyOn(window, 'open').mockReturnValue(null);
+    const navigate = jest.fn();
+    const replace = jest.fn();
+    oauth.configure({navigate, replace});
     history.replaceState(null, '', '/project/7');
     oauth.signIn(['account:view']);
-    await flush();
+    await waitFor(() => navigate.mock.calls.length);
     const target = new URL(navigate.mock.calls[0][0]);
     expect(target.searchParams.get('redirect_uri')).toBe(`${location.origin}/`);
     expect(target.searchParams.has('response_mode')).toBe(false);
     const state = target.searchParams.get('state');
-    expect(JSON.parse(sessionStorage.getItem('mw:rotur-oauth-pending'))).toMatchObject({state, returnTo: '/project/7'});
+    const pending = sessionStorage.getItem('mw:rotur-oauth-pending');
+    expect(JSON.parse(pending)).toMatchObject({state, returnTo: '/project/7'});
 
     // Coming back with someone else's code and state does nothing.
-    const pending = sessionStorage.getItem('mw:rotur-oauth-pending');
     history.replaceState(null, '', '/?code=attacker-code&state=attacker-state');
     await expect(oauth.completeRedirect()).resolves.toBeNull();
     expect(global.fetch).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
 
     sessionStorage.setItem('mw:rotur-oauth-pending', pending);
     global.fetch.mockImplementation(signInResponses({access_token: 'rotur_st_r', refresh_token: 'rrt_r', expires_in: 3600}));
     history.replaceState(null, '', `/?code=good-code&state=${state}&iss=https%3A%2F%2Fapi.rotur.dev`);
     await expect(oauth.completeRedirect()).resolves.toMatchObject({accessToken: 'rotur_st_r'});
-    expect(location.pathname + location.search).toBe('/project/7');
+    // A full load, so the app's router lands on the page too.
+    expect(replace).toHaveBeenCalledWith('/project/7');
     expect(Object.fromEntries(global.fetch.mock.calls[0][1].body).redirect_uri).toBe(`${location.origin}/`);
+    history.replaceState(null, '', '/');
 });
 
 test('refreshes once across tabs and shares the new token', async () => {
-    localStorage.setItem('mw:rotur-oauth', JSON.stringify({
-        accessToken: 'old', refreshToken: 'rrt_old', expiresAt: Date.now() + 1000, scopes: [], subject: 'user-id-1'
-    }));
+    store({accessToken: 'old', refreshToken: 'rrt_old', expiresAt: Date.now() + 1000, scopes: [], subject: 'user-id-1'});
     let release;
     global.fetch.mockReturnValue(new Promise(resolve => {
         release = () => resolve({ok: true, status: 200, json: () => Promise.resolve({
@@ -151,7 +170,7 @@ test('refreshes once across tabs and shares the new token', async () => {
     }));
     const a = oauth.getAccessToken();
     const b = oauth.getAccessToken();
-    await flush();
+    await waitFor(() => global.fetch.mock.calls.length);
     release();
     await expect(Promise.all([a, b])).resolves.toEqual(['new', 'new']);
     expect(global.fetch).toHaveBeenCalledTimes(1);
@@ -161,24 +180,34 @@ test('refreshes once across tabs and shares the new token', async () => {
     expect(oauth.readSession()).toMatchObject({accessToken: 'new', refreshToken: 'rrt_new', subject: 'user-id-1'});
 });
 
+test('a refresh that finishes after signing out does not sign back in', async () => {
+    store({accessToken: 'old', refreshToken: 'rrt_old', expiresAt: Date.now() + 1000, scopes: []});
+    let release;
+    global.fetch.mockReturnValue(new Promise(resolve => {
+        release = () => resolve({ok: true, status: 200, json: () => Promise.resolve({
+            access_token: 'new', refresh_token: 'rrt_new', expires_in: 3600
+        })});
+    }));
+    const token = oauth.getAccessToken();
+    await waitFor(() => global.fetch.mock.calls.length);
+    oauth.signOut();
+    release();
+    await expect(token).resolves.toBeNull();
+    expect(oauth.readSession()).toBeNull();
+});
+
 test('uses a token another tab refreshed instead of spending its own', async () => {
-    const stale = {accessToken: 'old', refreshToken: 'rrt_old', expiresAt: Date.now() + 1000, scopes: []};
-    localStorage.setItem('mw:rotur-oauth', JSON.stringify(stale));
-    global.fetch.mockReturnValue(tokenResponse({error: 'invalid_grant'}, false, 400));
+    store({accessToken: 'old', refreshToken: 'rrt_old', expiresAt: Date.now() + 1000, scopes: []});
     // The other tab wins the race and writes its result first.
     global.fetch.mockImplementationOnce(() => {
-        localStorage.setItem('mw:rotur-oauth', JSON.stringify({
-            accessToken: 'from-other-tab', refreshToken: 'rrt_other', expiresAt: Date.now() + 3600000, scopes: []
-        }));
+        store({accessToken: 'from-other-tab', refreshToken: 'rrt_other', expiresAt: Date.now() + 3600000, scopes: []});
         return tokenResponse({error: 'invalid_grant', error_description: 'Refresh token is invalid or expired'}, false, 400);
     });
     await expect(oauth.getAccessToken()).resolves.toBe('from-other-tab');
 });
 
 test('a revoked refresh token signs out and tells listeners', async () => {
-    localStorage.setItem('mw:rotur-oauth', JSON.stringify({
-        accessToken: 'old', refreshToken: 'rrt_old', expiresAt: Date.now() - 1, scopes: []
-    }));
+    store({accessToken: 'old', refreshToken: 'rrt_old', expiresAt: Date.now() - 1, scopes: []});
     const listener = jest.fn();
     const stop = oauth.onSessionChange(listener);
     global.fetch.mockReturnValue(tokenResponse({error: 'invalid_grant'}, false, 400));
@@ -186,6 +215,29 @@ test('a revoked refresh token signs out and tells listeners', async () => {
     expect(oauth.readSession()).toBeNull();
     expect(listener).toHaveBeenCalledWith(null);
     stop();
+});
+
+test('a session from another tab keeps refreshing here, retries after errors, and catches up on waking', async () => {
+    jest.useFakeTimers();
+    const soon = {accessToken: 'old', refreshToken: 'rrt_old', expiresAt: Date.now() + 3 * 60 * 1000, scopes: []};
+    store(soon);
+    global.fetch.mockImplementation(() => Promise.reject(new TypeError('Failed to fetch')));
+    // Another tab wrote this session; this tab takes over its refresh timer.
+    window.dispatchEvent(new StorageEvent('storage', {key: 'mw:rotur-oauth', newValue: JSON.stringify(soon)}));
+    await jest.advanceTimersByTimeAsync((60 * 1000) + 10);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    // Offline: it tries again 30 seconds later.
+    global.fetch.mockImplementation(() => tokenResponse({access_token: 'new', refresh_token: 'rrt_new', expires_in: 3600}));
+    await jest.advanceTimersByTimeAsync((30 * 1000) + 10);
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    expect(oauth.readSession().accessToken).toBe('new');
+
+    // After sleeping past expiry, coming back to the tab refreshes straight away.
+    store({accessToken: 'stale', refreshToken: 'rrt_stale', expiresAt: Date.now() - 1, scopes: []});
+    global.fetch.mockImplementation(() => tokenResponse({access_token: 'awake', refresh_token: 'rrt_awake', expires_in: 3600}));
+    document.dispatchEvent(new Event('visibilitychange'));
+    await jest.advanceTimersByTimeAsync(10);
+    expect(oauth.readSession().accessToken).toBe('awake');
 });
 
 test('an error inside the popup is handed to the opener', async () => {
@@ -208,9 +260,7 @@ test('an error inside the popup is handed to the opener', async () => {
 });
 
 test('signing out from a sign-out listener does not loop', () => {
-    localStorage.setItem('mw:rotur-oauth', JSON.stringify({
-        accessToken: 'a', refreshToken: 'r', expiresAt: Date.now() + 3600000, scopes: []
-    }));
+    store({accessToken: 'a', refreshToken: 'r', expiresAt: Date.now() + 3600000, scopes: []});
     const listener = jest.fn(() => oauth.signOut());
     const stop = oauth.onSessionChange(listener);
     oauth.signOut();
@@ -250,7 +300,7 @@ test('other tabs get the session in the message, not from storage they may not s
         channels[0].onmessage({data: null});
         expect(listener.mock.calls.map(call => call[0])).toEqual([session, null]);
         // And this tab's own changes go out with the session in them.
-        localStorage.setItem('mw:rotur-oauth', JSON.stringify(session));
+        store(session);
         oauth.signOut();
         expect(channels[0].posted).toEqual([null]);
         stop();
