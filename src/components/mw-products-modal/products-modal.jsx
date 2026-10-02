@@ -27,7 +27,7 @@ import {
 import Modal from '../../containers/windowed-modal.jsx';
 import Box from '../box/box.jsx';
 import api from '../../community/api.js';
-import {sendCommercePayment} from '../../community/credits.js';
+import {payWithRotur} from '../../lib/rotur/payment-window.js';
 import styles from './products-modal.css';
 
 const messages = defineMessages({
@@ -398,36 +398,40 @@ class ProductsModalComponent extends React.Component {
             });
             return;
         }
+        const refunding = withRefund && price > 0;
+        const revoke = refundKey => api.revokeGameProduct(projectId, selectedProductForEntitlements, {
+            username,
+            refundKey,
+            noRefund: !withRefund
+        });
         this.setState({
             revokeArmed: false,
-            onlineStatus: withRefund && price > 0 ? 'Sending refund…' : 'Revoking…'
+            onlineStatus: refunding ? 'Pay the refund on Rotur…' : 'Revoking…'
         });
         try {
-            let paymentId;
-            if (withRefund && price > 0) {
-                const paid = await sendCommercePayment({
-                    to: username,
-                    amount: price,
-                    kind: 'game_product_refund',
-                    resourceType: 'game_product',
-                    resourceId: `${projectId}:${selectedProductForEntitlements}`,
-                    note: `Refund: ${productName}`
+            // The refund is paid on Rotur first; revoking with its key checks it was.
+            if (refunding) {
+                await payWithRotur({
+                    start: returnUrl => api.gameProductRefundIntent(
+                        projectId, selectedProductForEntitlements, username, returnUrl
+                    ),
+                    confirm: ({key}) => revoke(key)
                 });
-                paymentId = paid.payment.id;
-                this.setState({onlineStatus: 'Refund sent, revoking…'});
+            } else {
+                await revoke();
             }
-            await api.revokeGameProduct(projectId, selectedProductForEntitlements, {
-                username,
-                paymentId,
-                noRefund: !withRefund
-            });
             this.setState({
                 onlineStatus: `Revoked from @${username}${withRefund && price > 0 ? ' with refund' : ''}.`,
                 revokeUsernameInput: '',
                 revokeArmed: false
             });
         } catch (err) {
-            this.setState({onlineStatus: `Revoke failed: ${err.message || err}`, revokeArmed: false});
+            this.setState({
+                onlineStatus: err.cancelled ?
+                    'Refund cancelled. Nothing was revoked.' :
+                    `Revoke failed: ${err.message || err}`,
+                revokeArmed: false
+            });
         }
     };
 

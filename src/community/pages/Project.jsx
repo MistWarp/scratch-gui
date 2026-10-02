@@ -15,9 +15,8 @@ import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.j
 import {MULTIPLAYER_ENABLED} from '../../lib/mistwarp-games/config.js';
 import {cachedFetchBuffer, preloadContent} from '../../lib/community/cached-fetch.js';
 import {buyProject} from '../purchase';
-import {
-    isInsufficientFunds, sendCommercePayment, listCommerceBounties
-} from '../credits';
+import {listCommerceBounties} from '../credits';
+import {payLink} from '../../lib/rotur/payment-window.js';
 import RoturConsentModal from '../components/RoturConsentModal.jsx';
 import GameMarketplaceModal from '../components/GameMarketplaceModal.jsx';
 import {
@@ -260,10 +259,6 @@ const Project = () => {
     const [confirmUnsandboxed, setConfirmUnsandboxed] = useState(false);
     const [buying, setBuying] = useState(false);
     const [confirmBuy, setConfirmBuy] = useState(false);
-    const [supportOpen, setSupportOpen] = useState(false);
-    const [supportAmount, setSupportAmount] = useState('5');
-    const [supporting, setSupporting] = useState(false);
-    const [supportSent, setSupportSent] = useState(false);
     const [savingLibrary, setSavingLibrary] = useState(false);
     const [savingFeatured, setSavingFeatured] = useState(false);
     const [savingComments, setSavingComments] = useState(false);
@@ -1144,54 +1139,10 @@ const Project = () => {
         } catch (e) {
             if (actionContextRef.current !== context) return;
             setConfirmBuy(false);
-            if (isInsufficientFunds(e)) {
-                setActionError(communityText('You do not have enough credits. Claim your daily credits on Rotur, then try again.'));
-            } else if (e.needsReauth) {
-                setActionError('Your current login cannot send credits. Log out and back in, then try again.');
-            } else {
-                setActionError(e.message || 'Could not complete the purchase.');
-            }
+            if (!e.cancelled) setActionError(e.message || 'Could not complete the purchase.');
         } finally {
             releaseAction(actionKey);
             if (actionContextRef.current === context) setBuying(false);
-        }
-    };
-
-    const supportProject = async () => {
-        const amount = Math.round(Number(supportAmount) * 100) / 100;
-        if (!Number.isFinite(amount) || amount < 0.01) {
-            setActionError('Enter an amount greater than 0.');
-            return;
-        }
-        const context = actionContextRef.current;
-        const actionKey = beginAction('support');
-        if (!actionKey) return;
-        setSupporting(true);
-        setActionError(null);
-        try {
-            await sendCommercePayment({
-                to: project.owner,
-                amount,
-                kind: 'project_tip',
-                resourceType: 'project',
-                resourceId: project.id,
-                note: `Support for ${project.title}`
-            });
-            if (actionContextRef.current !== context) return;
-            setSupportSent(true);
-        } catch (e) {
-            if (actionContextRef.current !== context) return;
-            if (isInsufficientFunds(e)) {
-                setSupportOpen(false);
-                setActionError(communityText('You do not have enough credits. Claim your daily credits on Rotur, then try again.'));
-            } else {
-                setActionError(e.needsReauth ?
-                    'Your current login cannot send credits. Log out and back in, then try again.' :
-                    (e.message || 'Could not support this project.'));
-            }
-        } finally {
-            releaseAction(actionKey);
-            if (actionContextRef.current === context) setSupporting(false);
         }
     };
 
@@ -1383,7 +1334,7 @@ const Project = () => {
     const commentSource = useMemo(() => ({
         list: options => api.getComments(id, options),
         add: (content, parent, kind, donation) => api.addComment(id, content, parent, kind, donation),
-        donationIntent: amount => api.commentDonationIntent(id, amount),
+        donationIntent: (amount, returnUrl) => api.commentDonationIntent(id, amount, returnUrl),
         remove: commentId => api.deleteComment(id, commentId),
         edit: (commentId, content) => api.editComment(id, commentId, content),
         react: (commentId, type) => api.reactComment(id, commentId, type),
@@ -1518,11 +1469,12 @@ const Project = () => {
                 <div className={styles.topActions}>
                     {user && !project.isOwner ? (
                         <Button
+                            as="a"
                             variant="secondary"
-                            onClick={() => {
-                                setSupportSent(false);
-                                setSupportOpen(true);
-                            }}
+                            href={payLink(project.owner, {note: `Support for ${project.title}`})}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={communityText('Send {value1} credits on Rotur', {value1: project.owner})}
                         >
                             <Coins size={16} />{communityText('Support')}</Button>
                     ) : null}
@@ -1698,56 +1650,6 @@ const Project = () => {
 
             {collectionOpen ? <CollectionSaveModal project={project} onClose={() => setCollectionOpen(false)} /> : null}
 
-            {supportOpen ? (
-                <Modal
-                    title={communityText('Support {value1}', {value1: project.owner})}
-                    onClose={() => !supporting && setSupportOpen(false)}
-                    dismissDisabled={supporting}
-                    actions={supportSent ? (
-                        <Button variant="primary" onClick={() => setSupportOpen(false)}>{communityText('Done')}</Button>
-                    ) : (
-                        <React.Fragment>
-                            <Button variant="secondary" disabled={supporting} onClick={() => setSupportOpen(false)}>{communityText('Cancel')}</Button>
-                            <Button
-                                variant="primary"
-                                busy={supporting}
-                                busyLabel={communityText('Sending…')}
-                                onClick={supportProject}
-                            >
-                                <Coins size={15} />{communityText('Send {value1} credits', {value1: supportAmount || 0})}</Button>
-                        </React.Fragment>
-                    )}
-                >
-                    {supportSent ? (
-                        <p className={styles.confirmText}>
-                            {communityText('{value1} credits sent to {value2}.', {value1: supportAmount, value2: project.owner})}
-                        </p>
-                    ) : (
-                        <React.Fragment>
-                            <p className={styles.confirmText}>{communityText('This project stays free. Your credits go to its creator.')}</p>
-                            <div className={styles.supportPresets}>
-                                {[1, 5, 10, 25].map(amount => (
-                                    <button
-                                        type="button"
-                                        key={amount}
-                                        className={Number(supportAmount) === amount ? styles.supportPresetActive : styles.supportPreset}
-                                        onClick={() => setSupportAmount(String(amount))}
-                                    >{amount}</button>
-                                ))}
-                                <input
-                                    aria-label={communityText('Custom support amount')}
-                                    type="number"
-                                    min="0.01"
-                                    step="0.01"
-                                    value={supportAmount}
-                                    onChange={event => setSupportAmount(event.target.value)}
-                                />
-                            </div>
-                        </React.Fragment>
-                    )}
-                </Modal>
-            ) : null}
-
             {deleteConfirm ? (
                 <ConfirmModal
                     destructive
@@ -1882,13 +1784,14 @@ const Project = () => {
                         </React.Fragment>
                     )}
                     busy={buying}
-                    busyLabel={communityText('Processing…')}
+                    busyLabel={communityText('Waiting for Rotur…')}
                     onConfirm={doBuy}
                     onCancel={() => setConfirmBuy(false)}
                 >
                     <p className={styles.confirmText}>
                         {communityText('Buy {value1} for a one-time payment of {value2} credits and support its creator?', {value1: project.title, value2: price})}
                     </p>
+                    <p className={styles.confirmBalance}>{communityText('Rotur opens in a new window to take the payment.')}</p>
                 </ConfirmModal>
             ) : null}
             {actionError ? (

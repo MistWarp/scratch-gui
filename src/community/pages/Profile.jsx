@@ -8,8 +8,7 @@ import {
 } from 'lucide-react';
 import api, {projectUrl} from '../api';
 import rotur from '../rotur';
-import {payUser} from '../../lib/rotur/client.js';
-import {isInsufficientFunds} from '../credits';
+import {payLink} from '../../lib/rotur/payment-window.js';
 import {useUser} from '../UserContext.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import CommentThread from '../components/CommentThread.jsx';
@@ -20,7 +19,6 @@ import Button from '../components/ui/Button.jsx';
 import CardGrid from '../components/ui/CardGrid.jsx';
 import ConfirmModal from '../components/ui/ConfirmModal.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
-import Modal from '../components/ui/Modal.jsx';
 import Notice from '../components/ui/Notice.jsx';
 import SectionHeading from '../components/ui/SectionHeading.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
@@ -120,11 +118,6 @@ const lastPlayedLabel = value => {
 
 const scrollToCommentAnchor = id => scrollToAnchorWithRetry(id);
 
-const parseDonationAmount = value => {
-    const amount = Math.round(Number(value) * 100) / 100;
-    return Number.isFinite(amount) && amount > 0 ? amount : null;
-};
-
 const Profile = () => {
     const {text: communityText} = useCommunityText();
     const {name} = useParams();
@@ -151,7 +144,6 @@ const Profile = () => {
     const [adminMessage, setAdminMessage] = useState('');
     const [adminBusy, setAdminBusy] = useState('');
     const [adminNote, setAdminNote] = useState(null);
-    const [donating, setDonating] = useState(false);
     const [reviews, setReviews] = useState(null);
     const [safetyBusy, setSafetyBusy] = useState(false);
     const [blockConfirmOpen, setBlockConfirmOpen] = useState(false);
@@ -241,7 +233,6 @@ const Profile = () => {
         setSafetyBusy(false);
         setBlockConfirmOpen(false);
         setReporting(false);
-        setDonating(false);
         setActiveTab(profileTabFromHash(window.location.hash));
         setProfileBadges([]);
         setProfilePosts([]);
@@ -516,12 +507,6 @@ const Profile = () => {
                     type="user"
                     target={name}
                     onClose={() => setReporting(false)}
-                />
-            ) : null}
-            {donating ? (
-                <DonateModal
-                    recipient={profile.username || name}
-                    onClose={() => setDonating(false)}
                 />
             ) : null}
             <div className={styles.layout}>
@@ -855,10 +840,13 @@ const Profile = () => {
                                                 {profile.followed ? communityText('Following') : communityText('Follow')}
                                             </Button>
                                             <Button
+                                                as="a"
                                                 variant="primary"
                                                 className={styles.railButton}
-                                                title={communityText('Send credits to {value1}', {value1: profile.username || name})}
-                                                onClick={() => setDonating(true)}
+                                                href={payLink(profile.username || name, {note: 'Sent from MistWarp'})}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                title={communityText('Send {value1} credits on Rotur', {value1: profile.username || name})}
                                             >
                                                 <Coins size={15} />{communityText('Donate')}</Button>
                                         </div>
@@ -1021,118 +1009,5 @@ const Profile = () => {
     );
 };
 
-export const DonateModal = ({recipient, onClose}) => {
-    const {text: communityText} = useCommunityText();
-    const [amount, setAmount] = useState('');
-    const [busy, setBusy] = useState(false);
-    const [status, setStatus] = useState(null);
-    const [sent, setSent] = useState(0);
-    const [insufficient, setInsufficient] = useState(false);
-    const actionLocks = useRef(new Set());
-    const currentRecipient = useRef(recipient);
-    currentRecipient.current = recipient;
-    useEffect(() => {
-        setAmount('');
-        setBusy(false);
-        setStatus(null);
-        setSent(0);
-        setInsufficient(false);
-    }, [recipient]);
-    const close = () => {
-        if (!busy) onClose();
-    };
-
-    const send = async () => {
-        const value = parseDonationAmount(amount);
-        if (value === null) {
-            setStatus('Enter an amount greater than 0.');
-            return;
-        }
-        const actionRecipient = recipient;
-        const actionKey = `${recipient}\u0000payment`;
-        if (actionLocks.current.has(actionKey)) return;
-        actionLocks.current.add(actionKey);
-        setBusy(true);
-        setStatus(null);
-        setInsufficient(false);
-        try {
-            await payUser(recipient, value, `MistWarp donation to ${recipient}`);
-            if (currentRecipient.current === actionRecipient) setSent(value);
-        } catch (e) {
-            if (currentRecipient.current === actionRecipient) {
-                if (isInsufficientFunds(e)) {
-                    setInsufficient(true);
-                } else {
-                    setStatus(e.needsReauth ?
-                        'Your current login cannot send credits. Log out and back in, then try again.' :
-                        (e.message || 'Could not send credits.'));
-                }
-            }
-        } finally {
-            actionLocks.current.delete(actionKey);
-            if (currentRecipient.current === actionRecipient) setBusy(false);
-        }
-    };
-
-    const submit = event => {
-        event.preventDefault();
-        return send();
-    };
-
-    return (
-        <Modal
-            className={styles.donateModal}
-            dismissDisabled={busy}
-            icon={Coins}
-            onClose={close}
-            title={communityText('Donate to {value1}', {value1: recipient})}
-        >
-            {sent ? (
-                <div className={styles.donateDone}>
-                    <span className={styles.donateDoneIcon}><Coins size={28} /></span>
-                    <p>{communityText('Sent {value1} credits to {value2}.', {value1: sent, value2: recipient})}</p>
-                    <Button
-                        variant="primary"
-                        onClick={close}
-                    >{communityText('Done')}</Button>
-                </div>
-            ) : (
-                <form className={styles.donateBody} onSubmit={submit}>
-                    <p className={styles.donateText}>
-                        {communityText('Send Rotur credits straight to {value1}. This transfers directly from your account.', {value1: recipient})}
-                    </p>
-                    <input
-                        className={styles.donateInput}
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        placeholder={communityText('Amount in credits')}
-                        value={amount}
-                        disabled={busy}
-                        required
-                        onChange={event => setAmount(event.target.value)}
-                    />
-                    {status ? <Notice variant="error">{status}</Notice> : null}
-                    {insufficient ? (
-                        <Notice variant="warning">
-                            {communityText('Not enough credits in your balance. Claim your daily credits on Rotur, then send again.')}{' '}
-                            <a href="https://rotur.dev/me" target="_blank" rel="noopener noreferrer">{communityText('Open Rotur')}</a>
-                        </Notice>
-                    ) : null}
-                    <Button
-                        variant="primary"
-                        type="submit"
-                        busy={busy}
-                        busyLabel={communityText('Sending…')}
-                    >
-                        <Coins size={16} />
-                        {communityText('Send credits')}
-                    </Button>
-                </form>
-            )}
-        </Modal>
-    );
-};
-
-export {scrollToCommentAnchor, parseDonationAmount};
+export {scrollToCommentAnchor};
 export default Profile;

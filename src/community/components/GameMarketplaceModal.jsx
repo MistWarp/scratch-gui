@@ -152,7 +152,7 @@ const GameMarketplaceModal = ({projectId, productId, isDraft, vm, username, onBl
             }
         } catch (e) {
             if (mounted.current && currentProjectId.current === actionProjectId) {
-                setError(e.message || communityText('Could not complete the purchase.'));
+                setError(e.cancelled ? '' : (e.message || communityText('Could not complete the purchase.')));
             }
         } finally {
             releasePurchase();
