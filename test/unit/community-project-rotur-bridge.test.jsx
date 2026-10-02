@@ -14,10 +14,10 @@ const mockClient = {
     setToken: jest.fn(),
     tokens: {create: jest.fn(() => Promise.resolve({token: 'rotur_new-token'}))},
     me: {
-        transfer: jest.fn(() => Promise.resolve({ok: true})),
         get: jest.fn(() => Promise.resolve({username: 'Viewer'}))
     },
     profiles: {get: jest.fn(() => Promise.resolve({username: 'someone'}))},
+    gifts: {create: jest.fn(() => Promise.resolve({ok: true}))},
     storage: {get: jest.fn(() => Promise.resolve({data: {}}))}
 };
 
@@ -125,20 +125,25 @@ describe('community project page Rotur bridge', () => {
         wrapper.unmount();
     });
 
-    test('a payment always shows the real amount and recipient, whatever the frame claims', async () => {
+    test('projects can no longer send credits', async () => {
+        const {wrapper, send} = await mountProject();
+        const reply = await send({kind: 'call', id: 5, method: 'me.transfer', args: ['thief', 5000, '']});
+        expect(reply.ok).toBe(false);
+        wrapper.unmount();
+    });
+
+    test('spending always shows the real amount, whatever the frame claims', async () => {
         const {wrapper, send} = await mountProject();
         const pending = send({
             kind: 'call',
-            id: 5,
-            method: 'me.transfer',
-            args: ['thief', 5000, ''],
+            id: 6,
+            method: 'gifts.create',
+            args: [5000],
             opts: {sensitive: false, label: 'claim a free hat'}
         });
         await pending;
-        expect(mockClient.me.transfer).not.toHaveBeenCalled();
-        expect(wrapper.text()).toContain('Confirm payment');
-        expect(wrapper.text()).toContain('5000');
-        expect(wrapper.text()).toContain('@thief');
+        expect(mockClient.gifts.create).not.toHaveBeenCalled();
+        expect(wrapper.text()).toContain('create a gift of 5000 credits');
         expect(wrapper.text()).not.toContain('free hat');
         wrapper.unmount();
     });
