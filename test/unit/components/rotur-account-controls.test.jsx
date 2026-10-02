@@ -41,4 +41,27 @@ describe('Rotur account controls', () => {
         expect(onCloseMenu).toHaveBeenCalled();
         expect(onOpenSettings).toHaveBeenCalledTimes(1);
     });
+
+    test('switching accounts signs out and opens the sign-in window without leaving the page', () => {
+        const onLogout = jest.fn();
+        const onOpenLogin = jest.fn();
+        const before = window.location.href;
+        const wrapper = shallowWithIntl(
+            <RoturAccount
+                username="tester"
+                onCloseMenu={() => {}}
+                onLogout={onLogout}
+                onOpenLogin={onOpenLogin}
+                onOpenMenu={() => {}}
+            />
+        );
+        wrapper.find(FormattedMessage)
+            .filterWhere(message => message.prop('id') === 'mw.rotur.accountMenu.switchAccount')
+            .parent()
+            .simulate('click');
+
+        expect(onLogout).toHaveBeenCalledTimes(1);
+        expect(onOpenLogin).toHaveBeenCalledTimes(1);
+        expect(window.location.href).toBe(before);
+    });
 });
