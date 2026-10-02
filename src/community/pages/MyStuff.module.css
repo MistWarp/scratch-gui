@@ -373,6 +373,7 @@
 
 .ovCardActions {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
 }
 
@@ -380,26 +381,6 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-}
-
-.ovWalletTop {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    align-items: flex-start;
-}
-
-.ovWalletBalance {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: var(--fs-3xl);
-    font-weight: 700;
-    color: var(--mw-text);
-}
-
-.ovWalletBalance svg {
-    color: var(--accent-strong);
 }
 
 .ovWalletRows {

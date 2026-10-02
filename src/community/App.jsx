@@ -2,7 +2,7 @@ import tokenStyles from './styles/tokens.module.css';
 import React, {Suspense, useEffect} from 'react';
 import {lazyWithReload as lazy} from '../lib/lazy-with-retry.js';
 import ErrorBoundary from '../containers/error-boundary.jsx';
-import {Routes, Route, useLocation} from 'react-router-dom';
+import {Navigate, Routes, Route, useLocation} from 'react-router-dom';
 import {UserProvider} from './UserContext.jsx';
 import setPageMeta from './page-meta.js';
 import {initSiteErrorReporting} from '../lib/error-reporter.js';
@@ -32,7 +32,7 @@ const Followers = lazy(() => import('./pages/Followers.jsx'));
 const Settings = lazy(() => import('./pages/Settings.jsx'));
 const MyStuff = lazy(() => import('./pages/MyStuff.jsx'));
 const ManageProject = lazy(() => import('./pages/ManageProject.jsx'));
-const Wallet = lazy(() => import('./pages/Wallet.jsx'));
+const Purchases = lazy(() => import('./pages/Purchases.jsx'));
 const Notifications = lazy(() => import('./pages/Notifications.jsx'));
 const Post = lazy(() => import('./pages/Post.jsx'));
 const News = lazy(() => import('./pages/News.jsx'));
@@ -67,7 +67,7 @@ const ROUTE_TITLES = [
     ['/perks', 'Memberships'],
     ['/mystuff/project/', 'Manage project'],
     ['/mystuff', 'My Stuff'],
-    ['/wallet', 'Wallet'],
+    ['/purchases', 'Purchases'],
     ['/notifications', 'Notifications'],
     ['/posts/', 'Post'],
     ['/news', 'News'],
@@ -151,7 +151,8 @@ const App = () => {
                         <Route path="/settings" element={<Settings />} />
                         <Route path="/mystuff" element={<MyStuff />} />
                         <Route path="/mystuff/project/:id" element={<ManageProject />} />
-                        <Route path="/wallet" element={<Wallet />} />
+                        <Route path="/purchases" element={<Purchases />} />
+                        <Route path="/wallet" element={<Navigate to="/purchases" replace />} />
                         <Route path="/notifications" element={<Notifications />} />
                         <Route path="/posts/:id" element={<Post />} />
                         <Route path="/news" element={<News />} />
