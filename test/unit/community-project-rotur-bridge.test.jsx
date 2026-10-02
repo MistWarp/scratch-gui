@@ -132,7 +132,7 @@ describe('community project page Rotur bridge', () => {
         wrapper.unmount();
     });
 
-    test('spending always shows the real amount, whatever the frame claims', async () => {
+    test('a confirmation shows what the host builds, whatever the frame claims', async () => {
         const {wrapper, send} = await mountProject();
         const pending = send({
             kind: 'call',
