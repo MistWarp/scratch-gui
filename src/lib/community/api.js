@@ -106,24 +106,29 @@ const parseResponse = async response => {
     return data;
 };
 
+// The token goes in the Authorization header, never the URL, so it stays out
+// of server logs, proxies and browser history.
+const requestValidator = async (roturToken, key) => {
+    const response = await fetch('https://api.rotur.dev/v2/validators', {
+        method: 'POST',
+        headers: {'Authorization': `Bearer ${roturToken}`, 'Content-Type': 'application/json'},
+        body: JSON.stringify({key})
+    });
+    const data = await response.json().catch(() => ({}));
+    if (data.validator) return data.validator;
+    const status = response.status;
+    const error = new Error(data.error || 'Could not validate Rotur login');
+    error.status = status;
+    if (status === 403) error.code = data.code || 'account_blocked';
+    else if (status === 429 || status >= 500) error.code = data.code || 'VALIDATOR_UNAVAILABLE';
+    else error.code = data.code || 'VALIDATOR_GENERATION_FAILED';
+    error.redirectUrl = data.redirect_url || 'https://rotur.dev/me';
+    error.data = data;
+    throw error;
+};
+
 const exchangeValidator = async (roturToken, appKey = 'mistwarp') => {
-    const validatorResponse = await fetch(
-        `https://api.rotur.dev/generate_validator?key=${encodeURIComponent(appKey)}&auth=${encodeURIComponent(roturToken)}`
-    );
-    const validatorData = await validatorResponse.json().catch(() => ({}));
-    const validator = validatorData.validator;
-    if (!validator) {
-        const error = new Error(validatorData.error || 'Could not validate Rotur login');
-        error.status = validatorResponse.status;
-        const status = validatorResponse.status;
-        let defaultCode = 'VALIDATOR_GENERATION_FAILED';
-        if (status === 403) defaultCode = 'account_blocked';
-        else if (status === 429 || status >= 500) defaultCode = 'VALIDATOR_UNAVAILABLE';
-        error.code = validatorData.code || defaultCode;
-        error.redirectUrl = validatorData.redirect_url || 'https://rotur.dev/me';
-        error.data = validatorData;
-        throw error;
-    }
+    const validator = await requestValidator(roturToken, appKey);
     const authResponse = await fetch(
         `${API_BASE}/auth?v=${encodeURIComponent(validator)}`,
         {method: 'POST'}
@@ -489,6 +494,7 @@ export {
     loadSession,
     storeSession,
     exchangeValidator,
+    requestValidator,
     runExchange,
     onAuthInvalid,
     onBanned,
