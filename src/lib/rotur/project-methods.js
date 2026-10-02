@@ -1,8 +1,9 @@
 // The only Rotur SDK methods a project may reach through a Rotur host (the
 // editor, the community project page and packaged exports). Each entry lists
 // the scopes that cover it (any one is enough; an empty list means it needs no
-// grant) and, for actions that spend, give away or destroy something, the
-// confirmation the host shows before every call.
+// grant) and, for actions that give away or destroy something, the
+// confirmation the host shows before every call. Nothing here spends credits:
+// projects can't.
 //
 // The host decides all of this. Nothing the project sends (labels,
 // confirmation text, a "sensitive" flag, a project name) is trusted, because a
@@ -10,10 +11,6 @@
 // Never resolve a method path that is not a key of this table.
 
 const text = value => String(typeof value === 'undefined' || value === null ? '' : value).slice(0, 200);
-const amount = value => {
-    const number = Number(value);
-    return Number.isFinite(number) ? number : 0;
-};
 
 const PROJECT_METHODS = Object.freeze({
     'me.abilities': {scopes: []},
@@ -25,8 +22,6 @@ const PROJECT_METHODS = Object.freeze({
     'me.block': {scopes: ['blocked:manage']},
     'me.unblock': {scopes: ['blocked:manage']},
     'me.requests': {scopes: ['friends:view']},
-    'me.claimTime': {scopes: ['credits:view']},
-    'me.transactions': {scopes: ['credits:view']},
 
     'profiles.get': {scopes: []},
     'profiles.exists': {scopes: []},
@@ -35,10 +30,6 @@ const PROJECT_METHODS = Object.freeze({
     'check.banned': {scopes: []},
     'notifications.list': {scopes: ['notifications:view']},
 
-    'gifts.create': {
-        scopes: ['gifts:create'],
-        confirm: args => ({label: `create a gift of ${amount(args[0])} credits`})
-    },
     'gifts.get': {scopes: []},
     'gifts.claim': {
         scopes: ['gifts:claim'],
@@ -52,10 +43,6 @@ const PROJECT_METHODS = Object.freeze({
     'keys.mine': {scopes: ['keys:view']},
     'keys.get': {scopes: []},
     'keys.check': {scopes: []},
-    'keys.buy': {
-        scopes: [],
-        confirm: args => ({label: `buy key ${text(args[0])}`})
-    },
     'keys.cancel': {
         scopes: [],
         confirm: args => ({label: `cancel your subscription to key ${text(args[0])}`})
@@ -102,10 +89,6 @@ const PROJECT_METHODS = Object.freeze({
     'items.get': {scopes: []},
     'items.selling': {scopes: []},
     'items.list': {scopes: []},
-    'items.buy': {
-        scopes: ['items:buy'],
-        confirm: args => ({label: `buy item ${text(args[0])}`})
-    },
     'items.sell': {scopes: ['items:sell']},
     'items.stopSelling': {scopes: ['items:sell']},
     'items.setPrice': {scopes: ['items:sell']},
@@ -115,10 +98,6 @@ const PROJECT_METHODS = Object.freeze({
     },
     'cosmetics.shop': {scopes: []},
     'cosmetics.mine': {scopes: ['cosmetics:view']},
-    'cosmetics.purchase': {
-        scopes: ['cosmetics:buy'],
-        confirm: args => ({label: `buy cosmetic ${text(args[0])}`})
-    },
     'cosmetics.equip': {scopes: ['cosmetics:equip']},
     'cosmetics.unequip': {scopes: ['cosmetics:equip']},
     'cosmetics.forUser': {scopes: []},
@@ -134,14 +113,6 @@ const PROJECT_METHODS = Object.freeze({
     'groups.announcements': {scopes: []},
     'groups.events': {scopes: ['groups:view']},
     'groups.products': {scopes: ['groups:view']},
-    'groups.sendTip': {
-        scopes: ['credits:manage'],
-        confirm: args => ({label: `tip ${amount(args[1])} credits to group ${text(args[0])}`})
-    },
-    'groups.purchaseProduct': {
-        scopes: ['credits:manage'],
-        confirm: args => ({label: `buy product ${text(args[1])} in group ${text(args[0])}`})
-    },
 
     // Projects only reach MistWarp's own Origin FS folder, never the whole drive.
     'files.index': {scopes: ['files:app']},
