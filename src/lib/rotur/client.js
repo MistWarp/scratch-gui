@@ -682,6 +682,12 @@ const markNotificationsRead = async () => {
     }
 };
 
+// Someone can untick scopes on the consent screen, so check what was granted.
+const hasScopes = scopes => {
+    const session = oauth.readSession();
+    return Boolean(session) && scopes.every(scope => session.scopes.includes(scope));
+};
+
 // Whether the session can use every scope in `scopes`. With prompt, and only
 // then, missing ones are asked for in a popup, so call it from a click; it
 // never leaves the page. Someone can switch scopes off on Rotur's consent
@@ -693,7 +699,7 @@ const ensureScopes = async (scopes, {prompt = false} = {}) => {
         if (wanted.every(scope => session.scopes.includes(scope))) return true;
         if (!prompt) return false;
         await login(session.scopes.filter(scope => scope !== 'profile').concat(wanted), false);
-        return true;
+        return hasScopes(wanted);
     }
     if (!loadLegacyToken()) return false;
     // A token from the old sign-in says what it may do.
@@ -705,9 +711,12 @@ const ensureScopes = async (scopes, {prompt = false} = {}) => {
         return true;
     }
     if (!prompt) return false;
-    await login(granted.concat(wanted), false);
-    return true;
+    // On the web this moves to Sign in with Rotur, so it asks only for what
+    // is wanted, not everything the old token could do.
+    await login(webOrigin ? wanted : granted.concat(wanted), false);
+    return !oauth.readSession() || hasScopes(wanted);
 };
+
 
 const isPaymentPermissionError = error => {
     const message = String((error && error.message) || error || '').toLowerCase();
