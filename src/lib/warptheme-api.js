@@ -1,5 +1,6 @@
 import {ensureScopes} from './rotur/client.js';
 import {ROTUR_TOKEN_KEY} from './rotur/token-key.js';
+import {requestValidator} from './community/api.js';
 
 const WARPTHEME_API_BASE = 'https://warptheme.mistium.com/api';
 const WARPTHEME_SESSION_KEY = 'mw:warptheme-session';
@@ -71,18 +72,9 @@ const exchangeSession = async () => {
     await ensureScopes(['validators:generate']);
     const roturToken = readStorage(ROTUR_TOKEN_KEY);
     if (!roturToken) throw new Error('Sign in with Rotur to use this WarpTheme action.');
-    const validatorResponse = await fetch(
-        `https://api.rotur.dev/generate_validator?key=warptheme&auth=${encodeURIComponent(roturToken)}`
-    );
-    const validatorData = await validatorResponse.json().catch(() => ({}));
-    if (!validatorResponse.ok || !validatorData.validator) {
-        const error = new Error(validatorData.error || 'Could not authorize WarpTheme.');
-        error.status = validatorResponse.status;
-        error.data = validatorData;
-        throw error;
-    }
+    const validator = await requestValidator(roturToken, 'warptheme');
     const authResponse = await fetch(
-        `${WARPTHEME_API_BASE}/auth?v=${encodeURIComponent(validatorData.validator)}`,
+        `${WARPTHEME_API_BASE}/auth?v=${encodeURIComponent(validator)}`,
         {method: 'POST'}
     );
     const authData = await responseData(authResponse);
