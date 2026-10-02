@@ -19,6 +19,7 @@ import NotificationsProvider from '../../lib/notifications-provider.jsx';
 import TWSecurityManager from '../../containers/tw-security-manager.jsx';
 import TWInvalidProjectModal from '../../containers/tw-invalid-project-modal.jsx';
 import RoturSession from '../../containers/rotur-session.jsx';
+import {hasRotur} from '../../lib/rotur/availability.js';
 import RoturExtensionHost from '../../containers/rotur-extension-host.jsx';
 import MistWarpGameHost from '../../containers/mistwarp-game-host.jsx';
 import RoturLoginModal from '../mw-rotur-login-modal/rotur-login-modal.jsx';
@@ -860,8 +861,8 @@ const GUIComponent = props => {
                 {!isPlayerOnly && <TWRestorePointManager />}
                 {!isPlayerOnly && <MWExtensionManagerModal />}
                 {!isPlayerOnly && <TWVariableManager />}
-                {!isPlayerOnly && <MWProductsModal />}
-                {!isPlayerOnly && <MWGameItemsModal />}
+                {!isPlayerOnly && hasRotur() && <MWProductsModal />}
+                {!isPlayerOnly && hasRotur() && <MWGameItemsModal />}
                 {!isPlayerOnly && <MWHelpModal />}
                 {!isPlayerOnly && <MWProjectThemeModal />}
                 {usernameModalVisible && <TWUsernameModal visible={usernameModalVisible} />}
@@ -879,7 +880,7 @@ const GUIComponent = props => {
                 {gitModalVisible && <TWGitModal />}
             </React.Suspense>
             {invalidProjectModalVisible && <TWInvalidProjectModal />}
-            {roturLoginModalVisible && (
+            {roturLoginModalVisible && hasRotur() && (
                 <RoturLoginModal onRequestClose={onRequestCloseRoturLogin} />
             )}
             <SimpleDialog />
