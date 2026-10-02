@@ -110,6 +110,28 @@ test('a server that only knows the old validator key gets one next', async () =>
     expect(keys).toEqual(['app_1938b6a87799f862', 'mistwarp']);
 });
 
+test('a token that can\'t make app-ID validators uses the old key, and isn\'t taken for a ban', async () => {
+    // Rotur only lets MistWarp's own sign-in token make app-ID validators; the
+    // desktop app's token and older ones get 403, with no code.
+    window.fetch = jest.fn((url, init) => {
+        if (String(url).includes('/v2/validators')) {
+            return Promise.resolve(JSON.parse(init.body).key === 'mistwarp' ?
+                {status: 200, json: () => Promise.resolve({validator: 'v-old'})} :
+                {status: 403, json: () => Promise.resolve({error: 'Token lacks permission: validators:generate'})});
+        }
+        return Promise.resolve({ok: true, status: 200, json: () => Promise.resolve({ok: true, token: 'session'})});
+    });
+    await expect(exchangeValidator('rotur-legacy')).resolves.toMatchObject({token: 'session'});
+    expect(String(window.fetch.mock.calls[2][0])).toContain('v=v-old');
+
+    // Without validators:generate either, the old key's own error is what's reported.
+    window.fetch = jest.fn(() => Promise.resolve({
+        status: 403, json: () => Promise.resolve({error: 'Token lacks permission: validators:generate'})
+    }));
+    await expect(exchangeValidator('rotur-legacy')).rejects.toThrow('Token lacks permission');
+    expect(window.fetch).toHaveBeenCalledTimes(2);
+});
+
 test('MistWarp project identity controls share, remix, and update actions', () => {
     expect(getMistWarpAction(null, false)).toBe('save');
     expect(getMistWarpAction({isOwner: false, shared: true}, false)).toBeNull();
