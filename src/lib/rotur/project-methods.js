@@ -143,10 +143,11 @@ const PROJECT_METHODS = Object.freeze({
         confirm: args => ({label: `buy product ${text(args[1])} in group ${text(args[0])}`})
     },
 
-    'files.index': {scopes: ['files:view']},
-    'files.getByPath': {scopes: ['files:view']},
-    'files.getByUUID': {scopes: ['files:view']},
-    'files.usage': {scopes: ['files:view']}
+    // Projects only reach MistWarp's own Origin FS folder, never the whole drive.
+    'files.index': {scopes: ['files:app']},
+    'files.getByPath': {scopes: ['files:app']},
+    'files.getByUUID': {scopes: ['files:app']},
+    'files.usage': {scopes: ['files:app']}
 });
 
 const has = (object, key) => typeof key === 'string' && Object.prototype.hasOwnProperty.call(object, key);
@@ -156,6 +157,8 @@ const has = (object, key) => typeof key === 'string' && Object.prototype.hasOwnP
  * @returns {object|null} The allowlist entry, or null if projects may not call it.
  */
 const projectMethod = method => (has(PROJECT_METHODS, method) ? PROJECT_METHODS[method] : null);
+
+const WHOLE_DRIVE_SCOPES = ['files:view', 'files:manage', 'files:delete'];
 
 // Every scope some project block can use. A project may only ask for these.
 const PROJECT_SCOPES = new Set(Object.values(PROJECT_METHODS).flatMap(spec => spec.scopes));
@@ -182,7 +185,8 @@ const grantsSilently = scopes => scopes.every(scope => scope.endsWith(':view') |
  */
 const validateProjectScopes = scopes => {
     if (!Array.isArray(scopes)) return null;
-    const list = [...new Set(scopes)];
+    // Older projects ask for the whole drive; they get MistWarp's folder.
+    const list = [...new Set(scopes.map(scope => (WHOLE_DRIVE_SCOPES.includes(scope) ? 'files:app' : scope)))];
     return list.every(scope => typeof scope === 'string' && PROJECT_SCOPES.has(scope)) ? list : null;
 };
 
@@ -210,6 +214,55 @@ const authorizeProjectCall = (method, args, granted, storageId) => {
     return {spec, args: list, confirm: spec.confirm ? spec.confirm(list) : null};
 };
 
+const OFS_HOME = 'origin/(c) users/';
+
+const outsideFolder = root => new Error(`Projects can only read files in MistWarp's folder${root ? `, ${root}` : ''}`);
+
+// Rotur's folder for the signed-in account, read once per token from the path
+// index. A failed read isn't kept, so the next call tries again.
+const appFolders = new WeakMap();
+const appFolder = client => {
+    const cached = appFolders.get(client);
+    if (cached && cached.token === client.token) return cached.folder;
+    const folder = client.files.pathIndex().then(index => {
+        const {root, username} = index || {};
+        if (typeof root !== 'string' || !root || !username) {
+            throw new Error('Rotur did not give this project a folder of its own');
+        }
+        const name = root.replace(/\/+$/, '').toLowerCase();
+        return {root, name, base: `${OFS_HOME}${String(username).toLowerCase()}${name}`};
+    });
+    appFolders.set(client, {token: client.token, folder});
+    folder.catch(() => {
+        if (appFolders.get(client) && appFolders.get(client).folder === folder) appFolders.delete(client);
+    });
+    return folder;
+};
+
+/**
+ * Turn a path a project gave into the Origin FS path Rotur indexes, inside
+ * MistWarp's own folder. Rotur picks the folder (/application data/<app>@<creator>)
+ * and says which in the path index. "/save.txt", "save.txt", the folder's own
+ * "/application data/..." path and the full "origin/(c) users/..." path all work.
+ * @param {object} client Rotur SDK client.
+ * @param {unknown} path What the project asked for.
+ * @returns {Promise<string>} The full, lower-case path.
+ */
+const appFilePath = async (client, path) => {
+    const asked = String(path || '').trim()
+        .toLowerCase();
+    // Bad segments are refused before Rotur is asked anything.
+    const parts = asked.replace(/^\/+/, '').split('/');
+    if (parts.some(part => !part || part === '.' || part === '..' || part.includes('\\'))) {
+        throw outsideFolder('');
+    }
+    const {root, name, base} = await appFolder(client);
+    const relative = asked.startsWith(`${name}/`) ? asked.slice(name.length) : asked;
+    const full = relative.startsWith(OFS_HOME) ? relative : `${base}/${relative.replace(/^\/+/, '')}`;
+    if (!full.startsWith(`${base}/`)) throw outsideFolder(root);
+    return full;
+};
+
 /**
  * Run an allowlisted method on a Rotur client. The path is a key of the
  * allowlist, never something taken straight from a project.
@@ -231,6 +284,9 @@ const invokeProjectMethod = async (client, method, args) => {
     if (typeof fn !== 'function') {
         throw new Error(`Rotur method is unavailable: ${method}`);
     }
+    if (method === 'files.getByPath') {
+        return fn.call(owner, await appFilePath(client, args[0]));
+    }
     return fn.apply(owner, args);
 };
 
@@ -241,5 +297,6 @@ export {
     grantsSilently,
     validateProjectScopes,
     authorizeProjectCall,
-    invokeProjectMethod
+    invokeProjectMethod,
+    appFilePath
 };
