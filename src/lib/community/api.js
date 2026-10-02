@@ -56,12 +56,16 @@ const clearApiCache = () => {
     cacheGeneration += 1;
     inFlightGets.clear();
     try {
-        for (let i = sessionStorage.length - 1; i >= 0; i--) {
+        // Find the keys before removing any. Removing an item can reorder the
+        // rest, so removing while walking key(i) skips some, and a skipped
+        // entry keeps serving stale data, such as a comment list without the
+        // comment just posted.
+        const keys = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
             const key = sessionStorage.key(i);
-            if (key && key.startsWith(GET_CACHE_PREFIX)) {
-                sessionStorage.removeItem(key);
-            }
+            if (key && key.startsWith(GET_CACHE_PREFIX)) keys.push(key);
         }
+        for (const key of keys) sessionStorage.removeItem(key);
     } catch (e) {
         // ignore
     }
