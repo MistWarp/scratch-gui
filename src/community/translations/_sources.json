@@ -266,7 +266,7 @@
     "src/community/components/CommentThread.jsx:312",
     "src/community/components/GameMarketplaceModal.jsx:224",
     "src/community/components/ProjectInfoPanel.jsx:382",
-    "src/community/components/ReportModal.jsx:89",
+    "src/community/components/ReportModal.jsx:106",
     "src/community/components/RoturConsentModal.jsx:75",
     "src/community/components/SocialPost.jsx:218",
     "src/community/components/SocialPost.jsx:264",
@@ -2065,73 +2065,106 @@
   "More like this": [
     "src/community/components/RelatedProjects.jsx:81"
   ],
-  "Inappropriate or explicit content": [
-    "src/community/components/ReportModal.jsx:23"
-  ],
-  "Harassment or bullying": [
-    "src/community/components/ReportModal.jsx:24"
-  ],
   "Spam or misleading": [
-    "src/community/components/ReportModal.jsx:25"
-  ],
-  "Hateful or abusive behaviour": [
-    "src/community/components/ReportModal.jsx:26"
-  ],
-  "Dangerous or illegal activity": [
-    "src/community/components/ReportModal.jsx:27"
-  ],
-  "Copyright or credit problem": [
-    "src/community/components/ReportModal.jsx:28"
-  ],
-  "Something else": [
-    "src/community/components/ReportModal.jsx:29"
-  ],
-  "Report this project": [
-    "src/community/components/ReportModal.jsx:32"
-  ],
-  "Report this user": [
+    "src/community/components/ReportModal.jsx:13",
     "src/community/components/ReportModal.jsx:33"
   ],
-  "Report this comment": [
+  "Harassment or bullying": [
+    "src/community/components/ReportModal.jsx:14",
     "src/community/components/ReportModal.jsx:34"
   ],
-  "Report this bounty": [
+  "Hate against people for who they are": [
+    "src/community/components/ReportModal.jsx:15",
     "src/community/components/ReportModal.jsx:35"
   ],
+  "Sexual or explicit content": [
+    "src/community/components/ReportModal.jsx:16",
+    "src/community/components/ReportModal.jsx:36"
+  ],
+  "Violence or gore": [
+    "src/community/components/ReportModal.jsx:17",
+    "src/community/components/ReportModal.jsx:37"
+  ],
+  "A scam": [
+    "src/community/components/ReportModal.jsx:18",
+    "src/community/components/ReportModal.jsx:38"
+  ],
+  "Copyright or credit problem": [
+    "src/community/components/ReportModal.jsx:19",
+    "src/community/components/ReportModal.jsx:39"
+  ],
+  "Something else": [
+    "src/community/components/ReportModal.jsx:20",
+    "src/community/components/ReportModal.jsx:40"
+  ],
+  "Sexual content involving a child": [
+    "src/community/components/ReportModal.jsx:23",
+    "src/community/components/ReportModal.jsx:41"
+  ],
+  "A threat to someone's life": [
+    "src/community/components/ReportModal.jsx:24",
+    "src/community/components/ReportModal.jsx:42"
+  ],
+  "Encouraging suicide or self-harm": [
+    "src/community/components/ReportModal.jsx:25",
+    "src/community/components/ReportModal.jsx:43"
+  ],
+  "Terrorism": [
+    "src/community/components/ReportModal.jsx:26",
+    "src/community/components/ReportModal.jsx:44"
+  ],
+  "Report this project": [
+    "src/community/components/ReportModal.jsx:47"
+  ],
+  "Report this user": [
+    "src/community/components/ReportModal.jsx:48"
+  ],
+  "Report this comment": [
+    "src/community/components/ReportModal.jsx:49"
+  ],
+  "Report this bounty": [
+    "src/community/components/ReportModal.jsx:50"
+  ],
   "Could not send the report.": [
-    "src/community/components/ReportModal.jsx:68"
+    "src/community/components/ReportModal.jsx:85"
   ],
   "Report this content": [
-    "src/community/components/ReportModal.jsx:79"
+    "src/community/components/ReportModal.jsx:96"
   ],
   "Done": [
-    "src/community/components/ReportModal.jsx:86",
+    "src/community/components/ReportModal.jsx:103",
     "src/community/pages/ManageProject.jsx:929",
     "src/community/pages/Profile.jsx:1097",
     "src/community/pages/Project.jsx:1723",
     "src/community/pages/Roadmap.jsx:34"
   ],
   "Sending…": [
-    "src/community/components/ReportModal.jsx:93",
+    "src/community/components/ReportModal.jsx:110",
     "src/community/pages/Profile.jsx:1126",
     "src/community/pages/Project.jsx:1730",
     "src/community/pages/Project.jsx:3093",
     "src/community/pages/Support.jsx:141"
   ],
   "Send report": [
-    "src/community/components/ReportModal.jsx:95"
+    "src/community/components/ReportModal.jsx:112"
   ],
   "Thanks. Your report was sent to the moderators.": [
-    "src/community/components/ReportModal.jsx:100"
+    "src/community/components/ReportModal.jsx:117"
   ],
   "What is wrong?": [
-    "src/community/components/ReportModal.jsx:103"
+    "src/community/components/ReportModal.jsx:120"
+  ],
+  "Urgent": [
+    "src/community/components/ReportModal.jsx:134"
+  ],
+  "Rotur's safety team sees this report straight away. If someone is in danger right now, contact your local emergency services.": [
+    "src/community/components/ReportModal.jsx:147"
   ],
   "Details (optional)": [
-    "src/community/components/ReportModal.jsx:118"
+    "src/community/components/ReportModal.jsx:151"
   ],
   "Add anything that helps a moderator understand the problem.": [
-    "src/community/components/ReportModal.jsx:124"
+    "src/community/components/ReportModal.jsx:157"
   ],
   "This project": [
     "src/community/components/RoturConsentModal.jsx:24"
