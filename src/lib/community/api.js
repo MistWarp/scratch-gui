@@ -90,13 +90,24 @@ const writeApiCache = (key, data) => {
     }
 };
 
+// Codes that mean the account can't use MistWarp at all: a MistWarp ban, a
+// Rotur restriction, or a ban from MistWarp's Rotur App.
+const RESTRICTED_CODES = ['banned', 'account_blocked', 'app_banned'];
+
+// A ban from MistWarp's Rotur App comes with Rotur's reason and end date.
+const banMessage = ({message, data}) => {
+    const {reason, until} = data || {};
+    const ends = until ? `${message.replace(/\.$/, '')} until ${new Date(until).toLocaleDateString()}.` : message;
+    return reason ? `${ends} Reason: ${reason}` : ends;
+};
+
 const parseResponse = async response => {
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data.ok === false || data.error) {
         const error = new Error(data.error || `Request failed (${response.status})`);
         error.status = response.status;
         error.code = data.code;
-        const isRestricted = data.code === 'banned' || data.code === 'account_blocked';
+        const isRestricted = RESTRICTED_CODES.includes(data.code);
         error.redirectUrl = data.redirectUrl || data.redirect_url || (isRestricted ? 'https://rotur.dev/me' : null);
         error.data = data;
         throw error;
@@ -175,8 +186,8 @@ const runExchange = token => {
                 if (error.code === 'VALIDATOR_GENERATION_FAILED' && authInvalidHandler) {
                     authInvalidHandler();
                 }
-                if ((error.code === 'banned' || error.code === 'account_blocked') && bannedHandler) {
-                    bannedHandler(error.message, error.redirectUrl || 'https://rotur.dev/me');
+                if (RESTRICTED_CODES.includes(error.code) && bannedHandler) {
+                    bannedHandler(banMessage(error), error.redirectUrl || 'https://rotur.dev/me');
                 }
                 throw error;
             })

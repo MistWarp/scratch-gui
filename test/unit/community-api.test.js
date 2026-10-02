@@ -1,10 +1,12 @@
 import JSZip from '@turbowarp/jszip';
 import {
     exchangeValidator,
+    onBanned,
     getPerks,
     getEditorProject,
     prepareSparseProjectUpload,
-    request
+    request,
+    runExchange
 } from '../../src/lib/community/api.js';
 import {
     getMistWarpAction,
@@ -130,6 +132,26 @@ test('a token that can\'t make app-ID validators uses the old key, and isn\'t ta
     }));
     await expect(exchangeValidator('rotur-legacy')).rejects.toThrow('Token lacks permission');
     expect(window.fetch).toHaveBeenCalledTimes(2);
+});
+
+test('a ban from MistWarp\'s Rotur App shows the banned screen with Rotur\'s reason', async () => {
+    const until = Date.UTC(2026, 9, 3, 12);
+    const refusal = {
+        ok: false, code: 'app_banned', error: 'You\'ve been banned from MistWarp.',
+        reason: 'Cheating in races', until, redirectUrl: 'https://rotur.dev/me'
+    };
+    const refused = {ok: false, status: 403, json: () => Promise.resolve(refusal)};
+    refused.clone = () => refused;
+    window.fetch = jest.fn(url => Promise.resolve(String(url).includes('/v2/validators') ?
+        {status: 200, json: () => Promise.resolve({validator: 'v'})} : refused));
+    const banned = jest.fn();
+    onBanned(banned);
+    await expect(runExchange('rotur-token')).rejects.toMatchObject({code: 'app_banned'});
+    expect(banned).toHaveBeenCalledWith(
+        `You've been banned from MistWarp until ${new Date(until).toLocaleDateString()}. Reason: Cheating in races`,
+        'https://rotur.dev/me'
+    );
+    onBanned(null);
 });
 
 test('MistWarp project identity controls share, remix, and update actions', () => {
