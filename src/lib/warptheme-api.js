@@ -1,5 +1,4 @@
-import {ensureScopes} from './rotur/client.js';
-import {ROTUR_TOKEN_KEY} from './rotur/token-key.js';
+import {accountKey, ensureScopes, getAccessToken} from './rotur/client.js';
 import {requestValidator} from './community/api.js';
 
 const WARPTHEME_API_BASE = 'https://warptheme.mistium.com/api';
@@ -25,18 +24,18 @@ const readStorage = key => {
 
 const readSession = () => {
     const stored = readStorage(WARPTHEME_SESSION_KEY);
-    const roturToken = readStorage(ROTUR_TOKEN_KEY);
+    const owner = accountKey();
     if (!stored) {
         likedThemes.clear();
         return '';
     }
-    if (!roturToken) {
+    if (!owner) {
         clearSession();
         return '';
     }
     try {
         const session = JSON.parse(stored);
-        if (session.roturToken === roturToken && session.token) return session.token;
+        if (session.owner === owner && session.token) return session.token;
     } catch (error) {
         // Legacy sessions were not bound to an identity and must be exchanged again.
     }
@@ -49,7 +48,7 @@ const storeSession = token => {
         if (token) {
             localStorage.setItem(WARPTHEME_SESSION_KEY, JSON.stringify({
                 token,
-                roturToken: readStorage(ROTUR_TOKEN_KEY)
+                owner: accountKey()
             }));
         } else clearSession();
     } catch (error) {
@@ -70,7 +69,7 @@ const responseData = async response => {
 
 const exchangeSession = async () => {
     await ensureScopes(['validators:generate']);
-    const roturToken = readStorage(ROTUR_TOKEN_KEY);
+    const roturToken = await getAccessToken();
     if (!roturToken) throw new Error('Sign in with Rotur to use this WarpTheme action.');
     const validator = await requestValidator(roturToken, 'warptheme');
     const authResponse = await fetch(

@@ -1,7 +1,7 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React from 'react';
 import {Link} from 'react-router-dom';
-import {ShieldAlert, ExternalLink} from 'lucide-react';
+import {ShieldAlert, ExternalLink, LogIn} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import styles from './StandingBanner.module.css';
 
@@ -12,7 +12,9 @@ const MESSAGES = {
 
 const StandingBanner = () => {
     const {text: communityText} = useCommunityText();
-    const {user, banMessage, dismissBan, signInError, dismissSignInError} = useUser();
+    const {
+        user, banMessage, dismissBan, signInError, dismissSignInError, reconnect, dismissReconnect, login
+    } = useUser();
     if (banMessage) {
         return (
             <div className={styles.banner}>
@@ -53,6 +55,26 @@ const StandingBanner = () => {
                     className={styles.link}
                     onClick={dismissSignInError}
                 >{communityText('Dismiss')}</button>
+            </div>
+        );
+    }
+    if (reconnect) {
+        return (
+            <div className={styles.banner}>
+                <LogIn className={styles.icon} size={16} />
+                <span className={styles.text}>
+                    {communityText('Rotur has a new way to sign in. Reconnect once to stay signed in to MistWarp.')}
+                </span>
+                <button
+                    type="button"
+                    className={styles.link}
+                    onClick={login}
+                >{communityText('Reconnect')}</button>
+                <button
+                    type="button"
+                    className={styles.link}
+                    onClick={dismissReconnect}
+                >{communityText('Later')}</button>
             </div>
         );
     }

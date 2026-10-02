@@ -3,6 +3,7 @@ const SET_STATUS = 'scratch-gui/rotur/SET_STATUS';
 const SET_ERROR = 'scratch-gui/rotur/SET_ERROR';
 const SET_USERNAME_OVERRIDE = 'scratch-gui/rotur/SET_USERNAME_OVERRIDE';
 const CLEAR = 'scratch-gui/rotur/CLEAR';
+const SET_RECONNECT = 'scratch-gui/rotur/SET_RECONNECT';
 
 const initialState = {
     status: 'idle', // idle | restoring | logging-in | ready | error
@@ -11,7 +12,9 @@ const initialState = {
     avatarUrl: null,
     bio: null,
     usernameOverride: null,
-    error: null
+    error: null,
+    // Signed in with the old Rotur sign-in, so offer to reconnect.
+    reconnect: false
 };
 
 const reducer = function (state, action) {
@@ -40,6 +43,8 @@ const reducer = function (state, action) {
             status: 'error',
             error: action.error
         });
+    case SET_RECONNECT:
+        return Object.assign({}, state, {reconnect: action.reconnect});
     case CLEAR:
         return Object.assign({}, initialState);
     default:
@@ -74,6 +79,11 @@ const clearRoturUser = () => ({
     type: CLEAR
 });
 
+const setRoturReconnect = reconnect => ({
+    type: SET_RECONNECT,
+    reconnect: Boolean(reconnect)
+});
+
 export {
     reducer as default,
     initialState as roturInitialState,
@@ -81,5 +91,6 @@ export {
     setRoturUser,
     setRoturUsernameOverride,
     setRoturError,
+    setRoturReconnect,
     clearRoturUser
 };

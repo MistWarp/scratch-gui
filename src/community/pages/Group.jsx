@@ -74,7 +74,7 @@ const normalizeGroupTabParams = currentParams => {
 const Group = () => {
     const {text: communityText} = useCommunityText();
     const {tag} = useParams();
-    const {user, login, refreshUser} = useUser();
+    const {user, login} = useUser();
     const includeMembers = Boolean(user);
     const [searchParams, setSearchParams] = useSearchParams();
     const [data, setData] = useState(null);
@@ -85,7 +85,6 @@ const Group = () => {
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
     const [busy, setBusy] = useState('');
-    const [amounts, setAmounts] = useState({});
     const requestedTab = searchParams.get('tab');
     const activeTab = TAB_KEYS.includes(requestedTab) ? requestedTab : 'projects';
     const beginLoad = useLatest();
@@ -141,43 +140,6 @@ const Group = () => {
             await load();
         } catch (e) {
             setError(e.message || communityText('Could not update membership.'));
-        } finally {
-            setBusy('');
-        }
-    };
-
-    const toggleRepresentation = async () => {
-        if (!user) return login();
-        const representing = String(user.group_tag || '').toLowerCase() === String(tag).toLowerCase();
-        setBusy('represent');
-        setError('');
-        setMessage('');
-        try {
-            if (representing) await rotur.groups.stopRepresenting(tag);
-            else await rotur.groups.represent(tag);
-            const refreshed = await refreshUser();
-            window.dispatchEvent(new CustomEvent('mw:group-representation', {
-                detail: {username: refreshed?.username, tag: refreshed?.group_tag || ''}
-            }));
-            setMessage(representing ? communityText('This group is no longer shown with your MistWarp identity.') : communityText('You now represent {group} across MistWarp.', {group: data.group.name}));
-        } catch (e) {
-            setError(e.message || communityText('Could not update your represented group.'));
-        } finally {
-            setBusy('');
-        }
-    };
-
-    const contribute = async campaign => {
-        if (!user) return login();
-        const amount = Number(amounts[campaign.id]);
-        if (!(amount > 0)) return setError(communityText('Enter an amount to contribute.'));
-        setBusy(campaign.id);
-        setError('');
-        try {
-            await rotur.groups.contribute(tag, campaign.id, amount);
-            await load();
-        } catch (e) {
-            setError(e.message || communityText('Contribution failed.'));
         } finally {
             setBusy('');
         }
@@ -259,7 +221,7 @@ const Group = () => {
                         <div className={styles.supportSections}>
                             <section className={styles.contentSection}>
                                 <SectionHeading icon={HeartHandshake} title={communityText('Support {group}', {group: group.name})} />
-                                {campaigns.length ? <div className={styles.cardGrid}>{campaigns.map(campaign => <article className={styles.dataCard} key={campaign.id}><span className={styles.cardType}><HeartHandshake size={14} /> {campaign.status === 'ACTIVE' ? communityText('Accepting support') : campaign.status}</span><h2>{campaign.title}</h2><p>{campaign.description}</p><div className={styles.progress}><i style={{width: `${Math.min(100, (campaign.raised_credits / campaign.goal_credits) * 100)}%`}} /></div><small>{communityText('{raised} of {goal} credits', {raised: formatNumber(campaign.raised_credits), goal: formatNumber(campaign.goal_credits)})}</small>{campaign.status === 'ACTIVE' ? <div className={styles.fund}><input min="0.01" step="0.01" type="number" aria-label={communityText('Credits for {value1}', {value1: campaign.title})} placeholder={communityText('Credits')} value={amounts[campaign.id] || ''} onChange={event => setAmounts({...amounts, [campaign.id]: event.target.value})} /><Button busy={busy === campaign.id} onClick={() => contribute(campaign)}>{communityText('Contribute')}</Button></div> : null}</article>)}</div> : <EmptyState icon={HeartHandshake} title={communityText('No active fundraisers')}>{communityText('You can still support this group through its Rotur page.')}</EmptyState>}
+                                {campaigns.length ? <div className={styles.cardGrid}>{campaigns.map(campaign => <article className={styles.dataCard} key={campaign.id}><span className={styles.cardType}><HeartHandshake size={14} /> {campaign.status === 'ACTIVE' ? communityText('Accepting support') : campaign.status}</span><h2>{campaign.title}</h2><p>{campaign.description}</p><div className={styles.progress}><i style={{width: `${Math.min(100, (campaign.raised_credits / campaign.goal_credits) * 100)}%`}} /></div><small>{communityText('{raised} of {goal} credits', {raised: formatNumber(campaign.raised_credits), goal: formatNumber(campaign.goal_credits)})}</small>{campaign.status === 'ACTIVE' ? <a href={roturGroupUrl} target="_blank" rel="noreferrer">{communityText('Contribute on Rotur')}<ExternalLink size={13} /></a> : null}</article>)}</div> : <EmptyState icon={HeartHandshake} title={communityText('No active fundraisers')}>{communityText('You can still support this group through its Rotur page.')}</EmptyState>}
                             </section>
                             {products.length ? <section className={styles.contentSection}><SectionHeading icon={Coins} title={communityText('Join with a membership')} /><div className={styles.cardGrid}>{products.map(product => <article className={styles.dataCard} key={product.id}><span className={styles.cardType}><Coins size={14} /> {communityText('{amount} credits', {amount: formatNumber(product.price_credits || product.price)})}</span><h2>{product.name || product.title}</h2><p>{product.description}</p><a href={roturGroupUrl} target="_blank" rel="noreferrer">{communityText('Purchase on Rotur')}<ExternalLink size={13} /></a></article>)}</div></section> : null}
                             {announcements.length || events.length ? <section className={styles.contentSection}><SectionHeading icon={Megaphone} title={communityText('Updates from {group}', {group: group.name})} /><div className={styles.cardGrid}>{announcements.map(item => <article className={styles.dataCard} key={item.id}><span className={styles.cardType}><Megaphone size={14} />{communityText('Announcement')}</span><h2>{item.title}</h2><p>{item.body}</p></article>)}{events.map(item => <article className={styles.dataCard} key={item.id}><span className={styles.cardType}><CalendarDays size={14} />{communityText('Event')}</span><h2>{item.title}</h2><p>{item.description}</p></article>)}</div></section> : null}
@@ -281,7 +243,7 @@ const Group = () => {
                             </div>
                             <div className={styles.actions}>
                                 {!member ? <Button variant="primary" busy={busy === 'join'} onClick={() => membership('join')}><Plus size={16} />{group.join_policy === 'REQUEST' ? communityText('Request to join') : communityText('Join group')}</Button> : null}
-                                {member ? <Button variant={representing ? 'secondary' : 'primary'} busy={busy === 'represent'} busyLabel={communityText('Saving…')} onClick={toggleRepresentation}>{representing ? communityText('Stop representing') : communityText('Represent group')}</Button> : null}
+                                {member ? <Button as="a" variant={representing ? 'secondary' : 'primary'} href={roturGroupUrl} target="_blank" rel="noreferrer"><ExternalLink size={16} />{representing ? communityText('Stop representing on Rotur') : communityText('Represent on Rotur')}</Button> : null}
                                 {data.isMember && !manager ? <Button variant="secondary" busy={busy === 'leave'} onClick={() => membership('leave')}>{communityText('Leave group')}</Button> : null}
                             </div>
                             {representing ? <p className={styles.representing}><ShieldCheck size={15} />{communityText('Shown with your identity across MistWarp')}</p> : null}

@@ -1,13 +1,19 @@
 import warpthemeApi, {request} from '../../src/lib/warptheme-api.js';
 
-jest.mock('../../src/lib/rotur/client.js', () => ({ensureScopes: jest.fn(() => Promise.resolve())}));
+const mockRotur = {account: 'rotur-user-1', token: 'rotur-session'};
+jest.mock('../../src/lib/rotur/client.js', () => ({
+    ensureScopes: jest.fn(() => Promise.resolve()),
+    accountKey: () => mockRotur.account,
+    getAccessToken: () => Promise.resolve(mockRotur.token)
+}));
 
 describe('WarpTheme API adapter', () => {
     beforeEach(() => {
-        localStorage.setItem('mw:rotur-token', 'rotur-session');
+        mockRotur.account = 'rotur-user-1';
+        mockRotur.token = 'rotur-session';
         localStorage.setItem('mw:warptheme-session', JSON.stringify({
             token: 'warp-session',
-            roturToken: 'rotur-session'
+            owner: 'rotur-user-1'
         }));
         window.fetch = jest.fn((url, options) => {
             if (url.endsWith('/api/theme') && options.method === 'POST') {
@@ -40,7 +46,6 @@ describe('WarpTheme API adapter', () => {
     });
 
     afterEach(() => {
-        localStorage.removeItem('mw:rotur-token');
         localStorage.removeItem('mw:warptheme-session');
     });
 
@@ -139,7 +144,7 @@ describe('WarpTheme API adapter', () => {
     });
 
     test('does not reuse WarpTheme authorization after the Rotur identity changes', async () => {
-        localStorage.setItem('mw:rotur-token', 'different-rotur-session');
+        mockRotur.account = 'someone-else';
 
         await request('/user/likes', {optionalAuth: true});
 
@@ -167,7 +172,7 @@ describe('WarpTheme API adapter', () => {
         });
 
         expect((await warpthemeApi.getTheme('theme-one')).theme.liked).toBe(true);
-        localStorage.removeItem('mw:rotur-token');
+        mockRotur.account = '';
         expect((await warpthemeApi.getTheme('theme-one')).theme.liked).toBe(false);
         expect(localStorage.getItem('mw:warptheme-session')).toBeNull();
     });
@@ -185,7 +190,7 @@ describe('WarpTheme API adapter', () => {
 
     test('authorizes WarpTheme with the Rotur token in a header, never in a URL', async () => {
         localStorage.removeItem('mw:warptheme-session');
-        localStorage.setItem('mw:rotur-token', 'rotur_secret-token');
+        mockRotur.token = 'rotur_secret-token';
         window.fetch.mockImplementation(url => Promise.resolve({
             ok: true,
             status: 200,
@@ -202,5 +207,8 @@ describe('WarpTheme API adapter', () => {
         expect(JSON.parse(validatorInit.body)).toEqual({key: 'warptheme'});
         expect(window.fetch.mock.calls[1][0]).toBe('https://warptheme.mistium.com/api/auth?v=1%2Cabc');
         expect(window.fetch.mock.calls.some(([url]) => url.includes('rotur_secret-token'))).toBe(false);
+        expect(JSON.parse(localStorage.getItem('mw:warptheme-session'))).toEqual({
+            token: 'fresh-warp-session', owner: 'rotur-user-1'
+        });
     });
 });

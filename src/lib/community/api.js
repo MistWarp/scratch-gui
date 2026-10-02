@@ -2,7 +2,6 @@ import JSZip from '@turbowarp/jszip';
 import {clearContentCache} from './cached-fetch.js';
 import {isGalleryExtensionUrl} from '../trusted-extension.js';
 import {trackApiSuccess} from '../../community/analytics.js';
-import {ROTUR_TOKEN_KEY} from '../rotur/token-key.js';
 import {setMinorAccount} from '../minor-account.js';
 
 const API_BASE = 'https://api.mistwarp.org/v1';
@@ -14,12 +13,11 @@ const GET_CACHE_TTL = 60 * 1000;
 let cacheGeneration = 0;
 const inFlightGets = new Map();
 
-const loadRoturToken = () => {
-    try {
-        return localStorage.getItem(ROTUR_TOKEN_KEY) || null;
-    } catch (e) {
-        return null;
-    }
+// Where to get a Rotur token for re-signing in to MistWarp after a 401. The
+// Rotur session sets it, so this file doesn't depend on it.
+let roturTokenGetter = () => Promise.resolve(null);
+const setRoturTokenGetter = getter => {
+    roturTokenGetter = getter;
 };
 
 let exchangeInFlight = null;
@@ -215,7 +213,7 @@ const request = async (path, {method = 'GET', body, headers = {}, raw = false, c
             !path.startsWith('/logout')
         ) {
             storeSession(null);
-            const roturToken = loadRoturToken();
+            const roturToken = await roturTokenGetter();
             if (roturToken) {
                 try {
                     await runExchange(roturToken);
@@ -432,7 +430,7 @@ const uploadProject = async (id, sb3Blob, thumbnailBlob, onUploadProgress, {
     } catch (e) {
         if (e.status !== 401) throw e;
         storeSession(null);
-        const roturToken = loadRoturToken();
+        const roturToken = await roturTokenGetter();
         if (!roturToken) throw e;
         await runExchange(roturToken);
         return uploadXhr(path, form, onUploadProgress);
@@ -496,6 +494,7 @@ export {
     exchangeValidator,
     requestValidator,
     runExchange,
+    setRoturTokenGetter,
     onAuthInvalid,
     onBanned,
     logout,
