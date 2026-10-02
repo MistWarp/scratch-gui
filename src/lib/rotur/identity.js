@@ -2,7 +2,11 @@ import {
     restoreSession as roturRestore,
     login as roturLogin,
     logout as roturLogout,
-    getRotur
+    accountKey,
+    getAccessToken,
+    getRotur,
+    needsReconnect,
+    onSessionChange
 } from './client.js';
 import {onRoturLogout} from './cloud-sync.js';
 import {clearGitAuth} from './git-api.js';
@@ -12,12 +16,11 @@ import {
     onBanned,
     loadSession,
     storeSession,
+    setRoturTokenGetter,
     logout as mistLogout
 } from '../community/api.js';
-import {ROTUR_TOKEN_KEY} from './token-key.js';
 import {setMinorAccount} from '../minor-account.js';
-
-const MIST_SESSION_KEY = 'mw:mistwarp-session';
+import {ROTUR_TOKEN_KEY} from './token-key.js';
 
 let state = {status: 'idle', user: null, banMessage: null};
 const listeners = new Set();
@@ -44,24 +47,13 @@ const subscribe = cb => {
     return () => listeners.delete(cb);
 };
 
-const readRoturToken = () => {
-    try {
-        return localStorage.getItem(ROTUR_TOKEN_KEY);
-    } catch (_) {
-        return null;
-    }
-};
-
-const ensureMistSession = () => {
+const ensureMistSession = async () => {
     const existing = loadSession();
     if (existing) {
-        return Promise.resolve(existing);
+        return existing;
     }
-    const token = getRotur().token || readRoturToken();
-    if (!token) {
-        return Promise.resolve(null);
-    }
-    return runExchange(token);
+    const token = await getAccessToken();
+    return token ? runExchange(token) : null;
 };
 
 const invalidateFailedValidator = error => {
@@ -71,6 +63,45 @@ const invalidateFailedValidator = error => {
     setMinorAccount(false);
     setState({status: 'idle', user: null});
     return true;
+};
+
+// Signing in or out in another tab, or Rotur ending the session. Wired on
+// first use rather than on import.
+// Signed out here, keeping the Rotur session if another tab still uses it.
+const signedOutElsewhere = () => {
+    setState({status: 'idle', user: null, reconnect: false});
+    roturLogout();
+    storeSession(null);
+    setMinorAccount(false);
+};
+
+const isSomeoneElse = session => (state.user.id ?
+    String(state.user.id) !== session.subject :
+    state.user.username !== session.username);
+
+let wired = false;
+const wireSession = () => {
+    if (wired) return;
+    wired = true;
+    setRoturTokenGetter(getAccessToken);
+    onSessionChange(session => {
+        if (state.status === 'logging-in') return;
+        if (session && (!state.user || isSomeoneElse(session))) {
+            // Signed in, or switched account, in another tab. The MistWarp
+            // session belongs to whoever was here before.
+            if (state.user) storeSession(null);
+            // eslint-disable-next-line no-use-before-define
+            restore();
+        } else if (!session && state.user && !needsReconnect()) {
+            signedOutElsewhere();
+        }
+    });
+    // The old sign-in has no session events: notice another tab removing it.
+    window.addEventListener('storage', event => {
+        if (event.key === ROTUR_TOKEN_KEY && !event.newValue && state.user && !accountKey()) {
+            signedOutElsewhere();
+        }
+    });
 };
 
 let restoreInFlight = null;
@@ -109,11 +140,12 @@ const doRestore = async () => {
         if (invalidateFailedValidator(error)) return null;
         if (error && error.code === 'banned') return null;
     }
-    setState({status: 'ready', user, banMessage: null});
+    setState({status: 'ready', user, banMessage: null, reconnect: needsReconnect()});
     return user;
 };
 
 const restore = () => {
+    wireSession();
     if (!restoreInFlight) {
         restoreInFlight = doRestore().finally(() => {
             restoreInFlight = null;
@@ -123,6 +155,7 @@ const restore = () => {
 };
 
 const login = async () => {
+    wireSession();
     const previousUser = state.user;
     setState({status: 'logging-in'});
     let user;
@@ -139,7 +172,7 @@ const login = async () => {
         if (invalidateFailedValidator(error)) throw error;
         if (error && error.code === 'banned') throw error;
     }
-    setState({status: 'ready', user, banMessage: null});
+    setState({status: 'ready', user, banMessage: null, reconnect: needsReconnect()});
     return user;
 };
 
@@ -158,11 +191,11 @@ const logout = () => {
     roturLogout();
     storeSession(null);
     setMinorAccount(false);
-    setState({status: 'idle', user: null, banMessage: null});
+    setState({status: 'idle', user: null, banMessage: null, reconnect: false});
 };
 
 const getMistSession = () => loadSession();
-const getRoturToken = () => getRotur().token || readRoturToken();
+const getRoturToken = () => getRotur().token;
 
 const getMistWarpAuthor = async () => {
     const user = state.user || await restore();
@@ -199,27 +232,6 @@ onBanned((message, redirectUrl) => {
         redirectUrl: redirectUrl || 'https://rotur.dev/me'
     });
 });
-
-if (typeof window !== 'undefined') {
-    window.addEventListener('storage', event => {
-        if (event.key !== ROTUR_TOKEN_KEY && event.key !== MIST_SESSION_KEY) {
-            return;
-        }
-        const token = readRoturToken();
-        if (!token) {
-            if (state.user) {
-                roturLogout();
-                storeSession(null);
-                setMinorAccount(false);
-                setState({status: 'idle', user: null});
-            }
-        } else if (!state.user) {
-            restore();
-        } else if (event.key === ROTUR_TOKEN_KEY && event.newValue !== event.oldValue) {
-            restore();
-        }
-    });
-}
 
 export {
     getState,

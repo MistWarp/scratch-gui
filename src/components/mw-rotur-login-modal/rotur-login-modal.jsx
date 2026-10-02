@@ -218,7 +218,9 @@ class RoturLoginModal extends React.Component {
     render () {
         const error = this.state.localError || this.props.error;
         const busy = this.state.busy || this.props.status === 'logging-in';
-        const loggedIn = Boolean(this.props.username);
+        // Signed in with Rotur's old sign-in: offer to sign in again instead.
+        const reconnecting = Boolean(this.props.username && this.props.reconnect);
+        const loggedIn = Boolean(this.props.username) && !reconnecting;
 
         return (
             <Modal
@@ -252,6 +254,13 @@ class RoturLoginModal extends React.Component {
                             )}
                             <div className={styles.heroText}>
                                 <h2 className={styles.title}>
+                                    {reconnecting ? (
+                                        <FormattedMessage
+                                            defaultMessage="Reconnect MistWarp to Rotur"
+                                            description="Headline in Rotur login modal for someone on the old sign-in"
+                                            id="mw.roturLogin.reconnectHeadline"
+                                        />
+                                    ) : null}
                                     {loggedIn ? (
                                         <FormattedMessage
                                             defaultMessage="Signed in as {username}"
@@ -259,7 +268,8 @@ class RoturLoginModal extends React.Component {
                                             id="mw.roturLogin.signedInAs"
                                             values={{username: this.props.username}}
                                         />
-                                    ) : (
+                                    ) : null}
+                                    {this.props.username ? null : (
                                         <FormattedMessage
                                             defaultMessage="Connect MistWarp to Rotur"
                                             description="Headline in Rotur login modal"
@@ -268,7 +278,16 @@ class RoturLoginModal extends React.Component {
                                     )}
                                 </h2>
                                 <p className={styles.subtitle}>
-                                    {loggedIn ? (
+                                    {reconnecting ? (
+                                        <FormattedMessage
+                                            // eslint-disable-next-line max-len
+                                            defaultMessage="Rotur has a new way to sign in. Reconnect once to stay signed in as {username}."
+                                            description="Subtitle in Rotur login modal for someone on the old sign-in"
+                                            id="mw.roturLogin.reconnectIntro"
+                                            values={{username: this.props.username}}
+                                        />
+                                    ) : null}
+                                    {reconnecting ? null : loggedIn ? (
                                         <FormattedMessage
                                             defaultMessage="Your Rotur account turns these on across MistWarp."
                                             description="Subtitle in Rotur info modal when signed in"
@@ -416,6 +435,12 @@ class RoturLoginModal extends React.Component {
                                                 id="mw.roturLogin.waiting"
                                             />
                                         </React.Fragment>
+                                    ) : reconnecting ? (
+                                        <FormattedMessage
+                                            defaultMessage="Reconnect"
+                                            description="Primary button to sign in again for someone on the old sign-in"
+                                            id="mw.roturLogin.reconnect"
+                                        />
                                     ) : (
                                         <FormattedMessage
                                             defaultMessage="Continue with Rotur"
@@ -437,12 +462,14 @@ RoturLoginModal.propTypes = {
     error: PropTypes.string,
     intl: intlShape,
     onRequestClose: PropTypes.func.isRequired,
+    reconnect: PropTypes.bool,
     status: PropTypes.string,
     username: PropTypes.string
 };
 
 const mapStateToProps = state => ({
     error: state.scratchGui.rotur.error,
+    reconnect: state.scratchGui.rotur.reconnect,
     status: state.scratchGui.rotur.status,
     username: state.scratchGui.rotur.username
 });

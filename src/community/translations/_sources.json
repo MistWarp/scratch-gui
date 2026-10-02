@@ -26,8 +26,8 @@
   ],
   "Dismiss": [
     "src/community/components/AnnouncementBanner.jsx:57",
-    "src/community/components/StandingBanner.jsx:35",
-    "src/community/components/StandingBanner.jsx:55",
+    "src/community/components/StandingBanner.jsx:37",
+    "src/community/components/StandingBanner.jsx:57",
     "src/community/components/ui/Notice.jsx:35",
     "src/community/pages/Admin.jsx:2355"
   ],
@@ -141,7 +141,6 @@
     "src/community/components/ProjectInfoPanel.jsx:388",
     "src/community/pages/Challenge.jsx:146",
     "src/community/pages/Commit.jsx:386",
-    "src/community/pages/Group.jsx:284",
     "src/community/pages/ManageProject.jsx:648",
     "src/community/pages/ManageProject.jsx:704",
     "src/community/pages/ManageProject.jsx:757",
@@ -576,7 +575,7 @@
     "src/community/pages/Admin.jsx:749",
     "src/community/pages/Admin.jsx:909",
     "src/community/pages/Collection.jsx:37",
-    "src/community/pages/Group.jsx:201",
+    "src/community/pages/Group.jsx:163",
     "src/community/pages/ManageSpace.jsx:27",
     "src/community/pages/ManageSpace.jsx:737",
     "src/community/pages/Profile.jsx:545",
@@ -591,7 +590,7 @@
     "src/community/components/ExploreNav.jsx:10",
     "src/community/components/Footer.jsx:39",
     "src/community/components/MyStuffSpaces.jsx:65",
-    "src/community/pages/Group.jsx:202",
+    "src/community/pages/Group.jsx:164",
     "src/community/pages/Search.jsx:160",
     "src/community/pages/Spaces.jsx:21"
   ],
@@ -599,14 +598,14 @@
     "src/community/components/ExploreNav.jsx:11",
     "src/community/components/Footer.jsx:40",
     "src/community/components/MyStuffSpaces.jsx:79",
-    "src/community/pages/Group.jsx:203",
+    "src/community/pages/Group.jsx:165",
     "src/community/pages/Home.jsx:460",
     "src/community/pages/Spaces.jsx:22"
   ],
   "Collections": [
     "src/community/components/ExploreNav.jsx:12",
     "src/community/components/MyStuffSpaces.jsx:33",
-    "src/community/pages/Group.jsx:204",
+    "src/community/pages/Group.jsx:166",
     "src/community/pages/MyStuff.jsx:502",
     "src/community/pages/Spaces.jsx:23"
   ],
@@ -752,15 +751,14 @@
   ],
   "Credits": [
     "src/community/components/Footer.jsx:72",
-    "src/community/components/ProjectInfoPanel.jsx:224",
-    "src/community/pages/Group.jsx:262"
+    "src/community/components/ProjectInfoPanel.jsx:224"
   ],
   "Help and safety": [
     "src/community/components/Footer.jsx:75"
   ],
   "Support": [
     "src/community/components/Footer.jsx:76",
-    "src/community/pages/Group.jsx:206",
+    "src/community/pages/Group.jsx:168",
     "src/community/pages/Project.jsx:1543",
     "src/community/pages/Support.jsx:101"
   ],
@@ -1389,7 +1387,7 @@
   ],
   "Event": [
     "src/community/components/NewsItem.jsx:110",
-    "src/community/pages/Group.jsx:265",
+    "src/community/pages/Group.jsx:227",
     "src/community/pages/News.jsx:234"
   ],
   "Poll": [
@@ -2420,7 +2418,7 @@
   "No description yet.": [
     "src/community/components/SpaceCard.jsx:46",
     "src/community/pages/Collection.jsx:72",
-    "src/community/pages/Group.jsx:277",
+    "src/community/pages/Group.jsx:239",
     "src/community/pages/Space.jsx:178",
     "src/community/pages/Studio.jsx:117"
   ],
@@ -2504,13 +2502,22 @@
     "src/community/components/SpriteList.jsx:122"
   ],
   "View on rotur.dev": [
-    "src/community/components/StandingBanner.jsx:29",
-    "src/community/components/StandingBanner.jsx:49",
-    "src/community/components/StandingBanner.jsx:78",
-    "src/community/pages/Group.jsx:289"
+    "src/community/components/StandingBanner.jsx:31",
+    "src/community/components/StandingBanner.jsx:51",
+    "src/community/components/StandingBanner.jsx:100",
+    "src/community/pages/Group.jsx:251"
+  ],
+  "Rotur has a new way to sign in. Reconnect once to stay signed in to MistWarp.": [
+    "src/community/components/StandingBanner.jsx:66"
+  ],
+  "Reconnect": [
+    "src/community/components/StandingBanner.jsx:72"
+  ],
+  "Later": [
+    "src/community/components/StandingBanner.jsx:77"
   ],
   "See details": [
-    "src/community/components/StandingBanner.jsx:83"
+    "src/community/components/StandingBanner.jsx:105"
   ],
   "No activity yet.": [
     "src/community/components/StatChart.jsx:50"
@@ -3474,7 +3481,7 @@
   "{amount} credits": [
     "src/community/pages/Bounties.jsx:82",
     "src/community/pages/Bounty.jsx:123",
-    "src/community/pages/Group.jsx:264"
+    "src/community/pages/Group.jsx:226"
   ],
   "No extra details provided.": [
     "src/community/pages/Bounties.jsx:84"
@@ -3983,134 +3990,115 @@
     "src/community/pages/Followers.jsx:81"
   ],
   "Could not load this group.": [
-    "src/community/pages/Group.jsx:110"
+    "src/community/pages/Group.jsx:109"
   ],
   "Could not update membership.": [
-    "src/community/pages/Group.jsx:143"
-  ],
-  "This group is no longer shown with your MistWarp identity.": [
-    "src/community/pages/Group.jsx:162"
-  ],
-  "You now represent {group} across MistWarp.": [
-    "src/community/pages/Group.jsx:162"
-  ],
-  "Could not update your represented group.": [
-    "src/community/pages/Group.jsx:164"
-  ],
-  "Enter an amount to contribute.": [
-    "src/community/pages/Group.jsx:173"
-  ],
-  "Contribution failed.": [
-    "src/community/pages/Group.jsx:180"
+    "src/community/pages/Group.jsx:142"
   ],
   "Loading group…": [
-    "src/community/pages/Group.jsx:187"
+    "src/community/pages/Group.jsx:149"
   ],
   "Members": [
-    "src/community/pages/Group.jsx:205"
+    "src/community/pages/Group.jsx:167"
   ],
   "All groups": [
-    "src/community/pages/Group.jsx:231"
+    "src/community/pages/Group.jsx:193"
   ],
   "Projects by {group}": [
-    "src/community/pages/Group.jsx:241"
+    "src/community/pages/Group.jsx:203"
   ],
   "Assign a project from its metadata settings.": [
-    "src/community/pages/Group.jsx:241"
+    "src/community/pages/Group.jsx:203"
   ],
   "No projects yet": [
-    "src/community/pages/Group.jsx:242",
+    "src/community/pages/Group.jsx:204",
     "src/community/pages/MyStuff.jsx:196",
     "src/community/pages/MyStuff.jsx:1601",
     "src/community/pages/Space.jsx:253",
     "src/community/pages/Studio.jsx:142"
   ],
   "Projects assigned to this group will appear here.": [
-    "src/community/pages/Group.jsx:242"
+    "src/community/pages/Group.jsx:204"
   ],
   "{count} members": [
-    "src/community/pages/Group.jsx:252",
+    "src/community/pages/Group.jsx:214",
     "src/community/pages/Groups.jsx:106"
   ],
   "Member of {tag}": [
-    "src/community/pages/Group.jsx:253"
+    "src/community/pages/Group.jsx:215"
   ],
   "No members yet": [
-    "src/community/pages/Group.jsx:253"
+    "src/community/pages/Group.jsx:215"
   ],
   "Members will appear here after they join.": [
-    "src/community/pages/Group.jsx:253"
+    "src/community/pages/Group.jsx:215"
   ],
   "{value1} members": [
-    "src/community/pages/Group.jsx:254"
+    "src/community/pages/Group.jsx:216"
   ],
   "The member directory is private.": [
-    "src/community/pages/Group.jsx:254"
+    "src/community/pages/Group.jsx:216"
   ],
   "Join this group to browse its member directory.": [
-    "src/community/pages/Group.jsx:254"
+    "src/community/pages/Group.jsx:216"
   ],
   "Support {group}": [
-    "src/community/pages/Group.jsx:261"
+    "src/community/pages/Group.jsx:223"
   ],
   "Accepting support": [
-    "src/community/pages/Group.jsx:262"
+    "src/community/pages/Group.jsx:224"
   ],
   "{raised} of {goal} credits": [
-    "src/community/pages/Group.jsx:262"
+    "src/community/pages/Group.jsx:224"
   ],
-  "Credits for {value1}": [
-    "src/community/pages/Group.jsx:262"
-  ],
-  "Contribute": [
-    "src/community/pages/Group.jsx:262",
-    "src/community/pages/Project.jsx:1455"
+  "Contribute on Rotur": [
+    "src/community/pages/Group.jsx:224"
   ],
   "No active fundraisers": [
-    "src/community/pages/Group.jsx:262"
+    "src/community/pages/Group.jsx:224"
   ],
   "You can still support this group through its Rotur page.": [
-    "src/community/pages/Group.jsx:262"
+    "src/community/pages/Group.jsx:224"
   ],
   "Join with a membership": [
-    "src/community/pages/Group.jsx:264"
+    "src/community/pages/Group.jsx:226"
   ],
   "Purchase on Rotur": [
-    "src/community/pages/Group.jsx:264"
+    "src/community/pages/Group.jsx:226"
   ],
   "Updates from {group}": [
-    "src/community/pages/Group.jsx:265"
+    "src/community/pages/Group.jsx:227"
   ],
   "Announcement": [
-    "src/community/pages/Group.jsx:265"
+    "src/community/pages/Group.jsx:227"
   ],
   "members": [
-    "src/community/pages/Group.jsx:279"
+    "src/community/pages/Group.jsx:241"
   ],
   "credits": [
-    "src/community/pages/Group.jsx:280",
+    "src/community/pages/Group.jsx:242",
     "src/community/pages/Wallet.jsx:181"
   ],
   "Request to join": [
-    "src/community/pages/Group.jsx:283"
+    "src/community/pages/Group.jsx:245"
   ],
   "Join group": [
-    "src/community/pages/Group.jsx:283"
+    "src/community/pages/Group.jsx:245"
   ],
-  "Stop representing": [
-    "src/community/pages/Group.jsx:284"
+  "Stop representing on Rotur": [
+    "src/community/pages/Group.jsx:246"
   ],
-  "Represent group": [
-    "src/community/pages/Group.jsx:284"
+  "Represent on Rotur": [
+    "src/community/pages/Group.jsx:246"
   ],
   "Leave group": [
-    "src/community/pages/Group.jsx:285"
+    "src/community/pages/Group.jsx:247"
   ],
   "Shown with your identity across MistWarp": [
-    "src/community/pages/Group.jsx:287"
+    "src/community/pages/Group.jsx:249"
   ],
   "Manage group": [
-    "src/community/pages/Group.jsx:290"
+    "src/community/pages/Group.jsx:252"
   ],
   "Could not load groups.": [
     "src/community/pages/Groups.jsx:52"
@@ -5720,6 +5708,9 @@
   ],
   "Version control": [
     "src/community/pages/Project.jsx:1453"
+  ],
+  "Contribute": [
+    "src/community/pages/Project.jsx:1455"
   ],
   "Project title": [
     "src/community/pages/Project.jsx:1515"

@@ -1,8 +1,15 @@
+const mockSession = {listener: null, account: 'id-1'};
 jest.mock('../../src/lib/rotur/client.js', () => ({
     restoreSession: jest.fn(),
     login: jest.fn(() => Promise.resolve({username: 'new-user'})),
     logout: jest.fn(),
-    getRotur: () => ({token: 'new-rotur-token'})
+    getRotur: () => ({token: 'new-rotur-token'}),
+    getAccessToken: () => Promise.resolve('new-rotur-token'),
+    needsReconnect: () => false,
+    accountKey: () => mockSession.account,
+    onSessionChange: jest.fn(listener => {
+        mockSession.listener = listener;
+    })
 }));
 
 jest.mock('../../src/lib/community/api.js', () => {
@@ -17,14 +24,15 @@ jest.mock('../../src/lib/community/api.js', () => {
             if (token) global.localStorage.setItem('mw:mistwarp-session', token);
             else global.localStorage.removeItem('mw:mistwarp-session');
         },
-        logout: jest.fn()
+        logout: jest.fn(),
+        setRoturTokenGetter: jest.fn()
     };
 });
 
 jest.mock('../../src/lib/rotur/cloud-sync.js', () => ({onRoturLogout: jest.fn()}));
 jest.mock('../../src/lib/rotur/git-api.js', () => ({clearGitAuth: jest.fn()}));
 
-import {login, restore} from '../../src/lib/rotur/identity.js';
+import {getState, login, restore} from '../../src/lib/rotur/identity.js';
 import {exchangeValidator} from '../../src/lib/community/api.js';
 import {logout as roturLogout, restoreSession} from '../../src/lib/rotur/client.js';
 
@@ -88,4 +96,37 @@ test('a Rotur token in the address bar is never adopted', async () => {
     expect(localStorage.getItem('mw:rotur-token')).toBe('rotur_own-token');
     expect(localStorage.getItem('mw:mistwarp-session')).toBe('own-session');
     expect(roturLogout).not.toHaveBeenCalled();
+});
+
+test('switching account in another tab restores here as the new account', async () => {
+    jest.useRealTimers();
+    restoreSession.mockReset();
+    localStorage.setItem('mw:mistwarp-session', 'old-account-session');
+    restoreSession.mockResolvedValueOnce({username: 'sam', id: 'id-1'});
+    await restore();
+    expect(getState().user).toMatchObject({username: 'sam'});
+    restoreSession.mockResolvedValueOnce({username: 'kit', id: 'id-2'});
+    mockSession.listener({accessToken: 'b', subject: 'id-2', username: 'kit'});
+    // The old account's MistWarp session goes straight away.
+    expect(localStorage.getItem('mw:mistwarp-session')).toBeNull();
+    for (let i = 0; i < 50 && (getState().user || {}).username !== 'kit'; i++) {
+        await new Promise(resolve => setTimeout(resolve, 5));
+    }
+    expect(getState().user).toMatchObject({username: 'kit', id: 'id-2'});
+    // The same account refreshing its token is not a switch.
+    restoreSession.mockClear();
+    mockSession.listener({accessToken: 'c', subject: 'id-2', username: 'kit'});
+    expect(restoreSession).not.toHaveBeenCalled();
+});
+
+test('signing out of the old sign-in in another tab signs this tab out', async () => {
+    restoreSession.mockReset();
+    restoreSession.mockResolvedValueOnce({username: 'sam', id: 'id-1'});
+    mockSession.account = 'rotur_legacy';
+    await restore();
+    expect(getState().user).toBeTruthy();
+    mockSession.account = '';
+    window.dispatchEvent(new StorageEvent('storage', {key: 'mw:rotur-token', newValue: null}));
+    expect(getState().user).toBeNull();
+    mockSession.account = 'id-1';
 });
