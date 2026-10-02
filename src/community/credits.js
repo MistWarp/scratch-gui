@@ -51,8 +51,9 @@ const randomIdempotencyKey = prefix => {
 };
 
 const commerceRequest = async (path, init = {}) => {
-    const scope = init.scope || ['credits:view'];
-    // Spending is asked for when someone pays, from their click.
+    // Every call says which permission it needs. Spending is asked for when
+    // someone pays, from their click.
+    const {scope} = init;
     await ensureScopes(scope, {prompt: scope.some(name => !name.endsWith(':view'))});
     const next = {...init};
     delete next.scope;
@@ -76,15 +77,10 @@ const sendCommercePayment = ({to, amount, source = 'mistwarp', kind, resourceTyp
         })
     });
 
-const getCommerceEarnings = async () => {
-    await ensureScopes(['credits:view']);
-    return billingRequest('/me/earnings');
-};
-
 const listCommerceBounties = async (filters = {}) => {
     const query = new URLSearchParams(filters);
     const path = `/bounties?${query.toString()}`;
-    if (await getAccessToken()) return commerceRequest(path);
+    // Anyone can list bounties, so no token or credits permission is needed.
     const response = await fetch(`${ROTUR_API}/commerce${path}`);
     const data = await response.json().catch(() => null);
     if (!response.ok) throw new Error((data && data.error) || `Billing request failed (${response.status})`);
@@ -112,7 +108,6 @@ export {
     isInsufficientFunds,
     randomIdempotencyKey,
     sendCommercePayment,
-    getCommerceEarnings,
     listCommerceBounties,
     createCommerceBounty,
     cancelCommerceBounty

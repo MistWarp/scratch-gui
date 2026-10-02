@@ -68,12 +68,12 @@ test('authenticated reads expand scopes without prompting', async () => {
     });
     host.acquireModalLock = jest.fn();
 
-    await expect(host.ensureConsent(['credits:view'], {
+    await expect(host.ensureConsent(['account:view'], {
         name: 'Project',
         authenticatedOnly: true
     })).resolves.toBe(true);
 
-    expect(commitGrant).toHaveBeenCalledWith({name: ''}, ['credits:view']);
+    expect(commitGrant).toHaveBeenCalledWith({name: ''}, ['account:view']);
     expect(host.acquireModalLock).not.toHaveBeenCalled();
 });
 

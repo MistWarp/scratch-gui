@@ -5,12 +5,11 @@ import React, {useEffect, useState, useCallback, useRef} from 'react';
 import {Link, useSearchParams} from 'react-router-dom';
 import {
     Plus, Trash2, Heart, ThumbsDown, Play, Upload, Star, MoreHorizontal, Pencil, ExternalLink, HardDrive,
-    SlidersHorizontal, Coins, Eye, TrendingUp, Wallet, HeartHandshake, FolderOpen, LayoutDashboard,
+    SlidersHorizontal, Coins, Eye, TrendingUp, ShoppingBag, HeartHandshake, FolderOpen, LayoutDashboard,
     AlertTriangle, Library, Layers3, RotateCcw, Package, Image, Palette, Bookmark
 } from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
 import {formatBytes, formatDate} from '../format';
-import {getAccountSummary} from '../../lib/rotur/client.js';
 import {useUser} from '../UserContext.jsx';
 import Button from '../components/ui/Button.jsx';
 import CardGrid from '../components/ui/CardGrid.jsx';
@@ -76,7 +75,7 @@ const visibilityLabel = project => {
     return 'Draft';
 };
 
-const Overview = ({stats, account, quota, username, onNavigate}) => {
+const Overview = ({stats, quota, username, onNavigate}) => {
     const {text: communityText} = useCommunityText();
     const [recent, setRecent] = useState(null);
     const [recentFailed, setRecentFailed] = useState(false);
@@ -210,17 +209,7 @@ const Overview = ({stats, account, quota, username, onNavigate}) => {
             </div>
             <div className={styles.ovSide}>
                 <div className={styles.ovCard}>
-                    <SectionHeading icon={Wallet} title={communityText('Wallet')} className={styles.cardHeading} />
-                    {account && account.balance !== null ? (
-                        <div className={styles.ovWalletTop}>
-                            <span className={styles.ovWalletBalance}>
-                                <Wallet size={16} aria-hidden="true" />
-                                {fmtCredits(account.balance)}
-                            </span>
-                            <span className={styles.ovStatLabel}>{communityText('Balance')}</span>
-                            <Button as={Link} to="/wallet"><Coins size={14} />{communityText('Open wallet')}</Button>
-                        </div>
-                    ) : null}
+                    <SectionHeading icon={Coins} title={communityText('Earnings')} className={styles.cardHeading} />
                     <div className={styles.ovWalletRows}>
                         {stats.totalRevenue > 0 ? (
                             <div className={styles.ovWalletRow}>
@@ -228,19 +217,16 @@ const Overview = ({stats, account, quota, username, onNavigate}) => {
                                 <strong>{fmtCredits(stats.totalRevenue)}</strong>
                             </div>
                         ) : null}
-                        {account && account.donationsReceived > 0 ? (
-                            <div className={styles.ovWalletRow}>
-                                <span><HeartHandshake size={15} aria-hidden="true" />{communityText('Donations received')}</span>
-                                <strong>{fmtCredits(account.donationsReceived)}</strong>
-                            </div>
-                        ) : null}
-                        {!(stats.totalRevenue > 0) &&
-                            !(account && account.donationsReceived > 0) &&
-                            !(account && account.balance !== null) ? (
-                                <EmptyState compact icon={Coins} title={communityText('No earnings yet')}>
-                                    {communityText('Offer a project for purchase so people can support your work.')}
-                                </EmptyState>
-                            ) : null}
+                        {stats.totalRevenue > 0 ? null : (
+                            <EmptyState compact icon={Coins} title={communityText('No earnings yet')}>
+                                {communityText('Offer a project for purchase so people can support your work.')}
+                            </EmptyState>
+                        )}
+                    </div>
+                    <div className={styles.ovCardActions}>
+                        <Button as={Link} to="/purchases"><ShoppingBag size={14} />{communityText('Purchases')}</Button>
+                        <Button as="a" href="https://rotur.dev/me" target="_blank" rel="noopener noreferrer">
+                            <ExternalLink size={14} />{communityText('Balance on Rotur')}</Button>
                     </div>
                 </div>
                 {quota ? (
@@ -545,7 +531,6 @@ const MyStuff = () => {
     const [perks, setPerks] = useState(null);
     const [stats, setStats] = useState(null);
     const [statsFailed, setStatsFailed] = useState(false);
-    const [account, setAccount] = useState(null);
     const [inventoryItems, setInventoryItems] = useState(null);
     const [inventoryFailed, setInventoryFailed] = useState(false);
     const [pendingUploadFile, setPendingUploadFile] = useState(null);
@@ -667,7 +652,6 @@ const MyStuff = () => {
         if (!username) {
             setStats(null);
             setStatsFailed(false);
-            setAccount(null);
             return;
         }
         const context = accountContextRef.current;
@@ -688,17 +672,6 @@ const MyStuff = () => {
     useEffect(() => {
         loadStats();
     }, [loadStats]);
-
-    useEffect(() => {
-        if (!user) return;
-        let stale = false;
-        getAccountSummary()
-            .then(data => !stale && setAccount(data))
-            .catch(() => {});
-        return () => {
-            stale = true;
-        };
-    }, [user]);
 
     const load = useCallback(() => {
         const fresh = beginProjectLoad();
@@ -1349,7 +1322,6 @@ const MyStuff = () => {
                         stats ? (
                             <Overview
                                 stats={stats}
-                                account={account}
                                 quota={quota}
                                 username={username}
                                 onNavigate={setTab}

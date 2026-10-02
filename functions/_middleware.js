@@ -97,6 +97,11 @@ const STATIC_META = {
         description: 'Your MistWarp credits and purchases.',
         noindex: true
     },
+    '/purchases': {
+        title: 'Purchases - MistWarp',
+        description: 'What you have bought on MistWarp.',
+        noindex: true
+    },
     '/notifications': {
         title: 'Notifications - MistWarp',
         description: 'Your MistWarp notifications.',

@@ -15,7 +15,7 @@ const text = value => String(typeof value === 'undefined' || value === null ? ''
 const PROJECT_METHODS = Object.freeze({
     'me.abilities': {scopes: []},
     'me.checkAuth': {scopes: []},
-    'me.get': {scopes: ['account:view', 'credits:view']},
+    'me.get': {scopes: ['account:view']},
     'me.badges': {scopes: ['account:view']},
     'me.subscription': {scopes: ['account:view']},
     'me.blocked': {scopes: ['blocked:view']},

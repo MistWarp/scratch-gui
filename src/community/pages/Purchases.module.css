@@ -1,0 +1,130 @@
+.page {
+    max-width: var(--maxw-narrow);
+    margin: 0 auto;
+    padding: var(--page-pad);
+}
+
+.roturCard {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 22px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+    margin-bottom: 16px;
+}
+
+.roturIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: var(--radius);
+    background: color-mix(in srgb, #FF8C1A 18%, transparent);
+    color: #FF8C1A;
+    flex-shrink: 0;
+}
+
+.roturLead {
+    font-size: var(--fs-sm);
+    color: var(--text-dim);
+}
+
+.section {
+    margin-bottom: 28px;
+}
+
+.sectionTitle {
+    margin: 0 0 6px;
+    font-size: var(--fs-lg);
+}
+
+.purchases {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.purchaseRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+}
+
+.purchaseTitle {
+    font-weight: 600;
+    font-size: var(--fs-lg);
+    color: var(--mw-text);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.purchaseTitle:hover {
+    color: var(--accent-strong);
+}
+
+.purchaseMeta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+}
+
+.purchaseAmount {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 600;
+    font-size: var(--fs-md);
+    color: #FF8C1A;
+}
+
+.purchaseDate {
+    font-size: var(--fs-sm);
+    color: var(--text-dim);
+    white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+    .page {
+        padding: 20px 14px 64px;
+    }
+
+    .roturCard {
+        flex-wrap: wrap;
+    }
+
+    .purchaseRow {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .purchaseMeta {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+.roturButton {
+    margin-inline-start: auto;
+    flex-shrink: 0;
+}
+
+.roturTitle {
+    font-size: var(--fs-lg);
+    font-weight: 700;
+    color: var(--mw-text);
+}
