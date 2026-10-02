@@ -20,7 +20,6 @@ import {
 } from '../credits';
 import RoturConsentModal from '../components/RoturConsentModal.jsx';
 import GameMarketplaceModal from '../components/GameMarketplaceModal.jsx';
-import {getBalance} from '../../lib/rotur/client.js';
 import {
     hasFullGrant, commitGrant, callRotur, grantedScopesFor,
     activityAllowed, rememberActivityDecision
@@ -261,7 +260,6 @@ const Project = () => {
     const [confirmUnsandboxed, setConfirmUnsandboxed] = useState(false);
     const [buying, setBuying] = useState(false);
     const [confirmBuy, setConfirmBuy] = useState(false);
-    const [confirmBalance, setConfirmBalance] = useState(null);
     const [supportOpen, setSupportOpen] = useState(false);
     const [supportAmount, setSupportAmount] = useState('5');
     const [supporting, setSupporting] = useState(false);
@@ -406,7 +404,6 @@ const Project = () => {
         setVersionControlTab(initialVersionControlTab());
         setCollectionOpen(false);
         setConfirmBuy(false);
-        setConfirmBalance(null);
         setForkSetup(null);
         setForkBounty(null);
         setPreferredBountyId('');
@@ -1127,21 +1124,9 @@ const Project = () => {
         }
     };
 
-    const openBuyConfirm = async () => {
-        const context = actionContextRef.current;
-        const actionKey = beginAction('balance');
-        if (!actionKey) return;
+    const openBuyConfirm = () => {
         setActionError(null);
-        setConfirmBalance(null);
         setConfirmBuy(true);
-        try {
-            const balance = await getBalance();
-            if (actionContextRef.current === context) setConfirmBalance(balance);
-        } catch (e) {
-            // balance stays null; the purchase still guards on the server
-        } finally {
-            releaseAction(actionKey);
-        }
     };
 
     const doBuy = async () => {
@@ -1160,7 +1145,7 @@ const Project = () => {
             if (actionContextRef.current !== context) return;
             setConfirmBuy(false);
             if (isInsufficientFunds(e)) {
-                setActionError(communityText('You do not have enough credits. Claim your daily credits in your wallet, then try again.'));
+                setActionError(communityText('You do not have enough credits. Claim your daily credits on Rotur, then try again.'));
             } else if (e.needsReauth) {
                 setActionError('Your current login cannot send credits. Log out and back in, then try again.');
             } else {
@@ -1198,7 +1183,7 @@ const Project = () => {
             if (actionContextRef.current !== context) return;
             if (isInsufficientFunds(e)) {
                 setSupportOpen(false);
-                setActionError(communityText('You do not have enough credits. Claim your daily credits in your wallet, then try again.'));
+                setActionError(communityText('You do not have enough credits. Claim your daily credits on Rotur, then try again.'));
             } else {
                 setActionError(e.needsReauth ?
                     'Your current login cannot send credits. Log out and back in, then try again.' :
@@ -1460,7 +1445,6 @@ const Project = () => {
     const price = project.price || 0;
     const locked = Boolean(project.locked);
     const hasContent = project.hasContent !== false;
-    const needsCredits = confirmBalance !== null && confirmBalance < price;
     const followThemeDecision = themeMode === 'followed' && user && owner ?
         followedOwner &&
             followedOwner.viewer === String(user.username).toLowerCase() &&
@@ -1894,23 +1878,17 @@ const Project = () => {
                     confirmLabel={(
                         <React.Fragment>
                             <Coins size={15} />
-                            {needsCredits ? communityText('Open wallet') : communityText('Pay {value1} credits', {value1: price})}
+                            {communityText('Pay {value1} credits', {value1: price})}
                         </React.Fragment>
                     )}
-                    busy={needsCredits ? false : buying}
+                    busy={buying}
                     busyLabel={communityText('Processing…')}
-                    onConfirm={needsCredits ? () => navigate('/wallet') : doBuy}
+                    onConfirm={doBuy}
                     onCancel={() => setConfirmBuy(false)}
                 >
                     <p className={styles.confirmText}>
                         {communityText('Buy {value1} for a one-time payment of {value2} credits and support its creator?', {value1: project.title, value2: price})}
                     </p>
-                    {confirmBalance !== null ? (
-                        <p className={styles.confirmBalance}>{communityText('Your balance: {value1} credits', {value1: confirmBalance})}</p>
-                    ) : null}
-                    {needsCredits ? (
-                        <p className={styles.confirmBalance}>{communityText('You do not have enough credits. Claim your daily credits in your wallet, then try again.')}</p>
-                    ) : null}
                 </ConfirmModal>
             ) : null}
             {actionError ? (

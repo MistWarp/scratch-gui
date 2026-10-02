@@ -35,9 +35,6 @@ jest.mock('../../src/community/api.js', () => ({
         return `/projects/${project.id}`;
     })
 }));
-jest.mock('../../src/lib/rotur/client.js', () => ({
-    getAccountSummary: jest.fn(() => Promise.resolve(null))
-}));
 
 const stats = {
     totalViews: 0,

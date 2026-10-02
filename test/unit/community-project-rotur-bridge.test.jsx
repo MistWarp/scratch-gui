@@ -38,7 +38,6 @@ jest.mock('../../src/community/rotur.js', () => ({
     following: jest.fn()
 }));
 jest.mock('../../src/lib/rotur/client.js', () => ({
-    getBalance: jest.fn(() => Promise.resolve(0)),
     getRotur: () => mockClient,
     ensureScopes: jest.fn(() => Promise.resolve(true))
 }));
