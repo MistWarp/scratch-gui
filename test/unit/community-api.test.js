@@ -50,7 +50,7 @@ test('a Rotur outage while generating a validator keeps the login', async () => 
 
 test('signing in remembers whether Rotur reports an under-18 account', async () => {
     const signIn = minor => {
-        window.fetch = jest.fn(url => Promise.resolve(String(url).includes('generate_validator') ? {
+        window.fetch = jest.fn(url => Promise.resolve(String(url).includes('/v2/validators') ? {
             status: 200,
             json: () => Promise.resolve({validator: 'v'})
         } : {
@@ -65,6 +65,30 @@ test('signing in remembers whether Rotur reports an under-18 account', async () 
     await signIn(undefined);
     expect(isMinorAccount()).toBe(false);
     setMinorAccount(false);
+});
+
+test('the Rotur token is sent in a header, never in a URL', async () => {
+    window.fetch = jest.fn(url => Promise.resolve(String(url).includes('/v2/validators') ? {
+        status: 200,
+        json: () => Promise.resolve({validator: '1,abc'})
+    } : {
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ok: true, token: 'session', username: 'sam'})
+    }));
+
+    await exchangeValidator('rotur_secret-token');
+
+    const [validatorUrl, validatorInit] = window.fetch.mock.calls[0];
+    expect(validatorUrl).toBe('https://api.rotur.dev/v2/validators');
+    expect(validatorInit).toMatchObject({
+        method: 'POST',
+        headers: {Authorization: 'Bearer rotur_secret-token'},
+        body: JSON.stringify({key: 'mistwarp'})
+    });
+    for (const [url] of window.fetch.mock.calls) {
+        expect(String(url)).not.toContain('rotur_secret-token');
+    }
 });
 
 test('MistWarp project identity controls share, remix, and update actions', () => {
