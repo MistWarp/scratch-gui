@@ -51,7 +51,9 @@ const randomIdempotencyKey = prefix => {
 };
 
 const commerceRequest = async (path, init = {}) => {
-    await ensureScopes(init.scope || ['credits:view']);
+    const scope = init.scope || ['credits:view'];
+    // Spending is asked for when someone pays, from their click.
+    await ensureScopes(scope, {prompt: scope.some(name => !name.endsWith(':view'))});
     const next = {...init};
     delete next.scope;
     return billingRequest(`/commerce${path}`, next);

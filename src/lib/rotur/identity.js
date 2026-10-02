@@ -2,6 +2,7 @@ import {
     restoreSession as roturRestore,
     login as roturLogin,
     logout as roturLogout,
+    accountKey,
     getAccessToken,
     getRotur,
     needsReconnect,
@@ -19,6 +20,7 @@ import {
     logout as mistLogout
 } from '../community/api.js';
 import {setMinorAccount} from '../minor-account.js';
+import {ROTUR_TOKEN_KEY} from './token-key.js';
 
 let state = {status: 'idle', user: null, banMessage: null};
 const listeners = new Set();
@@ -65,6 +67,18 @@ const invalidateFailedValidator = error => {
 
 // Signing in or out in another tab, or Rotur ending the session. Wired on
 // first use rather than on import.
+// Signed out here, keeping the Rotur session if another tab still uses it.
+const signedOutElsewhere = () => {
+    setState({status: 'idle', user: null, reconnect: false});
+    roturLogout();
+    storeSession(null);
+    setMinorAccount(false);
+};
+
+const isSomeoneElse = session => (state.user.id ?
+    String(state.user.id) !== session.subject :
+    state.user.username !== session.username);
+
 let wired = false;
 const wireSession = () => {
     if (wired) return;
@@ -72,14 +86,20 @@ const wireSession = () => {
     setRoturTokenGetter(getAccessToken);
     onSessionChange(session => {
         if (state.status === 'logging-in') return;
-        if (session && !state.user) {
+        if (session && (!state.user || isSomeoneElse(session))) {
+            // Signed in, or switched account, in another tab. The MistWarp
+            // session belongs to whoever was here before.
+            if (state.user) storeSession(null);
             // eslint-disable-next-line no-use-before-define
             restore();
         } else if (!session && state.user && !needsReconnect()) {
-            setState({status: 'idle', user: null, reconnect: false});
-            roturLogout();
-            storeSession(null);
-            setMinorAccount(false);
+            signedOutElsewhere();
+        }
+    });
+    // The old sign-in has no session events: notice another tab removing it.
+    window.addEventListener('storage', event => {
+        if (event.key === ROTUR_TOKEN_KEY && !event.newValue && state.user && !accountKey()) {
+            signedOutElsewhere();
         }
     });
 };

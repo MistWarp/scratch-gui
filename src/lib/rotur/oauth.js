@@ -4,20 +4,19 @@
 // helpers once they ship. Nothing here imports the rest of MistWarp.
 //
 // - signIn() opens Rotur's consent screen in a popup (response_mode
-//   web_message). If the browser blocks the popup it falls back to a full-page
-//   redirect, and completeRedirect() finishes the sign-in when the page loads
-//   again.
+//   web_message). If the browser blocks the popup it can fall back to a
+//   full-page redirect, and completeRedirect() finishes the sign-in when the
+//   page loads again.
 // - With offline_access the session carries a refresh token. Refresh tokens
 //   work once, so tabs refresh under a Web Lock and share the result over a
 //   BroadcastChannel (or the storage event where there is none).
-// - authorize() gets a token without storing it, for callers that keep their
-//   own (each project's Rotur grant).
 
 const config = {
     clientId: 'app_1938b6a87799f862',
     api: 'https://api.rotur.dev',
     site: 'https://rotur.dev',
-    navigate: url => location.assign(url)
+    navigate: url => location.assign(url),
+    replace: url => location.replace(url)
 };
 
 const STORAGE_KEY = 'mw:rotur-oauth';
@@ -28,6 +27,8 @@ const POPUP_NAME = 'rotur-signin';
 const MESSAGE_TYPE = 'rotur:signin';
 // Refresh this long before the hour is up, so a request never races expiry.
 const REFRESH_MARGIN = 2 * 60 * 1000;
+// After a failed refresh that may work later (offline, Rotur down), try again.
+const RETRY_DELAY = 30 * 1000;
 
 const listeners = new Set();
 let channel = null;
@@ -51,15 +52,13 @@ const pkce = async () => {
     return {verifier, challenge: base64url(digest)};
 };
 
-const scopeString = scopes => [...new Set(['profile', ...scopes])].join(' ');
-
 const authorizeUrl = ({scopes, state, challenge, redirectUri, popup}) => `${config.api}/oauth/authorize?${
     new URLSearchParams({
         client_id: config.clientId,
         redirect_uri: redirectUri,
         response_type: 'code',
         ...(popup ? {response_mode: 'web_message'} : {}),
-        scope: scopeString(scopes),
+        scope: [...new Set(['profile', ...scopes])].join(' '),
         state,
         code_challenge: challenge,
         code_challenge_method: 'S256'
@@ -128,12 +127,21 @@ const emit = session => {
     }
 };
 
+let scheduleRefresh = () => {};
+
+// A session another tab wrote: keep its refresh timer here too, in case that
+// tab closes.
+const received = session => {
+    scheduleRefresh(session);
+    emit(session);
+};
+
 // The message carries the session itself: in Firefox it can arrive before
 // this tab can see the other tab's write to localStorage.
 const getChannel = () => {
     if (!channel && typeof BroadcastChannel !== 'undefined') {
         channel = new BroadcastChannel(CHANNEL);
-        channel.onmessage = event => emit(event.data || null);
+        channel.onmessage = event => received(event.data || null);
     }
     return channel;
 };
@@ -182,16 +190,16 @@ const awaitPopup = (popup, state) => new Promise((resolve, reject) => {
 });
 
 /**
- * Get a Rotur token for these scopes. Call it straight from a click: the
- * popup is opened before anything is awaited, or browsers block it.
- * @param {object} options What to ask for.
- * @param {string[]} options.scopes Permissions besides profile.
- * @param {boolean} [options.redirectFallback] Fall back to a full-page redirect
- *     if the popup is blocked. The result then arrives via completeRedirect().
- * @param {string} [options.returnTo] Where a redirect comes back to.
- * @returns {Promise<object>} {accessToken, refreshToken, expiresAt, scopes, subject, username}.
+ * Sign in to MistWarp with these permissions, and keep the session. Call it
+ * straight from a click: the popup opens before anything is awaited, or
+ * browsers block it.
+ * @param {string[]} scopes Permissions besides profile.
+ * @param {object} [options] Options.
+ * @param {boolean} [options.redirectFallback] Go to Rotur in this tab if the
+ *     popup is blocked. The sign-in then finishes in completeRedirect().
+ * @returns {Promise<object>} The new session.
  */
-const authorize = async ({scopes, redirectFallback = false, returnTo}) => {
+const signIn = async (scopes, {redirectFallback = true} = {}) => {
     const popup = window.open('about:blank', POPUP_NAME, `popup,width=480,height=720,left=${
         Math.max(0, (screen.width - 480) / 2)},top=${Math.max(0, (screen.height - 720) / 2)}`);
     const {verifier, challenge} = await pkce();
@@ -199,36 +207,18 @@ const authorize = async ({scopes, redirectFallback = false, returnTo}) => {
     if (!popup) {
         if (!redirectFallback) throw oauthError('popup_blocked', 'Allow pop-ups for this site to sign in with Rotur');
         sessionStorage.setItem(PENDING_KEY, JSON.stringify({
-            state, verifier, returnTo: returnTo || `${location.pathname}${location.search}${location.hash}`
+            state, verifier, returnTo: `${location.pathname}${location.search}${location.hash}`
         }));
         config.navigate(authorizeUrl({scopes, state, challenge, redirectUri: redirectUriFor(false), popup: false}));
         return new Promise(() => {});
     }
+    let session;
     try {
         popup.location.href = authorizeUrl({scopes, state, challenge, redirectUri: redirectUriFor(true), popup: true});
-        const code = await awaitPopup(popup, state);
-        return await exchangeCode(code, verifier, redirectUriFor(true));
+        session = await exchangeCode(await awaitPopup(popup, state), verifier, redirectUriFor(true));
     } finally {
         if (!popup.closed) popup.close();
     }
-};
-
-const scheduleRefresh = session => {
-    clearTimeout(refreshTimer);
-    if (!session || !session.refreshToken) return;
-    refreshTimer = setTimeout(() => {
-        // eslint-disable-next-line no-use-before-define
-        getAccessToken().catch(() => {});
-    }, Math.max(0, session.expiresAt - REFRESH_MARGIN - Date.now()));
-};
-
-/**
- * Sign in to MistWarp, and keep the session.
- * @param {string[]} scopes Permissions besides profile and offline_access.
- * @returns {Promise<object>} The new session.
- */
-const signIn = async scopes => {
-    const session = await authorize({scopes: [...scopes, 'offline_access'], redirectFallback: true});
     writeSession(session);
     scheduleRefresh(session);
     return session;
@@ -264,13 +254,13 @@ const completeRedirect = async () => {
     // Only a sign-in this tab started counts. Anything else is ignored, so a
     // link can't sign someone in.
     if (!pending || pending.state !== params.get('state')) return null;
-    history.replaceState(null, '', pending.returnTo || '/');
-    if (params.has('error')) {
-        throw oauthError(params.get('error'), params.get('error_description') || 'Rotur sign-in was cancelled');
+    let session = null;
+    if (params.has('code')) {
+        session = await exchangeCode(params.get('code'), pending.verifier, redirectUriFor(false));
+        writeSession(session);
     }
-    const session = await exchangeCode(params.get('code'), pending.verifier, redirectUriFor(false));
-    writeSession(session);
-    scheduleRefresh(session);
+    // A full load of the page they were on, so the router sees it too.
+    config.replace(pending.returnTo || '/');
     return session;
 };
 
@@ -286,18 +276,15 @@ const refresh = stale => withLock(async () => {
     const current = readSession();
     if (!current) return null;
     if (current.refreshToken !== stale.refreshToken || current.expiresAt - REFRESH_MARGIN > Date.now()) {
-        scheduleRefresh(current);
         return current;
     }
+    let next;
     try {
-        const next = {
+        next = {
             ...await tokenRequest({grant_type: 'refresh_token', refresh_token: current.refreshToken}),
             subject: current.subject,
             username: current.username
         };
-        writeSession(next);
-        scheduleRefresh(next);
-        return next;
     } catch (error) {
         if (error.code !== 'invalid_grant') throw error;
         // Another tab without Web Locks may have won the race.
@@ -307,6 +294,11 @@ const refresh = stale => withLock(async () => {
         writeSession(null);
         return null;
     }
+    // Signed out, or signed in again, while Rotur was answering: keep that.
+    const latest = readSession();
+    if (!latest || latest.refreshToken !== current.refreshToken) return latest;
+    writeSession(next);
+    return next;
 });
 
 /**
@@ -324,7 +316,18 @@ const getAccessToken = async () => {
         });
     }
     const next = await refreshInFlight;
+    scheduleRefresh(next);
     return next ? next.accessToken : null;
+};
+
+scheduleRefresh = session => {
+    clearTimeout(refreshTimer);
+    if (!session || !session.refreshToken) return;
+    refreshTimer = setTimeout(() => {
+        getAccessToken().catch(() => {
+            refreshTimer = setTimeout(() => scheduleRefresh(readSession()), RETRY_DELAY);
+        });
+    }, Math.max(0, session.expiresAt - REFRESH_MARGIN - Date.now()));
 };
 
 const signOut = () => {
@@ -348,18 +351,22 @@ if (typeof window !== 'undefined') {
         window.addEventListener('storage', event => {
             if (event.key !== STORAGE_KEY) return;
             try {
-                emit(JSON.parse(event.newValue || 'null'));
+                received(JSON.parse(event.newValue || 'null'));
             } catch (e) {
-                emit(null);
+                received(null);
             }
         });
     }
+    // Timers stop while a laptop sleeps; catch up when it wakes or reconnects.
+    const catchUp = () => {
+        if (document.visibilityState !== 'hidden') getAccessToken().catch(() => {});
+    };
+    document.addEventListener('visibilitychange', catchUp);
+    window.addEventListener('online', catchUp);
     scheduleRefresh(readSession());
 }
 
 export {
-    STORAGE_KEY,
-    authorize,
     completeRedirect,
     configure,
     getAccessToken,

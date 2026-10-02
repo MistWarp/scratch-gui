@@ -84,11 +84,30 @@ test('the Rotur token is sent in a header, never in a URL', async () => {
     expect(validatorInit).toMatchObject({
         method: 'POST',
         headers: {Authorization: 'Bearer rotur_secret-token'},
-        body: JSON.stringify({key: 'mistwarp'})
+        body: JSON.stringify({key: 'app_1938b6a87799f862'})
     });
     for (const [url] of window.fetch.mock.calls) {
         expect(String(url)).not.toContain('rotur_secret-token');
     }
+});
+
+test('a server that only knows the old validator key gets one next', async () => {
+    let authCalls = 0;
+    window.fetch = jest.fn(url => {
+        if (String(url).includes('/v2/validators')) {
+            return Promise.resolve({status: 200, json: () => Promise.resolve({validator: 'v'})});
+        }
+        authCalls++;
+        // The server live today checks only the old key, and answers 403.
+        const refusal = {ok: false, code: 'invalid_validator', error: 'Validator expired or not valid'};
+        return Promise.resolve(authCalls === 1 ?
+            {ok: false, status: 403, json: () => Promise.resolve(refusal), clone: () => ({json: () => Promise.resolve(refusal)})} :
+            {ok: true, status: 200, json: () => Promise.resolve({ok: true, token: 'session'})});
+    });
+    await expect(exchangeValidator('rotur-token')).resolves.toMatchObject({token: 'session'});
+    const keys = window.fetch.mock.calls.filter(([url]) => String(url).includes('/v2/validators'))
+        .map(([, init]) => JSON.parse(init.body).key);
+    expect(keys).toEqual(['app_1938b6a87799f862', 'mistwarp']);
 });
 
 test('MistWarp project identity controls share, remix, and update actions', () => {

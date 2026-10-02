@@ -43,7 +43,7 @@ const signingStatus = async capabilities => {
 };
 
 const requestSigningPermission = async () => {
-    await ensureScopes([SIGNING_SCOPE]);
+    await ensureScopes([SIGNING_SCOPE], {prompt: true});
     scopeCheck = null;
     return scopeGranted();
 };

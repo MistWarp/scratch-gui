@@ -58,7 +58,7 @@ const hasFullGrant = (meta, scopes) => {
 
 // Broaden the session to cover the granted scopes, then persist the grant.
 const commitGrant = async (meta, scopes) => {
-    await ensureScopes(scopes);
+    await ensureScopes(scopes, {prompt: true});
     saveGrant(meta, [...new Set([...grantedScopesFor(meta), ...scopes])]);
 };
 
