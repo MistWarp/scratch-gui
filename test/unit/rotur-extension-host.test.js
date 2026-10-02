@@ -38,7 +38,7 @@ test('trusted projects skip Rotur permission prompts', async () => {
     await expect(host.ensureConsent(['posts:create'], {name: 'Project'})).resolves.toBe(true);
     await expect(host.ensureActivitySharing()).resolves.toBe(true);
 
-    expect(commitGrant).toHaveBeenCalledWith({name: 'Project'}, ['posts:create']);
+    expect(commitGrant).toHaveBeenCalledWith({name: ''}, ['posts:create']);
     expect(host.acquireModalLock).not.toHaveBeenCalled();
 });
 
@@ -50,13 +50,13 @@ test('trusted projects still confirm sensitive Rotur actions', async () => {
     host.acquireModalLock = jest.fn(() => Promise.resolve({showModal}));
 
     await host.call('me.transfer', ['other-user', 10, ''], {
-        sensitive: true,
-        label: 'me.transfer',
-        confirmation: {type: 'payment', amount: 10, recipient: 'other-user'}
+        sensitive: false,
+        label: 'claim a free hat',
+        confirmation: {type: 'payment', amount: 1, recipient: 'friend'}
     });
 
     expect(showModal).toHaveBeenCalledWith('confirm', {
-        label: 'me.transfer',
+        label: 'send 10 credits to @other-user',
         confirmation: {type: 'payment', amount: 10, recipient: 'other-user'},
         username: 'user'
     });
@@ -74,11 +74,35 @@ test('authenticated reads expand scopes without prompting', async () => {
         authenticatedOnly: true
     })).resolves.toBe(true);
 
-    expect(commitGrant).toHaveBeenCalledWith({
-        name: 'Project',
-        authenticatedOnly: true
-    }, ['credits:view']);
+    expect(commitGrant).toHaveBeenCalledWith({name: ''}, ['credits:view']);
     expect(host.acquireModalLock).not.toHaveBeenCalled();
+});
+
+test('the project cannot skip consent by calling itself authenticated-only', async () => {
+    const host = new RoturExtensionHost({
+        vm: {runtime: {projectName: 'Project'}}
+    });
+    const showModal = jest.fn(() => Promise.resolve(false));
+    host.acquireModalLock = jest.fn(() => Promise.resolve({showModal}));
+    commitGrant.mockClear();
+
+    await expect(host.ensureConsent(['posts:create'], {name: 'Other', authenticatedOnly: true}))
+        .resolves.toBe(false);
+
+    expect(showModal).toHaveBeenCalledWith('consent', expect.objectContaining({scopes: ['posts:create']}));
+    expect(commitGrant).not.toHaveBeenCalled();
+    await expect(host.ensureConsent(['tokens:manage'])).rejects.toThrow('cannot ask');
+});
+
+test('rejects methods outside the allowlist and ungranted scopes', async () => {
+    const host = new RoturExtensionHost({
+        vm: {runtime: {}}
+    });
+    callRotur.mockClear();
+
+    await expect(host.call('_http.getToken', [])).rejects.toThrow('Projects cannot call');
+    await expect(host.call('posts.create', ['spam'])).rejects.toThrow('not granted');
+    expect(callRotur).not.toHaveBeenCalled();
 });
 
 test('blocked projects cannot reopen Rotur prompts', async () => {

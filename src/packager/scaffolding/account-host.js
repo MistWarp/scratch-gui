@@ -1,6 +1,9 @@
 import {Rotur} from 'rotur-sdk';
 import {scopesUsedByProject} from 'scratch-vm/src/extensions/rotur/core';
 import {APP_NAME} from '../../lib/constants/brand';
+import {
+  authorizeProjectCall, invokeProjectMethod, validateProjectScopes
+} from '../../lib/rotur/project-methods';
 
 const ACCOUNT_EXTENSIONS = new Set([
   'rotur', 'roturEconomy', 'roturKeys', 'roturStatus', 'roturSocial', 'roturShop', 'roturGroups', 'roturFiles',
@@ -131,23 +134,23 @@ export const createAccountHost = (runtime, options = {}, Client = Rotur) => {
     projectName: () => title,
     projectImage: () => '',
     grantedScopes: () => granted.slice(),
-    ensureConsent,
-    async call (method, args = [], opts = {}) {
+    // Project code (and any extension loaded next to it) can reach this host
+    // through the VM, so it only gets project scopes and allowlisted methods.
+    ensureConsent: scopes => {
+      const valid = validateProjectScopes(scopes);
+      if (!valid) return Promise.reject(new Error('Projects cannot ask for that Rotur permission'));
+      return ensureConsent(valid);
+    },
+    async call (method, args = []) {
       await ready;
       if (!user.loggedIn) throw new Error('Sign in with Rotur to use this project.');
-      if (opts.sensitive && !window.confirm(`${opts.label || method}\n${opts.confirmation ? JSON.stringify(opts.confirmation) : ''}`)) {
+      const call = authorizeProjectCall(method, args, granted, roturHost.projectId());
+      if (call.confirm && !window.confirm(`Allow ${title} to ${call.confirm.label}?`)) {
         throw new Error('You cancelled this Rotur action');
       }
       if (['socket.addActivity', 'socket.setStatus'].includes(method) &&
           !window.confirm(`Allow ${title} to update your Rotur activity?`)) return '';
-      const parts = method.split('.');
-      if (parts.some(part => ['__proto__', 'prototype', 'constructor'].includes(part))) throw new Error('Invalid Rotur method');
-      if (parts[0] === 'socket' && (!client.socket || !client.socket.connected)) await client.connectSocket();
-      let owner = client;
-      for (const part of parts.slice(0, -1)) owner = owner && owner[part];
-      const fn = owner && owner[parts[parts.length - 1]];
-      if (typeof fn !== 'function') throw new Error(`Unknown Rotur method: ${method}`);
-      return fn.apply(owner, args);
+      return invokeProjectMethod(client, method, call.args);
     }
   };
 

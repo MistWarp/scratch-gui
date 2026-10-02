@@ -5,8 +5,11 @@ import bindAll from 'lodash.bindall';
 import RoturConsentModal from '../components/mw-rotur-consent-modal/consent-modal.jsx';
 import {
     hasFullGrant, commitGrant, grantedScopesFor, callRotur,
-    activityAllowed, rememberActivityDecision, isActivityMethod
+    activityAllowed, rememberActivityDecision
 } from '../lib/rotur/extension-bridge.js';
+import {
+    authorizeProjectCall, grantsSilently, validateProjectScopes
+} from '../lib/rotur/project-methods.js';
 import {getRoturSettings, setRoturSetting} from '../lib/rotur/settings.js';
 import {isLoggedIn} from '../lib/rotur/client.js';
 import {getState as getRoturIdentityState} from '../lib/rotur/identity.js';
@@ -19,13 +22,15 @@ import {
 // Attaches a Rotur "host" onto vm.runtime so builtin Rotur extensions can act as
 // the logged-in user without ever seeing the token. The token stays inside the
 // GUI's Rotur client (lib/rotur/client.js); this host only exposes identity,
-// per-project consent, and gated calls. Mirrors tw-security-manager's modal-lock.
+// per-project consent, and allowlisted calls (lib/rotur/project-methods.js).
+// The host, not the caller, decides which calls need a grant or a confirmation.
+// Mirrors tw-security-manager's modal-lock.
 class RoturExtensionHost extends React.Component {
     constructor (props) {
         super(props);
         bindAll(this, [
             'handleAllowed', 'handleBlocked', 'handleDenied', 'handleShareThis', 'handleShareAll', 'handleShareNo',
-            'getUser', 'ensureConsent', 'ensureActivitySharing', 'call', 'getProjectId'
+            'getUser', 'ensureConsent', 'ensureActivitySharing', 'call', 'getProjectId', 'grantMeta'
         ]);
         this.nextModalCallbacks = [];
         this.modalLocked = false;
@@ -46,7 +51,7 @@ class RoturExtensionHost extends React.Component {
                 const id = this.getProjectId();
                 return id ? `https://api.mistwarp.org/thumbnails/${encodeURIComponent(id)}.png` : '';
             },
-            grantedScopes: () => grantedScopesFor({name: this.props.vm.runtime.projectName || ''})
+            grantedScopes: () => grantedScopesFor(this.grantMeta())
         };
     }
 
@@ -192,14 +197,23 @@ class RoturExtensionHost extends React.Component {
         return this.currentUser();
     }
 
-    async ensureConsent (scopes, meta) {
+    grantMeta () {
+        return {name: this.props.vm.runtime.projectName || ''};
+    }
+
+    async ensureConsent (requested) {
+        const scopes = validateProjectScopes(requested);
+        if (!scopes) {
+            throw new Error('Projects cannot ask for that Rotur permission');
+        }
         if (!this.currentUser().loggedIn) {
             throw new Error('Log in to Rotur to let this project connect');
         }
+        const meta = this.grantMeta();
         if (hasFullGrant(meta, scopes)) {
             return true;
         }
-        if (meta && meta.authenticatedOnly) {
+        if (grantsSilently(scopes)) {
             await commitGrant(meta, scopes);
             return true;
         }
@@ -220,25 +234,31 @@ class RoturExtensionHost extends React.Component {
         return true;
     }
 
-    async call (method, args, opts) {
-        if (isActivityMethod(method)) {
+    async call (method, args) {
+        const call = authorizeProjectCall(
+            method,
+            args,
+            grantedScopesFor(this.grantMeta()),
+            this.getProjectId() || 'mistwarp'
+        );
+        if (call.spec.activity) {
             const allowed = await this.ensureActivitySharing();
             if (!allowed) {
                 return '';
             }
         }
-        if (opts && opts.sensitive) {
+        if (call.confirm) {
             const {showModal} = await this.acquireModalLock();
             const confirmed = await showModal('confirm', {
-                label: opts.label || method,
-                confirmation: opts.confirmation || null,
+                label: call.confirm.label,
+                confirmation: call.confirm.confirmation || null,
                 username: this.currentUser().username
             });
             if (!confirmed) {
                 throw new Error('You cancelled this Rotur action');
             }
         }
-        return this.activityScope.call(method, args);
+        return this.activityScope.call(method, call.args);
     }
 
     render () {

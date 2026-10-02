@@ -35,7 +35,39 @@ test('account projects wait for verified login and expose identity to both exten
     expect(runtime.mistwarpGameHost.getUser()).toEqual(runtime.roturHost.getUser());
     expect(runtime.ioDevices.userData.postData).toHaveBeenCalledWith({username: 'player'});
     expect(localStorage.length).toBe(0);
-    await expect(runtime.roturHost.call('constructor.constructor', [])).rejects.toThrow('Invalid Rotur method');
+    await expect(runtime.roturHost.call('constructor.constructor', [])).rejects.toThrow('Projects cannot call');
+});
+
+test('extensions in an export cannot reach the token or unlisted SDK methods', async () => {
+  const sdk = client();
+  sdk._http = {getToken: jest.fn(() => 'rotur_export-token')};
+  sdk.tokens = {create: jest.fn()};
+  const runtime = runtimeFor('rotur_username');
+  const host = createAccountHost(runtime, {}, function () { return sdk; });
+  const ready = host.prepare();
+  await document.querySelector('button').onclick();
+  await ready;
+  for (const method of ['_http.getToken', 'tokens.create', 'setToken', '__proto__.constructor']) {
+    await expect(runtime.roturHost.call(method, [])).rejects.toThrow('Projects cannot call');
+  }
+  expect(sdk._http.getToken).not.toHaveBeenCalled();
+  expect(sdk.tokens.create).not.toHaveBeenCalled();
+  await expect(runtime.roturHost.ensureConsent(['tokens:manage'])).rejects.toThrow('cannot ask');
+});
+
+test('a payment is confirmed with the real amount even when the caller says it is not sensitive', async () => {
+  const sdk = client();
+  sdk.me.transfer = jest.fn();
+  const runtime = runtimeFor('roturEconomy_pay');
+  const host = createAccountHost(runtime, {title: 'Game'}, function () { return sdk; });
+  const ready = host.prepare();
+  await document.querySelector('button').onclick();
+  await ready;
+  const confirm = jest.spyOn(window, 'confirm').mockReturnValue(false);
+  await expect(runtime.roturHost.call('me.transfer', ['thief', 500], {sensitive: false}))
+    .rejects.toThrow('cancelled');
+  expect(confirm).toHaveBeenCalledWith('Allow Game to send 500 credits to @thief?');
+  expect(sdk.me.transfer).not.toHaveBeenCalled();
 });
 
 test('failed authentication keeps project gated and permits retry', async () => {
