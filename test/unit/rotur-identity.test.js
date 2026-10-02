@@ -75,3 +75,17 @@ test('restoring gives up after repeated Rotur failures', async () => {
     expect(restoreSession).toHaveBeenCalledTimes(3);
     jest.useRealTimers();
 });
+
+test('a Rotur token in the address bar is never adopted', async () => {
+    window.history.replaceState(null, '', '/editor?token=rotur_attacker-token&project=1');
+    localStorage.setItem('mw:rotur-token', 'rotur_own-token');
+    localStorage.setItem('mw:mistwarp-session', 'own-session');
+    roturLogout.mockClear();
+    restoreSession.mockResolvedValueOnce({username: 'own-user'});
+
+    await expect(restore()).resolves.toEqual({username: 'own-user'});
+
+    expect(localStorage.getItem('mw:rotur-token')).toBe('rotur_own-token');
+    expect(localStorage.getItem('mw:mistwarp-session')).toBe('own-session');
+    expect(roturLogout).not.toHaveBeenCalled();
+});
