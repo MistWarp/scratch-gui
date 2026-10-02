@@ -158,9 +158,9 @@ const has = (object, key) => typeof key === 'string' && Object.prototype.hasOwnP
  */
 const projectMethod = method => (has(PROJECT_METHODS, method) ? PROJECT_METHODS[method] : null);
 
-// Every scope some project block can use. A project may only ask for these.
 const WHOLE_DRIVE_SCOPES = ['files:view', 'files:manage', 'files:delete'];
 
+// Every scope some project block can use. A project may only ask for these.
 const PROJECT_SCOPES = new Set(Object.values(PROJECT_METHODS).flatMap(spec => spec.scopes));
 
 // Scopes whose only methods ask for confirmation on every call, so granting
@@ -214,15 +214,30 @@ const authorizeProjectCall = (method, args, granted, storageId) => {
     return {spec, args: list, confirm: spec.confirm ? spec.confirm(list) : null};
 };
 
-/**
- * Run an allowlisted method on a Rotur client. The path is a key of the
- * allowlist, never something taken straight from a project.
- * @param {object} client A rotur-sdk Rotur instance.
- * @param {string} method An allowlisted method name.
- * @param {Array} args Arguments.
- * @returns {Promise<unknown>} The SDK result.
- */
 const OFS_HOME = 'origin/(c) users/';
+
+const outsideFolder = root => new Error(`Projects can only read files in MistWarp's folder${root ? `, ${root}` : ''}`);
+
+// Rotur's folder for the signed-in account, read once per token from the path
+// index. A failed read isn't kept, so the next call tries again.
+const appFolders = new WeakMap();
+const appFolder = client => {
+    const cached = appFolders.get(client);
+    if (cached && cached.token === client.token) return cached.folder;
+    const folder = client.files.pathIndex().then(index => {
+        const {root, username} = index || {};
+        if (typeof root !== 'string' || !root || !username) {
+            throw new Error('Rotur did not give this project a folder of its own');
+        }
+        const name = root.replace(/\/+$/, '').toLowerCase();
+        return {root, name, base: `${OFS_HOME}${String(username).toLowerCase()}${name}`};
+    });
+    appFolders.set(client, {token: client.token, folder});
+    folder.catch(() => {
+        if (appFolders.get(client) && appFolders.get(client).folder === folder) appFolders.delete(client);
+    });
+    return folder;
+};
 
 /**
  * Turn a path a project gave into the Origin FS path Rotur indexes, inside
@@ -234,25 +249,28 @@ const OFS_HOME = 'origin/(c) users/';
  * @returns {Promise<string>} The full, lower-case path.
  */
 const appFilePath = async (client, path) => {
-    const {root, username} = await client.files.pathIndex();
-    if (typeof root !== 'string' || !root || !username) {
-        throw new Error('Rotur did not give this project a folder of its own');
-    }
-    const folder = root.replace(/\/+$/, '').toLowerCase();
-    const base = `${OFS_HOME}${String(username).toLowerCase()}${folder}`;
-    let asked = String(path || '').trim()
+    const asked = String(path || '').trim()
         .toLowerCase();
-    if (asked.startsWith(`${folder}/`)) asked = asked.slice(folder.length);
-    const full = asked.startsWith(OFS_HOME) ? asked : `${base}/${asked.replace(/^\/+/, '')}`;
-    const inside = full.startsWith(`${base}/`) &&
-        full.slice(base.length + 1).split('/')
-            .every(part => part && part !== '.' && part !== '..' && !part.includes('\\'));
-    if (!inside) {
-        throw new Error(`Projects can only read files in MistWarp's folder, ${root}`);
+    // Bad segments are refused before Rotur is asked anything.
+    const parts = asked.replace(/^\/+/, '').split('/');
+    if (parts.some(part => !part || part === '.' || part === '..' || part.includes('\\'))) {
+        throw outsideFolder('');
     }
+    const {root, name, base} = await appFolder(client);
+    const relative = asked.startsWith(`${name}/`) ? asked.slice(name.length) : asked;
+    const full = relative.startsWith(OFS_HOME) ? relative : `${base}/${relative.replace(/^\/+/, '')}`;
+    if (!full.startsWith(`${base}/`)) throw outsideFolder(root);
     return full;
 };
 
+/**
+ * Run an allowlisted method on a Rotur client. The path is a key of the
+ * allowlist, never something taken straight from a project.
+ * @param {object} client A rotur-sdk Rotur instance.
+ * @param {string} method An allowlisted method name.
+ * @param {Array} args Arguments.
+ * @returns {Promise<unknown>} The SDK result.
+ */
 const invokeProjectMethod = async (client, method, args) => {
     if (!projectMethod(method)) {
         throw new Error(`Projects cannot call Rotur method: ${String(method).slice(0, 80)}`);

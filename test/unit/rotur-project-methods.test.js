@@ -180,10 +180,29 @@ describe('project files stay in MistWarp\'s own Origin FS folder', () => {
     });
 
     test.each([
-        '../secrets.txt', '/levels/../../x', 'origin/(c) users/sam/documents/diary.txt',
-        'origin/(c) users/kit/application data/app_1938b6a87799f862@mist/save.txt', '', '/'
+        'origin/(c) users/sam/documents/diary.txt',
+        'origin/(c) users/kit/application data/app_1938b6a87799f862@mist/save.txt', `${home}x/save.txt`
     ])('%j outside the folder is refused', async path => {
         await expect(appFilePath(client(), path)).rejects.toThrow(`Projects can only read files in MistWarp's folder, ${root}`);
+    });
+
+    test.each(['../secrets.txt', './save.txt', 'a//b.txt', 'a\\b.txt', '', '/'])(
+        '%j is refused before Rotur is asked',
+        async path => {
+            const rotur = client();
+            await expect(appFilePath(rotur, path)).rejects.toThrow('Projects can only read files in MistWarp\'s folder');
+            expect(rotur.files.pathIndex).not.toHaveBeenCalled();
+        }
+    );
+
+    test('the folder is read once per token', async () => {
+        const rotur = {...client(), token: 'a'};
+        await appFilePath(rotur, 'one.txt');
+        await appFilePath(rotur, 'two.txt');
+        expect(rotur.files.pathIndex).toHaveBeenCalledTimes(1);
+        rotur.token = 'b';
+        await appFilePath(rotur, 'one.txt');
+        expect(rotur.files.pathIndex).toHaveBeenCalledTimes(2);
     });
 
     test('a token Rotur gives no folder to reads nothing', async () => {
