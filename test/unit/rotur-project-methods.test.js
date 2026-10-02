@@ -49,12 +49,6 @@ test('every method the built-in Rotur extensions call is allowlisted with its sc
     const calls = await recordExtensionCalls();
     expect(calls.length).toBeGreaterThan(80);
     for (const {method, opts, scopes} of calls) {
-        // Blocks that spent credits, which projects can't do any more. They're
-        // removed from the extension in MistWarp/scratch-vm#24.
-        if ([
-            'me.transfer', 'gifts.create', 'keys.buy', 'groups.sendTip', 'groups.purchaseProduct',
-            'items.buy', 'cosmetics.purchase'
-        ].includes(method)) continue;
         const spec = projectMethod(method);
         expect({method, allowed: Boolean(spec)}).toEqual({method, allowed: true});
         // A block's scope is what the host grants for it, after mapping.
@@ -89,6 +83,8 @@ test.each([
     'admin.transferCredits',
     'me.transfer',
     'me.transfer.call',
+    'me.claimTime',
+    'me.transactions',
     'gifts.create',
     'keys.buy',
     'groups.sendTip',

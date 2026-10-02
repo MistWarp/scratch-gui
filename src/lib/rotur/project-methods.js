@@ -22,8 +22,6 @@ const PROJECT_METHODS = Object.freeze({
     'me.block': {scopes: ['blocked:manage']},
     'me.unblock': {scopes: ['blocked:manage']},
     'me.requests': {scopes: ['friends:view']},
-    'me.claimTime': {scopes: ['credits:view']},
-    'me.transactions': {scopes: ['credits:view']},
 
     'profiles.get': {scopes: []},
     'profiles.exists': {scopes: []},
