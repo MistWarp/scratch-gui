@@ -10,10 +10,6 @@
 // Never resolve a method path that is not a key of this table.
 
 const text = value => String(typeof value === 'undefined' || value === null ? '' : value).slice(0, 200);
-const amount = value => {
-    const number = Number(value);
-    return Number.isFinite(number) ? number : 0;
-};
 
 const PROJECT_METHODS = Object.freeze({
     'me.abilities': {scopes: []},
@@ -35,10 +31,6 @@ const PROJECT_METHODS = Object.freeze({
     'check.banned': {scopes: []},
     'notifications.list': {scopes: ['notifications:view']},
 
-    'gifts.create': {
-        scopes: ['gifts:create'],
-        confirm: args => ({label: `create a gift of ${amount(args[0])} credits`})
-    },
     'gifts.get': {scopes: []},
     'gifts.claim': {
         scopes: ['gifts:claim'],
@@ -52,10 +44,6 @@ const PROJECT_METHODS = Object.freeze({
     'keys.mine': {scopes: ['keys:view']},
     'keys.get': {scopes: []},
     'keys.check': {scopes: []},
-    'keys.buy': {
-        scopes: [],
-        confirm: args => ({label: `buy key ${text(args[0])}`})
-    },
     'keys.cancel': {
         scopes: [],
         confirm: args => ({label: `cancel your subscription to key ${text(args[0])}`})
@@ -134,14 +122,6 @@ const PROJECT_METHODS = Object.freeze({
     'groups.announcements': {scopes: []},
     'groups.events': {scopes: ['groups:view']},
     'groups.products': {scopes: ['groups:view']},
-    'groups.sendTip': {
-        scopes: ['credits:manage'],
-        confirm: args => ({label: `tip ${amount(args[1])} credits to group ${text(args[0])}`})
-    },
-    'groups.purchaseProduct': {
-        scopes: ['credits:manage'],
-        confirm: args => ({label: `buy product ${text(args[1])} in group ${text(args[0])}`})
-    },
 
     // Projects only reach MistWarp's own Origin FS folder, never the whole drive.
     'files.index': {scopes: ['files:app']},

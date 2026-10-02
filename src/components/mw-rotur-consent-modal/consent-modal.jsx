@@ -17,7 +17,6 @@ const groupScopes = scopes => {
 const RoturConsentModal = props => {
     const {type, data} = props;
     const groups = groupScopes(data.scopes || []);
-    const payment = type === 'confirm' && data.confirmation && data.confirmation.type === 'payment';
     if (type === 'share') {
         return (
             <Modal
@@ -78,23 +77,13 @@ const RoturConsentModal = props => {
             <Box className={styles.body}>
                 {type === 'confirm' ? (
                     <React.Fragment>
-                        <h2>{payment ? 'Confirm payment' : 'Confirm account action'}</h2>
-                        {payment ? (
-                            <p>
-                                {`Allow payment of ${data.confirmation.amount} credits to `}
-                                <b>{`@${data.confirmation.recipient}`}</b>
-                                {'?'}
-                            </p>
-                        ) : (
-                            <React.Fragment>
-                                <p>
-                                    {'Allow this project to '}
-                                    <b>{data.label}</b>
-                                    {data.username ? ` as @${data.username}?` : '?'}
-                                </p>
-                                <p>{'This action will happen once. It does not give the project ongoing approval.'}</p>
-                            </React.Fragment>
-                        )}
+                        <h2>{'Confirm account action'}</h2>
+                        <p>
+                            {'Allow this project to '}
+                            <b>{data.label}</b>
+                            {data.username ? ` as @${data.username}?` : '?'}
+                        </p>
+                        <p>{'This action will happen once. It does not give the project ongoing approval.'}</p>
                     </React.Fragment>
                 ) : (
                     <React.Fragment>
@@ -140,7 +129,7 @@ const RoturConsentModal = props => {
                         className={styles.allowButton}
                         onClick={props.onAllowed}
                     >
-                        {payment ? 'Allow payment' : (type === 'confirm' ? 'Allow once' : 'Connect')}
+                        {type === 'confirm' ? 'Allow once' : 'Connect'}
                     </button>
                 </Box>
             </Box>

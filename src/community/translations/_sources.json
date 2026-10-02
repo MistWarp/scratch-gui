@@ -267,7 +267,7 @@
     "src/community/components/GameMarketplaceModal.jsx:224",
     "src/community/components/ProjectInfoPanel.jsx:382",
     "src/community/components/ReportModal.jsx:106",
-    "src/community/components/RoturConsentModal.jsx:75",
+    "src/community/components/RoturConsentModal.jsx:70",
     "src/community/components/SocialPost.jsx:218",
     "src/community/components/SocialPost.jsx:264",
     "src/community/components/ui/ConfirmModal.jsx:22",
@@ -792,8 +792,8 @@
   ],
   "Block this project": [
     "src/community/components/GameMarketplaceModal.jsx:179",
-    "src/community/components/RoturConsentModal.jsx:33",
-    "src/community/components/RoturConsentModal.jsx:73"
+    "src/community/components/RoturConsentModal.jsx:32",
+    "src/community/components/RoturConsentModal.jsx:68"
   ],
   "Loading shop…": [
     "src/community/components/GameMarketplaceModal.jsx:182"
@@ -2167,65 +2167,56 @@
     "src/community/components/ReportModal.jsx:157"
   ],
   "This project": [
-    "src/community/components/RoturConsentModal.jsx:24"
+    "src/community/components/RoturConsentModal.jsx:23"
   ],
   "Show activity on your profile?": [
-    "src/community/components/RoturConsentModal.jsx:29"
+    "src/community/components/RoturConsentModal.jsx:28"
   ],
   "Not now": [
-    "src/community/components/RoturConsentModal.jsx:34",
-    "src/community/components/RoturConsentModal.jsx:75"
+    "src/community/components/RoturConsentModal.jsx:33",
+    "src/community/components/RoturConsentModal.jsx:70"
   ],
   "Allow all": [
-    "src/community/components/RoturConsentModal.jsx:35"
+    "src/community/components/RoturConsentModal.jsx:34"
   ],
   "Just this project": [
-    "src/community/components/RoturConsentModal.jsx:39"
+    "src/community/components/RoturConsentModal.jsx:38"
   ],
   "\"{value1}\" (@{value2}) wants to show it on your Rotur profile.": [
-    "src/community/components/RoturConsentModal.jsx:45"
+    "src/community/components/RoturConsentModal.jsx:44"
   ],
   "\"{value1}\" wants to show it on your Rotur profile.": [
-    "src/community/components/RoturConsentModal.jsx:48"
-  ],
-  "Allow payment of {value1} credits to @{value2}?": [
-    "src/community/components/RoturConsentModal.jsx:56"
+    "src/community/components/RoturConsentModal.jsx:47"
   ],
   "Allow this project to {value1} as @{value2}?": [
-    "src/community/components/RoturConsentModal.jsx:61"
+    "src/community/components/RoturConsentModal.jsx:56"
   ],
   "Allow this project to {value1}?": [
-    "src/community/components/RoturConsentModal.jsx:62"
-  ],
-  "Confirm payment": [
-    "src/community/components/RoturConsentModal.jsx:68"
+    "src/community/components/RoturConsentModal.jsx:57"
   ],
   "Confirm account action": [
-    "src/community/components/RoturConsentModal.jsx:68"
+    "src/community/components/RoturConsentModal.jsx:63"
   ],
   "Connect to Rotur": [
-    "src/community/components/RoturConsentModal.jsx:69"
-  ],
-  "Allow payment": [
-    "src/community/components/RoturConsentModal.jsx:82"
+    "src/community/components/RoturConsentModal.jsx:64"
   ],
   "Allow once": [
-    "src/community/components/RoturConsentModal.jsx:83"
+    "src/community/components/RoturConsentModal.jsx:76"
   ],
   "Connect": [
-    "src/community/components/RoturConsentModal.jsx:83"
+    "src/community/components/RoturConsentModal.jsx:76"
   ],
   "This action will happen once. It does not give the project ongoing approval.": [
-    "src/community/components/RoturConsentModal.jsx:94"
+    "src/community/components/RoturConsentModal.jsx:86"
   ],
   "\"{value1}\" (@{value2}) wants to use your Rotur account to:": [
-    "src/community/components/RoturConsentModal.jsx:103"
+    "src/community/components/RoturConsentModal.jsx:94"
   ],
   "\"{value1}\" wants to use your Rotur account to:": [
-    "src/community/components/RoturConsentModal.jsx:106"
+    "src/community/components/RoturConsentModal.jsx:97"
   ],
   "This only reads your public Rotur info.": [
-    "src/community/components/RoturConsentModal.jsx:122"
+    "src/community/components/RoturConsentModal.jsx:113"
   ],
   "Paste a Scratch project link": [
     "src/community/components/ScratchImport.jsx:34"

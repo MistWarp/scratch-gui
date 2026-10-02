@@ -17,7 +17,7 @@ const mockClient = {
         get: jest.fn(() => Promise.resolve({username: 'Viewer'}))
     },
     profiles: {get: jest.fn(() => Promise.resolve({username: 'someone'}))},
-    gifts: {create: jest.fn(() => Promise.resolve({ok: true}))},
+    gifts: {claim: jest.fn(() => Promise.resolve({ok: true}))},
     storage: {get: jest.fn(() => Promise.resolve({data: {}}))}
 };
 
@@ -137,13 +137,13 @@ describe('community project page Rotur bridge', () => {
         const pending = send({
             kind: 'call',
             id: 6,
-            method: 'gifts.create',
-            args: [5000],
+            method: 'gifts.claim',
+            args: ['REAL-CODE'],
             opts: {sensitive: false, label: 'claim a free hat'}
         });
         await pending;
-        expect(mockClient.gifts.create).not.toHaveBeenCalled();
-        expect(wrapper.text()).toContain('create a gift of 5000 credits');
+        expect(mockClient.gifts.claim).not.toHaveBeenCalled();
+        expect(wrapper.text()).toContain('claim gift code REAL-CODE');
         expect(wrapper.text()).not.toContain('free hat');
         wrapper.unmount();
     });
