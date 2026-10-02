@@ -1,5 +1,7 @@
 import warpthemeApi, {request} from '../../src/lib/warptheme-api.js';
 
+jest.mock('../../src/lib/rotur/client.js', () => ({ensureScopes: jest.fn(() => Promise.resolve())}));
+
 describe('WarpTheme API adapter', () => {
     beforeEach(() => {
         localStorage.setItem('mw:rotur-token', 'rotur-session');
@@ -179,5 +181,26 @@ describe('WarpTheme API adapter', () => {
 
         await expect(request('/user/likes', {optionalAuth: true})).rejects.toThrow('Expired session');
         expect(localStorage.getItem('mw:warptheme-session')).toBeNull();
+    });
+
+    test('authorizes WarpTheme with the Rotur token in a header, never in a URL', async () => {
+        localStorage.removeItem('mw:warptheme-session');
+        localStorage.setItem('mw:rotur-token', 'rotur_secret-token');
+        window.fetch.mockImplementation(url => Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve(url.includes('/v2/validators') ?
+                {validator: '1,abc'} :
+                {ok: true, token: 'fresh-warp-session', themes: []})
+        }));
+
+        await request('/user/likes', {authenticated: true});
+
+        const [validatorUrl, validatorInit] = window.fetch.mock.calls[0];
+        expect(validatorUrl).toBe('https://api.rotur.dev/v2/validators');
+        expect(validatorInit.headers.Authorization).toBe('Bearer rotur_secret-token');
+        expect(JSON.parse(validatorInit.body)).toEqual({key: 'warptheme'});
+        expect(window.fetch.mock.calls[1][0]).toBe('https://warptheme.mistium.com/api/auth?v=1%2Cabc');
+        expect(window.fetch.mock.calls.some(([url]) => url.includes('rotur_secret-token'))).toBe(false);
     });
 });
