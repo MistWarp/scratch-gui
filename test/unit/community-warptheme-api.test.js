@@ -2,7 +2,7 @@ import warpthemeApi, {request} from '../../src/lib/warptheme-api.js';
 
 const mockRotur = {account: 'rotur-user-1', token: 'rotur-session'};
 jest.mock('../../src/lib/rotur/client.js', () => ({
-    ensureScopes: jest.fn(() => Promise.resolve()),
+    ensureScopes: jest.fn(() => Promise.resolve(true)),
     accountKey: () => mockRotur.account,
     getAccessToken: () => Promise.resolve(mockRotur.token)
 }));

@@ -40,7 +40,7 @@ jest.mock('../../src/community/rotur.js', () => ({
 jest.mock('../../src/lib/rotur/client.js', () => ({
     getBalance: jest.fn(() => Promise.resolve(0)),
     getRotur: () => mockClient,
-    ensureScopes: jest.fn(() => Promise.resolve())
+    ensureScopes: jest.fn(() => Promise.resolve(true))
 }));
 jest.mock('../../src/lib/community/cached-fetch.js', () => ({
     cachedFetchBuffer: jest.fn(() => Promise.resolve(new ArrayBuffer(0))),
