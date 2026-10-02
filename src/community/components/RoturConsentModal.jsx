@@ -20,7 +20,6 @@ const groupScopes = scopes => {
 // it can request an action but never approve one on the user's behalf.
 const RoturConsentModal = ({type, data, onAllow, onBlock, onDeny, onShareThis, onShareAll, onShareNo}) => {
     const {text: communityText} = useCommunityText();
-    const payment = type === 'confirm' && data.confirmation && data.confirmation.type === 'payment';
     const projectName = data.name || communityText('This project');
     if (type === 'share') {
         return (
@@ -52,11 +51,7 @@ const RoturConsentModal = ({type, data, onAllow, onBlock, onDeny, onShareThis, o
     }
     const groups = groupScopes(data.scopes);
     let confirmLead = null;
-    if (payment) {
-        confirmLead = communityText('Allow payment of {value1} credits to @{value2}?', {
-            value1: data.confirmation.amount, value2: data.confirmation.recipient
-        });
-    } else if (type === 'confirm') {
+    if (type === 'confirm') {
         confirmLead = data.username ?
             communityText('Allow this project to {value1} as @{value2}?', {value1: data.label, value2: data.username}) :
             communityText('Allow this project to {value1}?', {value1: data.label});
@@ -65,7 +60,7 @@ const RoturConsentModal = ({type, data, onAllow, onBlock, onDeny, onShareThis, o
         <Modal
             icon={ShieldCheck}
             title={type === 'confirm' ?
-                (payment ? communityText('Confirm payment') : communityText('Confirm account action')) :
+                communityText('Confirm account action') :
                 communityText('Connect to Rotur')}
             onDismiss={onDeny}
             actions={
@@ -78,9 +73,7 @@ const RoturConsentModal = ({type, data, onAllow, onBlock, onDeny, onShareThis, o
                         variant="primary"
                         onClick={onAllow}
                     >
-                        {payment ?
-                            communityText('Allow payment') :
-                            (type === 'confirm' ? communityText('Allow once') : communityText('Connect'))}
+                        {type === 'confirm' ? communityText('Allow once') : communityText('Connect')}
                     </Button>
                 </React.Fragment>
             }
@@ -88,13 +81,11 @@ const RoturConsentModal = ({type, data, onAllow, onBlock, onDeny, onShareThis, o
             {type === 'confirm' ? (
                 <React.Fragment>
                     <p className={styles.lead}>{confirmLead}</p>
-                    {payment ? null : (
-                        <p className={styles.lead}>
-                            {communityText(
-                                'This action will happen once. It does not give the project ongoing approval.'
-                            )}
-                        </p>
-                    )}
+                    <p className={styles.lead}>
+                        {communityText(
+                            'This action will happen once. It does not give the project ongoing approval.'
+                        )}
+                    </p>
                 </React.Fragment>
             ) : (
                 <React.Fragment>
