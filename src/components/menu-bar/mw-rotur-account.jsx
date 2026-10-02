@@ -14,7 +14,6 @@ import ChevronDown from './ChevronDown.jsx';
 import menuBarStyles from './menu-bar.css';
 import accountNavStyles from './account-nav.css';
 import {getRoturSessionApi} from '../../lib/rotur/session-api.js';
-import {buildAuthUrl} from '../../lib/rotur/client.js';
 import {
     openAccountMenu,
     closeAccountMenu,
@@ -55,11 +54,10 @@ const getAdminLabel = (openReports, openErrors) => {
 
 const RoturAccount = props => {
     const handleSwitchAccount = React.useCallback(() => {
-        const authUrl = buildAuthUrl();
         props.onCloseMenu();
         logout(props.onLogout);
-        window.location.href = authUrl;
-    }, [props.onCloseMenu, props.onLogout]);
+        props.onOpenLogin();
+    }, [props.onCloseMenu, props.onLogout, props.onOpenLogin]);
 
     const handleOpenSettings = React.useCallback(() => {
         props.onCloseMenu();
