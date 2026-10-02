@@ -1004,7 +1004,8 @@ class ChatConnection {
             });
             return {...frame, ...proof};
         } catch (error) {
-            if (error && (error.name === 'NotSupportedError' || error.name === 'DataError')) {
+            if (error && (error.signingUnavailable ||
+                error.name === 'NotSupportedError' || error.name === 'DataError')) {
                 this.patch({signing: 'unsupported'});
                 return frame;
             }

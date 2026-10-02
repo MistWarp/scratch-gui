@@ -19,6 +19,7 @@ const SIGN_IN_SCOPES = [
     // own server takes validators keyed to its Rotur App, which need no permission.
     'account:view', // Your Rotur ID, and the badge editor on your profile.
     'account:profile', // Reorder or hide badges, and show what you're editing.
+    'signing:keys', // Register this device's public key to sign chat messages.
     'credits:view', // Wallet balance, donation history, earnings, bounties.
     'credits:daily', // The daily credits button in the wallet.
     'notifications:view', // Notifications, live and on the notifications page.

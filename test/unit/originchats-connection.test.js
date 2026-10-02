@@ -286,6 +286,21 @@ describe('ChatConnection', () => {
         expect(edit.timestamp).toBeGreaterThan(future);
     });
 
+    test('sends unsigned and stops signing after device key registration is refused', async () => {
+        const sign = jest.fn(() => Promise.reject(Object.assign(new Error('Refused'), {signingUnavailable: true})));
+        const {chat, socket} = readyChat({signer: {status: () => Promise.resolve('on'), sign, request: jest.fn()}});
+        socket.receive({cmd: 'ready', user: {username: 'me'}});
+        await flush();
+        await chat.sendMessage('general', 'first');
+        await flush();
+        await chat.sendMessage('general', 'second');
+        await flush();
+        expect(socket.sent.filter(frame => frame.cmd === 'message_new').map(frame => frame.content))
+            .toEqual(['first', 'second']);
+        expect(sign).toHaveBeenCalledTimes(1);
+        expect(chat.getState().signing).toBe('unsupported');
+    });
+
     test('replies can opt out of pinging the original author', async () => {
         const {chat, socket} = readyChat();
         socket.receive({cmd: 'ready', user: {username: 'me'}});
@@ -527,4 +542,3 @@ describe('originchats typing names', () => {
         expect(validatorKeyMatches('originChats-wss://dms.mistium.com-abc')).toBe(false);
     });
 });
-
