@@ -71,10 +71,18 @@ const loadLegacyToken = () => {
     }
 };
 
-// The desktop app's editor runs on tw-editor://, not a web origin, and Sign in
-// with Rotur only returns to registered web origins. Until the desktop app has
-// its own sign-in, it keeps Rotur's older one, asking for the same permissions.
+// The desktop app's editor runs on tw-editor://, not a web origin, so Sign in
+// with Rotur can't return to it. Desktop builds that can listen on 127.0.0.1
+// sign in through that instead; older ones keep Rotur's older sign-in, asking
+// for the same permissions.
 const webOrigin = typeof location !== 'undefined' && /^https?:$/.test(location.protocol);
+
+const desktopAuthorize = () => {
+    const preload = typeof window !== 'undefined' && window.EditorPreload;
+    return preload && typeof preload.roturAuthorize === 'function' ? preload.roturAuthorize : null;
+};
+
+const canUseOAuth = () => webOrigin || Boolean(desktopAuthorize());
 
 const legacyLogin = async scopes => {
     const rotur = getClient();
@@ -127,7 +135,7 @@ const accountKey = () => {
  * reconnect with Sign in with Rotur.
  * @returns {boolean} True to offer reconnecting.
  */
-const needsReconnect = () => webOrigin && !oauth.readSession() && Boolean(loadLegacyToken());
+const needsReconnect = () => canUseOAuth() && !oauth.readSession() && Boolean(loadLegacyToken());
 
 /**
  * Stable avatar URL derived only from username.
@@ -273,8 +281,10 @@ const restoreSession = async () => {
  */
 const login = async (extraScopes = [], redirectFallback = true) => {
     const scopes = [...new Set([...SIGN_IN_SCOPES, ...extraScopes])];
-    if (webOrigin) {
-        const session = await oauth.signIn(scopes, {redirectFallback});
+    if (canUseOAuth()) {
+        const session = webOrigin ?
+            await oauth.signIn(scopes, {redirectFallback}) :
+            await oauth.signInLoopback(scopes, desktopAuthorize());
         dropLegacyToken();
         useToken(session.accessToken);
     } else {
@@ -712,9 +722,9 @@ const ensureScopes = async (scopes, {prompt = false} = {}) => {
         return true;
     }
     if (!prompt) return false;
-    // On the web this moves to Sign in with Rotur, so it asks only for what
+    // Where it can, this moves to Sign in with Rotur, so it asks only for what
     // is wanted, not everything the old token could do.
-    await login(webOrigin ? wanted : granted.concat(wanted), false);
+    await login(canUseOAuth() ? wanted : granted.concat(wanted), false);
     return !oauth.readSession() || hasScopes(wanted);
 };
 

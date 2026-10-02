@@ -308,3 +308,41 @@ test('other tabs get the session in the message, not from storage they may not s
         delete global.BroadcastChannel;
     }
 });
+
+test('the desktop app signs in through its loopback listener with PKCE', async () => {
+    global.fetch.mockImplementation(signInResponses({
+        access_token: 'rotur_st_desktop', refresh_token: 'rrt_desktop', expires_in: 3600, scope: 'profile account:view'
+    }));
+    let sent = null;
+    // What the desktop app does: listen on a free port and hand back what Rotur sent there.
+    const authorize = jest.fn(async href => {
+        sent = new URL(href);
+        return {redirectUri: 'http://127.0.0.1:51234/', state: sent.searchParams.get('state'), code: 'desk-code'};
+    });
+
+    const session = await oauth.signInLoopback(['account:view'], authorize);
+
+    expect(sent.origin + sent.pathname).toBe('https://api.rotur.dev/oauth/authorize');
+    expect(Object.fromEntries(sent.searchParams)).toMatchObject({
+        client_id: 'app_1938b6a87799f862',
+        redirect_uri: 'http://127.0.0.1/',
+        response_type: 'code',
+        code_challenge_method: 'S256'
+    });
+    expect(sent.searchParams.has('response_mode')).toBe(false);
+    const body = Object.fromEntries(global.fetch.mock.calls[0][1].body);
+    expect(body).toMatchObject({grant_type: 'authorization_code', code: 'desk-code', redirect_uri: 'http://127.0.0.1:51234/'});
+    expect(body.code_verifier).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(session).toMatchObject({accessToken: 'rotur_st_desktop', subject: 'user-id-1'});
+    expect(oauth.readSession().accessToken).toBe('rotur_st_desktop');
+});
+
+test('a loopback answer for another sign-in, or a refusal, stores nothing', async () => {
+    await expect(oauth.signInLoopback([], async () => ({redirectUri: 'http://127.0.0.1:1/', state: 'other', code: 'x'})))
+        .rejects.toMatchObject({code: 'invalid_state'});
+    await expect(oauth.signInLoopback([], async href => ({
+        redirectUri: 'http://127.0.0.1:1/', state: new URL(href).searchParams.get('state'), error: 'access_denied'
+    }))).rejects.toMatchObject({code: 'access_denied'});
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(oauth.readSession()).toBe(null);
+});
