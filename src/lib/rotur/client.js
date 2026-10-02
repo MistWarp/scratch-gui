@@ -242,15 +242,6 @@ const restoreSession = async () => {
     return user;
 };
 
-const buildAuthUrl = (returnTo = (typeof window === 'undefined' ? '' : window.location.href)) => {
-    const params = new URLSearchParams({
-        system: LOGIN_SYSTEM,
-        return_to: returnTo,
-        requires: LOGIN_PERMISSIONS.join(',')
-    });
-    return `https://rotur.dev/auth?${params.toString()}`;
-};
-
 /** Open the Rotur login flow (popup, with iframe fallback for Electron). */
 const login = async () => {
     const rotur = getClient();
@@ -830,7 +821,6 @@ export {
     APP_URL,
     APP_IMAGE,
     getAvatarUrl,
-    buildAuthUrl,
     restoreSession,
     login,
     logout,

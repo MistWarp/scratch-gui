@@ -52,27 +52,6 @@ const readRoturToken = () => {
     }
 };
 
-const adoptUrlToken = () => {
-    try {
-        const params = new URLSearchParams(window.location.search);
-        const token = params.get('token');
-        if (!token || !token.startsWith('rotur_')) {
-            return;
-        }
-        if (token !== readRoturToken()) {
-            roturLogout();
-            localStorage.setItem(ROTUR_TOKEN_KEY, token);
-            storeSession(null);
-        }
-        params.delete('token');
-        const query = params.toString();
-        const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`;
-        window.history.replaceState(null, '', nextUrl);
-    } catch (_) {
-        return;
-    }
-};
-
 const ensureMistSession = () => {
     const existing = loadSession();
     if (existing) {
@@ -112,7 +91,6 @@ const restoreWithRetry = async () => {
 
 const doRestore = async () => {
     setState({status: 'restoring'});
-    adoptUrlToken();
     let user = null;
     try {
         user = await restoreWithRetry();
