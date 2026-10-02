@@ -21,6 +21,7 @@ import {
 } from '../../reducers/menus.js';
 import {openRoturLoginModal, openSettingsModal} from '../../reducers/modals.js';
 import communityEnabled from '../../lib/community/enabled.js';
+import {hasRotur} from '../../lib/rotur/availability.js';
 
 const logout = onLogout => {
     if (onLogout) {
@@ -68,6 +69,9 @@ const RoturAccount = props => {
         props.onCloseMenu();
         logout(props.onLogout);
     }, [props.onCloseMenu, props.onLogout]);
+
+    // The desktop app has no Rotur, so nobody signs in.
+    if (!hasRotur()) return null;
 
     if (!props.username) {
         return (

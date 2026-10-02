@@ -9,6 +9,7 @@ import {
 } from './settings.js';
 import {ROTUR_TOKEN_KEY} from './token-key.js';
 import * as oauth from './oauth.js';
+import {hasRotur, roturOfflineError} from './availability.js';
 
 // What MistWarp asks for when someone signs in with Rotur. Nothing here can
 // spend credits, change account settings or read secrets: payments go through
@@ -238,10 +239,14 @@ const writeRestoreCache = user => {
  * needed, or a token from the old sign-in.
  * @returns {Promise<string|null>} The token, or null when signed out.
  */
-const getAccessToken = async () => (await oauth.getAccessToken()) || loadLegacyToken();
+const getAccessToken = async () => {
+    if (!hasRotur()) return null;
+    return (await oauth.getAccessToken()) || loadLegacyToken();
+};
 
 /** Restore a previous session. */
 const restoreSession = async () => {
+    if (!hasRotur()) return null;
     await oauth.completeRedirect();
     const token = await getAccessToken();
     if (!token) {
@@ -272,6 +277,7 @@ const restoreSession = async () => {
  * @returns {Promise<object>} The signed-in user.
  */
 const login = async (extraScopes = [], redirectFallback = true) => {
+    if (!hasRotur()) throw roturOfflineError();
     const scopes = [...new Set([...SIGN_IN_SCOPES, ...extraScopes])];
     if (webOrigin) {
         const session = await oauth.signIn(scopes, {redirectFallback});
@@ -694,6 +700,7 @@ const hasScopes = scopes => {
 // never leaves the page. Someone can switch scopes off on Rotur's consent
 // screen, so reads just find out, and fail quietly if they can't.
 const ensureScopes = async (scopes, {prompt = false} = {}) => {
+    if (!hasRotur()) return false;
     const wanted = Array.isArray(scopes) ? scopes.filter(Boolean) : [];
     const session = oauth.readSession();
     if (session) {

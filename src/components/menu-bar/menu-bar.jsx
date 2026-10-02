@@ -70,6 +70,7 @@ import {getShortcutKey} from '../../lib/shortcuts/registry.js';
 import TWDesktopSettings from './tw-desktop-settings.jsx';
 import RoturAccount from './mw-rotur-account.jsx';
 import MwEditorNav from './mw-editor-nav.jsx';
+import {hasRotur} from '../../lib/rotur/availability.js';
 import CollabPresence from './mw-collab-presence.jsx';
 
 import {FEEDBACK_URL} from '../../lib/constants/brand.js';
@@ -1909,7 +1910,7 @@ class MenuBar extends React.Component {
                                         </MenuItem>
                                     )}</CloudVariablesToggler>
                                 </MenuSection>
-                                <MenuSection>
+                                {hasRotur() && <MenuSection>
                                     <MenuItem onClick={this.handleClickProducts}>
                                         <ShoppingBag size={20} />
                                         <FormattedMessage
@@ -1926,7 +1927,7 @@ class MenuBar extends React.Component {
                                             id="mw.menuBar.gameItems"
                                         />
                                     </MenuItem>
-                                </MenuSection>
+                                </MenuSection>}
                             </MenuBarMenu>
                         </MenuLabel>
                         <MenuLabel
@@ -1954,7 +1955,7 @@ class MenuBar extends React.Component {
                                 place={this.props.isRtl ? 'left' : 'right'}
                             >
                                 <MenuSection>
-                                    <MenuItem
+                                    {hasRotur() && <MenuItem
                                         onClick={this.handleClickGitModal}
                                     >
                                         <GitBranch />
@@ -1963,8 +1964,8 @@ class MenuBar extends React.Component {
                                             description="Menu bar item to open pushed project history"
                                             id="mw.menuBar.git"
                                         />
-                                    </MenuItem>
-                                    <MenuItem
+                                    </MenuItem>}
+                                    {hasRotur() && <MenuItem
                                         onClick={this.handleClickCollaboration}
                                     >
                                         <Handshake size={20} />
@@ -1973,7 +1974,7 @@ class MenuBar extends React.Component {
                                             description="Menu bar item for live collaboration"
                                             id="tw.menuBar.collaboration"
                                         />
-                                    </MenuItem>
+                                    </MenuItem>}
                                     <MenuItem onClick={this.handleClickProjectMetadata}>
                                         <Info />
                                         <FormattedMessage
