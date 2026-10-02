@@ -13,6 +13,7 @@ import GameMarketplaceModal from '../community/components/GameMarketplaceModal.j
 import {getRememberedPlatformProjectState} from '../lib/community/publish.js';
 import {MULTIPLAYER_ENABLED} from '../lib/mistwarp-games/config.js';
 import {blockProjectPrompts, isProjectPromptBlocked} from '../lib/project-prompt-blocking.js';
+import {hasRotur} from '../lib/rotur/availability.js';
 
 class MistWarpGameHost extends React.Component {
     constructor (props) {
@@ -148,7 +149,9 @@ class MistWarpGameHost extends React.Component {
         if (!MULTIPLAYER_ENABLED && (method === 'multiplayer.setState' || method === 'multiplayer.sendEvent')) {
             return Promise.resolve(false);
         }
-        if (this.isDraftProject()) return this.callForDraft(method, args);
+        // Offline, as in the desktop app, every project works like an unsaved
+        // one: saves stay local, and the shop is a preview with no payments.
+        if (!hasRotur() || this.isDraftProject()) return this.callForDraft(method, args);
         const projectId = this.requireProject();
         if (method === 'data.load') return loadProjectSave(projectId, 'editor');
         if (method === 'data.save') return saveProjectData(projectId, 'editor', args[0]);
