@@ -27,13 +27,6 @@ const PROJECT_METHODS = Object.freeze({
     'me.requests': {scopes: ['friends:view']},
     'me.claimTime': {scopes: ['credits:view']},
     'me.transactions': {scopes: ['credits:view']},
-    'me.transfer': {
-        scopes: ['credits:transfer'],
-        confirm: args => ({
-            label: `send ${amount(args[1])} credits to @${text(args[0])}`,
-            confirmation: {type: 'payment', amount: amount(args[1]), recipient: text(args[0])}
-        })
-    },
 
     'profiles.get': {scopes: []},
     'profiles.exists': {scopes: []},
