@@ -602,6 +602,7 @@
   "mw.git.rotur.signIn": "Sign in with Rotur",
   "mw.git.rotur.heading": "Your repositories",
   "mw.git.rotur.signedInAs": "Signed in as {username}. Repos live on {link}.",
+  "mw.git.rotur.syncPaused": "Pushing to and cloning from Rotur Git is turned off for now. It comes back once git.rotur.dev accepts a direct connection, so your sign-in never passes through another service. You can still create, open and delete repositories.",
   "mw.git.rotur.connectedDesc": "This project pushes to and pulls from this repository.",
   "mw.git.rotur.create": "Create a repository",
   "mw.git.rotur.namePlaceholder": "repo-name",

@@ -1,6 +1,14 @@
 import {getRotur, fetchCurrentUser} from './client.js';
 
 const GIT_HOST = 'https://git.rotur.dev';
+
+// Rotur Git's password is the Rotur token. Its REST API (/api/v1) sends CORS
+// headers, so it is called directly. Its Git endpoints (info/refs,
+// git-upload-pack, git-receive-pack) do not, so a browser could only reach
+// them through a third-party CORS proxy, which would see the token. Git
+// transfers to Rotur Git stay off until git.rotur.dev allows this origin on
+// those endpoints; then set this to true and they go direct.
+const ROTUR_GIT_SYNC_AVAILABLE = false;
 const API_BASE = `${GIT_HOST}/api/v1`;
 const PAGE_SIZE = 50;
 const MAX_PAGES = 10;
@@ -113,7 +121,6 @@ const deleteRepo = (owner, name) => apiFetch(
     {method: 'DELETE'}
 );
 
-const getAuth = () => requireAuth();
 
 const getGitUsername = async () => {
     const auth = await requireAuth();
@@ -124,10 +131,21 @@ const getRemoteUrl = (owner, name) => `${GIT_HOST}/${encodeURIComponent(owner)}/
 
 const isRoturGitUrl = url => {
     try {
-        return new URL(url).host === new URL(GIT_HOST).host;
+        const parsed = new URL(url);
+        return parsed.protocol === 'https:' && parsed.host === new URL(GIT_HOST).host &&
+            !parsed.username && !parsed.password;
     } catch (e) {
         return false;
     }
+};
+
+// isomorphic-git calls onAuth(url) whenever any server answers 401, so only
+// answer for Rotur Git itself. Anything else gets nothing.
+const getAuth = url => {
+    if (!isRoturGitUrl(url)) {
+        return Promise.resolve({cancel: true});
+    }
+    return requireAuth();
 };
 
 const parseRepoUrl = url => {
@@ -158,6 +176,7 @@ const parseRepoUrl = url => {
 
 export {
     GIT_HOST,
+    ROTUR_GIT_SYNC_AVAILABLE,
     listMyRepos,
     getRepo,
     createRepo,
