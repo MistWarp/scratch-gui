@@ -1,8 +1,9 @@
 // The only Rotur SDK methods a project may reach through a Rotur host (the
 // editor, the community project page and packaged exports). Each entry lists
 // the scopes that cover it (any one is enough; an empty list means it needs no
-// grant) and, for actions that spend, give away or destroy something, the
-// confirmation the host shows before every call.
+// grant) and, for actions that give away or destroy something, the
+// confirmation the host shows before every call. Nothing here spends credits:
+// projects can't.
 //
 // The host decides all of this. Nothing the project sends (labels,
 // confirmation text, a "sensitive" flag, a project name) is trusted, because a
@@ -90,10 +91,6 @@ const PROJECT_METHODS = Object.freeze({
     'items.get': {scopes: []},
     'items.selling': {scopes: []},
     'items.list': {scopes: []},
-    'items.buy': {
-        scopes: ['items:buy'],
-        confirm: args => ({label: `buy item ${text(args[0])}`})
-    },
     'items.sell': {scopes: ['items:sell']},
     'items.stopSelling': {scopes: ['items:sell']},
     'items.setPrice': {scopes: ['items:sell']},
@@ -103,10 +100,6 @@ const PROJECT_METHODS = Object.freeze({
     },
     'cosmetics.shop': {scopes: []},
     'cosmetics.mine': {scopes: ['cosmetics:view']},
-    'cosmetics.purchase': {
-        scopes: ['cosmetics:buy'],
-        confirm: args => ({label: `buy cosmetic ${text(args[0])}`})
-    },
     'cosmetics.equip': {scopes: ['cosmetics:equip']},
     'cosmetics.unequip': {scopes: ['cosmetics:equip']},
     'cosmetics.forUser': {scopes: []},
