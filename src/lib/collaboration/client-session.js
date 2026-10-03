@@ -430,7 +430,7 @@ class ClientSession extends Emitter {
             const user = this.users.get(payload.id);
             if (user) {
                 this.users.delete(payload.id);
-                this.emit('user-left', user);
+                this.emit('user-left', payload.rejoined ? Object.assign({}, user, {rejoined: true}) : user);
                 this.emit('users-updated', {users: this.getUsers()});
             }
             break;

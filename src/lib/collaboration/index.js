@@ -21,6 +21,7 @@ import log from '../utils/log.js';
  * containers already use.
  */
 const EDIT_ERROR_REPEAT_MS = 4000;
+const HOST_WAIT_MS = 60 * 1000;
 
 class CollabService extends Emitter {
     constructor () {
@@ -346,7 +347,9 @@ class CollabService extends Emitter {
         const session = this._session;
         const assets = this._assets;
         const isHost = this.isHost;
-        if (!session || !this.isConnected || (!isHost && (!this._approved || session.lastAppliedSeq === null))) {
+        // While a client reconnects, edits wait in the session and go out
+        // once the host lets it back in.
+        if (!session || !this.isConnected || (!isHost && session.lastAppliedSeq === null)) {
             return Promise.reject(new Error('Wait for the collaboration project to finish loading.'));
         }
         if (!isHost && session.role !== 'edit') {
@@ -355,7 +358,11 @@ class CollabService extends Emitter {
         }
         const send = this._sendChain.then(async () => {
             if (this._session !== session) throw new Error('Collaboration session ended');
-            if (!isHost && payload.assetRefs) await assets.sendAssets('host', payload.assetRefs);
+            if (!isHost && payload.assetRefs) {
+                await this._waitForHost(session);
+                if (this._session !== session) throw new Error('Collaboration session ended');
+                await assets.sendAssets('host', payload.assetRefs);
+            }
             if (this._session !== session) throw new Error('Collaboration session ended');
             return isHost ? {completion: session.submitLocal(type, payload).then(op => op && op.payload)} :
                 {completion: session.submitCommand(type, payload)};
@@ -365,6 +372,45 @@ class CollabService extends Emitter {
         return send.then(({completion}) => completion).finally(() => {
             if (this.vm && binaryRefs.length) releaseAssetData(this.vm, binaryRefs);
         });
+    }
+
+    /**
+     * Resolve once the host has (re)admitted us, so asset bytes are not
+     * sent into a link that is down.
+     * @param {ClientSession} session The session the edit belongs to.
+     * @returns {Promise} Resolves when admitted, or after a minute.
+     */
+    _waitForHost (session) {
+        if (this._approved || this._session !== session) return Promise.resolve();
+        return new Promise(resolve => {
+            let timer = null;
+            const done = () => {
+                clearTimeout(timer);
+                session.off('join-approved', done);
+                resolve();
+            };
+            timer = setTimeout(done, HOST_WAIT_MS);
+            session.on('join-approved', done);
+        });
+    }
+
+    /**
+     * How we reach the host, for diagnostics.
+     * @returns {string|null} 'direct', 'relay', or null.
+     */
+    getConnectionPath () {
+        if (!this._transport || this.isHost) return null;
+        return this._transport.connectionPath('host');
+    }
+
+    /**
+     * Whether anyone reaches this host through the broker relay, and so
+     * drops out while the broker is unreachable.
+     * @returns {boolean} True when at least one guest is relayed.
+     */
+    hasRelayedGuests () {
+        if (!this._transport || !this.isHost) return false;
+        return this._transport.peers().some(peerId => this._transport.connectionPath(peerId) === 'relay');
     }
 
     /**
