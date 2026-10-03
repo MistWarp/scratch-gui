@@ -28,7 +28,15 @@ const RELAY_FALLBACK_MS = 3 * 1000;
 const RECONNECT_BASE_DELAY_MS = 1000;
 const RECONNECT_MAX_DELAY_MS = 8 * 1000;
 const RECONNECT_GIVE_UP_MS = 5 * 60 * 1000;
+// Longer than the slowest attempt: the backoff, then registering and
+// dialing, each with its own timeout.
+const RECONNECT_STALL_MS = 60 * 1000;
 const BROKER_RECONNECT_MAX_DELAY_MS = 30 * 1000;
+// After a host reloads or crashes, the broker keeps its old registration
+// until that socket times out, about a minute later.
+const HOST_ID_RETRY_MS = 75 * 1000;
+const HOST_ID_RETRY_BASE_DELAY_MS = 2 * 1000;
+const HOST_ID_RETRY_MAX_DELAY_MS = 10 * 1000;
 const HOST_GONE_ATTEMPTS = 3;
 const HOST_GONE_AFTER_MS = 20 * 1000;
 const BROKER_PROBE_INTERVAL_MS = 15 * 1000;
@@ -87,11 +95,17 @@ const connectionClosedError = () => collabError(
  *  - 'peer-connected' (peerId, metadata) — (host) a client link opened
  *  - 'peer-disconnected' (peerId) — a link closed or timed out
  *  - 'message' (peerId, envelope) — validated inbound envelope
- *  - 'reconnecting' ({attempt, delayMs}) — (client) redial scheduled
+ *  - 'reconnecting' ({attempt, delayMs, reason}) — (client) redial
+ *    scheduled; reason is ROOM_NOT_FOUND while the broker says the host is
+ *    not registered (it may be reloading), CONNECTION_LOST for a dropped
+ *    link, or another collabCode for a failed redial
  *  - 'reconnected' () — (client) redial succeeded
  *  - 'invalid-message' ({peerId, error}) — dropped inbound message
  *  - 'version-mismatch' ({peerId, version, type}) — a hello or join denial
  *    from a different protocol version
+ *  - 'host-id-taken' ({attempt, delayMs}) — (host, before host() settles)
+ *    the broker still holds the room's id, probably from our own previous
+ *    page; registering again after delayMs
  *  - 'broker-offline' () / 'broker-online' () — registration with the
  *    signalling server was lost or restored; direct links keep working
  *  - 'fatal' ({error}) — unrecoverable; the session should shut down
@@ -122,6 +136,7 @@ class Transport extends Emitter {
         this._reconnectTimer = null;
         this._reconnectAttempts = 0;
         this._reconnectStartedAt = 0;
+        this._reconnectScheduledAt = 0;
         this._redialing = false;
         this._hostMissingAttempts = 0;
         this._hostMissingSince = 0;
@@ -201,7 +216,21 @@ class Transport extends Emitter {
         if (invalid) return Promise.reject(invalid);
         this.isHost = true;
         this.roomId = roomId;
-        return this._openPeer(generateHostPeerId(roomId)).then(id => {
+        const hostId = generateHostPeerId(roomId);
+        const startedAt = Date.now();
+        const register = attempt => this._openPeer(hostId).catch(error => {
+            if (!error || error.collabCode !== 'ROOM_TAKEN' || this.destroyed) throw error;
+            const remaining = HOST_ID_RETRY_MS - (Date.now() - startedAt);
+            if (remaining <= 0) throw error;
+            const delayMs = Math.min(
+                HOST_ID_RETRY_BASE_DELAY_MS * Math.pow(2, attempt),
+                HOST_ID_RETRY_MAX_DELAY_MS,
+                remaining
+            );
+            this.emit('host-id-taken', {attempt: attempt + 1, delayMs});
+            return this._delay(delayMs).then(() => register(attempt + 1));
+        });
+        return register(0).then(id => {
             this.hostPeerId = id;
             this.peer.on('connection', conn => this._wireConnection(conn));
             this._startMonitoring();
@@ -359,6 +388,27 @@ class Transport extends Emitter {
         this.peer = null;
         return Promise.all(links.map(link => this._drain(link).then(() => link.close())))
             .then(() => this._destroyPeer(peer));
+    }
+
+    /**
+     * @param {number} ms Delay.
+     * @returns {Promise} Resolves after the delay, or rejects when the
+     * transport is destroyed first.
+     */
+    _delay (ms) {
+        return new Promise((resolve, reject) => {
+            let timer = null;
+            const cancel = () => {
+                clearTimeout(timer);
+                this._pendingConnections.delete(cancel);
+                reject(collabError('CONNECTION_CANCELLED', 'Collaboration connection cancelled'));
+            };
+            timer = setTimeout(() => {
+                this._pendingConnections.delete(cancel);
+                resolve();
+            }, ms);
+            this._pendingConnections.add(cancel);
+        });
     }
 
     _openPeer (peerId) {
@@ -705,7 +755,12 @@ class Transport extends Emitter {
                 relay = this._createRelayLink(peer, this.hostPeerId, randomString() + randomString(),
                     this._joinMetadata);
                 relay.on('open', () => win(relay));
-                relay.on('close', () => fail(directError || connectionClosedError()));
+                relay.on('close', () => {
+                    // The relay itself failed, so the next dial should not
+                    // rely on it alone.
+                    if (!done) this._preferRelay = false;
+                    fail(directError || connectionClosedError());
+                });
                 relay.request();
                 // One attempt at a time, so the host never sees two links
                 // from us racing to replace each other.
@@ -754,10 +809,13 @@ class Transport extends Emitter {
             ));
             this._pendingConnections.add(pending.cancel);
             this._onPeerUnavailable = pending.unavailable;
-            timeout = setTimeout(() => fail(collabError(
-                'DIAL_TIMEOUT',
-                `Room "${this.roomId}" did not respond. The host may have a slow or blocked connection.`
-            )), this._dialTimeoutMs);
+            timeout = setTimeout(() => {
+                if (relay) this._preferRelay = false;
+                fail(collabError(
+                    'DIAL_TIMEOUT',
+                    `Room "${this.roomId}" did not respond. The host may have a slow or blocked connection.`
+                ));
+            }, this._dialTimeoutMs);
 
             if (!peer) {
                 fail(collabError('CONNECTION_CANCELLED', 'Collaboration connection cancelled'));
@@ -792,6 +850,15 @@ class Transport extends Emitter {
             if (finished || this.destroyed) return;
             finished = true;
             cleanup();
+            // A client only relays after giving up on its direct channel,
+            // and redials under a new id. A direct channel that opens after
+            // its relay is that abandoned attempt, and must not replace the
+            // relay the client is using.
+            const current = this._connections.get(link.peer);
+            if (current && current.link.path === 'relay' && current.link.open) {
+                link.close();
+                return;
+            }
             this._acceptLink(link);
         };
         link.on('close', cancel);
@@ -873,14 +940,25 @@ class Transport extends Emitter {
         this.emit('peer-disconnected', peerId);
 
         if (!this.isHost && peerId === this.hostPeerId) {
-            this._scheduleReconnect();
+            this._scheduleReconnect('CONNECTION_LOST');
         }
     }
 
-    _scheduleReconnect () {
+    /**
+     * @param {string} reason Why the last attempt failed: CONNECTION_LOST
+     * for the link that just dropped, otherwise the failed redial's
+     * collabCode (ROOM_NOT_FOUND while the broker has no host, DIAL_TIMEOUT,
+     * SERVER_UNREACHABLE, ...).
+     */
+    _scheduleReconnect (reason) {
         if (this.destroyed || this._reconnectTimer || this._redialing) return;
         const now = Date.now();
-        if (!this._reconnectStartedAt) this._reconnectStartedAt = now;
+        // A sleeping computer or frozen tab made no attempts meanwhile, so
+        // the time it was away does not count towards giving up.
+        if (!this._reconnectStartedAt || now - this._reconnectScheduledAt > RECONNECT_STALL_MS) {
+            this._reconnectStartedAt = now;
+        }
+        this._reconnectScheduledAt = now;
         if (now - this._reconnectStartedAt >= RECONNECT_GIVE_UP_MS) {
             this.emit('fatal', {
                 error: collabError(
@@ -895,7 +973,7 @@ class Transport extends Emitter {
             RECONNECT_BASE_DELAY_MS * Math.pow(2, this._reconnectAttempts - 1),
             RECONNECT_MAX_DELAY_MS
         );
-        this.emit('reconnecting', {attempt: this._reconnectAttempts, delayMs});
+        this.emit('reconnecting', {attempt: this._reconnectAttempts, delayMs, reason});
 
         this._reconnectTimer = setTimeout(() => {
             this._reconnectTimer = null;
@@ -911,6 +989,11 @@ class Transport extends Emitter {
         const previous = this.peer;
         this.peer = null;
         this._probeId = null;
+        // A broker retry pending for the old peer would otherwise block
+        // retries for the new one.
+        clearTimeout(this._brokerTimer);
+        this._brokerTimer = null;
+        this._brokerAttempts = 0;
         this._destroyPeer(previous);
         this._openPeer(generateClientPeerId(this.roomId))
             .then(() => this._dialHost())
@@ -938,7 +1021,7 @@ class Transport extends Emitter {
                         return;
                     }
                 }
-                this._scheduleReconnect();
+                this._scheduleReconnect((error && error.collabCode) || 'CONNECTION_LOST');
             });
     }
 

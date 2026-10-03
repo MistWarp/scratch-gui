@@ -445,7 +445,7 @@ describe('client reconnection', () => {
             transport.on('reconnected', reconnected);
 
             peers[0].lastConnection.close();
-            expect(reconnecting).toHaveBeenCalledWith({attempt: 1, delayMs: 1000});
+            expect(reconnecting).toHaveBeenCalledWith({attempt: 1, delayMs: 1000, reason: 'CONNECTION_LOST'});
 
             const peer = await redial(peers, 1000);
             expect(peers).toHaveLength(2);
