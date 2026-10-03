@@ -215,7 +215,7 @@ describe('CollaborationModal', () => {
         expect(wrapper.text()).toContain('Join room');
     });
 
-    test('joining a room nobody hosts suggests creating it', async () => {
+    test('joining a room nobody hosts says what to do', async () => {
         const props = defaultProps();
         const notFound = new Error('nope');
         notFound.collabCode = 'ROOM_NOT_FOUND';
@@ -227,7 +227,8 @@ describe('CollaborationModal', () => {
         await buttonWithText(wrapper, 'Join room').props()
             .onClick();
 
-        expect(modalOf(wrapper).state.error).toContain('Nobody is hosting room "test-room" yet');
+        expect(modalOf(wrapper).state.error).toContain('Nobody is hosting room "test-room" right now');
+        expect(modalOf(wrapper).state.error).toContain('ask the host for a new invite link');
     });
 
     test('a room in the url auto-joins with the pending invite key', async () => {
@@ -632,6 +633,67 @@ describe('CollaborationModal', () => {
         });
         expect(wrapper.find('[role="alert"]').text()).toBe('The host ended the live session.');
         wrapper.unmount();
+    });
+
+    test('a retryable failure offers Try again, which repeats the attempt', async () => {
+        const props = {...defaultProps(), canRetry: true, onRetry: jest.fn(() => Promise.resolve())};
+        const wrapper = mountModal(props);
+        expect(buttonWithText(wrapper, 'Try again').exists()).toBe(false);
+
+        wrapper.setProps({connectionError: 'Could not reach the collaboration server.'});
+        wrapper.update();
+        await buttonWithText(wrapper, 'Try again').props()
+            .onClick();
+        expect(props.onRetry).toHaveBeenCalledTimes(1);
+        expect(modalOf(wrapper).state.connectionStep).toBe('connecting');
+
+        // Without canRetry (kicked, room taken...) there is no button.
+        wrapper.setProps({canRetry: false, connectionError: 'Taken.'});
+        wrapper.update();
+        expect(buttonWithText(wrapper, 'Try again').exists()).toBe(false);
+        wrapper.unmount();
+    });
+
+    test('a failed retry shows the new reason', async () => {
+        const failure = new Error('raw');
+        failure.collabCode = 'SERVER_UNREACHABLE';
+        const props = {...defaultProps(), canRetry: true, onRetry: jest.fn(() => Promise.reject(failure))};
+        const wrapper = mountModal(props);
+        await modalOf(wrapper).handleRetry();
+        expect(modalOf(wrapper).state.error).toContain('Could not reach the collaboration server');
+        expect(modalOf(wrapper).state.connectionStep).toBe('join');
+        wrapper.unmount();
+    });
+
+    test('reclaiming a room from a previous page is explained while creating', async () => {
+        const props = {...defaultProps(), onCreateRoom: jest.fn(() => new Promise(() => {}))};
+        const wrapper = mountModal(props);
+        buttonWithText(wrapper, 'Create new room').props()
+            .onClick();
+        wrapper.setProps({isReclaimingRoom: true});
+        wrapper.update();
+        expect(wrapper.text()).toContain('Reclaiming the room from your previous session');
+        expect(wrapper.text()).toContain('up to a minute');
+        wrapper.unmount();
+    });
+
+    test('a host who dropped out reads as waiting, not as our connection failing', () => {
+        const wrapper = mountModal({
+            ...defaultProps(),
+            isConnected: true,
+            roomId: 'abc',
+            isReconnecting: true,
+            reconnectReason: 'ROOM_NOT_FOUND',
+            connectedUsers: [{id: 'user-1', username: 'TestUser'}, {id: 'h', username: 'Host', isHost: true}]
+        });
+        expect(wrapper.text()).toContain('Waiting for the host to come back');
+        expect(wrapper.text()).not.toContain('Connection lost');
+        wrapper.unmount();
+
+        const project = mountModal({...defaultProps(), reconnectReason: 'ROOM_NOT_FOUND',
+            projectSession: {active: true, phase: 'reconnecting', editors: [], onLeave: jest.fn()}});
+        expect(project.text()).toContain('Waiting for the host to come back');
+        project.unmount();
     });
 
     test('the room id field is labelled and errors are announced', async () => {

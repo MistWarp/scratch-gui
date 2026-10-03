@@ -304,12 +304,118 @@ describe('CollaborationContainer', () => {
         expect(NotificationSystem.warning).toHaveBeenCalledWith('Nope.', 8000);
     });
 
-    test('a host restart ends the reconnecting state', () => {
+    test('reconnecting lasts until reconnected, through a host restart, and keeps its reason', () => {
         const container = instanceOf(mountContainer());
-        container.handleReconnecting();
+        container.handleReconnecting({attempt: 1, delayMs: 1000, reason: 'ROOM_NOT_FOUND'});
         expect(collaborationState().isReconnecting).toBe(true);
+        expect(collaborationState().reconnectReason).toBe('ROOM_NOT_FOUND');
         container.handleHostRestarted();
+        expect(collaborationState().isReconnecting).toBe(true);
+        container.handleReconnected();
         expect(collaborationState().isReconnecting).toBe(false);
+        expect(collaborationState().reconnectReason).toBe(null);
+    });
+
+    test.each([
+        ['ROOM_NOT_FOUND', /Nobody is hosting room "room-1"/, true],
+        ['SERVER_UNREACHABLE', /Could not reach the collaboration server/, true],
+        ['DIAL_TIMEOUT', /Could not connect to the host/, true],
+        ['RECONNECT_FAILED', /could not be restored/, true],
+        ['SNAPSHOT_FAILED', /could not be downloaded/, true],
+        ['ASSET_FAILED', /costume or sound/, true],
+        ['ROOM_TAKEN', /already in use/, false],
+        [null, /^engine text$/, false]
+    ])('connection-failed %s explains itself and offers a retry only when it can help',
+        async (code, message, retry) => {
+            const wrapper = mountContainer();
+            const container = instanceOf(wrapper);
+            await container.handleJoinRoom('room-1', 'Alice');
+            container.handleConnectionFailed({error: 'engine text', code});
+            expect(collaborationState().connectionError).toMatch(message);
+            wrapper.update();
+            expect(wrapper.find('CollaborationModal').prop('canRetry')).toBe(retry);
+        });
+
+    test('a failed join explains the code, and Try again repeats it with the same invite', async () => {
+        const notFound = new Error('raw');
+        notFound.collabCode = 'ROOM_NOT_FOUND';
+        mockCollaborationService.connectToRoom.mockRejectedValueOnce(notFound);
+        const wrapper = mountContainer();
+        const container = instanceOf(wrapper);
+        let confirms = 0;
+        container.props = {...container.props, openSimpleDialog: config => {
+            confirms++;
+            config.onOk();
+        }};
+
+        await expect(container.handleJoinRoom('room-1', 'Alice', null, {invite: 'key'}))
+            .rejects.toMatchObject({collabCode: 'ROOM_NOT_FOUND'});
+        expect(collaborationState().connectionError).toMatch(/ask the host for a new invite link/);
+        wrapper.update();
+        expect(wrapper.find('CollaborationModal').prop('canRetry')).toBe(true);
+        expect(confirms).toBe(1);
+
+        await container.handleRetry();
+        expect(confirms).toBe(1);
+        expect(mockCollaborationService.connectToRoom).toHaveBeenLastCalledWith(
+            'room-1', 'Alice', false, 'private', ROTUR_HANDLE, null, {invite: 'key'});
+        wrapper.update();
+        expect(wrapper.find('CollaborationModal').prop('canRetry')).toBe(false);
+    });
+
+    test('a taken room code cannot be retried as is; hosting retries reuse the code', async () => {
+        const taken = new Error('raw');
+        taken.collabCode = 'ROOM_TAKEN';
+        mockCollaborationService.connectToRoom.mockRejectedValueOnce(taken);
+        const wrapper = mountContainer();
+        const container = instanceOf(wrapper);
+        await expect(container.handleCreateRoom('mine', 'Alice')).rejects.toThrow(/already in use/);
+        wrapper.update();
+        expect(wrapper.find('CollaborationModal').prop('canRetry')).toBe(false);
+
+        const offline = new Error('raw');
+        offline.collabCode = 'SERVER_UNREACHABLE';
+        mockCollaborationService.connectToRoom.mockRejectedValueOnce(offline);
+        await expect(container.handleCreateRoom('mine', 'Alice')).rejects.toThrow(/server/);
+        await container.handleRetry();
+        expect(mockCollaborationService.connectToRoom).toHaveBeenLastCalledWith(
+            'mine', 'Alice', true, 'private', ROTUR_HANDLE, null, {inviteRole: 'watch'});
+    });
+
+    test('project sessions never offer the room Try again', async () => {
+        const offline = new Error('raw');
+        offline.collabCode = 'SERVER_UNREACHABLE';
+        mockCollaborationService.connectToRoom.mockRejectedValueOnce(offline);
+        const wrapper = mountContainer();
+        const container = instanceOf(wrapper);
+        await expect(container.handleCreateRoom('r', 'Alice', 'private', {projectId: '1', branch: 'main'}))
+            .rejects.toThrow();
+        expect(container.state.canRetry).toBe(false);
+    });
+
+    test('reclaiming a held room id is shown until hosting settles', async () => {
+        let resolve;
+        mockCollaborationService.connectToRoom.mockImplementationOnce(() => new Promise(done => {
+            resolve = done;
+        }));
+        const wrapper = mountContainer();
+        const container = instanceOf(wrapper);
+        const hosting = container.handleCreateRoom('mine', 'Alice');
+        container.handleHostIdTaken({attempt: 1, delayMs: 2000});
+        wrapper.update();
+        expect(wrapper.find('CollaborationModal').prop('isReclaimingRoom')).toBe(true);
+        resolve('id');
+        await hosting;
+        wrapper.update();
+        expect(wrapper.find('CollaborationModal').prop('isReclaimingRoom')).toBe(false);
+    });
+
+    test('a download that will not be retried drops the loader at once', () => {
+        const container = instanceOf(mountContainer());
+        container.handleProjectSyncDownloadStart();
+        container.handleProjectSyncDownloadError({error: new Error('x'), attempt: 3, willRetry: false});
+        expect(collaborationState().isCollabLoading).toBe(false);
+        expect(NotificationSystem.error).not.toHaveBeenCalled();
     });
 
     test('the host hears about join requests while the window is closed', () => {
@@ -331,7 +437,7 @@ describe('CollaborationContainer', () => {
             expect(collaborationState().isCollabLoading).toBe(true);
             expect(collaborationState().collabLoadingMessage).toBe('downloading');
 
-            container.handleProjectSyncDownloadError({error: new Error('stalled')});
+            container.handleProjectSyncDownloadError({error: new Error('stalled'), attempt: 1, willRetry: true});
             expect(collaborationState().isCollabLoading).toBe(true);
             expect(collaborationState().collabLoadingMessage).toBe('retrying');
 

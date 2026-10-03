@@ -28,6 +28,11 @@ const messages = defineMessages({
         defaultMessage: 'Reconnecting…',
         description: 'Menu bar collaboration status while reconnecting to a live session'
     },
+    waitingForHost: {
+        id: 'mw.collabPresence.waitingForHost',
+        defaultMessage: 'Waiting for host…',
+        description: 'Menu bar collaboration status while the host has dropped out and may come back'
+    },
     leaving: {
         id: 'mw.collabPresence.leaving',
         defaultMessage: 'Leaving session…',
@@ -63,12 +68,14 @@ const messages = defineMessages({
 const initialFor = username => (username || '?').replace(/^@/, '').charAt(0)
     .toUpperCase();
 
-const CollabPresence = ({intl, isConnected, isReconnecting, users, onOpen, projectPresence}) => {
+const CollabPresence = ({intl, isConnected, isReconnecting, reconnectReason, users, onOpen, projectPresence}) => {
     const phase = projectPresence?.phase;
-    let progress = ['opening', 'joining', 'reconnecting', 'leaving'].includes(phase) ?
-        intl.formatMessage(messages[phase]) : null;
+    const reconnectMessage = reconnectReason === 'ROOM_NOT_FOUND' ? messages.waitingForHost : messages.reconnecting;
+    let progress = null;
+    if (phase === 'reconnecting') progress = intl.formatMessage(reconnectMessage);
+    else if (['opening', 'joining', 'leaving'].includes(phase)) progress = intl.formatMessage(messages[phase]);
     // Room sessions report reconnects through the store, not projectPresence.
-    if (!progress && isConnected && isReconnecting) progress = intl.formatMessage(messages.reconnecting);
+    if (!progress && isConnected && isReconnecting) progress = intl.formatMessage(reconnectMessage);
     if (progress || !isConnected || users.length < 2) {
         const editors = projectPresence?.editors || [];
         if (!progress && !isConnected && !editors.length && !projectPresence?.isPublic &&
@@ -141,6 +148,7 @@ CollabPresence.propTypes = {
     projectPresence: PropTypes.object,
     isConnected: PropTypes.bool,
     isReconnecting: PropTypes.bool,
+    reconnectReason: PropTypes.string,
     users: PropTypes.arrayOf(PropTypes.shape({
         id: PropTypes.string,
         username: PropTypes.string,
@@ -154,6 +162,7 @@ const mapStateToProps = state => ({
     projectPresence: state.scratchGui.collaboration.projectPresence,
     isConnected: state.scratchGui.collaboration.isConnected,
     isReconnecting: state.scratchGui.collaboration.isReconnecting,
+    reconnectReason: state.scratchGui.collaboration.reconnectReason,
     users: state.scratchGui.collaboration.connectedUsers
 });
 

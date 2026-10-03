@@ -24,6 +24,7 @@ import {
 import CollaborationService from '../../lib/collaboration/index.js';
 import {avatarForCollabUser} from '../../lib/collaboration/avatar.js';
 import describeActivity from '../../lib/collaboration/describe-activity.js';
+import {describeCollabError} from '../../lib/collaboration/describe-error.js';
 
 import styles from './collaboration-modal.css';
 
@@ -190,6 +191,26 @@ const messages = defineMessages({
         description: 'Placeholder of the collaboration room ID field',
         id: 'mw.collaboration.roomIdPlaceholder'
     },
+    waitingForHost: {
+        defaultMessage: 'Waiting for the host to come back…',
+        description: 'Status in the collaboration window while the host has dropped out and may return',
+        id: 'mw.collaboration.waitingForHost'
+    },
+    reclaimingRoom: {
+        defaultMessage: 'Reclaiming the room from your previous session…',
+        description: 'Shown while creating a collaboration room whose code is still held by an earlier page',
+        id: 'mw.collaboration.reclaimingRoom'
+    },
+    reclaimingRoomHint: {
+        defaultMessage: 'After reloading the page this can take up to a minute.',
+        description: 'Explains the wait while a collaboration room code is reclaimed',
+        id: 'mw.collaboration.reclaimingRoomHint'
+    },
+    tryAgain: {
+        defaultMessage: 'Try again',
+        description: 'Button that retries the last failed attempt to join or host a collaboration room',
+        id: 'mw.collaboration.tryAgain'
+    },
     enterRoomId: {
         defaultMessage: 'Enter a room ID to join, or create a new room below.',
         description: 'Error shown when trying to join a collaboration room without a room ID',
@@ -242,6 +263,7 @@ class CollaborationModal extends Component {
         this.handleJoinRequestsChanged = this.handleJoinRequestsChanged.bind(this);
         this.handleProjectLeave = this.handleProjectLeave.bind(this);
         this.leaveRoom = this.leaveRoom.bind(this);
+        this.handleRetry = this.handleRetry.bind(this);
     }
 
     componentDidMount () {
@@ -385,9 +407,7 @@ class CollaborationModal extends Component {
                 return;
             }
             this.setState({
-                error: error.collabCode === 'ROOM_NOT_FOUND' ?
-                    `Nobody is hosting room "${roomId}" yet. You can create it below.` :
-                    error.message || 'Failed to join room',
+                error: describeCollabError(error.collabCode, error.message || 'Failed to join room', {roomId}),
                 isConnecting: false,
                 connectionStep: 'join'
             });
@@ -604,9 +624,33 @@ class CollaborationModal extends Component {
             }
             this.setState({
                 roomId: roomCode,
-                error: error.collabCode === 'ROOM_NOT_FOUND' ?
-                    `Nobody is hosting room "${roomCode}" yet. You can create it below.` :
-                    error.message || 'Failed to join room',
+                error: describeCollabError(error.collabCode, error.message || 'Failed to join room',
+                    {roomId: roomCode}),
+                isConnecting: false,
+                connectionStep: 'join'
+            });
+        }
+    }
+
+    async handleRetry () {
+        if (!this.props.onRetry) return;
+        this.setState({
+            isConnecting: true,
+            connectionStep: 'connecting',
+            error: null
+        });
+        try {
+            await this.props.onRetry();
+            // Hosting is live now; a join waits for the host (componentDidUpdate).
+            if (this.props.isConnected) this.setState({isConnecting: false});
+        } catch (error) {
+            if (error && error.cancelled) {
+                this.resetToJoinScreen();
+                return;
+            }
+            this.setState({
+                error: describeCollabError(error.collabCode, error.message || 'Failed to connect',
+                    {roomId: this.state.roomId.trim()}),
                 isConnecting: false,
                 connectionStep: 'join'
             });
@@ -942,6 +986,15 @@ class CollaborationModal extends Component {
                                 {this.state.error}
                             </div>
                         )}
+                        {this.state.error && this.props.canRetry && (
+                            <Button
+                                className={classNames(styles.secondaryButton, styles.retryButton)}
+                                onClick={this.handleRetry}
+                                disabled={this.state.isConnecting}
+                            >
+                                {this.props.intl.formatMessage(messages.tryAgain)}
+                            </Button>
+                        )}
                         <div className={styles.privacyNotice}>
                             <div className={styles.privacyNoticeIcon}>
                                 <AlertTriangle size={14} />
@@ -1014,7 +1067,14 @@ class CollaborationModal extends Component {
                     aria-live="polite"
                 >
                     <div className={styles.spinner} />
-                    {this.state.roomId.trim() ?
+                    {this.props.isReclaimingRoom ? (
+                        <React.Fragment>
+                            <div>{this.props.intl.formatMessage(messages.reclaimingRoom)}</div>
+                            <div className={styles.statusHint}>
+                                {this.props.intl.formatMessage(messages.reclaimingRoomHint)}
+                            </div>
+                        </React.Fragment>
+                    ) : this.state.roomId.trim() ?
                         this.props.intl.formatMessage(messages.connectingToRoom, {roomId: this.state.roomId.trim()}) :
                         (
                             <FormattedMessage
@@ -1213,7 +1273,10 @@ class CollaborationModal extends Component {
                                 [styles.statusIndicatorReconnecting]: this.props.isReconnecting
                             })}
                         />
-                        {this.props.isReconnecting ? this.props.intl.formatMessage(messages.reconnecting) : (
+                        {this.props.isReconnecting ? this.props.intl.formatMessage(
+                            this.props.reconnectReason === 'ROOM_NOT_FOUND' ?
+                                messages.waitingForHost : messages.reconnecting
+                        ) : (
                             <FormattedMessage
                                 // eslint-disable-next-line max-len
                                 defaultMessage="Connected - {userCount} {userCount, plural, one {user} other {users}} online"
@@ -1326,11 +1389,14 @@ class CollaborationModal extends Component {
         const session = project.session;
         const pending = project.busy || ['joining', 'reconnecting'].includes(project.phase);
         const disabled = pending || project.checking || project.viewingCommit || Boolean(project.discoveryError);
+        const {intl} = this.props;
         const progress = {
-            opening: 'Opening your session…',
+            opening: this.props.isReclaimingRoom ?
+                intl.formatMessage(messages.reclaimingRoom) : 'Opening your session…',
             joining: "Joining and loading the host's project…",
             leaving: 'Disconnecting and updating the online listing…',
-            reconnecting: 'Connection lost. Reconnecting…'
+            reconnecting: intl.formatMessage(this.props.reconnectReason === 'ROOM_NOT_FOUND' ?
+                messages.waitingForHost : messages.reconnecting)
         }[project.phase];
         let status = 'Working independently. Your live edits are not shared.';
         if (project.active) {
@@ -1481,6 +1547,10 @@ CollaborationModal.propTypes = {
     currentUserId: PropTypes.string,
     isConnected: PropTypes.bool,
     isReconnecting: PropTypes.bool,
+    reconnectReason: PropTypes.string,
+    isReclaimingRoom: PropTypes.bool,
+    canRetry: PropTypes.bool,
+    onRetry: PropTypes.func,
     roomId: PropTypes.string,
     inviteLink: PropTypes.string,
     inviteRole: PropTypes.oneOf(['watch', 'edit']),

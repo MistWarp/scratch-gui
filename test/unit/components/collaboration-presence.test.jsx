@@ -54,6 +54,8 @@ test.each([
 
 test.each([
     [{isConnected: true, isReconnecting: true}, 'Reconnecting…'],
+    [{isConnected: true, isReconnecting: true, reconnectReason: 'ROOM_NOT_FOUND'}, 'Waiting for host…'],
+    [{reconnectReason: 'ROOM_NOT_FOUND', projectPresence: {phase: 'reconnecting'}}, 'Waiting for host…'],
     [{isConnected: true, connectedUsers: [{id: 'me', username: 'Mist'}]}, 'Session open']
 ])('a room session shows its own state in the menu bar: %j', (collab, label) => {
     const state = {...reducer(undefined, {}), ...collab};

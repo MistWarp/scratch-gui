@@ -7,7 +7,7 @@ import ClientSession from './client-session.js';
 import VMApplier, {remapTargetIds} from './vm-applier.js';
 import VMAdapter from './vm-adapter.js';
 import {HostSnapshotService, ClientSnapshotService} from './snapshot.js';
-import AssetChannel from './assets.js';
+import AssetChannel, {ASSET_LINK_CLOSED} from './assets.js';
 import PresenceChannel from './presence.js';
 import CursorOverlay from './cursor-overlay.js';
 import {getAssetData, storeAssetData, releaseAssetData, hasAssetData, clearAssetCache} from './vm-assets.js';
@@ -377,7 +377,7 @@ class CollabService extends Emitter {
                 } catch (error) {
                     // The link dropped mid-transfer. The host discards partial
                     // assets, so send them again once it lets us back in.
-                    if (!/Asset connection/.test(error.message) || this._session !== session) throw error;
+                    if (!error || error.code !== ASSET_LINK_CLOSED || this._session !== session) throw error;
                     if (this._admissions === admissions) this._approved = false;
                     await this._waitForHost(session);
                     if (this._session !== session) throw new Error('Collaboration session ended');
