@@ -187,3 +187,31 @@ test('a guest who joins through the invite link watches until the host lets them
         client.disconnect(); host.disconnect(); hostVM.quit(); clientVM.quit();
     }
 });
+
+test('an edit made while reconnecting commits once the guest is back', async () => {
+    const {host, client, hostVM, clientVM} = await joinPair();
+    try {
+        const clientId = client.getCurrentUserId();
+        mockHub.enqueueClose(clientId);
+        await mockHub.flush();
+        const id = clientVM.editingTarget.id;
+        let done = false;
+        let error = null;
+        clientVM.renameSprite(id, 'Made offline').then(() => {
+            done = true;
+        }, e => {
+            error = e;
+        });
+        await mockHub.flush();
+        expect(hostVM.runtime.getTargetById(id).getName()).toBe('Sprite');
+
+        mockHub.links.get(clientId).open = true;
+        client._transport.emit('reconnected');
+        await pumpUntil(() => done || error);
+        expect(error).toBeNull();
+        expect(hostVM.runtime.getTargetById(id).getName()).toBe('Made offline');
+        expect(clientVM.runtime.getTargetById(id).getName()).toBe('Made offline');
+    } finally {
+        client.disconnect(); host.disconnect(); hostVM.quit(); clientVM.quit();
+    }
+});

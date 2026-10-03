@@ -119,6 +119,34 @@ describe('private rooms', () => {
     });
 });
 
+describe('rejoining before the host notices', () => {
+    test('a guest who redials while its old link looks alive replaces itself', async () => {
+        const room = await createRoom({clientCount: 1});
+        const [client] = room.clients;
+        const left = jest.fn();
+        room.host.session.on('user-left', left);
+        const again = await rejoin(room, client);
+        expect(again.session.isApproved).toBe(true);
+        const ids = room.host.session.getUsers().map(user => user.id);
+        expect(ids).toContain(again.id);
+        expect(ids).not.toContain(client.id);
+        expect(left).toHaveBeenCalledWith(expect.objectContaining({id: client.id, rejoined: true}));
+        again.session.destroy();
+        room.destroy();
+    });
+
+    test('other guests hear that the old entry rejoined, not that it left', async () => {
+        const room = await createRoom({clientCount: 2});
+        const [first, second] = room.clients;
+        const left = jest.fn();
+        second.session.on('user-left', left);
+        const again = await rejoin(room, first);
+        expect(left).toHaveBeenCalledWith(expect.objectContaining({id: first.id, rejoined: true}));
+        again.session.destroy();
+        room.destroy();
+    });
+});
+
 describe('kicking', () => {
     test('a kicked guest cannot rejoin with its token or peer id', async () => {
         const room = await createRoom({clientCount: 1});
