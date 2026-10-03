@@ -243,7 +243,7 @@ const ManageProject = () => {
         setForm({
             title: project.title || '',
             groupTag: project.groupTag || '',
-            vanitySlug: project.vanitySlug || '',
+            vanitySlug: project.vanitySlug || project.vanityReserved || '',
             brandingAccent: project.branding?.accentColor || '#855cd6',
             brandingTagline: project.branding?.tagline || '',
             price: project.price || 0,
@@ -392,7 +392,7 @@ const ManageProject = () => {
         setStatus(null);
         try {
             const result = await api.createPreview(id, 24);
-            fresh(setPreview)(`${location.origin}${projectUrl({id, vanitySlug: form.vanitySlug || project.vanitySlug})}?k=${encodeURIComponent(result.key)}`);
+            fresh(setPreview)(`${location.origin}${projectUrl({id, vanitySlug: project.vanityLapsed ? '' : form.vanitySlug || project.vanitySlug})}?k=${encodeURIComponent(result.key)}`);
         } catch (e) {
             fresh(setStatus)(e.message || 'Could not create a preview link.');
         } finally {
@@ -637,8 +637,8 @@ const ManageProject = () => {
                                     </label>
                                     <label className={styles.field}>
                                         <span>{communityText('Vanity URL')}</span>
-                                        <div className={styles.vanityField}><span>{communityText('/p/')}</span><input disabled={saving || !perks?.mistwarp?.vanityProjectUrls} maxLength={40} value={form.vanitySlug} placeholder={communityText('my-project')} onChange={e => set('vanitySlug', e.target.value)} /></div>
-                                        <small>{project.vanitySlug ? <Link to={projectUrl(project)}>{communityText('Open {value1}', {value1: `/p/${project.vanitySlug}`})}</Link> : null}{project.vanitySlug && perks?.mistwarp?.vanityProjectUrls ? ' · ' : ''}{perks?.mistwarp?.vanityProjectUrls ? communityText('Your {value1} membership includes a vanity URL.', {value1: perks.tier}) : communityText('Vanity project URLs are included with Rotur Pro.')}</small>
+                                        <div className={styles.vanityField}><span>{communityText('/p/')}</span><input disabled={saving || (!perks?.mistwarp?.vanityProjectUrls && !project.vanityLapsed)} maxLength={40} value={form.vanitySlug} placeholder={communityText('my-project')} onChange={e => set('vanitySlug', e.target.value)} /></div>
+                                        <small>{project.vanityLapsed ? communityText('This vanity URL is paused because your plan no longer includes one. It stays yours for 30 days. Clear it to give it up now.') : null}{project.vanitySlug ? <Link to={projectUrl(project)}>{communityText('Open {value1}', {value1: `/p/${project.vanitySlug}`})}</Link> : null}{project.vanitySlug && perks?.mistwarp?.vanityProjectUrls ? ' · ' : ''}{project.vanityLapsed ? null : perks?.mistwarp?.vanityProjectUrls ? communityText('Your {value1} membership includes a vanity URL.', {value1: perks.tier}) : communityText('Vanity project URLs are included with Rotur Pro.')}</small>
                                     </label>
                                     <div className={styles.formActions}>
                                         {status ? <span className={styles.formStatus}>{status}</span> : null}
