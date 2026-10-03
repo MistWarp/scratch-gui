@@ -43,6 +43,7 @@ class CollabService extends Emitter {
         this._cursorOverlay = null;
         this._workspace = null;
         this._approved = false;
+        this._admissions = 0;
         this._sendChain = Promise.resolve();
         this._activity = {targetId: null, tab: 0, assetIndex: 0};
         this._ownLoads = 0;
@@ -115,7 +116,9 @@ class CollabService extends Emitter {
             const id = isHost ?
                 await this._connectAsHost(roomId, privacy, options.inviteRole) :
                 await this._connectAsClient(roomId, options.invite);
-            if (this._transport !== transport) throw new Error('Collaboration connection cancelled');
+            if (this._transport !== transport) {
+                throw Object.assign(new Error('Collaboration connection cancelled'), {cancelled: true});
+            }
             this.isConnected = true;
             this._watchProjectLoads();
             if (typeof window !== 'undefined') window.addEventListener('pagehide', this._onPageHide);
@@ -124,6 +127,8 @@ class CollabService extends Emitter {
             return id;
         } catch (error) {
             if (this._transport === transport) this._teardown();
+            // Superseded by another connect, or disconnected meanwhile.
+            else if (error && typeof error === 'object') error.cancelled = true;
             throw error;
         }
     }
@@ -181,7 +186,8 @@ class CollabService extends Emitter {
 
         this._transport.on('fatal', ({error}) => {
             this.emit('connection-failed', {
-                error: error && error.message ? error.message : String(error)
+                error: error && error.message ? error.message : String(error),
+                code: (error && error.collabCode) || null
             });
             this.disconnect();
         });
@@ -211,7 +217,8 @@ class CollabService extends Emitter {
             session,
             transport: this._transport,
             applyProjectData: (buffer, active) => this._loadProjectSuppressed(buffer, active),
-            remapTargetIds: (targetIds, active) => remapTargetIds(this.vm, targetIds, active),
+            remapTargetIds: (targetIds, active) =>
+                remapTargetIds(this.vm, targetIds, active, this._editingBeforeLoad),
             loadExtensions: extensions => this._loadMissingExtensions(extensions)
         });
         this._assets = new AssetChannel({
@@ -239,6 +246,7 @@ class CollabService extends Emitter {
 
         session.on('join-approved', () => {
             this._approved = true;
+            this._admissions++;
             this.emit('approval-resolved');
             this.emit('join-approved');
             this.emit('connected-to-host');
@@ -267,7 +275,7 @@ class CollabService extends Emitter {
         session.on('assets-needed', md5exts => this._assets.requestFromHost(md5exts));
         this._assets.on('asset-received', () => session.resumeApply());
         session.on('connection-failed', payload => {
-            this.emit('connection-failed', payload);
+            this.emit('connection-failed', Object.assign({code: null}, payload));
             this.disconnect();
         });
 
@@ -284,8 +292,8 @@ class CollabService extends Emitter {
         this._snapshot.on('download-complete', () => {
             this.emit('project-sync-download-complete');
         });
-        this._snapshot.on('download-error', ({error}) => {
-            this.emit('project-sync-download-error', {error});
+        this._snapshot.on('download-error', ({error, attempt, willRetry}) => {
+            this.emit('project-sync-download-error', {error, attempt, willRetry});
         });
 
         this._setupPresence(session);
@@ -296,6 +304,8 @@ class CollabService extends Emitter {
     _watchTransport (transport) {
         transport.on('broker-offline', () => this.emit('broker-status', {online: false}));
         transport.on('broker-online', () => this.emit('broker-status', {online: true}));
+        // {attempt, delayMs}: the broker still holds our room id after a reload.
+        transport.on('host-id-taken', info => this.emit('host-id-taken', info));
         transport.on('invalid-message', ({peerId, error}) => {
             log.warn(`Dropped a collaboration message from ${peerId}: ${error}`);
         });
@@ -361,7 +371,18 @@ class CollabService extends Emitter {
             if (!isHost && payload.assetRefs) {
                 await this._waitForHost(session);
                 if (this._session !== session) throw new Error('Collaboration session ended');
-                await assets.sendAssets('host', payload.assetRefs);
+                const admissions = this._admissions;
+                try {
+                    await assets.sendAssets('host', payload.assetRefs);
+                } catch (error) {
+                    // The link dropped mid-transfer. The host discards partial
+                    // assets, so send them again once it lets us back in.
+                    if (!/Asset connection/.test(error.message) || this._session !== session) throw error;
+                    if (this._admissions === admissions) this._approved = false;
+                    await this._waitForHost(session);
+                    if (this._session !== session) throw new Error('Collaboration session ended');
+                    await assets.sendAssets('host', payload.assetRefs);
+                }
             }
             if (this._session !== session) throw new Error('Collaboration session ended');
             return isHost ? {completion: session.submitLocal(type, payload).then(op => op && op.payload)} :
@@ -466,6 +487,7 @@ class CollabService extends Emitter {
         const scope = this.scope;
         if (!active()) return;
         this.emit('project-sync-apply-start');
+        this._editingBeforeLoad = this.vm.editingTarget ? this.vm.editingTarget.id : null;
         adapter.setSuppressed(true);
         this._ownLoads++;
         try {

@@ -44,7 +44,7 @@ const withTimeout = (promise, ms, message) => {
     return Promise.race([
         promise,
         new Promise((resolve, reject) => {
-            timer = setTimeout(() => reject(new Error(message)), ms);
+            timer = setTimeout(() => reject(Object.assign(new Error(message), {timedOut: true})), ms);
         })
     ]).finally(() => clearTimeout(timer));
 };
@@ -98,6 +98,9 @@ class HostSession extends Emitter {
         this.queue = new CommandQueue();
         this._receipts = new Map();
         this.seq = 0;
+        // Positions at or before this seq belong to a project the host has
+        // since replaced, so they can never be caught up from the log.
+        this.historyStart = 0;
         this.opLog = [];
         this.users = new Map();
         this.pendingJoinRequests = new Map();
@@ -214,25 +217,40 @@ class HostSession extends Emitter {
             }
             if (peerId !== this.id && !this.isClientApproved(peerId)) return null;
             if (typeof this.applier.validate === 'function') this.applier.validate(envelope.type, envelope.payload);
-            const result = await withTimeout(
-                this.applier.apply(envelope.type, envelope.payload, {clientId: peerId}),
-                COMMAND_TIMEOUT_MS,
-                'That edit took too long to apply, so it was cancelled.'
-            );
+            const applying = this.applier.apply(envelope.type, envelope.payload, {clientId: peerId});
+            let result;
+            try {
+                result = await withTimeout(applying, COMMAND_TIMEOUT_MS,
+                    'That edit took too long to apply. It will still reach everyone if it finishes.');
+            } catch (error) {
+                // The applier keeps running after a timeout. If the edit does
+                // finish, publish it then: later edits wait behind it in the
+                // applier, so seq order still matches the order of mutation.
+                if (error.timedOut) {
+                    applying.then(late => {
+                        if (active()) this._publish(peerId, envelope, key, late);
+                    }, () => {});
+                }
+                throw error;
+            }
             if (!active()) return null;
-            const payload = result || envelope.payload;
-            if (envelope.payload.requestId) payload.requestId = envelope.payload.requestId;
-            const op = makeOp(envelope.type, payload, {
-                seq: ++this.seq, clientId: peerId, clientOpId: envelope.clientOpId
-            });
-            // Keep receipts for the session lifetime: a reconnect can retry an
-            // acknowledged operation after its log entry has been pruned.
-            this._receipts.set(key, op);
-            this._appendToLog(op);
-            this._broadcast(op);
-            this.emit('op-applied', op);
-            return op;
+            return this._publish(peerId, envelope, key, result);
         });
+    }
+
+    _publish (peerId, envelope, key, result) {
+        const payload = result || envelope.payload;
+        if (envelope.payload.requestId) payload.requestId = envelope.payload.requestId;
+        const op = makeOp(envelope.type, payload, {
+            seq: ++this.seq, clientId: peerId, clientOpId: envelope.clientOpId
+        });
+        // Keep receipts for the session lifetime: a reconnect can retry an
+        // acknowledged operation after its log entry has been pruned.
+        this._receipts.set(key, op);
+        this._appendToLog(op);
+        this._broadcast(op);
+        this.emit('op-applied', op);
+        return op;
     }
 
     /**
@@ -378,7 +396,7 @@ class HostSession extends Emitter {
      * @returns {Array.<object>|null} Op envelopes, or null.
      */
     opsSince (fromSeq) {
-        if (fromSeq > this.seq + 1) return null;
+        if (fromSeq <= this.historyStart || fromSeq > this.seq + 1) return null;
         if (fromSeq === this.seq + 1) return [];
         const oldest = this.opLog.length > 0 ? this.opLog[0].seq : this.seq + 1;
         if (fromSeq < oldest) return null;
@@ -391,6 +409,9 @@ class HostSession extends Emitter {
      */
     restartHistory () {
         this.opLog = [];
+        // Skip a seq so that a guest who missed the reload, and still holds
+        // the old project at the old position, cannot look caught up.
+        this.historyStart = ++this.seq;
         this.emit('history-restarted');
         for (const peerId of this.users.keys()) {
             if (peerId === this.id) continue;
