@@ -1,4 +1,4 @@
-import {formatCommunityMessage, getCommunityLocale} from '../locale.js';
+import {getCommunityLocale} from '../locale.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
 import {Link} from 'react-router-dom';
@@ -18,7 +18,7 @@ import RichText from './RichText.jsx';
 import GroupTag from './GroupTag.jsx';
 import Dropdown, {DropdownItem} from './ui/Dropdown.jsx';
 import {timeAgo, sameUser, formatPlaytime} from '../format';
-import {sendCommercePayment, isInsufficientFunds} from '../credits';
+import {payWithRotur} from '../../lib/rotur/payment-window.js';
 import useLatest from '../use-latest.js';
 import styles from './CommentThread.module.css';
 
@@ -46,28 +46,13 @@ export const parseCommentDonation = value => {
     const amount = Math.round(Number(value) * 100) / 100;
     return Number.isFinite(amount) && amount >= 0.01 && amount <= 100000 ? amount : null;
 };
+// The donation is paid on Rotur, then the comment is posted with its key.
 export const postCommentDonation = async ({source, text, kind, amount}) => {
-    const intent = await source.donationIntent(amount);
-    const paid = await sendCommercePayment({
-        amount: intent.amount,
-        source: 'mistwarp',
-        kind: 'comment_donation',
-        resourceType: 'project',
-        resourceId: intent.projectId,
-        note: `MistWarp comment donation: ${intent.title || intent.projectId}`,
-        splits: intent.splits
+    const {result} = await payWithRotur({
+        start: returnUrl => source.donationIntent(amount, returnUrl),
+        confirm: ({key}) => source.add(text, null, kind, {key})
     });
-    let lastError = null;
-    for (let attempt = 0; attempt < 5; attempt++) {
-        try {
-            return await source.add(text, null, kind, {key: intent.key, paymentId: paid.payment.id});
-        } catch (e) {
-            if (e.status !== 402 || !e.data || !e.data.pending) throw e;
-            lastError = e;
-            await new Promise(resolve => window.setTimeout(resolve, 1500));
-        }
-    }
-    throw lastError || new Error(formatCommunityMessage('Donation could not be confirmed.'));
+    return result;
 };
 export const addCreatedComment = (comments, comment) => {
     const previous = (comments || []).find(item => sameUser(item.author, comment.author));
@@ -617,8 +602,8 @@ const CommentThread = ({
             setReplyTo(null);
         } catch (e) {
             if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {
-                setError(isInsufficientFunds(e) ?
-                    communityText('You do not have enough credits for this donation.') :
+                setError(e.cancelled ?
+                    communityText('Payment cancelled.') :
                     (e.message || communityText('Could not post comment.')));
             }
         } finally {

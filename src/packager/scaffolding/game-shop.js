@@ -1,5 +1,23 @@
-// The same intent/payment/confirmation protocol used by the editor's game shop.
-export const openGameShop = async (projectId, productId, {request, ensureConsent, client}) => {
+// The editor's game shop protocol: mistwarp-api asks Rotur for a payment
+// request, the player approves it on rotur.dev, and mistwarp-api confirms it.
+// An export isn't on MistWarp's own site, so Rotur can't message this page;
+// it asks mistwarp-api until the payment is found or Rotur's window closes.
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+const confirmWhilePaying = async (popup, confirm) => {
+  for (;;) {
+    const closed = popup.closed;
+    try {
+      return await confirm();
+    } catch (e) {
+      if (e.status !== 402) throw e;
+      if (closed) throw new Error('Payment cancelled.');
+    }
+    await sleep(2000);
+  }
+};
+
+export const openGameShop = async (projectId, productId, {request}) => {
   const path = `/projects/${encodeURIComponent(projectId)}/products`;
   const data = await request(path);
   const products = (data.products || []).filter(product => !productId || product.id === productId);
@@ -28,35 +46,31 @@ export const openGameShop = async (projectId, productId, {request, ensureConsent
       buy.textContent = product.owned ? 'Owned' : `Buy for ${product.price} credits`;
       buy.disabled = Boolean(product.owned);
       buttons.push(buy);
-      let intent;
-      let payment;
-      const key = `mistwarp:game_product:${projectId}:${product.id}:${crypto.randomUUID()}`;
       buy.onclick = async () => {
+        // Opened before anything is awaited, so the browser doesn't block it.
+        const popup = window.open('', 'rotur-payment', 'popup,width=480,height=760');
+        if (!popup) {
+          error.textContent = 'Your browser blocked Rotur\'s payment window. Allow pop-ups, then try again.';
+          return;
+        }
         for (const button of buttons) button.disabled = true;
         close.disabled = true;
         error.textContent = '';
         try {
-          intent = intent || await request(`${path}/${encodeURIComponent(product.id)}/purchase/intent`, 'POST');
-          if (intent.already) return finish({status: 'owned', product: intent.product});
-          if (Number(intent.amount) !== Number(product.price)) throw new Error('The price changed. Reopen the shop to review it.');
-          if (!payment) {
-            await ensureConsent(['credits:transfer']);
-            const response = await fetch('https://api.rotur.dev/v2/commerce/payments', {
-              method: 'POST',
-              headers: {Authorization: `Bearer ${client.token}`, 'Content-Type': 'application/json'},
-              body: JSON.stringify({amount: intent.amount, source: 'mistwarp', kind: 'game_product',
-                resource_type: 'game_product', resource_id: intent.resourceId,
-                note: `MistWarp game item: ${intent.title || product.id}`, splits: intent.splits, idempotency_key: key})
-            });
-            const result = await response.json();
-            if (!response.ok || !result.payment) throw new Error(result.error || 'Payment failed');
-            payment = result.payment;
+          const intent = await request(`${path}/${encodeURIComponent(product.id)}/purchase/intent`, 'POST', {returnUrl: ''});
+          if (intent.already) {
+            popup.close();
+            return finish({status: 'owned', product: intent.product});
           }
-          const confirmed = await request(`${path}/${encodeURIComponent(product.id)}/purchase/confirm`, 'POST',
-            {key: intent.key, paymentId: payment.id});
+          if (Number(intent.amount) !== Number(product.price)) throw new Error('The price changed. Reopen the shop to review it.');
+          popup.location.href = intent.approveUrl;
+          const confirmed = await confirmWhilePaying(popup, () =>
+            request(`${path}/${encodeURIComponent(product.id)}/purchase/confirm`, 'POST', {key: intent.key}));
+          popup.close();
           finish({status: 'purchased', product: confirmed.product});
         } catch (e) {
-          error.textContent = payment ? `Payment sent. ${e.message}. Retry to check this payment again.` : e.message;
+          popup.close();
+          error.textContent = e.message;
           products.forEach((item, index) => { buttons[index].disabled = Boolean(item.owned); });
           close.disabled = false;
         }

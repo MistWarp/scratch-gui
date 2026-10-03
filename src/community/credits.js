@@ -2,12 +2,6 @@ import {ensureScopes, getAccessToken} from '../lib/rotur/client.js';
 
 const ROTUR_API = 'https://api.rotur.dev/v2';
 
-// Detect an "insufficient funds" failure from a Rotur transfer error.
-const isInsufficientFunds = error => {
-    const message = String((error && error.message) || error || '').toLowerCase();
-    return message.includes('insufficient') || message.includes('not enough') || message.includes('balance');
-};
-
 const isPermissionError = message => {
     const text = String(message || '').toLowerCase();
     return text.includes('permission') ||
@@ -44,38 +38,15 @@ const billingRequest = async (path, init = {}) => {
     return data;
 };
 
-const randomIdempotencyKey = prefix => {
-    const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() :
-        `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-    return `${prefix}:${id}`;
-};
-
 const commerceRequest = async (path, init = {}) => {
-    // Every call says which permission it needs. Spending is asked for when
-    // someone pays, from their click.
+    // Every call says which permission it needs. Anything more than viewing
+    // is asked for from the person's click.
     const {scope} = init;
     await ensureScopes(scope, {prompt: scope.some(name => !name.endsWith(':view'))});
     const next = {...init};
     delete next.scope;
     return billingRequest(`/commerce${path}`, next);
 };
-
-const sendCommercePayment = ({to, amount, source = 'mistwarp', kind, resourceType, resourceId, note, splits}) =>
-    commerceRequest('/payments', {
-        method: 'POST',
-        scope: ['credits:transfer'],
-        body: JSON.stringify({
-            to,
-            amount,
-            source,
-            kind,
-            resource_type: resourceType,
-            resource_id: resourceId,
-            note,
-            splits,
-            idempotency_key: randomIdempotencyKey(`${source}:${kind}:${resourceId || 'general'}`)
-        })
-    });
 
 const listCommerceBounties = async (filters = {}) => {
     const query = new URLSearchParams(filters);
@@ -87,17 +58,6 @@ const listCommerceBounties = async (filters = {}) => {
     return data;
 };
 
-const createCommerceBounty = bounty => commerceRequest('/bounties', {
-    method: 'POST',
-    scope: ['credits:transfer'],
-    body: JSON.stringify({
-        ...bounty,
-        idempotency_key: bounty.idempotency_key || randomIdempotencyKey(
-            `${bounty.source}:${bounty.resource_type}:${bounty.resource_id}`
-        )
-    })
-});
-
 const cancelCommerceBounty = id => commerceRequest(`/bounties/${encodeURIComponent(id)}/cancel`, {
     method: 'POST',
     scope: ['credits:manage'],
@@ -105,10 +65,6 @@ const cancelCommerceBounty = id => commerceRequest(`/bounties/${encodeURICompone
 });
 
 export {
-    isInsufficientFunds,
-    randomIdempotencyKey,
-    sendCommercePayment,
     listCommerceBounties,
-    createCommerceBounty,
     cancelCommerceBounty
 };

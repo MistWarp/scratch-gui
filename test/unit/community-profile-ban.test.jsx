@@ -16,7 +16,7 @@ jest.mock('../../src/community/rotur', () => ({
 jest.mock('../../src/community/UserContext.jsx', () => ({
     useUser: () => ({user: null, loading: false})
 }));
-jest.mock('../../src/lib/rotur/client.js', () => ({payUser: jest.fn()}));
+jest.mock('../../src/lib/rotur/client.js', () => ({}));
 jest.mock('../../src/lib/themes/custom-themes.js', () => ({
     customThemeManager: {themes: {clear: jest.fn()}, loadCustomThemes: jest.fn()}
 }));

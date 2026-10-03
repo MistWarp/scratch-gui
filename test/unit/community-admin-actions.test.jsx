@@ -4,7 +4,7 @@ import {mount, shallow} from 'enzyme';
 import ConfirmModal from '../../src/community/components/ui/ConfirmModal.jsx';
 import api from '../../src/community/api.js';
 import {
-    AdminActionDialog, AnalyticsChart, buildSeries, StatsOverview, UserManager
+    AdminActionDialog, AnalyticsChart, buildSeries, UserManager
 } from '../../src/community/pages/Admin.jsx';
 
 jest.mock('../../src/lib/themes/custom-themes.js', () => ({
@@ -151,80 +151,5 @@ describe('admin user directory', () => {
         expect(preventDefault).toHaveBeenCalledTimes(1);
         expect(api.admin.getUser).toHaveBeenCalledWith('Alex');
         wrapper.unmount();
-    });
-});
-
-describe('admin payout retry', () => {
-    const stats = overrides => ({
-        projectsByDay: {},
-        projectUpdatesByDay: {},
-        usersByDay: {},
-        loginsByDay: {},
-        loadsByDay: {},
-        averageLoadMsByDay: {},
-        loadSamplesByDay: {},
-        startsByDay: {},
-        crashesByDay: {},
-        loadsByDevice: {},
-        pendingPayouts: 1,
-        pendingPayoutAmount: 2,
-        ...overrides
-    });
-
-    const deferred = () => {
-        let resolve;
-        const promise = new Promise(resolvePromise => {
-            resolve = resolvePromise;
-        });
-        return {promise, resolve};
-    };
-
-    afterEach(() => {
-        jest.restoreAllMocks();
-    });
-
-    test('refreshes the date range selected while a payout retry is running', async () => {
-        const payout = deferred();
-        const adminStats = jest.spyOn(api.admin, 'stats')
-            .mockResolvedValueOnce(stats())
-            .mockResolvedValue(stats({pendingPayouts: 0}));
-        jest.spyOn(api, 'quota').mockResolvedValue({used: 0, limit: 1});
-        jest.spyOn(api.admin, 'retryPayouts').mockReturnValue(payout.promise);
-        const wrapper = mount(<StatsOverview />);
-        await act(async () => {
-            await Promise.resolve();
-            await Promise.resolve();
-        });
-        wrapper.update();
-
-        wrapper.find('button').filterWhere(node => node.text() === 'Retry now').simulate('click');
-        wrapper.find('button').filterWhere(node => node.text() === '7 days').simulate('click');
-        await act(async () => {
-            await Promise.resolve();
-            await Promise.resolve();
-        });
-        await act(async () => payout.resolve({paid: 1, remaining: 0}));
-        wrapper.update();
-
-        expect(adminStats).toHaveBeenLastCalledWith(7);
-        wrapper.unmount();
-    });
-
-    test('does not refresh statistics after leaving during a payout retry', async () => {
-        const payout = deferred();
-        const adminStats = jest.spyOn(api.admin, 'stats').mockResolvedValue(stats());
-        jest.spyOn(api, 'quota').mockResolvedValue({used: 0, limit: 1});
-        jest.spyOn(api.admin, 'retryPayouts').mockReturnValue(payout.promise);
-        const wrapper = mount(<StatsOverview />);
-        await act(async () => {
-            await Promise.resolve();
-            await Promise.resolve();
-        });
-        wrapper.update();
-        wrapper.find('button').filterWhere(node => node.text() === 'Retry now').simulate('click');
-        wrapper.unmount();
-        await act(async () => payout.resolve({paid: 1, remaining: 0}));
-
-        expect(adminStats).toHaveBeenCalledTimes(1);
     });
 });

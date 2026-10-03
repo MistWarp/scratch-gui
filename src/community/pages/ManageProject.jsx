@@ -28,7 +28,7 @@ import UserLink from '../components/UserLink.jsx';
 import {SwitchRow} from '../components/ui/Switch.jsx';
 import useLatest from '../use-latest.js';
 import {formatDate, formatDateTime, formatPlaytime} from '../format.js';
-import {createCommerceBounty, listCommerceBounties, cancelCommerceBounty} from '../credits';
+import {listCommerceBounties, cancelCommerceBounty} from '../credits';
 import styles from './ManageProject.module.css';
 
 const roundCredits = value => Math.round((Number(value) || 0) * 100) / 100;
@@ -1075,7 +1075,6 @@ const ManageProject = () => {
 const BountiesPanel = ({project}) => {
     const {text: communityText} = useCommunityText();
     const [items, setItems] = useState(null);
-    const [form, setForm] = useState({title: '', description: '', amount: '10'});
     const [busy, setBusy] = useState(false);
     const [status, setStatus] = useState('');
 
@@ -1090,34 +1089,6 @@ const BountiesPanel = ({project}) => {
     }, [project.id]);
 
     useEffect(load, [load]);
-
-    const create = async event => {
-        event.preventDefault();
-        const amount = Math.round(Number(form.amount) * 100) / 100;
-        if (!form.title.trim() || !Number.isFinite(amount) || amount < 0.01) {
-            setStatus('Add a title and an amount greater than 0.');
-            return;
-        }
-        setBusy(true);
-        setStatus('');
-        try {
-            await createCommerceBounty({
-                title: form.title.trim(),
-                description: form.description.trim(),
-                amount,
-                source: 'mistwarp',
-                resource_type: 'project',
-                resource_id: project.id
-            });
-            setForm({title: '', description: '', amount: '10'});
-            setStatus('Bounty published. MistWarp will pay it when you merge a pull request linked to it.');
-            load();
-        } catch (error) {
-            setStatus(error.message || 'Could not create the bounty.');
-        } finally {
-            setBusy(false);
-        }
-    };
 
     const cancel = async id => {
         setBusy(true);
@@ -1136,44 +1107,10 @@ const BountiesPanel = ({project}) => {
     return (
         <div className={styles.stack}>
             <div className={styles.card}>
-                <SectionHeading as="h3" icon={Gift} title={communityText('Create a bounty')} lead={communityText('Offer credits for one clear change. Contributors can choose the bounty before they fork, then link it to their pull request.')} />
-                <form className={styles.form} onSubmit={create}>
-                    <input
-                        disabled={busy}
-                        maxLength={120}
-                        value={form.title}
-                        placeholder={communityText('Short task, such as Add keyboard controls')}
-                        onChange={event => {
-                            const {value} = event.currentTarget;
-                            setForm(current => ({...current, title: value}));
-                        }}
-                    />
-                    <textarea
-                        disabled={busy}
-                        maxLength={2000}
-                        value={form.description}
-                        placeholder={communityText('What should change? Include anything you will check before merging.')}
-                        onChange={event => {
-                            const {value} = event.currentTarget;
-                            setForm(current => ({...current, description: value}));
-                        }}
-                    />
-                    <label className={`${styles.field} ${styles.priceField}`}>
-                        <span>{communityText('Reward in credits')}</span>
-                        <input
-                            disabled={busy}
-                            type="number"
-                            min="0.01"
-                            step="0.01"
-                            value={form.amount}
-                            onChange={event => {
-                                const {value} = event.currentTarget;
-                                setForm(current => ({...current, amount: value}));
-                            }}
-                        />
-                    </label>
-                    <Button type="submit" variant="primary" busy={busy} busyLabel={communityText('Funding…')}><Coins size={15} />{communityText('Fund bounty')}</Button>
-                </form>
+                <SectionHeading as="h3" icon={Gift} title={communityText('Create a bounty')} />
+                <Notice variant="info">
+                    {communityText('New bounties are paused while MistWarp moves payments to Rotur. Bounties already funded still pay out when you merge a linked pull request, and you can cancel them for a refund.')}
+                </Notice>
                 {status ? <p className={styles.formStatus}>{status}</p> : null}
             </div>
             <div className={styles.card}>
@@ -1192,9 +1129,7 @@ const BountiesPanel = ({project}) => {
                         ))}
                     </ul>
                 ) : (
-                    <EmptyState compact icon={Gift} title={communityText('No bounties yet')}>
-                        {communityText('Fund a bounty to pay contributors for a specific change.')}
-                    </EmptyState>
+                    <EmptyState compact icon={Gift} title={communityText('No bounties yet')} />
                 )}
             </div>
         </div>
