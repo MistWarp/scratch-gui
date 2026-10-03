@@ -1,4 +1,5 @@
 import cursorIcon from '../assets/icon--cursor.svg';
+import {colorForCollabUser} from './avatar.js';
 
 /**
  * DOM overlay showing remote cursors, name labels and chat bubbles above
@@ -27,7 +28,10 @@ class CursorOverlay {
         this.remotePositions = new Map(); // userId -> {x, y, targetId}
         this.isChatting = false;
         this._lastLocalCursor = null;
+        this._pointerInside = false;
         this._listeners = [];
+        this._vmListener = null;
+        this._repositionFrame = null;
         this._origScrollbarSet = null;
         this._origSetScale = null;
 
@@ -77,6 +81,24 @@ class CursorOverlay {
     }
 
     detach () {
+        if (this.isChatting) {
+            // Removing a focused input does not reliably fire blur, so clear
+            // the bubble others see ourselves.
+            try {
+                this.presence.sendCursorChat(null);
+            } catch (e) {
+                // Session already gone.
+            }
+        }
+        if (this._vmListener && this.vm) {
+            const off = this.vm.off || this.vm.removeListener;
+            if (off) off.call(this.vm, 'workspaceUpdate', this._vmListener);
+        }
+        this._vmListener = null;
+        if (this._repositionFrame !== null) {
+            cancelAnimationFrame(this._repositionFrame);
+            this._repositionFrame = null;
+        }
         this._listeners.forEach(({target, event, handler, options}) => {
             target.removeEventListener(event, handler, options);
         });
@@ -107,6 +129,8 @@ class CursorOverlay {
         this.remoteCursors.clear();
         this.remotePositions.clear();
         this.isChatting = false;
+        this._pointerInside = false;
+        this._lastLocalCursor = null;
         this.workspace = null;
         this.container = null;
     }
@@ -122,6 +146,7 @@ class CursorOverlay {
         chatInput.className = 'collaboration-chat-input';
         chatInput.placeholder = 'Say something... (max 500 chars)';
         chatInput.maxLength = 500;
+        chatInput.setAttribute('aria-label', 'Cursor chat message');
         chatInput.style.position = 'absolute';
         chatInput.style.display = 'none';
         chatInput.style.zIndex = '1000';
@@ -169,7 +194,10 @@ class CursorOverlay {
     }
 
     _sendLocalCursor () {
-        if (!this._lastLocalCursor || !this.workspace) return;
+        // Only while the pointer is over the workspace: otherwise any
+        // workspace change (including remote edits being applied) would
+        // re-show our cursor to everyone after it left.
+        if (!this._pointerInside || !this._lastLocalCursor || !this.workspace) return;
         const metrics = this.workspace.getMetrics && this.workspace.getMetrics();
         const scale = this.workspace.scale || 1;
         const {x, y} = this._lastLocalCursor;
@@ -186,6 +214,7 @@ class CursorOverlay {
     _bindLocalEvents () {
         const container = this.container;
         this._listen(container, 'mousemove', e => {
+            this._pointerInside = true;
             const rect = container.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
@@ -197,10 +226,15 @@ class CursorOverlay {
             }
         });
         this._listen(container, 'mouseleave', () => {
+            this._pointerInside = false;
             this.presence.sendCursorLeave();
         });
         this._listen(window, 'keydown', e => {
-            if (e.key !== '/' || this.isChatting) return;
+            if (e.key !== '/' || this.isChatting || e.ctrlKey || e.metaKey || e.altKey) return;
+            // Only when the pointer is over this workspace, so "/" still
+            // types normally everywhere else and there is somewhere to put
+            // the input.
+            if (!this._pointerInside || !this._lastLocalCursor || !this.chatInput) return;
             const active = document.activeElement;
             const activeTag = active ? active.tagName : '';
             if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || (active && active.isContentEditable)) {
@@ -208,13 +242,11 @@ class CursorOverlay {
             }
             e.preventDefault();
             this.isChatting = true;
-            if (this.chatInput && this._lastLocalCursor) {
-                const {x, y} = this._lastLocalCursor;
-                this.chatInput.style.left = `${x}px`;
-                this.chatInput.style.top = `${y}px`;
-                this.chatInput.style.display = 'block';
-                this.chatInput.focus();
-            }
+            const {x, y} = this._lastLocalCursor;
+            this.chatInput.style.left = `${x}px`;
+            this.chatInput.style.top = `${y}px`;
+            this.chatInput.style.display = 'block';
+            this.chatInput.focus();
         });
     }
 
@@ -226,6 +258,20 @@ class CursorOverlay {
         this._listen(this.container, 'wheel', onViewportChanged, {passive: true});
         this._workspaceChangeListener = onViewportChanged;
         this.workspace.addChangeListener(this._workspaceChangeListener);
+
+        // Switching sprites swaps the workspace contents: cursors of people
+        // in the old sprite must hide and ours must move to the new one.
+        // The workspace is rebuilt after this event, so wait a frame.
+        if (this.vm && this.vm.on) {
+            this._vmListener = () => {
+                if (this._repositionFrame !== null) return;
+                this._repositionFrame = requestAnimationFrame(() => {
+                    this._repositionFrame = null;
+                    onViewportChanged();
+                });
+            };
+            this.vm.on('workspaceUpdate', this._vmListener);
+        }
 
         if (this.workspace.scrollbar && this.workspace.scrollbar.set) {
             const scrollbar = this.workspace.scrollbar;
@@ -254,6 +300,8 @@ class CursorOverlay {
         el.style.width = '24px';
         el.style.height = '24px';
         el.style.pointerEvents = 'none';
+        // Hidden until we know where it goes (a chat can arrive first).
+        el.style.display = 'none';
 
         const cursorImg = document.createElement('img');
         cursorImg.src = cursorIcon;
@@ -274,7 +322,7 @@ class CursorOverlay {
         label.style.gap = '4px';
         label.style.padding = '3px 7px';
         label.style.background = 'var(--looks-secondary)';
-        label.style.color = 'var(--accent-foreground, white)';
+        label.style.color = 'white';
         label.style.fontSize = '11px';
         label.style.fontWeight = '600';
         label.style.borderRadius = '4px';
@@ -353,7 +401,11 @@ class CursorOverlay {
             targetName: payload.targetName || null
         };
         this.remotePositions.set(userId, position);
-        cursor.labelName.textContent = this.getUsername(userId) || '';
+        const username = this.getUsername(userId) || '';
+        if (cursor.labelName.textContent !== username) {
+            cursor.labelName.textContent = username;
+            cursor.label.style.background = colorForCollabUser(username);
+        }
         const avatarUrl = this.getAvatarUrl(userId);
         if (avatarUrl) {
             if (cursor.labelAvatar.getAttribute('src') !== avatarUrl) {

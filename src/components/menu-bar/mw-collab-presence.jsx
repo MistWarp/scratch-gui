@@ -28,6 +28,11 @@ const messages = defineMessages({
         defaultMessage: 'Reconnecting…',
         description: 'Menu bar collaboration status while reconnecting to a live session'
     },
+    waitingForHost: {
+        id: 'mw.collabPresence.waitingForHost',
+        defaultMessage: 'Waiting for host…',
+        description: 'Menu bar collaboration status while the host has dropped out and may come back'
+    },
     leaving: {
         id: 'mw.collabPresence.leaving',
         defaultMessage: 'Leaving session…',
@@ -63,23 +68,35 @@ const messages = defineMessages({
 const initialFor = username => (username || '?').replace(/^@/, '').charAt(0)
     .toUpperCase();
 
-const CollabPresence = ({intl, isConnected, users, onOpen, projectPresence}) => {
+const CollabPresence = ({intl, isConnected, isReconnecting, reconnectReason, users, onOpen, projectPresence}) => {
     const phase = projectPresence?.phase;
-    const progress = ['opening', 'joining', 'reconnecting', 'leaving'].includes(phase) ?
-        intl.formatMessage(messages[phase]) : null;
+    const reconnectMessage = reconnectReason === 'ROOM_NOT_FOUND' ? messages.waitingForHost : messages.reconnecting;
+    let progress = null;
+    if (phase === 'reconnecting') progress = intl.formatMessage(reconnectMessage);
+    else if (['opening', 'joining', 'leaving'].includes(phase)) progress = intl.formatMessage(messages[phase]);
+    // Room sessions report reconnects through the store, not projectPresence.
+    if (!progress && isConnected && isReconnecting) progress = intl.formatMessage(reconnectMessage);
     if (progress || !isConnected || users.length < 2) {
         const editors = projectPresence?.editors || [];
-        if (!progress && !editors.length && !projectPresence?.isPublic && !projectPresence?.unavailable) return null;
-        return (<button
-            type="button"
-            className={styles.presence}
-            onClick={onOpen}
-            title={editors.map(editor => editor.username).join(', ')}
-        >{progress || (projectPresence?.unavailable ? intl.formatMessage(messages.unavailable) :
+        if (!progress && !isConnected && !editors.length && !projectPresence?.isPublic &&
+            !projectPresence?.unavailable) return null;
+        let label = progress;
+        if (!label && isConnected) {
+            // In a live session but nobody else is here yet.
+            label = intl.formatMessage(messages.sessionOpen);
+        } else if (!label) {
+            label = projectPresence?.unavailable ? intl.formatMessage(messages.unavailable) :
                 projectPresence?.isPublic ? intl.formatMessage(
                     projectPresence.hosting ? messages.sessionOpen : messages.sessionAvailable
                 ) :
-                    intl.formatMessage(messages.editorsOnBranch, {count: editors.length}))}</button>);
+                    intl.formatMessage(messages.editorsOnBranch, {count: editors.length});
+        }
+        return (<button
+            type="button"
+            className={classNames(styles.presence, {[styles.busy]: Boolean(progress)})}
+            onClick={onOpen}
+            title={editors.map(editor => editor.username).join(', ') || null}
+        >{label}</button>);
     }
 
     const currentUserId = CollaborationService.getInstance().getCurrentUserId();
@@ -130,6 +147,8 @@ CollabPresence.propTypes = {
     intl: intlShape.isRequired,
     projectPresence: PropTypes.object,
     isConnected: PropTypes.bool,
+    isReconnecting: PropTypes.bool,
+    reconnectReason: PropTypes.string,
     users: PropTypes.arrayOf(PropTypes.shape({
         id: PropTypes.string,
         username: PropTypes.string,
@@ -142,6 +161,8 @@ CollabPresence.propTypes = {
 const mapStateToProps = state => ({
     projectPresence: state.scratchGui.collaboration.projectPresence,
     isConnected: state.scratchGui.collaboration.isConnected,
+    isReconnecting: state.scratchGui.collaboration.isReconnecting,
+    reconnectReason: state.scratchGui.collaboration.reconnectReason,
     users: state.scratchGui.collaboration.connectedUsers
 });
 

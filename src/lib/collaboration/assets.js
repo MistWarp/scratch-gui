@@ -10,6 +10,21 @@ const CHUNK_SIZE = 64 * 1024;
 const MAX_BUFFERED_BYTES = 128 * 1024;
 const DRAIN_POLL_MS = 50;
 const MAX_INCOMING = 64;
+const RETRY_CHECK_MS = 10 * 1000;
+const STALL_MS = 10 * 1000;
+const MAX_REQUEST_ATTEMPTS = 3;
+// A sender that disconnected mid-transfer never finishes it. Forget its
+// chunks, so abandoned transfers cannot fill the MAX_INCOMING slots.
+const INCOMING_IDLE_MS = 60 * 1000;
+// The link to the peer dropped mid-send; the caller may resend once the
+// peer is reachable again.
+const ASSET_LINK_CLOSED = 'ASSET_LINK_CLOSED';
+
+const linkClosedError = message => {
+    const error = new Error(message);
+    error.code = ASSET_LINK_CLOSED;
+    return error;
+};
 
 const toArrayBuffer = data => {
     if (data instanceof ArrayBuffer) return data;
@@ -56,12 +71,19 @@ class AssetChannel extends Emitter {
         this._destroyed = false;
         this._retries = new Map();
         this._progressAt = new Map();
-        this._retryTimer = setInterval(() => this._retryMissing(), 10000);
+        this._retryTimer = setInterval(() => {
+            this._dropIdleIncoming();
+            this._retryMissing();
+        }, RETRY_CHECK_MS);
 
         if (isHost) {
             this._onAssetMessage = (peerId, envelope) => this._onMessage(peerId, envelope);
         } else {
             this._onAssetMessage = envelope => this._onMessage('host', envelope);
+            this._onReadmitted = () => this._rerequest();
+            this._onHostRestarted = () => this._forgetRequests();
+            session.on('join-approved', this._onReadmitted);
+            session.on('host-restarted', this._onHostRestarted);
         }
         session.on('asset-message', this._onAssetMessage);
     }
@@ -70,6 +92,10 @@ class AssetChannel extends Emitter {
         this._destroyed = true;
         clearInterval(this._retryTimer);
         this.session.off('asset-message', this._onAssetMessage);
+        if (!this.isHost) {
+            this.session.off('join-approved', this._onReadmitted);
+            this.session.off('host-restarted', this._onHostRestarted);
+        }
         this._incoming.clear();
         this._requestedFromHost.clear();
         this._pendingServes.clear();
@@ -95,7 +121,7 @@ class AssetChannel extends Emitter {
             peerId === 'host' ? this.transport.sendToHost(envelope) : this.transport.send(peerId, envelope)
         );
         if (!send(makeAsset(ASSET.BEGIN, {md5ext, totalBytes: buffer.byteLength, chunkCount}))) {
-            throw new Error('Asset connection is closed');
+            throw linkClosedError('Asset connection is closed');
         }
         for (let index = 0; index < chunkCount; index++) {
             await this._waitForDrain(peerId);
@@ -105,7 +131,7 @@ class AssetChannel extends Emitter {
                 md5ext,
                 index,
                 data: buffer.slice(start, Math.min(start + CHUNK_SIZE, buffer.byteLength))
-            }))) throw new Error('Asset connection closed during transfer');
+            }))) throw linkClosedError('Asset connection closed during transfer');
         }
         return true;
     }
@@ -154,16 +180,53 @@ class AssetChannel extends Emitter {
         this.transport.sendToHost(makeAsset(ASSET.REQUEST, {md5exts: wanted}));
     }
 
+    /**
+     * The host drops requests from a guest it has not (re)admitted, so
+     * requests made while reconnecting are lost. Ask again once admitted,
+     * without counting the lost ones as failures.
+     */
+    _rerequest () {
+        if (this._destroyed || this._requestedFromHost.size === 0) return;
+        const md5exts = Array.from(this._requestedFromHost);
+        const now = Date.now();
+        md5exts.forEach(md5ext => {
+            this._retries.delete(md5ext);
+            this._progressAt.set(md5ext, now);
+        });
+        this.transport.sendToHost(makeAsset(ASSET.REQUEST, {md5exts}));
+    }
+
+    /**
+     * A restarted host may never have had what we asked for; the fresh
+     * snapshot asks again for whatever is still needed.
+     */
+    _forgetRequests () {
+        this._requestedFromHost.clear();
+        this._retries.clear();
+        this._progressAt.clear();
+        this._incoming.clear();
+    }
+
+    _dropIdleIncoming () {
+        const now = Date.now();
+        this._incoming.forEach((incoming, key) => {
+            if (now - incoming.updatedAt >= INCOMING_IDLE_MS) this._incoming.delete(key);
+        });
+    }
+
     _retryMissing () {
         if (this.isHost || this._destroyed) return;
+        // Not admitted: requests would be dropped. _rerequest resumes.
+        if (this.session.isApproved === false) return;
         for (const md5ext of this._requestedFromHost) {
-            if (Date.now() - (this._progressAt.get(md5ext) || 0) < 10000) continue;
+            if (Date.now() - (this._progressAt.get(md5ext) || 0) < STALL_MS) continue;
             const attempts = (this._retries.get(md5ext) || 0) + 1;
             this._retries.set(md5ext, attempts);
-            if (attempts >= 3) {
+            if (attempts >= MAX_REQUEST_ATTEMPTS) {
                 this._requestedFromHost.delete(md5ext);
                 this.session.emit('connection-failed', {
-                    error: 'A costume or sound from the host would not download. Join the room again to retry.'
+                    error: 'A costume or sound from the host would not download. Join the room again to retry.',
+                    code: 'ASSET_FAILED'
                 });
                 return;
             }
@@ -198,7 +261,8 @@ class AssetChannel extends Emitter {
                 chunkCount,
                 chunks: new Array(chunkCount),
                 receivedCount: 0,
-                receivedBytes: 0
+                receivedBytes: 0,
+                updatedAt: Date.now()
             });
             break;
         }
@@ -208,7 +272,8 @@ class AssetChannel extends Emitter {
             const incoming = this._incoming.get(key);
             if (!incoming || index >= incoming.chunkCount || incoming.chunks[index]) return;
             incoming.chunks[index] = toArrayBuffer(data);
-            this._progressAt.set(md5ext, Date.now());
+            incoming.updatedAt = Date.now();
+            this._progressAt.set(md5ext, incoming.updatedAt);
             incoming.receivedCount++;
             incoming.receivedBytes += incoming.chunks[index].byteLength;
             if (incoming.receivedCount === incoming.chunkCount) {
@@ -251,4 +316,5 @@ class AssetChannel extends Emitter {
     }
 }
 
+export {ASSET_LINK_CLOSED};
 export default AssetChannel;

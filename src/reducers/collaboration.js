@@ -19,6 +19,8 @@ const initialState = {
     modalVisible: false,
     isConnected: false,
     isReconnecting: false,
+    // Why we are reconnecting, e.g. 'ROOM_NOT_FOUND' while the host is away.
+    reconnectReason: null,
     roomId: null,
     roomPrivacy: 'public',
     pendingInvite: null,
@@ -53,21 +55,29 @@ const reducer = function (state, action) {
         return Object.assign({}, state, {
             isConnected: action.connected,
             isReconnecting: action.connected ? state.isReconnecting : false,
+            reconnectReason: action.connected ? state.reconnectReason : null,
             connectionError: action.connected ? null : state.connectionError,
             activity: action.connected ? state.activity : {}
         });
 
     case SET_COLLABORATION_RECONNECTING:
         return Object.assign({}, state, {
-            isReconnecting: action.isReconnecting
+            isReconnecting: action.isReconnecting,
+            reconnectReason: action.isReconnecting ? (action.reason || null) : null
         });
     
     case SET_COLLABORATION_USERS: {
         const users = action.users || [];
-        const present = new Set(users.map(user => user.id));
+        const present = new Map(users.map(user => [user.id, user]));
         const activity = {};
         Object.keys(state.activity || {}).forEach(userId => {
-            if (present.has(userId)) activity[userId] = state.activity[userId];
+            const user = present.get(userId);
+            if (!user) return;
+            const entry = state.activity[userId];
+            // Keep badges in step with renames.
+            activity[userId] = (user.username && user.username !== entry.username) ?
+                Object.assign({}, entry, {username: user.username, handle: user.handle || entry.handle}) :
+                entry;
         });
         return Object.assign({}, state, {
             connectedUsers: users,
@@ -108,6 +118,11 @@ const reducer = function (state, action) {
         });
 
     case SET_USER_ACTIVITY:
+        // Presence can trail a departure; never resurrect someone who left.
+        if (!state.isConnected ||
+            ((state.connectedUsers || []).length && !state.connectedUsers.some(user => user.id === action.userId))) {
+            return state;
+        }
         return Object.assign({}, state, {
             activity: Object.assign({}, state.activity, {
                 [action.userId]: {
@@ -203,10 +218,11 @@ const setCollaborationHostLoadingProgress = function (progress) {
     };
 };
 
-const setCollaborationReconnecting = function (isReconnecting) {
+const setCollaborationReconnecting = function (isReconnecting, reason = null) {
     return {
         type: SET_COLLABORATION_RECONNECTING,
-        isReconnecting
+        isReconnecting,
+        reason
     };
 };
 

@@ -273,6 +273,10 @@ class ClientSnapshotService extends Emitter {
     }
 
     _onBegin ({transferId, totalBytes, chunkCount, atSeq, targetIds, extensions}) {
+        // The host also sends snapshots unasked, e.g. to a guest who rejoined
+        // after its log moved on. Stop applying ops against the old position;
+        // they buffer until the snapshot sets a new base.
+        if (this.session.lastAppliedSeq !== null) this.session.beginResync();
         this._generation++;
         this._incoming = {
             generation: this._generation,
@@ -379,10 +383,15 @@ class ClientSnapshotService extends Emitter {
 
     _fail (error) {
         if (this._destroyed) return;
-        this.emit('download-error', {error});
-        if (++this._attempts >= 3) {
-            this.session.emit('connection-failed', {error: error.message || 'Could not load collaboration project'});
-        } else this.requestResync();
+        const attempt = ++this._attempts;
+        const willRetry = attempt < 3;
+        this.emit('download-error', {error, attempt, willRetry});
+        if (willRetry) {
+            this.requestResync();
+        } else {
+            this.session.emit('connection-failed', {error: error.message || 'Could not load collaboration project',
+                code: 'SNAPSHOT_FAILED'});
+        }
     }
 
     _armTimeout () {

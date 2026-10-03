@@ -27,9 +27,10 @@ const VERSION_MISMATCH_REASON = 'This room is running a different version of Mis
  * Retrying an unacknowledged command preserves its request ID.
  *
  * Events:
- *  - 'awaiting-approval' () — hello sent, waiting on the host
+ *  - 'awaiting-approval' () — first hello sent, waiting on the host
  *  - 'join-pending' () — the host is asking its user to approve us
- *  - 'host-restarted' () — the host reopened the room; the project reloads
+ *  - 'host-restarted' () — the host reopened the room; the project reloads,
+ *    then 'reconnected' fires
  *  - 'role-changed' (role) — we can now edit ('edit') or only watch ('watch')
  *  - 'join-approved' ({hostUsername}) / 'join-denied' (reason)
  *  - 'users-updated' ({users}) / 'user-joined' (user) / 'user-left' (user)
@@ -40,8 +41,13 @@ const VERSION_MISMATCH_REASON = 'This room is running a different version of Mis
  *  - 'snapshot-message' (envelope) / 'asset-message' (envelope)
  *  - 'presence' (userId, envelope)
  *  - 'resync-needed' (reason) — ordered apply is broken; re-onboard
- *  - 'reconnecting' ({attempt, delayMs}) / 'reconnected' ()
- *  - 'connection-failed' ({error})
+ *  - 'reconnecting' ({attempt, delayMs, reason}) / 'reconnected' () — reason
+ *    is CONNECTION_LOST for a dropped link, otherwise the failed redial's
+ *    code, e.g. ROOM_NOT_FOUND while the host is missing from the room
+ *  - 'connection-failed' ({error, code}) — error is display text; code is
+ *    the transport's collabCode (RECONNECT_FAILED, ROOM_NOT_FOUND,
+ *    DIAL_TIMEOUT, SERVER_UNREACHABLE, ROOM_TAKEN...), NO_ANSWER,
+ *    SNAPSHOT_FAILED, or null when unknown
  */
 class ClientSession extends Emitter {
     /**
@@ -252,10 +258,13 @@ class ClientSession extends Emitter {
         clearTimeout(this._answerTimer);
         this._answerTimer = setTimeout(() => {
             this.emit('connection-failed', {error: 'The host did not answer. ' +
-                'You may be using different versions of MistWarp, so reload the page on both computers.'});
+                'You may be using different versions of MistWarp, so reload the page on both computers.',
+            code: 'NO_ANSWER'});
         }, HOST_ANSWER_TIMEOUT_MS);
+        const firstHello = !this._epoch;
         this.transport.sendToHost(makeCtrl(CTRL.HELLO, payload));
-        this.emit('awaiting-approval');
+        // A reconnect hello is not a new join request.
+        if (firstHello) this.emit('awaiting-approval');
     }
 
     _onMessage (peerId, envelope) {
@@ -336,6 +345,9 @@ class ClientSession extends Emitter {
             }
             return;
         }
+        // The next op is here, so any gap has closed. Later ops can sit in the
+        // buffer while this one applies or waits for assets; that is not a gap.
+        this._clearGapTimers();
         if (this._hasAsset && Array.isArray(envelope.payload.assetRefs)) {
             const missing = envelope.payload.assetRefs.filter(id => !this._hasAsset(id));
             if (missing.length) {
@@ -346,7 +358,15 @@ class ClientSession extends Emitter {
         }
         this._applying = true;
         this.queue.run(async active => {
-            await this.applier.apply(envelope.type, envelope.payload, {clientId: envelope.clientId, seq: envelope.seq});
+            try {
+                await this.applier.apply(envelope.type, envelope.payload,
+                    {clientId: envelope.clientId, seq: envelope.seq});
+            } catch (error) {
+                // A resync already began and cancelled this apply. Failing
+                // here would restart the snapshot that resync asked for.
+                if (!active()) return;
+                throw error;
+            }
             if (!active()) return;
             this.lastAppliedSeq = envelope.seq;
             this._opBuffer.delete(envelope.seq);
@@ -397,7 +417,8 @@ class ClientSession extends Emitter {
                 this.pendingOps = [];
                 dropped.forEach(op => op.reject(new Error('The host reopened the room before your edit was saved.')));
                 this.beginResync();
-                this._rejoining = false;
+                // _rejoining stays set: 'reconnected' follows once the new
+                // host's project has loaded.
                 this.emit('host-restarted');
             }
             this.isApproved = true;
@@ -529,7 +550,8 @@ class ClientSession extends Emitter {
             return;
         }
         this.emit('connection-failed', {
-            error: error && error.message ? error.message : String(error)
+            error: error && error.message ? error.message : String(error),
+            code: (error && error.collabCode) || null
         });
     }
 
