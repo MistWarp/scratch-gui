@@ -7,6 +7,7 @@ import {UserProvider} from './UserContext.jsx';
 import setPageMeta from './page-meta.js';
 import {initSiteErrorReporting} from '../lib/error-reporter.js';
 import NavBar from './components/NavBar.jsx';
+import RouteLoading from './components/RouteLoading.jsx';
 import AnnouncementBanner from './components/AnnouncementBanner.jsx';
 import StandingBanner from './components/StandingBanner.jsx';
 import UpgradeCelebration from './components/UpgradeCelebration.jsx';
@@ -98,7 +99,6 @@ const RouteMeta = () => {
 
 const App = () => {
     const {pathname} = useLocation();
-    const {text: communityText} = useCommunityIntl();
     const {t} = useCommunityIntl();
     useEffect(() => {
         initSiteErrorReporting();
@@ -116,13 +116,7 @@ const App = () => {
                 action="community-route"
                 resetKey={pathname}
             >
-                <Suspense
-                    fallback={
-                        <p className={tokenStyles['mw-route-loading']} role="status">
-                            {communityText('Loading page…')}
-                        </p>
-                    }
-                >
+                <Suspense fallback={<RouteLoading />}>
                     <Routes>
                         <Route path="/" element={<Home />} />
                         <Route path="/explore" element={<Explore />} />
