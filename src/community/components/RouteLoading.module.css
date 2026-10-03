@@ -1,0 +1,5 @@
+.page {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: var(--page-pad);
+}
