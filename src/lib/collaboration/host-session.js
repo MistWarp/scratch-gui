@@ -13,7 +13,7 @@ import {
 } from './protocol.js';
 
 const OP_LOG_SIZE = 512;
-const RECONNECT_GRACE_MS = 2 * 60 * 1000;
+const RECONNECT_GRACE_MS = 5 * 60 * 1000;
 const KICK_BAN_MS = 10 * 60 * 1000;
 const COMMAND_TIMEOUT_MS = 20 * 1000;
 const OPS_REQUEST_INTERVAL_MS = 1000;
@@ -525,6 +525,12 @@ class HostSession extends Emitter {
         }
         const reconnect = sameRoom ? this._takeToken(token) : null;
         if (reconnect) {
+            // A client that redialed before we noticed its old link died
+            // would otherwise appear twice until the heartbeat reaps it.
+            if (reconnect.peerId !== peerId && this.users.has(reconnect.peerId)) {
+                this.transport.closeConnection(reconnect.peerId);
+                this._removeClient(reconnect.peerId, {rejoined: true});
+            }
             this._admitClient(peerId, request, reconnect);
             return;
         }
@@ -550,7 +556,7 @@ class HostSession extends Emitter {
         if (!entry) return null;
         this._tokens.delete(token);
         if (entry.expiresAt !== null && entry.expiresAt <= Date.now()) return null;
-        return {role: entry.role, via: entry.via};
+        return {role: entry.role, via: entry.via, peerId: entry.peerId};
     }
 
     _onVersionMismatch ({peerId, version}) {
@@ -644,9 +650,10 @@ class HostSession extends Emitter {
         this._removeClient(peerId);
     }
 
-    _removeClient (peerId) {
+    _removeClient (peerId, {rejoined = false} = {}) {
         const user = this.users.get(peerId);
         if (!user) return;
+        if (rejoined) user.rejoined = true;
         this.users.delete(peerId);
         this._opsRequestedAt.delete(peerId);
         this._presenceBudget.delete(peerId);
@@ -654,8 +661,8 @@ class HostSession extends Emitter {
             if (entry.peerId === peerId && entry.expiresAt === null) entry.expiresAt = Date.now() + RECONNECT_GRACE_MS;
         }
         this.markClientSynced(peerId);
-        this._broadcast(makeCtrl(CTRL.USER_LEFT, {id: peerId}));
-        this.emit('user-left', user);
+        this._broadcast(makeCtrl(CTRL.USER_LEFT, rejoined ? {id: peerId, rejoined: true} : {id: peerId}));
+        this.emit('user-left', publicUser(user));
         this._emitUsersUpdated();
     }
 }

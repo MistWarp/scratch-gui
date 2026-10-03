@@ -314,7 +314,7 @@ class CollaborationContainer extends Component {
 
     handleUserLeft (user) {
         const username = user.username || user.id || 'A user';
-        NotificationSystem.info(`${username} disconnected`, 3000);
+        if (!user.rejoined) NotificationSystem.info(`${username} disconnected`, 3000);
         this.updateUsersList();
     }
 
@@ -560,8 +560,9 @@ class CollaborationContainer extends Component {
         if (!this.collaborationService.isHost) return;
         this.brokerOfflineTimer = setTimeout(() => {
             this.brokerOfflineShown = true;
-            NotificationSystem.warning('New people cannot join right now. ' +
-                'Everyone already in the room can keep editing.', 6000);
+            NotificationSystem.warning(this.collaborationService.hasRelayedGuests() ?
+                'Lost the collaboration server. Anyone connected through it will rejoin when it is back.' :
+                'New people cannot join right now. Everyone already in the room can keep editing.', 6000);
         }, BROKER_OFFLINE_NOTICE_DELAY_MS);
     }
 

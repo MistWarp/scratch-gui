@@ -12,7 +12,7 @@
  * authoritative for who sent a message.
  */
 
-const PROTOCOL_VERSION = 4;
+const PROTOCOL_VERSION = 5;
 
 const KIND = {
     OP: 'op',
