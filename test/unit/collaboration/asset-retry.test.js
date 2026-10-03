@@ -69,6 +69,7 @@ describe('asset requests across reconnects', () => {
         client.channel.requestFromHost([MD5]);
         jest.advanceTimersByTime(40000);
         expect(client.failed).toHaveBeenCalledTimes(1);
+        expect(client.failed.mock.calls[0][0].code).toBe('ASSET_FAILED');
         client.channel.destroy();
     });
 

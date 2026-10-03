@@ -16,6 +16,15 @@ const MAX_REQUEST_ATTEMPTS = 3;
 // A sender that disconnected mid-transfer never finishes it. Forget its
 // chunks, so abandoned transfers cannot fill the MAX_INCOMING slots.
 const INCOMING_IDLE_MS = 60 * 1000;
+// The link to the peer dropped mid-send; the caller may resend once the
+// peer is reachable again.
+const ASSET_LINK_CLOSED = 'ASSET_LINK_CLOSED';
+
+const linkClosedError = message => {
+    const error = new Error(message);
+    error.code = ASSET_LINK_CLOSED;
+    return error;
+};
 
 const toArrayBuffer = data => {
     if (data instanceof ArrayBuffer) return data;
@@ -112,7 +121,7 @@ class AssetChannel extends Emitter {
             peerId === 'host' ? this.transport.sendToHost(envelope) : this.transport.send(peerId, envelope)
         );
         if (!send(makeAsset(ASSET.BEGIN, {md5ext, totalBytes: buffer.byteLength, chunkCount}))) {
-            throw new Error('Asset connection is closed');
+            throw linkClosedError('Asset connection is closed');
         }
         for (let index = 0; index < chunkCount; index++) {
             await this._waitForDrain(peerId);
@@ -122,7 +131,7 @@ class AssetChannel extends Emitter {
                 md5ext,
                 index,
                 data: buffer.slice(start, Math.min(start + CHUNK_SIZE, buffer.byteLength))
-            }))) throw new Error('Asset connection closed during transfer');
+            }))) throw linkClosedError('Asset connection closed during transfer');
         }
         return true;
     }
@@ -216,7 +225,8 @@ class AssetChannel extends Emitter {
             if (attempts >= MAX_REQUEST_ATTEMPTS) {
                 this._requestedFromHost.delete(md5ext);
                 this.session.emit('connection-failed', {
-                    error: 'A costume or sound from the host would not download. Join the room again to retry.'
+                    error: 'A costume or sound from the host would not download. Join the room again to retry.',
+                    code: 'ASSET_FAILED'
                 });
                 return;
             }
@@ -306,4 +316,5 @@ class AssetChannel extends Emitter {
     }
 }
 
+export {ASSET_LINK_CLOSED};
 export default AssetChannel;

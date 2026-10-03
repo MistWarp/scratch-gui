@@ -19,6 +19,8 @@ const initialState = {
     modalVisible: false,
     isConnected: false,
     isReconnecting: false,
+    // Why we are reconnecting, e.g. 'ROOM_NOT_FOUND' while the host is away.
+    reconnectReason: null,
     roomId: null,
     roomPrivacy: 'public',
     pendingInvite: null,
@@ -53,13 +55,15 @@ const reducer = function (state, action) {
         return Object.assign({}, state, {
             isConnected: action.connected,
             isReconnecting: action.connected ? state.isReconnecting : false,
+            reconnectReason: action.connected ? state.reconnectReason : null,
             connectionError: action.connected ? null : state.connectionError,
             activity: action.connected ? state.activity : {}
         });
 
     case SET_COLLABORATION_RECONNECTING:
         return Object.assign({}, state, {
-            isReconnecting: action.isReconnecting
+            isReconnecting: action.isReconnecting,
+            reconnectReason: action.isReconnecting ? (action.reason || null) : null
         });
     
     case SET_COLLABORATION_USERS: {
@@ -214,10 +218,11 @@ const setCollaborationHostLoadingProgress = function (progress) {
     };
 };
 
-const setCollaborationReconnecting = function (isReconnecting) {
+const setCollaborationReconnecting = function (isReconnecting, reason = null) {
     return {
         type: SET_COLLABORATION_RECONNECTING,
-        isReconnecting
+        isReconnecting,
+        reason
     };
 };
 

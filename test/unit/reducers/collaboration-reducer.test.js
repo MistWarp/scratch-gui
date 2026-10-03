@@ -292,3 +292,16 @@ describe('remote activity', () => {
         expect(state.activity.a.targetId).toBe('t');
     });
 });
+
+test('the reconnect reason is kept while reconnecting and cleared after', () => {
+    const {setCollaborationReconnecting} = require('../../../src/reducers/collaboration');
+    let state = collaborationReducer(collaborationInitialState, setCollaborationConnected(true));
+    state = collaborationReducer(state, setCollaborationReconnecting(true, 'ROOM_NOT_FOUND'));
+    expect(state.reconnectReason).toBe('ROOM_NOT_FOUND');
+    state = collaborationReducer(state, setCollaborationReconnecting(false));
+    expect(state.reconnectReason).toBe(null);
+    state = collaborationReducer(state, setCollaborationReconnecting(true, 'DIAL_TIMEOUT'));
+    state = collaborationReducer(state, setCollaborationConnected(false));
+    expect(state.isReconnecting).toBe(false);
+    expect(state.reconnectReason).toBe(null);
+});

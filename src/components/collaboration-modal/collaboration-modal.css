@@ -419,6 +419,11 @@
     animation-duration: 0.8s;
 }
 
+.retryButton {
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
 .statusHint {
     margin-top: 0.375rem;
     font-size: 0.8125rem;
