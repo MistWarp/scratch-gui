@@ -3,8 +3,10 @@ import {
     generateHostPeerId,
     generateClientPeerId
 } from '../../../src/lib/collaboration/transport.js';
-import {makeCtrl, makePresence, CTRL, PRESENCE, KIND} from '../../../src/lib/collaboration/protocol.js';
-import {FakePeer} from '../../fixtures/fake-peerjs.js';
+import {
+    makeCtrl, makePresence, makeSnapshot, CTRL, PRESENCE, SNAPSHOT, KIND
+} from '../../../src/lib/collaboration/protocol.js';
+import {FakePeer, FakeBroker} from '../../fixtures/fake-peerjs.js';
 
 const flush = async (ticks = 10) => {
     for (let i = 0; i < ticks; i++) {
@@ -423,8 +425,17 @@ describe('client reconnection', () => {
         await joinPromise;
         return result;
     };
+    const latest = peers => peers[peers.length - 1];
+    // Runs one scheduled redial: a fresh peer registers with the broker.
+    const redial = async (peers, delay) => {
+        jest.advanceTimersByTime(delay);
+        await flush();
+        latest(peers).simulateOpen();
+        await flush();
+        return latest(peers);
+    };
 
-    test('losing the host connection schedules a redial with backoff', async () => {
+    test('losing the host connection redials with a fresh peer', async () => {
         jest.useFakeTimers();
         try {
             const {transport, peers} = await openClient();
@@ -436,13 +447,15 @@ describe('client reconnection', () => {
             peers[0].lastConnection.close();
             expect(reconnecting).toHaveBeenCalledWith({attempt: 1, delayMs: 1000});
 
-            jest.advanceTimersByTime(1000);
-            await flush();
-            const redialConn = peers[0].lastConnection;
+            const peer = await redial(peers, 1000);
+            expect(peers).toHaveLength(2);
+            expect(peers[0].destroyed).toBe(true);
+            const redialConn = peer.lastConnection;
             expect(redialConn.peer).toBe(generateHostPeerId('room1'));
             redialConn.simulateOpen();
             await flush();
             expect(reconnected).toHaveBeenCalled();
+            expect(transport.id).toBe(peer.id);
             transport.destroy();
         } finally {
             jest.useRealTimers();
@@ -456,13 +469,15 @@ describe('client reconnection', () => {
             const fatal = jest.fn();
             transport.on('fatal', fatal);
             peers[0].lastConnection.close();
-            for (const delay of [1000, 2000, 4000]) {
-                jest.advanceTimersByTime(delay);
-                await flush();
-                peers[0].trigger('error', Object.assign(new Error('Could not connect to peer'), {
+            const delays = [1000, 2000, 4000, 8000, 8000];
+            for (let i = 0; i < delays.length; i++) {
+                const peer = await redial(peers, delays[i]);
+                peer.trigger('error', Object.assign(new Error('Could not connect to peer'), {
                     type: 'peer-unavailable'
                 }));
                 await flush();
+                // A host reloading its page gets a few seconds to come back.
+                if (i < 3) expect(fatal).not.toHaveBeenCalled();
             }
             expect(fatal).toHaveBeenCalledTimes(1);
             expect(fatal.mock.calls[0][0].error.collabCode).toBe('HOST_GONE');
@@ -472,28 +487,7 @@ describe('client reconnection', () => {
         }
     });
 
-    test('redials that time out also count as the host being gone', async () => {
-        jest.useFakeTimers();
-        try {
-            const {transport, peers} = await openClient();
-            const fatal = jest.fn();
-            transport.on('fatal', fatal);
-            peers[0].lastConnection.close();
-            for (const delay of [1000, 2000, 4000]) {
-                jest.advanceTimersByTime(delay);
-                await flush();
-                jest.advanceTimersByTime(15000);
-                await flush();
-            }
-            expect(fatal).toHaveBeenCalledTimes(1);
-            expect(fatal.mock.calls[0][0].error.collabCode).toBe('HOST_GONE');
-            transport.destroy();
-        } finally {
-            jest.useRealTimers();
-        }
-    });
-
-    test('gives up with fatal after max attempts', async () => {
+    test('redials that time out keep trying instead of ending the session', async () => {
         jest.useFakeTimers();
         try {
             const {transport, peers} = await openClient();
@@ -501,28 +495,42 @@ describe('client reconnection', () => {
             const reconnecting = jest.fn();
             transport.on('fatal', fatal);
             transport.on('reconnecting', reconnecting);
-
             peers[0].lastConnection.close();
-            for (let attempt = 1; attempt <= 10; attempt++) {
-                jest.advanceTimersByTime(16000);
+            for (const delay of [1000, 2000, 4000, 8000]) {
+                await redial(peers, delay);
+                jest.advanceTimersByTime(15000);
                 await flush();
-                if (attempt < 10) {
-                    peers[0].lastConnection.simulateError(new Error('still down'));
-                    await flush();
-                } else {
-                    peers[0].lastConnection.simulateError(new Error('still down'));
-                    await flush();
-                }
             }
-            expect(reconnecting).toHaveBeenCalledTimes(10);
-            expect(fatal).toHaveBeenCalledTimes(1);
+            expect(fatal).not.toHaveBeenCalled();
+            expect(reconnecting).toHaveBeenCalledTimes(5);
             transport.destroy();
         } finally {
             jest.useRealTimers();
         }
     });
 
-    test('backoff delay grows exponentially and caps at 16s', async () => {
+    test('gives up after five minutes without reaching the host', async () => {
+        jest.useFakeTimers();
+        try {
+            const {transport, peers} = await openClient();
+            const fatal = jest.fn();
+            transport.on('fatal', fatal);
+
+            peers[0].lastConnection.close();
+            for (let i = 0; i < 60 && !fatal.mock.calls.length; i++) {
+                const peer = await redial(peers, 8000);
+                peer.lastConnection.simulateError(new Error('still down'));
+                await flush();
+            }
+            expect(fatal).toHaveBeenCalledTimes(1);
+            expect(fatal.mock.calls[0][0].error.collabCode).toBe('RECONNECT_FAILED');
+            transport.destroy();
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+
+    test('backoff delay grows exponentially and caps at 8s', async () => {
         jest.useFakeTimers();
         try {
             const {transport, peers} = await openClient();
@@ -530,13 +538,34 @@ describe('client reconnection', () => {
             transport.on('reconnecting', ({delayMs}) => delays.push(delayMs));
 
             peers[0].lastConnection.close();
-            for (let i = 0; i < 6; i++) {
-                jest.advanceTimersByTime(16000);
-                await flush();
-                peers[0].lastConnection.simulateError(new Error('down'));
+            for (let i = 0; i < 5; i++) {
+                const peer = await redial(peers, 8000);
+                peer.lastConnection.simulateError(new Error('down'));
                 await flush();
             }
-            expect(delays.slice(0, 6)).toEqual([1000, 2000, 4000, 8000, 16000, 16000]);
+            expect(delays.slice(0, 6)).toEqual([1000, 2000, 4000, 8000, 8000, 8000]);
+            transport.destroy();
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+
+    test('coming back online redials straight away', async () => {
+        jest.useFakeTimers();
+        try {
+            const {transport, peers} = await openClient();
+            peers[0].lastConnection.close();
+            jest.advanceTimersByTime(1000);
+            await flush();
+            latest(peers).simulateOpen();
+            await flush();
+            latest(peers).lastConnection.simulateError(new Error('offline'));
+            await flush();
+            expect(peers).toHaveLength(2);
+
+            window.dispatchEvent(new Event('online'));
+            await flush();
+            expect(peers).toHaveLength(3);
             transport.destroy();
         } finally {
             jest.useRealTimers();
@@ -555,10 +584,230 @@ describe('client reconnection', () => {
             jest.advanceTimersByTime(60000);
             await flush();
             // No further dials happened after destroy
+            expect(peers).toHaveLength(1);
             expect(peers[0].connections.length).toBe(1);
         } finally {
             jest.useRealTimers();
         }
+    });
+});
+
+describe('broker relay', () => {
+    const setup = async ({relayFallbackMs = 5000} = {}) => {
+        const broker = new FakeBroker();
+        const all = [];
+        const create = (id, config) => {
+            const peer = new FakePeer(id, config).enableRelay(broker);
+            all.push(peer);
+            return peer;
+        };
+        const host = new Transport({createPeer: create, relayFallbackMs});
+        const hosted = host.host('room1');
+        all[0].simulateOpen();
+        await hosted;
+        const client = new Transport({createPeer: create, relayFallbackMs});
+        return {broker, all, host, client};
+    };
+
+    test('a client that cannot connect directly is relayed through the broker', async () => {
+        jest.useFakeTimers();
+        try {
+            const {all, host, client} = await setup();
+            const connected = jest.fn();
+            const received = jest.fn();
+            host.on('peer-connected', connected);
+            host.on('message', received);
+            const joined = client.join('room1', {username: 'bob'});
+            all[1].simulateOpen();
+            await flush();
+            const direct = all[1].lastConnection;
+
+            jest.advanceTimersByTime(5000);
+            await joined;
+            expect(direct.closed).toBe(true);
+            expect(client.connectionPath('host')).toBe('relay');
+            expect(connected).toHaveBeenCalledWith(all[1].id, {username: 'bob'});
+            expect(host.connectionPath(all[1].id)).toBe('relay');
+
+            const big = new Uint8Array(200 * 1024);
+            for (let i = 0; i < big.length; i++) big[i] = i % 251;
+            expect(client.sendToHost(makeCtrl(CTRL.USERNAME_CHANGE, {username: 'bob'}))).toBe(true);
+            expect(host.send(all[1].id, makeCtrl(CTRL.SESSION_READY, {}))).toBe(true);
+            client.sendToHost(makePresence(PRESENCE.CURSOR, {x: 1, y: 2}));
+            expect(received).toHaveBeenCalledTimes(2);
+            expect(received.mock.calls[0][1].type).toBe(CTRL.USERNAME_CHANGE);
+            expect(received.mock.calls[1][1].type).toBe(PRESENCE.CURSOR);
+
+            const clientReceived = jest.fn();
+            client.on('message', clientReceived);
+            host.send(all[1].id, makeSnapshot(SNAPSHOT.CHUNK, {transferId: 't', index: 0, data: big.buffer}));
+            const chunk = clientReceived.mock.calls[0][1];
+            expect(Buffer.from(chunk.payload.data).equals(Buffer.from(big))).toBe(true);
+            client.destroy();
+            host.destroy();
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+
+    test('a direct channel that fails falls back to the relay at once', async () => {
+        jest.useFakeTimers();
+        try {
+            const {all, host, client} = await setup();
+            const joined = client.join('room1', {});
+            all[1].simulateOpen();
+            await flush();
+            all[1].lastConnection.simulateError(new Error('ICE failed'));
+            await joined;
+            expect(client.connectionPath('host')).toBe('relay');
+            client.destroy();
+            host.destroy();
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+
+    test('a lost relay frame closes the link so the client rejoins', async () => {
+        jest.useFakeTimers();
+        try {
+            const {broker, all, host, client} = await setup();
+            const joined = client.join('room1', {});
+            all[1].simulateOpen();
+            await flush();
+            jest.advanceTimersByTime(5000);
+            await joined;
+            const reconnecting = jest.fn();
+            client.on('reconnecting', reconnecting);
+
+            broker.paused = true;
+            host.send(all[1].id, makeCtrl(CTRL.SESSION_READY, {}));
+            host.send(all[1].id, makeCtrl(CTRL.SESSION_READY, {}));
+            broker.queue.splice(0, 1);
+            broker.paused = false;
+            broker.flush();
+            expect(reconnecting).toHaveBeenCalledTimes(1);
+            expect(host.peers()).toEqual([]);
+            client.destroy();
+            host.destroy();
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+
+    test('data for a link the host never accepted is refused', async () => {
+        jest.useFakeTimers();
+        try {
+            const {all, host, client} = await setup();
+            const joined = client.join('room1', {});
+            all[1].simulateOpen();
+            await flush();
+            jest.advanceTimersByTime(5000);
+            await joined;
+            const reconnecting = jest.fn();
+            client.on('reconnecting', reconnecting);
+            // The host reloads: it forgets every relay link.
+            host._relayLinks.clear();
+            host._connections.clear();
+            client.sendToHost(makeCtrl(CTRL.HELLO, {}));
+            expect(reconnecting).toHaveBeenCalledTimes(1);
+            client.destroy();
+            host.destroy();
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+
+    test('a client that needed the relay uses it first when redialing', async () => {
+        jest.useFakeTimers();
+        try {
+            const {all, host, client} = await setup();
+            const joined = client.join('room1', {});
+            all[1].simulateOpen();
+            await flush();
+            jest.advanceTimersByTime(5000);
+            await joined;
+            host.closeConnection(all[1].id);
+            await flush();
+            jest.advanceTimersByTime(1000);
+            await flush();
+            const fresh = all[all.length - 1];
+            fresh.simulateOpen();
+            await flush();
+            expect(fresh.connections).toHaveLength(0);
+            expect(client.connectionPath('host')).toBe('relay');
+            client.destroy();
+            host.destroy();
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+
+    test('a broker socket that stops echoing probes is reconnected', async () => {
+        jest.useFakeTimers();
+        try {
+            const {broker, all, host} = await setup();
+            const offline = jest.fn();
+            const online = jest.fn();
+            host.on('broker-offline', offline);
+            host.on('broker-online', online);
+            jest.advanceTimersByTime(15000);
+            expect(all[0].reconnectCalls).toBe(0);
+
+            broker.paused = true;
+            jest.advanceTimersByTime(15000);
+            jest.advanceTimersByTime(15000);
+            expect(offline).toHaveBeenCalledTimes(1);
+            expect(all[0].reconnectCalls).toBe(1);
+
+            // The reconnected socket delivers the probe sent after it.
+            broker.paused = false;
+            broker.flush();
+            expect(online).toHaveBeenCalledTimes(1);
+            host.destroy();
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+
+    test('relay traffic keeps the broker registration alive', async () => {
+        jest.useFakeTimers();
+        try {
+            const {all, host, client} = await setup();
+            const joined = client.join('room1', {});
+            all[1].simulateOpen();
+            await flush();
+            jest.advanceTimersByTime(5000);
+            await joined;
+            const heartbeats = () => all[0].socket.sent.filter(m => m.type === 'HEARTBEAT').length;
+            const before = heartbeats();
+            jest.advanceTimersByTime(10000);
+            client.sendToHost(makeCtrl(CTRL.HELLO, {}));
+            expect(heartbeats()).toBe(before + 1);
+            client.destroy();
+            host.destroy();
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+});
+
+describe('older clients', () => {
+    test('a channel using PeerJS serialization can still be told about the mismatch', async () => {
+        const {transport, peers} = makeTransport();
+        const hosted = transport.host('room1');
+        peers[0].simulateOpen();
+        await hosted;
+        const conn = peers[0].simulateIncomingConnection('old', {serialization: 'binary'});
+        conn.simulateOpen();
+        const mismatch = jest.fn();
+        transport.on('version-mismatch', mismatch);
+        conn.simulateData({v: 4, kind: KIND.CTRL, type: CTRL.HELLO, payload: {}});
+        expect(mismatch).toHaveBeenCalledWith({peerId: 'old', version: 4, type: CTRL.HELLO});
+        const denial = makeCtrl(CTRL.JOIN_DENIED, {reason: 'old'});
+        transport.send('old', denial);
+        expect(conn.sent).toEqual([denial]);
+        expect(conn.frames).toEqual([]);
+        transport.destroy();
     });
 });
 
