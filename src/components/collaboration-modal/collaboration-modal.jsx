@@ -138,6 +138,62 @@ const messages = defineMessages({
         defaultMessage: 'You are watching. You can look around and follow along, but changes are made by the host and editors.',
         description: 'Notice shown to a collaborator who can only watch the session',
         id: 'mw.collaboration.watcherNotice'
+    },
+    reconnecting: {
+        defaultMessage: 'Connection lost. Reconnecting…',
+        description: 'Status in the collaboration window while the connection to the host is being restored',
+        id: 'mw.collaboration.reconnecting'
+    },
+    connectingToRoom: {
+        defaultMessage: 'Connecting to room "{roomId}"…',
+        description: 'Shown while connecting to a collaboration room. {roomId} is the room code.',
+        id: 'mw.collaboration.connectingToRoom'
+    },
+    aloneHint: {
+        defaultMessage: 'No one else has joined yet. Share the invite link below to bring people in.',
+        description: 'Hint shown to a collaboration host while nobody else is in the room',
+        id: 'mw.collaboration.aloneHint'
+    },
+    endForEveryone: {
+        defaultMessage: 'End live session for everyone',
+        description: 'Button the collaboration host uses to end the session for all collaborators',
+        id: 'mw.collaboration.endForEveryone'
+    },
+    leaveSession: {
+        defaultMessage: 'Leave live session',
+        description: 'Button a collaboration guest uses to leave the session',
+        id: 'mw.collaboration.leaveSession'
+    },
+    endConfirmTitle: {
+        defaultMessage: 'End the live session?',
+        description: 'Title of the dialog confirming that the host wants to end a collaboration session',
+        id: 'mw.collaboration.endConfirmTitle'
+    },
+    endConfirmMessage: {
+        // eslint-disable-next-line max-len
+        defaultMessage: '{count, plural, one {# person is} other {# people are}} still here. Ending the session disconnects everyone. They keep their own copy of the project.',
+        description: 'Message of the dialog confirming that the host wants to end a collaboration session with guests',
+        id: 'mw.collaboration.endConfirmMessage'
+    },
+    endConfirmButton: {
+        defaultMessage: 'End for everyone',
+        description: 'Button confirming that the collaboration host wants to end the session for everyone',
+        id: 'mw.collaboration.endConfirmButton'
+    },
+    changeUsername: {
+        defaultMessage: 'Change username',
+        description: 'Accessible label of the button that changes the name used in collaboration',
+        id: 'mw.collaboration.changeUsername'
+    },
+    roomIdPlaceholder: {
+        defaultMessage: 'Enter room ID…',
+        description: 'Placeholder of the collaboration room ID field',
+        id: 'mw.collaboration.roomIdPlaceholder'
+    },
+    enterRoomId: {
+        defaultMessage: 'Enter a room ID to join, or create a new room below.',
+        description: 'Error shown when trying to join a collaboration room without a room ID',
+        id: 'mw.collaboration.enterRoomId'
     }
 });
 
@@ -183,6 +239,9 @@ class CollaborationModal extends Component {
         this.handleJoinDenied = this.handleJoinDenied.bind(this);
         this.resetToJoinScreen = this.resetToJoinScreen.bind(this);
         this.handleCancelClick = this.handleCancelClick.bind(this);
+        this.handleJoinRequestsChanged = this.handleJoinRequestsChanged.bind(this);
+        this.handleProjectLeave = this.handleProjectLeave.bind(this);
+        this.leaveRoom = this.leaveRoom.bind(this);
     }
 
     componentDidMount () {
@@ -193,7 +252,11 @@ class CollaborationModal extends Component {
                 const service = CollaborationService.getInstance();
                 if (service) {
                     service.on('join-request-received', this.handleJoinRequestEvent);
-                    service.on('awaiting-approval', this.handleAwaitingApproval);
+                    service.on('join-request-cancelled', this.handleJoinRequestsChanged);
+                    // 'awaiting-approval' fires for every hello, including
+                    // invite links and reconnects; only 'join-pending' means
+                    // the host really has to let us in.
+                    service.on('join-pending', this.handleAwaitingApproval);
                     service.on('approval-resolved', this.handleApprovalResolved);
                     service.on('join-denied', this.handleJoinDenied);
                 }
@@ -205,11 +268,14 @@ class CollaborationModal extends Component {
 
     /* eslint-disable react/no-did-update-set-state */
     componentDidUpdate (prevProps) {
+        // When the session ends, the container's connectionError says why
+        // (kicked, host left, denied...). Keep it rather than wiping it, in
+        // whatever order the connected/room/error updates arrive.
         if (prevProps.isConnected !== this.props.isConnected) {
             this.setState({
                 connectionStep: this.props.isConnected ? 'connected' : 'join',
                 isConnecting: false,
-                error: null
+                error: this.props.isConnected ? null : (this.props.connectionError || null)
             });
         }
 
@@ -218,7 +284,13 @@ class CollaborationModal extends Component {
                 this.setState({roomId: this.props.roomId});
             } else {
                 this._autoJoinKey = null;
-                if (!this.props.isConnected) this.resetToJoinScreen();
+                if (!this.props.isConnected) {
+                    this.setState({
+                        connectionStep: 'join',
+                        isConnecting: false,
+                        error: this.props.connectionError || null
+                    });
+                }
             }
         }
 
@@ -257,7 +329,8 @@ class CollaborationModal extends Component {
                 const service = CollaborationService.getInstance();
                 if (service) {
                     service.off('join-request-received', this.handleJoinRequestEvent);
-                    service.off('awaiting-approval', this.handleAwaitingApproval);
+                    service.off('join-request-cancelled', this.handleJoinRequestsChanged);
+                    service.off('join-pending', this.handleAwaitingApproval);
                     service.off('approval-resolved', this.handleApprovalResolved);
                     service.off('join-denied', this.handleJoinDenied);
                 }
@@ -293,7 +366,7 @@ class CollaborationModal extends Component {
     async handleJoinRoom () {
         const roomId = this.state.roomId.trim();
         if (!roomId) {
-            this.setState({error: 'Please enter a room ID'});
+            this.setState({error: this.props.intl.formatMessage(messages.enterRoomId)});
             return;
         }
         this._autoJoinKey = `${roomId}-${this.props.currentUsername}`;
@@ -332,16 +405,18 @@ class CollaborationModal extends Component {
         });
 
         try {
+            // The room code is deliberately not put in the address bar: a
+            // reload would then try to join the room this tab was hosting.
+            // People join through the invite link.
             await this.props.onCreateRoom(roomCode, this.props.currentUsername, 'private');
-
-            const currentUrl = new URL(window.location.href);
-            currentUrl.searchParams.set('room', roomCode);
-            currentUrl.searchParams.delete('username');
-            window.history.replaceState(null, null, currentUrl.toString());
 
             this.setState({roomId: roomCode});
 
         } catch (error) {
+            if (error && error.cancelled) {
+                this.resetToJoinScreen();
+                return;
+            }
             this.setState({
                 error: error.message || 'Failed to create room',
                 connectionStep: 'join'
@@ -351,13 +426,53 @@ class CollaborationModal extends Component {
         }
     }
 
+    /**
+     * Run `leave` straight away, or after confirming when we host people
+     * who would all be disconnected by it.
+     * @param {boolean} isHost Whether we host the session.
+     * @param {Function} leave Ends or leaves the session.
+     */
+    confirmEndForEveryone (isHost, leave) {
+        const others = (this.props.connectedUsers || []).filter(user => user.id !== this.props.currentUserId);
+        if (!isHost || others.length === 0) {
+            leave();
+            return;
+        }
+        const {intl} = this.props;
+        this.props.openSimpleDialog({
+            type: 'confirm',
+            title: intl.formatMessage(messages.endConfirmTitle),
+            message: intl.formatMessage(messages.endConfirmMessage, {count: others.length}),
+            choices: [{value: 'end', label: intl.formatMessage(messages.endConfirmButton)}],
+            onOk: leave,
+            onCancel: () => {}
+        });
+    }
+
+    isHosting () {
+        const me = (this.props.connectedUsers || []).find(user => user.id === this.props.currentUserId);
+        return Boolean(me && me.isHost);
+    }
+
     handleLeaveRoom () {
+        this.confirmEndForEveryone(this.isHosting(), this.leaveRoom);
+    }
+
+    leaveRoom () {
         this.props.onLeaveRoom();
         this.setState({
             connectionStep: 'join',
             roomId: '',
             error: null
         });
+    }
+
+    handleProjectLeave () {
+        const project = this.props.projectSession || {};
+        if (!project.onLeave) return;
+        // Cancelling a join or a leave already under way needs no confirmation.
+        const ending = project.isHost && !project.busy && project.phase !== 'joining';
+        this.confirmEndForEveryone(ending, project.onLeave);
     }
 
     handleKickUser (userId) {
@@ -546,7 +661,7 @@ class CollaborationModal extends Component {
     }
 
     handleAwaitingApproval () {
-        if (CollaborationService?.getInstance().scope) return;
+        if (CollaborationService?.getInstance().scope || this.props.isConnected) return;
         this.setState({
             connectionStep: 'pending-approval',
             isConnecting: false,
@@ -567,8 +682,12 @@ class CollaborationModal extends Component {
         this.setState({
             connectionStep: 'join',
             isConnecting: false,
-            error: `Join request denied: ${reason}`
+            error: reason || null
         });
+    }
+
+    handleJoinRequestsChanged () {
+        this.handleJoinRequestEvent();
     }
 
     handleJoinRequestEvent () {
@@ -764,7 +883,8 @@ class CollaborationModal extends Component {
                             type="button"
                             className={styles.editUsernameButton}
                             onClick={this.props.onOpenChangeUsername}
-                            title="Change username"
+                            title={this.props.intl.formatMessage(messages.changeUsername)}
+                            aria-label={this.props.intl.formatMessage(messages.changeUsername)}
                         >
                             <PenLine size={16} />
                         </button>
@@ -781,7 +901,10 @@ class CollaborationModal extends Component {
                             />
                         </h3>
                         <div className={styles.inputGroup}>
-                            <label className={styles.label}>
+                            <label
+                                className={styles.label}
+                                htmlFor="collaborationRoomId"
+                            >
                                 <FormattedMessage
                                     defaultMessage="Room ID"
                                     description="Label for room ID input"
@@ -789,8 +912,11 @@ class CollaborationModal extends Component {
                                 />
                             </label>
                             <Input
+                                id="collaborationRoomId"
                                 className={styles.input}
-                                placeholder="Enter room ID..."
+                                placeholder={this.props.intl.formatMessage(messages.roomIdPlaceholder)}
+                                aria-invalid={Boolean(this.state.error)}
+                                aria-describedby={this.state.error ? 'collaborationJoinError' : null}
                                 value={this.state.roomId}
                                 onChange={this.handleRoomIdChange}
                                 onKeyPress={this.handleRoomIdKeyPress}
@@ -808,7 +934,11 @@ class CollaborationModal extends Component {
                             />
                         </Button>
                         {this.state.error && (
-                            <div className={styles.joinError}>
+                            <div
+                                className={styles.joinError}
+                                id="collaborationJoinError"
+                                role="alert"
+                            >
                                 {this.state.error}
                             </div>
                         )}
@@ -878,13 +1008,21 @@ class CollaborationModal extends Component {
     renderConnectingStep () {
         return (
             <Box className={styles.content}>
-                <div className={styles.connecting}>
+                <div
+                    className={styles.connecting}
+                    role="status"
+                    aria-live="polite"
+                >
                     <div className={styles.spinner} />
-                    <FormattedMessage
-                        defaultMessage="Connecting to room..."
-                        description="Connecting message"
-                        id="gui.collaboration.connecting"
-                    />
+                    {this.state.roomId.trim() ?
+                        this.props.intl.formatMessage(messages.connectingToRoom, {roomId: this.state.roomId.trim()}) :
+                        (
+                            <FormattedMessage
+                                defaultMessage="Connecting to room..."
+                                description="Connecting message"
+                                id="gui.collaboration.connecting"
+                            />
+                        )}
                     <div className={styles.buttonGroup}>
                         <Button
                             className={styles.secondaryButton}
@@ -1065,16 +1203,31 @@ class CollaborationModal extends Component {
                 </div>
 
                 <div className={styles.connectedInfo}>
-                    <div className={styles.status}>
-                        <span className={styles.statusIndicator} />
-                        <FormattedMessage
-                            // eslint-disable-next-line max-len
-                            defaultMessage="Connected - {userCount} {userCount, plural, one {user} other {users}} online"
-                            description="Connection status"
-                            id="gui.collaboration.status"
-                            values={{userCount: users.length}}
+                    <div
+                        className={styles.status}
+                        role="status"
+                        aria-live="polite"
+                    >
+                        <span
+                            className={classNames(styles.statusIndicator, {
+                                [styles.statusIndicatorReconnecting]: this.props.isReconnecting
+                            })}
                         />
+                        {this.props.isReconnecting ? this.props.intl.formatMessage(messages.reconnecting) : (
+                            <FormattedMessage
+                                // eslint-disable-next-line max-len
+                                defaultMessage="Connected - {userCount} {userCount, plural, one {user} other {users}} online"
+                                description="Connection status"
+                                id="gui.collaboration.status"
+                                values={{userCount: users.length}}
+                            />
+                        )}
                     </div>
+                    {isHost && users.length < 2 && (
+                        <div className={styles.statusHint}>
+                            {this.props.intl.formatMessage(messages.aloneHint)}
+                        </div>
+                    )}
                 </div>
 
                 {!isHost && this.props.myRole === 'watch' && (
@@ -1108,11 +1261,7 @@ class CollaborationModal extends Component {
                         className={styles.dangerButton}
                         onClick={this.handleLeaveRoom}
                     >
-                        <FormattedMessage
-                            defaultMessage="Leave room"
-                            description="Button to leave collaboration room"
-                            id="gui.collaboration.leaveRoom"
-                        />
+                        {this.props.intl.formatMessage(isHost ? messages.endForEveryone : messages.leaveSession)}
                     </Button>
                 </div>
             </Box>
@@ -1159,7 +1308,10 @@ class CollaborationModal extends Component {
                 </div>
 
                 {this.state.error && (
-                    <div className={styles.error}>
+                    <div
+                        className={styles.error}
+                        role="alert"
+                    >
                         {this.state.error}
                     </div>
                 )}
@@ -1218,18 +1370,18 @@ class CollaborationModal extends Component {
                     <p>{session.public ? `${session.host} has opened a live session to collaborators.` :
                         `${session.host} is working privately.`}</p>
                 )}
-                {project.error && (
+                {(project.error || (!project.active && this.props.connectionError)) && (
                     <div
                         className={styles.error}
                         role="alert"
-                    >{project.error}</div>
+                    >{project.error || this.props.connectionError}</div>
                 )}
                 <div className={styles.projectActions}>
                     {project.active && (
                         <Button
                             className={styles.secondaryButton}
                             disabled={project.busy}
-                            onClick={project.onLeave}
+                            onClick={this.handleProjectLeave}
                         >{leaveLabel}</Button>
                     )}
                     {!project.active && !session && project.canHost && (
@@ -1328,6 +1480,7 @@ CollaborationModal.propTypes = {
     currentUsername: PropTypes.string,
     currentUserId: PropTypes.string,
     isConnected: PropTypes.bool,
+    isReconnecting: PropTypes.bool,
     roomId: PropTypes.string,
     inviteLink: PropTypes.string,
     inviteRole: PropTypes.oneOf(['watch', 'edit']),

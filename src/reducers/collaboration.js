@@ -64,10 +64,16 @@ const reducer = function (state, action) {
     
     case SET_COLLABORATION_USERS: {
         const users = action.users || [];
-        const present = new Set(users.map(user => user.id));
+        const present = new Map(users.map(user => [user.id, user]));
         const activity = {};
         Object.keys(state.activity || {}).forEach(userId => {
-            if (present.has(userId)) activity[userId] = state.activity[userId];
+            const user = present.get(userId);
+            if (!user) return;
+            const entry = state.activity[userId];
+            // Keep badges in step with renames.
+            activity[userId] = (user.username && user.username !== entry.username) ?
+                Object.assign({}, entry, {username: user.username, handle: user.handle || entry.handle}) :
+                entry;
         });
         return Object.assign({}, state, {
             connectedUsers: users,
@@ -108,6 +114,11 @@ const reducer = function (state, action) {
         });
 
     case SET_USER_ACTIVITY:
+        // Presence can trail a departure; never resurrect someone who left.
+        if (!state.isConnected ||
+            ((state.connectedUsers || []).length && !state.connectedUsers.some(user => user.id === action.userId))) {
+            return state;
+        }
         return Object.assign({}, state, {
             activity: Object.assign({}, state.activity, {
                 [action.userId]: {

@@ -39,6 +39,9 @@ import {
 
 const MAX_ATTACH_ATTEMPTS = 20;
 const BROKER_OFFLINE_NOTICE_DELAY_MS = 5000;
+// After a failed project download the snapshot service retries on its own;
+// if nothing more is heard by then, stop covering the editor.
+const SYNC_RETRY_GIVE_UP_MS = 30000;
 
 class CollaborationContainer extends Component {
     constructor (props) {
@@ -184,9 +187,9 @@ class CollaborationContainer extends Component {
             this.attachTimeout = null;
         }
         clearTimeout(this.brokerOfflineTimer);
-
-        // Cleanup notification manager
-        NotificationSystem.cleanup();
+        clearTimeout(this.syncRetryTimer);
+        // The notification manager is app-wide; its other subscribers (the
+        // toast renderer) must keep working after this container goes away.
 
         // Disconnect if connected
         if (this.collaborationService.isConnected) {
@@ -211,12 +214,15 @@ class CollaborationContainer extends Component {
             cancelled.cancelled = true;
             throw cancelled;
         }
+        const attempt = this.beginConnectAttempt();
         try {
+            this.endNoticeShown = false;
             this.props.onSetError(null);
 
             await this.collaborationService.connectToRoom(
                 roomId, username, false, 'private', this.props.roturHandle, scope, {invite: options.invite}
             );
+            this.throwIfAbandoned(attempt);
             if (options.invite) this.props.onSetInvite(null);
 
             // Don't set connected immediately - wait for connected-to-host event
@@ -226,6 +232,7 @@ class CollaborationContainer extends Component {
             this.tryAttachToWorkspace();
 
         } catch (error) {
+            this.throwIfAbandoned(attempt);
             console.error('Failed to join room:', error);
             this.props.onSetError(error.message || 'Failed to join room');
             throw error;
@@ -236,7 +243,9 @@ class CollaborationContainer extends Component {
 
         if (!roomId) throw new Error('Room ID is required to create a room');
 
+        const attempt = this.beginConnectAttempt();
         try {
+            this.endNoticeShown = false;
             this.props.onSetError(null);
 
             await this.collaborationService.connectToRoom(
@@ -248,6 +257,7 @@ class CollaborationContainer extends Component {
                 scope,
                 {inviteRole: 'watch'}
             );
+            this.throwIfAbandoned(attempt);
 
             this.props.onSetConnected(true);
             this.props.onSetRoomId(roomId);
@@ -258,10 +268,28 @@ class CollaborationContainer extends Component {
             this.tryAttachToWorkspace();
 
         } catch (error) {
+            this.throwIfAbandoned(attempt);
             console.error('Failed to create room:', error);
             this.props.onSetError(error.message || 'Failed to create room');
             throw error;
         }
+    }
+
+    beginConnectAttempt () {
+        this.connectAttempt = (this.connectAttempt || 0) + 1;
+        return this.connectAttempt;
+    }
+
+    /**
+     * After the user cancels or leaves mid-connect, the connect call fails
+     * (or finishes) late. That outcome is not an error to show.
+     * @param {number} attempt The attempt the caller started.
+     */
+    throwIfAbandoned (attempt) {
+        if (attempt === this.connectAttempt) return;
+        const cancelled = new Error('Connecting was cancelled.');
+        cancelled.cancelled = true;
+        throw cancelled;
     }
 
     tryAttachToWorkspace (attempt = 0) {
@@ -289,12 +317,11 @@ class CollaborationContainer extends Component {
     }
 
     handleLeaveRoom () {
+        this.beginConnectAttempt();
         this.endNoticeShown = true;
         this.collaborationService.disconnect();
-        this.props.onSetConnected(false);
-        this.props.onSetRoomId(null);
+        this.resetSessionState();
         this.props.onSetRoomPrivacy('public');
-        this.props.onSetUsers([]);
         this.props.onSetError(null);
     }
 
@@ -313,8 +340,8 @@ class CollaborationContainer extends Component {
     }
 
     handleUserLeft (user) {
-        const username = user.username || user.id || 'A user';
-        if (!user.rejoined) NotificationSystem.info(`${username} disconnected`, 3000);
+        const username = user.username || user.id || 'Someone';
+        if (!user.rejoined) NotificationSystem.info(`${username} left the live session.`, 3000);
         this.updateUsersList();
     }
 
@@ -323,6 +350,7 @@ class CollaborationContainer extends Component {
     }
 
     resetSessionState () {
+        clearTimeout(this.syncRetryTimer);
         this.props.onSetConnected(false);
         this.props.onSetRoomId(null);
         this.props.onSetUsers([]);
@@ -330,11 +358,23 @@ class CollaborationContainer extends Component {
         this.props.onSetReconnecting(false);
     }
 
+    /**
+     * Tell the user why their session ended. The collaboration window shows
+     * the same message inline, so only toast when it is closed.
+     * @param {string} type Notification type.
+     * @param {string} message The message.
+     */
+    announceEnd (type, message) {
+        if (!this.props.isVisible) NotificationSystem[type](message, 8000);
+    }
+
     handleConnectionFailed (data) {
+        const message = (data && (typeof data === 'string' ? data : data.error)) ||
+            'The live session connection failed. Check your internet connection and try again.';
         this.endNoticeShown = true;
         this.resetSessionState();
-        this.props.onSetError(data.error);
-        NotificationSystem.error(data.error, 8000);
+        this.props.onSetError(message);
+        this.announceEnd('error', message);
     }
 
     handleUsernameChanged (user) {
@@ -355,15 +395,15 @@ class CollaborationContainer extends Component {
         this.collaborationService.disconnect();
         this.resetSessionState();
         this.props.onSetError(message);
-        NotificationSystem.warning(message, 8000);
+        this.announceEnd('warning', message);
     }
 
     handleHostLeft () {
-        const message = 'The host closed the room. Your copy of the project is still here.';
+        const message = 'The host ended the live session. Your copy of the project is still here.';
         this.endNoticeShown = true;
         this.resetSessionState();
-        NotificationSystem.warning(message, 8000);
         this.props.onSetError(message);
+        this.announceEnd('warning', message);
     }
 
     handleConnectedToHost () {
@@ -395,14 +435,13 @@ class CollaborationContainer extends Component {
     }
 
     handleCancelConnection () {
+        this.beginConnectAttempt();
         this.endNoticeShown = true;
         this.collaborationService.disconnect();
 
         // Clear any connection state
-        this.props.onSetConnected(false);
-        this.props.onSetRoomId(null);
+        this.resetSessionState();
         this.props.onSetRoomPrivacy('public');
-        this.props.onSetUsers([]);
         this.props.onSetError(null);
     }
 
@@ -434,8 +473,13 @@ class CollaborationContainer extends Component {
         this.handleCancelConnection();
     }
 
-    handleJoinRequestReceived () {
-        // The modal will handle this event directly from the collaboration service
+    handleJoinRequestReceived (request) {
+        // The modal lists requests itself. Project sessions approve through
+        // the project's collaborator list, so there is nothing to ask.
+        if (this.props.isVisible || this.collaborationService.scope) return;
+        const name = (request && request.requesterUsername) || 'Someone';
+        NotificationSystem.info(`${name} wants to join your live session. ` +
+            'Open Live Collaboration to let them in.', 10000);
     }
 
     handleJoinApproved () {
@@ -445,11 +489,11 @@ class CollaborationContainer extends Component {
     }
 
     handleJoinDenied (data) {
+        const message = data || 'The host did not let you in.';
         this.endNoticeShown = true;
-        this.props.onSetError(data || 'Your join request was denied');
-        this.props.onSetConnected(false);
-        this.props.onSetRoomId(null);
-        this.props.onSetCollabLoading(false);
+        this.resetSessionState();
+        this.props.onSetError(message);
+        this.announceEnd('warning', message);
     }
 
 
@@ -496,28 +540,32 @@ class CollaborationContainer extends Component {
         return this.collaborationService.getCurrentUserId();
     }
 
+    // The loader messages are keys the collab loader translates.
     handleProjectSyncDownloadStart () {
+        clearTimeout(this.syncRetryTimer);
         this.projectSyncProgress = 0;
-        this.props.onSetCollabLoading(true, 'Downloading project from host…');
+        this.props.onSetCollabLoading(true, 'downloading');
         this.props.onSetHostLoadingProgress(0);
     }
 
     handleProjectSyncDownloadProgress (data) {
         if (data && typeof data.progress === 'number') {
+            clearTimeout(this.syncRetryTimer);
             this.projectSyncProgress = data.progress;
-            this.props.onSetCollabLoading(true, 'Downloading project from host…');
+            this.props.onSetCollabLoading(true, 'downloading');
             this.props.onSetHostLoadingProgress(data.progress);
         }
     }
 
     handleProjectSyncDownloadComplete () {
         this.projectSyncProgress = null;
-        this.props.onSetCollabLoading(true, 'Loading project…');
+        this.props.onSetCollabLoading(true, 'loading');
         this.props.onSetHostLoadingProgress(0);
     }
 
     handleProjectSyncApplyStart () {
-        this.props.onSetCollabLoading(true, 'Loading project…');
+        clearTimeout(this.syncRetryTimer);
+        this.props.onSetCollabLoading(true, 'loading');
         this.props.onSetHostLoadingProgress(0);
     }
 
@@ -527,12 +575,23 @@ class CollaborationContainer extends Component {
     }
 
     handleProjectSyncDownloadError () {
-        NotificationSystem.error('Failed to download project from host', 5000);
-        this.props.onSetCollabLoading(false);
+        // The download is retried automatically (and the session ends with
+        // connection-failed if it keeps failing), so say so instead of
+        // dropping the loader over a half-loaded project.
+        this.props.onSetCollabLoading(true, 'retrying');
+        this.props.onSetHostLoadingProgress(0);
+        clearTimeout(this.syncRetryTimer);
+        this.syncRetryTimer = setTimeout(() => {
+            this.props.onSetCollabLoading(false);
+            NotificationSystem.error('The host\'s project could not be downloaded. ' +
+                'Leave the live session and join again to retry.', 8000);
+        }, SYNC_RETRY_GIVE_UP_MS);
     }
 
     handleHostRestarted () {
-        NotificationSystem.info('The host reopened the room, so their project is loading again.', 5000);
+        // A restarted host never sends 'reconnected'; the reload replaces it.
+        this.props.onSetReconnecting(false);
+        NotificationSystem.info('The host reopened the live session, so their project is loading again.', 5000);
     }
 
     handleLeftForOtherProject () {
@@ -572,7 +631,7 @@ class CollaborationContainer extends Component {
 
     handleReconnected () {
         this.props.onSetReconnecting(false);
-        NotificationSystem.info('Reconnected to the collaboration room', 3000);
+        NotificationSystem.success('Reconnected to the live session.', 3000);
     }
 
     handlePresenceEditingChanged ({userId, username, handle, activity}) {
@@ -606,6 +665,7 @@ class CollaborationContainer extends Component {
                         currentUserId={this.getCurrentUserId()}
                         roturHandle={this.props.roturHandle}
                         isConnected={!projectSessionActive && this.props.isConnected}
+                        isReconnecting={this.props.isReconnecting}
                         roomId={projectSessionActive ? null : this.props.roomId}
                         roomPrivacy={this.props.roomPrivacy}
                         connectedUsers={this.props.connectedUsers}
@@ -644,6 +704,7 @@ CollaborationContainer.propTypes = {
     onOpen: PropTypes.func.isRequired,
     isVisible: PropTypes.bool.isRequired,
     isConnected: PropTypes.bool.isRequired,
+    isReconnecting: PropTypes.bool,
     roomId: PropTypes.string,
     roomPrivacy: PropTypes.string,
     connectedUsers: PropTypes.array.isRequired,
@@ -678,6 +739,7 @@ const mapStateToProps = state => ({
     isProjectReady: getIsShowingProject(state.scratchGui.projectState?.loadingState),
     isVisible: state.scratchGui.collaboration.modalVisible,
     isConnected: state.scratchGui.collaboration.isConnected,
+    isReconnecting: state.scratchGui.collaboration.isReconnecting,
     roomId: state.scratchGui.collaboration.roomId,
     roomPrivacy: state.scratchGui.collaboration.roomPrivacy,
     pendingInvite: state.scratchGui.collaboration.pendingInvite,

@@ -242,7 +242,7 @@ describe('CollaborationContainer', () => {
         expect(NotificationSystem.warning).toHaveBeenCalled();
         expect(collaborationState().isConnected).toBe(false);
         expect(collaborationState().roomId).toBe(null);
-        expect(collaborationState().connectionError).toMatch(/host closed the room/i);
+        expect(collaborationState().connectionError).toMatch(/host ended the live session/i);
     });
 
     test('handleConnectedToHost marks the session connected', () => {
@@ -273,6 +273,103 @@ describe('CollaborationContainer', () => {
 
         expect(mockCollaborationService.approveJoinRequest).toHaveBeenCalledWith('req-1', 'edit');
         expect(mockCollaborationService.denyJoinRequest).toHaveBeenCalledWith('req-2');
+    });
+
+    test('unmounting leaves the app-wide notification system working', () => {
+        mountContainer().unmount();
+        expect(NotificationSystem.cleanup).not.toHaveBeenCalled();
+        expect(NotificationSystem.dismissAll).not.toHaveBeenCalled();
+    });
+
+    test('a session-ending message is toasted only while the window is closed', () => {
+        const container = instanceOf(mountContainer());
+        container.handleConnectionFailed({error: 'The host did not answer.'});
+        expect(NotificationSystem.error).toHaveBeenCalledWith('The host did not answer.', 8000);
+        expect(collaborationState().connectionError).toBe('The host did not answer.');
+
+        NotificationSystem.error.mockClear();
+        store.dispatch({type: 'scratch-gui/collaboration/OPEN_COLLABORATION_MODAL'});
+        container.handleConnectionFailed({});
+        expect(NotificationSystem.error).not.toHaveBeenCalled();
+        expect(collaborationState().connectionError).toMatch(/connection failed/);
+    });
+
+    test('a denial while waiting clears loading and reconnecting state', () => {
+        const container = instanceOf(mountContainer());
+        store.dispatch({type: 'scratch-gui/collaboration/SET_RECONNECTING', isReconnecting: true});
+        container.handleJoinDenied('Nope.');
+        expect(collaborationState().isReconnecting).toBe(false);
+        expect(collaborationState().isCollabLoading).toBe(false);
+        expect(collaborationState().connectionError).toBe('Nope.');
+        expect(NotificationSystem.warning).toHaveBeenCalledWith('Nope.', 8000);
+    });
+
+    test('a host restart ends the reconnecting state', () => {
+        const container = instanceOf(mountContainer());
+        container.handleReconnecting();
+        expect(collaborationState().isReconnecting).toBe(true);
+        container.handleHostRestarted();
+        expect(collaborationState().isReconnecting).toBe(false);
+    });
+
+    test('the host hears about join requests while the window is closed', () => {
+        const container = instanceOf(mountContainer());
+        container.handleJoinRequestReceived({requesterId: 'r', requesterUsername: 'Bob'});
+        expect(NotificationSystem.info).toHaveBeenCalledWith(expect.stringContaining('Bob wants to join'), 10000);
+
+        NotificationSystem.info.mockClear();
+        container.props = {...container.props, isVisible: true};
+        container.handleJoinRequestReceived({requesterId: 'r', requesterUsername: 'Bob'});
+        expect(NotificationSystem.info).not.toHaveBeenCalled();
+    });
+
+    test('a failed download keeps the loader up while it retries, then gives up', () => {
+        jest.useFakeTimers();
+        try {
+            const container = instanceOf(mountContainer());
+            container.handleProjectSyncDownloadStart();
+            expect(collaborationState().isCollabLoading).toBe(true);
+            expect(collaborationState().collabLoadingMessage).toBe('downloading');
+
+            container.handleProjectSyncDownloadError({error: new Error('stalled')});
+            expect(collaborationState().isCollabLoading).toBe(true);
+            expect(collaborationState().collabLoadingMessage).toBe('retrying');
+
+            // A retry that starts cancels the give-up timer.
+            container.handleProjectSyncDownloadStart();
+            jest.advanceTimersByTime(60000);
+            expect(collaborationState().isCollabLoading).toBe(true);
+
+            container.handleProjectSyncDownloadError({error: new Error('stalled')});
+            jest.advanceTimersByTime(60000);
+            expect(collaborationState().isCollabLoading).toBe(false);
+            expect(NotificationSystem.error).toHaveBeenCalled();
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+
+    test('a quiet end after a failed attempt still tells the user they left', async () => {
+        const container = instanceOf(mountContainer());
+        container.handleConnectionFailed({error: 'failed'});
+        await container.handleCreateRoom('room', 'Alice');
+        container.handleDisconnected();
+        expect(NotificationSystem.info).toHaveBeenCalledWith('You left the live session.', 3000);
+    });
+
+    test('cancelling mid-connect is not reported as a failure', async () => {
+        let reject;
+        mockCollaborationService.connectToRoom.mockImplementationOnce(() => new Promise((resolve, fail) => {
+            reject = fail;
+        }));
+        const container = instanceOf(mountContainer());
+        const joining = container.handleJoinRoom('room', 'Alice');
+        await Promise.resolve();
+        container.handleCancelConnection();
+        reject(new Error('Collaboration connection cancelled'));
+
+        await expect(joining).rejects.toMatchObject({cancelled: true});
+        expect(collaborationState().connectionError).toBe(null);
     });
 
     test('handleRoomPrivacyChanged mirrors a privacy change pushed by the host', () => {

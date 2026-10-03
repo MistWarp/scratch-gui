@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import classNames from 'classnames';
-import {avatarForCollabUser} from '../lib/collaboration/avatar.js';
+import {avatarForCollabUser, colorForCollabUser} from '../lib/collaboration/avatar.js';
 import styles from './collaboration-sprite-indicator.css';
 
 const MAX_SHOWN = 2;
@@ -12,18 +12,6 @@ const getUsernameInitials = username => {
     return username.replace(/^@/, '').substring(0, 2)
         .toUpperCase();
 };
-
-const hashUsername = username => {
-    let hash = 0;
-    for (let i = 0; i < username.length; i++) {
-        const char = username.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash;
-    }
-    return Math.abs(hash);
-};
-
-const getUserColor = username => `hsl(${hashUsername(username) % 360}, 70%, 45%)`;
 
 /**
  * The stack of little "who else is here" avatars. Used on sprites, on editor
@@ -51,7 +39,7 @@ const CollaborationSpriteIndicator = ({users, verb = 'is editing this', inline =
                         key={user.userId}
                         className={styles.badge}
                         style={Object.assign(
-                            {backgroundColor: getUserColor(user.username || '')},
+                            {backgroundColor: colorForCollabUser(user.username)},
                             offset(index)
                         )}
                         title={`${user.username} ${verb}`}
@@ -71,7 +59,8 @@ const CollaborationSpriteIndicator = ({users, verb = 'is editing this', inline =
                 <div
                     className={styles.overflowBadge}
                     style={offset(shown.length)}
-                    title={`${overflowCount} more here`}
+                    title={users.slice(MAX_SHOWN).map(user => user.username)
+                        .join(', ')}
                 >
                     {`+${overflowCount}`}
                 </div>
