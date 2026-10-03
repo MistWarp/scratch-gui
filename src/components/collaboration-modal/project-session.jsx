@@ -391,7 +391,7 @@ class ProjectSession extends React.Component {
                             action: lease.host ? 'end' : 'leave', sessionId: lease.id, branch: lease.branch
                         });
                     }
-                    this.setState({phase: ''});
+                    if (!this.disposed) this.setState({phase: ''});
                 } catch (e) {
                     throw new Error('Disconnected. The online listing could not be updated ' +
                         'and may remain for up to 90 seconds.');

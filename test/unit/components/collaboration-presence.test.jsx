@@ -11,7 +11,8 @@ jest.mock('../../../src/lib/collaboration/index.js', () => ({
     getInstance: () => ({getCurrentUserId: () => 'me'})
 }));
 jest.mock('../../../src/lib/collaboration/avatar.js', () => ({
-    avatarForCollabUser: user => user.handle ? `/avatars/${user.handle}` : null
+    avatarForCollabUser: user => user.handle ? `/avatars/${user.handle}` : null,
+    colorForCollabUser: () => 'hsl(0, 70%, 45%)'
 }));
 
 test('menu avatars open the collaboration window', () => {
@@ -49,4 +50,36 @@ test.each([
     const wrapper = mountWithIntl(<Provider store={store}><CollabPresence /></Provider>);
     expect(wrapper.find('button').text()).toBe(label);
     wrapper.unmount();
+});
+
+test.each([
+    [{isConnected: true, isReconnecting: true}, 'Reconnecting…'],
+    [{isConnected: true, connectedUsers: [{id: 'me', username: 'Mist'}]}, 'Session open']
+])('a room session shows its own state in the menu bar: %j', (collab, label) => {
+    const state = {...reducer(undefined, {}), ...collab};
+    const store = createStore(() => ({scratchGui: {collaboration: state}}));
+    const wrapper = mountWithIntl(<Provider store={store}><CollabPresence /></Provider>);
+    expect(wrapper.find('button').text()).toBe(label);
+    wrapper.unmount();
+});
+
+test('reconnecting replaces the avatars until the connection is back', () => {
+    const state = {
+        ...reducer(undefined, {}),
+        isConnected: true,
+        isReconnecting: true,
+        connectedUsers: [{id: 'me', username: 'Mist'}, {id: 'peer', username: 'Alex'}]
+    };
+    const store = createStore(() => ({scratchGui: {collaboration: state}}));
+    const wrapper = mountWithIntl(<Provider store={store}><CollabPresence /></Provider>);
+    expect(wrapper.find('button').text()).toBe('Reconnecting…');
+    wrapper.unmount();
+});
+
+test('sprite presence overflow names the people it hides', () => {
+    const wrapper = shallow(<CollaborationSpriteIndicator users={[
+        {userId: 'a', username: 'A'}, {userId: 'b', username: 'B'},
+        {userId: 'c', username: 'C'}, {userId: 'd', username: 'D'}
+    ]} />);
+    expect(wrapper.find('[title="C, D"]').text()).toBe('+2');
 });
