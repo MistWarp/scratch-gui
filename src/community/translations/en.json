@@ -2466,5 +2466,6 @@
   "Send {value1} credits on Rotur": "Send {value1} credits on Rotur",
   "Waiting for Rotur…": "Waiting for Rotur…",
   "Rotur opens in a new window to take the payment.": "Rotur opens in a new window to take the payment.",
-  "Payment cancelled.": "Payment cancelled."
+  "Payment cancelled.": "Payment cancelled.",
+  "This vanity URL is paused because your plan no longer includes one. It stays yours for 30 days. Clear it to give it up now.": "This vanity URL is paused because your plan no longer includes one. It stays yours for 30 days. Clear it to give it up now."
 }
