@@ -335,9 +335,6 @@ const StatsOverview = ({view}) => {
     const [days, setDays] = useState(30);
     const [statsBusy, setStatsBusy] = useState(false);
     const [showDailyData, setShowDailyData] = useState(false);
-    const [payoutBusy, setPayoutBusy] = useState(false);
-    const [payoutNote, setPayoutNote] = useState('');
-    const payoutLocks = useRef(new Set());
     const mounted = useRef(true);
     const currentDays = useRef(days);
     currentDays.current = days;
@@ -398,26 +395,6 @@ const StatsOverview = ({view}) => {
             active = false;
         };
     }, []);
-
-    const retryPayouts = async () => {
-        if (payoutLocks.current.has('retry')) return;
-        payoutLocks.current.add('retry');
-        setPayoutBusy(true);
-        setPayoutNote('');
-        try {
-            const result = await api.admin.retryPayouts();
-            if (!mounted.current) return;
-            setPayoutNote(`Paid ${result.paid}, ${result.remaining} still pending.`);
-            const refreshDays = currentDays.current;
-            const fresh = await api.admin.stats(refreshDays);
-            if (mounted.current && currentDays.current === refreshDays) setStats(fresh);
-        } catch (e) {
-            if (mounted.current) setPayoutNote(e.message || 'Could not retry payouts.');
-        } finally {
-            payoutLocks.current.delete('retry');
-            if (mounted.current) setPayoutBusy(false);
-        }
-    };
 
     const syncR2Storage = async () => {
         if (storageSyncBusy) return;
@@ -561,26 +538,8 @@ const StatsOverview = ({view}) => {
             {view === 'storage' && storageError ? <Notice variant="error" className={styles.notice}>{storageError}</Notice> : null}
 
             {(!view || view === 'overview') ? <React.Fragment>
-                {(stats.pendingPayouts > 0 || (quota && (quota.used / quota.limit) * 100 >= 80)) ? (
+                {quota && (quota.used / quota.limit) * 100 >= 80 ? (
                     <div className={styles.alerts} aria-label={communityText('Items needing attention')}>
-                        {stats.pendingPayouts > 0 ? (
-                            <Notice
-                                variant="warning"
-                                action={(
-                                    <Button
-                                        busy={payoutBusy}
-                                        busyLabel={communityText('Retrying…')}
-                                        onClick={retryPayouts}
-                                    >{communityText('Retry now')}</Button>
-                                )}
-                            >
-                                {communityText('{value1, plural, one {# creator payout} other {# creator payouts}} failed. {value2} credits are still owed.', {
-                                    value1: stats.pendingPayouts,
-                                    value2: Math.round((stats.pendingPayoutAmount || 0) * 100) / 100
-                                })}
-                                {payoutNote ? <span className={styles.alertNote}>{payoutNote}</span> : null}
-                            </Notice>
-                        ) : null}
                         {quota && (quota.used / quota.limit) * 100 >= 80 ? (
                             <Notice variant="warning">
                                 {communityText('Your projects use {value1}% of your storage.', {value1: Math.round((quota.used / quota.limit) * 100)})}
@@ -810,8 +769,6 @@ const StatsOverview = ({view}) => {
         </div>
     );
 };
-
-export {StatsOverview};
 
 const ProjectManager = () => {
     const {text: communityText} = useCommunityText();

@@ -11,12 +11,14 @@ import CommentThread, {
     postCommentDonation
 } from '../../src/community/components/CommentThread.jsx';
 import {useUser} from '../../src/community/UserContext.jsx';
-import {sendCommercePayment} from '../../src/community/credits';
+import {payWithRotur} from '../../src/lib/rotur/payment-window.js';
 
 jest.mock('../../src/community/UserContext.jsx', () => ({useUser: jest.fn()}));
-jest.mock('../../src/community/credits', () => ({
-    sendCommercePayment: jest.fn(),
-    isInsufficientFunds: jest.fn(() => false)
+jest.mock('../../src/lib/rotur/payment-window.js', () => ({
+    payWithRotur: jest.fn(async ({start, confirm}) => {
+        const intent = await start('https://mistwarp.org/projects/project-1');
+        return {intent, result: await confirm(intent)};
+    })
 }));
 
 describe('CommentThread signed-out flow', () => {
@@ -46,18 +48,16 @@ describe('CommentThread signed-out flow', () => {
         expect(commentDonationTier(1000)).toBe('gold');
     });
 
-    test('pays the project owner before attaching the donation to a comment', async () => {
+    test('pays on Rotur before attaching the donation to a comment', async () => {
         const source = {
             donationIntent: jest.fn(() => Promise.resolve({
-                key: 'intent-key',
-                amount: 12.5,
-                projectId: 'project-1',
-                title: 'A project',
-                splits: [{username: 'owner', basis_points: 10000}]
+                key: 'mwdonate_1',
+                requestId: 'pr_1',
+                approveUrl: 'https://rotur.dev/pay/approve/pr_1',
+                amount: 12.5
             })),
             add: jest.fn(() => Promise.resolve({comment: {id: 'comment-1'}}))
         };
-        sendCommercePayment.mockResolvedValueOnce({payment: {id: 'payment-1'}});
 
         await expect(postCommentDonation({
             source,
@@ -66,17 +66,9 @@ describe('CommentThread signed-out flow', () => {
             amount: 12.5
         })).resolves.toEqual({comment: {id: 'comment-1'}});
 
-        expect(sendCommercePayment).toHaveBeenCalledWith(expect.objectContaining({
-            amount: 12.5,
-            kind: 'comment_donation',
-            resourceType: 'project',
-            resourceId: 'project-1',
-            splits: [{username: 'owner', basis_points: 10000}]
-        }));
-        expect(source.add).toHaveBeenCalledWith('Nice work', null, 'comment', {
-            key: 'intent-key',
-            paymentId: 'payment-1'
-        });
+        expect(payWithRotur).toHaveBeenCalledTimes(1);
+        expect(source.donationIntent).toHaveBeenCalledWith(12.5, 'https://mistwarp.org/projects/project-1');
+        expect(source.add).toHaveBeenCalledWith('Nice work', null, 'comment', {key: 'mwdonate_1'});
     });
 
     test('lets a signed-out visitor write first and asks for sign-in on submit', () => {
