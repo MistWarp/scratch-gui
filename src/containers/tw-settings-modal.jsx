@@ -12,6 +12,7 @@ import {getStyleSetting, getStyleSettings, setStyleSetting} from '../lib/mw-styl
 import {applyTheme} from '../lib/themes/themePersistance';
 import {getHideOperatorArrows, setHideOperatorArrows} from '../lib/mw-operator-arrows';
 import {getVanillaPalette, setVanillaPalette} from '../lib/mw-vanilla-palette';
+import {getTwoColumnCategories, setTwoColumnCategories} from '../lib/mw-two-column-categories';
 import {
     getDisableCompiler, setDisableCompiler,
     getDisableCloudVariables, setDisableCloudVariables
@@ -34,6 +35,7 @@ class UsernameModal extends React.Component {
             hideDeleteButton: getAppearanceSetting('hide-delete-button'),
             hideExtensionButton: getAppearanceSetting('hide-extension-button'),
             unclipPalette: getAppearanceSetting('unclip-palette'),
+            twoColumnCategories: getTwoColumnCategories(),
             hideBackpack: getAppearanceSetting('hide-backpack')
         };
 
@@ -60,6 +62,7 @@ class UsernameModal extends React.Component {
             'handleHideDeleteButtonChange',
             'handleHideExtensionButtonChange',
             'handleUnclipPaletteChange',
+            'handleTwoColumnCategoriesChange',
             'handleHideBackpackChange',
             'handleTabStyleChange',
             'handleTabLooksChange',
@@ -228,6 +231,11 @@ class UsernameModal extends React.Component {
         this.setAppearance_('unclipPalette', 'unclip-palette', e.target.checked);
     }
 
+    handleTwoColumnCategoriesChange (e) {
+        this.setState({twoColumnCategories: e.target.checked});
+        setTwoColumnCategories(e.target.checked);
+    }
+
     setStyle_ (id, value) {
         setStyleSetting(id, value);
         if (this.props.theme) {
@@ -293,6 +301,8 @@ class UsernameModal extends React.Component {
                 hideExtensionButton={this.state.hideExtensionButton}
                 onUnclipPaletteChange={this.handleUnclipPaletteChange}
                 unclipPalette={this.state.unclipPalette}
+                onTwoColumnCategoriesChange={this.handleTwoColumnCategoriesChange}
+                twoColumnCategories={this.state.twoColumnCategories}
                 onHideBackpackChange={this.handleHideBackpackChange}
                 hideBackpack={this.state.hideBackpack}
                 onTabStyleChange={this.handleTabStyleChange}

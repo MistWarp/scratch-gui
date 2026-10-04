@@ -1,6 +1,7 @@
 import {blockMessages} from '../generated/editor-locales/index.js';
 import {getVanillaPalette} from './mw-vanilla-palette';
 import {applyCatBlocksToLoadedBlockly} from './mw-cat-blocks';
+import {installTwoColumnCategories} from './mw-two-column-categories';
 import {installSteadySvgResize} from './mw-svg-resize';
 import {installBlocklyContextMenuIcons} from './context-menu-icons';
 import BundledScratchBlocks from 'scratch-blocks';
@@ -62,6 +63,8 @@ const set = ScratchBlocks => {
             };
         }
     }
+
+    installTwoColumnCategories(_ScratchBlocks);
 
     const ToolboxProto = _ScratchBlocks.Toolbox && _ScratchBlocks.Toolbox.prototype;
 

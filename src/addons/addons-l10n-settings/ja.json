@@ -352,8 +352,6 @@
   "editor-comment-previews/@settings-select-delay-long": "長",
   "editor-comment-previews/@settings-select-delay-none": "なし",
   "editor-comment-previews/@settings-select-delay-short": "短",
-  "columns/@description": "Scratch 2.0のように、ブロックカテゴリーメニューを2列に分け、ブロックパレットの上部に配置する。",
-  "columns/@name": "2列カテゴリーメニュー",
   "number-pad/@description": "ブロックの数値を編集するときに、Scratchのナンバーパッド入力をタッチスクリーンデバイス以外のすべてのデバイスで表示する。",
   "number-pad/@info-explanation": "「() 歩動かす」ブロックなどの数値を変えるときに、ナンバーパッドが表示されるようになります。",
   "number-pad/@name": "ナンバーパッドを常に表示",

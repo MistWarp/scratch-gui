@@ -338,8 +338,6 @@
   "editor-comment-previews/@settings-select-delay-long": "Длинное",
   "editor-comment-previews/@settings-select-delay-none": "Никакое",
   "editor-comment-previews/@settings-select-delay-short": "Короткое",
-  "columns/@description": "Разделяет меню категорий блоков на два столбца и перемещает его в верхнюю часть палитры блоков, как в Scratch 2.0.",
-  "columns/@name": "Меню категорий с двумя столбцами",
   "number-pad/@description": "Показать виртуальную цифровую клавиатуру Scratch во время редактирования значений цифровых полей в блоках на всех устройствах, а не на устройствах с сенсорным экраном.",
   "number-pad/@info-explanation": "Виртуальная цифровая панель появится во время редактирования цифровых полей, таких как \"идти () шагов\".",
   "number-pad/@name": "Всегда показывать панель с цифрами",

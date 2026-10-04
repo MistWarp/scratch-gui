@@ -354,8 +354,6 @@
   "editor-comment-previews/@settings-select-delay-long": "长",
   "editor-comment-previews/@settings-select-delay-none": "无",
   "editor-comment-previews/@settings-select-delay-short": "短",
-  "columns/@description": "将积木分类菜单分成两列，并把分类栏移到积木列表的顶部，就像在 Scratch 2.0 中那样。",
-  "columns/@name": "双列分类菜单",
   "number-pad/@description": "在所有设备上编辑积木的数字参数时显示Scratch的虚拟数字键盘，而不仅仅是在触屏设备上显示。",
   "number-pad/@info-explanation": "在编辑如“移动()步”等代码块中的数字输入时，会显示数字键盘。",
   "number-pad/@name": "始终显示数字键盘",

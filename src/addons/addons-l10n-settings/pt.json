@@ -277,8 +277,6 @@
   "editor-comment-previews/@settings-select-delay-long": "Longo",
   "editor-comment-previews/@settings-select-delay-none": "Nenhum",
   "editor-comment-previews/@settings-select-delay-short": "Curto",
-  "columns/@description": "Divide o menu de categorias em duas colunas e o move para o topo da paleta de blocos, assim como no Scratch 2.0.",
-  "columns/@name": "Menu de categoria de duas colunas",
   "number-pad/@name": "Sempre mostrar o teclado de numeros",
   "expanded-backpack/@name": "Múltiplas linhas na mochila",
   "expanded-backpack/@settings-name-rows": "Número de linhas exibidas",
