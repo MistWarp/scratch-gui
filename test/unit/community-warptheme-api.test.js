@@ -188,6 +188,19 @@ describe('WarpTheme API adapter', () => {
         expect(localStorage.getItem('mw:warptheme-session')).toBeNull();
     });
 
+    test('explains a failed WarpTheme request without status codes', async () => {
+        window.fetch.mockResolvedValue({
+            ok: false,
+            status: 502,
+            json: () => Promise.resolve({error: 'Bad Gateway'})
+        });
+
+        const error = await request('/themes').catch(caught => caught);
+        expect(error.message).toBe('MistWarp is having trouble right now. Try again in a moment.');
+        expect(error.status).toBe(502);
+        expect(error.message).not.toContain('502');
+    });
+
     test('authorizes WarpTheme with the Rotur token in a header, never in a URL', async () => {
         localStorage.removeItem('mw:warptheme-session');
         mockRotur.token = 'rotur_secret-token';

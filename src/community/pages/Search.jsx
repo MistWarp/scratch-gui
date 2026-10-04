@@ -17,7 +17,8 @@ import {ExploreSearch} from '../components/ExploreHeader.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import SectionHeading from '../components/ui/SectionHeading.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
-import SectionTabs from '../components/SectionTabs.jsx';
+import SectionTabs, {tabPanelProps} from '../components/SectionTabs.jsx';
+import CardGridSkeleton from '../components/CardGridSkeleton.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import {rankSections} from '../search-rank.js';
 import styles from './Search.module.css';
@@ -225,6 +226,19 @@ const Search = () => {
         {key: 'spaces', label: tabLabel(communityText('Spaces'), 'spaces')}
     ];
     const failedSections = SECTION_KEYS.filter(key => results[key].failed);
+    // Sorting reorders the project results in place, so it's a button group, not tabs.
+    const sortControl = (
+        <SectionTabs
+            items={SORTS}
+            value={sort}
+            onChange={key => setParam('sort', key, 'relevance')}
+            className={styles.sorts}
+            itemClassName={styles.sort}
+            activeClassName={styles.sortActive}
+            ariaLabel="Project sorting"
+            variant="buttons"
+        />
+    );
 
     return (
         <main className={styles.page}>
@@ -246,55 +260,55 @@ const Search = () => {
                     value={tab}
                     onChange={key => setParam('tab', key, 'all')}
                     ariaLabel="Search result types"
+                    idPrefix="search"
                 />
             </PageHeader>
-            {loading ? <StatusMessage>{communityText('Searching…')}</StatusMessage> : failed ? (
-                <StatusMessage error onRetry={() => setAttempt(a => a + 1)}>{communityText('Could not load these results.')}</StatusMessage>
-            ) : tab === 'all' ? (
-                <>
-                    {sections.map(section => (
-                        <section key={section.key} className={styles.section}>
-                            <SectionHeading
-                                title={communityText(section.heading)}
-                                actions={section.total > section.items.length ? (
-                                    <button type="button" className={styles.seeAll} onClick={() => setParam('tab', section.key, 'all')}>
-                                        {communityText('See all {value1}', {value1: section.total})}
-                                    </button>
-                                ) : null}
-                            />
-                            {section.render(section.items)}
-                        </section>
-                    ))}
-                    {failedSections.map(key => <div key={key} className={styles.section}>{sectionError(key, true)}</div>)}
-                    {sections.length || failedSections.length ? null : (
-                        <EmptyState icon={SearchIcon} title={communityText('Nothing matched that search')}>{communityText('Try a different search term.')}</EmptyState>
-                    )}
-                </>
-            ) : tab === 'projects' ? (
-                <>
-                    <SectionTabs
-                        items={SORTS}
-                        value={sort}
-                        onChange={key => setParam('sort', key, 'relevance')}
-                        className={styles.sorts}
-                        itemClassName={styles.sort}
-                        activeClassName={styles.sortActive}
-                        ariaLabel="Project sorting"
-                    />
-                    {projects.failed ? sectionError('projects') : projects.items.length ? projectGrid(projects.items) : <EmptyState icon={SearchIcon} title={communityText('No projects matched that search')}>{communityText('Try a different search term.')}</EmptyState>}
-                    {moreButton('projects')}
-                </>
-            ) : tab === 'people' ? (
-                <>
-                    {people.failed ? sectionError('people') : people.items.length ? peopleList(people.items) : <EmptyState icon={SearchIcon} title={communityText('No people matched that search')}>{communityText('Try a different search term.')}</EmptyState>}
-                    {moreButton('people')}
-                </>
-            ) : (
-                <>
-                    {spaces.failed ? sectionError('spaces') : spaces.items.length ? spaceGrid(spaces.items) : <EmptyState icon={SearchIcon} title={communityText('No spaces matched that search')}>{communityText('Try a different search term.')}</EmptyState>}
-                    {moreButton('spaces')}
-                </>
-            )}
+            <div {...tabPanelProps('search', tab)}>
+                {tab === 'projects' && loading ? (
+                    <>
+                        {sortControl}
+                        <CardGridSkeleton className={styles.grid} count={PREVIEW.projects} />
+                    </>
+                ) : loading ? <StatusMessage>{communityText('Searching…')}</StatusMessage> : failed ? (
+                    <StatusMessage error onRetry={() => setAttempt(a => a + 1)}>{communityText('Could not load these results.')}</StatusMessage>
+                ) : tab === 'all' ? (
+                    <>
+                        {sections.map(section => (
+                            <section key={section.key} className={styles.section}>
+                                <SectionHeading
+                                    title={communityText(section.heading)}
+                                    actions={section.total > section.items.length ? (
+                                        <button type="button" className={styles.seeAll} onClick={() => setParam('tab', section.key, 'all')}>
+                                            {communityText('See all {value1}', {value1: section.total})}
+                                        </button>
+                                    ) : null}
+                                />
+                                {section.render(section.items)}
+                            </section>
+                        ))}
+                        {failedSections.map(key => <div key={key} className={styles.section}>{sectionError(key, true)}</div>)}
+                        {sections.length || failedSections.length ? null : (
+                            <EmptyState icon={SearchIcon} title={communityText('Nothing matched that search')}>{communityText('Try a different search term.')}</EmptyState>
+                        )}
+                    </>
+                ) : tab === 'projects' ? (
+                    <>
+                        {sortControl}
+                        {projects.failed ? sectionError('projects') : projects.items.length ? projectGrid(projects.items) : <EmptyState icon={SearchIcon} title={communityText('No projects matched that search')}>{communityText('Try a different search term.')}</EmptyState>}
+                        {moreButton('projects')}
+                    </>
+                ) : tab === 'people' ? (
+                    <>
+                        {people.failed ? sectionError('people') : people.items.length ? peopleList(people.items) : <EmptyState icon={SearchIcon} title={communityText('No people matched that search')}>{communityText('Try a different search term.')}</EmptyState>}
+                        {moreButton('people')}
+                    </>
+                ) : (
+                    <>
+                        {spaces.failed ? sectionError('spaces') : spaces.items.length ? spaceGrid(spaces.items) : <EmptyState icon={SearchIcon} title={communityText('No spaces matched that search')}>{communityText('Try a different search term.')}</EmptyState>}
+                        {moreButton('spaces')}
+                    </>
+                )}
+            </div>
         </main>
     );
 };

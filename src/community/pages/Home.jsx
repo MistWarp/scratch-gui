@@ -21,6 +21,7 @@ import {tabPanelProps} from '../components/SectionTabs.jsx';
 import ScratchImport from '../components/ScratchImport.jsx';
 import ChallengeCalendar from '../components/ChallengeCalendar.jsx';
 import ReactionButtons from '../components/ReactionButtons.jsx';
+import CardGridSkeleton from '../components/CardGridSkeleton.jsx';
 import UserLink from '../components/UserLink.jsx';
 import {roadmapStatusMatches} from '../roadmap-filters';
 import {categoryForNotification, getNotificationPreferences} from '../notification-preferences';
@@ -540,7 +541,7 @@ const ProjectRow = ({title, icon: Icon, projects, link, onRetry, bare = false, e
     const {text: communityText} = useCommunityIntl();
     return (<section className={bare ? null : styles.projectSection}>
         {bare ? null : <SectionHeading icon={Icon} title={title} link={link} />}
-        {projects === null ? <div className={styles.projectGrid}>{[0, 1, 2, 3].map(i => <div key={i} className={styles.projectSkeleton} />)}</div> : null}
+        {projects === null ? <CardGridSkeleton className={styles.projectGrid} count={4} /> : null}
         {projects === false ? <StatusMessage compact error onRetry={onRetry}>{communityText("Couldn't load projects.")}</StatusMessage> : null}
         {Array.isArray(projects) && !projects.length ? <EmptyState compact icon={Icon} title={emptyTitle || communityText('No shared projects yet')}>{emptyText}</EmptyState> : null}
         {Array.isArray(projects) && projects.length ? <div className={styles.projectGrid}>{projects.slice(0, projects.length > 4 ? projects.length - (projects.length % 4) : 4).map(project => <ProjectCard key={project.id} project={project} />)}</div> : null}

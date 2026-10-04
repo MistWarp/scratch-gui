@@ -58,8 +58,8 @@ const MyStuffSpaces = ({
                 icon={Layers3}
                 title={communityText('Spaces')}
                 lead={communityText('Studios you curate or follow, and challenges you host, join, judge, or follow.')}
-                link="/spaces?kind=studio"
-                linkLabel={communityText('Browse studios')}
+                link="/spaces"
+                linkLabel={communityText('Browse spaces')}
             />
             <div className={styles.group}>
                 <SectionHeading as="h3" icon={Layers3} title={communityText('Studios')} count={studios.length} />
