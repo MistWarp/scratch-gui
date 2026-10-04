@@ -7,7 +7,8 @@ import GroupTag from '../../src/community/components/GroupTag.jsx';
 import rotur from '../../src/community/rotur.js';
 
 jest.mock('../../src/community/rotur.js', () => ({
-    profile: jest.fn()
+    groupTag: jest.fn(),
+    setGroupTag: jest.fn()
 }));
 
 const mountTag = username => mount(
@@ -18,11 +19,11 @@ const mountTag = username => mount(
 
 describe('community GroupTag', () => {
     afterEach(() => {
-        rotur.profile = jest.fn();
+        rotur.groupTag = jest.fn();
     });
 
-    test('does not crash when profile lookup is unavailable', async () => {
-        rotur.profile = undefined;
+    test('does not crash when group tag lookup is unavailable', async () => {
+        rotur.groupTag = undefined;
         let wrapper;
         await act(async () => {
             wrapper = mountTag('missing-capability');
@@ -33,28 +34,19 @@ describe('community GroupTag', () => {
         wrapper.unmount();
     });
 
-    test('retries a failed lookup instead of caching an empty tag', async () => {
-        rotur.profile
-            .mockRejectedValueOnce(new Error('Temporary failure'))
-            .mockResolvedValueOnce({group_tag: 'builders'});
+    test('shows the tag the shared lookup resolves', async () => {
+        rotur.groupTag.mockResolvedValue('builders');
 
-        let first;
+        let wrapper;
         await act(async () => {
-            first = mountTag('retry-user');
+            wrapper = mountTag('Builder');
             await Promise.resolve();
         });
-        first.unmount();
+        wrapper.update();
 
-        let second;
-        await act(async () => {
-            second = mountTag('retry-user');
-            await Promise.resolve();
-        });
-        second.update();
-
-        expect(rotur.profile).toHaveBeenCalledTimes(2);
-        expect(second.text()).toContain('builders');
-        second.unmount();
+        expect(rotur.groupTag).toHaveBeenCalledWith('Builder');
+        expect(wrapper.text()).toContain('builders');
+        wrapper.unmount();
     });
 
     test('renders a passive badge when nested inside another control', () => {

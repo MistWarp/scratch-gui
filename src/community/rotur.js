@@ -1,5 +1,7 @@
 import {getRoturToken} from '../lib/rotur/identity.js';
 import {ensureScopes, getRotur} from '../lib/rotur/client.js';
+import {responseMessage} from './api-errors.js';
+import {formatCommunityMessage} from './locale.js';
 
 const ROTUR_API = 'https://api.rotur.dev';
 const AVATARS = 'https://avatars.rotur.dev';
@@ -28,7 +30,7 @@ const get = async (path, params = {}) => {
         data = null;
     }
     if (!response.ok || (data && data.error)) {
-        const error = new Error((data && data.error) || `Rotur request failed (${response.status})`);
+        const error = new Error(responseMessage(response.status, data && data.error));
         error.status = response.status;
         throw error;
     }
@@ -47,7 +49,7 @@ const mutate = async (path, {method = 'POST', params = {}, body, scopes = []} = 
         if (value !== null && typeof value !== 'undefined') query.set(key, String(value));
     });
     const token = roturToken();
-    if (!token) throw new Error('Log in to continue');
+    if (!token) throw new Error(formatCommunityMessage('Sign in to continue'));
     const response = await fetch(`${ROTUR_API}${path}${query.toString() ? `?${query}` : ''}`, {
         method,
         headers: {
@@ -58,7 +60,9 @@ const mutate = async (path, {method = 'POST', params = {}, body, scopes = []} = 
     });
     const data = await response.json().catch(() => null);
     if (!response.ok || (data && data.error)) {
-        throw new Error((data && data.error) || `Rotur request failed (${response.status})`);
+        const error = new Error(responseMessage(response.status, data && data.error));
+        error.status = response.status;
+        throw error;
     }
     cache.clear();
     return data;
@@ -138,7 +142,7 @@ const followerLeaderboard = async (max = 15) => {
 const authenticatedAction = async (scopes, action) => {
     await ensureScopes(scopes);
     const client = getRotur();
-    if (!client.loggedIn) throw new Error('Log in to continue');
+    if (!client.loggedIn) throw new Error(formatCommunityMessage('Sign in to continue'));
     const result = await action(client);
     cache.clear();
     return result;
@@ -164,14 +168,41 @@ const groupBundle = async (tag, {includeMembers = false} = {}) => {
     return {campaigns, announcements, events, products, roles, members};
 };
 
+// Group tags change rarely and show on every card and comment, so lookups are
+// shared: one request per person however many places show their tag, reused
+// for a few minutes. Rotur has no batch profile lookup, so this is the most
+// that can be saved.
+const GROUP_TAG_TTL = 5 * 60 * 1000;
+const groupTags = new Map();
+
+const groupTagKey = username => String(username || '').trim()
+    .toLowerCase();
+
+const groupTag = username => {
+    const key = groupTagKey(username);
+    if (!key) return Promise.resolve('');
+    const hit = groupTags.get(key);
+    if (hit && Date.now() - hit.at < GROUP_TAG_TTL) return hit.promise;
+    // A failed lookup is forgotten, so the next card asks again instead of
+    // showing no tag for minutes.
+    const promise = getProfile(key).then(profile => String((profile && profile.group_tag) || ''), () => {
+        if (groupTags.get(key)?.promise === promise) groupTags.delete(key);
+        return '';
+    });
+    groupTags.set(key, {at: Date.now(), promise});
+    if (groupTags.size > CACHE_MAX_ENTRIES) groupTags.delete(groupTags.keys().next().value);
+    return promise;
+};
+
+const setGroupTag = (username, tag) => {
+    const key = groupTagKey(username);
+    if (key) groupTags.set(key, {at: Date.now(), promise: Promise.resolve(String(tag || ''))});
+};
+
 const withGroupTags = users => Promise.all((users || []).map(async user => {
     if (!user || user.group_tag) return user;
-    try {
-        const profile = await cachedGet(`/profile/${encodeURIComponent(user.username)}`, {include_posts: '0'});
-        return {...user, group_tag: profile.group_tag || ''};
-    } catch (e) {
-        return user;
-    }
+    const tag = await groupTag(user.username);
+    return tag ? {...user, group_tag: tag} : user;
 }));
 
 const rotur = {
@@ -250,6 +281,8 @@ const rotur = {
     deletePost: id => authenticatedAction(['posts:delete'], client => client.posts.delete(id)),
     status: getStatus,
     followerLeaderboard,
+    groupTag,
+    setGroupTag,
     withGroupTags,
     groups: {
         search: query => get('/groups/search', {query}),

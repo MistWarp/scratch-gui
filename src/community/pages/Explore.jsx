@@ -5,6 +5,7 @@ import {Navigate, useSearchParams} from 'react-router-dom';
 import {Compass} from 'lucide-react';
 import api from '../api';
 import useLatest from '../use-latest.js';
+import CardGridSkeleton from '../components/CardGridSkeleton.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import Button from '../components/ui/Button.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
@@ -81,6 +82,9 @@ const Explore = () => {
     const pageDepth = getPageDepth(params.get('page'));
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
+    // Once a page has loaded, later sorts and filters keep it on screen
+    // (dimmed) until the new one arrives, instead of blanking the grid.
+    const [loaded, setLoaded] = useState(false);
     const [failed, setFailed] = useState(false);
     const [attempt, setAttempt] = useState(0);
     const [total, setTotal] = useState(0);
@@ -118,6 +122,7 @@ const Explore = () => {
             .then(fresh(pages => {
                 setProjects(mergeProjects(pages.map(page => page.projects)));
                 setTotal(pages.length ? pages[0].total || 0 : 0);
+                setLoaded(true);
             }))
             .catch(fresh(() => setFailed(true)))
             .finally(fresh(() => setLoading(false)));
@@ -198,12 +203,12 @@ const Explore = () => {
                     options={SORTS.map(option => ({value: option.key, label: communityText(option.label)}))}
                 />
             </ExploreHeader>
-            {loading ? (
-                <StatusMessage />
+            {loading && (!loaded || !projects.length) ? (
+                <CardGridSkeleton className={styles.grid} count={8} />
             ) : failed ? (
                 <StatusMessage error onRetry={() => setAttempt(a => a + 1)}>{communityText('Could not load projects.')}</StatusMessage>
             ) : projects.length ? (
-                <div className={styles.grid}>
+                <div className={loading ? `${styles.grid} ${styles.stale}` : styles.grid} aria-busy={loading}>
                     {projects.map(project => (
                         <ProjectCard
                             key={project.id}

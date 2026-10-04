@@ -1,9 +1,11 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Link, useParams} from 'react-router-dom';
 import {CalendarDays, Library, MessageCircle, Settings, UserMinus, UserPlus, Users} from 'lucide-react';
-import api from '../api';
+import api, {friendlyError} from '../api';
+import setPageMeta from '../page-meta.js';
+import scrollToAnchorWithRetry from '../scroll-to-anchor.js';
 import {useUser} from '../UserContext.jsx';
 import Avatar from '../components/Avatar.jsx';
 import GroupTag from '../components/GroupTag.jsx';
@@ -45,18 +47,36 @@ const normalizeSpace = space => ({
         (Array.isArray(space.followers) ? space.followers.length : 0)
 });
 
-const loadMissingProjects = async space => {
+// Spaces can list projects the response doesn't include. Those are fetched
+// one by one, so they are remembered in `known` across reloads of the page.
+const loadMissingProjects = async (space, known = new Map()) => {
     const normalized = normalizeSpace(space);
     const ids = normalized.projectIds;
     const projects = normalized.projects;
     if (!ids.length || projects.length === ids.length) return normalized;
     const byId = new Map(projects.map(project => [project.id, project]));
     const missing = ids.filter(projectId => !byId.has(projectId));
-    const loaded = await Promise.all(missing.map(projectId => api.getProject(projectId)
-        .then(data => data.project)
-        .catch(() => null)));
-    loaded.filter(Boolean).forEach(project => byId.set(project.id, project));
+    const loaded = await Promise.all(missing.map(projectId => (known.has(projectId) ?
+        Promise.resolve(known.get(projectId)) :
+        api.getProject(projectId)
+            .then(data => data.project)
+            .catch(() => null))));
+    loaded.filter(Boolean).forEach(project => {
+        byId.set(project.id, project);
+        known.set(project.id, project);
+    });
     return {...normalized, projects: ids.map(projectId => byId.get(projectId)).filter(Boolean)};
+};
+
+// What following or unfollowing changes, applied before the server answers.
+const toggleFollow = (space, viewerName, following) => {
+    const followers = (space.followers || []).filter(name => name !== viewerName);
+    return {
+        ...space,
+        following,
+        followers: following && viewerName ? [...followers, viewerName] : followers,
+        followerCount: Math.max(0, (space.followerCount || 0) + (following ? 1 : -1))
+    };
 };
 
 const Space = () => {
@@ -70,6 +90,11 @@ const Space = () => {
     const [failed, setFailed] = useState('');
     const [failedLoadContext, setFailedLoadContext] = useState('');
     const [error, setError] = useState('');
+    const [followBusy, setFollowBusy] = useState(false);
+    const followLocks = useRef(new Set());
+    const knownProjects = useRef(new Map());
+    const currentContext = useRef(loadContext);
+    currentContext.current = loadContext;
     const beginLoad = useLatest();
 
     const commentSource = useSpaceCommentSource(id);
@@ -79,7 +104,7 @@ const Space = () => {
         return api.getSpace(id)
             .then(data => {
                 if (!data || !data.space) throw new Error('Space response was incomplete.');
-                return loadMissingProjects(data.space);
+                return loadMissingProjects(data.space, knownProjects.current);
             })
             .then(fresh(loadedSpace => {
                 setSpace(loadedSpace);
@@ -99,21 +124,54 @@ const Space = () => {
         setSpace(null);
         setFailed('');
         setError('');
+        // Another space or viewer can see different projects.
+        knownProjects.current = new Map();
         load().catch(() => {});
     }, [load, viewerName]);
+
+    useEffect(() => {
+        if (!space || spaceLoadContext !== loadContext) return;
+        setPageMeta({
+            title: space.title,
+            description: space.description,
+            image: space.thumbnailUrl || (space.projects.find(project => project.thumbUrl) || {}).thumbUrl
+        });
+    }, [space, spaceLoadContext, loadContext]);
+
+    // Comment links (#comment-id-…) scroll once the space and its comments render.
+    const spaceReady = Boolean(space) && spaceLoadContext === loadContext;
+    useEffect(() => {
+        if (!spaceReady) return;
+        const hash = window.location.hash;
+        if (!hash) return;
+        return scrollToAnchorWithRetry(hash.replace('#', ''));
+    }, [spaceReady, loadContext]);
 
     const follow = async () => {
         if (!user) {
             login();
             return;
         }
+        const context = loadContext;
+        if (followLocks.current.has(context) || !space) return;
+        followLocks.current.add(context);
+        setFollowBusy(true);
         setError('');
+        const wasFollowing = Boolean(space.following);
+        setSpace(current => toggleFollow(current, viewerName, !wasFollowing));
         try {
-            if (space.following) await api.unfollowSpace(id);
-            else await api.followSpace(id);
-            await load();
+            const data = wasFollowing ? await api.unfollowSpace(id) : await api.followSpace(id);
+            if (currentContext.current === context && data && typeof data.followerCount === 'number') {
+                setSpace(current => ({...current, followerCount: data.followerCount}));
+            }
         } catch (e) {
-            setError(e.message || communityText('Could not update follow status.'));
+            if (currentContext.current === context) {
+                setSpace(current => toggleFollow(current, viewerName, wasFollowing));
+                setError(friendlyError(e, communityText('Could not update follow status.')));
+            }
+        } finally {
+            followLocks.current.delete(context);
+            setFollowBusy(false);
         }
     };
 
@@ -123,7 +181,7 @@ const Space = () => {
             await api.respondSpaceInvitation(id, accepted);
             await load();
         } catch (e) {
-            setError(e.message || communityText('Could not respond to the invitation.'));
+            setError(friendlyError(e, communityText('Could not respond to the invitation.')));
         }
     };
 
@@ -142,7 +200,7 @@ const Space = () => {
                 myReaction: data.myReaction
             }));
         } catch (e) {
-            setError(e.message || communityText('Could not rate this space.'));
+            setError(friendlyError(e, communityText('Could not rate this space.')));
         }
     };
 
@@ -178,7 +236,7 @@ const Space = () => {
                 lead={space.description || communityText('No description yet.')}
                 actions={(
                     <React.Fragment>
-                        <Button variant={space.following ? 'secondary' : 'primary'} onClick={follow}>
+                        <Button variant={space.following ? 'secondary' : 'primary'} busy={followBusy} onClick={follow}>
                             {space.following ? <UserMinus size={16} /> : <UserPlus size={16} />}
                             {space.following ? communityText('Following') : communityText('Follow')}
                         </Button>
@@ -263,5 +321,5 @@ const Space = () => {
     );
 };
 
-export {normalizeSpace, spaceLoadMessage};
+export {loadMissingProjects, normalizeSpace, spaceLoadMessage, toggleFollow};
 export default Space;

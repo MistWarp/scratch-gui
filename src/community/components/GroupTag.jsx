@@ -3,25 +3,12 @@ import {Link} from 'react-router-dom';
 import rotur from '../rotur.js';
 import styles from './GroupTag.module.css';
 
-const tagCache = new Map();
-const resolveTag = username => {
-    const key = String(username || '').trim().toLowerCase();
-    if (!key) return Promise.resolve('');
-    const cached = tagCache.get(key);
-    if (cached && Date.now() - cached.at < 300000) return cached.promise;
-    if (typeof rotur.profile !== 'function') return Promise.resolve('');
-    const promise = rotur.profile(key).then(profile => profile.group_tag || '').catch(() => {
-        if (tagCache.get(key)?.promise === promise) tagCache.delete(key);
-        return '';
-    });
-    tagCache.set(key, {at: Date.now(), promise});
-    return promise;
-};
+// rotur.js shares one lookup per person across every tag on the page.
+const resolveTag = username => (
+    typeof rotur.groupTag === 'function' ? rotur.groupTag(username) : Promise.resolve('')
+);
 const storeResolvedTag = (username, tag) => {
-    const key = String(username || '').trim().toLowerCase();
-    if (key) {
-        tagCache.set(key, {at: Date.now(), promise: Promise.resolve(String(tag || ''))});
-    }
+    if (typeof rotur.setGroupTag === 'function') rotur.setGroupTag(username, tag);
 };
 
 const GroupTag = ({tag, username, compact = false, linked = true, className = ''}) => {

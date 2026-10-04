@@ -3,12 +3,19 @@ import {clearContentCache} from './cached-fetch.js';
 import {isGalleryExtensionUrl} from '../trusted-extension.js';
 import {trackApiSuccess} from '../../community/analytics.js';
 import {setMinorAccount} from '../minor-account.js';
+import {
+    createApiError, createNetworkError, createTimeoutError, friendlyError
+} from '../../community/api-errors.js';
 
-const API_BASE = 'https://api.mistwarp.org/v1';
+// Builds can point at another API with MW_API_BASE (see vite.config.mjs).
+const API_BASE = process.env.MW_API_BASE || 'https://api.mistwarp.org/v1';
 
 const SESSION_KEY = 'mw:mistwarp-session';
 const GET_CACHE_PREFIX = 'mw:api-cache:';
 const GET_CACHE_TTL = 60 * 1000;
+// A GET that hasn't answered in this long gives up instead of spinning forever.
+const GET_TIMEOUT = 15000;
+const GET_RETRY_DELAY = 400;
 
 let cacheGeneration = 0;
 const inFlightGets = new Map();
@@ -52,9 +59,17 @@ const getCacheKey = path => {
     return `${GET_CACHE_PREFIX}${session ? session.slice(-8) : 'anon'}:${path}`;
 };
 
-const clearApiCache = () => {
+const cachedPath = key => {
+    const start = key.indexOf(':/', GET_CACHE_PREFIX.length);
+    return start === -1 ? '' : key.slice(start + 1);
+};
+
+// Clears cached GETs. With a test, only the entries whose path it accepts.
+const clearApiCache = (test = null) => {
     cacheGeneration += 1;
-    inFlightGets.clear();
+    for (const key of Array.from(inFlightGets.keys())) {
+        if (!test || test(cachedPath(key))) inFlightGets.delete(key);
+    }
     try {
         // Find the keys before removing any. Removing an item can reorder the
         // rest, so removing while walking key(i) skips some, and a skipped
@@ -63,12 +78,49 @@ const clearApiCache = () => {
         const keys = [];
         for (let i = 0; i < sessionStorage.length; i++) {
             const key = sessionStorage.key(i);
-            if (key && key.startsWith(GET_CACHE_PREFIX)) keys.push(key);
+            if (key && key.startsWith(GET_CACHE_PREFIX) && (!test || test(cachedPath(key)))) keys.push(key);
         }
         for (const key of keys) sessionStorage.removeItem(key);
     } catch (e) {
         // ignore
     }
+};
+
+// Requests that change nothing a GET returns.
+const isCacheNeutral = path => path.endsWith('/view') || path.endsWith('/live') || path === '/errors';
+
+// Collections whose items are cached separately, so a change to one item can
+// leave the others' cached pages alone.
+const SCOPED_COLLECTIONS = ['projects', 'spaces', 'users', 'news', 'roadmap', 'bounties'];
+const COLLECTION_PAGES = ['featured', 'random'];
+// Actions that change which lists, trees or pages an item shows up in.
+const WIDE_ACTIONS = ['remix', 'publish', 'unpublish', 'visibility', 'restore', 'upload', 'history'];
+
+const pathSegments = path => path.split('?')[0].split('/')
+    .filter(Boolean);
+
+/**
+ * Which cached GETs a request can make stale. Everything, unless the request
+ * changes one item of a scoped collection: then that item's pages, and every
+ * page that isn't another item of the same collection (lists, feeds, /me and
+ * other collections), since those can show the item too.
+ * @param {string} method - The request method.
+ * @param {string} path - The request path.
+ * @returns {?Function} A test for cached paths to drop, or null to drop them all.
+ */
+const staleCacheTest = (method, path) => {
+    const [collection, id, action] = pathSegments(path);
+    if (!SCOPED_COLLECTIONS.includes(collection) || !id || COLLECTION_PAGES.includes(id)) return null;
+    if (WIDE_ACTIONS.includes(action) || (!action && method === 'DELETE')) return null;
+    // Names differ in case between links (/users/Mist, /users/mist), so a
+    // case-only difference counts as the same item.
+    const item = id.toLowerCase();
+    return cached => {
+        const [cachedCollection, cachedId] = pathSegments(cached);
+        const otherItem = cachedCollection === collection && cachedId &&
+            !COLLECTION_PAGES.includes(cachedId) && cachedId.toLowerCase() !== item;
+        return !otherItem;
+    };
 };
 
 const readApiCache = key => {
@@ -108,12 +160,14 @@ const banMessage = ({message, data}) => {
 const parseResponse = async response => {
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data.ok === false || data.error) {
-        const error = new Error(data.error || `Request failed (${response.status})`);
-        error.status = response.status;
-        error.code = data.code;
+        const error = createApiError({
+            status: response.status,
+            code: data.code,
+            serverMessage: data.error,
+            data
+        });
         const isRestricted = RESTRICTED_CODES.includes(data.code);
         error.redirectUrl = data.redirectUrl || data.redirect_url || (isRestricted ? 'https://rotur.dev/me' : null);
-        error.data = data;
         throw error;
     }
     return data;
@@ -202,20 +256,25 @@ const runExchange = token => {
     return exchangeInFlight;
 };
 
-const request = async (path, {method = 'GET', body, headers = {}, raw = false, cache = true, timeoutMs = 0} = {}) => {
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+const request = async (path, {method = 'GET', body, headers = {}, raw = false, cache = true, timeoutMs} = {}) => {
     const cacheable = method === 'GET' && !raw && cache;
     const cacheKey = cacheable ? getCacheKey(path) : '';
+    // Uploads and raw downloads (project history) can take far longer than a
+    // JSON GET, so only those get a deadline unless the caller asks for one.
+    const timeout = typeof timeoutMs === 'number' ? timeoutMs : (method === 'GET' && !raw ? GET_TIMEOUT : 0);
     if (cacheable) {
         const hit = readApiCache(cacheKey);
         if (hit) return hit;
         const pending = inFlightGets.get(cacheKey);
         if (pending) return pending;
-    } else if (method !== 'GET' && !path.endsWith('/view') && !path.endsWith('/live')) {
-        clearApiCache();
+    } else if (method !== 'GET' && !isCacheNeutral(path)) {
+        clearApiCache(staleCacheTest(method, path));
     }
     const generation = cacheGeneration;
     const run = async () => {
-        const doFetch = () => {
+        const fetchOnce = () => {
             const session = loadSession();
             const finalHeaders = {...headers};
             if (session) {
@@ -228,19 +287,30 @@ const request = async (path, {method = 'GET', body, headers = {}, raw = false, c
                 finalHeaders['Content-Type'] = 'application/json';
                 options.body = JSON.stringify(body);
             }
-            const controller = timeoutMs ? new AbortController() : null;
+            const controller = timeout ? new AbortController() : null;
             if (controller) options.signal = controller.signal;
-            const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+            const timer = controller ? setTimeout(() => controller.abort(), timeout) : null;
             return fetch(`${API_BASE}${path}`, options)
                 .catch(error => {
-                    if (controller && controller.signal.aborted) {
-                        throw new Error('The server did not respond in time. Retrying the connection.');
-                    }
-                    throw error;
+                    if (controller && controller.signal.aborted) throw createTimeoutError(error);
+                    throw createNetworkError(error);
                 })
                 .finally(() => {
                     if (timer) clearTimeout(timer);
                 });
+        };
+        // A GET changes nothing, so a dropped connection or a server error
+        // gets one more try. A timeout doesn't, so the wait stays bounded.
+        const doFetch = async () => {
+            if (method !== 'GET') return fetchOnce();
+            try {
+                const response = await fetchOnce();
+                if (!(response.status >= 500)) return response;
+            } catch (error) {
+                if (error.code !== 'network') throw error;
+            }
+            await wait(GET_RETRY_DELAY);
+            return fetchOnce();
         };
         let response = await doFetch();
         if (
@@ -334,7 +404,7 @@ const uploadXhr = (path, form, onUploadProgress) => new Promise((resolve, reject
             onUploadProgress(event.loaded, event.total);
         }
     };
-    xhr.onerror = () => finishReject(new Error('Network error during upload'));
+    xhr.onerror = () => finishReject(createNetworkError());
     xhr.onabort = () => {
         if (!settled) finishReject(new Error('Upload cancelled'));
     };
@@ -349,11 +419,7 @@ const uploadXhr = (path, form, onUploadProgress) => new Promise((resolve, reject
             finishResolve(data);
             return;
         }
-        const error = new Error(data.error || `Request failed (${xhr.status})`);
-        error.status = xhr.status;
-        error.code = data.code;
-        error.data = data;
-        finishReject(error);
+        finishReject(createApiError({status: xhr.status, code: data.code, serverMessage: data.error, data}));
     };
     scheduleTimeout(UPLOAD_STALL_TIMEOUT, false);
     xhr.send(form);
@@ -553,5 +619,8 @@ export {
     hashExtensionUrl,
     extensionSourceUrl,
     fetchWorkspace,
-    bootstrapProjectHistory
+    bootstrapProjectHistory,
+    clearApiCache,
+    friendlyError,
+    staleCacheTest
 };

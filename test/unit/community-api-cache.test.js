@@ -1,4 +1,4 @@
-import {request} from '../../src/lib/community/api.js';
+import {request, staleCacheTest} from '../../src/lib/community/api.js';
 
 const jsonResponse = data => ({
     ok: true,
@@ -91,7 +91,7 @@ describe('community api GET cache', () => {
             const paths = ['/me', '/me/settings', '/projects/abc/pulls', '/projects/abc/related',
                 '/projects/abc/remixtree', '/projects/abc/comments?offset=0&limit=20'];
             for (const path of paths) await request(path);
-            await request('/projects/abc/comments', {method: 'POST', body: {content: 'hello'}});
+            await request('/me/settings', {method: 'PUT', body: {theme: 'dark'}});
 
             expect(Array.from(items.keys())).toEqual(['mw:rotur-restore']);
             await request('/projects/abc/comments?offset=0&limit=20');
@@ -132,5 +132,60 @@ describe('community api GET cache', () => {
         await request('/projects/abc');
         expect(global.fetch).toHaveBeenCalledTimes(2);
         spy.mockRestore();
+    });
+
+    test('a change to one project keeps other projects cached', async () => {
+        const paths = ['/projects/abc', '/projects/abc/comments?offset=0&limit=20', '/projects/def',
+            '/projects/def/related?limit=6&exclude=', '/projects/featured', '/explore?sort=recent', '/me',
+            '/users/mist/projects?offset=0&limit=24', '/spaces/s1'];
+        for (const path of paths) await request(path);
+        global.fetch.mockClear();
+
+        await request('/projects/abc/comments', {method: 'POST', body: {content: 'hello'}});
+        for (const path of paths) await request(path);
+
+        const refetched = global.fetch.mock.calls.slice(1).map(call => call[0].replace(/^.*\/v1/, ''));
+        expect(refetched).toEqual(['/projects/abc', '/projects/abc/comments?offset=0&limit=20',
+            '/projects/featured', '/explore?sort=recent', '/me', '/users/mist/projects?offset=0&limit=24',
+            '/spaces/s1']);
+    });
+
+    test('changes that move an item between lists clear every cached GET', async () => {
+        const paths = ['/projects/abc', '/projects/def/remixtree', '/projects/def'];
+        for (const path of paths) await request(path);
+        global.fetch.mockClear();
+
+        await request('/projects/abc/remix', {method: 'POST', body: {}});
+        await request('/projects/def/remixtree');
+        await request('/projects/def', {method: 'DELETE'});
+        await request('/projects/abc');
+        expect(global.fetch).toHaveBeenCalledTimes(4);
+    });
+
+    test('unknown paths clear every cached GET', async () => {
+        await request('/projects/abc');
+        await request('/themes/xyz/react', {method: 'POST', body: {type: 'heart'}});
+        await request('/projects/abc');
+        expect(global.fetch).toHaveBeenCalledTimes(3);
+    });
+
+    test('error reports leave the cache alone', async () => {
+        await request('/projects/abc');
+        await request('/errors', {method: 'POST', body: {message: 'oops'}});
+        await request('/projects/abc');
+        expect(global.fetch).toHaveBeenCalledTimes(2);
+    });
+
+    test('staleCacheTest scopes item changes and widens list changes', () => {
+        const isStale = staleCacheTest('POST', '/spaces/s1/follow');
+        expect(isStale('/spaces/s1')).toBe(true);
+        expect(isStale('/spaces/s1/comments?offset=0')).toBe(true);
+        expect(isStale('/spaces?kind=studio')).toBe(true);
+        expect(isStale('/spaces/s2')).toBe(false);
+        expect(isStale('/me/spaces')).toBe(true);
+        expect(staleCacheTest('POST', '/projects')).toBeNull();
+        expect(staleCacheTest('POST', '/projects/abc/publish')).toBeNull();
+        expect(staleCacheTest('DELETE', '/spaces/s1')).toBeNull();
+        expect(staleCacheTest('PUT', '/me/settings')).toBeNull();
     });
 });
