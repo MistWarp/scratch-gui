@@ -20,6 +20,9 @@ import {
     isProjectPromptBlocked
 } from '../lib/project-prompt-blocking.js';
 
+// Project thumbnails are served from the MistWarp API origin, outside the /v1 prefix.
+const MISTWARP_API_ORIGIN = (process.env.MW_API_BASE || 'https://api.mistwarp.org/v1').replace(/\/v1\/?$/, '');
+
 // Attaches a Rotur "host" onto vm.runtime so builtin Rotur extensions can act as
 // the logged-in user without ever seeing the token. The token stays inside the
 // GUI's Rotur client (lib/rotur/client.js); this host only exposes identity,
@@ -50,7 +53,7 @@ class RoturExtensionHost extends React.Component {
             projectName: () => this.props.projectTitle || '',
             projectImage: () => {
                 const id = this.getProjectId();
-                return id ? `https://api.mistwarp.org/thumbnails/${encodeURIComponent(id)}.png` : '';
+                return id ? `${MISTWARP_API_ORIGIN}/thumbnails/${encodeURIComponent(id)}.png` : '';
             },
             grantedScopes: () => grantedScopesFor(this.grantMeta())
         };

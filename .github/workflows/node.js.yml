@@ -16,8 +16,33 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Only `pnpm run test:integration` needs chromedriver, and no job here runs it.
+  CHROMEDRIVER_SKIP_DOWNLOAD: 'true'
+
+# The three jobs run in parallel. Together they run what `pnpm run check:full` runs locally.
 jobs:
-  build:
+  static:
+    name: Lint and static checks
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: pnpm/action-setup@v4
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: .nvmrc
+        cache: pnpm
+    # Nothing here runs dependency build scripts.
+    - run: pnpm install --frozen-lockfile --ignore-scripts
+    - run: pnpm run lint
+    - run: pnpm run i18n:editor:check
+    - run: pnpm run i18n:community:check
+    - run: pnpm run check:community-css
+    - run: pnpm run deps:check
+
+  unit:
+    name: Unit tests
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -28,14 +53,28 @@ jobs:
         node-version-file: .nvmrc
         cache: pnpm
     - run: pnpm install --frozen-lockfile
-    - run: pnpm run deps:check
-    - run: pnpm run i18n:community:check
-    - run: pnpm run i18n:editor:check
-    - run: pnpm run test:unit:ci
-    - run: pnpm run build
+    - run: pnpm run test:unit:ci --reporters=default --reporters=github-actions
+
+  build:
+    name: Production build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: pnpm/action-setup@v4
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: .nvmrc
+        cache: pnpm
+    # Cloudflare Pages also installs without build scripts (scripts/cloudflare-build.mjs).
+    - run: pnpm install --frozen-lockfile --ignore-scripts
+    # The community site build, as deployed. build:deploy raises Node's heap limit itself.
+    - run: pnpm run build:deploy
       env:
         NODE_ENV: production
-        MW_COMMUNITY: 'true'
-        NODE_OPTIONS: --max-old-space-size=7168
-    - run: pnpm lint
-    - run: node scripts/validate-deploy.mjs build
+    - run: pnpm run validate-deploy
+    - uses: actions/upload-artifact@v4
+      with:
+        name: build
+        path: build/
+        retention-days: 7

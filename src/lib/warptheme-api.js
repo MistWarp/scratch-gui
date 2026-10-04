@@ -1,7 +1,8 @@
 import {accountKey, ensureScopes, getAccessToken} from './rotur/client.js';
 import {requestValidator} from './community/api.js';
 
-const WARPTHEME_API_BASE = 'https://warptheme.mistium.com/api';
+// Set MW_WARPTHEME_API in .env to point local development at another WarpTheme server.
+const WARPTHEME_API_BASE = process.env.MW_WARPTHEME_API || 'https://warptheme.mistium.com/api';
 const WARPTHEME_SESSION_KEY = 'mw:warptheme-session';
 const likedThemes = new Set();
 

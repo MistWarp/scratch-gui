@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react",
+    "allowJs": true,
+    "checkJs": false,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "scratch-blocks": ["src/generated/scratch-blocks.js"],
+      "scratch-render-fonts": ["src/lib/tw-scratch-render-fonts/index.js"],
+      "fractch/browser": ["node_modules/fractch/src/browser.js"],
+      "text-encoding": ["src/lib/native-text-encoding.js"]
+    }
+  },
+  "include": ["src", "test", "scripts", "functions", "*.mjs", "*.cjs"],
+  "exclude": ["node_modules", "build", "dist", "src/generated/editor-locales", "src/addons/ScratchAddons"]
+}

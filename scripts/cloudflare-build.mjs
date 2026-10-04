@@ -51,7 +51,13 @@ const docs = downloadDocs().catch(error => {
 if (!process.env.MW_PINNED_FORKS) await run(process.execPath, ['scripts/sync-forks.mjs']);
 await run('pnpm', ['install', process.env.MW_PINNED_FORKS ? '--frozen-lockfile' : '--no-frozen-lockfile',
     '--ignore-scripts']);
-await run('pnpm', ['run', 'prepublish']);
+await run('pnpm', ['run', 'setup:microbit']);
 const docsBuild = await docs;
-await run(process.execPath, ['scripts/build.mjs', '--site-only'],
-    {MW_COMMUNITY: 'true', ...(docsBuild ? {MW_DOCS_BUILD: docsBuild} : {})});
+// The community build needs more memory than Node's default heap.
+const nodeOptions = process.env.NODE_OPTIONS || '';
+await run(process.execPath, ['scripts/build.mjs', '--site-only'], {
+    MW_COMMUNITY: 'true',
+    ...(/--max-old-space-size/.test(nodeOptions) ? {} :
+        {NODE_OPTIONS: `${nodeOptions} --max-old-space-size=7168`.trim()}),
+    ...(docsBuild ? {MW_DOCS_BUILD: docsBuild} : {})
+});

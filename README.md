@@ -2,7 +2,7 @@
 
 This repository is the browser app behind [mistwarp.org](https://mistwarp.org/): the editor, the project player, and the community site. It is a fork of [TurboWarp](https://github.com/TurboWarp/scratch-gui), which is based on Scratch GUI.
 
-Contributor docs, including the code style rules and how the other MistWarp packages fit together, are at [mistwarp.org/docs/contributing](https://mistwarp.org/docs/contributing/overview/).
+Contributor docs, including the code style rules and how the other MistWarp packages fit together, are at [mistwarp.org/docs/contributing](https://mistwarp.org/docs/contributing/overview/). [CONTRIBUTING.md](CONTRIBUTING.md) is the short version for this repository, and [docs/conventions.md](docs/conventions.md) explains how editor and community code differ.
 
 ## Requirements
 
@@ -22,7 +22,7 @@ pnpm start
 
 With the `.env` from `.env.example`, `MW_COMMUNITY=true` turns on the community site:
 
-- <http://localhost:8601/> is the community site. It talks to the live API at `api.mistwarp.org`.
+- <http://localhost:8601/> is the community site. It talks to the live API at `api.mistwarp.org`, or to the server in `MW_API_BASE`.
 - <http://localhost:8601/editor> is the editor.
 
 Without `.env`, <http://localhost:8601/> is the editor and the community pages are left out.
@@ -36,36 +36,45 @@ pnpm run build
 pnpm run preview
 ```
 
-`pnpm run build` writes the site to `build/`, and `pnpm run preview` serves it on port 8601. A community build (`MW_COMMUNITY=true`) needs more memory than Node's default, so set `NODE_OPTIONS=--max-old-space-size=7168` if it runs out.
+`pnpm run build` writes the site to `build/`, and `pnpm run preview` serves it on port 8601. A community build needs more memory than Node's default heap, so the build scripts run Node with `--max-old-space-size=7168`. Run them through `pnpm run`, not as `node scripts/build.mjs`, or pass that flag yourself.
 
+- `pnpm run build:deploy` builds the site as production does, with the community site.
 - `pnpm run build:editor` builds only the editor, as one bundle.
 - `pnpm run build:community` builds only the community site.
 - `pnpm run build:library` builds the GUI library into `dist/`, and `pnpm run build:all` builds the site and the library.
 - `pnpm run build:stats` and `pnpm run build:report` report bundle sizes.
 
-Production runs on Cloudflare Pages, which builds `develop` with `MW_COMMUNITY=true`, updates the engine forks to their latest `develop`, and adds the docs site under `/docs`. Its build command is `node scripts/cloudflare-build.mjs`. That script installs once with the forks already updated and skips their build scripts, since the site compiles the forks from source. It downloads `/docs` from the archive that the MistWarp/docs deployment publishes, and builds the docs from source only when that archive is behind docs `master`.
+These scripts pass flags to `scripts/build.mjs` instead of setting environment variables, so they work on Windows too: `--entry=<page>`, `--community`, `--no-community`, `--stats`, `--library` and `--site-only`.
+
+Production runs on Cloudflare Pages, which builds `develop` with `MW_COMMUNITY=true`, updates the engine forks to their latest `develop`, and adds the docs site under `/docs`. Its build command is `node scripts/cloudflare-build.mjs`. That script installs once with the forks already updated and skips their build scripts, since the site compiles the forks from source, then fetches the micro:bit HEX file with `pnpm run setup:microbit`. It downloads `/docs` from the archive that the MistWarp/docs deployment publishes, and builds the docs from source only when that archive is behind docs `master`.
 
 ## Check your changes
 
-Pull requests run these checks, so run them before pushing:
+Before pushing, run:
 
 ```sh
-pnpm run deps:check
-pnpm run i18n:community:check
-pnpm run i18n:editor:check
-pnpm run test:unit:ci
-MW_COMMUNITY=true pnpm run build
-node scripts/validate-deploy.mjs build
+pnpm check
 ```
+
+`pnpm check` (also `pnpm test`) works offline and runs, in order:
+
+- `pnpm run lint`: ESLint on every `.js`, `.jsx`, `.mjs` and `.cjs` file. `pnpm run fmt` fixes what it can, and `npx eslint <files>` checks just the files you changed.
+- `pnpm run i18n:editor:check` and `pnpm run i18n:community:check`: every message is extracted and every catalog is valid.
+- `pnpm run check:community-css`: the community CSS rules.
+- `pnpm run test:unit:ci`: the Jest tests in `test/unit`.
+
+`pnpm run check:full` adds what needs the network or several minutes: `pnpm run deps:check` (the fork pins are current), `pnpm run build:deploy` (the production build) and `pnpm run validate-deploy` (the built pages reference files that exist). Pull requests run all of it, split over three parallel CI jobs: `static`, `unit` and `build`.
 
 Also run these when they apply:
 
-- `pnpm run lint` for ESLint, or `npx eslint <files>` for the files you changed. `pnpm run fmt` fixes what it can.
-- `pnpm run check:community-css` after changing CSS in `src/community`.
 - `pnpm run i18n:editor:extract` after adding or changing an editor message, then commit `src/lib/tw-translations/default-messages.json`.
 - `pnpm run i18n:community:extract` after adding a community string.
 - `pnpm run test:unit:watch` while working, or `npx jest <path>` for one file.
-- `pnpm run test:integration` runs the Selenium tests in `test/integration` against `build/`. It needs Chrome and a matching `chromedriver`.
+- `pnpm run test:integration` runs the Selenium tests in `test/integration` against `build/`. Build first; the tests open `build/editor.html`, so they work with and without the community site. They need Chrome and a matching `chromedriver`. Plain `jest` leaves these tests out.
+
+### Pre-commit hook (optional)
+
+`pnpm run hooks:install` points Git at `.githooks/`. Its pre-commit hook runs ESLint on the staged script files and, when `src/` changed, the i18n checks. It takes a few seconds and needs no extra packages. `git commit --no-verify` skips it once, and `git config --unset core.hooksPath` turns it off.
 
 ## Work on the engine packages
 
@@ -78,7 +87,13 @@ cd scratch-gui
 pnpm run link
 ```
 
-`pnpm run link` links every fork that is checked out next to `scratch-gui` and skips the rest. `pnpm run unlink`, or another `pnpm install`, goes back to the pinned copies. `pnpm run reinstall` forces a fresh install and links again. `pnpm run deps:sync` moves the pins to each fork's latest `develop`.
+`pnpm run link` links every fork that is checked out next to `scratch-gui` and skips the rest. `pnpm run unlink` goes back to the pinned copies. `pnpm run reinstall` forces a fresh install and links again. `pnpm run deps:sync` moves the pins to each fork's latest `develop`.
+
+Things to know about linked forks:
+
+- Each linked fork needs its own `npm install` in its checkout (the forks use npm lockfiles), since the editor resolves the fork's dependencies from there.
+- The editor reads the generated Closure files of `scratch-blocks` (`blockly_compressed_vertical.js`, `blocks_compressed*.js`, `msg/`). After changing `scratch-blocks/core` or `blocks_vertical`, run its Closure build (`npm run build:closure` in the fork, which needs Python and the fork's dev dependencies) to regenerate them.
+- Any `pnpm install` or `pnpm add` in `scratch-gui` replaces the links with the pinned copies without saying so. Run `pnpm run link` again afterwards.
 
 ## Environment variables
 
@@ -95,10 +110,15 @@ Set these in `.env` or in the shell.
 | `MW_BUILD_DOCS` | Clones and builds MistWarp/docs into `/docs`. A built sibling `../docs/build` is copied in instead when it exists. |
 | `MW_PINNED_FORKS` | On Cloudflare Pages, keeps the fork pins from `package.json` instead of updating them. |
 | `MW_DOCS_ORIGIN` | Docs deployment that Cloudflare Pages builds download `/docs` from. Defaults to `https://docs.warp.mistium.com`. |
-| `MW_STATUS_URL` | Status service used by the community status page and analytics. |
+| `MW_STATUS_URL` | Status service used by the community status page and analytics. Defaults to `https://status.warp.mistium.com`. |
+| `MW_API_BASE` | MistWarp API for the community site, project embeds and Rotur thumbnails. Defaults to `https://api.mistwarp.org/v1`. |
+| `MW_API_WS` | Realtime socket. Defaults to `MW_API_BASE` with `http` replaced by `ws`, plus `/ws`. |
+| `MW_WARPTHEME_API` | WarpTheme API for the theme gallery. Defaults to `https://warptheme.mistium.com/api`. |
 | `GOOGLE_FONTS_API_KEY` | Google Fonts API key for the theme font picker. |
 
-`ROUTING_STYLE`, `STATIC_PATH`, `EXTRA_META`, `ENABLE_SERVICE_WORKER`, `DEBUG`, `MW_BUILD_ID`, and `MW_BUILD_TIME` are also read. See `vite.config.mjs` and `scripts/build.mjs`.
+`ROUTING_STYLE`, `STATIC_PATH`, `EXTRA_META`, `ENABLE_SERVICE_WORKER`, `DEBUG`, `MW_BUILD_ID`, `MW_BUILD_TIME`, `MW_BUILD_STATS`, and `MW_DOCS_BUILD` are also read. `.env.example` lists every variable with its default.
+
+CI sets `CHROMEDRIVER_SKIP_DOWNLOAD=true` so that `pnpm install` skips the chromedriver download. Set it in your shell too if you never run `pnpm run test:integration`.
 
 ## Where things live
 
