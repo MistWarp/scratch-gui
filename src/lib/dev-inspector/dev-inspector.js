@@ -5,6 +5,7 @@ import * as bundledModule2 from './dev-inspector.module.css';
 import WindowManager from '../../addons/window-system/window-manager.js';
 import AddonHooks from '../../addons/hooks.js';
 import {createModalSidebar} from '../../components/modal-sidebar/modal-sidebar-vanilla.js';
+import copyText from '../utils/copy-text.js';
 
 let inspectorStyles;
 let jsonEditorLoader;
@@ -1310,7 +1311,7 @@ export const initDevInspector = (vm, Blockly) => {
                 flashButton(copyBtn, 'Not ready');
                 return;
             }
-            navigator.clipboard.writeText(getEditorText(blockJSONEditor))
+            copyText(getEditorText(blockJSONEditor))
                 .then(() => flashButton(copyBtn, 'Copied'))
                 .catch(() => flashButton(copyBtn, 'Failed'));
         });
@@ -1390,7 +1391,7 @@ export const initDevInspector = (vm, Blockly) => {
                 flashButton(projectCopyBtn, 'Not ready');
                 return;
             }
-            navigator.clipboard.writeText(getEditorText(projectJSONEditor))
+            copyText(getEditorText(projectJSONEditor))
                 .then(() => flashButton(projectCopyBtn, 'Copied'))
                 .catch(() => flashButton(projectCopyBtn, 'Failed'));
         });
