@@ -1,4 +1,3 @@
-import React from 'react';
 import {mountWithIntl} from '../../helpers/intl-helpers.jsx';
 import {GUI} from '../../../src/containers/gui.jsx';
 import ProjectLoadError from '../../../src/components/project-load-error/project-load-error.jsx';

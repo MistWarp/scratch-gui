@@ -1,13 +1,31 @@
 version: 2
 updates:
+  # The engine forks (scratch-vm, scratch-blocks, scratch-render, scratch-paint, scratch-audio)
+  # are pinned to codeload tarballs, which Dependabot cannot update. The "Sync fork pins"
+  # workflow (.github/workflows/sync-forks.yml) moves them instead.
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "daily"
-    allow:
-      - dependency-name: "@turbowarp/*"
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
       - dependency-name: "scratch-audio"
-      - dependency-name: "scratch-render"
-      - dependency-name: "scratch-vm"
-      - dependency-name: "scratch-paint"
       - dependency-name: "scratch-blocks"
+      - dependency-name: "scratch-paint"
+      - dependency-name: "scratch-render"
+      - dependency-name: "scratch-render-fonts"
+      - dependency-name: "scratch-vm"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        patterns:
+          - "*"

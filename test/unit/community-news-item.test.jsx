@@ -13,7 +13,10 @@ describe('NewsItem links', () => {
 
     test('uses client navigation for internal links', () => {
         const wrapper = shallow(
-            <NewsItem item={{...item, link: {url: '/roadmap', label: 'Roadmap'}}} onChanged={jest.fn()} />
+            <NewsItem
+                item={{...item, link: {url: '/roadmap', label: 'Roadmap'}}}
+                onChanged={jest.fn()}
+            />
         );
 
         expect(wrapper.find(Link).map(link => link.prop('to'))).toContain('/roadmap');
@@ -21,7 +24,10 @@ describe('NewsItem links', () => {
 
     test('does not crash when optional link data has no URL', () => {
         expect(() => shallow(
-            <NewsItem item={{...item, link: {label: 'Missing URL'}}} onChanged={jest.fn()} />
+            <NewsItem
+                item={{...item, link: {label: 'Missing URL'}}}
+                onChanged={jest.fn()}
+            />
         )).not.toThrow();
     });
 
@@ -31,7 +37,10 @@ describe('NewsItem links', () => {
     });
 
     test('links the post title to its blog page', () => {
-        const wrapper = shallow(<NewsItem item={item} onChanged={jest.fn()} />);
+        const wrapper = shallow(<NewsItem
+            item={item}
+            onChanged={jest.fn()}
+        />);
 
         expect(wrapper.find(Link).map(link => link.prop('to'))).toContain('/news/news-1');
     });

@@ -1,5 +1,5 @@
-import * as bundledModule0 from "../lib/community/publish";
-import * as bundledModule1 from "../addons/entry";
+import * as bundledModule0 from '../lib/community/publish';
+import * as bundledModule1 from '../addons/entry';
 
 /* eslint-disable max-len */
 import './embed-storage-shim';
@@ -195,5 +195,6 @@ window.addEventListener('message', event => {
 });
 
 if (urlParams.has('addons')) {
-    Promise.resolve(bundledModule1).then(({default: runAddons}) => runAddons()).catch(() => null);
+    Promise.resolve(bundledModule1).then(({default: runAddons}) => runAddons())
+        .catch(() => null);
 }

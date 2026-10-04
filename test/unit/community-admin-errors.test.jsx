@@ -22,7 +22,9 @@ const response = {
 
 const renderErrors = async () => {
     let wrapper;
-    await act(async () => { wrapper = mount(<ErrorManager />); });
+    await act(async () => {
+        wrapper = mount(<ErrorManager />);
+    });
     wrapper.update();
     return wrapper;
 };
@@ -42,7 +44,9 @@ describe('admin error bulk actions', () => {
     test('copies the full response even when search hides errors', async () => {
         const wrapper = await renderErrors();
         wrapper.find('input[type="search"]').simulate('change', {target: {value: 'First'}});
-        await act(async () => { button(wrapper, 'Copy response JSON').simulate('click'); });
+        await act(async () => {
+            button(wrapper, 'Copy response JSON').simulate('click');
+        });
         wrapper.update();
         expect(copyText).toHaveBeenCalledWith(JSON.stringify(response, null, 2));
         expect(button(wrapper, 'Copied JSON')).toHaveLength(1);
@@ -51,18 +55,24 @@ describe('admin error bulk actions', () => {
 
     test('requires confirmation, prevents duplicate deletion, and refreshes counts', async () => {
         let finish;
-        api.admin.deleteAllSiteErrors.mockReturnValue(new Promise(resolve => { finish = resolve; }));
+        api.admin.deleteAllSiteErrors.mockReturnValue(new Promise(resolve => {
+            finish = resolve;
+        }));
         const wrapper = await renderErrors();
         button(wrapper, 'Delete all errors').simulate('click');
         expect(api.admin.deleteAllSiteErrors).not.toHaveBeenCalled();
         const confirm = wrapper.find(AdminActionDialog).prop('onConfirm');
         let deleting;
-        act(() => { deleting = confirm(); confirm(); });
+        act(() => {
+            deleting = confirm(); confirm();
+        });
         wrapper.update();
         expect(api.admin.deleteAllSiteErrors).toHaveBeenCalledTimes(1);
         expect(wrapper.find(AdminActionDialog).prop('busy')).toBe(true);
         api.admin.siteErrors.mockResolvedValue({ok: true, errors: [], openCount: 0});
-        await act(async () => { finish({ok: true, deleted: 250}); await deleting; });
+        await act(async () => {
+            finish({ok: true, deleted: 250}); await deleting;
+        });
         wrapper.update();
         expect(wrapper.text()).toContain('Open0');
         expect(wrapper.text()).toContain('No errors here.');
@@ -75,13 +85,19 @@ describe('admin error bulk actions', () => {
         copyText.mockRejectedValue(new Error('Clipboard unavailable'));
         const wrapper = await renderErrors();
         button(wrapper, 'Delete all errors').simulate('click');
-        await act(async () => { await wrapper.find(AdminActionDialog).prop('onConfirm')(); });
+        await act(async () => {
+            await wrapper.find(AdminActionDialog).prop('onConfirm')();
+        });
         wrapper.update();
         expect(wrapper.find(AdminActionDialog).prop('error')).toBe('Deletion failed');
         expect(wrapper.text()).toContain('First error');
-        act(() => { wrapper.find(AdminActionDialog).prop('onCancel')(); });
+        act(() => {
+            wrapper.find(AdminActionDialog).prop('onCancel')();
+        });
         wrapper.update();
-        await act(async () => { button(wrapper, 'Copy response JSON').simulate('click'); });
+        await act(async () => {
+            button(wrapper, 'Copy response JSON').simulate('click');
+        });
         wrapper.update();
         expect(wrapper.text()).toContain('Clipboard unavailable');
         wrapper.unmount();

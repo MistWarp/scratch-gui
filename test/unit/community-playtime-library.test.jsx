@@ -12,10 +12,18 @@ describe('Playtime library', () => {
     test('shows games in ranked order with their playtime', () => {
         const wrapper = shallow(<PlaytimeLibrary
             projects={[
-                {id: 'one', title: 'Long game', owner: 'Alex', duration: 7200000,
-                    lastPlayed: Date.now(), libraryPublic: true},
-                {id: 'two', title: 'Short game', owner: 'Sam', duration: 1800000,
-                    lastPlayed: Date.now(), libraryPublic: true}
+                {id: 'one',
+                    title: 'Long game',
+                    owner: 'Alex',
+                    duration: 7200000,
+                    lastPlayed: Date.now(),
+                    libraryPublic: true},
+                {id: 'two',
+                    title: 'Short game',
+                    owner: 'Sam',
+                    duration: 1800000,
+                    lastPlayed: Date.now(),
+                    libraryPublic: true}
             ]}
             total={2}
         />);
@@ -30,13 +38,18 @@ describe('Playtime library', () => {
         const wrapper = shallow(<PlaytimeLibrary visible={false} />);
 
         expect(wrapper.find(EmptyState).prop('title')).toBe('This game library is private');
-        expect(wrapper.find(EmptyState).children().text()).toContain('chosen not to share what they play');
+        expect(wrapper.find(EmptyState).children()
+            .text()).toContain('chosen not to share what they play');
     });
 
     test('marks a private library as visible to its owner', () => {
         const wrapper = shallow(<PlaytimeLibrary
-            projects={[{id: 'one', title: 'Game', owner: 'Alex', duration: 60000,
-                lastPlayed: Date.now(), libraryPublic: false}]}
+            projects={[{id: 'one',
+                title: 'Game',
+                owner: 'Alex',
+                duration: 60000,
+                lastPlayed: Date.now(),
+                libraryPublic: false}]}
             total={1}
             visible={false}
             self

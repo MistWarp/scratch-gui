@@ -28,15 +28,15 @@ describe('community upload timeout', () => {
 
     test('a server that stalls after 100% produces a retryable error', async () => {
         const upload = uploadXhr('/projects/project-1/upload', new FormData(), jest.fn());
-        const rejection = expect(upload).rejects.toMatchObject({
-            code: 'upload_processing_timeout',
-            message: expect.stringContaining('check My Stuff before retrying')
-        });
+        upload.catch(() => {});
 
         request.upload.onprogress({lengthComputable: true, loaded: 10, total: 10});
         jest.advanceTimersByTime(180000);
 
-        await rejection;
+        await expect(upload).rejects.toMatchObject({
+            code: 'upload_processing_timeout',
+            message: expect.stringContaining('check My Stuff before retrying')
+        });
         expect(request.abort).toHaveBeenCalledTimes(1);
     });
 

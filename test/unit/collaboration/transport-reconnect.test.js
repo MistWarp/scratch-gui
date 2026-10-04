@@ -152,7 +152,7 @@ describe('transport reconnection', () => {
         peers[0].lastConnection.close();
 
         // The laptop lid closes for ten minutes while the first redial waits.
-        jest.setSystemTime(Date.now() + 10 * 60 * 1000);
+        jest.setSystemTime(Date.now() + (10 * 60 * 1000));
         jest.advanceTimersByTime(1000);
         await flush();
         peers[1].simulateOpen();
@@ -237,18 +237,18 @@ describe('hosting a room whose id the broker still holds', () => {
         const {transport, peers} = makeHost();
         const start = Date.now();
         const hosted = transport.host('room1');
-        let error = null;
+        const outcome = {error: null};
         hosted.catch(e => {
-            error = e;
+            outcome.error = e;
         });
-        for (let i = 0; i < 20 && !error; i++) {
+        for (let i = 0; i < 20 && !outcome.error; i++) {
             taken(peers[peers.length - 1]);
             await flush();
             jest.advanceTimersByTime(10000);
             await flush();
         }
-        expect(error).not.toBeNull();
-        expect(error.collabCode).toBe('ROOM_TAKEN');
+        expect(outcome.error).not.toBeNull();
+        expect(outcome.error.collabCode).toBe('ROOM_TAKEN');
         expect(Date.now() - start).toBeGreaterThanOrEqual(70000);
         expect(peers.length).toBeLessThan(15);
         transport.destroy();

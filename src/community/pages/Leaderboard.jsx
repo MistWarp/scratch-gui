@@ -7,6 +7,7 @@ import rotur from '../rotur';
 import api from '../api';
 import useLatest from '../use-latest.js';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
+import {tabPanelProps} from '../components/SectionTabs.jsx';
 import Avatar from '../components/Avatar.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
@@ -121,59 +122,62 @@ const Leaderboard = () => {
                 onChange={selectBoard}
                 className={styles.tabs}
                 ariaLabel="Leaderboard type"
+                idPrefix="leaderboard"
             />
-            {users === null ? (
-                <StatusMessage />
-            ) : error ? (
-                <StatusMessage error onRetry={() => setAttempt(value => value + 1)}>{error}</StatusMessage>
-            ) : !users.length ? (
-                <EmptyState icon={Trophy} title={communityText('No one on this leaderboard yet')}>
-                    {communityText('Check back once the community has been active for a while.')}
-                </EmptyState>
-            ) : (
-                <ol className={styles.list}>
-                    {users.map((person, position) => (
-                        <li key={person.username}>
-                            <Link
-                                to={`/users/${person.username}`}
-                                className={styles.row}
-                            >
-                                <span className={`${styles.rank} ${PODIUM_CLASSES[position] || ''}`}>
-                                    {position < 3 ? <Trophy size={22} /> : position + 1}
-                                </span>
-                                <Avatar
-                                    username={person.username}
-                                    size={52}
-                                />
-                                <span className={styles.identity}>
-                                    <strong>{person.username}</strong>
-                                    {board === 'followers' ? (
-                                        <span>
-                                            {typeof person.index === 'number' ?
-                                                communityText('Account #{value1}', {value1: person.index}) :
-                                                communityText('Account number unavailable')}
-                                        </span>
-                                    ) : (
-                                        <span>
-                                            {communityText(
-                                                '{count, plural, one {# shared project} other {# shared projects}}',
-                                                {count: person.projects || 0}
-                                            )}
-                                        </span>
-                                    )}
-                                    {board === 'followers' && person.status ? (
-                                        <UserStatus status={person.status} className={styles.userStatus} />
-                                    ) : null}
-                                </span>
-                                <Stat
-                                    board={board}
-                                    person={person}
-                                />
-                            </Link>
-                        </li>
-                    ))}
-                </ol>
-            )}
+            <div {...tabPanelProps('leaderboard', board)}>
+                {users === null ? (
+                    <StatusMessage />
+                ) : error ? (
+                    <StatusMessage error onRetry={() => setAttempt(value => value + 1)}>{error}</StatusMessage>
+                ) : !users.length ? (
+                    <EmptyState icon={Trophy} title={communityText('No one on this leaderboard yet')}>
+                        {communityText('Check back once the community has been active for a while.')}
+                    </EmptyState>
+                ) : (
+                    <ol className={styles.list}>
+                        {users.map((person, position) => (
+                            <li key={person.username}>
+                                <Link
+                                    to={`/users/${person.username}`}
+                                    className={styles.row}
+                                >
+                                    <span className={`${styles.rank} ${PODIUM_CLASSES[position] || ''}`}>
+                                        {position < 3 ? <Trophy size={22} /> : position + 1}
+                                    </span>
+                                    <Avatar
+                                        username={person.username}
+                                        size={52}
+                                    />
+                                    <span className={styles.identity}>
+                                        <strong>{person.username}</strong>
+                                        {board === 'followers' ? (
+                                            <span>
+                                                {typeof person.index === 'number' ?
+                                                    communityText('Account #{value1}', {value1: person.index}) :
+                                                    communityText('Account number unavailable')}
+                                            </span>
+                                        ) : (
+                                            <span>
+                                                {communityText(
+                                                    '{count, plural, one {# shared project} other {# shared projects}}',
+                                                    {count: person.projects || 0}
+                                                )}
+                                            </span>
+                                        )}
+                                        {board === 'followers' && person.status ? (
+                                            <UserStatus status={person.status} className={styles.userStatus} />
+                                        ) : null}
+                                    </span>
+                                    <Stat
+                                        board={board}
+                                        person={person}
+                                    />
+                                </Link>
+                            </li>
+                        ))}
+                    </ol>
+                )}
+            </div>
         </main>
     );
 };

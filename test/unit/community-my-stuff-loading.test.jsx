@@ -5,7 +5,6 @@ import {MemoryRouter, useLocation} from 'react-router-dom';
 
 import api from '../../src/community/api.js';
 import MyStuffLibrary from '../../src/community/components/MyStuffLibrary.jsx';
-import MyStuffSpaces from '../../src/community/components/MyStuffSpaces.jsx';
 import Button from '../../src/community/components/ui/Button.jsx';
 import Modal from '../../src/community/components/ui/Modal.jsx';
 import MyStuff from '../../src/community/pages/MyStuff.jsx';
@@ -77,7 +76,8 @@ describe('My Stuff load failures', () => {
 
         expect(wrapper.text()).toContain('Could not load your overview.');
         await act(async () => {
-            wrapper.find(Button).filterWhere(button => button.text() === 'Try again').simulate('click');
+            wrapper.find(Button).filterWhere(button => button.text() === 'Try again')
+                .simulate('click');
             await Promise.resolve();
         });
         wrapper.update();
@@ -106,7 +106,8 @@ describe('My Stuff load failures', () => {
         expect(wrapper.text()).toContain('Could not load Trash.');
         expect(wrapper.text()).not.toContain('Loading Trash…');
         await act(async () => {
-            wrapper.find(Button).filterWhere(button => button.text() === 'Try again').simulate('click');
+            wrapper.find(Button).filterWhere(button => button.text() === 'Try again')
+                .simulate('click');
             await Promise.resolve();
         });
         wrapper.update();
@@ -134,7 +135,8 @@ describe('My Stuff load failures', () => {
 
         expect(wrapper.text()).toContain('Could not load storage usage.');
         await act(async () => {
-            wrapper.find(Button).filterWhere(button => button.text() === 'Try again').simulate('click');
+            wrapper.find(Button).filterWhere(button => button.text() === 'Try again')
+                .simulate('click');
             await Promise.resolve();
         });
         wrapper.update();
@@ -193,7 +195,8 @@ describe('My Stuff load failures', () => {
         wrapper.update();
 
         wrapper.find('button[aria-label="Actions for Draft"]').simulate('click');
-        wrapper.find('button').filterWhere(button => button.text() === 'Delete').simulate('click');
+        wrapper.find('button').filterWhere(button => button.text() === 'Delete')
+            .simulate('click');
         await act(async () => {
             await wrapper.find(Modal).find(Button)
                 .filterWhere(button => button.text() === 'Delete project')
@@ -231,14 +234,16 @@ describe('My Stuff load failures', () => {
         });
         wrapper.update();
 
-        expect(wrapper.find(LocationProbe).find('span').prop('data-location'))
+        expect(wrapper.find(LocationProbe).find('span')
+            .prop('data-location'))
             .toBe('?section=library');
         expect(wrapper.find(MyStuffLibrary)).toHaveLength(1);
 
         wrapper.find('button').filterWhere(button => button.text() === 'Collections')
             .simulate('click');
         wrapper.update();
-        expect(wrapper.find(LocationProbe).find('span').prop('data-location')).toBe('?section=collections');
+        expect(wrapper.find(LocationProbe).find('span')
+            .prop('data-location')).toBe('?section=collections');
         wrapper.unmount();
     });
 

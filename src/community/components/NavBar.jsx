@@ -12,10 +12,9 @@ import {fetchNotifications} from '../../lib/rotur/client.js';
 import logo from '../assets/mistwarp-logo.png';
 import Avatar from './Avatar.jsx';
 import GroupTag from './GroupTag.jsx';
-import UserLink from './UserLink.jsx';
 import setFaviconBadge from '../faviconBadge';
 import searchPath from '../search-path.js';
-import searchFocusIndex from '../search-keyboard.js';
+import {searchKeyAction} from '../search-keyboard.js';
 import {rankSections} from '../search-rank.js';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import Button from './ui/Button.jsx';
@@ -23,55 +22,132 @@ import {RoturAccount} from '../../components/menu-bar/mw-rotur-account.jsx';
 import {useCommunityIntl} from '../i18n.jsx';
 import styles from './NavBar.module.css';
 
-const SPACE_KIND_LABELS = {studio: 'Studio', challenge: 'Challenge', collection: 'Collection'};
+const spaceKindLabel = (kind, communityText) => ({
+    studio: communityText('Studio'),
+    challenge: communityText('Challenge'),
+    collection: communityText('Collection')
+}[kind] || communityText('Space'));
 
-const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, onKeyDown, onSubmit, open, projects, people, spaces, searching, searchReady, searchFailed, onProject, onProfile, onSpace, onSeeAll, placeholderLabel, searchLabel, suggestionId}) => {
+// A combobox: focus stays in the input and the arrow keys move the highlighted option
+// (aria-activedescendant), so every quick result is reachable from the keyboard.
+const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, onOpen, onClose, onSubmit, open, projects, people, spaces, searching, searchReady, searchFailed, onProject, onProfile, onSpace, onSeeAll, placeholderLabel, searchLabel, suggestionId}) => {
     const {text: communityText} = useCommunityIntl();
+    const [activeIndex, setActiveIndex] = useState(-1);
     const sections = rankSections([
         {
             key: 'projects',
             label: 'Projects',
             match: projects.map(project => project.title),
-            items: projects.map(project => (
-                <div key={project.id} className={styles.suggestion}>
-                    <button type="button" className={styles.suggestionTarget} aria-label={communityText('Open {value1}', {value1: project.title})} onClick={() => onProject(project)} />
-                    <ProjectThumbnail project={project} className={styles.suggestionThumb} fallbackClassName={styles.suggestionThumbFallback} />
-                    <span>{project.title}</span>
-                    <UserLink className={styles.suggestionMeta} username={project.owner}>{communityText('by ')}{project.owner}</UserLink>
-                </div>
-            ))
+            items: projects.map(project => ({
+                key: `project-${project.id}`,
+                onSelect: () => onProject(project),
+                content: (
+                    <>
+                        <ProjectThumbnail project={project} className={styles.suggestionThumb} fallbackClassName={styles.suggestionThumbFallback} />
+                        <span>{project.title}</span>
+                        <span className={styles.suggestionMeta}>{communityText('by ')}{project.owner}</span>
+                    </>
+                )
+            }))
         },
         {
             key: 'people',
             label: 'People',
             match: people.map(person => person.username),
-            items: people.map(person => (
-                <button key={person.username} type="button" className={styles.suggestion} onClick={() => onProfile(person.username)}>
-                    <Avatar username={person.username} size={26} />
-                    <span>{person.username}</span>
-                    {person.group_tag ? <GroupTag tag={person.group_tag} compact linked={false} /> : null}
-                    <span className={styles.suggestionMeta}>{person.followers ?? 0}{communityText(' followers · ')}{person.projects}{communityText(' projects')}</span>
-                </button>
-            ))
+            items: people.map(person => ({
+                key: `person-${person.username}`,
+                onSelect: () => onProfile(person.username),
+                content: (
+                    <>
+                        <Avatar username={person.username} size={26} />
+                        <span>{person.username}</span>
+                        {person.group_tag ? <GroupTag tag={person.group_tag} compact linked={false} /> : null}
+                        <span className={styles.suggestionMeta}>{person.followers ?? 0}{communityText(' followers · ')}{person.projects}{communityText(' projects')}</span>
+                    </>
+                )
+            }))
         },
         {
             key: 'spaces',
             label: 'Spaces',
             match: spaces.map(space => space.title),
-            items: spaces.map(space => (
-                <div key={space._id} className={styles.suggestion}>
-                    <button type="button" className={styles.suggestionTarget} aria-label={communityText('Open {value1}', {value1: space.title})} onClick={() => onSpace(space._id)} />
-                    <span className={styles.suggestionSpaceIcon}><Layers3 size={15} /></span>
-                    <span>{space.title}</span>
-                    <span className={styles.suggestionMeta}>{SPACE_KIND_LABELS[space.kind] || communityText('Space')}{communityText(' · by ')}<UserLink username={space.owner}>{space.owner}</UserLink></span>
-                </div>
-            ))
+            items: spaces.map(space => ({
+                key: `space-${space._id}`,
+                onSelect: () => onSpace(space._id),
+                content: (
+                    <>
+                        <span className={styles.suggestionSpaceIcon}><Layers3 size={15} /></span>
+                        <span>{space.title}</span>
+                        <span className={styles.suggestionMeta}>{spaceKindLabel(space.kind, communityText)}{communityText(' · by ')}{space.owner}</span>
+                    </>
+                )
+            }))
         }
     ].filter(section => section.items.length), query);
+    const options = sections.reduce((all, section) => all.concat(section.items), []);
+    if (sections.length) {
+        options.push({
+            key: 'all',
+            className: styles.suggestionAll,
+            onSelect: onSeeAll,
+            content: communityText('See all results for "{value1}"', {value1: query.trim()})
+        });
+    }
+    const listOpen = Boolean(open && query.trim().length >= 2 && (people.length || projects.length || spaces.length || searching || searchReady));
+    const hasOptions = listOpen && options.length > 0;
+    const optionId = option => `${suggestionId}-${option.key}`;
+    const activeId = hasOptions && options[activeIndex] ? optionId(options[activeIndex]) : null;
+
+    useEffect(() => {
+        setActiveIndex(-1);
+    }, [query, open, projects, people, spaces]);
+
+    useEffect(() => {
+        const option = activeId && document.getElementById(activeId);
+        if (option && option.scrollIntoView) option.scrollIntoView({block: 'nearest'});
+    }, [activeId]);
+
+    const handleKeyDown = event => {
+        const action = searchKeyAction(event.key, activeIndex, options.length, hasOptions);
+        if (!action) return;
+        event.preventDefault();
+        if (action.type === 'close') {
+            setActiveIndex(-1);
+            onClose();
+        } else if (action.type === 'open') {
+            onOpen();
+        } else if (action.type === 'select') {
+            options[action.index].onSelect();
+        } else {
+            setActiveIndex(action.index);
+        }
+    };
+
+    const renderOption = option => {
+        const index = options.indexOf(option);
+        return (
+            <div
+                key={option.key}
+                id={optionId(option)}
+                role="option"
+                aria-selected={index === activeIndex}
+                className={`${styles.suggestion} ${option.className || ''} ${index === activeIndex ? styles.suggestionActive : ''}`}
+                // Keep focus in the input so the combobox stays in charge of the keyboard.
+                onMouseDown={event => event.preventDefault()}
+                onMouseMove={() => {
+                    if (index !== activeIndex) setActiveIndex(index);
+                }}
+                onClick={() => option.onSelect()}
+            >
+                {option.content}
+            </div>
+        );
+    };
+
     return (<form
         className={`${styles.search} ${className}`}
+        role="search"
         onSubmit={onSubmit}
-        onKeyDown={onKeyDown}
         ref={containerRef}
     >
         <Search size={17} className={styles.searchIcon} />
@@ -81,29 +157,36 @@ const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, 
             placeholder={placeholderLabel || searchLabel}
             aria-label={searchLabel}
             role="combobox"
-            aria-expanded={Boolean(open)}
-            aria-controls={suggestionId}
+            aria-expanded={hasOptions}
+            aria-controls={hasOptions ? suggestionId : null}
+            aria-activedescendant={activeId}
             aria-autocomplete="list"
             autoComplete="off"
             value={query}
             onChange={event => onQuery(event.target.value)}
             onFocus={onFocus}
+            onKeyDown={handleKeyDown}
         />
-        {open && query.trim().length >= 2 && (people.length || projects.length || spaces.length || searching || searchReady) ? (
-            <div className={styles.suggestions} id={suggestionId} role="listbox">
+        {listOpen ? (
+            <div className={styles.suggestions}>
                 {searching ? <p className={styles.suggestionStatus}>{communityText('Searching…')}</p> : null}
                 {!searching && searchFailed ? <p className={styles.suggestionStatus}>{communityText('Could not load quick results. Press Enter to search.')}</p> : null}
                 {!searching && !searchFailed && searchReady && !sections.length ? <p className={styles.suggestionStatus}>{communityText('No quick matches. Press Enter to search everything.')}</p> : null}
-                {sections.map(section => (
-                    <div key={section.key} className={styles.suggestionGroup}>
-                        <p className={styles.suggestionGroupLabel}>{communityText(section.label)}</p>
-                        {section.items}
+                {hasOptions ? (
+                    <div id={suggestionId} role="listbox" aria-label={searchLabel}>
+                        {sections.map(section => (
+                            <div
+                                key={section.key}
+                                className={styles.suggestionGroup}
+                                role="group"
+                                aria-labelledby={`${suggestionId}-group-${section.key}`}
+                            >
+                                <p className={styles.suggestionGroupLabel} id={`${suggestionId}-group-${section.key}`} role="presentation">{communityText(section.label)}</p>
+                                {section.items.map(renderOption)}
+                            </div>
+                        ))}
+                        {renderOption(options[options.length - 1])}
                     </div>
-                ))}
-                {sections.length ? (
-                    <button type="button" className={`${styles.suggestion} ${styles.suggestionAll}`} onClick={onSeeAll}>
-                        {communityText('See all results for "{value1}"', {value1: query.trim()})}
-                    </button>
                 ) : null}
             </div>
         ) : null}
@@ -141,6 +224,8 @@ const NavBar = () => {
     const desktopSearchInputRef = useRef(null);
     const mobileSearchInputRef = useRef(null);
     const loginInFlight = useRef(false);
+    // The query the results page was opened with: shown in the box, but not looked up again.
+    const seededQuery = useRef('');
     const releaseLogin = () => {
         loginInFlight.current = false;
     };
@@ -168,7 +253,10 @@ const NavBar = () => {
     }, []);
 
     useEffect(() => {
-        setQuery('');
+        const seeded = location.pathname === '/search' ?
+            (new URLSearchParams(location.search).get('q') || '').trim() : '';
+        seededQuery.current = seeded;
+        setQuery(seeded);
         setSuggestions([]);
         setProjectSuggestions([]);
         setSpaceSuggestions([]);
@@ -184,8 +272,9 @@ const NavBar = () => {
             const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
             if ((event.key === '/' && !typing) || (event.key.toLowerCase() === 'k' && (event.ctrlKey || event.metaKey))) {
                 event.preventDefault();
-                const mobile = window.matchMedia('(max-width: 680px)').matches;
-                const input = mobile ? mobileSearchInputRef.current : desktopSearchInputRef.current;
+                // Focus whichever search box the stylesheet is showing at this width.
+                const input = [desktopSearchInputRef.current, mobileSearchInputRef.current]
+                    .find(element => element && element.offsetParent !== null) || desktopSearchInputRef.current;
                 input?.focus();
                 setSuggestionsOpen(true);
             }
@@ -258,7 +347,7 @@ const NavBar = () => {
 
     useEffect(() => {
         const q = query.trim();
-        if (q.length < 2) {
+        if (q.length < 2 || q === seededQuery.current) {
             setSuggestions([]);
             setProjectSuggestions([]);
             setSpaceSuggestions([]);
@@ -331,28 +420,6 @@ const NavBar = () => {
         runSearch();
     };
 
-    const handleSearchKeyDown = (event, searchRef) => {
-        if (event.key === 'Escape') {
-            const input = searchRef.current && searchRef.current.querySelector('input');
-            if (input && document.activeElement !== input) input.focus();
-            setSuggestionsOpen(false);
-            event.preventDefault();
-            return;
-        }
-        if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
-        if (!suggestionsOpen) {
-            setSuggestionsOpen(true);
-            return;
-        }
-        const items = Array.from(searchRef.current.querySelectorAll(`.${styles.suggestion}`));
-        const currentIndex = items.indexOf(document.activeElement);
-        if (currentIndex < 0 && (event.key === 'Home' || event.key === 'End')) return;
-        const nextIndex = searchFocusIndex(event.key, currentIndex, items.length);
-        if (nextIndex < 0) return;
-        event.preventDefault();
-        items[nextIndex].focus();
-    };
-
     const doLogin = async () => {
         if (loginInFlight.current) return;
         loginInFlight.current = true;
@@ -385,6 +452,15 @@ const NavBar = () => {
         navigate(`/spaces/${id}`);
     };
 
+    const updateQuery = value => {
+        seededQuery.current = '';
+        setQuery(value);
+        setSuggestionsOpen(true);
+    };
+
+    const linkClass = active => `${styles.link} ${active ? styles.linkActive : ''}`;
+    const randomActive = location.pathname === '/random';
+
     const mobileItemClass = path => `${styles.mobileDockItem} ${
         location.pathname === path || (path !== '/' && location.pathname.startsWith(`${path}/`)) ? styles.mobileDockItemActive : ''
     }`;
@@ -409,22 +485,26 @@ const NavBar = () => {
                 </Link>
 
                 <nav className={styles.links} ref={linksRef} aria-label={t('nav.main')}>
-                    <a href={editorUrl()} className={styles.link} aria-label={t('nav.create')}>
+                    <a href={editorUrl()} className={styles.link} aria-label={t('nav.create')} title={t('nav.create')}>
                         <Plus size={17} />
                         <span className={styles.linkLabel}>{t('nav.create')}</span>
                     </a>
                     <Link
                         to="/explore"
-                        className={styles.link}
+                        className={linkClass(exploreActive)}
+                        aria-current={exploreActive ? 'page' : null}
                         aria-label={t('nav.explore')}
+                        title={t('nav.explore')}
                     >
                         <Compass size={17} />
                         <span className={styles.linkLabel}>{t('nav.explore')}</span>
                     </Link>
                     <Link
                         to="/random"
-                        className={styles.link}
+                        className={linkClass(randomActive)}
+                        aria-current={randomActive ? 'page' : null}
                         aria-label={t('nav.random')}
+                        title={t('nav.random')}
                     >
                         <Shuffle size={17} />
                         <span className={styles.linkLabel}>{t('nav.random')}</span>
@@ -436,12 +516,10 @@ const NavBar = () => {
                     containerRef={desktopSearchRef}
                     inputRef={desktopSearchInputRef}
                     query={query}
-                    onQuery={value => {
-                        setQuery(value);
-                        setSuggestionsOpen(true);
-                    }}
+                    onQuery={updateQuery}
                     onFocus={() => setSuggestionsOpen(true)}
-                    onKeyDown={event => handleSearchKeyDown(event, desktopSearchRef)}
+                    onOpen={() => setSuggestionsOpen(true)}
+                    onClose={() => setSuggestionsOpen(false)}
                     onSubmit={submitSearch}
                     open={suggestionsOpen}
                     projects={projectSuggestions}
@@ -521,12 +599,10 @@ const NavBar = () => {
                 containerRef={mobileSearchRef}
                 inputRef={mobileSearchInputRef}
                 query={query}
-                onQuery={value => {
-                    setQuery(value);
-                    setSuggestionsOpen(true);
-                }}
+                onQuery={updateQuery}
                 onFocus={() => setSuggestionsOpen(true)}
-                onKeyDown={event => handleSearchKeyDown(event, mobileSearchRef)}
+                onOpen={() => setSuggestionsOpen(true)}
+                onClose={() => setSuggestionsOpen(false)}
                 onSubmit={submitSearch}
                 open={suggestionsOpen}
                 projects={projectSuggestions}
@@ -539,7 +615,7 @@ const NavBar = () => {
                 onProfile={goToProfile}
                 onSpace={goToSpace}
                 onSeeAll={runSearch}
-                placeholderLabel="Search"
+                placeholderLabel={communityText('Search')}
                 searchLabel={t('nav.search')}
                 suggestionId="mw-search-suggestions-mobile"
             />

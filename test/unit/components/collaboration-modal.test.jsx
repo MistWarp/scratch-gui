@@ -384,9 +384,10 @@ describe('CollaborationModal', () => {
         });
 
         test('a host alone and a guest leave without a confirmation', () => {
-            const alone = {...connectedProps(), connectedUsers: [
-                {id: 'user-1', username: 'TestUser', isHost: true, role: 'edit'}
-            ]};
+            const alone = {...connectedProps(),
+                connectedUsers: [
+                    {id: 'user-1', username: 'TestUser', isHost: true, role: 'edit'}
+                ]};
             let wrapper = mountModal(alone);
             expect(wrapper.text()).toContain('No one else has joined yet');
             modalOf(wrapper).handleLeaveRoom();
@@ -434,12 +435,22 @@ describe('CollaborationModal', () => {
             wrapper.unmount();
         });
 
-        test('kicking a user calls back with that user id', () => {
+        test('kicking a user asks first, naming them, then calls back with their id', () => {
             const props = connectedProps();
             const wrapper = mountModal(props);
 
             wrapper.find('button[aria-label="Remove Alice"]').simulate('click');
 
+            expect(props.onKickUser).not.toHaveBeenCalled();
+            expect(props.openSimpleDialog).toHaveBeenCalledTimes(1);
+            const dialog = props.openSimpleDialog.mock.calls[0][0];
+            expect(dialog.type).toBe('confirm');
+            expect(dialog.title).toBe('Remove Alice?');
+            expect(dialog.message).toMatch(/^Alice will leave the live session/);
+
+            dialog.onCancel();
+            expect(props.onKickUser).not.toHaveBeenCalled();
+            dialog.onOk();
             expect(props.onKickUser).toHaveBeenCalledWith('user-2');
         });
 
@@ -690,7 +701,8 @@ describe('CollaborationModal', () => {
         expect(wrapper.text()).not.toContain('Connection lost');
         wrapper.unmount();
 
-        const project = mountModal({...defaultProps(), reconnectReason: 'ROOM_NOT_FOUND',
+        const project = mountModal({...defaultProps(),
+            reconnectReason: 'ROOM_NOT_FOUND',
             projectSession: {active: true, phase: 'reconnecting', editors: [], onLeave: jest.fn()}});
         expect(project.text()).toContain('Waiting for the host to come back');
         project.unmount();

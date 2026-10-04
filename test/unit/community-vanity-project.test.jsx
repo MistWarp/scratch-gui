@@ -21,7 +21,7 @@ jest.mock('../../src/community/api.js', () => {
         if (/^[A-Za-z0-9-]{3,40}$/.test(trimmed)) return trimmed;
         return '';
     };
-    const projectUrl = (idOrProject, maybeSlug) => {
+    const buildProjectUrl = (idOrProject, maybeSlug) => {
         let id = idOrProject;
         let slug = maybeSlug;
         if (idOrProject && typeof idOrProject === 'object') {
@@ -35,7 +35,7 @@ jest.mock('../../src/community/api.js', () => {
     return {
         __esModule: true,
         default: {resolveVanity: jest.fn()},
-        projectUrl
+        projectUrl: buildProjectUrl
     };
 });
 

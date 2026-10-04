@@ -12,10 +12,15 @@ describe('ReactionButtons signed-out flow', () => {
         const loginOrThrow = jest.fn(() => Promise.resolve());
         useUser.mockReturnValue({user: null, loginOrThrow});
         const onReact = jest.fn();
-        const wrapper = shallow(<ReactionButtons reactions={{heart: [], brokenheart: []}} onReact={onReact} />);
+        const wrapper = shallow(<ReactionButtons
+            reactions={{heart: [], brokenheart: []}}
+            onReact={onReact}
+        />);
 
-        expect(wrapper.find('button').first().prop('disabled')).toBe(false);
-        wrapper.find('button').first().simulate('click');
+        expect(wrapper.find('button').first()
+            .prop('disabled')).toBe(false);
+        wrapper.find('button').first()
+            .simulate('click');
         expect(loginOrThrow).toHaveBeenCalledTimes(1);
         expect(onReact).not.toHaveBeenCalled();
     });
@@ -24,7 +29,10 @@ describe('ReactionButtons signed-out flow', () => {
         const loginOrThrow = jest.fn(() => Promise.resolve());
         useUser.mockReturnValue({user: null, loginOrThrow});
         const onReact = jest.fn();
-        const wrapper = mount(<ReactionButtons reactions={{heart: [], brokenheart: []}} onReact={onReact} />);
+        const wrapper = mount(<ReactionButtons
+            reactions={{heart: [], brokenheart: []}}
+            onReact={onReact}
+        />);
 
         wrapper.find('button').first()
             .simulate('click');
@@ -38,7 +46,10 @@ describe('ReactionButtons signed-out flow', () => {
         const loginOrThrow = jest.fn(() => Promise.reject(new Error('closed')));
         useUser.mockReturnValue({user: null, loginOrThrow});
         const onReact = jest.fn();
-        const wrapper = mount(<ReactionButtons reactions={{heart: [], brokenheart: []}} onReact={onReact} />);
+        const wrapper = mount(<ReactionButtons
+            reactions={{heart: [], brokenheart: []}}
+            onReact={onReact}
+        />);
 
         wrapper.find('button').first()
             .simulate('click');

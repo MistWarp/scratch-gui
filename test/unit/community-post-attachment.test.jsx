@@ -7,7 +7,10 @@ describe('post attachments', () => {
     test('notifies virtualized lists when media finishes loading', () => {
         const onPreviewChange = jest.fn();
         const wrapper = mount(
-            <PostAttachment url="https://chats.mistium.com/attachment/123.png" onPreviewChange={onPreviewChange} />
+            <PostAttachment
+                url="https://chats.mistium.com/attachment/123.png"
+                onPreviewChange={onPreviewChange}
+            />
         );
 
         onPreviewChange.mockClear();

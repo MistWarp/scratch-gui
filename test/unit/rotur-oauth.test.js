@@ -31,9 +31,11 @@ const signInResponses = token => (url => tokenResponse(String(url).endsWith('/oa
 
 // A popup whose consent page answers through postMessage, like rotur.dev's.
 const fakePopup = () => {
-    const popup = {closed: false, close: jest.fn(() => {
-        popup.closed = true;
-    }), location: {}};
+    const popup = {closed: false,
+        close: jest.fn(() => {
+            popup.closed = true;
+        }),
+        location: {}};
     jest.spyOn(window, 'open').mockReturnValue(popup);
     const answer = data => {
         const state = new URL(popup.location.href).searchParams.get('state');
@@ -62,7 +64,9 @@ afterEach(() => {
 test('signs in through the popup with PKCE and keeps a refreshable session', async () => {
     const {popup, answer} = fakePopup();
     global.fetch.mockImplementation(signInResponses({
-        access_token: 'rotur_st_access', refresh_token: 'rrt_one', expires_in: 3600,
+        access_token: 'rotur_st_access',
+        refresh_token: 'rrt_one',
+        expires_in: 3600,
         scope: 'profile offline_access account:view'
     }));
 
@@ -164,9 +168,11 @@ test('refreshes once across tabs and shares the new token', async () => {
     store({accessToken: 'old', refreshToken: 'rrt_old', expiresAt: Date.now() + 1000, scopes: [], subject: 'user-id-1'});
     let release;
     global.fetch.mockReturnValue(new Promise(resolve => {
-        release = () => resolve({ok: true, status: 200, json: () => Promise.resolve({
-            access_token: 'new', refresh_token: 'rrt_new', expires_in: 3600
-        })});
+        release = () => resolve({ok: true,
+            status: 200,
+            json: () => Promise.resolve({
+                access_token: 'new', refresh_token: 'rrt_new', expires_in: 3600
+            })});
     }));
     const a = oauth.getAccessToken();
     const b = oauth.getAccessToken();
@@ -184,9 +190,11 @@ test('a refresh that finishes after signing out does not sign back in', async ()
     store({accessToken: 'old', refreshToken: 'rrt_old', expiresAt: Date.now() + 1000, scopes: []});
     let release;
     global.fetch.mockReturnValue(new Promise(resolve => {
-        release = () => resolve({ok: true, status: 200, json: () => Promise.resolve({
-            access_token: 'new', refresh_token: 'rrt_new', expires_in: 3600
-        })});
+        release = () => resolve({ok: true,
+            status: 200,
+            json: () => Promise.resolve({
+                access_token: 'new', refresh_token: 'rrt_new', expires_in: 3600
+            })});
     }));
     const token = oauth.getAccessToken();
     await waitFor(() => global.fetch.mock.calls.length);
@@ -219,7 +227,7 @@ test('a revoked refresh token signs out and tells listeners', async () => {
 
 test('a session from another tab keeps refreshing here, retries after errors, and catches up on waking', async () => {
     jest.useFakeTimers();
-    const soon = {accessToken: 'old', refreshToken: 'rrt_old', expiresAt: Date.now() + 3 * 60 * 1000, scopes: []};
+    const soon = {accessToken: 'old', refreshToken: 'rrt_old', expiresAt: Date.now() + (3 * 60 * 1000), scopes: []};
     store(soon);
     global.fetch.mockImplementation(() => Promise.reject(new TypeError('Failed to fetch')));
     // Another tab wrote this session; this tab takes over its refresh timer.

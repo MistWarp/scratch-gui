@@ -1,10 +1,10 @@
 import React from 'react';
 import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
-import {MemoryRouter, Route, Routes} from 'react-router-dom';
+import {MemoryRouter, Route, Routes, useLocation, useNavigate} from 'react-router-dom';
 
 import api from '../../src/community/api.js';
-import Project from '../../src/community/pages/Project.jsx';
+import Project, {activityHash, activityTabForHash} from '../../src/community/pages/Project.jsx';
 import {setMockUserContext} from '../../src/community/UserContext.jsx';
 import rotur from '../../src/community/rotur.js';
 
@@ -29,13 +29,25 @@ jest.mock('../../src/lib/community/cached-fetch.js', () => ({
     preloadContent: jest.fn(() => Promise.resolve())
 }));
 
-const Harness = ({renderVersion}) => (
+let currentLocation = null;
+let navigateTo = null;
+const LocationProbe = () => {
+    currentLocation = useLocation();
+    navigateTo = useNavigate();
+    return null;
+};
+
+const Harness = ({renderVersion, path = '/project/project-1'}) => (
     <MemoryRouter
-        initialEntries={['/project/project-1']}
+        initialEntries={[path]}
         future={{v7_startTransition: true, v7_relativeSplatPath: true}}
     >
+        <LocationProbe />
         <Routes>
-            <Route path="/project/:id" element={<Project renderVersion={renderVersion} />} />
+            <Route
+                path="/project/:id"
+                element={<Project renderVersion={renderVersion} />}
+            />
         </Routes>
     </MemoryRouter>
 );
@@ -46,17 +58,18 @@ describe('community project loading', () => {
         jest.restoreAllMocks();
     });
 
-    test('waits for identity restoration before loading and counting the view', async () => {
+    test('loads the project during sign-in and counts the view once sign-in settles', async () => {
         const pending = new Promise(() => {});
         const getProject = jest.spyOn(api, 'getProject').mockReturnValue(pending);
         const commits = jest.spyOn(api, 'commits').mockReturnValue(pending);
+        const pulls = jest.spyOn(api, 'pulls').mockReturnValue(pending);
         const view = jest.spyOn(api, 'view').mockResolvedValue({});
         setMockUserContext({user: null, loading: true, login: jest.fn()});
 
         const wrapper = mount(<Harness renderVersion={0} />);
 
-        expect(getProject).not.toHaveBeenCalled();
-        expect(commits).not.toHaveBeenCalled();
+        expect(getProject).toHaveBeenCalledTimes(1);
+        expect(getProject).toHaveBeenCalledWith('project-1');
         expect(view).not.toHaveBeenCalled();
 
         setMockUserContext({user: {username: 'Sophie'}, loading: false, login: jest.fn()});
@@ -65,10 +78,31 @@ describe('community project loading', () => {
             await Promise.resolve();
         });
 
+        // The stored session did not change, so the project is not fetched again.
         expect(getProject).toHaveBeenCalledTimes(1);
-        expect(getProject).toHaveBeenCalledWith('project-1');
         expect(commits).not.toHaveBeenCalled();
+        expect(pulls).not.toHaveBeenCalled();
         expect(view).toHaveBeenCalledTimes(1);
+        wrapper.unmount();
+    });
+
+    test('loads again when sign-in changes the session', async () => {
+        const getProject = jest.spyOn(api, 'getProject').mockReturnValue(new Promise(() => {}));
+        jest.spyOn(api, 'view').mockResolvedValue({});
+        const session = jest.spyOn(api, 'loadSession').mockReturnValue(null);
+        setMockUserContext({user: null, loading: true, login: jest.fn()});
+
+        const wrapper = mount(<Harness renderVersion={0} />);
+        expect(getProject).toHaveBeenCalledTimes(1);
+
+        session.mockReturnValue('new-session');
+        setMockUserContext({user: {username: 'Sophie'}, loading: false, login: jest.fn()});
+        await act(async () => {
+            wrapper.setProps({renderVersion: 1});
+            await Promise.resolve();
+        });
+
+        expect(getProject).toHaveBeenCalledTimes(2);
         wrapper.unmount();
     });
 
@@ -190,6 +224,72 @@ describe('community project loading', () => {
 
         expect(saveProject).toHaveBeenCalledWith('project-1');
         expect(wrapper.find('button').filterWhere(button => button.text() === 'Remove from library')).toHaveLength(1);
+        wrapper.unmount();
+    });
+
+    test('maps activity tabs to address hashes and back', () => {
+        expect(activityHash('Comments', 'history')).toBe('');
+        expect(activityHash('Reviews', 'history')).toBe('#reviews');
+        expect(activityHash('Version control', 'pulls')).toBe('#pull-requests');
+        expect(activityTabForHash('#pull-requests')).toBe('Version control');
+        expect(activityTabForHash('#bounties')).toBe('Bounties');
+        expect(activityTabForHash('#comment-12')).toBe('Comments');
+        expect(activityTabForHash('')).toBe('Comments');
+    });
+
+    test('writes the chosen activity tab to the address and follows hash changes', async () => {
+        rotur.following.mockResolvedValue({following: []});
+        jest.spyOn(api, 'getProject').mockResolvedValue({
+            project: {id: 'project-1', title: 'Project', owner: 'Creator', hasContent: true, visibility: 'public'}
+        });
+        jest.spyOn(api, 'view').mockResolvedValue({});
+        jest.spyOn(api, 'reviews').mockReturnValue(new Promise(() => {}));
+        setMockUserContext({user: {username: 'Viewer'}, loading: false, login: jest.fn()});
+
+        const wrapper = mount(<Harness
+            renderVersion={0}
+            path="/project/project-1?k=key"
+        />);
+        await act(async () => {
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+        wrapper.update();
+
+        const reviewsTab = wrapper.find('[role="tab"]').filterWhere(tab => tab.text() === 'Reviews');
+        act(() => {
+            reviewsTab.simulate('click');
+        });
+        wrapper.update();
+        expect(currentLocation.hash).toBe('#reviews');
+        expect(currentLocation.search).toBe('?k=key');
+
+        const commentsTab = wrapper.find('[role="tab"]').filterWhere(tab => tab.text() === 'Comments');
+        act(() => {
+            commentsTab.simulate('click');
+        });
+        wrapper.update();
+        expect(currentLocation.hash).toBe('');
+        const selected = name => wrapper.find('[role="tab"]').hostNodes()
+            .filterWhere(tab => tab.text() === name)
+            .prop('aria-selected');
+        expect(selected('Comments')).toBe(true);
+
+        act(() => {
+            navigateTo({hash: '#reviews'});
+        });
+        wrapper.update();
+        expect(selected('Reviews')).toBe(true);
+
+        // The active tab and the panel it shows point at each other.
+        const reviewsButton = wrapper.find('[role="tab"]').hostNodes()
+            .filterWhere(tab => tab.text() === 'Reviews');
+        const panel = wrapper.find('[role="tabpanel"]').hostNodes()
+            .filterWhere(node => node.prop('id').startsWith('project-activity-'));
+        expect(panel).toHaveLength(1);
+        expect(reviewsButton.prop('aria-controls')).toBe(panel.prop('id'));
+        expect(panel.prop('aria-labelledby')).toBe(reviewsButton.prop('id'));
+        expect(panel.prop('id')).toBe('project-activity-panel-reviews');
         wrapper.unmount();
     });
 });

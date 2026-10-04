@@ -1,213 +1,56 @@
 import {getCommunityLocale} from '../locale.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
-import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
-import {useParams, Link, useNavigate} from 'react-router-dom';
-import {
-    Play, GitFork, ExternalLink, EyeOff, Clock3,
-    MessageSquareOff, MessageSquare, ImageUp, MonitorPlay, Upload, Blocks, Flag, CalendarDays,
-    ShieldCheck, ShieldAlert, MoreHorizontal, Code2, Trash2, Link2, Link as LinkIcon, Lock, Coins, SlidersHorizontal,
-    Palette, Bookmark, BookmarkCheck, Star, Library, Trophy, Plus, ChevronRight, GitPullRequest, Search,
-    History, GitBranch, Package, SearchX, LogIn
-} from 'lucide-react';
-import api, {projectUrl, editorUrl, embedUrl, themeCustomFor} from '../api';
+import React, {useEffect, useState, useMemo, useRef} from 'react';
+import {useParams, Link, useLocation, useNavigate} from 'react-router-dom';
+import {Blocks, CalendarDays, ShieldAlert, Trash2, Coins, SearchX} from 'lucide-react';
+import api, {editorUrl, embedUrl} from '../api';
 import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
-import {MULTIPLAYER_ENABLED} from '../../lib/mistwarp-games/config.js';
-import {cachedFetchBuffer, preloadContent} from '../../lib/community/cached-fetch.js';
 import {buyProject} from '../purchase';
 import {listCommerceBounties} from '../credits';
-import {payLink} from '../../lib/rotur/payment-window.js';
-import RoturConsentModal from '../components/RoturConsentModal.jsx';
-import GameMarketplaceModal from '../components/GameMarketplaceModal.jsx';
-import {
-    hasFullGrant, commitGrant, callRotur, grantedScopesFor,
-    activityAllowed, rememberActivityDecision
-} from '../../lib/rotur/extension-bridge.js';
-import {
-    authorizeProjectCall, grantsSilently, validateProjectScopes
-} from '../../lib/rotur/project-methods.js';
-import {getRoturSettings, setRoturSetting} from '../../lib/rotur/settings.js';
-import ProjectActivityScope from '../../lib/rotur/project-activity-scope.js';
-import {getUsernameOverride} from '../../lib/rotur/cloud-sync.js';
-import rotur from '../rotur';
-import {Theme} from '../../lib/themes';
-import {CustomTheme} from '../../lib/themes/custom-themes.js';
-import {applyThemeVisuals, detectTheme} from '../../lib/themes/themePersistance';
-import Avatar from '../components/Avatar.jsx';
-import GroupTag from '../components/GroupTag.jsx';
-import VisibilityMenu from '../components/VisibilityMenu.jsx';
 import ProjectInfoPanel from '../components/ProjectInfoPanel.jsx';
-import LiveProjectSession from '../components/LiveProjectSession.jsx';
 import {canViewProjectSource} from '../project-source-access';
 import ProjectCompatibility from '../components/ProjectCompatibility.jsx';
 import CollectionSaveModal from '../components/CollectionSaveModal.jsx';
 import {useUser} from '../UserContext.jsx';
 import useAfterLogin from '../use-after-login.js';
-import {timeAgo, sameUser, formatDate, formatPlaytime} from '../format';
-import CommentThread from '../components/CommentThread.jsx';
-import ProjectFiles from '../components/ProjectFiles.jsx';
-import ProjectBranches from '../components/ProjectBranches.jsx';
-import Sidebar from '../components/Sidebar.jsx';
+import {formatDate} from '../format';
 import ReportModal from '../components/ReportModal.jsx';
-import GitGraph from '../components/GitGraph.jsx';
 import Button from '../components/ui/Button.jsx';
 import ConfirmModal from '../components/ui/ConfirmModal.jsx';
-import Dropdown from '../components/ui/Dropdown.jsx';
-import EmptyState, {SignInPrompt} from '../components/ui/EmptyState.jsx';
-import IconButton from '../components/ui/IconButton.jsx';
-import Notice from '../components/ui/Notice.jsx';
-import SectionHeading from '../components/ui/SectionHeading.jsx';
-import SelectMenu from '../components/ui/SelectMenu.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
-import Modal from '../components/ui/Modal.jsx';
-import UnderlineTabs from '../components/UnderlineTabs.jsx';
-import RichText from '../components/RichText.jsx';
-import UserLink from '../components/UserLink.jsx';
-import ReactionButtons from '../components/ReactionButtons.jsx';
 import setPageMeta from '../page-meta.js';
-import useLatest from '../use-latest.js';
 import copyText from '../copy-text.js';
 import scrollToAnchorWithRetry from '../scroll-to-anchor.js';
-import {hashExtensionUrl} from '../../lib/community/api.js';
-import {
-    loadProjectSave,
-    saveProjectData,
-    loadProjectInventory,
-    grantProjectItem
-} from '../../lib/mistwarp-games/data-client.js';
-import {buildSb3FromFileEntries} from '../../lib/git/mwp.js';
-import {isGalleryExtensionUrl} from '../../lib/trusted-extension.js';
 import projectRealtime from '../project-realtime.js';
-import {blockProjectPrompts, isProjectPromptBlocked} from '../../lib/project-prompt-blocking.js';
 import styles from './Project.module.css';
 import RelatedProjects, {rememberProject} from '../components/RelatedProjects.jsx';
 import {track} from '../analytics';
-
-const EMBED_STORAGE_PREFIX = 'mw:embed-storage:';
-const EMBED_STORAGE_BLOCKED_PREFIXES = ['mw:', 'tw:'];
-const ACTIVITY_TABS = ['Comments', 'Files', 'Reviews', 'Version control', 'Bounties', 'Contribute'];
-const activityTabsFor = project => ACTIVITY_TABS.filter(name =>
-    canViewProjectSource(project) || !['Files', 'Version control', 'Contribute'].includes(name));
-const VERSION_CONTROL_HASHES = {
-    '#history': 'history',
-    '#branches': 'branches',
-    '#pull-requests': 'pulls',
-    '#releases': 'releases'
-};
-const initialActivityTab = () => (VERSION_CONTROL_HASHES[window.location.hash] ? 'Version control' : ({
-    '#files': 'Files',
-    '#bounties': 'Bounties',
-    '#contribute': 'Contribute'
-}[window.location.hash] || 'Comments'));
-const initialVersionControlTab = () => VERSION_CONTROL_HASHES[window.location.hash] || 'history';
-
-export const reviewPayload = (rating, message) => ({rating, message: message.trim()});
-export const releasePayload = form => ({...form, version: form.version.trim(), notes: form.notes.trim()});
-export const contributionPayload = (remixProjectId, title, body, bountyId = '') => {
-    const payload = {
-        remixProjectId: remixProjectId.trim(),
-        title: title.trim(),
-        body: body.trim()
-    };
-    if (bountyId) payload.bountyId = bountyId;
-    return payload;
-};
-export const bountyProjectId = project => project.remixParent || project.id;
-export const contributionRemixes = (projects, targetId, username) => (projects || []).filter(project => (
-    project.remixParent === targetId && (!username || sameUser(project.owner, username))
-));
-export const openPullForRemix = (pulls, targetId, remixProjectId) => (pulls || []).find(pull => (
-    pull.state === 'open' && pull.targetProjectId === targetId && pull.sourceProjectId === remixProjectId
-));
-const BOUNTY_CLAIM_KEY = 'mw:bounty-claim:';
-const rememberBountyClaim = (projectId, bountyId) => {
-    try {
-        if (bountyId) localStorage.setItem(`${BOUNTY_CLAIM_KEY}${projectId}`, bountyId);
-        else localStorage.removeItem(`${BOUNTY_CLAIM_KEY}${projectId}`);
-    } catch (e) {
-        // Bounty selection is a convenience. The contribution form still works without storage.
-    }
-};
-const recalledBountyClaim = projectId => {
-    try {
-        return localStorage.getItem(`${BOUNTY_CLAIM_KEY}${projectId}`) || '';
-    } catch (e) {
-        return '';
-    }
-};
-export const applyReactionResult = (project, result) => ({
-    ...project,
-    loveCount: result.hearts,
-    brokenHeartCount: result.brokenHearts,
-    myReaction: result.myReaction || ''
-});
-export const updateReviewSummary = (summary, previousRating, nextRating) => {
-    const previous = Number(previousRating) || 0;
-    const next = Number(nextRating) || 0;
-    const count = Math.max(0, (Number(summary.count) || 0) + (previous ? 0 : 1) - (next ? 0 : 1));
-    const total = ((Number(summary.average) || 0) * (Number(summary.count) || 0)) - previous + next;
-    return {count, average: count ? total / count : 0};
-};
-
-const PROJECT_THEME_MODE_KEY = 'mw:project-theme-mode';
-const getProjectThemeMode = () => {
-    try {
-        return localStorage.getItem(PROJECT_THEME_MODE_KEY) || 'all';
-    } catch (e) {
-        return 'all';
-    }
-};
-
-const buildProjectTheme = payload => {
-    try {
-        if (payload && payload.kind === 'custom' && payload.data) {
-            return CustomTheme.import(payload.data);
-        }
-        if (payload && payload.kind === 'standard' && payload.data) {
-            const d = payload.data;
-            return new Theme(d.accent, d.gui, d.blocks, d.menuBarAlign, d.wallpaper, d.fonts, null, d.appearance || {});
-        }
-    } catch (e) {
-        // ignore malformed payloads
-    }
-    return null;
-};
-
-const clearProjectStorage = projectId => {
-    if (!projectId) return;
-    const prefix = `${EMBED_STORAGE_PREFIX}${String(projectId)}:`;
-    try {
-        const keys = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith(prefix)) keys.push(key);
-        }
-        for (const key of keys) {
-            localStorage.removeItem(key);
-        }
-    } catch (e) {
-        // ignore
-    }
-};
-
-const isBlockedProjectStorageKey = key => EMBED_STORAGE_BLOCKED_PREFIXES.some(prefix => key.startsWith(prefix));
-
-const restoreUserTheme = () => {
-    try {
-        applyThemeVisuals(detectTheme());
-    } catch (e) {
-        // ignore
-    }
-};
-
-const getCustomExtensions = async (urls, trustedExtensions) => {
-    const custom = (urls || []).filter(url => typeof url === 'string' && !isGalleryExtensionUrl(url));
-    const trusted = new Set(trustedExtensions || []);
-    const hashes = await Promise.all(custom.map(hashExtensionUrl));
-    return custom.filter((url, index) => !trusted.has(hashes[index]));
-};
-
-const analyzeBlocks = summary => ({total: Number(summary && summary.total) || 0});
+import {
+    activityHash, activityTabForHash, initialActivityTab, initialVersionControlTab, VERSION_CONTROL_HASHES
+} from './project/activity-tabs.js';
+import {
+    applyReactionResult, bountyProjectId, contributionPayload, contributionRemixes, currentSession,
+    openPullForRemix, releasePayload, rememberBountyClaim, reviewPayload, updateReviewSummary
+} from './project/project-helpers.js';
+import {restoreUserTheme} from './project/embed-helpers.js';
+import RemixTree from './project/RemixTree.jsx';
+import HistoryList from './project/HistoryList.jsx';
+import PullList from './project/PullList.jsx';
+import ReviewPanel from './project/ReviewPanel.jsx';
+import ReleaseList from './project/ReleaseList.jsx';
+import useProjectData from './project/use-project-data.js';
+import useProjectRealtime from './project/use-project-realtime.js';
+import useStageContent from './project/use-stage-content.js';
+import useProjectTheme from './project/use-project-theme.js';
+import usePlayerBridge from './project/use-player-bridge.js';
+import ProjectHeader from './project/ProjectHeader.jsx';
+import ForkSetupModal from './project/ForkSetupModal.jsx';
+import PlayerPrompts from './project/PlayerPrompts.jsx';
+import ProjectNotices from './project/ProjectNotices.jsx';
+import ProjectStage from './project/ProjectStage.jsx';
+import ProjectActivity from './project/ProjectActivity.jsx';
 
 const Project = () => {
     const {text: communityText} = useCommunityText();
@@ -216,8 +59,6 @@ const Project = () => {
     const id = resolvedId || '';
     const {user, loading: userLoading, login} = useUser();
     const viewerName = (user && user.username) || '';
-    const realtimeViewer = useRef(viewerName);
-    realtimeViewer.current = viewerName;
     const actionContext = `${id}\u0000${viewerName}`;
     const actionContextRef = useRef(actionContext);
     actionContextRef.current = actionContext;
@@ -230,11 +71,11 @@ const Project = () => {
     };
     const releaseAction = key => actionLocks.current.delete(key);
     const navigate = useNavigate();
-    const [project, setProject] = useState(null);
-    const [projectLoadContext, setProjectLoadContext] = useState('');
-    const [versionHistory, setVersionHistory] = useState(null);
-    const [error, setError] = useState(null);
-    const [errorLoadContext, setErrorLoadContext] = useState('');
+    const location = useLocation();
+    const {
+        project, setProject, projectLoadContext, setProjectLoadContext, versionHistory, setVersionHistory,
+        error, setError, errorLoadContext, beginHistoryLoad, load, loadHistory, refreshProjectAndHistory
+    } = useProjectData(id);
     const [actionError, setActionError] = useState(null);
     const [tab, setTab] = useState(initialActivityTab);
     const [versionControlTab, setVersionControlTab] = useState(initialVersionControlTab);
@@ -249,14 +90,7 @@ const Project = () => {
     const [collectionOpen, setCollectionOpen] = useState(false);
     const thumbInput = useRef(null);
     const stageFrame = useRef(null);
-    const roturActivityScope = useRef(null);
     const stageSource = useRef({key: null, url: null});
-    const [stageHeightRatio, setStageHeightRatio] = useState(3 / 4);
-    const [blockStats, setBlockStats] = useState(null);
-    const [customExtensions, setCustomExtensions] = useState([]);
-    const [contentError, setContentError] = useState(false);
-    const [unsandboxed, setUnsandboxed] = useState(false);
-    const [confirmUnsandboxed, setConfirmUnsandboxed] = useState(false);
     const [buying, setBuying] = useState(false);
     const [confirmBuy, setConfirmBuy] = useState(false);
     const [savingLibrary, setSavingLibrary] = useState(false);
@@ -265,107 +99,49 @@ const Project = () => {
     const [reactionBusy, setReactionBusy] = useState(false);
     const [savingVisibility, setSavingVisibility] = useState(false);
     const [featuredProject, setFeaturedProject] = useState('');
-    const [projectThemeApplied, setProjectThemeApplied] = useState(false);
-    const [revertTheme, setRevertTheme] = useState(false);
-    const [followedOwner, setFollowedOwner] = useState(null);
-    const [roturModal, setRoturModal] = useState(null);
-    const [gameMarketplace, setGameMarketplace] = useState(null);
     const [forkSetup, setForkSetup] = useState(null);
     const [forkBounty, setForkBounty] = useState(null);
     const [preferredBountyId, setPreferredBountyId] = useState('');
     const [creatingFork, setCreatingFork] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState(false);
     const [deletingProject, setDeletingProject] = useState(false);
-    const themeMode = getProjectThemeMode();
+    const {
+        stageHeightRatio, setStageHeightRatio, blockStats, customExtensions, contentError,
+        unsandboxed, setUnsandboxed, confirmUnsandboxed, setConfirmUnsandboxed, runUnsandboxed, confirmRunUnsandboxed
+    } = useStageContent(id, project, stageFrame);
+    const owner = project && project.owner;
+    const {
+        themeMode, projectThemeApplied, setProjectThemeApplied, revertTheme, setRevertTheme, followedOwner, setFollowedOwner
+    } = useProjectTheme(user, owner);
     const projectBountyId = project ? bountyProjectId(project) : '';
     // Stays on the /p/slug form while loading; canonical vanitySlug wins after load.
     const baseProjectUrl = projectBaseUrl({project, projectId: id, vanitySlug: slug});
 
-    const beginLoad = useLatest();
-    const beginHistoryLoad = useLatest();
-
-    useEffect(() => {
-        if (!id) return () => {};
-        const accessKey = new URLSearchParams(window.location.search).get('k') || '';
-        return projectRealtime.subscribe(id, event => {
-            if (event.type !== 'project_stats') return;
-            setProject(current => {
-                if (!current || String(current.id) !== String(event.projectId)) return current;
-                const next = {
-                    ...current,
-                    loveCount: Number(event.hearts) || 0,
-                    brokenHeartCount: Number(event.brokenHearts) || 0,
-                    saveCount: Number(event.saves) || 0
-                };
-                if (sameUser(event.actor, realtimeViewer.current)) {
-                    if (Object.prototype.hasOwnProperty.call(event, 'reaction')) {
-                        next.myReaction = event.reaction || '';
-                    }
-                    if (Object.prototype.hasOwnProperty.call(event, 'saved')) {
-                        next.saved = Boolean(event.saved);
-                    }
-                }
-                return next;
-            });
-        }, accessKey);
-    }, [id]);
-
-    useEffect(() => {
-        projectRealtime.refreshAuth();
-    }, [viewerName]);
-
-    useEffect(() => {
-        const scope = new ProjectActivityScope(callRotur);
-        roturActivityScope.current = scope;
-        return () => {
-            if (roturActivityScope.current === scope) roturActivityScope.current = null;
-            scope.clear();
-        };
-    }, [id]);
-
-    const load = useCallback(() => {
-        if (!id) return Promise.resolve();
-        const fresh = beginLoad();
-        setError(null);
-        setErrorLoadContext('');
-        return api.getProject(id)
-            .then(fresh(data => {
-                if (!data || !data.project) throw new Error('Project response was incomplete.');
-                setProject(data.project);
-                setProjectLoadContext(actionContext);
-                setError(null);
-            }))
-            .catch(fresh(e => {
-                setErrorLoadContext(actionContext);
-                setError(e && e.status === 404 ? 'Project not found.' : 'Could not load this project.');
-            }));
-    }, [actionContext, id, beginLoad]);
-
-    const loadHistory = useCallback(() => {
-        if (!id || !canViewProjectSource(project)) return Promise.resolve();
-        const fresh = beginHistoryLoad();
-        return api.commits(id)
-            .then(fresh(setVersionHistory))
-            .catch(fresh(() => setVersionHistory({commits: [], error: true})));
-    }, [beginHistoryLoad, id, project]);
-
-    const refreshProjectAndHistory = useCallback(() => Promise.all([load(), loadHistory()]), [load, loadHistory]);
+    useProjectRealtime(id, viewerName, setProject);
 
     useEffect(() => {
         setFeaturedProject((user && user.featuredProject) || '');
     }, [user]);
 
+    // The open pull request count is only shown in version control, so count them when it opens.
+    const pullCountFor = useRef('');
     useEffect(() => {
-        if (!id) return () => {};
+        if (!id || tab !== 'Version control' || pullCountFor.current === id) return () => {};
+        pullCountFor.current = id;
         let current = true;
+        let settled = false;
         setOpenPullCount(null);
         api.pulls(id).then(data => {
             if (current) setOpenPullCount((data.pulls || []).filter(pull => pull.state === 'open').length);
-        }).catch(() => {});
+        }).catch(() => {}).finally(() => {
+            settled = true;
+        });
         return () => {
+            // Leaving before the count arrived: count again next time.
+            if (!settled && pullCountFor.current === id) pullCountFor.current = '';
             current = false;
         };
-    }, [id]);
+    }, [id, tab]);
 
     useEffect(() => {
         if (!projectBountyId) return () => {};
@@ -386,10 +162,18 @@ const Project = () => {
         };
     }, [projectBountyId]);
 
+    // Load straight away with the stored session instead of waiting for sign-in to finish. Once
+    // sign-in settles, load again only if it changed the session the project was loaded with.
+    const loadedFor = useRef({id: '', session: null});
     useEffect(() => {
-        if (userLoading || !id) return;
+        if (!id) return;
+        const session = currentSession();
+        const previous = loadedFor.current;
+        if (previous.id === id && (userLoading || previous.session === session)) return;
+        loadedFor.current = {id, session};
         beginHistoryLoad();
         setProject(null);
+        setProjectLoadContext('');
         setVersionHistory(null);
         setProjectFileCount(null);
         setError(null);
@@ -421,7 +205,22 @@ const Project = () => {
         setStageHeightRatio(3 / 4);
         restoreUserTheme();
         load();
-    }, [actionContext, beginHistoryLoad, id, load, userLoading]);
+    }, [beginHistoryLoad, id, load, userLoading, viewerName]);
+
+    // Follow the address when the hash changes, such as Back to an earlier tab or a pasted link.
+    useEffect(() => {
+        setTab(activityTabForHash(location.hash));
+        if (VERSION_CONTROL_HASHES[location.hash]) setVersionControlTab(VERSION_CONTROL_HASHES[location.hash]);
+    }, [location.hash]);
+
+    const showActivity = (nextTab, nextVersionControlTab = versionControlTab) => {
+        setTab(nextTab);
+        setVersionControlTab(nextVersionControlTab);
+        const hash = activityHash(nextTab, nextVersionControlTab);
+        // Keep a comment link's anchor while the comments stay open.
+        if (hash === location.hash || (!hash && activityTabForHash(location.hash) === nextTab)) return;
+        navigate({search: location.search, hash}, {replace: true});
+    };
 
     useEffect(() => {
         if (!project) return;
@@ -440,87 +239,17 @@ const Project = () => {
         track('project_view', {project: id, signedIn: Boolean(user)});
     }, [id, userLoading]);
 
-    useEffect(() => {
-        const onMessage = event => {
-            if (event.data && event.data.type === 'mw:project-theme-applied') {
-                setProjectThemeApplied(true);
-                const theme = buildProjectTheme(event.data.theme);
-                if (theme) {
-                    try {
-                        applyThemeVisuals(theme);
-                    } catch (e) {
-                        // ignore
-                    }
-                }
-            }
-        };
-        window.addEventListener('message', onMessage);
-        return () => window.removeEventListener('message', onMessage);
-    }, []);
-
-    // Always hand the viewer's own theme back when leaving the project.
-    useEffect(() => () => restoreUserTheme(), []);
-
     // Scroll to a comment anchor after the comments section renders
     useEffect(() => {
-        if (projectLoadContext !== actionContext) return;
+        if (projectLoadContext !== id) return;
         const hash = window.location.hash;
         if (!hash) return;
         return scrollToAnchorWithRetry(hash.replace('#', ''));
-    }, [actionContext, projectLoadContext]);
-
-    const owner = project && project.owner;
-    useEffect(() => {
-        if (themeMode !== 'followed' || !user || !owner) return;
-        let active = true;
-        const viewerKey = String(user.username).toLowerCase();
-        const ownerKey = String(owner).toLowerCase();
-        setFollowedOwner(null);
-        rotur.following(user.username)
-            .then(data => {
-                if (!active) return;
-                const list = (data.following || []).map(name => String(name).toLowerCase());
-                setFollowedOwner({
-                    owner: ownerKey,
-                    value: list.includes(ownerKey),
-                    viewer: viewerKey
-                });
-            })
-            .catch(() => {
-                if (active) setFollowedOwner({owner: ownerKey, value: false, viewer: viewerKey});
-            });
-        return () => {
-            active = false;
-        };
-    }, [themeMode, user, owner]);
+    }, [id, projectLoadContext]);
 
     useEffect(() => {
         if (project) setTitle(project.title || '');
     }, [project]);
-
-    useEffect(() => {
-        const onMessage = event => {
-            const frame = stageFrame.current;
-            if (!frame || event.source !== frame.contentWindow) return;
-            if (!event.data) return;
-            if (event.data.type === 'mw:stage-size') {
-                const width = Number(event.data.width);
-                const height = Number(event.data.height);
-                if (Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0) {
-                    setStageHeightRatio(height / width);
-                }
-                return;
-            }
-            if (event.data.type === 'mw:diagnostic') {
-                projectRealtime.diagnostic(id, event.data.diagnostic);
-                if (event.data.diagnostic && event.data.diagnostic.type === 'playtime_start') {
-                    track('project_play_start', {project: id});
-                }
-            }
-        };
-        window.addEventListener('message', onMessage);
-        return () => window.removeEventListener('message', onMessage);
-    }, [id]);
 
     useEffect(() => {
         if (!project) return;
@@ -531,55 +260,6 @@ const Project = () => {
             card: 'summary_large_image'
         });
     }, [project]);
-
-    const projectJsonUrl = project && project.projectJsonUrl;
-    useEffect(() => {
-        setBlockStats(null);
-        setCustomExtensions([]);
-        setContentError(false);
-        setUnsandboxed(false);
-        setConfirmUnsandboxed(false);
-        let active = true;
-        if (projectJsonUrl) {
-            preloadContent(projectJsonUrl).catch(() => {
-                if (active) setContentError(true);
-            });
-        }
-        return () => {
-            active = false;
-        };
-    }, [projectJsonUrl]);
-
-    useEffect(() => {
-        let cancelled = false;
-        const onMessage = event => {
-            const frame = stageFrame.current;
-            if (!frame || event.source !== frame.contentWindow) return;
-            const data = event.data;
-            if (!data || data.type !== 'mw:project-metadata') return;
-            setBlockStats(analyzeBlocks(data.blockStats));
-            getCustomExtensions(data.customExtensions, (project && project.trustedExtensions) || [])
-                .then(urls => {
-                    if (!cancelled) setCustomExtensions(urls);
-                })
-                .catch(() => {
-                    if (!cancelled) setCustomExtensions([]);
-                });
-        };
-        window.addEventListener('message', onMessage);
-        return () => {
-            cancelled = true;
-            window.removeEventListener('message', onMessage);
-        };
-    }, [projectJsonUrl, project && project.trustedExtensions]);
-
-    const runUnsandboxed = () => {
-        setConfirmUnsandboxed(true);
-    };
-    const confirmRunUnsandboxed = () => {
-        setConfirmUnsandboxed(false);
-        setUnsandboxed(true);
-    };
 
     useEffect(() => {
         let timeout;
@@ -618,424 +298,9 @@ const Project = () => {
         }
     };
 
-    useEffect(() => {
-        if (!project || !project.projectJsonUrl) return;
-        preloadContent(project.projectJsonUrl).catch(() => null);
-        const assetsBase = project.assetsBase ? `${project.assetsBase.replace(/\/+$/, '')}/` : null;
-        const allowed = url => typeof url === 'string' &&
-            (url === project.projectJsonUrl || (assetsBase && url.startsWith(assetsBase)));
-        const onMessage = event => {
-            const frame = stageFrame.current;
-            if (!frame || event.source !== frame.contentWindow) return;
-            const data = event.data;
-            if (!data) return;
-            if (data.type === 'mw:embed-ready') {
-                cachedFetchBuffer(project.projectJsonUrl)
-                    .then(buffer => {
-                        try {
-                            const copy = buffer.slice(0);
-                            event.source.postMessage({
-                                type: 'mw:preload-resource',
-                                url: project.projectJsonUrl,
-                                buffer: copy
-                            }, '*', [copy]);
-                        } catch (e) {
-                            // ignore
-                        }
-                    })
-                    .catch(() => null);
-                return;
-            }
-            if (data.type !== 'mw:fetch' || !allowed(data.url)) return;
-            const reply = (message, transfer) => {
-                try {
-                    event.source.postMessage(message, '*', transfer);
-                } catch (e) {
-                    // ignore
-                }
-            };
-            cachedFetchBuffer(data.url)
-                .then(buffer => reply({type: 'mw:fetch-result', id: data.id, buffer}, [buffer]))
-                .catch(() => reply({type: 'mw:fetch-result', id: data.id}));
-        };
-        window.addEventListener('message', onMessage);
-        return () => window.removeEventListener('message', onMessage);
-    }, [project]);
-
-    const userMessage = useMemo(() => ({
-        type: 'mw:rotur-user',
-        user: {
-            loggedIn: Boolean(user && user.username),
-            username: (user && user.username) || '',
-            id: (user && user.id) || ''
-        },
-        displayName: user && user.username ? getUsernameOverride() || `@${user.username}` : '',
-        projectId: (project && project.id) || id || '',
-        projectName: (project && (project.title || project.name)) || '',
-        projectImage: (project && project.thumbUrl) || ''
-    }), [user, project, id]);
-
-    const gamesUserMessage = useMemo(() => ({
-        type: 'mw:games-user',
-        user: userMessage.user
-    }), [userMessage.user.loggedIn, userMessage.user.username, userMessage.user.id]);
-
-    const gamesProjectId = String((project && project.id) || id || '');
-
-    // MistWarp Games bridge for the sandboxed project player. Authentication
-    // and short-lived save capabilities remain on this trusted project page;
-    // project code only receives the result of the narrow operation it asked
-    // for. Production saves are therefore separate from editor test saves.
-    useEffect(() => {
-        const projectId = gamesProjectId;
-        if (!projectId) return;
-        const reply = (source, payload) => {
-            try {
-                source.postMessage({type: 'mw:games-result', ...payload}, '*');
-            } catch (e) {
-                // ignore a player frame which navigated away during a request
-            }
-        };
-        const onMessage = async event => {
-            const frame = stageFrame.current;
-            if (!frame || event.source !== frame.contentWindow) return;
-            const data = event.data;
-            if (!data || data.type !== 'mw:games') return;
-            if (data.kind === 'hello') {
-                if (!userLoading) {
-                    try {
-                        event.source.postMessage(gamesUserMessage, '*');
-                    } catch (e) {
-                        // ignore
-                    }
-                }
-                return;
-            }
-            if (data.kind !== 'call') return;
-            if (data.method === 'marketplace.open' || data.method === 'marketplace.purchase') {
-                if (isProjectPromptBlocked({id: projectId})) {
-                    reply(event.source, {id: data.id, ok: true, result: {status: 'blocked'}});
-                    return;
-                }
-                setGameMarketplace({
-                    projectId,
-                    productId: data.method === 'marketplace.purchase' ? String((data.args && data.args[0]) || '') : '',
-                    onResult: result => reply(event.source, {id: data.id, ok: true, result})
-                });
-                return;
-            }
-            try {
-                let result;
-                if (data.method === 'data.load') {
-                    result = await loadProjectSave(projectId, 'play');
-                } else if (data.method === 'data.save') {
-                    result = await saveProjectData(projectId, 'play', data.args && data.args[0]);
-                } else if (data.method === 'inventory.load') {
-                    result = await loadProjectInventory(projectId, 'play');
-                } else if (data.method === 'inventory.grant') {
-                    const request = (data.args && data.args[0]) || {};
-                    result = await grantProjectItem(projectId, 'play', request.item, request.requestId);
-                } else if (data.method === 'multiplayer.connect') {
-                    result = {
-                        connected: false,
-                        self: '',
-                        players: [],
-                        status: MULTIPLAYER_ENABLED ? 'multiplayer unavailable' : 'multiplayer disabled'
-                    };
-                } else if (data.method === 'multiplayer.disconnect') {
-                    result = {connected: false};
-                } else if (data.method === 'multiplayer.players') {
-                    result = [];
-                } else if (data.method === 'multiplayer.setState') {
-                    result = false;
-                } else if (data.method === 'multiplayer.sendEvent') {
-                    result = false;
-                } else if (data.method === 'marketplace.owns') {
-                    const owned = await api.ownsGameProduct(projectId, String((data.args && data.args[0]) || ''));
-                    result = owned.owned;
-                } else {
-                    throw new Error(`MistWarp Games method is not available: ${data.method}`);
-                }
-                reply(event.source, {id: data.id, ok: true, result});
-            } catch (e) {
-                reply(event.source, {
-                    id: data.id,
-                    ok: false,
-                    error: String((e && e.message) || e)
-                });
-            }
-        };
-        window.addEventListener('message', onMessage);
-        try {
-            const frame = stageFrame.current;
-            if (!userLoading && frame && frame.contentWindow) {
-                frame.contentWindow.postMessage(gamesUserMessage, '*');
-            }
-        } catch (e) {
-            // ignore
-        }
-        return () => {
-            window.removeEventListener('message', onMessage);
-        };
-    }, [gamesProjectId, userLoading, gamesUserMessage]);
-
-    // Rotur bridge for the embedded player. The project iframe cannot hold the
-    // token or render trusted UI, so its Rotur blocks post requests up here; this
-    // page holds the token (via lib/rotur/client) and renders consent/confirm UI
-    // that the sandboxed project cannot read or approve on its own.
-    useEffect(() => {
-        const identity = userMessage.user;
-        const onMessage = async event => {
-            const frame = stageFrame.current;
-            if (!frame || event.source !== frame.contentWindow) return;
-            const data = event.data;
-            if (!data || data.type !== 'mw:rotur') return;
-            const source = event.source;
-            const reply = payload => {
-                try {
-                    source.postMessage({type: 'mw:rotur-result', ...payload}, '*');
-                } catch (e) {
-                    // ignore
-                }
-            };
-
-            if (data.kind === 'hello') {
-                // While identity is still restoring, stay silent: answering now
-                // would settle the embed's cache as logged-out. The proactive
-                // push below runs once loading finishes and answers instead.
-                if (userLoading) return;
-                try {
-                    source.postMessage(userMessage, '*');
-                } catch (e) {
-                    // ignore
-                }
-                return;
-            }
-
-            // The grant key, the project name and whether to ask all come from
-            // this page. Anything the frame sends besides the scopes and the
-            // method is ignored, because custom extensions can post here too.
-            const meta = {
-                projectId: gamesProjectId,
-                name: (project && (project.title || project.name)) || ''
-            };
-
-            if (data.kind === 'consent') {
-                const scopes = validateProjectScopes(data.scopes);
-                if (!scopes) {
-                    reply({id: data.id, ok: false, error: 'Projects cannot ask for that Rotur permission'});
-                    return;
-                }
-                if (!identity.loggedIn) {
-                    reply({id: data.id, ok: true, result: false});
-                    return;
-                }
-                if (hasFullGrant(meta, scopes)) {
-                    reply({id: data.id, ok: true, result: true});
-                    return;
-                }
-                if (grantsSilently(scopes)) {
-                    try {
-                        await commitGrant(meta, scopes);
-                        reply({id: data.id, ok: true, result: true});
-                    } catch (e) {
-                        reply({id: data.id, ok: false, error: String((e && e.message) || e)});
-                    }
-                    return;
-                }
-                if (isProjectPromptBlocked({id: gamesProjectId})) {
-                    reply({id: data.id, ok: true, result: false});
-                    return;
-                }
-                setRoturModal({
-                    type: 'consent',
-                    data: {scopes, username: identity.username, name: meta.name},
-                    onAllow: async () => {
-                        setRoturModal(null);
-                        try {
-                            await commitGrant(meta, scopes);
-                            reply({id: data.id, ok: true, result: true});
-                        } catch (e) {
-                            reply({id: data.id, ok: false, error: String((e && e.message) || e)});
-                        }
-                    },
-                    onDeny: () => {
-                        setRoturModal(null);
-                        reply({id: data.id, ok: true, result: false});
-                    },
-                    onBlock: () => {
-                        blockProjectPrompts({id: gamesProjectId});
-                        setRoturModal(null);
-                        reply({id: data.id, ok: true, result: false});
-                    }
-                });
-                return;
-            }
-
-            if (data.kind === 'call') {
-                const method = data.method;
-                let call;
-                try {
-                    if (!identity.loggedIn) throw new Error('Log in to Rotur to use this block');
-                    call = authorizeProjectCall(method, data.args, grantedScopesFor(meta), gamesProjectId);
-                } catch (e) {
-                    reply({id: data.id, ok: false, error: String((e && e.message) || e)});
-                    return;
-                }
-                const args = call.args;
-                const perform = async () => {
-                    try {
-                        const scope = roturActivityScope.current;
-                        const result = scope ? await scope.call(method, args) : await callRotur(method, args);
-                        reply({id: data.id, ok: true, result});
-                    } catch (e) {
-                        reply({id: data.id, ok: false, error: String((e && e.message) || e)});
-                    }
-                };
-                if (call.spec.activity) {
-                    const key = (project && project.id) || id || `name:${(project && project.title) || ''}`;
-                    const decision = activityAllowed(getRoturSettings().activitySharing, key);
-                    if (decision === true) {
-                        perform();
-                        return;
-                    }
-                    if (decision === false) {
-                        reply({id: data.id, ok: true, result: ''});
-                        return;
-                    }
-                    if (isProjectPromptBlocked({id: gamesProjectId})) {
-                        reply({id: data.id, ok: true, result: ''});
-                        return;
-                    }
-                    setRoturModal({
-                        type: 'share',
-                        data: {username: identity.username, name: (project && project.title) || ''},
-                        onShareThis: () => {
-                            setRoturModal(null);
-                            rememberActivityDecision(key, true);
-                            perform();
-                        },
-                        onShareAll: () => {
-                            setRoturModal(null);
-                            setRoturSetting('activitySharing', 'all');
-                            perform();
-                        },
-                        onShareNo: () => {
-                            setRoturModal(null);
-                            rememberActivityDecision(key, false);
-                            reply({id: data.id, ok: true, result: ''});
-                        },
-                        onBlock: () => {
-                            blockProjectPrompts({id: gamesProjectId});
-                            setRoturModal(null);
-                            rememberActivityDecision(key, false);
-                            reply({id: data.id, ok: true, result: ''});
-                        }
-                    });
-                    return;
-                }
-                if (call.confirm) {
-                    if (isProjectPromptBlocked({id: gamesProjectId})) {
-                        reply({id: data.id, ok: false, error: 'You blocked prompts from this project'});
-                        return;
-                    }
-                    setRoturModal({
-                        type: 'confirm',
-                        data: {
-                            label: call.confirm.label,
-                            confirmation: call.confirm.confirmation || null,
-                            username: identity.username
-                        },
-                        onAllow: () => {
-                            setRoturModal(null);
-                            perform();
-                        },
-                        onDeny: () => {
-                            setRoturModal(null);
-                            reply({id: data.id, ok: false, error: 'You cancelled this Rotur action'});
-                        },
-                        onBlock: () => {
-                            blockProjectPrompts({id: gamesProjectId});
-                            setRoturModal(null);
-                            reply({id: data.id, ok: false, error: 'You blocked prompts from this project'});
-                        }
-                    });
-                } else {
-                    perform();
-                }
-            }
-        };
-        window.addEventListener('message', onMessage);
-        // Push identity proactively so a login (or logout) after the embed has
-        // loaded refreshes its cache, instead of waiting for a hello that only
-        // fires once.
-        try {
-            const frame = stageFrame.current;
-            if (!userLoading && frame && frame.contentWindow) {
-                frame.contentWindow.postMessage(userMessage, '*');
-            }
-        } catch (e) {
-            // ignore
-        }
-        return () => window.removeEventListener('message', onMessage);
-    }, [user, userLoading, project, id, userMessage]);
-
-    const sendThemeToStage = useCallback(() => {
-        try {
-            const frame = stageFrame.current;
-            if (!frame || !frame.contentWindow) return;
-            const theme = localStorage.getItem('tw:theme');
-            frame.contentWindow.postMessage({
-                type: 'mw:apply-theme',
-                theme,
-                customThemes: theme ? themeCustomFor(theme) : ''
-            }, '*');
-            if (!userLoading) {
-                frame.contentWindow.postMessage(userMessage, '*');
-            }
-        } catch (e) {
-            // ignore
-        }
-    }, [userLoading, userMessage]);
-
-    useEffect(() => {
-        if (!project || !project.id) return;
-        const projectId = String(project.id);
-        const onMessage = event => {
-            const frame = stageFrame.current;
-            if (!frame || event.source !== frame.contentWindow) return;
-            const data = event.data;
-            if (!data || typeof data.type !== 'string') return;
-            if (data.storageProject && String(data.storageProject) !== projectId) return;
-            if (data.type === 'mw:storage-clear') {
-                clearProjectStorage(projectId);
-                return;
-            }
-            if (data.type !== 'mw:storage-set' && data.type !== 'mw:storage-remove') return;
-            const key = typeof data.key === 'string' ? data.key : '';
-            if (!key) return;
-            if (isBlockedProjectStorageKey(key)) return;
-            const storageKey = `${EMBED_STORAGE_PREFIX}${projectId}:${key}`;
-            try {
-                if (data.type === 'mw:storage-set') {
-                    if (!Object.prototype.hasOwnProperty.call(data, 'value')) return;
-                    localStorage.setItem(storageKey, String(data.value));
-                    return;
-                }
-                localStorage.removeItem(storageKey);
-            } catch (e) {
-                // ignore
-            }
-        };
-        window.addEventListener('message', onMessage);
-        return () => window.removeEventListener('message', onMessage);
-    }, [project && project.id]);
-
-    const handleTitleKeyDown = event => {
-        if (event.key === 'Enter') {
-            event.currentTarget.blur();
-        }
-    };
+    const {roturModal, gameMarketplace, setGameMarketplace, sendThemeToStage} = usePlayerBridge({
+        id, project, user, userLoading, stageFrame
+    });
 
     const react = async type => {
         if (!user) return;
@@ -1357,7 +622,7 @@ const Project = () => {
             </main>
         );
     }
-    if (error && errorLoadContext === actionContext && projectLoadContext !== actionContext) {
+    if (error && errorLoadContext === id && projectLoadContext !== id) {
         return (
             <main className={styles.page}>
                 {error === 'Project not found.' ? (
@@ -1372,7 +637,7 @@ const Project = () => {
             </main>
         );
     }
-    if (!project || projectLoadContext !== actionContext) {
+    if (!project || projectLoadContext !== id) {
         return (
             <main className={styles.page}>
                 <StatusMessage>{resolvingVanity ? communityText('Finding project…') : communityText('Loading…')}</StatusMessage>
@@ -1382,15 +647,6 @@ const Project = () => {
 
     const ownsProject = Boolean(user && String(user.username).toLowerCase() === String(project.owner).toLowerCase());
     const seeInsideHref = editorUrl({platformProject: project.id});
-    const activityTabLabels = {
-        'Comments': communityText('Comments'),
-        'Files': communityText('Files'),
-        'Reviews': communityText('Reviews'),
-        'Version control': communityText('Version control'),
-        'Bounties': communityText('Bounties'),
-        'Contribute': communityText('Contribute')
-    };
-
     const sharedDate = formatDate(project.sharedAt || project.created);
     const visibility = project.visibility || (project.shared ? 'public' : 'private');
     const price = project.price || 0;
@@ -1432,221 +688,34 @@ const Project = () => {
             className={`${styles.page} ${project.branding?.accentColor ? styles.branded : ''}`}
             style={project.branding?.accentColor ? {'--project-accent': project.branding.accentColor} : null}
         >
-            <div className={styles.topBar}>
-                <div className={styles.titleBlock}>
-                    <Link to={`/users/${project.owner}`}>
-                        <Avatar
-                            username={project.owner}
-                            size={44}
-                        />
-                    </Link>
-                    <div className={styles.titleText}>
-                        <div className={styles.titleRow}>
-                            {project.isOwner ? (
-                                <input
-                                    className={styles.titleInput}
-                                    value={title}
-                                    maxLength={100}
-                                    aria-label={communityText('Project title')}
-                                    disabled={savingTitle}
-                                    onChange={event => setTitle(event.target.value)}
-                                    onBlur={saveTitle}
-                                    onKeyDown={handleTitleKeyDown}
-                                />
-                            ) : <h1>{project.title}</h1>}
-                        </div>
-                        <div className={styles.bylineRow}>
-                            <Link
-                                to={`/users/${project.owner}`}
-                                className={styles.byline}
-                            >{communityText('by {value1}', {value1: project.owner})}</Link>
-                            <GroupTag className={styles.projectGroupTag} username={project.owner} compact />
-                            {project.groupTag ? <Link className={styles.groupByline} to={`/groups/${project.groupTag}`}>{communityText('for @')}{project.groupTag}</Link> : null}
-                        </div>
-                        {project.branding?.tagline ? <p className={styles.brandTagline}>{project.branding.tagline}</p> : null}
-                    </div>
-                </div>
-                <div className={styles.topActions}>
-                    {user && !project.isOwner ? (
-                        <Button
-                            as="a"
-                            variant="secondary"
-                            href={payLink(project.owner, {note: `Support for ${project.title}`})}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title={communityText('Send {value1} credits on Rotur', {value1: project.owner})}
-                        >
-                            <Coins size={16} />{communityText('Support')}</Button>
-                    ) : null}
-                    {project.isOwner ? (
-                        <VisibilityMenu
-                            value={visibility}
-                            onChange={changeVisibility}
-                            disabled={savingVisibility}
-                        />
-                    ) : project.canRemix ? (
-                        <Button
-                            variant="secondary"
-                            onClick={remix}
-                            disabled={userLoading}
-                            title={!user && !userLoading ? communityText('Sign in to remix') : null}
-                        >
-                            <GitFork size={16} />{communityText('Remix')}</Button>
-                    ) : null}
-                    {user ? (
-                        <Button
-                            variant="secondary"
-                            onClick={toggleLibrary}
-                            disabled={savingLibrary}
-                            aria-pressed={Boolean(project.saved)}
-                        >
-                            {project.saved ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
-                            {project.saved ? communityText('Remove from library') : communityText('Save to library')}
-                        </Button>
-                    ) : null}
-                    {canViewProjectSource(project) ? (
-                        <Button
-                            as="a"
-                            variant="primary"
-                            href={seeInsideHref}
-                        >
-                            <ExternalLink size={16} />{communityText('See inside')}</Button>
-                    ) : null}
-                    <Dropdown
-                        className={styles.menuWrap}
-                        menuClassName={styles.actionMenu}
-                        renderTrigger={({open, toggle}) => (
-                            <IconButton
-                                label={communityText('More actions')}
-                                aria-expanded={open}
-                                aria-haspopup="menu"
-                                onClick={toggle}
-                            >
-                                <MoreHorizontal size={18} />
-                            </IconButton>
-                        )}
-                    >
-                        {({close}) => (
-                            <React.Fragment>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        close();
-                                        copyLink();
-                                    }}
-                                >
-                                    <Link2 size={15} />{communityText('Copy link')}</button>
-                                {project.shared && visibility === 'public' ? (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            close();
-                                            track('embed_code_copied', {project: project.id});
-                                            copyLink(`<iframe src="${window.location.origin}/embed.html?mw=${
-                                                encodeURIComponent(project.id)
-                                            }" width="482" height="412" frameborder="0" scrolling="no" ` +
-                                                'allowfullscreen></iframe>');
-                                        }}
-                                    >
-                                        <Code2 size={15} />{communityText('Copy embed code')}</button>
-                                ) : null}
-                                {user ? (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            close();
-                                            setCollectionOpen(true);
-                                        }}
-                                    >
-                                        <Library size={15} />{communityText('Save to collection')}</button>
-                                ) : null}
-                                {project.isOwner ? <div className={styles.menuSeparator} role="separator" /> : null}
-                                {project.isOwner ? (
-                                    <button
-                                        type="button"
-                                        disabled={thumbnailStatus === 'saving'}
-                                        onClick={() => {
-                                            close();
-                                            useStageThumbnail();
-                                        }}
-                                    >
-                                        <MonitorPlay size={15} />{communityText('Use stage as thumbnail')}</button>
-                                ) : null}
-                                {project.isOwner ? (
-                                    <button
-                                        type="button"
-                                        disabled={thumbnailStatus === 'saving'}
-                                        onClick={() => {
-                                            close();
-                                            chooseThumbnailUpload();
-                                        }}
-                                    >
-                                        <ImageUp size={15} />{communityText('Upload thumbnail')}</button>
-                                ) : null}
-                                {project.isOwner ? (
-                                    <Link
-                                        to={`/mystuff/project/${project.id}`}
-                                        onClick={close}
-                                    >
-                                        <SlidersHorizontal size={15} />{communityText('Manage & analytics')}</Link>
-                                ) : null}
-                                {project.isOwner ? (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            close();
-                                            menuRemix();
-                                        }}
-                                        disabled={!user}
-                                    >
-                                        <GitFork size={15} />{communityText('Remix')}</button>
-                                ) : null}
-                                {project.isOwner && project.shared ? (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            close();
-                                            toggleFeatured();
-                                        }}
-                                        disabled={savingFeatured}
-                                    >
-                                        <Star
-                                            size={15}
-                                            fill={featuredProject === project.id ? 'currentColor' : 'none'}
-                                        />
-                                        {featuredProject === project.id ?
-                                            communityText('Remove profile feature') : communityText('Feature on profile')}
-                                    </button>
-                                ) : null}
-                                {user && !sameUser(project.owner, user.username) ? <div className={styles.menuSeparator} role="separator" /> : null}
-                                {user && !sameUser(project.owner, user.username) ? (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            close();
-                                            menuReport();
-                                        }}
-                                    >
-                                        <Flag size={15} />{communityText('Report')}</button>
-                                ) : null}
-                                {project.isOwner ? <div className={styles.menuSeparator} role="separator" /> : null}
-                                {project.isOwner ? (
-                                    <button
-                                        type="button"
-                                        className={styles.menuDanger}
-                                        onClick={() => {
-                                            close();
-                                            setActionError(null);
-                                            setDeleteConfirm(true);
-                                        }}
-                                    >
-                                        <Trash2 size={15} />{communityText('Delete project')}</button>
-                                ) : null}
-                            </React.Fragment>
-                        )}
-                    </Dropdown>
-                </div>
-            </div>
+            <ProjectHeader
+                project={project}
+                user={user}
+                userLoading={userLoading}
+                title={title}
+                setTitle={setTitle}
+                savingTitle={savingTitle}
+                saveTitle={saveTitle}
+                visibility={visibility}
+                changeVisibility={changeVisibility}
+                savingVisibility={savingVisibility}
+                remix={remix}
+                toggleLibrary={toggleLibrary}
+                savingLibrary={savingLibrary}
+                seeInsideHref={seeInsideHref}
+                copyLink={copyLink}
+                setCollectionOpen={setCollectionOpen}
+                thumbnailStatus={thumbnailStatus}
+                useStageThumbnail={useStageThumbnail}
+                chooseThumbnailUpload={chooseThumbnailUpload}
+                menuRemix={menuRemix}
+                toggleFeatured={toggleFeatured}
+                savingFeatured={savingFeatured}
+                featuredProject={featuredProject}
+                menuReport={menuReport}
+                setActionError={setActionError}
+                setDeleteConfirm={setDeleteConfirm}
+            />
 
             {collectionOpen ? <CollectionSaveModal project={project} onClose={() => setCollectionOpen(false)} /> : null}
 
@@ -1675,68 +744,15 @@ const Project = () => {
             ) : null}
 
             {forkSetup ? (
-                <Modal
-                    className={styles.forkModal}
-                    title={communityText('Set up your fork')}
-                    onClose={() => {
-                        setForkSetup(null);
-                        setForkBounty(null);
-                    }}
-                    dismissDisabled={creatingFork}
-                >
-                    <form onSubmit={createFork}>
-                        <p className={styles.forkIntro}>{communityText('MistWarp will create a private working copy. Edit and save it, then open its project page and send your changes back.')}</p>
-                        {forkBounty ? (
-                            <Notice variant="info" icon={Trophy} title={communityText('Working on a bounty')} className={styles.forkNotice}>
-                                <p><strong>{forkBounty.title}</strong></p>
-                                <p>{communityText('{value1} credits, paid if the project owner merges your pull request.', {value1: forkBounty.amount})}</p>
-                            </Notice>
-                        ) : null}
-                        <label className={styles.forkField}>
-                            <span>{communityText('Project name')}</span>
-                            <input
-                                value={forkSetup.title}
-                                disabled={creatingFork}
-                                maxLength={100}
-                                required
-                                autoFocus
-                                onChange={event => setForkSetup({...forkSetup, title: event.target.value})}
-                            />
-                        </label>
-                        <label className={styles.forkField}>
-                            <span>{communityText('Working branch')}</span>
-                            <input
-                                value={forkSetup.branch}
-                                disabled={creatingFork}
-                                maxLength={100}
-                                required
-                                pattern="[A-Za-z0-9][A-Za-z0-9._/-]*"
-                                onChange={event => setForkSetup({...forkSetup, branch: event.target.value})}
-                            />
-                        </label>
-                        <dl className={styles.forkSummary}>
-                            <div><dt>{communityText('Forked from')}</dt><dd><UserLink username={project.owner}>{project.owner}</UserLink>/{project.title}</dd></div>
-                            <div><dt>{communityText('Base commit')}</dt><dd><code>{project.gitHead ? project.gitHead.slice(0, 7) : communityText('Current version')}</code></dd></div>
-                            <div><dt>{communityText('Visibility')}</dt><dd>{communityText('Private draft')}</dd></div>
-                        </dl>
-                        <div className={styles.confirmActions}>
-                            <Button
-                                onClick={() => {
-                                    setForkSetup(null);
-                                    setForkBounty(null);
-                                }}
-                                disabled={creatingFork}
-                            >{communityText('Cancel')}</Button>
-                            <Button
-                                variant="primary"
-                                type="submit"
-                                busy={creatingFork}
-                                busyLabel={communityText('Creating fork…')}
-                            >
-                                <GitFork size={15} />{communityText('Create fork')}</Button>
-                        </div>
-                    </form>
-                </Modal>
+                <ForkSetupModal
+                    project={project}
+                    forkSetup={forkSetup}
+                    setForkSetup={setForkSetup}
+                    forkBounty={forkBounty}
+                    setForkBounty={setForkBounty}
+                    creatingFork={creatingFork}
+                    createFork={createFork}
+                />
             ) : null}
 
             {reporting ? (
@@ -1746,33 +762,11 @@ const Project = () => {
                     onClose={() => setReporting(false)}
                 />
             ) : null}
-            {roturModal ? (
-                <RoturConsentModal
-                    type={roturModal.type}
-                    data={roturModal.data}
-                    onAllow={() => roturModal.onAllow && roturModal.onAllow()}
-                    onBlock={() => roturModal.onBlock && roturModal.onBlock()}
-                    onDeny={() => roturModal.onDeny && roturModal.onDeny()}
-                    onShareThis={() => roturModal.onShareThis && roturModal.onShareThis()}
-                    onShareAll={() => roturModal.onShareAll && roturModal.onShareAll()}
-                    onShareNo={() => roturModal.onShareNo && roturModal.onShareNo()}
-                />
-            ) : null}
-            {gameMarketplace ? (
-                <GameMarketplaceModal
-                    projectId={gameMarketplace.projectId}
-                    productId={gameMarketplace.productId}
-                    onBlockProject={() => {
-                        blockProjectPrompts({id: gameMarketplace.projectId});
-                        gameMarketplace.onResult({status: 'blocked'});
-                        setGameMarketplace(null);
-                    }}
-                    onResult={result => {
-                        gameMarketplace.onResult(result);
-                        setGameMarketplace(null);
-                    }}
-                />
-            ) : null}
+            <PlayerPrompts
+                roturModal={roturModal}
+                gameMarketplace={gameMarketplace}
+                setGameMarketplace={setGameMarketplace}
+            />
             {confirmBuy ? (
                 <ConfirmModal
                     icon={Coins}
@@ -1794,177 +788,47 @@ const Project = () => {
                     <p className={styles.confirmBalance}>{communityText('Rotur opens in a new window to take the payment.')}</p>
                 </ConfirmModal>
             ) : null}
-            {actionError ? (
-                <Notice variant="error" className={styles.pageNotice} onDismiss={() => setActionError(null)}>{actionError}</Notice>
-            ) : null}
-            <LiveProjectSession project={project} />
-            {copied ? <Notice variant="success" className={styles.pageNotice}>{communityText('Copied to clipboard.')}</Notice> : null}
-            {thumbnailStatus !== 'idle' ? (
-                <Notice variant={thumbnailStatus === 'saving' ? 'info' : 'success'} className={styles.pageNotice}>
-                    {thumbnailStatus === 'saving' ? communityText('Saving thumbnail…') : communityText('Thumbnail updated.')}
-                </Notice>
-            ) : null}
-
-            {visibility === 'unlisted' ? (
-                <Notice variant="info" icon={LinkIcon} className={styles.pageNotice}>
-                    {communityText('Unlisted. Hidden from search and profiles, but anyone with the link can open it.')}
-                </Notice>
-            ) : null}
-            {visibility === 'private' ? (
-                <Notice variant="info" icon={EyeOff} className={styles.pageNotice}>
-                    {project.contributionOnly ?
-                        communityText('This remix of a project offered for purchase stays private. You can contribute your changes back to the original creator.') :
-                        communityText('Unshared. Only you can see this project.')}
-                </Notice>
-            ) : null}
-            {price > 0 ? (
-                <Notice variant="info" icon={Coins} className={styles.pageNotice}>
-                    {project.isOwner ?
-                        communityText('Available for a one-time purchase of {value1} credits.', {value1: price}) :
-                        project.bought ?
-                            communityText('Thanks for supporting this creator. You have access to play this project.') :
-                            communityText('Support this creator with a one-time purchase of {value1} credits to play.', {value1: price})}
-                </Notice>
-            ) : null}
-            {projectThemeApplied && !revertTheme ? (
-                <Notice
-                    variant="info"
-                    icon={Palette}
-                    className={styles.pageNotice}
-                    action={(
-                        <React.Fragment>
-                            <Button
-                                onClick={() => {
-                                    setRevertTheme(true);
-                                    restoreUserTheme();
-                                }}
-                            >{communityText('Use my theme')}</Button>
-                            <Button as={Link} to="/settings">{communityText('Preferences')}</Button>
-                        </React.Fragment>
-                    )}
-                >{communityText('This project applied its own theme.')}</Notice>
-            ) : null}
+            <ProjectNotices
+                project={project}
+                visibility={visibility}
+                price={price}
+                actionError={actionError}
+                setActionError={setActionError}
+                copied={copied}
+                thumbnailStatus={thumbnailStatus}
+                projectThemeApplied={projectThemeApplied}
+                revertTheme={revertTheme}
+                setRevertTheme={setRevertTheme}
+            />
 
             <div className={styles.stageRow}>
-                <div className={styles.stageCol}>
-                    <div
-                        className={styles.stageWrap}
-                        style={{paddingBottom: `calc(${stageHeightRatio * 100}% + 48px)`}}
-                    >
-                        <div className={styles.stageSizer}>
-                            {!locked && !hasContent ? (
-                                <div className={styles.paywall}>
-                                    <EmptyState
-                                        icon={Upload}
-                                        title={communityText('Nothing here yet')}
-                                        action={project.isOwner ? (
-                                            <Button as="a" variant="primary" href={editorUrl({platformProject: project.id})}>
-                                                <ExternalLink size={16} />{communityText('Open in editor')}</Button>
-                                        ) : null}
-                                    >
-                                        {project.isOwner ?
-                                            communityText('No content yet. Open it in the editor and save to upload.') :
-                                            communityText('This project has not been uploaded yet.')}
-                                    </EmptyState>
-                                </div>
-                            ) : locked ? (
-                                <div className={styles.paywall}>
-                                    <EmptyState
-                                        icon={Lock}
-                                        title={communityText('Support this creator')}
-                                        action={(
-                                            <Button variant="primary" onClick={openBuyConfirm} disabled={!user || buying}>
-                                                <Coins size={16} />{communityText('Buy for {value1} credits', {value1: price})}</Button>
-                                        )}
-                                    >
-                                        {communityText('Your purchase supports the creator and gives you access to play {value1}. Pay once, with no recurring charge.', {value1: project.title})}
-                                        {user ? null : ` ${communityText('Sign in to purchase and support this creator.')}`}
-                                    </EmptyState>
-                                </div>
-                            ) : contentError ? (
-                                <div className={styles.paywall}>
-                                    <EmptyState icon={ShieldAlert} title={communityText('Project unavailable')}>
-                                        {communityText('The project file could not be loaded. The creator may need to save it again.')}
-                                    </EmptyState>
-                                </div>
-                            ) : followThemeDecision === null ? (
-                                <div className={styles.paywall}><StatusMessage>{communityText('Loading project…')}</StatusMessage></div>
-                            ) : (
-                                <iframe
-                                    key={stageSourceKey}
-                                    ref={stageFrame}
-                                    className={styles.stage}
-                                    src={stageSource.current.url}
-                                    title={project.title}
-                                    onLoad={sendThemeToStage}
-                                    allow="autoplay; fullscreen"
-                                    allowFullScreen
-                                    sandbox={unsandboxed ?
-                                        null :
-                                        'allow-scripts allow-forms allow-pointer-lock allow-downloads ' +
-                                        'allow-popups allow-popups-to-escape-sandbox'}
-                                />
-                            )}
-                        </div>
-                    </div>
-                    {customExtensions.length ? (
-                        <Notice
-                            variant={unsandboxed ? 'warning' : 'info'}
-                            icon={unsandboxed ? ShieldAlert : ShieldCheck}
-                            className={styles.stageNotice}
-                            action={unsandboxed ? (
-                                <Button onClick={() => setUnsandboxed(false)}>{communityText('Back to sandbox')}</Button>
-                            ) : (
-                                <Button onClick={runUnsandboxed}>{communityText('Run without sandbox')}</Button>
-                            )}
-                        >
-                            {unsandboxed ?
-                                communityText('Running with full access to your account. Only for projects you trust.') :
-                                communityText('Uses custom extensions, running in a sandbox. Saved data can persist to browser storage.')}
-                        </Notice>
-                    ) : null}
-                    <div className={styles.statsBar}>
-                        <ReactionButtons
-                            variant="bordered"
-                            counts={{heart: project.loveCount || 0, brokenheart: project.brokenHeartCount || 0}}
-                            activeReaction={project.myReaction || ''}
-                            onReact={react}
-                            disabled={locked || reactionBusy}
-                            disabledTitle={locked ? 'Buy this project to react' : 'Saving…'}
-                        />
-                        <button
-                            type="button"
-                            className={`${styles.statButton} ${project.saved ? styles.statButtonActive : ''}`}
-                            disabled={savingLibrary}
-                            title={user ? (project.saved ? communityText('Remove from your library') : communityText('Save to your library')) :
-                                communityText('Sign in to save to your library')}
-                            aria-label={communityText('{value1} library, {value2} saves', {value1: project.saved ? 'Remove from' : 'Save to', value2: project.saveCount || 0})}
-                            aria-pressed={Boolean(project.saved)}
-                            onClick={saveAfterLogin}
-                        >
-                            {project.saved ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
-                            {(project.saveCount || 0).toLocaleString(getCommunityLocale())}
-                        </button>
-                        <span className={styles.statMuted}>
-                            <Play size={15} />
-                            {project.views || 0}
-                        </span>
-                        {user && Number.isFinite(project.myPlaytimeMs) ? (
-                            <span className={styles.statMuted} title={communityText('Your playtime on this project')}>
-                                <Clock3 size={15} />
-                                {project.myPlaytimeMs > 0 ?
-                                    communityText('{value1} played', {value1: formatPlaytime(project.myPlaytimeMs, false)}) : communityText('Not played yet')}
-                            </span>
-                        ) : null}
-                        <input
-                            ref={thumbInput}
-                            className={styles.hiddenInput}
-                            type="file"
-                            accept="image/png,image/jpeg"
-                            onChange={pickThumbnail}
-                        />
-                    </div>
-                </div>
+                <ProjectStage
+                    project={project}
+                    user={user}
+                    userLoading={userLoading}
+                    locked={locked}
+                    hasContent={hasContent}
+                    price={price}
+                    buying={buying}
+                    openBuyConfirm={openBuyConfirm}
+                    contentError={contentError}
+                    followThemeDecision={followThemeDecision}
+                    stageHeightRatio={stageHeightRatio}
+                    stageSourceKey={stageSourceKey}
+                    stageFrame={stageFrame}
+                    stageSource={stageSource}
+                    sendThemeToStage={sendThemeToStage}
+                    unsandboxed={unsandboxed}
+                    setUnsandboxed={setUnsandboxed}
+                    runUnsandboxed={runUnsandboxed}
+                    customExtensions={customExtensions}
+                    react={react}
+                    reactionBusy={reactionBusy}
+                    savingLibrary={savingLibrary}
+                    saveAfterLogin={saveAfterLogin}
+                    thumbInput={thumbInput}
+                    pickThumbnail={pickThumbnail}
+                />
 
                 <div className={styles.sideCol}>
                     <ProjectInfoPanel
@@ -1989,117 +853,35 @@ const Project = () => {
             </div>
 
             <div className={`${styles.bottomGrid} ${tab === 'Files' || tab === 'Version control' ? styles.filesGrid : ''}`}>
-                <section className={styles.commentsCol}>
-                    <UnderlineTabs
-                        className={styles.activityTabs}
-                        ariaLabel="Project activity"
-                        value={tab}
-                        onChange={setTab}
-                        items={activityTabsFor(project).map(name => ({
-                            key: name,
-                            label: (
-                                <React.Fragment>
-                                    {activityTabLabels[name] || name}
-                                    {name === 'Bounties' && openBountyCount !== null ? (
-                                        <b>{openBountyCount}</b>
-                                    ) : null}
-                                    {name === 'Files' && projectFileCount !== null ? (
-                                        <b>{projectFileCount}</b>
-                                    ) : null}
-                                </React.Fragment>
-                            )
-                        }))}
-                    />
-                    {tab === 'Comments' && (
-                        <CommentThread
-                            projectComments
-                            source={commentSource}
-                            donationRecipient={project.owner}
-                            canModerate={project.isOwner}
-                            canPin={project.isOwner}
-                            disabled={Boolean(project.commentsOff) || locked}
-                            disabledReason={locked && !project.commentsOff ?
-                                'Buy this project to comment.' : 'Comments are turned off.'}
-                            reportContext={`project ${id}`}
-                            composerAction={project.isOwner ? (
-                                <Button
-                                    variant="secondary"
-                                    onClick={toggleComments}
-                                    busy={savingComments}
-                                >
-                                    {project.commentsOff ?
-                                        <MessageSquare size={14} /> :
-                                        <MessageSquareOff size={14} />}
-                                    {project.commentsOff ? communityText('Turn on comments') : communityText('Turn off comments')}
-                                </Button>
-                            ) : null}
-                        />
-                    )}
-                    {tab === 'Files' && canViewProjectSource(project) ? <ProjectFiles project={project} onCount={setProjectFileCount} /> : null}
-                    {tab === 'Reviews' && <ReviewPanel key={id} id={id} project={project} user={user} login={login} ownsProject={ownsProject} />}
-                    {tab === 'Version control' && canViewProjectSource(project) && (
-                        <div className={styles.versionControlLayout}>
-                            <Sidebar
-                                ariaLabel="Version control"
-                                active={versionControlTab}
-                                onChange={setVersionControlTab}
-                                sections={[
-                                    {key: 'history', label: 'History', icon: History, badge: versionHistory?.graph?.nodes?.length ?? versionHistory?.commits?.length ?? project.commitCount},
-                                    {key: 'branches', label: 'Branches', icon: GitBranch},
-                                    {key: 'pulls', label: 'Pull requests', icon: GitPullRequest, badge: openPullCount},
-                                    {key: 'releases', label: 'Releases', icon: Package}
-                                ]}
-                            />
-                            <div className={styles.versionControlContent}>
-                                {versionControlTab === 'history' ? (
-                                    <HistoryList id={id} baseUrl={baseProjectUrl} history={versionHistory} canRestore={project.isOwner} onChange={refreshProjectAndHistory} />
-                                ) : null}
-                                {versionControlTab === 'branches' ? (
-                                    <ProjectBranches id={id} canManage={project.isOwner} onChange={refreshProjectAndHistory} />
-                                ) : null}
-                                {versionControlTab === 'pulls' ? (
-                                    <PullList id={id} baseUrl={baseProjectUrl} onCount={setOpenPullCount} onNew={() => setTab('Contribute')} />
-                                ) : null}
-                                {versionControlTab === 'releases' ? (
-                                    <ReleaseList key={id} id={id} isOwner={project.isOwner} viewerName={viewerName} />
-                                ) : null}
-                            </div>
-                        </div>
-                    )}
-                    {tab === 'Bounties' && (
-                        <ProjectBounties
-                            project={project}
-                            userLoading={userLoading}
-                            onRemix={remix}
-                            onClaim={bounty => {
-                                if (project.remixParent && project.isOwner) {
-                                    rememberBountyClaim(project.id, bounty.id);
-                                    setPreferredBountyId(bounty.id);
-                                    setTab('Contribute');
-                                } else {
-                                    remixForBounty(bounty);
-                                }
-                            }}
-                            onCreate={() => navigate(`/mystuff/project/${id}?section=bounties`)}
-                        />
-                    )}
-                    {tab === 'Contribute' && canViewProjectSource(project) && (
-                        <div className={styles.contributionStack}>
-                            <OutgoingPullNotice id={id} targetId={project.remixParent || ''} />
-                            <ContributionPanel
-                                key={`${id}:${project.remixParent || ''}`}
-                                id={project.remixParent || id}
-                                baseUrl={project.remixParent ? projectUrl(project.remixParent) : baseProjectUrl}
-                                sourceProjectId={project.remixParent ? id : ''}
-                                preferredBountyId={preferredBountyId}
-                                onRemix={remix}
-                                user={user}
-                                viewerName={viewerName}
-                                login={login}
-                            />
-                        </div>
-                    )}
-                </section>
+                <ProjectActivity
+                    id={id}
+                    project={project}
+                    user={user}
+                    login={login}
+                    userLoading={userLoading}
+                    viewerName={viewerName}
+                    ownsProject={ownsProject}
+                    locked={locked}
+                    baseProjectUrl={baseProjectUrl}
+                    tab={tab}
+                    showActivity={showActivity}
+                    openBountyCount={openBountyCount}
+                    projectFileCount={projectFileCount}
+                    setProjectFileCount={setProjectFileCount}
+                    commentSource={commentSource}
+                    toggleComments={toggleComments}
+                    savingComments={savingComments}
+                    versionControlTab={versionControlTab}
+                    versionHistory={versionHistory}
+                    refreshProjectAndHistory={refreshProjectAndHistory}
+                    openPullCount={openPullCount}
+                    setOpenPullCount={setOpenPullCount}
+                    remix={remix}
+                    remixForBounty={remixForBounty}
+                    preferredBountyId={preferredBountyId}
+                    setPreferredBountyId={setPreferredBountyId}
+                    navigate={navigate}
+                />
 
                 <aside className={styles.remixCol}>
                     <RemixTree id={id} baseUrl={baseProjectUrl} />
@@ -2110,877 +892,20 @@ const Project = () => {
     );
 };
 
-const ProjectBounties = ({project, userLoading, onRemix, onClaim, onCreate}) => {
-    const {text: communityText} = useCommunityText();
-    const [items, setItems] = useState(null);
-    const targetId = bountyProjectId(project);
-    const isFork = Boolean(project.remixParent);
-
-    useEffect(() => {
-        let active = true;
-        setItems(null);
-        listCommerceBounties({
-            source: 'mistwarp',
-            resource_type: 'project',
-            resource_id: targetId,
-            status: 'open'
-        })
-            .then(data => {
-                if (active) setItems(data.bounties || []);
-            })
-            .catch(() => {
-                if (active) setItems([]);
-            });
-        return () => {
-            active = false;
-        };
-    }, [targetId]);
-
-    if (items === null) return null;
-
-    return (
-        <section className={styles.bountyPanel} aria-labelledby="project-bounties-title">
-            <SectionHeading
-                id="project-bounties-title"
-                icon={Trophy}
-                title={isFork ? communityText('Bounties on the parent project') : communityText('Bounties')}
-                count={items.length}
-                actions={project.isOwner && !isFork ? (
-                    <Button variant="primary" onClick={onCreate}>
-                        <Plus size={16} />{communityText('New bounty')}</Button>
-                ) : !isFork && project.canRemix ? (
-                    <Button variant="primary" disabled={userLoading} onClick={onRemix}>
-                        <GitFork size={16} />{communityText('Remix')}</Button>
-                ) : null}
-            />
-            {items.length ? (
-                <ul className={styles.bountyList}>
-                    {items.map(item => (
-                        <li key={item.id}>
-                            <div>
-                                <Link className={styles.bountyTitle} to={`/bounties/${encodeURIComponent(item.id)}`}>{item.title}</Link>
-                                {item.description ? <p>{item.description}</p> : null}
-                            </div>
-                            <div className={styles.bountyItemAction}>
-                                <span className={styles.bountyReward}>{communityText('{value1} credits', {value1: item.amount})}</span>
-                                {!project.isOwner || isFork ? (
-                                    isFork && !project.isOwner ? (
-                                        <Link className={styles.bountyClaim} to={projectUrl(targetId)}>{communityText('Open parent')}</Link>
-                                    ) : (
-                                        <button
-                                            type="button"
-                                            className={styles.bountyClaim}
-                                            disabled={userLoading}
-                                            onClick={() => onClaim(item)}
-                                        >{isFork ? communityText('Use this bounty') : communityText('Work on this')}</button>
-                                    )
-                                ) : null}
-                            </div>
-                        </li>
-                    ))}
-                </ul>
-            ) : (
-                <EmptyState icon={Trophy} title={communityText('No open bounties')}>
-                    {project.isOwner && !isFork ?
-                        communityText('Fund a specific change when you want contributors to pick it up.') :
-                        communityText('There are no funded tasks right now. You can still fork the project and send an improvement.')}
-                </EmptyState>
-            )}
-        </section>
-    );
+export {
+    activityHash,
+    activityTabForHash,
+    applyReactionResult,
+    bountyProjectId,
+    contributionPayload,
+    contributionRemixes,
+    openPullForRemix,
+    releasePayload,
+    reviewPayload,
+    updateReviewSummary,
+    HistoryList,
+    PullList,
+    ReleaseList,
+    ReviewPanel
 };
-
-const RemixTree = ({id, baseUrl}) => {
-    const {text: communityText} = useCommunityText();
-    const [tree, setTree] = useState(null);
-    const [failed, setFailed] = useState(false);
-    const [attempt, setAttempt] = useState(0);
-    useEffect(() => {
-        let active = true;
-        setTree(null);
-        setFailed(false);
-        api.remixTree(id)
-            .then(data => active && setTree(data))
-            .catch(() => active && setFailed(true));
-        return () => {
-            active = false;
-        };
-    }, [attempt, id]);
-    if (!tree && !failed) return null;
-    if (failed) {
-        return (
-            <StatusMessage error compact onRetry={() => setAttempt(value => value + 1)}>
-                {communityText('Could not load remixes.')}
-            </StatusMessage>
-        );
-    }
-    const nodes = tree.nodes || [];
-    return (
-        <section className={styles.remixPanel}>
-            <GitFork size={20} />
-            <div>
-                <h2>{communityText('Remix tree')}</h2>
-                <p>{nodes.length > 1 ? communityText('{value1} projects branch from the same original.', {value1: nodes.length}) : communityText('See this project alongside its Git history.')}</p>
-            </div>
-            <Link to={`${baseUrl || projectUrl(id)}/remixes`}>{communityText('Explore tree')}<ChevronRight size={15} /></Link>
-        </section>
-    );
-};
-
-const HistoryList = ({id, history, canRestore, onChange, baseUrl}) => {
-    const {text: communityText} = useCommunityText();
-    const [restoring, setRestoring] = useState(null);
-    const [restoreError, setRestoreError] = useState(null);
-    const [restoreCandidate, setRestoreCandidate] = useState(null);
-    const restoreLocks = useRef(new Set());
-    const idRef = useRef(id);
-    idRef.current = id;
-    useEffect(() => {
-        restoreLocks.current.clear();
-        setRestoring(null);
-        setRestoreError(null);
-        setRestoreCandidate(null);
-    }, [id]);
-    const requestRestore = commit => {
-        if (restoring) return;
-        setRestoreError(null);
-        setRestoreCandidate(commit);
-    };
-    const restore = async commit => {
-        const actionId = id;
-        const lockId = `${actionId}\u0000${commit.sha}`;
-        if (restoreLocks.current.has(lockId)) return;
-        restoreLocks.current.add(lockId);
-        setRestoring(commit.sha);
-        setRestoreError(null);
-        try {
-            const {project} = await api.getProject(actionId);
-            if (!project.gitHead) throw new Error('This project does not have server-side history');
-            const tree = await api.commitTree(actionId, commit.sha);
-            const files = await Promise.all((tree.files || []).map(async file => {
-                const result = await api.commitFile(actionId, commit.sha, file.path);
-                const binary = atob(result.content || '');
-                const data = new Uint8Array(binary.length);
-                for (let index = 0; index < binary.length; index++) data[index] = binary.charCodeAt(index);
-                return {path: file.path, data};
-            }));
-            const sb3 = await buildSb3FromFileEntries(files);
-            await api.uploadProject(actionId, sb3, null, null, {
-                expectedHead: project.gitHead,
-                restoreCommit: commit.sha,
-                restoreMessage: `Restored version ${commit.sha.slice(0, 7)}`
-            });
-            if (idRef.current !== actionId) return;
-            setRestoreCandidate(null);
-            if (onChange) await onChange();
-        } catch (error) {
-            if (idRef.current === actionId) {
-                setRestoreError(error.message || 'Could not restore this version.');
-            }
-        } finally {
-            restoreLocks.current.delete(lockId);
-            if (idRef.current === actionId) setRestoring(null);
-        }
-    };
-    if (!history) return <StatusMessage />;
-    if (history.error) {
-        return <StatusMessage error onRetry={onChange}>{communityText('Could not load version history.')}</StatusMessage>;
-    }
-    const commits = history.commits || [];
-    if (!commits.length) {
-        return (
-            <EmptyState icon={History} title={communityText('No version history yet')}>
-                {communityText('Saved versions of this project will appear here.')}
-            </EmptyState>
-        );
-    }
-    if (history.graph?.nodes?.length) {
-        return (
-            <>
-                {restoreError ? <Notice variant="error" className={styles.pageNotice}>{restoreError}</Notice> : null}
-                <GitGraph
-                    projectId={id}
-                    graph={history.graph}
-                    currentBranch={history.branch}
-                    onRestore={canRestore ? requestRestore : null}
-                    restoring={restoring}
-                />
-                {restoreCandidate ? (
-                    <ConfirmModal
-                        icon={History}
-                        title={communityText('Restore this version?')}
-                        confirmLabel={communityText('Restore version')}
-                        busy={Boolean(restoring)}
-                        busyLabel={communityText('Restoring…')}
-                        error={restoreError}
-                        onConfirm={() => restore(restoreCandidate)}
-                        onCancel={() => setRestoreCandidate(null)}
-                    >
-                        {communityText('{value1} will become the current project. Newer versions will stay in the history.', {
-                            value1: (restoreCandidate.message || communityText('Saved version')).split('\n')[0]
-                        })}
-                    </ConfirmModal>
-                ) : null}
-            </>
-        );
-    }
-    return (
-        <React.Fragment>
-            <ul className={styles.commitList}>
-                {commits.map(commit => (
-                    <li key={commit.sha}>
-                        <Link className={styles.commitLink} to={`${baseUrl || projectUrl(id)}/commits/${commit.sha}`}>
-                            <code>{commit.sha.slice(0, 7)}</code>
-                            <span className={styles.commitMsg}>{commit.message.split('\n')[0]}</span>
-                        </Link>
-                        <UserLink className={styles.muted} username={commit.author}>{commit.author}</UserLink>
-                    </li>
-                ))}
-            </ul>
-        </React.Fragment>
-    );
-};
-
-const PullList = ({id, baseUrl, onCount, onNew}) => {
-    const {text: communityText} = useCommunityText();
-    const [pulls, setPulls] = useState(null);
-    const [loadError, setLoadError] = useState(false);
-    const [state, setState] = useState('open');
-    const [query, setQuery] = useState('');
-    const beginLoad = useLatest();
-
-    const reload = useCallback(() => {
-        const fresh = beginLoad();
-        setPulls(null);
-        setLoadError(false);
-        api.pulls(id)
-            .then(fresh(d => {
-                const loaded = d.pulls || [];
-                setPulls(loaded);
-                if (onCount) onCount(loaded.filter(pull => pull.state === 'open').length);
-            }))
-            .catch(fresh(() => setLoadError(true)));
-    }, [beginLoad, id, onCount]);
-
-    useEffect(() => {
-        reload();
-    }, [reload]);
-
-    if (!pulls && !loadError) return <StatusMessage>{communityText('Loading pull requests…')}</StatusMessage>;
-    if (loadError) return <StatusMessage error onRetry={reload}>{communityText('Could not load pull requests.')}</StatusMessage>;
-    const openCount = pulls.filter(pull => pull.state === 'open').length;
-    const closedCount = pulls.length - openCount;
-    const needle = query.trim().toLowerCase();
-    const filtered = pulls.filter(pull => {
-        const stateMatches = state === 'open' ? pull.state === 'open' : pull.state !== 'open';
-        return stateMatches && (!needle || `${pull.title} ${pull.user} ${pull.index}`.toLowerCase().includes(needle));
-    });
-    return (
-        <section className={styles.pullBrowser}>
-            <div className={styles.pullTools}>
-                <label><Search size={16} /><input value={query} placeholder={communityText('Search pull requests')} onChange={event => setQuery(event.target.value)} /></label>
-                <Button variant="primary" onClick={onNew}><Plus size={16} />{communityText('New pull request')}</Button>
-            </div>
-            <div className={styles.pullList}>
-                <header>
-                    <button type="button" className={state === 'open' ? styles.pullStateActive : ''} onClick={() => setState('open')}><GitPullRequest size={16} />{communityText('{value1} open', {value1: openCount})}</button>
-                    <button type="button" className={state === 'closed' ? styles.pullStateActive : ''} onClick={() => setState('closed')}>{communityText('{value1} closed', {value1: closedCount})}</button>
-                </header>
-                {filtered.length ? filtered.map(pull => (
-                    <article key={pull.index} id={`pull-${pull.index}`}>
-                        <GitPullRequest className={pull.state === 'open' ? styles.pullOpen : styles.pullClosed} size={18} />
-                        <div>
-                            <Link to={`${baseUrl || projectUrl(id)}/pulls/${pull.index}`}>{pull.title}</Link>
-                            <span>{communityText('#{value1} opened {value2} by', {value1: pull.index, value2: timeAgo(pull.created)})} <UserLink username={pull.user}><Avatar username={pull.user} size={18} /></UserLink> <UserLink username={pull.user}>{pull.user}</UserLink></span>
-                        </div>
-                        <span className={styles.pullComments}><MessageSquare size={14} /> {pull.commentCount || 0}</span>
-                    </article>
-                )) : (
-                    <EmptyState
-                        compact
-                        icon={GitPullRequest}
-                        className={styles.pullEmpty}
-                        title={state === 'open' ? communityText('No open pull requests') : communityText('No closed pull requests')}
-                    >
-                        {needle ? communityText('No pull requests match your search.') : communityText('Pull requests sent to this project will appear here.')}
-                    </EmptyState>
-                )}
-            </div>
-        </section>
-    );
-};
-
-const OutgoingPullNotice = ({id, targetId}) => {
-    const {text: communityText} = useCommunityText();
-    const [pulls, setPulls] = useState(null);
-    const [targetTitle, setTargetTitle] = useState('');
-    const [targetVanity, setTargetVanity] = useState('');
-    useEffect(() => {
-        if (!targetId) {
-            setPulls([]);
-            return () => {};
-        }
-        let active = true;
-        Promise.all([api.pulls(targetId), api.getProject(targetId)]).then(([data, projectData]) => {
-            if (!active) return;
-            const target = projectData.project || projectData;
-            setTargetTitle(target.title || targetId);
-            setTargetVanity(target.vanitySlug || '');
-            setPulls((data.pulls || []).filter(pull => pull.state === 'open' && pull.sourceProjectId === id));
-        }).catch(() => {
-            if (active) setPulls([]);
-        });
-        return () => {
-            active = false;
-        };
-    }, [id, targetId]);
-    if (!pulls?.length) return null;
-    return (
-        <section className={styles.outgoingPulls}>
-            <header><GitPullRequest size={16} /><strong>{communityText('Open pull requests from this project')}</strong><span>{pulls.length}</span></header>
-            {pulls.map(pull => (
-                <Link key={`${pull.targetProjectId}:${pull.index}`} to={`${projectUrl({id: pull.targetProjectId, vanitySlug: targetVanity})}/pulls/${pull.index}`}>
-                    <span><strong>{pull.title}</strong><small>{communityText('into {value1}', {value1: targetTitle || pull.targetProjectId})}</small></span>
-                    <span>#{pull.index} <ChevronRight size={14} /></span>
-                </Link>
-            ))}
-        </section>
-    );
-};
-
-const ReviewStars = ({rating, onChange}) => {
-    const {text: communityText} = useCommunityText();
-    return (
-        <div className={onChange ? styles.reviewStarPicker : styles.reviewStars} aria-label={communityText('{value1} out of 5 stars', {value1: rating})}>
-            {[1, 2, 3, 4, 5].map(value => {
-                if (onChange) {
-                    return (
-                        <button key={value} type="button" aria-label={communityText('{value1} stars', {value1: value})} onClick={() => onChange(value)}>
-                            <Star size={20} fill={value <= rating ? 'currentColor' : 'none'} />
-                        </button>
-                    );
-                }
-                return <Star key={value} size={15} fill={value <= rating ? 'currentColor' : 'none'} />;
-            })}
-        </div>
-    );
-};
-
-const ReviewPanel = ({id, user, login, ownsProject}) => {
-    const {text: communityText} = useCommunityText();
-    const viewerName = (user && user.username) || '';
-    const reviewContext = `${id}\u0000${viewerName}`;
-    const reviewContextRef = useRef(reviewContext);
-    reviewContextRef.current = reviewContext;
-    const [reviews, setReviews] = useState(null);
-    const [summary, setSummary] = useState({average: 0, count: 0});
-    const [rating, setRating] = useState(0);
-    const [message, setMessage] = useState('');
-    const [hasReview, setHasReview] = useState(false);
-    const [status, setStatus] = useState('');
-    const [loadError, setLoadError] = useState(false);
-    const [busy, setBusy] = useState('');
-    const [deleteConfirm, setDeleteConfirm] = useState(false);
-    const actionLocks = useRef(new Set());
-    const beginLoad = useLatest();
-
-    const load = useCallback(() => {
-        const fresh = beginLoad();
-        setReviews(null);
-        setLoadError(false);
-        api.reviews(id)
-            .then(fresh(data => {
-                setReviews(data.reviews || []);
-                setSummary({average: Number(data.average) || 0, count: Number(data.count) || 0});
-                const mine = data.myReview && data.myReview._id ? data.myReview : null;
-                setHasReview(Boolean(mine));
-                setRating(mine ? Number(mine.rating) : 0);
-                setMessage(mine ? mine.message || '' : '');
-            }))
-            .catch(fresh(() => setLoadError(true)));
-    }, [beginLoad, id, viewerName]);
-
-    useEffect(() => {
-        actionLocks.current.clear();
-        setBusy('');
-        setStatus('');
-        setDeleteConfirm(false);
-        load();
-    }, [load]);
-
-    const submit = async event => {
-        event.preventDefault();
-        const actionContext = reviewContextRef.current;
-        if (actionLocks.current.has(actionContext)) return;
-        if (!user) {
-            login();
-            return;
-        }
-        if (!rating) {
-            setStatus(communityText('Choose a star rating first.'));
-            return;
-        }
-        actionLocks.current.add(actionContext);
-        setBusy('save');
-        setStatus('');
-        try {
-            const data = await api.saveReview(id, reviewPayload(rating, message));
-            if (reviewContextRef.current !== actionContext) return;
-            const previousRating = hasReview ? Number(
-                (reviews || []).find(review =>
-                    String(review.author).toLowerCase() === viewerName.toLowerCase())?.rating || rating
-            ) : 0;
-            setSummary(current => updateReviewSummary(current, previousRating, rating));
-            setReviews(current => {
-                const withoutMine = (current || []).filter(review =>
-                    String(review.author).toLowerCase() !== viewerName.toLowerCase());
-                return [data.review, ...withoutMine];
-            });
-            setHasReview(true);
-            setStatus(communityText('Review saved.'));
-        } catch (e) {
-            if (reviewContextRef.current === actionContext) {
-                setStatus(e.message || communityText('Could not save your review.'));
-            }
-        } finally {
-            actionLocks.current.delete(actionContext);
-            if (reviewContextRef.current === actionContext) setBusy('');
-        }
-    };
-
-    const remove = async () => {
-        const actionContext = reviewContextRef.current;
-        if (actionLocks.current.has(actionContext)) return;
-        actionLocks.current.add(actionContext);
-        setBusy('delete');
-        setStatus('');
-        try {
-            await api.deleteReview(id);
-            if (reviewContextRef.current !== actionContext) return;
-            const previousRating = Number(
-                (reviews || []).find(review =>
-                    String(review.author).toLowerCase() === viewerName.toLowerCase())?.rating || rating
-            );
-            setSummary(current => updateReviewSummary(current, previousRating, 0));
-            setReviews(current => (current || []).filter(review =>
-                String(review.author).toLowerCase() !== viewerName.toLowerCase()));
-            setRating(0);
-            setMessage('');
-            setHasReview(false);
-            setStatus(communityText('Review deleted.'));
-            setDeleteConfirm(false);
-        } catch (e) {
-            if (reviewContextRef.current === actionContext) {
-                setStatus(e.message || communityText('Could not delete your review.'));
-            }
-        } finally {
-            actionLocks.current.delete(actionContext);
-            if (reviewContextRef.current === actionContext) setBusy('');
-        }
-    };
-
-    return (
-        <div className={styles.reviewPanel}>
-            <div className={styles.reviewSummary}>
-                <strong>{summary.count ? summary.average.toFixed(1) : '0.0'}</strong>
-                <div>
-                    <ReviewStars rating={Math.round(summary.average)} />
-                    <span>{summary.count} {summary.count === 1 ? communityText('review') : communityText('reviews')}</span>
-                </div>
-            </div>
-            {!ownsProject ? (
-                <form className={styles.reviewForm} onSubmit={submit}>
-                    <div>
-                        <h3>{hasReview ? communityText('Your review') : communityText('Review this project')}</h3>
-                        <ReviewStars rating={rating} onChange={busy ? null : setRating} />
-                    </div>
-                    <textarea value={message} disabled={Boolean(busy)} maxLength={2000} placeholder={communityText('What worked well? What should change?')} onChange={event => setMessage(event.target.value)} />
-                    <div className={styles.reviewActions}>
-                        <Button
-                            type="submit"
-                            variant="primary"
-                            disabled={busy === 'delete'}
-                            busy={busy === 'save'}
-                            busyLabel={communityText('Saving…')}
-                        >
-                            {user ? <Star size={15} /> : <LogIn size={15} />}
-                            {user ? communityText('Save review') : communityText('Sign in to review')}
-                        </Button>
-                        {hasReview ? (
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                disabled={Boolean(busy)}
-                                onClick={() => {
-                                    setStatus('');
-                                    setDeleteConfirm(true);
-                                }}
-                            >{communityText('Delete')}</Button>
-                        ) : null}
-                        {status ? <span>{status}</span> : null}
-                    </div>
-                </form>
-            ) : <Notice variant="info">{communityText('You cannot review your own project.')}</Notice>}
-            {!reviews && !loadError ? <StatusMessage compact>{communityText('Loading reviews…')}</StatusMessage> : null}
-            {loadError ? <StatusMessage error compact onRetry={load}>{communityText('Could not load reviews.')}</StatusMessage> : null}
-            {reviews && !reviews.length ? (
-                <EmptyState icon={Star} title={communityText('No reviews yet')}>
-                    {communityText('Reviews from players will appear here.')}
-                </EmptyState>
-            ) : null}
-            {reviews && reviews.map(review => (
-                <article key={review._id} className={styles.reviewCard}>
-                    <Link to={`/users/${review.author}`}><Avatar username={review.author} size={34} /></Link>
-                    <div>
-                        <header>
-                            <Link to={`/users/${review.author}`}>{review.author}</Link>
-                            {Number.isFinite(review.playtimeMs) && review.playtimeMs > 0 ? (
-                                <span className={styles.reviewPlaytime}>{formatPlaytime(review.playtimeMs)}</span>
-                            ) : null}
-                            <span>{timeAgo(review.edited || review.created)}</span>
-                        </header>
-                        <ReviewStars rating={review.rating} />
-                        {review.message ? <p><RichText text={review.message} /></p> : null}
-                    </div>
-                </article>
-            ))}
-            {deleteConfirm ? (
-                <ConfirmModal
-                    destructive
-                    title={communityText('Delete your review?')}
-                    confirmLabel={communityText('Delete review')}
-                    busy={Boolean(busy)}
-                    busyLabel={communityText('Deleting…')}
-                    error={status}
-                    onConfirm={remove}
-                    onCancel={() => setDeleteConfirm(false)}
-                >{communityText('Your rating and review text will be removed.')}</ConfirmModal>
-            ) : null}
-        </div>
-    );
-};
-
-const ReleaseList = ({id, isOwner, viewerName}) => {
-    const {text: communityText} = useCommunityText();
-    const actionContext = `${id}\u0000${viewerName}`;
-    const actionContextRef = useRef(actionContext);
-    actionContextRef.current = actionContext;
-    const [releases, setReleases] = useState(null);
-    const [form, setForm] = useState({version: '', channel: 'stable', notes: ''});
-    const [error, setError] = useState('');
-    const [loadError, setLoadError] = useState(false);
-    const [busy, setBusy] = useState(false);
-    const actionLocks = useRef(new Set());
-    const beginLoad = useLatest();
-    const updateForm = (field, value) => setForm(current => ({...current, [field]: value}));
-
-    const load = useCallback(() => {
-        const fresh = beginLoad();
-        setReleases(null);
-        setLoadError(false);
-        api.releases(id)
-            .then(fresh(data => setReleases(data.releases || [])))
-            .catch(fresh(() => setLoadError(true)));
-    }, [beginLoad, id, viewerName]);
-
-    useEffect(() => {
-        actionLocks.current.clear();
-        setForm({version: '', channel: 'stable', notes: ''});
-        setError('');
-        setBusy(false);
-        load();
-    }, [load]);
-
-    const create = async event => {
-        event.preventDefault();
-        const context = actionContextRef.current;
-        if (actionLocks.current.has(context)) return;
-        const payload = releasePayload(form);
-        if (!payload.version) {
-            setError(communityText('Enter a version before publishing.'));
-            return;
-        }
-        actionLocks.current.add(context);
-        setBusy(true);
-        setError('');
-        try {
-            const data = await api.createRelease(id, payload);
-            if (actionContextRef.current !== context) return;
-            setForm({version: '', channel: 'stable', notes: ''});
-            setReleases(current => [data.release, ...(current || []).filter(item => item._id !== data.release._id)]);
-        } catch (e) {
-            if (actionContextRef.current === context) {
-                setError(e.message || communityText('Could not create the release.'));
-            }
-        } finally {
-            actionLocks.current.delete(context);
-            if (actionContextRef.current === context) setBusy(false);
-        }
-    };
-
-    return (
-        <div className={styles.toolPanel}>
-            {isOwner ? (
-                <form className={styles.inlineForm} onSubmit={create}>
-                    <h3>{communityText('Publish a release')}</h3>
-                    <div className={styles.inlineFields}>
-                        <input value={form.version} disabled={busy} required maxLength={50} placeholder={communityText('Version, such as 1.2.0')} onChange={event => updateForm('version', event.target.value)} />
-                        <SelectMenu
-                            options={[
-                                {value: 'stable', label: communityText('Stable')},
-                                {value: 'beta', label: communityText('Beta')},
-                                {value: 'development', label: communityText('Development')}
-                            ]}
-                            value={form.channel}
-                            disabled={busy}
-                            onChange={value => updateForm('channel', value)}
-                            ariaLabel={communityText('Release channel')}
-                        />
-                    </div>
-                    <textarea value={form.notes} disabled={busy} placeholder={communityText('What changed?')} onChange={event => updateForm('notes', event.target.value)} />
-                    <Button type="submit" variant="primary" busy={busy} busyLabel={communityText('Publishing…')}>
-                        <Package size={15} />{communityText('Publish release')}</Button>
-                    {error ? <Notice variant="error">{error}</Notice> : null}
-                </form>
-            ) : null}
-            {!releases && !loadError ? <StatusMessage>{communityText('Loading releases…')}</StatusMessage> : null}
-            {loadError ? <StatusMessage error onRetry={load}>{communityText('Could not load releases.')}</StatusMessage> : null}
-            {releases && !releases.length ? (
-                <EmptyState icon={Package} title={communityText('No releases yet')}>
-                    {communityText('Published releases will appear here.')}
-                </EmptyState>
-            ) : null}
-            {releases && releases.map(release => (
-                <article className={styles.release} key={release._id}>
-                    <div><strong>{release.version}</strong> <span className={styles.releaseChannel}>{release.channel}</span></div>
-                    <span className={styles.muted}>{timeAgo(release.created)}</span>
-                    {release.notes ? <RichText text={release.notes} /> : null}
-                    {release.jsonUrl ? (
-                        <Button
-                            as="a"
-                            variant="primary"
-                            className={styles.releasePlay}
-                            href={embedUrl({id, projectJsonUrl: release.jsonUrl, assetsBase: release.assetsBase})}
-                        >
-                            <Play size={15} />{communityText('Play this release')}</Button>
-                    ) : null}
-                </article>
-            ))}
-        </div>
-    );
-};
-
-const ContributionPanel = ({id, baseUrl, sourceProjectId, preferredBountyId, onRemix, user, viewerName, login}) => {
-    const {text: communityText} = useCommunityText();
-    const actionContext = `${id}\u0000${sourceProjectId}\u0000${viewerName}`;
-    const actionContextRef = useRef(actionContext);
-    actionContextRef.current = actionContext;
-    const [remixProjectId, setRemixProjectId] = useState(sourceProjectId);
-    const [title, setTitle] = useState('');
-    const [body, setBody] = useState('');
-    const [status, setStatus] = useState('');
-    const [busy, setBusy] = useState(false);
-    const [bounties, setBounties] = useState([]);
-    const [bountyId, setBountyId] = useState('');
-    const [remixes, setRemixes] = useState(sourceProjectId ? [] : null);
-    const [targetPulls, setTargetPulls] = useState([]);
-    const [remixLoadError, setRemixLoadError] = useState(false);
-    const [remixLoadAttempt, setRemixLoadAttempt] = useState(0);
-    const actionLocks = useRef(new Set());
-    const openPull = openPullForRemix(targetPulls, id, remixProjectId);
-
-    useEffect(() => {
-        actionLocks.current.clear();
-        setRemixProjectId(sourceProjectId);
-        setTitle('');
-        setBody('');
-        setStatus('');
-        setBusy(false);
-        const rememberedBounty = preferredBountyId || (sourceProjectId ? recalledBountyClaim(sourceProjectId) : '');
-        setBountyId(rememberedBounty);
-        if (user) {
-            listCommerceBounties({source: 'mistwarp', resource_type: 'project', resource_id: id, status: 'open'})
-                .then(data => {
-                    const openBounties = data.bounties || [];
-                    setBounties(openBounties);
-                    if (rememberedBounty && !openBounties.some(item => item.id === rememberedBounty)) {
-                        setBountyId('');
-                        if (sourceProjectId) rememberBountyClaim(sourceProjectId, '');
-                    }
-                })
-                .catch(() => setBounties([]));
-        } else {
-            setBounties([]);
-        }
-    }, [id, sourceProjectId, viewerName, preferredBountyId]);
-
-    useEffect(() => {
-        if (sourceProjectId) {
-            setRemixes([]);
-            setTargetPulls([]);
-            setRemixLoadError(false);
-            return () => {};
-        }
-        if (!user?.username) {
-            setRemixes([]);
-            setTargetPulls([]);
-            setRemixProjectId('');
-            setRemixLoadError(false);
-            return () => {};
-        }
-        let active = true;
-        setRemixes(null);
-        setRemixLoadError(false);
-        Promise.all([
-            api.myProjects(user.username),
-            api.pulls(id)
-        ]).then(([projectData, pullData]) => {
-            if (!active) return;
-            const ownedRemixes = contributionRemixes(projectData.projects, id, user.username);
-            setRemixes(ownedRemixes);
-            setTargetPulls(pullData.pulls || []);
-            setRemixProjectId(current => (
-                ownedRemixes.some(project => project.id === current) ? current : (ownedRemixes[0]?.id || '')
-            ));
-        }).catch(() => {
-            if (!active) return;
-            setRemixes([]);
-            setTargetPulls([]);
-            setRemixLoadError(true);
-        });
-        return () => {
-            active = false;
-        };
-    }, [id, remixLoadAttempt, sourceProjectId, user?.username]);
-
-    const submit = async event => {
-        event.preventDefault();
-        const context = actionContextRef.current;
-        if (actionLocks.current.has(context)) return;
-        if (!user) {
-            login();
-            return;
-        }
-        const payload = contributionPayload(remixProjectId, title, body, bountyId);
-        if (!payload.remixProjectId || !payload.title) {
-            setStatus(communityText('Add a fork project ID and title before sending.'));
-            return;
-        }
-        actionLocks.current.add(context);
-        setBusy(true);
-        setStatus('');
-        try {
-            const data = await api.contribute(id, payload);
-            if (actionContextRef.current !== context) return;
-            setTargetPulls(current => [data.pull, ...current]);
-            setStatus('');
-            setTitle('');
-            setBody('');
-            setBountyId('');
-            if (sourceProjectId) rememberBountyClaim(sourceProjectId, '');
-        } catch (e) {
-            if (actionContextRef.current === context) {
-                setStatus(e.message || communityText('Could not send the contribution.'));
-            }
-        } finally {
-            actionLocks.current.delete(context);
-            if (actionContextRef.current === context) setBusy(false);
-        }
-    };
-
-    return (
-        <form className={styles.inlineForm} onSubmit={submit}>
-            <h3>{communityText('Send changes back')}</h3>
-            <p className={styles.muted}>
-                {sourceProjectId ?
-                    communityText('This creates a pull request for the parent project. The owner can review your changes before merging them.') :
-                    communityText('Choose one of your remixes, then describe the changes you want the project owner to review.')}
-            </p>
-            {!sourceProjectId ? (
-                <div className={styles.contributionRemixPicker}>
-                    {remixes === null ? <StatusMessage compact>{communityText('Loading your remixes…')}</StatusMessage> : null}
-                    {remixLoadError ? (
-                        <StatusMessage error compact onRetry={() => setRemixLoadAttempt(value => value + 1)}>
-                            {communityText('Could not load your remixes.')}
-                        </StatusMessage>
-                    ) : null}
-                    {remixes?.length ? (
-                        <label className={styles.bountySelect}>
-                            <span>{communityText('Remix to contribute')}</span>
-                            <SelectMenu
-                                options={remixes.map(project => ({
-                                    value: project.id,
-                                    label: project.title || project.id
-                                }))}
-                                value={remixProjectId}
-                                disabled={busy}
-                                onChange={setRemixProjectId}
-                                ariaLabel={communityText('Remix to contribute')}
-                                width={320}
-                            />
-                        </label>
-                    ) : null}
-                    {user && remixes && !remixes.length && !remixLoadError ? (
-                        <EmptyState
-                            compact
-                            icon={GitFork}
-                            title={communityText('No remix yet')}
-                            action={onRemix ? (
-                                <Button type="button" variant="primary" onClick={onRemix}>
-                                    <GitFork size={15} />{communityText('Create a remix')}</Button>
-                            ) : null}
-                        >{communityText('You do not have a remix of this project yet.')}</EmptyState>
-                    ) : null}
-                    {!user ? (
-                        <SignInPrompt compact onSignIn={login}>{communityText('Sign in to choose one of your remixes.')}</SignInPrompt>
-                    ) : null}
-                </div>
-            ) : null}
-            {openPull ? (
-                <Link className={styles.openContribution} to={`${baseUrl || projectUrl(id)}/pulls/${openPull.index}`}>
-                    <GitPullRequest size={17} />
-                    <span><strong>{openPull.title}</strong><small>{communityText('Pull request #{value1} is open for this remix', {value1: openPull.index})}</small></span>
-                    <ChevronRight size={16} />
-                </Link>
-            ) : (sourceProjectId || remixProjectId) ? (
-                <React.Fragment>
-                    <ol className={styles.contributionSteps}>
-                        <li className={sourceProjectId || remixProjectId ? styles.contributionStepDone : ''}><span>1</span>{communityText('Remix the project')}</li>
-                        <li><span>2</span>{communityText('Edit and save your remix')}</li>
-                        <li><span>3</span>{communityText('Describe your work and send it')}</li>
-                    </ol>
-                    <input value={title} disabled={busy} required maxLength={200} placeholder={communityText('What did you change?')} onChange={event => setTitle(event.target.value)} />
-                    <textarea value={body} disabled={busy} placeholder={communityText('Anything the creator should know')} onChange={event => setBody(event.target.value)} />
-                    {bounties.length ? (
-                        <label className={styles.bountySelect}>
-                            <span>{communityText('Bounty to claim')} <small>{communityText('Optional')}</small></span>
-                            <SelectMenu
-                                options={[
-                                    {value: '', label: communityText('No bounty')},
-                                    ...bounties.map(bounty => ({
-                                        value: bounty.id,
-                                        label: communityText('{value1} credits: {value2}', {value1: bounty.amount, value2: bounty.title})
-                                    }))
-                                ]}
-                                value={bountyId}
-                                disabled={busy}
-                                onChange={setBountyId}
-                                ariaLabel={communityText('Bounty to claim')}
-                                width={320}
-                            />
-                            <small>{communityText('The reward is paid when the project owner merges this pull request.')}</small>
-                        </label>
-                    ) : null}
-                    <Button type="submit" variant="primary" busy={busy} busyLabel={communityText('Sending…')}>
-                        {user ? <GitPullRequest size={15} /> : <LogIn size={15} />}
-                        {user ? communityText('Create pull request') : communityText('Sign in to contribute')}
-                    </Button>
-                </React.Fragment>
-            ) : null}
-            {status ? <Notice variant="error">{status}</Notice> : null}
-        </form>
-    );
-};
-
-export {HistoryList, PullList, ReleaseList, ReviewPanel};
 export default Project;

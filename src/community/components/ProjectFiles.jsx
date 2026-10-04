@@ -3,6 +3,7 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 import PropTypes from 'prop-types';
 import {Code2, Eye, FileCode2, FileQuestion, Lock} from 'lucide-react';
 import api from '../api.js';
+import {formatBytes} from '../../lib/utils/bytes.js';
 import {canViewProjectSource} from '../project-source-access';
 import FileBrowserTree from './FileBrowserTree.jsx';
 import EmptyState from './ui/EmptyState.jsx';
@@ -256,12 +257,6 @@ export const highlightXml = text => text.split('\n').map(line => {
     return tokens.filter(token => token.value);
 });
 
-const formatSize = value => {
-    if (value < 1024) return `${value} B`;
-    if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
-    return `${(value / (1024 * 1024)).toFixed(1)} MB`;
-};
-
 const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) => {
     const {text: communityText} = useCommunityText();
     const [snapshot, setSnapshot] = useState(null);
@@ -379,7 +374,7 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) =>
                         <header>
                             <FileCode2 size={15} />
                             <strong>{selected.path}</strong>
-                            <span>{formatSize(selected.size)}</span>
+                            <span>{formatBytes(selected.size)}</span>
                             <code>{snapshot.head.slice(0, 7)}</code>
                             {selected.media && !selected.binary ? (
                                 <div className={styles.viewModes}>
@@ -422,10 +417,10 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) =>
                                 <span>
                                     {selected.mediaType && !selected.media ?
                                         communityText('{value1} · This file is too large to preview.', {
-                                            value1: formatSize(selected.size)
+                                            value1: formatBytes(selected.size)
                                         }) :
                                         communityText('{value1} · Preview is not available.', {
-                                            value1: formatSize(selected.size)
+                                            value1: formatBytes(selected.size)
                                         })}
                                 </span>
                             </div>

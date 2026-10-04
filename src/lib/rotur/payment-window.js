@@ -7,13 +7,13 @@
 // it; otherwise the window just closes. Either way mistwarp-api is then asked
 // to confirm, and it checks with Rotur, so nothing here decides what was paid.
 
+import {sleep} from '../utils/async.js';
+
 const ROTUR_ORIGIN = 'https://rotur.dev';
 const CONFIRM_TRIES = 5;
 const CONFIRM_DELAY = 1500;
 
 const paymentError = (message, fields) => Object.assign(new Error(message), fields);
-
-const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 // Called straight from the click, before anything is awaited, so browsers
 // don't block the window.

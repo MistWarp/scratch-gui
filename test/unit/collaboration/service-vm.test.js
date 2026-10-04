@@ -11,7 +11,9 @@ let mockPeer = 0;
 jest.mock('../../../src/lib/collaboration/transport', () => {
     const {FakeCollabTransport} = require('../../fixtures/collab-harness');
     return {Transport: class extends FakeCollabTransport {
-        constructor () { super(mockHub, `peer-${++mockPeer}`); }
+        constructor () {
+            super(mockHub, `peer-${++mockPeer}`);
+        }
     }};
 });
 jest.mock('../../../src/lib/api/restore-points', () => ({
@@ -33,9 +35,15 @@ const makeVM = () => {
     for (const [name, stage] of [['Stage', true], ['Sprite', false]]) {
         const sprite = new Sprite(null, vm.runtime);
         sprite.name = name;
-        sprite.costumes = [{name: 'costume', asset, assetId: asset.assetId,
-            bitmapResolution: 1, rotationCenterX: 0, rotationCenterY: 0,
-            dataFormat: asset.dataFormat, md5: `${asset.assetId}.${asset.dataFormat}`, skinId: 1}];
+        sprite.costumes = [{name: 'costume',
+            asset,
+            assetId: asset.assetId,
+            bitmapResolution: 1,
+            rotationCenterX: 0,
+            rotationCenterY: 0,
+            dataFormat: asset.dataFormat,
+            md5: `${asset.assetId}.${asset.dataFormat}`,
+            skinId: 1}];
         const target = new RenderedTarget(sprite, vm.runtime);
         target.isStage = stage;
         target.isOriginal = true;
@@ -73,14 +81,18 @@ test('real facade onboards a VM and commits edits from both peers without echoin
         expect(clientVM.editingCommands.snapshot()).toEqual(hostVM.editingCommands.snapshot());
         const id = clientVM.editingTarget.id;
         let done = false;
-        const rename = clientVM.renameSprite(id, 'Together').then(() => { done = true; });
+        const rename = clientVM.renameSprite(id, 'Together').then(() => {
+            done = true;
+        });
         await pumpUntil(() => done);
         await rename;
         expect(hostVM.runtime.getTargetById(id).getName()).toBe('Together');
         expect(clientVM.runtime.getTargetById(id).getName()).toBe('Together');
         expect(host._session.seq).toBe(1);
         done = false;
-        const transform = hostVM.postSpriteInfo({x: 73}).then(() => { done = true; });
+        const transform = hostVM.postSpriteInfo({x: 73}).then(() => {
+            done = true;
+        });
         await pumpUntil(() => done && client._session.lastAppliedSeq === 2);
         await transform;
         expect(clientVM.runtime.getTargetById(id).x).toBe(73);
@@ -88,7 +100,9 @@ test('real facade onboards a VM and commits edits from both peers without echoin
         expect(clientVM.editingCommands.snapshot()).toEqual(hostVM.editingCommands.snapshot());
         const spriteBytes = await clientVM.exportSprite(id, 'arraybuffer');
         done = false;
-        const imported = clientVM.addSprite(spriteBytes).then(() => { done = true; });
+        const imported = clientVM.addSprite(spriteBytes).then(() => {
+            done = true;
+        });
         await pumpUntil(() => done && client._session.lastAppliedSeq === 3);
         await imported;
         expect(hostVM.runtime.targets).toHaveLength(3);

@@ -1,7 +1,7 @@
 import React from 'react';
 import {useLocation} from 'react-router-dom';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
-import tokenStyles from '../styles/tokens.module.css';
+import CardGridSkeleton from './CardGridSkeleton.jsx';
 import ExploreHeader from './ExploreHeader.jsx';
 import StatusMessage from './ui/StatusMessage.jsx';
 import styles from './RouteLoading.module.css';
@@ -9,7 +9,9 @@ import styles from './RouteLoading.module.css';
 // Shown by the route-level Suspense boundary while a lazily loaded page chunk
 // is still downloading. Explore sections share one header and tab row, so when
 // the destination is one of them we keep that shell on screen and only let the
-// content area show the loading state.
+// content area show the loading state. Other pages get a neutral page-shaped
+// placeholder, so the page doesn't flash a message of its own before showing
+// its real loading state.
 const SECTION_LEADS = {
     studios: 'A shared place where curators organise projects and accept submissions.',
     challenges: 'A timed event where people make projects around a prompt.',
@@ -41,9 +43,18 @@ const RouteLoading = () => {
     const section = getExploreSection(pathname, search);
     if (!section) {
         return (
-            <p className={tokenStyles['mw-route-loading']} role="status">
-                {communityText('Loading page…')}
-            </p>
+            <main
+                className={`${styles.page} ${styles.placeholder}`}
+                aria-busy="true"
+            >
+                <span
+                    className={styles.srOnly}
+                    role="status"
+                >{communityText('Loading page…')}</span>
+                <span className={styles.heading} aria-hidden="true" />
+                <span className={styles.lead} aria-hidden="true" />
+                <span className={styles.block} aria-hidden="true" />
+            </main>
         );
     }
     return (
@@ -52,7 +63,7 @@ const RouteLoading = () => {
                 active={section.active}
                 lead={section.lead ? communityText(SECTION_LEADS[section.lead]) : null}
             />
-            <StatusMessage />
+            {section.active === 'projects' ? <CardGridSkeleton /> : <StatusMessage />}
         </main>
     );
 };

@@ -45,7 +45,9 @@ test('a failed language download can be retried', async () => {
 
 test('a slow selection does not overwrite a newer language choice', async () => {
     let complete;
-    loaders.fr.mockImplementation(() => new Promise(resolve => { complete = resolve; }));
+    loaders.fr.mockImplementation(() => new Promise(resolve => {
+        complete = resolve;
+    }));
     const {localeMiddleware, selectLocale} = require('../../src/reducers/locales');
     const next = jest.fn();
     const dispatch = localeMiddleware()(next);

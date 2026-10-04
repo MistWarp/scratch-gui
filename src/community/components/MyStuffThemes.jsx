@@ -14,6 +14,7 @@ import IconButton from './ui/IconButton.jsx';
 import SectionHeading from './ui/SectionHeading.jsx';
 import StatusMessage from './ui/StatusMessage.jsx';
 import UnderlineTabs from './UnderlineTabs.jsx';
+import {tabPanelProps} from './SectionTabs.jsx';
 import ThemeCard from './ThemeCard.jsx';
 import ThemePreview from './ThemePreview.jsx';
 import styles from '../pages/MyStuff.module.css';
@@ -235,8 +236,9 @@ const MyStuffThemes = ({username}) => {
                 onChange={setView}
                 className={styles.themeTabs}
                 ariaLabel={communityText('Theme library sections')}
+                idPrefix="my-themes"
             />
-            {body}
+            <div {...tabPanelProps('my-themes', view)}>{body}</div>
             {removeTheme ? (
                 <ConfirmModal
                     destructive

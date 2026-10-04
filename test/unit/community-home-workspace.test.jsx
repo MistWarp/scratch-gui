@@ -22,7 +22,7 @@ jest.mock('../../src/community/api', () => ({
         leaderboard: jest.fn(() => Promise.resolve({users: []})),
         getUser: jest.fn(() => Promise.resolve({recentActivity: []}))
     },
-    editorUrl: ({platformProject, starter} = {}) => platformProject ? `/editor#mw-${platformProject}` : `/editor${starter ? `?starter=${starter}` : ''}`,
+    editorUrl: ({platformProject, starter} = {}) => (platformProject ? `/editor#mw-${platformProject}` : `/editor${starter ? `?starter=${starter}` : ''}`),
     projectUrl: id => `/project/${id}`
 }));
 jest.mock('../../src/community/rotur', () => ({following: () => Promise.resolve({following: []})}));
@@ -31,10 +31,14 @@ jest.mock('../../src/lib/api/restore-points', () => ({getAllRestorePoints: () =>
 jest.mock('../../src/lib/themes/custom-themes', () => ({customThemeManager: {themes: {clear: jest.fn()}, loadCustomThemes: jest.fn()}}));
 
 const flush = async wrapper => {
-    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    await act(async () => {
+        await Promise.resolve(); await Promise.resolve();
+    });
     wrapper.update();
 };
-const render = element => mount(<MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>{element}</MemoryRouter>);
+const render = element => mount(
+    <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>{element}</MemoryRouter>
+);
 
 beforeEach(() => {
     jest.clearAllMocks();
@@ -69,7 +73,8 @@ test('puts the last edited project first and removes duplicates', async () => {
     api.myProjectPage.mockResolvedValue({projects: [
         {id: 'newest', owner: 'alice', title: 'Newest saved', edited: 10},
         {id: 'last', owner: 'alice', title: 'Last edited', edited: 1}
-    ], total: 2});
+    ],
+    total: 2});
     const wrapper = render(<ContinueProjects username="alice" />);
     await flush(wrapper);
     expect(wrapper.find('a[href="/editor#mw-last"]')).toHaveLength(1);
@@ -79,7 +84,9 @@ test('puts the last edited project first and removes duplicates', async () => {
 
 test('ignores a late project response from the previous account', async () => {
     let resolveAlice;
-    api.myProjectPage.mockImplementation(name => name === 'alice' ? new Promise(resolve => { resolveAlice = resolve; }) : Promise.resolve({projects: [], total: 0}));
+    api.myProjectPage.mockImplementation(name => (name === 'alice' ? new Promise(resolve => {
+        resolveAlice = resolve;
+    }) : Promise.resolve({projects: [], total: 0})));
     const Harness = ({username}) => <MemoryRouter><ContinueProjects username={username} /></MemoryRouter>;
     const wrapper = mount(<Harness username="alice" />);
     act(() => wrapper.setProps({username: 'bob'}));

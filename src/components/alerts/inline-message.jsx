@@ -13,7 +13,10 @@ const InlineMessageComponent = ({
     level
 }) => (
     <div
+        aria-atomic="true"
         className={classNames(styles.inlineMessage, styles[level])}
+        // Save and git progress next to the save button; a failure interrupts.
+        role={level === AlertLevels.WARN ? 'alert' : 'status'}
     >
         {/* TODO: implement Rtl handling */}
         {iconSpinner && (

@@ -3,7 +3,8 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
 import {setCloud} from '../reducers/tw';
-import {showStandardAlert} from '../reducers/alerts';
+import {openSettingsModal} from '../reducers/modals';
+import {setSettingsModalInitialView} from '../lib/settings/modal-view.js';
 import isScratchDesktop from '../lib/utils/isScratchDesktop';
 
 class CloudVariablesToggler extends React.Component {
@@ -15,7 +16,8 @@ class CloudVariablesToggler extends React.Component {
     }
     toggleCloudVariables () {
         if (!this.props.canUseCloudVariables) {
-            this.props.onShowCloudUnavailable();
+            // Point to the setting that does apply here rather than a dead end.
+            this.props.onOpenCloudSettings();
             return;
         }
         this.props.onCloudChange(!this.props.enabled);
@@ -36,7 +38,7 @@ CloudVariablesToggler.propTypes = {
     enabled: PropTypes.bool,
     username: PropTypes.string,
     onCloudChange: PropTypes.func,
-    onShowCloudUnavailable: PropTypes.func,
+    onOpenCloudSettings: PropTypes.func,
     canUseCloudVariables: PropTypes.bool
 };
 
@@ -48,7 +50,11 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => ({
     onCloudChange: enabled => dispatch(setCloud(enabled)),
-    onShowCloudUnavailable: () => dispatch(showStandardAlert('cloudUnavailable'))
+    onOpenCloudSettings: () => {
+        // "Disable cloud variables in editor" is on the Editor page.
+        setSettingsModalInitialView('editor');
+        dispatch(openSettingsModal());
+    }
 });
 
 export {

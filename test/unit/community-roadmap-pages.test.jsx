@@ -35,12 +35,27 @@ const render = async (url = '/roadmap') => {
     let wrapper;
     await act(async () => {
         wrapper = mount(
-            <MemoryRouter initialEntries={[url]} future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+            <MemoryRouter
+                initialEntries={[url]}
+                future={{v7_startTransition: true, v7_relativeSplatPath: true}}
+            >
                 <Routes>
-                    <Route path="/roadmap" element={<Roadmap />} />
-                    <Route path="/roadmap/changes" element={<Roadmap changes />} />
-                    <Route path="/roadmap/entry/:entryId" element={<Roadmap />} />
-                    <Route path="/roadmap/:status" element={<Roadmap />} />
+                    <Route
+                        path="/roadmap"
+                        element={<Roadmap />}
+                    />
+                    <Route
+                        path="/roadmap/changes"
+                        element={<Roadmap changes />}
+                    />
+                    <Route
+                        path="/roadmap/entry/:entryId"
+                        element={<Roadmap />}
+                    />
+                    <Route
+                        path="/roadmap/:status"
+                        element={<Roadmap />}
+                    />
                 </Routes>
             </MemoryRouter>
         );
@@ -88,8 +103,10 @@ describe('roadmap overview and detail pages', () => {
         ]);
         expect(wrapper.find('a[href="/roadmap/shipped"]').exists()).toBe(true);
         expect(wrapper.find('a[href="/roadmap/declined"]').exists()).toBe(true);
-        expect(wrapper.find('article').first().text()).toContain('Full details for building entry 0');
-        expect(wrapper.find('article').first().text()).toContain('Mist');
+        expect(wrapper.find('article').first()
+            .text()).toContain('Full details for building entry 0');
+        expect(wrapper.find('article').first()
+            .text()).toContain('Mist');
         expect(wrapper.text()).not.toContain('Entry discussion');
         wrapper.unmount();
     });
@@ -99,11 +116,13 @@ describe('roadmap overview and detail pages', () => {
         expect(wrapper.find('article')).toHaveLength(10);
         expect(wrapper.text()).toContain('Page 1 of 3');
         act(() => {
-            wrapper.find('button').filterWhere(node => node.text() === 'Next').simulate('click');
+            wrapper.find('button').filterWhere(node => node.text() === 'Next')
+                .simulate('click');
         });
         wrapper.update();
         expect(wrapper.find('article')).toHaveLength(10);
-        expect(wrapper.find('article').first().text()).toContain('shipped entry 10');
+        expect(wrapper.find('article').first()
+            .text()).toContain('shipped entry 10');
         expect(wrapper.text()).toContain('Page 2 of 3');
         wrapper.unmount();
     });
@@ -226,7 +245,8 @@ describe('roadmap changes tab', () => {
         });
         wrapper.update();
         await act(async () => {
-            wrapper.find('form').filterWhere(node => node.find('input#link-building-0').exists()).simulate('submit');
+            wrapper.find('form').filterWhere(node => node.find('input#link-building-0').exists())
+                .simulate('submit');
         });
         wrapper.update();
         expect(api.updateIdea).toHaveBeenCalledWith('building-0', {pulls: ['scratch-gui#20', 'scratch-gui#21']});

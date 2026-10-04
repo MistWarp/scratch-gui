@@ -52,7 +52,10 @@ const Harness = () => (
         future={{v7_startTransition: true, v7_relativeSplatPath: true}}
     >
         <Routes>
-            <Route path="/project/:id" element={<Project renderVersion={0} />} />
+            <Route
+                path="/project/:id"
+                element={<Project renderVersion={0} />}
+            />
         </Routes>
     </MemoryRouter>
 );

@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import {isMilestoneNotification, milestoneText, milestoneLink} from '../milestone-notifications.js';
+import {isMilestoneNotification} from '../milestone-notifications.js';
 import React, {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {ArrowRight, Bell, Bug, Clock, Gamepad2, Rocket, UserPlus, GitFork, Globe, Heart, Lightbulb, Megaphone, MessageCircle, Sparkles, Star, Trophy, Users} from 'lucide-react';
@@ -17,9 +17,11 @@ import NewsItem from '../components/NewsItem.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
 import HomeDiscovery from '../components/HomeDiscovery.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
+import {tabPanelProps} from '../components/SectionTabs.jsx';
 import ScratchImport from '../components/ScratchImport.jsx';
 import ChallengeCalendar from '../components/ChallengeCalendar.jsx';
 import ReactionButtons from '../components/ReactionButtons.jsx';
+import CardGridSkeleton from '../components/CardGridSkeleton.jsx';
 import UserLink from '../components/UserLink.jsx';
 import {roadmapStatusMatches} from '../roadmap-filters';
 import {categoryForNotification, getNotificationPreferences} from '../notification-preferences';
@@ -27,19 +29,24 @@ import {ActiveChallenge, ContinueProjects, DeviceBackup, StarterGallery} from '.
 import {track} from '../analytics.js';
 import {useCommunityIntl} from '../i18n.jsx';
 import {normalizeFollowingPosts, postUrl, timestampMs} from '../following-feed.js';
+import {
+    SYSTEM_TYPES, USERNAME_RE, actorFor, describeNotification, richTranslator, targetFor
+} from '../notification-text.jsx';
 import styles from './Home.module.css';
 
 const ACTIVITY_ICONS = {love: Heart, favorite: Star, share: Globe, remix: GitFork, review: Star};
 const ROADMAP_STATUS_LABELS = {open: 'Suggested', planned: 'Planned', building: 'In progress', shipped: 'Shipped', declined: 'Not planned'};
 
-const describeActivity = item => {
+// `t` comes from richTranslator; `actor` is the linked name for {actor}.
+const describeActivity = (item, t, actor) => {
+    const project = <strong>{item.projectTitle}</strong>;
     switch (item.type) {
-    case 'love': return <>loved <strong>{item.projectTitle}</strong></>;
-    case 'favorite': return <>favorited <strong>{item.projectTitle}</strong></>;
-    case 'share': return <>shared <strong>{item.projectTitle}</strong></>;
-    case 'remix': return <>remixed <strong>{item.parentTitle || item.projectTitle}</strong></>;
-    case 'review': return <>rated <strong>{item.projectTitle}</strong> {item.rating} out of 5</>;
-    default: return <>posted an update</>;
+    case 'love': return t('{actor} loved {project}', {actor, project});
+    case 'favorite': return t('{actor} favorited {project}', {actor, project});
+    case 'share': return t('{actor} shared {project}', {actor, project});
+    case 'remix': return t('{actor} remixed {project}', {actor, project: <strong>{item.parentTitle || item.projectTitle}</strong>});
+    case 'review': return t('{actor} rated {project} {rating} out of 5', {actor, project, rating: Number(item.rating) || 0});
+    default: return t('{actor} posted an update', {actor});
     }
 };
 
@@ -116,22 +123,20 @@ const FriendsSection = ({user, login, bare = false}) => {
                     {items.slice(0, 4).map((item, index) => {
                         const isPost = item.timelineType === 'following-post';
                         const Icon = isPost ? MessageCircle : (ACTIVITY_ICONS[item.type] || Heart);
+                        const name = isPost ? item.user : item.actor;
+                        const actor = <Link to={`/users/${name}`} className={styles.activityActor}>{name}</Link>;
+                        const to = isPost ? postUrl(item.id) : item.projectId ? projectUrl(item.projectId) : null;
+                        const t = richTranslator(communityText, to ? children => <Link to={to}>{children}</Link> : null);
                         return (
                             <div key={isPost ? `post:${item.id}` : `${item.actor}-${item.created}-${index}`} className={styles.activityItem}>
-                                <Link to={`/users/${isPost ? item.user : item.actor}`}>
-                                    <Avatar username={isPost ? item.user : item.actor} size={34} />
+                                <Link to={`/users/${name}`}>
+                                    <Avatar username={name} size={34} />
                                 </Link>
                                 <span className={styles.activityIcon}><Icon size={14} /></span>
                                 <span className={styles.activityText}>
-                                    <Link to={`/users/${isPost ? item.user : item.actor}`} className={styles.activityActor}>
-                                        {isPost ? item.user : item.actor}
-                                    </Link>{' '}
-                                    {isPost ? (
-                                        <Link to={postUrl(item.id)}>{communityText('posted: ')}{item.content || communityText('View post')}
-                                        </Link>
-                                    ) : item.projectId ? (
-                                        <Link to={projectUrl(item.projectId)}>{describeActivity(item)}</Link>
-                                    ) : describeActivity(item)}
+                                    {isPost ?
+                                        t('{actor} posted: {post}', {actor, post: item.content || communityText('View post')}) :
+                                        describeActivity(item, t, actor)}
                                 </span>
                                 <span className={styles.activityTime}>{timeAgo(item.created || item.timestamp)}</span>
                             </div>
@@ -186,7 +191,7 @@ const RoadmapSection = ({viewerName, bare = false}) => {
                                 <div className={styles.roadmapLabels}>
                                     {idea.kind === 'bug' ? <span><Bug size={10} />{communityText('Bug')}</span> : null}
                                     <span>{idea.category}</span>
-                                    <span className={styles[`roadmapStatus${idea.status}`]}>{ROADMAP_STATUS_LABELS[idea.status] || idea.status}</span>
+                                    <span className={styles[`roadmapStatus${idea.status}`]}>{communityText(ROADMAP_STATUS_LABELS[idea.status] || idea.status)}</span>
                                 </div>
                                 <h3>{idea.title}</h3>
                                 <p>{idea.description}</p>
@@ -202,55 +207,6 @@ const RoadmapSection = ({viewerName, bare = false}) => {
             ) : null}
         </section>
     );
-};
-
-const notificationText = item => {
-    if (isMilestoneNotification(item)) return milestoneText(item);
-    if (item.type === 'project_review') return `rated ${item.projectTitle || 'your project'} ${item.rating} out of 5`;
-    if (item.type === 'love') return `loved ${item.projectTitle || 'your project'}`;
-    if (item.type === 'comment') {
-        if (item.pull) {
-            return `commented on ${item.projectTitle || 'your project'} pr #${item.pull}`;
-        }
-        return `commented on ${item.projectTitle || 'your project'}`;
-    }
-    if (item.type === 'reply') {
-        if (item.pull) {
-            return `replied to your comment on ${item.projectTitle || 'your project'} pr #${item.pull}`;
-        }
-        return `replied to your comment on ${item.projectTitle || 'your project'}`;
-    }
-    if (item.type === 'mention') {
-        if (item.pull) {
-            return `mentioned you on ${item.projectTitle || 'your project'} pr #${item.pull}`;
-        }
-        return `mentioned you on ${item.projectTitle || 'your project'}`;
-    }
-    if (item.type === 'contribution') {
-        if (item.pull) {
-            return `sent changes for ${item.projectTitle || 'your project'} pr #${item.pull}`;
-        }
-        return `sent changes for ${item.projectTitle || 'your project'}`;
-    }
-    if (item.type === 'contribution_merged') {
-        if (item.pull) {
-            return `merged changes for ${item.projectTitle || 'your project'} pr #${item.pull}`;
-        }
-        return `merged changes for ${item.projectTitle || 'your project'}`;
-    }
-    if (item.type === 'roadmap_comment') return `commented on ${item.roadmapTitle || 'your suggestion'}`;
-    if (item.type === 'follow') return 'followed you';
-    if (item.type === 'remix') return `remixed ${item.projectTitle || 'your project'}`;
-    return item.body || 'sent you a notification';
-};
-
-const notificationLink = item => {
-    if (isMilestoneNotification(item)) return milestoneLink(item);
-    if (item.roadmapId) return `/roadmap#idea-${item.roadmapId}`;
-    if (item.projectId && item.pull) return `/project/${item.projectId}/pulls/${item.pull}${item.commentId ? `#comment-id-${item.commentId}` : ''}`;
-    if (item.projectId) return `${projectUrl(item.projectId)}${item.commentId ? `#comment-id-${item.commentId}` : ''}`;
-    if (item.actor) return `/users/${item.actor}`;
-    return '/notifications';
 };
 
 const NotificationsSection = ({user, login, bare = false}) => {
@@ -297,17 +253,24 @@ const NotificationsSection = ({user, login, bare = false}) => {
             {visibleItems.length ? (
                 <div className={`${styles.activityList} ${styles.feedScroll}`}>
                     {visibleItems.slice(0, 4).map((item, index) => {
-                        const actor = item.actor || item.title || 'MistWarp';
-                        const target = notificationLink(item);
+                        const system = isMilestoneNotification(item) || SYSTEM_TYPES.includes(item.type);
+                        const name = system ? null : actorFor(item);
+                        const profile = name && USERNAME_RE.test(name) ? name : null;
+                        const target = targetFor(item, viewerName) || {to: profile ? `/users/${profile}` : '/notifications'};
+                        const wrap = target.href ?
+                            children => <a href={target.href} target="_blank" rel="noreferrer">{children}</a> :
+                            children => <Link to={target.to}>{children}</Link>;
+                        const actor = profile ?
+                            <Link to={`/users/${profile}`} className={styles.activityActor}>{profile}</Link> :
+                            <strong className={styles.activityActor}>{name || 'MistWarp'}</strong>;
+                        const avatar = profile ? <Avatar username={profile} size={34} /> : <span className={styles.notificationAvatar}><Bell size={15} /></span>;
+                        const avatarLink = profile ? `/users/${profile}` : target.to;
                         return (
                             <div key={item.id || index} className={styles.activityItem}>
-                                <Link to={item.actor ? `/users/${item.actor}` : target}>
-                                    {item.actor ? <Avatar username={item.actor} size={34} /> : <span className={styles.notificationAvatar}><Bell size={15} /></span>}
-                                </Link>
+                                {avatarLink ? <Link to={avatarLink}>{avatar}</Link> : avatar}
                                 <span className={styles.activityIcon}><Bell size={14} /></span>
                                 <span className={styles.activityText}>
-                                    {!isMilestoneNotification(item) && <>{item.actor ? <Link to={`/users/${item.actor}`} className={styles.activityActor}>{actor}</Link> : <strong className={styles.activityActor}>{actor}</strong>}{' '}</>}
-                                    <Link to={target}>{notificationText(item)}</Link>
+                                    {describeNotification(item, richTranslator(communityText, wrap), actor)}
                                 </span>
                                 <span className={styles.activityTime}>{timeAgo(item.created || item.timestamp)}</span>
                             </div>
@@ -379,7 +342,8 @@ const Home = () => {
                     viewerName={viewerName}
                     side={user && !user.isNew ? (
                         <HomeTabs
-                            label="Your activity"
+                            id="home-activity"
+                            label={communityText('Your activity')}
                             tabs={[
                                 {
                                     key: 'following',
@@ -402,7 +366,8 @@ const Home = () => {
             <ActiveChallenge />
             <HomeTabs
                 className={styles.projectSection}
-                label="Projects"
+                id="home-projects"
+                label={communityText('Projects')}
                 tabs={[
                     {
                         key: 'trending',
@@ -437,7 +402,8 @@ const Home = () => {
             />
             <HomeTabs
                 className={styles.projectSection}
-                label="Community updates"
+                id="home-community"
+                label={communityText('Community updates')}
                 tabs={[
                     {
                         key: 'news',
@@ -469,9 +435,12 @@ const Home = () => {
     );
 };
 
-const HomeTabs = ({label, tabs, className}) => {
+// Panels stay mounted once visited (hidden while inactive), so switching
+// back keeps their loaded content instead of refetching it.
+const HomeTabs = ({id, label, tabs, className}) => {
     const {text: communityText} = useCommunityIntl();
     const [active, setActive] = useState(tabs[0].key);
+    const [visited, setVisited] = useState(() => [tabs[0].key]);
     const current = tabs.find(tab => tab.key === active) || tabs[0];
     const headRef = useRef(null);
     const revealTab = key => {
@@ -488,13 +457,19 @@ const HomeTabs = ({label, tabs, className}) => {
                     value={current.key}
                     onChange={key => {
                         setActive(key);
+                        setVisited(keys => (keys.includes(key) ? keys : [...keys, key]));
                         revealTab(key);
                     }}
                     ariaLabel={label}
+                    idPrefix={id}
                 />
                 {current.link ? <Link to={current.link}>{current.linkLabel || communityText('See all')}</Link> : null}
             </div>
-            {current.render()}
+            {tabs.filter(tab => tab.key === current.key || visited.includes(tab.key)).map(tab => (
+                <div key={tab.key} {...tabPanelProps(id, tab.key)} hidden={tab.key !== current.key}>
+                    {tab.render()}
+                </div>
+            ))}
         </section>
     );
 };
@@ -502,8 +477,10 @@ const HomeTabs = ({label, tabs, className}) => {
 const ContinuePlaying = ({username}) => {
     const {text: communityText} = useCommunityIntl();
     const [projects, setProjects] = useState(null);
+    const [attempt, setAttempt] = useState(0);
     useEffect(() => {
         let active = true;
+        setProjects(null);
         api.getUser(username)
             .then(data => {
                 if (!active) return;
@@ -512,11 +489,11 @@ const ContinuePlaying = ({username}) => {
                     .sort((a, b) => Number(b.lastPlayed) - Number(a.lastPlayed))
                     .slice(0, 4));
             })
-            .catch(() => active && setProjects([]));
+            .catch(() => active && setProjects(false));
         return () => {
             active = false;
         };
-    }, [username]);
+    }, [attempt, username]);
     return (
         <ProjectRow
             bare
@@ -525,7 +502,7 @@ const ContinuePlaying = ({username}) => {
             title={communityText('Continue playing')}
             icon={Gamepad2}
             projects={projects}
-            onRetry={() => {}}
+            onRetry={() => setAttempt(value => value + 1)}
         />
     );
 };
@@ -564,12 +541,12 @@ const ProjectRow = ({title, icon: Icon, projects, link, onRetry, bare = false, e
     const {text: communityText} = useCommunityIntl();
     return (<section className={bare ? null : styles.projectSection}>
         {bare ? null : <SectionHeading icon={Icon} title={title} link={link} />}
-        {projects === null ? <div className={styles.projectGrid}>{[0, 1, 2, 3].map(i => <div key={i} className={styles.projectSkeleton} />)}</div> : null}
+        {projects === null ? <CardGridSkeleton className={styles.projectGrid} count={4} /> : null}
         {projects === false ? <StatusMessage compact error onRetry={onRetry}>{communityText("Couldn't load projects.")}</StatusMessage> : null}
         {Array.isArray(projects) && !projects.length ? <EmptyState compact icon={Icon} title={emptyTitle || communityText('No shared projects yet')}>{emptyText}</EmptyState> : null}
         {Array.isArray(projects) && projects.length ? <div className={styles.projectGrid}>{projects.slice(0, projects.length > 4 ? projects.length - (projects.length % 4) : 4).map(project => <ProjectCard key={project.id} project={project} />)}</div> : null}
     </section>);
 };
 
-export {FriendsSection, NewsSection, NotificationsSection, ProjectFeedRow, RoadmapSection};
+export {ContinuePlaying, FriendsSection, HomeTabs, NewsSection, NotificationsSection, ProjectFeedRow, RoadmapSection};
 export default Home;

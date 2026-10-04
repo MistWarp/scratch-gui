@@ -18,7 +18,9 @@ jest.mock('@isomorphic-git/lightning-fs', () => class TestFs {
 
 const openPage = () => {
     let git;
-    jest.isolateModules(() => { git = require('../../../src/lib/git/browser-git.js'); });
+    jest.isolateModules(() => {
+        git = require('../../../src/lib/git/browser-git.js');
+    });
     return git;
 };
 

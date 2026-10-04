@@ -164,7 +164,12 @@ describe('Project content action payloads', () => {
         });
         const wrapper = mount(
             <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
-                <ReviewPanel id="project-1" user={null} login={jest.fn()} ownsProject />
+                <ReviewPanel
+                    id="project-1"
+                    user={null}
+                    login={jest.fn()}
+                    ownsProject
+                />
             </MemoryRouter>
         );
         await act(async () => {

@@ -293,13 +293,6 @@
     gap: 18px;
 }
 
-.projectSkeleton {
-    aspect-ratio: 3 / 3.4;
-    border-radius: var(--radius-sm);
-    background: var(--bg-card);
-    animation: pulse 1.4s infinite ease-in-out;
-}
-
 @media (max-width: 1000px) {
     .projectGrid {
         grid-template-columns: repeat(2, minmax(0, 1fr));

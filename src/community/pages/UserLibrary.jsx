@@ -53,7 +53,7 @@ const UserLibrary = () => {
         load();
     }, [load]);
 
-    useEffect(() => setPageMeta({title: `${name}'s game library`}), [name]);
+    useEffect(() => setPageMeta({title: communityText("{name}'s game library", {name})}), [communityText, name]);
 
     const loadMore = async () => {
         if (moreBusy || offset >= total) return;

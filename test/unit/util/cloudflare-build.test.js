@@ -53,7 +53,7 @@ test('updates the forks, then installs once without their build scripts', async 
     expect(sequence(steps)).toEqual([
         'scripts/sync-forks.mjs',
         'pnpm install --no-frozen-lockfile --ignore-scripts',
-        'pnpm run prepublish',
+        'pnpm run setup:microbit',
         'scripts/build.mjs --site-only'
     ]);
 });

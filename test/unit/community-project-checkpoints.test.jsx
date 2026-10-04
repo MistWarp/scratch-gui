@@ -26,7 +26,11 @@ describe('project release publishing', () => {
             finishCreate = resolve;
         }));
         const wrapper = mount(
-            <ReleaseList id="project-1" isOwner viewerName="tester" />
+            <ReleaseList
+                id="project-1"
+                isOwner
+                viewerName="tester"
+            />
         );
         await act(async () => {
             await Promise.resolve();

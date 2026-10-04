@@ -348,7 +348,9 @@ const ProjectEmbed = ({embed, intl}) => {
             <span className={styles.projectText}>
                 <span className={styles.cardTitle}>{data.title}</span>
                 {data.owner ? (
-                    <span className={styles.cardMeta}>{intl.formatMessage(messages.projectBy, {owner: data.owner})}</span>
+                    <span className={styles.cardMeta}>
+                        {intl.formatMessage(messages.projectBy, {owner: data.owner})}
+                    </span>
                 ) : null}
                 <span className={styles.cardMeta}>
                     <span className={styles.cardStat}>

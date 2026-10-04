@@ -115,6 +115,9 @@ class MenuLabel extends React.Component {
                 aria-expanded={this.props.open}
                 aria-haspopup="menu"
                 aria-label={this.props.ariaLabel}
+                // A tooltip for when only the icon is visible. Not while open, or the
+                // menu items inside would show it too.
+                title={this.props.open ? null : this.props.ariaLabel}
                 onClick={this.handleClick}
                 onKeyDown={this.handleKeyDown}
                 ref={this.menuRef}

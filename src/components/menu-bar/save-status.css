@@ -15,8 +15,18 @@
     font-size: 12px;
 }
 
-.save-now:disabled {
-    cursor: wait;
+.save-now.busy {
+    cursor: progress;
+}
+
+/* Read-only projects can't be saved; the tooltip says why. */
+.save-now.read-only {
+    cursor: not-allowed;
+    opacity: 0.75;
+}
+
+.save-now.read-only:hover {
+    background-color: transparent;
 }
 
 .save-now:focus-visible {
@@ -43,12 +53,78 @@
     font-weight: 600;
 }
 
+.save-icon-wrapper {
+    position: relative;
+    display: flex;
+    flex-shrink: 0;
+}
+
+/* Status shown next to the label; only the dot remains on narrow screens. */
+.status-text {
+    white-space: nowrap;
+    font-weight: normal;
+    opacity: 0.85;
+}
+
+.status-text.error {
+    font-weight: 600;
+    opacity: 1;
+}
+
+.status-dot {
+    position: absolute;
+    right: -3px;
+    bottom: -3px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1.5px $menu-bar-background;
+    background-color: currentColor;
+}
+
+.status-dot.saved {
+    background-color: $status-success;
+}
+
+.status-dot.unsaved {
+    background-color: $status-warning;
+}
+
+.status-dot.error {
+    background-color: $status-danger;
+}
+
+.status-dot.busy {
+    background-color: $status-info;
+    animation: status-pulse 1s ease-in-out infinite alternate;
+}
+
+.status-dot.idle {
+    display: none;
+}
+
+@keyframes status-pulse {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0.35;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .status-dot.busy {
+        animation: none;
+    }
+}
+
 @media only screen and (max-width: 900px) {
     .save-icon {
         display: block;
     }
 
-    .save-action {
+    .save-action,
+    .status-text {
         display: none;
     }
 }
@@ -57,6 +133,7 @@
     display: block;
 }
 
-:global(.mw-compact-save) .save-action {
+:global(.mw-compact-save) .save-action,
+:global(.mw-compact-save) .status-text {
     display: none;
 }

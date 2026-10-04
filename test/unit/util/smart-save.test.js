@@ -5,6 +5,7 @@ import {getRememberedPlatformProjectState, publishToMistWarp} from '../../../src
 import downloadBlob from '../../../src/lib/utils/download-blob';
 import {request} from '../../../src/lib/community/api.js';
 import {getSaveFeedback, SAVE_FEEDBACK_EVENT} from '../../../src/lib/mw/save-feedback.js';
+import {beginProjectOperation} from '../../../src/lib/project-operation.js';
 
 jest.mock('../../../src/lib/community/enabled.js', () => true);
 jest.mock('../../../src/lib/mw/open-mw-share-window.js', () => jest.fn());
@@ -60,6 +61,14 @@ describe('MistWarp smart save results', () => {
 
         await expect(smartSave({vm: {}, title: 'Project'})).resolves.toBe(false);
         expect(openMistWarpShareWindow).toHaveBeenCalledWith(expect.objectContaining({action: 'remix'}));
+    });
+
+    test('downloads a copy of a project that can be neither saved nor remixed', async () => {
+        getRememberedPlatformProjectState.mockReturnValue({isOwner: false, canRemix: false});
+
+        await expect(smartSave({vm: {}, title: 'Project'})).resolves.toBe(true);
+        expect(openMistWarpShareWindow).not.toHaveBeenCalled();
+        expect(downloadBlob).toHaveBeenCalledWith('Project.mwp', expect.any(Blob));
     });
 
     test('opens the agreement UI when the agreement check fails', async () => {
@@ -133,5 +142,46 @@ describe('MistWarp smart save results', () => {
         onPublished({id: 'remix'});
 
         expect(onSaved).not.toHaveBeenCalled();
+    });
+
+    test('ignores a second save while the first is still running', async () => {
+        let finishPublish;
+        getRememberedPlatformProjectState.mockReturnValue({isOwner: true});
+        publishToMistWarp.mockImplementationOnce(() => new Promise(resolve => {
+            finishPublish = resolve;
+        }));
+        const vm = {};
+
+        const first = smartSave({vm, title: 'Project'});
+        await expect(smartSave({vm, title: 'Project'})).resolves.toBe(false);
+        for (let i = 0; i < 5; i++) await Promise.resolve();
+        finishPublish({id: 'project'});
+
+        await expect(first).resolves.toBe(true);
+        expect(publishToMistWarp).toHaveBeenCalledTimes(1);
+        expect(openMistWarpShareWindow).not.toHaveBeenCalled();
+    });
+
+    test('does nothing while another project operation holds the lock', async () => {
+        getRememberedPlatformProjectState.mockReturnValue(null);
+        const vm = {};
+        const release = beginProjectOperation(vm);
+        try {
+            await expect(smartSave({vm, title: 'Project'})).resolves.toBe(false);
+        } finally {
+            release();
+        }
+        expect(createMwp).not.toHaveBeenCalled();
+        expect(downloadBlob).not.toHaveBeenCalled();
+    });
+
+    test('does not open the save window when an autosave took the lock first', async () => {
+        getRememberedPlatformProjectState.mockReturnValue({isOwner: true});
+        publishToMistWarp.mockRejectedValueOnce(Object.assign(new Error('still running'), {
+            code: 'project_operation_active'
+        }));
+
+        await expect(smartSave({vm: {}, title: 'Project'})).resolves.toBe(false);
+        expect(openMistWarpShareWindow).not.toHaveBeenCalled();
     });
 });

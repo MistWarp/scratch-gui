@@ -1,7 +1,8 @@
 node_modules/*
 build/*
 dist/*
-test/*
+# Test inputs, not test code
+test/fixtures/*
 src/examples/*
 
 # Files vendored from upstreams

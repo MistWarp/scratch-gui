@@ -2,6 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const {createRequire} = require('module');
 
+const generated = path.resolve(__dirname, '../src/generated');
+
 module.exports = {
     interfaceVersion: 2,
     resolve (request, importer) {
@@ -19,6 +21,12 @@ module.exports = {
             } catch (error) {
                 // Try the next source extension.
             }
+        }
+        // Vite and the Jest global setup write src/generated. Lint must not depend on
+        // having run either first, so accept those imports without reading them.
+        const target = path.resolve(path.dirname(importer), source);
+        if (source.startsWith('.') && target.startsWith(`${generated}${path.sep}`)) {
+            return {found: true, path: null};
         }
         if (/^(@[^/]+\/)?[^./@][^/]*$/.test(source)) {
             try {

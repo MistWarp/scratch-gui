@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import classNames from 'classnames';
-import {FormattedMessage} from 'react-intl';
+import {defineMessages, injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
 
 import {openSettingsModal} from '../../reducers/modals.js';
@@ -11,31 +11,44 @@ import styles from './settings-menu.css';
 
 import {Settings} from 'lucide-react';
 
-const SettingsMenu = ({onOpenSettings}) => (
-    <button
-        type="button"
-        data-mw-item="view"
-        className={classNames(styles.button, menuBarStyles.menuBarItem, menuBarStyles.hoverable)}
-        onClick={onOpenSettings}
-    >
-        <Settings
-            width={20}
-            height={20}
-            size={20}
-        />
-        <span className={classNames(styles.dropdownLabel, menuBarStyles.collapsibleLabel)}>
-            <FormattedMessage
-                defaultMessage="Settings"
-                description="Button in the menu bar to open the settings window"
-                id="mw.menuBar.settings"
-            />
-        </span>
-    </button>
-);
+const messages = defineMessages({
+    settings: {
+        defaultMessage: 'Settings',
+        description: 'Button in the menu bar to open the settings window',
+        id: 'mw.menuBar.settings'
+    }
+});
 
-SettingsMenu.propTypes = {
+const SettingsMenuComponent = ({intl, onOpenSettings}) => {
+    // The visible label is hidden on narrow screens and in icons-only mode.
+    const label = intl.formatMessage(messages.settings);
+    return (
+        <button
+            type="button"
+            data-mw-item="view"
+            aria-label={label}
+            className={classNames(styles.button, menuBarStyles.menuBarItem, menuBarStyles.hoverable)}
+            title={label}
+            onClick={onOpenSettings}
+        >
+            <Settings
+                width={20}
+                height={20}
+                size={20}
+            />
+            <span className={classNames(styles.dropdownLabel, menuBarStyles.collapsibleLabel)}>
+                {label}
+            </span>
+        </button>
+    );
+};
+
+SettingsMenuComponent.propTypes = {
+    intl: intlShape.isRequired,
     onOpenSettings: PropTypes.func
 };
+
+const SettingsMenu = injectIntl(SettingsMenuComponent);
 
 const ConnectedSettingsMenu = connect(
     null,

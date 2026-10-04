@@ -20,6 +20,7 @@ import Dropdown, {DropdownItem} from './ui/Dropdown.jsx';
 import {timeAgo, sameUser, formatPlaytime} from '../format';
 import {payWithRotur} from '../../lib/rotur/payment-window.js';
 import useLatest from '../use-latest.js';
+import {readSessionDraft, writeSessionDraft} from '../session-draft.js';
 import styles from './CommentThread.module.css';
 
 const commentKindOptions = text => [
@@ -71,6 +72,15 @@ export const mergeCommentPages = (current, incoming) => {
     const byId = new Map((current || []).map(comment => [comment.id, comment]));
     for (const comment of incoming || []) byId.set(comment.id, comment);
     return Array.from(byId.values()).sort(compareRootOrder);
+};
+// Reactions toggle: picking the active one clears it, picking the other one switches.
+export const applyCommentReaction = (comment, type) => {
+    const counts = {...(comment.reactionCounts || {})};
+    const previous = comment.myReaction || '';
+    if (previous) counts[previous] = Math.max(0, (counts[previous] || 0) - 1);
+    const next = previous === type ? '' : type;
+    if (next) counts[next] = (counts[next] || 0) + 1;
+    return {...comment, reactionCounts: counts, myReaction: next};
 };
 const kindLabel = (kind, text) => commentKindOptions(text).find(item => item.value === kind)?.label || text('Comment');
 
@@ -196,6 +206,7 @@ const CommentRow = ({
                             value={editText}
                             maxLength={500}
                             disabled={editBusy}
+                            aria-label={communityText('Edit comment')}
                             onChange={event => onEditTextChange(event.target.value)}
                         />
                         <div className={styles.composerButtons}>
@@ -228,7 +239,7 @@ const CommentRow = ({
 };
 
 const InlineComposer = ({
-    user, value, onChange, onSubmit, onCancel, placeholder, busy, error, small, kind, onKindChange,
+    user, value, onChange, onSubmit, onCancel, placeholder, ariaLabel, busy, error, small, kind, onKindChange,
     composerAction, donation, onDonationChange, donationRecipient
 }) => {
     const {text: communityText} = useCommunityText();
@@ -250,6 +261,7 @@ const InlineComposer = ({
                     className={expanded ? styles.input : `${styles.input} ${styles.inputIdle}`}
                     data-donation-tier={previewTier || null}
                     placeholder={placeholder}
+                    aria-label={ariaLabel}
                     value={value}
                     maxLength={500}
                     disabled={busy}
@@ -308,7 +320,7 @@ const InlineComposer = ({
 
 const CommentThread = ({
     source, canModerate, canPin = false, disabled, disabledReason, reportContext, projectComments = false,
-    composerAction, onCountChange = null, donationRecipient = ''
+    composerAction, onCountChange = null, donationRecipient = '', draftKey = ''
 }) => {
     const {text: communityText} = useCommunityText();
     const {user} = useUser();
@@ -333,8 +345,8 @@ const CommentThread = ({
     const [editingId, setEditingId] = useState(null);
     const [editText, setEditText] = useState('');
     const [editBusy, setEditBusy] = useState(false);
-    const [reactingId, setReactingId] = useState(null);
-    const [pinningId, setPinningId] = useState(null);
+    const [reactingIds, setReactingIds] = useState({});
+    const [pinningIds, setPinningIds] = useState({});
     const [rootLimit, setRootLimit] = useState(ROOT_PAGE);
     const [totalRoots, setTotalRoots] = useState(0);
     const [nextOffset, setNextOffset] = useState(0);
@@ -344,6 +356,9 @@ const CommentThread = ({
     const sourceRef = useRef(source);
     const viewerRef = useRef(viewerName);
     const actionLocks = useRef(new Map());
+    // The top-level draft is stored per thread; the key is fixed when the source changes.
+    const currentDraftKey = draftKey || `${window.location.pathname}\n${reportContext || ''}`;
+    const draftKeyRef = useRef(currentDraftKey);
     sourceRef.current = source;
     viewerRef.current = viewerName;
 
@@ -361,6 +376,13 @@ const CommentThread = ({
             if (!locks.size) actionLocks.current.delete(actionSource);
         };
     };
+
+    const markPending = (setter, id, pending) => setter(current => {
+        const next = {...current};
+        if (pending) next[id] = true;
+        else delete next[id];
+        return next;
+    });
 
     const beginLoad = useLatest();
     const beginExtraLoad = useLatest();
@@ -413,26 +435,36 @@ const CommentThread = ({
             }));
     }, [source, beginLoad, viewerName, sortOrder]);
 
+    // Drafts and filters belong to one thread, so only a new source clears them.
     useEffect(() => {
-        setComments([]);
-        setContent('');
+        draftKeyRef.current = currentDraftKey;
+        setContent(readSessionDraft(`comment:${currentDraftKey}`));
         setKind('comment');
         setKindFilter('all');
         setSearch('');
         setDonation('');
         setReplyTo(null);
         setReplyText('');
-        setBusy(false);
-        setError(null);
         setReportId(null);
         setReplyLimits({});
+    }, [source]);
+
+    // Actions started by another viewer or for another source never settle here, so drop their state.
+    useEffect(() => {
+        setBusy(false);
+        setError(null);
         setRemovingId(null);
         setDeleteId(null);
         setEditingId(null);
         setEditText('');
         setEditBusy(false);
-        setReactingId(null);
-        setPinningId(null);
+        setReactingIds({});
+        setPinningIds({});
+    }, [source, viewerName]);
+
+    // A new sort order or viewer only reloads the list.
+    useEffect(() => {
+        setComments([]);
         setRootLimit(ROOT_PAGE);
         setTotalRoots(0);
         setNextOffset(0);
@@ -572,6 +604,7 @@ const CommentThread = ({
         }
         const actionSource = source;
         const actionViewer = viewerName;
+        const actionDraftKey = draftKeyRef.current;
         const releaseAction = beginAction(actionSource, actionViewer, 'submit');
         if (!releaseAction) return;
         setBusy(true);
@@ -583,6 +616,7 @@ const CommentThread = ({
                 kind: commentKind,
                 amount: attachedDonation
             }) : await actionSource.add(text.trim(), parent, commentKind);
+            if (!parent) writeSessionDraft(`comment:${actionDraftKey}`, '');
             if (sourceRef.current !== actionSource || viewerRef.current !== actionViewer) return;
             if (data && data.comment) {
                 setComments(current => {
@@ -595,11 +629,14 @@ const CommentThread = ({
                     return addCreatedComment(current, data.comment);
                 });
             }
-            setContent('');
-            setKind('comment');
-            setDonation('');
-            setReplyText('');
-            setReplyTo(null);
+            if (parent) {
+                setReplyText('');
+                setReplyTo(null);
+            } else {
+                setContent('');
+                setKind('comment');
+                setDonation('');
+            }
         } catch (e) {
             if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {
                 setError(e.cancelled ?
@@ -619,7 +656,7 @@ const CommentThread = ({
     const remove = async commentId => {
         const actionSource = source;
         const actionViewer = viewerName;
-        const releaseAction = beginAction(actionSource, actionViewer, 'remove');
+        const releaseAction = beginAction(actionSource, actionViewer, `remove:${commentId}`);
         if (!releaseAction) return;
         setRemovingId(commentId);
         const removingComment = comments.find(comment => comment.id === commentId);
@@ -679,9 +716,15 @@ const CommentThread = ({
         if (!source.react || !user) return;
         const actionSource = source;
         const actionViewer = viewerName;
-        const releaseAction = beginAction(actionSource, actionViewer, 'react');
+        const previous = comments.find(c => c.id === commentId);
+        if (!previous) return;
+        const releaseAction = beginAction(actionSource, actionViewer, `react:${commentId}`);
         if (!releaseAction) return;
-        setReactingId(commentId);
+        const restore = c => (c.id === commentId ?
+            {...c, reactionCounts: previous.reactionCounts, myReaction: previous.myReaction || ''} :
+            c);
+        markPending(setReactingIds, commentId, true);
+        setComments(cs => cs.map(c => (c.id === commentId ? applyCommentReaction(c, type) : c)));
         try {
             const result = await actionSource.react(commentId, type);
             if (sourceRef.current !== actionSource || viewerRef.current !== actionViewer) return;
@@ -690,11 +733,14 @@ const CommentThread = ({
                 c)));
         } catch (e) {
             if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {
+                setComments(cs => cs.map(restore));
                 setError(e.message || communityText('Could not react.'));
             }
         } finally {
             releaseAction();
-            if (sourceRef.current === actionSource && viewerRef.current === actionViewer) setReactingId(null);
+            if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {
+                markPending(setReactingIds, commentId, false);
+            }
         }
     };
 
@@ -702,9 +748,9 @@ const CommentThread = ({
         if (!source.pin || !user) return;
         const actionSource = source;
         const actionViewer = viewerName;
-        const releaseAction = beginAction(actionSource, actionViewer, 'pin');
+        const releaseAction = beginAction(actionSource, actionViewer, `pin:${commentId}`);
         if (!releaseAction) return;
-        setPinningId(commentId);
+        markPending(setPinningIds, commentId, true);
         setError(null);
         try {
             const result = await actionSource.pin(commentId, pinned);
@@ -717,7 +763,9 @@ const CommentThread = ({
             }
         } finally {
             releaseAction();
-            if (sourceRef.current === actionSource && viewerRef.current === actionViewer) setPinningId(null);
+            if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {
+                markPending(setPinningIds, commentId, false);
+            }
         }
     };
 
@@ -783,9 +831,13 @@ const CommentThread = ({
                 <InlineComposer
                     user={user}
                     value={content}
-                    onChange={setContent}
+                    onChange={value => {
+                        setContent(value);
+                        writeSessionDraft(`comment:${draftKeyRef.current}`, value);
+                    }}
                     onSubmit={() => (user ? submit(content, null, kind) : submitAfterLogin(content, null, kind))}
                     placeholder={communityText('Add a comment')}
+                    ariaLabel={communityText('Add a comment')}
                     busy={busy}
                     error={replyTo === null ? error : null}
                     kind={projectComments ? kind : null}
@@ -881,9 +933,9 @@ const CommentThread = ({
                                 editing={editingId === comment.id}
                                 editBusy={editBusy}
                                 canReport={canReport(comment)}
-                                deleting={removingId !== null}
-                                reacting={reactingId !== null}
-                                pinning={pinningId !== null}
+                                deleting={removingId === comment.id}
+                                reacting={Boolean(reactingIds[comment.id])}
+                                pinning={Boolean(pinningIds[comment.id])}
                             />
                             <div className={styles.replies}>
                                 {(() => {
@@ -905,8 +957,8 @@ const CommentThread = ({
                                                     editing={editingId === reply.id}
                                                     editBusy={editBusy}
                                                     canReport={canReport(reply)}
-                                                    deleting={removingId !== null}
-                                                    reacting={reactingId !== null}
+                                                    deleting={removingId === reply.id}
+                                                    reacting={Boolean(reactingIds[reply.id])}
                                                     onReply={() => openReply(comment.id, `@${reply.author} `)}
                                                     onDelete={() => {
                                                         setError(null);
@@ -955,6 +1007,7 @@ const CommentThread = ({
                                         onSubmit={() => submit(replyText, comment.id)}
                                         onCancel={() => setReplyTo(null)}
                                         placeholder={communityText('Reply to {value1}', {value1: comment.author})}
+                                        ariaLabel={communityText('Write a reply')}
                                         busy={busy}
                                         error={error}
                                     />

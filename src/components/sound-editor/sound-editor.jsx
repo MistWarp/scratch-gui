@@ -12,6 +12,7 @@ import BufferedInputHOC from '../forms/buffered-input-hoc.jsx';
 import AudioSelector from '../../containers/audio-selector.jsx';
 import IconButton from '../icon-button/icon-button.jsx';
 import {SOUND_BYTE_LIMIT} from '../../lib/audio/audio-util.js';
+import {formatBytes} from '../../lib/utils/bytes.js';
 
 import styles from './sound-editor.css';
 
@@ -177,13 +178,6 @@ const formatDuration = (playheadPercent, trimStartPercent, trimEndPercent, durat
     const currentTime = progressInTrim * trimDuration;
 
     return `${formatTime(currentTime)} / ${formatTime(trimDuration)}`;
-};
-
-const formatSoundSize = bytes => {
-    if (bytes > 1000 * 1000) {
-        return `${(bytes / 1000 / 1000).toFixed(2)}MB`;
-    }
-    return `${(bytes / 1000).toFixed(2)}KB`;
 };
 
 const formatSampleRate = sampleRate => `${Number((sampleRate / 1000).toFixed(2))} kHz`;
@@ -385,7 +379,7 @@ const SoundEditor = props => (
             <div className={styles.advancedInfo}>
                 {`${formatSampleRate(props.sampleRate)} · ${props.intl.formatMessage(
                     props.isStereo ? messages.stereo : messages.mono
-                )} · ${formatSoundSize(props.size)}`}
+                )} · ${formatBytes(props.size)}`}
             </div>
         </div>
         {/* TODO: don't know whether this should be > or >=. Using >= for now to be safe */}

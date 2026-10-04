@@ -6,6 +6,7 @@ import PropTypes from 'prop-types';
 import bindAll from 'lodash.bindall';
 import {PackageOpen, FileJson, ShieldCheck, Blocks, Cat, Palette, Github} from 'lucide-react';
 import {getLoaderSettings} from '../../lib/mw/loader-settings';
+import {formatBytes} from '../../lib/utils/bytes.js';
 import styles from './loader.css';
 import {getIsFetchingWithId, getIsLoadingWithId} from '../../reducers/project-state';
 import topBlock from './top-block.svg';
@@ -98,12 +99,6 @@ const STAGE_PROGRESS = {
     building: [80, 85],
     assets: [85, 97],
     installing: [97, 100]
-};
-
-const formatBytes = bytes => {
-    if (!bytes || bytes < 1024) return `${bytes || 0} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
 // How often the quote at the bottom changes, in ms.

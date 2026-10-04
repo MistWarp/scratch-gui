@@ -1,5 +1,5 @@
-import path from 'path';
 import SeleniumHelper from '../helpers/selenium-helper';
+import editorUri from '../helpers/editor-uri';
 
 const {
     clickText,
@@ -10,7 +10,7 @@ const {
     loadUri
 } = new SeleniumHelper();
 
-const uri = path.resolve(__dirname, '../../build/index.html');
+const uri = editorUri;
 
 let driver;
 
@@ -34,6 +34,7 @@ describe('Hardware extension connection modal', () => {
 
     test('Message saying Scratch Link is unavailable (BLE)', async () => {
         await driver.quit();
+        // eslint-disable-next-line require-atomic-updates -- no other code touches driver meanwhile
         driver = getDriver();
 
         await loadUri(uri);

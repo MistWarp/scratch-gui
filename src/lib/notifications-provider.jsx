@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import Notifications from '../components/notifications/notifications.jsx';
 import notificationManager from '../lib/notification-manager.js';
 
@@ -37,9 +36,5 @@ class NotificationsProvider extends React.Component {
         );
     }
 }
-
-NotificationsProvider.propTypes = {
-    children: PropTypes.node
-};
 
 export default NotificationsProvider;

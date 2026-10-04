@@ -23,6 +23,7 @@ import Notice from '../components/ui/Notice.jsx';
 import SectionHeading from '../components/ui/SectionHeading.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
+import {tabPanelProps} from '../components/SectionTabs.jsx';
 import ActivityCard from '../components/ActivityCard.jsx';
 import FeaturedProject from '../components/FeaturedProject.jsx';
 import ProfileBadges from '../components/ProfileBadges.jsx';
@@ -293,7 +294,7 @@ const Profile = () => {
     useEffect(() => {
         if (mwUserLoadContext !== loadContext) return;
         if (mwUser && mwUser.banned) {
-            setPageMeta({title: name, description: 'Banned from MistWarp by site admins.'});
+            setPageMeta({title: name, description: communityText('Banned from MistWarp by site admins.')});
             return;
         }
         if (!profile) return;
@@ -303,7 +304,7 @@ const Profile = () => {
             image: rotur.avatar(name, 256),
             card: 'summary'
         });
-    }, [profile, name, mwUser, mwUserLoadContext, loadContext]);
+    }, [communityText, profile, name, mwUser, mwUserLoadContext, loadContext]);
 
     // Scroll to a comment anchor after the comments section renders
     useEffect(() => {
@@ -320,23 +321,32 @@ const Profile = () => {
         actionLocks.current.add(actionKey);
         setFollowBusy(true);
         setActionError(null);
+        const me = user.username;
+        const wasFollowed = Boolean(profile.followed);
+        // Show the new state straight away and put the old one back if Rotur refuses.
+        const showFollow = followed => {
+            setProfile(p => (Boolean(p.followed) === followed ? p : {
+                ...p,
+                followed,
+                followers: followed ? (p.followers || 0) + 1 : Math.max(0, (p.followers || 1) - 1)
+            }));
+            setFollowers(fs => {
+                const others = fs.filter(f => f.toLowerCase() !== me.toLowerCase());
+                return followed ? [me, ...others] : others;
+            });
+        };
+        showFollow(!wasFollowed);
         try {
-            const me = user.username;
-            if (profile.followed) {
+            if (wasFollowed) {
                 await rotur.unfollow(name);
-                if (actionContextRef.current !== context) return;
-                setProfile(p => ({...p, followed: false, followers: Math.max(0, (p.followers || 1) - 1)}));
-                setFollowers(fs => fs.filter(f => f.toLowerCase() !== me.toLowerCase()));
             } else {
                 await rotur.follow(name);
                 api.checkFollowerMilestones(name).catch(() => {});
-                if (actionContextRef.current !== context) return;
-                setProfile(p => ({...p, followed: true, followers: (p.followers || 0) + 1}));
-                setFollowers(fs => [me, ...fs.filter(f => f.toLowerCase() !== me.toLowerCase())]);
             }
         } catch (e) {
             if (actionContextRef.current === context) {
-                setActionError(e.message || 'Could not update follow.');
+                showFollow(wasFollowed);
+                setActionError(e.message || communityText('Could not update follow.'));
             }
         } finally {
             actionLocks.current.delete(actionKey);
@@ -524,6 +534,7 @@ const Profile = () => {
                     <UnderlineTabs
                         className={styles.tabs}
                         ariaLabel="Profile content"
+                        idPrefix="profile"
                         value={activeTab}
                         onChange={selectTab}
                         items={[
@@ -533,249 +544,252 @@ const Profile = () => {
                         ]}
                     />
 
-                    {activeTab === 'projects' ? (
-                        <React.Fragment>
+                    <div {...tabPanelProps('profile', activeTab)}>
+                        {activeTab === 'projects' ? (
+                            <React.Fragment>
 
-                            {featuredProject ? (
-                                <section className={styles.section}>
-                                    <FeaturedProject project={featuredProject} />
-                                </section>
-                            ) : null}
+                                {featuredProject ? (
+                                    <section className={styles.section}>
+                                        <FeaturedProject project={featuredProject} />
+                                    </section>
+                                ) : null}
 
-                            {showRecentActivity ? (
-                                <section className={styles.section}>
-                                    <SectionHeading
-                                        icon={Gamepad2}
-                                        title={communityText('Recent activity')}
-                                        link={`/users/${name}/library`}
-                                        linkLabel={communityText('View game library')}
-                                        actions={isSelf && mwUser.recentActivityVisible === false ? <span className={styles.privateActivity}>{communityText('Only visible to you')}</span> : null}
-                                    />
-                                    {recentActivity.length ? (
-                                        <div className={styles.recentActivity}>
-                                            {recentActivity.map(item => {
-                                                const projectId = item.projectId || item.id || item._id;
-                                                return (
-                                                    <article className={styles.recentActivityItem} key={projectId}>
-                                                        <Link className={styles.recentActivityLink} to={projectUrl(projectId)} aria-label={communityText('Open {value1}', {value1: item.title})} />
-                                                        <div className={styles.recentActivityThumb}>
-                                                            <img src={item.thumbUrl} alt="" loading="lazy" />
-                                                        </div>
-                                                        <div className={styles.recentActivityBody}>
-                                                            <div
-                                                                className={styles.recentActivityTitle}
-                                                                title={item.title}
-                                                            >{item.title}</div>
-                                                            <div className={styles.recentActivityOwner}><span>{communityText('by')}</span><UserLink username={item.owner}>{item.owner}</UserLink></div>
-                                                            <div className={styles.recentActivityStats}>
-                                                                {item.duration > 0 ?
-                                                                    <span>{formatPlaytime(item.duration, false)}</span> : null}
-                                                                {Number(item.lastPlayed) > 0 ?
-                                                                    <span>{lastPlayedLabel(item.lastPlayed)}</span> : null}
-                                                            </div>
-                                                        </div>
-                                                    </article>
-                                                );
-                                            })}
-                                        </div>
-                                    ) : (
-                                        <EmptyState
+                                {showRecentActivity ? (
+                                    <section className={styles.section}>
+                                        <SectionHeading
                                             icon={Gamepad2}
-                                            title={mwUser.recentActivityVisible === false && !isSelf ?
-                                                communityText('Activity is private') :
-                                                communityText('No recent activity')}
-                                        >
-                                            {mwUser.recentActivityVisible === false && !isSelf ?
-                                                communityText('This user has chosen not to share what they play.') :
-                                                communityText('Games added to the library will appear here after they are played.')}
-                                        </EmptyState>
-                                    )}
-                                </section>
-                            ) : null}
+                                            title={communityText('Recent activity')}
+                                            link={`/users/${name}/library`}
+                                            linkLabel={communityText('View game library')}
+                                            actions={isSelf && mwUser.recentActivityVisible === false ? <span className={styles.privateActivity}>{communityText('Only visible to you')}</span> : null}
+                                        />
+                                        {recentActivity.length ? (
+                                            <div className={styles.recentActivity}>
+                                                {recentActivity.map(item => {
+                                                    const projectId = item.projectId || item.id || item._id;
+                                                    return (
+                                                        <article className={styles.recentActivityItem} key={projectId}>
+                                                            <Link className={styles.recentActivityLink} to={projectUrl(projectId)} aria-label={communityText('Open {value1}', {value1: item.title})} />
+                                                            <div className={styles.recentActivityThumb}>
+                                                                <img src={item.thumbUrl} alt="" loading="lazy" />
+                                                            </div>
+                                                            <div className={styles.recentActivityBody}>
+                                                                <div
+                                                                    className={styles.recentActivityTitle}
+                                                                    title={item.title}
+                                                                >{item.title}</div>
+                                                                <div className={styles.recentActivityOwner}><span>{communityText('by')}</span><UserLink username={item.owner}>{item.owner}</UserLink></div>
+                                                                <div className={styles.recentActivityStats}>
+                                                                    {item.duration > 0 ?
+                                                                        <span>{formatPlaytime(item.duration, false)}</span> : null}
+                                                                    {Number(item.lastPlayed) > 0 ?
+                                                                        <span>{lastPlayedLabel(item.lastPlayed)}</span> : null}
+                                                                </div>
+                                                            </div>
+                                                        </article>
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : (
+                                            <EmptyState
+                                                icon={Gamepad2}
+                                                title={mwUser.recentActivityVisible === false && !isSelf ?
+                                                    communityText('Activity is private') :
+                                                    communityText('No recent activity')}
+                                            >
+                                                {mwUser.recentActivityVisible === false && !isSelf ?
+                                                    communityText('This user has chosen not to share what they play.') :
+                                                    communityText('Games added to the library will appear here after they are played.')}
+                                            </EmptyState>
+                                        )}
+                                    </section>
+                                ) : null}
 
-                            {otherProjects.length ? (
-                                <section className={styles.section}>
-                                    <SectionHeading icon={FolderKanban} title={communityText('Projects')} />
-                                    <div className={styles.grid}>
-                                        {otherProjects.map(project => (
-                                            <ProjectCard
-                                                key={project.id}
-                                                project={project}
-                                            />
-                                        ))}
-                                    </div>
-                                    {projectOffset < projectTotal ? (
-                                        <div className={styles.loadMore}>
-                                            <Button
-                                                variant="secondary"
-                                                busy={projectsBusy}
-                                                busyLabel={communityText('Loading…')}
-                                                onClick={loadMoreProjects}
-                                            >{communityText('Load more projects')}</Button>
+                                {otherProjects.length ? (
+                                    <section className={styles.section}>
+                                        <SectionHeading icon={FolderKanban} title={communityText('Projects')} />
+                                        <div className={styles.grid}>
+                                            {otherProjects.map(project => (
+                                                <ProjectCard
+                                                    key={project.id}
+                                                    project={project}
+                                                />
+                                            ))}
                                         </div>
-                                    ) : null}
-                                    {projectsError ? (
-                                        <StatusMessage error compact onRetry={loadMoreProjects}>{communityText('Could not load more projects.')}</StatusMessage>
-                                    ) : null}
-                                </section>
-                            ) : null}
+                                        {projectOffset < projectTotal ? (
+                                            <div className={styles.loadMore}>
+                                                <Button
+                                                    variant="secondary"
+                                                    busy={projectsBusy}
+                                                    busyLabel={communityText('Loading…')}
+                                                    onClick={loadMoreProjects}
+                                                >{communityText('Load more projects')}</Button>
+                                            </div>
+                                        ) : null}
+                                        {projectsError ? (
+                                            <StatusMessage error compact onRetry={loadMoreProjects}>{communityText('Could not load more projects.')}</StatusMessage>
+                                        ) : null}
+                                    </section>
+                                ) : null}
 
-                            {user && user.isAdmin && unsharedProjects.length ? (
+                                {user && user.isAdmin && unsharedProjects.length ? (
+                                    <section className={styles.section}>
+                                        <SectionHeading
+                                            icon={EyeOff}
+                                            title={communityText('Unshared projects')}
+                                            lead={communityText('Only admins can see these projects.')}
+                                        />
+                                        <div className={styles.grid}>
+                                            {unsharedProjects.map(project => (
+                                                <ProjectCard
+                                                    key={project.id}
+                                                    project={project}
+                                                />
+                                            ))}
+                                        </div>
+                                    </section>
+                                ) : null}
+
+                                {onMistWarp ? (
+                                    <section className={styles.section}>
+                                        <SectionHeading icon={Star} title={communityText('Recent reviews')} />
+                                        {reviews === null ? <StatusMessage compact>{communityText('Loading reviews…')}</StatusMessage> : null}
+                                        {reviews && !reviews.length ? (
+                                            <EmptyState icon={Star} title={communityText('No reviews yet')}>
+                                                {communityText('Reviews this user writes on projects will appear here.')}
+                                            </EmptyState>
+                                        ) : null}
+                                        {reviews && reviews.length ? (
+                                            <div className={styles.reviewGrid}>
+                                                {reviews.slice(0, 6).map(review => (
+                                                    <Link
+                                                        key={review._id}
+                                                        to={projectUrl(review.projectId)}
+                                                        className={styles.reviewCard}
+                                                    >
+                                                        <div className={styles.reviewHead}>
+                                                            <strong>{review.projectTitle}</strong>
+                                                            <span>{timeAgo(review.edited || review.created)}</span>
+                                                        </div>
+                                                        <div
+                                                            className={styles.reviewStars}
+                                                            aria-label={communityText('{value1} out of 5 stars', {value1: review.rating})}
+                                                        >
+                                                            {[1, 2, 3, 4, 5].map(value => (
+                                                                <Star
+                                                                    key={value}
+                                                                    size={14}
+                                                                    fill={value <= review.rating ? 'currentColor' : 'none'}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                        {review.message ? (
+                                                            <p><RichText text={review.message} /></p>
+                                                        ) : (
+                                                            <p className={styles.reviewNoText}>{communityText('No written review.')}</p>
+                                                        )}
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        ) : null}
+                                    </section>
+                                ) : null}
+
                                 <section className={styles.section}>
                                     <SectionHeading
-                                        icon={EyeOff}
-                                        title={communityText('Unshared projects')}
-                                        lead={communityText('Only admins can see these projects.')}
+                                        icon={Users}
+                                        title={communityText('Followers')}
+                                        count={profile.followers || followers.length}
+                                        link={followers.length ? `/users/${name}/followers` : null}
                                     />
-                                    <div className={styles.grid}>
-                                        {unsharedProjects.map(project => (
-                                            <ProjectCard
-                                                key={project.id}
-                                                project={project}
-                                            />
-                                        ))}
-                                    </div>
-                                </section>
-                            ) : null}
-
-                            {onMistWarp ? (
-                                <section className={styles.section}>
-                                    <SectionHeading icon={Star} title={communityText('Recent reviews')} />
-                                    {reviews === null ? <StatusMessage compact>{communityText('Loading reviews…')}</StatusMessage> : null}
-                                    {reviews && !reviews.length ? (
-                                        <EmptyState icon={Star} title={communityText('No reviews yet')}>
-                                            {communityText('Reviews this user writes on projects will appear here.')}
-                                        </EmptyState>
-                                    ) : null}
-                                    {reviews && reviews.length ? (
-                                        <div className={styles.reviewGrid}>
-                                            {reviews.slice(0, 6).map(review => (
+                                    {followers.length ? (
+                                        <div className={styles.followersRow}>
+                                            {followers.slice(0, FOLLOWER_STRIP_COUNT).map(follower => (
                                                 <Link
-                                                    key={review._id}
-                                                    to={projectUrl(review.projectId)}
-                                                    className={styles.reviewCard}
+                                                    key={follower}
+                                                    to={`/users/${follower}`}
+                                                    className={styles.followerChip}
                                                 >
-                                                    <div className={styles.reviewHead}>
-                                                        <strong>{review.projectTitle}</strong>
-                                                        <span>{timeAgo(review.edited || review.created)}</span>
-                                                    </div>
-                                                    <div
-                                                        className={styles.reviewStars}
-                                                        aria-label={communityText('{value1} out of 5 stars', {value1: review.rating})}
-                                                    >
-                                                        {[1, 2, 3, 4, 5].map(value => (
-                                                            <Star
-                                                                key={value}
-                                                                size={14}
-                                                                fill={value <= review.rating ? 'currentColor' : 'none'}
-                                                            />
-                                                        ))}
-                                                    </div>
-                                                    {review.message ? (
-                                                        <p><RichText text={review.message} /></p>
-                                                    ) : (
-                                                        <p className={styles.reviewNoText}>{communityText('No written review.')}</p>
-                                                    )}
+                                                    <Avatar
+                                                        username={follower}
+                                                        size={56}
+                                                    />
+                                                    <span>{follower}</span>
                                                 </Link>
                                             ))}
                                         </div>
-                                    ) : null}
+                                    ) : (
+                                        <EmptyState icon={Users} title={communityText('No followers yet')}>
+                                            {communityText('People who follow this user will appear here.')}
+                                        </EmptyState>
+                                    )}
                                 </section>
-                            ) : null}
 
+                                {onMistWarp ? (
+                                    <section className={styles.section} id="comments">
+                                        <SectionHeading
+                                            icon={MessageSquare}
+                                            title={communityText('Comments')}
+                                            actions={isSelf ? (
+                                                <Button
+                                                    variant="secondary"
+                                                    onClick={toggleComments}
+                                                    busy={commentsBusy}
+                                                    busyLabel={commentsOff ? communityText('Turning on…') : communityText('Turning off…')}
+                                                >
+                                                    {commentsOff ? <MessageSquare size={14} /> : <MessageSquareOff size={14} />}
+                                                    {commentsOff ? communityText('Turn on comments') : communityText('Turn off comments')}
+                                                </Button>
+                                            ) : null}
+                                        />
+                                        <div className={styles.feed}>
+                                            <CommentThread
+                                                source={commentSource}
+                                                canModerate={isSelf}
+                                                canPin={isSelf}
+                                                disabled={commentsOff}
+                                                reportContext={`profile ${name}`}
+                                                draftKey={`profile:${String(name).toLowerCase()}`}
+                                            />
+                                        </div>
+                                    </section>
+                                ) : null}
+
+                            </React.Fragment>
+                        ) : null}
+
+                        {activeTab === 'posts' ? (
                             <section className={styles.section}>
-                                <SectionHeading
-                                    icon={Users}
-                                    title={communityText('Followers')}
-                                    count={profile.followers || followers.length}
-                                    link={followers.length ? `/users/${name}/followers` : null}
+                                <ProfilePosts
+                                    posts={profilePosts}
+                                    username={profile.username || name}
+                                    viewer={user}
+                                    editable={isSelf}
+                                    onChange={setProfilePosts}
+                                    onLogin={login}
                                 />
-                                {followers.length ? (
-                                    <div className={styles.followersRow}>
-                                        {followers.slice(0, FOLLOWER_STRIP_COUNT).map(follower => (
-                                            <Link
-                                                key={follower}
-                                                to={`/users/${follower}`}
-                                                className={styles.followerChip}
-                                            >
-                                                <Avatar
-                                                    username={follower}
-                                                    size={56}
-                                                />
-                                                <span>{follower}</span>
-                                            </Link>
-                                        ))}
-                                    </div>
+                            </section>
+                        ) : null}
+
+                        {activeTab === 'themes' ? (
+                            <section className={styles.section}>
+                                <SectionHeading icon={Palette} title={communityText('Published themes')} />
+                                {profileThemes === null ? (
+                                    <StatusMessage compact>{communityText('Loading themes…')}</StatusMessage>
+                                ) : profileThemesError ? (
+                                    <StatusMessage error onRetry={loadThemes}>{communityText('Could not load published themes.')}</StatusMessage>
+                                ) : profileThemes.length ? (
+                                    <CardGrid>
+                                        {profileThemes.map(item => <ThemeCard key={item.id} theme={item} />)}
+                                    </CardGrid>
                                 ) : (
-                                    <EmptyState icon={Users} title={communityText('No followers yet')}>
-                                        {communityText('People who follow this user will appear here.')}
+                                    <EmptyState icon={Palette} title={communityText('No published themes yet')}>
+                                        {communityText('Themes this user publishes will appear here.')}
                                     </EmptyState>
                                 )}
                             </section>
-
-                            {onMistWarp ? (
-                                <section className={styles.section} id="comments">
-                                    <SectionHeading
-                                        icon={MessageSquare}
-                                        title={communityText('Comments')}
-                                        actions={isSelf ? (
-                                            <Button
-                                                variant="secondary"
-                                                onClick={toggleComments}
-                                                busy={commentsBusy}
-                                                busyLabel={commentsOff ? communityText('Turning on…') : communityText('Turning off…')}
-                                            >
-                                                {commentsOff ? <MessageSquare size={14} /> : <MessageSquareOff size={14} />}
-                                                {commentsOff ? communityText('Turn on comments') : communityText('Turn off comments')}
-                                            </Button>
-                                        ) : null}
-                                    />
-                                    <div className={styles.feed}>
-                                        <CommentThread
-                                            source={commentSource}
-                                            canModerate={isSelf}
-                                            canPin={isSelf}
-                                            disabled={commentsOff}
-                                            reportContext={`profile ${name}`}
-                                        />
-                                    </div>
-                                </section>
-                            ) : null}
-
-                        </React.Fragment>
-                    ) : null}
-
-                    {activeTab === 'posts' ? (
-                        <section className={styles.section}>
-                            <ProfilePosts
-                                posts={profilePosts}
-                                username={profile.username || name}
-                                viewer={user}
-                                editable={isSelf}
-                                onChange={setProfilePosts}
-                                onLogin={login}
-                            />
-                        </section>
-                    ) : null}
-
-                    {activeTab === 'themes' ? (
-                        <section className={styles.section}>
-                            <SectionHeading icon={Palette} title={communityText('Published themes')} />
-                            {profileThemes === null ? (
-                                <StatusMessage compact>{communityText('Loading themes…')}</StatusMessage>
-                            ) : profileThemesError ? (
-                                <StatusMessage error onRetry={loadThemes}>{communityText('Could not load published themes.')}</StatusMessage>
-                            ) : profileThemes.length ? (
-                                <CardGrid>
-                                    {profileThemes.map(item => <ThemeCard key={item.id} theme={item} />)}
-                                </CardGrid>
-                            ) : (
-                                <EmptyState icon={Palette} title={communityText('No published themes yet')}>
-                                    {communityText('Themes this user publishes will appear here.')}
-                                </EmptyState>
-                            )}
-                        </section>
-                    ) : null}
+                        ) : null}
+                    </div>
 
                 </div>
                 <aside className={styles.profileRail}>

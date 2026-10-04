@@ -1,25 +1,42 @@
-import {describeCollabError, isRetryableCollabError} from '../../../src/lib/collaboration/describe-error.js';
+import {IntlProvider} from 'react-intl';
+import {
+    describeCollabError,
+    formatCollabError,
+    isRetryableCollabError
+} from '../../../src/lib/collaboration/describe-error.js';
 import AssetChannel, {ASSET_LINK_CLOSED} from '../../../src/lib/collaboration/assets.js';
 import Emitter from '../../../src/lib/collaboration/emitter.js';
 
+const {intl} = new IntlProvider({locale: 'en'}, {}).getChildContext();
+const format = (code, fallback, context) => formatCollabError(intl, code, fallback, context);
+
 describe('describeCollabError', () => {
     test('names the room and says what to do', () => {
-        expect(describeCollabError('ROOM_NOT_FOUND', 'raw', {roomId: 'cool-cat-001'}))
+        expect(format('ROOM_NOT_FOUND', 'raw', {roomId: 'cool-cat-001'}))
             .toBe('Nobody is hosting room "cool-cat-001" right now. ' +
                 'Check the code, or ask the host for a new invite link.');
-        expect(describeCollabError('ROOM_TAKEN', 'raw', {roomId: 'x'})).toMatch(/already in use\. Pick another/);
-        expect(describeCollabError('SERVER_UNREACHABLE')).toMatch(/collaboration server/);
+        expect(format('ROOM_NOT_FOUND')).toMatch(/^Nobody is hosting this room/);
+        expect(format('ROOM_TAKEN', 'raw', {roomId: 'x'})).toMatch(/already in use\. Pick another/);
+        expect(format('SERVER_UNREACHABLE')).toMatch(/collaboration server/);
     });
 
     test('a dial timeout reads differently for hosts and guests', () => {
-        expect(describeCollabError('DIAL_TIMEOUT', null, {hosting: true})).toMatch(/opening the room/);
-        expect(describeCollabError('DIAL_TIMEOUT', null, {hosting: false})).toMatch(/connect to the host/);
+        expect(format('DIAL_TIMEOUT', null, {hosting: true})).toMatch(/opening the room/);
+        expect(format('DIAL_TIMEOUT', null, {hosting: false})).toMatch(/connect to the host/);
     });
 
     test('unknown or missing codes keep the engine text', () => {
-        expect(describeCollabError(null, 'The host did not answer.')).toBe('The host did not answer.');
-        expect(describeCollabError('SOMETHING_NEW', 'Engine text')).toBe('Engine text');
-        expect(describeCollabError(null)).toMatch(/connection failed/);
+        expect(format(null, 'The host did not answer.')).toBe('The host did not answer.');
+        expect(format('SOMETHING_NEW', 'Engine text')).toBe('Engine text');
+        expect(format(null)).toMatch(/connection failed/);
+    });
+
+    test('known codes are translatable descriptors, engine text is passed through', () => {
+        expect(describeCollabError('ROOM_NOT_FOUND', 'raw', {roomId: 'r'})).toEqual({
+            message: expect.objectContaining({id: 'mw.collaboration.error.roomNotFound'}),
+            values: {roomId: 'r'}
+        });
+        expect(describeCollabError('SOMETHING_NEW', 'Engine text')).toEqual({text: 'Engine text'});
     });
 
     test('only failures that a retry can fix are retryable', () => {

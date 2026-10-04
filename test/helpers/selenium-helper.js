@@ -297,7 +297,9 @@ class SeleniumHelper {
                         async () => await this.driver.executeScript('return document.readyState;') === 'complete',
                         DEFAULT_TIMEOUT_MILLISECONDS
                     );
-                    await this.driver.executeScript(`window.onbeforeunload = undefined; ${DISABLE_NATIVE_FILE_PICKERS}`);
+                    await this.driver.executeScript(
+                        `window.onbeforeunload = undefined; ${DISABLE_NATIVE_FILE_PICKERS}`
+                    );
                 }
             }
             await this.driver.manage().window()
@@ -478,7 +480,9 @@ class SeleniumHelper {
         try {
             await this.setTitle(`openSettingsPage ${label}`);
             await this.clickXpath('//button[@data-mw-item="view"]');
-            await this.clickXpath(`//*[contains(@class,"modal-window")]//button[.//*[text()="${label}"] or text()="${label}"]`);
+            await this.clickXpath(
+                `//*[contains(@class,"modal-window")]//button[.//*[text()="${label}"] or text()="${label}"]`
+            );
         } catch (cause) {
             throw await enhanceError(outerError, cause, this.driver);
         }
@@ -508,7 +512,9 @@ class SeleniumHelper {
      * @returns {Promise<void>} A promise that resolves when the sound has been added.
      */
     async addSoundFromLibrary (search, name) {
-        const outerError = new Error(`addSoundFromLibrary failed with arguments:\n\tsearch: ${search}\n\tname: ${name}`);
+        const outerError = new Error(
+            `addSoundFromLibrary failed with arguments:\n\tsearch: ${search}\n\tname: ${name}`
+        );
         try {
             await this.clickXpath('//button[@aria-label="Add sound"]');
             const el = await this.findByXpath("//input[@placeholder='Search']");

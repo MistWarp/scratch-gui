@@ -24,6 +24,7 @@ import {closeProjectMetadataModal} from '../reducers/modals';
 import {getLoadedProjectMeta} from '../lib/mw-project-metadata';
 import {getPerks, getProject} from '../lib/community/api';
 import {getRememberedPlatformProject} from '../lib/community/publish';
+import {formatBytes} from '../lib/utils/bytes.js';
 
 import styles from '../components/mw-project-metadata/project-metadata-modal.css';
 
@@ -40,13 +41,6 @@ const formatTime = iso => {
     const date = new Date(iso);
     if (isNaN(date.getTime())) return String(iso);
     return date.toLocaleString();
-};
-
-const formatSize = bytes => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < MB) return `${(bytes / 1024).toFixed(2)} KB`;
-    if (bytes < 1024 * MB) return `${(bytes / MB).toFixed(2)} MB`;
-    return `${(bytes / (1024 * MB)).toFixed(2)} GB`;
 };
 
 const assetSize = asset => {
@@ -197,7 +191,7 @@ const Meter = ({current, label, limit, note}) => {
                     {note && <small>{note}</small>}
                 </span>
                 <span className={over ? styles.over : null}>
-                    {formatSize(current)} {' / '} {formatSize(limit)}
+                    {formatBytes(current)} {' / '} {formatBytes(limit)}
                 </span>
             </div>
             <div className={styles.meterTrack}>
@@ -273,8 +267,8 @@ const ProjectMetadataModal = ({initialView, onRequestClose, projectTitle, roturU
             'The saved project is within MistWarp’s storage limits.' :
             'MistWarp checks compressed project data when you upload.';
     const perkSummary = perks ?
-        `${formatSize(limits.assets)} of assets per project, ${formatSize(limits.asset)} per asset, ` +
-            `and ${formatSize(perks.mistwarp.storageBytes)} of storage for all your projects.` :
+        `${formatBytes(limits.assets)} of assets per project, ${formatBytes(limits.asset)} per asset, ` +
+            `and ${formatBytes(perks.mistwarp.storageBytes)} of storage for all your projects.` :
         '';
     const groups = [
         {
@@ -329,12 +323,12 @@ const ProjectMetadataModal = ({initialView, onRequestClose, projectTitle, roturU
                 <div className={styles.summary}>
                     <div>
                         <span>{'Editor estimate'}</span>
-                        <strong>{formatSize(report.localEstimate)}</strong>
+                        <strong>{formatBytes(report.localEstimate)}</strong>
                     </div>
                     <div>
                         <span>{'Stored on MistWarp'}</span>
                         <strong>
-                            {serverProject ? formatSize(serverProject.sizeBytes || 0) :
+                            {serverProject ? formatBytes(serverProject.sizeBytes || 0) :
                                 serverLoading ? 'Loading...' : 'Not uploaded'}
                         </strong>
                     </div>
@@ -344,18 +338,18 @@ const ProjectMetadataModal = ({initialView, onRequestClose, projectTitle, roturU
                         <Header>{'Server usage'}</Header>
                         <Row
                             label="Total stored"
-                            value={formatSize(serverProject.sizeBytes || 0)}
+                            value={formatBytes(serverProject.sizeBytes || 0)}
                         />
                         <Row
                             label="Project data"
                             value={typeof serverProject.storedJsonBytes === 'number' ?
-                                formatSize(serverProject.storedJsonBytes) :
+                                formatBytes(serverProject.storedJsonBytes) :
                                 null}
                         />
                         <Row
                             label="Assets"
                             value={typeof serverProject.assetBytes === 'number' ?
-                                formatSize(serverProject.assetBytes) :
+                                formatBytes(serverProject.assetBytes) :
                                 null}
                         />
                     </React.Fragment>
@@ -393,9 +387,9 @@ const ProjectMetadataModal = ({initialView, onRequestClose, projectTitle, roturU
                         'Fast lower-bound estimate from the VM'}
                 />
                 <p className={styles.detail}>
-                    {`Your current limits are ${formatSize(limits.storedJson)} of compressed project data, ` +
-                        `${formatSize(limits.expandedJson)} expanded, ${formatSize(limits.assets)} of assets, ` +
-                        `and ${formatSize(limits.asset)} per asset.`}
+                    {`Your current limits are ${formatBytes(limits.storedJson)} of compressed project data, ` +
+                        `${formatBytes(limits.expandedJson)} expanded, ${formatBytes(limits.assets)} of assets, ` +
+                        `and ${formatBytes(limits.asset)} per asset.`}
                 </p>
             </React.Fragment>
         );
@@ -444,7 +438,7 @@ const ProjectMetadataModal = ({initialView, onRequestClose, projectTitle, roturU
                         >
                             <div className={styles.breakdownLabel}>
                                 <span>{category.name}</span>
-                                <strong>{formatSize(category.size)}</strong>
+                                <strong>{formatBytes(category.size)}</strong>
                             </div>
                             <div className={styles.bar}>
                                 <div
@@ -466,7 +460,7 @@ const ProjectMetadataModal = ({initialView, onRequestClose, projectTitle, roturU
                                 <strong>{entry.label}</strong>
                                 <small>{entry.category}</small>
                             </span>
-                            <strong>{formatSize(entry.size)}</strong>
+                            <strong>{formatBytes(entry.size)}</strong>
                         </div>
                     ))}
                 </div>
@@ -586,7 +580,7 @@ ProjectMetadataModal.propTypes = {
     vm: PropTypes.instanceOf(VM).isRequired
 };
 
-export {buildSizeReport, formatSize, LIMITS};
+export {buildSizeReport, LIMITS};
 export default connect(
     state => ({
         initialView: state.scratchGui.modals.projectMetadataView || 'project',

@@ -7,12 +7,18 @@ jest.mock('../../src/lib/find-bar/api', () => ({getCodeSearch: jest.fn(), setFin
 let controller;
 const makeController = blocks => {
     const target = {blocks: {_blocks: blocks}, variables: {}};
-    const vm = {on: jest.fn(), removeListener: jest.fn(), runtime: {
-        getTargetForStage: () => target, getBlocksJSON: () => []
-    }};
-    const result = new FindBarController({ScratchBlocks: {Msg: {}}, vm,
-        utils: {getEditingTarget: () => target, scrollBlockIntoView: jest.fn()}, msg: x => x, msgAny: x => x,
-        activeTabIndexRef: {current: 0}, isPlayerOnlyRef: {current: false}});
+    const vm = {on: jest.fn(),
+        removeListener: jest.fn(),
+        runtime: {
+            getTargetForStage: () => target, getBlocksJSON: () => []
+        }};
+    const result = new FindBarController({ScratchBlocks: {Msg: {}},
+        vm,
+        utils: {getEditingTarget: () => target, scrollBlockIntoView: jest.fn()},
+        msg: x => x,
+        msgAny: x => x,
+        activeTabIndexRef: {current: 0},
+        isPlayerOnlyRef: {current: false}});
     result.findInput = document.createElement('input');
     result.dropdownOut = document.createElement('div');
     result.dropdownOut.appendChild(result.dropdown.createDom());
@@ -28,7 +34,9 @@ afterEach(() => {
 test('large searches filter data before rendering and retain all result pages', () => {
     const blocks = {};
     for (let i = 0; i < 5000; i++) {
-        blocks[i] = {id: String(i), opcode: 'looks_say', inputs: {},
+        blocks[i] = {id: String(i),
+            opcode: 'looks_say',
+            inputs: {},
             fields: {TEXT: {value: `token ${i}`}}};
     }
     controller = makeController(blocks);
@@ -69,7 +77,10 @@ test('clearing search cancels pending input and the same query can be searched a
 
 test('old code-search results cannot reopen a cleared search', async () => {
     let resolve;
-    getCodeSearch.mockReturnValue({search: jest.fn(), searchAll: () => new Promise(r => { resolve = r; })});
+    getCodeSearch.mockReturnValue({search: jest.fn(),
+        searchAll: () => new Promise(r => {
+            resolve = r;
+        })});
     controller = makeController({});
     controller.findInput.value = 'query';
     controller.inputChange();

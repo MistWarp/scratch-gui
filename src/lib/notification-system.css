@@ -1,0 +1,125 @@
+.notification {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 300px;
+    max-width: 400px;
+    padding: 12px 8px 12px 20px;
+    border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+    border-radius: 12px;
+    background: var(--ui-modal-background, #ffffff);
+    color: var(--text-primary, #2d3748);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    font-family: inherit;
+    font-size: 13px;
+    overflow-wrap: break-word;
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .notification {
+        transform: none;
+        transition: opacity 0.15s linear;
+    }
+}
+
+.icon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+}
+
+.info .icon {
+    color: var(--status-info, #4c97ff);
+}
+
+.success .icon {
+    color: var(--status-success, #2f9e5b);
+}
+
+.warning .icon {
+    color: var(--status-warning, #d98324);
+}
+
+.error .icon {
+    color: var(--status-danger, #d94747);
+}
+
+.body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.message {
+    line-height: 1.4;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.action {
+    padding: 4px 10px;
+    border: 1px solid var(--ui-black-transparent, rgba(0, 0, 0, 0.15));
+    border-radius: 8px;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.action:first-child {
+    border-color: transparent;
+    background: var(--looks-secondary, #855cd6);
+    color: #ffffff;
+}
+
+.action:hover {
+    filter: brightness(1.1);
+}
+
+.close {
+    display: flex;
+    flex-shrink: 0;
+    align-self: flex-start;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background: none;
+    color: inherit;
+    opacity: 0.65;
+    cursor: pointer;
+}
+
+.close:hover {
+    opacity: 1;
+    background: var(--ui-black-transparent, rgba(0, 0, 0, 0.1));
+}
+
+.action:focus-visible,
+.close:focus-visible {
+    outline: 2px solid var(--looks-secondary, #855cd6);
+    outline-offset: 2px;
+    opacity: 1;
+}

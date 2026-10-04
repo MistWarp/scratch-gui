@@ -24,7 +24,8 @@ import {
 import CollaborationService from '../../lib/collaboration/index.js';
 import {avatarForCollabUser} from '../../lib/collaboration/avatar.js';
 import describeActivity from '../../lib/collaboration/describe-activity.js';
-import {describeCollabError} from '../../lib/collaboration/describe-error.js';
+import {formatCollabError} from '../../lib/collaboration/describe-error.js';
+import copyText from '../../lib/utils/copy-text.js';
 
 import styles from './collaboration-modal.css';
 
@@ -128,6 +129,22 @@ const messages = defineMessages({
         defaultMessage: 'Remove {name}',
         description: 'Accessible label of the button removing a named collaborator from the room',
         id: 'mw.collaboration.removeUser'
+    },
+    kickConfirmTitle: {
+        defaultMessage: 'Remove {name}?',
+        description: 'Title of the dialog confirming that the host wants to remove a named collaborator',
+        id: 'mw.collaboration.kickConfirmTitle'
+    },
+    kickConfirmMessage: {
+        // eslint-disable-next-line max-len
+        defaultMessage: '{name} will leave the live session and cannot rejoin for 10 minutes. They keep their own copy of the project.',
+        description: 'Message of the dialog confirming that the host wants to remove a named collaborator',
+        id: 'mw.collaboration.kickConfirmMessage'
+    },
+    kickConfirmButton: {
+        defaultMessage: 'Remove',
+        description: 'Button confirming that the host wants to remove a collaborator from the live session',
+        id: 'mw.collaboration.kickConfirmButton'
     },
     denyUser: {
         defaultMessage: 'Deny {name}',
@@ -247,7 +264,6 @@ class CollaborationModal extends Component {
         this.handleSelectInviteWatch = this.handleSelectInviteWatch.bind(this);
         this.handleSelectInviteEdit = this.handleSelectInviteEdit.bind(this);
         this.handleInviteRoleKeyDown = this.handleInviteRoleKeyDown.bind(this);
-        this.fallbackCopyToClipboard = this.fallbackCopyToClipboard.bind(this);
         this.showUrlPrompt = this.showUrlPrompt.bind(this);
         this.generateRoomCode = this.generateRoomCode.bind(this);
         this.attemptAutoJoin = this.attemptAutoJoin.bind(this);
@@ -407,7 +423,7 @@ class CollaborationModal extends Component {
                 return;
             }
             this.setState({
-                error: describeCollabError(error.collabCode, error.message || 'Failed to join room', {roomId}),
+                error: formatCollabError(this.props.intl, error.collabCode, error.message, {roomId}),
                 isConnecting: false,
                 connectionStep: 'join'
             });
@@ -495,8 +511,16 @@ class CollaborationModal extends Component {
         this.confirmEndForEveryone(ending, project.onLeave);
     }
 
-    handleKickUser (userId) {
-        this.props.onKickUser(userId);
+    handleKickUser (user) {
+        const {intl} = this.props;
+        this.props.openSimpleDialog({
+            type: 'confirm',
+            title: intl.formatMessage(messages.kickConfirmTitle, {name: user.username}),
+            message: intl.formatMessage(messages.kickConfirmMessage, {name: user.username}),
+            choices: [{value: 'kick', label: intl.formatMessage(messages.kickConfirmButton)}],
+            onOk: () => this.props.onKickUser(user.id),
+            onCancel: () => {}
+        });
     }
 
     handleChangeUserRole (userId, role) {
@@ -507,17 +531,13 @@ class CollaborationModal extends Component {
         const inviteLink = this.props.inviteLink;
         if (!inviteLink) return;
 
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(inviteLink).then(() => {
-                this.props.onShowToast(this.props.intl.formatMessage(messages.inviteLinkCopied), 'success');
-            })
-                .catch(err => {
-                    console.error('Failed to copy invite link:', err);
-                    this.fallbackCopyToClipboard(inviteLink);
-                });
-        } else {
-            this.fallbackCopyToClipboard(inviteLink);
-        }
+        copyText(inviteLink).then(() => {
+            this.props.onShowToast(this.props.intl.formatMessage(messages.inviteLinkCopied), 'success');
+        })
+            .catch(err => {
+                console.error('Failed to copy invite link:', err);
+                this.showUrlPrompt(inviteLink);
+            });
     }
 
     handleInviteLinkFocus (event) {
@@ -547,32 +567,6 @@ class CollaborationModal extends Component {
         const group = event.currentTarget;
         const target = group.querySelector(`[data-role="${next}"]`);
         if (target) target.focus();
-    }
-
-    fallbackCopyToClipboard (text) {
-        const textArea = document.createElement('textarea');
-        textArea.value = text;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        textArea.style.top = '-999999px';
-        document.body.appendChild(textArea);
-
-        try {
-            textArea.focus();
-            textArea.select();
-            const successful = document.execCommand('copy');
-            if (successful) {
-                this.props.onShowToast(this.props.intl.formatMessage(messages.inviteLinkCopied), 'success');
-            } else {
-                console.warn('Fallback copy failed');
-                this.showUrlPrompt(text);
-            }
-        } catch (err) {
-            console.error('Fallback copy failed:', err);
-            this.showUrlPrompt(text);
-        } finally {
-            document.body.removeChild(textArea);
-        }
     }
 
     showUrlPrompt (text) {
@@ -624,8 +618,7 @@ class CollaborationModal extends Component {
             }
             this.setState({
                 roomId: roomCode,
-                error: describeCollabError(error.collabCode, error.message || 'Failed to join room',
-                    {roomId: roomCode}),
+                error: formatCollabError(this.props.intl, error.collabCode, error.message, {roomId: roomCode}),
                 isConnecting: false,
                 connectionStep: 'join'
             });
@@ -649,7 +642,7 @@ class CollaborationModal extends Component {
                 return;
             }
             this.setState({
-                error: describeCollabError(error.collabCode, error.message || 'Failed to connect',
+                error: formatCollabError(this.props.intl, error.collabCode, error.message,
                     {roomId: this.state.roomId.trim()}),
                 isConnecting: false,
                 connectionStep: 'join'
@@ -1157,7 +1150,7 @@ class CollaborationModal extends Component {
                         <Button
                             className={styles.kickButton}
                             aria-label={intl.formatMessage(messages.removeUser, {name: user.username})}
-                            onClick={this.handleKickUser.bind(this, user.id)}
+                            onClick={this.handleKickUser.bind(this, user)}
                             iconElem={UserMinus}
                             iconClassName={styles.kickIcon}
                         >

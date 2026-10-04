@@ -1,0 +1,31 @@
+#!/bin/sh
+# Fast checks on staged files. Turn on with `pnpm run hooks:install`, skip once with
+# `git commit --no-verify`. CI still runs the full `pnpm check`.
+set -e
+
+root=$(git rev-parse --show-toplevel)
+cd "$root"
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -n "$staged" ] || exit 0
+
+# ESLint on the staged JavaScript files. .eslintignore still applies.
+scripts=$(printf '%s\n' "$staged" | grep -E '\.(js|jsx|mjs|cjs)$' || true)
+if [ -n "$scripts" ]; then
+    echo "pre-commit: eslint"
+    # File names come from git, one per line; IFS keeps names with spaces whole.
+    old_ifs=$IFS
+    IFS='
+'
+    # shellcheck disable=SC2086
+    node node_modules/eslint/bin/eslint.js --no-error-on-unmatched-pattern $scripts
+    IFS=$old_ifs
+fi
+
+# Message extraction checks when source changed. They read files, not the network.
+if printf '%s\n' "$staged" | grep -q '^src/'; then
+    echo "pre-commit: i18n checks"
+    node scripts/editor-default-messages.mjs --check
+    node scripts/community-extract.mjs --check
+    node scripts/community-translations.mjs check
+fi
