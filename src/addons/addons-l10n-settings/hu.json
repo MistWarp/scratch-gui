@@ -308,8 +308,6 @@
   "editor-comment-previews/@settings-select-delay-long": "Hosszú",
   "editor-comment-previews/@settings-select-delay-none": "Nincs",
   "editor-comment-previews/@settings-select-delay-short": "Rövid",
-  "columns/@description": "Felosztja a blokk kategória menüt két oszlopra és a blokkválasztó tetejére helyezi, mint a Scratch 2.0-ban.",
-  "columns/@name": "Két oszlopos kategória menü",
   "number-pad/@description": "Megjeleníti számbemenetek szerkesztése közben a Scratch virtuális egérbillentyűzetét minden eszközön ahelyett, hogy csak az érintőképernyősökön.",
   "number-pad/@info-explanation": "Egy számbillentyűzet fog felugrani a számbemenetek szerkesztésénél, mint amilyen a \"menj () lépést\" blokknál is található.",
   "number-pad/@name": "Mindig mutass számbillentyűzetet",

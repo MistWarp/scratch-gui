@@ -462,6 +462,65 @@ $fade-out-distance: 15px;
     margin-top: 0;
 }
 
+.palette-button-label {
+    display: none;
+}
+
+/* Two-column category menu: the footer becomes an add extension bar between the categories and the flyout. */
+:global(body.mw-two-column-categories) .palette-footer {
+    top: calc(var(--mw-two-column-flyout-top, 0px) - 2rem);
+    bottom: auto;
+    left: 0.25rem;
+    width: calc(var(--mw-two-column-palette-width, 310px) - 0.5rem);
+    flex-direction: row;
+    border: none;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+:global(body.mw-two-column-categories) [dir="rtl"] .palette-footer {
+    left: auto;
+    right: 0.25rem;
+}
+
+:global(body.mw-two-column-categories) .palette-footer:before {
+    display: none;
+}
+
+:global(body.mw-two-column-categories) .palette-button {
+    flex: 1;
+    gap: 0.375rem;
+    height: 1.75rem;
+    min-height: 0;
+}
+
+:global(body.mw-two-column-categories) .palette-search-button {
+    flex: 0 0 2.5rem;
+    border-bottom: none;
+    border-inline-end: 1px solid $ui-black-transparent;
+}
+
+:global(body.mw-two-column-categories) .palette-button-label {
+    display: inline;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+:global(body.mw-two-column-categories) .extension-button-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+/* Keep the hide-flyout addon lined up with the wider flyout. */
+:global(body.mw-two-column-categories) [class*="gui_tabs_"] {
+    --sa-flyout-width: var(--mw-two-column-palette-width, 310px);
+    --sa-category-width: 0px;
+}
+
+:global(body.mw-two-column-categories .sa-flyout-placeHolder) {
+    top: var(--mw-two-column-flyout-top, 0px);
+}
+
 /* Sprite Selection Watermark */
 .watermark {
     position: absolute;

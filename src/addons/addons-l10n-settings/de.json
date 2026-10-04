@@ -353,8 +353,6 @@
   "editor-comment-previews/@settings-select-delay-long": "Lang",
   "editor-comment-previews/@settings-select-delay-none": "Keine",
   "editor-comment-previews/@settings-select-delay-short": "Kurz",
-  "columns/@description": "Trennt das Blockkategorienmenü in zwei Spalten und verschiebt es über die Blockpalette, wie in Scratch 2.0.",
-  "columns/@name": "Zweispaltiges Kategorienmenü",
   "number-pad/@description": "Zeigt Scratchs virtuelles Zahlenpad, das bei der Eingabe in Zahlenfeldern auf Touchscreen-Geräten geöffnet wird, auf allen Geräten an.",
   "number-pad/@info-explanation": "Die Zifferntastatur wird beim Bearbeiten von Zahlenfeldern auf bestimmten Blöcken wie \"gehe ()er Schritt\" angezeigt.",
   "number-pad/@name": "Zifferntastatur immer anzeigen",

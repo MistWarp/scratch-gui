@@ -85,7 +85,7 @@ const installCategoryDrag = (workspace, options = {}) => {
         !workspace.options.readOnly &&
         !toolbox.horizontalLayout_ &&
         toolbox.categoryMenu_ &&
-        !toolbox.categoryMenu_.secondTable
+        !toolbox.categoryMenu_.extensionTable
     );
 
     const clearPending = () => {

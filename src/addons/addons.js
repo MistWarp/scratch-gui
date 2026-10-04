@@ -56,7 +56,6 @@ const addons = [
     'rename-broadcasts',
     'swap-local-global',
     'editor-comment-previews',
-    'columns',
     'number-pad',
     'editor-number-arrow-keys',
     'script-snap',

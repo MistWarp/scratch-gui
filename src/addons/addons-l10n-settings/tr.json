@@ -349,8 +349,6 @@
   "editor-comment-previews/@settings-select-delay-long": "Uzun",
   "editor-comment-previews/@settings-select-delay-none": "Yok",
   "editor-comment-previews/@settings-select-delay-short": "Kısa",
-  "columns/@description": "Blok kategorisi menüsünü iki sütuna böler ve Scratch 2.0'daki gibi blok paletini en üstüne taşır.",
-  "columns/@name": "İki sütunlu kategori menüsü",
   "number-pad/@description": "Yalnızca dokunmatik ekranlı cihazlar yerine tüm cihazlarda bloklardaki sayı alanlarını düzenlerken Scratch'in sanal sayısal tuş takımını gösterir.",
   "number-pad/@info-explanation": "\"() adım git\" gibi bloklardaki sayı girişlerini düzenlerken bir sayısal tuş takımı gösterir.",
   "number-pad/@name": "Sayısal tuş takımını her zaman göster",

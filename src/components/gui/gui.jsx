@@ -1282,6 +1282,9 @@ const GUIComponent = props => {
                                                         className={styles.extensionButtonIcon}
                                                         draggable={false}
                                                     />
+                                                    <span className={styles.paletteButtonLabel}>
+                                                        {intl.formatMessage(messages.addExtension)}
+                                                    </span>
                                                 </button>
                                             </Box>
                                             <Box className={styles.watermark}>

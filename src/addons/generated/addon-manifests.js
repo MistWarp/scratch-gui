@@ -51,7 +51,6 @@ import _block_duplicate from "../addons/block-duplicate/_manifest_entry.js";
 import _rename_broadcasts from "../addons/rename-broadcasts/_manifest_entry.js";
 import _swap_local_global from "../addons/swap-local-global/_manifest_entry.js";
 import _editor_comment_previews from "../addons/editor-comment-previews/_manifest_entry.js";
-import _columns from "../addons/columns/_manifest_entry.js";
 import _number_pad from "../addons/number-pad/_manifest_entry.js";
 import _editor_number_arrow_keys from "../addons/editor-number-arrow-keys/_manifest_entry.js";
 import _script_snap from "../addons/script-snap/_manifest_entry.js";
@@ -113,7 +112,6 @@ export default {
   "rename-broadcasts": _rename_broadcasts,
   "swap-local-global": _swap_local_global,
   "editor-comment-previews": _editor_comment_previews,
-  "columns": _columns,
   "number-pad": _number_pad,
   "editor-number-arrow-keys": _editor_number_arrow_keys,
   "script-snap": _script_snap,
