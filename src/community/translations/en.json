@@ -2638,5 +2638,7 @@
   "Invited judges score each entry from 1 to 10 against your criteria.": "Invited judges score each entry from 1 to 10 against your criteria.",
   "Anyone signed in rates entries from 1 to 5 stars. The highest average wins. No judges needed.": "Anyone signed in rates entries from 1 to 5 stars. The highest average wins. No judges needed.",
   "Publishing reveals the ranking by average audience rating on the public challenge page.": "Publishing reveals the ranking by average audience rating on the public challenge page.",
-  "{value1} of {value2} entries rated": "{value1} of {value2} entries rated"
+  "{value1} of {value2} entries rated": "{value1} of {value2} entries rated",
+  "No ratings": "No ratings",
+  "Score every criterion to save.": "Score every criterion to save."
 }

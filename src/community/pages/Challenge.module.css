@@ -513,12 +513,11 @@
 
 .starMine {
     position: absolute;
+    right: 2px;
     bottom: -5px;
-    left: 50%;
-    width: 4px;
-    height: 4px;
-    margin-left: -2px;
-    border-radius: 50%;
+    left: 2px;
+    height: 2px;
+    border-radius: 1px;
     background: var(--accent-strong);
 }
 
@@ -634,11 +633,21 @@
     object-fit: cover;
 }
 
-.queueFallback {
+.queueFallback,
+.judgeFallback {
+    max-width: 100%;
+    padding: 0 4px;
+    overflow: hidden;
     color: var(--accent);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-2xs);
     font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     opacity: 0.6;
+}
+
+.judgeFallback {
+    font-size: var(--fs-2xl);
 }
 
 .queueText {
@@ -920,6 +929,10 @@
 .resultList small {
     color: var(--text-faint);
     font-size: var(--fs-2xs);
+}
+
+.resultList li > strong small {
+    margin-inline-start: 4px;
 }
 
 @media (max-width: 860px) {

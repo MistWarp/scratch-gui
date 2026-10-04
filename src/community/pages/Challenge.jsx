@@ -154,10 +154,12 @@ const StarRating = ({average, count, myVote, interactive, busy, title, onRate}) 
             ) : (
                 <div className={styles.stars} role="img" aria-label={label}>{STAR_VALUES.map(value => <span key={value}>{star(value)}</span>)}</div>
             )}
-            <span className={styles.ratingMeta}>
-                <strong>{count ? challengeRating(average).toFixed(1) : '–'}</strong>
-                <small>{communityText('({value1})', {value1: count || 0})}</small>
-            </span>
+            {count ? (
+                <span className={styles.ratingMeta}>
+                    <strong>{challengeRating(average).toFixed(1)}</strong>
+                    <small>{communityText('({value1})', {value1: count})}</small>
+                </span>
+            ) : <span className={styles.ratingMeta}><small>{communityText('No ratings')}</small></span>}
         </div>
     );
 };
@@ -350,7 +352,7 @@ const JudgingWorkspace = ({challengeId, projects, criteria, load}) => {
                 >
                     <header className={styles.judgeEntry}>
                         <Link to={projectUrl(selected)} target="_blank" rel="noopener noreferrer" className={styles.judgeThumb} aria-label={communityText('Open {value1}', {value1: selected.title})}>
-                            <ProjectThumbnail project={selected} fallbackClassName={styles.queueFallback} />
+                            <ProjectThumbnail project={selected} fallbackClassName={styles.judgeFallback} />
                         </Link>
                         <div className={styles.judgeEntryText}>
                             <h3>{selected.title}</h3>
@@ -381,7 +383,7 @@ const JudgingWorkspace = ({challengeId, projects, criteria, load}) => {
                         </label>
                     </fieldset>
                     <footer className={styles.judgeActions}>
-                        <span className={styles.judgeTotal}><strong>{ready ? weighted.toFixed(1) : '–'}</strong><small>{communityText('/ 10 overall')}</small></span>
+                        {ready ? <span className={styles.judgeTotal}><strong>{weighted.toFixed(1)}</strong><small>{communityText('/ 10 overall')}</small></span> : <span className={styles.judgeTotal}><small>{communityText('Score every criterion to save.')}</small></span>}
                         {message.text ? <span className={message.error ? styles.judgeMessageError : styles.judgeMessage} role={message.error ? 'alert' : 'status'}>{message.text}</span> : null}
                         <div className={styles.judgeButtons}>
                             {remainingAfter ? <Button disabled={!ready || saving} onClick={() => save(false)}>{communityText('Save')}</Button> : null}
@@ -657,7 +659,7 @@ const Challenge = ({id, space, user, login, load}) => {
                 {tab === 'results' ? (
                     <section>
                         <SectionHeading icon={Medal} title={communityText('Final results')} lead={audienceJudged ? communityText('Ranked by average audience rating. Ties go to the entry with more ratings.') : communityText('Ranked by the judges using the criteria shown on the overview.')} />
-                        {space.projects.length ? <ol className={styles.resultList}>{space.projects.map(project => <li key={project.id}><span className={project.place <= 3 ? styles.resultPlaceWinner : styles.resultPlace}>{project.place ? `#${project.place}` : '-'}</span><div><Link to={`/project/${project.id}`}>{project.title}</Link><span>{communityText('by')}{' '}<UserLink username={project.owner}>{project.owner}</UserLink></span></div>{audienceJudged ? <strong>{challengeScore(project.audienceScore)}<small>{communityText('/ 5 · {value1} ratings', {value1: project.audienceVoteCount || 0})}</small></strong> : <strong>{challengeScore(project.judgeScore)}<small>{communityText('/ 10')}</small></strong>}</li>)}</ol> : <EmptyState compact icon={Medal} title={communityText('No results')}>{communityText('This challenge did not receive any submissions.')}</EmptyState>}
+                        {space.projects.length ? <ol className={styles.resultList}>{space.projects.map(project => <li key={project.id}><span className={project.place <= 3 ? styles.resultPlaceWinner : styles.resultPlace}>{project.place ? `#${project.place}` : '-'}</span><div><Link to={`/project/${project.id}`}>{project.title}</Link><span>{communityText('by')}{' '}<UserLink username={project.owner}>{project.owner}</UserLink></span></div>{audienceJudged ? (project.audienceVoteCount ? <strong>{challengeScore(project.audienceScore)}<small>{communityText('/ 5 · {value1} ratings', {value1: project.audienceVoteCount})}</small></strong> : <small>{communityText('No ratings')}</small>) : <strong>{challengeScore(project.judgeScore)}<small>{communityText('/ 10')}</small></strong>}</li>)}</ol> : <EmptyState compact icon={Medal} title={communityText('No results')}>{communityText('This challenge did not receive any submissions.')}</EmptyState>}
                     </section>
                 ) : null}
                 {tab === 'judging' ? (
