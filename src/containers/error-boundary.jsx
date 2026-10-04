@@ -4,6 +4,7 @@ import CrashMessageComponent from '../components/crash-message/crash-message.jsx
 import log from '../lib/utils/log.js';
 import {reportSiteError} from '../lib/error-reporter.js';
 import downloadBlob from '../lib/utils/download-blob.js';
+import {projectFilename} from '../lib/utils/safe-filename.js';
 
 // The VM usually survives a rendering crash, so the project can still be saved.
 const getRecoverableVm = () => {
@@ -15,9 +16,15 @@ const getRecoverableVm = () => {
     return null;
 };
 
+/**
+ * Catches render errors below it. By default it shows the editor crash screen.
+ * Pass `renderFallback({error, reset})` to render your own fallback instead
+ * (e.g. a small panel or a community page); call `reset()` to try rendering
+ * the children again. Changing `resetKey` also resets it.
+ */
 class ErrorBoundary extends React.Component {
-    constructor (props) {
-        super(props);
+    constructor (props, context) {
+        super(props, context);
         this.state = {
             error: null,
             errorInfo: null,
@@ -25,6 +32,7 @@ class ErrorBoundary extends React.Component {
             resetKey: props.resetKey
         };
         this.handleDownloadProject = this.handleDownloadProject.bind(this);
+        this.handleReset = this.handleReset.bind(this);
     }
 
     static getDerivedStateFromProps (props, state) {
@@ -82,6 +90,26 @@ class ErrorBoundary extends React.Component {
         window.location.reload();
     }
 
+    handleReset () {
+        this.setState({
+            error: null,
+            errorInfo: null,
+            downloadState: null
+        });
+    }
+
+    // The editor's project title, rather than document.title which carries the app name.
+    getProjectTitle () {
+        try {
+            const store = this.context && this.context.store;
+            const state = store && store.getState();
+            const title = state && state.scratchGui && state.scratchGui.projectTitle;
+            return typeof title === 'string' ? title : '';
+        } catch (e) {
+            return '';
+        }
+    }
+
     handleDownloadProject () {
         const vm = getRecoverableVm();
         if (!vm || this.state.downloadState === 'saving') return;
@@ -89,8 +117,9 @@ class ErrorBoundary extends React.Component {
         Promise.resolve()
             .then(() => vm.saveProjectSb3())
             .then(blob => {
-                const title = (typeof document === 'undefined' ? '' : document.title) || 'Project';
-                downloadBlob(`${title.replace(/[\\/:*?"<>|]+/g, '').trim() || 'Project'}.sb3`, blob);
+                // .sb3 rather than .mwp: building a .mwp needs the project history code,
+                // which may be what crashed, and every Scratch editor can open an .sb3.
+                downloadBlob(projectFilename(this.getProjectTitle(), 'Project', 'sb3'), blob);
                 this.setState({downloadState: 'saved'});
             })
             .catch(downloadError => {
@@ -123,6 +152,9 @@ class ErrorBoundary extends React.Component {
     }
 
     render () {
+        if (this.state.error && this.props.renderFallback) {
+            return this.props.renderFallback({error: this.state.error, reset: this.handleReset});
+        }
         if (this.state.error) {
             return (
                 <CrashMessageComponent
@@ -140,7 +172,14 @@ class ErrorBoundary extends React.Component {
 ErrorBoundary.propTypes = {
     action: PropTypes.string.isRequired, // Used for defining tracking action
     children: PropTypes.node,
+    renderFallback: PropTypes.func,
     resetKey: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+};
+
+// react-redux 5 passes the store through legacy context; optional because the
+// community site renders this outside the editor.
+ErrorBoundary.contextTypes = {
+    store: PropTypes.object
 };
 
 export default ErrorBoundary;

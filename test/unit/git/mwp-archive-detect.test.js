@@ -28,10 +28,21 @@ const bytes = blob => new Promise((resolve, reject) => {
 });
 const projectJson = JSON.stringify({
     targets: [{
-        isStage: true, name: 'Stage', variables: {score: ['score', 7]}, lists: {}, broadcasts: {},
-        blocks: {}, comments: {}, currentCostume: 0, costumes: [], sounds: [], volume: 100
+        isStage: true,
+        name: 'Stage',
+        variables: {score: ['score', 7]},
+        lists: {},
+        broadcasts: {},
+        blocks: {},
+        comments: {},
+        currentCostume: 0,
+        costumes: [],
+        sounds: [],
+        volume: 100
     }],
-    monitors: [], extensions: [], meta: {semver: '3.0.0', vm: '0.2.0', agent: 'test'}
+    monitors: [],
+    extensions: [],
+    meta: {semver: '3.0.0', vm: '0.2.0', agent: 'test'}
 });
 
 beforeEach(() => deleteRepo());

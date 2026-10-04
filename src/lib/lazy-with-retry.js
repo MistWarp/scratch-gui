@@ -1,4 +1,4 @@
-import {lazy} from 'react';
+import React, {lazy} from 'react';
 import {BUILD_ID} from './build-version';
 
 export const isChunkLoadError = error => Boolean(error && (
@@ -22,6 +22,22 @@ export const importWithRetry = async load => {
 };
 
 export default load => lazy(() => importWithRetry(load));
+
+// React.lazy remembers a failed import forever, so an error boundary's "Try again" would rethrow it.
+// This variant starts a fresh import the next time it renders after a failure, and never reloads the page.
+export const retryableLazy = load => {
+    let Lazy = null;
+    const createLazy = () => lazy(() => importWithRetry(load).catch(error => {
+        Lazy = createLazy();
+        throw error;
+    }));
+    Lazy = createLazy();
+    const RetryableLazy = props => React.createElement(Lazy, props);
+    RetryableLazy.preload = () => importWithRetry(load).catch(() => {
+        // Rendering retries the import and reports the error.
+    });
+    return RetryableLazy;
+};
 
 // Community page navigation can recover from assets removed by a deployment.
 // Do not use this for editor imports, where a reload could discard project edits.

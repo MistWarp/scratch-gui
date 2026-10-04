@@ -19,6 +19,7 @@ import AddonWindow from '../../addons/window-system/window.jsx';
 import Button from '../button/button.jsx';
 import downloadBlob from '../../lib/utils/download-blob.js';
 import {projectFilename} from '../../lib/utils/safe-filename.js';
+import {formatBytes} from '../../lib/utils/bytes.js';
 import styles from './media-recorder.css';
 
 const MIME_TYPES = [
@@ -26,11 +27,6 @@ const MIME_TYPES = [
     'video/webm',
     'video/mp4'
 ];
-
-const formatBytes = bytes => {
-    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-};
 
 class MediaRecorderButton extends React.Component {
     constructor (props) {

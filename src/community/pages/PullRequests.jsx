@@ -33,7 +33,7 @@ const PullRequests = () => {
             const loadedProject = projectData.project || projectData;
             setProject(loadedProject);
             setPulls(pullData.pulls || []);
-            setPageMeta({title: `Pull requests · ${loadedProject.title}`});
+            setPageMeta({title: communityText('Pull requests · {value1}', {value1: loadedProject.title})});
         } catch (loadError) {
             setError(loadError.message || communityText('Could not load pull requests.'));
         }

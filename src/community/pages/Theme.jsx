@@ -16,6 +16,7 @@ import {useUser} from '../UserContext.jsx';
 import {CustomTheme, customThemeManager} from '../../lib/themes/custom-themes.js';
 import {applyTheme} from '../../lib/themes/themePersistance.js';
 import {sameUser} from '../format.js';
+import setPageMeta from '../page-meta.js';
 import styles from './Theme.module.css';
 
 const savedThemeMatches = (localTheme, remoteTheme) => {
@@ -112,6 +113,10 @@ const Theme = () => {
             active = false;
         };
     }, [id, user?.username]);
+
+    useEffect(() => {
+        if (theme) setPageMeta({title: theme.name || communityText('Theme'), description: theme.description});
+    }, [communityText, theme]);
 
     const run = async (actionName, action) => {
         if (actionInFlight.current) return;

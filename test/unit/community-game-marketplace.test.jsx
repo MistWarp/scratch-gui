@@ -18,7 +18,10 @@ const loadModal = async (product, onResult = jest.fn()) => {
     api.gameProducts.mockResolvedValue({products: [product]});
     let wrapper;
     await act(async () => {
-        wrapper = mount(<GameMarketplaceModal projectId="project-1" onResult={onResult} />);
+        wrapper = mount(<GameMarketplaceModal
+            projectId="project-1"
+            onResult={onResult}
+        />);
         await Promise.resolve();
     });
     wrapper.update();
@@ -80,7 +83,8 @@ describe('game marketplace purchases', () => {
         });
         wrapper.update();
 
-        wrapper.find('button').filterWhere(button => button.text() === 'Block this project').simulate('click');
+        wrapper.find('button').filterWhere(button => button.text() === 'Block this project')
+            .simulate('click');
         expect(onBlockProject).toHaveBeenCalledTimes(1);
         wrapper.unmount();
     });
@@ -94,7 +98,10 @@ describe('game marketplace purchases', () => {
             }));
         let wrapper;
         await act(async () => {
-            wrapper = mount(<GameMarketplaceModal projectId="project-1" onResult={jest.fn()} />);
+            wrapper = mount(<GameMarketplaceModal
+                projectId="project-1"
+                onResult={jest.fn()}
+            />);
             await Promise.resolve();
         });
         wrapper.update();
@@ -138,7 +145,8 @@ describe('game marketplace purchases', () => {
         expect(wrapper.text()).toContain('Would you like to buy VIP for 10 credits?');
         expect(api.gameProducts).not.toHaveBeenCalled();
 
-        await wrapper.find('Button').first().prop('onClick')();
+        await wrapper.find('Button').first()
+            .prop('onClick')();
 
         expect(vm.grantProduct).toHaveBeenCalledWith('vip', 'tester');
         expect(buyGameProduct).not.toHaveBeenCalled();
@@ -170,7 +178,8 @@ describe('game marketplace purchases', () => {
         wrapper.update();
         expect(wrapper.text()).toContain('Already owned');
 
-        await wrapper.find('Button').first().prop('onClick')();
+        await wrapper.find('Button').first()
+            .prop('onClick')();
 
         expect(vm.grantProduct).not.toHaveBeenCalled();
         expect(onResult).toHaveBeenCalledWith({status: 'owned', product: expect.objectContaining({id: 'vip'})});
@@ -186,7 +195,10 @@ describe('game marketplace purchases', () => {
         const Host = () => {
             const [open, setOpen] = useState(true);
             return open ? (
-                <GameMarketplaceModal projectId="project-1" onResult={() => setOpen(false)} />
+                <GameMarketplaceModal
+                    projectId="project-1"
+                    onResult={() => setOpen(false)}
+                />
             ) : <span>Closed</span>;
         };
         const error = jest.spyOn(console, 'error').mockImplementation(() => {});

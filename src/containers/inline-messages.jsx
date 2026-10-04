@@ -21,7 +21,8 @@ const InlineMessages = ({
         return null;
     }
 
-    // get first alert
+    // Only the first alert is shown; it is a live region, so replacing it
+    // (e.g. "Saving…" then "Saved") is announced.
     const firstInlineAlert = inlineAlerts[0];
     const {
         content,

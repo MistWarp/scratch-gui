@@ -1,39 +1,25 @@
-### Resolves
+### What this changes
 
-_What Github issue does this resolve (please include link)?_
+<!-- What the pull request does and why. Link the issue it resolves, if there is one: "Resolves #123". -->
 
-- Resolves #
+### Area
 
-### Proposed Changes
+- [ ] Editor (editor, player, addons, packager)
+- [ ] Community site (`src/community`)
+- [ ] Build, CI, or tooling
 
-_Describe what this Pull Request does_
+### Screenshots
 
-### Reason for Changes
+<!-- For UI changes, before and after. Include dark mode if the change affects colours. Delete this section otherwise. -->
 
-_Explain why these changes should be made_
+### Checklist
 
-### Test Coverage
+- [ ] `pnpm check` passes (lint, i18n checks, community CSS check, unit tests).
+- [ ] New or changed behaviour has unit tests, or this says why it can't.
+- [ ] If editor strings changed: ran `pnpm run i18n:editor:extract` and committed `src/lib/tw-translations/default-messages.json`.
+- [ ] If community strings changed: ran `pnpm run i18n:community:extract` and committed the catalog.
+- [ ] If this needs a new engine fork commit: the pin in `package.json` points at it.
 
-_Please show how you have added tests to cover your changes_
+### How it was tested
 
-### Browser Coverage
-Check the OS/browser combinations tested (At least 2)
-
-Mac
- * [ ] Chrome 
- * [ ] Firefox 
- * [ ] Safari
- 
-Windows
- * [ ] Chrome 
- * [ ] Firefox 
- * [ ] Edge
- 
-Chromebook
- * [ ] Chrome
- 
-iPad
-* [ ] Safari
-
-Android Tablet
-* [ ] Chrome
+<!-- Browsers and devices you tried, and anything a reviewer should try by hand. -->

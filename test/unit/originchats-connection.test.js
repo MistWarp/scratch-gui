@@ -83,8 +83,12 @@ describe('originchats reducer', () => {
 
     test('history pages from the DM server arrive under messages instead of val', () => {
         const state = applyFrame(initialState(true), {
-            cmd: 'messages_get', channel: 'HoAqvHXhuM', at_start: false, at_end: true,
-            messages: [message('b', 2), message('a', 1)], range: {start: 0, end: 50, limit: 50}
+            cmd: 'messages_get',
+            channel: 'HoAqvHXhuM',
+            at_start: false,
+            at_end: true,
+            messages: [message('b', 2), message('a', 1)],
+            range: {start: 0, end: 50, limit: 50}
         });
         expect(state.messages.HoAqvHXhuM.map(item => item.id)).toEqual(['a', 'b']);
         expect(state.history.HoAqvHXhuM).toEqual({loaded: true, loading: false, atStart: false});
@@ -97,10 +101,11 @@ describe('originchats reducer', () => {
     });
 
     test('presence events track who is online', () => {
-        let state = applyFrame(initialState(), {cmd: 'users_list', users: [
-            {username: 'Ann', status: {status: 'online'}},
-            {username: 'bob', status: {status: 'offline'}}
-        ]});
+        let state = applyFrame(initialState(), {cmd: 'users_list',
+            users: [
+                {username: 'Ann', status: {status: 'online'}},
+                {username: 'bob', status: {status: 'offline'}}
+            ]});
         state = applyFrame(state, {cmd: 'user_connect', user: {username: 'bob'}});
         expect(onlineUsers(state).map(user => user.username)).toEqual(['Ann', 'bob']);
         state = applyFrame(state, {cmd: 'user_disconnect', username: 'Ann'});
@@ -108,9 +113,10 @@ describe('originchats reducer', () => {
     });
 
     test('users_list merges into known users instead of dropping people learned from user_join', () => {
-        let state = applyFrame(initialState(), {cmd: 'user_join', user: {
-            username: 'USR:discord_42', nickname: 'Pixel', cracked: true, status: {status: 'offline'}
-        }});
+        let state = applyFrame(initialState(), {cmd: 'user_join',
+            user: {
+                username: 'USR:discord_42', nickname: 'Pixel', cracked: true, status: {status: 'offline'}
+            }});
         state = applyFrame(state, {cmd: 'users_list', users: [{username: 'Ann', status: {status: 'online'}}]});
         expect(state.users['usr:discord_42'].nickname).toBe('Pixel');
         expect(state.users.ann.status.status).toBe('online');
@@ -318,10 +324,12 @@ describe('ChatConnection', () => {
     test('edits show at once, settle on the server copy and roll back when refused', async () => {
         const {chat, socket} = readyChat();
         socket.receive({cmd: 'ready', user: {username: 'me'}});
-        socket.receive({cmd: 'messages_get', channel: 'general', val: [
-            {...message('a', 1, 'me', 'old'), signature: 'sig'},
-            message('b', 2, 'me', 'second')
-        ]});
+        socket.receive({cmd: 'messages_get',
+            channel: 'general',
+            val: [
+                {...message('a', 1, 'me', 'old'), signature: 'sig'},
+                message('b', 2, 'me', 'second')
+            ]});
         const find = id => chat.getState().messages.general.find(item => item.id === id);
         expect(chat.editMessage('general', 'a', ' old ')).toBe(true);
         await flush();
@@ -331,7 +339,10 @@ describe('ChatConnection', () => {
         expect(find('a')).toMatchObject({content: 'new', edited: true, pendingEdit: true, signature: null});
         await flush();
         const edit = socket.sent.find(frame => frame.cmd === 'message_edit');
-        socket.receive({cmd: 'message_edit', channel: 'general', id: 'a', listener: edit.listener,
+        socket.receive({cmd: 'message_edit',
+            channel: 'general',
+            id: 'a',
+            listener: edit.listener,
             message: {...message('a', 1, 'me', 'new'), edited: true, edited_at: 5}});
         expect(find('a')).toMatchObject({content: 'new', pendingEdit: false, edited_at: 5});
         expect(chat.pendingEdits.size).toBe(0);
@@ -445,10 +456,11 @@ describe('ChatConnection', () => {
     test('uploads go to the OriginChats url of the connected server', () => {
         const {chat, socket} = readyChat({socketUrl: 'wss://dms.originchats.com/', serverUrl: 'https://elsewhere.example'});
         expect(chat.uploadUrl()).toBe('https://dms.originchats.com/attachments/upload');
-        socket.receive({cmd: 'handshake', val: {
-            validator_key: `originChats-${chat.signingUrls[0]}-key`,
-            server: {name: 'DMs', url: 'wss://dms.mistium.com'}
-        }});
+        socket.receive({cmd: 'handshake',
+            val: {
+                validator_key: `originChats-${chat.signingUrls[0]}-key`,
+                server: {name: 'DMs', url: 'wss://dms.mistium.com'}
+            }});
         expect(chat.uploadUrl()).toBe('https://dms.mistium.com/attachments/upload');
     });
 

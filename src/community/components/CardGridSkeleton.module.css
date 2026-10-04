@@ -1,0 +1,79 @@
+.skeleton {
+    position: relative;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+}
+
+.thumb {
+    aspect-ratio: 4 / 3;
+    background: var(--bg-raised);
+    animation: pulse 1.4s infinite ease-in-out;
+}
+
+.body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 14px 14px;
+}
+
+.title,
+.owner,
+.stats {
+    display: block;
+    height: 12px;
+    border-radius: var(--radius-2xs);
+    background: var(--bg-raised);
+    animation: pulse 1.4s infinite ease-in-out;
+}
+
+.title {
+    width: 78%;
+    height: 15px;
+}
+
+.owner {
+    width: 44%;
+}
+
+.stats {
+    width: 58%;
+    margin-top: 8px;
+}
+
+.srOnly {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+@keyframes pulse {
+    0%,
+    100% { opacity: 1; }
+    50% { opacity: .55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .thumb,
+    .title,
+    .owner,
+    .stats {
+        animation: none;
+    }
+}
+
+@media (max-width: 520px) {
+    .body {
+        padding: 10px;
+    }
+}

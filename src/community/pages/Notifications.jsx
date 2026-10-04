@@ -1,5 +1,5 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
-import {isMilestoneNotification, milestoneText, milestoneLink} from '../milestone-notifications.js';
+import {isMilestoneNotification} from '../milestone-notifications.js';
 import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
@@ -9,6 +9,9 @@ import {
     Lightbulb, Star
 } from 'lucide-react';
 import {projectUrl} from '../api';
+import {
+    SYSTEM_TYPES, USERNAME_RE, actorFor, commentAnchor, describeNotification, richTranslator, stripSender, targetFor
+} from '../notification-text.jsx';
 import Avatar from '../components/Avatar.jsx';
 import Button from '../components/ui/Button.jsx';
 import EmptyState, {SignInPrompt} from '../components/ui/EmptyState.jsx';
@@ -77,34 +80,6 @@ const TYPE_STYLE = {
 
 const typeStyle = type => TYPE_STYLE[type] || TYPE_STYLE.notification;
 
-const SYSTEM_TYPES = ['standing', 'moderation', 'news', 'report_update'];
-
-const GROUP_TYPES = [
-    'group_invite',
-    'group_request_accepted',
-    'group_request_declined',
-    'group_kicked',
-    'group_banned',
-    'group_ownership_transferred'
-];
-
-// Rotur / usernames follow this shape; titles that don't match are app
-// messages rather than account names.
-const USERNAME_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,19}$/;
-
-const commentAnchor = n => (n.commentId ? `#comment-id-${n.commentId}` : '');
-
-const groupUrl = n => (n.group_tag ? `https://rotur.dev/groups/${encodeURIComponent(n.group_tag)}` : null);
-
-const REPORT_OUTCOMES = {
-    dismiss: 'reviewed; no action was taken',
-    warn_user: 'actioned with a warning',
-    ban_user: 'actioned with a ban',
-    unshare_project: 'actioned; the project was unshared'
-};
-
-const escapeRegex = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
 const linkify = text => <RichText text={text} />;
 
 // Comment-bearing notifications carry no text (Rotur relays strip the
@@ -153,16 +128,6 @@ CommentPreview.propTypes = {
     n: PropTypes.object.isRequired
 };
 
-// Generic notifications carry the sender in `title` (MistWarp posts
-// title = actor) and the full sentence in `body`; drop the duplicated
-// prefix so "shima" + "shima commented on your project" reads cleanly.
-const stripSender = (sender, text) => {
-    if (!sender || !text) {
-        return text;
-    }
-    return text.replace(new RegExp(`^${escapeRegex(sender)}[\\s:.,\\u2014-]*`, 'i'), '');
-};
-
 const mergeNotifications = (...lists) => {
     const seen = new Set();
     const merged = [];
@@ -180,113 +145,11 @@ const mergeNotifications = (...lists) => {
 
 const markItemsRead = items => (items || []).map(item => ({...item, read: true}));
 
-// Prefer a username-shaped title (real actor) over the app account that
-// posted the notification ("MistWarp"). Returns null when no actor is known.
-const actorFor = n => {
-    const title = typeof n.title === 'string' ? n.title : '';
-    if (title && USERNAME_RE.test(title) && title.toLowerCase() !== 'mistwarp') {
-        return title;
-    }
-    return n.actor || n.from || title || null;
-};
-
-const describe = n => {
-    switch (n.type) {
-    case 'project_shared': return <span>shared <strong>{n.projectTitle || 'a project'}</strong> with you</span>;
-    case 'love': return n.projectTitle ?
-        <span>loved <strong>{n.projectTitle}</strong></span> :
-        <span>loved your project</span>;
-    case 'comment': return n.pull ? (
-        n.projectTitle ?
-            <span>commented on <strong>{n.projectTitle}</strong> pr #{n.pull}</span> :
-            <span>commented on pr #{n.pull}</span>
-    ) : n.projectTitle ?
-        <span>commented on <strong>{n.projectTitle}</strong></span> :
-        <span>commented on your project</span>;
-    case 'profile_comment': return <span>commented on your profile</span>;
-    case 'reply': return n.post_id ?
-        <span>replied to your post</span> :
-        n.pull && n.projectTitle ?
-            <span>replied to your comment on <strong>{n.projectTitle}</strong> pr #{n.pull}</span> :
-            n.projectTitle ?
-                <span>replied to your comment on <strong>{n.projectTitle}</strong></span> :
-                <span>replied to your comment</span>;
-    case 'purchase': return (
-        <span>
-            bought {n.projectTitle ? <strong>{n.projectTitle}</strong> : 'your project'}
-            {n.amount ? ` for ${n.amount} credits` : ''}
-        </span>
-    );
-    case 'donation': return (
-        <span>donated {n.amount ? `${n.amount} credits` : 'credits'} to you</span>
-    );
-    case 'remix': return n.projectTitle ?
-        <span>remixed <strong>{n.projectTitle}</strong></span> :
-        <span>remixed your project</span>;
-    case 'follow': return <span>followed you</span>;
-    case 'mention': return n.post_id ?
-        <span>mentioned you in a post</span> :
-        n.pull && n.projectTitle ?
-            <span>mentioned you on <strong>{n.projectTitle}</strong> pr #{n.pull}</span> :
-            n.projectTitle ?
-                <span>mentioned you on <strong>{n.projectTitle}</strong></span> :
-                <span>mentioned you in a comment</span>;
-    case 'like': return <span>liked your post</span>;
-    case 'repost': return <span>reposted your post</span>;
-    case 'group_invite': return <span>invited you to join <strong>{n.group_name}</strong></span>;
-    case 'group_request_accepted': return <span>accepted your request to join <strong>{n.group_name}</strong></span>;
-    case 'group_request_declined': return <span>declined your request to join <strong>{n.group_name}</strong></span>;
-    case 'group_kicked': return <span>removed you from <strong>{n.group_name}</strong></span>;
-    case 'group_banned': return <span>banned you from <strong>{n.group_name}</strong></span>;
-    case 'group_ownership_transferred': return <span>transferred <strong>{n.group_name}</strong> to you</span>;
-    case 'cosmetic_gift': return <span>sent you <strong>{n.cosmetic_name}</strong></span>;
-    case 'item_received': return <span>sent you <strong>{n.item_name}</strong></span>;
-    case 'item_sold': return <span>bought <strong>{n.item_name}</strong> from you</span>;
-    case 'item_purchased': return <span>you bought <strong>{n.item_name}</strong></span>;
-    case 'standing': return n.reason ?
-        <span>Your account standing is now <strong>{n.level}</strong>: {n.reason}</span> :
-        <span>Your account standing is now <strong>{n.level}</strong>.</span>;
-    case 'moderation': return <span>{n.message || 'A moderator sent you a message.'}</span>;
-    case 'news': return <span>New announcement: <strong>{n.title}</strong></span>;
-    case 'report_update': return <span>Your report was {REPORT_OUTCOMES[n.action] || 'reviewed'}.</span>;
-    case 'contribution': return n.pull && n.projectTitle ?
-        <span>sent changes for <strong>{n.projectTitle}</strong> pr #{n.pull}</span> :
-        n.projectTitle ?
-            <span>sent changes for <strong>{n.projectTitle}</strong></span> :
-            <span>sent changes</span>;
-    case 'contribution_merged': return n.pull && n.projectTitle ?
-        <span>merged changes for <strong>{n.projectTitle}</strong> pr #{n.pull}</span> :
-        n.projectTitle ?
-            <span>merged changes for <strong>{n.projectTitle}</strong></span> :
-            <span>merged changes</span>;
-    case 'space_project': return (
-        <span>added <strong>{n.projectTitle}</strong> to <strong>{n.spaceTitle}</strong></span>
-    );
-    case 'space_comment': return <span>commented on <strong>{n.spaceTitle}</strong></span>;
-    case 'space_curator_invite': return <span>invited you to curate <strong>{n.spaceTitle}</strong></span>;
-    case 'space_curator_accepted': return (
-        <span>accepted your invitation to curate <strong>{n.spaceTitle}</strong></span>
-    );
-    case 'space_curator_declined': return (
-        <span>declined your invitation to curate <strong>{n.spaceTitle}</strong></span>
-    );
-    case 'space_curator_removed': return <span>removed you as a curator of <strong>{n.spaceTitle}</strong></span>;
-    case 'challenge_judge_invite': return <span>invited you to judge <strong>{n.spaceTitle}</strong></span>;
-    case 'challenge_judge_accepted': return (
-        <span>accepted your invitation to judge <strong>{n.spaceTitle}</strong></span>
-    );
-    case 'challenge_join': return <span>joined <strong>{n.spaceTitle}</strong></span>;
-    case 'project_feedback': return <span>sent {n.feedbackType} feedback for <strong>{n.projectTitle}</strong></span>;
-    case 'project_review': return <span>rated <strong>{n.projectTitle}</strong> {n.rating} out of 5</span>;
-    case 'roadmap_comment': return <span>commented on <strong>{n.roadmapTitle}</strong></span>;
-    default: return <span>did something</span>;
-    }
-};
-
 // Generic Rotur notifications (any app's /v2/notify/ push) arrive as
 // type "notification" with title/body/from/source. Title holds the sender
 // for MistWarp; other apps may put an app name or message summary there.
 const GenericNotification = ({n}) => {
+    const {text: communityText} = useCommunityText();
     const sender = n.title || n.from || n.actor || '';
     const isUser = Boolean(sender) && USERNAME_RE.test(sender) &&
         sender.toLowerCase() !== 'mistwarp' &&
@@ -297,7 +160,10 @@ const GenericNotification = ({n}) => {
     }
     const text = isUser ? stripSender(sender, raw) : raw;
     const showTitle = !isUser && Boolean(sender) && sender !== text;
-    const channel = n.channelName ? ` in #${n.channelName}` : '';
+    const t = richTranslator(communityText);
+    const message = body => (n.channelName ?
+        t('{message} in #{channel}', {message: linkify(body), channel: n.channelName}) :
+        linkify(body));
     const target = n.projectId && n.pull ? `/project/${n.projectId}/pulls/${n.pull}${commentAnchor(n)}` :
         n.projectId ? `${projectUrl(n.projectId)}${commentAnchor(n)}` : null;
     const sourceLink = typeof n.source === 'string' && /^https?:\/\//.test(n.source);
@@ -308,11 +174,11 @@ const GenericNotification = ({n}) => {
         content = (
             <>
                 <span className={styles.senderTitle}>{sender}</span>
-                {linkify(text)}{channel}
+                {message(text)}
             </>
         );
     } else {
-        content = <>{linkify(text || sender)}{channel}</>;
+        content = <>{message(text || sender)}</>;
     }
     if (target) {
         content = <Link to={target} className={styles.body}>{content}</Link>;
@@ -383,54 +249,29 @@ FollowingPost.propTypes = {
     post: PropTypes.object.isRequired
 };
 
-const targetFor = (n, viewerName) => {
-    if (isMilestoneNotification(n)) return {to: milestoneLink(n)};
-    if (GROUP_TYPES.includes(n.type) && groupUrl(n)) return {href: groupUrl(n)};
-    if (n.spaceId) return {to: `/spaces/${n.spaceId}`};
-    if (n.roadmapId) return {to: `/roadmap#idea-${n.roadmapId}`};
-    if (n.projectId && n.pull) return {to: `/project/${n.projectId}/pulls/${n.pull}${commentAnchor(n)}`};
-    if (n.projectId) return {to: `${projectUrl(n.projectId)}${commentAnchor(n)}`};
-    if (n.type === 'profile_comment' || n.profile) {
-        return {to: `/users/${n.profile || viewerName}${commentAnchor(n)}`};
-    }
-    if (n.type === 'news' && n.newsId) return {to: '/news'};
-    return null;
-};
-
 // Uniform row: avatar (or a flat tinted icon when there is no actor),
 // a metadata line, and a plain comment preview below it.
-const NotificationRow = ({n, viewerName}) => {
+const NotificationRow = ({n, viewerName, isNew}) => {
+    const {text: communityText} = useCommunityText();
     const {icon: Icon, color} = typeStyle(n.type);
     const time = timeAgo(n.created || n.timestamp);
-    const itemClass = n.read ? styles.item : styles.itemUnread;
+    const itemClass = isNew ? styles.itemUnread : styles.item;
     const target = targetFor(n, viewerName);
+    const system = isMilestoneNotification(n) || SYSTEM_TYPES.includes(n.type);
+    if (!system && !actorFor(n)) return null;
 
-    let title;
-    if (isMilestoneNotification(n)) {
-        title = <Link to={milestoneLink(n)} className={styles.body}>{milestoneText(n)}</Link>;
-    } else if (SYSTEM_TYPES.includes(n.type)) {
-        title = target ?
-            <Link to={target.to} className={styles.body}>{describe(n)}</Link> :
-            <span className={styles.body}>{describe(n)}</span>;
-    } else {
-        const actor = actorFor(n);
-        if (!actor) return null;
-        const body = describe(n);
-        const linked = target && target.href ?
-            <a href={target.href} target="_blank" rel="noreferrer" className={styles.body}>{body}</a> :
-            target ?
-                <Link to={target.to} className={styles.body}>{body}</Link> :
-                body;
-        title = (
-            <>
-                <Link to={`/users/${actor}`} className={styles.actor}>{actor}</Link>
-                {' '}
-                {linked}
-            </>
-        );
-    }
+    // The sentence links to its target, apart from the actor's own link.
+    const wrap = target && target.href ?
+        children => <a href={target.href} target="_blank" rel="noreferrer" className={styles.body}>{children}</a> :
+        target ?
+            children => <Link to={target.to} className={styles.body}>{children}</Link> :
+            children => <span className={styles.body}>{children}</span>;
+    const actorLink = system ? null : (
+        <Link to={`/users/${actorFor(n)}`} className={styles.actor}>{actorFor(n)}</Link>
+    );
+    const title = describeNotification(n, richTranslator(communityText, wrap), actorLink);
 
-    const actor = actorFor(n);
+    const actor = system ? null : actorFor(n);
     const visual = actor ? (
         <span className={styles.avatarWrap}>
             <Link to={`/users/${actor}`}>
@@ -460,7 +301,8 @@ const NotificationRow = ({n, viewerName}) => {
 
 NotificationRow.propTypes = {
     n: PropTypes.object.isRequired,
-    viewerName: PropTypes.string
+    viewerName: PropTypes.string,
+    isNew: PropTypes.bool
 };
 
 const Notifications = ({hideHeading}) => {
@@ -478,6 +320,14 @@ const Notifications = ({hideHeading}) => {
     }, []);
     const [failed, setFailed] = useState(false);
     const [attempt, setAttempt] = useState(0);
+    // Ids that were unread when they loaded. They stay highlighted for the
+    // rest of the visit even after the inbox is marked read.
+    const [newIds, setNewIds] = useState(() => new Set());
+    const isNew = n => !n.read || newIds.has(n.id);
+
+    useEffect(() => {
+        setNewIds(new Set());
+    }, [viewerName]);
 
     useEffect(() => {
         if (!viewerName) {
@@ -513,6 +363,8 @@ const Notifications = ({hideHeading}) => {
             const [notificationResult, feedResult] = results;
             if (notificationResult.status === 'fulfilled') {
                 setItems(current => mergeNotifications(current || [], notificationResult.value));
+                const unread = (notificationResult.value || []).filter(item => item && item.id && !item.read);
+                if (unread.length) setNewIds(current => new Set([...current, ...unread.map(item => item.id)]));
                 markNotificationsRead()
                     .then(marked => {
                         if (!marked || cancelled) return;
@@ -579,13 +431,13 @@ const Notifications = ({hideHeading}) => {
                         }
                         if (n.type === 'notification') {
                             return (
-                                <div key={n.id} className={n.read ? styles.item : styles.itemUnread}>
+                                <div key={n.id} className={isNew(n) ? styles.itemUnread : styles.item}>
                                     <GenericNotification n={n} />
                                     <span className={styles.time}>{timeAgo(n.created || n.timestamp)}</span>
                                 </div>
                             );
                         }
-                        return <NotificationRow key={n.id} n={n} viewerName={viewerName} />;
+                        return <NotificationRow key={n.id} n={n} viewerName={viewerName} isNew={isNew(n)} />;
                     })}
                 </div>
             ) : items.length ? (

@@ -19,3 +19,33 @@ describe('settings navigation', () => {
         expect(modal.state('currentView')).toBe('fonts');
     });
 });
+
+describe('settings search', () => {
+    test('filters the sidebar by page titles and setting text', () => {
+        const modal = shallowWithIntl(<SettingsModalComponent onClose={jest.fn()} />);
+        modal.setState({searchQuery: 'backpack'});
+        expect(modal.find(ModalSidebarItem).map(item => item.prop('label'))).toEqual(['Editor']);
+        modal.find(ModalSidebarItem).simulate('click');
+        expect(modal.state('currentView')).toBe('editor');
+
+        modal.setState({searchQuery: 'no setting has this name'});
+        expect(modal.find(ModalSidebarItem)).toHaveLength(0);
+        expect(modal.find('p[role="status"]').text()).toBe('No settings match');
+    });
+
+    test('Addons result opens the addon settings window', () => {
+        const onClose = jest.fn();
+        const onClickAddonSettings = jest.fn();
+        const modal = shallowWithIntl(
+            <SettingsModalComponent
+                onClickAddonSettings={onClickAddonSettings}
+                onClose={onClose}
+            />
+        );
+        modal.setState({searchQuery: 'addons'});
+        modal.find(ModalSidebarItem).filterWhere(item => item.prop('label') === 'Addons')
+            .simulate('click');
+        expect(onClose).toHaveBeenCalled();
+        expect(onClickAddonSettings).toHaveBeenCalled();
+    });
+});

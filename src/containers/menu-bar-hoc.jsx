@@ -2,10 +2,24 @@ import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import bindAll from 'lodash.bindall';
 import React from 'react';
+import {defineMessages, intlShape} from 'react-intl';
 import {openSimpleDialog} from '../reducers/modals';
 import ToastNotification from '../components/toast-notification/toast-notification.jsx';
 import smartSave from '../lib/mw/smart-save.js';
 import {setProjectUnchanged} from '../reducers/project-changed';
+
+const messages = defineMessages({
+    newProjectTitle: {
+        id: 'mw.menuBar.newProject.title',
+        defaultMessage: 'Start a new project?',
+        description: 'Title of the confirmation shown before File > New replaces a project with unsaved changes'
+    },
+    newProjectConfirm: {
+        id: 'mw.menuBar.newProject.backUpAndStart',
+        defaultMessage: 'Back up and start new project',
+        description: 'Button that backs up the current project and starts a new one'
+    }
+});
 
 const shouldConfirmProjectReplacement = ({projectChanged}) => Boolean(projectChanged);
 
@@ -26,8 +40,11 @@ const MenuBarHOC = function (WrappedComponent) {
             return new Promise(resolve => {
                 this.props.openSimpleDialog({
                     type: 'confirm',
-                    title: 'Start a new project?',
-                    choices: [{value: 'replace', label: 'Back up and start new project'}],
+                    title: this.props.intl.formatMessage(messages.newProjectTitle),
+                    choices: [{
+                        value: 'replace',
+                        label: this.props.intl.formatMessage(messages.newProjectConfirm)
+                    }],
                     message,
                     onOk: () => resolve(true),
                     onCancel: () => resolve(false)
@@ -77,6 +94,7 @@ const MenuBarHOC = function (WrappedComponent) {
     MenuBarContainer.propTypes = {
         confirmWithMessage: PropTypes.func,
         handleHideToast: PropTypes.func.isRequired,
+        intl: intlShape.isRequired,
         openSimpleDialog: PropTypes.func.isRequired,
         onProjectUnchanged: PropTypes.func.isRequired,
         projectChanged: PropTypes.bool,

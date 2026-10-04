@@ -5,6 +5,7 @@ import {mount, shallow} from 'enzyme';
 
 import CommentThread, {
     addCreatedComment,
+    applyCommentReaction,
     commentDonationTier,
     mergeCommentPages,
     parseCommentDonation,
@@ -238,5 +239,128 @@ describe('CommentThread signed-out flow', () => {
             [{id: 'new', created: 200}],
             [{id: 'old', created: 100, pinned: true, pinnedAt: 150}]
         ).map(comment => comment.id)).toEqual(['old', 'new']);
+    });
+
+    test('toggles and switches reactions locally', () => {
+        const comment = {id: 'c', reactionCounts: {heart: 2, brokenheart: 1}, myReaction: 'heart'};
+        expect(applyCommentReaction(comment, 'heart')).toMatchObject({
+            reactionCounts: {heart: 1, brokenheart: 1}, myReaction: ''
+        });
+        expect(applyCommentReaction(comment, 'brokenheart')).toMatchObject({
+            reactionCounts: {heart: 1, brokenheart: 2}, myReaction: 'brokenheart'
+        });
+        expect(applyCommentReaction({id: 'c'}, 'heart')).toMatchObject({
+            reactionCounts: {heart: 1}, myReaction: 'heart'
+        });
+    });
+});
+
+const flush = async () => {
+    await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+    });
+};
+const mountThread = props => mount(
+    <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+        <CommentThread {...props} />
+    </MemoryRouter>
+);
+const manyComments = Array.from({length: 8}, (_, index) => ({
+    id: `c${index}`,
+    author: 'other',
+    content: `Comment ${index}`,
+    created: 10 - index,
+    reactionCounts: {heart: 1},
+    myReaction: ''
+}));
+
+describe('CommentThread drafts and reactions', () => {
+    beforeEach(() => {
+        sessionStorage.clear();
+        useUser.mockReturnValue({user: {username: 'me'}, loginOrThrow: jest.fn()});
+    });
+
+    test('keeps the draft and filters when the sort order changes', async () => {
+        const source = {list: jest.fn(() => Promise.resolve({comments: manyComments}))};
+        const wrapper = mountThread({source, projectComments: true, draftKey: 'project-1'});
+        await flush();
+        wrapper.update();
+
+        const composer = () => wrapper.find('textarea[aria-label="Add a comment"]');
+        composer().simulate('change', {target: {value: 'Half written'}});
+        wrapper.find('input[type="search"]').simulate('change', {target: {value: 'Comment'}});
+        expect(sessionStorage.getItem('mw-community-draft:comment:project-1')).toBe('Half written');
+
+        const sortMenu = wrapper.find('SelectMenu').filterWhere(menu => menu.prop('ariaLabel') === 'Sort comments');
+        act(() => sortMenu.prop('onChange')('donations'));
+        await flush();
+        wrapper.update();
+
+        expect(source.list).toHaveBeenLastCalledWith(expect.objectContaining({sort: 'donations'}));
+        expect(composer().prop('value')).toBe('Half written');
+        expect(wrapper.find('input[type="search"]').prop('value')).toBe('Comment');
+        wrapper.unmount();
+    });
+
+    test('restores a saved draft and clears it once posted', async () => {
+        sessionStorage.setItem('mw-community-draft:comment:project-2', 'Saved earlier');
+        const source = {
+            list: jest.fn(() => Promise.resolve({comments: []})),
+            add: jest.fn(() => Promise.resolve({comment: {id: 'new', author: 'me', content: 'Saved earlier'}}))
+        };
+        const wrapper = mountThread({source, draftKey: 'project-2'});
+        await flush();
+        wrapper.update();
+        const composer = () => wrapper.find('textarea[aria-label="Add a comment"]');
+        expect(composer().prop('value')).toBe('Saved earlier');
+
+        await act(async () => {
+            wrapper.find('button').filterWhere(button => button.text() === 'Post')
+                .simulate('click');
+            await Promise.resolve();
+        });
+        wrapper.update();
+
+        expect(source.add).toHaveBeenCalledWith('Saved earlier', null, 'comment');
+        expect(composer().prop('value')).toBe('');
+        expect(sessionStorage.getItem('mw-community-draft:comment:project-2')).toBeNull();
+        wrapper.unmount();
+    });
+
+    test('shows a reaction at once, locks only that comment and rolls back on failure', async () => {
+        let reject;
+        const source = {
+            list: jest.fn(() => Promise.resolve({comments: manyComments.slice(0, 2)})),
+            react: jest.fn(() => new Promise((_, fail) => {
+                reject = fail;
+            }))
+        };
+        const wrapper = mountThread({source});
+        await flush();
+        wrapper.update();
+        const like = id => wrapper.find(`#comment-id-${id} button[aria-label="Like"]`);
+
+        act(() => {
+            like('c0').simulate('click');
+        });
+        wrapper.update();
+        expect(source.react).toHaveBeenCalledWith('c0', 'heart');
+        expect(like('c0').prop('aria-pressed')).toBe(true);
+        expect(like('c0').text()).toBe('2');
+        expect(like('c0').prop('disabled')).toBe(true);
+        expect(like('c1').prop('disabled')).toBe(false);
+
+        await act(async () => {
+            reject(new Error('Offline'));
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+        wrapper.update();
+        expect(like('c0').prop('aria-pressed')).toBe(false);
+        expect(like('c0').text()).toBe('1');
+        expect(like('c0').prop('disabled')).toBe(false);
+        expect(wrapper.text()).toContain('Offline');
+        wrapper.unmount();
     });
 });

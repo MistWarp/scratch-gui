@@ -1,0 +1,10 @@
+blank_issues_enabled: false
+contact_links:
+  - name: MistWarp documentation
+    url: https://mistwarp.org/docs/
+    about: How to use the editor and community site, and how to contribute.
+  - name: Engine bugs (blocks, runtime, rendering, sound)
+    url: https://github.com/MistWarp
+    about: >-
+      If you know the bug is in scratch-vm, scratch-blocks, scratch-render, scratch-paint or scratch-audio,
+      open the issue in that MistWarp fork. Otherwise report it here.

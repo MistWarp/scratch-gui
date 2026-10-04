@@ -23,7 +23,7 @@ describe('shared project cards', () => {
         expect(card.type()).toBe('article');
         expect(card.text()).toContain('Editor');
         expect(card.find(Button).props()).toEqual(expect.objectContaining({
-            as: 'a', href: '/editor#mw-p1', variant: 'primary', 'aria-label': 'Edit Team project'
+            'as': 'a', 'href': '/editor#mw-p1', 'variant': 'primary', 'aria-label': 'Edit Team project'
         }));
         expect(card.text()).not.toContain('Your access:');
     });
@@ -32,7 +32,7 @@ describe('shared project cards', () => {
         const card = shallow(<SharedProjectCard project={{...project, myRole: 'tester', canSaveDirectly: false}} />);
         expect(card.text()).toContain('Tester');
         expect(card.find(Button).props()).toEqual(expect.objectContaining({
-            href: '/project/p1', variant: 'secondary', 'aria-label': 'Open Team project'
+            'href': '/project/p1', 'variant': 'secondary', 'aria-label': 'Open Team project'
         }));
     });
 

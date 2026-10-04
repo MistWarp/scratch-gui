@@ -7,7 +7,8 @@ import {
     logout,
     createProject,
     uploadProject,
-    prepareSparseProjectUpload
+    prepareSparseProjectUpload,
+    friendlyError
 } from '../lib/community/api.js';
 import warpthemeApi from '../lib/warptheme-api.js';
 
@@ -166,6 +167,10 @@ const projectAccessQuery = () => {
     return key ? `?k=${encodeURIComponent(key)}` : '';
 };
 
+// GETs the server builds on demand (exports, diffs, git trees) can take longer
+// than the usual deadline.
+const SLOW_GET_TIMEOUT = 60000;
+
 const api = {
     loadSession,
     storeSession,
@@ -182,7 +187,7 @@ const api = {
         get: () => request('/me/settings'),
         put: settings => request('/me/settings', {method: 'PUT', body: settings})
     },
-    exportMyData: () => request('/me/export'),
+    exportMyData: () => request('/me/export', {timeoutMs: SLOW_GET_TIMEOUT}),
     deleteMyData: username => request('/me/data', {method: 'DELETE', body: {username}}),
     safety: () => request('/me/safety'),
     blockUser: name => request(`/me/blocks/${encodeURIComponent(name)}`, {method: 'POST'}),
@@ -451,18 +456,22 @@ const api = {
     commitInspection: (id, sha) => {
         const params = new URLSearchParams(projectAccessQuery().replace(/^\?/, ''));
         params.set('inline', '1');
-        return request(`/projects/${id}/commits/${encodeURIComponent(sha)}?${params.toString()}`, {cache: false});
+        return request(`/projects/${id}/commits/${encodeURIComponent(sha)}?${params.toString()}`, {
+            cache: false, timeoutMs: SLOW_GET_TIMEOUT
+        });
     },
     commitTree: (id, sha) => request(
         `/projects/${id}/commits/${encodeURIComponent(sha)}/tree${projectAccessQuery()}`,
-        {cache: false}
+        {cache: false, timeoutMs: SLOW_GET_TIMEOUT}
     ),
     commitFile: (id, sha, path, pull = '', pullTarget = '') => {
         const params = new URLSearchParams(projectAccessQuery().replace(/^\?/, ''));
         params.set('path', path);
         if (pull !== '') params.set('pull', String(pull));
         if (pullTarget) params.set('pullTarget', pullTarget);
-        return request(`/projects/${id}/commits/${encodeURIComponent(sha)}/file?${params.toString()}`, {cache: false});
+        return request(`/projects/${id}/commits/${encodeURIComponent(sha)}/file?${params.toString()}`, {
+            cache: false, timeoutMs: SLOW_GET_TIMEOUT
+        });
     },
     commitCoAuthors: (id, sha) => request(
         `/projects/${id}/commits/${encodeURIComponent(sha)}/co-authors${projectAccessQuery()}`
@@ -488,7 +497,9 @@ const api = {
         request(`/bounties/${encodeURIComponent(id)}/comments/${comment}`, {method: 'DELETE'}),
     joinBounty: id => request(`/bounties/${encodeURIComponent(id)}/workers/me`, {method: 'POST'}),
     leaveBounty: id => request(`/bounties/${encodeURIComponent(id)}/workers/me`, {method: 'DELETE'}),
-    pullDiff: (id, index) => request(`/projects/${id}/pulls/${index}/diff?inline=1`, {cache: false}),
+    pullDiff: (id, index) => request(`/projects/${id}/pulls/${index}/diff?inline=1`, {
+        cache: false, timeoutMs: SLOW_GET_TIMEOUT
+    }),
     mergePull: (id, index) => request(`/projects/${id}/pulls/${index}/merge`, {method: 'POST'}),
     closePull: (id, index) => request(`/projects/${id}/pulls/${index}/close`, {method: 'POST'}),
     uploadPullMerge: (id, {sb3, mergeTree, expectedHead, pullId}) =>
@@ -507,5 +518,5 @@ const api = {
 export default api;
 export {
     editorUrl, embedUrl, projectUrl, loadSession, storeSession, exchangeValidator,
-    request, themeCustomFor
+    request, themeCustomFor, friendlyError
 };

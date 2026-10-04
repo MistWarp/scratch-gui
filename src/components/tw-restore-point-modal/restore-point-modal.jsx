@@ -143,8 +143,10 @@ const RestorePointModal = props => (
                     <span>
                         <FormattedMessage
                             // eslint-disable-next-line max-len
-                            defaultMessage="Local recovery snapshots on this browser only. Pushed history lives under Project history."
-                            id="tw.restorePoints.automaticDescription"
+                            defaultMessage="Recovery copies kept in this browser only. Versions you saved to MistWarp are under Project history."
+                            // eslint-disable-next-line max-len
+                            description="Explains device backups. Project history is the name of another window that lists saved versions."
+                            id="mw.restorePoints.automaticDescription"
                         />
                     </span>
                 </div>

@@ -16,6 +16,11 @@ const messages = defineMessages({
         id: 'gui.gui.projectTitlePlaceholder',
         description: 'Placeholder for project title when blank',
         defaultMessage: 'Project title here'
+    },
+    projectTitleLabel: {
+        id: 'mw.menuBar.projectTitleLabel',
+        description: 'Accessible label for the project title field in the menu bar',
+        defaultMessage: 'Project title'
     }
 });
 
@@ -28,6 +33,7 @@ const ProjectTitleInput = ({
     projectTitle
 }) => (
     <BufferedInput
+        aria-label={intl.formatMessage(messages.projectTitleLabel)}
         className={classNames(styles.titleField, className)}
         data-project-title-input
         maxLength="100"

@@ -184,7 +184,7 @@ const IdeaCard = ({idea, user, login, onVote, onStatus, onCommentCount, onLinkPu
                 {discussionOpen ? (
                     <div className={styles.discussion}>
                         {!user ? <Button variant="primary" className={styles.signIn} onClick={login}><LogIn size={15} />{communityText('Sign in to join the discussion')}</Button> : null}
-                        <CommentThread source={source} canModerate={Boolean(user && (user.isAdmin || user.username.toLowerCase() === idea.author.toLowerCase()))} reportContext={`roadmap suggestion ${idea.title}`} onCountChange={delta => onCommentCount(idea._id, delta)} />
+                        <CommentThread source={source} canModerate={Boolean(user && (user.isAdmin || user.username.toLowerCase() === idea.author.toLowerCase()))} reportContext={`roadmap suggestion ${idea.title}`} draftKey={`roadmap:${idea._id}`} onCountChange={delta => onCommentCount(idea._id, delta)} />
                     </div>
                 ) : null}
             </div>

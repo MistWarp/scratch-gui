@@ -15,17 +15,31 @@ jest.mock('../../../src/lib/git/project-history.js', () => ({isProjectHistoryHyd
 
 const makeCoordinator = (role = 'owner') => {
     const service = {
-        isConnected: false, scope: null, on: jest.fn(), off: jest.fn(),
-        getPendingJoinRequests: jest.fn(() => []), approveJoinRequest: jest.fn(() => true),
+        isConnected: false,
+        scope: null,
+        on: jest.fn(),
+        off: jest.fn(),
+        getPendingJoinRequests: jest.fn(() => []),
+        approveJoinRequest: jest.fn(() => true),
         kickUser: jest.fn()
     };
     const props = {
-        service, vm: {on: jest.fn(), off: jest.fn()}, username: 'mist', isReady: true,
-        onOpen: jest.fn(), onLeaveRoom: jest.fn(() => { service.isConnected = false; }),
-        onCreateRoom: jest.fn(), onJoinRoom: jest.fn(), children: jest.fn()
+        service,
+        vm: {on: jest.fn(), off: jest.fn()},
+        username: 'mist',
+        isReady: true,
+        onOpen: jest.fn(),
+        onLeaveRoom: jest.fn(() => {
+            service.isConnected = false;
+        }),
+        onCreateRoom: jest.fn(),
+        onJoinRoom: jest.fn(),
+        children: jest.fn()
     };
     const instance = new ProjectSession(props);
-    instance.setState = patch => { instance.state = {...instance.state, ...patch}; };
+    instance.setState = patch => {
+        instance.state = {...instance.state, ...patch};
+    };
     instance.state.project = {id: 'p1', myRole: role, collaborators: [{username: 'friend', role: 'editor'}]};
     instance.contextKey = 'p1:main:mist';
     instance.host = jest.fn().mockResolvedValue();
@@ -107,9 +121,10 @@ describe('opt-in project collaboration', () => {
         instance.lease = {id: 'live', projectId: 'p1', branch: 'main', roomId: 'room', host: true};
         instance.props.service.isConnected = true;
         instance.props.service.getPendingJoinRequests.mockReturnValue([{id: 'verified'}, {id: 'unverified'}]);
-        api.request.mockResolvedValue({session: {id: 'live', members: [
-            {username: 'friend', peerId: 'verified', approved: true}
-        ]}});
+        api.request.mockResolvedValue({session: {id: 'live',
+            members: [
+                {username: 'friend', peerId: 'verified', approved: true}
+            ]}});
         await instance.tick();
         expect(instance.props.service.approveJoinRequest.mock.calls).toEqual([['verified', 'edit']]);
     });
@@ -119,9 +134,10 @@ describe('opt-in project collaboration', () => {
         instance.lease = {id: 'live', projectId: 'p1', branch: 'main', roomId: 'room', host: true};
         instance.props.service.isConnected = true;
         instance.props.service.getPendingJoinRequests.mockReturnValue([{id: 'tester-peer'}]);
-        api.request.mockResolvedValue({session: {id: 'live', members: [
-            {username: 'qa', peerId: 'tester-peer', approved: true, access: 'watch'}
-        ]}});
+        api.request.mockResolvedValue({session: {id: 'live',
+            members: [
+                {username: 'qa', peerId: 'tester-peer', approved: true, access: 'watch'}
+            ]}});
         await instance.tick();
         expect(instance.props.service.approveJoinRequest.mock.calls).toEqual([['tester-peer', 'watch']]);
     });
@@ -144,7 +160,9 @@ describe('opt-in project collaboration', () => {
 
     test('opening a session explicitly advertises it as public to the team', async () => {
         const instance = makeCoordinator();
-        instance.props.onCreateRoom.mockImplementation(async () => { instance.props.service.isConnected = true; });
+        instance.props.onCreateRoom.mockImplementation(async () => {
+            instance.props.service.isConnected = true;
+        });
         api.request.mockResolvedValue({session: {id: 'live', branch: 'main', public: true}});
         await ProjectSession.prototype.host.call(instance);
         expect(instance.props.onCreateRoom).toHaveBeenCalledWith(
@@ -160,7 +178,9 @@ describe('opt-in project collaboration', () => {
         const instance = makeCoordinator('editor');
         instance.props.service.getCurrentUserId = () => 'peer';
         instance.state.session = {id: 'live', roomId: 'room', public: true};
-        instance.props.onJoinRoom.mockImplementation(async () => { instance.props.service.isConnected = true; });
+        instance.props.onJoinRoom.mockImplementation(async () => {
+            instance.props.service.isConnected = true;
+        });
         api.request.mockResolvedValue({session: instance.state.session});
         await instance.run(() => ProjectSession.prototype.join.call(instance), 'joining');
         expect(instance.lease.host).toBe(false);

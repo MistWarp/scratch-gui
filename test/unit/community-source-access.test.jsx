@@ -9,7 +9,13 @@ import {canViewProjectSource} from '../../src/community/project-source-access';
 
 jest.mock('../../src/community/api', () => ({
     __esModule: true,
-    default: {getProject: jest.fn(), commitInspection: jest.fn(), commitCoAuthors: jest.fn(), commitTree: jest.fn(), commitFile: jest.fn()},
+    default: {
+        getProject: jest.fn(),
+        commitInspection: jest.fn(),
+        commitCoAuthors: jest.fn(),
+        commitTree: jest.fn(),
+        commitFile: jest.fn()
+    },
     projectUrl: id => `/project/${id}`
 }));
 jest.mock('../../src/community/UserContext', () => ({useUser: () => ({user: null})}));
@@ -36,8 +42,14 @@ test.each([{price: 5, bought: false}, {price: 5, bought: true, seeInside: false}
     api.getProject.mockResolvedValue({project: {id: 'p1', ...restricted}});
     let wrapper;
     await act(async () => {
-        wrapper = mount(<MemoryRouter initialEntries={['/project/p1/commits/abc']} future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
-            <Routes><Route path="/project/:id/commits/:sha" element={<Commit />} /></Routes>
+        wrapper = mount(<MemoryRouter
+            initialEntries={['/project/p1/commits/abc']}
+            future={{v7_startTransition: true, v7_relativeSplatPath: true}}
+        >
+            <Routes><Route
+                path="/project/:id/commits/:sha"
+                element={<Commit />}
+            /></Routes>
         </MemoryRouter>);
     });
     wrapper.update();

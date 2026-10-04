@@ -100,7 +100,8 @@ describe('community groups search', () => {
         expect(wrapper.text()).not.toContain('No groups found.');
 
         await act(async () => {
-            wrapper.find('button').filterWhere(button => button.text() === 'Try again').simulate('click');
+            wrapper.find('button').filterWhere(button => button.text() === 'Try again')
+                .simulate('click');
             await Promise.resolve();
         });
         wrapper.update();

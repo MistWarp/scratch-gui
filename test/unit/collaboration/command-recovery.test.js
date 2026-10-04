@@ -6,7 +6,9 @@ import AssetChannel from '../../../src/lib/collaboration/assets';
 const block = id => ({targetId: 'stage', event: {type: 'create', blockId: id}});
 const deferred = () => {
     let resolve;
-    const promise = new Promise(done => { resolve = done; });
+    const promise = new Promise(done => {
+        resolve = done;
+    });
     return {promise, resolve};
 };
 
@@ -15,7 +17,9 @@ describe('command completion and recovery', () => {
         const room = await createRoom({clientCount: 1});
         const gate = deferred();
         const apply = room.host.applier.apply.bind(room.host.applier);
-        room.host.applier.apply = async (...args) => { await gate.promise; return apply(...args); };
+        room.host.applier.apply = async (...args) => {
+            await gate.promise; return apply(...args);
+        };
         room.edit(room.clients[0], OP.BLOCK_EVENT, block('new'));
         await room.hub.flush();
         expect(room.host.session.seq).toBe(0);
@@ -62,7 +66,8 @@ describe('command completion and recovery', () => {
         const room = await createRoom({clientCount: 0});
         const gate = deferred();
         const captured = [];
-        const snapshots = new HostSnapshotService({session: room.host.session, transport: room.host.transport,
+        const snapshots = new HostSnapshotService({session: room.host.session,
+            transport: room.host.transport,
             getProjectData: async () => {
                 captured.push({seq: room.host.session.seq, doc: room.host.applier.snapshot()});
                 await gate.promise;
@@ -90,7 +95,8 @@ describe('command completion and recovery', () => {
         const client = room.clients[0];
         const failed = jest.fn();
         client.session.on('connection-failed', failed);
-        const snapshots = new ClientSnapshotService({session: client.session, transport: client.transport,
+        const snapshots = new ClientSnapshotService({session: client.session,
+            transport: client.transport,
             applyProjectData: jest.fn()});
         snapshots.requestResync();
         jest.advanceTimersByTime(180000);
@@ -104,8 +110,11 @@ describe('command completion and recovery', () => {
         const client = room.clients[0];
         const failed = jest.fn();
         client.session.on('connection-failed', failed);
-        const assets = new AssetChannel({session: client.session, transport: client.transport,
-            isHost: false, getAsset: () => null, storeAsset: jest.fn()});
+        const assets = new AssetChannel({session: client.session,
+            transport: client.transport,
+            isHost: false,
+            getAsset: () => null,
+            storeAsset: jest.fn()});
         assets.requestFromHost([`${'a'.repeat(32)}.wav`]);
         jest.advanceTimersByTime(30000);
         expect(failed).toHaveBeenCalledTimes(1);

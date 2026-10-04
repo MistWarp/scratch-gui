@@ -71,7 +71,8 @@ const buildScript = async filename => {
     const output = Array.isArray(result) ? result[0].output : result.output;
     const {code} = await transformWithEsbuild(output.find(item => item.type === 'chunk').code,
         filename, {minify: true, target: 'es2020'});
-    new Script(code, {filename});
+    // Compiling the script is a syntax check of the bundle.
+    new Script(code, {filename}); // eslint-disable-line no-new
     return code;
 };
 
@@ -343,6 +344,9 @@ export default defineConfig(async ({mode, command}) => {
     const root = env.ROOT ?? '/';
     if (root && !root.endsWith('/')) throw new Error('If ROOT is defined, it must have a trailing slash.');
     const library = env.BUILD_MODE === 'dist';
+    // Point local development at another API server with MW_API_BASE. The socket URL
+    // follows it unless MW_API_WS is set as well.
+    const apiBase = (env.MW_API_BASE || 'https://api.mistwarp.org/v1').replace(/\/$/, '');
     const values = {
         DEBUG: Boolean(env.DEBUG),
         ENABLE_SERVICE_WORKER: env.ENABLE_SERVICE_WORKER || '',
@@ -352,11 +356,15 @@ export default defineConfig(async ({mode, command}) => {
         MW_BUILD_ID: resolveBuildId(env),
         MW_BUILD_TIME: env.MW_BUILD_TIME || '',
         MW_STATUS_URL: env.MW_STATUS_URL || 'https://status.warp.mistium.com',
+        MW_API_BASE: apiBase,
+        MW_API_WS: env.MW_API_WS || `${apiBase.replace(/^http/, 'ws')}/ws`,
+        MW_WARPTHEME_API: env.MW_WARPTHEME_API || 'https://warptheme.mistium.com/api',
         GOOGLE_FONTS_API_KEY: env.GOOGLE_FONTS_API_KEY || 'demo'
     };
     values.MW_PACKAGER_BUILD_ID = createHash('sha256')
         .update(`${values.MW_BUILD_ID}:${values.MW_BUILD_TIME || new Date().toISOString()}`)
-        .digest('hex').slice(0, 20);
+        .digest('hex')
+        .slice(0, 20);
     return {
         cacheDir: `node_modules/.vite/${mode}-${env.PORT || 8601}`,
         base: library ? `${env.STATIC_PATH || '/static'}/` : root || './',
@@ -364,23 +372,44 @@ export default defineConfig(async ({mode, command}) => {
         resolve: sharedResolve,
         define: Object.fromEntries(Object.entries(values).map(([key, value]) =>
             [`process.env.${key}`, JSON.stringify(value)])),
-        plugins: [packagerRuntime({buildId: values.MW_PACKAGER_BUILD_ID, absolute, sharedResolve, scratchCompatibility, nodePolyfills,
-            postcssImport, postcssVars, autoprefixer}), scratchCompatibility(), react({jsxRuntime: 'classic'}),
+        plugins: [
+            packagerRuntime({
+                buildId: values.MW_PACKAGER_BUILD_ID,
+                absolute,
+                sharedResolve,
+                scratchCompatibility,
+                nodePolyfills,
+                postcssImport,
+                postcssVars,
+                autoprefixer
+            }),
+            scratchCompatibility(),
+            react({jsxRuntime: 'classic'}),
             // The packager is ESM. Its require() calls are text inside generated Electron scripts.
             viteCommonjs({exclude: ['/node_modules/.vite/', '/peerjs/dist/', '/generated/scratch-blocks.js',
                 '/src/packager/packager/packager.js']}),
-            nodePolyfills(), pagesAndAssets(env, root, library, generatedInputs)],
-        css: {modules: {localsConvention: 'camelCase',
-            generateScopedName: (name, filename) => {
-                const original = filename.replace(/\.module\.css$/, '.css');
-                const hash = createHash('sha256').update(path.relative(directory, original) + name)
-                    .digest('base64url')
-                    .slice(0, 5);
-                return `${path.basename(original, '.css')}_${name}_${hash}`;
-            }},
-        postcss: {plugins: [postcssImport(), postcssVars(), autoprefixer()]}},
-        server: {host: '0.0.0.0', port: Number(env.PORT || 8601), cors: true,
-            fs: {allow: [path.dirname(directory)]}},
+            nodePolyfills(),
+            pagesAndAssets(env, root, library, generatedInputs)
+        ],
+        css: {
+            modules: {
+                localsConvention: 'camelCase',
+                generateScopedName: (name, filename) => {
+                    const original = filename.replace(/\.module\.css$/, '.css');
+                    const hash = createHash('sha256').update(path.relative(directory, original) + name)
+                        .digest('base64url')
+                        .slice(0, 5);
+                    return `${path.basename(original, '.css')}_${name}_${hash}`;
+                }
+            },
+            postcss: {plugins: [postcssImport(), postcssVars(), autoprefixer()]}
+        },
+        server: {
+            host: '0.0.0.0',
+            port: Number(env.PORT || 8601),
+            cors: true,
+            fs: {allow: [path.dirname(directory)]}
+        },
         preview: {port: Number(env.PORT || 8601)},
         optimizeDeps: {
             include: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime',
@@ -410,16 +439,17 @@ export default defineConfig(async ({mode, command}) => {
                     /\?(raw|worker)$/.test(id) || id.startsWith('\0mw-') ? 'preferred' : false
                 )
             },
-            ...(!library && env.ONLY_ENTRY === 'editor' ? {
+            ...(library ? {} : env.ONLY_ENTRY === 'editor' ? {
                 cssCodeSplit: false,
                 rollupOptions: {output: {inlineDynamicImports: true}}
-            } : !library ? {
+            } : {
                 // Shared translations belong in their own chunk on site builds,
                 // not in an arbitrarily named UI component such as "checkbox".
                 rollupOptions: {output: {manualChunks: id => (
+                    // eslint-disable-next-line no-undefined -- Rollup's default chunking
                     id.includes('/generated/editor-locales/') ? 'editor-locales' : undefined
                 )}}
-            } : {}),
+            }),
             ...(library ? {lib: {entry: absolute('src/index.js'),
                 name: 'GUI',
                 formats: ['es', 'umd'],

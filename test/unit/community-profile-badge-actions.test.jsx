@@ -11,7 +11,11 @@ jest.mock('../../src/community/rotur.js', () => ({
 }));
 
 const openEditor = async () => {
-    const wrapper = mount(<ProfileBadges badges={[]} editable onChange={jest.fn()} />);
+    const wrapper = mount(<ProfileBadges
+        badges={[]}
+        editable
+        onChange={jest.fn()}
+    />);
     wrapper.find('button[aria-label="Edit badge order and visibility"]').simulate('click');
     await act(async () => {
         await Promise.resolve();
@@ -54,7 +58,11 @@ describe('profile badge editor actions', () => {
             finishLoad = resolve;
         }));
         const error = jest.spyOn(console, 'error').mockImplementation(() => {});
-        const wrapper = mount(<ProfileBadges badges={[]} editable onChange={jest.fn()} />);
+        const wrapper = mount(<ProfileBadges
+            badges={[]}
+            editable
+            onChange={jest.fn()}
+        />);
         wrapper.find('button[aria-label="Edit badge order and visibility"]').simulate('click');
         wrapper.unmount();
 

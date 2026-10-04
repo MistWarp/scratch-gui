@@ -1,4 +1,5 @@
 import React from 'react';
+import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
 
 import Modal from '../../src/community/components/ui/Modal.jsx';
@@ -7,17 +8,25 @@ describe('community Modal dismissal', () => {
     test('disables close controls while dismissal is locked', () => {
         const onClose = jest.fn();
         const wrapper = mount(
-            <Modal title="Saving" onClose={onClose} dismissDisabled>Working…</Modal>
+            <Modal
+                title="Saving"
+                onClose={onClose}
+                dismissDisabled
+            >Working…</Modal>
         );
 
         expect(wrapper.find('button[aria-label="Close"]').prop('disabled')).toBe(true);
-        expect(wrapper.find('div').at(0).prop('onClick')).toBeNull();
+        expect(wrapper.find('div').at(0)
+            .prop('onClick')).toBeNull();
         wrapper.unmount();
     });
 
     test('keeps normal close controls active when unlocked', () => {
         const onClose = jest.fn();
-        const wrapper = mount(<Modal title="Ready" onClose={onClose}>Done</Modal>);
+        const wrapper = mount(<Modal
+            title="Ready"
+            onClose={onClose}
+        >Done</Modal>);
 
         wrapper.find('button[aria-label="Close"]').simulate('click');
         expect(onClose).toHaveBeenCalledTimes(1);
@@ -34,7 +43,10 @@ describe('community Modal dismissal', () => {
         opener.focus();
 
         const wrapper = mount(
-            <Modal title="Ready" onClose={() => {}}>Done</Modal>,
+            <Modal
+                title="Ready"
+                onClose={() => {}}
+            >Done</Modal>,
             {attachTo: host}
         );
 
@@ -51,7 +63,10 @@ describe('community Modal dismissal', () => {
         const host = document.createElement('div');
         document.body.appendChild(host);
         const wrapper = mount(
-            <Modal title="Edit" onClose={() => {}}><input aria-label="Project name" /></Modal>,
+            <Modal
+                title="Edit"
+                onClose={() => {}}
+            ><input aria-label="Project name" /></Modal>,
             {attachTo: host}
         );
 
@@ -65,14 +80,18 @@ describe('community Modal dismissal', () => {
         const host = document.createElement('div');
         document.body.appendChild(host);
         const wrapper = mount(
-            <Modal title="Choose" onClose={() => {}}>
+            <Modal
+                title="Choose"
+                onClose={() => {}}
+            >
                 <button type="button">First choice</button>
                 <button type="button">Last choice</button>
             </Modal>,
             {attachTo: host}
         );
         const close = wrapper.find('button[aria-label="Close"]').getDOMNode();
-        const last = wrapper.find('button').last().getDOMNode();
+        const last = wrapper.find('button').last()
+            .getDOMNode();
 
         last.focus();
         wrapper.find('[role="dialog"]').simulate('keydown', {key: 'Tab', shiftKey: false});
@@ -90,7 +109,11 @@ describe('community Modal dismissal', () => {
         const host = document.createElement('div');
         document.body.appendChild(host);
         const wrapper = mount(
-            <Modal title="Saving" onClose={() => {}} dismissDisabled>Working…</Modal>,
+            <Modal
+                title="Saving"
+                onClose={() => {}}
+                dismissDisabled
+            >Working…</Modal>,
             {attachTo: host}
         );
         const dialog = wrapper.find('[role="dialog"]');
@@ -105,11 +128,80 @@ describe('community Modal dismissal', () => {
 
     test('locks background scrolling and restores the previous style', () => {
         document.body.style.overflow = 'scroll';
-        const wrapper = mount(<Modal title="Ready" onClose={() => {}}>Done</Modal>);
+        const wrapper = mount(<Modal
+            title="Ready"
+            onClose={() => {}}
+        >Done</Modal>);
 
         expect(document.body.style.overflow).toBe('hidden');
         wrapper.unmount();
         expect(document.body.style.overflow).toBe('scroll');
         document.body.style.overflow = '';
+    });
+
+    test('dismisses only when the press starts and ends on the backdrop', () => {
+        const onClose = jest.fn();
+        const wrapper = mount(<Modal
+            title="Ready"
+            onClose={onClose}
+        >Done</Modal>);
+        const overlay = wrapper.find('div').at(0);
+        const overlayNode = overlay.getDOMNode();
+        const dialogNode = wrapper.find('[role="dialog"]').getDOMNode();
+
+        // A text selection dragged out of the dialog ends with a click on the backdrop.
+        overlay.simulate('mousedown', {target: dialogNode});
+        overlay.simulate('click', {target: overlayNode});
+        expect(onClose).not.toHaveBeenCalled();
+
+        overlay.simulate('mousedown', {target: overlayNode});
+        overlay.simulate('click', {target: overlayNode});
+        expect(onClose).toHaveBeenCalledTimes(1);
+        wrapper.unmount();
+    });
+
+    test('Escape closes only the newest open modal', () => {
+        const outerClose = jest.fn();
+        const innerClose = jest.fn();
+        const outer = mount(<Modal
+            title="Outer"
+            onClose={outerClose}
+        >Outer</Modal>);
+        const inner = mount(<Modal
+            title="Inner"
+            onClose={innerClose}
+        >Inner</Modal>);
+        const pressEscape = () => act(() => {
+            window.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'}));
+        });
+
+        pressEscape();
+        expect(innerClose).toHaveBeenCalledTimes(1);
+        expect(outerClose).not.toHaveBeenCalled();
+
+        inner.unmount();
+        pressEscape();
+        expect(outerClose).toHaveBeenCalledTimes(1);
+        outer.unmount();
+    });
+
+    test('a locked modal keeps Escape from reaching the layer below', () => {
+        const outerClose = jest.fn();
+        const outer = mount(<Modal
+            title="Outer"
+            onClose={outerClose}
+        >Outer</Modal>);
+        const locked = mount(<Modal
+            title="Saving"
+            onClose={() => {}}
+            dismissDisabled
+        >Working…</Modal>);
+
+        act(() => {
+            window.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'}));
+        });
+        expect(outerClose).not.toHaveBeenCalled();
+        locked.unmount();
+        outer.unmount();
     });
 });

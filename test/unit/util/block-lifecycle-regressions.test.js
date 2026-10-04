@@ -7,7 +7,9 @@ test('operator buttons can be disposed before they are rendered', () => {
 
 test('ending an unchanged comment resize restores workspace resizing and tolerates a duplicate event', () => {
     const bubble = {
-        resizeStartSize_: {width: 100, height: 80}, width_: 100, height_: 80,
+        resizeStartSize_: {width: 100, height: 80},
+        width_: 100,
+        height_: 80,
         workspace_: {setResizesEnabled: jest.fn()}
     };
     Blockly.ScratchBubble.prototype.resizeMouseUp_.call(bubble);

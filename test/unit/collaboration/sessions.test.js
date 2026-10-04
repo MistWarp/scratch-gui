@@ -61,8 +61,10 @@ describe('join flow', () => {
         expect(host.session.getUsers()).toHaveLength(4);
         clients.forEach(client => {
             expect(client.session.isApproved).toBe(true);
-            expect(client.session.getUsers().map(u => u.id).sort())
-                .toEqual(host.session.getUsers().map(u => u.id).sort());
+            expect(client.session.getUsers().map(u => u.id)
+                .sort())
+                .toEqual(host.session.getUsers().map(u => u.id)
+                    .sort());
         });
         room.destroy();
     });
@@ -329,7 +331,7 @@ describe('op sequencing and convergence', () => {
             await room.hub.flush();
         }
         room.expectConverged();
-        expect(room.host.session.seq).toBe(4 + 10 * 4 * 2);
+        expect(room.host.session.seq).toBe(4 + (10 * 4 * 2));
         room.destroy();
     });
 });
@@ -580,7 +582,10 @@ describe('presence relay', () => {
         room.host.session.on('presence', seenByHost);
 
         clientA.session.submitLocalPresence({
-            v: PROTOCOL_VERSION, kind: 'presence', type: 'cursor', ts: Date.now(),
+            v: PROTOCOL_VERSION,
+            kind: 'presence',
+            type: 'cursor',
+            ts: Date.now(),
             payload: {x: 5, y: 6, userId: 'spoofed'}
         });
         await room.hub.flush();

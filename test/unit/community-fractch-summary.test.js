@@ -269,7 +269,11 @@ describe('fractch summaries', () => {
             {type: 'add', content: '+use "mistwarpData";'}
         ];
         const summary = {
-            variables: [], sprite: [], scripts: [], assets: [], watchers: [],
+            variables: [],
+            sprite: [],
+            scripts: [],
+            assets: [],
+            watchers: [],
             extensions: [{type: 'extension', change: 'added', id: 'mistwarpData', url: null}]
         };
         const result = filterCoveredDiffLines(moved, summary);
@@ -291,7 +295,10 @@ describe('fractch summaries', () => {
             {type: 'add', content: '+costume "c" file "assets/c.png" center 75,95 bitmap 2;'}
         ];
         const summary = {
-            variables: [], sprite: [], scripts: [], watchers: [],
+            variables: [],
+            sprite: [],
+            scripts: [],
+            watchers: [],
             assets: [{type: 'asset', change: 'changed', name: 'b', names: ['c', 'b'], text: 'Switched sprite to costume "b"'}]
         };
 

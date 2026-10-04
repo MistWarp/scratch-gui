@@ -23,7 +23,27 @@ import {hasRotur} from '../../lib/rotur/availability.js';
 import RoturExtensionHost from '../../containers/rotur-extension-host.jsx';
 import MistWarpGameHost from '../../containers/mistwarp-game-host.jsx';
 import RoturLoginModal from '../mw-rotur-login-modal/rotur-login-modal.jsx';
-import {closeRoturLoginModal} from '../../reducers/modals.js';
+import {
+    closeAssetsModal,
+    closeConnectionModal,
+    closeCustomExtensionModal,
+    closeDebuggerModal,
+    closeExtensionManagerModal,
+    closeFontsModal,
+    closeGameItemsModal,
+    closeGitModal,
+    closeHelpModal,
+    closeProductsModal,
+    closeProjectMetadataModal,
+    closeRestorePointModal,
+    closeRoturLoginModal,
+    closeSettingsModal,
+    closeUnknownPlatformModal,
+    closeUsernameModal,
+    closeVariableManagerModal
+} from '../../reducers/modals.js';
+import {closeProjectThemePrompt} from '../../reducers/mw-project-theme';
+import {closeCollaborationModal} from '../../reducers/collaboration';
 import SimpleDialog from '../../containers/simple-dialog.jsx';
 import AddonHooks from '../../addons/hooks.js';
 import NativeFindBar from '../find-bar/find-bar.jsx';
@@ -32,6 +52,8 @@ import EditorWelcome from '../editor-welcome/editor-welcome.jsx';
 import NativeSpotlight from '../../containers/spotlight.jsx';
 import MobileStageControls from '../mobile-stage-controls/mobile-stage-controls.jsx';
 import ChatDock from '../mw-chat/chat-dock.jsx';
+import PanelErrorBoundary from '../panel-error-boundary/panel-error-boundary.jsx';
+import {closeChat} from '../../lib/originchats/chat-ui.js';
 
 import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../../lib/constants/layout-constants';
 import {resolveStageSize} from '../../lib/utils/screen';
@@ -49,7 +71,7 @@ import {setStageSize} from '../../reducers/stage-size';
 import {isRendererSupported, isBrowserSupported} from '../../lib/utils/tw-environment-support-prober.js';
 
 import styles from './gui.css';
-import {getGuiComponents} from './gui-components';
+import {getGuiComponents, preloadLazyGuiComponents} from './gui-components';
 
 const messages = defineMessages({
     addExtension: {
@@ -71,6 +93,16 @@ const messages = defineMessages({
         id: 'gui.gui.stage',
         description: 'Stage workspace tab in a narrow editor layout',
         defaultMessage: 'Stage'
+    },
+    editorViews: {
+        id: 'gui.gui.editorViews',
+        description: 'Accessible label for the row of workspace tabs in a narrow editor layout',
+        defaultMessage: 'Editor views'
+    },
+    resizeStagePanel: {
+        id: 'gui.gui.resizeStagePanel',
+        description: 'Accessible label for the handle between the code area and the stage panel',
+        defaultMessage: 'Resize stage panel. Use left and right arrow keys.'
     }
 });
 
@@ -103,10 +135,52 @@ const MIN_EDITOR_PANE_WIDTH_WITH_CHAT = 460;
 const MIN_TARGET_PANE_HEIGHT = 180;
 const HIDE_STAGE_DRAG_SLOP = 80;
 const NARROW_LAYOUT_WIDTH = 900;
+// The editor asks for this much height, but never more than the window has, down to the smallest usable height.
+// This keeps short laptop and tablet screens from scrolling the whole page.
+const PREFERRED_MIN_EDITOR_HEIGHT = 640;
+const MIN_EDITOR_HEIGHT = 480;
 const STAGE_RESIZER_WIDTH = 6;
 const MIN_STAGE_PANEL_WIDTH = (FIXED_WIDTH * 0.5) + 18;
 
 const cachedStyleValues = new WeakMap();
+
+const getMinEditorHeight = viewportHeight => Math.max(
+    MIN_EDITOR_HEIGHT,
+    Math.min(PREFERRED_MIN_EDITOR_HEIGHT, viewportHeight || PREFERRED_MIN_EDITOR_HEIGHT)
+);
+
+// Optional windows get their own error boundary, so a crash in one of them leaves the editor running.
+// Some of them load on demand, so each one also gets its own Suspense boundary.
+// Close uses onClose when given, otherwise it dispatches closeAction to hide the window.
+const IsolatedPanel = ({children, closeAction, name, onClose, onClosePanel}) => {
+    const handleClose = useCallback(() => {
+        if (onClose) {
+            onClose();
+        } else if (closeAction && onClosePanel) {
+            onClosePanel(closeAction);
+        }
+    }, [closeAction, onClose, onClosePanel]);
+    return (
+        <PanelErrorBoundary
+            name={name}
+            onClose={handleClose}
+        >
+            <React.Suspense fallback={null}>
+                {children}
+            </React.Suspense>
+        </PanelErrorBoundary>
+    );
+};
+
+IsolatedPanel.propTypes = {
+    children: PropTypes.node,
+    closeAction: PropTypes.func,
+    name: PropTypes.string.isRequired,
+    onClose: PropTypes.func,
+    onClosePanel: PropTypes.func
+};
+
+const handleCloseChat = () => closeChat();
 
 const minEditorWidth = containerEl => {
     const next = containerEl && containerEl.nextElementSibling;
@@ -197,6 +271,9 @@ const GUIComponent = props => {
     const [mobileEditorView, setMobileEditorView] = useState('editor');
     const [mobileStageContainerWidth, setMobileStageContainerWidth] = useState(null);
     const [playerStageWidth, setPlayerStageWidth] = useState(null);
+    const [viewportHeight, setViewportHeight] = useState(
+        typeof window === 'undefined' ? PREFERRED_MIN_EDITOR_HEIGHT : window.innerHeight
+    );
 
     const isStageHidden = props.stageSizeMode === STAGE_SIZE_MODES.hidden && !props.isFullScreen;
     const preferredPanelWidthRef = useRef(null);
@@ -489,6 +566,26 @@ const GUIComponent = props => {
         window.addEventListener('resize', fitPlayer);
         return () => window.removeEventListener('resize', fitPlayer);
     }, [props.isPlayerOnly, props.customStageSize]);
+
+    useEffect(() => {
+        if (props.isPlayerOnly || typeof window === 'undefined') return;
+        const handleResize = () => setViewportHeight(window.innerHeight);
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [props.isPlayerOnly]);
+
+    useEffect(() => {
+        if (props.isPlayerOnly || typeof window === 'undefined') return;
+        // Fetch the on-demand windows once the editor is idle so opening them later is instant.
+        const preload = () => preloadLazyGuiComponents();
+        if (typeof window.requestIdleCallback === 'function') {
+            const handle = window.requestIdleCallback(preload, {timeout: 10000});
+            return () => window.cancelIdleCallback(handle);
+        }
+        const timeout = setTimeout(preload, 5000);
+        return () => clearTimeout(timeout);
+    }, [props.isPlayerOnly]);
 
     const autoHiddenRef = useRef(false);
     useEffect(() => {
@@ -812,6 +909,7 @@ const GUIComponent = props => {
         gitModalVisible,
         roturLoginModalVisible,
         onRequestCloseRoturLogin,
+        onClosePanel,
         vm,
         dispatch,
         ...componentProps
@@ -857,28 +955,145 @@ const GUIComponent = props => {
             <MistWarpGameHost />
             <NotificationsProvider />
             <TWSecurityManager securityManager={securityManager} />
-            <React.Suspense fallback={null}>
-                {!isPlayerOnly && <TWRestorePointManager />}
-                {!isPlayerOnly && <MWExtensionManagerModal />}
-                {!isPlayerOnly && <TWVariableManager />}
-                {!isPlayerOnly && hasRotur() && <MWProductsModal />}
-                {!isPlayerOnly && hasRotur() && <MWGameItemsModal />}
-                {!isPlayerOnly && <MWHelpModal />}
-                {!isPlayerOnly && <MWProjectThemeModal />}
-                {usernameModalVisible && <TWUsernameModal visible={usernameModalVisible} />}
-                {settingsModalVisible && (
+            {!isPlayerOnly && (
+                <IsolatedPanel
+                    name="Restore points"
+                    closeAction={closeRestorePointModal}
+                    onClosePanel={onClosePanel}
+                >
+                    <TWRestorePointManager />
+                </IsolatedPanel>
+            )}
+            {!isPlayerOnly && (
+                <IsolatedPanel
+                    name="Extension manager"
+                    closeAction={closeExtensionManagerModal}
+                    onClosePanel={onClosePanel}
+                >
+                    <MWExtensionManagerModal />
+                </IsolatedPanel>
+            )}
+            {!isPlayerOnly && (
+                <IsolatedPanel
+                    name="Variable manager"
+                    closeAction={closeVariableManagerModal}
+                    onClosePanel={onClosePanel}
+                >
+                    <TWVariableManager />
+                </IsolatedPanel>
+            )}
+            {!isPlayerOnly && hasRotur() && (
+                <IsolatedPanel
+                    name="Products"
+                    closeAction={closeProductsModal}
+                    onClosePanel={onClosePanel}
+                >
+                    <MWProductsModal />
+                </IsolatedPanel>
+            )}
+            {!isPlayerOnly && hasRotur() && (
+                <IsolatedPanel
+                    name="Game items"
+                    closeAction={closeGameItemsModal}
+                    onClosePanel={onClosePanel}
+                >
+                    <MWGameItemsModal />
+                </IsolatedPanel>
+            )}
+            {!isPlayerOnly && (
+                <IsolatedPanel
+                    name="Help"
+                    closeAction={closeHelpModal}
+                    onClosePanel={onClosePanel}
+                >
+                    <MWHelpModal />
+                </IsolatedPanel>
+            )}
+            {!isPlayerOnly && (
+                <IsolatedPanel
+                    name="Project theme"
+                    closeAction={closeProjectThemePrompt}
+                    onClosePanel={onClosePanel}
+                >
+                    <MWProjectThemeModal />
+                </IsolatedPanel>
+            )}
+            {usernameModalVisible && (
+                <IsolatedPanel
+                    name="Username"
+                    closeAction={closeUsernameModal}
+                    onClosePanel={onClosePanel}
+                >
+                    <TWUsernameModal visible={usernameModalVisible} />
+                </IsolatedPanel>
+            )}
+            {settingsModalVisible && (
+                <IsolatedPanel
+                    name="Settings"
+                    closeAction={closeSettingsModal}
+                    onClosePanel={onClosePanel}
+                >
                     <TWSettingsModal
                         isRtl={isRtl}
                         visible={settingsModalVisible}
+                        onClickAddonSettings={onClickAddonSettings}
                     />
-                )}
-                {customExtensionModalVisible && <TWCustomExtensionModal />}
-                {fontsModalVisible && <TWFontsModal />}
-                {assetsModalVisible && <MWAssetsModal />}
-                {projectMetadataModalVisible && <MWProjectMetadataModal />}
-                {unknownPlatformModalVisible && <TWUnknownPlatformModal />}
-                {gitModalVisible && <TWGitModal />}
-            </React.Suspense>
+                </IsolatedPanel>
+            )}
+            {customExtensionModalVisible && (
+                <IsolatedPanel
+                    name="Custom extension"
+                    closeAction={closeCustomExtensionModal}
+                    onClosePanel={onClosePanel}
+                >
+                    <TWCustomExtensionModal />
+                </IsolatedPanel>
+            )}
+            {fontsModalVisible && (
+                <IsolatedPanel
+                    name="Fonts"
+                    closeAction={closeFontsModal}
+                    onClosePanel={onClosePanel}
+                >
+                    <TWFontsModal />
+                </IsolatedPanel>
+            )}
+            {assetsModalVisible && (
+                <IsolatedPanel
+                    name="Assets"
+                    closeAction={closeAssetsModal}
+                    onClosePanel={onClosePanel}
+                >
+                    <MWAssetsModal />
+                </IsolatedPanel>
+            )}
+            {projectMetadataModalVisible && (
+                <IsolatedPanel
+                    name="Project details"
+                    closeAction={closeProjectMetadataModal}
+                    onClosePanel={onClosePanel}
+                >
+                    <MWProjectMetadataModal />
+                </IsolatedPanel>
+            )}
+            {unknownPlatformModalVisible && (
+                <IsolatedPanel
+                    name="Unknown platform"
+                    closeAction={closeUnknownPlatformModal}
+                    onClosePanel={onClosePanel}
+                >
+                    <TWUnknownPlatformModal />
+                </IsolatedPanel>
+            )}
+            {gitModalVisible && (
+                <IsolatedPanel
+                    name="Version control"
+                    closeAction={closeGitModal}
+                    onClosePanel={onClosePanel}
+                >
+                    <TWGitModal />
+                </IsolatedPanel>
+            )}
             {invalidProjectModalVisible && <TWInvalidProjectModal />}
             {roturLoginModalVisible && hasRotur() && (
                 <RoturLoginModal onRequestClose={onRequestCloseRoturLogin} />
@@ -887,6 +1102,8 @@ const GUIComponent = props => {
         </React.Fragment>
     ), [
         securityManager,
+        onClosePanel,
+        onClickAddonSettings,
         usernameModalVisible,
         settingsModalVisible,
         isRtl,
@@ -910,17 +1127,18 @@ const GUIComponent = props => {
                 minHeight: 0
             };
         }
+        const minHeight = getMinEditorHeight(viewportHeight);
         if (isStageHidden) {
             return {
                 minWidth: MIN_EDITOR_PANE_WIDTH + 16,
-                minHeight: 640
+                minHeight
             };
         }
         return {
             minWidth: MIN_EDITOR_PANE_WIDTH + MIN_STAGE_PANEL_WIDTH + STAGE_RESIZER_WIDTH + 16,
-            minHeight: 640
+            minHeight
         };
-    }, [isStageHidden, isNarrowLayout]);
+    }, [isStageHidden, isNarrowLayout, viewportHeight]);
 
     const stagePanelStyle = useMemo(() => {
         if (isStageHidden) {
@@ -982,7 +1200,13 @@ const GUIComponent = props => {
                     {...componentProps}
                 >
                     {alwaysEnabledModals}
-                    <TWDebugger />
+                    <IsolatedPanel
+                        name="Debugger"
+                        closeAction={closeDebuggerModal}
+                        onClosePanel={onClosePanel}
+                    >
+                        <TWDebugger />
+                    </IsolatedPanel>
                     {telemetryModalVisible ? (
                         <TelemetryModal
                             isRtl={isRtl}
@@ -1015,11 +1239,23 @@ const GUIComponent = props => {
                     ) : null}
                     <UpdateToast />
                     {connectionModalVisible ? (
-                        <ConnectionModal
-                            vm={vm}
-                        />
+                        <IsolatedPanel
+                            name="Connection"
+                            closeAction={closeConnectionModal}
+                            onClosePanel={onClosePanel}
+                        >
+                            <ConnectionModal
+                                vm={vm}
+                            />
+                        </IsolatedPanel>
                     ) : null}
-                    <CollaborationContainer />
+                    <IsolatedPanel
+                        name="Collaboration"
+                        closeAction={closeCollaborationModal}
+                        onClosePanel={onClosePanel}
+                    >
+                        <CollaborationContainer />
+                    </IsolatedPanel>
                     {costumeLibraryVisible ? (
                         <CostumeLibrary
                             vm={vm}
@@ -1038,35 +1274,41 @@ const GUIComponent = props => {
                             onRequestClose={onRequestCloseSoundLibrary}
                         />
                     ) : null}
-                    <MenuBar
-                        accountNavOpen={accountNavOpen}
-                        authorId={authorId}
-                        authorThumbnailUrl={authorThumbnailUrl}
-                        authorUsername={authorUsername}
-                        canChangeLanguage={canChangeLanguage}
-                        canChangeTheme={canChangeTheme}
-                        canEditTitle={canEditTitle}
-                        canManageFiles={canManageFiles}
-                        className={styles.menuBarPosition}
-                        enableCommunity={enableCommunity}
-                        logo={logo}
-                        showOpenFilePicker={showOpenFilePicker}
-                        showSaveFilePicker={showSaveFilePicker}
-                        onClickAbout={onClickAbout}
-                        onClickAccountNav={onClickAccountNav}
-                        onClickAddonSettings={onClickAddonSettings}
-                        onClickDesktopSettings={onClickDesktopSettings}
-                        onClickNewWindow={onClickNewWindow}
-                        onClickPackager={onClickPackager}
-                        onCloseAccountNav={onCloseAccountNav}
-                        onLogOut={onLogOut}
-                        onOpenExtensionLibrary={onOpenExtensionLibrary}
-                        onOpenExtensionManagerModal={onOpenExtensionManagerModal}
-                        onOpenRegistration={onOpenRegistration}
-                        onProjectTelemetryEvent={onProjectTelemetryEvent}
-                        onStartSelectingFileUpload={onStartSelectingFileUpload}
-                        onToggleLoginOpen={onToggleLoginOpen}
-                    />
+                    <PanelErrorBoundary
+                        closable={false}
+                        name="Menu bar"
+                        variant="inline"
+                    >
+                        <MenuBar
+                            accountNavOpen={accountNavOpen}
+                            authorId={authorId}
+                            authorThumbnailUrl={authorThumbnailUrl}
+                            authorUsername={authorUsername}
+                            canChangeLanguage={canChangeLanguage}
+                            canChangeTheme={canChangeTheme}
+                            canEditTitle={canEditTitle}
+                            canManageFiles={canManageFiles}
+                            className={styles.menuBarPosition}
+                            enableCommunity={enableCommunity}
+                            logo={logo}
+                            showOpenFilePicker={showOpenFilePicker}
+                            showSaveFilePicker={showSaveFilePicker}
+                            onClickAbout={onClickAbout}
+                            onClickAccountNav={onClickAccountNav}
+                            onClickAddonSettings={onClickAddonSettings}
+                            onClickDesktopSettings={onClickDesktopSettings}
+                            onClickNewWindow={onClickNewWindow}
+                            onClickPackager={onClickPackager}
+                            onCloseAccountNav={onCloseAccountNav}
+                            onLogOut={onLogOut}
+                            onOpenExtensionLibrary={onOpenExtensionLibrary}
+                            onOpenExtensionManagerModal={onOpenExtensionManagerModal}
+                            onOpenRegistration={onOpenRegistration}
+                            onProjectTelemetryEvent={onProjectTelemetryEvent}
+                            onStartSelectingFileUpload={onStartSelectingFileUpload}
+                            onToggleLoginOpen={onToggleLoginOpen}
+                        />
+                    </PanelErrorBoundary>
                     <StarterGuide
                         vm={vm}
                         onImport={onStartSelectingFileUpload}
@@ -1093,7 +1335,7 @@ const GUIComponent = props => {
                                     <Box
                                         className={styles.mobileEditorNav}
                                         role="tablist"
-                                        aria-label="Editor views"
+                                        aria-label={intl.formatMessage(messages.editorViews)}
                                     >
                                         <button
                                             type="button"
@@ -1351,7 +1593,7 @@ const GUIComponent = props => {
                                         onKeyDown={handleStagePanelResizeKeyDown}
                                         role="separator"
                                         aria-orientation="vertical"
-                                        aria-label="Resize stage panel. Use left and right arrow keys."
+                                        aria-label={intl.formatMessage(messages.resizeStagePanel)}
                                         tabIndex={0}
                                     />
                                     <Box
@@ -1384,10 +1626,18 @@ const GUIComponent = props => {
                                 </React.Fragment>
                             )}
                         </Box>
-                        <ChatDock />
+                        <IsolatedPanel
+                            name="Chat"
+                            onClose={handleCloseChat}
+                        >
+                            <ChatDock />
+                        </IsolatedPanel>
                     </Box>
-                    <React.Suspense fallback={null}>
-                        {extensionLibraryVisible ? (
+                    {extensionLibraryVisible ? (
+                        <IsolatedPanel
+                            name="Extension library"
+                            onClose={onRequestCloseExtensionLibrary}
+                        >
                             <ExtensionLibrary
                                 vm={vm}
                                 visible={extensionLibraryVisible}
@@ -1395,8 +1645,8 @@ const GUIComponent = props => {
                                 onOpenCustomExtensionModal={onOpenCustomExtensionModal}
                                 onEnableProcedureReturns={handleEnableProcedureReturns}
                             />
-                        ) : null}
-                    </React.Suspense>
+                        </IsolatedPanel>
+                    ) : null}
                     <DragLayer />
                 </Box>
             </React.Suspense>
@@ -1495,6 +1745,7 @@ GUIComponent.propTypes = {
     usernameModalVisible: PropTypes.bool,
     roturLoginModalVisible: PropTypes.bool,
     onRequestCloseRoturLogin: PropTypes.func,
+    onClosePanel: PropTypes.func,
     settingsModalVisible: PropTypes.bool,
     customExtensionModalVisible: PropTypes.bool,
     fontsModalVisible: PropTypes.bool,
@@ -1535,7 +1786,8 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => ({
     onSetStageSize: stageSize => dispatch(setStageSize(stageSize)),
-    onRequestCloseRoturLogin: () => dispatch(closeRoturLoginModal())
+    onRequestCloseRoturLogin: () => dispatch(closeRoturLoginModal()),
+    onClosePanel: closeAction => dispatch(closeAction())
 });
 
 export {

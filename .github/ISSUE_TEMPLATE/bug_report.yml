@@ -1,0 +1,61 @@
+name: Bug report
+description: Something in the editor or on the community site does not work.
+labels: [bug]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Editor
+        - Project player or embed
+        - Community site
+        - Addons
+        - Packager
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What to do to see the bug. Link or attach a project if it needs one.
+      placeholder: |
+        1. Open https://mistwarp.org/editor
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: What happens instead. Include errors from the browser console if there are any.
+    validations:
+      required: true
+  - type: input
+    id: build
+    attributes:
+      label: Build
+      description: The `id` from https://mistwarp.org/version.json, or "local" with the commit if you run it yourself.
+    validations:
+      required: false
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and operating system
+      placeholder: Chrome 140 on Windows 11
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Screenshots, recordings, or other context.
+    validations:
+      required: false

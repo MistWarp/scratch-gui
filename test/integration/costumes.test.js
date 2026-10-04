@@ -1,5 +1,6 @@
 import path from 'path';
 import SeleniumHelper from '../helpers/selenium-helper';
+import editorUri from '../helpers/editor-uri';
 
 const {
     clickContextMenuItem,
@@ -17,7 +18,7 @@ const {
 // The costumes library is slow to load. Increase the timeout for these tests.
 jest.setTimeout(60_000);
 
-const uri = path.resolve(__dirname, '../../build/index.html');
+const uri = editorUri;
 
 let driver;
 
@@ -245,7 +246,7 @@ describe('Working with costumes', () => {
         await expect(logs).toEqual([]);
     });
 
-    test('Load an invalid svg from scratch3 as costume', async () => { // eslint-disable-line no-disabled-tests
+    test('Load an invalid svg from scratch3 as costume', async () => {
         await loadUri(uri);
         await clickText('Costumes');
         const el = await findByXpath('//button[@aria-label="Choose a Costume"]');
@@ -259,7 +260,7 @@ describe('Working with costumes', () => {
         await expect(tileVisible).toBe(true);
     });
 
-    test('Load an invalid svg from scratch2 as costume', async () => { // eslint-disable-line no-disabled-tests
+    test('Load an invalid svg from scratch2 as costume', async () => {
         await loadUri(uri);
         await clickText('Costumes');
         const el = await findByXpath('//button[@aria-label="Choose a Costume"]');

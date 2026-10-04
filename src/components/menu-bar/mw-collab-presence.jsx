@@ -62,13 +62,55 @@ const messages = defineMessages({
         id: 'mw.collabPresence.showCollaborators',
         defaultMessage: 'Show current collaborators',
         description: 'Accessible label for the collaborator avatars button in the menu bar'
+    },
+    waitingToJoin: {
+        id: 'mw.collabPresence.waitingToJoin',
+        defaultMessage: '{count, plural, one {# person waiting to join} other {# people waiting to join}}',
+        description: 'Menu bar badge tooltip: how many people are asking the host to join the live session'
+    },
+    labelWithWaiting: {
+        id: 'mw.collabPresence.labelWithWaiting',
+        defaultMessage: '{label}, {waiting}',
+        description: 'Accessible label of the menu bar collaboration button while people wait to join. ' +
+            '{label} is its usual label; {waiting} says how many people are waiting, e.g. "2 people waiting to join".'
     }
 });
+
+/**
+ * How many people are waiting for this host to let them into the room.
+ * Project sessions let people in through the collaborator list instead.
+ * @returns {number} The count.
+ */
+const usePendingJoinRequestCount = () => {
+    const [, refresh] = React.useReducer(count => count + 1, 0);
+    React.useEffect(() => {
+        const service = CollaborationService.getInstance();
+        if (!service || typeof service.on !== 'function') return;
+        // Approving and denying also update the user list, which re-renders this.
+        const events = ['join-request-received', 'join-request-cancelled', 'users-updated'];
+        events.forEach(event => service.on(event, refresh));
+        return () => events.forEach(event => service.off(event, refresh));
+    }, []);
+    const service = CollaborationService.getInstance();
+    if (!service || service.scope || typeof service.getPendingJoinRequests !== 'function') return 0;
+    return service.getPendingJoinRequests().length;
+};
 
 const initialFor = username => (username || '?').replace(/^@/, '').charAt(0)
     .toUpperCase();
 
 const CollabPresence = ({intl, isConnected, isReconnecting, reconnectReason, users, onOpen, projectPresence}) => {
+    const waitingCount = usePendingJoinRequestCount();
+    const waiting = isConnected && waitingCount > 0 ?
+        intl.formatMessage(messages.waitingToJoin, {count: waitingCount}) : null;
+    const withWaiting = label => (waiting ? intl.formatMessage(messages.labelWithWaiting, {label, waiting}) : label);
+    const badge = waiting && (
+        <span
+            className={styles.requestBadge}
+            title={waiting}
+            aria-hidden="true"
+        >{waitingCount}</span>
+    );
     const phase = projectPresence?.phase;
     const reconnectMessage = reconnectReason === 'ROOM_NOT_FOUND' ? messages.waitingForHost : messages.reconnecting;
     let progress = null;
@@ -95,8 +137,9 @@ const CollabPresence = ({intl, isConnected, isReconnecting, reconnectReason, use
             type="button"
             className={classNames(styles.presence, {[styles.busy]: Boolean(progress)})}
             onClick={onOpen}
+            aria-label={waiting ? withWaiting(label) : null}
             title={editors.map(editor => editor.username).join(', ') || null}
-        >{label}</button>);
+        >{label}{badge}</button>);
     }
 
     const currentUserId = CollaborationService.getInstance().getCurrentUserId();
@@ -110,7 +153,7 @@ const CollabPresence = ({intl, isConnected, isReconnecting, reconnectReason, use
             type="button"
             className={styles.presence}
             onClick={onOpen}
-            aria-label={intl.formatMessage(messages.showCollaborators)}
+            aria-label={withWaiting(intl.formatMessage(messages.showCollaborators))}
             title={ordered.map(user => user.username).join(', ')}
         >
             <span className={styles.faces}>
@@ -139,6 +182,7 @@ const CollabPresence = ({intl, isConnected, isReconnecting, reconnectReason, use
                     </span>
                 )}
             </span>
+            {badge}
         </button>
     );
 };

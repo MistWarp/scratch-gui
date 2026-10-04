@@ -11,7 +11,8 @@ test('retries a failed chunk download once', async () => {
     jest.useFakeTimers();
     const error = Object.assign(new Error('Loading chunk 116 failed.'), {name: 'ChunkLoadError'});
     const module = {default: () => null};
-    const load = jest.fn().mockRejectedValueOnce(error).mockResolvedValueOnce(module);
+    const load = jest.fn().mockRejectedValueOnce(error)
+        .mockResolvedValueOnce(module);
     const pending = importWithRetry(load);
     await Promise.resolve();
     jest.runAllTimers();
@@ -31,10 +32,11 @@ test('a second failed chunk request reaches the error boundary', async () => {
     jest.useFakeTimers();
     const error = Object.assign(new Error('Loading chunk 116 failed.'), {name: 'ChunkLoadError'});
     const load = jest.fn().mockRejectedValue(error);
-    const pending = expect(importWithRetry(load)).rejects.toBe(error);
+    const pending = importWithRetry(load);
+    pending.catch(() => {});
     await Promise.resolve();
     jest.runAllTimers();
-    await pending;
+    await expect(pending).rejects.toBe(error);
     expect(load).toHaveBeenCalledTimes(2);
     jest.useRealTimers();
 });
@@ -44,7 +46,8 @@ test('blocked video playback is handled, releases the camera, and can be retried
     const stop = jest.fn();
     requestVideoStream.mockResolvedValue({getTracks: () => [{stop}]});
     const play = jest.spyOn(HTMLMediaElement.prototype, 'play')
-        .mockRejectedValueOnce(error).mockResolvedValueOnce(undefined);
+        .mockRejectedValueOnce(error)
+        .mockResolvedValueOnce(undefined);
     const provider = new VideoProvider();
     provider.onError = jest.fn();
     await provider.enableVideo();
@@ -98,7 +101,10 @@ test('stale community pages reload once per build without a reload loop', () => 
 });
 
 test('blocked session storage leaves chunk recovery to the manual reload button', () => {
-    const browser = {get sessionStorage () { throw new Error('blocked'); }, location: {reload: jest.fn()}};
+    const browser = {get sessionStorage () {
+        throw new Error('blocked');
+    },
+    location: {reload: jest.fn()}};
     expect(reloadStalePage(new Error('Importing a module script failed.'), browser)).toBe(false);
     expect(browser.location.reload).not.toHaveBeenCalled();
 });

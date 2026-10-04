@@ -3,3 +3,64 @@
     margin: 0 auto;
     padding: var(--page-pad);
 }
+
+/* Waits a moment before showing, so a page chunk that arrives quickly
+   replaces it without a flash. */
+.placeholder {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    animation: appear 0.2s ease 0.2s both;
+}
+
+.heading,
+.lead,
+.block {
+    display: block;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    animation: pulse 1.4s infinite ease-in-out;
+}
+
+.heading {
+    width: min(320px, 70%);
+    height: 30px;
+}
+
+.lead {
+    width: min(520px, 90%);
+    height: 14px;
+    margin-bottom: 12px;
+}
+
+.block {
+    height: 280px;
+}
+
+.srOnly {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+@keyframes appear {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes pulse {
+    0%,
+    100% { opacity: 1; }
+    50% { opacity: .55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .heading,
+    .lead,
+    .block {
+        animation: none;
+    }
+}

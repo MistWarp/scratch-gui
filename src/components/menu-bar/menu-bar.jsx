@@ -88,6 +88,7 @@ import {
     openSimpleDialog
 } from '../../reducers/modals';
 import {openCollaborationModal} from '../../reducers/collaboration';
+import {BLOCKS_TAB_INDEX} from '../../reducers/editor-tab';
 import {setPlayer} from '../../reducers/mode';
 import {
     getIsUpdating,
@@ -137,13 +138,18 @@ import {
 } from '../../lib/menu-bar/settings.js';
 
 import MediaRecorderButton from './media-recorder.jsx';
+import {
+    bookmarkShortcutHint,
+    WorkspaceBookmarkCategory,
+    WorkspaceBookmarkItem
+} from './workspace-bookmark-item.jsx';
 
 import {
     createWorkspaceBookmarksExportData,
     downloadJsonObject,
-    getDefaultWorkspaceBookmarksPayload,
+    getWorkspaceBookmarkShortcut,
+    loadWorkspaceBookmarksPayload,
     mergeWorkspaceBookmarksPayload,
-    readWorkspaceBookmarksFromStage,
     writeWorkspaceBookmarksToStage
 } from '../../lib/mw/workspace-bookmarks.js';
 
@@ -163,7 +169,8 @@ import {
     GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Wrench,
     Download, AppWindow, Computer, Shield, Code, Code2,
     Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, Video,
-    ShoppingBag, Backpack, Check, Zap
+    ShoppingBag, Backpack, Check, Zap,
+    Bookmark, BookmarkPlus, Trash2, FolderOpen
 } from 'lucide-react';
 
 import sharedMessages from '../../lib/constants/shared-messages';
@@ -194,7 +201,108 @@ const twMessages = defineMessages({
     noChanges: {
         id: 'mw.menuBar.noChanges',
         defaultMessage: 'There are no new changes to save.',
-        description: 'Tooltip on the disabled Save to MistWarp menu item when nothing changed'
+        description: 'Explanation under the disabled Save to MistWarp menu item when nothing changed'
+    },
+    gitCommitPromptMessage: {
+        id: 'mw.menuBar.gitCommit.promptMessage',
+        defaultMessage: 'Add a short message describing this version.',
+        description: 'Text in the prompt asking for a git commit message from the File menu'
+    },
+    gitPullConfirmTitle: {
+        id: 'mw.menuBar.gitPull.confirmTitle',
+        defaultMessage: 'Replace code with the remote version?',
+        description: 'Title of the confirmation before git pull replaces the open project'
+    },
+    saveMwpFailed: {
+        id: 'mw.menuBar.saveMwpFailed',
+        defaultMessage: 'Could not save MistWarp project: {error}',
+        description: 'Toast shown when saving the .mwp project file fails. {error} is the error message.'
+    },
+    mwpFileType: {
+        id: 'mw.menuBar.mwpFileType',
+        defaultMessage: 'MistWarp Project',
+        description: 'File type name shown in the save dialog for .mwp project files'
+    },
+    newProjectConfirm: {
+        id: 'mw.menuBar.newProject.confirm',
+        // eslint-disable-next-line max-len
+        defaultMessage: 'Starting a new project closes this workspace. A device backup will keep your current code. The saved MistWarp project stays unchanged. Cancel to keep editing.',
+        description: 'Confirmation shown before File > New replaces a project with unsaved changes'
+    },
+    newProjectNoBackupTitle: {
+        id: 'mw.menuBar.newProject.noBackupTitle',
+        defaultMessage: 'Start anyway without a backup?',
+        description: 'Title of the confirmation shown when File > New cannot back up the current project'
+    },
+    newProjectNoBackup: {
+        id: 'mw.menuBar.newProject.noBackup',
+        // eslint-disable-next-line max-len
+        defaultMessage: 'A device backup of your current project could not be made, for example because this browser is in private mode or out of storage. If you start a new project now, changes you have not saved will be lost.',
+        description: 'Explanation shown when File > New cannot back up the current project'
+    },
+    newProjectNoBackupConfirm: {
+        id: 'mw.menuBar.newProject.noBackupConfirm',
+        defaultMessage: 'Start without a backup',
+        description: 'Button that starts a new project even though the current one could not be backed up'
+    },
+    newProjectFailed: {
+        id: 'mw.menuBar.newProject.failed',
+        defaultMessage: 'Could not start a new project. Your current project is still open.',
+        description: 'Toast shown when File > New fails'
+    },
+    codeTabOnly: {
+        id: 'mw.menuBar.codeTabOnly',
+        defaultMessage: 'Available on the Code tab',
+        description: 'Explanation under Undo and Redo in the Edit menu while the Costumes or Sounds tab is open'
+    },
+    cloudSettings: {
+        id: 'mw.menuBar.cloudSettings',
+        defaultMessage: 'Cloud variable settings',
+        description: 'Edit menu item that opens the editor settings where cloud variables can be turned off'
+    }
+});
+
+const bookmarkMessages = defineMessages({
+    defaultName: {
+        id: 'tw.workspaceBookmarks.defaultName',
+        defaultMessage: 'Bookmark {number}',
+        description: 'Suggested name for a new workspace bookmark. {number} is its position in the list.'
+    },
+    empty: {
+        id: 'tw.workspaceBookmarks.empty',
+        defaultMessage: 'No bookmarks yet',
+        description: 'Shown in the Bookmarks menu when the project has no workspace bookmarks'
+    },
+    emptyHelp: {
+        id: 'tw.workspaceBookmarks.emptyHelp',
+        defaultMessage: 'A bookmark remembers a sprite and where you are in its code.',
+        description: 'Explanation under the empty Bookmarks menu'
+    },
+    add: {
+        id: 'tw.workspaceBookmarks.add',
+        defaultMessage: 'Bookmark this view',
+        description: 'Bookmarks menu item that saves the current sprite and code position'
+    },
+    export: {
+        id: 'tw.workspaceBookmarks.export',
+        defaultMessage: 'Export bookmarks',
+        description: 'Bookmarks menu item that downloads the bookmarks as a file'
+    },
+    import: {
+        id: 'tw.workspaceBookmarks.import',
+        defaultMessage: 'Import bookmarks',
+        description: 'Bookmarks menu item that adds bookmarks from a file'
+    },
+    clearAll: {
+        id: 'tw.workspaceBookmarks.clearAll',
+        defaultMessage: 'Delete all bookmarks',
+        description: 'Bookmarks menu item that deletes every workspace bookmark in the project'
+    },
+    unreadable: {
+        id: 'tw.workspaceBookmarks.unreadable',
+        // eslint-disable-next-line max-len
+        defaultMessage: 'The bookmarks saved in this project could not be read, so bookmarks cannot be changed here. They are left as they are.',
+        description: 'Alert when the bookmarks stored in a project are damaged'
     }
 });
 
@@ -245,14 +353,17 @@ const menuLabelMessages = defineMessages({
 
 const AboutButton = props => (
     <Button
+        aria-label={props.label}
         className={classNames(styles.menuBarItem, styles.hoverable)}
         iconClassName={styles.aboutIcon}
         iconElem={Info}
+        title={props.label}
         onClick={props.onClick}
     />
 );
 
 AboutButton.propTypes = {
+    label: PropTypes.string.isRequired,
     onClick: PropTypes.func.isRequired
 };
 
@@ -324,6 +435,9 @@ class MenuBar extends React.Component {
         this.disposeMenuBarSettings = null;
         this.menuResizeObserver = null;
         this.workspaceBookmarksProjectListener = null;
+        // False until the open project's bookmarks have been read, so saving
+        // can never replace them with an empty or stale list.
+        this.workspaceBookmarksReadable = false;
         this.undoRedoChangeListener = null;
         this.undoRedoWorkspace = null;
         this.unmounted = false;
@@ -371,6 +485,7 @@ class MenuBar extends React.Component {
             'getCurrentWorkspaceBookmarkState',
             'applyWorkspaceBookmarkState',
             'updateUndoRedoState',
+            'handleClickWorkspaceBookmarks',
             'handleAddWorkspaceBookmark',
             'handleSwitchWorkspaceBookmark',
             'handleDeleteWorkspaceBookmark',
@@ -424,9 +539,11 @@ class MenuBar extends React.Component {
         if (this.props.vm && this.props.vm.runtime) {
             this.workspaceBookmarksProjectListener = () => {
                 this.refreshMistWarpShared();
+                this.loadWorkspaceBookmarksFromProject();
             };
             this.props.vm.runtime.on('PROJECT_LOADED', this.workspaceBookmarksProjectListener);
         }
+        this.loadWorkspaceBookmarksFromProject();
 
         this.ensureScratchBlocks().then(ScratchBlocks => {
             if (this.unmounted) return;
@@ -531,16 +648,35 @@ class MenuBar extends React.Component {
         });
     }
 
-    showConfirm (title, message) {
+    showConfirm (title, message, confirmLabel) {
         return new Promise(resolve => {
             this.props.openSimpleDialog({
                 type: 'confirm',
                 title,
                 message,
+                choices: confirmLabel ? [{value: 'confirm', label: confirmLabel}] : null,
                 onOk: () => resolve(true),
                 onCancel: () => resolve(false)
             });
         });
+    }
+
+    async backUpBeforeNewProject () {
+        try {
+            await RestorePointAPI.createSafetyRestorePoint(this.props.vm, this.props.projectTitle);
+            return true;
+        } catch (error) {
+            // Private browsing and full storage both end up here.
+            // eslint-disable-next-line no-console
+            console.warn('Could not back up the project before starting a new one:', error);
+            // Nothing unsaved would be lost.
+            if (!this.props.projectChanged) return true;
+            return this.showConfirm(
+                this.props.intl.formatMessage(twMessages.newProjectNoBackupTitle),
+                this.props.intl.formatMessage(twMessages.newProjectNoBackup),
+                this.props.intl.formatMessage(twMessages.newProjectNoBackupConfirm)
+            );
+        }
     }
 
     async handleClickNew () {
@@ -549,15 +685,16 @@ class MenuBar extends React.Component {
         this.props.onRequestCloseFile();
         try {
             const readyToReplaceProject = await this.props.confirmReadyToReplaceProject(
-                'Starting a new project closes this workspace. A device backup will keep your current code. ' +
-                'The saved MistWarp project stays unchanged. Cancel to keep editing.'
+                this.props.intl.formatMessage(twMessages.newProjectConfirm)
             );
             if (!readyToReplaceProject) return false;
-            await RestorePointAPI.createSafetyRestorePoint(this.props.vm, this.props.projectTitle);
+            if (!(await this.backUpBeforeNewProject())) return false;
             await Promise.resolve(this.props.onClickNew(false));
             return true;
         } catch (error) {
-            this.showToastMessage(error.message, 'error');
+            // eslint-disable-next-line no-console
+            console.error(error);
+            this.showToastMessage(this.props.intl.formatMessage(twMessages.newProjectFailed), 'error');
             return false;
         } finally {
             this.newProjectPending = false;
@@ -767,7 +904,7 @@ class MenuBar extends React.Component {
         try {
             {
                 const ok = await this.showConfirm(
-                    'Replace code with the remote version?',
+                    this.props.intl.formatMessage(twMessages.gitPullConfirmTitle),
                     this.props.intl.formatMessage({
                         // eslint-disable-next-line max-len
                         defaultMessage: 'Pulling replaces your project with the pushed version. A device backup is saved first. Continue?',
@@ -819,7 +956,7 @@ class MenuBar extends React.Component {
                     description: 'Prompt title when committing to git from the File menu',
                     id: 'mw.menuBar.gitCommit.prompt'
                 }),
-                'Add a short message describing this version.',
+                this.props.intl.formatMessage(twMessages.gitCommitPromptMessage),
                 ''
             );
             if (message === null || !message.trim()) {
@@ -852,13 +989,14 @@ class MenuBar extends React.Component {
         if (this.mwpSaving) return false;
         this.mwpSaving = true;
         try {
-            const filename = projectFilename(this.props.projectTitle, 'MistWarp Project', 'mwp');
+            const fileType = this.props.intl.formatMessage(twMessages.mwpFileType);
+            const filename = projectFilename(this.props.projectTitle, fileType, 'mwp');
             let handle = saveAs ? null : this.state.mwpFileHandle;
             if (!handle && this.props.showSaveFilePicker) {
                 handle = await this.props.showSaveFilePicker({
                     suggestedName: filename,
                     types: [{
-                        description: 'MistWarp Project',
+                        description: fileType,
                         accept: {'application/x-mistwarp-project': ['.mwp']}
                     }],
                     excludeAcceptAllOption: true
@@ -891,7 +1029,9 @@ class MenuBar extends React.Component {
             this.props.onCloseGitStatus('savingMwp');
             if (error && error.name === 'AbortError') return false;
             this.props.showToast(
-                `Could not save MistWarp project: ${error && error.message ? error.message : error}`,
+                this.props.intl.formatMessage(twMessages.saveMwpFailed, {
+                    error: error && error.message ? error.message : String(error)
+                }),
                 'error'
             );
             return false;
@@ -922,46 +1062,54 @@ class MenuBar extends React.Component {
             target.tagName === 'TEXTAREA' ||
             target.isContentEditable
         );
-        if (!isTyping && !this.props.isPlayerOnly && event.ctrlKey && event.altKey) {
-            const key = event.key.toLowerCase();
-            if (key >= '1' && key <= '9') {
-                event.preventDefault();
-                void this.handleSwitchWorkspaceBookmark(parseInt(key, 10) - 1);
-                return;
-            }
-            if (key === '0') {
-                event.preventDefault();
-                void this.handleSwitchWorkspaceBookmark(9);
-                return;
-            }
-            if (key === 't') {
-                event.preventDefault();
-                void this.handleAddWorkspaceBookmark();
-                return;
-            }
+        if (isTyping || this.props.isPlayerOnly || !this.props.blocksTabVisible) return;
+        const shortcut = getWorkspaceBookmarkShortcut(event, isMac);
+        if (!shortcut) return;
+        event.preventDefault();
+        if (shortcut.type === 'add') {
+            void this.handleAddWorkspaceBookmark();
+        } else {
+            void this.handleSwitchWorkspaceBookmark(shortcut.index);
         }
     }
 
     loadWorkspaceBookmarksFromProject () {
-        try {
-            const vm = this.props.vm;
-            if (!vm || !vm.runtime) return;
-            const stage = vm.runtime.getTargetForStage();
-            if (!stage || !stage.comments) return;
-
-            const payload = readWorkspaceBookmarksFromStage(stage) || getDefaultWorkspaceBookmarksPayload();
-            this.setState({
-                workspaceBookmarks: payload.bookmarks,
-                workspaceBookmarksCategories: payload.categories,
-                workspaceBookmarksCollapsedCategories: payload.collapsedCategories
-            });
-        } catch (e) {
-            // eslint-disable-next-line no-console
-            console.warn('Failed to load workspace bookmarks:', e);
+        const vm = this.props.vm;
+        const stage = vm && vm.runtime && vm.runtime.getTargetForStage();
+        if (!stage || !stage.comments) {
+            this.workspaceBookmarksReadable = false;
+            return;
         }
+        const {payload, readable} = loadWorkspaceBookmarksPayload(stage);
+        this.workspaceBookmarksReadable = readable;
+        if (!readable) {
+            // eslint-disable-next-line no-console
+            console.warn('Workspace bookmarks in this project could not be read; leaving them unchanged.');
+        }
+        this.setState({
+            workspaceBookmarks: payload.bookmarks,
+            workspaceBookmarksCategories: payload.categories,
+            workspaceBookmarksCollapsedCategories: payload.collapsedCategories
+        });
+    }
+
+    async ensureWorkspaceBookmarksWritable () {
+        if (!this.workspaceBookmarksReadable) this.loadWorkspaceBookmarksFromProject();
+        if (this.workspaceBookmarksReadable) return true;
+        this.props.onRequestCloseWorkspaceBookmarks();
+        await this.showAlert(
+            this.props.intl.formatMessage({
+                defaultMessage: 'Error',
+                id: 'tw.workspaceBookmarks.errorTitle'
+            }),
+            this.props.intl.formatMessage(bookmarkMessages.unreadable)
+        );
+        return false;
     }
 
     saveWorkspaceBookmarksToProject () {
+        // Never overwrite bookmarks that were not read successfully.
+        if (!this.workspaceBookmarksReadable) return;
         try {
             const vm = this.props.vm;
             if (!vm || !vm.runtime) return;
@@ -1029,10 +1177,17 @@ class MenuBar extends React.Component {
         }
     }
 
+    handleClickWorkspaceBookmarks () {
+        this.props.onClickWorkspaceBookmarks();
+        // Pick up bookmarks changed elsewhere, such as by a collaborator.
+        this.loadWorkspaceBookmarksFromProject();
+    }
+
     async handleAddWorkspaceBookmark () {
         const maxTabs = 20;
         const enableCategories = true;
 
+        if (!(await this.ensureWorkspaceBookmarksWritable())) return;
         if (this.state.workspaceBookmarks.length >= maxTabs) {
             await this.showAlert(
                 this.props.intl.formatMessage({
@@ -1061,7 +1216,9 @@ class MenuBar extends React.Component {
                 description: 'Prompt title for bookmark name',
                 id: 'tw.workspaceBookmarks.namePrompt'
             }),
-            `Bookmark ${this.state.workspaceBookmarks.length + 1}`
+            this.props.intl.formatMessage(bookmarkMessages.defaultName, {
+                number: this.state.workspaceBookmarks.length + 1
+            })
         );
         if (name === null) return;
 
@@ -1085,7 +1242,9 @@ class MenuBar extends React.Component {
         }
 
         const bookmark = {
-            name: (name.trim() || `Bookmark ${this.state.workspaceBookmarks.length + 1}`),
+            name: (name.trim() || this.props.intl.formatMessage(bookmarkMessages.defaultName, {
+                number: this.state.workspaceBookmarks.length + 1
+            })),
             category,
             state,
             timestamp: Date.now()
@@ -1207,7 +1366,8 @@ class MenuBar extends React.Component {
         this.props.onRequestCloseWorkspaceBookmarks();
     }
 
-    handleImportWorkspaceBookmarks () {
+    async handleImportWorkspaceBookmarks () {
+        if (!(await this.ensureWorkspaceBookmarksWritable())) return;
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.json,application/json';
@@ -1343,7 +1503,8 @@ class MenuBar extends React.Component {
         this.props.onClickSeeInside();
     }
     handleClickUndo () {
-        if (this.props.isPlayerOnly || !this.state.canUndo) return;
+        // The costume and sound editors have their own undo; the workspace is hidden there.
+        if (this.props.isPlayerOnly || !this.props.blocksTabVisible || !this.state.canUndo) return;
         this.ensureScratchBlocks()
             .then(ScratchBlocks => {
                 if (this.unmounted) return false;
@@ -1359,7 +1520,7 @@ class MenuBar extends React.Component {
             });
     }
     handleClickRedo () {
-        if (!this.props.isPlayerOnly && this.state.canRedo) {
+        if (!this.props.isPlayerOnly && this.props.blocksTabVisible && this.state.canRedo) {
             this.ensureScratchBlocks().then(ScratchBlocks => {
                 if (this.unmounted) return;
                 const workspace = ScratchBlocks.getMainWorkspace();
@@ -1392,7 +1553,12 @@ class MenuBar extends React.Component {
         }
         if (typeof onClickAbout === 'function') {
             // make a button which calls a function
-            return <AboutButton onClick={onClickAbout} />;
+            return (
+                <AboutButton
+                    label={this.props.intl.formatMessage(menuLabelMessages.about)}
+                    onClick={onClickAbout}
+                />
+            );
         }
         // assume it's an array of objects
         // each item must have a 'title' FormattedMessage and a 'handleClick' function
@@ -1439,6 +1605,114 @@ class MenuBar extends React.Component {
             </MenuLabel>
         );
     }
+    renderWorkspaceBookmarkItems () {
+        const bookmarks = this.state.workspaceBookmarks;
+        const switchDisabled = !this.props.blocksTabVisible;
+        const renderItem = index => (
+            <WorkspaceBookmarkItem
+                key={`${bookmarks[index].timestamp}-${index}`}
+                disabled={switchDisabled}
+                index={index}
+                intl={this.props.intl}
+                name={String(bookmarks[index].name)}
+                onDelete={this.handleDeleteWorkspaceBookmark}
+                onRename={this.handleEditWorkspaceBookmark}
+                onSwitch={this.handleSwitchWorkspaceBookmark}
+            />
+        );
+        const categoryOf = bookmark => bookmark.category || 'General';
+        const usedCategories = [...new Set(bookmarks.map(categoryOf))];
+        if (usedCategories.length < 2) {
+            return bookmarks.map((_bookmark, index) => renderItem(index));
+        }
+        // Group by category, keeping each bookmark's index for its shortcut.
+        const orderedCategories = [
+            ...this.state.workspaceBookmarksCategories.filter(category => usedCategories.includes(category)),
+            ...usedCategories.filter(category => !this.state.workspaceBookmarksCategories.includes(category))
+        ];
+        return orderedCategories.map(category => {
+            const collapsed = this.state.workspaceBookmarksCollapsedCategories.includes(category);
+            return (
+                <React.Fragment key={`category-${category}`}>
+                    <WorkspaceBookmarkCategory
+                        category={category}
+                        collapsed={collapsed}
+                        onToggle={this.handleToggleWorkspaceBookmarkCategoryCollapsed}
+                    />
+                    {collapsed ? null : bookmarks
+                        .map((bookmark, index) => (categoryOf(bookmark) === category ? renderItem(index) : null))}
+                </React.Fragment>
+            );
+        });
+    }
+    renderWorkspaceBookmarksMenu () {
+        const label = this.props.intl.formatMessage(menuLabelMessages.bookmarks);
+        const hasBookmarks = this.state.workspaceBookmarks.length > 0;
+        const codeTabReason = this.props.blocksTabVisible ?
+            null : this.props.intl.formatMessage(twMessages.codeTabOnly);
+        return (
+            <MenuLabel
+                ariaLabel={label}
+                dataItem="bookmarks"
+                open={this.props.workspaceBookmarksMenuOpen}
+                onOpen={this.handleClickWorkspaceBookmarks}
+                onClose={this.props.onRequestCloseWorkspaceBookmarks}
+            >
+                <Bookmark size={20} />
+                <span className={styles.collapsibleLabel}>{label}</span>
+                <ChevronDown size={8} />
+                <MenuBarMenu
+                    className={classNames(styles.menuBarMenu)}
+                    mobileBack
+                    mobileTitle={label}
+                    onMobileClose={this.props.onRequestCloseWorkspaceBookmarks}
+                    open={this.props.workspaceBookmarksMenuOpen}
+                    place={this.props.isRtl ? 'left' : 'right'}
+                >
+                    {hasBookmarks ? this.renderWorkspaceBookmarkItems() : (
+                        <MenuItem
+                            disabled
+                            subtitle={this.props.intl.formatMessage(bookmarkMessages.emptyHelp)}
+                        >
+                            <Bookmark />
+                            {this.props.intl.formatMessage(bookmarkMessages.empty)}
+                        </MenuItem>
+                    )}
+                    <MenuSection>
+                        <MenuItem
+                            disabled={!this.props.blocksTabVisible}
+                            onClick={this.handleAddWorkspaceBookmark}
+                            shortcut={bookmarkShortcutHint('T')}
+                            subtitle={codeTabReason}
+                        >
+                            <BookmarkPlus />
+                            {this.props.intl.formatMessage(bookmarkMessages.add)}
+                        </MenuItem>
+                    </MenuSection>
+                    <MenuSection>
+                        <MenuItem
+                            disabled={!hasBookmarks}
+                            onClick={this.handleExportWorkspaceBookmarks}
+                        >
+                            <Download />
+                            {this.props.intl.formatMessage(bookmarkMessages.export)}
+                        </MenuItem>
+                        <MenuItem onClick={this.handleImportWorkspaceBookmarks}>
+                            <FolderOpen />
+                            {this.props.intl.formatMessage(bookmarkMessages.import)}
+                        </MenuItem>
+                        <MenuItem
+                            disabled={!hasBookmarks}
+                            onClick={this.handleClearAllWorkspaceBookmarks}
+                        >
+                            <Trash2 />
+                            {this.props.intl.formatMessage(bookmarkMessages.clearAll)}
+                        </MenuItem>
+                    </MenuSection>
+                </MenuBarMenu>
+            </MenuLabel>
+        );
+    }
     wrapAboutMenuCallback (callback) {
         return () => {
             callback();
@@ -1458,6 +1732,9 @@ class MenuBar extends React.Component {
         );
         // Show the About button only if we have a handler for it (like in the desktop app)
         const aboutButton = this.buildAboutMenu(this.props.onClickAbout);
+        const canUseUndoRedo = !this.props.isPlayerOnly && this.props.blocksTabVisible;
+        const undoRedoUnavailableReason = this.props.isPlayerOnly || this.props.blocksTabVisible ?
+            null : this.props.intl.formatMessage(twMessages.codeTabOnly);
         const menuBar = (
             <Box
                 className={classNames(
@@ -1617,7 +1894,7 @@ class MenuBar extends React.Component {
                                                 onClick={this.handleClickMistWarpShare}
                                                 shortcut={this.state.mistwarpProject ?
                                                     shortcutHint('save', this.props.customShortcuts) : null}
-                                                title={mistwarpAction ?
+                                                subtitle={mistwarpAction ?
                                                     null : this.props.intl.formatMessage(twMessages.noChanges)}
                                             >
                                                 <Globe />
@@ -1797,7 +2074,7 @@ class MenuBar extends React.Component {
                                     {this.props.isPlayerOnly ? null : (
                                         <DeletionRestorer>{(handleRestore, {restorable, deletedItem}) => (
                                             <MenuItem
-                                                className={classNames({[styles.disabled]: !restorable})}
+                                                disabled={!restorable}
                                                 onClick={this.handleRestoreOption(handleRestore)}
                                             >
                                                 <ArchiveRestore />
@@ -1808,9 +2085,10 @@ class MenuBar extends React.Component {
                                 </MenuSection>
                                 <MenuSection>
                                     <MenuItem
-                                        className={classNames({[styles.disabled]: !this.state.canUndo})}
-                                        onClick={this.state.canUndo ? this.handleClickUndo : null}
+                                        disabled={!canUseUndoRedo || !this.state.canUndo}
+                                        onClick={this.handleClickUndo}
                                         shortcut={shortcutHint('undo', this.props.customShortcuts)}
+                                        subtitle={undoRedoUnavailableReason}
                                     >
                                         <Undo />
 
@@ -1821,9 +2099,10 @@ class MenuBar extends React.Component {
                                         />
                                     </MenuItem>
                                     <MenuItem
-                                        className={classNames({[styles.disabled]: !this.state.canRedo})}
-                                        onClick={this.state.canRedo ? this.handleClickRedo : null}
+                                        disabled={!canUseUndoRedo || !this.state.canRedo}
+                                        onClick={this.handleClickRedo}
                                         shortcut={shortcutHint('redo', this.props.customShortcuts)}
+                                        subtitle={undoRedoUnavailableReason}
                                     >
                                         <Redo />
 
@@ -1880,13 +2159,10 @@ class MenuBar extends React.Component {
                                         </MenuItem>
                                     )}</ChangeUsername>
                                     <CloudVariablesToggler>{(toggleCloudVariables, {enabled, canUseCloudVariables}) => (
-                                        <MenuItem
-                                            className={classNames({[styles.disabled]: !canUseCloudVariables})}
-                                            onClick={toggleCloudVariables}
-                                        >
-                                            <Cloud />
-                                            {canUseCloudVariables ? (
-                                                enabled ? (
+                                        canUseCloudVariables ? (
+                                            <MenuItem onClick={toggleCloudVariables}>
+                                                <Cloud />
+                                                {enabled ? (
                                                     <FormattedMessage
                                                         defaultMessage="Disable Cloud Variables"
                                                         description="Menu bar item for disabling cloud variables"
@@ -1898,16 +2174,16 @@ class MenuBar extends React.Component {
                                                         description="Menu bar item for enabling cloud variables"
                                                         id="tw.menuBar.cloudOn"
                                                     />
-                                                )
-                                            ) : (
-                                                <FormattedMessage
-                                                    defaultMessage="Cloud Variables are not Available"
-                                                    // eslint-disable-next-line max-len
-                                                    description="Menu bar item for when cloud variables are not available"
-                                                    id="tw.menuBar.cloudUnavailable"
-                                                />
-                                            )}
-                                        </MenuItem>
+                                                )}
+                                            </MenuItem>
+                                        ) : (
+                                            // The editor decides cloud variables when a project opens,
+                                            // so this opens the setting that controls it instead.
+                                            <MenuItem onClick={this.handleRestoreOption(toggleCloudVariables)}>
+                                                <Cloud />
+                                                {this.props.intl.formatMessage(twMessages.cloudSettings)}
+                                            </MenuItem>
+                                        )
                                     )}</CloudVariablesToggler>
                                 </MenuSection>
                                 {hasRotur() && <MenuSection>
@@ -1930,6 +2206,7 @@ class MenuBar extends React.Component {
                                 </MenuSection>}
                             </MenuBarMenu>
                         </MenuLabel>
+                        {this.props.isPlayerOnly ? null : this.renderWorkspaceBookmarksMenu()}
                         <MenuLabel
                             ariaLabel={this.props.intl.formatMessage(menuLabelMessages.tools)}
                             dataItem="tools"
@@ -2185,6 +2462,7 @@ MenuBar.propTypes = {
     authorId: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]),
     authorThumbnailUrl: PropTypes.string,
     authorUsername: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]),
+    blocksTabVisible: PropTypes.bool,
     canChangeLanguage: PropTypes.bool,
     canChangeTheme: PropTypes.bool,
     canEditTitle: PropTypes.bool,
@@ -2297,6 +2575,7 @@ const mapStateToProps = (state, ownProps) => {
     return {
         authorUsername: state.scratchGui.tw.author.username,
         authorThumbnailUrl: state.scratchGui.tw.author.thumbnail,
+        blocksTabVisible: state.scratchGui.editorTab.activeTabIndex === BLOCKS_TAB_INDEX,
         projectId: state.scratchGui.projectState.projectId,
         aboutMenuOpen: aboutMenuOpen(state),
         accountMenuOpen: accountMenuOpen(state),

@@ -264,7 +264,6 @@ describe('CollaborationContainer', () => {
     });
 
 
-
     test('handleApproveJoinRequest and handleDenyJoinRequest delegate to the service', async () => {
         const container = instanceOf(mountContainer());
 
@@ -343,10 +342,11 @@ describe('CollaborationContainer', () => {
         const wrapper = mountContainer();
         const container = instanceOf(wrapper);
         let confirms = 0;
-        container.props = {...container.props, openSimpleDialog: config => {
-            confirms++;
-            config.onOk();
-        }};
+        container.props = {...container.props,
+            openSimpleDialog: config => {
+                confirms++;
+                config.onOk();
+            }};
 
         await expect(container.handleJoinRoom('room-1', 'Alice', null, {invite: 'key'}))
             .rejects.toMatchObject({collabCode: 'ROOM_NOT_FOUND'});
@@ -421,12 +421,52 @@ describe('CollaborationContainer', () => {
     test('the host hears about join requests while the window is closed', () => {
         const container = instanceOf(mountContainer());
         container.handleJoinRequestReceived({requesterId: 'r', requesterUsername: 'Bob'});
-        expect(NotificationSystem.info).toHaveBeenCalledWith(expect.stringContaining('Bob wants to join'), 10000);
+        // It stays until answered, and can be answered from the notification.
+        expect(NotificationSystem.info).toHaveBeenCalledWith('Bob wants to join your live session.', 0, {
+            actions: [
+                {label: 'Let them in', onClick: expect.any(Function)},
+                {label: 'Open Live Collaboration', onClick: expect.any(Function)}
+            ]
+        });
 
         NotificationSystem.info.mockClear();
         container.props = {...container.props, isVisible: true};
         container.handleJoinRequestReceived({requesterId: 'r', requesterUsername: 'Bob'});
         expect(NotificationSystem.info).not.toHaveBeenCalled();
+    });
+
+    test('a join request notification lets the person in or opens the window', async () => {
+        const wrapper = mountContainer();
+        const container = instanceOf(wrapper);
+        NotificationSystem.info.mockReturnValueOnce('notice-1');
+        container.handleJoinRequestReceived({requesterId: 'req-1', requesterUsername: 'Bob'});
+        const [letIn, open] = NotificationSystem.info.mock.calls[0][2].actions;
+
+        await letIn.onClick();
+        const [requesterId, role] = mockCollaborationService.approveJoinRequest.mock.calls[0];
+        expect(requesterId).toBe('req-1');
+        // No role given, so the room's invite role applies.
+        expect(role).toBeUndefined();
+        expect(NotificationSystem.dismiss).toHaveBeenCalledWith('notice-1');
+
+        open.onClick();
+        expect(collaborationState().modalVisible).toBe(true);
+    });
+
+    test('a join request notification goes away once the request is answered elsewhere', () => {
+        const wrapper = mountContainer();
+        const container = instanceOf(wrapper);
+        NotificationSystem.info.mockReturnValueOnce('notice-1').mockReturnValueOnce('notice-2');
+        container.handleJoinRequestReceived({requesterId: 'a', requesterUsername: 'Ann'});
+        container.handleJoinRequestReceived({requesterId: 'b', requesterUsername: 'Ben'});
+
+        container.handleJoinRequestCancelled({requesterId: 'a'});
+        expect(NotificationSystem.dismiss).toHaveBeenCalledWith('notice-1');
+
+        // Opening the window, which lists the requests, clears the rest.
+        store.dispatch({type: 'scratch-gui/collaboration/OPEN_COLLABORATION_MODAL'});
+        wrapper.update();
+        expect(NotificationSystem.dismiss).toHaveBeenCalledWith('notice-2');
     });
 
     test('a failed download keeps the loader up while it retries, then gives up', () => {

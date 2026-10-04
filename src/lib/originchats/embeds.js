@@ -1,3 +1,4 @@
+import {parseHttpUrl, safeUrl} from '../utils/safe-url.js';
 import {ORIGINCHATS_WEB} from './links.js';
 
 const HOST = /^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?(?::\d+)?$/i;
@@ -18,6 +19,7 @@ const IMAGE_EXT = /\.(?:png|jpe?g|gif|webp|avif|bmp|svg)$/i;
 const VIDEO_EXT = /\.(?:mp4|webm|mov|m4v|ogv)$/i;
 const AUDIO_EXT = /\.(?:mp3|wav|ogg|oga|m4a|flac|aac|opus)$/i;
 const MAX_EMBEDS = 3;
+const MISTWARP_API_BASE = process.env.MW_API_BASE || 'https://api.mistwarp.org/v1';
 const IMAGE_PROXY = 'https://wsrv.nl/?n=-1&url=';
 const TRUSTED_MEDIA = [
     'chats.mistwarp.org',
@@ -42,15 +44,6 @@ const cleanHost = raw => {
     return HOST.test(host) && host.includes('.') ? host : null;
 };
 
-const toUrl = raw => {
-    try {
-        const url = new URL(raw);
-        return url.protocol === 'https:' || url.protocol === 'http:' ? url : null;
-    } catch (e) {
-        return null;
-    }
-};
-
 const segments = url => url.pathname.split('/')
     .filter(Boolean)
     .map(part => {
@@ -67,7 +60,7 @@ const parseInvite = raw => {
         const server = cleanHost(native[1]);
         return server ? {server, code: null} : null;
     }
-    const url = toUrl(raw);
+    const url = parseHttpUrl(raw);
     if (!url) return null;
     const host = url.host.toLowerCase();
     const parts = segments(url);
@@ -92,7 +85,7 @@ const parseInvite = raw => {
 };
 
 const parseMessageLink = raw => {
-    const url = toUrl(raw);
+    const url = parseHttpUrl(raw);
     if (!url || !SHARE_HOSTS.includes(url.host.toLowerCase())) return null;
     const match = MESSAGE_PATH.exec(url.pathname);
     if (!match) return null;
@@ -102,14 +95,14 @@ const parseMessageLink = raw => {
 };
 
 const parseProjectLink = raw => {
-    const url = toUrl(raw);
+    const url = parseHttpUrl(raw);
     if (!url || !MISTWARP_HOSTS.includes(url.host.toLowerCase())) return null;
     const match = PROJECT_PATH.exec(url.pathname);
     return match ? {id: match[1]} : null;
 };
 
 const mediaType = raw => {
-    const url = toUrl(raw);
+    const url = parseHttpUrl(raw);
     if (!url) return null;
     if (IMAGE_EXT.test(url.pathname)) return 'image';
     if (VIDEO_EXT.test(url.pathname)) return 'video';
@@ -123,7 +116,7 @@ const detectEmbed = raw => {
     const message = parseMessageLink(raw);
     if (message) return {type: 'message', url: raw, ...message};
     const youtube = YOUTUBE.exec(String(raw || ''));
-    if (youtube && toUrl(raw)) return {type: 'youtube', url: raw, id: youtube[1]};
+    if (youtube && parseHttpUrl(raw)) return {type: 'youtube', url: raw, id: youtube[1]};
     const project = parseProjectLink(raw);
     if (project) return {type: 'project', url: raw, ...project};
     const media = mediaType(raw);
@@ -175,13 +168,8 @@ const originChatsInviteUrl = (server, code) => (code ?
     `${ORIGINCHATS_WEB}/invite/${encodeURIComponent(server)}/${encodeURIComponent(code)}` :
     `${ORIGINCHATS_WEB}/app?server=${encodeURIComponent(server)}`);
 
-const safeUrl = raw => {
-    const url = toUrl(raw);
-    return url ? url.href : null;
-};
-
 const trustedMedia = url => {
-    const parsed = toUrl(url);
+    const parsed = parseHttpUrl(url);
     return Boolean(parsed) && TRUSTED_MEDIA.includes(parsed.host.toLowerCase());
 };
 
@@ -236,7 +224,7 @@ const fetchSharedMessage = (server, channel, id) => cachedJson(
 );
 
 const fetchProjectCard = async id => {
-    const data = await cachedJson(`project:${id}`, `https://api.mistwarp.org/v1/projects/${encodeURIComponent(id)}`);
+    const data = await cachedJson(`project:${id}`, `${MISTWARP_API_BASE}/projects/${encodeURIComponent(id)}`);
     const project = data && data.project;
     if (!project || !project.title) return null;
     return {

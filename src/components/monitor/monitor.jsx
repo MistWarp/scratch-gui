@@ -167,7 +167,8 @@ MonitorComponent.propTypes = {
     componentRef: PropTypes.func.isRequired,
     draggable: PropTypes.bool.isRequired,
     id: PropTypes.string.isRequired,
-    label: PropTypes.string.isRequired,
+    // Not read here, but forwarded to the mode component (e.g. DefaultMonitor) via {...props}.
+    label: PropTypes.string.isRequired, // eslint-disable-line react/no-unused-prop-types
     mode: PropTypes.oneOf(monitorModes),
     opcode: PropTypes.string.isRequired,
     onDragEnd: PropTypes.func.isRequired,

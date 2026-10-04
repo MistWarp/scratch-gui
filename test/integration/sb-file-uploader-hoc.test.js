@@ -1,5 +1,6 @@
 import path from 'path';
 import SeleniumHelper from '../helpers/selenium-helper';
+import editorUri from '../helpers/editor-uri';
 
 const {
     clickText,
@@ -10,7 +11,7 @@ const {
     loadUri
 } = new SeleniumHelper();
 
-const uri = path.resolve(__dirname, '../../build/index.html');
+const uri = editorUri;
 
 let driver;
 

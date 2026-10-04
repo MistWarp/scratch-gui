@@ -51,8 +51,23 @@ import styles from './interface.css';
 
 trackOnce('editor_open', {source: 'editor'});
 
+const messages = defineMessages({
+    defaultTitle: {
+        defaultMessage: 'Scratch, Supercharged',
+        description: 'Title of homepage',
+        id: 'tw.guiDefaultTitle'
+    },
+    addonSettingsTitle: {
+        defaultMessage: 'Addon Settings',
+        description: 'Title of the window that shows addon settings in the editor',
+        id: 'mw.addonSettingsWindow.title'
+    }
+});
+
 // Import window manager dynamically
 let settingsWindow = null;
+// Addons can open the window without access to intl, so the interface keeps the translated title here.
+let addonSettingsTitle = messages.addonSettingsTitle.defaultMessage;
 
 const syncCssVarsToIframe = (iframe, vars) => {
     const doc = iframe.contentDocument;
@@ -127,7 +142,7 @@ const handleClickAddonSettings = addonId => {
     
     // Create new settings window
     settingsWindow = windowManager.createWindow({
-        title: 'Addon Settings',
+        title: addonSettingsTitle,
         width: 900,
         height: 700,
         minWidth: 600,
@@ -147,14 +162,6 @@ const handleClickAddonSettings = addonId => {
 if (typeof window !== 'undefined') {
     window.handleClickAddonSettings = handleClickAddonSettings;
 }
-
-const messages = defineMessages({
-    defaultTitle: {
-        defaultMessage: 'Scratch, Supercharged',
-        description: 'Title of homepage',
-        id: 'tw.guiDefaultTitle'
-    }
-});
 
 const WrappedMenuBar = compose(
     SBFileUploaderHOC,
@@ -287,10 +294,19 @@ class Interface extends React.Component {
         super(props);
         this.handleUpdateProjectTitle = this.handleUpdateProjectTitle.bind(this);
     }
+    componentDidMount () {
+        this.updateAddonSettingsTitle();
+    }
     componentDidUpdate (prevProps) {
         if (prevProps.isLoading && !this.props.isLoading) {
             loadServiceWorker();
         }
+        if (prevProps.intl !== this.props.intl) {
+            this.updateAddonSettingsTitle();
+        }
+    }
+    updateAddonSettingsTitle () {
+        addonSettingsTitle = this.props.intl.formatMessage(messages.addonSettingsTitle);
     }
     handleUpdateProjectTitle (title, isDefault) {
         if (isDefault || !title) {

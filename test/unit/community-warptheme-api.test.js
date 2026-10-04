@@ -86,7 +86,7 @@ describe('WarpTheme API adapter', () => {
     });
 
     test('tracks explicit downloads and preserves an existing like toggle', async () => {
-        window.fetch.mockImplementation((url, options) => {
+        window.fetch.mockImplementation(url => {
             if (url.endsWith('/api/user/likes')) {
                 return Promise.resolve({
                     ok: true,
@@ -186,6 +186,19 @@ describe('WarpTheme API adapter', () => {
 
         await expect(request('/user/likes', {optionalAuth: true})).rejects.toThrow('Expired session');
         expect(localStorage.getItem('mw:warptheme-session')).toBeNull();
+    });
+
+    test('explains a failed WarpTheme request without status codes', async () => {
+        window.fetch.mockResolvedValue({
+            ok: false,
+            status: 502,
+            json: () => Promise.resolve({error: 'Bad Gateway'})
+        });
+
+        const error = await request('/themes').catch(caught => caught);
+        expect(error.message).toBe('MistWarp is having trouble right now. Try again in a moment.');
+        expect(error.status).toBe(502);
+        expect(error.message).not.toContain('502');
     });
 
     test('authorizes WarpTheme with the Rotur token in a header, never in a URL', async () => {

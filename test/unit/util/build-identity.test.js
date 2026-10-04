@@ -14,8 +14,10 @@ const runBuild = async (initialEnv = {}, args = ['--site-only'], siblingDocs = f
         .replace(/^export /gm, '');
     const source = script('build-id.mjs') + script('build.mjs');
     const context = {
-        process: {env: environment, argv: ['node', 'build.mjs', ...args],
-            cwd: () => '/test', execPath: '/node'},
+        process: {env: environment,
+            argv: ['node', 'build.mjs', ...args],
+            cwd: () => '/test',
+            execPath: '/node'},
         loadEnv: () => ({}),
         fs: {existsSync: file => siblingDocs && file === '../docs/build'},
         os: {tmpdir: () => '/tmp'},
@@ -28,15 +30,15 @@ const runBuild = async (initialEnv = {}, args = ['--site-only'], siblingDocs = f
             // change the identity of the library build or version.json.
             if (head !== null) head = 'commit-made-during-build';
         },
-        execFileSync: (command, args) => {
+        execFileSync: (command, commandArgs) => {
             if (command === 'git') {
                 if (head === null) throw new Error('not a git repository');
                 return head;
             }
-            if (command === 'pnpm') steps.push(`pnpm ${args.join(' ')}`);
-            if (args[0] === 'scripts/sync-forks.mjs') steps.push('sync-forks');
-            if (args[0] === 'scripts/build-docs.mjs') steps.push(`build-docs ${args[1]}`);
-            if (args[0] === 'scripts/write-version.mjs') {
+            if (command === 'pnpm') steps.push(`pnpm ${commandArgs.join(' ')}`);
+            if (commandArgs[0] === 'scripts/sync-forks.mjs') steps.push('sync-forks');
+            if (commandArgs[0] === 'scripts/build-docs.mjs') steps.push(`build-docs ${commandArgs[1]}`);
+            if (commandArgs[0] === 'scripts/write-version.mjs') {
                 identities.push(environment.MW_BUILD_ID || environment.GITHUB_SHA || head);
             }
         }

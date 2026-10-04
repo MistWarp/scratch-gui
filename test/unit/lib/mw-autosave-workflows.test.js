@@ -77,7 +77,8 @@ test('pushes the worktree without committing', async () => {
         commitChanges: false
     }));
     expect(onSaved).toHaveBeenCalledTimes(1);
-    expect(showToast).toHaveBeenCalledWith('Project autosaved.', 'success');
+    expect(showToast).toHaveBeenCalledWith(expect.anything(), 'success');
+    expect(showToast.mock.calls[0][0].props.defaultMessage).toBe('Project autosaved.');
 });
 
 test('stays quiet when the upload agreement is pending', async () => {
@@ -107,7 +108,8 @@ test('notifies on unexpected failures', async () => {
         settings
     })).resolves.toBe(false);
 
-    expect(showToast).toHaveBeenCalledWith('Autosave failed.', 'error');
+    expect(showToast).toHaveBeenCalledWith(expect.anything(), 'error');
+    expect(showToast.mock.calls[0][0].props.id).toBe('mw.autosave.failed');
 });
 
 

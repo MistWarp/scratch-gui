@@ -1,5 +1,5 @@
 import searchPath from '../../src/community/search-path.js';
-import searchFocusIndex from '../../src/community/search-keyboard.js';
+import searchFocusIndex, {searchKeyAction} from '../../src/community/search-keyboard.js';
 import matchScore, {rankSections} from '../../src/community/search-rank.js';
 
 describe('community search navigation', () => {
@@ -22,6 +22,27 @@ describe('community search keyboard navigation', () => {
     test('ignores unrelated keys and empty result sets', () => {
         expect(searchFocusIndex('Enter', 0, 3)).toBeNull();
         expect(searchFocusIndex('ArrowDown', -1, 0)).toBe(-1);
+    });
+
+    test('moves the highlighted quick result while focus stays in the input', () => {
+        expect(searchKeyAction('ArrowDown', -1, 3, true)).toEqual({type: 'move', index: 0});
+        expect(searchKeyAction('ArrowUp', 0, 3, true)).toEqual({type: 'move', index: 2});
+        expect(searchKeyAction('End', 0, 3, true)).toEqual({type: 'move', index: 2});
+        expect(searchKeyAction('Home', 2, 3, true)).toEqual({type: 'move', index: 0});
+    });
+
+    test('leaves Home and End to the caret until a result is highlighted', () => {
+        expect(searchKeyAction('Home', -1, 3, true)).toBeNull();
+        expect(searchKeyAction('End', -1, 3, false)).toBeNull();
+    });
+
+    test('opens, selects, and closes quick results', () => {
+        expect(searchKeyAction('ArrowDown', -1, 0, false)).toEqual({type: 'open'});
+        expect(searchKeyAction('Enter', 1, 3, true)).toEqual({type: 'select', index: 1});
+        expect(searchKeyAction('Enter', -1, 3, true)).toBeNull();
+        expect(searchKeyAction('Enter', 1, 3, false)).toBeNull();
+        expect(searchKeyAction('Escape', 1, 3, true)).toEqual({type: 'close'});
+        expect(searchKeyAction('a', 1, 3, true)).toBeNull();
     });
 });
 

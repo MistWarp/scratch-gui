@@ -4,7 +4,7 @@ const makeToggler = overrides => new CloudVariablesToggler({
     canUseCloudVariables: true,
     enabled: false,
     onCloudChange: jest.fn(),
-    onShowCloudUnavailable: jest.fn(),
+    onOpenCloudSettings: jest.fn(),
     ...overrides
 });
 
@@ -15,15 +15,15 @@ describe('cloud variable toggler', () => {
         toggler.toggleCloudVariables();
 
         expect(toggler.props.onCloudChange).toHaveBeenCalledWith(true);
-        expect(toggler.props.onShowCloudUnavailable).not.toHaveBeenCalled();
+        expect(toggler.props.onOpenCloudSettings).not.toHaveBeenCalled();
     });
 
-    test('shows an app alert without changing state when cloud variables are unavailable', () => {
+    test('opens the cloud variable setting without changing state when the toggle is unavailable', () => {
         const toggler = makeToggler({canUseCloudVariables: false});
 
         toggler.toggleCloudVariables();
 
-        expect(toggler.props.onShowCloudUnavailable).toHaveBeenCalledTimes(1);
+        expect(toggler.props.onOpenCloudSettings).toHaveBeenCalledTimes(1);
         expect(toggler.props.onCloudChange).not.toHaveBeenCalled();
     });
 });

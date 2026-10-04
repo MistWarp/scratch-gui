@@ -10,6 +10,7 @@ import DiffView, {parseDiff} from '../components/DiffView.jsx';
 import ProjectFiles from '../components/ProjectFiles.jsx';
 import SpriteList from '../components/SpriteList.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
+import {tabPanelProps} from '../components/SectionTabs.jsx';
 import UserLink from '../components/UserLink.jsx';
 import Button from '../components/ui/Button.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
@@ -118,7 +119,7 @@ const Commit = () => {
                 coAuthors: metadata.coAuthors || metadata.collaborators || []
             });
             setDiff(inspected.diff || 'No textual changes.');
-            setPageMeta({title: `${metadata.message || sha.slice(0, 7)} · Commit`});
+            setPageMeta({title: communityText('{value1} · Commit', {value1: metadata.message || sha.slice(0, 7)})});
             coAuthorsPromise.then(coAuthorData => {
                 if (!coAuthorData || contextRef.current !== context) return;
                 setEntry(current => (current ? ({
@@ -321,27 +322,30 @@ const Commit = () => {
                     value={fileView ? 'files' : 'changes'}
                     onChange={key => (key === 'files' ? showFiles(historicalPath) : showDiff())}
                     ariaLabel="Commit views"
+                    idPrefix="commit"
                 />
             </PageHeader>
-            {fileView ? (
-                <ProjectFiles
-                    bounded
-                    project={{...project, gitHead: sha}}
-                    initialPath={historicalPath}
-                    onSelectPath={selectHistoricalFile}
-                />
-            ) : files.length ? (
-                <div className={styles.layout}>
-                    <SpriteList
-                        files={files}
-                        fileTexts={fileTexts}
-                        loadAsset={loadCommitAsset}
-                        activeSprite={activeSprite}
-                        onSelect={name => setActiveSprite(current => (current === name ? '' : name))}
+            <div {...tabPanelProps('commit', fileView ? 'files' : 'changes')}>
+                {fileView ? (
+                    <ProjectFiles
+                        bounded
+                        project={{...project, gitHead: sha}}
+                        initialPath={historicalPath}
+                        onSelectPath={selectHistoricalFile}
                     />
-                    <section className={styles.diff}><DiffView diff={diff} spriteFilter={activeSprite} onOpenFile={showFiles} loadAsset={loadCommitAsset} fileTexts={fileTexts} /></section>
-                </div>
-            ) : <EmptyState icon={GitCommitHorizontal} title={communityText('No files changed')}>{communityText('This commit did not change any files.')}</EmptyState>}
+                ) : files.length ? (
+                    <div className={styles.layout}>
+                        <SpriteList
+                            files={files}
+                            fileTexts={fileTexts}
+                            loadAsset={loadCommitAsset}
+                            activeSprite={activeSprite}
+                            onSelect={name => setActiveSprite(current => (current === name ? '' : name))}
+                        />
+                        <section className={styles.diff}><DiffView diff={diff} spriteFilter={activeSprite} onOpenFile={showFiles} loadAsset={loadCommitAsset} fileTexts={fileTexts} /></section>
+                    </div>
+                ) : <EmptyState icon={GitCommitHorizontal} title={communityText('No files changed')}>{communityText('This commit did not change any files.')}</EmptyState>}
+            </div>
             {manageOpen ? (
                 <Modal
                     className={styles.manageModal}

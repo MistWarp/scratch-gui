@@ -185,9 +185,13 @@ const RemixTree = () => {
     const baseUrl = projectBaseUrl({project: selected, projectId: id, vanitySlug: slug});
 
     useEffect(() => {
-        if (selected) setPageMeta({title: `${selected.title || 'Project'} · Remix tree`});
-        else setPageMeta({title: 'Remix tree'});
-    }, [selected]);
+        if (!selected) {
+            setPageMeta({title: communityText('Remix tree')});
+            return;
+        }
+        const projectTitle = selected.title || communityText('Project');
+        setPageMeta({title: communityText('{value1} · Remix tree', {value1: projectTitle})});
+    }, [communityText, selected]);
 
     if (resolving) {
         return <main className={styles.page}><StatusMessage>{communityText('Finding project…')}</StatusMessage></main>;

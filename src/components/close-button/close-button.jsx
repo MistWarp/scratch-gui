@@ -2,14 +2,28 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import classNames from 'classnames';
 import {ArrowLeft, X} from 'lucide-react';
+import {defineMessages, injectIntl, intlShape} from 'react-intl';
 
 import styles from './close-button.css';
+
+const messages = defineMessages({
+    back: {
+        defaultMessage: 'Back',
+        description: 'Accessible label of the arrow button that goes back',
+        id: 'mw.closeButton.back'
+    },
+    close: {
+        defaultMessage: 'Close',
+        description: 'Accessible label of the X button that closes a window or message',
+        id: 'mw.closeButton.close'
+    }
+});
 
 const iconSize = size => (size === 'small' ? 8 : 16);
 
 const CloseButton = props => (
     <button
-        aria-label={props.buttonType === 'back' ? 'Back' : 'Close'}
+        aria-label={props.intl.formatMessage(props.buttonType === 'back' ? messages.back : messages.close)}
         className={classNames(
             styles.closeButton,
             props.className,
@@ -50,6 +64,7 @@ CloseButton.propTypes = {
     buttonType: PropTypes.oneOf(['back', 'close']),
     className: PropTypes.string,
     color: PropTypes.string,
+    intl: intlShape.isRequired,
     onClick: PropTypes.func.isRequired,
     size: PropTypes.oneOf([CloseButton.SIZE_SMALL, CloseButton.SIZE_LARGE])
 };
@@ -60,4 +75,16 @@ CloseButton.defaultProps = {
     buttonType: 'close'
 };
 
-export default CloseButton;
+const IntlCloseButton = injectIntl(CloseButton);
+// Keep the size and colour constants reachable through the wrapped component.
+Object.assign(IntlCloseButton, {
+    SIZE_SMALL: CloseButton.SIZE_SMALL,
+    SIZE_LARGE: CloseButton.SIZE_LARGE,
+    COLOR_NEUTRAL: CloseButton.COLOR_NEUTRAL,
+    COLOR_GREEN: CloseButton.COLOR_GREEN,
+    COLOR_ORANGE: CloseButton.COLOR_ORANGE
+});
+
+export {CloseButton as CloseButtonComponent};
+
+export default IntlCloseButton;

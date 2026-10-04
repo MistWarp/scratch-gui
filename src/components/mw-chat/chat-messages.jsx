@@ -50,6 +50,7 @@ import {
 import {messageEmbeds, serverEmbeds} from '../../lib/originchats/embeds.js';
 import {firstLine, onlyEmoji, parse} from '../../lib/originchats/rich-text.js';
 import {verifyMessage} from '../../lib/originchats/signing.js';
+import copyText from '../../lib/utils/copy-text.js';
 import {Attachment, ClientEmbed, LinkEmbed} from './chat-embeds.jsx';
 import {CHAT_DRAG_MIME} from './chat-actions.js';
 import {DirectAvatar} from './chat-direct.jsx';
@@ -144,6 +145,7 @@ const messages = defineMessages({
     },
     editHint: {
         defaultMessage: 'Escape to {cancel}, Enter to {save}',
+        // eslint-disable-next-line max-len
         description: 'Hint under a chat message being edited. {cancel} and {save} are the editCancel and editSave buttons',
         id: 'mw.chat.editHint'
     },
@@ -739,7 +741,9 @@ const MessageBody = ({connection, editor, intl, message, state}) => {
                     {message.edited ? (
                         <span
                             className={styles.edited}
-                            title={editedAt ? intl.formatMessage(messages.editedAt, {time: formatFull(editedAt)}) : null}
+                            title={editedAt ?
+                                intl.formatMessage(messages.editedAt, {time: formatFull(editedAt)}) :
+                                null}
                         >{` ${intl.formatMessage(messages.edited)}`}</span>
                     ) : null}
                     {message.pinned ? (
@@ -996,7 +1000,9 @@ const Intro = ({channel, intl, state}) => {
     return (
         <li className={styles.intro}>
             <span className={styles.introIcon}><Hash size={18} /></span>
-            <p className={styles.introTitle}>{intl.formatMessage(messages.introTitle, {channel: channelName(channel)})}</p>
+            <p className={styles.introTitle}>
+                {intl.formatMessage(messages.introTitle, {channel: channelName(channel)})}
+            </p>
             <p className={styles.introBody}>{intl.formatMessage(messages.introBody)}</p>
             <div className={styles.chips}>
                 <a
@@ -1035,20 +1041,7 @@ const markInternalDrag = event => {
 };
 
 const copyToClipboard = (element, text) => {
-    const view = element.ownerDocument.defaultView;
-    if (view.navigator.clipboard && view.navigator.clipboard.writeText) {
-        view.navigator.clipboard.writeText(text).catch(() => null);
-        return;
-    }
-    const doc = element.ownerDocument;
-    const area = doc.createElement('textarea');
-    area.value = text;
-    area.style.position = 'fixed';
-    area.style.opacity = '0';
-    doc.body.appendChild(area);
-    area.select();
-    doc.execCommand('copy');
-    doc.body.removeChild(area);
+    copyText(text, {document: element.ownerDocument}).catch(() => null);
 };
 
 const tidySeparators = items => items.filter((item, index) => {
@@ -1205,27 +1198,67 @@ const MessageList = ({
         const canPin = hasCapability(state, 'message_pin') && canInChannel(state, channel, 'pin');
         const items = [];
         if (canSend) {
-            items.push({key: 'reply', label: intl.formatMessage(messages.reply), icon: Reply, onSelect: () => onReply(message)});
+            items.push({
+                key: 'reply',
+                label: intl.formatMessage(messages.reply),
+                icon: Reply,
+                onSelect: () => onReply(message)
+            });
         }
         if (canEditMessage(state, channel, message)) {
-            items.push({key: 'edit', label: intl.formatMessage(messages.editMessage), icon: Pencil, onSelect: () => onEdit(message)});
+            items.push({
+                key: 'edit',
+                label: intl.formatMessage(messages.editMessage),
+                icon: Pencil,
+                onSelect: () => onEdit(message)
+            });
         }
         if (canSend && person && !mine) {
-            items.push({key: 'mention', label: intl.formatMessage(messages.mention), icon: AtSign, onSelect: () => onMention(message)});
+            items.push({
+                key: 'mention',
+                label: intl.formatMessage(messages.mention),
+                icon: AtSign,
+                onSelect: () => onMention(message)
+            });
         }
         if (canDirect && person && !mine && isRoturUser(state, message.user)) {
-            items.push({key: 'direct', label: intl.formatMessage(messages.message), icon: MessageCircle, onSelect: () => onDirect(message.user)});
+            items.push({
+                key: 'direct',
+                label: intl.formatMessage(messages.message),
+                icon: MessageCircle,
+                onSelect: () => onDirect(message.user)
+            });
         }
         items.push({key: 'copy-separator', separator: true});
         if (menu.selection) {
-            items.push({key: 'copy-selection', label: intl.formatMessage(messages.copySelection), icon: Copy, onSelect: () => copyToClipboard(element, menu.selection)});
+            items.push({
+                key: 'copy-selection',
+                label: intl.formatMessage(messages.copySelection),
+                icon: Copy,
+                onSelect: () => copyToClipboard(element, menu.selection)
+            });
         } else if (message.content) {
-            items.push({key: 'copy-text', label: intl.formatMessage(messages.copyText), icon: Copy, onSelect: () => copyToClipboard(element, message.content)});
+            items.push({
+                key: 'copy-text',
+                label: intl.formatMessage(messages.copyText),
+                icon: Copy,
+                onSelect: () => copyToClipboard(element, message.content)
+            });
         }
         if (menu.link) {
-            items.push({key: 'copy-link', label: intl.formatMessage(messages.copyLink), icon: Link, onSelect: () => copyToClipboard(element, menu.link)});
+            items.push({
+                key: 'copy-link',
+                label: intl.formatMessage(messages.copyLink),
+                icon: Link,
+                onSelect: () => copyToClipboard(element, menu.link)
+            });
         }
-        items.push({key: 'copy-id', label: intl.formatMessage(messages.copyId), icon: IdCard, onSelect: () => copyToClipboard(element, String(message.id))});
+        items.push({
+            key: 'copy-id',
+            label: intl.formatMessage(messages.copyId),
+            icon: IdCard,
+            onSelect: () => copyToClipboard(element, String(message.id))
+        });
         items.push({key: 'manage-separator', separator: true});
         if (canPin) {
             items.push({
@@ -1265,7 +1298,9 @@ const MessageList = ({
                         state={state}
                     />
                 ) : null}
-                {history.loading ? <li className={styles.status}>{intl.formatMessage(messages.loadingOlder)}</li> : null}
+                {history.loading ? (
+                    <li className={styles.status}>{intl.formatMessage(messages.loadingOlder)}</li>
+                ) : null}
                 {groups.map(group => (
                     <MessageGroup
                         key={group.key}

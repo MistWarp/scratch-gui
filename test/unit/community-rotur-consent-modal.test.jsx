@@ -18,7 +18,8 @@ test('Rotur project prompts offer a project block action', () => {
         />
     );
 
-    wrapper.find('button').filterWhere(button => button.text() === 'Block this project').simulate('click');
+    wrapper.find('button').filterWhere(button => button.text() === 'Block this project')
+        .simulate('click');
     expect(onBlock).toHaveBeenCalledTimes(1);
     wrapper.unmount();
 });

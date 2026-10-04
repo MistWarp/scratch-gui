@@ -13,6 +13,7 @@ import Notice from './ui/Notice.jsx';
 import SectionHeading from './ui/SectionHeading.jsx';
 import StatusMessage from './ui/StatusMessage.jsx';
 import UnderlineTabs from './UnderlineTabs.jsx';
+import {tabPanelProps} from './SectionTabs.jsx';
 import UserLink from './UserLink.jsx';
 import useLatest from '../use-latest.js';
 import styles from '../pages/Spaces.module.css';
@@ -189,66 +190,69 @@ const SpaceProjectPicker = ({space, onAdded}) => {
                 onChange={setTab}
                 className={styles.pickerTabs}
                 ariaLabel={communityText('Project sources')}
+                idPrefix="space-picker"
             />
-            {tab === 'search' ? (
-                <form className={styles.projectSearch} onSubmit={search}>
-                    <Search size={16} />
-                    <input
-                        value={query}
-                        disabled={searching}
-                        onChange={event => setQuery(event.target.value)}
-                        placeholder={communityText('Search by title, creator, or tag')}
-                    />
-                    <Button type="submit" variant="secondary" busy={searching} busyLabel={communityText('Searching…')}>{communityText('Search')}</Button>
-                </form>
-            ) : null}
-            {error ? <Notice variant="error">{error}</Notice> : null}
-            {tab === 'mine' && mine === null && !mineError ? (
-                <StatusMessage compact>{communityText('Loading your projects…')}</StatusMessage>
-            ) : null}
-            {tab === 'mine' && mineError ? (
-                <StatusMessage compact error onRetry={() => setMineAttempt(attempt => attempt + 1)}>{mineError}</StatusMessage>
-            ) : null}
-            {tab === 'search' && !results.length && !searching ? (
-                <EmptyState compact icon={Search} title={communityText('No results yet')}>
-                    {communityText('Search for a public project to add.')}
-                </EmptyState>
-            ) : null}
-            {tab === 'mine' && mine && !mine.length && !mineError && mineOffset >= mineTotal ? (
-                <EmptyState compact icon={FolderPlus} title={communityText('No projects to add')}>
-                    {communityText('You do not have any shared or unlisted projects yet.')}
-                </EmptyState>
-            ) : null}
-            <div className={styles.pickerResults}>
-                {projects.map(project => {
-                    const added = existingIds.has(project.id);
-                    return (
-                        <article key={project.id} className={styles.pickerProject}>
-                            <ProjectThumbnail project={project} className={styles.pickerThumb} fallbackClassName={styles.pickerThumbFallback} lazy />
-                            <div>
-                                <strong>{project.title}</strong>
-                                <span>{communityText('by')} <UserLink username={project.owner}>{project.owner}</UserLink></span>
-                                {project.visibility === 'unlisted' ? <small>{communityText('Unlisted')}</small> : null}
-                            </div>
-                            <Button
-                                variant="secondary"
-                                disabled={added || Boolean(adding)}
-                                busy={adding === project.id}
-                                busyLabel={communityText('Adding…')}
-                                onClick={() => add(project)}
-                            >
-                                {added ? <><Check size={14} />{communityText('Added')}</> : <><Plus size={14} />{communityText('Add')}</>}
-                            </Button>
-                        </article>
-                    );
-                })}
+            <div {...tabPanelProps('space-picker', tab)}>
+                {tab === 'search' ? (
+                    <form className={styles.projectSearch} onSubmit={search}>
+                        <Search size={16} />
+                        <input
+                            value={query}
+                            disabled={searching}
+                            onChange={event => setQuery(event.target.value)}
+                            placeholder={communityText('Search by title, creator, or tag')}
+                        />
+                        <Button type="submit" variant="secondary" busy={searching} busyLabel={communityText('Searching…')}>{communityText('Search')}</Button>
+                    </form>
+                ) : null}
+                {error ? <Notice variant="error">{error}</Notice> : null}
+                {tab === 'mine' && mine === null && !mineError ? (
+                    <StatusMessage compact>{communityText('Loading your projects…')}</StatusMessage>
+                ) : null}
+                {tab === 'mine' && mineError ? (
+                    <StatusMessage compact error onRetry={() => setMineAttempt(attempt => attempt + 1)}>{mineError}</StatusMessage>
+                ) : null}
+                {tab === 'search' && !results.length && !searching ? (
+                    <EmptyState compact icon={Search} title={communityText('No results yet')}>
+                        {communityText('Search for a public project to add.')}
+                    </EmptyState>
+                ) : null}
+                {tab === 'mine' && mine && !mine.length && !mineError && mineOffset >= mineTotal ? (
+                    <EmptyState compact icon={FolderPlus} title={communityText('No projects to add')}>
+                        {communityText('You do not have any shared or unlisted projects yet.')}
+                    </EmptyState>
+                ) : null}
+                <div className={styles.pickerResults}>
+                    {projects.map(project => {
+                        const added = existingIds.has(project.id);
+                        return (
+                            <article key={project.id} className={styles.pickerProject}>
+                                <ProjectThumbnail project={project} className={styles.pickerThumb} fallbackClassName={styles.pickerThumbFallback} lazy />
+                                <div>
+                                    <strong>{project.title}</strong>
+                                    <span>{communityText('by')} <UserLink username={project.owner}>{project.owner}</UserLink></span>
+                                    {project.visibility === 'unlisted' ? <small>{communityText('Unlisted')}</small> : null}
+                                </div>
+                                <Button
+                                    variant="secondary"
+                                    disabled={added || Boolean(adding)}
+                                    busy={adding === project.id}
+                                    busyLabel={communityText('Adding…')}
+                                    onClick={() => add(project)}
+                                >
+                                    {added ? <><Check size={14} />{communityText('Added')}</> : <><Plus size={14} />{communityText('Add')}</>}
+                                </Button>
+                            </article>
+                        );
+                    })}
+                </div>
+                {tab === 'mine' && mineOffset < mineTotal ? (
+                    <Button variant="secondary" busy={mineMoreBusy} busyLabel={communityText('Loading…')} onClick={loadMoreMine}>{communityText('Load more projects')}</Button>
+                ) : null}
+                {tab === 'mine' && mineMoreError ? (
+                    <Notice variant="error">{communityText('Could not load more projects. Try again.')}</Notice>
+                ) : null}
             </div>
-            {tab === 'mine' && mineOffset < mineTotal ? (
-                <Button variant="secondary" busy={mineMoreBusy} busyLabel={communityText('Loading…')} onClick={loadMoreMine}>{communityText('Load more projects')}</Button>
-            ) : null}
-            {tab === 'mine' && mineMoreError ? (
-                <Notice variant="error">{communityText('Could not load more projects. Try again.')}</Notice>
-            ) : null}
         </section>
     );
 };

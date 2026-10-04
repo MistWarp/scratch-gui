@@ -16,39 +16,44 @@
   "main": "./dist/scratch-gui.js",
   "packageManager": "pnpm@10.28.2",
   "scripts": {
-    "build": "node scripts/build.mjs --site-only",
-    "build:all": "node scripts/build.mjs",
-    "build:editor": "MW_COMMUNITY= ONLY_ENTRY=editor node scripts/build.mjs",
-    "build:community": "MW_COMMUNITY=true ONLY_ENTRY=community node scripts/build.mjs",
-    "build:stats": "MW_BUILD_STATS=true node scripts/build.mjs --site-only",
-    "clean": "node -e \"for (const d of ['build', 'dist']) { fs.rmSync(d, {recursive: true, force: true}); fs.mkdirSync(d, {recursive: true}); }\"",
-    "reinstall": "pnpm install --force && pnpm run link",
-    "prepublish": "node scripts/microbit-hex.mjs",
     "start": "vite",
-    "fmt": "eslint --fix .",
-    "lint": "eslint .",
-    "test": "pnpm run test:unit:ci && pnpm run build && pnpm run test:integration",
-    "test:integration": "node scripts/test-integration.mjs",
+    "build": "node --max-old-space-size=7168 scripts/build.mjs --site-only",
+    "build:all": "node --max-old-space-size=7168 scripts/build.mjs",
+    "build:editor": "node scripts/build.mjs --entry=editor --no-community",
+    "build:community": "node --max-old-space-size=7168 scripts/build.mjs --entry=community --community",
+    "build:deploy": "node --max-old-space-size=7168 scripts/build.mjs --site-only --community",
+    "build:stats": "node --max-old-space-size=7168 scripts/build.mjs --site-only --stats",
+    "build:library": "node scripts/build.mjs --library",
+    "build:report": "node scripts/build-report.mjs",
+    "preview": "vite preview",
+    "validate-deploy": "node scripts/validate-deploy.mjs build",
+    "clean": "node -e \"for (const d of ['build', 'dist']) { fs.rmSync(d, {recursive: true, force: true}); fs.mkdirSync(d, {recursive: true}); }\"",
+    "setup:microbit": "node scripts/microbit-hex.mjs",
+    "check": "pnpm run lint && pnpm run i18n:editor:check && pnpm run i18n:community:check && pnpm run check:community-css && pnpm run test:unit:ci",
+    "check:full": "pnpm run check && pnpm run deps:check && pnpm run build:deploy && pnpm run validate-deploy",
     "check:community-css": "node scripts/check-community-css.mjs",
-    "deps:sync": "node scripts/sync-forks.mjs",
-    "deps:check": "node scripts/sync-forks.mjs --check",
-    "test:collab": "jest test[\\\\/]unit[\\\\/]collaboration",
+    "lint": "eslint --ext .js,.jsx,.mjs,.cjs .",
+    "fmt": "eslint --ext .js,.jsx,.mjs,.cjs --fix .",
+    "hooks:install": "git config core.hooksPath .githooks",
+    "test": "pnpm run check",
     "test:unit": "jest test[\\\\/]unit",
     "test:unit:ci": "jest --ci test[\\\\/]unit",
-    "test:unit:addons": "jest test[\\\\/]unit[\\\\/]addons",
     "test:unit:watch": "jest test[\\\\/]unit --watch",
-    "link": "node scripts/link-forks.mjs",
-    "unlink": "node scripts/link-forks.mjs --unlink",
-    "build:library": "BUILD_MODE=dist vite build",
-    "preview": "vite preview",
-    "build:report": "node scripts/build-report.mjs",
+    "test:unit:addons": "jest test[\\\\/]unit[\\\\/]addons",
+    "test:collab": "jest test[\\\\/]unit[\\\\/]collaboration",
+    "test:integration": "node scripts/test-integration.mjs",
+    "i18n:editor:extract": "node scripts/editor-default-messages.mjs",
+    "i18n:editor:check": "node scripts/editor-default-messages.mjs --check",
     "i18n:community": "node scripts/community-translations.mjs",
     "i18n:community:add": "node scripts/community-translations.mjs add",
     "i18n:community:coverage": "node scripts/community-translations.mjs coverage",
     "i18n:community:extract": "node scripts/community-extract.mjs",
     "i18n:community:check": "node scripts/community-extract.mjs --check && node scripts/community-translations.mjs check",
-    "i18n:editor:extract": "node scripts/editor-default-messages.mjs",
-    "i18n:editor:check": "node scripts/editor-default-messages.mjs --check"
+    "deps:sync": "node scripts/sync-forks.mjs",
+    "deps:check": "node scripts/sync-forks.mjs --check",
+    "link": "node scripts/link-forks.mjs",
+    "unlink": "node scripts/link-forks.mjs --unlink",
+    "reinstall": "pnpm install --force && pnpm run link"
   },
   "dependencies": {
     "@fiahfy/icns": "0.0.7",
@@ -118,10 +123,12 @@
   "devDependencies": {
     "@babel/core": "^7.28.6",
     "@babel/eslint-parser": "^7.28.6",
+    "@babel/parser": "^7.29.7",
     "@babel/plugin-syntax-dynamic-import": "^7.8.3",
     "@babel/plugin-transform-object-rest-spread": "^7.28.6",
     "@babel/preset-env": "^7.28.6",
     "@babel/preset-react": "^7.28.6",
+    "@babel/traverse": "^7.29.7",
     "@originjs/vite-plugin-commonjs": "^1.0.3",
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.5.5",
@@ -136,6 +143,7 @@
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-jest": "22.17.0",
     "eslint-plugin-react": "7.33.2",
+    "intl-messageformat-parser": "1.8.1",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "postcss": "^8.5.28",
@@ -150,78 +158,12 @@
     "web-audio-test-api": "0.5.2",
     "yauzl": "2.10.0"
   },
-  "jest": {
-    "setupFiles": [
-      "raf/polyfill",
-      "<rootDir>/test/helpers/enzyme-setup.js"
-    ],
-    "globalSetup": "<rootDir>/test/helpers/jest-global-setup.mjs",
-    "testPathIgnorePatterns": [
-      "<rootDir>/.claude/"
-    ],
-    "moduleNameMapper": {
-      "^scratch-paint$": "<rootDir>/test/__mocks__/scratch-paint.js",
-      "\\.module\\.css$": "<rootDir>/test/__mocks__/cssModuleMock.js",
-      "generated/editor-locales/index\\.js$": "<rootDir>/test/__mocks__/editor-locales.js",
-      "\\?arraybuffer$": "<rootDir>/test/__mocks__/arrayBufferMock.js",
-      "\\?(raw|base64|url|recolor|worker)$": "<rootDir>/test/__mocks__/fileMock.js",
-      "\\.css\\?(inline|global)$": "<rootDir>/test/__mocks__/styleMock.js",
-      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/test/__mocks__/fileMock.js",
-      "\\.(css|less)$": "<rootDir>/test/__mocks__/styleMock.js",
-      "editor-msgs(\\.js)?$": "<rootDir>/test/__mocks__/editor-msgs-mock.js",
-      "^scratch-render-fonts$": "<rootDir>/src/lib/tw-scratch-render-fonts",
-      "^!arraybuffer-loader!.*$": "<rootDir>/test/__mocks__/arrayBufferMock.js",
-      "^!!base64-loader!.*$": "<rootDir>/test/__mocks__/fileMock.js",
-      "^!raw-loader!.*$": "<rootDir>/test/__mocks__/fileMock.js",
-      "^scratch-audio$": "<rootDir>/node_modules/scratch-audio/src/index.js",
-      "^scratchblocks$": "<rootDir>/node_modules/scratchblocks/build/scratchblocks.min.es.js",
-      "^fractch/browser$": "<rootDir>/node_modules/fractch/src/browser.js",
-      "^@turbowarp/scratch-svg-renderer$": "<rootDir>/node_modules/@turbowarp/scratch-svg-renderer"
-    },
-    "testEnvironment": "jsdom",
-    "testEnvironmentOptions": {
-      "customExportConditions": [
-        "node",
-        "require",
-        "default"
-      ]
-    },
-    "transformIgnorePatterns": [
-      "/node_modules/(?!(scratch-audio|scratch-paint|fractch|scratchblocks|pify|isomorphic-git|rotur-sdk|@vernier/godirect|@chenglou/pretext)/)"
-    ],
-    "transform": {
-      "^.+\\.(js|jsx|mjs|cjs)$": [
-        "babel-jest",
-        {
-          "babelrc": false,
-          "configFile": false,
-          "presets": [
-            [
-              "@babel/preset-env",
-              {
-                "targets": {
-                  "node": "current"
-                }
-              }
-            ],
-            "@babel/preset-react"
-          ],
-          "plugins": [
-            "@babel/plugin-syntax-dynamic-import",
-            "@babel/plugin-transform-object-rest-spread"
-          ]
-        }
-      ]
-    }
-  },
   "pnpm": {
     "onlyBuiltDependencies": [
       "chromedriver",
+      "esbuild",
       "fsevents",
-      "scratch-audio",
-      "scratch-blocks",
-      "scratch-vm",
-      "esbuild"
+      "scratch-blocks"
     ],
     "overrides": {
       "cheerio": "1.0.0-rc.12"

@@ -1,7 +1,9 @@
 import {accountKey, ensureScopes, getAccessToken} from './rotur/client.js';
 import {requestValidator} from './community/api.js';
+import {responseMessage} from '../community/api-errors.js';
 
-const WARPTHEME_API_BASE = 'https://warptheme.mistium.com/api';
+// Set MW_WARPTHEME_API in .env to point local development at another WarpTheme server.
+const WARPTHEME_API_BASE = process.env.MW_WARPTHEME_API || 'https://warptheme.mistium.com/api';
 const WARPTHEME_SESSION_KEY = 'mw:warptheme-session';
 const likedThemes = new Set();
 
@@ -59,7 +61,7 @@ const storeSession = token => {
 const responseData = async response => {
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data.ok === false || data.error) {
-        const error = new Error(data.error || `WarpTheme request failed (${response.status})`);
+        const error = new Error(responseMessage(response.status, data.error));
         error.status = response.status;
         error.data = data;
         throw error;

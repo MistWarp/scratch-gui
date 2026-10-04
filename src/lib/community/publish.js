@@ -401,7 +401,17 @@ const publishWorkspace = async ({
     return {id: platformId, url: projectLink, shared, remoteWarnings};
 };
 
-const publishToMistWarp = options => withProjectOperation(options.vm, () => publishWorkspace(options));
+// Save feedback ('uploading' -> 'cloud' | 'cloudFailed') drives the menu bar
+// save status for every upload: Ctrl+S, autosave and the save window.
+const publishToMistWarp = options => withProjectOperation(options.vm, async () => {
+    setSaveFeedback(options.vm, 'uploading');
+    try {
+        return await publishWorkspace(options);
+    } catch (e) {
+        setSaveFeedback(options.vm, 'cloudFailed');
+        throw e;
+    }
+});
 
 export {
     publishToMistWarp,

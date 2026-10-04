@@ -8,7 +8,10 @@ import {Switch, SwitchRow} from '../../src/community/components/ui/Switch.jsx';
 describe('community UI controls', () => {
     test('button disables itself and shows its busy label while working', () => {
         const button = shallow(
-            <Button busy busyLabel="Saving…">Save</Button>
+            <Button
+                busy
+                busyLabel="Saving…"
+            >Save</Button>
         );
 
         expect(button.prop('disabled')).toBe(true);

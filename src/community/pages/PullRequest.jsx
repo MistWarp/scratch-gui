@@ -18,6 +18,7 @@ import Notice from '../components/ui/Notice.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
+import {tabPanelProps} from '../components/SectionTabs.jsx';
 import RichText from '../components/RichText.jsx';
 import UserLink from '../components/UserLink.jsx';
 import {canViewProjectSource} from '../project-source-access.js';
@@ -259,7 +260,7 @@ const PullRequest = () => {
                 commits: timelineData.commits || [],
                 targetCommits: timelineData.targetCommits || []
             });
-            setPageMeta({title: `${pullData.pull.title} · Pull request #${pullData.pull.index}`});
+            setPageMeta({title: communityText('{title} · Pull request #{index}', {title: pullData.pull.title, index: pullData.pull.index})});
         } catch (error) {
             if (contextRef.current === context) {
                 setLoadingError(error.message || 'Could not load this pull request.');
@@ -514,108 +515,111 @@ const PullRequest = () => {
                     value={tab}
                     onChange={setTab}
                     ariaLabel="Pull request sections"
+                    idPrefix="pull"
                 />
             </PageHeader>
 
-            {tab === 'conversation' ? (
-                <div className={styles.conversationGrid}>
-                    <section className={styles.timeline}>
-                        <div className={styles.eventFeed}>
-                            <article className={styles.description}>
-                                <MessageSquare className={styles.commentMarker} size={14} />
-                                <header><UserLink username={pull.user}><Avatar username={pull.user} size={28} /></UserLink><UserLink username={pull.user}><strong>{pull.user}</strong></UserLink>{communityText('opened this pull request')}</header>
-                                <div>{pull.body ? <RichText text={pull.body} /> : <p>{communityText('No description was provided.')}</p>}</div>
-                            </article>
-                            {conversationEvents.map((event, eventIndex) => (event.eventType === 'comment' ? (
-                                <article className={styles.commentCard} key={`comment-${event.id}`} id={`comment-id-${event.id}`}>
+            <div {...tabPanelProps('pull', tab)}>
+                {tab === 'conversation' ? (
+                    <div className={styles.conversationGrid}>
+                        <section className={styles.timeline}>
+                            <div className={styles.eventFeed}>
+                                <article className={styles.description}>
                                     <MessageSquare className={styles.commentMarker} size={14} />
-                                    <header>
-                                        <Link to={`/users/${event.author}`}><Avatar username={event.author} size={28} /><strong>{event.author}</strong></Link>
-                                        <span>{communityText('commented {value1}', {value1: timeAgo(event.created)})}</span>
-                                        {user && (user.isAdmin || project.isOwner || user.username.toLowerCase() === event.author.toLowerCase()) ? (
-                                            <button type="button" title={communityText('Delete comment')} disabled={commentBusy} onClick={() => deleteComment(event)}><Trash2 size={14} /></button>
-                                        ) : null}
-                                    </header>
-                                    <div><RichText text={event.content} /></div>
+                                    <header><UserLink username={pull.user}><Avatar username={pull.user} size={28} /></UserLink><UserLink username={pull.user}><strong>{pull.user}</strong></UserLink>{communityText('opened this pull request')}</header>
+                                    <div>{pull.body ? <RichText text={pull.body} /> : <p>{communityText('No description was provided.')}</p>}</div>
                                 </article>
+                                {conversationEvents.map((event, eventIndex) => (event.eventType === 'comment' ? (
+                                    <article className={styles.commentCard} key={`comment-${event.id}`} id={`comment-id-${event.id}`}>
+                                        <MessageSquare className={styles.commentMarker} size={14} />
+                                        <header>
+                                            <Link to={`/users/${event.author}`}><Avatar username={event.author} size={28} /><strong>{event.author}</strong></Link>
+                                            <span>{communityText('commented {value1}', {value1: timeAgo(event.created)})}</span>
+                                            {user && (user.isAdmin || project.isOwner || user.username.toLowerCase() === event.author.toLowerCase()) ? (
+                                                <button type="button" title={communityText('Delete comment')} disabled={commentBusy} onClick={() => deleteComment(event)}><Trash2 size={14} /></button>
+                                            ) : null}
+                                        </header>
+                                        <div><RichText text={event.content} /></div>
+                                    </article>
+                                ) : (
+                                    <div className={styles.commitEvent} key={`${event.eventType}-${event.sha}-${eventIndex}`}>
+                                        <GitCommitHorizontal size={16} />
+                                        <UserLink username={event.author}><Avatar username={event.author} size={24} /></UserLink>
+                                        <span><UserLink username={event.author}><strong>{event.author}</strong></UserLink>{' '}{event.eventType === 'target-commit' ? communityText('committed to {value1}', {value1: pull.baseBranch}) : communityText('committed on {value1}', {value1: pull.headBranch})}</span>
+                                        <code>{event.message || communityText('Untitled commit')}</code>
+                                        <small>
+                                            <Link to={`/project/${event.eventType === 'target-commit' ? id : pull.sourceProjectId}/commits/${event.sha}`}>
+                                                {String(event.sha || '').slice(0, 7)}
+                                            </Link> · {timeAgo(event.date)}
+                                        </small>
+                                    </div>
+                                )))}
+                            </div>
+                            {user ? (
+                                <form className={styles.commentForm} onSubmit={submitComment}>
+                                    <Avatar username={user.username} size={34} />
+                                    <div>
+                                        <textarea value={commentText} maxLength={500} placeholder={communityText('Leave a comment')} disabled={commentBusy} onChange={event => setCommentText(event.target.value)} />
+                                        {commentError ? <Notice variant="error" className={styles.commentNotice}>{commentError}</Notice> : null}
+                                        <footer>
+                                            <span>{commentText.length}/500</span>
+                                            <Button type="submit" variant="primary" disabled={!commentText.trim()} busy={commentBusy} busyLabel={communityText('Posting…')}>{communityText('Comment')}</Button>
+                                        </footer>
+                                    </div>
+                                </form>
                             ) : (
-                                <div className={styles.commitEvent} key={`${event.eventType}-${event.sha}-${eventIndex}`}>
-                                    <GitCommitHorizontal size={16} />
-                                    <UserLink username={event.author}><Avatar username={event.author} size={24} /></UserLink>
-                                    <span><UserLink username={event.author}><strong>{event.author}</strong></UserLink>{' '}{event.eventType === 'target-commit' ? communityText('committed to {value1}', {value1: pull.baseBranch}) : communityText('committed on {value1}', {value1: pull.headBranch})}</span>
-                                    <code>{event.message || communityText('Untitled commit')}</code>
-                                    <small>
-                                        <Link to={`/project/${event.eventType === 'target-commit' ? id : pull.sourceProjectId}/commits/${event.sha}`}>
-                                            {String(event.sha || '').slice(0, 7)}
-                                        </Link> · {timeAgo(event.date)}
-                                    </small>
-                                </div>
-                            )))}
-                        </div>
-                        {user ? (
-                            <form className={styles.commentForm} onSubmit={submitComment}>
-                                <Avatar username={user.username} size={34} />
-                                <div>
-                                    <textarea value={commentText} maxLength={500} placeholder={communityText('Leave a comment')} disabled={commentBusy} onChange={event => setCommentText(event.target.value)} />
-                                    {commentError ? <Notice variant="error" className={styles.commentNotice}>{commentError}</Notice> : null}
-                                    <footer>
-                                        <span>{commentText.length}/500</span>
-                                        <Button type="submit" variant="primary" disabled={!commentText.trim()} busy={commentBusy} busyLabel={communityText('Posting…')}>{communityText('Comment')}</Button>
-                                    </footer>
-                                </div>
-                            </form>
-                        ) : (
-                            <SignInPrompt compact onSignIn={login} title={communityText('Sign in to comment')}>{communityText('Join the conversation on this pull request once you are signed in.')}</SignInPrompt>
-                        )}
+                                <SignInPrompt compact onSignIn={login} title={communityText('Sign in to comment')}>{communityText('Join the conversation on this pull request once you are signed in.')}</SignInPrompt>
+                            )}
+                        </section>
+                        <aside className={styles.mergeBox}>
+                            <div className={open ? styles.mergeStatusOpen : styles.mergeStatusClosed}>
+                                {open ? <GitMerge size={20} /> : <Check size={20} />}
+                                <div><strong>{open ? communityText('Ready for review') : communityText('Pull request closed')}</strong><span>{open ? communityText('Review the files before merging.') : communityText('No more changes can be merged.')}</span></div>
+                            </div>
+                            {mergeError ? <Notice variant="error">{mergeError}</Notice> : null}
+                            {open && canMerge ? (
+                                <Button variant="primary" onClick={merge} busy={merging} busyLabel={communityText('Merging…')}>{communityText('Merge pull request')}</Button>
+                            ) : open ? <p className={styles.note}>{communityText('Only project owners and maintainers can merge this pull request.')}</p> : null}
+                            {open && canClose ? (
+                                <Button
+                                    variant="secondary"
+                                    disabled={merging}
+                                    onClick={() => {
+                                        setCloseError('');
+                                        setCloseConfirmOpen(true);
+                                    }}
+                                >{communityText('Close pull request')}</Button>
+                            ) : null}
+                        </aside>
+                    </div>
+                ) : tab === 'commits' ? (
+                    <section className={styles.commitsPanel}>
+                        <header><GitCommitHorizontal size={17} /><strong>{communityText('Commits on {value1}', {value1: formatDate(timeline.commits[0]?.date, communityText('this pull request'))})}</strong></header>
+                        {timeline.commits.length ? timeline.commits.map(commit => (
+                            <article className={styles.commitRow} key={commit.sha}>
+                                <UserLink username={commit.author}><Avatar username={commit.author} size={26} /></UserLink>
+                                <div><Link to={`/project/${pull.sourceProjectId}/commits/${commit.sha}`}><strong>{commit.message || communityText('Untitled commit')}</strong></Link><span><UserLink username={commit.author}>{commit.author}</UserLink>{' '}{communityText('committed {value1}', {value1: timeAgo(commit.date)})}</span></div>
+                                <code>{String(commit.sha || '').slice(0, 7)}</code>
+                            </article>
+                        )) : <div className={styles.emptyCommits}><EmptyState compact icon={GitCommitHorizontal} title={communityText('No commits yet')}>{communityText('No commits found after the fork point.')}</EmptyState></div>}
                     </section>
-                    <aside className={styles.mergeBox}>
-                        <div className={open ? styles.mergeStatusOpen : styles.mergeStatusClosed}>
-                            {open ? <GitMerge size={20} /> : <Check size={20} />}
-                            <div><strong>{open ? communityText('Ready for review') : communityText('Pull request closed')}</strong><span>{open ? communityText('Review the files before merging.') : communityText('No more changes can be merged.')}</span></div>
-                        </div>
-                        {mergeError ? <Notice variant="error">{mergeError}</Notice> : null}
-                        {open && canMerge ? (
-                            <Button variant="primary" onClick={merge} busy={merging} busyLabel={communityText('Merging…')}>{communityText('Merge pull request')}</Button>
-                        ) : open ? <p className={styles.note}>{communityText('Only project owners and maintainers can merge this pull request.')}</p> : null}
-                        {open && canClose ? (
-                            <Button
-                                variant="secondary"
-                                disabled={merging}
-                                onClick={() => {
-                                    setCloseError('');
-                                    setCloseConfirmOpen(true);
-                                }}
-                            >{communityText('Close pull request')}</Button>
-                        ) : null}
-                    </aside>
-                </div>
-            ) : tab === 'commits' ? (
-                <section className={styles.commitsPanel}>
-                    <header><GitCommitHorizontal size={17} /><strong>{communityText('Commits on {value1}', {value1: formatDate(timeline.commits[0]?.date, communityText('this pull request'))})}</strong></header>
-                    {timeline.commits.length ? timeline.commits.map(commit => (
-                        <article className={styles.commitRow} key={commit.sha}>
-                            <UserLink username={commit.author}><Avatar username={commit.author} size={26} /></UserLink>
-                            <div><Link to={`/project/${pull.sourceProjectId}/commits/${commit.sha}`}><strong>{commit.message || communityText('Untitled commit')}</strong></Link><span><UserLink username={commit.author}>{commit.author}</UserLink>{' '}{communityText('committed {value1}', {value1: timeAgo(commit.date)})}</span></div>
-                            <code>{String(commit.sha || '').slice(0, 7)}</code>
-                        </article>
-                    )) : <div className={styles.emptyCommits}><EmptyState compact icon={GitCommitHorizontal} title={communityText('No commits yet')}>{communityText('No commits found after the fork point.')}</EmptyState></div>}
-                </section>
-            ) : (
-                <div className={styles.filesLayout}>
-                    <SpriteList
-                        files={files}
-                        fileTexts={fileTexts}
-                        loadAsset={loadPullAsset}
-                        activeSprite={activeSprite}
-                        onSelect={name => setActiveSprite(current => (current === name ? '' : name))}
-                    />
-                    <section className={styles.diffColumn}>
-                        {diffError ? <StatusMessage error onRetry={() => loadDiff(pull, `${viewer}:${id}:${index}`)}>{diffError}</StatusMessage> : diff === null ? (
-                            <StatusMessage>{communityText('Loading file changes…')}</StatusMessage>
-                        ) : <DiffView diff={diff} spriteFilter={activeSprite} loadAsset={loadPullAsset} fileTexts={fileTexts} />}
-                    </section>
-                </div>
-            )}
+                ) : (
+                    <div className={styles.filesLayout}>
+                        <SpriteList
+                            files={files}
+                            fileTexts={fileTexts}
+                            loadAsset={loadPullAsset}
+                            activeSprite={activeSprite}
+                            onSelect={name => setActiveSprite(current => (current === name ? '' : name))}
+                        />
+                        <section className={styles.diffColumn}>
+                            {diffError ? <StatusMessage error onRetry={() => loadDiff(pull, `${viewer}:${id}:${index}`)}>{diffError}</StatusMessage> : diff === null ? (
+                                <StatusMessage>{communityText('Loading file changes…')}</StatusMessage>
+                            ) : <DiffView diff={diff} spriteFilter={activeSprite} loadAsset={loadPullAsset} fileTexts={fileTexts} />}
+                        </section>
+                    </div>
+                )}
+            </div>
 
             {mergeSession ? (
                 <section className={styles.conflicts}>

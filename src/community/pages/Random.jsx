@@ -2,7 +2,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useCallback, useEffect, useState} from 'react';
 import {Link, useNavigate, useSearchParams} from 'react-router-dom';
 import {Compass, Dices} from 'lucide-react';
-import api, {projectUrl} from '../api';
+import api, {friendlyError, projectUrl} from '../api';
 import setPageMeta from '../page-meta.js';
 import Button from '../components/ui/Button.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
@@ -22,16 +22,18 @@ const Random = () => {
         try {
             const data = await api.randomProject(exclude);
             const project = data.project || data;
-            if (!project || !project.id) throw new Error('empty');
+            if (!project || !project.id) throw Object.assign(new Error('empty'), {code: 'empty'});
             navigate(projectUrl(project), {replace: true});
         } catch (e) {
-            setError('no-shared');
+            // Only an answer with no project means nothing is shared; anything
+            // else is a failure worth retrying.
+            setError(e.code === 'empty' || e.status === 404 ? 'no-shared' : friendlyError(e));
             setLoading(false);
         }
     }, [navigate]);
 
     useEffect(() => {
-        setPageMeta({title: 'Random project'});
+        setPageMeta({title: communityText('Random project')});
         loadRandom(searchParams.get('exclude'));
     }, []);
 
@@ -40,7 +42,10 @@ const Random = () => {
             {loading ? (
                 <StatusMessage>{communityText('Finding a random project…')}</StatusMessage>
             ) : null}
-            {error ? (
+            {error && error !== 'no-shared' ? (
+                <StatusMessage error onRetry={() => loadRandom(searchParams.get('exclude'))}>{error}</StatusMessage>
+            ) : null}
+            {error === 'no-shared' ? (
                 <EmptyState
                     icon={Dices}
                     title={communityText('No shared projects yet')}
