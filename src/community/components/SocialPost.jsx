@@ -9,6 +9,7 @@ import {
 import api from '../api.js';
 import rotur from '../rotur.js';
 import {timeAgo} from '../format.js';
+import copyText from '../copy-text.js';
 import {postUrl} from '../following-feed.js';
 import {useUser} from '../UserContext.jsx';
 import Avatar from './Avatar.jsx';
@@ -178,7 +179,7 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
     });
     const copyLink = async () => {
         try {
-            await navigator.clipboard.writeText(`${window.location.origin}${postUrl(post.id)}`);
+            await copyText(`${window.location.origin}${postUrl(post.id)}`);
             setNotice(communityText('Link copied.'));
         } catch (_) {
             setError(communityText('Could not copy the link.'));

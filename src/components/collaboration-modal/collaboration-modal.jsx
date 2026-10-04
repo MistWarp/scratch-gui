@@ -25,6 +25,7 @@ import CollaborationService from '../../lib/collaboration/index.js';
 import {avatarForCollabUser} from '../../lib/collaboration/avatar.js';
 import describeActivity from '../../lib/collaboration/describe-activity.js';
 import {formatCollabError} from '../../lib/collaboration/describe-error.js';
+import copyText from '../../lib/utils/copy-text.js';
 
 import styles from './collaboration-modal.css';
 
@@ -263,7 +264,6 @@ class CollaborationModal extends Component {
         this.handleSelectInviteWatch = this.handleSelectInviteWatch.bind(this);
         this.handleSelectInviteEdit = this.handleSelectInviteEdit.bind(this);
         this.handleInviteRoleKeyDown = this.handleInviteRoleKeyDown.bind(this);
-        this.fallbackCopyToClipboard = this.fallbackCopyToClipboard.bind(this);
         this.showUrlPrompt = this.showUrlPrompt.bind(this);
         this.generateRoomCode = this.generateRoomCode.bind(this);
         this.attemptAutoJoin = this.attemptAutoJoin.bind(this);
@@ -531,17 +531,13 @@ class CollaborationModal extends Component {
         const inviteLink = this.props.inviteLink;
         if (!inviteLink) return;
 
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(inviteLink).then(() => {
-                this.props.onShowToast(this.props.intl.formatMessage(messages.inviteLinkCopied), 'success');
-            })
-                .catch(err => {
-                    console.error('Failed to copy invite link:', err);
-                    this.fallbackCopyToClipboard(inviteLink);
-                });
-        } else {
-            this.fallbackCopyToClipboard(inviteLink);
-        }
+        copyText(inviteLink).then(() => {
+            this.props.onShowToast(this.props.intl.formatMessage(messages.inviteLinkCopied), 'success');
+        })
+            .catch(err => {
+                console.error('Failed to copy invite link:', err);
+                this.showUrlPrompt(inviteLink);
+            });
     }
 
     handleInviteLinkFocus (event) {
@@ -571,32 +567,6 @@ class CollaborationModal extends Component {
         const group = event.currentTarget;
         const target = group.querySelector(`[data-role="${next}"]`);
         if (target) target.focus();
-    }
-
-    fallbackCopyToClipboard (text) {
-        const textArea = document.createElement('textarea');
-        textArea.value = text;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        textArea.style.top = '-999999px';
-        document.body.appendChild(textArea);
-
-        try {
-            textArea.focus();
-            textArea.select();
-            const successful = document.execCommand('copy');
-            if (successful) {
-                this.props.onShowToast(this.props.intl.formatMessage(messages.inviteLinkCopied), 'success');
-            } else {
-                console.warn('Fallback copy failed');
-                this.showUrlPrompt(text);
-            }
-        } catch (err) {
-            console.error('Fallback copy failed:', err);
-            this.showUrlPrompt(text);
-        } finally {
-            document.body.removeChild(textArea);
-        }
     }
 
     showUrlPrompt (text) {
