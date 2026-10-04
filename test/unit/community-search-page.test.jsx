@@ -146,6 +146,39 @@ describe('community search page', () => {
         wrapper.unmount();
     });
 
+    test('sorts projects with a button group inside the projects tab panel', async () => {
+        const wrapper = await renderSearch('mist', 'projects');
+
+        const panel = wrapper.find('[role="tabpanel"]');
+        expect(panel.prop('id')).toBe('search-panel-projects');
+        expect(panel.prop('aria-labelledby')).toBe('search-tab-projects');
+        expect(wrapper.find('#search-tab-projects').prop('aria-controls')).toBe('search-panel-projects');
+        expect(wrapper.find('[role="tab"]')).toHaveLength(4);
+        const sorts = wrapper.find('[role="group"]').find('button');
+        expect(sorts.map(button => button.text())).toEqual(['Best match', 'Trending', 'Recent', 'Most loved']);
+        expect(sorts.map(button => button.prop('aria-pressed'))).toEqual([true, false, false, false]);
+        wrapper.unmount();
+    });
+
+    test('keeps the sort control and shows placeholder cards while projects reload', async () => {
+        const wrapper = await renderSearch('mist', 'projects');
+        api.explore.mockReturnValueOnce(new Promise(() => {}));
+        await act(async () => {
+            wrapper.find('[role="group"]').find('button')
+                .filterWhere(button => button.text() === 'Recent')
+                .simulate('click');
+            await Promise.resolve();
+        });
+        wrapper.update();
+
+        expect(api.explore).toHaveBeenLastCalledWith(expect.objectContaining({sort: 'recent'}));
+        expect(wrapper.find('[aria-busy="true"]').exists()).toBe(true);
+        expect(wrapper.find('.project')).toHaveLength(0);
+        const pressed = wrapper.find('[role="group"]').find('button[aria-pressed=true]');
+        expect(pressed.text()).toBe('Recent');
+        wrapper.unmount();
+    });
+
     test('refines the search from the results page', async () => {
         const wrapper = await renderSearch('mist');
         const field = wrapper.find('input[type="search"]');

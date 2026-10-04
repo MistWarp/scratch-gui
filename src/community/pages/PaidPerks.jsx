@@ -5,6 +5,7 @@ import {ArrowRight, BarChart3, Check, Coins, ExternalLink, FileSpreadsheet, Hear
 import {Link} from 'react-router-dom';
 import api from '../api.js';
 import {getCommunityLocale} from '../locale.js';
+import {formatBytes} from '../../lib/utils/bytes.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import {useUser} from '../UserContext.jsx';
 import Button from '../components/ui/Button.jsx';
@@ -12,20 +13,15 @@ import PageHeader from '../components/ui/PageHeader.jsx';
 import SectionHeading from '../components/ui/SectionHeading.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
+import {tabPanelProps} from '../components/SectionTabs.jsx';
 import {AnalyticsPreview, BrandingPreview, RecoveryPreview} from '../components/MembershipPreviews.jsx';
 import styles from './PaidPerks.module.css';
 
 const TIERS = ['Free', 'Lite', 'Plus', 'Pro'];
 const PRICES = {Lite: '15 RC/month', Plus: '£1.75/month', Pro: '£5.75/month'};
 
-const formatSize = (bytes, unit) => {
-    const locale = getCommunityLocale();
-    const gb = bytes / (unit ** 3);
-    if (gb >= 1) return `${gb.toLocaleString(locale, {maximumFractionDigits: 1})} GB`;
-    return `${Math.round(bytes / (unit ** 2)).toLocaleString(locale)} MB`;
-};
-const binarySize = value => formatSize(value, 1024);
-const decimalSize = value => formatSize(value, 1000);
+const binarySize = value => formatBytes(value);
+const decimalSize = value => formatBytes(value, {decimal: true});
 const count = value => value.toLocaleString(getCommunityLocale());
 
 const MISTWARP_ROWS = [
@@ -223,8 +219,9 @@ const PaidPerks = () => {
                     value={comparison}
                     onChange={setComparison}
                     ariaLabel={communityText('Membership comparison')}
+                    idPrefix="perks-compare"
                 />
-                <div role="tabpanel" aria-label={communityText('Membership comparison details')}>
+                <div {...tabPanelProps('perks-compare', comparison)}>
                     <Comparison plans={plans} rows={rows} source="mistwarp" />
                     {comparison === 'storage' ? <p className={styles.detailNote}>{communityText('Storage covers every project you own, including its assets, version history and anything in the trash. Deleting a project and emptying it from the trash frees its space.')}{' '}<Link to="/mystuff?section=uploads">{communityText('View your storage')} <ArrowRight size={14} /></Link></p> : null}
                     {comparison === 'sales' ? <p className={styles.detailNote}>{communityText('Project purchases support individual creators. A membership does not include access to every project offered for purchase.')}{' '}<Link to="/mystuff?section=projects">{communityText('Manage project pricing')} <ArrowRight size={14} /></Link></p> : null}

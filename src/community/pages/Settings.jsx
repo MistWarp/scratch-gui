@@ -10,6 +10,7 @@ import {ThemeAccentPanel} from '../../components/tw-settings-modal/theme-accent-
 import CustomThemesPage from '../../components/tw-settings-modal/custom-themes-page.jsx';
 import Sidebar from '../components/Sidebar.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
+import {tabPanelProps} from '../components/SectionTabs.jsx';
 import Button from '../components/ui/Button.jsx';
 import ConfirmModal from '../components/ui/ConfirmModal.jsx';
 import EmptyState, {SignInPrompt} from '../components/ui/EmptyState.jsx';
@@ -558,8 +559,8 @@ const Settings = () => {
                 <div className={styles.content}>
                     {activeSection === 'theme' ? (
                         <section className={styles.card}>
-                            <UnderlineTabs items={THEME_TABS} value={themeTab} onChange={setThemeTab} className={styles.themeTabs} ariaLabel="Theme sections" />
-                            {themeTab === 'appearance' ? <div className={`${styles.themeContent} ${styles.appearance}`}>
+                            <UnderlineTabs items={THEME_TABS} value={themeTab} onChange={setThemeTab} className={styles.themeTabs} ariaLabel="Theme sections" idPrefix="settings-theme" />
+                            {themeTab === 'appearance' ? <div className={`${styles.themeContent} ${styles.appearance}`} {...tabPanelProps('settings-theme', themeTab)}>
                                 <ThemeAccentPanel theme={theme} onChangeTheme={applyAndPersist} />
                                 <div className={styles.appearanceSection}>
                                     <SectionHeading icon={PanelTop} title={communityText('Menu bar')} />
@@ -578,7 +579,7 @@ const Settings = () => {
                                     </div>
                                 </div>
                             </div> : null}
-                            {themeTab === 'projects' ? <div className={styles.themeContent}>
+                            {themeTab === 'projects' ? <div className={styles.themeContent} {...tabPanelProps('settings-theme', themeTab)}>
                                 <SectionHeading
                                     icon={Paintbrush}
                                     title={communityText('Project themes')}
@@ -591,7 +592,7 @@ const Settings = () => {
                                     </select>
                                 </label>
                             </div> : null}
-                            {themeTab === 'custom' ? <div className={styles.themeContent}>
+                            {themeTab === 'custom' ? <div className={styles.themeContent} {...tabPanelProps('settings-theme', themeTab)}>
                                 <SectionHeading icon={Brush} title={communityText('Custom themes')} />
                                 <CustomThemesPage
                                     initialTab={searchParams.get('themeAction') || 'library'}
@@ -853,8 +854,8 @@ const Settings = () => {
                                 title={communityText('Your MistWarp data')}
                                 lead={communityText('These controls apply to MistWarp. Your Rotur account and Rotur data are managed separately on rotur.dev.')}
                             />
-                            <UnderlineTabs items={DATA_TABS} value={dataTab} onChange={setDataTab} className={styles.themeTabs} ariaLabel="Data sections" />
-                            {dataTab === 'account' ? <React.Fragment>
+                            <UnderlineTabs items={DATA_TABS} value={dataTab} onChange={setDataTab} className={styles.themeTabs} ariaLabel="Data sections" idPrefix="settings-data" />
+                            {dataTab === 'account' ? <div {...tabPanelProps('settings-data', dataTab)}>
                                 <div className={styles.dataAction}>
                                     <div>
                                         <h3>{t('settings.analytics')}</h3>
@@ -918,8 +919,8 @@ const Settings = () => {
                                     <Link to="/trust">{communityText('Privacy and community terms')}</Link>
                                     <a href="https://rotur.dev/me" target="_blank" rel="noreferrer">{communityText('Manage your Rotur account')}</a>
                                 </p>
-                            </React.Fragment> : null}
-                            {dataTab === 'games' ? <React.Fragment>
+                            </div> : null}
+                            {dataTab === 'games' ? <div {...tabPanelProps('settings-data', dataTab)}>
                                 {!user ? (
                                     <SignInPrompt compact onSignIn={login}>
                                         {communityText('Sign in to manage your game saves and portable items.')}
@@ -974,7 +975,7 @@ const Settings = () => {
                                         )}
                                     </React.Fragment>
                                 )}
-                            </React.Fragment> : null}
+                            </div> : null}
                         </section>
                     ) : null}
 

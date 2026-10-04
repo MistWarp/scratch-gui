@@ -12,6 +12,7 @@ import ProjectCard from '../components/ProjectCard.jsx';
 import RichText from '../components/RichText.jsx';
 import SpaceProjectPicker from '../components/SpaceProjectPicker.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
+import {tabPanelProps} from '../components/SectionTabs.jsx';
 import Button from '../components/ui/Button.jsx';
 import CardGrid from '../components/ui/CardGrid.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
@@ -79,33 +80,35 @@ const Collection = ({id, space, user, login, load}) => {
             >
                 <div className={styles.owner}><Avatar username={space.owner} size={28} /><span>{communityText('Curated by')} <Link to={`/users/${space.owner}`}>{space.owner}</Link> <GroupTag username={space.owner} compact /></span></div>
             </PageHeader>
-            <UnderlineTabs items={tabs} value={view} onChange={setView} className={styles.tabs} ariaLabel="Collection sections" />
+            <UnderlineTabs items={tabs} value={view} onChange={setView} className={styles.tabs} ariaLabel="Collection sections" idPrefix="collection" />
             {error ? <Notice variant="error">{error}</Notice> : null}
-            {view === 'projects' ? (
-                <section>
-                    <SectionHeading
-                        icon={Library}
-                        title={communityText('In this collection')}
-                        lead={communityText('A curated set of MistWarp projects.')}
-                        actions={space.openSubmissions || space.canManage ? <SpaceProjectPicker space={space} onAdded={load} /> : null}
-                    />
-                    {space.projects.length ? (
-                        <CardGrid>{space.projects.map(project => <ProjectCard key={project.id} project={project} />)}</CardGrid>
-                    ) : (
-                        <EmptyState icon={Library} title={communityText('This collection is empty')}>{communityText('The curator has not added any projects yet.')}</EmptyState>
-                    )}
-                </section>
-            ) : null}
-            {view === 'discussion' ? (
-                <section>
-                    <SectionHeading
-                        icon={MessageCircle}
-                        title={communityText('Discussion')}
-                        lead={communityText('Talk about the projects in this collection.')}
-                    />
-                    <CommentThread source={commentSource} canModerate={Boolean(space.canManage)} canPin={Boolean(space.canManage)} reportContext={`collection ${space.title}`} />
-                </section>
-            ) : null}
+            <div {...tabPanelProps('collection', view)}>
+                {view === 'projects' ? (
+                    <section>
+                        <SectionHeading
+                            icon={Library}
+                            title={communityText('In this collection')}
+                            lead={communityText('A curated set of MistWarp projects.')}
+                            actions={space.openSubmissions || space.canManage ? <SpaceProjectPicker space={space} onAdded={load} /> : null}
+                        />
+                        {space.projects.length ? (
+                            <CardGrid>{space.projects.map(project => <ProjectCard key={project.id} project={project} />)}</CardGrid>
+                        ) : (
+                            <EmptyState icon={Library} title={communityText('This collection is empty')}>{communityText('The curator has not added any projects yet.')}</EmptyState>
+                        )}
+                    </section>
+                ) : null}
+                {view === 'discussion' ? (
+                    <section>
+                        <SectionHeading
+                            icon={MessageCircle}
+                            title={communityText('Discussion')}
+                            lead={communityText('Talk about the projects in this collection.')}
+                        />
+                        <CommentThread source={commentSource} canModerate={Boolean(space.canManage)} canPin={Boolean(space.canManage)} reportContext={`collection ${space.title}`} draftKey={`space:${id}`} />
+                    </section>
+                ) : null}
+            </div>
         </main>
     );
 };

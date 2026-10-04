@@ -13,6 +13,7 @@ import ProjectThumbnail from '../components/ProjectThumbnail.jsx';
 import RichText from '../components/RichText.jsx';
 import SpaceProjectPicker from '../components/SpaceProjectPicker.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
+import {tabPanelProps} from '../components/SectionTabs.jsx';
 import Button from '../components/ui/Button.jsx';
 import CardGrid from '../components/ui/CardGrid.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
@@ -126,37 +127,39 @@ const Studio = ({id, space, user, login, load}) => {
                     </dl>
                 </aside>
                 <section className={styles.content}>
-                    <UnderlineTabs items={tabs} value={tab} onChange={setTab} className={styles.tabs} ariaLabel="Studio sections" />
+                    <UnderlineTabs items={tabs} value={tab} onChange={setTab} className={styles.tabs} ariaLabel="Studio sections" idPrefix="studio" />
                     {error ? <Notice variant="error">{error}</Notice> : null}
-                    {tab === 'projects' ? (
-                        <section>
-                            <SectionHeading
-                                icon={FolderOpen}
-                                title={communityText('Projects')}
-                                lead={communityText('Projects collected and shared by this studio.')}
-                                actions={space.openSubmissions || space.canManage ? <SpaceProjectPicker space={space} onAdded={load} /> : null}
-                            />
-                            {space.projects.length ? (
-                                <CardGrid>{space.projects.map(project => <ProjectCard key={project.id} project={project} />)}</CardGrid>
-                            ) : (
-                                <EmptyState icon={FolderOpen} title={communityText('No projects yet')}>
-                                    {space.openSubmissions ? communityText('Add the first project to this studio.') : communityText('The curators have not added anything yet.')}
-                                </EmptyState>
-                            )}
-                        </section>
-                    ) : null}
-                    {tab === 'comments' ? (
-                        <section>
-                            <SectionHeading icon={MessageCircle} title={communityText('Comments')} lead={communityText('Talk with the studio community.')} />
-                            <CommentThread source={commentSource} canModerate={Boolean(space.canManage)} canPin={Boolean(space.canManage)} reportContext={`studio ${space.title}`} />
-                        </section>
-                    ) : null}
-                    {tab === 'curators' ? (
-                        <section className={styles.curators}>
-                            <SectionHeading icon={Users} title={communityText('Curators')} lead={communityText('The people who organise this studio.')} />
-                            <div>{[space.owner, ...(space.managers || [])].map((name, index) => <Link key={name} to={`/users/${name}`}><Avatar username={name} size={42} /><span><strong>{name}</strong><GroupTag username={name} compact linked={false} /><small>{index === 0 ? communityText('Owner') : communityText('Curator')}</small></span></Link>)}</div>
-                        </section>
-                    ) : null}
+                    <div {...tabPanelProps('studio', tab)}>
+                        {tab === 'projects' ? (
+                            <section>
+                                <SectionHeading
+                                    icon={FolderOpen}
+                                    title={communityText('Projects')}
+                                    lead={communityText('Projects collected and shared by this studio.')}
+                                    actions={space.openSubmissions || space.canManage ? <SpaceProjectPicker space={space} onAdded={load} /> : null}
+                                />
+                                {space.projects.length ? (
+                                    <CardGrid>{space.projects.map(project => <ProjectCard key={project.id} project={project} />)}</CardGrid>
+                                ) : (
+                                    <EmptyState icon={FolderOpen} title={communityText('No projects yet')}>
+                                        {space.openSubmissions ? communityText('Add the first project to this studio.') : communityText('The curators have not added anything yet.')}
+                                    </EmptyState>
+                                )}
+                            </section>
+                        ) : null}
+                        {tab === 'comments' ? (
+                            <section>
+                                <SectionHeading icon={MessageCircle} title={communityText('Comments')} lead={communityText('Talk with the studio community.')} />
+                                <CommentThread source={commentSource} canModerate={Boolean(space.canManage)} canPin={Boolean(space.canManage)} reportContext={`studio ${space.title}`} draftKey={`space:${id}`} />
+                            </section>
+                        ) : null}
+                        {tab === 'curators' ? (
+                            <section className={styles.curators}>
+                                <SectionHeading icon={Users} title={communityText('Curators')} lead={communityText('The people who organise this studio.')} />
+                                <div>{[space.owner, ...(space.managers || [])].map((name, index) => <Link key={name} to={`/users/${name}`}><Avatar username={name} size={42} /><span><strong>{name}</strong><GroupTag username={name} compact linked={false} /><small>{index === 0 ? communityText('Owner') : communityText('Curator')}</small></span></Link>)}</div>
+                            </section>
+                        ) : null}
+                    </div>
                 </section>
             </div>
         </main>

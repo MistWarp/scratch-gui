@@ -1,4 +1,5 @@
 import {ensureScopes, getAccessToken} from '../lib/rotur/client.js';
+import {responseMessage} from './api-errors.js';
 
 const ROTUR_API = 'https://api.rotur.dev/v2';
 
@@ -28,9 +29,9 @@ const billingRequest = async (path, init = {}) => {
     });
     const data = await response.json().catch(() => null);
     if (!response.ok) {
-        const message = (data && data.error) || `Billing request failed (${response.status})`;
-        const error = new Error(message);
-        if (isPermissionError(message)) {
+        const serverMessage = data && data.error;
+        const error = new Error(responseMessage(response.status, serverMessage));
+        if (isPermissionError(serverMessage)) {
             error.needsReauth = true;
         }
         throw error;
@@ -54,7 +55,7 @@ const listCommerceBounties = async (filters = {}) => {
     // Anyone can list bounties, so no token or credits permission is needed.
     const response = await fetch(`${ROTUR_API}/commerce${path}`);
     const data = await response.json().catch(() => null);
-    if (!response.ok) throw new Error((data && data.error) || `Billing request failed (${response.status})`);
+    if (!response.ok) throw new Error(responseMessage(response.status, data && data.error));
     return data;
 };
 

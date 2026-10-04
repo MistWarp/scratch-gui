@@ -12,6 +12,7 @@ import GroupTag from '../components/GroupTag.jsx';
 import CommentThread from '../components/CommentThread.jsx';
 import useSpaceCommentSource from '../space-comments.js';
 import ProjectCard from '../components/ProjectCard.jsx';
+import CardGridSkeleton from '../components/CardGridSkeleton.jsx';
 import SpaceProjectPicker from '../components/SpaceProjectPicker.jsx';
 import Button from '../components/ui/Button.jsx';
 import CardGrid from '../components/ui/CardGrid.jsx';
@@ -217,7 +218,8 @@ const Space = () => {
             </main>
         );
     }
-    if (!space || spaceLoadContext !== loadContext) return <main className={styles.page}><StatusMessage>{communityText('Loading space…')}</StatusMessage></main>;
+    // Every kind of space leads with its project grid, so that is what loads in.
+    if (!space || spaceLoadContext !== loadContext) return <main className={styles.page}><CardGridSkeleton label={communityText('Loading space…')} /></main>;
     if (space.kind === 'challenge') return <Challenge id={id} space={space} user={user} login={login} load={load} />;
     if (space.kind === 'studio') return <Studio id={id} space={space} user={user} login={login} load={load} />;
     if (space.kind === 'collection') return <Collection id={id} space={space} user={user} login={login} load={load} />;
@@ -315,7 +317,7 @@ const Space = () => {
             </section>
             <section id="space-comments" className={styles.spaceComments}>
                 <SectionHeading icon={MessageCircle} title={communityText('Comments')} lead={communityText('Talk about this space and reply to other people.')} />
-                <CommentThread source={commentSource} canModerate={Boolean(space.canManage)} canPin={Boolean(space.canManage)} reportContext={`${space.kind} ${space.title}`} />
+                <CommentThread source={commentSource} canModerate={Boolean(space.canManage)} canPin={Boolean(space.canManage)} reportContext={`${space.kind} ${space.title}`} draftKey={`space:${id}`} />
             </section>
         </main>
     );

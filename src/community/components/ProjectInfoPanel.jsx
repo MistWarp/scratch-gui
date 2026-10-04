@@ -7,6 +7,7 @@ import api, {projectUrl} from '../api';
 import Avatar from './Avatar.jsx';
 import RichText from './RichText.jsx';
 import UnderlineTabs from './UnderlineTabs.jsx';
+import {tabPanelProps} from './SectionTabs.jsx';
 import ProjectCompatibility, {CONTROL_TYPES} from './ProjectCompatibility.jsx';
 import Button from './ui/Button.jsx';
 import EmptyState from './ui/EmptyState.jsx';
@@ -118,8 +119,9 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false, facts = null}) =>
                 onChange={setTab}
                 className={styles.panelTabs}
                 ariaLabel={communityText('Project information')}
+                idPrefix="project-info"
             />
-            <div className={styles.panelBody} role="tabpanel">
+            <div className={styles.panelBody} {...tabPanelProps('project-info', tab)}>
                 {saveError ? <Notice variant="error" className={styles.panelError}>{saveError}</Notice> : null}
                 {tab === 'About' && (
                     <div className={styles.aboutSections}>
