@@ -132,7 +132,7 @@ describe('server commit diff', () => {
                 parentTree: 'copied-tree',
                 files: []
             }),
-            commitTree: jest.fn((projectId, commit) => Promise.resolve(projectId === 'original' ? {
+            commitTree: jest.fn(projectId => Promise.resolve(projectId === 'original' ? {
                 files: [{path: 'Sprite/main.fractch', oid: 'old', size: 3}]
             } : {
                 files: [

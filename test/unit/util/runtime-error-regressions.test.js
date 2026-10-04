@@ -32,10 +32,11 @@ test('a second failed chunk request reaches the error boundary', async () => {
     jest.useFakeTimers();
     const error = Object.assign(new Error('Loading chunk 116 failed.'), {name: 'ChunkLoadError'});
     const load = jest.fn().mockRejectedValue(error);
-    const pending = expect(importWithRetry(load)).rejects.toBe(error);
+    const pending = importWithRetry(load);
+    pending.catch(() => {});
     await Promise.resolve();
     jest.runAllTimers();
-    await pending;
+    await expect(pending).rejects.toBe(error);
     expect(load).toHaveBeenCalledTimes(2);
     jest.useRealTimers();
 });

@@ -36,7 +36,9 @@ const flush = async wrapper => {
     });
     wrapper.update();
 };
-const render = element => mount(<MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>{element}</MemoryRouter>);
+const render = element => mount(
+    <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>{element}</MemoryRouter>
+);
 
 beforeEach(() => {
     jest.clearAllMocks();

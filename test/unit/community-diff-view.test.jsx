@@ -115,7 +115,7 @@ describe('DiffView', () => {
     });
 
     test('compares asset versions side by side with before and after sizes', async () => {
-        const loadAsset = jest.fn((side, path) => Promise.resolve({
+        const loadAsset = jest.fn(side => Promise.resolve({
             bytes: new Uint8Array(side === 'old' ? [1, 2, 3, 4] : [1, 2, 3, 4, 5, 6]),
             mediaType: 'image/png'
         }));

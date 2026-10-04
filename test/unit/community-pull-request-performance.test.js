@@ -49,7 +49,7 @@ describe('pull request loading', () => {
 
     test('scopes changed-file requests to the pull request', async () => {
         const apiClient = {
-            commitFile: jest.fn((projectId, sha) => Promise.resolve({
+            commitFile: jest.fn(projectId => Promise.resolve({
                 content: btoa(projectId === 'target' ? 'old\n' : 'new\n')
             }))
         };

@@ -89,29 +89,28 @@ describe('community project content cache', () => {
     test('clearing the cache does not let an older request replace a newer one', async () => {
         const stale = new ArrayBuffer(1);
         const fresh = new ArrayBuffer(2);
-        let resolveStale;
-        let resolveFresh;
+        const resolvers = {stale: null, fresh: null};
         global.fetch
             .mockImplementationOnce(() => new Promise(resolve => {
-                resolveStale = resolve;
+                resolvers.stale = resolve;
             }))
             .mockImplementationOnce(() => new Promise(resolve => {
-                resolveFresh = resolve;
+                resolvers.fresh = resolve;
             }));
 
         const first = cachedFetchBuffer(url);
-        for (let i = 0; i < 5 && !resolveStale; i++) await Promise.resolve();
+        for (let i = 0; i < 5 && !resolvers.stale; i++) await Promise.resolve();
         clearContentCache();
         const second = cachedFetchBuffer(url);
-        for (let i = 0; i < 5 && !resolveFresh; i++) await Promise.resolve();
-        resolveStale({
+        for (let i = 0; i < 5 && !resolvers.fresh; i++) await Promise.resolve();
+        resolvers.stale({
             ok: true,
             arrayBuffer: () => Promise.resolve(stale)
         });
         await expect(first).resolves.toBe(stale);
 
         const third = cachedFetchBuffer(url);
-        resolveFresh({
+        resolvers.fresh({
             ok: true,
             arrayBuffer: () => Promise.resolve(fresh)
         });
@@ -153,7 +152,7 @@ describe('community project content cache', () => {
     test('revalidates expired entry with If-None-Match and reuses buffer on 304', async () => {
         const buffer = new ArrayBuffer(4);
         const headerMap = {
-            'x-mw-cached-at': String(Date.now() - 10 * 60 * 1000), // expired
+            'x-mw-cached-at': String(Date.now() - (10 * 60 * 1000)), // expired
             'x-mw-etag': '"project-123"'
         };
         const cachedResponse = {

@@ -86,7 +86,7 @@ describe('WarpTheme API adapter', () => {
     });
 
     test('tracks explicit downloads and preserves an existing like toggle', async () => {
-        window.fetch.mockImplementation((url, options) => {
+        window.fetch.mockImplementation(url => {
             if (url.endsWith('/api/user/likes')) {
                 return Promise.resolve({
                     ok: true,
