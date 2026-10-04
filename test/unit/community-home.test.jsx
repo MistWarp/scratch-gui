@@ -5,7 +5,9 @@ import {MemoryRouter} from 'react-router-dom';
 
 import {fetchNotifications} from '../../src/lib/rotur/client.js';
 import api from '../../src/community/api';
-import {NotificationsSection, ProjectFeedRow} from '../../src/community/pages/Home.jsx';
+import {
+    ContinuePlaying, HomeTabs, NotificationsSection, ProjectFeedRow
+} from '../../src/community/pages/Home.jsx';
 
 jest.mock('../../src/lib/rotur/client.js', () => ({
     fetchFollowingFeed: jest.fn(),
@@ -13,7 +15,7 @@ jest.mock('../../src/lib/rotur/client.js', () => ({
 }));
 jest.mock('../../src/community/api', () => ({
     __esModule: true,
-    default: {explore: jest.fn()},
+    default: {explore: jest.fn(), getUser: jest.fn()},
     editorUrl: () => '/editor',
     projectUrl: id => `/project/${id}`
 }));
@@ -94,6 +96,28 @@ describe('home notification preview', () => {
         expect(wrapper.text()).toContain('alice');
         wrapper.unmount();
     });
+
+    test('links space comments to the comment with a full sentence', async () => {
+        fetchNotifications.mockResolvedValue([{
+            id: 'space',
+            type: 'space_comment',
+            actor: 'alice',
+            spaceId: 's1',
+            spaceTitle: 'Game Jam',
+            commentId: 'c1',
+            created: Date.now()
+        }]);
+        const wrapper = mount(<Harness user={{username: 'viewer'}} />);
+        await act(async () => {
+            await Promise.resolve();
+        });
+        wrapper.update();
+
+        expect(wrapper.text()).toContain('alice commented on Game Jam');
+        expect(wrapper.text()).not.toContain('sent you a notification');
+        expect(wrapper.find('a[href="/spaces/s1#comment-id-c1"]').text()).toBe('commented on Game Jam');
+        wrapper.unmount();
+    });
 });
 
 describe('home project feeds', () => {
@@ -125,6 +149,95 @@ describe('home project feeds', () => {
 
         expect(api.explore.mock.calls.filter(([options]) => options.sort === 'trending')).toHaveLength(2);
         expect(api.explore.mock.calls.filter(([options]) => options.sort === 'recent')).toHaveLength(1);
+        wrapper.unmount();
+    });
+});
+
+describe('home tabs', () => {
+    beforeEach(() => jest.clearAllMocks());
+
+    const flush = async () => {
+        await act(async () => {
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+    };
+
+    test('keeps visited panels mounted instead of refetching them', async () => {
+        Element.prototype.scrollIntoView = jest.fn();
+        api.explore.mockResolvedValue({projects: []});
+        const Icon = () => null;
+        const trending = (<ProjectFeedRow
+            bare
+            sort="trending"
+        />);
+        const recent = (<ProjectFeedRow
+            bare
+            sort="recent"
+        />);
+        const wrapper = mount(
+            <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+                <HomeTabs
+                    id="feeds"
+                    label="Projects"
+                    tabs={[
+                        {key: 'trending', title: 'Trending', icon: Icon, render: () => trending},
+                        {key: 'recent', title: 'Recent', icon: Icon, render: () => recent}
+                    ]}
+                />
+            </MemoryRouter>
+        );
+        await flush();
+        wrapper.update();
+        expect(api.explore).toHaveBeenCalledTimes(1);
+        expect(wrapper.find('[role="tabpanel"]').hostNodes()).toHaveLength(1);
+
+        const tabs = () => wrapper.find('button[role="tab"]');
+        act(() => {
+            tabs().at(1)
+                .simulate('click');
+        });
+        await flush();
+        act(() => {
+            tabs().at(0)
+                .simulate('click');
+        });
+        await flush();
+        wrapper.update();
+
+        expect(api.explore).toHaveBeenCalledTimes(2);
+        const panels = wrapper.find('[role="tabpanel"]').hostNodes();
+        expect(panels.map(panel => [panel.prop('id'), panel.prop('aria-labelledby'), panel.prop('hidden')])).toEqual([
+            ['feeds-panel-trending', 'feeds-tab-trending', false],
+            ['feeds-panel-recent', 'feeds-tab-recent', true]
+        ]);
+        wrapper.unmount();
+        delete Element.prototype.scrollIntoView;
+    });
+
+    test('shows an error with a working retry for recently played games', async () => {
+        api.getUser
+            .mockRejectedValueOnce(new Error('offline'))
+            .mockResolvedValueOnce({recentActivity: []});
+        const wrapper = mount(
+            <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+                <ContinuePlaying username="viewer" />
+            </MemoryRouter>
+        );
+        await flush();
+        wrapper.update();
+        expect(wrapper.text()).not.toContain('Nothing played yet');
+
+        await act(async () => {
+            wrapper.find('button').filterWhere(button => button.text() === 'Try again')
+                .simulate('click');
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+        wrapper.update();
+
+        expect(api.getUser).toHaveBeenCalledTimes(2);
+        expect(wrapper.text()).toContain('Nothing played yet');
         wrapper.unmount();
     });
 });

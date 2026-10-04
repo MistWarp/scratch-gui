@@ -166,7 +166,7 @@ describe('notification read state', () => {
         });
         wrapper.update();
 
-        expect(wrapper.text()).toContain('commented on Cool Game pr #4');
+        expect(wrapper.text()).toContain('bob commented on PR #4 in Cool Game');
         expect(wrapper.find('a[href="/project/p178804/pulls/4#comment-id-c999"]')).toHaveLength(1);
         wrapper.unmount();
     });
@@ -203,12 +203,67 @@ describe('notification read state', () => {
         });
         wrapper.update();
 
-        expect(wrapper.text()).toContain('replied to your comment on Cool Game pr #4');
+        expect(wrapper.text()).toContain('bob replied to your comment on PR #4 in Cool Game');
         expect(wrapper.find('a[href="/project/p178804/pulls/4#comment-id-c1001"]')).toHaveLength(1);
 
-        expect(wrapper.text()).toContain('mentioned you on Cool Game pr #4');
+        expect(wrapper.text()).toContain('charlie mentioned you on PR #4 in Cool Game');
         expect(wrapper.find('a[href="/project/p178804/pulls/4#comment-id-c1002"]')).toHaveLength(1);
         wrapper.unmount();
     });
-});
 
+    test('keeps unread items highlighted for the visit after marking them read', async () => {
+        markNotificationsRead.mockResolvedValue(true);
+        fetchNotifications.mockResolvedValue([
+            {id: 'one', type: 'follow', actor: 'alice', read: false, created: Date.now()},
+            {id: 'two', type: 'follow', actor: 'bob', read: true, created: Date.now() - 1000}
+        ]);
+        const wrapper = render();
+
+        await act(async () => {
+            await Promise.resolve();
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+        wrapper.update();
+
+        expect(markNotificationsRead).toHaveBeenCalledTimes(1);
+        expect(wrapper.find('.module-itemUnread').hostNodes()
+            .map(node => node.text())).toEqual([
+            expect.stringContaining('alice followed you')
+        ]);
+        expect(wrapper.find('.module-item').hostNodes()
+            .map(node => node.text())).toEqual([
+            expect.stringContaining('bob followed you')
+        ]);
+        wrapper.unmount();
+    });
+
+    test('links space comments to the comment and news to its post', async () => {
+        markNotificationsRead.mockResolvedValue(false);
+        fetchNotifications.mockResolvedValue([
+            {
+                id: 'space-comment',
+                type: 'space_comment',
+                actor: 'bob',
+                spaceId: 's1',
+                spaceTitle: 'Game Jam',
+                commentId: 'c7',
+                created: Date.now()
+            },
+            {id: 'news', type: 'news', title: 'Release notes', newsId: 'n1', created: Date.now()}
+        ]);
+        const wrapper = render();
+
+        await act(async () => {
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+        wrapper.update();
+
+        expect(wrapper.text()).toContain('bob commented on Game Jam');
+        expect(wrapper.find('a[href="/spaces/s1#comment-id-c7"]')).toHaveLength(1);
+        expect(wrapper.text()).toContain('New announcement: Release notes');
+        expect(wrapper.find('a[href="/news/n1"]')).toHaveLength(1);
+        wrapper.unmount();
+    });
+});
