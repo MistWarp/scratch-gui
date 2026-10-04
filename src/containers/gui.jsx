@@ -40,8 +40,7 @@ import {
     openCostumeLibrary,
     openSoundLibrary,
     openSettingsModal,
-    openRestorePointModal,
-    openSimpleDialog
+    openRestorePointModal
 } from '../reducers/modals';
 
 import FontLoaderHOC from '../lib/components/font-loader-hoc.jsx';
@@ -201,14 +200,14 @@ class GUI extends React.Component {
         }
         const {
             /* eslint-disable no-unused-vars */
-            activateTab,
+            activateTab: _activateTab,
             assetHost,
             cloudHost,
             error,
             isError,
             isScratchDesktop,
             isShowingProject,
-            manualUpdateProject,
+            manualUpdateProject: _manualUpdateProject,
             onClearDeletionRestore,
             onDeleteEditingSprite,
             onDuplicateEditingSprite,
@@ -218,19 +217,19 @@ class GUI extends React.Component {
             onStorageInit,
             onUpdateProjectId,
             onVmInit,
-            openCostumeLibrary,
-            openExtensionManagerModal,
-            openRestorePointModal,
-            openSettingsModal,
-            openSoundLibrary,
-            openSpriteLibrary,
+            openCostumeLibrary: _openCostumeLibrary,
+            openExtensionManagerModal: _openExtensionManagerModal,
+            openRestorePointModal: _openRestorePointModal,
+            openSettingsModal: _openSettingsModal,
+            openSoundLibrary: _openSoundLibrary,
+            openSpriteLibrary: _openSpriteLibrary,
             projectHost,
             projectFetchError,
             projectId,
             projectTitle,
-            requestNewProject,
+            requestNewProject: _requestNewProject,
             restoreDeletion,
-            saveProjectAsCopy,
+            saveProjectAsCopy: _saveProjectAsCopy,
             onProjectUnchanged,
             /* eslint-enable no-unused-vars */
             children,
@@ -255,6 +254,7 @@ class GUI extends React.Component {
 }
 
 GUI.propTypes = {
+    activateTab: PropTypes.func,
     assetHost: PropTypes.string,
     children: PropTypes.node,
     cloudHost: PropTypes.string,
@@ -269,7 +269,13 @@ GUI.propTypes = {
     isScratchDesktop: PropTypes.bool,
     isShowingProject: PropTypes.bool,
     loadingStateVisible: PropTypes.bool,
+    manualUpdateProject: PropTypes.func,
+    onClickPackager: PropTypes.func,
+    onOpenExtensionLibrary: PropTypes.func,
     onProjectLoaded: PropTypes.func,
+    onSetFullScreen: PropTypes.func,
+    onSetStageSize: PropTypes.func,
+    onStartSelectingFileUpload: PropTypes.func,
     onRetryProjectFetch: PropTypes.func,
     projectFetchError: PropTypes.oneOfType([PropTypes.object, PropTypes.string]),
     onDeleteEditingSprite: PropTypes.func,
@@ -279,15 +285,24 @@ GUI.propTypes = {
     onStorageInit: PropTypes.func,
     onUpdateProjectId: PropTypes.func,
     onVmInit: PropTypes.func,
+    openCostumeLibrary: PropTypes.func,
+    openExtensionManagerModal: PropTypes.func,
+    openRestorePointModal: PropTypes.func,
+    openSettingsModal: PropTypes.func,
+    openSoundLibrary: PropTypes.func,
+    openSpriteLibrary: PropTypes.func,
     projectHost: PropTypes.string,
     projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     projectTitle: PropTypes.string,
+    requestNewProject: PropTypes.func,
     restoreDeletion: PropTypes.shape({
         deletedItem: PropTypes.string,
         restoreFun: PropTypes.func,
         sequence: PropTypes.number
     }),
     onProjectUnchanged: PropTypes.func,
+    saveProjectAsCopy: PropTypes.func,
+    stageSizeMode: PropTypes.oneOf(Object.keys(STAGE_SIZE_MODES)),
     telemetryModalVisible: PropTypes.bool,
     vm: PropTypes.instanceOf(VM).isRequired,
     activeTabIndex: PropTypes.number,

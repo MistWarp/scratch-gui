@@ -130,6 +130,7 @@ TargetPane.propTypes = {
     editingTarget: PropTypes.string,
     extensionLibraryVisible: PropTypes.bool,
     fileInputRef: PropTypes.func,
+    getWorkspaceMetrics: PropTypes.func,
     hoveredTarget: PropTypes.shape({
         hoveredSprite: PropTypes.string,
         receivedBlocks: PropTypes.bool

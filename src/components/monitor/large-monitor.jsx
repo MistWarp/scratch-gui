@@ -4,7 +4,7 @@ import styles from './monitor.css';
 
 const formatValue = value => {
     // Avoid rendering objects directly as React children which throws.
-    if (value === null || value === undefined) return String(value);
+    if (value === null || typeof value === 'undefined') return String(value);
     if (Array.isArray(value)) return '[Array]';
     if (typeof value === 'object') return '[Object]';
     return value;

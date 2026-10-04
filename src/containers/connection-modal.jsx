@@ -21,9 +21,13 @@ import {isMicroBitUpdateSupported, selectAndUpdateMicroBit} from '../lib/microbi
  * @property {typeof extensionData[number]} extension
  * @property {keyof typeof PHASES} phase
  */
+
+/**
+ * Modal that scans for, connects to and manages a hardware peripheral for an extension.
+ */
 class ConnectionModal extends React.Component {
     /**
-     * @param {ConnectionModalProps} props
+     * @param {ConnectionModalProps} props - component props
      */
     constructor (props) {
         super(props);
@@ -60,7 +64,7 @@ class ConnectionModal extends React.Component {
     }
     /**
      * Handle connecting to a peripheral.
-     * @param {string} peripheralId
+     * @param {string} peripheralId - ID of the peripheral to connect to
      * @returns {void}
      */
     handleConnecting (peripheralId) {
@@ -166,8 +170,8 @@ const mapStateToProps = state => ({
  */
 
 /**
- * @param {import('redux').Dispatch<function>} dispatch
- * @returns {MapDispatchToProps}
+ * @param {function} dispatch - Redux dispatch function
+ * @returns {MapDispatchToProps} props mapped from dispatch
  */
 const mapDispatchToProps = dispatch => ({
     onCancel: () => {
