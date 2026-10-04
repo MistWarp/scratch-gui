@@ -30,24 +30,21 @@ import PrivacyPage from './privacy-page.jsx';
 import ShortcutManager from '../shortcut-manager/shortcut-manager.jsx';
 import {takeSettingsModalInitialView} from '../../lib/settings/modal-view.js';
 
-import {ChevronLeft} from 'lucide-react';
+import {ChevronLeft, Search} from 'lucide-react';
 import BuildVersionFooter from './build-version-footer.jsx';
 import {DEFINITIONS as DEBUGGER_SETTINGS, getSetting as getDebuggerSetting,
     setSetting as setDebuggerSetting} from '../../lib/debugger/settings.js';
 import {getSetting as getStageControlSetting, setSetting as setStageControlSetting,
     getScreenshotSoundUrl, setScreenshotSoundUrl} from '../../lib/mw-stage-controls/settings.js';
-import {DEFINITIONS as VARIABLE_MANAGER_SETTINGS, getSetting as getVariableManagerSetting,
-    setSetting as setVariableManagerSetting} from '../../lib/variable-manager/settings.js';
-import {
-    getAuthorName, getAuthorEmail, setAuthorName, setAuthorEmail,
-    getDefaultBranch, setDefaultBranch, getAutoCommit, setAutoCommit
-} from '../../lib/git/config.js';
-import {
-    getSetting as getAutosaveSetting, setSetting as setAutosaveSetting,
-    onSettingsChanged as onAutosaveSettingsChanged
-} from '../../lib/mw/autosave-settings.js';
+import {DEFINITIONS as VARIABLE_MANAGER_SETTINGS} from '../../lib/variable-manager/settings.js';
 import {BooleanSetting, LearnMore, Setting} from './setting.jsx';
-import {getSettingsSidebarGroups} from './settings-navigation.js';
+import Header from './settings-header.jsx';
+import VersionControlPage from './pages/version-control-page.jsx';
+import AutosavePage from './pages/autosave-page.jsx';
+import VariableManagerPage from './pages/variable-manager-page.jsx';
+import DesktopPage from './pages/desktop-page.jsx';
+import {getAddonsSearchEntry, getSettingsSidebarGroups} from './settings-navigation.js';
+import {searchSettingsPages} from './settings-search.js';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -56,6 +53,21 @@ const messages = defineMessages({
         defaultMessage: 'Settings',
         description: 'Title of settings modal',
         id: 'tw.settingsModal.title'
+    },
+    sections: {
+        defaultMessage: 'Settings sections',
+        description: 'Accessible label for the list of pages in the settings window',
+        id: 'mw.settingsModal.sections'
+    },
+    search: {
+        defaultMessage: 'Search settings',
+        description: 'Placeholder for the search box at the top of the settings window sidebar',
+        id: 'mw.settingsModal.search'
+    },
+    noResults: {
+        defaultMessage: 'No settings match',
+        description: 'Shown in the settings window sidebar when a search finds nothing',
+        id: 'mw.settingsModal.noResults'
     },
     headerFeatured: {
         defaultMessage: 'Playback',
@@ -124,33 +136,11 @@ const messages = defineMessages({
         defaultMessage: 'Menu Items',
         id: 'mw.settings.menuBarItemsHeader'
     },
-    headerAutosave: {
-        defaultMessage: 'Autosave',
-        id: 'mw.settings.autosaveHeader'
-    },
     headerDebugger: {
         defaultMessage: 'Debugger',
         id: 'mw.settings.debuggerHeader'
-    },
-    headerVersionControl: {
-        defaultMessage: 'Version Control',
-        id: 'mw.settings.versionControlHeader'
-    },
-    headerVariableManager: {
-        defaultMessage: 'Variable Manager',
-        id: 'mw.settings.variableManagerHeader'
     }
 });
-
-const Header = ({children}) => (
-    <div className={styles.header}>
-        {children}
-        <div className={styles.divider} />
-    </div>
-);
-Header.propTypes = {
-    children: PropTypes.node
-};
 
 const settingDefinitions = {
     highQualityPen: {
@@ -458,6 +448,8 @@ const createBooleanSetting = (key, definition) => {
         value: PropTypes.bool,
         onChange: PropTypes.func.isRequired
     };
+    // Lets the settings search find the page this setting is on.
+    SettingComponent.searchMessages = [definition.label, definition.help];
 
     SettingComponent.displayName = key;
     return SettingComponent;
@@ -1215,6 +1207,39 @@ const pageConfigurations = {
     }
 };
 
+// Sidebar ids of the pages built from pageConfigurations.
+const CONFIGURED_PAGE_VIEWS = {
+    general: 'general',
+    editor: 'editor',
+    styles: 'appearance',
+    menuBar: 'menuBar',
+    experimental: 'experimental'
+};
+
+/**
+ * Collect the section headers and setting labels of each page, so the sidebar search can match them.
+ * @param {intlShape} intl The intl object used to translate the labels.
+ * @returns {object} Searchable text for each sidebar page id.
+ */
+const getSettingsPageText = intl => {
+    const pageText = {};
+    for (const [configId, view] of Object.entries(CONFIGURED_PAGE_VIEWS)) {
+        const text = [];
+        for (const section of pageConfigurations[configId].sections) {
+            text.push(intl.formatMessage(messages[section.headerMessage]));
+            for (const setting of section.settings) {
+                for (const message of setting.component.searchMessages || []) {
+                    text.push(intl.formatMessage(message));
+                }
+            }
+        }
+        pageText[view] = text;
+    }
+    pageText.debugger = DEBUGGER_SETTINGS.map(setting => `${setting.label} ${setting.help}`);
+    pageText.variableManager = VARIABLE_MANAGER_SETTINGS.map(setting => `${setting.label} ${setting.help}`);
+    return pageText;
+};
+
 const UnwrappedPageRenderer = ({config, intl, ...props}) => (
     <Box className={styles.body}>
         {config.sections.map((section, sectionIdx) => (
@@ -1290,577 +1315,6 @@ UnwrappedDebuggerPage.propTypes = {
 
 const DebuggerPage = injectIntl(UnwrappedDebuggerPage);
 
-const TextSetting = ({label, help, value, onSubmit, placeholder}) => (
-    <div className={styles.setting}>
-        <div className={styles.textSettingLabel}>{label}</div>
-        <BufferedInput
-            className={styles.textInput}
-            type="text"
-            value={value}
-            placeholder={placeholder}
-            onSubmit={onSubmit}
-        />
-        {help && <p className={styles.detail}>{help}</p>}
-    </div>
-);
-TextSetting.propTypes = {
-    label: PropTypes.node,
-    help: PropTypes.node,
-    value: PropTypes.string,
-    onSubmit: PropTypes.func.isRequired,
-    placeholder: PropTypes.string
-};
-
-class UnwrappedVersionControlPage extends React.Component {
-    constructor (props) {
-        super(props);
-        bindAll(this, [
-            'handleNameChange',
-            'handleEmailChange',
-            'handleBranchChange',
-            'handleAutoCommitChange'
-        ]);
-        this.state = {
-            authorName: getAuthorName(),
-            authorEmail: getAuthorEmail(),
-            defaultBranch: getDefaultBranch(),
-            autoCommit: getAutoCommit()
-        };
-    }
-    handleNameChange (value) {
-        setAuthorName(value);
-        this.setState({authorName: getAuthorName()});
-    }
-    handleEmailChange (value) {
-        setAuthorEmail(value);
-        this.setState({authorEmail: getAuthorEmail()});
-    }
-    handleBranchChange (value) {
-        setDefaultBranch(value);
-        this.setState({defaultBranch: getDefaultBranch()});
-    }
-    handleAutoCommitChange (e) {
-        const value = e.target.checked;
-        setAutoCommit(value);
-        this.setState({autoCommit: value});
-    }
-    render () {
-        const {intl} = this.props;
-        return (
-            <Box className={styles.body}>
-                <Header>{intl.formatMessage(messages.headerVersionControl)}</Header>
-                <TextSetting
-                    label={<FormattedMessage
-                        defaultMessage="Author name"
-                        id="mw.settings.vc.authorName"
-                    />}
-                    help={<FormattedMessage
-                        // eslint-disable-next-line max-len
-                        defaultMessage="Used as the commit author and as your username when pushing to private repositories."
-                        id="mw.settings.vc.authorNameHelp"
-                    />}
-                    value={this.state.authorName}
-                    onSubmit={this.handleNameChange}
-                    placeholder="User"
-                />
-                <TextSetting
-                    label={<FormattedMessage
-                        defaultMessage="Author email"
-                        id="mw.settings.vc.authorEmail"
-                    />}
-                    help={<FormattedMessage
-                        defaultMessage="Recorded as the email address on each commit you make."
-                        id="mw.settings.vc.authorEmailHelp"
-                    />}
-                    value={this.state.authorEmail}
-                    onSubmit={this.handleEmailChange}
-                    placeholder="user@example.com"
-                />
-                <TextSetting
-                    label={<FormattedMessage
-                        defaultMessage="Default branch name"
-                        id="mw.settings.vc.defaultBranch"
-                    />}
-                    help={<FormattedMessage
-                        defaultMessage="Branch created when a new repository is initialized."
-                        id="mw.settings.vc.defaultBranchHelp"
-                    />}
-                    value={this.state.defaultBranch}
-                    onSubmit={this.handleBranchChange}
-                    placeholder="main"
-                />
-                <BooleanSetting
-                    value={this.state.autoCommit}
-                    onChange={this.handleAutoCommitChange}
-                    label={<FormattedMessage
-                        defaultMessage="Commit automatically when the project is saved"
-                        id="mw.settings.vc.autoCommit"
-                    />}
-                    help={<FormattedMessage
-                        // eslint-disable-next-line max-len
-                        defaultMessage="Creates a commit each time you save the project so your history stays up to date without manual commits."
-                        id="mw.settings.vc.autoCommitHelp"
-                    />}
-                />
-            </Box>
-        );
-    }
-}
-UnwrappedVersionControlPage.propTypes = {
-    intl: intlShape.isRequired
-};
-const VersionControlPage = injectIntl(UnwrappedVersionControlPage);
-
-class UnwrappedAutosavePage extends React.Component {
-    constructor (props) {
-        super(props);
-        bindAll(this, [
-            'handleEnabledChange',
-            'handleIntervalSubmit',
-            'handleNotificationsChange',
-            'handleOnlyWhenChangedChange'
-        ]);
-        this.state = {
-            enabled: getAutosaveSetting('enabled'),
-            interval: String(getAutosaveSetting('interval')),
-            notifications: getAutosaveSetting('notifications'),
-            onlyWhenChanged: getAutosaveSetting('only_when_changed')
-        };
-    }
-    componentDidMount () {
-        this.disposeAutosaveSettings = onAutosaveSettingsChanged(() => {
-            this.setState({
-                enabled: getAutosaveSetting('enabled'),
-                interval: String(getAutosaveSetting('interval')),
-                notifications: getAutosaveSetting('notifications'),
-                onlyWhenChanged: getAutosaveSetting('only_when_changed')
-            });
-        });
-    }
-    componentWillUnmount () {
-        if (this.disposeAutosaveSettings) this.disposeAutosaveSettings();
-    }
-    handleEnabledChange (e) {
-        const value = e.target.checked;
-        setAutosaveSetting('enabled', value);
-        this.setState({enabled: getAutosaveSetting('enabled')});
-    }
-    handleIntervalSubmit (value) {
-        setAutosaveSetting('interval', value);
-        this.setState({interval: String(getAutosaveSetting('interval'))});
-    }
-    handleNotificationsChange (e) {
-        const value = e.target.checked;
-        setAutosaveSetting('notifications', value);
-        this.setState({notifications: getAutosaveSetting('notifications')});
-    }
-    handleOnlyWhenChangedChange (e) {
-        const value = e.target.checked;
-        setAutosaveSetting('only_when_changed', value);
-        this.setState({onlyWhenChanged: getAutosaveSetting('only_when_changed')});
-    }
-    render () {
-        const {intl} = this.props;
-        return (
-            <Box className={styles.body}>
-                <Header>{intl.formatMessage(messages.headerAutosave)}</Header>
-                <BooleanSetting
-                    value={this.state.enabled}
-                    onChange={this.handleEnabledChange}
-                    label={<FormattedMessage
-                        defaultMessage="Enable autosave"
-                        id="mw.settings.autosave.enabled"
-                    />}
-                    help={<FormattedMessage
-                        // eslint-disable-next-line max-len
-                        defaultMessage="Periodically push the current worktree to MistWarp without creating a version. Edits stay as uncommitted changes."
-                        id="mw.settings.autosave.enabledHelp"
-                    />}
-                />
-                <div className={styles.setting}>
-                    <div className={styles.textSettingLabel}>
-                        <FormattedMessage
-                            defaultMessage="Autosave interval (minutes)"
-                            id="mw.settings.autosave.interval"
-                        />
-                    </div>
-                    <BufferedInput
-                        className={styles.textInput}
-                        type="number"
-                        min="1"
-                        max="60"
-                        value={this.state.interval}
-                        onSubmit={this.handleIntervalSubmit}
-                    />
-                    <p className={styles.detail}>
-                        <FormattedMessage
-                            defaultMessage="How often autosave pushes, from 1 to 60 minutes."
-                            id="mw.settings.autosave.intervalHelp"
-                        />
-                    </p>
-                </div>
-                <BooleanSetting
-                    value={this.state.notifications}
-                    onChange={this.handleNotificationsChange}
-                    label={<FormattedMessage
-                        defaultMessage="Show autosave notifications"
-                        id="mw.settings.autosave.notifications"
-                    />}
-                    help={<FormattedMessage
-                        defaultMessage="Show a toast when autosave pushes or fails."
-                        id="mw.settings.autosave.notificationsHelp"
-                    />}
-                />
-                <BooleanSetting
-                    value={this.state.onlyWhenChanged}
-                    onChange={this.handleOnlyWhenChangedChange}
-                    label={<FormattedMessage
-                        defaultMessage="Only autosave changed projects"
-                        id="mw.settings.autosave.onlyWhenChanged"
-                    />}
-                    help={<FormattedMessage
-                        defaultMessage="Skip the push when nothing changed since the last save."
-                        id="mw.settings.autosave.onlyWhenChangedHelp"
-                    />}
-                />
-            </Box>
-        );
-    }
-}
-UnwrappedAutosavePage.propTypes = {
-    intl: intlShape.isRequired
-};
-const AutosavePage = injectIntl(UnwrappedAutosavePage);
-
-class VmSetting extends React.Component {
-    constructor (props) {
-        super(props);
-        bindAll(this, ['handleBooleanChange', 'handleSelectChange', 'handleNumberChange']);
-        this.state = {value: getVariableManagerSetting(props.definition.id)};
-    }
-    commit (value) {
-        setVariableManagerSetting(this.props.definition.id, value);
-        this.setState({value: getVariableManagerSetting(this.props.definition.id)});
-    }
-    handleBooleanChange (e) {
-        this.commit(e.target.checked);
-    }
-    handleSelectChange (e) {
-        this.commit(e.target.value);
-    }
-    handleNumberChange (value) {
-        this.commit(value);
-    }
-    render () {
-        const {definition} = this.props;
-        const {value} = this.state;
-        if (definition.type === 'boolean') {
-            return (
-                <BooleanSetting
-                    value={value}
-                    onChange={this.handleBooleanChange}
-                    label={definition.label}
-                    help={definition.help}
-                />
-            );
-        }
-        if (definition.type === 'select') {
-            return (
-                <Setting
-                    help={definition.help}
-                    primary={
-                        <div className={styles.label}>
-                            <span className={styles.settingText}>{definition.label}</span>
-                            <select
-                                className={styles.select}
-                                value={value}
-                                onChange={this.handleSelectChange}
-                            >
-                                {definition.options.map(option => (
-                                    <option
-                                        key={option.value}
-                                        value={option.value}
-                                    >
-                                        {option.label}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    }
-                />
-            );
-        }
-        return (
-            <Setting
-                help={definition.help}
-                primary={
-                    <div className={styles.label}>
-                        <span className={styles.settingText}>{definition.label}</span>
-                        <BufferedInput
-                            className={styles.numberInput}
-                            type="number"
-                            value={value}
-                            min={definition.min}
-                            max={definition.max}
-                            step={definition.step}
-                            onSubmit={this.handleNumberChange}
-                        />
-                    </div>
-                }
-            />
-        );
-    }
-}
-VmSetting.propTypes = {
-    definition: PropTypes.shape({
-        id: PropTypes.string.isRequired,
-        type: PropTypes.string.isRequired,
-        label: PropTypes.string,
-        help: PropTypes.string,
-        min: PropTypes.number,
-        max: PropTypes.number,
-        step: PropTypes.number,
-        options: PropTypes.array
-    }).isRequired
-};
-
-const UnwrappedVariableManagerPage = ({intl}) => (
-    <Box className={styles.body}>
-        <Header>{intl.formatMessage(messages.headerVariableManager)}</Header>
-        {VARIABLE_MANAGER_SETTINGS.map(definition => (
-            <VmSetting
-                key={definition.id}
-                definition={definition}
-            />
-        ))}
-    </Box>
-);
-UnwrappedVariableManagerPage.propTypes = {
-    intl: intlShape.isRequired
-};
-const VariableManagerPage = injectIntl(UnwrappedVariableManagerPage);
-
-const DesktopSelectSetting = ({label, help, value, options, onChange}) => (
-    <Setting
-        help={help}
-        primary={
-            <div className={styles.label}>
-                <span className={styles.settingText}>{label}</span>
-                <select
-                    className={styles.select}
-                    value={value}
-                    onChange={onChange}
-                >
-                    {options.map(option => (
-                        <option
-                            key={option.value}
-                            value={option.value}
-                        >
-                            {option.label}
-                        </option>
-                    ))}
-                </select>
-            </div>
-        }
-    />
-);
-DesktopSelectSetting.propTypes = {
-    label: PropTypes.node,
-    help: PropTypes.node,
-    value: PropTypes.string,
-    options: PropTypes.arrayOf(PropTypes.shape({
-        value: PropTypes.string,
-        label: PropTypes.node
-    })),
-    onChange: PropTypes.func
-};
-
-class DesktopPage extends React.Component {
-    constructor (props) {
-        super(props);
-        this.state = {
-            settings: null,
-            devices: []
-        };
-    }
-
-    componentDidMount () {
-        try {
-            this.setState({settings: window.EditorPreload.getDesktopSettings()});
-        } catch (e) {
-            this.setState({settings: null});
-        }
-        navigator.mediaDevices.enumerateDevices()
-            .then(devices => this.setState({devices}))
-            .catch(() => {});
-    }
-
-    set (key, value) {
-        this.setState(prevState => ({
-            settings: {
-                ...prevState.settings,
-                [key]: value
-            }
-        }));
-        window.EditorPreload.setDesktopSetting(key, value);
-    }
-
-    renderDeviceSelect (key, label, help, kind) {
-        const devices = this.state.devices.filter(device => device.kind === kind);
-        return (
-            <DesktopSelectSetting
-                label={label}
-                help={help}
-                value={this.state.settings[key] || ''}
-                options={[
-                    {
-                        value: '',
-                        label: 'System default'
-                    },
-                    ...devices.map(device => ({
-                        value: device.deviceId,
-                        label: device.label || device.deviceId
-                    }))
-                ]}
-                onChange={e => this.set(key, e.target.value || null)}
-            />
-        );
-    }
-
-    render () {
-        const s = this.state.settings;
-        if (!s) {
-            return null;
-        }
-        return (
-            <Box className={styles.pageContent}>
-                {s.updateCheckerAllowed ? (
-                    <DesktopSelectSetting
-                        label={<FormattedMessage
-                            defaultMessage="Update notifications"
-                            id="mw.settingsModal.desktop.updateChecker"
-                        />}
-                        help={<FormattedMessage
-                            defaultMessage="Controls which app updates you are notified about. Security updates only shows the most important releases; Never disables the update check entirely."
-                            id="mw.settingsModal.desktop.updateCheckerHelp"
-                        />}
-                        value={s.updateChecker}
-                        options={[
-                            {value: 'unstable',
-                                label: 'All updates, including betas'},
-                            {value: 'stable',
-                                label: 'Stable updates'},
-                            {value: 'security',
-                                label: 'Security updates only'},
-                            {value: 'never',
-                                label: 'Never'}
-                        ]}
-                        onChange={e => this.set('updateChecker', e.target.value)}
-                    />
-                ) : null}
-                {this.renderDeviceSelect('microphone', (<FormattedMessage
-                    defaultMessage="Microphone"
-                    id="mw.settingsModal.desktop.microphone"
-                />), (<FormattedMessage
-                    defaultMessage="The input device projects use to record audio, such as the microphone extension."
-                    id="mw.settingsModal.desktop.microphoneHelp"
-                />), 'audioinput')}
-                {this.renderDeviceSelect('camera', (<FormattedMessage
-                    defaultMessage="Camera"
-                    id="mw.settingsModal.desktop.camera"
-                />), (<FormattedMessage
-                    defaultMessage="The camera projects use for video sensing."
-                    id="mw.settingsModal.desktop.cameraHelp"
-                />), 'videoinput')}
-                <BooleanSetting
-                    value={!!s.hardwareAcceleration}
-                    onChange={value => this.set('hardwareAcceleration', value)}
-                    label={<FormattedMessage
-                        defaultMessage="Hardware acceleration (requires restart)"
-                        id="mw.settingsModal.desktop.hardwareAcceleration"
-                    />}
-                    help={<FormattedMessage
-                        defaultMessage="Uses the GPU to speed up rendering. Turn this off if you see graphical glitches or crashes on your system."
-                        id="mw.settingsModal.desktop.hardwareAccelerationHelp"
-                    />}
-                />
-                <BooleanSetting
-                    value={!!s.backgroundThrottling}
-                    onChange={value => this.set('backgroundThrottling', value)}
-                    label={<FormattedMessage
-                        defaultMessage="Pause when the window is not visible"
-                        id="mw.settingsModal.desktop.backgroundThrottling"
-                    />}
-                    help={<FormattedMessage
-                        defaultMessage="Slows down projects while the window is hidden or minimized to save power. Disable this if projects need to keep running in the background."
-                        id="mw.settingsModal.desktop.backgroundThrottlingHelp"
-                    />}
-                />
-                <BooleanSetting
-                    value={!!s.bypassCORS}
-                    onChange={value => this.set('bypassCORS', value)}
-                    label={<FormattedMessage
-                        defaultMessage="Allow projects to access any website (requires restart, dangerous)"
-                        id="mw.settingsModal.desktop.bypassCORS"
-                    />}
-                    help={<FormattedMessage
-                        defaultMessage="Lets projects fetch data from websites that would normally block them. Only enable this for projects you trust, as it removes a security protection."
-                        id="mw.settingsModal.desktop.bypassCORSHelp"
-                    />}
-                />
-                <BooleanSetting
-                    value={!!s.spellchecker}
-                    onChange={value => this.set('spellchecker', value)}
-                    label={<FormattedMessage
-                        defaultMessage="Spellchecker (requires restart)"
-                        id="mw.settingsModal.desktop.spellchecker"
-                    />}
-                    help={<FormattedMessage
-                        defaultMessage="Underlines misspelled words in text fields like the ask block prompt and costume names."
-                        id="mw.settingsModal.desktop.spellcheckerHelp"
-                    />}
-                />
-                <BooleanSetting
-                    value={!!s.exitFullscreenOnEscape}
-                    onChange={value => this.set('exitFullscreenOnEscape', value)}
-                    label={<FormattedMessage
-                        defaultMessage="Exit fullscreen when escape is pressed"
-                        id="mw.settingsModal.desktop.exitFullscreenOnEscape"
-                    />}
-                    help={<FormattedMessage
-                        defaultMessage="Lets the Escape key leave fullscreen mode. Disable this if your project uses Escape for its own controls."
-                        id="mw.settingsModal.desktop.exitFullscreenOnEscapeHelp"
-                    />}
-                />
-                {s.richPresenceAvailable ? (
-                    <BooleanSetting
-                        value={!!s.richPresence}
-                        onChange={value => this.set('richPresence', value)}
-                        label={<FormattedMessage
-                            defaultMessage="Discord rich presence"
-                            id="mw.settingsModal.desktop.richPresence"
-                        />}
-                        help={<FormattedMessage
-                            defaultMessage="Shows that you are using MistWarp on your Discord profile while the app is open."
-                            id="mw.settingsModal.desktop.richPresenceHelp"
-                        />}
-                    />
-                ) : null}
-                <button
-                    type="button"
-                    className={styles.button}
-                    onClick={() => window.EditorPreload.openUserData()}
-                >
-                    <FormattedMessage
-                        defaultMessage="Open user data folder"
-                        id="mw.settingsModal.desktop.openUserData"
-                    />
-                </button>
-            </Box>
-        );
-    }
-}
-
 const SettingsRouter = ({view, ...handlers}) => {
     switch (view) {
     case 'general':
@@ -1916,6 +1370,9 @@ class SettingsModalComponent extends React.Component {
         super(props);
         bindAll(this, [
             'handleNavigate',
+            'handleSearchChange',
+            'handleSearchKeyDown',
+            'handleSelectSearchResult',
             'handleStoreProjectOptions',
             'handleMobileBack'
         ]);
@@ -1923,12 +1380,46 @@ class SettingsModalComponent extends React.Component {
         const requestedView = takeSettingsModalInitialView();
         this.state = {
             currentView: requestedView || 'general',
-            mobileView: requestedView ? 'content' : 'list'
+            mobileView: requestedView ? 'content' : 'list',
+            searchQuery: ''
         };
+    }
+
+    getSearchResults (sidebarGroups) {
+        const {intl} = this.props;
+        const pages = sidebarGroups.reduce((all, group) => all.concat(group.items), []);
+        if (this.props.onClickAddonSettings) {
+            pages.push(getAddonsSearchEntry(intl));
+        }
+        return searchSettingsPages(pages, this.state.searchQuery, getSettingsPageText(intl));
     }
 
     handleNavigate (category) {
         this.setState({currentView: category, mobileView: 'content'});
+    }
+
+    handleSearchChange (e) {
+        this.setState({searchQuery: e.target.value});
+    }
+
+    handleSearchKeyDown (e) {
+        if (e.key !== 'Enter') return;
+        const sidebarGroups = getSettingsSidebarGroups(this.props.intl, typeof window.EditorPreload !== 'undefined');
+        const [firstResult] = this.getSearchResults(sidebarGroups);
+        if (firstResult) {
+            e.preventDefault();
+            this.handleSelectSearchResult(firstResult.id);
+        }
+    }
+
+    handleSelectSearchResult (id) {
+        if (id === 'addons') {
+            // Addon settings open in their own window, the same way as Edit > Addons.
+            this.props.onClose();
+            this.props.onClickAddonSettings();
+            return;
+        }
+        this.handleNavigate(id);
     }
 
     handleMobileBack () {
@@ -1941,9 +1432,10 @@ class SettingsModalComponent extends React.Component {
 
     render () {
         const {intl} = this.props;
-        const {currentView} = this.state;
+        const {currentView, searchQuery} = this.state;
 
         const sidebarGroups = getSettingsSidebarGroups(intl, typeof window.EditorPreload !== 'undefined');
+        const searchResults = searchQuery.trim() ? this.getSearchResults(sidebarGroups) : null;
 
         return (
             <Modal
@@ -1956,10 +1448,45 @@ class SettingsModalComponent extends React.Component {
             >
                 <ModalSidebarLayout mobileView={this.state.mobileView}>
                     <ModalSidebar
-                        ariaLabel="Settings sections"
+                        ariaLabel={intl.formatMessage(messages.sections)}
                         width="wide"
+                        header={
+                            <div className={styles.sidebarSearch}>
+                                <Search
+                                    aria-hidden="true"
+                                    className={styles.sidebarSearchIcon}
+                                    size={15}
+                                />
+                                <input
+                                    aria-label={intl.formatMessage(messages.search)}
+                                    className={styles.sidebarSearchInput}
+                                    placeholder={intl.formatMessage(messages.search)}
+                                    type="search"
+                                    value={searchQuery}
+                                    onChange={this.handleSearchChange}
+                                    onKeyDown={this.handleSearchKeyDown}
+                                />
+                            </div>
+                        }
                     >
-                        {sidebarGroups.map(group => (
+                        {searchResults ? (
+                            searchResults.length > 0 ? searchResults.map(result => (
+                                <ModalSidebarItem
+                                    key={result.id}
+                                    icon={result.icon}
+                                    label={result.label}
+                                    selected={currentView === result.id}
+                                    onClick={() => this.handleSelectSearchResult(result.id)}
+                                />
+                            )) : (
+                                <p
+                                    className={styles.sidebarNoResults}
+                                    role="status"
+                                >
+                                    {intl.formatMessage(messages.noResults)}
+                                </p>
+                            )
+                        ) : sidebarGroups.map(group => (
                             <ModalSidebarCollapsibleGroup
                                 key={group.id}
                                 label={group.label}
@@ -2005,6 +1532,7 @@ class SettingsModalComponent extends React.Component {
 SettingsModalComponent.propTypes = {
     intl: intlShape,
     onClose: PropTypes.func,
+    onClickAddonSettings: PropTypes.func,
     isEmbedded: PropTypes.bool,
     framerate: PropTypes.number,
     onFramerateChange: PropTypes.func,

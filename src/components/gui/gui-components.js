@@ -10,27 +10,31 @@ import Watermark from '../../containers/watermark.jsx';
 import Backpack from '../../containers/backpack.jsx';
 import BrowserModal from '../browser-modal/browser-modal.jsx';
 import DragLayer from '../../containers/drag-layer.jsx';
-import ConnectionModal from '../../containers/connection-modal.jsx';
 import CollaborationContainer from '../../containers/collaboration-container.jsx';
 import CollabLoader from '../collab-loader/collab-loader.jsx';
 import TelemetryModal from '../telemetry-modal/telemetry-modal.jsx';
-import TWUsernameModal from '../../containers/tw-username-modal.jsx';
-import TWSettingsModal from '../../containers/tw-settings-modal.jsx';
-import TWCustomExtensionModal from '../../containers/tw-custom-extension-modal.jsx';
 import TWRestorePointManager from '../../containers/tw-restore-point-manager.jsx';
-import TWFontsModal from '../../containers/tw-fonts-modal.jsx';
-import MWAssetsModal from '../../containers/mw-assets-modal.jsx';
-import MWProjectMetadataModal from '../../containers/mw-project-metadata-modal.jsx';
 import TWDebugger from '../../containers/tw-debugger.jsx';
 import TWVariableManager from '../../containers/tw-variable-manager.jsx';
-import TWUnknownPlatformModal from '../../containers/tw-unknown-platform-modal.jsx';
-import TWGitModal from '../../containers/mw-git-modal.jsx';
 import MWExtensionManagerModal from '../../containers/mw-extension-manager-modal.jsx';
 import MWHelpModal from '../../containers/mw-help-modal.jsx';
 import MWProjectThemeModal from '../../containers/mw-project-theme-modal.jsx';
 import MWProductsModal from '../../containers/mw-products-modal.jsx';
 import MWGameItemsModal from '../../containers/mw-game-items-modal.jsx';
-import ExtensionLibrary from '../../containers/extension-library.jsx';
+import {retryableLazy} from '../../lib/lazy-with-retry.js';
+
+// Rarely used windows that only mount while open load on demand, so they stay out of the startup bundle.
+// Each one must render inside a React.Suspense boundary.
+const ConnectionModal = retryableLazy(() => import('../../containers/connection-modal.jsx'));
+const TWUsernameModal = retryableLazy(() => import('../../containers/tw-username-modal.jsx'));
+const TWSettingsModal = retryableLazy(() => import('../../containers/tw-settings-modal.jsx'));
+const TWCustomExtensionModal = retryableLazy(() => import('../../containers/tw-custom-extension-modal.jsx'));
+const TWFontsModal = retryableLazy(() => import('../../containers/tw-fonts-modal.jsx'));
+const MWAssetsModal = retryableLazy(() => import('../../containers/mw-assets-modal.jsx'));
+const MWProjectMetadataModal = retryableLazy(() => import('../../containers/mw-project-metadata-modal.jsx'));
+const TWUnknownPlatformModal = retryableLazy(() => import('../../containers/tw-unknown-platform-modal.jsx'));
+const TWGitModal = retryableLazy(() => import('../../containers/mw-git-modal.jsx'));
+const ExtensionLibrary = retryableLazy(() => import('../../containers/extension-library.jsx'));
 
 const components = {
     Blocks,
@@ -68,6 +72,22 @@ const components = {
     ExtensionLibrary
 };
 
+const lazyComponents = [
+    ConnectionModal,
+    TWUsernameModal,
+    TWSettingsModal,
+    TWCustomExtensionModal,
+    TWFontsModal,
+    MWAssetsModal,
+    MWProjectMetadataModal,
+    TWUnknownPlatformModal,
+    TWGitModal,
+    ExtensionLibrary
+];
+
 const getGuiComponents = () => components;
 
-export {getGuiComponents};
+// Fetches the on-demand windows in the background so the first open does not wait for the network.
+const preloadLazyGuiComponents = () => Promise.all(lazyComponents.map(component => component.preload()));
+
+export {getGuiComponents, preloadLazyGuiComponents};
