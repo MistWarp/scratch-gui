@@ -24,7 +24,7 @@ import {
 import CollaborationService from '../../lib/collaboration/index.js';
 import {avatarForCollabUser} from '../../lib/collaboration/avatar.js';
 import describeActivity from '../../lib/collaboration/describe-activity.js';
-import {describeCollabError} from '../../lib/collaboration/describe-error.js';
+import {formatCollabError} from '../../lib/collaboration/describe-error.js';
 
 import styles from './collaboration-modal.css';
 
@@ -128,6 +128,22 @@ const messages = defineMessages({
         defaultMessage: 'Remove {name}',
         description: 'Accessible label of the button removing a named collaborator from the room',
         id: 'mw.collaboration.removeUser'
+    },
+    kickConfirmTitle: {
+        defaultMessage: 'Remove {name}?',
+        description: 'Title of the dialog confirming that the host wants to remove a named collaborator',
+        id: 'mw.collaboration.kickConfirmTitle'
+    },
+    kickConfirmMessage: {
+        // eslint-disable-next-line max-len
+        defaultMessage: '{name} will leave the live session and cannot rejoin for 10 minutes. They keep their own copy of the project.',
+        description: 'Message of the dialog confirming that the host wants to remove a named collaborator',
+        id: 'mw.collaboration.kickConfirmMessage'
+    },
+    kickConfirmButton: {
+        defaultMessage: 'Remove',
+        description: 'Button confirming that the host wants to remove a collaborator from the live session',
+        id: 'mw.collaboration.kickConfirmButton'
     },
     denyUser: {
         defaultMessage: 'Deny {name}',
@@ -407,7 +423,7 @@ class CollaborationModal extends Component {
                 return;
             }
             this.setState({
-                error: describeCollabError(error.collabCode, error.message || 'Failed to join room', {roomId}),
+                error: formatCollabError(this.props.intl, error.collabCode, error.message, {roomId}),
                 isConnecting: false,
                 connectionStep: 'join'
             });
@@ -495,8 +511,16 @@ class CollaborationModal extends Component {
         this.confirmEndForEveryone(ending, project.onLeave);
     }
 
-    handleKickUser (userId) {
-        this.props.onKickUser(userId);
+    handleKickUser (user) {
+        const {intl} = this.props;
+        this.props.openSimpleDialog({
+            type: 'confirm',
+            title: intl.formatMessage(messages.kickConfirmTitle, {name: user.username}),
+            message: intl.formatMessage(messages.kickConfirmMessage, {name: user.username}),
+            choices: [{value: 'kick', label: intl.formatMessage(messages.kickConfirmButton)}],
+            onOk: () => this.props.onKickUser(user.id),
+            onCancel: () => {}
+        });
     }
 
     handleChangeUserRole (userId, role) {
@@ -624,8 +648,7 @@ class CollaborationModal extends Component {
             }
             this.setState({
                 roomId: roomCode,
-                error: describeCollabError(error.collabCode, error.message || 'Failed to join room',
-                    {roomId: roomCode}),
+                error: formatCollabError(this.props.intl, error.collabCode, error.message, {roomId: roomCode}),
                 isConnecting: false,
                 connectionStep: 'join'
             });
@@ -649,7 +672,7 @@ class CollaborationModal extends Component {
                 return;
             }
             this.setState({
-                error: describeCollabError(error.collabCode, error.message || 'Failed to connect',
+                error: formatCollabError(this.props.intl, error.collabCode, error.message,
                     {roomId: this.state.roomId.trim()}),
                 isConnecting: false,
                 connectionStep: 'join'
@@ -1157,7 +1180,7 @@ class CollaborationModal extends Component {
                         <Button
                             className={styles.kickButton}
                             aria-label={intl.formatMessage(messages.removeUser, {name: user.username})}
-                            onClick={this.handleKickUser.bind(this, user.id)}
+                            onClick={this.handleKickUser.bind(this, user)}
                             iconElem={UserMinus}
                             iconClassName={styles.kickIcon}
                         >

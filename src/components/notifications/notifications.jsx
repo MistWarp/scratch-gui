@@ -5,9 +5,15 @@ import Notification from '../../lib/notification-system.jsx';
 Notifications.propTypes = {
     notifications: PropTypes.arrayOf(PropTypes.shape({
         id: PropTypes.string.isRequired,
-        message: PropTypes.string.isRequired,
+        message: PropTypes.oneOfType([PropTypes.string, PropTypes.node]).isRequired,
         type: PropTypes.oneOf(['info', 'success', 'warning', 'error']).isRequired,
-        duration: PropTypes.number.isRequired
+        duration: PropTypes.number.isRequired,
+        options: PropTypes.shape({
+            actions: PropTypes.arrayOf(PropTypes.shape({
+                label: PropTypes.string.isRequired,
+                onClick: PropTypes.func.isRequired
+            }))
+        })
     })).isRequired,
     onDismiss: PropTypes.func.isRequired
 };
@@ -30,6 +36,7 @@ function Notifications ({notifications, onDismiss}) {
                 <Notification
                     key={notif.id}
                     id={notif.id}
+                    actions={notif.options && notif.options.actions}
                     message={notif.message}
                     type={notif.type}
                     duration={notif.duration}

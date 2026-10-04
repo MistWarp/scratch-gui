@@ -3,12 +3,13 @@ import {getIsShowingProject} from '../reducers/project-state.js';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 import {compose} from 'redux';
+import {defineMessages, injectIntl, intlShape} from 'react-intl';
 
 import CollaborationModal from '../components/collaboration-modal/collaboration-modal.jsx';
 import ProjectSession from '../components/collaboration-modal/project-session.jsx';
 import CollaborationService from '../lib/collaboration/index.js';
 import NotificationSystem from '../lib/notification-manager.js';
-import {describeCollabError, isRetryableCollabError} from '../lib/collaboration/describe-error.js';
+import {formatCollabError, isRetryableCollabError} from '../lib/collaboration/describe-error.js';
 import {setGitModalInitialView} from '../lib/git/modal-view.js';
 
 import {
@@ -38,6 +39,151 @@ import {
     openGitModal
 } from '../reducers/modals';
 
+/* eslint-disable max-len */
+const messages = defineMessages({
+    joinConfirmTitle: {
+        defaultMessage: 'Join the live session?',
+        description: 'Title of the dialog confirming that joining a live collaboration session replaces the open project',
+        id: 'mw.collaboration.joinConfirmTitle'
+    },
+    joinConfirmMessage: {
+        defaultMessage: 'The host\'s project will replace the one you have open. A device backup of your current project is saved first. This project stops saving to MistWarp until you leave the session.',
+        description: 'Message of the dialog confirming that joining a live collaboration room replaces the open project',
+        id: 'mw.collaboration.joinConfirmMessage'
+    },
+    joinConfirmMessageProject: {
+        defaultMessage: 'The host\'s project will replace the one you have open. A device backup of your current project is saved first. Your edits can be saved to this MistWarp project.',
+        description: 'Message of the dialog confirming that joining a live session of a MistWarp project replaces the open project',
+        id: 'mw.collaboration.joinConfirmMessageProject'
+    },
+    joinConfirmButton: {
+        defaultMessage: 'Join',
+        description: 'Button confirming that the user wants to join a live collaboration session',
+        id: 'mw.collaboration.joinConfirmButton'
+    },
+    joinCancelled: {
+        defaultMessage: 'Joining was cancelled. Your project is unchanged.',
+        description: 'Shown when the user chose not to join a live collaboration session',
+        id: 'mw.collaboration.joinCancelled'
+    },
+    userLeft: {
+        defaultMessage: '{name} left the live session.',
+        description: 'Notification when a collaborator leaves. {name} is their name.',
+        id: 'mw.collaboration.userLeft'
+    },
+    someoneLeft: {
+        defaultMessage: 'Someone left the live session.',
+        description: 'Notification when a collaborator whose name is unknown leaves',
+        id: 'mw.collaboration.someoneLeft'
+    },
+    kicked: {
+        defaultMessage: 'The host removed you from the room. Your copy of the project is still here.',
+        description: 'Shown to a collaborator the host removed from the live session',
+        id: 'mw.collaboration.kicked'
+    },
+    youLeft: {
+        defaultMessage: 'You left the live session.',
+        description: 'Notification after leaving a live collaboration session',
+        id: 'mw.collaboration.youLeft'
+    },
+    joinRequest: {
+        defaultMessage: '{name} wants to join your live session.',
+        description: 'Notification for the host when someone asks to join. {name} is their name.',
+        id: 'mw.collaboration.joinRequest'
+    },
+    joinRequestUnnamed: {
+        defaultMessage: 'Someone wants to join your live session.',
+        description: 'Notification for the host when someone whose name is unknown asks to join',
+        id: 'mw.collaboration.joinRequestUnnamed'
+    },
+    letThemIn: {
+        defaultMessage: 'Let them in',
+        description: 'Button in the join request notification that lets the person into the live session',
+        id: 'mw.collaboration.letThemIn'
+    },
+    openLiveCollaboration: {
+        defaultMessage: 'Open Live Collaboration',
+        description: 'Button in the join request notification that opens the Live Collaboration window',
+        id: 'mw.collaboration.openLiveCollaboration'
+    },
+    approveFailed: {
+        defaultMessage: 'Could not let them in. Open Live Collaboration to try again.',
+        description: 'Error when approving a request to join the live session failed',
+        id: 'mw.collaboration.approveFailed'
+    },
+    denyFailed: {
+        defaultMessage: 'Could not deny the request to join.',
+        description: 'Error when denying a request to join the live session failed',
+        id: 'mw.collaboration.denyFailed'
+    },
+    joinDenied: {
+        defaultMessage: 'The host did not let you in.',
+        description: 'Shown when the host denied a request to join the live session',
+        id: 'mw.collaboration.joinDenied'
+    },
+    nowEditing: {
+        defaultMessage: 'The host let you edit. Your changes now reach everyone.',
+        description: 'Notification when the host lets a collaborator edit',
+        id: 'mw.collaboration.nowEditing'
+    },
+    nowWatching: {
+        defaultMessage: 'The host set you to watch. You can follow along, but your changes will not be kept.',
+        description: 'Notification when the host makes a collaborator watch only',
+        id: 'mw.collaboration.nowWatching'
+    },
+    downloadGaveUp: {
+        defaultMessage: 'The host\'s project could not be downloaded. Leave the live session and join again to retry.',
+        description: 'Error when downloading the host\'s project kept failing',
+        id: 'mw.collaboration.downloadGaveUp'
+    },
+    hostRestarted: {
+        defaultMessage: 'The host reopened the live session, so their project is loading again.',
+        description: 'Notification when the host reloaded and their project is being downloaded again',
+        id: 'mw.collaboration.hostRestarted'
+    },
+    leftForOtherProject: {
+        defaultMessage: 'You opened another project, so you left the live session.',
+        description: 'Notification when opening another project ended the live session',
+        id: 'mw.collaboration.leftForOtherProject'
+    },
+    extensionsSkipped: {
+        defaultMessage: 'These extensions from the host were not loaded: {extensions}. Blocks that use them will not work for you.',
+        description: 'Warning when extensions of the host\'s project were not loaded. {extensions} lists their IDs.',
+        id: 'mw.collaboration.extensionsSkipped'
+    },
+    snapshotUploadFailed: {
+        defaultMessage: 'The project could not be sent to {name}. They will try again automatically.',
+        description: 'Warning for the host when their project could not be sent to someone joining. {name} is their name.',
+        id: 'mw.collaboration.snapshotUploadFailed'
+    },
+    snapshotUploadFailedUnnamed: {
+        defaultMessage: 'The project could not be sent to someone joining. They will try again automatically.',
+        description: 'Warning for the host when their project could not be sent to someone joining whose name is unknown',
+        id: 'mw.collaboration.snapshotUploadFailedUnnamed'
+    },
+    brokerBack: {
+        defaultMessage: 'New people can join the room again.',
+        description: 'Notification for the host when the collaboration server is reachable again',
+        id: 'mw.collaboration.brokerBack'
+    },
+    brokerLostRelayed: {
+        defaultMessage: 'Lost the collaboration server. Anyone connected through it will rejoin when it is back.',
+        description: 'Warning for the host when the collaboration server is lost and some guests depended on it',
+        id: 'mw.collaboration.brokerLostRelayed'
+    },
+    brokerLost: {
+        defaultMessage: 'New people cannot join right now. Everyone already in the room can keep editing.',
+        description: 'Warning for the host when the collaboration server is lost',
+        id: 'mw.collaboration.brokerLost'
+    },
+    reconnected: {
+        defaultMessage: 'Reconnected to the live session.',
+        description: 'Notification when the connection to the live session is back',
+        id: 'mw.collaboration.reconnected'
+    }
+});
+/* eslint-enable max-len */
+
 const MAX_ATTACH_ATTEMPTS = 20;
 const BROKER_OFFLINE_NOTICE_DELAY_MS = 5000;
 // After a failed project download the snapshot service retries on its own;
@@ -61,6 +207,9 @@ class CollaborationContainer extends Component {
         };
         // How the last room join/host was started, for "Try again".
         this.lastConnect = null;
+        // Join request notifications by requester, so answering a request
+        // anywhere removes its notification.
+        this.joinRequestNotices = new Map();
 
         this.handleJoinRoom = this.handleJoinRoom.bind(this);
         this.handleCreateRoom = this.handleCreateRoom.bind(this);
@@ -81,6 +230,7 @@ class CollaborationContainer extends Component {
         this.handleDenyJoinRequest = this.handleDenyJoinRequest.bind(this);
         this.handleCancelJoinRequest = this.handleCancelJoinRequest.bind(this);
         this.handleJoinRequestReceived = this.handleJoinRequestReceived.bind(this);
+        this.handleJoinRequestCancelled = this.handleJoinRequestCancelled.bind(this);
         this.handleJoinApproved = this.handleJoinApproved.bind(this);
         this.handleJoinDenied = this.handleJoinDenied.bind(this);
         this.handleRoomPrivacyChanged = this.handleRoomPrivacyChanged.bind(this);
@@ -127,6 +277,7 @@ class CollaborationContainer extends Component {
         this.collaborationService.on('disconnected', this.handleDisconnected);
         this.collaborationService.on('connection-failed', this.handleConnectionFailed);
         this.collaborationService.on('join-request-received', this.handleJoinRequestReceived);
+        this.collaborationService.on('join-request-cancelled', this.handleJoinRequestCancelled);
         this.collaborationService.on('join-approved', this.handleJoinApproved);
         this.collaborationService.on('join-denied', this.handleJoinDenied);
         this.collaborationService.on('room-privacy-changed', this.handleRoomPrivacyChanged);
@@ -156,6 +307,8 @@ class CollaborationContainer extends Component {
     }
 
     componentDidUpdate (prevProps) {
+        // The window lists join requests itself.
+        if (this.props.isVisible && !prevProps.isVisible) this.dismissJoinRequestNotices();
         // The tabs are the one piece of our activity this container owns; the
         // sprite and the costume/sound index are reported by their own panes.
         if (this.props.activeTabIndex !== prevProps.activeTabIndex) {
@@ -176,6 +329,7 @@ class CollaborationContainer extends Component {
         this.collaborationService.off('disconnected', this.handleDisconnected);
         this.collaborationService.off('connection-failed', this.handleConnectionFailed);
         this.collaborationService.off('join-request-received', this.handleJoinRequestReceived);
+        this.collaborationService.off('join-request-cancelled', this.handleJoinRequestCancelled);
         this.collaborationService.off('join-approved', this.handleJoinApproved);
         this.collaborationService.off('join-denied', this.handleJoinDenied);
         this.collaborationService.off('room-privacy-changed', this.handleRoomPrivacyChanged);
@@ -204,6 +358,7 @@ class CollaborationContainer extends Component {
         }
         clearTimeout(this.brokerOfflineTimer);
         clearTimeout(this.syncRetryTimer);
+        this.dismissJoinRequestNotices();
         // The notification manager is app-wide; its other subscribers (the
         // toast renderer) must keep working after this container goes away.
 
@@ -215,19 +370,17 @@ class CollaborationContainer extends Component {
 
     async handleJoinRoom (roomId, username, scope = null, options = {}) {
         // A retry repeats a join the user already agreed to.
+        const {intl} = this.props;
         const accepted = options.retry || await new Promise(resolve => this.props.openSimpleDialog({
             type: 'confirm',
-            title: 'Join the live session?',
-            message: `The host's project will replace the one you have open. ` +
-                `A device backup of your current project is saved first. ${
-                    scope ? 'Your edits can be saved to this MistWarp project.' :
-                        'This project stops saving to MistWarp until you leave the session.'}`,
-            choices: [{value: 'join', label: 'Join'}],
+            title: intl.formatMessage(messages.joinConfirmTitle),
+            message: intl.formatMessage(scope ? messages.joinConfirmMessageProject : messages.joinConfirmMessage),
+            choices: [{value: 'join', label: intl.formatMessage(messages.joinConfirmButton)}],
             onOk: () => resolve(true),
             onCancel: () => resolve(false)
         }));
         if (!accepted) {
-            const cancelled = new Error('Joining was cancelled. Your project is unchanged.');
+            const cancelled = new Error(intl.formatMessage(messages.joinCancelled));
             cancelled.cancelled = true;
             throw cancelled;
         }
@@ -304,8 +457,7 @@ class CollaborationContainer extends Component {
      */
     connectFailed (error, {roomId, scope, hosting}) {
         const code = (error && error.collabCode) || null;
-        const message = describeCollabError(code, (error && error.message) ||
-            (hosting ? 'Failed to create room' : 'Failed to join room'), {roomId, hosting});
+        const message = formatCollabError(this.props.intl, code, error && error.message, {roomId, hosting});
         this.props.onSetError(message);
         this.setSessionState({canRetry: !scope && isRetryableCollabError(code)});
         const failure = new Error(message);
@@ -394,8 +546,12 @@ class CollaborationContainer extends Component {
     }
 
     handleUserLeft (user) {
-        const username = user.username || user.id || 'Someone';
-        if (!user.rejoined) NotificationSystem.info(`${username} left the live session.`, 3000);
+        const name = user.username || user.id;
+        if (!user.rejoined) {
+            NotificationSystem.info(name ?
+                this.props.intl.formatMessage(messages.userLeft, {name}) :
+                this.props.intl.formatMessage(messages.someoneLeft), 3000);
+        }
         this.updateUsersList();
     }
 
@@ -405,6 +561,7 @@ class CollaborationContainer extends Component {
 
     resetSessionState () {
         clearTimeout(this.syncRetryTimer);
+        this.dismissJoinRequestNotices();
         this.props.onSetConnected(false);
         this.props.onSetRoomId(null);
         this.props.onSetUsers([]);
@@ -426,7 +583,8 @@ class CollaborationContainer extends Component {
         const code = (data && typeof data === 'object' && data.code) || null;
         const text = data && (typeof data === 'string' ? data : data.error);
         const service = this.collaborationService;
-        const message = describeCollabError(code, text, {roomId: this.props.roomId, hosting: service.isHost});
+        const message = formatCollabError(this.props.intl, code, text,
+            {roomId: this.props.roomId, hosting: service.isHost});
         const last = this.lastConnect;
         this.endNoticeShown = true;
         this.resetSessionState();
@@ -448,7 +606,7 @@ class CollaborationContainer extends Component {
     }
 
     handleKickedFromRoom () {
-        const message = 'The host removed you from the room. Your copy of the project is still here.';
+        const message = this.props.intl.formatMessage(messages.kicked);
         this.endNoticeShown = true;
         this.collaborationService.disconnect();
         this.resetSessionState();
@@ -458,7 +616,7 @@ class CollaborationContainer extends Component {
     }
 
     handleHostLeft () {
-        const message = 'The host ended the live session. Your copy of the project is still here.';
+        const message = formatCollabError(this.props.intl, 'HOST_GONE');
         this.endNoticeShown = true;
         this.resetSessionState();
         this.setSessionState({canRetry: false});
@@ -487,7 +645,7 @@ class CollaborationContainer extends Component {
 
     handleDisconnected () {
         this.syncSessionInfo();
-        if (!this.endNoticeShown) NotificationSystem.info('You left the live session.', 3000);
+        if (!this.endNoticeShown) NotificationSystem.info(this.props.intl.formatMessage(messages.youLeft), 3000);
         this.endNoticeShown = false;
         clearTimeout(this.brokerOfflineTimer);
         this.resetSessionState();
@@ -506,23 +664,28 @@ class CollaborationContainer extends Component {
     }
 
     async handleApproveJoinRequest (requesterId, requesterUsername, role) {
+        this.dismissJoinRequestNotice(requesterId);
         try {
             await this.collaborationService.approveJoinRequest(requesterId, role);
         } catch (error) {
             console.error('Failed to approve join request:', error);
-            this.props.onSetError(error.message || 'Failed to approve join request');
+            this.props.onSetError(error.message || this.props.intl.formatMessage(messages.approveFailed));
             throw error;
         }
     }
 
     async handleDenyJoinRequest (requesterId) {
+        this.dismissJoinRequestNotice(requesterId);
         try {
             await this.collaborationService.denyJoinRequest(requesterId);
         } catch (error) {
             console.error('Failed to deny join request:', error);
-            this.props.onSetError(error.message || 'Failed to deny join request');
+            this.props.onSetError(error.message || this.props.intl.formatMessage(messages.denyFailed));
             throw error;
         }
+        // A denial changes nothing else in the store; refresh it so the menu
+        // bar's waiting count goes down.
+        this.updateUsersList();
     }
 
     handleCancelJoinRequest () {
@@ -537,9 +700,40 @@ class CollaborationContainer extends Component {
         // The modal lists requests itself. Project sessions approve through
         // the project's collaborator list, so there is nothing to ask.
         if (this.props.isVisible || this.collaborationService.scope) return;
-        const name = (request && request.requesterUsername) || 'Someone';
-        NotificationSystem.info(`${name} wants to join your live session. ` +
-            'Open Live Collaboration to let them in.', 10000);
+        const {intl} = this.props;
+        const requesterId = request && request.requesterId;
+        const name = request && request.requesterUsername;
+        this.dismissJoinRequestNotice(requesterId);
+        // Someone is waiting on the host, so this stays until it is answered
+        // here, in the window, or the request goes away.
+        const noticeId = NotificationSystem.info(name ?
+            intl.formatMessage(messages.joinRequest, {name}) :
+            intl.formatMessage(messages.joinRequestUnnamed), 0, {
+            actions: [{
+                label: intl.formatMessage(messages.letThemIn),
+                onClick: () => this.handleApproveJoinRequest(requesterId, name).catch(() => {
+                    NotificationSystem.error(intl.formatMessage(messages.approveFailed), 6000);
+                })
+            }, {
+                label: intl.formatMessage(messages.openLiveCollaboration),
+                onClick: this.props.onOpen
+            }]
+        });
+        if (requesterId) this.joinRequestNotices.set(requesterId, noticeId);
+    }
+
+    handleJoinRequestCancelled (request) {
+        this.dismissJoinRequestNotice(request && request.requesterId);
+    }
+
+    dismissJoinRequestNotice (requesterId) {
+        if (!this.joinRequestNotices.has(requesterId)) return;
+        NotificationSystem.dismiss(this.joinRequestNotices.get(requesterId));
+        this.joinRequestNotices.delete(requesterId);
+    }
+
+    dismissJoinRequestNotices () {
+        Array.from(this.joinRequestNotices.keys()).forEach(requesterId => this.dismissJoinRequestNotice(requesterId));
     }
 
     handleJoinApproved () {
@@ -549,7 +743,7 @@ class CollaborationContainer extends Component {
     }
 
     handleJoinDenied (data) {
-        const message = data || 'The host did not let you in.';
+        const message = data || this.props.intl.formatMessage(messages.joinDenied);
         this.endNoticeShown = true;
         this.resetSessionState();
         this.setSessionState({canRetry: false});
@@ -582,9 +776,8 @@ class CollaborationContainer extends Component {
         this.syncSessionInfo();
         this.updateUsersList();
         if (!this.collaborationService.isConnectedToHostPeer()) return;
-        NotificationSystem.info(role === 'edit' ?
-            'The host let you edit. Your changes now reach everyone.' :
-            'The host set you to watch. You can follow along, but your changes will not be kept.', 5000);
+        NotificationSystem.info(this.props.intl.formatMessage(role === 'edit' ?
+            messages.nowEditing : messages.nowWatching), 5000);
     }
 
     handleChangeInviteRole (role) {
@@ -650,45 +843,46 @@ class CollaborationContainer extends Component {
         this.props.onSetHostLoadingProgress(0);
         this.syncRetryTimer = setTimeout(() => {
             this.props.onSetCollabLoading(false);
-            NotificationSystem.error('The host\'s project could not be downloaded. ' +
-                'Leave the live session and join again to retry.', 8000);
+            NotificationSystem.error(this.props.intl.formatMessage(messages.downloadGaveUp), 8000);
         }, SYNC_RETRY_GIVE_UP_MS);
     }
 
     handleHostRestarted () {
         // The reconnecting state stays until 'reconnected', which follows
         // once the reloaded project is in.
-        NotificationSystem.info('The host reopened the live session, so their project is loading again.', 5000);
+        NotificationSystem.info(this.props.intl.formatMessage(messages.hostRestarted), 5000);
     }
 
     handleLeftForOtherProject () {
         this.endNoticeShown = true;
-        NotificationSystem.info('You opened another project, so you left the live session.', 5000);
+        NotificationSystem.info(this.props.intl.formatMessage(messages.leftForOtherProject), 5000);
     }
 
     handleExtensionsSkipped ({ids}) {
-        NotificationSystem.warning(`These extensions from the host were not loaded: ${ids.join(', ')}. ` +
-            'Blocks that use them will not work for you.', 8000);
+        NotificationSystem.warning(this.props.intl.formatMessage(messages.extensionsSkipped,
+            {extensions: ids.join(', ')}), 8000);
     }
 
     handleSnapshotUploadFailed ({username}) {
-        NotificationSystem.warning(`The project could not be sent to ${username || 'someone joining'}. ` +
-            'They will try again automatically.', 6000);
+        NotificationSystem.warning(username ?
+            this.props.intl.formatMessage(messages.snapshotUploadFailed, {name: username}) :
+            this.props.intl.formatMessage(messages.snapshotUploadFailedUnnamed), 6000);
     }
 
     handleBrokerStatus ({online}) {
         clearTimeout(this.brokerOfflineTimer);
         if (online) {
-            if (this.brokerOfflineShown) NotificationSystem.info('New people can join the room again.', 3000);
+            if (this.brokerOfflineShown) {
+                NotificationSystem.info(this.props.intl.formatMessage(messages.brokerBack), 3000);
+            }
             this.brokerOfflineShown = false;
             return;
         }
         if (!this.collaborationService.isHost) return;
         this.brokerOfflineTimer = setTimeout(() => {
             this.brokerOfflineShown = true;
-            NotificationSystem.warning(this.collaborationService.hasRelayedGuests() ?
-                'Lost the collaboration server. Anyone connected through it will rejoin when it is back.' :
-                'New people cannot join right now. Everyone already in the room can keep editing.', 6000);
+            NotificationSystem.warning(this.props.intl.formatMessage(this.collaborationService.hasRelayedGuests() ?
+                messages.brokerLostRelayed : messages.brokerLost), 6000);
         }, BROKER_OFFLINE_NOTICE_DELAY_MS);
     }
 
@@ -702,7 +896,7 @@ class CollaborationContainer extends Component {
 
     handleReconnected () {
         this.props.onSetReconnecting(false);
-        NotificationSystem.success('Reconnected to the live session.', 3000);
+        NotificationSystem.success(this.props.intl.formatMessage(messages.reconnected), 3000);
     }
 
     handlePresenceEditingChanged ({userId, username, handle, activity}) {
@@ -779,6 +973,7 @@ CollaborationContainer.propTypes = {
     onOpen: PropTypes.func.isRequired,
     isVisible: PropTypes.bool.isRequired,
     isConnected: PropTypes.bool.isRequired,
+    intl: intlShape.isRequired,
     isReconnecting: PropTypes.bool,
     reconnectReason: PropTypes.string,
     roomId: PropTypes.string,
@@ -863,5 +1058,6 @@ const mapDispatchToProps = dispatch => ({
 });
 
 export default compose(
+    injectIntl,
     connect(mapStateToProps, mapDispatchToProps)
 )(CollaborationContainer);

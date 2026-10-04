@@ -32,6 +32,9 @@ const AlertComponent = ({
 }) => (
     <Box
         className={classNames(styles.alert, styles[level])}
+        // Warnings (failed saves, lost devices) interrupt; the rest are read
+        // politely by the alerts list's live region.
+        role={level === AlertLevels.WARN ? 'alert' : null}
     >
         {/* TODO: implement Rtl handling */}
         {(iconSpinner || iconURL) && (
