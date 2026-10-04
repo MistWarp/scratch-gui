@@ -105,6 +105,7 @@ const MenuItem = ({
     expanded = false,
     onClick,
     shortcut,
+    subtitle,
     title
 }) => {
     const handleKeyDown = e => {
@@ -122,7 +123,8 @@ const MenuItem = ({
                 className,
                 {
                     [styles.expanded]: expanded,
-                    [styles.disabled]: disabled
+                    [styles.disabled]: disabled,
+                    [styles.hasSubtitle]: !!subtitle
                 }
             )}
             aria-disabled={disabled || null}
@@ -135,6 +137,7 @@ const MenuItem = ({
         >
             {children}
             {shortcut && <span className={styles.shortcut}>{shortcut}</span>}
+            {subtitle && <span className={styles.subtitle}>{subtitle}</span>}
         </li>
     );
 };
@@ -146,6 +149,8 @@ MenuItem.propTypes = {
     expanded: PropTypes.bool,
     onClick: PropTypes.func,
     shortcut: PropTypes.string,
+    // Secondary text under the label, such as why the item is disabled
+    subtitle: PropTypes.node,
     title: PropTypes.string
 };
 

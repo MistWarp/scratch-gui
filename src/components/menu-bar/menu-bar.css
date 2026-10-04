@@ -334,10 +334,6 @@
     margin-right: .5rem;
 }
 
-.disabled {
-    opacity: 0.5;
-}
-
 .mystuff > a {
   background-repeat: no-repeat;
   background-position: center center;
@@ -377,6 +373,76 @@
     .help-icon {
         margin-right: 0;
     }
+}
+
+/* Workspace bookmarks menu */
+
+.bookmark-item {
+    display: flex;
+    align-items: center;
+}
+
+.bookmark-name {
+    flex: 1;
+    min-width: 0;
+    max-width: 16rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bookmark-action {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-left: 0.25rem;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+.bookmark-action:hover,
+.bookmark-action:focus-visible {
+    background-color: $ui-black-transparent;
+    opacity: 1;
+}
+
+.bookmark-action:focus-visible {
+    outline: 2px solid $looks-secondary;
+}
+
+.bookmark-item .bookmark-action :global(svg.lucide) {
+    width: 14px;
+    margin: 0;
+}
+
+.bookmark-category {
+    font-weight: normal;
+    opacity: 0.8;
+}
+
+.bookmark-category-caret {
+    margin-right: 0.5rem;
+    transition: transform 0.15s ease;
+}
+
+[dir="rtl"] .bookmark-category-caret {
+    margin-right: 0;
+    margin-left: 0.5rem;
+}
+
+.bookmark-category-collapsed {
+    transform: rotate(-90deg);
+}
+
+[dir="rtl"] .bookmark-category-collapsed {
+    transform: rotate(90deg);
 }
 
 .menu-item-link {
