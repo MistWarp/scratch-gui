@@ -22,8 +22,9 @@ const agreementAccepted = async () => {
 // Ctrl+S / save button. Saving never creates a version: it uploads the
 // current worktree snapshot and leaves the edits as uncommitted changes.
 // Own project already on MistWarp -> upload silently. Someone else's
-// project -> the window (remix makes a copy). Not on MistWarp yet ->
-// download the native .mwp. The window only reappears for an update when a
+// project -> the window (remix makes a copy). Not on MistWarp yet, or
+// someone else's project that can't be remixed -> download the native
+// .mwp. The window only reappears for an update when a
 // new upload agreement needs accepting, or the silent upload fails.
 // Commits happen explicitly from the save window or Project history.
 // Pressing save again while a save (or any other project operation) is still
@@ -32,8 +33,12 @@ const savesInFlight = new WeakSet();
 const runSmartSave = async ({vm, title, onSaved}) => {
     const onSavedIfCurrent = guardSavedCallback(vm, onSaved);
     const platform = communityEnabled ? getRememberedPlatformProjectState() : null;
+    // Someone else's project that can't be remixed either: the only way to
+    // keep the work is a copy on this computer, same as a project not on MistWarp.
+    const readOnly = platform && platform.isOwner === false && !platform.canSaveDirectly &&
+        platform.canRemix === false;
 
-    if (!platform) {
+    if (!platform || readOnly) {
         setSaveFeedback(vm, 'downloading');
         let blob;
         try {

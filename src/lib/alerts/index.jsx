@@ -209,20 +209,6 @@ const alerts = [
         level: AlertLevels.WARN
     },
     {
-        alertId: 'cloudUnavailable',
-        alertType: AlertTypes.STANDARD,
-        clearList: ['cloudUnavailable'],
-        closeButton: true,
-        content: (
-            <FormattedMessage
-                defaultMessage="Cloud variables are unavailable in this editor session."
-                description="Message shown when cloud variables cannot be enabled"
-                id="gui.alerts.cloudUnavailable"
-            />
-        ),
-        level: AlertLevels.WARN
-    },
-    {
         alertId: 'usernameChangeUnavailable',
         alertType: AlertTypes.STANDARD,
         clearList: ['usernameChangeUnavailable'],
