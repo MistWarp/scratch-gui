@@ -109,6 +109,61 @@ describe('menu keyboard controls', () => {
         expect(onClick).toHaveBeenCalledTimes(1);
     });
 
+    test('disabled menu items are announced and cannot be activated', () => {
+        const onClick = jest.fn();
+        const wrapper = shallow(
+            <MenuItem
+                disabled
+                onClick={onClick}
+            >
+                Undo
+            </MenuItem>
+        );
+        const item = wrapper.find('[role="menuitem"]');
+        const target = {};
+
+        expect(item.prop('aria-disabled')).toBe(true);
+        expect(item.prop('onClick')).toBeNull();
+        expect(item.prop('tabIndex')).toBe(-1);
+        item.prop('onKeyDown')({
+            currentTarget: target,
+            target,
+            key: 'Enter',
+            preventDefault: jest.fn()
+        });
+        expect(onClick).not.toHaveBeenCalled();
+    });
+
+    test('menu items show a subtitle as visible text', () => {
+        const wrapper = shallow(
+            <MenuItem
+                disabled
+                subtitle="There are no new changes to save."
+            >
+                Save
+            </MenuItem>
+        );
+        expect(wrapper.text()).toContain('There are no new changes to save.');
+    });
+
+    test('menu labels have a tooltip only while closed', () => {
+        const closed = shallow(
+            <MenuLabel
+                ariaLabel="File"
+                open={false}
+                onOpen={jest.fn()}
+                onClose={jest.fn()}
+            >
+                File
+            </MenuLabel>
+        );
+        expect(closed.find('[role="button"]').prop('title')).toBe('File');
+
+        // Items inside an open menu would otherwise show the label's tooltip.
+        closed.setProps({open: true});
+        expect(closed.find('[role="button"]').prop('title')).toBeNull();
+    });
+
     test('menus expose their menu role', () => {
         const wrapper = shallow(<Menu><MenuItem>Info</MenuItem></Menu>);
         expect(wrapper.prop('role')).toBe('menu');

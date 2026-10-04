@@ -12,6 +12,9 @@ describe('SettingsMenu', () => {
         expect(button).toHaveLength(1);
         expect(button.prop('type')).toBe('button');
         expect(button.text()).toBe('Settings');
+        // The visible label is hidden on narrow screens and in icons-only mode.
+        expect(button.prop('aria-label')).toBe('Settings');
+        expect(button.prop('title')).toBe('Settings');
 
         button.simulate('click');
         expect(onOpenSettings).toHaveBeenCalledTimes(1);

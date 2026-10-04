@@ -2,6 +2,7 @@ import {MenuBar, mapDispatchToProps} from '../../../src/components/menu-bar/menu
 import {openExtensionLibrary} from '../../../src/reducers/modals';
 import {commitProject, pull, push, repoExists} from '../../../src/lib/git/browser-git';
 import {createMwp} from '../../../src/lib/git/mwp.js';
+import RestorePointAPI from '../../../src/lib/api/restore-points.js';
 
 jest.mock('../../../src/lib/git/browser-git', () => ({
     REPO_DIR: '/repo',
@@ -24,6 +25,11 @@ jest.mock('../../../src/lib/git/project-history.js', () => ({
 jest.mock('../../../src/lib/api/restore-points.js', () => ({
     createSafetyRestorePoint: jest.fn(async () => 42)
 }));
+
+const intl = {
+    formatMessage: (message, values = {}) => message.defaultMessage
+        .replace(/\{(\w+)\}/g, (match, name) => (name in values ? values[name] : match))
+};
 
 const makeMenuBar = props => {
     const menuBar = Object.create(MenuBar.prototype);
@@ -227,6 +233,7 @@ describe('menu bar file workflows', () => {
             name: 'Project.mwp'
         }));
         const menuBar = makeMenuBar({
+            intl,
             onCloseGitStatus: jest.fn(),
             onGitStatusDone: jest.fn(),
             onRequestCloseFile: jest.fn(),
@@ -264,6 +271,7 @@ describe('menu bar file workflows', () => {
             cancelPicker = () => reject(cancelled);
         }));
         const menuBar = makeMenuBar({
+            intl,
             onCloseGitStatus: jest.fn(),
             onRequestCloseFile: jest.fn(),
             onShowGitStatus: jest.fn(),
@@ -288,6 +296,7 @@ describe('menu bar file workflows', () => {
         createMwp.mockRejectedValueOnce(new Error('disk full'));
         const showToast = jest.fn();
         const menuBar = makeMenuBar({
+            intl,
             onCloseGitStatus: jest.fn(),
             onRequestCloseFile: jest.fn(),
             onShowGitStatus: jest.fn(),
@@ -304,6 +313,152 @@ describe('menu bar file workflows', () => {
         expect(menuBar.props.onCloseGitStatus).toHaveBeenCalledWith('savingMwp');
         expect(showToast).toHaveBeenCalledWith('Could not save MistWarp project: disk full', 'error');
         expect(menuBar.mwpSaving).toBe(false);
+    });
+
+    test('asks before starting a new project when the backup cannot be made', async () => {
+        const storageError = new Error('Device backups are not available here.');
+        storageError.name = 'StorageUnavailableError';
+        RestorePointAPI.createSafetyRestorePoint.mockRejectedValueOnce(storageError);
+        const onClickNew = jest.fn();
+        const menuBar = makeMenuBar({
+            confirmReadyToReplaceProject: jest.fn(() => Promise.resolve(true)),
+            intl,
+            onClickNew,
+            onRequestCloseFile: jest.fn(),
+            projectChanged: true,
+            showToast: jest.fn()
+        });
+        menuBar.showConfirm = jest.fn(() => Promise.resolve(false));
+
+        await expect(menuBar.handleClickNew()).resolves.toBe(false);
+
+        expect(menuBar.showConfirm).toHaveBeenCalledWith(
+            'Start anyway without a backup?',
+            expect.any(String),
+            'Start without a backup'
+        );
+        expect(onClickNew).not.toHaveBeenCalled();
+        expect(menuBar.props.showToast).not.toHaveBeenCalled();
+    });
+
+    test('starts a new project without a backup once the user agrees', async () => {
+        RestorePointAPI.createSafetyRestorePoint.mockRejectedValueOnce(new Error('QuotaExceededError'));
+        const onClickNew = jest.fn();
+        const menuBar = makeMenuBar({
+            confirmReadyToReplaceProject: jest.fn(() => Promise.resolve(true)),
+            intl,
+            onClickNew,
+            onRequestCloseFile: jest.fn(),
+            projectChanged: true
+        });
+        menuBar.showConfirm = jest.fn(() => Promise.resolve(true));
+
+        await expect(menuBar.handleClickNew()).resolves.toBe(true);
+        expect(onClickNew).toHaveBeenCalledWith(false);
+    });
+
+    test('does not ask about a backup when nothing unsaved would be lost', async () => {
+        RestorePointAPI.createSafetyRestorePoint.mockRejectedValueOnce(new Error('QuotaExceededError'));
+        const onClickNew = jest.fn();
+        const menuBar = makeMenuBar({
+            confirmReadyToReplaceProject: jest.fn(() => Promise.resolve(true)),
+            intl,
+            onClickNew,
+            onRequestCloseFile: jest.fn(),
+            projectChanged: false
+        });
+        menuBar.showConfirm = jest.fn();
+
+        await expect(menuBar.handleClickNew()).resolves.toBe(true);
+        expect(menuBar.showConfirm).not.toHaveBeenCalled();
+        expect(onClickNew).toHaveBeenCalledTimes(1);
+    });
+
+    test('shows a plain error if a new project cannot be started', async () => {
+        const menuBar = makeMenuBar({
+            confirmReadyToReplaceProject: jest.fn(() => Promise.resolve(true)),
+            intl,
+            onClickNew: jest.fn(() => {
+                throw new Error('internal failure');
+            }),
+            onRequestCloseFile: jest.fn(),
+            showToast: jest.fn()
+        });
+        jest.spyOn(console, 'error').mockImplementationOnce(() => {});
+
+        await expect(menuBar.handleClickNew()).resolves.toBe(false);
+        expect(menuBar.props.showToast).toHaveBeenCalledWith(
+            'Could not start a new project. Your current project is still open.',
+            'error'
+        );
+    });
+
+    test('Undo and Redo do nothing while the Costumes or Sounds tab is open', () => {
+        const menuBar = makeMenuBar({blocksTabVisible: false, isPlayerOnly: false});
+        menuBar.state = {canUndo: true, canRedo: true};
+        menuBar.ensureScratchBlocks = jest.fn(() => Promise.resolve());
+
+        menuBar.handleClickUndo();
+        menuBar.handleClickRedo();
+
+        expect(menuBar.ensureScratchBlocks).not.toHaveBeenCalled();
+    });
+
+    test('bookmark shortcuts ignore AltGr and other tabs', () => {
+        const menuBar = makeMenuBar({blocksTabVisible: true, isPlayerOnly: false});
+        menuBar.handleAddWorkspaceBookmark = jest.fn();
+        menuBar.handleSwitchWorkspaceBookmark = jest.fn();
+        const press = (props, extra = {}) => {
+            menuBar.props = {...menuBar.props, ...props};
+            const event = {
+                altKey: true,
+                ctrlKey: true,
+                getModifierState: () => false,
+                key: 't',
+                preventDefault: jest.fn(),
+                target: {tagName: 'DIV'},
+                ...extra
+            };
+            menuBar.handleKeyPress(event);
+            return event;
+        };
+
+        press({}, {getModifierState: modifier => modifier === 'AltGraph'});
+        press({blocksTabVisible: false});
+        expect(menuBar.handleAddWorkspaceBookmark).not.toHaveBeenCalled();
+
+        const event = press({blocksTabVisible: true}, {key: '2'});
+        expect(event.preventDefault).toHaveBeenCalled();
+        expect(menuBar.handleSwitchWorkspaceBookmark).toHaveBeenCalledWith(1);
+    });
+
+    test('loads saved bookmarks and never overwrites ones it could not read', async () => {
+        const stage = {
+            comments: {c: {text: 'WORKSPACE_BOOKMARKS:{damaged'}}
+        };
+        const menuBar = makeMenuBar({
+            intl,
+            onRequestCloseWorkspaceBookmarks: jest.fn(),
+            vm: {runtime: {getTargetForStage: () => stage}}
+        });
+        menuBar.state = {workspaceBookmarks: []};
+        menuBar.setState = update => Object.assign(menuBar.state, update);
+        menuBar.showAlert = jest.fn(() => Promise.resolve());
+        menuBar.getCurrentWorkspaceBookmarkState = jest.fn();
+        jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+        menuBar.loadWorkspaceBookmarksFromProject();
+        await menuBar.handleAddWorkspaceBookmark();
+        menuBar.saveWorkspaceBookmarksToProject();
+
+        expect(menuBar.showAlert).toHaveBeenCalledTimes(1);
+        expect(menuBar.getCurrentWorkspaceBookmarkState).not.toHaveBeenCalled();
+        expect(stage.comments.c.text).toBe('WORKSPACE_BOOKMARKS:{damaged');
+        console.warn.mockRestore();
+
+        stage.comments.c.text = 'WORKSPACE_BOOKMARKS:{"bookmarks":[{"name":"Loop"}]}';
+        menuBar.loadWorkspaceBookmarksFromProject();
+        expect(menuBar.state.workspaceBookmarks).toEqual([{name: 'Loop'}]);
     });
 
     test('does not update undo state after the menu bar unmounts', async () => {
