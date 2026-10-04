@@ -10,7 +10,7 @@ import styles from './UnderlineTabs.module.css';
 // defaults, so they render unstyled gray buttons when reused here).
 // Counts render as pills via a plain <b> in the label:
 //   {key: 'projects', label: <>Projects <b>{count}</b></>}
-const UnderlineTabs = ({items, value, onChange, ariaLabel, className}) => (
+const UnderlineTabs = ({items, value, onChange, ariaLabel, className, variant, idPrefix, panelId}) => (
     <SectionTabs
         items={items}
         value={value}
@@ -19,6 +19,9 @@ const UnderlineTabs = ({items, value, onChange, ariaLabel, className}) => (
         itemClassName={styles.tab}
         activeClassName={styles.tabActive}
         ariaLabel={ariaLabel}
+        variant={variant}
+        idPrefix={idPrefix}
+        panelId={panelId}
     />
 );
 
@@ -30,11 +33,17 @@ UnderlineTabs.propTypes = {
     value: PropTypes.string.isRequired,
     onChange: PropTypes.func.isRequired,
     ariaLabel: PropTypes.string.isRequired,
-    className: PropTypes.string
+    className: PropTypes.string,
+    variant: PropTypes.oneOf(['tabs', 'buttons']),
+    idPrefix: PropTypes.string,
+    panelId: PropTypes.string
 };
 
 UnderlineTabs.defaultProps = {
-    className: ''
+    className: '',
+    variant: 'tabs',
+    idPrefix: '',
+    panelId: ''
 };
 
 export default UnderlineTabs;

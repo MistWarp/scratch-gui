@@ -1,8 +1,10 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
-import React, {useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Clock, Image, ListChecks, Plus, Send, X} from 'lucide-react';
 import rotur from '../rotur.js';
+import {formatDateTime} from '../format';
+import {readSessionDraft, writeSessionDraft} from '../session-draft.js';
 import {ATTACHMENT_TYPES, uploadPostAttachment} from '../post-upload.js';
 import Button from './ui/Button.jsx';
 import Notice from './ui/Notice.jsx';
@@ -20,11 +22,19 @@ const attachmentLimit = tier => {
     return rank >= 3 ? 4 : rank >= 2 ? 2 : 1;
 };
 
+// The value format a datetime-local input expects, in the viewer's time zone.
+const localDateTimeValue = time => {
+    const date = new Date(time);
+    date.setSeconds(0, 0);
+    return new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+};
+
 const PostComposer = ({user, onPosted, profileOnly = false}) => {
     const {text: communityText} = useCommunityText();
     const fileInput = useRef(null);
     const submitInFlight = useRef(false);
-    const [content, setContent] = useState('');
+    const draftKey = `post:${user.username || ''}:${profileOnly ? 'profile' : 'feed'}`;
+    const [content, setContent] = useState(() => readSessionDraft(draftKey));
     const [attachments, setAttachments] = useState([]);
     const [poll, setPoll] = useState(null);
     const [scheduledFor, setScheduledFor] = useState('');
@@ -34,6 +44,13 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
     const [progress, setProgress] = useState(0);
     const [dragging, setDragging] = useState(false);
     const [error, setError] = useState('');
+    const [notice, setNotice] = useState('');
+    const draftKeyRef = useRef(draftKey);
+    useEffect(() => {
+        if (draftKeyRef.current === draftKey) return;
+        draftKeyRef.current = draftKey;
+        setContent(readSessionDraft(draftKey));
+    }, [draftKey]);
     const releaseSubmit = () => {
         submitInFlight.current = false;
     };
@@ -84,6 +101,7 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
         submitInFlight.current = true;
         setBusy(true);
         setError('');
+        setNotice('');
         const options = {profileOnly};
         if (attachments.length === 1) options.attachment = attachments[0];
         else if (attachments.length > 1) options.attachments = attachments;
@@ -91,7 +109,14 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
         if (scheduledFor) options.scheduledFor = new Date(scheduledFor).getTime();
         try {
             const created = await rotur.createPost(content.trim(), options);
-            if (!created.scheduled && !scheduledFor) onPosted({...created, user: created.user || user.username});
+            if (!created.scheduled && !scheduledFor) {
+                onPosted({...created, user: created.user || user.username});
+            } else {
+                setNotice(communityText('Scheduled for {value1}', {
+                    value1: formatDateTime(options.scheduledFor || created.scheduledFor)
+                }));
+            }
+            writeSessionDraft(draftKey, '');
             setContent('');
             setAttachments([]);
             setPoll(null);
@@ -113,11 +138,7 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
         event.preventDefault();
         addFiles(files);
     };
-    const defaultSchedule = () => {
-        const date = new Date(Date.now() + 3600000);
-        date.setSeconds(0, 0);
-        return new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
-    };
+    const defaultSchedule = () => localDateTimeValue(Date.now() + 3600000);
 
     return (
         <form
@@ -143,7 +164,10 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
                     communityText('Post something')}
                 aria-label={communityText('Post content')}
                 onPaste={handlePaste}
-                onChange={event => setContent(event.target.value)}
+                onChange={event => {
+                    setContent(event.target.value);
+                    writeSessionDraft(draftKey, event.target.value);
+                }}
             />
             <input
                 hidden
@@ -181,6 +205,7 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
                                 value={option}
                                 maxLength={80}
                                 placeholder={communityText('Option {value1}', {value1: index + 1})}
+                                aria-label={communityText('Option {value1}', {value1: index + 1})}
                                 onChange={event => {
                                     const nextValue = event.target.value;
                                     setPoll(current => current.map((value, item) => (
@@ -197,6 +222,9 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
                             ) : null}
                         </div>
                     ))}
+                    {pollValid ? null : (
+                        <small className={styles.pollHint}>{communityText('Add at least 2 options')}</small>
+                    )}
                     {poll.length < 6 ? (
                         <button type="button" onClick={() => setPoll(current => [...current, ''])}>
                             <Plus size={14} />
@@ -212,6 +240,7 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
                     <input
                         type="datetime-local"
                         value={scheduledFor}
+                        min={localDateTimeValue(Date.now())}
                         onChange={event => setScheduledFor(event.target.value)}
                     />
                 </label>
@@ -252,6 +281,11 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
                 </Button>
             </div>
             {error ? <Notice variant="error" className={styles.message}>{error}</Notice> : null}
+            {notice ? (
+                <Notice variant="success" className={styles.message} onDismiss={() => setNotice('')}>
+                    {notice}
+                </Notice>
+            ) : null}
         </form>
     );
 };
@@ -262,5 +296,5 @@ PostComposer.propTypes = {
     profileOnly: PropTypes.bool
 };
 
-export {attachmentLimit, postLimit};
+export {attachmentLimit, localDateTimeValue, postLimit};
 export default PostComposer;
