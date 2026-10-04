@@ -341,6 +341,8 @@ const mapStateToProps = state => {
         restoreDeletion: state.scratchGui.restoreDeletion,
         soundLibraryVisible: state.scratchGui.modals.soundLibrary,
         soundsTabVisible: state.scratchGui.editorTab.activeTabIndex === SOUNDS_TAB_INDEX,
+        // The toggle-stage-size shortcut needs the current size to pick the other one.
+        stageSizeMode: state.scratchGui.stageSize.stageSize,
         targetIsStage: (
             state.scratchGui.targets.stage &&
             state.scratchGui.targets.stage.id === state.scratchGui.targets.editingTarget
