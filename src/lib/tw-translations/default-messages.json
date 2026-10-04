@@ -1146,6 +1146,7 @@
   "mw.settingsModal.disableCloudVariables": "Disable cloud variables in editor",
   "mw.settingsModal.disableCloudVariablesHelp": "Keeps cloud variables local whenever a project opens in the editor on this device, so nothing is sent to or received from the cloud variable server.",
   "mw.settingsModal.vanillaPalette": "Vanilla Compatible Blocks Only",
+  "mw.settingsModal.twoColumnCategories": "Two-Column Category Menu",
   "mw.settingsModal.unclipPalette": "Unclip Block Palette",
   "mw.settingsModal.showPauseButton": "Show Pause Button",
   "mw.settingsModal.showStepButton": "Show Frame Step Button",

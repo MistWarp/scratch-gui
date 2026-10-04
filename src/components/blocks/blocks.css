@@ -208,3 +208,62 @@
         transform: scale(1.06);
     }
 }
+
+/*
+    Two-column category menu: categories sit above the flyout, built-in ones in two columns
+    and extensions in a list underneath. The bottom padding leaves room for the add
+    extension bar from gui.css.
+*/
+.blocks :global(.blocklyToolboxDiv.mwTwoColumnCategories) {
+    height: auto !important;
+    padding-bottom: 2.25rem;
+    border-radius: 0;
+}
+
+.blocks :global(.mwTwoColumnCategories .scratchCategoryMenu) {
+    width: 100%;
+    margin-bottom: 0;
+    padding: 0.25rem;
+    overflow: visible;
+    columns: 2;
+    column-gap: 0.25rem;
+}
+
+.blocks :global(.mwTwoColumnCategories .mwExtensionCategoryMenu) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 0.25rem;
+    padding-top: 0;
+}
+
+.blocks :global(.mwTwoColumnCategories .mwExtensionCategoryMenu:empty) {
+    display: none;
+}
+
+.blocks :global(.mwTwoColumnCategories .scratchCategoryMenuRow) {
+    break-inside: avoid;
+    min-width: 0;
+}
+
+.blocks :global(.mwTwoColumnCategories .scratchCategoryMenuItem) {
+    display: flex;
+    align-items: center;
+    padding: 0.25rem;
+    border-radius: 0.875rem;
+    text-align: start;
+}
+
+.blocks :global(.mwTwoColumnCategories .scratchCategoryItemBubble),
+.blocks :global(.mwTwoColumnCategories .scratchCategoryItemIcon) {
+    flex-shrink: 0;
+    margin: 0;
+    margin-inline-end: 0.5rem;
+}
+
+.blocks :global(.mwTwoColumnCategories .scratchCategoryMenuItemLabel) {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

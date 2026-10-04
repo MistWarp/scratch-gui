@@ -24,6 +24,11 @@ import {CATEGORY_ORDER_CHANGED, getCategoryOrder} from '../lib/mw-category-order
 import {LoadingState} from '../reducers/project-state';
 import installCategoryDrag from '../lib/mw-category-drag';
 import {CAT_BLOCKS_CHANGED} from '../lib/mw-cat-blocks';
+import {
+    getResizableFlyoutWidth,
+    refreshTwoColumnCategories,
+    TWO_COLUMN_CATEGORIES_CHANGED
+} from '../lib/mw-two-column-categories';
 import defineDynamicBlock from '../lib/utils/define-dynamic-block';
 import {Theme} from '../lib/themes';
 import {injectExtensionBlockTheme, injectExtensionCategoryTheme} from '../lib/themes/blockHelpers';
@@ -166,6 +171,7 @@ class Blocks extends React.Component {
         this.handleAddonSettingChanged = this.handleAddonSettingChanged.bind(this);
         this.handleToolboxPreferenceChanged = this.handleToolboxPreferenceChanged.bind(this);
         this.handleCatBlocksChanged = this.handleCatBlocksChanged.bind(this);
+        this.handleTwoColumnCategoriesChanged = this.handleTwoColumnCategoriesChanged.bind(this);
         this.applyPaletteResizeEnabledState = this.applyPaletteResizeEnabledState.bind(this);
         this.updateBlockColors = this.updateBlockColors.bind(this);
 
@@ -190,6 +196,7 @@ class Blocks extends React.Component {
         window.addEventListener(VANILLA_PALETTE_CHANGED, this.handleToolboxPreferenceChanged);
         window.addEventListener(CATEGORY_ORDER_CHANGED, this.handleToolboxPreferenceChanged);
         window.addEventListener(CAT_BLOCKS_CHANGED, this.handleCatBlocksChanged);
+        window.addEventListener(TWO_COLUMN_CATEGORIES_CHANGED, this.handleTwoColumnCategoriesChanged);
 
         this.ScratchBlocks = VMScratchBlocks(this.props.vm, this.props.useCatBlocks);
         this.ScratchBlocks.prompt = this.handlePromptStart;
@@ -248,7 +255,7 @@ class Blocks extends React.Component {
         const toolboxWorkspace = this.workspace.getFlyout().getWorkspace();
 
         try {
-            const initialFlyoutWidth = this.workspace.getFlyout().getWidth();
+            const initialFlyoutWidth = getResizableFlyoutWidth(this.workspace.getFlyout());
             if (typeof initialFlyoutWidth === 'number' && Number.isFinite(initialFlyoutWidth)) {
                 if (this.state.paletteResizeEnabled) {
                     this.setFlyoutWidth(initialFlyoutWidth);
@@ -452,6 +459,7 @@ class Blocks extends React.Component {
         window.removeEventListener(VANILLA_PALETTE_CHANGED, this.handleToolboxPreferenceChanged);
         window.removeEventListener(CATEGORY_ORDER_CHANGED, this.handleToolboxPreferenceChanged);
         window.removeEventListener(CAT_BLOCKS_CHANGED, this.handleCatBlocksChanged);
+        window.removeEventListener(TWO_COLUMN_CATEGORIES_CHANGED, this.handleTwoColumnCategoriesChanged);
         this.detachVM();
         this.unmounted = true;
         this.blocks.removeEventListener('dragover', this.handleScriptDragOver);
@@ -530,7 +538,7 @@ class Blocks extends React.Component {
         const toolbox = this.workspace.getToolbox && this.workspace.getToolbox();
         if (!flyout || !toolbox) return;
 
-        const startFlyoutWidth = flyout.getWidth();
+        const startFlyoutWidth = getResizableFlyoutWidth(flyout);
         const rect = container.getBoundingClientRect();
 
         // In ScratchBlocks this.toolboxPosition exists on the workspace.
@@ -668,6 +676,10 @@ class Blocks extends React.Component {
         }
     }
 
+    handleTwoColumnCategoriesChanged () {
+        if (this.workspace) refreshTwoColumnCategories(this.workspace);
+    }
+
     handleAddonSettingChanged (e) {
         const detail = e && e.detail;
         if (!detail) return;
@@ -698,7 +710,7 @@ class Blocks extends React.Component {
 
         if (paletteResizeEnabled) {
             // Re-sync the current (default) flyout width into our override system.
-            const currentWidth = flyout.getWidth();
+            const currentWidth = getResizableFlyoutWidth(flyout);
             if (typeof currentWidth === 'number' && Number.isFinite(currentWidth)) {
                 this.setFlyoutWidth(currentWidth);
             }
@@ -708,7 +720,7 @@ class Blocks extends React.Component {
                 flyout.setWidth(null);
             }
 
-            const flyoutWidth = flyout.getWidth();
+            const flyoutWidth = getResizableFlyoutWidth(flyout);
             if (typeof flyoutWidth === 'number' && Number.isFinite(flyoutWidth)) {
                 toolbox.width = CATEGORY_MENU_WIDTH + flyoutWidth;
             }

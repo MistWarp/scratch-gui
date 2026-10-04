@@ -348,8 +348,6 @@
   "editor-comment-previews/@settings-select-delay-long": "Largo",
   "editor-comment-previews/@settings-select-delay-none": "Ninguno",
   "editor-comment-previews/@settings-select-delay-short": "Corto",
-  "columns/@description": "Divide el menú de categorías de bloques en dos columnas y lo mueve a la cima de la paleta de bloques, como en Scratch 2.0.",
-  "columns/@name": "Menú de categorías de dos columnas",
   "number-pad/@description": "Muestra el teclado numérico virtual de Scratch cuando se editan entradas de números en bloques en todos los dispositivos y no solo en dispositivos táctiles.",
   "number-pad/@info-explanation": "Se mostrará un teclado numérico cuando se editen entradas para bloques como \"mover () pasos\".",
   "number-pad/@name": "Siempre mostrar teclado numérico",

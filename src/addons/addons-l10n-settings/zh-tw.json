@@ -269,8 +269,6 @@
   "editor-comment-previews/@settings-select-delay-long": "較長",
   "editor-comment-previews/@settings-select-delay-none": "無",
   "editor-comment-previews/@settings-select-delay-short": "較短",
-  "columns/@description": "把工具箱的積木分類改成兩列顯示，並把面板放置在編輯器頂部，就像 Scratch 2.0 版那樣。",
-  "columns/@name": "兩列式積木選單",
   "number-pad/@name": "一直顯示數字鍵盤",
   "script-snap/@description": "在程式編輯區上拖曳程式時，會自動與畫面的網格貼齊。",
   "script-snap/@name": "程式積木貼齊網格",

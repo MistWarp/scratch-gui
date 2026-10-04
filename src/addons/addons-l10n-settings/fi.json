@@ -354,8 +354,6 @@
   "editor-comment-previews/@settings-select-delay-long": "Pitkä",
   "editor-comment-previews/@settings-select-delay-none": "Ei viivettä",
   "editor-comment-previews/@settings-select-delay-short": "Lyhyt",
-  "columns/@description": "Jakaa lohkokategoriavalikon kahteen sarakkeeseen ja siirtää sen lohkopaletin yläosaan, kuten Scratch 2.0:ssa.",
-  "columns/@name": "Kahden sarakkeen lohkokategoriavalikko",
   "number-pad/@description": "Näytä Scratchin virtuaalinen numeronäppäimistö kaikilla laitteilla lohkojen numerokenttiä muokatessa sen sijaan, että näppäimistö näytettäisiin ainoastaan kosketusnäytöllisillä laitteilla.",
   "number-pad/@info-explanation": "Numeronäppäimistö ilmestyy, kun lohkojen, kuten \"liiku () askelta\", numerokenttiä muokataan.",
   "number-pad/@name": "Näytä aina numeronäppäimistö",

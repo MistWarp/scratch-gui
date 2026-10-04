@@ -48,7 +48,6 @@ import * as bundledModule46 from "../addons/block-duplicate/_runtime_entry.js";
 import * as bundledModule47 from "../addons/rename-broadcasts/_runtime_entry.js";
 import * as bundledModule48 from "../addons/swap-local-global/_runtime_entry.js";
 import * as bundledModule49 from "../addons/editor-comment-previews/_runtime_entry.js";
-import * as bundledModule50 from "../addons/columns/_runtime_entry.js";
 import * as bundledModule51 from "../addons/number-pad/_runtime_entry.js";
 import * as bundledModule52 from "../addons/editor-number-arrow-keys/_runtime_entry.js";
 import * as bundledModule53 from "../addons/script-snap/_runtime_entry.js";
@@ -112,7 +111,6 @@ export default {
   "rename-broadcasts": () => Promise.resolve(bundledModule47),
   "swap-local-global": () => Promise.resolve(bundledModule48),
   "editor-comment-previews": () => Promise.resolve(bundledModule49),
-  "columns": () => Promise.resolve(bundledModule50),
   "number-pad": () => Promise.resolve(bundledModule51),
   "editor-number-arrow-keys": () => Promise.resolve(bundledModule52),
   "script-snap": () => Promise.resolve(bundledModule53),
