@@ -186,11 +186,12 @@ const projectDetails = async id => {
     const data = await apiJson(`/projects/${encodeURIComponent(id)}`);
     if (!data || !data.project || data.project.shared !== true) return null;
     const project = data.project;
+    const name = project.title || 'Untitled project';
     return {
-        name: project.title || 'Untitled project',
+        name,
         owner: project.owner || 'unknown',
         description: flatten(project.instructions || project.description) ||
-            `Play ${project.title} on MistWarp.`,
+            `Play ${name} on MistWarp.`,
         image: project.thumbUrl || null
     };
 };
@@ -543,7 +544,13 @@ export const onRequest = async context => {
     if (!contentType.includes('text/html')) return response;
     if (SKIP_PATHS.has(url.pathname) || DOCS_PATH.test(url.pathname)) return response;
 
-    const meta = await metaForPath(url.pathname);
+    let meta;
+    try {
+        meta = await metaForPath(url.pathname);
+    } catch (e) {
+        // Unexpected API data must not take the page down; serve it with its default tags.
+        return response;
+    }
     if (!meta) return response;
 
     const canonicalUrl = `${url.origin}${url.pathname}`;
