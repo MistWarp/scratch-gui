@@ -103,7 +103,12 @@ test('a server that only knows the old validator key gets one next', async () =>
         // The server live today checks only the old key, and answers 403.
         const refusal = {ok: false, code: 'invalid_validator', error: 'Validator expired or not valid'};
         return Promise.resolve(authCalls === 1 ?
-            {ok: false, status: 403, json: () => Promise.resolve(refusal), clone: () => ({json: () => Promise.resolve(refusal)})} :
+            {
+                ok: false,
+                status: 403,
+                json: () => Promise.resolve(refusal),
+                clone: () => ({json: () => Promise.resolve(refusal)})
+            } :
             {ok: true, status: 200, json: () => Promise.resolve({ok: true, token: 'session'})});
     });
     await expect(exchangeValidator('rotur-token')).resolves.toMatchObject({token: 'session'});

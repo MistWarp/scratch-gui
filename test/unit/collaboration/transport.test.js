@@ -860,9 +860,10 @@ describe('connection lifecycle regressions', () => {
         jest.useFakeTimers();
         const {transport, peers} = makeTransport();
         try {
-            const failed = expect(transport.host('room1')).rejects.toMatchObject({collabCode: 'SERVER_UNREACHABLE'});
+            const failed = transport.host('room1');
+            failed.catch(() => {});
             jest.advanceTimersByTime(15001);
-            await failed;
+            await expect(failed).rejects.toMatchObject({collabCode: 'SERVER_UNREACHABLE'});
             expect(peers[0].destroyed).toBe(true);
             expect(transport.peer).toBeNull();
             const fatal = jest.fn();
@@ -881,11 +882,12 @@ describe('connection lifecycle regressions', () => {
     test('a channel closing before open rejects the join without waiting for timeout', async () => {
         const {transport, peers} = makeTransport();
         try {
-            const joined = expect(transport.join('room1')).rejects.toMatchObject({collabCode: 'CONNECTION_CLOSED'});
+            const joined = transport.join('room1');
+            joined.catch(() => {});
             peers[0].simulateOpen();
             await flush();
             peers[0].lastConnection.close();
-            await joined;
+            await expect(joined).rejects.toMatchObject({collabCode: 'CONNECTION_CLOSED'});
         } finally {
             transport.destroy();
         }

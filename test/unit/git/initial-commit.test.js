@@ -46,7 +46,7 @@ jest.mock('@isomorphic-git/lightning-fs', () => class MemoryFs {
             },
             readFile: async path => files.get(path)
         };
-        mockGit.init.mockImplementation(async ({dir}) => {
+        jest.requireMock('isomorphic-git').default.init.mockImplementation(async ({dir}) => {
             directories.add(`${dir}/.git`);
         });
     }

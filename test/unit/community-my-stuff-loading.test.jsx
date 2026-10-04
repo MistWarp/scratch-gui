@@ -5,7 +5,6 @@ import {MemoryRouter, useLocation} from 'react-router-dom';
 
 import api from '../../src/community/api.js';
 import MyStuffLibrary from '../../src/community/components/MyStuffLibrary.jsx';
-import MyStuffSpaces from '../../src/community/components/MyStuffSpaces.jsx';
 import Button from '../../src/community/components/ui/Button.jsx';
 import Modal from '../../src/community/components/ui/Modal.jsx';
 import MyStuff from '../../src/community/pages/MyStuff.jsx';

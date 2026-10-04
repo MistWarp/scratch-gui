@@ -175,7 +175,6 @@ describe('VM assets and generated identities', () => {
     });
 
     test('binary command encoding preserves Buffer bytes as a browser typed array', () => {
-        const Storage = require('@turbowarp/scratch-storage');
         host.attachStorage(new Storage());
         const encoded = encodeCommand(host, command('addSprite', [Buffer.from([3, 7, 11])]));
         const decoded = decodeCommand(host, encoded.command);

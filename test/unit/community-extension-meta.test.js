@@ -1,5 +1,4 @@
 import {
-    builtinExtensionMeta,
     isGalleryExtensionUrl,
     resolveExtensionMeta,
     resolveExtensionMetas

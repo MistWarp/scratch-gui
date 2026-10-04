@@ -227,7 +227,7 @@ test('a revoked refresh token signs out and tells listeners', async () => {
 
 test('a session from another tab keeps refreshing here, retries after errors, and catches up on waking', async () => {
     jest.useFakeTimers();
-    const soon = {accessToken: 'old', refreshToken: 'rrt_old', expiresAt: Date.now() + 3 * 60 * 1000, scopes: []};
+    const soon = {accessToken: 'old', refreshToken: 'rrt_old', expiresAt: Date.now() + (3 * 60 * 1000), scopes: []};
     store(soon);
     global.fetch.mockImplementation(() => Promise.reject(new TypeError('Failed to fetch')));
     // Another tab wrote this session; this tab takes over its refresh timer.

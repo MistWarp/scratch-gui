@@ -22,7 +22,7 @@ const extensionInfo = {
     ]
 };
 
-const loadAddon = async ({noop = true} = {}) => {
+const loadAddon = async () => {
     let contextMenu = null;
     await blockSwitching({
         addon: {

@@ -9,7 +9,13 @@ import {canViewProjectSource} from '../../src/community/project-source-access';
 
 jest.mock('../../src/community/api', () => ({
     __esModule: true,
-    default: {getProject: jest.fn(), commitInspection: jest.fn(), commitCoAuthors: jest.fn(), commitTree: jest.fn(), commitFile: jest.fn()},
+    default: {
+        getProject: jest.fn(),
+        commitInspection: jest.fn(),
+        commitCoAuthors: jest.fn(),
+        commitTree: jest.fn(),
+        commitFile: jest.fn()
+    },
     projectUrl: id => `/project/${id}`
 }));
 jest.mock('../../src/community/UserContext', () => ({useUser: () => ({user: null})}));

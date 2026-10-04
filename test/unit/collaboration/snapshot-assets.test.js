@@ -1,4 +1,4 @@
-import {createRoom, DocApplier} from '../../fixtures/collab-harness.js';
+import {createRoom} from '../../fixtures/collab-harness.js';
 import {HostSnapshotService, ClientSnapshotService, CHUNK_SIZE} from '../../../src/lib/collaboration/snapshot.js';
 import AssetChannel from '../../../src/lib/collaboration/assets.js';
 import {OP} from '../../../src/lib/collaboration/protocol.js';
@@ -79,7 +79,7 @@ describe('snapshot streaming', () => {
 
         // Give the host a doc bigger than several chunks.
         room.host.applier.doc.blocks.big = {
-            fields: {pad: 'x'.repeat(CHUNK_SIZE * 4 + 123)},
+            fields: {pad: 'x'.repeat((CHUNK_SIZE * 4) + 123)},
             pos: {x: 0, y: 0}
         };
         room.edit(room.host, OP.BLOCK_EVENT, createBlock('stage', 'b1'));

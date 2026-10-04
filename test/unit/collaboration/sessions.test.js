@@ -331,7 +331,7 @@ describe('op sequencing and convergence', () => {
             await room.hub.flush();
         }
         room.expectConverged();
-        expect(room.host.session.seq).toBe(4 + 10 * 4 * 2);
+        expect(room.host.session.seq).toBe(4 + (10 * 4 * 2));
         room.destroy();
     });
 });
