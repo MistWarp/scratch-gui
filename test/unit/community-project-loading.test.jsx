@@ -44,7 +44,10 @@ const Harness = ({renderVersion, path = '/project/project-1'}) => (
     >
         <LocationProbe />
         <Routes>
-            <Route path="/project/:id" element={<Project renderVersion={renderVersion} />} />
+            <Route
+                path="/project/:id"
+                element={<Project renderVersion={renderVersion} />}
+            />
         </Routes>
     </MemoryRouter>
 );
@@ -277,6 +280,16 @@ describe('community project loading', () => {
         });
         wrapper.update();
         expect(selected('Reviews')).toBe(true);
+
+        // The active tab and the panel it shows point at each other.
+        const reviewsButton = wrapper.find('[role="tab"]').hostNodes()
+            .filterWhere(tab => tab.text() === 'Reviews');
+        const panel = wrapper.find('[role="tabpanel"]').hostNodes()
+            .filterWhere(node => node.prop('id').startsWith('project-activity-'));
+        expect(panel).toHaveLength(1);
+        expect(reviewsButton.prop('aria-controls')).toBe(panel.prop('id'));
+        expect(panel.prop('aria-labelledby')).toBe(reviewsButton.prop('id'));
+        expect(panel.prop('id')).toBe('project-activity-panel-reviews');
         wrapper.unmount();
     });
 });
