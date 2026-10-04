@@ -2,12 +2,16 @@ import React from 'react';
 import {mountWithIntl} from '../../helpers/intl-helpers.jsx';
 import CollaborationModal from '../../../src/components/collaboration-modal/collaboration-modal.jsx';
 
-const serviceState = {roomId: null, pendingRequests: []};
+const serviceState = {roomId: null, pendingRequests: [], handlers: {}};
 
 jest.mock('../../../src/lib/collaboration/index.js', () => ({
     getInstance: () => ({
-        on: () => {},
-        off: () => {},
+        on: (event, handler) => {
+            serviceState.handlers[event] = handler;
+        },
+        off: (event, handler) => {
+            if (serviceState.handlers[event] === handler) delete serviceState.handlers[event];
+        },
         disconnect: () => {},
         get roomId () {
             return serviceState.roomId;
@@ -48,6 +52,7 @@ const flush = () => new Promise(resolve => setTimeout(resolve, 0));
 beforeEach(() => {
     serviceState.roomId = null;
     serviceState.pendingRequests = [];
+    serviceState.handlers = {};
 });
 
 describe('CollaborationModal', () => {
@@ -161,7 +166,7 @@ describe('CollaborationModal', () => {
             .onClick();
 
         expect(props.onJoinRoom).not.toHaveBeenCalled();
-        expect(modalOf(wrapper).state.error).toBe('Please enter a room ID');
+        expect(modalOf(wrapper).state.error).toBe('Enter a room ID to join, or create a new room below.');
     });
 
     test('a room id is trimmed before joining', async () => {
@@ -210,7 +215,7 @@ describe('CollaborationModal', () => {
         expect(wrapper.text()).toContain('Join room');
     });
 
-    test('joining a room nobody hosts suggests creating it', async () => {
+    test('joining a room nobody hosts says what to do', async () => {
         const props = defaultProps();
         const notFound = new Error('nope');
         notFound.collabCode = 'ROOM_NOT_FOUND';
@@ -222,7 +227,8 @@ describe('CollaborationModal', () => {
         await buttonWithText(wrapper, 'Join room').props()
             .onClick();
 
-        expect(modalOf(wrapper).state.error).toContain('Nobody is hosting room "test-room" yet');
+        expect(modalOf(wrapper).state.error).toContain('Nobody is hosting room "test-room" right now');
+        expect(modalOf(wrapper).state.error).toContain('ask the host for a new invite link');
     });
 
     test('a room in the url auto-joins with the pending invite key', async () => {
@@ -356,14 +362,76 @@ describe('CollaborationModal', () => {
             expect(wrapper.text()).not.toContain('experimental');
         });
 
-        test('leaving the room calls back and returns to the join step', () => {
+        test('a host with guests confirms before ending the session for everyone', () => {
             const props = connectedProps();
             const wrapper = mountModal(props);
 
+            expect(wrapper.text()).toContain('End live session for everyone');
             modalOf(wrapper).handleLeaveRoom();
 
+            expect(props.onLeaveRoom).not.toHaveBeenCalled();
+            expect(props.openSimpleDialog).toHaveBeenCalledTimes(1);
+            const dialog = props.openSimpleDialog.mock.calls[0][0];
+            expect(dialog.type).toBe('confirm');
+            expect(dialog.message).toContain('1 person is still here');
+
+            dialog.onCancel();
+            expect(props.onLeaveRoom).not.toHaveBeenCalled();
+
+            dialog.onOk();
             expect(props.onLeaveRoom).toHaveBeenCalled();
             expect(modalOf(wrapper).state.connectionStep).toBe('join');
+        });
+
+        test('a host alone and a guest leave without a confirmation', () => {
+            const alone = {...connectedProps(), connectedUsers: [
+                {id: 'user-1', username: 'TestUser', isHost: true, role: 'edit'}
+            ]};
+            let wrapper = mountModal(alone);
+            expect(wrapper.text()).toContain('No one else has joined yet');
+            modalOf(wrapper).handleLeaveRoom();
+            expect(alone.openSimpleDialog).not.toHaveBeenCalled();
+            expect(alone.onLeaveRoom).toHaveBeenCalledTimes(1);
+            wrapper.unmount();
+
+            const guest = {...connectedProps(), currentUserId: 'user-2', inviteLink: null};
+            wrapper = mountModal(guest);
+            expect(wrapper.text()).toContain('Leave live session');
+            expect(wrapper.text()).not.toContain('No one else has joined yet');
+            modalOf(wrapper).handleLeaveRoom();
+            expect(guest.openSimpleDialog).not.toHaveBeenCalled();
+            expect(guest.onLeaveRoom).toHaveBeenCalledTimes(1);
+            wrapper.unmount();
+        });
+
+        test('a dropped connection shows as reconnecting, not connected', () => {
+            const wrapper = mountModal({...connectedProps(), isReconnecting: true});
+
+            expect(wrapper.text()).toContain('Connection lost. Reconnecting…');
+            expect(wrapper.text()).not.toContain('users online');
+
+            wrapper.setProps({isReconnecting: false});
+            expect(wrapper.text()).toContain('2 users online');
+            wrapper.unmount();
+        });
+
+        test('the reason a session ended survives the room being cleared', () => {
+            const wrapper = mountModal(connectedProps());
+
+            // The container clears the connection and the room, then sets
+            // the reason; or sets the reason first. Either way it must show.
+            wrapper.setProps({isConnected: false});
+            wrapper.setProps({roomId: null});
+            wrapper.setProps({connectionError: 'The host removed you from the room.'});
+            expect(modalOf(wrapper).state.error).toBe('The host removed you from the room.');
+
+            wrapper.setProps({connectionError: null, isConnected: true, roomId: 'abc'});
+            wrapper.setProps({connectionError: 'The host did not let you in.'});
+            wrapper.setProps({isConnected: false, roomId: null});
+            expect(modalOf(wrapper).state.connectionStep).toBe('join');
+            expect(modalOf(wrapper).state.error).toBe('The host did not let you in.');
+            expect(wrapper.find('[role="alert"]').text()).toBe('The host did not let you in.');
+            wrapper.unmount();
         });
 
         test('kicking a user calls back with that user id', () => {
@@ -499,5 +567,144 @@ describe('CollaborationModal', () => {
                 .onClick();
             expect(props.onDenyJoinRequest).toHaveBeenCalledWith('req-1');
         });
+
+        test('a cancelled join request disappears from the host\'s list', () => {
+            serviceState.pendingRequests = [{id: 'req-1', username: 'Bob'}];
+            const wrapper = mountModal(connectedProps());
+            wrapper.setProps({connectionError: null});
+            expect(wrapper.text()).toContain('Join requests (1)');
+
+            serviceState.pendingRequests = [];
+            serviceState.handlers['join-request-cancelled']({requesterId: 'req-1'});
+            wrapper.update();
+            expect(wrapper.text()).not.toContain('Join requests');
+            wrapper.unmount();
+        });
+    });
+
+    test('only a real approval request shows the waiting-for-host step', async () => {
+        const props = defaultProps();
+        props.onJoinRoom = jest.fn(() => new Promise(() => {}));
+        const wrapper = mountModal(props);
+        wrapper.find('input').first()
+            .simulate('change', {target: {value: 'room'}});
+        buttonWithText(wrapper, 'Join room').props()
+            .onClick();
+        wrapper.update();
+        expect(wrapper.text()).toContain('Connecting to room "room"');
+        expect(serviceState.handlers['awaiting-approval']).toBeUndefined();
+
+        serviceState.handlers['join-pending']();
+        wrapper.update();
+        expect(wrapper.text()).toContain('Waiting for the host');
+
+        serviceState.handlers['approval-resolved']();
+        wrapper.setProps({isConnected: true, roomId: 'room'});
+        expect(modalOf(wrapper).state.connectionStep).toBe('connected');
+
+        // A reconnect re-sends the hello; it must not look like a new request.
+        serviceState.handlers['join-pending']();
+        expect(modalOf(wrapper).state.connectionStep).toBe('connected');
+        wrapper.unmount();
+    });
+
+    test('a project session host confirms before ending it for collaborators', () => {
+        const onLeave = jest.fn();
+        const props = {
+            ...defaultProps(),
+            projectSessionActive: true,
+            projectSession: {active: true, isHost: true, phase: 'live', editors: [], onLeave},
+            connectedUsers: [{id: 'user-1', username: 'Mist', isHost: true}, {id: 'user-2', username: 'Alex'}]
+        };
+        const wrapper = mountModal(props);
+        buttonWithText(wrapper, 'End live session for everyone').props()
+            .onClick();
+        expect(onLeave).not.toHaveBeenCalled();
+        props.openSimpleDialog.mock.calls[0][0].onOk();
+        expect(onLeave).toHaveBeenCalledTimes(1);
+        wrapper.unmount();
+    });
+
+    test('a project session shows why the last session ended', () => {
+        const wrapper = mountModal({
+            ...defaultProps(),
+            connectionError: 'The host ended the live session.',
+            projectSession: {editors: [], canHost: true}
+        });
+        expect(wrapper.find('[role="alert"]').text()).toBe('The host ended the live session.');
+        wrapper.unmount();
+    });
+
+    test('a retryable failure offers Try again, which repeats the attempt', async () => {
+        const props = {...defaultProps(), canRetry: true, onRetry: jest.fn(() => Promise.resolve())};
+        const wrapper = mountModal(props);
+        expect(buttonWithText(wrapper, 'Try again').exists()).toBe(false);
+
+        wrapper.setProps({connectionError: 'Could not reach the collaboration server.'});
+        wrapper.update();
+        await buttonWithText(wrapper, 'Try again').props()
+            .onClick();
+        expect(props.onRetry).toHaveBeenCalledTimes(1);
+        expect(modalOf(wrapper).state.connectionStep).toBe('connecting');
+
+        // Without canRetry (kicked, room taken...) there is no button.
+        wrapper.setProps({canRetry: false, connectionError: 'Taken.'});
+        wrapper.update();
+        expect(buttonWithText(wrapper, 'Try again').exists()).toBe(false);
+        wrapper.unmount();
+    });
+
+    test('a failed retry shows the new reason', async () => {
+        const failure = new Error('raw');
+        failure.collabCode = 'SERVER_UNREACHABLE';
+        const props = {...defaultProps(), canRetry: true, onRetry: jest.fn(() => Promise.reject(failure))};
+        const wrapper = mountModal(props);
+        await modalOf(wrapper).handleRetry();
+        expect(modalOf(wrapper).state.error).toContain('Could not reach the collaboration server');
+        expect(modalOf(wrapper).state.connectionStep).toBe('join');
+        wrapper.unmount();
+    });
+
+    test('reclaiming a room from a previous page is explained while creating', async () => {
+        const props = {...defaultProps(), onCreateRoom: jest.fn(() => new Promise(() => {}))};
+        const wrapper = mountModal(props);
+        buttonWithText(wrapper, 'Create new room').props()
+            .onClick();
+        wrapper.setProps({isReclaimingRoom: true});
+        wrapper.update();
+        expect(wrapper.text()).toContain('Reclaiming the room from your previous session');
+        expect(wrapper.text()).toContain('up to a minute');
+        wrapper.unmount();
+    });
+
+    test('a host who dropped out reads as waiting, not as our connection failing', () => {
+        const wrapper = mountModal({
+            ...defaultProps(),
+            isConnected: true,
+            roomId: 'abc',
+            isReconnecting: true,
+            reconnectReason: 'ROOM_NOT_FOUND',
+            connectedUsers: [{id: 'user-1', username: 'TestUser'}, {id: 'h', username: 'Host', isHost: true}]
+        });
+        expect(wrapper.text()).toContain('Waiting for the host to come back');
+        expect(wrapper.text()).not.toContain('Connection lost');
+        wrapper.unmount();
+
+        const project = mountModal({...defaultProps(), reconnectReason: 'ROOM_NOT_FOUND',
+            projectSession: {active: true, phase: 'reconnecting', editors: [], onLeave: jest.fn()}});
+        expect(project.text()).toContain('Waiting for the host to come back');
+        project.unmount();
+    });
+
+    test('the room id field is labelled and errors are announced', async () => {
+        const wrapper = mountModal(defaultProps());
+        expect(wrapper.find('label[htmlFor="collaborationRoomId"]').exists()).toBe(true);
+        expect(wrapper.find('input#collaborationRoomId').exists()).toBe(true);
+        await buttonWithText(wrapper, 'Join room').props()
+            .onClick();
+        wrapper.update();
+        expect(wrapper.find('[role="alert"]').exists()).toBe(true);
+        expect(wrapper.find('input#collaborationRoomId').prop('aria-invalid')).toBe(true);
+        wrapper.unmount();
     });
 });

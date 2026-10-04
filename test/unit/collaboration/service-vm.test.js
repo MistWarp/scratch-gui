@@ -215,3 +215,44 @@ test('an edit made while reconnecting commits once the guest is back', async () 
         client.disconnect(); host.disconnect(); hostVM.quit(); clientVM.quit();
     }
 });
+
+test('a sprite import whose upload is cut off is sent again once the guest is back', async () => {
+    const {host, client, hostVM, clientVM} = await joinPair();
+    try {
+        const bytes = await clientVM.exportSprite(clientVM.editingTarget.id, 'arraybuffer');
+        const clientId = client.getCurrentUserId();
+        // The link dies before anyone notices.
+        mockHub.links.get(clientId).open = false;
+        let done = false;
+        let error = null;
+        clientVM.addSprite(bytes).then(() => {
+            done = true;
+        }, e => {
+            error = e;
+        });
+        for (let i = 0; i < 10; i++) await new Promise(resolve => setTimeout(resolve, 2));
+        expect(error).toBeNull();
+        expect(hostVM.runtime.targets).toHaveLength(2);
+
+        mockHub.links.get(clientId).open = true;
+        client._transport.emit('reconnected');
+        await pumpUntil(() => done || error);
+        expect(error).toBeNull();
+        expect(hostVM.runtime.targets).toHaveLength(3);
+        await pumpUntil(() => clientVM.runtime.targets.length === 3);
+        expect(clientVM.editingCommands.snapshot()).toEqual(hostVM.editingCommands.snapshot());
+    } finally {
+        client.disconnect(); host.disconnect(); hostVM.quit(); clientVM.quit();
+    }
+});
+
+test('an abandoned connection attempt rejects as cancelled', async () => {
+    mockHub = new FakeHub();
+    const host = new CollabService();
+    const hostVM = makeVM();
+    host.init(hostVM);
+    const attempt = host.connectToRoom('test', 'host', true);
+    host.disconnect();
+    await expect(attempt).rejects.toMatchObject({cancelled: true});
+    hostVM.quit();
+});

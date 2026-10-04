@@ -17,6 +17,12 @@
     background-color: $ui-black-transparent;
 }
 
+/* Transitional states (joining, reconnecting...) read as in progress. */
+.busy {
+    font-style: italic;
+    opacity: 0.85;
+}
+
 .faces {
     display: flex;
     align-items: center;

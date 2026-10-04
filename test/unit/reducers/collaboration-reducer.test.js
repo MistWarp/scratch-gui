@@ -256,3 +256,52 @@ test('leaving the session clears everyone\'s activity', () => {
     const resultState = collaborationReducer(initialState, setCollaborationConnected(false));
     expect(resultState.activity).toEqual({});
 });
+
+describe('remote activity', () => {
+    const {setUserActivity} = require('../../../src/reducers/collaboration');
+    const connected = () => collaborationReducer(
+        collaborationReducer(collaborationInitialState, setCollaborationConnected(true)),
+        setCollaborationUsers([{id: 'me', username: 'Me'}, {id: 'a', username: 'Alice'}])
+    );
+
+    test('is recorded for people in the session', () => {
+        const state = collaborationReducer(connected(), setUserActivity({
+            userId: 'a', username: 'Alice', targetId: 't', tab: 0, assetIndex: 0
+        }));
+        expect(state.activity.a.targetId).toBe('t');
+    });
+
+    test('is ignored for someone who already left, or after disconnecting', () => {
+        const ghost = setUserActivity({userId: 'gone', username: 'Ghost', targetId: 't', tab: 0});
+        expect(collaborationReducer(connected(), ghost).activity).toEqual({});
+
+        const late = setUserActivity({userId: 'a', username: 'Alice', targetId: 't', tab: 0});
+        const offline = collaborationReducer(connected(), setCollaborationConnected(false));
+        expect(collaborationReducer(offline, late).activity).toEqual({});
+    });
+
+    test('follows a rename so badges show the current name', () => {
+        let state = collaborationReducer(connected(), setUserActivity({
+            userId: 'a', username: 'Alice', targetId: 't', tab: 0
+        }));
+        state = collaborationReducer(state, setCollaborationUsers([
+            {id: 'me', username: 'Me'}, {id: 'a', username: 'Alicia', handle: 'alicia'}
+        ]));
+        expect(state.activity.a.username).toBe('Alicia');
+        expect(state.activity.a.handle).toBe('alicia');
+        expect(state.activity.a.targetId).toBe('t');
+    });
+});
+
+test('the reconnect reason is kept while reconnecting and cleared after', () => {
+    const {setCollaborationReconnecting} = require('../../../src/reducers/collaboration');
+    let state = collaborationReducer(collaborationInitialState, setCollaborationConnected(true));
+    state = collaborationReducer(state, setCollaborationReconnecting(true, 'ROOM_NOT_FOUND'));
+    expect(state.reconnectReason).toBe('ROOM_NOT_FOUND');
+    state = collaborationReducer(state, setCollaborationReconnecting(false));
+    expect(state.reconnectReason).toBe(null);
+    state = collaborationReducer(state, setCollaborationReconnecting(true, 'DIAL_TIMEOUT'));
+    state = collaborationReducer(state, setCollaborationConnected(false));
+    expect(state.isReconnecting).toBe(false);
+    expect(state.reconnectReason).toBe(null);
+});
