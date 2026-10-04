@@ -1,5 +1,5 @@
-import path from 'path';
 import SeleniumHelper from '../helpers/selenium-helper';
+import editorUri from '../helpers/editor-uri';
 
 const {
     clickBlocksCategory,
@@ -13,7 +13,7 @@ const {
     scope
 } = new SeleniumHelper();
 
-const uri = path.resolve(__dirname, '../../build/index.html');
+const uri = editorUri;
 
 let driver;
 
@@ -40,6 +40,7 @@ describe('Loading scratch gui', () => {
         // of loading projects that we are not actively using anymore
         test.skip('Load a project by ID directly through url', async () => {
             await driver.quit(); // Reset driver to test hitting # url directly
+            // eslint-disable-next-line require-atomic-updates -- no other code touches driver meanwhile
             driver = getDriver();
 
             const projectId = '96708228';
@@ -55,6 +56,7 @@ describe('Loading scratch gui', () => {
         // of loading projects that we are not actively using anymore
         test.skip('Load a project by ID (fullscreen)', async () => {
             await driver.quit(); // Reset driver to test hitting # url directly
+            // eslint-disable-next-line require-atomic-updates -- no other code touches driver meanwhile
             driver = getDriver();
 
             const prevSize = driver.manage()

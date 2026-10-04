@@ -8,6 +8,12 @@ module.exports = {
     globals: {
         process: true
     },
+    parserOptions: {
+        // The shared Babel config, also used by Jest. See babel.config.cjs.
+        babelOptions: {
+            configFile: path.resolve(__dirname, '../babel.config.cjs')
+        }
+    },
     rules: {
         // BEGIN: these caused trouble after upgrading eslint-plugin-react from 7.24.0 to 7.33.2
         'react/forbid-prop-types': 'off',

@@ -1,5 +1,6 @@
 import path from 'path';
 import SeleniumHelper from '../helpers/selenium-helper';
+import editorUri from '../helpers/editor-uri';
 import {Key} from 'selenium-webdriver';
 
 const {
@@ -16,7 +17,7 @@ const {
     scope
 } = new SeleniumHelper();
 
-const uri = path.resolve(__dirname, '../../build/index.html');
+const uri = editorUri;
 
 let driver;
 
@@ -118,7 +119,9 @@ describe('Working with sounds', () => {
         await driver.actions().mouseMove(el)
             .perform();
         await driver.sleep(500); // Wait for thermometer menu to come up
-        const input = await findByXpath('//button[@aria-label="Add sound"]/following-sibling::div//input[@type="file"]');
+        const input = await findByXpath(
+            '//button[@aria-label="Add sound"]/following-sibling::div//input[@type="file"]'
+        );
         await input.sendKeys(files.join('\n'));
 
         await findByText('movie', scope.soundsTab);

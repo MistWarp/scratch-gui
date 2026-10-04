@@ -18,6 +18,7 @@ const IMAGE_EXT = /\.(?:png|jpe?g|gif|webp|avif|bmp|svg)$/i;
 const VIDEO_EXT = /\.(?:mp4|webm|mov|m4v|ogv)$/i;
 const AUDIO_EXT = /\.(?:mp3|wav|ogg|oga|m4a|flac|aac|opus)$/i;
 const MAX_EMBEDS = 3;
+const MISTWARP_API_BASE = process.env.MW_API_BASE || 'https://api.mistwarp.org/v1';
 const IMAGE_PROXY = 'https://wsrv.nl/?n=-1&url=';
 const TRUSTED_MEDIA = [
     'chats.mistwarp.org',
@@ -236,7 +237,7 @@ const fetchSharedMessage = (server, channel, id) => cachedJson(
 );
 
 const fetchProjectCard = async id => {
-    const data = await cachedJson(`project:${id}`, `https://api.mistwarp.org/v1/projects/${encodeURIComponent(id)}`);
+    const data = await cachedJson(`project:${id}`, `${MISTWARP_API_BASE}/projects/${encodeURIComponent(id)}`);
     const project = data && data.project;
     if (!project || !project.title) return null;
     return {

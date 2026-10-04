@@ -39,7 +39,8 @@ export const packagerRuntime = ({buildId, absolute, sharedResolve, scratchCompat
                     .join('\n');
                 const {code} = await transformWithEsbuild(output.find(item => item.type === 'chunk').code,
                     name, {minify: true, target: 'es2020'});
-                new Script(code, {filename: name});
+                // Compiling the script is a syntax check of the bundle.
+                new Script(code, {filename: name}); // eslint-disable-line no-new
                 return `(function(){const style=document.createElement('style');` +
                     `style.textContent=${JSON.stringify(css)};document.head.appendChild(style);})();\n` +
                     `${code}\n// ${buildId} =^..^=`;

@@ -1,3 +1,5 @@
+const path = require('path');
+
 module.exports = {
     root: true,
     extends: ['scratch', 'scratch/node', 'scratch/es6'],
@@ -5,15 +7,28 @@ module.exports = {
         ecmaFeatures: {
             jsx: true
         },
+        // Parse with the same Babel config that Jest compiles with.
         babelOptions: {
-            presets: [
-                ['@babel/preset-env'],
-                ['@babel/preset-react']
-            ],
-            plugins: ['@babel/plugin-syntax-dynamic-import', '@babel/plugin-transform-object-rest-spread']
+            configFile: path.resolve(__dirname, 'babel.config.cjs')
         }
     },
     rules: {
         'import/namespace': 'off'
-    }
+    },
+    overrides: [
+        {
+            // Node scripts and the Vite config are ES modules.
+            files: ['*.mjs'],
+            parserOptions: {
+                sourceType: 'module',
+                ecmaVersion: 'latest'
+            }
+        },
+        {
+            files: ['*.cjs'],
+            parserOptions: {
+                sourceType: 'script'
+            }
+        }
+    ]
 };
