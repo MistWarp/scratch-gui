@@ -99,4 +99,12 @@ describe('ManageSpace save snapshots', () => {
         expect(buildSpacePatch(form, 'judging', true)).not.toHaveProperty('criteria');
         expect(buildSpacePatch(form, 'judging', false).criteria).toEqual(form.criteria);
     });
+
+    test('saves the voting mode and skips criteria for audience-voted challenges', () => {
+        expect(buildSpacePatch(form, 'judging', false).votingMode).toBe('judges');
+        const audience = buildSpacePatch({...form, votingMode: 'audience'}, 'judging', false);
+        expect(audience.votingMode).toBe('audience');
+        expect(audience).not.toHaveProperty('criteria');
+        expect(buildSpacePatch({...form, votingMode: 'audience'}, 'general', false)).not.toHaveProperty('votingMode');
+    });
 });
