@@ -353,8 +353,6 @@
   "editor-comment-previews/@settings-select-delay-long": "Dolgo",
   "editor-comment-previews/@settings-select-delay-none": "Brez",
   "editor-comment-previews/@settings-select-delay-short": "Kratko",
-  "columns/@description": "Razdeli seznam kategorij blokov na dva stolpca in ga premakne na vrh palete blokov, kot v Scratchu 2.0.",
-  "columns/@name": "Seznam kategorij z dvema stolpcema",
   "number-pad/@description": "Med urejanjem polj za vnos števil v blok pokaže Scratchevo številčnico na vseh napravah, ne le na tistih z zasloni na dotik.",
   "number-pad/@info-explanation": "Številčnica bo prikazana med urejanjem polj za vnos števil v blokih, na primer \"pojdi () korakov\".",
   "number-pad/@name": "Vedno pokaži številčnico",

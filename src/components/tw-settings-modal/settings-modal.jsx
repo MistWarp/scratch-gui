@@ -348,6 +348,17 @@ const settingDefinitions = {
             id: 'mw.settingsModal.vanillaPaletteHelp'
         }
     },
+    twoColumnCategories: {
+        label: {
+            defaultMessage: 'Two-Column Category Menu',
+            id: 'mw.settingsModal.twoColumnCategories'
+        },
+        help: {
+            defaultMessage: 'Moves the block categories above the block palette and splits them into ' +
+                'two columns, like in Scratch 2.0. Extension categories are listed underneath.',
+            id: 'mw.settingsModal.twoColumnCategoriesHelp'
+        }
+    },
     unclipPalette: {
         label: {
             defaultMessage: 'Unclip Block Palette',
@@ -575,6 +586,7 @@ const HideOperatorArrows = createBooleanSetting('HideOperatorArrows', settingDef
 const DisableCompiler = createBooleanSetting('DisableCompiler', settingDefinitions.disableCompiler);
 const DisableCloudVariables = createBooleanSetting('DisableCloudVariables', settingDefinitions.disableCloudVariables);
 const UnclipPalette = createBooleanSetting('UnclipPalette', settingDefinitions.unclipPalette);
+const TwoColumnCategories = createBooleanSetting('TwoColumnCategories', settingDefinitions.twoColumnCategories);
 const VanillaPalette = createBooleanSetting('VanillaPalette', settingDefinitions.vanillaPalette);
 
 const STYLE_OPTIONS = {
@@ -1071,6 +1083,13 @@ const pageConfigurations = {
                         props: props => ({
                             value: props.hideOperatorArrows,
                             onChange: props.onHideOperatorArrowsChange
+                        })
+                    },
+                    {
+                        component: TwoColumnCategories,
+                        props: props => ({
+                            value: props.twoColumnCategories,
+                            onChange: props.onTwoColumnCategoriesChange
                         })
                     },
                     {
@@ -2033,6 +2052,8 @@ SettingsModalComponent.propTypes = {
     onHideExtensionButtonChange: PropTypes.func,
     unclipPalette: PropTypes.bool,
     onUnclipPaletteChange: PropTypes.func,
+    twoColumnCategories: PropTypes.bool,
+    onTwoColumnCategoriesChange: PropTypes.func,
     hideBackpack: PropTypes.bool,
     onHideBackpackChange: PropTypes.func,
     hideOperatorArrows: PropTypes.bool,

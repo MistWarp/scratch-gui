@@ -353,8 +353,6 @@
   "editor-comment-previews/@settings-select-delay-long": "Lunga",
   "editor-comment-previews/@settings-select-delay-none": "Nessuna",
   "editor-comment-previews/@settings-select-delay-short": "Breve",
-  "columns/@description": "Divide il menu delle categorie dei blocchi in due colonne e lo sposta in cima alla lista dei blocchi, come in Scratch 2.0.",
-  "columns/@name": "Menu delle categorie a due colonne",
   "number-pad/@description": "Mostra il tastierino numerico virtuale su qualunque dispositivo quando si modificano gli argomenti dei blocchi, non solo sui dispositivi touch. ",
   "number-pad/@info-explanation": "Viene mostrato un tastierino numero quando si modificano gli argomenti di blocchi come \"fai () passi\".",
   "number-pad/@name": "Mostra sempre tastierino numerico",

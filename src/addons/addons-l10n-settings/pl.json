@@ -288,8 +288,6 @@
   "editor-comment-previews/@settings-select-delay-long": "Długie",
   "editor-comment-previews/@settings-select-delay-none": "Brak",
   "editor-comment-previews/@settings-select-delay-short": "Krótkie",
-  "columns/@description": "Dzieli menu kategorii bloków na dwie kolumny i przenosi je na górę palety bloków, tak jak w Scratch 2.0.",
-  "columns/@name": "Menu kategorii podzielone na 2 kolumny",
   "number-pad/@name": "Zawsze pokazuj klawiaturę numeryczną",
   "editor-number-arrow-keys/@settings-name-regular": "Zmiana przy zwykłym naciśnięciu",
   "editor-number-arrow-keys/@settings-name-regularCustom": "Zmiana przy zwykłym naciśnięciu",
