@@ -23,6 +23,27 @@
     background: color-mix(in srgb, var(--donation-color) 11%, transparent);
 }
 
+.row[data-author-badge],
+.replyRow[data-author-badge] {
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, #f3c952 10%, transparent);
+    box-shadow: inset 3px 0 0 #f3c952;
+}
+
+.authorBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 7px;
+    border-radius: var(--radius-2xs);
+    color: #3b2a00;
+    background: #f3c952;
+    font-size: var(--fs-2xs);
+    font-weight: 700;
+    white-space: nowrap;
+}
+
 [data-donation-tier="green"] {
     --donation-color: #2faa72;
 }

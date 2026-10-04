@@ -5,12 +5,12 @@ import {Check, PartyPopper, Sparkles} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import {formatBytes} from '../format';
 import {watchTier} from '../tier-watch.js';
+import Confetti from './Confetti.jsx';
 import Modal from './ui/Modal.jsx';
 import Button from './ui/Button.jsx';
 import styles from './UpgradeCelebration.module.css';
 
 const megabytes = value => Math.round(value / 1048576).toLocaleString();
-const CONFETTI = Array.from({length: 24}, (_, index) => index);
 
 const UpgradeCelebration = () => {
     const {text: communityText} = useCommunityText();
@@ -60,14 +60,7 @@ const UpgradeCelebration = () => {
                 ><Sparkles size={16} />{communityText('View your membership benefits')}</Button>
             </>}
         >
-            <div className={styles.confetti} aria-hidden="true">
-                {CONFETTI.map(index => (
-                    <span
-                        key={index}
-                        style={{'--i': index}}
-                    />
-                ))}
-            </div>
+            <Confetti burst={1} />
             <p className={styles.lead}>
                 {communityText('Thank you for supporting MistWarp. Your new membership benefits are ready to use.')}
             </p>
