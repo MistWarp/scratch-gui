@@ -2,7 +2,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Link, useNavigate, useParams, useSearchParams} from 'react-router-dom';
-import {CalendarClock, Check, ExternalLink, Gavel, Image as ImageIcon, LayoutGrid, Plus, Search, Settings, Trash2, Trophy, UserPlus, Users, X} from 'lucide-react';
+import {CalendarClock, Check, ExternalLink, Gavel, Image as ImageIcon, LayoutGrid, Plus, Search, Settings, Star, Trash2, Trophy, UserPlus, Users, X} from 'lucide-react';
 import api from '../api';
 import Avatar from '../components/Avatar.jsx';
 import UserLink from '../components/UserLink.jsx';
@@ -135,8 +135,10 @@ const buildSpacePatch = (form, section, criteriaLocked) => {
         });
     }
     if (section === 'judging') {
+        const votingMode = form.votingMode === 'audience' ? 'audience' : 'judges';
+        patch.votingMode = votingMode;
         patch.communityVoting = form.communityVoting;
-        if (!criteriaLocked) patch.criteria = form.criteria;
+        if (!criteriaLocked && votingMode === 'judges') patch.criteria = form.criteria;
     }
     return patch;
 };
@@ -201,7 +203,8 @@ const ManageSpace = () => {
                 endsAt,
                 judgingEndsAt: spaceTimestamp(data.space.judgingEndsAt) || (endsAt ? endsAt + 604800000 : 0),
                 theme: data.space.theme || '',
-                rules: data.space.rules || ''
+                rules: data.space.rules || '',
+                votingMode: data.space.votingMode === 'audience' ? 'audience' : 'judges'
             };
             setSpace(loaded);
             setSpaceLoadContext(loadContext);
@@ -566,6 +569,8 @@ const ManageSpace = () => {
         );
     }
     const criteriaLocked = space.projects.some(project => project.judgeScoreCount > 0);
+    const audienceMode = space.votingMode === 'audience';
+    const formAudienceMode = form.votingMode === 'audience';
     const confirmationDetails = spaceConfirmationDetails(confirmation, space);
 
     return (
@@ -611,7 +616,7 @@ const ManageSpace = () => {
                                 setStatus('');
                                 setRouteSection(key);
                             }}
-                        ><Icon size={16} /> {label}</button>
+                        ><Icon size={16} /> {key === 'judging' && audienceMode ? communityText('Voting') : label}</button>
                     ))}
                 </nav>
                 <div className={styles.manageContent}>
@@ -651,12 +656,12 @@ const ManageSpace = () => {
                     ) : null}
                     {active === 'schedule' && space.kind === 'challenge' ? (
                         <form className={styles.manageCard} onSubmit={save}>
-                            <SectionHeading icon={CalendarClock} className={styles.manageCardHeading} title={communityText('Schedule')} lead={communityText('Each deadline changes what participants and judges can do.')} />
+                            <SectionHeading icon={CalendarClock} className={styles.manageCardHeading} title={communityText('Schedule')} lead={audienceMode ? communityText('Each deadline changes what participants and voters can do.') : communityText('Each deadline changes what participants and judges can do.')} />
                             <fieldset className={styles.manageFormFields} disabled={saving}>
                                 <div className={styles.scheduleFields}>
                                     <label><span>{communityText('Submissions open')}</span><input type="datetime-local" value={dateTimeInput(form.startsAt)} onChange={event => updateForm('startsAt', event.target.value ? new Date(event.target.value).getTime() : 0)} /><small>{communityText('People can start entering projects.')}</small></label>
-                                    <label><span>{communityText('Submissions close')}</span><input type="datetime-local" value={dateTimeInput(form.endsAt)} onChange={event => updateForm('endsAt', event.target.value ? new Date(event.target.value).getTime() : 0)} /><small>{communityText('Entries lock and judging starts.')}</small></label>
-                                    <label><span>{communityText('Judging ends')}</span><input type="datetime-local" value={dateTimeInput(form.judgingEndsAt)} onChange={event => updateForm('judgingEndsAt', event.target.value ? new Date(event.target.value).getTime() : 0)} /><small>{communityText('The host can publish the final results.')}</small></label>
+                                    <label><span>{communityText('Submissions close')}</span><input type="datetime-local" value={dateTimeInput(form.endsAt)} onChange={event => updateForm('endsAt', event.target.value ? new Date(event.target.value).getTime() : 0)} /><small>{audienceMode ? communityText('Entries lock and voting starts.') : communityText('Entries lock and judging starts.')}</small></label>
+                                    <label><span>{audienceMode ? communityText('Voting ends') : communityText('Judging ends')}</span><input type="datetime-local" value={dateTimeInput(form.judgingEndsAt)} onChange={event => updateForm('judgingEndsAt', event.target.value ? new Date(event.target.value).getTime() : 0)} /><small>{communityText('The host can publish the final results.')}</small></label>
                                 </div>
                                 <div className={styles.manageCardActions}><Button type="submit" busy={saving} busyLabel={communityText('Saving…')}>{communityText('Save schedule')}</Button></div>
                             </fieldset>
@@ -666,26 +671,51 @@ const ManageSpace = () => {
                         <section className={styles.judgingStack}>
                             <form className={styles.manageCard} onSubmit={save}>
                                 <SectionHeading
-                                    icon={Gavel}
+                                    icon={Trophy}
                                     className={styles.manageCardHeading}
-                                    title={communityText('Scoring criteria')}
-                                    lead={criteriaLocked ? communityText('Scoring has started, so the criteria are locked.') : communityText('Judges score each entry from 1 to 10. Weights decide how much each criterion counts.')}
+                                    title={communityText('Who picks the winner?')}
+                                    lead={space.resultsPublishedAt ? communityText('Results are published, so this can no longer change.') : communityText('You can switch until results are published.')}
                                 />
                                 <fieldset className={styles.manageFormFields} disabled={saving}>
-                                    <div className={styles.criteriaEditor}>
-                                        {(form.criteria || []).map((criterion, index) => <article key={criterion.id}><label><span>{communityText('Name')}</span><input required disabled={criteriaLocked} maxLength={60} value={criterion.name} onChange={event => updateCriterion(index, 'name', event.target.value)} /></label><label><span>{communityText('Description')}</span><input disabled={criteriaLocked} maxLength={300} value={criterion.description || ''} onChange={event => updateCriterion(index, 'description', event.target.value)} /></label><label className={styles.weightField}><span>{communityText('Weight {value1}', {value1: criterion.weight})}</span><input type="range" disabled={criteriaLocked} min="1" max="5" step="1" value={criterion.weight} onChange={event => updateCriterion(index, 'weight', Number(event.target.value))} aria-label={communityText('{value1} weight, {value2} of 5', {value1: criterion.name || 'Criterion', value2: criterion.weight})} /></label><IconButton variant="danger" label={communityText('Remove {value1}', {value1: criterion.name || 'criterion'})} onClick={() => removeCriterion(index)} disabled={criteriaLocked || form.criteria.length === 1}><X size={16} /></IconButton></article>)}
-                                    </div>
-                                    {!criteriaLocked && form.criteria.length < 8 ? <Button className={styles.addCriterion} onClick={addCriterion}><Plus size={15} />{communityText('Add criterion')}</Button> : null}
-                                    <SwitchRow
-                                        checked={Boolean(form.communityVoting)}
-                                        description={communityText('Signed-in users can rate entries from 1 to 5 during judging. Audience ratings are shown separately and do not change the winner.')}
-                                        label={communityText('Audience ratings')}
-                                        onChange={value => updateForm('communityVoting', value)}
-                                    />
-                                    <div className={styles.manageCardActions}><Button type="submit" busy={saving} busyLabel={communityText('Saving…')}>{communityText('Save judging setup')}</Button></div>
+                                    <fieldset className={`${styles.typeChoices} ${styles.votingChoices}`} disabled={Boolean(space.resultsPublishedAt)}>
+                                        <legend className={styles.srOnly}>{communityText('Who picks the winner?')}</legend>
+                                        <div>
+                                            <label className={formAudienceMode ? styles.typeChoice : styles.typeChoiceActive}>
+                                                <input type="radio" name="voting-mode" value="judges" checked={!formAudienceMode} onChange={() => updateForm('votingMode', 'judges')} />
+                                                <Gavel size={18} />
+                                                <span><strong>{communityText('Judges')}</strong><small>{communityText('Invited judges score each entry from 1 to 10 against your criteria.')}</small></span>
+                                            </label>
+                                            <label className={formAudienceMode ? styles.typeChoiceActive : styles.typeChoice}>
+                                                <input type="radio" name="voting-mode" value="audience" checked={formAudienceMode} onChange={() => updateForm('votingMode', 'audience')} />
+                                                <Star size={18} />
+                                                <span><strong>{communityText('Audience vote')}</strong><small>{communityText('Anyone signed in rates entries from 1 to 5 stars. The highest average wins. No judges needed.')}</small></span>
+                                            </label>
+                                        </div>
+                                    </fieldset>
+                                    {formAudienceMode ? null : (
+                                        <React.Fragment>
+                                            <SectionHeading
+                                                icon={Gavel}
+                                                className={styles.manageCardHeading}
+                                                title={communityText('Scoring criteria')}
+                                                lead={criteriaLocked ? communityText('Scoring has started, so the criteria are locked.') : communityText('Judges score each entry from 1 to 10. Weights decide how much each criterion counts.')}
+                                            />
+                                            <div className={styles.criteriaEditor}>
+                                                {(form.criteria || []).map((criterion, index) => <article key={criterion.id}><label><span>{communityText('Name')}</span><input required disabled={criteriaLocked} maxLength={60} value={criterion.name} onChange={event => updateCriterion(index, 'name', event.target.value)} /></label><label><span>{communityText('Description')}</span><input disabled={criteriaLocked} maxLength={300} value={criterion.description || ''} onChange={event => updateCriterion(index, 'description', event.target.value)} /></label><label className={styles.weightField}><span>{communityText('Weight {value1}', {value1: criterion.weight})}</span><input type="range" disabled={criteriaLocked} min="1" max="5" step="1" value={criterion.weight} onChange={event => updateCriterion(index, 'weight', Number(event.target.value))} aria-label={communityText('{value1} weight, {value2} of 5', {value1: criterion.name || 'Criterion', value2: criterion.weight})} /></label><IconButton variant="danger" label={communityText('Remove {value1}', {value1: criterion.name || 'criterion'})} onClick={() => removeCriterion(index)} disabled={criteriaLocked || form.criteria.length === 1}><X size={16} /></IconButton></article>)}
+                                            </div>
+                                            {!criteriaLocked && form.criteria.length < 8 ? <Button className={styles.addCriterion} onClick={addCriterion}><Plus size={15} />{communityText('Add criterion')}</Button> : null}
+                                            <SwitchRow
+                                                checked={Boolean(form.communityVoting)}
+                                                description={communityText('Signed-in users can rate entries from 1 to 5 during judging. Audience ratings are shown separately and do not change the winner.')}
+                                                label={communityText('Audience ratings')}
+                                                onChange={value => updateForm('communityVoting', value)}
+                                            />
+                                        </React.Fragment>
+                                    )}
+                                    <div className={styles.manageCardActions}><Button type="submit" busy={saving} busyLabel={communityText('Saving…')}>{communityText('Save')}</Button></div>
                                 </fieldset>
                             </form>
-                            <section className={styles.manageCard}>
+                            {audienceMode ? null : <section className={styles.manageCard}>
                                 <SectionHeading icon={Users} className={styles.manageCardHeading} title={communityText('Judges')} lead={communityText('Judges accept an invitation before they can score entries.')} />
                                 <div className={styles.curatorInvite}>
                                     <Search size={16} />
@@ -695,10 +725,10 @@ const ManageSpace = () => {
                                 </div>
                                 <div className={styles.peopleList}>{(space.judges || []).map(username => <article key={username}><UserLink username={username}><Avatar username={username} size={38} /></UserLink><div><UserLink username={username}><strong>{username}</strong></UserLink><span>{communityText('Judge')}</span></div><Button variant="danger" busy={busyUser === username} busyLabel={communityText('Removing…')} onClick={() => removeJudge(username)} disabled={Boolean(busyUser)}><X size={15} />{communityText('Remove')}</Button></article>)}{!space.judges?.length ? <p className={styles.pickerEmpty}>{communityText('No judges have accepted yet.')}</p> : null}</div>
                                 {(space.judgeInvites || []).length ? <><h3 className={styles.subheading}>{communityText('Pending invitations')}</h3><div className={styles.peopleList}>{space.judgeInvites.map(invitation => <article key={invitation.username}><UserLink username={invitation.username}><Avatar username={invitation.username} size={38} /></UserLink><div><UserLink username={invitation.username}><strong>{invitation.username}</strong></UserLink><span>{communityText('Invited')}</span></div></article>)}</div></> : null}
-                            </section>
+                            </section>}
                             <section className={styles.manageCard}>
-                                <SectionHeading icon={Trophy} className={styles.manageCardHeading} title={communityText('Results')} lead={communityText('Publishing reveals the ranked judge scores on the public challenge page.')} />
-                                <div className={styles.publishRow}><span>{space.resultsPublishedAt ? communityText('Published {value1}', {value1: formatDateTime(space.resultsPublishedAt, 'date unavailable')}) : communityText('{value1} of {value2} entries scored', {value1: space.projects.filter(project => project.judgeScoreCount > 0).length, value2: space.projects.length})}</span>{!space.resultsPublishedAt ? <Button
+                                <SectionHeading icon={Trophy} className={styles.manageCardHeading} title={communityText('Results')} lead={audienceMode ? communityText('Publishing reveals the ranking by average audience rating on the public challenge page.') : communityText('Publishing reveals the ranked judge scores on the public challenge page.')} />
+                                <div className={styles.publishRow}><span>{space.resultsPublishedAt ? communityText('Published {value1}', {value1: formatDateTime(space.resultsPublishedAt, 'date unavailable')}) : audienceMode ? communityText('{value1} of {value2} entries rated', {value1: space.projects.filter(project => project.audienceVoteCount > 0).length, value2: space.projects.length}) : communityText('{value1} of {value2} entries scored', {value1: space.projects.filter(project => project.judgeScoreCount > 0).length, value2: space.projects.length})}</span>{!space.resultsPublishedAt ? <Button
                                     variant="primary" busy={publishing} busyLabel={communityText('Publishing…')} onClick={publishResults}
                                 >{communityText('Publish results')}</Button> : <span className={styles.published}><Check size={15} />{communityText('Results are live')}</span>}</div>
                             </section>

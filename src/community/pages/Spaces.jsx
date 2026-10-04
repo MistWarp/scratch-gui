@@ -2,7 +2,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Link, useNavigate, useSearchParams} from 'react-router-dom';
-import {Layers3, Trophy, Library, Plus} from 'lucide-react';
+import {Gavel, Layers3, Trophy, Library, Plus, Star} from 'lucide-react';
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
 import Button from '../components/ui/Button.jsx';
@@ -79,6 +79,7 @@ const spaceCreatePayload = form => ({
     description: form.description.trim(),
     startsAt: form.kind === 'challenge' && form.startsAt ? new Date(form.startsAt).getTime() : 0,
     endsAt: form.kind === 'challenge' && form.endsAt ? new Date(form.endsAt).getTime() : 0,
+    votingMode: form.kind === 'challenge' && form.votingMode === 'audience' ? 'audience' : 'judges',
     openSubmissions: form.kind !== 'collection'
 });
 
@@ -102,7 +103,7 @@ const Spaces = () => {
     const [loadMoreError, setLoadMoreError] = useState('');
     const creating = searchParams.get('create') === '1';
     const [createBusy, setCreateBusy] = useState(false);
-    const [form, setForm] = useState({title: '', description: '', kind: createKind, visibility: 'public', startsAt: '', endsAt: '', groupTag: requestedGroup});
+    const [form, setForm] = useState({title: '', description: '', kind: createKind, visibility: 'public', startsAt: '', endsAt: '', votingMode: 'judges', groupTag: requestedGroup});
     const [error, setError] = useState('');
     const loadSequence = useRef(0);
     const createLocks = useRef(new Set());
@@ -192,7 +193,7 @@ const Spaces = () => {
         try {
             const data = await api.createSpace(payload);
             if (currentViewer.current === actionViewer) {
-                setForm({title: '', description: '', kind: 'studio', visibility: 'public', startsAt: '', endsAt: '', groupTag: ''});
+                setForm({title: '', description: '', kind: 'studio', visibility: 'public', startsAt: '', endsAt: '', votingMode: 'judges', groupTag: ''});
                 navigate(`/spaces/${data.space._id}/manage`);
             }
         } catch (e) {
@@ -276,6 +277,23 @@ const Spaces = () => {
                             <label><span>{communityText('Submissions open')}</span><input type="datetime-local" disabled={createBusy} required value={form.startsAt} onChange={event => updateForm('startsAt', event.target.value)} /></label>
                             <label><span>{communityText('Submissions close')}</span><input type="datetime-local" disabled={createBusy} required value={form.endsAt} onChange={event => updateForm('endsAt', event.target.value)} /></label>
                         </div>
+                    ) : null}
+                    {form.kind === 'challenge' ? (
+                        <fieldset className={`${styles.typeChoices} ${styles.votingChoices}`} disabled={createBusy}>
+                            <legend>{communityText('Who picks the winner?')}</legend>
+                            <div>
+                                <label className={form.votingMode === 'audience' ? styles.typeChoice : styles.typeChoiceActive}>
+                                    <input type="radio" name="space-voting-mode" value="judges" checked={form.votingMode !== 'audience'} onChange={() => updateForm('votingMode', 'judges')} />
+                                    <Gavel size={18} />
+                                    <span><strong>{communityText('Judges')}</strong><small>{communityText('Invited judges score each entry from 1 to 10 against your criteria.')}</small></span>
+                                </label>
+                                <label className={form.votingMode === 'audience' ? styles.typeChoiceActive : styles.typeChoice}>
+                                    <input type="radio" name="space-voting-mode" value="audience" checked={form.votingMode === 'audience'} onChange={() => updateForm('votingMode', 'audience')} />
+                                    <Star size={18} />
+                                    <span><strong>{communityText('Audience vote')}</strong><small>{communityText('Anyone signed in rates entries from 1 to 5 stars. The highest average wins. No judges needed.')}</small></span>
+                                </label>
+                            </div>
+                        </fieldset>
                     ) : null}
                     {error ? <Notice variant="error">{error}</Notice> : null}
                     <div className={styles.actions}>
