@@ -69,8 +69,8 @@ describe('DiffView', () => {
 
     test('formats asset byte sizes', () => {
         expect(formatAssetSize(512)).toBe('512 B');
-        expect(formatAssetSize(2048)).toBe('2.0 KB');
-        expect(formatAssetSize(3 * 1024 * 1024)).toBe('3.0 MB');
+        expect(formatAssetSize(2048)).toBe('2 KB');
+        expect(formatAssetSize(3 * 1024 * 1024)).toBe('3 MB');
     });
 
     test('shows source files on the code tab and assets as compact rows without a loader', () => {

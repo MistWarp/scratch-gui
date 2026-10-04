@@ -1,3 +1,5 @@
+import {formatBytes} from '../lib/utils/bytes.js';
+
 const IMAGE_EXTENSIONS = new Set(['svg', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico']);
 const VIDEO_EXTENSIONS = new Set(['mp4', 'webm', 'mov']);
 const AUDIO_EXTENSIONS = new Set(['wav', 'mp3', 'ogg', 'm4a', 'flac']);
@@ -54,7 +56,5 @@ export const inlineDataToBytes = value => {
 
 export const formatAssetSize = value => {
     if (typeof value !== 'number' || !isFinite(value) || value < 0) return '';
-    if (value < 1024) return `${value} B`;
-    if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
-    return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+    return formatBytes(value);
 };

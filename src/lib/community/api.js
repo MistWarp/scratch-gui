@@ -3,6 +3,7 @@ import {clearContentCache} from './cached-fetch.js';
 import {isGalleryExtensionUrl} from '../trusted-extension.js';
 import {trackApiSuccess} from '../../community/analytics.js';
 import {setMinorAccount} from '../minor-account.js';
+import {sleep} from '../utils/async.js';
 import {
     createApiError, createNetworkError, createTimeoutError, friendlyError
 } from '../../community/api-errors.js';
@@ -256,8 +257,6 @@ const runExchange = token => {
     return exchangeInFlight;
 };
 
-const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
-
 const request = async (path, {method = 'GET', body, headers = {}, raw = false, cache = true, timeoutMs} = {}) => {
     const cacheable = method === 'GET' && !raw && cache;
     const cacheKey = cacheable ? getCacheKey(path) : '';
@@ -309,7 +308,7 @@ const request = async (path, {method = 'GET', body, headers = {}, raw = false, c
             } catch (error) {
                 if (error.code !== 'network') throw error;
             }
-            await wait(GET_RETRY_DELAY);
+            await sleep(GET_RETRY_DELAY);
             return fetchOnce();
         };
         let response = await doFetch();
