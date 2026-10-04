@@ -9,6 +9,8 @@
     width: min(560px, calc(100vw - 32px));
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
     align-items: center;
     overflow: hidden;
     justify-content: flex-start;
@@ -34,11 +36,6 @@
     flex: 1;
 }
 
-.version {
-    font-weight: normal;
-    font-family: monospace;
-}
-
 .reloadButton {
     min-height: 2rem;
     padding: 0.55rem 0.9rem;
@@ -50,4 +47,22 @@
     border: none;
     cursor: pointer;
     white-space: nowrap;
+}
+
+.laterButton {
+    min-height: 2rem;
+    margin-right: 0.5rem;
+    padding: 0.55rem 0.9rem;
+    border-radius: 6px;
+    background: transparent;
+    color: $text-primary;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    border: 1px solid $ui-black-transparent;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.laterButton:hover {
+    background: $ui-black-transparent;
 }

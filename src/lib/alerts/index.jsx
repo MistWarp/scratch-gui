@@ -17,6 +17,11 @@ const AlertLevels = {
     WARN: 'warn'
 };
 
+// Device backup failures replace each other rather than stacking.
+const RESTORE_POINT_ERROR_IDS = [
+    'twRestorePointError', 'twRestorePointQuotaError', 'twRestorePointUnavailableError'
+];
+
 // Git status toasts replace each other rather than stacking.
 const GIT_ALERT_IDS = [
     'gitCommitting', 'gitPushing', 'gitPulling',
@@ -235,7 +240,7 @@ const alerts = [
         alertId: 'saveSuccess',
         alertType: AlertTypes.INLINE,
         clearList: ['saveSuccess', 'saving', 'savingError', 'twSaveToDiskSuccess',
-            'twCreatingRestorePoint', 'twRestorePointSuccess', 'twRestorePointError'],
+            'twCreatingRestorePoint', 'twRestorePointSuccess'],
         content: (
             <FormattedMessage
                 defaultMessage="Project saved."
@@ -251,7 +256,7 @@ const alerts = [
         alertId: 'twSaveToDiskSuccess',
         alertType: AlertTypes.INLINE,
         clearList: ['saveSuccess', 'saving', 'savingError', 'savingMwp', 'twCreatingRestorePoint',
-            'twRestorePointSuccess', 'twRestorePointError'],
+            'twRestorePointSuccess'],
         content: (
             <FormattedMessage
                 defaultMessage="Saved to your computer."
@@ -311,7 +316,7 @@ const alerts = [
         alertId: 'saving',
         alertType: AlertTypes.INLINE,
         clearList: ['saveSuccess', 'saving', 'savingError', 'twSaveToDiskSuccess',
-            'twCreatingRestorePoint', 'twRestorePointSuccess', 'twRestorePointError'],
+            'twCreatingRestorePoint', 'twRestorePointSuccess'],
         content: (
             <FormattedMessage
                 defaultMessage="Saving project…"
@@ -412,11 +417,11 @@ const alerts = [
     {
         alertId: 'twCreatingRestorePoint',
         alertType: AlertTypes.INLINE,
-        clearList: ['twRestorePointSuccess', 'twRestorePointError'],
+        clearList: ['twRestorePointSuccess'],
         content: (
             <FormattedMessage
                 defaultMessage="Creating device backup…"
-                description="Menu bar message indicating that a device backup is being automatically created"
+                description="Menu bar message indicating that a device backup is being created"
                 id="tw.alerts.creatingRestorePoint"
             />
         ),
@@ -426,7 +431,7 @@ const alerts = [
     {
         alertId: 'twRestorePointSuccess',
         alertType: AlertTypes.INLINE,
-        clearList: ['twCreatingRestorePoint', 'twRestorePointError'],
+        clearList: ['twCreatingRestorePoint', ...RESTORE_POINT_ERROR_IDS],
         content: (
             <FormattedMessage
                 defaultMessage="Device backup created. Find it in File > Device backups."
@@ -439,20 +444,56 @@ const alerts = [
         level: AlertLevels.SUCCESS,
         maxDisplaySecs: 3
     },
+    // Backup failures stay until dismissed and offer a download instead.
     {
         alertId: 'twRestorePointError',
-        alertType: AlertTypes.INLINE,
-        clearList: ['twCreatingRestorePoint', 'twRestorePointSuccess'],
+        alertType: AlertTypes.STANDARD,
+        clearList: ['twCreatingRestorePoint', 'twRestorePointSuccess', ...RESTORE_POINT_ERROR_IDS],
+        closeButton: true,
+        showDownload: true,
         content: (
             <FormattedMessage
-                defaultMessage="Could not create a device backup."
-                description="Menu bar message indicating that a device backup could not be created."
-                id="tw.alerts.restorePointError"
+                defaultMessage="Could not create a device backup. Download your project to keep a copy."
+                // eslint-disable-next-line max-len
+                description="Message shown when a device backup could not be created. Download is the button next to it."
+                id="mw.alerts.deviceBackupError"
             />
         ),
-        iconURL: successImage,
-        level: AlertLevels.WARN,
-        maxDisplaySecs: 5
+        level: AlertLevels.WARN
+    },
+    {
+        alertId: 'twRestorePointQuotaError',
+        alertType: AlertTypes.STANDARD,
+        clearList: ['twCreatingRestorePoint', 'twRestorePointSuccess', ...RESTORE_POINT_ERROR_IDS],
+        closeButton: true,
+        showDownload: true,
+        content: (
+            <FormattedMessage
+                // eslint-disable-next-line max-len
+                defaultMessage="Could not create a device backup because this browser is out of storage space. Delete old backups in File > Device backups, or download your project."
+                // eslint-disable-next-line max-len
+                description="Message shown when a device backup failed because browser storage is full. File > Device backups is the menu path. Download is the button next to it."
+                id="mw.alerts.deviceBackupQuotaError"
+            />
+        ),
+        level: AlertLevels.WARN
+    },
+    {
+        alertId: 'twRestorePointUnavailableError',
+        alertType: AlertTypes.STANDARD,
+        clearList: ['twCreatingRestorePoint', 'twRestorePointSuccess', ...RESTORE_POINT_ERROR_IDS],
+        closeButton: true,
+        showDownload: true,
+        content: (
+            <FormattedMessage
+                // eslint-disable-next-line max-len
+                defaultMessage="Device backups don't work in this browser window (private browsing can block them). Download your project to keep a copy."
+                // eslint-disable-next-line max-len
+                description="Message shown when device backups cannot be stored, for example in a private window. Download is the button next to it."
+                id="mw.alerts.deviceBackupUnavailable"
+            />
+        ),
+        level: AlertLevels.WARN
     },
     {
         alertId: 'twRestorePointExportError',

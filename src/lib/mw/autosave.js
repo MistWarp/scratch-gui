@@ -1,8 +1,26 @@
+import React from 'react';
+import {defineMessages, FormattedMessage} from 'react-intl';
 import {getRememberedPlatformProjectState, publishToMistWarp} from '../community/publish.js';
 import {isProjectOperationActive} from '../project-operation.js';
 import communityEnabled from '../community/enabled.js';
 import {guardSavedCallback} from './smart-save.js';
 import {getSettings} from './autosave-settings.js';
+
+const messages = defineMessages({
+    autosaved: {
+        defaultMessage: 'Project autosaved.',
+        description: 'Toast shown after the project was automatically saved to MistWarp',
+        id: 'mw.autosave.saved'
+    },
+    failed: {
+        defaultMessage: 'Autosave failed.',
+        description: 'Toast shown when automatically saving the project to MistWarp failed',
+        id: 'mw.autosave.failed'
+    }
+});
+
+// Toasts render inside the editor's IntlProvider, so pass translatable elements.
+const toastMessage = descriptor => React.createElement(FormattedMessage, descriptor);
 
 let inFlight = false;
 
@@ -38,13 +56,13 @@ const runAutosave = async ({
             commitChanges: false,
             changeMessage: ''
         }));
-        if (config.notifications) showToast('Project autosaved.', 'success');
+        if (config.notifications) showToast(toastMessage(messages.autosaved), 'success');
         return true;
     } catch (e) {
         // A pending upload agreement needs an explicit user decision in the
         // save window; never nag for it from a background tick.
         if (!e || e.code !== 'agreement_required') {
-            if (config.notifications) showToast('Autosave failed.', 'error');
+            if (config.notifications) showToast(toastMessage(messages.failed), 'error');
         }
         return false;
     } finally {
