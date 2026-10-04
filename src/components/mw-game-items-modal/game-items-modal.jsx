@@ -551,6 +551,7 @@ class GameItemsModalComponent extends React.Component {
                                 </p>
                                 <p style={{margin: 0, fontSize: '0.85rem'}}>
                                     <FormattedMessage
+                                        // eslint-disable-next-line max-len
                                         defaultMessage="Click Add Item to create collectables players keep across projects."
                                         description="Empty state description for item list"
                                         id="mw.gameItemsModal.emptyDescription"

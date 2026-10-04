@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import dropdownCaret from './dropdown-caret.svg?raw';
 
 const ChevronDown = ({size = 8, ...props}) => {
@@ -10,9 +11,15 @@ const ChevronDown = ({size = 8, ...props}) => {
             width={size}
             height={height}
             {...props}
+            // Safe: the markup is a static SVG file bundled at build time, never user input.
+            // eslint-disable-next-line react/no-danger
             dangerouslySetInnerHTML={{__html: dropdownCaret}}
         />
     );
+};
+
+ChevronDown.propTypes = {
+    size: PropTypes.number
 };
 
 export default ChevronDown;

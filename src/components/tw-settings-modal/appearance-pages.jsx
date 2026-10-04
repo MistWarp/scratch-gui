@@ -1,31 +1,19 @@
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {FormattedMessage, defineMessages, injectIntl, intlShape} from 'react-intl';
+import {FormattedMessage} from 'react-intl';
 import {connect} from 'react-redux';
 import locales from '@turbowarp/scratch-l10n';
 
 import Box from '../box/box.jsx';
-import Input from '../forms/input.jsx';
-import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
 import {BooleanSetting} from './setting.jsx';
 import {Theme, BLOCKS_CUSTOM, BLOCKS_DARK, BLOCKS_HIGH_CONTRAST, BLOCKS_THREE}
     from '../../lib/themes/index.js';
-import {PageHeader, ThemeAccentPanel} from './theme-accent-panel.jsx';
+import {PageHeader} from './theme-accent-panel.jsx';
 import CustomThemesPage from './custom-themes-page.jsx';
 import communityEnabled from '../../lib/community/enabled.js';
-import {
-    getAccentMenuBar,
-    setAccentMenuBar,
-    getMenuBarText,
-    setMenuBarText,
-    MENU_BAR_TEXT_OPTIONS
-} from '../../lib/themes/menu-bar-accent.js';
-import {setTheme} from '../../reducers/theme.js';
-import {applyTheme} from '../../lib/themes/themePersistance.js';
+import {themeStateToProps, themeDispatchToProps} from './theme-connect.js';
 import {selectLocale} from '../../reducers/locales.js';
-import {loadGoogleFont, isGoogleFont} from '../../lib/themes/google-fonts.js';
-import openMWFontsWindow from '../../lib/mw/open-mw-fonts-window.js';
 import {getCatBlocks, getCatBlocksWatch, setCatBlocks, setCatBlocksWatch} from '../../lib/mw-cat-blocks.js';
 
 import styles from './settings-modal.css';
@@ -34,51 +22,44 @@ import threeIcon from '../menu-bar/tw-blocks-three.svg';
 import highContrastIcon from '../menu-bar/tw-blocks-high-contrast.svg';
 import darkIcon from '../menu-bar/tw-blocks-dark.svg';
 
-import {ExternalLink, Trash} from 'lucide-react';
+import {ExternalLink} from 'lucide-react';
 
-const themeStateToProps = state => ({
-    theme: state.scratchGui.theme.theme
-});
-const themeDispatchToProps = dispatch => ({
-    onChangeTheme: theme => {
-        dispatch(setTheme(theme));
-        applyTheme(theme);
-    }
-});
-
-const UnconnectedLanguagePage = ({currentLocale, onChangeLanguage}) => (
-    <Box className={styles.body}>
-        <PageHeader>
-            <FormattedMessage
-                defaultMessage="Language"
-                description="Language sub-menu"
-                id="gui.menuBar.language"
-            />
-        </PageHeader>
-        <div className={styles.setting}>
-            <select
-                className={styles.select}
-                value={currentLocale}
-                onChange={e => onChangeLanguage(e.target.value)}
-            >
-                {Object.keys(locales).map(locale => (
-                    <option
-                        key={locale}
-                        value={locale}
-                    >
-                        {locales[locale].name}
-                    </option>
-                ))}
-            </select>
-            <p className={styles.detail}>
+const UnconnectedLanguagePage = ({currentLocale, onChangeLanguage}) => {
+    const handleChange = React.useCallback(e => onChangeLanguage(e.target.value), [onChangeLanguage]);
+    return (
+        <Box className={styles.body}>
+            <PageHeader>
                 <FormattedMessage
-                    defaultMessage="Changes the language of the editor interface."
-                    id="mw.settings.languageHelp"
+                    defaultMessage="Language"
+                    description="Language sub-menu"
+                    id="gui.menuBar.language"
                 />
-            </p>
-        </div>
-    </Box>
-);
+            </PageHeader>
+            <div className={styles.setting}>
+                <select
+                    className={styles.select}
+                    value={currentLocale}
+                    onChange={handleChange}
+                >
+                    {Object.keys(locales).map(locale => (
+                        <option
+                            key={locale}
+                            value={locale}
+                        >
+                            {locales[locale].name}
+                        </option>
+                    ))}
+                </select>
+                <p className={styles.detail}>
+                    <FormattedMessage
+                        defaultMessage="Changes the language of the editor interface."
+                        id="mw.settings.languageHelp"
+                    />
+                </p>
+            </div>
+        </Box>
+    );
+};
 UnconnectedLanguagePage.propTypes = {
     currentLocale: PropTypes.string,
     onChangeLanguage: PropTypes.func
@@ -178,538 +159,72 @@ class CatBlocksSettings extends React.Component {
     }
 }
 
-const UnconnectedThemePage = ({theme, onChangeTheme}) => (
-    <Box className={styles.body}>
-        <PageHeader>
-            <FormattedMessage
-                defaultMessage="Block Colors"
-                description="Label for to choose what color blocks should be, eg. original or high contrast"
-                id="tw.menuBar.blockColors"
-            />
-        </PageHeader>
-        <div className={styles.stylePicker}>
-            {BLOCKS_OPTIONS.map(option => (
-                <button
-                    key={option.id}
-                    type="button"
-                    disabled={theme.blocks === BLOCKS_CUSTOM}
-                    className={classNames(styles.styleOption, {
-                        [styles.styleOptionSelected]: theme.blocks === option.id
-                    })}
-                    onClick={() => onChangeTheme(theme.set('blocks', option.id))}
-                >
-                    <div className={styles.themeCardPreview}>
-                        <img
-                            src={option.icon}
-                            draggable={false}
-                            width={32}
-                        />
-                    </div>
-                    <span className={styles.styleOptionLabel}>
-                        <FormattedMessage {...option.message} />
-                    </span>
-                </button>
-            ))}
-        </div>
-        <div className={styles.setting}>
-            <button
-                type="button"
-                className={styles.button}
-                onClick={openBlocksAddonSettings}
-            >
+const UnconnectedThemePage = ({theme, onChangeTheme}) => {
+    const handleSelectBlocks = React.useCallback(e => {
+        onChangeTheme(theme.set('blocks', e.currentTarget.value));
+    }, [theme, onChangeTheme]);
+    return (
+        <Box className={styles.body}>
+            <PageHeader>
                 <FormattedMessage
-                    defaultMessage="Customize in Addon Settings"
-                    description="Link in block color list to open addon settings for more customization"
-                    id="tw.blockColors.custom"
+                    defaultMessage="Block Colors"
+                    description="Label for to choose what color blocks should be, eg. original or high contrast"
+                    id="tw.menuBar.blockColors"
                 />
-                {' '}
-                <ExternalLink size={14} />
-            </button>
-        </div>
-        <CatBlocksSettings />
-    </Box>
-);
+            </PageHeader>
+            <div className={styles.stylePicker}>
+                {BLOCKS_OPTIONS.map(option => (
+                    <button
+                        key={option.id}
+                        type="button"
+                        disabled={theme.blocks === BLOCKS_CUSTOM}
+                        className={classNames(styles.styleOption, {
+                            [styles.styleOptionSelected]: theme.blocks === option.id
+                        })}
+                        value={option.id}
+                        onClick={handleSelectBlocks}
+                    >
+                        <div className={styles.themeCardPreview}>
+                            <img
+                                src={option.icon}
+                                draggable={false}
+                                width={32}
+                            />
+                        </div>
+                        <span className={styles.styleOptionLabel}>
+                            <FormattedMessage {...option.message} />
+                        </span>
+                    </button>
+                ))}
+            </div>
+            <div className={styles.setting}>
+                <button
+                    type="button"
+                    className={styles.button}
+                    onClick={openBlocksAddonSettings}
+                >
+                    <FormattedMessage
+                        defaultMessage="Customize in Addon Settings"
+                        description="Link in block color list to open addon settings for more customization"
+                        id="tw.blockColors.custom"
+                    />
+                    {' '}
+                    <ExternalLink size={14} />
+                </button>
+            </div>
+            <CatBlocksSettings />
+        </Box>
+    );
+};
 UnconnectedThemePage.propTypes = {
     theme: PropTypes.instanceOf(Theme),
     onChangeTheme: PropTypes.func
 };
 export const ThemePage = connect(themeStateToProps, themeDispatchToProps)(UnconnectedThemePage);
 
-export class UnconnectedWallpaperPage extends React.Component {
-    constructor (props) {
-        super(props);
-        this.state = {
-            url: ''
-        };
-    }
-    setWallpaper (patch) {
-        const {theme, onChangeTheme} = this.props;
-        onChangeTheme(theme.set('wallpaper', {...theme.wallpaper, ...patch}));
-    }
-    handleAdd = e => {
-        e.preventDefault();
-        const url = this.state.url.trim();
-        if (!url) return;
-        const history = [url, ...(this.props.theme.wallpaper.history || []).filter(u => u !== url)].slice(0, 10);
-        this.setWallpaper({url, history});
-        this.setState({url: ''});
-    };
-    handleRemove = url => {
-        const wallpaper = this.props.theme.wallpaper;
-        this.setWallpaper({
-            history: (wallpaper.history || []).filter(u => u !== url),
-            ...(wallpaper.url === url ? {url: ''} : null)
-        });
-    };
-    handleSelectWallpaper = e => {
-        this.setWallpaper({url: e.currentTarget.value});
-    };
-    handleRemoveWallpaper = e => {
-        this.handleRemove(e.currentTarget.value);
-    };
-    render () {
-        const {theme} = this.props;
-        const wallpaper = theme.wallpaper;
-
-        return (
-            <Box className={styles.body}>
-                <PageHeader>
-                    <FormattedMessage
-                        defaultMessage="Wallpaper"
-                        description="Label for wallpaper menu"
-                        id="tw.menuBar.wallpaper"
-                    />
-                </PageHeader>
-                <form
-                    className={styles.setting}
-                    onSubmit={this.handleAdd}
-                >
-                    <div className={styles.textSettingLabel}>
-                        <FormattedMessage
-                            defaultMessage="Image URL"
-                            id="mw.settings.wallpaperUrl"
-                        />
-                    </div>
-                    <div className={styles.wallpaperInputRow}>
-                        <Input
-                            type="url"
-                            className={styles.textInput}
-                            placeholder="Enter image URL..."
-                            value={this.state.url}
-                            onChange={e => this.setState({url: e.target.value})}
-                        />
-                        <button
-                            type="submit"
-                            className={styles.button}
-                            disabled={!this.state.url.trim()}
-                        >
-                            <FormattedMessage
-                                defaultMessage="Add"
-                                description="Button to add wallpaper"
-                                id="tw.wallpaper.add"
-                            />
-                        </button>
-                    </div>
-                </form>
-
-                <div className={styles.setting}>
-                    <label className={styles.sliderRow}>
-                        <span className={styles.sliderLabel}>
-                            <FormattedMessage
-                                defaultMessage="Opacity:"
-                                description="Label for wallpaper opacity slider"
-                                id="tw.wallpaper.opacity"
-                            />
-                        </span>
-                        <input
-                            type="range"
-                            className={styles.gcSlider}
-                            min="0.1"
-                            max="1"
-                            step="0.1"
-                            value={wallpaper.opacity}
-                            onChange={e => this.setWallpaper({opacity: parseFloat(e.target.value)})}
-                        />
-                        <span className={styles.sliderValue}>{`${Math.round(wallpaper.opacity * 100)}%`}</span>
-                    </label>
-                    <label className={styles.sliderRow}>
-                        <span className={styles.sliderLabel}>
-                            <FormattedMessage
-                                defaultMessage="Darkness:"
-                                description="Label for wallpaper darkness slider"
-                                id="tw.wallpaper.darkness"
-                            />
-                        </span>
-                        <input
-                            type="range"
-                            className={styles.gcSlider}
-                            min="0"
-                            max="0.8"
-                            step="0.1"
-                            value={wallpaper.darkness || 0}
-                            onChange={e => this.setWallpaper({darkness: parseFloat(e.target.value)})}
-                        />
-                        <span className={styles.sliderValue}>{`${Math.round((wallpaper.darkness || 0) * 100)}%`}</span>
-                    </label>
-                    <label className={styles.sliderRow}>
-                        <span className={styles.sliderLabel}>
-                            <FormattedMessage
-                                defaultMessage="Show Grid:"
-                                description="Label for wallpaper grid visibility toggle"
-                                id="tw.wallpaper.showGrid"
-                            />
-                        </span>
-                        <FancyCheckbox
-                            className={styles.checkbox}
-                            checked={wallpaper.gridVisible !== false}
-                            onChange={e => this.setWallpaper({gridVisible: e.target.checked})}
-                        />
-                    </label>
-                </div>
-
-                <div className={styles.wallpaperList}>
-                    <div
-                        className={classNames(styles.wallpaperItem, {
-                            [styles.wallpaperItemSelected]: !wallpaper.url
-                        })}
-                    >
-                        <button
-                            type="button"
-                            className={styles.wallpaperChoice}
-                            aria-pressed={!wallpaper.url}
-                            value=""
-                            onClick={this.handleSelectWallpaper}
-                        >
-                            <div className={styles.wallpaperThumb}>
-                                <FormattedMessage
-                                    defaultMessage="None"
-                                    description="Label for no wallpaper option"
-                                    id="tw.wallpaper.none"
-                                />
-                            </div>
-                            <span className={styles.wallpaperItemUrl}>
-                                <FormattedMessage
-                                    defaultMessage="No wallpaper"
-                                    description="Label for no wallpaper selected"
-                                    id="tw.wallpaper.noWallpaper"
-                                />
-                            </span>
-                        </button>
-                    </div>
-                    {(wallpaper.history || []).map(url => (
-                        <div
-                            key={url}
-                            className={classNames(styles.wallpaperItem, {
-                                [styles.wallpaperItemSelected]: wallpaper.url === url
-                            })}
-                        >
-                            <button
-                                type="button"
-                                className={styles.wallpaperChoice}
-                                aria-pressed={wallpaper.url === url}
-                                value={url}
-                                onClick={this.handleSelectWallpaper}
-                            >
-                                <div className={styles.wallpaperThumb}>
-                                    <img
-                                        src={url}
-                                        alt=""
-                                        onError={e => {
-                                            e.target.style.display = 'none';
-                                        }}
-                                    />
-                                </div>
-                                <span
-                                    className={styles.wallpaperItemUrl}
-                                    title={url}
-                                >
-                                    {url}
-                                </span>
-                            </button>
-                            <button
-                                type="button"
-                                className={styles.iconButton}
-                                title="Remove wallpaper"
-                                aria-label="Remove wallpaper"
-                                value={url}
-                                onClick={this.handleRemoveWallpaper}
-                            >
-                                <Trash size={16} />
-                            </button>
-                        </div>
-                    ))}
-                </div>
-            </Box>
-        );
-    }
-}
-UnconnectedWallpaperPage.propTypes = {
-    theme: PropTypes.instanceOf(Theme),
-    onChangeTheme: PropTypes.func
-};
-export const WallpaperPage = connect(themeStateToProps, themeDispatchToProps)(UnconnectedWallpaperPage);
-
-class UnconnectedFontsPage extends React.Component {
-    static contextTypes = {
-        store: PropTypes.object
-    };
-
-    getSelectedFontName () {
-        const {theme} = this.props;
-        if (theme.fonts.google.length > 0) return theme.fonts.google[0];
-        if (theme.fonts.system.length > 0) return theme.fonts.system[0];
-        return null;
-    }
-
-    setSelectedFont ({google = [], system = [], historyFont}) {
-        const family = (historyFont || '').trim();
-        const history = family ? [
-            ...this.props.theme.fonts.history.filter(f => f !== family),
-            family
-        ].slice(-10) : this.props.theme.fonts.history;
-
-        this.props.onChangeTheme(this.props.theme.set('fonts', {system, google, history}));
-    }
-
-    handleReset = () => {
-        this.setSelectedFont({});
-    };
-
-    handleRecentFontClick = async e => {
-        const family = (e.currentTarget.dataset.family || '').trim();
-        if (!family) return;
-
-        try {
-            const google = await isGoogleFont(family);
-            if (google) {
-                await loadGoogleFont(family);
-                this.setSelectedFont({google: [family], system: [], historyFont: family});
-            } else {
-                this.setSelectedFont({google: [], system: [family], historyFont: family});
-            }
-        } catch (err) {
-            this.setSelectedFont({google: [], system: [family], historyFont: family});
-        }
-    };
-
-    handleOpenFontsWindow = () => {
-        openMWFontsWindow({
-            vm: this.props.vm,
-            store: this.context.store,
-            locale: this.props.locale,
-            messages: this.props.messages
-        });
-    };
-
-    render () {
-        const {theme} = this.props;
-        const selectedFont = this.getSelectedFontName();
-        const history = [...theme.fonts.history].reverse();
-
-        return (
-            <Box className={styles.body}>
-                <PageHeader>
-                    <FormattedMessage
-                        defaultMessage="Fonts"
-                        description="Label for menu to choose fonts for the theme"
-                        id="tw.menuBar.fonts"
-                    />
-                </PageHeader>
-                <div className={styles.setting}>
-                    <div className={styles.textSettingLabel}>
-                        <FormattedMessage
-                            defaultMessage="Selected font"
-                            description="Section title for selected font"
-                            id="tw.fonts.selectedFont"
-                        />
-                    </div>
-                    {selectedFont ? (
-                        <div className={styles.fontRow}>
-                            <span style={{fontFamily: selectedFont}}>{selectedFont}</span>
-                            <button
-                                type="button"
-                                className={styles.iconButton}
-                                onClick={this.handleReset}
-                                title="Remove font"
-                            >
-                                {'×'}
-                            </button>
-                        </div>
-                    ) : (
-                        <p className={styles.detail}>
-                            <FormattedMessage
-                                defaultMessage="Default"
-                                description="Shown when no custom font is selected"
-                                id="tw.fonts.default"
-                            />
-                        </p>
-                    )}
-                    <button
-                        type="button"
-                        className={styles.button}
-                        onClick={this.handleOpenFontsWindow}
-                    >
-                        <FormattedMessage
-                            defaultMessage="Add Font"
-                            description="Button to open the fonts manager window"
-                            id="tw.fonts.addFont"
-                        />
-                    </button>
-                </div>
-                <div className={styles.setting}>
-                    <div className={styles.textSettingLabel}>
-                        <FormattedMessage
-                            defaultMessage="Recently used"
-                            description="Section title for recently used fonts"
-                            id="tw.fonts.recentlyUsed"
-                        />
-                    </div>
-                    {history.length > 0 ? (
-                        <div className={styles.fontList}>
-                            {history.map(font => (
-                                <button
-                                    key={font}
-                                    type="button"
-                                    className={styles.fontRow}
-                                    data-family={font}
-                                    style={{fontFamily: font, cursor: 'pointer'}}
-                                    title={font}
-                                    onClick={this.handleRecentFontClick}
-                                >
-                                    {font}
-                                </button>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className={styles.detail}>
-                            <FormattedMessage
-                                defaultMessage="No recent fonts"
-                                description="Shown when there is no font history"
-                                id="tw.fonts.noRecent"
-                            />
-                        </p>
-                    )}
-                </div>
-            </Box>
-        );
-    }
-}
-UnconnectedFontsPage.propTypes = {
-    theme: PropTypes.instanceOf(Theme),
-    onChangeTheme: PropTypes.func,
-    locale: PropTypes.string,
-    messages: PropTypes.object,
-    vm: PropTypes.object
-};
-export const FontsPage = connect(
-    state => ({
-        theme: state.scratchGui.theme.theme,
-        locale: state.locales.locale,
-        messages: state.locales.messages,
-        vm: state.scratchGui.vm
-    }),
-    themeDispatchToProps
-)(UnconnectedFontsPage);
-
-const MENU_BAR_TEXT_MESSAGES = defineMessages({
-    auto: {defaultMessage: 'Automatic', id: 'mw.settingsModal.menuBarTextAuto'},
-    light: {defaultMessage: 'Light', id: 'mw.settingsModal.menuBarTextLight'},
-    dark: {defaultMessage: 'Dark', id: 'mw.settingsModal.menuBarTextDark'}
-});
-
-class UnconnectedColorThemePage extends React.Component {
-    constructor (props) {
-        super(props);
-        this.state = {
-            accentMenuBar: getAccentMenuBar(),
-            menuBarText: getMenuBarText()
-        };
-        this.handleAccentMenuBarChange = this.handleAccentMenuBarChange.bind(this);
-        this.handleMenuBarTextChange = this.handleMenuBarTextChange.bind(this);
-    }
-
-    handleAccentMenuBarChange (event) {
-        setAccentMenuBar(event.target.checked);
-        this.setState({accentMenuBar: event.target.checked});
-        applyTheme(this.props.theme);
-    }
-
-    handleMenuBarTextChange (event) {
-        setMenuBarText(event.target.value);
-        this.setState({menuBarText: event.target.value});
-        applyTheme(this.props.theme);
-    }
-
-    render () {
-        const {theme, onChangeTheme} = this.props;
-        return (
-            <Box className={styles.body}>
-                <PageHeader>
-                    <FormattedMessage
-                        defaultMessage="Theme"
-                        description="Label for menu to choose between light and dark mode"
-                        id="tw.menuBar.theme"
-                    />
-                </PageHeader>
-                <ThemeAccentPanel
-                    theme={theme}
-                    onChangeTheme={onChangeTheme}
-                />
-                <PageHeader>
-                    <FormattedMessage
-                        defaultMessage="Menu bar colors"
-                        id="mw.settingsModal.menuBarColors"
-                    />
-                </PageHeader>
-                <BooleanSetting
-                    value={this.state.accentMenuBar}
-                    onChange={this.handleAccentMenuBarChange}
-                    label={<FormattedMessage
-                        defaultMessage="Use the accent color for the menu bar"
-                        description="Label for toggle that colors the menu bar with the accent color"
-                        id="tw.menuBar.accentMenuBar"
-                    />}
-                    help={<FormattedMessage
-                        defaultMessage="When this is off, the menu bar uses the plain color of the light or dark theme."
-                        id="mw.settingsModal.accentMenuBarHelp"
-                    />}
-                />
-                <label className={styles.menuBarSettingRow}>
-                    <span>
-                        <FormattedMessage
-                            defaultMessage="Menu bar text"
-                            description="Label for the menu bar text color setting"
-                            id="tw.menuBar.textColor"
-                        />
-                    </span>
-                    <select
-                        className={styles.select}
-                        value={this.state.menuBarText}
-                        onChange={this.handleMenuBarTextChange}
-                    >
-                        {MENU_BAR_TEXT_OPTIONS.map(option => (
-                            <option
-                                key={option}
-                                value={option}
-                            >
-                                {this.props.intl.formatMessage(MENU_BAR_TEXT_MESSAGES[option])}
-                            </option>
-                        ))}
-                    </select>
-                </label>
-            </Box>
-        );
-    }
-}
-UnconnectedColorThemePage.propTypes = {
-    intl: intlShape,
-    theme: PropTypes.instanceOf(Theme),
-    onChangeTheme: PropTypes.func
-};
-export const ColorThemePage = connect(
-    themeStateToProps,
-    themeDispatchToProps
-)(injectIntl(UnconnectedColorThemePage));
+export {UnconnectedWallpaperPage, WallpaperPage} from './wallpaper-page.jsx';
+export {FontsPage} from './fonts-page.jsx';
+export {ColorThemePage} from './color-theme-page.jsx';
 
 const openThemeMarketplace = () => {
     window.open('/themes', '_blank', 'noopener');

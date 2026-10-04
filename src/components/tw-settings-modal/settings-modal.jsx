@@ -32,12 +32,12 @@ import {takeSettingsModalInitialView} from '../../lib/settings/modal-view.js';
 
 import {ChevronLeft, Search} from 'lucide-react';
 import BuildVersionFooter from './build-version-footer.jsx';
-import {DEFINITIONS as DEBUGGER_SETTINGS, getSetting as getDebuggerSetting,
-    setSetting as setDebuggerSetting} from '../../lib/debugger/settings.js';
-import {getSetting as getStageControlSetting, setSetting as setStageControlSetting,
-    getScreenshotSoundUrl, setScreenshotSoundUrl} from '../../lib/mw-stage-controls/settings.js';
+import {DEFINITIONS as DEBUGGER_SETTINGS} from '../../lib/debugger/settings.js';
 import {DEFINITIONS as VARIABLE_MANAGER_SETTINGS} from '../../lib/variable-manager/settings.js';
 import {BooleanSetting, LearnMore, Setting} from './setting.jsx';
+import DebuggerBooleanSetting from './debugger-boolean-setting.jsx';
+import StageControlBooleanSetting from './stage-control-boolean-setting.jsx';
+import ScreenshotSoundUrlSetting from './screenshot-sound-url-setting.jsx';
 import Header from './settings-header.jsx';
 import VersionControlPage from './pages/version-control-page.jsx';
 import AutosavePage from './pages/autosave-page.jsx';
@@ -455,102 +455,6 @@ const createBooleanSetting = (key, definition) => {
     return SettingComponent;
 };
 
-class DebuggerBooleanSetting extends React.Component {
-    constructor (props) {
-        super(props);
-        this.handleChange = this.handleChange.bind(this);
-        this.state = {value: getDebuggerSetting(props.settingId)};
-    }
-    handleChange (e) {
-        const value = e.target.checked;
-        setDebuggerSetting(this.props.settingId, value);
-        this.setState({value});
-    }
-    render () {
-        return (
-            <BooleanSetting
-                value={this.state.value}
-                onChange={this.handleChange}
-                label={this.props.label}
-                help={this.props.help}
-            />
-        );
-    }
-}
-
-DebuggerBooleanSetting.propTypes = {
-    settingId: PropTypes.string.isRequired,
-    label: PropTypes.node.isRequired,
-    help: PropTypes.node
-};
-
-class StageControlBooleanSetting extends React.Component {
-    constructor (props) {
-        super(props);
-        this.handleChange = this.handleChange.bind(this);
-        this.state = {value: getStageControlSetting(props.settingId)};
-    }
-    handleChange (e) {
-        const value = e.target.checked;
-        setStageControlSetting(this.props.settingId, value);
-        this.setState({value});
-    }
-    render () {
-        return (
-            <BooleanSetting
-                value={this.state.value}
-                onChange={this.handleChange}
-                label={this.props.label}
-                help={this.props.help}
-            />
-        );
-    }
-}
-
-StageControlBooleanSetting.propTypes = {
-    settingId: PropTypes.string.isRequired,
-    label: PropTypes.node.isRequired,
-    help: PropTypes.node
-};
-
-class ScreenshotSoundUrlSetting extends React.Component {
-    constructor (props) {
-        super(props);
-        this.handleSubmit = this.handleSubmit.bind(this);
-        this.state = {value: getScreenshotSoundUrl()};
-    }
-    handleSubmit (value) {
-        setScreenshotSoundUrl(value);
-        this.setState({value: getScreenshotSoundUrl()});
-    }
-    render () {
-        return (
-            <div className={styles.setting}>
-                <div className={styles.textSettingLabel}>
-                    <FormattedMessage
-                        defaultMessage="Screenshot Sound Effect URL"
-                        id="mw.settingsModal.screenshotSoundUrl"
-                    />
-                </div>
-                <BufferedInput
-                    className={styles.textInput}
-                    type="text"
-                    value={this.state.value}
-                    placeholder="https://…"
-                    onSubmit={this.handleSubmit}
-                />
-                <p className={styles.detail}>
-                    <FormattedMessage
-                        defaultMessage={'Optional sound played after a stage screenshot is captured. ' +
-                            'Leave empty for silence.'}
-                        id="mw.settingsModal.screenshotSoundUrlHelp"
-                    />
-                </p>
-            </div>
-        );
-    }
-}
-
 const HighQualityPen = createBooleanSetting('HighQualityPen', settingDefinitions.highQualityPen);
 const Interpolation = createBooleanSetting('Interpolation', settingDefinitions.interpolation);
 const InfiniteClones = createBooleanSetting('InfiniteClones', settingDefinitions.infiniteClones);
@@ -594,22 +498,25 @@ const getOptionCss = (groupId, value) => {
     return option ? option.css : null;
 };
 
-const StyleOption = ({groupId, option, selected, onSelect}) => (
-    <button
-        type="button"
-        className={classNames(styles.styleOption, {[styles.styleOptionSelected]: selected})}
-        onClick={() => onSelect(option.value)}
-    >
-        <div className={styles.stylePreview}>
-            <StylePreview
-                type={groupId === 'window-style' ? 'window' : 'tabs'}
-                variant={option.value}
-                css={getOptionCss(groupId, option.value)}
-            />
-        </div>
-        <span className={styles.styleOptionLabel}>{option.label}</span>
-    </button>
-);
+const StyleOption = ({groupId, option, selected, onSelect}) => {
+    const handleClick = React.useCallback(() => onSelect(option.value), [onSelect, option.value]);
+    return (
+        <button
+            type="button"
+            className={classNames(styles.styleOption, {[styles.styleOptionSelected]: selected})}
+            onClick={handleClick}
+        >
+            <div className={styles.stylePreview}>
+                <StylePreview
+                    type={groupId === 'window-style' ? 'window' : 'tabs'}
+                    variant={option.value}
+                    css={getOptionCss(groupId, option.value)}
+                />
+            </div>
+            <span className={styles.styleOptionLabel}>{option.label}</span>
+        </button>
+    );
+};
 StyleOption.propTypes = {
     groupId: PropTypes.string.isRequired,
     option: PropTypes.shape({
@@ -1377,6 +1284,9 @@ class SettingsModalComponent extends React.Component {
             'handleMobileBack'
         ]);
 
+        this.navigateHandlers = new Map();
+        this.searchResultHandlers = new Map();
+
         const requestedView = takeSettingsModalInitialView();
         this.state = {
             currentView: requestedView || 'general',
@@ -1396,6 +1306,21 @@ class SettingsModalComponent extends React.Component {
 
     handleNavigate (category) {
         this.setState({currentView: category, mobileView: 'content'});
+    }
+
+    // Sidebar items get one cached click handler per page id, so their onClick stays the same between renders.
+    getNavigateHandler (id) {
+        if (!this.navigateHandlers.has(id)) {
+            this.navigateHandlers.set(id, () => this.handleNavigate(id));
+        }
+        return this.navigateHandlers.get(id);
+    }
+
+    getSearchResultHandler (id) {
+        if (!this.searchResultHandlers.has(id)) {
+            this.searchResultHandlers.set(id, () => this.handleSelectSearchResult(id));
+        }
+        return this.searchResultHandlers.get(id);
     }
 
     handleSearchChange (e) {
@@ -1476,7 +1401,7 @@ class SettingsModalComponent extends React.Component {
                                     icon={result.icon}
                                     label={result.label}
                                     selected={currentView === result.id}
-                                    onClick={() => this.handleSelectSearchResult(result.id)}
+                                    onClick={this.getSearchResultHandler(result.id)}
                                 />
                             )) : (
                                 <p
@@ -1497,7 +1422,7 @@ class SettingsModalComponent extends React.Component {
                                         icon={cat.icon}
                                         label={cat.label}
                                         selected={currentView === cat.id}
-                                        onClick={() => this.handleNavigate(cat.id)}
+                                        onClick={this.getNavigateHandler(cat.id)}
                                     />
                                 ))}
                             </ModalSidebarCollapsibleGroup>

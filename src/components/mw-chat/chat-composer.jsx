@@ -87,6 +87,7 @@ const messages = defineMessages({
     },
     scriptFailedReason: {
         defaultMessage: 'Could not upload the script. The server said: {reason}',
+        // eslint-disable-next-line max-len
         description: 'Error when uploading a script dragged from the code area fails, with the reason the chat server gave',
         id: 'mw.chat.scriptFailedReason'
     },

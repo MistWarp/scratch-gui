@@ -1,6 +1,7 @@
 import {FormattedMessage} from 'react-intl';
 import PropTypes from 'prop-types';
 import React from 'react';
+import bindAll from 'lodash.bindall';
 import Box from '../../box/box.jsx';
 import {BooleanSetting, Setting} from '../setting.jsx';
 import styles from '../settings-modal.css';
@@ -40,21 +41,36 @@ DesktopSelectSetting.propTypes = {
     onChange: PropTypes.func
 };
 
+const readDesktopSettings = () => {
+    try {
+        return window.EditorPreload.getDesktopSettings();
+    } catch (e) {
+        return null;
+    }
+};
+
 class DesktopPage extends React.Component {
     constructor (props) {
         super(props);
+        bindAll(this, [
+            'handleChangeUpdateChecker',
+            'handleChangeMicrophone',
+            'handleChangeCamera',
+            'handleChangeHardwareAcceleration',
+            'handleChangeBackgroundThrottling',
+            'handleChangeBypassCORS',
+            'handleChangeSpellchecker',
+            'handleChangeExitFullscreenOnEscape',
+            'handleChangeRichPresence',
+            'handleOpenUserData'
+        ]);
         this.state = {
-            settings: null,
+            settings: readDesktopSettings(),
             devices: []
         };
     }
 
     componentDidMount () {
-        try {
-            this.setState({settings: window.EditorPreload.getDesktopSettings()});
-        } catch (e) {
-            this.setState({settings: null});
-        }
         navigator.mediaDevices.enumerateDevices()
             .then(devices => this.setState({devices}))
             .catch(() => {});
@@ -70,7 +86,47 @@ class DesktopPage extends React.Component {
         window.EditorPreload.setDesktopSetting(key, value);
     }
 
-    renderDeviceSelect (key, label, help, kind) {
+    handleChangeUpdateChecker (e) {
+        this.set('updateChecker', e.target.value);
+    }
+
+    handleChangeMicrophone (e) {
+        this.set('microphone', e.target.value || null);
+    }
+
+    handleChangeCamera (e) {
+        this.set('camera', e.target.value || null);
+    }
+
+    handleChangeHardwareAcceleration (value) {
+        this.set('hardwareAcceleration', value);
+    }
+
+    handleChangeBackgroundThrottling (value) {
+        this.set('backgroundThrottling', value);
+    }
+
+    handleChangeBypassCORS (value) {
+        this.set('bypassCORS', value);
+    }
+
+    handleChangeSpellchecker (value) {
+        this.set('spellchecker', value);
+    }
+
+    handleChangeExitFullscreenOnEscape (value) {
+        this.set('exitFullscreenOnEscape', value);
+    }
+
+    handleChangeRichPresence (value) {
+        this.set('richPresence', value);
+    }
+
+    handleOpenUserData () {
+        window.EditorPreload.openUserData();
+    }
+
+    renderDeviceSelect (key, label, help, kind, onChange) {
         const devices = this.state.devices.filter(device => device.kind === kind);
         return (
             <DesktopSelectSetting
@@ -87,7 +143,7 @@ class DesktopPage extends React.Component {
                         label: device.label || device.deviceId
                     }))
                 ]}
-                onChange={e => this.set(key, e.target.value || null)}
+                onChange={onChange}
             />
         );
     }
@@ -106,6 +162,7 @@ class DesktopPage extends React.Component {
                             id="mw.settingsModal.desktop.updateChecker"
                         />}
                         help={<FormattedMessage
+                            // eslint-disable-next-line max-len
                             defaultMessage="Controls which app updates you are notified about. Security updates only shows the most important releases; Never disables the update check entirely."
                             id="mw.settingsModal.desktop.updateCheckerHelp"
                         />}
@@ -120,7 +177,7 @@ class DesktopPage extends React.Component {
                             {value: 'never',
                                 label: 'Never'}
                         ]}
-                        onChange={e => this.set('updateChecker', e.target.value)}
+                        onChange={this.handleChangeUpdateChecker}
                     />
                 ) : null}
                 {this.renderDeviceSelect('microphone', (<FormattedMessage
@@ -129,70 +186,75 @@ class DesktopPage extends React.Component {
                 />), (<FormattedMessage
                     defaultMessage="The input device projects use to record audio, such as the microphone extension."
                     id="mw.settingsModal.desktop.microphoneHelp"
-                />), 'audioinput')}
+                />), 'audioinput', this.handleChangeMicrophone)}
                 {this.renderDeviceSelect('camera', (<FormattedMessage
                     defaultMessage="Camera"
                     id="mw.settingsModal.desktop.camera"
                 />), (<FormattedMessage
                     defaultMessage="The camera projects use for video sensing."
                     id="mw.settingsModal.desktop.cameraHelp"
-                />), 'videoinput')}
+                />), 'videoinput', this.handleChangeCamera)}
                 <BooleanSetting
                     value={!!s.hardwareAcceleration}
-                    onChange={value => this.set('hardwareAcceleration', value)}
+                    onChange={this.handleChangeHardwareAcceleration}
                     label={<FormattedMessage
                         defaultMessage="Hardware acceleration (requires restart)"
                         id="mw.settingsModal.desktop.hardwareAcceleration"
                     />}
                     help={<FormattedMessage
+                        // eslint-disable-next-line max-len
                         defaultMessage="Uses the GPU to speed up rendering. Turn this off if you see graphical glitches or crashes on your system."
                         id="mw.settingsModal.desktop.hardwareAccelerationHelp"
                     />}
                 />
                 <BooleanSetting
                     value={!!s.backgroundThrottling}
-                    onChange={value => this.set('backgroundThrottling', value)}
+                    onChange={this.handleChangeBackgroundThrottling}
                     label={<FormattedMessage
                         defaultMessage="Pause when the window is not visible"
                         id="mw.settingsModal.desktop.backgroundThrottling"
                     />}
                     help={<FormattedMessage
+                        // eslint-disable-next-line max-len
                         defaultMessage="Slows down projects while the window is hidden or minimized to save power. Disable this if projects need to keep running in the background."
                         id="mw.settingsModal.desktop.backgroundThrottlingHelp"
                     />}
                 />
                 <BooleanSetting
                     value={!!s.bypassCORS}
-                    onChange={value => this.set('bypassCORS', value)}
+                    onChange={this.handleChangeBypassCORS}
                     label={<FormattedMessage
                         defaultMessage="Allow projects to access any website (requires restart, dangerous)"
                         id="mw.settingsModal.desktop.bypassCORS"
                     />}
                     help={<FormattedMessage
+                        // eslint-disable-next-line max-len
                         defaultMessage="Lets projects fetch data from websites that would normally block them. Only enable this for projects you trust, as it removes a security protection."
                         id="mw.settingsModal.desktop.bypassCORSHelp"
                     />}
                 />
                 <BooleanSetting
                     value={!!s.spellchecker}
-                    onChange={value => this.set('spellchecker', value)}
+                    onChange={this.handleChangeSpellchecker}
                     label={<FormattedMessage
                         defaultMessage="Spellchecker (requires restart)"
                         id="mw.settingsModal.desktop.spellchecker"
                     />}
                     help={<FormattedMessage
+                        // eslint-disable-next-line max-len
                         defaultMessage="Underlines misspelled words in text fields like the ask block prompt and costume names."
                         id="mw.settingsModal.desktop.spellcheckerHelp"
                     />}
                 />
                 <BooleanSetting
                     value={!!s.exitFullscreenOnEscape}
-                    onChange={value => this.set('exitFullscreenOnEscape', value)}
+                    onChange={this.handleChangeExitFullscreenOnEscape}
                     label={<FormattedMessage
                         defaultMessage="Exit fullscreen when escape is pressed"
                         id="mw.settingsModal.desktop.exitFullscreenOnEscape"
                     />}
                     help={<FormattedMessage
+                        // eslint-disable-next-line max-len
                         defaultMessage="Lets the Escape key leave fullscreen mode. Disable this if your project uses Escape for its own controls."
                         id="mw.settingsModal.desktop.exitFullscreenOnEscapeHelp"
                     />}
@@ -200,12 +262,13 @@ class DesktopPage extends React.Component {
                 {s.richPresenceAvailable ? (
                     <BooleanSetting
                         value={!!s.richPresence}
-                        onChange={value => this.set('richPresence', value)}
+                        onChange={this.handleChangeRichPresence}
                         label={<FormattedMessage
                             defaultMessage="Discord rich presence"
                             id="mw.settingsModal.desktop.richPresence"
                         />}
                         help={<FormattedMessage
+                            // eslint-disable-next-line max-len
                             defaultMessage="Shows that you are using MistWarp on your Discord profile while the app is open."
                             id="mw.settingsModal.desktop.richPresenceHelp"
                         />}
@@ -214,7 +277,7 @@ class DesktopPage extends React.Component {
                 <button
                     type="button"
                     className={styles.button}
-                    onClick={() => window.EditorPreload.openUserData()}
+                    onClick={this.handleOpenUserData}
                 >
                     <FormattedMessage
                         defaultMessage="Open user data folder"

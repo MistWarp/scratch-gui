@@ -64,11 +64,11 @@ const GradientBuilder = props => {
     const previewRef = React.useRef(null);
     const dragging = React.useRef({index: null, rect: null});
 
-    const handleSubmit = () => {
+    const handleSubmit = React.useCallback(() => {
         if (props.onSubmit) props.onSubmit(name, description, gradientColors, primaryColor, direction);
-    };
+    }, [props.onSubmit, name, description, gradientColors, primaryColor, direction]);
 
-    const handlePreview = () => {
+    const handlePreview = React.useCallback(() => {
         if (isPreviewActive) {
             setIsPreviewActive(false);
             if (props.onPreview) {
@@ -83,27 +83,55 @@ const GradientBuilder = props => {
             props.onPreview(name, gradientColors, primaryColor, direction);
             setIsPreviewActive(true);
         }
-    };
+    }, [props.onPreview, isPreviewActive, name, gradientColors, primaryColor, direction]);
 
-    const handleAddColorStop = () => {
+    const handleAddColorStop = React.useCallback(() => {
         const next = [...gradientColors, {color: '#ffffff', position: 50}];
         next.sort((a, b) => a.position - b.position);
         setGradientColors(next);
-    };
+    }, [gradientColors]);
 
-    const handleRemoveColorStop = index => {
+    const handleRemoveColorStop = React.useCallback(e => {
+        const index = Number(e.currentTarget.dataset.index);
         if (gradientColors.length <= 2) return;
         setGradientColors(gradientColors.filter((_, i) => i !== index));
-    };
+    }, [gradientColors]);
 
-    const handleColorChange = (index, color) => {
+    const handleColorChange = React.useCallback(e => {
+        const index = Number(e.currentTarget.dataset.index);
+        const color = e.target.value;
         const next = gradientColors.slice();
         next[index] = {...next[index], color};
         setGradientColors(next);
         if (index === 0) setPrimaryColor(color);
-    };
+    }, [gradientColors]);
 
-    const handlePresetSelect = presetName => {
+    const handleStopDragStart = React.useCallback(e => {
+        const index = Number(e.currentTarget.dataset.index);
+        setIsDragging(index);
+        startDrag(index, e, dragging, setGradientColors, previewRef);
+    }, []);
+
+    const handleStopDragEnd = React.useCallback(() => setIsDragging(null), []);
+
+    const handleDirectionSliderChange = React.useCallback(e => setDirection(parseInt(e.target.value, 10)), []);
+
+    const handleDirectionPresetClick = React.useCallback(e => {
+        setDirection(Number(e.currentTarget.dataset.direction));
+    }, []);
+
+    const handlePrimaryColorChange = React.useCallback(e => setPrimaryColor(e.target.value), []);
+
+    const handleNameChange = React.useCallback(e => setName(e.target.value), []);
+
+    const handleDescriptionChange = React.useCallback(e => setDescription(e.target.value), []);
+
+    const handleCancel = React.useCallback(() => {
+        if (props.onCancel) props.onCancel();
+    }, [props.onCancel]);
+
+    const handlePresetSelect = React.useCallback(e => {
+        const presetName = e.currentTarget.dataset.preset;
         const preset = GradientUtils.getGradientPresets().find(pr => pr.name === presetName);
         if (preset) {
             const colorStops = preset.colors.map(
@@ -114,7 +142,7 @@ const GradientBuilder = props => {
             setPrimaryColor(preset.colors[0]);
             setSelectedPreset(presetName);
         }
-    };
+    }, []);
 
     const handleKeyDown = e => {
         if (e.key === 'Escape' && props.onCancel) {
@@ -157,16 +185,11 @@ const GradientBuilder = props => {
                             )}
                             style={{left: `${stop.position}%`, background: stop.color}}
                             title={`${stop.color} · ${Math.round(stop.position)}%`}
-                            onMouseDown={e => {
-                                setIsDragging(index);
-                                startDrag(index, e, dragging, setGradientColors, previewRef);
-                            }}
-                            onTouchStart={e => {
-                                setIsDragging(index);
-                                startDrag(index, e, dragging, setGradientColors, previewRef);
-                            }}
-                            onMouseUp={() => setIsDragging(null)}
-                            onTouchEnd={() => setIsDragging(null)}
+                            data-index={index}
+                            onMouseDown={handleStopDragStart}
+                            onTouchStart={handleStopDragStart}
+                            onMouseUp={handleStopDragEnd}
+                            onTouchEnd={handleStopDragEnd}
                         />
                     ))}
                 </div>
@@ -180,7 +203,8 @@ const GradientBuilder = props => {
                             <input
                                 type="color"
                                 value={stop.color}
-                                onChange={e => handleColorChange(index, e.target.value)}
+                                data-index={index}
+                                onChange={handleColorChange}
                                 className={styles.gcStopColor}
                                 title={stop.color}
                             />
@@ -188,7 +212,8 @@ const GradientBuilder = props => {
                             {gradientColors.length > 2 && (
                                 <button
                                     type="button"
-                                    onClick={() => handleRemoveColorStop(index)}
+                                    data-index={index}
+                                    onClick={handleRemoveColorStop}
                                     className={styles.gcStopRemove}
                                     title="Remove color"
                                 >
@@ -224,7 +249,7 @@ const GradientBuilder = props => {
                             min="0"
                             max="360"
                             value={direction}
-                            onChange={e => setDirection(parseInt(e.target.value, 10))}
+                            onChange={handleDirectionSliderChange}
                             className={styles.gcSlider}
                         />
                         <span className={styles.gcDegrees}>{`${direction}°`}</span>
@@ -233,7 +258,8 @@ const GradientBuilder = props => {
                                 <button
                                     key={dir}
                                     type="button"
-                                    onClick={() => setDirection(dir)}
+                                    data-direction={dir}
+                                    onClick={handleDirectionPresetClick}
                                     className={classNames(
                                         styles.gcDirBtn,
                                         direction === dir && styles.gcDirBtnActive
@@ -259,7 +285,8 @@ const GradientBuilder = props => {
                             <button
                                 key={preset.name}
                                 type="button"
-                                onClick={() => handlePresetSelect(preset.name)}
+                                data-preset={preset.name}
+                                onClick={handlePresetSelect}
                                 className={classNames(
                                     styles.gcPresetSwatch,
                                     selectedPreset === preset.name && styles.gcPresetSwatchActive
@@ -285,7 +312,7 @@ const GradientBuilder = props => {
                         <input
                             type="color"
                             value={primaryColor}
-                            onChange={e => setPrimaryColor(e.target.value)}
+                            onChange={handlePrimaryColorChange}
                             className={styles.gcStopColor}
                         />
                         <span className={styles.gcHex}>{primaryColor}</span>
@@ -302,7 +329,7 @@ const GradientBuilder = props => {
                     <input
                         type="text"
                         value={name}
-                        onChange={e => setName(e.target.value)}
+                        onChange={handleNameChange}
                         placeholder="My Gradient Theme"
                         className={styles.gcInput}
                         maxLength={50}
@@ -317,7 +344,7 @@ const GradientBuilder = props => {
                     </label>
                     <textarea
                         value={description}
-                        onChange={e => setDescription(e.target.value)}
+                        onChange={handleDescriptionChange}
                         placeholder="Describe your gradient theme..."
                         className={styles.gcTextarea}
                         maxLength={200}
@@ -352,9 +379,7 @@ const GradientBuilder = props => {
                 <button
                     type="button"
                     className={styles.gcBtn}
-                    onClick={() => {
-                        if (props.onCancel) props.onCancel();
-                    }}
+                    onClick={handleCancel}
                 >
                     <FormattedMessage
                         defaultMessage="Cancel"
