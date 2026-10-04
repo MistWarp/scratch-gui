@@ -8,6 +8,11 @@ const runtimeFor = opcode => ({
     targets: [{blocks: {_blocks: {a: {opcode}}}}],
     ioDevices: {userData: {postData: jest.fn()}}
 });
+// createAccountHost constructs its client with `new`, so the stand-in must be a
+// regular function rather than an arrow function.
+const clientClass = sdk => function RoturClient () {
+    return sdk;
+};
 const client = () => ({login: jest.fn().mockResolvedValue(), me: {get: jest.fn().mockResolvedValue({username: 'player', id: 42})}});
 afterEach(() => {
     document.body.innerHTML = ''; localStorage.clear(); jest.restoreAllMocks();
@@ -16,7 +21,7 @@ afterEach(() => {
 test('ordinary projects run without Rotur login', async () => {
     const sdk = client();
     const runtime = runtimeFor('motion_movesteps');
-    await createAccountHost(runtime, {}, () => sdk).prepare();
+    await createAccountHost(runtime, {}, clientClass(sdk)).prepare();
     expect(accountExtensionsUsed(runtime)).toEqual([]);
     expect(sdk.login).not.toHaveBeenCalled();
     expect(document.querySelector('button')).toBeNull();
@@ -25,7 +30,7 @@ test('ordinary projects run without Rotur login', async () => {
 test('account projects wait for verified login and expose identity to both extension hosts', async () => {
     const sdk = client();
     const runtime = runtimeFor('mistwarpData_load');
-    const host = createAccountHost(runtime, {title: 'Example'}, () => sdk);
+    const host = createAccountHost(runtime, {title: 'Example'}, clientClass(sdk));
     let started = false;
     const ready = host.prepare().then(() => {
         started = true;
@@ -47,7 +52,7 @@ test('extensions in an export cannot reach the token or unlisted SDK methods', a
     sdk._http = {getToken: jest.fn(() => 'rotur_export-token')};
     sdk.tokens = {create: jest.fn()};
     const runtime = runtimeFor('rotur_username');
-    const host = createAccountHost(runtime, {}, () => sdk);
+    const host = createAccountHost(runtime, {}, clientClass(sdk));
     const ready = host.prepare();
     await document.querySelector('button').onclick();
     await ready;
@@ -63,7 +68,7 @@ test('a payment is confirmed with the real amount even when the caller says it i
     const sdk = client();
     sdk.gifts = {claim: jest.fn()};
     const runtime = runtimeFor('roturEconomy_pay');
-    const host = createAccountHost(runtime, {title: 'Game'}, () => sdk);
+    const host = createAccountHost(runtime, {title: 'Game'}, clientClass(sdk));
     const ready = host.prepare();
     await document.querySelector('button').onclick();
     await ready;
@@ -78,7 +83,7 @@ test('failed authentication keeps project gated and permits retry', async () => 
     const sdk = client();
     sdk.login.mockRejectedValueOnce(new Error('Login cancelled'));
     const runtime = runtimeFor('rotur_username');
-    const host = createAccountHost(runtime, {}, () => sdk);
+    const host = createAccountHost(runtime, {}, clientClass(sdk));
     let started = false;
     const ready = host.prepare().then(() => {
         started = true;
@@ -102,7 +107,7 @@ test('published game data uses a player capability and the authenticated session
     global.fetch = jest.fn(async () => ({ok: true, json: async () => replies.shift()}));
     try {
         const runtime = runtimeFor('mistwarpData_load');
-        const host = createAccountHost(runtime, {projectId: '123'}, () => sdk);
+        const host = createAccountHost(runtime, {projectId: '123'}, clientClass(sdk));
         const ready = host.prepare();
         await document.querySelector('button').onclick();
         await ready;
@@ -122,7 +127,7 @@ test('sensitive Rotur actions retain a separate confirmation after login', async
     const sdk = client();
     sdk.gifts = {claim: jest.fn()};
     const runtime = runtimeFor('roturEconomy_transfer');
-    const host = createAccountHost(runtime, {}, () => sdk);
+    const host = createAccountHost(runtime, {}, clientClass(sdk));
     const ready = host.prepare();
     await document.querySelector('button').onclick();
     await ready;
