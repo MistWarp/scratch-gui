@@ -2,7 +2,7 @@ import {firstLine, onlyEmoji, parse} from '../../src/lib/originchats/rich-text.j
 
 const context = {
     users: {
-        kai: {username: 'kai', nickname: 'Kai'},
+        'kai': {username: 'kai', nickname: 'Kai'},
         'usr:discord_1': {username: 'USR:discord_1', nickname: 'Doody', cracked: true}
     },
     roles: {everyone: {id: '1552656206236090490', color: '#5865f2'}},

@@ -42,7 +42,10 @@ jest.mock('../../src/community/i18n.jsx', () => ({
 }));
 
 const renderNav = (path = '/') => mount(
-    <MemoryRouter initialEntries={[path]} future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+    <MemoryRouter
+        initialEntries={[path]}
+        future={{v7_startTransition: true, v7_relativeSplatPath: true}}
+    >
         <NavBar />
     </MemoryRouter>
 );
@@ -95,7 +98,8 @@ describe('community navigation actions', () => {
             finishLogin = resolve;
         }));
         const wrapper = renderNav();
-        const signIn = wrapper.find(Button).filterWhere(button => button.text().includes('Sign in')).prop('onClick');
+        const signIn = wrapper.find(Button).filterWhere(button => button.text().includes('Sign in'))
+            .prop('onClick');
 
         let first;
         act(() => {

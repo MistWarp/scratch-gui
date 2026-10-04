@@ -264,7 +264,6 @@ describe('CollaborationContainer', () => {
     });
 
 
-
     test('handleApproveJoinRequest and handleDenyJoinRequest delegate to the service', async () => {
         const container = instanceOf(mountContainer());
 
@@ -343,10 +342,11 @@ describe('CollaborationContainer', () => {
         const wrapper = mountContainer();
         const container = instanceOf(wrapper);
         let confirms = 0;
-        container.props = {...container.props, openSimpleDialog: config => {
-            confirms++;
-            config.onOk();
-        }};
+        container.props = {...container.props,
+            openSimpleDialog: config => {
+                confirms++;
+                config.onOk();
+            }};
 
         await expect(container.handleJoinRoom('room-1', 'Alice', null, {invite: 'key'}))
             .rejects.toMatchObject({collabCode: 'ROOM_NOT_FOUND'});

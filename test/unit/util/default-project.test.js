@@ -13,7 +13,8 @@ describe('defaultProject', () => {
         const includedAssetIds = defaultProject.map(obj => obj.id);
         const projectData = JSON.parse(defaultProject[0].data);
         const fog = readFileSync(path.resolve(__dirname, '../../../src/lib/default-project/fog.svg'));
-        expect(includedAssetIds).toContain(createHash('md5').update(fog).digest('hex'));
+        expect(includedAssetIds).toContain(createHash('md5').update(fog)
+            .digest('hex'));
         projectData.targets.forEach(target => {
             target.costumes.forEach(costume => {
                 expect(includedAssetIds.includes(costume.assetId)).toBe(true);

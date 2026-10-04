@@ -36,7 +36,8 @@ describe('news composer actions', () => {
             await Promise.resolve();
         });
         wrapper.update();
-        wrapper.find('button').filterWhere(button => button.text().includes('New post')).simulate('click');
+        wrapper.find('button').filterWhere(button => button.text().includes('New post'))
+            .simulate('click');
         wrapper.find('input[placeholder="Update title"]').simulate('change', {target: {value: 'Release'}});
         wrapper.find('textarea[placeholder="Write in Markdown…"]').simulate('change', {target: {value: 'Details'}});
         const submit = wrapper.find('form').prop('onSubmit');

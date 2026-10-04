@@ -34,8 +34,10 @@ describe('native Variable Manager workflows', () => {
         expect(wrapper.find('select')).toHaveLength(0);
         expect(wrapper.find(SelectMenu)).toHaveLength(2);
 
-        wrapper.find('input').at(0).simulate('change', {target: {value: 'inventory'}});
-        act(() => wrapper.find(SelectMenu).at(0).prop('onChange')('list'));
+        wrapper.find('input').at(0)
+            .simulate('change', {target: {value: 'inventory'}});
+        act(() => wrapper.find(SelectMenu).at(0)
+            .prop('onChange')('list'));
         wrapper.update();
         wrapper.find('form').simulate('submit', {preventDefault: jest.fn()});
 
@@ -59,7 +61,8 @@ describe('native Variable Manager workflows', () => {
             />
         );
 
-        wrapper.find('button').filterWhere(node => node.text().includes('Add item')).simulate('click');
+        wrapper.find('button').filterWhere(node => node.text().includes('Add item'))
+            .simulate('click');
         expect(onChange).toHaveBeenLastCalledWith(['first', '']);
 
         const firstItem = wrapper.find('input[aria-label="Item 1"]');

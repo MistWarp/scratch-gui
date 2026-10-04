@@ -3,16 +3,20 @@ import blockSwitching from '../../../src/addons/addons/block-switching/userscrip
 const extensionInfo = {
     id: 'speed',
     blocks: [
-        {info: {opcode: 'setSpeed', text: 'set speed to [VALUE]', switches: ['changeSpeed', {
-            id: 'motion_movesteps',
-            rawId: true,
-            text: 'move _ steps',
-            inputs: [['VALUE', 'STEPS']]
-        }]}},
-        {info: {opcode: 'changeSpeed', text: ['change speed by [VALUE]'], switches: [{
-            id: 'setSpeed',
-            inputs: [['VALUE', 'VALUE']]
-        }, {id: 'setSpeedFor', splitInputs: ['SECS']}, {id: 'missing'}]}},
+        {info: {opcode: 'setSpeed',
+            text: 'set speed to [VALUE]',
+            switches: ['changeSpeed', {
+                id: 'motion_movesteps',
+                rawId: true,
+                text: 'move _ steps',
+                inputs: [['VALUE', 'STEPS']]
+            }]}},
+        {info: {opcode: 'changeSpeed',
+            text: ['change speed by [VALUE]'],
+            switches: [{
+                id: 'setSpeed',
+                inputs: [['VALUE', 'VALUE']]
+            }, {id: 'setSpeedFor', splitInputs: ['SECS']}, {id: 'missing'}]}},
         {info: {opcode: 'setSpeedFor', text: {default: 'set speed to [VALUE] for [SECS] secs'}}},
         {info: {opcode: 'speed', text: 'speed'}}
     ]

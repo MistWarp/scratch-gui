@@ -90,7 +90,8 @@ describe('theme marketplace action locks', () => {
                 />
             </MemoryRouter>
         );
-        expect(wrapper.find(Link).first().prop('state')).toEqual({
+        expect(wrapper.find(Link).first()
+            .prop('state')).toEqual({
             themeReturnLabel: 'Your themes',
             themeReturnTo: '/mystuff?section=themes&themeView=published'
         });
@@ -113,7 +114,10 @@ describe('theme marketplace action locks', () => {
                     initialEntries={['/themes']}
                     future={{v7_startTransition: true, v7_relativeSplatPath: true}}
                 >
-                    <Routes><Route path="/themes" element={<React.Fragment><Themes /><LocationProbe /></React.Fragment>} /></Routes>
+                    <Routes><Route
+                        path="/themes"
+                        element={<React.Fragment><Themes /><LocationProbe /></React.Fragment>}
+                    /></Routes>
                 </MemoryRouter>
             );
             await Promise.resolve();
@@ -125,7 +129,8 @@ describe('theme marketplace action locks', () => {
         });
         wrapper.update();
 
-        expect(wrapper.find(LocationProbe).find('span').prop('data-location')).toBe('?q=quiet');
+        expect(wrapper.find(LocationProbe).find('span')
+            .prop('data-location')).toBe('?q=quiet');
         expect(wrapper.text()).toContain('Quiet dark');
         expect(wrapper.text()).not.toContain('Bright day');
         wrapper.unmount();
@@ -149,7 +154,8 @@ describe('theme marketplace action locks', () => {
         expect(wrapper.text()).toContain('WarpTheme is unavailable.');
         expect(wrapper.text()).not.toContain('No themes found');
         await act(async () => {
-            wrapper.find(Button).filterWhere(button => button.text() === 'Try again').simulate('click');
+            wrapper.find(Button).filterWhere(button => button.text() === 'Try again')
+                .simulate('click');
             await Promise.resolve();
         });
         wrapper.update();
@@ -174,15 +180,22 @@ describe('theme marketplace action locks', () => {
                     future={{v7_startTransition: true, v7_relativeSplatPath: true}}
                 >
                     <Routes>
-                        <Route path="/themes/:id" element={<Theme />} />
-                        <Route path="/mystuff" element={<span>My Stuff themes</span>} />
+                        <Route
+                            path="/themes/:id"
+                            element={<Theme />}
+                        />
+                        <Route
+                            path="/mystuff"
+                            element={<span>My Stuff themes</span>}
+                        />
                     </Routes>
                 </MemoryRouter>
             );
             await Promise.resolve();
         });
         wrapper.update();
-        const like = wrapper.find(Button).filterWhere(button => button.text().includes('Like')).prop('onClick');
+        const like = wrapper.find(Button).filterWhere(button => button.text().includes('Like'))
+            .prop('onClick');
 
         let first;
         act(() => {
@@ -214,8 +227,14 @@ describe('theme marketplace action locks', () => {
                     future={{v7_startTransition: true, v7_relativeSplatPath: true}}
                 >
                     <Routes>
-                        <Route path="/themes/:id" element={<Theme />} />
-                        <Route path="/mystuff" element={<span>My Stuff themes</span>} />
+                        <Route
+                            path="/themes/:id"
+                            element={<Theme />}
+                        />
+                        <Route
+                            path="/mystuff"
+                            element={<span>My Stuff themes</span>}
+                        />
                     </Routes>
                 </MemoryRouter>
             );
@@ -223,7 +242,8 @@ describe('theme marketplace action locks', () => {
         });
         wrapper.update();
 
-        wrapper.find(Button).filterWhere(button => button.text().includes('Delete')).simulate('click');
+        wrapper.find(Button).filterWhere(button => button.text().includes('Delete'))
+            .simulate('click');
         expect(wrapper.find(Modal).prop('title')).toBe('Delete theme?');
         await act(async () => {
             await wrapper.find(Modal).find(Button)
@@ -245,14 +265,18 @@ describe('theme marketplace action locks', () => {
                     initialEntries={['/themes/theme-1']}
                     future={{v7_startTransition: true, v7_relativeSplatPath: true}}
                 >
-                    <Routes><Route path="/themes/:id" element={<Theme />} /></Routes>
+                    <Routes><Route
+                        path="/themes/:id"
+                        element={<Theme />}
+                    /></Routes>
                 </MemoryRouter>
             );
             await Promise.resolve();
         });
         wrapper.update();
 
-        wrapper.find(Button).filterWhere(button => button.text().includes('Edit details')).simulate('click');
+        wrapper.find(Button).filterWhere(button => button.text().includes('Edit details'))
+            .simulate('click');
         const editModal = wrapper.find(Modal).filterWhere(modal => modal.prop('title') === 'Edit theme details');
         editModal.find('input').simulate('change', {target: {value: 'New name'}});
         editModal.find('textarea').simulate('change', {target: {value: 'New copy'}});
@@ -283,7 +307,10 @@ describe('theme marketplace action locks', () => {
                     initialEntries={['/themes/theme-1']}
                     future={{v7_startTransition: true, v7_relativeSplatPath: true}}
                 >
-                    <Routes><Route path="/themes/:id" element={<Theme />} /></Routes>
+                    <Routes><Route
+                        path="/themes/:id"
+                        element={<Theme />}
+                    /></Routes>
                 </MemoryRouter>
             );
             await Promise.resolve();
@@ -309,8 +336,14 @@ describe('theme marketplace action locks', () => {
                     future={{v7_startTransition: true, v7_relativeSplatPath: true}}
                 >
                     <Routes>
-                        <Route path="/themes" element={<Themes />} />
-                        <Route path="/themes/:id" element={<span>Published theme</span>} />
+                        <Route
+                            path="/themes"
+                            element={<Themes />}
+                        />
+                        <Route
+                            path="/themes/:id"
+                            element={<span>Published theme</span>}
+                        />
                     </Routes>
                 </MemoryRouter>
             );
@@ -347,13 +380,17 @@ describe('theme marketplace action locks', () => {
                     initialEntries={['/themes?tab=publish']}
                     future={{v7_startTransition: true, v7_relativeSplatPath: true}}
                 >
-                    <Routes><Route path="/themes" element={<Themes />} /></Routes>
+                    <Routes><Route
+                        path="/themes"
+                        element={<Themes />}
+                    /></Routes>
                 </MemoryRouter>
             );
             await Promise.resolve();
         });
         wrapper.update();
-        wrapper.find('button').filterWhere(button => button.text().includes('Theme JSON')).simulate('click');
+        wrapper.find('button').filterWhere(button => button.text().includes('Theme JSON'))
+            .simulate('click');
         const chooseFile = wrapper.find('input[accept="application/json,.json"]').prop('onChange');
 
         let first;
@@ -367,7 +404,8 @@ describe('theme marketplace action locks', () => {
         });
         wrapper.update();
 
-        const nameInput = wrapper.find('label').filterWhere(label => label.text().startsWith('Name')).find('input');
+        const nameInput = wrapper.find('label').filterWhere(label => label.text().startsWith('Name'))
+            .find('input');
         expect(nameInput.prop('value')).toBe('Second theme');
         wrapper.unmount();
     });
@@ -384,17 +422,22 @@ describe('theme marketplace action locks', () => {
                     initialEntries={['/themes?tab=publish']}
                     future={{v7_startTransition: true, v7_relativeSplatPath: true}}
                 >
-                    <Routes><Route path="/themes" element={<Themes />} /></Routes>
+                    <Routes><Route
+                        path="/themes"
+                        element={<Themes />}
+                    /></Routes>
                 </MemoryRouter>
             );
             await Promise.resolve();
         });
         wrapper.update();
-        wrapper.find('button').filterWhere(button => button.text().includes('Theme JSON')).simulate('click');
+        wrapper.find('button').filterWhere(button => button.text().includes('Theme JSON'))
+            .simulate('click');
         const read = wrapper.find('input[accept="application/json,.json"]').prop('onChange')({
             target: {files: [file]}
         });
-        wrapper.find('button').filterWhere(button => button.text().includes('Current theme')).simulate('click');
+        wrapper.find('button').filterWhere(button => button.text().includes('Current theme'))
+            .simulate('click');
 
         await act(async () => {
             finishRead(JSON.stringify({name: 'Late file'}));
@@ -402,7 +445,9 @@ describe('theme marketplace action locks', () => {
         });
         wrapper.update();
 
-        expect(wrapper.find('label').filterWhere(label => label.text().startsWith('Name')).find('input').prop('value'))
+        expect(wrapper.find('label').filterWhere(label => label.text().startsWith('Name'))
+            .find('input')
+            .prop('value'))
             .toBe('');
         expect(wrapper.text()).not.toContain('Late file');
         wrapper.unmount();

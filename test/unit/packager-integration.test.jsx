@@ -16,11 +16,17 @@ const makeVM = () => ({
     saveProjectSb3: jest.fn()
 });
 let wrapper;
-afterEach(() => { if (wrapper) wrapper.unmount(); wrapper = null; });
+afterEach(() => {
+    if (wrapper) wrapper.unmount(); wrapper = null;
+});
 
 test('opens the complete native form immediately without serializing a project', () => {
     const vm = makeVM();
-    wrapper = mount(<PackagerWindow vm={vm} projectTitle="Instant form" onClose={() => {}} />);
+    wrapper = mount(<PackagerWindow
+        vm={vm}
+        projectTitle="Instant form"
+        onClose={() => {}}
+    />);
     expect(wrapper.text()).not.toMatch(/Loading packager|Loading the current project/);
     expect(vm.saveProjectSb3).not.toHaveBeenCalled();
     expect(wrapper.find('input[type="radio"][name="environment"]').map(input => input.prop('value')))
@@ -34,10 +40,15 @@ test('opens the complete native form immediately without serializing a project',
 test('native number and boolean controls change the options passed to export', async () => {
     exportProject.mockRejectedValue(new Error('Test export complete'));
     const vm = makeVM();
-    wrapper = mount(<PackagerWindow vm={vm} projectTitle="Changed settings" onClose={() => {}} />);
+    wrapper = mount(<PackagerWindow
+        vm={vm}
+        projectTitle="Changed settings"
+        onClose={() => {}}
+    />);
     const framerate = wrapper.find('input[type="number"]').at(0);
     framerate.simulate('change', {target: {value: '60'}});
-    wrapper.find('input[type="checkbox"]').at(0).simulate('change', {target: {checked: true}});
+    wrapper.find('input[type="checkbox"]').at(0)
+        .simulate('change', {target: {checked: true}});
     await wrapper.instance().run(false);
     expect(exportProject).toHaveBeenLastCalledWith(expect.objectContaining({
         vm, options: expect.objectContaining({framerate: 60, turbo: true})
@@ -46,7 +57,11 @@ test('native number and boolean controls change the options passed to export', a
 
 test('closing the native window cancels an active export', () => {
     exportProject.mockReturnValue(new Promise(() => {}));
-    wrapper = mount(<PackagerWindow vm={makeVM()} projectTitle="Cancel export" onClose={() => {}} />);
+    wrapper = mount(<PackagerWindow
+        vm={makeVM()}
+        projectTitle="Cancel export"
+        onClose={() => {}}
+    />);
     wrapper.instance().run(false);
     const {signal} = exportProject.mock.calls[exportProject.mock.calls.length - 1][0];
     expect(signal.aborted).toBe(false);

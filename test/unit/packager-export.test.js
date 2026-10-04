@@ -10,7 +10,8 @@ jest.mock('../../src/packager/packager/download-project', () => ({downloadProjec
 beforeEach(() => {
     jest.clearAllMocks();
     Packager.mockImplementation(() => ({
-        abort: jest.fn(), addEventListener: jest.fn(),
+        abort: jest.fn(),
+        addEventListener: jest.fn(),
         package: jest.fn().mockResolvedValue({data: '<html></html>', type: 'text/html', filename: 'Project.html'})
     }));
     downloadProject.mockResolvedValue({type: 'sb3', analysis: {}});
@@ -19,7 +20,8 @@ beforeEach(() => {
 test('every export takes a fresh snapshot from the current editor VM', async () => {
     const first = new ArrayBuffer(1);
     const second = new ArrayBuffer(2);
-    const vm = {saveProjectSb3: jest.fn().mockResolvedValueOnce(first).mockResolvedValueOnce(second)};
+    const vm = {saveProjectSb3: jest.fn().mockResolvedValueOnce(first)
+        .mockResolvedValueOnce(second)};
     const controller = new AbortController();
     const args = {vm, options: {target: 'html'}, signal: controller.signal, onProgress: jest.fn()};
     const result = await exportProject(args);
@@ -31,7 +33,9 @@ test('every export takes a fresh snapshot from the current editor VM', async () 
 
 test('cancelled project preparation cannot continue into packaging', async () => {
     let resolve;
-    const vm = {saveProjectSb3: jest.fn(() => new Promise(done => { resolve = done; }))};
+    const vm = {saveProjectSb3: jest.fn(() => new Promise(done => {
+        resolve = done;
+    }))};
     const controller = new AbortController();
     const pending = exportProject({vm, options: {}, signal: controller.signal, onProgress: jest.fn()});
     controller.abort();

@@ -32,7 +32,9 @@ test('XML-only deferred loaders receive complete XML and no descriptions', () =>
 
 test('small workspaces load descriptions without serializing XML', () => {
     const {Xml, data, dom} = setup();
-    Object.defineProperty(data, 'xml', {get: () => { throw new Error('XML was serialized'); }});
+    Object.defineProperty(data, 'xml', {get: () => {
+        throw new Error('XML was serialized');
+    }});
     expect(loadWorkspace({Xml}, {}, data, {})).toBeNull();
     expect(Xml.clearWorkspaceAndLoadFromDescs).toHaveBeenCalledWith(dom, data.blocks, {});
 });

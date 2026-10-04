@@ -8,7 +8,10 @@ import StatusMessage from '../../src/community/components/ui/StatusMessage.jsx';
 import CardGridSkeleton from '../../src/community/components/CardGridSkeleton.jsx';
 
 const renderAt = path => mount(
-    <MemoryRouter initialEntries={[path]} future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+    <MemoryRouter
+        initialEntries={[path]}
+        future={{v7_startTransition: true, v7_relativeSplatPath: true}}
+    >
         <RouteLoading />
     </MemoryRouter>
 );

@@ -20,7 +20,9 @@ jest.mock('../../src/lib/rotur/client.js', () => ({
 }));
 
 const registered = [];
-const message = {content: 'hello', attachments: [{url: 'https://example.com/a'}], timestamp: 1234,
+const message = {content: 'hello',
+    attachments: [{url: 'https://example.com/a'}],
+    timestamp: 1234,
     signingUrl: 'https://chats.mistwarp.org'};
 const loadSigning = () => require('../../src/lib/originchats/signing.js');
 
@@ -49,7 +51,7 @@ test('signs the canonical message with a non-exportable device key and registers
     expect(second.key_id).toBe(first.key_id);
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith('https://api.rotur.dev/v2/me/signing-keys', expect.objectContaining({
-        headers: {Authorization: 'Bearer alice-token', 'Content-Type': 'application/json'}
+        headers: {'Authorization': 'Bearer alice-token', 'Content-Type': 'application/json'}
     }));
     expect(Object.keys(registered[0]).sort()).toEqual(['name', 'public_key']);
     const publicKey = await crypto.subtle.importKey('raw', Buffer.from(registered[0].public_key, 'base64url'),
@@ -65,7 +67,8 @@ test('signs the canonical message with a non-exportable device key and registers
         request.onsuccess = () => resolve(request.result);
     });
     const saved = await new Promise(resolve => {
-        const request = db.transaction('keys').objectStore('keys').get('alice-id');
+        const request = db.transaction('keys').objectStore('keys')
+            .get('alice-id');
         request.onsuccess = () => resolve(request.result);
     });
     db.close();

@@ -4,8 +4,12 @@ import {STARTERS, createStarterProject} from '../../../src/lib/starter-projects'
 // Run real Scratch blocks, rather than only comparing generated JSON.
 describe('working starter projects', () => {
     let vm;
-    beforeEach(() => { vm = new VM(); });
-    afterEach(() => { vm.quit(); vm.clear(); });
+    beforeEach(() => {
+        vm = new VM();
+    });
+    afterEach(() => {
+        vm.quit(); vm.clear();
+    });
 
     test.each(STARTERS.map(starter => [starter.id]))('%s loads in the VM', async id => {
         await vm.loadProject(JSON.stringify(createStarterProject(id)), {skipGitImport: true});

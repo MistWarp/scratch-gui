@@ -23,23 +23,34 @@ const makeVM = () => {
     vm.editingCommands.snapshot();
     return vm;
 };
-const event = (blockId, type = 'create') => ({type, blockId,
+const event = (blockId, type = 'create') => ({type,
+    blockId,
     xml: `<block id="${blockId}" type="motion_movesteps"><value name="STEPS"><shadow id="${blockId}-n" type="math_number"><field name="NUM">10</field></shadow></value></block>`});
 const command = (method, args, extra = {}) => ({method, args, targetId: 'sprite', ...extra});
 
 describe('native VM editing commands', () => {
     let host;
     let client;
-    beforeEach(() => { host = makeVM(); client = makeVM(); });
-    afterEach(() => { host.quit(); client.quit(); });
+    beforeEach(() => {
+        host = makeVM(); client = makeVM();
+    });
+    afterEach(() => {
+        host.quit(); client.quit();
+    });
 
     test('snapshot remaps native monitor records to the host target', async () => {
         const metadata = host.editingCommands.snapshot();
         client.editingTarget.id = 'temporary-import-id';
-        client.runtime.requestAddMonitor({id: 'watcher', opcode: 'motion_xposition',
-            targetId: 'temporary-import-id', spriteName: 'Sprite'});
-        client.runtime.monitorBlocks.createBlock({id: 'watcher', opcode: 'motion_xposition',
-            inputs: {}, fields: {}, topLevel: true, targetId: 'temporary-import-id'});
+        client.runtime.requestAddMonitor({id: 'watcher',
+            opcode: 'motion_xposition',
+            targetId: 'temporary-import-id',
+            spriteName: 'Sprite'});
+        client.runtime.monitorBlocks.createBlock({id: 'watcher',
+            opcode: 'motion_xposition',
+            inputs: {},
+            fields: {},
+            topLevel: true,
+            targetId: 'temporary-import-id'});
         await remapTargetIds(client, metadata);
         expect(client.runtime.getMonitorState().get('watcher').targetId).toBe('sprite');
         expect(client.runtime.monitorBlocks.getBlock('watcher').targetId).toBe('sprite');
@@ -76,7 +87,10 @@ describe('native VM editing commands', () => {
         const send = jest.fn(() => Promise.resolve({}));
         const adapter = new VMAdapter({vm: client, onLocalOp: send});
         client.emit('workspaceUpdate', {});
-        const e = {...event('local'), toJson () { return event('local'); }};
+        const e = {...event('local'),
+            toJson () {
+                return event('local');
+            }};
         client.blockListener(e);
         expect(client.editingTarget.blocks.getBlock('local')).toBeUndefined();
         expect(send).toHaveBeenCalledWith(OP.VM_EDIT, expect.objectContaining({command: expect.objectContaining({method: 'blockEvent'})}));
@@ -86,8 +100,14 @@ describe('native VM editing commands', () => {
 
     test('remote comments target the addressed sprite and clearing text persists', async () => {
         client.editingTarget = client.runtime.targets[0];
-        const create = {type: 'comment_create', commentId: 'comment', blockId: null,
-            text: 'hello', xy: {x: 1, y: 2}, width: 100, height: 100, minimized: false};
+        const create = {type: 'comment_create',
+            commentId: 'comment',
+            blockId: null,
+            text: 'hello',
+            xy: {x: 1, y: 2},
+            width: 100,
+            height: 100,
+            minimized: false};
         await client.editingCommands.apply(await host.editingCommands.execute(command('blockEvent', [create])), () => null);
         await client.editingCommands.apply(await host.editingCommands.execute(command('blockEvent', [{
             type: 'comment_change', commentId: 'comment', newContents_: {text: ''}
@@ -132,15 +152,23 @@ describe('VM assets and generated identities', () => {
         host.runtime.renderer.destroyDrawable = () => {};
         client.runtime.renderer.destroyDrawable = () => {};
     });
-    afterEach(() => { host.quit(); client.quit(); });
+    afterEach(() => {
+        host.quit(); client.quit();
+    });
 
     test('snapshot remaps native monitor records to the host target', async () => {
         const metadata = host.editingCommands.snapshot();
         client.editingTarget.id = 'temporary-import-id';
-        client.runtime.requestAddMonitor({id: 'watcher', opcode: 'motion_xposition',
-            targetId: 'temporary-import-id', spriteName: 'Sprite'});
-        client.runtime.monitorBlocks.createBlock({id: 'watcher', opcode: 'motion_xposition',
-            inputs: {}, fields: {}, topLevel: true, targetId: 'temporary-import-id'});
+        client.runtime.requestAddMonitor({id: 'watcher',
+            opcode: 'motion_xposition',
+            targetId: 'temporary-import-id',
+            spriteName: 'Sprite'});
+        client.runtime.monitorBlocks.createBlock({id: 'watcher',
+            opcode: 'motion_xposition',
+            inputs: {},
+            fields: {},
+            topLevel: true,
+            targetId: 'temporary-import-id'});
         await remapTargetIds(client, metadata);
         expect(client.runtime.getMonitorState().get('watcher').targetId).toBe('sprite');
         expect(client.runtime.monitorBlocks.getBlock('watcher').targetId).toBe('sprite');
@@ -195,17 +223,35 @@ describe('VM assets and generated identities', () => {
         expect(client.runtime.targets[0].blocks._blocks).toEqual(shared);
         const number = Object.values(shared).find(block => block.opcode === 'math_number');
         const edit = await host.editingCommands.execute(command('blockEvent', [{type: 'change',
-            blockId: number.id, element: 'field', name: 'NUM', newValue: '42'}], {targetId: 'stage'}));
+            blockId: number.id,
+            element: 'field',
+            name: 'NUM',
+            newValue: '42'}], {targetId: 'stage'}));
         await client.editingCommands.apply(edit, lookup(host));
         expect(client.runtime.targets[0].blocks.getBlock(number.id).fields.NUM.value).toBe('42');
     });
 
     test('new sprites preserve the selected sprite and every block ID on the receiver', async () => {
         const result = await host.editingCommands.execute(command('addSprite', [{
-            name: 'Added', isStage: false, variables: {}, lists: {}, broadcasts: {},
-            blocks: {}, comments: {}, costumes: [], sounds: [], currentCostume: 0,
-            volume: 100, layerOrder: 2, visible: true, x: 0, y: 0, size: 100,
-            direction: 90, draggable: false, rotationStyle: 'all around'
+            name: 'Added',
+            isStage: false,
+            variables: {},
+            lists: {},
+            broadcasts: {},
+            blocks: {},
+            comments: {},
+            costumes: [],
+            sounds: [],
+            currentCostume: 0,
+            volume: 100,
+            layerOrder: 2,
+            visible: true,
+            x: 0,
+            y: 0,
+            size: 100,
+            direction: 90,
+            draggable: false,
+            rotationStyle: 'all around'
         }]));
         await client.editingCommands.apply(result, lookup(host));
         expect(client.editingTarget.id).toBe('sprite');

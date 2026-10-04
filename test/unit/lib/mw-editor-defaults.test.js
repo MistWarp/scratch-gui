@@ -41,7 +41,7 @@ test('settings persist to localStorage', () => {
 
 test('enabled legacy addons migrate into the native settings', () => {
     localStorage.setItem('tw:addons', JSON.stringify({
-        _: 5,
+        '_': 5,
         'tw-disable-compiler': {enabled: true},
         'tw-disable-cloud-variables': {enabled: false}
     }));

@@ -99,13 +99,15 @@ describe('DiffView', () => {
         expect(wrapper.text()).toContain('Sprite/main.fractch');
         expect(wrapper.text()).not.toContain('costume.svg');
 
-        tabs().at(1).simulate('click');
+        tabs().at(1)
+            .simulate('click');
         wrapper.update();
         expect(wrapper.text()).toContain('costume.svg');
         expect(wrapper.text()).toContain('Asset changed');
         expect(wrapper.text()).not.toContain('Sprite/main.fractch');
 
-        tabs().at(2).simulate('click');
+        tabs().at(2)
+            .simulate('click');
         wrapper.update();
         expect(wrapper.text()).toContain('pop.wav');
         expect(wrapper.text()).not.toContain('costume.svg');
@@ -118,7 +120,10 @@ describe('DiffView', () => {
             mediaType: 'image/png'
         }));
         const wrapper = mount(
-            <AssetCompare file={{path: 'Sprite/assets/costume.png', status: 'Modified'}} loadAsset={loadAsset} />
+            <AssetCompare
+                file={{path: 'Sprite/assets/costume.png', status: 'Modified'}}
+                loadAsset={loadAsset}
+            />
         );
 
         expect(wrapper.text()).toContain('Before');
@@ -138,7 +143,10 @@ describe('DiffView', () => {
     test('marks the missing side for added and removed assets', async () => {
         const loadAsset = jest.fn(() => Promise.resolve({bytes: new Uint8Array([9, 9]), mediaType: 'audio/wav'}));
         const added = mount(
-            <AssetCompare file={{path: 'Sprite/assets/pop.wav', status: 'Added'}} loadAsset={loadAsset} />
+            <AssetCompare
+                file={{path: 'Sprite/assets/pop.wav', status: 'Added'}}
+                loadAsset={loadAsset}
+            />
         );
         await flush();
         added.update();
@@ -150,7 +158,10 @@ describe('DiffView', () => {
         added.unmount();
 
         const removed = mount(
-            <AssetCompare file={{path: 'Sprite/assets/pop.wav', status: 'Deleted'}} loadAsset={loadAsset} />
+            <AssetCompare
+                file={{path: 'Sprite/assets/pop.wav', status: 'Deleted'}}
+                loadAsset={loadAsset}
+            />
         );
         await flush();
         removed.update();
@@ -162,7 +173,10 @@ describe('DiffView', () => {
         const before = 'sprite "Cat" at 10,20 layer 1;\nvar score = 14 id "abc";\nwhen flag {\n  score = 0;\n}\n';
         const after = 'sprite "Cat" at 10,20 layer 1;\nvar score = 13 id "abc";\nwhen flag {\n  score = 0;\n}\n';
         const texts = {'Sprite/main.fractch': {before, after}};
-        const wrapper = mount(<DiffView diff={VAR_DIFF} fileTexts={texts} />);
+        const wrapper = mount(<DiffView
+            diff={VAR_DIFF}
+            fileTexts={texts}
+        />);
 
         expect(wrapper.text()).toContain('"score" now starts at 13 instead of 14');
         expect(wrapper.find('details')).toHaveLength(0);
@@ -188,11 +202,15 @@ describe('DiffView', () => {
             before: 'sprite "Sprite" at 0,0;\ncostume "a" file "assets/a.svg";\ncostume "b" file "assets/b.svg" current;\n',
             after: 'sprite "Sprite" at 0,0;\ncostume "a" file "assets/a.svg" current;\ncostume "b" file "assets/b.svg";\n'
         }};
-        const wrapper = mount(<DiffView diff={diff} fileTexts={texts} />);
+        const wrapper = mount(<DiffView
+            diff={diff}
+            fileTexts={texts}
+        />);
         const tabs = () => wrapper.find('button[role="tab"]');
 
         expect(tabs().map(tab => tab.text())).toEqual(['Code 1', 'Costumes 1', 'Sounds 0']);
-        tabs().at(1).simulate('click');
+        tabs().at(1)
+            .simulate('click');
         wrapper.update();
         expect(wrapper.text()).toContain('Switched sprite to costume "a"');
         wrapper.unmount();
@@ -240,7 +258,10 @@ describe('DiffView', () => {
             before: 'when flag {\n  move 10;\n}\n',
             after: 'when flag {\n  move 20;\n}\n'
         }};
-        const wrapper = mount(<DiffView diff={diff} fileTexts={texts} />);
+        const wrapper = mount(<DiffView
+            diff={diff}
+            fileTexts={texts}
+        />);
         for (let round = 0; round < 8; round++) await new Promise(resolve => setTimeout(resolve, 0));
         wrapper.update();
 
@@ -277,15 +298,20 @@ describe('DiffView', () => {
             />
         );
 
-        expect(wrapper.find('section header strong').first().text()).toBe('SpriteA');
-        expect(wrapper.find('section header strong').last().text()).toBe('SpriteB');
+        expect(wrapper.find('section header strong').first()
+            .text()).toBe('SpriteA');
+        expect(wrapper.find('section header strong').last()
+            .text()).toBe('SpriteB');
     });
 
     test('renders grouped change summaries above the code diff', () => {
         const before = 'sprite "Cat" at 10,20 layer 1;\nvar score = 14 id "abc";\nwhen flag {\n  score = 0;\n}\n';
         const after = 'sprite "Cat" at 10,20 layer 1;\nvar score = 13 id "abc";\nwhen flag {\n  score = 0;\n}\n';
         const wrapper = render(
-            <DiffView diff={VAR_DIFF} fileTexts={{'Sprite/main.fractch': {before, after}}} />
+            <DiffView
+                diff={VAR_DIFF}
+                fileTexts={{'Sprite/main.fractch': {before, after}}}
+            />
         );
 
         expect(wrapper.text()).toContain('Variables');
@@ -297,7 +323,10 @@ describe('DiffView', () => {
     test('offers historical file links when a file opener is provided', () => {
         const onOpenFile = jest.fn();
         const wrapper = shallow(
-            <OpenFileButton file={{path: 'Sprite/main.fractch', status: 'Modified'}} onOpenFile={onOpenFile} />
+            <OpenFileButton
+                file={{path: 'Sprite/main.fractch', status: 'Modified'}}
+                onOpenFile={onOpenFile}
+            />
         );
 
         expect(wrapper.text()).toBe('Open file');
@@ -308,6 +337,7 @@ describe('DiffView', () => {
     test('uses a plain status instead of a code panel for failed diffs', () => {
         const wrapper = shallow(<DiffView diff="Could not load diff." />);
         expect(wrapper.find(StatusMessage).prop('error')).toBe(true);
-        expect(wrapper.find(StatusMessage).children().text()).toBe('Could not load diff.');
+        expect(wrapper.find(StatusMessage).children()
+            .text()).toBe('Could not load diff.');
     });
 });

@@ -67,8 +67,12 @@ describe('backpack workflows', () => {
 
         const handle = document.createElement('div');
         document.body.appendChild(handle);
-        handle.getBoundingClientRect = () => ({left: 10, right: 310, top: 700, bottom: 740,
-            width: 300, height: 40});
+        handle.getBoundingClientRect = () => ({left: 10,
+            right: 310,
+            top: 700,
+            bottom: 740,
+            width: 300,
+            height: 40});
         backpack.setHandleRef(handle);
         backpack.handleBlockDragHook('start');
         expect(backpack.render().props.dragActive).toBe(true);
@@ -182,12 +186,30 @@ describe('backpack workflows', () => {
     test('saves a right-clicked script with every block below and inside it', async () => {
         codePayload.mockResolvedValueOnce({type: 'script', name: 'code'});
         const stored = {
-            top: {id: 'top', opcode: 'event_whenflagclicked', next: 'move', parent: null, topLevel: true,
-                inputs: {}, fields: {}, x: 5, y: 6},
-            move: {id: 'move', opcode: 'motion_movesteps', next: null, parent: 'top', topLevel: false,
-                inputs: {STEPS: {name: 'STEPS', block: 'steps', shadow: 'steps'}}, fields: {}},
-            steps: {id: 'steps', opcode: 'math_number', next: null, parent: 'move', topLevel: false,
-                shadow: true, inputs: {}, fields: {NUM: {name: 'NUM', value: '10'}}}
+            top: {id: 'top',
+                opcode: 'event_whenflagclicked',
+                next: 'move',
+                parent: null,
+                topLevel: true,
+                inputs: {},
+                fields: {},
+                x: 5,
+                y: 6},
+            move: {id: 'move',
+                opcode: 'motion_movesteps',
+                next: null,
+                parent: 'top',
+                topLevel: false,
+                inputs: {STEPS: {name: 'STEPS', block: 'steps', shadow: 'steps'}},
+                fields: {}},
+            steps: {id: 'steps',
+                opcode: 'math_number',
+                next: null,
+                parent: 'move',
+                topLevel: false,
+                shadow: true,
+                inputs: {},
+                fields: {NUM: {name: 'NUM', value: '10'}}}
         };
         const exportStandaloneBlocks = jest.fn(blocks => blocks);
         const backpack = makeBackpack({

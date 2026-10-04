@@ -443,8 +443,8 @@ test('setStore weird values', () => {
     settingsStore.setAddonEnabled('block-switching', false);
     settingsStore.setAddonEnabled('clones', true);
     settingsStore.setStore({
-        invalid0: {},
-        invalid1: null,
+        'invalid0': {},
+        'invalid1': null,
         'block-switching': null
     });
     expect(settingsStore.getAddonEnabled('block-switching')).toBe(false);
@@ -672,8 +672,8 @@ test('Settings migration 4 -> 5', () => {
 
     // explicit default settings
     global.localStorage.getItem = () => JSON.stringify({
-        '_': 4,
-        'fullscreen': {
+        _: 4,
+        fullscreen: {
             hideToolbar: false
         }
     });
@@ -682,8 +682,8 @@ test('Settings migration 4 -> 5', () => {
 
     // explicit hide, implied default hover setting
     global.localStorage.getItem = () => JSON.stringify({
-        '_': 4,
-        'fullscreen': {
+        _: 4,
+        fullscreen: {
             hideToolbar: true
         }
     });
@@ -692,8 +692,8 @@ test('Settings migration 4 -> 5', () => {
 
     // explicit hide and default hover
     global.localStorage.getItem = () => JSON.stringify({
-        '_': 4,
-        'fullscreen': {
+        _: 4,
+        fullscreen: {
             hideToolbar: true,
             hoverToolbar: true
         }
@@ -703,8 +703,8 @@ test('Settings migration 4 -> 5', () => {
 
     // explicit hide, no hover
     global.localStorage.getItem = () => JSON.stringify({
-        '_': 4,
-        'fullscreen': {
+        _: 4,
+        fullscreen: {
             hideToolbar: true,
             hoverToolbar: false
         }
@@ -715,7 +715,7 @@ test('Settings migration 4 -> 5', () => {
 
 test('saving keeps settings of addons that were retired into native features', () => {
     localStorage.setItem('tw:addons', JSON.stringify({
-        _: 5,
+        '_': 5,
         'tw-disable-restore-points': {enabled: true},
         'vol-slider': {enabled: true, defaultVolume: 40},
         'mute-project': {enabled: false}

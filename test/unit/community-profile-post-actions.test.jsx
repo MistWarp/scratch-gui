@@ -133,7 +133,8 @@ describe('profile post actions', () => {
         expect(rotur.deletePost).not.toHaveBeenCalled();
         expect(wrapper.text()).toContain('This permanently deletes the post');
 
-        const confirm = wrapper.find('button').filterWhere(button => button.text() === 'Delete post').prop('onClick');
+        const confirm = wrapper.find('button').filterWhere(button => button.text() === 'Delete post')
+            .prop('onClick');
         let first;
         act(() => {
             first = confirm();

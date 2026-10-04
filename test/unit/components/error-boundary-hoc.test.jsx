@@ -70,7 +70,8 @@ describe('ErrorBoundary', () => {
             const wrapper = mountWithIntl(
                 <Provider store={store}><ErrorBoundary action="test"><ChildComponent /></ErrorBoundary></Provider>
             );
-            wrapper.childAt(0).childAt(0).simulateError(new Error('render failed'));
+            wrapper.childAt(0).childAt(0)
+                .simulateError(new Error('render failed'));
             wrapper.update();
             const button = wrapper.find('button').filterWhere(node => /Download project/.test(node.text()));
             expect(button).toHaveLength(1);
@@ -159,7 +160,8 @@ describe('ErrorBoundary', () => {
         const wrapper = mountWithIntl(
             <Provider store={store}><ErrorBoundary action="test"><ChildComponent /></ErrorBoundary></Provider>
         );
-        wrapper.childAt(0).childAt(0).simulateError(new Error('render failed'));
+        wrapper.childAt(0).childAt(0)
+            .simulateError(new Error('render failed'));
         wrapper.update();
         expect(wrapper.find('button').filterWhere(node => /Download project/.test(node.text()))).toHaveLength(0);
     });
@@ -173,7 +175,8 @@ describe('ErrorBoundary', () => {
                 ><ChildComponent /></ErrorBoundary>
             </Provider>
         );
-        wrapper.childAt(0).childAt(0).simulateError(new Error('render failed'));
+        wrapper.childAt(0).childAt(0)
+            .simulateError(new Error('render failed'));
         wrapper.update();
         expect(wrapper.containsMatchingElement(<CrashMessageComponent />)).toBeTruthy();
 

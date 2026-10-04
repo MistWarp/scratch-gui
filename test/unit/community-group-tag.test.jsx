@@ -52,7 +52,10 @@ describe('community GroupTag', () => {
     test('renders a passive badge when nested inside another control', () => {
         const wrapper = mount(
             <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
-                <GroupTag tag="builders" linked={false} />
+                <GroupTag
+                    tag="builders"
+                    linked={false}
+                />
             </MemoryRouter>
         );
 

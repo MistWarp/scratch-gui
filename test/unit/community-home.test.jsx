@@ -25,7 +25,10 @@ jest.mock('../../src/lib/themes/custom-themes.js', () => ({
 
 const Harness = ({user}) => (
     <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
-        <NotificationsSection user={user} login={jest.fn()} />
+        <NotificationsSection
+            user={user}
+            login={jest.fn()}
+        />
     </MemoryRouter>
 );
 
@@ -132,8 +135,18 @@ describe('home project feeds', () => {
         const Icon = () => null;
         const wrapper = mount(
             <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
-                <ProjectFeedRow title="Trending" icon={Icon} sort="trending" link="/explore" />
-                <ProjectFeedRow title="Fresh" icon={Icon} sort="recent" link="/explore?sort=recent" />
+                <ProjectFeedRow
+                    title="Trending"
+                    icon={Icon}
+                    sort="trending"
+                    link="/explore"
+                />
+                <ProjectFeedRow
+                    title="Fresh"
+                    icon={Icon}
+                    sort="recent"
+                    link="/explore?sort=recent"
+                />
             </MemoryRouter>
         );
         await act(async () => {
@@ -143,7 +156,8 @@ describe('home project feeds', () => {
         wrapper.update();
 
         await act(async () => {
-            wrapper.find('button').filterWhere(button => button.text() === 'Try again').simulate('click');
+            wrapper.find('button').filterWhere(button => button.text() === 'Try again')
+                .simulate('click');
             await Promise.resolve();
         });
 

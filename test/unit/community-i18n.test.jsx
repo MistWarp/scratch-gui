@@ -12,23 +12,42 @@ jest.mock('../../src/generated/community-locales', () => ({
 const deferred = () => {
     let resolve;
     let reject;
-    const promise = new Promise((yes, no) => { resolve = yes; reject = no; });
+    const promise = new Promise((yes, no) => {
+        resolve = yes; reject = no;
+    });
     return {promise, resolve, reject};
 };
-const flush = async () => { await Promise.resolve(); await Promise.resolve(); await Promise.resolve(); };
+const flush = async () => {
+    await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
+};
 
 const Probe = () => {
     const {text, locale, setPreference, loadError, retry} = useCommunityIntl();
     const [draft, setDraft] = useState('');
-    return <div>
+    return (<div>
         <span className="locale">{locale}</span><span className="translation">{text('Save')}</span>
-        <input value={draft} onChange={event => setDraft(event.target.value)} />
-        <button className="de" onClick={() => setPreference('de')}>de</button>
-        <button className="es" onClick={() => setPreference('es')}>es</button>
-        <button className="ar" onClick={() => setPreference('ar')}>ar</button>
-        <button className="retry" onClick={retry}>retry</button>
+        <input
+            value={draft}
+            onChange={event => setDraft(event.target.value)}
+        />
+        <button
+            className="de"
+            onClick={() => setPreference('de')}
+        >de</button>
+        <button
+            className="es"
+            onClick={() => setPreference('es')}
+        >es</button>
+        <button
+            className="ar"
+            onClick={() => setPreference('ar')}
+        >ar</button>
+        <button
+            className="retry"
+            onClick={retry}
+        >retry</button>
         {loadError ? <p role="alert">failed</p> : null}
-    </div>;
+    </div>);
 };
 
 beforeEach(() => {
@@ -61,7 +80,7 @@ test('formats plural forms and placeholders with safe English fallback', () => {
     expect(text('Hello {name}', {name: '<b>Ada</b>'})).toBe('Bonjour <b>Ada</b>');
     expect(text('Save')).toBe('Save');
     expect(text('constructor')).toBe('constructor');
-    expect(createTranslator('fr', {'Hello {name}': '{invalid'} )('Hello {name}', {name: 'Ada'})).toBe('Hello Ada');
+    expect(createTranslator('fr', {'Hello {name}': '{invalid'})('Hello {name}', {name: 'Ada'})).toBe('Hello Ada');
 });
 
 test('deduplicates translation downloads', async () => {
@@ -86,10 +105,14 @@ test('ignores stale downloads and keeps drafts when switching languages', async 
     wrapper.find('input').simulate('change', {target: {value: 'unsaved text'}});
     wrapper.find('.de').simulate('click');
     wrapper.find('.es').simulate('click');
-    await act(async () => { es.resolve({default: {Save: 'Guardar'}}); await flush(); });
+    await act(async () => {
+        es.resolve({default: {Save: 'Guardar'}}); await flush();
+    });
     wrapper.update();
     expect(wrapper.find('.translation').text()).toBe('Guardar');
-    await act(async () => { de.resolve({default: {Save: 'Speichern'}}); await flush(); });
+    await act(async () => {
+        de.resolve({default: {Save: 'Speichern'}}); await flush();
+    });
     wrapper.update();
     expect(wrapper.find('.locale').text()).toBe('es');
     expect(wrapper.find('input').prop('value')).toBe('unsaved text');

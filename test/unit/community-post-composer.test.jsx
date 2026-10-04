@@ -21,7 +21,11 @@ describe('PostComposer', () => {
         sessionStorage.setItem(DRAFT, 'From before');
         rotur.createPost.mockResolvedValue({id: 'p1'});
         const onPosted = jest.fn();
-        const wrapper = mount(<PostComposer user={user} profileOnly onPosted={onPosted} />);
+        const wrapper = mount(<PostComposer
+            user={user}
+            profileOnly
+            onPosted={onPosted}
+        />);
         expect(wrapper.find('textarea').prop('value')).toBe('From before');
 
         wrapper.find('textarea').simulate('change', {target: {value: 'Hello there'}});
@@ -39,7 +43,10 @@ describe('PostComposer', () => {
     });
 
     test('explains why a poll cannot be posted yet and labels its options', () => {
-        const wrapper = mount(<PostComposer user={user} onPosted={() => {}} />);
+        const wrapper = mount(<PostComposer
+            user={user}
+            onPosted={() => {}}
+        />);
         wrapper.find('button[title="Add a poll"]').simulate('click');
 
         expect(wrapper.text()).toContain('Add at least 2 options');
@@ -53,7 +60,10 @@ describe('PostComposer', () => {
     test('confirms a scheduled post and does not allow past times', async () => {
         rotur.createPost.mockResolvedValue({id: 'p2', scheduled: true});
         const onPosted = jest.fn();
-        const wrapper = mount(<PostComposer user={user} onPosted={onPosted} />);
+        const wrapper = mount(<PostComposer
+            user={user}
+            onPosted={onPosted}
+        />);
         wrapper.find('textarea').simulate('change', {target: {value: 'Later'}});
         wrapper.find('button[title="Schedule post"]').simulate('click');
         const input = wrapper.find('input[type="datetime-local"]');

@@ -340,13 +340,19 @@ describe('protocol envelope validation', () => {
                 {v: 1, kind: KIND.OP, type: OP.BLOCK_EVENT},
                 {v: 1, kind: KIND.OP, type: OP.BLOCK_EVENT, payload: null},
                 {v: 1, kind: KIND.CTRL, type: CTRL.USERS_LIST, payload: {users: [null]}},
-                {v: 1, kind: KIND.CTRL, type: CTRL.HELLO, payload: {
-                    protocolVersion: '1', username: 'a', roomId: 'r'
-                }},
+                {v: 1,
+                    kind: KIND.CTRL,
+                    type: CTRL.HELLO,
+                    payload: {
+                        protocolVersion: '1', username: 'a', roomId: 'r'
+                    }},
                 {v: '1', kind: KIND.CTRL, type: CTRL.PING, payload: {}},
-                {v: 1, kind: KIND.SNAPSHOT, type: SNAPSHOT.CHUNK, payload: {
-                    transferId: 'x', index: 0.5, data: new ArrayBuffer(1)
-                }},
+                {v: 1,
+                    kind: KIND.SNAPSHOT,
+                    type: SNAPSHOT.CHUNK,
+                    payload: {
+                        transferId: 'x', index: 0.5, data: new ArrayBuffer(1)
+                    }},
                 {v: 1, kind: KIND.PRESENCE, type: PRESENCE.CURSOR, payload: {x: 'a', y: 'b'}}
             ];
             garbage.forEach(envelope => {

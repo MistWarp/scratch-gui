@@ -39,13 +39,15 @@ describe('Challenge calendar dates', () => {
         const endsAt = String(Date.now() + (2 * 86400000));
         const wrapper = mount(
             <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
-                <ChallengeCalendar spaces={[{
-                    _id: 'challenge',
-                    title: 'Numeric dates',
-                    startsAt,
-                    endsAt,
-                    projects: []
-                }]} />
+                <ChallengeCalendar
+                    spaces={[{
+                        _id: 'challenge',
+                        title: 'Numeric dates',
+                        startsAt,
+                        endsAt,
+                        projects: []
+                    }]}
+                />
             </MemoryRouter>
         );
         const title = wrapper.find('a[href="/spaces/challenge"]').prop('title');

@@ -24,7 +24,7 @@ jest.mock('../../../src/lib/collaboration/index.js', () => ({
     getInstance: () => mockService
 }));
 jest.mock('../../../src/lib/collaboration/avatar.js', () => ({
-    avatarForCollabUser: user => user.handle ? `/avatars/${user.handle}` : null,
+    avatarForCollabUser: user => (user.handle ? `/avatars/${user.handle}` : null),
     colorForCollabUser: () => 'hsl(0, 70%, 45%)'
 }));
 
@@ -44,9 +44,11 @@ test('menu avatars open the collaboration window', () => {
 });
 
 test('sprite presence uses the collaborator avatar with a named tooltip', () => {
-    const wrapper = shallow(<CollaborationSpriteIndicator users={[
-        {userId: 'peer', username: 'Alex', handle: 'Alex'}
-    ]} />);
+    const wrapper = shallow(<CollaborationSpriteIndicator
+        users={[
+            {userId: 'peer', username: 'Alex', handle: 'Alex'}
+        ]}
+    />);
     expect(wrapper.find('img').prop('src')).toBe('/avatars/Alex');
     expect(wrapper.find('[title="Alex is editing this"]').exists()).toBe(true);
 });
@@ -92,10 +94,12 @@ test('reconnecting replaces the avatars until the connection is back', () => {
 });
 
 test('sprite presence overflow names the people it hides', () => {
-    const wrapper = shallow(<CollaborationSpriteIndicator users={[
-        {userId: 'a', username: 'A'}, {userId: 'b', username: 'B'},
-        {userId: 'c', username: 'C'}, {userId: 'd', username: 'D'}
-    ]} />);
+    const wrapper = shallow(<CollaborationSpriteIndicator
+        users={[
+            {userId: 'a', username: 'A'}, {userId: 'b', username: 'B'},
+            {userId: 'c', username: 'C'}, {userId: 'd', username: 'D'}
+        ]}
+    />);
     expect(wrapper.find('[title="C, D"]').text()).toBe('+2');
 });
 

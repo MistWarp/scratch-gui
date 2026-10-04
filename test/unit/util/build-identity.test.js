@@ -14,8 +14,10 @@ const runBuild = async (initialEnv = {}, args = ['--site-only'], siblingDocs = f
         .replace(/^export /gm, '');
     const source = script('build-id.mjs') + script('build.mjs');
     const context = {
-        process: {env: environment, argv: ['node', 'build.mjs', ...args],
-            cwd: () => '/test', execPath: '/node'},
+        process: {env: environment,
+            argv: ['node', 'build.mjs', ...args],
+            cwd: () => '/test',
+            execPath: '/node'},
         loadEnv: () => ({}),
         fs: {existsSync: file => siblingDocs && file === '../docs/build'},
         os: {tmpdir: () => '/tmp'},

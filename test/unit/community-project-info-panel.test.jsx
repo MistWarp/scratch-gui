@@ -60,20 +60,27 @@ describe('ProjectInfoPanel tabs', () => {
             );
         });
 
-        act(() => wrapper.find('button[role="tab"]').at(1).props().onClick());
+        act(() => wrapper.find('button[role="tab"]').at(1)
+            .props()
+            .onClick());
         wrapper.update();
-        act(() => wrapper.find('button').filterWhere(button => button.text() === 'Edit details').props().onClick());
+        act(() => wrapper.find('button').filterWhere(button => button.text() === 'Edit details')
+            .props()
+            .onClick());
         wrapper.update();
 
         expect(wrapper.find('button').filterWhere(button => button.text() === 'Suggest tags')).toHaveLength(0);
         expect(wrapper.text()).toContain('Up to 10 tags.');
-        act(() => wrapper.find('input[placeholder="platformer game pixel-art"]').props().onChange({
-            target: {value: 'platformer game'}
-        }));
+        act(() => wrapper.find('input[placeholder="platformer game pixel-art"]').props()
+            .onChange({
+                target: {value: 'platformer game'}
+            }));
         wrapper.update();
 
         await act(async () => {
-            wrapper.find('button').filterWhere(button => button.text() === 'Save').props().onClick();
+            wrapper.find('button').filterWhere(button => button.text() === 'Save')
+                .props()
+                .onClick();
             await Promise.resolve();
         });
         wrapper.update();

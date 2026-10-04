@@ -74,18 +74,21 @@ describe('My Stuff themes', () => {
 
         expect(wrapper.text()).toContain('Quiet dark');
         expect(api.themes).not.toHaveBeenCalled();
-        wrapper.find('button').filterWhere(button => button.text() === 'Apply').simulate('click');
+        wrapper.find('button').filterWhere(button => button.text() === 'Apply')
+            .simulate('click');
         expect(applyTheme).toHaveBeenCalledWith(localTheme);
 
         await act(async () => {
-            wrapper.find('button').filterWhere(button => button.text() === 'Published on WarpTheme').simulate('click');
+            wrapper.find('button').filterWhere(button => button.text() === 'Published on WarpTheme')
+                .simulate('click');
             await Promise.resolve();
         });
         wrapper.update();
 
         expect(api.themes).toHaveBeenCalledWith({owner: 'Sophie', sort: 'newest'});
         expect(wrapper.text()).toContain('Published theme');
-        expect(wrapper.find(LocationProbe).find('span').prop('data-location'))
+        expect(wrapper.find(LocationProbe).find('span')
+            .prop('data-location'))
             .toBe('?section=themes&themeView=published');
         wrapper.unmount();
     });
@@ -106,7 +109,8 @@ describe('My Stuff themes', () => {
         });
         wrapper.update();
 
-        expect(wrapper.find(LocationProbe).find('span').prop('data-location')).toBe('?section=themes');
+        expect(wrapper.find(LocationProbe).find('span')
+            .prop('data-location')).toBe('?section=themes');
         expect(wrapper.text()).toContain('Quiet dark');
         expect(api.themes).not.toHaveBeenCalled();
         wrapper.unmount();
@@ -125,7 +129,8 @@ describe('My Stuff themes', () => {
         wrapper.update();
 
         expect(wrapper.find('button').filterWhere(button => button.text() === 'Applied')).toHaveLength(1);
-        expect(wrapper.find('button').filterWhere(button => button.text() === 'Applied').prop('disabled')).toBe(true);
+        expect(wrapper.find('button').filterWhere(button => button.text() === 'Applied')
+            .prop('disabled')).toBe(true);
         expect(wrapper.find('a').filterWhere(link => link.text().includes('Edit library'))).toHaveLength(1);
         expect(wrapper.text()).not.toContain('Manage');
 
@@ -159,7 +164,8 @@ describe('My Stuff themes', () => {
 
         expect(applyTheme).toHaveBeenCalledWith(fallback);
         expect(wrapper.text()).toContain('Your library is empty');
-        expect(wrapper.find('a').filterWhere(link => link.text() === 'Create a theme').prop('href'))
+        expect(wrapper.find('a').filterWhere(link => link.text() === 'Create a theme')
+            .prop('href'))
             .toBe('/settings?section=theme&tab=custom&themeAction=create');
         wrapper.unmount();
     });
@@ -177,7 +183,9 @@ describe('My Stuff themes', () => {
 
         wrapper.find('button[aria-label="Remove Quiet dark"]').simulate('click');
         expect(wrapper.find(Modal).prop('title')).toBe('Remove saved theme?');
-        wrapper.find(Modal).find('button').filterWhere(button => button.text() === 'Remove theme').simulate('click');
+        wrapper.find(Modal).find('button')
+            .filterWhere(button => button.text() === 'Remove theme')
+            .simulate('click');
         expect(customThemeManager.removeTheme).toHaveBeenCalledWith('local-1');
         wrapper.unmount();
     });
