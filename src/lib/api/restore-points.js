@@ -337,7 +337,7 @@ const generateThumbnail = vm => new Promise(resolve => {
  * @param {VirtualMachine} vm scratch-vm instance
  * @param {string} title project title
  * @param {MetadataType} type restore point type
- * @returns {Promise<void>} resolves when the restore point is created
+ * @returns {Promise<IDBValidKey>} resolves with the new restore point's ID when it is created
  */
 const createRestorePoint = (
     vm,
@@ -375,7 +375,7 @@ const createRestorePoint = (
             const request = thumbnailStore.add(thumbnailData, generatedId);
             request.onsuccess = () => {
                 vm.emit('RESTORE_POINT_END');
-                resolveTransaction();
+                resolveTransaction(generatedId);
             };
         };
 

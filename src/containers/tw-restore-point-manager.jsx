@@ -7,11 +7,28 @@ import {intlShape, injectIntl, defineMessages} from 'react-intl';
 import PropTypes from 'prop-types';
 import bindAll from 'lodash.bindall';
 import {showAlertWithTimeout, showStandardAlert} from '../reducers/alerts';
-import {closeLoadingProject, closeRestorePointModal, openLoadingProject} from '../reducers/modals';
+import {
+    closeLoadingProject,
+    closeRestorePointModal,
+    openLoadingProject,
+    openRestorePointModal
+} from '../reducers/modals';
 import {LoadingStates, getIsShowingProject, onLoadedProject, requestProjectUpload} from '../reducers/project-state';
 import {setFileHandle} from '../reducers/tw';
+import {setProjectChanged} from '../reducers/project-changed';
 import TWRestorePointModal from '../components/tw-restore-point-modal/restore-point-modal.jsx';
+import RecoveryPrompt from '../components/tw-restore-point-modal/recovery-prompt.jsx';
 import RestorePointAPI from '../lib/api/restore-points';
+import {
+    HEARTBEAT_INTERVAL,
+    forgetUnsavedBackup,
+    getBackupDelay,
+    getBackupErrorKind,
+    rememberUnsavedBackup,
+    takeUnsavedBackup,
+    touchUnsavedBackup,
+    waitForQuietMoment
+} from '../lib/mw/device-backups.js';
 import log from '../lib/utils/log';
 import downloadBlob from '../lib/utils/download-blob.js';
 import {projectFilename} from '../lib/utils/safe-filename.js';
@@ -20,6 +37,12 @@ const SAVE_DELAY = 250;
 const MINIMUM_SAVE_TIME = 1000;
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+const BACKUP_ERROR_ALERTS = {
+    quota: 'twRestorePointQuotaError',
+    unavailable: 'twRestorePointUnavailableError',
+    other: 'twRestorePointError'
+};
 
 const messages = defineMessages({
     confirmLoad: {
@@ -84,6 +107,10 @@ export class TWRestorePointManager extends React.Component {
             'handleClickLoad',
             'handleConfirmAction',
             'handleCancelAction',
+            'handlePageHidden',
+            'handleRestoreRecovery',
+            'handleDismissRecovery',
+            'handleViewRecoveryBackups',
             'isExportingRestorePoint'
         ]);
         this.state = {
@@ -94,9 +121,17 @@ export class TWRestorePointManager extends React.Component {
             interval: RestorePointAPI.readInterval(),
             exportingRestorePoints: [],
             confirmation: null,
-            confirmationError: ''
+            confirmationError: '',
+            recovery: null
         };
         this.timeout = null;
+        // Whether an automatic backup has run, which ends the shorter first delay.
+        this.hasAutomaticBackup = false;
+        // Edits made since the last backup started, so hiding the page twice
+        // does not back up the same state twice.
+        this.changedSinceBackup = false;
+        // Repeated automatic failures alert once until a backup works again.
+        this.automaticFailureShown = false;
         this.createPromise = null;
         this.deleting = false;
         this.loadingRestorePoint = false;
@@ -110,15 +145,24 @@ export class TWRestorePointManager extends React.Component {
         // causes this component to re-mount. Still not perfect though, ideally we would
         // compensate for time already passed.
         if (this.props.projectChanged && this.props.hasEverEnteredEditor) {
+            this.changedSinceBackup = true;
             this.queueRestorePoint();
         }
 
         RestorePointAPI.deleteLegacyRestorePoint();
         this.props.vm.on('PROJECT_CHANGED', this.handleProjectChanged);
         this.props.vm.on('TRIGGER_MANUAL_RESTORE_POINT', this.handleClickCreate);
+        document.addEventListener('visibilitychange', this.handlePageHidden);
+        window.addEventListener('pagehide', this.handlePageHidden);
+        this.heartbeat = setInterval(() => touchUnsavedBackup(), HEARTBEAT_INTERVAL);
+        this.offerUnsavedBackup();
     }
 
     UNSAFE_componentWillReceiveProps (nextProps) {
+        // Saved (or replaced): the backup no longer holds unsaved work.
+        if (this.props.projectChanged && !nextProps.projectChanged) {
+            forgetUnsavedBackup();
+        }
         if (nextProps.isModalVisible && !this.props.isModalVisible) {
             this.refreshState();
         } else if (!nextProps.isModalVisible && this.props.isModalVisible) {
@@ -134,14 +178,67 @@ export class TWRestorePointManager extends React.Component {
         this.unmounted = true;
         this.refreshRequest++;
         this.cancelQueuedRestorePoint();
+        clearInterval(this.heartbeat);
         this.props.vm.off('PROJECT_CHANGED', this.handleProjectChanged);
         this.props.vm.off('TRIGGER_MANUAL_RESTORE_POINT', this.handleClickCreate);
+        document.removeEventListener('visibilitychange', this.handlePageHidden);
+        window.removeEventListener('pagehide', this.handlePageHidden);
     }
 
     handleProjectChanged () {
+        this.changedSinceBackup = true;
         if (this.props.hasEverEnteredEditor && !this.timeout) {
             this.queueRestorePoint();
         }
+    }
+
+    // Leaving the tab is when work is most often lost (closed tab, crash,
+    // phone killing the page), so back up unsaved edits right away. Best
+    // effort: the page may be gone before the backup finishes.
+    handlePageHidden (event) {
+        const closing = event && event.type === 'pagehide';
+        if (!closing && document.visibilityState !== 'hidden') return;
+        if (this.props.projectChanged && this.changedSinceBackup && this.props.hasEverEnteredEditor &&
+            this.state.interval >= 0 && !this.createPromise) {
+            this.cancelQueuedRestorePoint();
+            this.createRestorePoint(RestorePointAPI.TYPE_AUTOMATIC, {immediate: true});
+        }
+        touchUnsavedBackup(closing);
+    }
+
+    // Offer, once, a backup an earlier session made of work it never saved.
+    offerUnsavedBackup () {
+        if (this.props.isPlayerOnly || this.props.isEmbedded) return;
+        const backup = takeUnsavedBackup();
+        if (!backup) return;
+        RestorePointAPI.getAllRestorePoints()
+            .then(({restorePoints}) => {
+                if (this.unmounted) return;
+                if (restorePoints.some(restorePoint => restorePoint.id === backup.id)) {
+                    this.setState({recovery: backup});
+                }
+            })
+            .catch(error => {
+                log.warn('Could not check for unsaved work', error);
+            });
+    }
+
+    handleRestoreRecovery () {
+        const recovery = this.state.recovery;
+        if (!recovery || this.loadingRestorePoint || !this.canLoadProject()) return;
+        this.setState({recovery: null});
+        // The current project is backed up first (see project-replacement.js),
+        // so this is safe without another confirmation.
+        return this.loadRestorePoint(recovery.id, {unsavedWork: true});
+    }
+
+    handleDismissRecovery () {
+        this.setState({recovery: null});
+    }
+
+    handleViewRecoveryBackups () {
+        this.setState({recovery: null});
+        this.props.onOpenModal();
     }
 
     handleClickCreate () {
@@ -238,7 +335,7 @@ export class TWRestorePointManager extends React.Component {
         });
     }
 
-    loadRestorePoint (id) {
+    loadRestorePoint (id, {unsavedWork = false} = {}) {
         if (this.loadingRestorePoint || !this.canLoadProject()) return;
 
         this.loadingRestorePoint = true;
@@ -252,6 +349,8 @@ export class TWRestorePointManager extends React.Component {
             .then(() => {
                 detachWorkspace(this.props.vm);
                 this.props.onFinishLoadingRestorePoint(true, this.props.loadingState);
+                // Recovered work was never saved, so keep warning before it is lost again.
+                if (unsavedWork) this.props.onProjectChanged();
                 setTimeout(() => {
                     this.props.vm.renderer.draw();
                 });
@@ -312,14 +411,15 @@ export class TWRestorePointManager extends React.Component {
     }
 
     queueRestorePoint () {
-        if (this.timeout || this.state.interval < 0) {
+        const delay = getBackupDelay(this.state.interval, this.hasAutomaticBackup);
+        if (this.timeout || delay < 0) {
             return;
         }
         this.timeout = setTimeout(() => {
             this.createRestorePoint(RestorePointAPI.TYPE_AUTOMATIC).then(() => {
                 this.timeout = null;
             });
-        }, this.state.interval);
+        }, delay);
     }
 
     cancelQueuedRestorePoint () {
@@ -329,35 +429,57 @@ export class TWRestorePointManager extends React.Component {
         }
     }
 
-    createRestorePoint (type) {
+    createRestorePoint (type, {immediate = false} = {}) {
         if (this.createPromise) return this.createPromise;
 
+        // Automatic backups stay quiet unless they fail; manual ones show progress.
+        const manual = type !== RestorePointAPI.TYPE_AUTOMATIC;
         if (this.props.isModalVisible) {
             this.setState({
                 loading: true
             });
         }
 
-        this.props.onStartCreatingRestorePoint();
+        if (manual) this.props.onStartCreatingRestorePoint();
+        let createdId;
         this.createPromise = Promise.all([
-            // Wait a little bit before saving so UI can update before saving, which can cause stutter
-            sleep(SAVE_DELAY)
-                .then(() => RestorePointAPI.createRestorePoint(this.props.vm, this.props.projectTitle, type))
-                .then(() => RestorePointAPI.removeExtraneousRestorePoints()),
+            // Serialising the project blocks the page. Manual backups wait a little so the UI can
+            // update first; automatic ones wait until the project stops running and the page is idle.
+            (manual ? sleep(SAVE_DELAY) : waitForQuietMoment(this.props.vm, {immediate}))
+                .then(() => {
+                    this.changedSinceBackup = false;
+                    return RestorePointAPI.createRestorePoint(this.props.vm, this.props.projectTitle, type);
+                })
+                .then(id => {
+                    createdId = id;
+                    return RestorePointAPI.removeExtraneousRestorePoints();
+                }),
 
             // Force saves to not be instant so people can see that we're making a restore point
             // It also makes refreshes less likely to cause accidental clicks in the modal
-            sleep(MINIMUM_SAVE_TIME)
+            manual ? sleep(MINIMUM_SAVE_TIME) : null
         ])
             .then(() => {
-                this.props.onFinishCreatingRestorePoint();
+                if (manual) {
+                    this.props.onFinishCreatingRestorePoint();
+                } else {
+                    this.hasAutomaticBackup = true;
+                }
+                this.automaticFailureShown = false;
+                if (this.props.projectChanged && typeof createdId !== 'undefined') {
+                    rememberUnsavedBackup({id: createdId, title: this.props.projectTitle, created: Date.now()});
+                }
                 if (this.props.isModalVisible) {
                     this.refreshState();
                 }
             })
             .catch(error => {
                 log.error(error);
-                this.props.onErrorCreatingRestorePoint();
+                this.changedSinceBackup = true;
+                if (manual || !this.automaticFailureShown) {
+                    this.automaticFailureShown = !manual;
+                    this.props.onErrorCreatingRestorePoint(getBackupErrorKind(error));
+                }
                 if (this.props.isModalVisible) {
                     this.refreshState();
                 }
@@ -403,6 +525,18 @@ export class TWRestorePointManager extends React.Component {
     }
 
     render () {
+        if (this.state.recovery && !this.props.isModalVisible) {
+            return (
+                <RecoveryPrompt
+                    created={this.state.recovery.created}
+                    disabled={!this.props.isShowingProject}
+                    title={this.state.recovery.title}
+                    onDismiss={this.handleDismissRecovery}
+                    onRestore={this.handleRestoreRecovery}
+                    onViewAll={this.handleViewRecoveryBackups}
+                />
+            );
+        }
         if (this.props.isModalVisible) {
             return (
                 <TWRestorePointModal
@@ -447,7 +581,11 @@ TWRestorePointManager.propTypes = {
     loadingState: PropTypes.oneOf(LoadingStates).isRequired,
     isShowingProject: PropTypes.bool.isRequired,
     isModalVisible: PropTypes.bool.isRequired,
+    isEmbedded: PropTypes.bool,
+    isPlayerOnly: PropTypes.bool,
     hasEverEnteredEditor: PropTypes.bool.isRequired,
+    onOpenModal: PropTypes.func,
+    onProjectChanged: PropTypes.func,
     vm: PropTypes.shape({
         on: PropTypes.func.isRequired,
         off: PropTypes.func.isRequired,
@@ -466,13 +604,17 @@ const mapStateToProps = state => ({
     isShowingProject: getIsShowingProject(state.scratchGui.projectState.loadingState),
     isModalVisible: state.scratchGui.modals.restorePointModal,
     hasEverEnteredEditor: state.scratchGui.mode.hasEverEnteredEditor,
+    isEmbedded: state.scratchGui.mode.isEmbedded,
+    isPlayerOnly: state.scratchGui.mode.isPlayerOnly,
     vm: state.scratchGui.vm
 });
 
 export const mapDispatchToProps = dispatch => ({
     onStartCreatingRestorePoint: () => dispatch(showStandardAlert('twCreatingRestorePoint')),
     onFinishCreatingRestorePoint: () => showAlertWithTimeout(dispatch, 'twRestorePointSuccess'),
-    onErrorCreatingRestorePoint: () => showAlertWithTimeout(dispatch, 'twRestorePointError'),
+    // Failures stay until dismissed and offer a download instead.
+    onErrorCreatingRestorePoint: kind => dispatch(showStandardAlert(BACKUP_ERROR_ALERTS[kind] ||
+        BACKUP_ERROR_ALERTS.other)),
     onShowExportError: () => dispatch(showStandardAlert('twRestorePointExportError')),
     onShowLoadError: () => dispatch(showStandardAlert('twRestorePointLoadError')),
     onStartLoadingRestorePoint: loadingState => {
@@ -484,7 +626,9 @@ export const mapDispatchToProps = dispatch => ({
         dispatch(closeLoadingProject());
         if (success) dispatch(setFileHandle(null));
     },
-    onCloseModal: () => dispatch(closeRestorePointModal())
+    onCloseModal: () => dispatch(closeRestorePointModal()),
+    onOpenModal: () => dispatch(openRestorePointModal()),
+    onProjectChanged: () => dispatch(setProjectChanged())
 });
 
 export default injectIntl(connect(
