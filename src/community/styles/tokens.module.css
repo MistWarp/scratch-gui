@@ -87,6 +87,11 @@ html:where(.root),
     flex: 1;
 }
 
+/* Focus moves here after each navigation; outlining the whole page would be noise. */
+.mw-app-content:focus {
+    outline: none;
+}
+
 .mw-route-loading {
     width: min(420px, calc(100% - 40px));
     margin: 72px auto;

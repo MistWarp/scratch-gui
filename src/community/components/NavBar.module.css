@@ -77,6 +77,12 @@
     opacity: 1;
 }
 
+.linkActive {
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 -3px 0 var(--menu-bar-foreground, #fff);
+    opacity: 1;
+}
+
 .search {
     position: relative;
     flex: 1 1 0;
@@ -160,6 +166,7 @@
     font-weight: 600;
     padding: 8px 12px;
     text-align: start;
+    cursor: pointer;
 }
 
 .suggestionGroup {
@@ -186,15 +193,6 @@
     cursor: pointer;
 }
 
-.suggestionTarget {
-    position: absolute;
-    z-index: 1;
-    inset: 0;
-    border: 0;
-    background: transparent;
-    cursor: pointer;
-}
-
 .suggestionStatus {
     margin: 0;
     padding: 12px;
@@ -203,8 +201,13 @@
     line-height: 1.4;
 }
 
-.suggestion:hover {
+.suggestion:hover,
+.suggestionActive {
     background: var(--accent-softer);
+}
+
+.suggestionActive {
+    box-shadow: inset 3px 0 0 var(--accent-strong);
 }
 
 .suggestionMeta {

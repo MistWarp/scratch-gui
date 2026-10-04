@@ -21,6 +21,7 @@ import {Link, useParams, useSearchParams} from 'react-router-dom';
 import api from '../api.js';
 import rotur from '../rotur.js';
 import useLatest from '../use-latest.js';
+import setPageMeta from '../page-meta.js';
 import {useUser} from '../UserContext.jsx';
 import Avatar from '../components/Avatar.jsx';
 import ProjectCard from '../components/ProjectCard.jsx';
@@ -120,6 +121,16 @@ const Group = () => {
         setMessage('');
         load();
     }, [load]);
+
+    useEffect(() => {
+        const group = data && data.group;
+        if (!group) return;
+        setPageMeta({
+            title: group.name || group.tag,
+            description: group.description,
+            image: group.banner_url || group.icon_url
+        });
+    }, [data]);
 
     const selectTab = nextTab => {
         const next = new URLSearchParams(searchParams);

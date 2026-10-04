@@ -7,4 +7,18 @@ const searchFocusIndex = (key, currentIndex, itemCount) => {
     return null;
 };
 
+// What a key press in the search box does to the highlighted quick result. Focus stays in the
+// input, so Home and End keep moving the caret until a result is highlighted.
+export const searchKeyAction = (key, activeIndex, itemCount, open) => {
+    if (key === 'Escape') return {type: 'close'};
+    if (key === 'Enter') {
+        return open && activeIndex >= 0 && activeIndex < itemCount ? {type: 'select', index: activeIndex} : null;
+    }
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(key)) return null;
+    if (!open) return key === 'ArrowDown' || key === 'ArrowUp' ? {type: 'open'} : null;
+    if (activeIndex < 0 && (key === 'Home' || key === 'End')) return null;
+    const index = searchFocusIndex(key, activeIndex, itemCount);
+    return index < 0 ? null : {type: 'move', index};
+};
+
 export default searchFocusIndex;

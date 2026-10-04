@@ -118,7 +118,7 @@ const Commit = () => {
                 coAuthors: metadata.coAuthors || metadata.collaborators || []
             });
             setDiff(inspected.diff || 'No textual changes.');
-            setPageMeta({title: `${metadata.message || sha.slice(0, 7)} · Commit`});
+            setPageMeta({title: communityText('{value1} · Commit', {value1: metadata.message || sha.slice(0, 7)})});
             coAuthorsPromise.then(coAuthorData => {
                 if (!coAuthorData || contextRef.current !== context) return;
                 setEntry(current => (current ? ({
