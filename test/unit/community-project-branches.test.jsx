@@ -42,14 +42,24 @@ describe('project branch management', () => {
 
     test('owners can create a branch from a selected branch', async () => {
         const onChange = jest.fn().mockResolvedValue();
-        const wrapper = mount(<ProjectBranches id="123" canManage onChange={onChange} />);
+        const wrapper = mount(<ProjectBranches
+            id="123"
+            canManage
+            onChange={onChange}
+        />);
         await settle(wrapper);
 
-        act(() => wrapper.find('input[placeholder="feature-name"]').props().onChange({target: {value: 'release'}}));
-        act(() => wrapper.find('form').at(0).find('select').props().onChange({target: {value: 'feature'}}));
+        act(() => wrapper.find('input[placeholder="feature-name"]').props()
+            .onChange({target: {value: 'release'}}));
+        act(() => wrapper.find('form').at(0)
+            .find('select')
+            .props()
+            .onChange({target: {value: 'feature'}}));
         wrapper.update();
         await act(async () => {
-            wrapper.find('form').at(0).props().onSubmit({preventDefault: jest.fn()});
+            wrapper.find('form').at(0)
+                .props()
+                .onSubmit({preventDefault: jest.fn()});
             await Promise.resolve();
             await Promise.resolve();
         });
@@ -61,25 +71,35 @@ describe('project branch management', () => {
     });
 
     test('owners can rename and delete non-current branches', async () => {
-        const wrapper = mount(<ProjectBranches id="123" canManage />);
+        const wrapper = mount(<ProjectBranches
+            id="123"
+            canManage
+        />);
         await settle(wrapper);
 
-        act(() => wrapper.find('button[title="Rename feature"]').props().onClick());
+        act(() => wrapper.find('button[title="Rename feature"]').props()
+            .onClick());
         wrapper.update();
-        act(() => wrapper.find('input[aria-label="New name for feature"]').props().onChange({target: {value: 'updated'}}));
+        act(() => wrapper.find('input[aria-label="New name for feature"]').props()
+            .onChange({target: {value: 'updated'}}));
         wrapper.update();
         await act(async () => {
-            wrapper.find('input[aria-label="New name for feature"]').parent().props().onSubmit({preventDefault: jest.fn()});
+            wrapper.find('input[aria-label="New name for feature"]').parent()
+                .props()
+                .onSubmit({preventDefault: jest.fn()});
             await Promise.resolve();
             await Promise.resolve();
         });
         wrapper.update();
         expect(api.renameBranch).toHaveBeenCalledWith('123', 'feature', 'updated');
 
-        act(() => wrapper.find('button[title="Delete feature"]').props().onClick());
+        act(() => wrapper.find('button[title="Delete feature"]').props()
+            .onClick());
         wrapper.update();
         await act(async () => {
-            wrapper.find('button').filterWhere(button => button.text() === 'Yes').props().onClick();
+            wrapper.find('button').filterWhere(button => button.text() === 'Yes')
+                .props()
+                .onClick();
             await Promise.resolve();
             await Promise.resolve();
         });
@@ -88,7 +108,10 @@ describe('project branch management', () => {
     });
 
     test('visitors only see the branch list', async () => {
-        const wrapper = mount(<ProjectBranches id="123" canManage={false} />);
+        const wrapper = mount(<ProjectBranches
+            id="123"
+            canManage={false}
+        />);
         await settle(wrapper);
 
         expect(wrapper.find('input[placeholder="feature-name"]')).toHaveLength(0);

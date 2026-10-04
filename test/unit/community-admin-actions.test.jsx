@@ -73,7 +73,8 @@ describe('admin analytics charts', () => {
         expect(wrapper.text()).toContain('Average project load time');
         expect(wrapper.text()).toContain('Milliseconds');
         expect(wrapper.text()).toContain('Date');
-        expect(wrapper.find('title').first().text()).toContain('800 ms from 2 samples');
+        expect(wrapper.find('title').first()
+            .text()).toContain('800 ms from 2 samples');
     });
 
     test('keeps missing load-time samples out of the average line', () => {
@@ -124,7 +125,8 @@ describe('admin user directory', () => {
         expect(wrapper.text()).toContain('Directory unavailable');
         expect(wrapper.text()).not.toContain('No users match that filter.');
         await act(async () => {
-            wrapper.find('button').filterWhere(node => node.text() === 'Try again').simulate('click');
+            wrapper.find('button').filterWhere(node => node.text() === 'Try again')
+                .simulate('click');
             await Promise.resolve();
             await Promise.resolve();
         });

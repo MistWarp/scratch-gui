@@ -384,9 +384,10 @@ describe('CollaborationModal', () => {
         });
 
         test('a host alone and a guest leave without a confirmation', () => {
-            const alone = {...connectedProps(), connectedUsers: [
-                {id: 'user-1', username: 'TestUser', isHost: true, role: 'edit'}
-            ]};
+            const alone = {...connectedProps(),
+                connectedUsers: [
+                    {id: 'user-1', username: 'TestUser', isHost: true, role: 'edit'}
+                ]};
             let wrapper = mountModal(alone);
             expect(wrapper.text()).toContain('No one else has joined yet');
             modalOf(wrapper).handleLeaveRoom();
@@ -700,7 +701,8 @@ describe('CollaborationModal', () => {
         expect(wrapper.text()).not.toContain('Connection lost');
         wrapper.unmount();
 
-        const project = mountModal({...defaultProps(), reconnectReason: 'ROOM_NOT_FOUND',
+        const project = mountModal({...defaultProps(),
+            reconnectReason: 'ROOM_NOT_FOUND',
             projectSession: {active: true, phase: 'reconnecting', editors: [], onLeave: jest.fn()}});
         expect(project.text()).toContain('Waiting for the host to come back');
         project.unmount();

@@ -118,9 +118,9 @@ class GUI extends React.Component {
                 redo: () => this.handleRedo(),
                 toggleStageSize: () => {
                     this.props.onSetStageSize(
-                        this.props.stageSizeMode === STAGE_SIZE_MODES.large 
-                            ? STAGE_SIZE_MODES.small 
-                            : STAGE_SIZE_MODES.large
+                        this.props.stageSizeMode === STAGE_SIZE_MODES.large ?
+                            STAGE_SIZE_MODES.small :
+                            STAGE_SIZE_MODES.large
                     );
                 },
                 setFullScreen: () => {

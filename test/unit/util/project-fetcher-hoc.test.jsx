@@ -75,7 +75,8 @@ describe('ProjectFetcherHOC', () => {
             />,
             {context: {store}}
         );
-        const instance = wrapper.dive().dive().instance();
+        const instance = wrapper.dive().dive()
+            .instance();
 
         instance.fetchProject('0', LoadingState.FETCHING_WITH_ID);
         await Promise.resolve();
@@ -104,7 +105,8 @@ describe('ProjectFetcherHOC', () => {
             />,
             {context: {store}}
         );
-        const instance = wrapper.dive().dive().instance();
+        const instance = wrapper.dive().dive()
+            .instance();
 
         const oldFetch = instance.fetchProject('0', LoadingState.FETCHING_WITH_ID);
         await Promise.resolve();
@@ -143,7 +145,8 @@ describe('ProjectFetcherHOC', () => {
                 />,
                 {context: {store}}
             );
-            const instance = wrapper.dive().dive().instance();
+            const instance = wrapper.dive().dive()
+                .instance();
             instance.previousProjectId = '100';
             await instance.fetchProject('200', LoadingState.FETCHING_WITH_ID);
         } finally {
@@ -177,7 +180,8 @@ describe('ProjectFetcherHOC', () => {
                 />,
                 {context: {store}}
             );
-            const instance = wrapper.dive().dive().instance();
+            const instance = wrapper.dive().dive()
+                .instance();
             await instance.fetchProject('200', LoadingState.FETCHING_WITH_ID);
         } finally {
             release();
@@ -209,7 +213,8 @@ describe('ProjectFetcherHOC', () => {
             />,
             {context: {store}}
         );
-        const instance = wrapper.dive().dive().instance();
+        const instance = wrapper.dive().dive()
+            .instance();
 
         window.history.replaceState({}, '', '/?platform_project=new');
         await instance.fetchProject('0', LoadingState.FETCHING_WITH_ID);
@@ -243,7 +248,9 @@ describe('ProjectFetcherHOC', () => {
         );
 
         window.history.replaceState({}, '', '/?platform_project=handoff');
-        await wrapper.dive().dive().instance().fetchProject('0', LoadingState.FETCHING_WITH_ID);
+        await wrapper.dive().dive()
+            .instance()
+            .fetchProject('0', LoadingState.FETCHING_WITH_ID);
 
         expect(getEditorProject).toHaveBeenCalledWith('handoff');
         expect(cachedFetchBuffer).toHaveBeenCalledWith(currentProject.projectJsonUrl);
@@ -275,7 +282,8 @@ describe('ProjectFetcherHOC', () => {
             />,
             {context: {store}}
         );
-        const instance = wrapper.dive().dive().instance();
+        const instance = wrapper.dive().dive()
+            .instance();
         window.history.replaceState({}, '', `/editor?test=1#mw-${project.id}`);
         const originalUrl = window.location.href;
 

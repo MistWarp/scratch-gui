@@ -14,7 +14,7 @@ test('migrates legacy menu bar addons without enabling disabled addons', () => {
             show_costume_count: true
         },
         'custom-menu-bar': {
-            enabled: true,
+            'enabled': true,
             'menu-labels': 'icons'
         }
     }));

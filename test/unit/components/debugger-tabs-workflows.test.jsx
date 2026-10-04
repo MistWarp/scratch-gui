@@ -23,7 +23,10 @@ const makeController = () => ({
 
 describe('debugger tabs', () => {
     test('uses arrow keys to select and focus the next tab', () => {
-        const wrapper = shallow(<Debugger controller={makeController()} onClose={() => {}} />);
+        const wrapper = shallow(<Debugger
+            controller={makeController()}
+            onClose={() => {}}
+        />);
         const instance = wrapper.instance();
         const tabs = [{focus: jest.fn()}, {focus: jest.fn()}, {focus: jest.fn()}];
         const preventDefault = jest.fn();

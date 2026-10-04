@@ -66,14 +66,17 @@ test('shows actual plan entitlements and keeps checkout on Rotur without marking
 
 test('keeps storage allowances and sales fees accessible in the comparison', async () => {
     const wrapper = await renderPage();
-    wrapper.find('button[role="tab"]').at(1).simulate('click');
+    wrapper.find('button[role="tab"]').at(1)
+        .simulate('click');
     expect(wrapper.find('table').text()).toContain('Storage for all your projects');
     expect(wrapper.find('table').text()).toContain('500 MB2 GB10 GB50 GB');
     expect(wrapper.find('a[href="/mystuff?section=uploads"]')).toHaveLength(1);
-    wrapper.find('button[role="tab"]').at(2).simulate('click');
+    wrapper.find('button[role="tab"]').at(2)
+        .simulate('click');
     expect(wrapper.find('table').text()).toContain('Game save storage');
     expect(wrapper.find('table').text()).toContain('5 MB25 MB100 MB1 GB');
-    wrapper.find('button[role="tab"]').at(3).simulate('click');
+    wrapper.find('button[role="tab"]').at(3)
+        .simulate('click');
     expect(wrapper.find('table').text()).toContain('10%10%7%5%');
     expect(wrapper.text()).toContain('A membership does not include access to every project');
     wrapper.unmount();

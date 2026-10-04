@@ -25,14 +25,18 @@ test.each([
 
 test('malformed data URLs do not throw during add-on startup', () => {
     const image = createRecolorableImage(() => '#abcdef', []);
-    expect(() => { image.src = 'data:image/svg+xml;base64,%%%'; }).not.toThrow();
+    expect(() => {
+        image.src = 'data:image/svg+xml;base64,%%%';
+    }).not.toThrow();
     expect(image.getAttribute('src')).toBe('data:image/svg+xml;base64,%%%');
 });
 
 test('an older SVG download cannot replace a newer source', async () => {
     const originalFetch = global.fetch;
     let resolve;
-    global.fetch = jest.fn(() => new Promise(done => { resolve = done; }));
+    global.fetch = jest.fn(() => new Promise(done => {
+        resolve = done;
+    }));
     try {
         const image = createRecolorableImage(() => '#abcdef', []);
         image.src = '/assets/icon.svg';

@@ -45,7 +45,8 @@ describe('ProjectFiles', () => {
 
     test('highlights Fractch keywords, strings, numbers, and comments', () => {
         const lines = highlightFractch('sprite "Cat" at 12; // hello\nforever { wait 1; }');
-        const kinds = lines.flat().filter(token => token.kind).map(token => [token.value, token.kind]);
+        const kinds = lines.flat().filter(token => token.kind)
+            .map(token => [token.value, token.kind]);
 
         expect(kinds).toEqual(expect.arrayContaining([
             ['sprite', 'keyword'],
@@ -65,7 +66,8 @@ describe('ProjectFiles', () => {
 
     test('highlights svg tags, strings, and comments', () => {
         const lines = highlightXml(formatXml('<!-- hi --><svg><rect width="10" /></svg>'));
-        const kinds = lines.flat().filter(token => token.kind).map(token => [token.value, token.kind]);
+        const kinds = lines.flat().filter(token => token.kind)
+            .map(token => [token.value, token.kind]);
 
         expect(kinds).toEqual(expect.arrayContaining([
             ['<!-- hi -->', 'comment'],

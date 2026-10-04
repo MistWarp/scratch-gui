@@ -8,8 +8,11 @@ test('sensing menus survive a missing stage and include its variables when it ar
         Blocks: new Proxy({}, {get: (target, key) => (target[key] || (target[key] = {}))}),
         Colours: {sensing: {}},
         Msg: {SENSING_OF_VOLUME: 'volume'},
-        VerticalFlyout: {}, FlyoutExtensionCategoryHeader: {}, FieldNote: {},
-        scratchBlocksUtils: {}, utils: {}
+        VerticalFlyout: {},
+        FlyoutExtensionCategoryHeader: {},
+        FieldNote: {},
+        scratchBlocksUtils: {},
+        utils: {}
     };
     LazyScratchBlocks.get.mockReturnValue(blocks);
     const vm = {
@@ -18,9 +21,10 @@ test('sensing menus survive a missing stage and include its variables when it ar
     };
     initBlocks(vm);
     let options;
-    blocks.Blocks.sensing_of.init.call({id: 'sensing', jsonInit: json => {
-        options = json.args0[0].options;
-    }});
+    blocks.Blocks.sensing_of.init.call({id: 'sensing',
+        jsonInit: json => {
+            options = json.args0[0].options;
+        }});
     expect(options()).toContainEqual(['volume', 'volume']);
     vm.runtime.getTargetForStage.mockReturnValue({getAllVariableNamesInScopeByType: () => ['score']});
     expect(options()).toContainEqual(['score', 'score']);

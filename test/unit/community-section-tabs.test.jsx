@@ -8,7 +8,13 @@ const items = [{key: 'new', label: 'Newest'}, {key: 'top', label: 'Top'}];
 describe('SectionTabs', () => {
     test('links the active tab to its panel when given an id prefix', () => {
         const wrapper = mount(
-            <SectionTabs items={items} value="top" onChange={() => {}} ariaLabel="Sections" idPrefix="feed" />
+            <SectionTabs
+                items={items}
+                value="top"
+                onChange={() => {}}
+                ariaLabel="Sections"
+                idPrefix="feed"
+            />
         );
         const tabs = wrapper.find('button[role="tab"]');
         expect(tabs.at(0).prop('id')).toBe('feed-tab-new');
@@ -26,7 +32,13 @@ describe('SectionTabs', () => {
     test('renders filter controls as a group of pressed buttons', () => {
         const onChange = jest.fn();
         const wrapper = mount(
-            <SectionTabs items={items} value="new" onChange={onChange} ariaLabel="Sort" variant="buttons" />
+            <SectionTabs
+                items={items}
+                value="new"
+                onChange={onChange}
+                ariaLabel="Sort"
+                variant="buttons"
+            />
         );
         expect(wrapper.find('[role="tablist"]')).toHaveLength(0);
         expect(wrapper.find('[role="group"]').prop('aria-label')).toBe('Sort');

@@ -137,8 +137,12 @@ test('a token that can\'t make app-ID validators uses the old key, and isn\'t ta
 test('a ban from MistWarp\'s Rotur App shows the banned screen with Rotur\'s reason', async () => {
     const until = Date.UTC(2026, 9, 3, 12);
     const refusal = {
-        ok: false, code: 'app_banned', error: 'You\'ve been banned from MistWarp.',
-        reason: 'Cheating in races', until, redirectUrl: 'https://rotur.dev/me'
+        ok: false,
+        code: 'app_banned',
+        error: 'You\'ve been banned from MistWarp.',
+        reason: 'Cheating in races',
+        until,
+        redirectUrl: 'https://rotur.dev/me'
     };
     const refused = {ok: false, status: 403, json: () => Promise.resolve(refusal)};
     refused.clone = () => refused;

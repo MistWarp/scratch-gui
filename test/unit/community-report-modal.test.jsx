@@ -19,7 +19,13 @@ describe('community report dialog', () => {
 
     test('sends one of Rotur\'s categories with the report', async () => {
         const report = jest.spyOn(api, 'report').mockResolvedValue({ok: true});
-        const wrapper = mount(<ReportModal type="comment" target="c1" context="text" targetUser="bob" onClose={() => {}} />);
+        const wrapper = mount(<ReportModal
+            type="comment"
+            target="c1"
+            context="text"
+            targetUser="bob"
+            onClose={() => {}}
+        />);
         wrapper.find('select').simulate('change', {target: {value: 'harassment'}});
         wrapper.find('textarea').simulate('change', {target: {value: 'keeps insulting me'}});
         await submit(wrapper);
@@ -30,8 +36,13 @@ describe('community report dialog', () => {
 
     test('offers the urgent categories, and says Rotur sees them straight away', async () => {
         const report = jest.spyOn(api, 'report').mockResolvedValue({ok: true});
-        const wrapper = mount(<ReportModal type="user" target="bob" onClose={() => {}} />);
-        const urgent = wrapper.find('optgroup').find('option').map(option => option.prop('value'));
+        const wrapper = mount(<ReportModal
+            type="user"
+            target="bob"
+            onClose={() => {}}
+        />);
+        const urgent = wrapper.find('optgroup').find('option')
+            .map(option => option.prop('value'));
         expect(urgent).toEqual(['csea', 'threat_to_life', 'self_harm', 'terrorism']);
         expect(wrapper.text()).not.toContain('safety team');
         wrapper.find('select').simulate('change', {target: {value: 'threat_to_life'}});
@@ -43,7 +54,11 @@ describe('community report dialog', () => {
     });
 
     test('labels the reason and details fields', () => {
-        const wrapper = mount(<ReportModal type="comment" target="c1" onClose={() => {}} />);
+        const wrapper = mount(<ReportModal
+            type="comment"
+            target="c1"
+            onClose={() => {}}
+        />);
         const labels = wrapper.find('label');
         expect(labels.at(0).prop('htmlFor')).toBe(wrapper.find('select').prop('id'));
         expect(labels.at(1).prop('htmlFor')).toBe(wrapper.find('textarea').prop('id'));

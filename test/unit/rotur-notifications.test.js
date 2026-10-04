@@ -90,8 +90,11 @@ describe('Rotur notification loading', () => {
 test('includes locally stored milestone notifications when the shared inbox is unavailable', async () => {
     loadSession.mockReturnValue('alice-session');
     communityApi.notifications.mockResolvedValue({notifications: [{
-        id: 'local', type: 'like_milestone', platform: 'mistwarp',
-        platform_data: {milestone: 25, contentKind: 'project', path: '/project/p1'}, read: false
+        id: 'local',
+        type: 'like_milestone',
+        platform: 'mistwarp',
+        platform_data: {milestone: 25, contentKind: 'project', path: '/project/p1'},
+        read: false
     }]});
     notificationsList.mockRejectedValue(new Error('offline'));
     await expect(fetchNotifications()).resolves.toEqual([expect.objectContaining({

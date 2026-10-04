@@ -29,7 +29,8 @@ describe('RestorePoint', () => {
         expect(wrapper.find('article').prop('onClick')).toBeUndefined();
         expect(onClickLoad).not.toHaveBeenCalled();
 
-        wrapper.find('button').first().simulate('click');
+        wrapper.find('button').first()
+            .simulate('click');
         expect(onClickLoad).toHaveBeenCalledWith(7);
     });
 });

@@ -196,8 +196,8 @@ describe('scratchblocks translation', () => {
         ];
         const expected = [
             before[0],
-            ...before.slice(1).map(line => line.trim() === 'end' ? line : `- ${line}`),
-            ...after.slice(1).map(line => line.trim() === 'end' ? line : `+ ${line}`)
+            ...before.slice(1).map(line => (line.trim() === 'end' ? line : `- ${line}`)),
+            ...after.slice(1).map(line => (line.trim() === 'end' ? line : `+ ${line}`))
         ].join('\n');
 
         expect(mergeScriptDiff(before.join('\n'), after.join('\n'))).toBe(expected);

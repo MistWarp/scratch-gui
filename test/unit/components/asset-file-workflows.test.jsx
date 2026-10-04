@@ -95,7 +95,9 @@ describe('custom asset folder controls', () => {
 
         buttons.at(0).simulate('click', {stopPropagation: jest.fn()});
         wrapper.update();
-        expect(wrapper.find('button').at(0).prop('aria-expanded')).toBe(false);
-        expect(wrapper.find('button').at(0).prop('aria-label')).toBe('Expand Sprites');
+        expect(wrapper.find('button').at(0)
+            .prop('aria-expanded')).toBe(false);
+        expect(wrapper.find('button').at(0)
+            .prop('aria-label')).toBe('Expand Sprites');
     });
 });

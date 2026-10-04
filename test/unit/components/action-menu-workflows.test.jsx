@@ -94,10 +94,11 @@ describe('action menu file workflow', () => {
         expect(wrapper.state('isOpen')).toBe(true);
         expect(wrapper.find('button[aria-label="Upload"]').prop('tabIndex')).toBe(0);
 
-        wrapper.find('div').first().simulate('keydown', {
-            key: 'Escape',
-            preventDefault: jest.fn()
-        });
+        wrapper.find('div').first()
+            .simulate('keydown', {
+                key: 'Escape',
+                preventDefault: jest.fn()
+            });
         expect(wrapper.state('isOpen')).toBe(false);
         wrapper.unmount();
     });

@@ -29,10 +29,21 @@ const bytes = blob => new Promise((resolve, reject) => {
 const projectFiles = value => ({
     'project.json': JSON.stringify({
         targets: [{
-            isStage: true, name: 'Stage', variables: {score: ['score', value]}, lists: {}, broadcasts: {},
-            blocks: {}, comments: {}, currentCostume: 0, costumes: [], sounds: [], volume: 100
+            isStage: true,
+            name: 'Stage',
+            variables: {score: ['score', value]},
+            lists: {},
+            broadcasts: {},
+            blocks: {},
+            comments: {},
+            currentCostume: 0,
+            costumes: [],
+            sounds: [],
+            volume: 100
         }],
-        monitors: [], extensions: [], meta: {semver: '3.0.0', vm: '0.2.0', agent: 'test'}
+        monitors: [],
+        extensions: [],
+        meta: {semver: '3.0.0', vm: '0.2.0', agent: 'test'}
     })
 });
 const source = (kind, value) => {
@@ -83,20 +94,52 @@ test('MWP files retain uncommitted scripts and costume bytes, and remove deleted
         let costume;
         if (message) {
             costume = `<svg xmlns="http://www.w3.org/2000/svg"><text>${message}</text></svg>`;
-            const assetId = require('crypto').createHash('md5').update(costume).digest('hex');
+            const assetId = require('crypto').createHash('md5')
+                .update(costume)
+                .digest('hex');
             project.targets.push({
-                isStage: false, name: 'New sprite', variables: {}, lists: {}, broadcasts: {}, comments: {},
-                currentCostume: 0, costumes: [{
-                    assetId, md5ext: `${assetId}.svg`, dataFormat: 'svg', name: 'New costume',
-                    rotationCenterX: 0, rotationCenterY: 0, bitmapResolution: 1
+                isStage: false,
+                name: 'New sprite',
+                variables: {},
+                lists: {},
+                broadcasts: {},
+                comments: {},
+                currentCostume: 0,
+                costumes: [{
+                    assetId,
+                    md5ext: `${assetId}.svg`,
+                    dataFormat: 'svg',
+                    name: 'New costume',
+                    rotationCenterX: 0,
+                    rotationCenterY: 0,
+                    bitmapResolution: 1
                 }],
-                sounds: [], volume: 100, visible: true, x: 10, y: 20, size: 100, direction: 90,
-                draggable: false, rotationStyle: 'all around',
+                sounds: [],
+                volume: 100,
+                visible: true,
+                x: 10,
+                y: 20,
+                size: 100,
+                direction: 90,
+                draggable: false,
+                rotationStyle: 'all around',
                 blocks: {
-                    start: {opcode: 'event_whenflagclicked', next: 'say', parent: null,
-                        inputs: {}, fields: {}, shadow: false, topLevel: true, x: 0, y: 0},
-                    say: {opcode: 'looks_say', next: null, parent: 'start',
-                        inputs: {MESSAGE: [1, [10, message]]}, fields: {}, shadow: false, topLevel: false}
+                    start: {opcode: 'event_whenflagclicked',
+                        next: 'say',
+                        parent: null,
+                        inputs: {},
+                        fields: {},
+                        shadow: false,
+                        topLevel: true,
+                        x: 0,
+                        y: 0},
+                    say: {opcode: 'looks_say',
+                        next: null,
+                        parent: 'start',
+                        inputs: {MESSAGE: [1, [10, message]]},
+                        fields: {},
+                        shadow: false,
+                        topLevel: false}
                 }
             });
             files[`${assetId}.svg`] = costume;

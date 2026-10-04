@@ -18,13 +18,19 @@ describe('native control workflows', () => {
     });
 
     test('back control has the correct action label', () => {
-        const control = shallowWithIntl(<CloseButton buttonType="back" onClick={() => {}} />);
+        const control = shallowWithIntl(<CloseButton
+            buttonType="back"
+            onClick={() => {}}
+        />);
 
         expect(control.prop('aria-label')).toBe('Back');
     });
 
     test('delete control passes disabled state to the native button', () => {
-        const control = shallow(<DeleteButton disabled onClick={() => {}} />);
+        const control = shallow(<DeleteButton
+            disabled
+            onClick={() => {}}
+        />);
 
         expect(control.type()).toBe('button');
         expect(control.prop('type')).toBe('button');

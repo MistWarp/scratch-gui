@@ -146,7 +146,8 @@ class ShortcutManager extends React.Component {
         return allShortcuts.filter(shortcut =>
             shortcut.label.toLowerCase().includes(query) ||
             shortcut.key.toLowerCase().includes(query) ||
-            getCategoryLabel(shortcut.category).toLowerCase().includes(query)
+            getCategoryLabel(shortcut.category).toLowerCase()
+                .includes(query)
         );
     }
 

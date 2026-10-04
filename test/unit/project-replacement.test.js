@@ -17,11 +17,15 @@ beforeEach(() => {
     jest.resetAllMocks();
     vm = new EventEmitter();
     vm.code = 'original';
-    vm.loadProject = jest.fn(async code => { vm.code = code; });
+    vm.loadProject = jest.fn(async code => {
+        vm.code = code;
+    });
     restoreRepo = jest.fn();
     createRepoBackup.mockResolvedValue(restoreRepo);
     RestorePointAPI.createSafetyRestorePoint.mockResolvedValue(42);
-    RestorePointAPI.loadRestorePoint.mockImplementation(async () => { vm.code = 'original'; });
+    RestorePointAPI.loadRestorePoint.mockImplementation(async () => {
+        vm.code = 'original';
+    });
 });
 
 test('backup failure prevents every mutation', async () => {

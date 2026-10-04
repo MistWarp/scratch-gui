@@ -24,7 +24,10 @@ describe('SpriteList', () => {
 
     test('lists sprites only, never the stage', () => {
         const onSelect = jest.fn();
-        const wrapper = mount(<SpriteList files={FILES} onSelect={onSelect} />);
+        const wrapper = mount(<SpriteList
+            files={FILES}
+            onSelect={onSelect}
+        />);
 
         expect(wrapper.text()).toContain('Sprite3');
         expect(wrapper.text()).not.toContain('Global');
@@ -37,7 +40,11 @@ describe('SpriteList', () => {
     });
 
     test('marks the active sprite', () => {
-        const wrapper = mount(<SpriteList files={FILES} activeSprite="Sprite3" onSelect={() => {}} />);
+        const wrapper = mount(<SpriteList
+            files={FILES}
+            activeSprite="Sprite3"
+            onSelect={() => {}}
+        />);
         const active = wrapper.find('button').filterWhere(row => row.prop('aria-pressed') === true);
 
         expect(active).toHaveLength(1);

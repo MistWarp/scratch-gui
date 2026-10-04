@@ -14,8 +14,12 @@ beforeAll(() => {
         sockets.push(String(url));
     });
     localStorage.setItem('mw:rotur-oauth', JSON.stringify({
-        accessToken: 'rotur_st_old', refreshToken: 'rrt_old', subject: 'id-1', username: 'sam',
-        scopes: ['profile'], expiresAt: Date.now() - 1000
+        accessToken: 'rotur_st_old',
+        refreshToken: 'rrt_old',
+        subject: 'id-1',
+        username: 'sam',
+        scopes: ['profile'],
+        expiresAt: Date.now() - 1000
     }));
     localStorage.setItem('mw:rotur-token', 'rotur_legacy');
 });

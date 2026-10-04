@@ -9,7 +9,11 @@ const ExampleDropdown = () => (
         className="custom-wrap"
         menuClassName="custom-menu"
         renderTrigger={({open, toggle}) => (
-            <button type="button" aria-expanded={open} onClick={toggle}>Open</button>
+            <button
+                type="button"
+                aria-expanded={open}
+                onClick={toggle}
+            >Open</button>
         )}
     >
         {({close}) => (
@@ -55,7 +59,8 @@ describe('community dropdown', () => {
     });
 
     test('moves through enabled items with arrow keys', () => {
-        dropdown.find('button').first().simulate('click');
+        dropdown.find('button').first()
+            .simulate('click');
         dropdown.update();
 
         dropdown.find('[role="menu"]').simulate('keydown', {key: 'ArrowDown'});
@@ -65,8 +70,10 @@ describe('community dropdown', () => {
     });
 
     test('closes after selecting an item', () => {
-        dropdown.find('button').first().simulate('click');
-        dropdown.find(DropdownItem).first().simulate('click');
+        dropdown.find('button').first()
+            .simulate('click');
+        dropdown.find(DropdownItem).first()
+            .simulate('click');
         dropdown.update();
 
         expect(dropdown.find('[role="menu"]')).toHaveLength(0);
