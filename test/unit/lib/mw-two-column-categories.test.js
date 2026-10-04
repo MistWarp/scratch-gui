@@ -45,49 +45,57 @@ test('changing the setting persists it and notifies the editor', () => {
 
 // Just enough of scratch-blocks' category menu to run the patched populate.
 const makeScratchBlocks = () => {
-    function Category (menu, row, node) {
-        this.id_ = node.getAttribute('id');
-        row.textContent = this.id_;
-    }
-    function CategoryMenu (parent, parentHtml) {
-        this.parent_ = parent;
-        this.parentHtml_ = parentHtml;
-        this.categories_ = [];
-        this.createDom();
-    }
-    CategoryMenu.prototype.createDom = function () {
-        this.table = document.createElement('div');
-        this.table.className = 'scratchCategoryMenu';
-        this.parentHtml_.appendChild(this.table);
-    };
-    CategoryMenu.prototype.populate = function (domTree) {
-        this.dispose();
-        this.createDom();
-        for (const child of Array.from(domTree.childNodes)) {
-            if (!child.tagName || child.tagName.toUpperCase() !== 'CATEGORY') continue;
-            const row = document.createElement('div');
-            row.className = 'scratchCategoryMenuRow';
-            this.table.appendChild(row);
-            this.categories_.push(new Category(this, row, child));
+    class Category {
+        constructor (menu, row, node) {
+            this.id_ = node.getAttribute('id');
+            row.textContent = this.id_;
         }
-    };
-    CategoryMenu.prototype.dispose = function () {
-        this.categories_ = [];
-        if (this.table) {
-            this.table.remove();
-            this.table = null;
+    }
+    class CategoryMenu {
+        constructor (parent, parentHtml) {
+            this.parent_ = parent;
+            this.parentHtml_ = parentHtml;
+            this.categories_ = [];
+            this.createDom();
         }
-    };
-    function Toolbox () {}
-    Toolbox.prototype.position = function () {};
-    Toolbox.prototype.dispose = function () {};
+        createDom () {
+            this.table = document.createElement('div');
+            this.table.className = 'scratchCategoryMenu';
+            this.parentHtml_.appendChild(this.table);
+        }
+        populate (domTree) {
+            this.dispose();
+            this.createDom();
+            for (const child of Array.from(domTree.childNodes)) {
+                if (!child.tagName || child.tagName.toUpperCase() !== 'CATEGORY') continue;
+                const row = document.createElement('div');
+                row.className = 'scratchCategoryMenuRow';
+                this.table.appendChild(row);
+                this.categories_.push(new Category(this, row, child));
+            }
+        }
+        dispose () {
+            this.categories_ = [];
+            if (this.table) {
+                this.table.remove();
+                this.table = null;
+            }
+        }
+    }
+    class Toolbox {
+        position () {}
+        dispose () {}
+    }
     Toolbox.CategoryMenu = CategoryMenu;
     Toolbox.Category = Category;
-    function Flyout () {}
-    Flyout.prototype.getWidth = () => 250;
-    function VerticalFlyout () {}
-    VerticalFlyout.prototype = Object.create(Flyout.prototype);
-    VerticalFlyout.prototype.position = function () {};
+    class Flyout {
+        getWidth () {
+            return 250;
+        }
+    }
+    class VerticalFlyout extends Flyout {
+        position () {}
+    }
     return {Toolbox, Flyout, VerticalFlyout};
 };
 
