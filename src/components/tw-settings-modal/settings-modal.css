@@ -1265,3 +1265,44 @@
     }
 }
 
+
+/* Settings search, at the top of the sidebar */
+.sidebarSearch {
+    position: relative;
+    padding: 0.75rem 0.75rem 0.25rem;
+}
+
+.sidebarSearchIcon {
+    position: absolute;
+    left: 1.4rem;
+    top: calc(50% + 0.25rem);
+    transform: translateY(-50%);
+    color: color-mix(in srgb, $text-primary 45%, transparent);
+    pointer-events: none;
+}
+
+.sidebarSearchInput {
+    box-sizing: border-box;
+    width: 100%;
+    height: 2.25rem;
+    padding: 0 0.75rem 0 2.1rem;
+    font-family: inherit;
+    font-size: 0.875rem;
+    color: $text-primary;
+    background: $ui-primary;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 6px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sidebarSearchInput:focus {
+    outline: none;
+    border-color: $looks-secondary;
+    box-shadow: 0 0 0 2px $looks-transparent;
+}
+
+.sidebarNoResults {
+    margin: 0.75rem 0.5rem;
+    font-size: 0.875rem;
+    color: color-mix(in srgb, $text-primary 60%, transparent);
+}
