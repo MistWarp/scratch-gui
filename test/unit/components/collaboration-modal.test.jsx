@@ -434,12 +434,22 @@ describe('CollaborationModal', () => {
             wrapper.unmount();
         });
 
-        test('kicking a user calls back with that user id', () => {
+        test('kicking a user asks first, naming them, then calls back with their id', () => {
             const props = connectedProps();
             const wrapper = mountModal(props);
 
             wrapper.find('button[aria-label="Remove Alice"]').simulate('click');
 
+            expect(props.onKickUser).not.toHaveBeenCalled();
+            expect(props.openSimpleDialog).toHaveBeenCalledTimes(1);
+            const dialog = props.openSimpleDialog.mock.calls[0][0];
+            expect(dialog.type).toBe('confirm');
+            expect(dialog.title).toBe('Remove Alice?');
+            expect(dialog.message).toMatch(/^Alice will leave the live session/);
+
+            dialog.onCancel();
+            expect(props.onKickUser).not.toHaveBeenCalled();
+            dialog.onOk();
             expect(props.onKickUser).toHaveBeenCalledWith('user-2');
         });
 

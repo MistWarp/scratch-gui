@@ -256,7 +256,7 @@ class GitModalComponent extends React.Component {
                 </button>
                 <div className={styles.emptyDivider}>
                     <FormattedMessage
-                        defaultMessage="or clone an existing fractch project"
+                        defaultMessage="or clone an existing project"
                         description="Divider between init and clone"
                         id="mw.git.empty.or"
                     />
@@ -719,7 +719,8 @@ class GitModalComponent extends React.Component {
                         <Box className={styles.conflicts}>
                             <p className={styles.muted}>
                                 <FormattedMessage
-                                    defaultMessage="Resolve conflicts by choosing a side for each file:"
+                                    // eslint-disable-next-line max-len
+                                    defaultMessage="These files changed on both branches. Choose which version of each to keep:"
                                     description="Conflict resolution instructions"
                                     id="mw.git.branches.conflictHelp"
                                 />
@@ -738,13 +739,14 @@ class GitModalComponent extends React.Component {
                                             disabled={this.props.busy}
                                             data-filepath={path}
                                             value="ours"
+                                            aria-pressed={mergeResolutions[path] === 'ours'}
                                             onClick={this.handleSetMergeResolution}
                                             type="button"
                                         >
                                             <FormattedMessage
-                                                defaultMessage="Ours"
-                                                description="Keep our version"
-                                                id="mw.git.branches.ours"
+                                                defaultMessage="Keep current version"
+                                                description="Merge conflict choice: keep the current branch's file"
+                                                id="mw.git.branches.keepCurrent"
                                             />
                                         </button>
                                         <button
@@ -754,13 +756,16 @@ class GitModalComponent extends React.Component {
                                             disabled={this.props.busy}
                                             data-filepath={path}
                                             value="theirs"
+                                            aria-pressed={mergeResolutions[path] === 'theirs'}
                                             onClick={this.handleSetMergeResolution}
                                             type="button"
                                         >
                                             <FormattedMessage
-                                                defaultMessage="Theirs"
-                                                description="Keep their version"
-                                                id="mw.git.branches.theirs"
+                                                defaultMessage="Use version from {branch}"
+                                                // eslint-disable-next-line max-len
+                                                description="Merge conflict choice: take the file from the branch being merged in. {branch} is its name."
+                                                id="mw.git.branches.useIncoming"
+                                                values={{branch: this.props.mergeSourceBranch}}
                                             />
                                         </button>
                                     </Box>
@@ -805,7 +810,7 @@ class GitModalComponent extends React.Component {
                 </h2>
                 <p className={styles.muted}>
                     <FormattedMessage
-                        defaultMessage="Working tree vs. last commit. Select a file to view its readable fractch diff."
+                        defaultMessage="Your changes since the last commit. Select a file to see what changed in it."
                         description="Diff section explanation"
                         id="mw.git.diff.explain"
                     />
@@ -947,7 +952,7 @@ class GitModalComponent extends React.Component {
                     <p className={styles.muted}>
                         <FormattedMessage
                             // eslint-disable-next-line max-len
-                            defaultMessage="RoturGit does not need this. Other services use your author name as the username."
+                            defaultMessage="Rotur Git does not need this. Other services use your author name as the username."
                             description="Explains that the author name is the git username"
                             id="mw.git.remote.usernameNote"
                         />
