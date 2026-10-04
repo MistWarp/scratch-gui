@@ -63,6 +63,14 @@ describe('MistWarp smart save results', () => {
         expect(openMistWarpShareWindow).toHaveBeenCalledWith(expect.objectContaining({action: 'remix'}));
     });
 
+    test('downloads a copy of a project that can be neither saved nor remixed', async () => {
+        getRememberedPlatformProjectState.mockReturnValue({isOwner: false, canRemix: false});
+
+        await expect(smartSave({vm: {}, title: 'Project'})).resolves.toBe(true);
+        expect(openMistWarpShareWindow).not.toHaveBeenCalled();
+        expect(downloadBlob).toHaveBeenCalledWith('Project.mwp', expect.any(Blob));
+    });
+
     test('opens the agreement UI when the agreement check fails', async () => {
         getRememberedPlatformProjectState.mockReturnValue({isOwner: true});
         request.mockRejectedValueOnce(new Error('offline'));

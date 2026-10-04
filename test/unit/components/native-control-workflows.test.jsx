@@ -1,7 +1,7 @@
 import React from 'react';
 import {shallow} from 'enzyme';
 
-import CloseButton from '../../../src/components/close-button/close-button';
+import {CloseButtonComponent as CloseButton} from '../../../src/components/close-button/close-button';
 import DeleteButton from '../../../src/components/delete-button/delete-button';
 import Question from '../../../src/components/question/question.jsx';
 import CloudServerButton from '../../../src/components/tw-cloud-variable-badge/cloud-server-button.jsx';
@@ -10,7 +10,7 @@ import {shallowWithIntl} from '../../helpers/intl-helpers.jsx';
 
 describe('native control workflows', () => {
     test('close control is a non-submitting button', () => {
-        const control = shallow(<CloseButton onClick={() => {}} />);
+        const control = shallowWithIntl(<CloseButton onClick={() => {}} />);
 
         expect(control.type()).toBe('button');
         expect(control.prop('type')).toBe('button');
@@ -18,7 +18,7 @@ describe('native control workflows', () => {
     });
 
     test('back control has the correct action label', () => {
-        const control = shallow(<CloseButton buttonType="back" onClick={() => {}} />);
+        const control = shallowWithIntl(<CloseButton buttonType="back" onClick={() => {}} />);
 
         expect(control.prop('aria-label')).toBe('Back');
     });
