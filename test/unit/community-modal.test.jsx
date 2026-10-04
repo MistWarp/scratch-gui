@@ -1,4 +1,5 @@
 import React from 'react';
+import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
 
 import Modal from '../../src/community/components/ui/Modal.jsx';
@@ -111,5 +112,55 @@ describe('community Modal dismissal', () => {
         wrapper.unmount();
         expect(document.body.style.overflow).toBe('scroll');
         document.body.style.overflow = '';
+    });
+
+    test('dismisses only when the press starts and ends on the backdrop', () => {
+        const onClose = jest.fn();
+        const wrapper = mount(<Modal title="Ready" onClose={onClose}>Done</Modal>);
+        const overlay = wrapper.find('div').at(0);
+        const overlayNode = overlay.getDOMNode();
+        const dialogNode = wrapper.find('[role="dialog"]').getDOMNode();
+
+        // A text selection dragged out of the dialog ends with a click on the backdrop.
+        overlay.simulate('mousedown', {target: dialogNode});
+        overlay.simulate('click', {target: overlayNode});
+        expect(onClose).not.toHaveBeenCalled();
+
+        overlay.simulate('mousedown', {target: overlayNode});
+        overlay.simulate('click', {target: overlayNode});
+        expect(onClose).toHaveBeenCalledTimes(1);
+        wrapper.unmount();
+    });
+
+    test('Escape closes only the newest open modal', () => {
+        const outerClose = jest.fn();
+        const innerClose = jest.fn();
+        const outer = mount(<Modal title="Outer" onClose={outerClose}>Outer</Modal>);
+        const inner = mount(<Modal title="Inner" onClose={innerClose}>Inner</Modal>);
+        const pressEscape = () => act(() => {
+            window.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'}));
+        });
+
+        pressEscape();
+        expect(innerClose).toHaveBeenCalledTimes(1);
+        expect(outerClose).not.toHaveBeenCalled();
+
+        inner.unmount();
+        pressEscape();
+        expect(outerClose).toHaveBeenCalledTimes(1);
+        outer.unmount();
+    });
+
+    test('a locked modal keeps Escape from reaching the layer below', () => {
+        const outerClose = jest.fn();
+        const outer = mount(<Modal title="Outer" onClose={outerClose}>Outer</Modal>);
+        const locked = mount(<Modal title="Saving" onClose={() => {}} dismissDisabled>Working…</Modal>);
+
+        act(() => {
+            window.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'}));
+        });
+        expect(outerClose).not.toHaveBeenCalled();
+        locked.unmount();
+        outer.unmount();
     });
 });

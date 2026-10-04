@@ -26,6 +26,7 @@ const URGENT_REASONS = [
     {id: 'terrorism', category: 'terrorism', label: 'Terrorism'}
 ];
 const ALL_REASONS = REASONS.concat(URGENT_REASONS);
+let nextReportId = 0;
 
 const ReportModal = ({type, target, context, targetUser, onClose}) => {
     const {text: communityText} = useCommunityText();
@@ -58,6 +59,7 @@ const ReportModal = ({type, target, context, targetUser, onClose}) => {
     const [sent, setSent] = useState(false);
     const firstRef = useRef(null);
     const submitLocks = useRef(new Set());
+    const fieldId = useRef(`community-report-${++nextReportId}`).current;
     const requestKey = `${type}\u0000${target}\u0000${context || ''}`;
     const currentRequestKey = useRef(requestKey);
     currentRequestKey.current = requestKey;
@@ -117,9 +119,13 @@ const ReportModal = ({type, target, context, targetUser, onClose}) => {
                 <p className={styles.sent}>{communityText('Thanks. Your report was sent to the moderators.')}</p>
             ) : (
                 <React.Fragment>
-                    <label className={styles.label}>{communityText('What is wrong?')}</label>
+                    <label
+                        className={styles.label}
+                        htmlFor={`${fieldId}-reason`}
+                    >{communityText('What is wrong?')}</label>
                     <select
                         ref={firstRef}
+                        id={`${fieldId}-reason`}
                         className={styles.select}
                         value={reasonId}
                         disabled={busy}
@@ -148,8 +154,12 @@ const ReportModal = ({type, target, context, targetUser, onClose}) => {
                             )}
                         </Notice>
                     ) : null}
-                    <label className={styles.label}>{communityText('Details (optional)')}</label>
+                    <label
+                        className={styles.label}
+                        htmlFor={`${fieldId}-details`}
+                    >{communityText('Details (optional)')}</label>
                     <textarea
+                        id={`${fieldId}-details`}
                         className={styles.textarea}
                         value={details}
                         disabled={busy}

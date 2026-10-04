@@ -170,6 +170,11 @@
     box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
+.pollHint {
+    color: var(--text-dim);
+    font-size: var(--fs-2xs);
+}
+
 .schedule {
     display: flex;
     align-items: center;

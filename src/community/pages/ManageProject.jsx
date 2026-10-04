@@ -196,7 +196,9 @@ const ManageProject = () => {
             }))
             .catch(fresh(e => {
                 setErrorLoadContext(loadContext);
-                setError(e && e.status === 404 ? 'Project not found.' : 'Could not load this project.');
+                setError(e && e.status === 404 ?
+                    communityText('Project not found.') :
+                    communityText('Could not load this project.'));
             }));
     }, [beginLoad, id, loadContext]);
 
@@ -294,7 +296,7 @@ const ManageProject = () => {
         const actionKey = beginAction('save');
         if (!actionKey) return;
         if (!form.title.trim()) {
-            setStatus('Project titles cannot be empty.');
+            setStatus(communityText('Project titles cannot be empty.'));
             releaseAction(actionKey);
             return;
         }
@@ -319,13 +321,13 @@ const ManageProject = () => {
                 data = await api.setVisibility(id, form.visibility);
             }
             if (currentLoadContext.current === loadContext) {
-                setStatus('Saved.');
+                setStatus(communityText('Saved.'));
                 setProject(data.project);
                 setProjectLoadContext(loadContext);
             }
         } catch (e) {
             if (currentLoadContext.current === loadContext) {
-                setStatus(e.message || 'Could not save changes.');
+                setStatus(e.message || communityText('Could not save changes.'));
             }
         } finally {
             releaseAction(actionKey);
@@ -370,13 +372,13 @@ const ManageProject = () => {
         try {
             const data = await api.updateProject(id, {collaborators});
             if (currentLoadContext.current === loadContext) {
-                setTeamStatus('Team saved.');
+                setTeamStatus(communityText('Team saved.'));
                 setProject(data.project);
                 setProjectLoadContext(loadContext);
             }
         } catch (e) {
             if (currentLoadContext.current === loadContext) {
-                setTeamStatus(e.message || 'Could not save the team.');
+                setTeamStatus(e.message || communityText('Could not save the team.'));
             }
         } finally {
             releaseAction(actionKey);
@@ -394,7 +396,7 @@ const ManageProject = () => {
             const result = await api.createPreview(id, 24);
             fresh(setPreview)(`${location.origin}${projectUrl({id, vanitySlug: project.vanityLapsed ? '' : form.vanitySlug || project.vanitySlug})}?k=${encodeURIComponent(result.key)}`);
         } catch (e) {
-            fresh(setStatus)(e.message || 'Could not create a preview link.');
+            fresh(setStatus)(e.message || communityText('Could not create a preview link.'));
         } finally {
             releaseAction(actionKey);
             fresh(setPreviewBusy)(false);
@@ -641,7 +643,7 @@ const ManageProject = () => {
                                         <small>{project.vanityLapsed ? communityText('This vanity URL is paused because your plan no longer includes one. It stays yours for 30 days. Clear it to give it up now.') : null}{project.vanitySlug ? <Link to={projectUrl(project)}>{communityText('Open {value1}', {value1: `/p/${project.vanitySlug}`})}</Link> : null}{project.vanitySlug && perks?.mistwarp?.vanityProjectUrls ? ' · ' : ''}{project.vanityLapsed ? null : perks?.mistwarp?.vanityProjectUrls ? communityText('Your {value1} membership includes a vanity URL.', {value1: perks.tier}) : communityText('Vanity project URLs are included with Rotur Pro.')}</small>
                                     </label>
                                     <div className={styles.formActions}>
-                                        {status ? <span className={styles.formStatus}>{status}</span> : null}
+                                        <span className={styles.formStatus} role="status" aria-live="polite">{status}</span>
                                         <Button
                                             variant="primary"
                                             busy={saving}
@@ -700,7 +702,7 @@ const ManageProject = () => {
                                         <SwitchRow checked={form.commentsOff} disabled={saving} label={communityText('Turn off comments')} onChange={value => set('commentsOff', value)} />
                                     </div>
                                     <div className={styles.formActions}>
-                                        {status ? <span className={styles.formStatus}>{status}</span> : null}
+                                        <span className={styles.formStatus} role="status" aria-live="polite">{status}</span>
                                         <Button variant="primary" busy={saving} busyLabel={communityText('Saving…')} onClick={save}>
                                             <Check size={16} />{communityText('Save publishing settings')}</Button>
                                     </div>
@@ -753,7 +755,7 @@ const ManageProject = () => {
                                         </div>
                                         {perks ? <p className={styles.cardHint}>{communityText('Your {value1} membership supports project prices up to {value2} credits. Each sale includes a {value3}% MistWarp fee.', {value1: perks.tier, value2: perks.mistwarp.maxProjectPrice, value3: perks.mistwarp.salesFeeBasisPoints / 100})}</p> : null}
                                         <div className={styles.formActions}>
-                                            {status ? <span className={styles.formStatus}>{status}</span> : null}
+                                            <span className={styles.formStatus} role="status" aria-live="polite">{status}</span>
                                             <Button variant="primary" busy={saving} busyLabel={communityText('Saving…')} onClick={save}><Check size={16} />{communityText('Save price')}</Button>
                                         </div>
                                     </div>
@@ -844,7 +846,7 @@ const ManageProject = () => {
                                         <small>{communityText('Clear this field to move the project back to your account.')}</small>
                                     </label>
                                     <div className={styles.formActions}>
-                                        {status ? <span className={styles.formStatus}>{status}</span> : null}
+                                        <span className={styles.formStatus} role="status" aria-live="polite">{status}</span>
                                         <Button variant="primary" busy={saving} busyLabel={communityText('Saving…')} onClick={save}><Check size={16} />{communityText('Save group')}</Button>
                                     </div>
                                 </div>
@@ -1039,7 +1041,7 @@ const ManageProject = () => {
                                     </EmptyState>
                                 )}
                                 <div className={styles.teamFooter}>
-                                    <span>{teamStatus}</span>
+                                    <span role="status" aria-live="polite">{teamStatus}</span>
                                     <Button
                                         variant="primary"
                                         busy={teamSaving}
@@ -1084,7 +1086,7 @@ const BountiesPanel = ({project}) => {
             .then(data => setItems(data.bounties || []))
             .catch(error => {
                 setItems([]);
-                setStatus(error.message || 'Could not load bounties.');
+                setStatus(error.message || communityText('Could not load bounties.'));
             });
     }, [project.id]);
 
@@ -1095,10 +1097,10 @@ const BountiesPanel = ({project}) => {
         setStatus('');
         try {
             await cancelCommerceBounty(id);
-            setStatus('Bounty cancelled and refunded.');
+            setStatus(communityText('Bounty cancelled and refunded.'));
             load();
         } catch (error) {
-            setStatus(error.message || 'Could not cancel the bounty.');
+            setStatus(error.message || communityText('Could not cancel the bounty.'));
         } finally {
             setBusy(false);
         }
@@ -1111,7 +1113,7 @@ const BountiesPanel = ({project}) => {
                 <Notice variant="info">
                     {communityText('New bounties are paused while MistWarp moves payments to Rotur. Bounties already funded still pay out when you merge a linked pull request, and you can cancel them for a refund.')}
                 </Notice>
-                {status ? <p className={styles.formStatus}>{status}</p> : null}
+                <div className={styles.cardStatus} role="status" aria-live="polite">{status}</div>
             </div>
             <div className={styles.card}>
                 <SectionHeading as="h3" icon={Coins} title={communityText('Project bounties')} />

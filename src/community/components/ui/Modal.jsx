@@ -7,6 +7,8 @@ import useEscape from '../../use-escape.js';
 import styles from './Modal.module.css';
 
 let nextModalId = 0;
+// A locked modal still owns Escape so it cannot fall through to the layer underneath.
+const ignoreEscape = () => {};
 const focusableSelector = '[autofocus], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), ' +
     'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
 
@@ -17,8 +19,9 @@ const Modal = ({actions, children, className, dismissDisabled, icon: Icon, onClo
     const modalRef = useRef(null);
     const bodyRef = useRef(null);
     const closeRef = useRef(null);
+    const pressedOverlay = useRef(false);
     const titleId = useRef(`community-modal-title-${++nextModalId}`).current;
-    useEscape(activeDismiss);
+    useEscape(activeDismiss || ignoreEscape);
 
     useEffect(() => {
         const previousFocus = document.activeElement;
@@ -56,10 +59,20 @@ const Modal = ({actions, children, className, dismissDisabled, icon: Icon, onClo
         }
     };
 
+    // Only a press that starts and ends on the backdrop dismisses, not a drag out of the dialog.
+    const dismissFromOverlay = event => {
+        const started = pressedOverlay.current;
+        pressedOverlay.current = false;
+        if (started && event.target === event.currentTarget) activeDismiss();
+    };
+
     return (
         <div
             className={styles.overlay}
-            onClick={activeDismiss}
+            onMouseDown={event => {
+                pressedOverlay.current = event.target === event.currentTarget;
+            }}
+            onClick={activeDismiss ? dismissFromOverlay : null}
         >
             <div
                 ref={modalRef}

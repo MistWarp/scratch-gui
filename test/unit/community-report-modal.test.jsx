@@ -41,4 +41,13 @@ describe('community report dialog', () => {
             'threat_to_life');
         wrapper.unmount();
     });
+
+    test('labels the reason and details fields', () => {
+        const wrapper = mount(<ReportModal type="comment" target="c1" onClose={() => {}} />);
+        const labels = wrapper.find('label');
+        expect(labels.at(0).prop('htmlFor')).toBe(wrapper.find('select').prop('id'));
+        expect(labels.at(1).prop('htmlFor')).toBe(wrapper.find('textarea').prop('id'));
+        expect(wrapper.find('select').prop('id')).toBeTruthy();
+        wrapper.unmount();
+    });
 });

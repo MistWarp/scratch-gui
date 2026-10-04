@@ -13,6 +13,8 @@ const ProjectCard = ({project, showTrend = false}) => {
     const price = project.price || 0;
     const teamSize = Math.max(1, Number(project.teamSize) || 1);
     const acceptedChanges = Number(project.acceptedChanges) || 0;
+    const loves = project.loveCount || 0;
+    const views = project.views || 0;
     return (
         <article className={styles.card}>
             <Link
@@ -55,11 +57,17 @@ const ProjectCard = ({project, showTrend = false}) => {
                 <div className={styles.stats}>
                     <span className={styles.stat}>
                         <Heart size={13} />
-                        {project.loveCount || 0}
+                        <span aria-hidden="true">{loves}</span>
+                        <span className={styles.srOnly}>
+                            {communityText('{value1, plural, one {# love} other {# loves}}', {value1: loves})}
+                        </span>
                     </span>
                     <span className={styles.stat}>
                         <Play size={13} />
-                        {project.views || 0}
+                        <span aria-hidden="true">{views}</span>
+                        <span className={styles.srOnly}>
+                            {communityText('{value1, plural, one {# view} other {# views}}', {value1: views})}
+                        </span>
                     </span>
                     {teamSize > 1 ? (
                         <span
@@ -67,7 +75,10 @@ const ProjectCard = ({project, showTrend = false}) => {
                             title={communityText('{value1} people have worked on this project', {value1: teamSize})}
                         >
                             <Users size={13} />
-                            {teamSize}
+                            <span aria-hidden="true">{teamSize}</span>
+                            <span className={styles.srOnly}>
+                                {communityText('{value1} people have worked on this project', {value1: teamSize})}
+                            </span>
                         </span>
                     ) : null}
                     {acceptedChanges > 0 ? (
@@ -78,7 +89,12 @@ const ProjectCard = ({project, showTrend = false}) => {
                                 communityText('{value1} accepted contributions', {value1: acceptedChanges})}
                         >
                             <GitPullRequest size={13} />
-                            {acceptedChanges}
+                            <span aria-hidden="true">{acceptedChanges}</span>
+                            <span className={styles.srOnly}>
+                                {acceptedChanges === 1 ?
+                                    communityText('1 accepted contribution') :
+                                    communityText('{value1} accepted contributions', {value1: acceptedChanges})}
+                            </span>
                         </span>
                     ) : null}
                     {project.remixParent ? (
