@@ -2,7 +2,7 @@ import {getCommunityLocale} from '../locale.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
-import {useParams, Link, useNavigate} from 'react-router-dom';
+import {useParams, Link, useLocation, useNavigate} from 'react-router-dom';
 import {
     Play, GitFork, ExternalLink, EyeOff, Clock3,
     MessageSquareOff, MessageSquare, ImageUp, MonitorPlay, Upload, Blocks, Flag, CalendarDays,
@@ -94,12 +94,23 @@ const VERSION_CONTROL_HASHES = {
     '#pull-requests': 'pulls',
     '#releases': 'releases'
 };
-const initialActivityTab = () => (VERSION_CONTROL_HASHES[window.location.hash] ? 'Version control' : ({
+const ACTIVITY_HASHES = {
     '#files': 'Files',
+    '#reviews': 'Reviews',
     '#bounties': 'Bounties',
     '#contribute': 'Contribute'
-}[window.location.hash] || 'Comments'));
+};
+export const activityTabForHash = hash => (VERSION_CONTROL_HASHES[hash] ? 'Version control' : ACTIVITY_HASHES[hash] || 'Comments');
+// The address hash for a tab, so a tab can be linked to. Comments, the default, has none.
+export const activityHash = (tab, versionControlTab) => {
+    const hashes = tab === 'Version control' ? VERSION_CONTROL_HASHES : ACTIVITY_HASHES;
+    const value = tab === 'Version control' ? versionControlTab : tab;
+    return Object.keys(hashes).find(hash => hashes[hash] === value) || '';
+};
+const initialActivityTab = () => activityTabForHash(window.location.hash);
 const initialVersionControlTab = () => VERSION_CONTROL_HASHES[window.location.hash] || 'history';
+// The MistWarp session a request is sent with; it changes when the viewer signs in, out, or switches account.
+const currentSession = () => (typeof api.loadSession === 'function' ? api.loadSession() : null);
 
 export const reviewPayload = (rating, message) => ({rating, message: message.trim()});
 export const releasePayload = form => ({...form, version: form.version.trim(), notes: form.notes.trim()});
@@ -230,6 +241,7 @@ const Project = () => {
     };
     const releaseAction = key => actionLocks.current.delete(key);
     const navigate = useNavigate();
+    const location = useLocation();
     const [project, setProject] = useState(null);
     const [projectLoadContext, setProjectLoadContext] = useState('');
     const [versionHistory, setVersionHistory] = useState(null);
@@ -332,14 +344,14 @@ const Project = () => {
             .then(fresh(data => {
                 if (!data || !data.project) throw new Error('Project response was incomplete.');
                 setProject(data.project);
-                setProjectLoadContext(actionContext);
+                setProjectLoadContext(id);
                 setError(null);
             }))
             .catch(fresh(e => {
-                setErrorLoadContext(actionContext);
+                setErrorLoadContext(id);
                 setError(e && e.status === 404 ? 'Project not found.' : 'Could not load this project.');
             }));
-    }, [actionContext, id, beginLoad]);
+    }, [id, beginLoad]);
 
     const loadHistory = useCallback(() => {
         if (!id || !canViewProjectSource(project)) return Promise.resolve();
@@ -355,17 +367,25 @@ const Project = () => {
         setFeaturedProject((user && user.featuredProject) || '');
     }, [user]);
 
+    // The open pull request count is only shown in version control, so count them when it opens.
+    const pullCountFor = useRef('');
     useEffect(() => {
-        if (!id) return () => {};
+        if (!id || tab !== 'Version control' || pullCountFor.current === id) return () => {};
+        pullCountFor.current = id;
         let current = true;
+        let settled = false;
         setOpenPullCount(null);
         api.pulls(id).then(data => {
             if (current) setOpenPullCount((data.pulls || []).filter(pull => pull.state === 'open').length);
-        }).catch(() => {});
+        }).catch(() => {}).finally(() => {
+            settled = true;
+        });
         return () => {
+            // Leaving before the count arrived: count again next time.
+            if (!settled && pullCountFor.current === id) pullCountFor.current = '';
             current = false;
         };
-    }, [id]);
+    }, [id, tab]);
 
     useEffect(() => {
         if (!projectBountyId) return () => {};
@@ -386,10 +406,18 @@ const Project = () => {
         };
     }, [projectBountyId]);
 
+    // Load straight away with the stored session instead of waiting for sign-in to finish. Once
+    // sign-in settles, load again only if it changed the session the project was loaded with.
+    const loadedFor = useRef({id: '', session: null});
     useEffect(() => {
-        if (userLoading || !id) return;
+        if (!id) return;
+        const session = currentSession();
+        const previous = loadedFor.current;
+        if (previous.id === id && (userLoading || previous.session === session)) return;
+        loadedFor.current = {id, session};
         beginHistoryLoad();
         setProject(null);
+        setProjectLoadContext('');
         setVersionHistory(null);
         setProjectFileCount(null);
         setError(null);
@@ -421,7 +449,22 @@ const Project = () => {
         setStageHeightRatio(3 / 4);
         restoreUserTheme();
         load();
-    }, [actionContext, beginHistoryLoad, id, load, userLoading]);
+    }, [beginHistoryLoad, id, load, userLoading, viewerName]);
+
+    // Follow the address when the hash changes, such as Back to an earlier tab or a pasted link.
+    useEffect(() => {
+        setTab(activityTabForHash(location.hash));
+        if (VERSION_CONTROL_HASHES[location.hash]) setVersionControlTab(VERSION_CONTROL_HASHES[location.hash]);
+    }, [location.hash]);
+
+    const showActivity = (nextTab, nextVersionControlTab = versionControlTab) => {
+        setTab(nextTab);
+        setVersionControlTab(nextVersionControlTab);
+        const hash = activityHash(nextTab, nextVersionControlTab);
+        // Keep a comment link's anchor while the comments stay open.
+        if (hash === location.hash || (!hash && activityTabForHash(location.hash) === nextTab)) return;
+        navigate({search: location.search, hash}, {replace: true});
+    };
 
     useEffect(() => {
         if (!project) return;
@@ -463,11 +506,11 @@ const Project = () => {
 
     // Scroll to a comment anchor after the comments section renders
     useEffect(() => {
-        if (projectLoadContext !== actionContext) return;
+        if (projectLoadContext !== id) return;
         const hash = window.location.hash;
         if (!hash) return;
         return scrollToAnchorWithRetry(hash.replace('#', ''));
-    }, [actionContext, projectLoadContext]);
+    }, [id, projectLoadContext]);
 
     const owner = project && project.owner;
     useEffect(() => {
@@ -1357,7 +1400,7 @@ const Project = () => {
             </main>
         );
     }
-    if (error && errorLoadContext === actionContext && projectLoadContext !== actionContext) {
+    if (error && errorLoadContext === id && projectLoadContext !== id) {
         return (
             <main className={styles.page}>
                 {error === 'Project not found.' ? (
@@ -1372,7 +1415,7 @@ const Project = () => {
             </main>
         );
     }
-    if (!project || projectLoadContext !== actionContext) {
+    if (!project || projectLoadContext !== id) {
         return (
             <main className={styles.page}>
                 <StatusMessage>{resolvingVanity ? communityText('Finding project…') : communityText('Loading…')}</StatusMessage>
@@ -1887,7 +1930,7 @@ const Project = () => {
                                         {communityText('The project file could not be loaded. The creator may need to save it again.')}
                                     </EmptyState>
                                 </div>
-                            ) : followThemeDecision === null ? (
+                            ) : followThemeDecision === null || userLoading ? (
                                 <div className={styles.paywall}><StatusMessage>{communityText('Loading project…')}</StatusMessage></div>
                             ) : (
                                 <iframe
@@ -1994,7 +2037,7 @@ const Project = () => {
                         className={styles.activityTabs}
                         ariaLabel="Project activity"
                         value={tab}
-                        onChange={setTab}
+                        onChange={name => showActivity(name)}
                         items={activityTabsFor(project).map(name => ({
                             key: name,
                             label: (
@@ -2042,7 +2085,7 @@ const Project = () => {
                             <Sidebar
                                 ariaLabel="Version control"
                                 active={versionControlTab}
-                                onChange={setVersionControlTab}
+                                onChange={key => showActivity('Version control', key)}
                                 sections={[
                                     {key: 'history', label: 'History', icon: History, badge: versionHistory?.graph?.nodes?.length ?? versionHistory?.commits?.length ?? project.commitCount},
                                     {key: 'branches', label: 'Branches', icon: GitBranch},
@@ -2058,7 +2101,7 @@ const Project = () => {
                                     <ProjectBranches id={id} canManage={project.isOwner} onChange={refreshProjectAndHistory} />
                                 ) : null}
                                 {versionControlTab === 'pulls' ? (
-                                    <PullList id={id} baseUrl={baseProjectUrl} onCount={setOpenPullCount} onNew={() => setTab('Contribute')} />
+                                    <PullList id={id} baseUrl={baseProjectUrl} onCount={setOpenPullCount} onNew={() => showActivity('Contribute')} />
                                 ) : null}
                                 {versionControlTab === 'releases' ? (
                                     <ReleaseList key={id} id={id} isOwner={project.isOwner} viewerName={viewerName} />
@@ -2075,7 +2118,7 @@ const Project = () => {
                                 if (project.remixParent && project.isOwner) {
                                     rememberBountyClaim(project.id, bounty.id);
                                     setPreferredBountyId(bounty.id);
-                                    setTab('Contribute');
+                                    showActivity('Contribute');
                                 } else {
                                     remixForBounty(bounty);
                                 }

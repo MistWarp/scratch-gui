@@ -30,8 +30,8 @@ const Followers = ({mode}) => {
         communityText('No followers yet');
 
     useEffect(() => {
-        setPageMeta({title: `${name}'s ${label}`, image: rotur.avatar(name, 256), card: 'summary'});
-    }, [label, name]);
+        setPageMeta({title, image: rotur.avatar(name, 256), card: 'summary'});
+    }, [title, name]);
 
     useEffect(() => {
         const fresh = beginLoad();

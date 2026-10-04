@@ -1,13 +1,13 @@
 import tokenStyles from './styles/tokens.module.css';
-import React, {Suspense, useEffect} from 'react';
+import React, {Suspense, useEffect, useRef} from 'react';
 import {lazyWithReload as lazy} from '../lib/lazy-with-retry.js';
-import ErrorBoundary from '../containers/error-boundary.jsx';
-import {Navigate, Routes, Route, useLocation} from 'react-router-dom';
+import {Navigate, Routes, Route, useLocation, useNavigationType} from 'react-router-dom';
 import {UserProvider} from './UserContext.jsx';
-import setPageMeta from './page-meta.js';
+import {setRouteMeta} from './page-meta.js';
 import {initSiteErrorReporting} from '../lib/error-reporter.js';
 import NavBar from './components/NavBar.jsx';
 import RouteLoading from './components/RouteLoading.jsx';
+import RouteErrorBoundary from './components/RouteErrorBoundary.jsx';
 import AnnouncementBanner from './components/AnnouncementBanner.jsx';
 import StandingBanner from './components/StandingBanner.jsx';
 import UpgradeCelebration from './components/UpgradeCelebration.jsx';
@@ -81,19 +81,80 @@ const ROUTE_TITLES = [
     ['/trust', 'Trust and safety'],
     ['/support', 'Support'],
     ['/status', 'Service status'],
+    ['/admin', 'Admin'],
     ['/users/', 'Profile'],
     ['/p/', 'Project'],
     ['/project/', 'Project']
 ];
 
-const RouteMeta = () => {
+// Scroll positions by history entry, so Back and Forward return to where the reader was.
+const scrollPositions = new Map();
+const RESTORE_SCROLL_FOR = 2000;
+
+// Pages fill in after their data loads, so keep scrolling until the page is tall enough,
+// the time runs out, or the reader takes over.
+const restoreScroll = top => {
+    let frame = null;
+    const started = Date.now();
+    const userEvents = ['wheel', 'touchstart', 'keydown', 'mousedown'];
+    const stop = () => {
+        if (frame !== null) cancelAnimationFrame(frame);
+        frame = null;
+        userEvents.forEach(type => window.removeEventListener(type, stop));
+    };
+    const step = () => {
+        frame = null;
+        window.scrollTo(0, top);
+        if (Math.abs(window.scrollY - top) > 1 && Date.now() - started < RESTORE_SCROLL_FOR) {
+            frame = requestAnimationFrame(step);
+        } else {
+            stop();
+        }
+    };
+    userEvents.forEach(type => window.addEventListener(type, stop, {passive: true}));
+    step();
+    return stop;
+};
+
+export const RouteMeta = () => {
     const {text} = useCommunityIntl();
-    const {pathname} = useLocation();
+    const {key, pathname} = useLocation();
+    const navigationType = useNavigationType();
+    const locationKey = useRef(key);
+    locationKey.current = key;
+    const metaPath = useRef(null);
+    const firstRoute = useRef(true);
+
     useEffect(() => {
         const match = ROUTE_TITLES.find(([prefix]) => pathname.startsWith(prefix));
-        setPageMeta({title: match ? text(match[1]) : null});
-        window.scrollTo(0, 0);
+        const navigated = metaPath.current !== pathname;
+        metaPath.current = pathname;
+        setRouteMeta({title: match ? text(match[1]) : null}, navigated);
     }, [pathname, text]);
+
+    useEffect(() => {
+        if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
+        const save = () => scrollPositions.set(locationKey.current, window.scrollY);
+        window.addEventListener('scroll', save, {passive: true});
+        return () => window.removeEventListener('scroll', save);
+    }, []);
+
+    useEffect(() => {
+        if (firstRoute.current) {
+            firstRoute.current = false;
+            return;
+        }
+        let stopRestoring = null;
+        if (navigationType === 'POP') stopRestoring = restoreScroll(scrollPositions.get(key) || 0);
+        else window.scrollTo(0, 0);
+        // Start keyboard and screen reader users at the new page rather than the link they left.
+        const main = document.getElementById('mw-main-content');
+        if (main && !main.contains(document.activeElement)) main.focus({preventScroll: true});
+        return () => {
+            if (stopRestoring) stopRestoring();
+        };
+    // Only a new page moves the scroll position and focus; tab and filter changes keep them.
+    }, [pathname]);
     return null;
 };
 
@@ -112,10 +173,7 @@ const App = () => {
         <UpdateToast />
         <UpgradeCelebration />
         <div className={tokenStyles['mw-app-content']} id="mw-main-content" tabIndex="-1">
-            <ErrorBoundary
-                action="community-route"
-                resetKey={pathname}
-            >
+            <RouteErrorBoundary resetKey={pathname}>
                 <Suspense fallback={<RouteLoading />}>
                     <Routes>
                         <Route path="/" element={<Home />} />
@@ -170,7 +228,7 @@ const App = () => {
                         <Route path="*" element={<NotFound />} />
                     </Routes>
                 </Suspense>
-            </ErrorBoundary>
+            </RouteErrorBoundary>
         </div>
         <Footer />
     </UserProvider>);

@@ -3,6 +3,7 @@ import React, {useEffect, useState} from 'react';
 import {ArrowLeft} from 'lucide-react';
 import {useNavigate, useParams} from 'react-router-dom';
 import rotur from '../rotur.js';
+import setPageMeta from '../page-meta.js';
 import {useUser} from '../UserContext.jsx';
 import IconButton from '../components/ui/IconButton.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
@@ -40,6 +41,11 @@ const Post = () => {
             active = false;
         };
     }, [attempt, id, user && user.username]);
+
+    useEffect(() => {
+        if (!post) return;
+        setPageMeta({title: communityText('Post by {value1}', {value1: post.user}), description: post.content});
+    }, [communityText, post]);
 
     return (
         <main className={styles.page}>

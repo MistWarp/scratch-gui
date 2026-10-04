@@ -293,7 +293,7 @@ const Profile = () => {
     useEffect(() => {
         if (mwUserLoadContext !== loadContext) return;
         if (mwUser && mwUser.banned) {
-            setPageMeta({title: name, description: 'Banned from MistWarp by site admins.'});
+            setPageMeta({title: name, description: communityText('Banned from MistWarp by site admins.')});
             return;
         }
         if (!profile) return;
@@ -303,7 +303,7 @@ const Profile = () => {
             image: rotur.avatar(name, 256),
             card: 'summary'
         });
-    }, [profile, name, mwUser, mwUserLoadContext, loadContext]);
+    }, [communityText, profile, name, mwUser, mwUserLoadContext, loadContext]);
 
     // Scroll to a comment anchor after the comments section renders
     useEffect(() => {
@@ -320,23 +320,32 @@ const Profile = () => {
         actionLocks.current.add(actionKey);
         setFollowBusy(true);
         setActionError(null);
+        const me = user.username;
+        const wasFollowed = Boolean(profile.followed);
+        // Show the new state straight away and put the old one back if Rotur refuses.
+        const showFollow = followed => {
+            setProfile(p => (Boolean(p.followed) === followed ? p : {
+                ...p,
+                followed,
+                followers: followed ? (p.followers || 0) + 1 : Math.max(0, (p.followers || 1) - 1)
+            }));
+            setFollowers(fs => {
+                const others = fs.filter(f => f.toLowerCase() !== me.toLowerCase());
+                return followed ? [me, ...others] : others;
+            });
+        };
+        showFollow(!wasFollowed);
         try {
-            const me = user.username;
-            if (profile.followed) {
+            if (wasFollowed) {
                 await rotur.unfollow(name);
-                if (actionContextRef.current !== context) return;
-                setProfile(p => ({...p, followed: false, followers: Math.max(0, (p.followers || 1) - 1)}));
-                setFollowers(fs => fs.filter(f => f.toLowerCase() !== me.toLowerCase()));
             } else {
                 await rotur.follow(name);
                 api.checkFollowerMilestones(name).catch(() => {});
-                if (actionContextRef.current !== context) return;
-                setProfile(p => ({...p, followed: true, followers: (p.followers || 0) + 1}));
-                setFollowers(fs => [me, ...fs.filter(f => f.toLowerCase() !== me.toLowerCase())]);
             }
         } catch (e) {
             if (actionContextRef.current === context) {
-                setActionError(e.message || 'Could not update follow.');
+                showFollow(wasFollowed);
+                setActionError(e.message || communityText('Could not update follow.'));
             }
         } finally {
             actionLocks.current.delete(actionKey);

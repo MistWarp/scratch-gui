@@ -9,7 +9,7 @@ import styles from './InfoPage.module.css';
 
 const NotFound = () => {
     const {text: communityText} = useCommunityText();
-    useEffect(() => setPageMeta({title: 'Page not found'}), []);
+    useEffect(() => setPageMeta({title: communityText('Page not found')}), [communityText]);
     return (
         <main className={`${styles.page} ${styles.notFound}`}>
             <EmptyState

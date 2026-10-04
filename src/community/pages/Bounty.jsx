@@ -16,6 +16,7 @@ import ReportModal from '../components/ReportModal.jsx';
 import UserLink from '../components/UserLink.jsx';
 import {useUser} from '../UserContext.jsx';
 import {timeAgo} from '../format.js';
+import setPageMeta from '../page-meta.js';
 import styles from './Bounty.module.css';
 
 const Bounty = () => {
@@ -55,6 +56,15 @@ const Bounty = () => {
     useEffect(() => {
         load();
     }, [load]);
+
+    useEffect(() => {
+        if (!bounty || !project) return;
+        setPageMeta({
+            title: bounty.title || communityText('Bounty for {value1}', {value1: project.title}),
+            description: bounty.description,
+            image: project.cardUrl || project.thumbUrl
+        });
+    }, [bounty, communityText, project]);
 
     const registered = activity.workers.some(worker => worker.isViewer || (user && worker.username.toLowerCase() === user.username.toLowerCase()));
     const toggleRegistration = async () => {

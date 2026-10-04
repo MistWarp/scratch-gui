@@ -41,8 +41,8 @@ jest.mock('../../src/community/i18n.jsx', () => ({
     useCommunityIntl: () => ({t: key => key, text: key => key})
 }));
 
-const renderNav = () => mount(
-    <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+const renderNav = (path = '/') => mount(
+    <MemoryRouter initialEntries={[path]} future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
         <NavBar />
     </MemoryRouter>
 );
@@ -131,5 +131,94 @@ describe('community navigation actions', () => {
         expect(wrapper.text()).not.toContain('Searching…');
         wrapper.unmount();
         jest.useRealTimers();
+    });
+
+    test('moves through every quick result kind with the arrow keys', async () => {
+        jest.useFakeTimers();
+        api.explore.mockResolvedValue({projects: [{id: 'p1', title: 'Alpine', owner: 'Sophie'}]});
+        api.spaces.mockResolvedValue({spaces: [{_id: 's1', title: 'Alps studio', kind: 'studio', owner: 'Sophie'}]});
+        const wrapper = renderNav();
+        const input = () => wrapper.find('input[role="combobox"]').first();
+
+        input().simulate('focus');
+        input().simulate('change', {target: {value: 'al'}});
+        await act(async () => {
+            jest.advanceTimersByTime(200);
+            await Promise.resolve();
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+        wrapper.update();
+
+        const listbox = wrapper.find('#mw-search-suggestions-desktop[role="listbox"]');
+        const options = listbox.find('[role="option"]');
+        expect(options).toHaveLength(4);
+        expect(listbox.find('[role="group"]')).toHaveLength(3);
+        expect(listbox.find('button')).toHaveLength(0);
+        expect(input().prop('aria-expanded')).toBe(true);
+
+        const highlighted = [];
+        for (let step = 0; step < 4; step++) {
+            input().simulate('keydown', {key: 'ArrowDown'});
+            wrapper.update();
+            highlighted.push(input().prop('aria-activedescendant'));
+        }
+        expect(new Set(highlighted).size).toBe(4);
+        expect(wrapper.find(`#${highlighted[3]}`).text()).toContain('See all results');
+
+        input().simulate('keydown', {key: 'Home'});
+        wrapper.update();
+        expect(input().prop('aria-activedescendant')).toBe(highlighted[0]);
+        input().simulate('keydown', {key: 'End'});
+        wrapper.update();
+        expect(input().prop('aria-activedescendant')).toBe(highlighted[3]);
+        wrapper.unmount();
+        jest.useRealTimers();
+    });
+
+    test('opens the highlighted quick result with Enter', async () => {
+        jest.useFakeTimers();
+        const wrapper = renderNav();
+        const input = () => wrapper.find('input[role="combobox"]').first();
+
+        input().simulate('focus');
+        input().simulate('change', {target: {value: 'al'}});
+        await act(async () => {
+            jest.advanceTimersByTime(200);
+            await Promise.resolve();
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+        wrapper.update();
+        input().simulate('keydown', {key: 'ArrowDown'});
+        wrapper.update();
+        expect(wrapper.find(`#${input().prop('aria-activedescendant')}`).text()).toContain('Alex');
+        input().simulate('keydown', {key: 'Enter'});
+        wrapper.update();
+
+        // Leaving the page clears the box.
+        expect(input().prop('value')).toBe('');
+        wrapper.unmount();
+        jest.useRealTimers();
+    });
+
+    test('keeps the query in the box on the results page without looking it up again', () => {
+        const wrapper = renderNav('/search?q=platform%20game');
+
+        expect(wrapper.find('input[role="combobox"]').first()
+            .prop('value')).toBe('platform game');
+        expect(api.searchUsers).not.toHaveBeenCalled();
+        wrapper.unmount();
+    });
+
+    test('marks the current main section in the desktop links', () => {
+        const wrapper = renderNav('/spaces?kind=studio');
+        const main = wrapper.find('nav[aria-label="nav.main"]');
+
+        expect(main.find('a[aria-label="nav.explore"]').prop('aria-current')).toBe('page');
+        expect(main.find('a[aria-label="nav.random"]')
+            .prop('aria-current')).toBeFalsy();
+        expect(main.find('a[aria-label="nav.random"]').prop('title')).toBe('nav.random');
+        wrapper.unmount();
     });
 });

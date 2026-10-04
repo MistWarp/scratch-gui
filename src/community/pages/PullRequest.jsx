@@ -259,7 +259,7 @@ const PullRequest = () => {
                 commits: timelineData.commits || [],
                 targetCommits: timelineData.targetCommits || []
             });
-            setPageMeta({title: `${pullData.pull.title} · Pull request #${pullData.pull.index}`});
+            setPageMeta({title: communityText('{title} · Pull request #{index}', {title: pullData.pull.title, index: pullData.pull.index})});
         } catch (error) {
             if (contextRef.current === context) {
                 setLoadingError(error.message || 'Could not load this pull request.');
