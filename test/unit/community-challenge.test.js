@@ -1,12 +1,15 @@
 import {
     challengeAudienceJudged,
     challengePhase,
+    challengeWinner,
     challengeRating,
     challengeRatingsReady,
     challengeScore,
     challengeWeightedScore,
     nextUnscoredEntry
 } from '../../src/community/pages/Challenge.jsx';
+import {confettiPieces} from '../../src/community/components/Confetti.jsx';
+import {selectRecentWinner, WINNER_SHOWCASE_MS} from '../../src/community/components/HomeWorkspace.jsx';
 
 describe('Challenge state', () => {
     test('calculates phases from numeric or ISO dates', () => {
@@ -62,5 +65,40 @@ describe('Challenge state', () => {
         expect(nextUnscoredEntry(projects, 'b').id).toBe('d');
         expect(nextUnscoredEntry(projects, 'd').id).toBe('b');
         expect(nextUnscoredEntry([{id: 'a'}], 'a')).toBe(null);
+    });
+
+    test('only names a winner once results are published', () => {
+        const projects = [{id: 'b', place: 2, judgeScore: 6}, {id: 'a', place: 1, owner: 'ann', judgeScore: 8, audienceScore: 4, audienceVoteCount: 3}];
+        expect(challengeWinner({projects})).toBe(null);
+        expect(challengeWinner({resultsPublishedAt: 5, projects})).toMatchObject({id: 'a', score: 8, scoreOutOf: 10});
+        expect(challengeWinner({resultsPublishedAt: 5, votingMode: 'audience', projects})).toMatchObject({id: 'a', score: 4, scoreOutOf: 5, voteCount: 3});
+        expect(challengeWinner({resultsPublishedAt: 5, winner: {id: 'z', owner: 'zed'}, projects})).toMatchObject({id: 'z'});
+    });
+
+    test('shows the most recent winner from the last two weeks on the home page', () => {
+        const now = 100 * 86400000;
+        const spaces = [
+            {_id: 'old', resultsPublishedAt: now - WINNER_SHOWCASE_MS - 1, winner: {id: 'p1'}},
+            {_id: 'recent', resultsPublishedAt: now - 1000, winner: {id: 'p2'}},
+            {_id: 'older', resultsPublishedAt: now - 86400000, winner: {id: 'p3'}},
+            {_id: 'none', resultsPublishedAt: now, winner: {}}
+        ];
+        expect(selectRecentWinner(spaces, now)._id).toBe('recent');
+        expect(selectRecentWinner([spaces[0]], now)).toBeUndefined();
+    });
+
+    test('generates confetti inside the viewport', () => {
+        let seed = 0;
+        const random = () => {
+            seed = (seed + 0.37) % 1;
+            return seed;
+        };
+        const pieces = confettiPieces(20, random);
+        expect(pieces).toHaveLength(20);
+        pieces.forEach(piece => {
+            expect(piece.left).toBeGreaterThanOrEqual(0);
+            expect(piece.left).toBeLessThanOrEqual(100);
+            expect(piece.duration).toBeGreaterThan(2);
+        });
     });
 });
