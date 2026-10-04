@@ -50,6 +50,7 @@ import {
 import {messageEmbeds, serverEmbeds} from '../../lib/originchats/embeds.js';
 import {firstLine, onlyEmoji, parse} from '../../lib/originchats/rich-text.js';
 import {verifyMessage} from '../../lib/originchats/signing.js';
+import copyText from '../../lib/utils/copy-text.js';
 import {Attachment, ClientEmbed, LinkEmbed} from './chat-embeds.jsx';
 import {CHAT_DRAG_MIME} from './chat-actions.js';
 import {DirectAvatar} from './chat-direct.jsx';
@@ -1035,20 +1036,7 @@ const markInternalDrag = event => {
 };
 
 const copyToClipboard = (element, text) => {
-    const view = element.ownerDocument.defaultView;
-    if (view.navigator.clipboard && view.navigator.clipboard.writeText) {
-        view.navigator.clipboard.writeText(text).catch(() => null);
-        return;
-    }
-    const doc = element.ownerDocument;
-    const area = doc.createElement('textarea');
-    area.value = text;
-    area.style.position = 'fixed';
-    area.style.opacity = '0';
-    doc.body.appendChild(area);
-    area.select();
-    doc.execCommand('copy');
-    doc.body.removeChild(area);
+    copyText(text, {document: element.ownerDocument}).catch(() => null);
 };
 
 const tidySeparators = items => items.filter((item, index) => {

@@ -1,4 +1,4 @@
-import {buildSizeReport, formatSize, LIMITS} from '../../../src/containers/mw-project-metadata-modal.jsx';
+import {buildSizeReport, LIMITS} from '../../../src/containers/mw-project-metadata-modal.jsx';
 
 const asset = (id, format, size) => ({
     assetId: id,
@@ -52,7 +52,6 @@ test('reads project sizes directly from the VM', () => {
     ]);
     expect(report.largest[0].label).toBe('Sprite: Costume');
     expect(LIMITS.storedJson).toBe(20 * 1024 * 1024);
-    expect(formatSize(1024 * 1024 * 1024)).toBe('1.00 GB');
 });
 
 test('uses subscription project limits when building the size report', () => {

@@ -1,4 +1,5 @@
 import React from 'react';
+import {formatBytes} from '../../lib/utils/bytes.js';
 
 const noop = () => false;
 
@@ -13,13 +14,6 @@ const ChatActions = React.createContext({
 });
 
 const CHAT_DRAG_MIME = 'application/x-mistwarp-chat';
-
-const formatBytes = bytes => {
-    const size = Number(bytes) || 0;
-    if (size < 1024) return `${size} B`;
-    if (size < 1024 * 1024) return `${(size / 1024).toFixed(size < 10 * 1024 ? 1 : 0)} KB`;
-    return `${(size / (1024 * 1024)).toFixed(size < 10 * 1024 * 1024 ? 1 : 0)} MB`;
-};
 
 const formatCount = value => {
     const count = Number(value) || 0;

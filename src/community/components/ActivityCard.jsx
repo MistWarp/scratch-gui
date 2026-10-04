@@ -1,9 +1,8 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useMemo, useState} from 'react';
 import {Clock, Gamepad2, Headphones, Radio} from 'lucide-react';
+import {safeUrl} from '../../lib/utils/safe-url.js';
 import styles from './ActivityCard.module.css';
-
-const safeUrl = value => (/^https?:\/\//i.test(value || '') ? value : null);
 
 const formatTime = milliseconds => {
     const seconds = Math.max(0, Math.floor(milliseconds / 1000));

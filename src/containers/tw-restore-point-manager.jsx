@@ -30,13 +30,12 @@ import {
     waitForQuietMoment
 } from '../lib/mw/device-backups.js';
 import log from '../lib/utils/log';
+import {sleep} from '../lib/utils/async.js';
 import downloadBlob from '../lib/utils/download-blob.js';
 import {projectFilename} from '../lib/utils/safe-filename.js';
 
 const SAVE_DELAY = 250;
 const MINIMUM_SAVE_TIME = 1000;
-
-const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 const BACKUP_ERROR_ALERTS = {
     quota: 'twRestorePointQuotaError',

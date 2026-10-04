@@ -21,6 +21,7 @@ import {
 } from '../community/api.js';
 import {setMinorAccount} from '../minor-account.js';
 import {ROTUR_TOKEN_KEY} from './token-key.js';
+import {sleep} from '../utils/async.js';
 
 let state = {status: 'idle', user: null, banMessage: null};
 const listeners = new Set();
@@ -107,15 +108,13 @@ const wireSession = () => {
 let restoreInFlight = null;
 const RESTORE_RETRY_DELAYS = [1000, 3000];
 
-const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
-
 const restoreWithRetry = async () => {
     for (let attempt = 0; ; attempt++) {
         try {
             return await roturRestore();
         } catch (error) {
             if (!error || !error.transient || attempt >= RESTORE_RETRY_DELAYS.length) throw error;
-            await wait(RESTORE_RETRY_DELAYS[attempt]);
+            await sleep(RESTORE_RETRY_DELAYS[attempt]);
         }
     }
 };
