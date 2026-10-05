@@ -25,10 +25,9 @@
 
 .row[data-author-badge],
 .replyRow[data-author-badge] {
-    padding: 10px;
+    padding: 10px 12px;
     border-radius: var(--radius-sm);
-    background: color-mix(in srgb, #f3c952 10%, transparent);
-    box-shadow: inset 3px 0 0 #f3c952;
+    background: color-mix(in srgb, #f3c952 7%, transparent);
 }
 
 .authorBadge {
@@ -37,8 +36,8 @@
     gap: 3px;
     padding: 2px 7px;
     border-radius: var(--radius-2xs);
-    color: #3b2a00;
-    background: #f3c952;
+    color: #f3c952;
+    background: color-mix(in srgb, #f3c952 14%, transparent);
     font-size: var(--fs-2xs);
     font-weight: 700;
     white-space: nowrap;
@@ -117,10 +116,10 @@
 }
 
 .commentGroupPinned {
-    border-inline-start: 3px solid var(--accent);
-    padding-inline-start: 12px;
-    background: color-mix(in srgb, var(--accent) 5%, transparent);
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding-inline: 12px;
+    border-bottom-color: transparent;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
 }
 
 .playtime {
@@ -194,6 +193,10 @@
     line-height: 1.5;
     white-space: pre-wrap;
     word-break: break-word;
+}
+
+.replies:empty {
+    display: none;
 }
 
 .replies {

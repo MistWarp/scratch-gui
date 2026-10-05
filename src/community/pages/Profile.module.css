@@ -271,7 +271,6 @@
     background: var(--bg-card);
     box-shadow: var(--card-shadow);
     color: var(--mw-text);
-    transition: transform 0.13s ease, box-shadow 0.13s ease;
 }
 
 .recentActivityLink {
@@ -280,9 +279,8 @@
     inset: 0;
 }
 
-.recentActivityItem:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+.recentActivityItem:hover .recentActivityTitle {
+    color: var(--accent-strong);
 }
 
 .recentActivityThumb {

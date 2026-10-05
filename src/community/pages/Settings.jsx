@@ -939,8 +939,8 @@ const Settings = () => {
                                                 <div>
                                                     <h3>{save.title}</h3>
                                                     <p>{save.owner ?
-                                                        communityText('by @{value1} · {value2} bytes · revision {value3}', {value1: save.owner, value2: save.bytes, value3: save.revision}) :
-                                                        communityText('{value1} bytes · revision {value2}', {value1: save.bytes, value2: save.revision})}</p>
+                                                        communityText('By @{value1}, {value2} bytes, revision {value3}', {value1: save.owner, value2: save.bytes, value3: save.revision}) :
+                                                        communityText('{value1} bytes, revision {value2}', {value1: save.bytes, value2: save.revision})}</p>
                                                 </div>
                                                 <Button
                                                     variant="danger"
@@ -964,7 +964,7 @@ const Settings = () => {
                                             <div className={styles.dataAction} key={item.id}>
                                                 <div>
                                                     <h3>{item.name}</h3>
-                                                    <p>{communityText('{value1} · quantity {value2} · from {value3}', {value1: item.id, value2: item.quantity, value3: item.originProjectTitle})}</p>
+                                                    <p>{communityText('Quantity {value2}, from {value3}, ID {value1}', {value1: item.id, value2: item.quantity, value3: item.originProjectTitle})}</p>
                                                 </div>
                                                 {item.visual && item.visual.url ? <img className={styles.itemVisual} alt="" src={item.visual.url} width="56" height="56" /> : null}
                                             </div>

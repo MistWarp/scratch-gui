@@ -416,10 +416,10 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) =>
                                 <strong>{communityText('Binary file')}</strong>
                                 <span>
                                     {selected.mediaType && !selected.media ?
-                                        communityText('{value1} · This file is too large to preview.', {
+                                        communityText('This {value1} file is too large to preview.', {
                                             value1: formatBytes(selected.size)
                                         }) :
-                                        communityText('{value1} · Preview is not available.', {
+                                        communityText('There is no preview for this {value1} file.', {
                                             value1: formatBytes(selected.size)
                                         })}
                                 </span>

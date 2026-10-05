@@ -2,7 +2,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {ArrowRight, Cloud, Crown, Gamepad2, HardDrive, MousePointer2, PartyPopper, Sparkles, Trophy} from 'lucide-react';
+import {Cloud, Gamepad2, HardDrive, MousePointer2, PartyPopper, Play, Sparkles, Trophy} from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
 import {formatDate, sameUser, timeAgo} from '../format';
 import {STARTERS} from '../../lib/starter-projects';
@@ -10,6 +10,9 @@ import {getLastEditedProject} from '../../lib/mw/recent-projects';
 import Confetti, {useCelebration} from './Confetti.jsx';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import UserLink from './UserLink.jsx';
+import WinnerSeal from './WinnerSeal.jsx';
+import Button from './ui/Button.jsx';
+import IconButton from './ui/IconButton.jsx';
 import CardGrid from './ui/CardGrid.jsx';
 import EmptyState from './ui/EmptyState.jsx';
 import Notice from './ui/Notice.jsx';
@@ -65,7 +68,6 @@ export const ContinueProjects = ({username, onProjectCount}) => {
                 actions={(
                     <Link to="/mystuff?section=projects" className={styles.link}>
                         {communityText('All your projects')}
-                        <ArrowRight size={16} />
                     </Link>
                 )}
             />
@@ -88,13 +90,12 @@ export const ContinueProjects = ({username, onProjectCount}) => {
                                 <div>
                                     <span className={styles.meta}>
                                         {project.shared ?
-                                            communityText('Shared · Saved {value1}', {value1: saved}) :
-                                            communityText('Draft · Saved {value1}', {value1: saved})}
+                                            communityText('Shared, saved {value1}', {value1: saved}) :
+                                            communityText('Draft, saved {value1}', {value1: saved})}
                                     </span>
                                     <h2>{project.title}</h2>
                                     <span className={index === 0 ? styles.continueButton : styles.continueLink}>
                                         {communityText('Continue editing')}
-                                        <ArrowRight size={16} />
                                     </span>
                                 </div>
                             </a>
@@ -129,11 +130,10 @@ export const DeviceBackup = () => {
             action={(
                 <a className={styles.link} href={editorUrl({restore: backup.id})}>
                     {communityText('Open backup')}
-                    <ArrowRight size={16} />
                 </a>
             )}
         >
-            {communityText('{value1} · {value2} · This browser only', {value1: backup.title, value2: timeAgo(backup.created * 1000)})}
+            {communityText('{value1}, {value2}, on this browser only', {value1: backup.title, value2: timeAgo(backup.created * 1000)})}
         </Notice>
     );
 };
@@ -152,7 +152,6 @@ export const StarterGallery = () => {
                 actions={(
                     <a className={styles.link} href={editorUrl()}>
                         {communityText('Start a blank project')}
-                        <ArrowRight size={16} />
                     </a>
                 )}
             />
@@ -171,7 +170,6 @@ export const StarterGallery = () => {
                                 <p>{starter.description}</p>
                                 <span>
                                     {communityText('Try this starter')}
-                                    <ArrowRight size={16} />
                                 </span>
                             </div>
                         </a>
@@ -216,7 +214,6 @@ export const ActiveChallenge = () => {
             </div>
             <Link className={styles.link} to={`/spaces/${challenge._id}`} onClick={() => track('challenge_open', {source: 'home'})}>
                 {communityText('View challenge and enter')}
-                <ArrowRight size={16} />
             </Link>
         </section>
     );
@@ -234,22 +231,23 @@ const ChallengeWinnerCard = ({challenge}) => {
     const winner = challenge.winner;
     const [burst, replay] = useCelebration(`challenge:${challenge._id}:${winner.id}`);
     return (
-        <section className={styles.winner}>
+        <section className={styles.winner} aria-label={communityText('Challenge winner')}>
             <Confetti burst={burst} />
-            <Link className={styles.winnerThumb} to={projectUrl(winner)} onClick={() => track('challenge_winner_open', {source: 'home'})}>
-                <ProjectThumbnail project={winner} fallbackClassName={styles.thumbnailFallback} lazy />
-            </Link>
-            <div>
-                <span className={styles.winnerLabel}><Crown size={14} aria-hidden="true" />{communityText('{value1} winner', {value1: challenge.title})}</span>
-                <h2><Link to={projectUrl(winner)}>{winner.title}</Link></h2>
+            <div className={styles.winnerArt}>
+                <Link className={styles.winnerThumb} to={projectUrl(winner)} tabIndex={-1} aria-hidden="true">
+                    <ProjectThumbnail project={winner} fallbackClassName={styles.thumbnailFallback} lazy />
+                </Link>
+                <WinnerSeal small className={styles.winnerSeal} />
+            </div>
+            <div className={styles.winnerText}>
+                <h2><Link to={projectUrl(winner)} onClick={() => track('challenge_winner_open', {source: 'home'})}>{winner.title}</Link></h2>
+                <p>{communityText('Winner of {value1}', {value1: challenge.title})}</p>
                 <p>{communityText('by')}{' '}<UserLink username={winner.owner}>{winner.owner}</UserLink></p>
             </div>
             <div className={styles.winnerActions}>
-                <button type="button" className={styles.winnerCelebrate} onClick={replay} aria-label={communityText('Celebrate')}><PartyPopper size={18} /></button>
-                <Link className={styles.link} to={`/spaces/${challenge._id}`}>
-                    {communityText('See all results')}
-                    <ArrowRight size={16} />
-                </Link>
+                <Button as={Link} to={projectUrl(winner)} variant="primary" onClick={() => track('challenge_winner_open', {source: 'home'})}><Play size={16} />{communityText('Play the winner')}</Button>
+                <Button as={Link} to={`/spaces/${challenge._id}`}>{communityText('See the results')}</Button>
+                <IconButton label={communityText('Replay the celebration')} onClick={replay}><PartyPopper size={17} /></IconButton>
             </div>
         </section>
     );
