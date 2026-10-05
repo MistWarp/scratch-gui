@@ -2,12 +2,14 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {ArrowRight, Cloud, Gamepad2, HardDrive, MousePointer2, Sparkles, Trophy} from 'lucide-react';
-import api, {editorUrl} from '../api';
+import {ArrowRight, Cloud, Crown, Gamepad2, HardDrive, MousePointer2, PartyPopper, Sparkles, Trophy} from 'lucide-react';
+import api, {editorUrl, projectUrl} from '../api';
 import {formatDate, sameUser, timeAgo} from '../format';
 import {STARTERS} from '../../lib/starter-projects';
 import {getLastEditedProject} from '../../lib/mw/recent-projects';
+import Confetti, {useCelebration} from './Confetti.jsx';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
+import UserLink from './UserLink.jsx';
 import CardGrid from './ui/CardGrid.jsx';
 import EmptyState from './ui/EmptyState.jsx';
 import Notice from './ui/Notice.jsx';
@@ -218,4 +220,53 @@ export const ActiveChallenge = () => {
             </Link>
         </section>
     );
+};
+
+// Winners stay on the home page for two weeks after the results go up.
+export const WINNER_SHOWCASE_MS = 14 * 86400000;
+
+export const selectRecentWinner = (spaces, now = Date.now()) => spaces
+    .filter(space => space.winner && space.winner.id && Number(space.resultsPublishedAt) >= now - WINNER_SHOWCASE_MS)
+    .sort((a, b) => Number(b.resultsPublishedAt) - Number(a.resultsPublishedAt))[0];
+
+const ChallengeWinnerCard = ({challenge}) => {
+    const {text: communityText} = useCommunityText();
+    const winner = challenge.winner;
+    const [burst, replay] = useCelebration(`challenge:${challenge._id}:${winner.id}`);
+    return (
+        <section className={styles.winner}>
+            <Confetti burst={burst} />
+            <Link className={styles.winnerThumb} to={projectUrl(winner)} onClick={() => track('challenge_winner_open', {source: 'home'})}>
+                <ProjectThumbnail project={winner} fallbackClassName={styles.thumbnailFallback} lazy />
+            </Link>
+            <div>
+                <span className={styles.winnerLabel}><Crown size={14} aria-hidden="true" />{communityText('{value1} winner', {value1: challenge.title})}</span>
+                <h2><Link to={projectUrl(winner)}>{winner.title}</Link></h2>
+                <p>{communityText('by')}{' '}<UserLink username={winner.owner}>{winner.owner}</UserLink></p>
+            </div>
+            <div className={styles.winnerActions}>
+                <button type="button" className={styles.winnerCelebrate} onClick={replay} aria-label={communityText('Celebrate')}><PartyPopper size={18} /></button>
+                <Link className={styles.link} to={`/spaces/${challenge._id}`}>
+                    {communityText('See all results')}
+                    <ArrowRight size={16} />
+                </Link>
+            </div>
+        </section>
+    );
+};
+
+export const ChallengeWinner = () => {
+    const [challenge, setChallenge] = useState(null);
+    useEffect(() => {
+        let active = true;
+        api.spaces({kind: 'challenge', limit: 5, resultsAfter: Date.now() - WINNER_SHOWCASE_MS})
+            .then(data => {
+                if (active) setChallenge(selectRecentWinner(data.spaces || []) || null);
+            })
+            .catch(() => {});
+        return () => {
+            active = false;
+        };
+    }, []);
+    return challenge ? <ChallengeWinnerCard challenge={challenge} /> : null;
 };

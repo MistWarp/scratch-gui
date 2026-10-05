@@ -384,10 +384,11 @@ const api = {
     userReviews: (name, limit = 6) => request(`/users/${encodeURIComponent(name)}/reviews?limit=${limit}`),
     saveReview: (id, review) => request(`/projects/${id}/reviews/me`, {method: 'PUT', body: review}),
     deleteReview: id => request(`/projects/${id}/reviews/me`, {method: 'DELETE'}),
-    spaces: ({kind = '', q = '', offset = 0, limit = 24, startsBefore = 0, endsAfter = 0} = {}) => {
+    spaces: ({kind = '', q = '', offset = 0, limit = 24, startsBefore = 0, endsAfter = 0, resultsAfter = 0} = {}) => {
         const dateWindow = startsBefore > 0 && endsAfter > 0 ?
             `&startsBefore=${startsBefore}&endsAfter=${endsAfter}` : '';
-        return request(`/spaces?kind=${encodeURIComponent(kind)}&q=${encodeURIComponent(q)}&offset=${offset}&limit=${limit}${dateWindow}`);
+        const results = resultsAfter > 0 ? `&resultsAfter=${resultsAfter}` : '';
+        return request(`/spaces?kind=${encodeURIComponent(kind)}&q=${encodeURIComponent(q)}&offset=${offset}&limit=${limit}${dateWindow}${results}`);
     },
     getSpace: id => request(`/spaces/${id}`),
     getSpaceManagement: id => request(`/spaces/${id}/manage`),

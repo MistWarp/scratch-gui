@@ -25,7 +25,7 @@ import CardGridSkeleton from '../components/CardGridSkeleton.jsx';
 import UserLink from '../components/UserLink.jsx';
 import {roadmapStatusMatches} from '../roadmap-filters';
 import {categoryForNotification, getNotificationPreferences} from '../notification-preferences';
-import {ActiveChallenge, ContinueProjects, DeviceBackup, StarterGallery} from '../components/HomeWorkspace.jsx';
+import {ActiveChallenge, ChallengeWinner, ContinueProjects, DeviceBackup, StarterGallery} from '../components/HomeWorkspace.jsx';
 import {track} from '../analytics.js';
 import {useCommunityIntl} from '../i18n.jsx';
 import {normalizeFollowingPosts, postUrl, timestampMs} from '../following-feed.js';
@@ -363,6 +363,7 @@ const Home = () => {
                     ) : null}
                 />
             </div>
+            <ChallengeWinner />
             <ActiveChallenge />
             <HomeTabs
                 className={styles.projectSection}

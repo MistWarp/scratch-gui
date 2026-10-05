@@ -2640,5 +2640,18 @@
   "Publishing reveals the ranking by average audience rating on the public challenge page.": "Publishing reveals the ranking by average audience rating on the public challenge page.",
   "{value1} of {value2} entries rated": "{value1} of {value2} entries rated",
   "No ratings": "No ratings",
-  "Score every criterion to save.": "Score every criterion to save."
+  "Score every criterion to save.": "Score every criterion to save.",
+  "{value1} winner": "{value1} winner",
+  "Celebrate": "Celebrate",
+  "See all results": "See all results",
+  "Challenge winner": "Challenge winner",
+  "Winner": "Winner",
+  "{value1} / 5 from {value2} ratings": "{value1} / 5 from {value2} ratings",
+  "{value1} / 10 from the judges": "{value1} / 10 from the judges",
+  "You rated this {value1} out of 5": "You rated this {value1} out of 5",
+  "Not rated yet": "Not rated yet",
+  "Rate it": "Rate it",
+  "Your entry": "Your entry",
+  "Once submissions close, anyone signed in can rate each entry from 1 to 5 stars. Ratings stay hidden until voting ends, and the entry with the highest average rating wins.": "Once submissions close, anyone signed in can rate each entry from 1 to 5 stars. Ratings stay hidden until voting ends, and the entry with the highest average rating wins.",
+  "Click the stars to rate an entry. Ratings stay hidden until voting ends, and you can change yours until then.": "Click the stars to rate an entry. Ratings stay hidden until voting ends, and you can change yours until then."
 }
