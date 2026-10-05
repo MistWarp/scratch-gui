@@ -65,7 +65,7 @@
 }
 
 .defaultBanner {
-    background: linear-gradient(135deg, var(--accent), var(--bg-card));
+    background: color-mix(in srgb, var(--accent) 34%, var(--bg-card));
 }
 
 .profileBody {

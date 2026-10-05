@@ -282,7 +282,7 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
                 ) : null}
                 <div className={styles.via}>
                     {post.os && views ?
-                        communityText('Posted from {value1} · {value2}', {value1: post.os, value2: viewsText}) :
+                        communityText('Posted from {value1}, {value2}', {value1: post.os, value2: viewsText}) :
                         null}
                     {post.os && !views ? communityText('Posted from {value1}', {value1: post.os}) : null}
                     {!post.os && views ? viewsText : null}

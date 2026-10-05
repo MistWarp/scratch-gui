@@ -240,8 +240,8 @@ const NewsItem = ({compact, full = false, item, onArchive, onChanged, onEdit, sh
                                 <span>{option.text}</span>
                                 <strong>
                                     {option.votes === 1 ?
-                                        communityText('1 vote · {value1}%', {value1: percent}) :
-                                        communityText('{value1} votes · {value2}%', {
+                                        communityText('1 vote ({value1}%)', {value1: percent}) :
+                                        communityText('{value1} votes ({value2}%)', {
                                             value1: option.votes, value2: percent
                                         })}
                                 </strong>

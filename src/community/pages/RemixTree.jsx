@@ -58,7 +58,7 @@ const RemixGraph = ({tree, selectedId}) => {
                                 <strong>{node.title || communityText('Untitled project')}</strong>
                                 <span>
                                     {communityText('by {owner}', {owner: node.owner || communityText('unknown')})}
-                                    {age ? ` · ${age}` : ''}
+                                    {age ? `, ${age}` : ''}
                                 </span>
                             </span>
                             {children.length ? (

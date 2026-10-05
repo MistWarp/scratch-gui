@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import React, {useEffect, useState} from 'react';
 import PropTypes from 'prop-types';
-import {ArrowRight, BarChart3, Check, Coins, ExternalLink, FileSpreadsheet, Heart, History, Link2, Palette, Plus, RotateCcw, Server, Sparkles, Users, X} from 'lucide-react';
+import {BarChart3, Check, Coins, ExternalLink, FileSpreadsheet, Heart, History, Link2, Palette, Plus, RotateCcw, Server, Sparkles, Users, X} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import api from '../api.js';
 import {getCommunityLocale} from '../locale.js';
@@ -146,7 +146,7 @@ const PaidPerks = () => {
             >
                 <p className={styles.freeNote}>
                     {communityText('You can create, share, and take part with a free account. Membership is an optional way to support MistWarp and get extra tools.')}{' '}
-                    <Link to="/editor">{communityText('Start creating for free')} <ArrowRight size={14} /></Link>
+                    <Link to="/editor">{communityText('Start creating for free')}</Link>
                 </p>
             </PageHeader>
 
@@ -156,7 +156,7 @@ const PaidPerks = () => {
                         <div className={styles.featureCopy}>
                             <SectionHeading icon={feature.icon} title={feature.title} />
                             <p>{feature.description}</p>
-                            <Link className={styles.featureLink} to={feature.link}>{feature.action}<ArrowRight size={16} /></Link>
+                            <Link className={styles.featureLink} to={feature.link}>{feature.action}</Link>
                         </div>
                         <div className={styles.featurePreview}>{feature.preview}</div>
                     </div>
@@ -223,8 +223,8 @@ const PaidPerks = () => {
                 />
                 <div {...tabPanelProps('perks-compare', comparison)}>
                     <Comparison plans={plans} rows={rows} source="mistwarp" />
-                    {comparison === 'storage' ? <p className={styles.detailNote}>{communityText('Storage covers every project you own, including its assets, version history and anything in the trash. Deleting a project and emptying it from the trash frees its space.')}{' '}<Link to="/mystuff?section=uploads">{communityText('View your storage')} <ArrowRight size={14} /></Link></p> : null}
-                    {comparison === 'sales' ? <p className={styles.detailNote}>{communityText('Project purchases support individual creators. A membership does not include access to every project offered for purchase.')}{' '}<Link to="/mystuff?section=projects">{communityText('Manage project pricing')} <ArrowRight size={14} /></Link></p> : null}
+                    {comparison === 'storage' ? <p className={styles.detailNote}>{communityText('Storage covers every project you own, including its assets, version history and anything in the trash. Deleting a project and emptying it from the trash frees its space.')}{' '}<Link to="/mystuff?section=uploads">{communityText('View your storage')}</Link></p> : null}
+                    {comparison === 'sales' ? <p className={styles.detailNote}>{communityText('Project purchases support individual creators. A membership does not include access to every project offered for purchase.')}{' '}<Link to="/mystuff?section=projects">{communityText('Manage project pricing')}</Link></p> : null}
                 </div>
             </section>
         </main>

@@ -2,7 +2,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Link, useLocation, useNavigate, useParams, useSearchParams} from 'react-router-dom';
-import {Bug, ArrowRight, Check, ChevronLeft, ChevronRight, Circle, GitMerge, GitPullRequest, Hammer, Lightbulb, LogIn, Map, MessageCircle, Plus, Search, X} from 'lucide-react';
+import {Bug, Check, ChevronLeft, ChevronRight, Circle, GitMerge, GitPullRequest, Hammer, Lightbulb, LogIn, Map, MessageCircle, Plus, Search, X} from 'lucide-react';
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
 import Avatar from '../components/Avatar.jsx';
@@ -589,13 +589,13 @@ const Roadmap = ({changes = false}) => {
                                         {!entries.length ? <div className={styles.previewEmpty}><EmptyState compact icon={Icon} title={filtering ? communityText('No matching entries') : communityText('Nothing in this stage yet')} /></div> : null}
                                     </div>
                                     <Link className={styles.viewStage} to={`/roadmap/${item.id}${filterSearch}`} aria-label={`${communityText('View all')} ${communityText(item.label).toLowerCase()}`}>
-                                        {communityText('View all')}<ArrowRight size={16} />
+                                        {communityText('View all')}
                                     </Link>
                                 </section>
                             );
                         })}
                     </div>
-                    <Link className={styles.archiveLink} to={`/roadmap/declined${filterSearch}`}><X size={16} />{communityText('Not planned')}<span>{ideasByStage.declined.length}</span><ArrowRight size={16} /></Link>
+                    <Link className={styles.archiveLink} to={`/roadmap/declined${filterSearch}`}><X size={16} />{communityText('Not planned')}<span>{ideasByStage.declined.length}</span></Link>
                 </>
             ) : null}
         </main>

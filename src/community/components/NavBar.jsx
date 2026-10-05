@@ -62,7 +62,7 @@ const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, 
                         <Avatar username={person.username} size={26} />
                         <span>{person.username}</span>
                         {person.group_tag ? <GroupTag tag={person.group_tag} compact linked={false} /> : null}
-                        <span className={styles.suggestionMeta}>{person.followers ?? 0}{communityText(' followers · ')}{person.projects}{communityText(' projects')}</span>
+                        <span className={styles.suggestionMeta}>{person.followers ?? 0}{communityText(' followers, ')}{person.projects}{communityText(' projects')}</span>
                     </>
                 )
             }))
@@ -78,7 +78,7 @@ const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, 
                     <>
                         <span className={styles.suggestionSpaceIcon}><Layers3 size={15} /></span>
                         <span>{space.title}</span>
-                        <span className={styles.suggestionMeta}>{spaceKindLabel(space.kind, communityText)}{communityText(' · by ')}{space.owner}</span>
+                        <span className={styles.suggestionMeta}>{spaceKindLabel(space.kind, communityText)}{communityText(' by ')}{space.owner}</span>
                     </>
                 )
             }))

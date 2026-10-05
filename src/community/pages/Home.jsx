@@ -2,7 +2,7 @@
 import {isMilestoneNotification} from '../milestone-notifications.js';
 import React, {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {ArrowRight, Bell, Bug, Clock, Gamepad2, Rocket, UserPlus, GitFork, Globe, Heart, Lightbulb, Megaphone, MessageCircle, Sparkles, Star, Trophy, Users} from 'lucide-react';
+import {Bell, Bug, Clock, Gamepad2, Rocket, UserPlus, GitFork, Globe, Heart, Lightbulb, Megaphone, MessageCircle, Sparkles, Star, Trophy, Users} from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
 import rotur from '../rotur';
 import {fetchFollowingFeed, fetchNotifications} from '../../lib/rotur/client.js';
@@ -309,7 +309,6 @@ const Home = () => {
                                 <ScratchImport source="home" />
                                 <Link to="/compare">
                                     {communityText('Coming from Scratch or TurboWarp? See what is different')}
-                                    <ArrowRight size={14} />
                                 </Link>
                             </div>
                         </div>
@@ -317,7 +316,7 @@ const Home = () => {
                             <span>{communityText('Make your first version')}</span>
                             <span>{communityText('Invite someone to improve it')}</span>
                             <span>{communityText('Keep earlier versions to return to')}</span>
-                            <a href={editorUrl({starter: 'clicker'})}>{communityText('Start with a working clicker')}<ArrowRight size={14} /></a>
+                            <a href={editorUrl({starter: 'clicker'})}>{communityText('Start with a working clicker')}</a>
                         </div>
                     </section>
                 )}
