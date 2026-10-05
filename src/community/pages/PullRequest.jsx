@@ -550,7 +550,7 @@ const PullRequest = () => {
                                         <small>
                                             <Link to={`/project/${event.eventType === 'target-commit' ? id : pull.sourceProjectId}/commits/${event.sha}`}>
                                                 {String(event.sha || '').slice(0, 7)}
-                                            </Link> · {timeAgo(event.date)}
+                                            </Link>, {timeAgo(event.date)}
                                         </small>
                                     </div>
                                 )))}

@@ -71,7 +71,7 @@ const Status = () => {
         const uptime = historyFailed ?
             communityText('History unavailable') :
             `${t('status.history')} ${uptimeByService[service.service]?.toFixed(2) || '0.00'}%`;
-        return `${latency} · ${uptime}`;
+        return `${latency}, ${uptime}`;
     };
     return (
         <main className={styles.page}>

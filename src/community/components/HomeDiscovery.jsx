@@ -62,7 +62,7 @@ const SuggestedCreators = ({viewerName}) => {
                         <Link to={`/users/${creator.username}`} className={styles.creatorBody}>
                             <strong>{creator.username}</strong>
                             <span>
-                                {text('{value1} projects · {value2} hearts', {
+                                {text('{value1} projects, {value2} hearts', {
                                     value1: creator.projects,
                                     value2: creator.loves
                                 })}

@@ -103,7 +103,7 @@ const Groups = () => {
         <section className={styles.grid}>
             {cards.map(group => (<Link className={styles.card} to={`/groups/${group.tag}`} key={group.tag}>
                 <div className={styles.icon}>{group.icon_url ? <img src={group.icon_url} alt="" /> : <Building2 />}</div>
-                <div><h2>{group.name}</h2><span>@{group.tag}</span><p>{group.description || communityText('A Rotur group on MistWarp.')}</p><small><Users size={14} /> {communityText('{count} members', {count: group.member_count || 0})}{mineTags.has(group.tag) ? <span> · {communityText('Joined')}</span> : null}</small></div>
+                <div><h2>{group.name}</h2><span>@{group.tag}</span><p>{group.description || communityText('A Rotur group on MistWarp.')}</p><small><Users size={14} /> {communityText('{count} members', {count: group.member_count || 0})}{mineTags.has(group.tag) ? <span>{communityText(', joined')}</span> : null}</small></div>
             </Link>))}
         </section>
     </main>);

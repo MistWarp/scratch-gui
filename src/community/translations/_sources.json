@@ -86,8 +86,8 @@
   ],
   "All challenges": [
     "src/community/components/ChallengeCalendar.jsx:144",
-    "src/community/pages/Challenge.jsx:605",
-    "src/community/pages/Home.jsx:430"
+    "src/community/pages/Challenge.jsx:616",
+    "src/community/pages/Home.jsx:429"
   ],
   "{value1}, {value2} to {value3}": [
     "src/community/components/ChallengeCalendar.jsx:155"
@@ -160,7 +160,7 @@
     "src/community/components/ProjectInfoPanel.jsx:392",
     "src/community/components/SocialPost.jsx:267",
     "src/community/components/SocialPost.jsx:309",
-    "src/community/pages/Challenge.jsx:435",
+    "src/community/pages/Challenge.jsx:446",
     "src/community/pages/ManageSpace.jsx:715"
   ],
   "Saving…": [
@@ -170,7 +170,7 @@
     "src/community/components/NewsItem.jsx:275",
     "src/community/components/ProfileBadges.jsx:204",
     "src/community/components/ProjectInfoPanel.jsx:390",
-    "src/community/pages/Challenge.jsx:436",
+    "src/community/pages/Challenge.jsx:447",
     "src/community/pages/Commit.jsx:390",
     "src/community/pages/ManageProject.jsx:650",
     "src/community/pages/ManageProject.jsx:706",
@@ -605,7 +605,7 @@
     "src/community/pages/Admin.jsx:35",
     "src/community/pages/Collection.jsx:38",
     "src/community/pages/Group.jsx:175",
-    "src/community/pages/Home.jsx:371",
+    "src/community/pages/Home.jsx:370",
     "src/community/pages/ManageSpace.jsx:27",
     "src/community/pages/ManageSpace.jsx:767",
     "src/community/pages/Profile.jsx:541",
@@ -632,7 +632,7 @@
     "src/community/components/Footer.jsx:40",
     "src/community/components/MyStuffSpaces.jsx:79",
     "src/community/pages/Group.jsx:177",
-    "src/community/pages/Home.jsx:427",
+    "src/community/pages/Home.jsx:426",
     "src/community/pages/Spaces.jsx:22"
   ],
   "Collections": [
@@ -729,7 +729,7 @@
   ],
   "Community": [
     "src/community/components/Footer.jsx:37",
-    "src/community/pages/Challenge.jsx:689",
+    "src/community/pages/Challenge.jsx:700",
     "src/community/pages/Roadmap.jsx:497",
     "src/community/pages/Roadmap.jsx:511"
   ],
@@ -739,7 +739,7 @@
   "News": [
     "src/community/components/Footer.jsx:43",
     "src/community/pages/Home.jsx:74",
-    "src/community/pages/Home.jsx:411",
+    "src/community/pages/Home.jsx:410",
     "src/community/pages/News.jsx:166"
   ],
   "Stats": [
@@ -748,7 +748,7 @@
   "Roadmap": [
     "src/community/components/Footer.jsx:45",
     "src/community/pages/Home.jsx:170",
-    "src/community/pages/Home.jsx:419",
+    "src/community/pages/Home.jsx:418",
     "src/community/pages/Roadmap.jsx:478"
   ],
   "Compare with Scratch": [
@@ -868,7 +868,7 @@
   ],
   "Results": [
     "src/community/components/GifPicker.jsx:61",
-    "src/community/pages/Challenge.jsx:578",
+    "src/community/pages/Challenge.jsx:589",
     "src/community/pages/ManageSpace.jsx:730"
   ],
   "Popular GIFs": [
@@ -908,15 +908,15 @@
     "src/community/components/HomeDiscovery.jsx:56",
     "src/community/components/ui/SectionHeading.jsx:21",
     "src/community/pages/Home.jsx:243",
-    "src/community/pages/Home.jsx:467"
+    "src/community/pages/Home.jsx:466"
   ],
-  "{value1} projects · {value2} hearts": [
+  "{value1} projects, {value2} hearts": [
     "src/community/components/HomeDiscovery.jsx:65"
   ],
   "Following": [
     "src/community/components/HomeDiscovery.jsx:76",
     "src/community/pages/Collection.jsx:76",
-    "src/community/pages/Home.jsx:350",
+    "src/community/pages/Home.jsx:349",
     "src/community/pages/Profile.jsx:854",
     "src/community/pages/Space.jsx:243",
     "src/community/pages/Studio.jsx:120"
@@ -931,41 +931,41 @@
     "src/community/components/HomeDiscovery.jsx:105"
   ],
   "Continue editing": [
-    "src/community/components/HomeWorkspace.jsx:61",
     "src/community/components/HomeWorkspace.jsx:64",
-    "src/community/components/HomeWorkspace.jsx:96"
+    "src/community/components/HomeWorkspace.jsx:67",
+    "src/community/components/HomeWorkspace.jsx:98"
   ],
   "All your projects": [
-    "src/community/components/HomeWorkspace.jsx:67"
+    "src/community/components/HomeWorkspace.jsx:70"
   ],
   "Loading your projects…": [
-    "src/community/components/HomeWorkspace.jsx:72",
+    "src/community/components/HomeWorkspace.jsx:74",
     "src/community/components/SpaceProjectPicker.jsx:210"
   ],
   "Could not load your projects.": [
-    "src/community/components/HomeWorkspace.jsx:74",
+    "src/community/components/HomeWorkspace.jsx:76",
     "src/community/components/SpaceProjectPicker.jsx:81",
     "src/community/pages/MyStuff.jsx:1401"
   ],
   "Your first project starts here": [
-    "src/community/components/HomeWorkspace.jsx:77"
+    "src/community/components/HomeWorkspace.jsx:79"
   ],
   "Try a starter below. Save it to MistWarp and continue here next time.": [
-    "src/community/components/HomeWorkspace.jsx:78"
+    "src/community/components/HomeWorkspace.jsx:80"
   ],
-  "Shared · Saved {value1}": [
-    "src/community/components/HomeWorkspace.jsx:91"
+  "Shared, saved {value1}": [
+    "src/community/components/HomeWorkspace.jsx:93"
   ],
-  "Draft · Saved {value1}": [
-    "src/community/components/HomeWorkspace.jsx:92"
+  "Draft, saved {value1}": [
+    "src/community/components/HomeWorkspace.jsx:94"
   ],
   "Device backup available": [
-    "src/community/components/HomeWorkspace.jsx:128"
+    "src/community/components/HomeWorkspace.jsx:129"
   ],
   "Open backup": [
-    "src/community/components/HomeWorkspace.jsx:131"
+    "src/community/components/HomeWorkspace.jsx:132"
   ],
-  "{value1} · {value2} · This browser only": [
+  "{value1}, {value2}, on this browser only": [
     "src/community/components/HomeWorkspace.jsx:136"
   ],
   "Starter projects": [
@@ -978,25 +978,29 @@
     "src/community/components/HomeWorkspace.jsx:154"
   ],
   "Try this starter": [
-    "src/community/components/HomeWorkspace.jsx:173"
+    "src/community/components/HomeWorkspace.jsx:172"
   ],
   "Theme: {value1}.": [
-    "src/community/components/HomeWorkspace.jsx:206"
+    "src/community/components/HomeWorkspace.jsx:204"
   ],
   "Submissions close {value1}.": [
-    "src/community/components/HomeWorkspace.jsx:207"
+    "src/community/components/HomeWorkspace.jsx:205"
   ],
   "1 creator has joined.": [
-    "src/community/components/HomeWorkspace.jsx:208"
+    "src/community/components/HomeWorkspace.jsx:206"
   ],
   "{value1} creators have joined.": [
-    "src/community/components/HomeWorkspace.jsx:208"
+    "src/community/components/HomeWorkspace.jsx:206"
   ],
   "View challenge and enter": [
-    "src/community/components/HomeWorkspace.jsx:218"
+    "src/community/components/HomeWorkspace.jsx:216"
   ],
-  "{value1} winner": [
-    "src/community/components/HomeWorkspace.jsx:243"
+  "Challenge winner": [
+    "src/community/components/HomeWorkspace.jsx:234",
+    "src/community/pages/Challenge.jsx:193"
+  ],
+  "Winner of {value1}": [
+    "src/community/components/HomeWorkspace.jsx:244"
   ],
   "by": [
     "src/community/components/HomeWorkspace.jsx:245",
@@ -1004,17 +1008,20 @@
     "src/community/components/PlaytimeLibrary.jsx:78",
     "src/community/components/ProjectCard.jsx:50",
     "src/community/components/SpaceProjectPicker.jsx:233",
-    "src/community/pages/Challenge.jsx:138",
-    "src/community/pages/Challenge.jsx:405",
-    "src/community/pages/Challenge.jsx:711",
+    "src/community/pages/Challenge.jsx:416",
+    "src/community/pages/Challenge.jsx:722",
     "src/community/pages/Profile.jsx:581"
   ],
-  "Celebrate": [
+  "Play the winner": [
     "src/community/components/HomeWorkspace.jsx:248",
-    "src/community/pages/Challenge.jsx:145"
+    "src/community/pages/Challenge.jsx:214"
   ],
-  "See all results": [
-    "src/community/components/HomeWorkspace.jsx:250"
+  "See the results": [
+    "src/community/components/HomeWorkspace.jsx:249"
+  ],
+  "Replay the celebration": [
+    "src/community/components/HomeWorkspace.jsx:250",
+    "src/community/pages/Challenge.jsx:215"
   ],
   "Chat with the community on MistWarp's own chat.": [
     "src/community/components/JoinCommunityModal.jsx:27"
@@ -1337,13 +1344,13 @@
     "src/community/components/NavBar.jsx:55",
     "src/community/pages/Search.jsx:225"
   ],
-  " followers · ": [
+  " followers, ": [
     "src/community/components/NavBar.jsx:65"
   ],
   " projects": [
     "src/community/components/NavBar.jsx:65"
   ],
-  " · by ": [
+  " by ": [
     "src/community/components/NavBar.jsx:81"
   ],
   "See all results for \"{value1}\"": [
@@ -1394,7 +1401,7 @@
     "src/community/components/NavBar.jsx:554",
     "src/community/components/NavBar.jsx:636",
     "src/community/components/NavBar.jsx:637",
-    "src/community/pages/Home.jsx:356",
+    "src/community/pages/Home.jsx:355",
     "src/community/pages/Notifications.jsx:408",
     "src/community/pages/Settings.jsx:105",
     "src/community/pages/Settings.jsx:662"
@@ -1509,10 +1516,10 @@
   "{value1} active days": [
     "src/community/components/NewsItem.jsx:222"
   ],
-  "1 vote · {value1}%": [
+  "1 vote ({value1}%)": [
     "src/community/components/NewsItem.jsx:243"
   ],
-  "{value1} votes · {value2}%": [
+  "{value1} votes ({value2}%)": [
     "src/community/components/NewsItem.jsx:244"
   ],
   "1 vote in total": [
@@ -1870,7 +1877,7 @@
     "src/community/components/SharedProjects.jsx:50",
     "src/community/components/SpaceCard.jsx:37",
     "src/community/components/ThemeCard.jsx:20",
-    "src/community/pages/Challenge.jsx:400",
+    "src/community/pages/Challenge.jsx:411",
     "src/community/pages/Home.jsx:179",
     "src/community/pages/ManageProject.jsx:643",
     "src/community/pages/Profile.jsx:572"
@@ -1990,10 +1997,10 @@
   "Binary file": [
     "src/community/components/ProjectFiles.jsx:416"
   ],
-  "{value1} · This file is too large to preview.": [
+  "This {value1} file is too large to preview.": [
     "src/community/components/ProjectFiles.jsx:419"
   ],
-  "{value1} · Preview is not available.": [
+  "There is no preview for this {value1} file.": [
     "src/community/components/ProjectFiles.jsx:422"
   ],
   "{value1} contents": [
@@ -2028,7 +2035,7 @@
     "src/community/components/ProjectInfoPanel.jsx:143",
     "src/community/components/ProjectInfoPanel.jsx:146",
     "src/community/pages/Explore.jsx:29",
-    "src/community/pages/Home.jsx:389"
+    "src/community/pages/Home.jsx:388"
   ],
   "Shared projects with this option appear in Looking for feedback. Add a specific question to Creator notes, such as \"Is the first level too difficult?\"": [
     "src/community/components/ProjectInfoPanel.jsx:144"
@@ -2367,7 +2374,7 @@
   ],
   "No shared projects yet": [
     "src/community/components/SharedProjects.jsx:98",
-    "src/community/pages/Home.jsx:547",
+    "src/community/pages/Home.jsx:546",
     "src/community/pages/Random.jsx:51"
   ],
   "Projects will appear here when someone adds you to their team.": [
@@ -2435,7 +2442,7 @@
   "edited": [
     "src/community/components/SocialPost.jsx:255"
   ],
-  "Posted from {value1} · {value2}": [
+  "Posted from {value1}, {value2}": [
     "src/community/components/SocialPost.jsx:285"
   ],
   "Posted from {value1}": [
@@ -2651,6 +2658,12 @@
   ],
   "Project visibility": [
     "src/community/components/VisibilityMenu.jsx:26"
+  ],
+  "First place": [
+    "src/community/components/WinnerSeal.jsx:13"
+  ],
+  "1st": [
+    "src/community/components/WinnerSeal.jsx:15"
   ],
   "Confirm": [
     "src/community/components/ui/ConfirmModal.jsx:30"
@@ -2928,7 +2941,7 @@
   ],
   "Overview": [
     "src/community/pages/Admin.jsx:29",
-    "src/community/pages/Challenge.jsx:575",
+    "src/community/pages/Challenge.jsx:586",
     "src/community/pages/MyStuff.jsx:484"
   ],
   "Storage and runtime": [
@@ -3053,8 +3066,7 @@
   ],
   "On": [
     "src/community/pages/Bounties.jsx:111",
-    "src/community/pages/Bounties.jsx:114",
-    "src/community/pages/Bounty.jsx:135"
+    "src/community/pages/Bounties.jsx:114"
   ],
   "by {owner}": [
     "src/community/pages/Bounties.jsx:111",
@@ -3118,9 +3130,12 @@
   "Loading bounty…": [
     "src/community/pages/Bounty.jsx:122"
   ],
+  "for": [
+    "src/community/pages/Bounty.jsx:135"
+  ],
   "Updating…": [
     "src/community/pages/Bounty.jsx:151",
-    "src/community/pages/Challenge.jsx:617",
+    "src/community/pages/Challenge.jsx:628",
     "src/community/pages/Collection.jsx:76",
     "src/community/pages/MyStuff.jsx:1473",
     "src/community/pages/MyStuff.jsx:1480",
@@ -3166,306 +3181,304 @@
     "src/community/pages/Bounty.jsx:175"
   ],
   "Starts soon": [
-    "src/community/pages/Challenge.jsx:29"
+    "src/community/pages/Challenge.jsx:31"
   ],
   "Submissions open": [
-    "src/community/pages/Challenge.jsx:30",
-    "src/community/pages/Challenge.jsx:452",
+    "src/community/pages/Challenge.jsx:32",
+    "src/community/pages/Challenge.jsx:463",
     "src/community/pages/ManageSpace.jsx:662",
     "src/community/pages/Spaces.jsx:277"
   ],
   "Judging": [
-    "src/community/pages/Challenge.jsx:31",
+    "src/community/pages/Challenge.jsx:33",
     "src/community/pages/ManageSpace.jsx:34"
   ],
   "Results pending": [
-    "src/community/pages/Challenge.jsx:32"
+    "src/community/pages/Challenge.jsx:34"
   ],
   "Results published": [
-    "src/community/pages/Challenge.jsx:33"
+    "src/community/pages/Challenge.jsx:35"
   ],
   "Voting open": [
-    "src/community/pages/Challenge.jsx:38"
-  ],
-  "Challenge winner": [
-    "src/community/pages/Challenge.jsx:130"
-  ],
-  "Winner": [
-    "src/community/pages/Challenge.jsx:136",
-    "src/community/pages/Challenge.jsx:512"
-  ],
-  "{value1} / 5 from {value2} ratings": [
-    "src/community/pages/Challenge.jsx:141"
-  ],
-  "{value1} / 10 from the judges": [
-    "src/community/pages/Challenge.jsx:142"
+    "src/community/pages/Challenge.jsx:40"
   ],
   "You rated this {value1} out of 5": [
-    "src/community/pages/Challenge.jsx:167"
+    "src/community/pages/Challenge.jsx:145"
   ],
   "Not rated yet": [
-    "src/community/pages/Challenge.jsx:167"
+    "src/community/pages/Challenge.jsx:145"
   ],
   "Rated {value1} out of 5 from {value2} ratings": [
-    "src/community/pages/Challenge.jsx:168"
+    "src/community/pages/Challenge.jsx:146"
   ],
   "No ratings yet": [
-    "src/community/pages/Challenge.jsx:169"
+    "src/community/pages/Challenge.jsx:147"
   ],
   "Your rating": [
-    "src/community/pages/Challenge.jsx:180",
-    "src/community/pages/Challenge.jsx:200"
+    "src/community/pages/Challenge.jsx:158",
+    "src/community/pages/Challenge.jsx:178"
   ],
   "Rate {value1} out of 5": [
-    "src/community/pages/Challenge.jsx:187"
+    "src/community/pages/Challenge.jsx:165"
   ],
   "Rate it": [
-    "src/community/pages/Challenge.jsx:200"
+    "src/community/pages/Challenge.jsx:178"
   ],
   "({value1})": [
-    "src/community/pages/Challenge.jsx:204"
+    "src/community/pages/Challenge.jsx:182"
   ],
   "No ratings": [
-    "src/community/pages/Challenge.jsx:206",
-    "src/community/pages/Challenge.jsx:711"
+    "src/community/pages/Challenge.jsx:184",
+    "src/community/pages/Challenge.jsx:722"
+  ],
+  "Winning entry by": [
+    "src/community/pages/Challenge.jsx:203"
+  ],
+  "{value1} average from {value2} ratings": [
+    "src/community/pages/Challenge.jsx:210"
+  ],
+  "Scored {value1} out of 10 by the judges": [
+    "src/community/pages/Challenge.jsx:212"
   ],
   "Judge score": [
-    "src/community/pages/Challenge.jsx:257"
+    "src/community/pages/Challenge.jsx:268"
   ],
   "/ 10": [
-    "src/community/pages/Challenge.jsx:257",
-    "src/community/pages/Challenge.jsx:711"
+    "src/community/pages/Challenge.jsx:268",
+    "src/community/pages/Challenge.jsx:722"
   ],
   "Your entry": [
-    "src/community/pages/Challenge.jsx:266"
+    "src/community/pages/Challenge.jsx:277"
   ],
   "You cannot rate your own entry.": [
-    "src/community/pages/Challenge.jsx:267"
+    "src/community/pages/Challenge.jsx:278"
   ],
   "Give every criterion a score from 1 to 10.": [
-    "src/community/pages/Challenge.jsx:332"
+    "src/community/pages/Challenge.jsx:343"
   ],
   "Saved {value1}.": [
-    "src/community/pages/Challenge.jsx:358"
+    "src/community/pages/Challenge.jsx:369"
   ],
   "Score saved.": [
-    "src/community/pages/Challenge.jsx:358"
+    "src/community/pages/Challenge.jsx:369"
   ],
   "Every entry has your score. You can still change them until judging ends.": [
-    "src/community/pages/Challenge.jsx:370"
+    "src/community/pages/Challenge.jsx:381"
   ],
   "{value1} of {value2} entries scored": [
-    "src/community/pages/Challenge.jsx:370",
+    "src/community/pages/Challenge.jsx:381",
     "src/community/pages/ManageSpace.jsx:731"
   ],
   "Entries to judge": [
-    "src/community/pages/Challenge.jsx:374"
+    "src/community/pages/Challenge.jsx:385"
   ],
   "Unsaved": [
-    "src/community/pages/Challenge.jsx:384"
+    "src/community/pages/Challenge.jsx:395"
   ],
   "To do": [
-    "src/community/pages/Challenge.jsx:384"
+    "src/community/pages/Challenge.jsx:395"
   ],
   "Play in new tab": [
-    "src/community/pages/Challenge.jsx:406"
+    "src/community/pages/Challenge.jsx:417"
   ],
   "×{value1} weight": [
-    "src/community/pages/Challenge.jsx:414"
+    "src/community/pages/Challenge.jsx:425"
   ],
   "No judging criteria are configured.": [
-    "src/community/pages/Challenge.jsx:425",
-    "src/community/pages/Challenge.jsx:675"
+    "src/community/pages/Challenge.jsx:436",
+    "src/community/pages/Challenge.jsx:686"
   ],
   "Private feedback for the host": [
-    "src/community/pages/Challenge.jsx:427"
+    "src/community/pages/Challenge.jsx:438"
   ],
   "Optional notes on this entry": [
-    "src/community/pages/Challenge.jsx:428"
+    "src/community/pages/Challenge.jsx:439"
   ],
   "/ 10 overall": [
-    "src/community/pages/Challenge.jsx:432"
+    "src/community/pages/Challenge.jsx:443"
   ],
   "Score every criterion to save.": [
-    "src/community/pages/Challenge.jsx:432"
+    "src/community/pages/Challenge.jsx:443"
   ],
   "Save and next": [
-    "src/community/pages/Challenge.jsx:436"
+    "src/community/pages/Challenge.jsx:447"
   ],
   "Save score": [
-    "src/community/pages/Challenge.jsx:436"
+    "src/community/pages/Challenge.jsx:447"
   ],
   "Starts in {value1}": [
-    "src/community/pages/Challenge.jsx:456"
+    "src/community/pages/Challenge.jsx:467"
   ],
   "Submissions close": [
-    "src/community/pages/Challenge.jsx:462",
+    "src/community/pages/Challenge.jsx:473",
     "src/community/pages/ManageSpace.jsx:663",
     "src/community/pages/Spaces.jsx:278"
   ],
   "{value1} left to enter": [
-    "src/community/pages/Challenge.jsx:466"
+    "src/community/pages/Challenge.jsx:477"
   ],
   "Voting ends": [
-    "src/community/pages/Challenge.jsx:472",
+    "src/community/pages/Challenge.jsx:483",
     "src/community/pages/ManageSpace.jsx:664"
   ],
   "Judging ends": [
-    "src/community/pages/Challenge.jsx:472",
+    "src/community/pages/Challenge.jsx:483",
     "src/community/pages/ManageSpace.jsx:664"
   ],
   "{value1} of voting left": [
-    "src/community/pages/Challenge.jsx:476"
+    "src/community/pages/Challenge.jsx:487"
   ],
   "{value1} of judging left": [
-    "src/community/pages/Challenge.jsx:476"
+    "src/community/pages/Challenge.jsx:487"
   ],
   "Challenge schedule": [
-    "src/community/pages/Challenge.jsx:480"
+    "src/community/pages/Challenge.jsx:491"
+  ],
+  "Winner": [
+    "src/community/pages/Challenge.jsx:523"
   ],
   "Submissions": [
-    "src/community/pages/Challenge.jsx:576",
-    "src/community/pages/Challenge.jsx:649",
-    "src/community/pages/Challenge.jsx:698",
+    "src/community/pages/Challenge.jsx:587",
+    "src/community/pages/Challenge.jsx:660",
+    "src/community/pages/Challenge.jsx:709",
     "src/community/pages/ManageSpace.jsx:35",
     "src/community/pages/ManageSpace.jsx:767"
   ],
   "Judge entries": [
-    "src/community/pages/Challenge.jsx:577",
-    "src/community/pages/Challenge.jsx:716"
+    "src/community/pages/Challenge.jsx:588",
+    "src/community/pages/Challenge.jsx:727"
   ],
   "invited you to judge this challenge.": [
-    "src/community/pages/Challenge.jsx:592"
+    "src/community/pages/Challenge.jsx:603"
   ],
   "Responding…": [
-    "src/community/pages/Challenge.jsx:595",
+    "src/community/pages/Challenge.jsx:606",
     "src/community/pages/Studio.jsx:106"
   ],
   "Accept": [
-    "src/community/pages/Challenge.jsx:595",
+    "src/community/pages/Challenge.jsx:606",
     "src/community/pages/Studio.jsx:106"
   ],
   "Decline": [
-    "src/community/pages/Challenge.jsx:596",
+    "src/community/pages/Challenge.jsx:607",
     "src/community/pages/Space.jsx:261",
     "src/community/pages/Studio.jsx:107"
   ],
   "Judges score every submission against the published criteria.": [
-    "src/community/pages/Challenge.jsx:600"
-  ],
-  "Hosted by {value1}": [
     "src/community/pages/Challenge.jsx:611"
   ],
+  "Hosted by {value1}": [
+    "src/community/pages/Challenge.jsx:622"
+  ],
   "Leave challenge": [
-    "src/community/pages/Challenge.jsx:617"
+    "src/community/pages/Challenge.jsx:628"
   ],
   "Join challenge": [
-    "src/community/pages/Challenge.jsx:617"
+    "src/community/pages/Challenge.jsx:628"
   ],
   "Manage challenge": [
-    "src/community/pages/Challenge.jsx:618"
+    "src/community/pages/Challenge.jsx:629"
   ],
   "Theme": [
-    "src/community/pages/Challenge.jsx:634",
+    "src/community/pages/Challenge.jsx:645",
     "src/community/pages/ManageSpace.jsx:642",
     "src/community/pages/Settings.jsx:103",
     "src/community/pages/Theme.jsx:118",
     "src/community/pages/Theme.jsx:200"
   ],
   "About this challenge": [
-    "src/community/pages/Challenge.jsx:638"
+    "src/community/pages/Challenge.jsx:649"
   ],
   "The host has not added a description yet.": [
-    "src/community/pages/Challenge.jsx:639"
+    "src/community/pages/Challenge.jsx:650"
   ],
   "Rules": [
-    "src/community/pages/Challenge.jsx:642",
+    "src/community/pages/Challenge.jsx:653",
     "src/community/pages/ManageSpace.jsx:642"
   ],
   "The host has not added rules yet.": [
-    "src/community/pages/Challenge.jsx:643"
+    "src/community/pages/Challenge.jsx:654"
   ],
   "Joined": [
-    "src/community/pages/Challenge.jsx:648",
-    "src/community/pages/Groups.jsx:106"
+    "src/community/pages/Challenge.jsx:659"
   ],
   "Winner picked by": [
-    "src/community/pages/Challenge.jsx:650"
+    "src/community/pages/Challenge.jsx:661"
   ],
   "Audience": [
-    "src/community/pages/Challenge.jsx:650"
+    "src/community/pages/Challenge.jsx:661"
   ],
   "Judges": [
-    "src/community/pages/Challenge.jsx:650",
-    "src/community/pages/Challenge.jsx:678",
+    "src/community/pages/Challenge.jsx:661",
+    "src/community/pages/Challenge.jsx:689",
     "src/community/pages/ManageSpace.jsx:686",
     "src/community/pages/ManageSpace.jsx:719",
     "src/community/pages/Spaces.jsx:288"
   ],
   "Audience vote": [
-    "src/community/pages/Challenge.jsx:654",
+    "src/community/pages/Challenge.jsx:665",
     "src/community/pages/ManageSpace.jsx:691",
     "src/community/pages/Spaces.jsx:293"
   ],
   "Once submissions close, anyone signed in can rate each entry from 1 to 5 stars. Ratings stay hidden until voting ends, and the entry with the highest average rating wins.": [
-    "src/community/pages/Challenge.jsx:655"
+    "src/community/pages/Challenge.jsx:666"
   ],
   "Audience ratings are open during judging. They are shown next to each entry but do not decide the winner.": [
-    "src/community/pages/Challenge.jsx:658"
-  ],
-  "Judging criteria": [
-    "src/community/pages/Challenge.jsx:662"
-  ],
-  "Weight {value1} of 5": [
     "src/community/pages/Challenge.jsx:669"
   ],
+  "Judging criteria": [
+    "src/community/pages/Challenge.jsx:673"
+  ],
+  "Weight {value1} of 5": [
+    "src/community/pages/Challenge.jsx:680"
+  ],
   "No judges announced yet.": [
-    "src/community/pages/Challenge.jsx:683"
+    "src/community/pages/Challenge.jsx:694"
   ],
   "Questions, progress updates, and discussion about the challenge.": [
-    "src/community/pages/Challenge.jsx:689"
-  ],
-  "Enter a shared or unlisted project before submissions close.": [
     "src/community/pages/Challenge.jsx:700"
   ],
+  "Enter a shared or unlisted project before submissions close.": [
+    "src/community/pages/Challenge.jsx:711"
+  ],
   "Click the stars to rate an entry. Ratings stay hidden until voting ends, and you can change yours until then.": [
-    "src/community/pages/Challenge.jsx:701"
+    "src/community/pages/Challenge.jsx:712"
   ],
   "Submissions are locked for this challenge.": [
-    "src/community/pages/Challenge.jsx:702"
+    "src/community/pages/Challenge.jsx:713"
   ],
   "No submissions yet": [
-    "src/community/pages/Challenge.jsx:705"
-  ],
-  "The first entry will appear here.": [
-    "src/community/pages/Challenge.jsx:705"
-  ],
-  "Final results": [
-    "src/community/pages/Challenge.jsx:710"
-  ],
-  "Ranked by average audience rating. Ties go to the entry with more ratings.": [
-    "src/community/pages/Challenge.jsx:710"
-  ],
-  "Ranked by the judges using the criteria shown on the overview.": [
-    "src/community/pages/Challenge.jsx:710"
-  ],
-  "/ 5 · {value1} ratings": [
-    "src/community/pages/Challenge.jsx:711"
-  ],
-  "No results": [
-    "src/community/pages/Challenge.jsx:711"
-  ],
-  "This challenge did not receive any submissions.": [
-    "src/community/pages/Challenge.jsx:711"
-  ],
-  "Play each entry, then score it from 1 to 10 on every criterion. Only the host sees your feedback.": [
     "src/community/pages/Challenge.jsx:716"
   ],
+  "The first entry will appear here.": [
+    "src/community/pages/Challenge.jsx:716"
+  ],
+  "Final results": [
+    "src/community/pages/Challenge.jsx:721"
+  ],
+  "Ranked by average audience rating. Ties go to the entry with more ratings.": [
+    "src/community/pages/Challenge.jsx:721"
+  ],
+  "Ranked by the judges using the criteria shown on the overview.": [
+    "src/community/pages/Challenge.jsx:721"
+  ],
+  "/ 5 from {value1} ratings": [
+    "src/community/pages/Challenge.jsx:722"
+  ],
+  "No results": [
+    "src/community/pages/Challenge.jsx:722"
+  ],
+  "This challenge did not receive any submissions.": [
+    "src/community/pages/Challenge.jsx:722"
+  ],
+  "Play each entry, then score it from 1 to 10 on every criterion. Only the host sees your feedback.": [
+    "src/community/pages/Challenge.jsx:727"
+  ],
   "No entries to judge": [
-    "src/community/pages/Challenge.jsx:717"
+    "src/community/pages/Challenge.jsx:728"
   ],
   "Submissions will appear here after the deadline.": [
-    "src/community/pages/Challenge.jsx:717"
+    "src/community/pages/Challenge.jsx:728"
   ],
   "Discussion": [
     "src/community/pages/Collection.jsx:39",
@@ -3600,7 +3613,7 @@
   ],
   "Trending": [
     "src/community/pages/Explore.jsx:20",
-    "src/community/pages/Home.jsx:375",
+    "src/community/pages/Home.jsx:374",
     "src/community/pages/Search.jsx:28"
   ],
   "Recent": [
@@ -3806,6 +3819,9 @@
   "A Rotur group on MistWarp.": [
     "src/community/pages/Groups.jsx:106"
   ],
+  ", joined": [
+    "src/community/pages/Groups.jsx:106"
+  ],
   "{actor} favorited {project}": [
     "src/community/pages/Home.jsx:45"
   ],
@@ -3817,7 +3833,7 @@
   ],
   "All updates": [
     "src/community/pages/Home.jsx:74",
-    "src/community/pages/Home.jsx:414"
+    "src/community/pages/Home.jsx:413"
   ],
   "Couldn't load news.": [
     "src/community/pages/Home.jsx:76",
@@ -3858,7 +3874,7 @@
   ],
   "Suggest and vote": [
     "src/community/pages/Home.jsx:170",
-    "src/community/pages/Home.jsx:422"
+    "src/community/pages/Home.jsx:421"
   ],
   "Couldn't load roadmap suggestions.": [
     "src/community/pages/Home.jsx:172"
@@ -3911,7 +3927,7 @@
   ],
   "Try a starter": [
     "src/community/pages/Home.jsx:305",
-    "src/community/pages/Home.jsx:330"
+    "src/community/pages/Home.jsx:329"
   ],
   "home.explore": [
     "src/community/pages/Home.jsx:306"
@@ -3920,53 +3936,53 @@
     "src/community/pages/Home.jsx:311"
   ],
   "Build together, keep your progress": [
-    "src/community/pages/Home.jsx:316"
+    "src/community/pages/Home.jsx:315"
   ],
   "Make your first version": [
-    "src/community/pages/Home.jsx:317"
+    "src/community/pages/Home.jsx:316"
   ],
   "Invite someone to improve it": [
-    "src/community/pages/Home.jsx:318"
+    "src/community/pages/Home.jsx:317"
   ],
   "Keep earlier versions to return to": [
-    "src/community/pages/Home.jsx:319"
+    "src/community/pages/Home.jsx:318"
   ],
   "Start with a working clicker": [
-    "src/community/pages/Home.jsx:320"
+    "src/community/pages/Home.jsx:319"
   ],
   "Welcome to MistWarp, {value1}": [
-    "src/community/pages/Home.jsx:326"
+    "src/community/pages/Home.jsx:325"
   ],
   "Start from a working project, or follow a few creators to fill your feed.": [
-    "src/community/pages/Home.jsx:327"
+    "src/community/pages/Home.jsx:326"
   ],
   "Find creators": [
-    "src/community/pages/Home.jsx:333"
+    "src/community/pages/Home.jsx:332"
   ],
   "Your activity": [
-    "src/community/pages/Home.jsx:346"
+    "src/community/pages/Home.jsx:345"
   ],
   "Freshly shared": [
-    "src/community/pages/Home.jsx:382"
+    "src/community/pages/Home.jsx:381"
   ],
   "Continue playing": [
-    "src/community/pages/Home.jsx:396",
-    "src/community/pages/Home.jsx:503"
-  ],
-  "Game library": [
-    "src/community/pages/Home.jsx:399"
-  ],
-  "Community updates": [
-    "src/community/pages/Home.jsx:407"
-  ],
-  "Nothing played yet": [
-    "src/community/pages/Home.jsx:501"
-  ],
-  "Games you save to your library show up here after you play them.": [
+    "src/community/pages/Home.jsx:395",
     "src/community/pages/Home.jsx:502"
   ],
+  "Game library": [
+    "src/community/pages/Home.jsx:398"
+  ],
+  "Community updates": [
+    "src/community/pages/Home.jsx:406"
+  ],
+  "Nothing played yet": [
+    "src/community/pages/Home.jsx:500"
+  ],
+  "Games you save to your library show up here after you play them.": [
+    "src/community/pages/Home.jsx:501"
+  ],
   "Couldn't load projects.": [
-    "src/community/pages/Home.jsx:546"
+    "src/community/pages/Home.jsx:545"
   ],
   "Followers": [
     "src/community/pages/Leaderboard.jsx:23",
@@ -4726,7 +4742,7 @@
   "Could not load recent projects.": [
     "src/community/pages/MyStuff.jsx:168"
   ],
-  "{value1} · {value2} views · {value3} hearts": [
+  "{value1}, {value2} views, {value3} hearts": [
     "src/community/pages/MyStuff.jsx:185"
   ],
   "Start a new project": [
@@ -6304,10 +6320,10 @@
   "Project saves": [
     "src/community/pages/Settings.jsx:936"
   ],
-  "by @{value1} · {value2} bytes · revision {value3}": [
+  "By @{value1}, {value2} bytes, revision {value3}": [
     "src/community/pages/Settings.jsx:942"
   ],
-  "{value1} bytes · revision {value2}": [
+  "{value1} bytes, revision {value2}": [
     "src/community/pages/Settings.jsx:943"
   ],
   "Delete save": [
@@ -6326,7 +6342,7 @@
   "Games see only items they define or explicitly allow from other projects.": [
     "src/community/pages/Settings.jsx:961"
   ],
-  "{value1} · quantity {value2} · from {value3}": [
+  "Quantity {value2}, from {value3}, ID {value1}": [
     "src/community/pages/Settings.jsx:967"
   ],
   "No portable items": [

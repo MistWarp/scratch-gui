@@ -1,0 +1,65 @@
+/* Zero specificity, so whoever places the seal can position it absolutely. */
+:where(.seal, .sealSmall) {
+    position: relative;
+}
+
+.seal,
+.sealSmall {
+    display: grid;
+    width: 68px;
+    height: 68px;
+    place-items: center;
+    color: #3b2a00;
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4));
+    transform: rotate(-12deg);
+}
+
+/* Two squares, one turned 45 degrees, make the eight-point seal edge. */
+.seal::before,
+.seal::after,
+.sealSmall::before,
+.sealSmall::after {
+    position: absolute;
+    inset: 9px;
+    border-radius: var(--radius-2xs);
+    background: #f3c952;
+    content: '';
+}
+
+.seal::after,
+.sealSmall::after {
+    transform: rotate(45deg);
+}
+
+.seal > span,
+.sealSmall > span {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border: 2px solid color-mix(in srgb, #3b2a00 22%, transparent);
+    border-radius: 50%;
+    background: #f7d873;
+    font-size: var(--fs-md);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.sealSmall {
+    width: 46px;
+    height: 46px;
+}
+
+.sealSmall::before,
+.sealSmall::after {
+    inset: 6px;
+}
+
+.sealSmall > span {
+    width: 28px;
+    height: 28px;
+    border-width: 1.5px;
+    font-size: var(--fs-2xs);
+}

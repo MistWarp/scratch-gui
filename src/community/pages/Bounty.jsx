@@ -131,8 +131,8 @@ const Bounty = () => {
                 lead={(
                     <React.Fragment>
                         <span className={styles.reward}><Coins size={15} /> {communityText('{amount} credits', {amount: bounty.amount})}</span>
-                        {' · '}
-                        {communityText('On')} <Link to={projectUrl(project)}>{project.title}</Link> <UserLink username={project.owner}>{communityText('by {owner}', {owner: project.owner})}</UserLink>
+                        {' '}
+                        {communityText('for')} <Link to={projectUrl(project)}>{project.title}</Link> <UserLink username={project.owner}>{communityText('by {owner}', {owner: project.owner})}</UserLink>
                     </React.Fragment>
                 )}
                 actions={(
