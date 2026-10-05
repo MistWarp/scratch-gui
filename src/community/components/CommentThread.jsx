@@ -2,7 +2,7 @@ import {getCommunityLocale} from '../locale.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
 import {Link} from 'react-router-dom';
-import {Reply, Search, MoreHorizontal, MessageSquare, Pencil, Flag, Trash2, Coins, Pin} from 'lucide-react';
+import {Reply, Search, MoreHorizontal, MessageSquare, Pencil, Flag, Trash2, Coins, Pin, Trophy} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import useAfterLogin from '../use-after-login.js';
 import Avatar from './Avatar.jsx';
@@ -87,7 +87,7 @@ const kindLabel = (kind, text) => commentKindOptions(text).find(item => item.val
 const CommentRow = ({
     comment, onReply, onDelete, onEdit, onSaveEdit, onCancelEdit, onReact, onPin, onReport, canReply, canDelete,
     canEdit, canPin, canReport, deleting, editing, editText, editBusy, onEditTextChange, reacting, pinning,
-    isReply, id
+    isReply, id, authorBadge
 }) => {
     const {text: communityText} = useCommunityText();
     const hasMenu = canEdit || canPin || canReport || canDelete;
@@ -97,6 +97,7 @@ const CommentRow = ({
             id={id}
             className={isReply ? styles.replyRow : styles.row}
             data-donation-tier={donationTier || null}
+            data-author-badge={authorBadge ? 'winner' : null}
         >
             <Link to={`/users/${comment.author}`}>
                 <Avatar
@@ -111,6 +112,12 @@ const CommentRow = ({
                         className={styles.author}
                     >{comment.author}</Link>
                     <GroupTag username={comment.author} compact />
+                    {authorBadge ? (
+                        <span className={styles.authorBadge}>
+                            <Trophy size={11} aria-hidden="true" />
+                            {authorBadge}
+                        </span>
+                    ) : null}
                     {!isReply && comment.kind && comment.kind !== 'comment' ? (
                         <span className={`${styles.kind} ${styles[`kind-${comment.kind}`] || ''}`}>
                             {kindLabel(comment.kind, communityText)}
@@ -320,7 +327,7 @@ const InlineComposer = ({
 
 const CommentThread = ({
     source, canModerate, canPin = false, disabled, disabledReason, reportContext, projectComments = false,
-    composerAction, onCountChange = null, donationRecipient = '', draftKey = ''
+    composerAction, onCountChange = null, donationRecipient = '', draftKey = '', authorBadges = null
 }) => {
     const {text: communityText} = useCommunityText();
     const {user} = useUser();
@@ -780,6 +787,7 @@ const CommentThread = ({
     const canEdit = comment => Boolean(source.edit && user) && sameUser(comment.author, user.username);
     const canPinComment = comment => Boolean(canPin && source.pin && user) && !comment.parent;
     const canReport = comment => Boolean(user) && !sameUser(comment.author, user.username);
+    const authorBadgeFor = author => (authorBadges && author ? authorBadges[String(author).toLowerCase()] || '' : '');
     const canReply = Boolean(user) && !disabled;
 
     const {roots, replyMap} = useMemo(() => {
@@ -909,6 +917,7 @@ const CommentThread = ({
                             <CommentRow
                                 comment={comment}
                                 id={`comment-id-${comment.id}`}
+                                authorBadge={authorBadgeFor(comment.author)}
                                 onReply={() => openReply(comment.id)}
                                 onDelete={() => {
                                     setError(null);
@@ -950,6 +959,7 @@ const CommentThread = ({
                                                     key={reply.id}
                                                     comment={reply}
                                                     id={`comment-id-${reply.id}`}
+                                                    authorBadge={authorBadgeFor(reply.author)}
                                                     isReply
                                                     canReply={canReply}
                                                     canDelete={canDelete(reply)}

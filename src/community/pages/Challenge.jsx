@@ -3,9 +3,10 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {CalendarDays, Check, ExternalLink, Gavel, Info, Medal, MessageCircle, ScrollText, Settings, Sparkles, Star, Trophy, UserMinus, UserPlus, Users} from 'lucide-react';
+import {CalendarDays, Check, Crown, ExternalLink, Gavel, Info, Medal, MessageCircle, PartyPopper, ScrollText, Settings, Sparkles, Star, Trophy, UserMinus, UserPlus, Users} from 'lucide-react';
 import api, {projectUrl} from '../api';
 import Avatar from '../components/Avatar.jsx';
+import Confetti, {useCelebration} from '../components/Confetti.jsx';
 import GroupTag from '../components/GroupTag.jsx';
 import UserLink from '../components/UserLink.jsx';
 import CommentThread from '../components/CommentThread.jsx';
@@ -106,6 +107,46 @@ export const challengeWeightedScore = (criteria, ratings) => {
     return weights ? total / weights : 0;
 };
 
+// The winner comes from the server once results are published. Older API
+// responses lack it, so fall back to the entry ranked first.
+export const challengeWinner = space => {
+    if (!space || !timestamp(space.resultsPublishedAt)) return null;
+    if (space.winner && space.winner.id) return space.winner;
+    const first = (space.projects || []).find(project => Number(project.place) === 1);
+    if (!first) return null;
+    const audience = challengeAudienceJudged(space);
+    return {
+        ...first,
+        score: audience ? first.audienceScore : first.judgeScore,
+        scoreOutOf: audience ? 5 : 10,
+        voteCount: first.audienceVoteCount
+    };
+};
+
+const WinnerBanner = ({challengeId, winner, audienceJudged}) => {
+    const {text: communityText} = useCommunityText();
+    const [burst, replay] = useCelebration(`challenge:${challengeId}:${winner.id}`);
+    return (
+        <section className={styles.winner} aria-label={communityText('Challenge winner')}>
+            <Confetti burst={burst} />
+            <Link to={projectUrl(winner)} className={styles.winnerThumb}>
+                <ProjectThumbnail project={winner} fallbackClassName={styles.judgeFallback} />
+            </Link>
+            <div className={styles.winnerText}>
+                <span className={styles.winnerLabel}><Crown size={15} aria-hidden="true" />{communityText('Winner')}</span>
+                <h2><Link to={projectUrl(winner)}>{winner.title}</Link></h2>
+                <span className={styles.winnerBy}>{communityText('by')}{' '}<UserLink username={winner.owner}>{winner.owner}</UserLink></span>
+                <span className={styles.winnerScore}>
+                    {audienceJudged ?
+                        communityText('{value1} / 5 from {value2} ratings', {value1: challengeScore(winner.score), value2: winner.voteCount || 0}) :
+                        communityText('{value1} / 10 from the judges', {value1: challengeScore(winner.score)})}
+                </span>
+            </div>
+            <Button className={styles.winnerReplay} onClick={replay}><PartyPopper size={16} />{communityText('Celebrate')}</Button>
+        </section>
+    );
+};
+
 const isScored = project => Boolean(project.myScore && project.myScore.edited);
 
 const savedRatings = project => Object.fromEntries(((project.myScore && project.myScore.ratings) || []).map(rating => [rating.criterionId, rating.value]));
@@ -118,18 +159,19 @@ export const nextUnscoredEntry = (projects, currentId) => {
 
 const STAR_VALUES = [1, 2, 3, 4, 5];
 
-const StarRating = ({average, count, myVote, interactive, busy, title, onRate}) => {
+const StarRating = ({average, count, myVote, revealed, interactive, busy, note, title, onRate}) => {
     const {text: communityText} = useCommunityText();
     const [preview, setPreview] = useState(0);
-    const shown = preview || challengeRating(average);
-    const label = count ?
-        communityText('Rated {value1} out of 5 from {value2} ratings', {value1: challengeRating(average).toFixed(1), value2: count}) :
-        communityText('No ratings yet');
+    // Until voting ends nobody sees the averages, so the stars show your own vote.
+    const shown = preview || (revealed ? challengeRating(average) : myVote);
+    const label = !revealed ? (myVote ? communityText('You rated this {value1} out of 5', {value1: myVote}) : communityText('Not rated yet')) :
+        count ? communityText('Rated {value1} out of 5 from {value2} ratings', {value1: challengeRating(average).toFixed(1), value2: count}) :
+            communityText('No ratings yet');
     const star = value => (
         <span className={styles.star} aria-hidden="true">
             <Star size={18} />
             <span className={styles.starFill} style={{width: `${Math.round(Math.max(0, Math.min(1, shown - value + 1)) * 100)}%`}}><Star size={18} fill="currentColor" /></span>
-            {myVote === value ? <i className={styles.starMine} /> : null}
+            {revealed && myVote === value ? <i className={styles.starMine} /> : null}
         </span>
     );
     return (
@@ -154,7 +196,9 @@ const StarRating = ({average, count, myVote, interactive, busy, title, onRate}) 
             ) : (
                 <div className={styles.stars} role="img" aria-label={label}>{STAR_VALUES.map(value => <span key={value}>{star(value)}</span>)}</div>
             )}
-            {count ? (
+            {note ? <span className={styles.ratingMeta}><small>{note}</small></span> : !revealed ? (
+                <span className={styles.ratingMeta}><small>{myVote ? communityText('Your rating') : communityText('Rate it')}</small></span>
+            ) : count ? (
                 <span className={styles.ratingMeta}>
                     <strong>{challengeRating(average).toFixed(1)}</strong>
                     <small>{communityText('({value1})', {value1: count})}</small>
@@ -216,8 +260,10 @@ const Entry = ({challengeId, project, challenge, user, login, load, onError}) =>
                             average={project.audienceScore}
                             count={project.audienceVoteCount}
                             myVote={Number(project.myVote) || 0}
+                            revealed={challenge.phase === 'awaiting-results' || challenge.phase === 'results'}
                             interactive={canVote}
                             busy={voting}
+                            note={ownEntry && challenge.phase === 'judging' ? communityText('Your entry') : ''}
                             title={ownEntry && challenge.phase === 'judging' ? communityText('You cannot rate your own entry.') : ''}
                             onRate={vote}
                         />
@@ -462,6 +508,8 @@ const Challenge = ({id, space, user, login, load}) => {
     const liveSpace = {...space, phase: currentPhase};
     const criteria = space.criteria || [];
     const judges = space.judges || [];
+    const winner = currentPhase === 'results' ? challengeWinner(space) : null;
+    const winnerBadges = winner && winner.owner ? {[String(winner.owner).toLowerCase()]: communityText('Winner')} : null;
     const commentSource = useSpaceCommentSource(id);
 
     useEffect(() => {
@@ -573,6 +621,7 @@ const Challenge = ({id, space, user, login, load}) => {
             >
                 <Timeline space={space} phase={currentPhase} now={now} audienceJudged={audienceJudged} />
             </PageHeader>
+            {winner ? <WinnerBanner challengeId={id} winner={winner} audienceJudged={audienceJudged} /> : null}
             <UnderlineTabs items={tabs} value={tab} onChange={setTab} className={styles.tabs} ariaLabel="Challenge sections" idPrefix="challenge" />
             {error ? <Notice variant="error" className={styles.pageNotice}>{error}</Notice> : null}
             <div {...tabPanelProps('challenge', tab)}>
@@ -603,7 +652,7 @@ const Challenge = ({id, space, user, login, load}) => {
                             {audienceJudged ? (
                                 <div className={styles.sidebarBlock}>
                                     <h2><Star size={16} aria-hidden="true" />{communityText('Audience vote')}</h2>
-                                    <p className={styles.sidebarText}>{communityText('Once submissions close, anyone signed in can rate each entry from 1 to 5 stars. The entry with the highest average rating wins.')}</p>
+                                    <p className={styles.sidebarText}>{communityText('Once submissions close, anyone signed in can rate each entry from 1 to 5 stars. Ratings stay hidden until voting ends, and the entry with the highest average rating wins.')}</p>
                                 </div>
                             ) : null}
                             {!audienceJudged && space.communityVoting ? <p className={styles.sidebarText}>{communityText('Audience ratings are open during judging. They are shown next to each entry but do not decide the winner.')}</p> : null}
@@ -638,7 +687,7 @@ const Challenge = ({id, space, user, login, load}) => {
                         </aside>
                         <section className={styles.community} id="space-comments">
                             <SectionHeading icon={MessageCircle} title={communityText('Community')} lead={communityText('Questions, progress updates, and discussion about the challenge.')} />
-                            <CommentThread source={commentSource} canModerate={Boolean(space.canManage)} canPin={Boolean(space.canManage)} reportContext={`challenge ${space.title}`} draftKey={`space:${id}`} />
+                            <CommentThread source={commentSource} canModerate={Boolean(space.canManage)} canPin={Boolean(space.canManage)} reportContext={`challenge ${space.title}`} draftKey={`space:${id}`} authorBadges={winnerBadges} />
                         </section>
                     </div>
                 ) : null}
@@ -649,7 +698,7 @@ const Challenge = ({id, space, user, login, load}) => {
                             title={communityText('Submissions')}
                             count={space.projects.length}
                             lead={currentPhase === 'submissions' ? communityText('Enter a shared or unlisted project before submissions close.') :
-                                currentPhase === 'judging' && (audienceJudged || space.communityVoting) ? communityText('Click the stars to rate an entry. You can change your rating until voting ends.') :
+                                currentPhase === 'judging' && (audienceJudged || space.communityVoting) ? communityText('Click the stars to rate an entry. Ratings stay hidden until voting ends, and you can change yours until then.') :
                                     communityText('Submissions are locked for this challenge.')}
                             actions={currentPhase === 'submissions' && (space.openSubmissions || space.canManage) ? <SpaceProjectPicker space={liveSpace} onAdded={load} /> : null}
                         />
