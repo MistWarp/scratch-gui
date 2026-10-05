@@ -120,7 +120,6 @@
 
 .node:hover {
     background: var(--bg-raised);
-    transform: translateY(-1px);
 }
 
 .nodeSelected {

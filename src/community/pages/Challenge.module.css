@@ -365,25 +365,11 @@
     overflow: hidden;
 }
 
-.entry {
-    transition: transform 0.13s ease, box-shadow 0.13s ease;
-}
-
-.entry:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
-}
 
 /* The project card fills the wrapper so every footer lines up at the bottom of its row. */
 .entry > article {
     flex: 1 1 auto;
     border-radius: 0;
-    box-shadow: none;
-    transform: none;
-}
-
-.entry > article:hover {
-    transform: none;
     box-shadow: none;
 }
 
@@ -539,28 +525,27 @@
 }
 
 .winner {
-    position: relative;
     display: grid;
     align-items: center;
-    grid-template-columns: 180px minmax(0, 1fr) auto;
-    margin: 18px 0 4px;
-    padding: 16px;
-    gap: 20px;
-    border: 1px solid color-mix(in srgb, #f3c952 45%, transparent);
+    grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
+    margin: 22px 0 8px;
+    padding: 22px 26px 22px 22px;
+    gap: 30px;
     border-radius: var(--radius);
-    background:
-        radial-gradient(circle at 12% 0%, color-mix(in srgb, #f3c952 22%, transparent), transparent 60%),
-        var(--bg-card);
+    background: var(--bg-card);
     box-shadow: var(--card-shadow);
+}
+
+.winnerArt {
+    position: relative;
 }
 
 .winnerThumb {
     display: grid;
     aspect-ratio: 4 / 3;
     place-items: center;
-    border-radius: var(--radius-xs);
+    border-radius: var(--radius-sm);
     background: var(--bg-raised);
-    box-shadow: 0 0 0 3px #f3c952;
     overflow: hidden;
 }
 
@@ -570,37 +555,37 @@
     object-fit: cover;
 }
 
+.winnerSeal {
+    position: absolute;
+    top: -20px;
+    right: -22px;
+}
+
 .winnerText {
     display: grid;
     justify-items: start;
     min-width: 0;
-    gap: 4px;
-}
-
-.winnerLabel {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 3px 9px;
-    border-radius: var(--radius-xs);
-    color: #3b2a00;
-    background: #f3c952;
-    font-size: var(--fs-xs);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    gap: 6px;
 }
 
 .winnerText h2 {
-    margin: 4px 0 0;
-    font-size: var(--fs-2xl);
-    line-height: 1.2;
+    max-width: 34ch;
+    margin: 0;
+    font-size: var(--fs-3xl);
+    line-height: 1.08;
+    letter-spacing: -0.015em;
     overflow-wrap: anywhere;
 }
 
-.winnerBy {
+.winnerText h2 a:hover {
+    color: var(--accent-strong);
+}
+
+.winnerBy,
+.winnerScore {
+    margin: 0;
     color: var(--text-dim);
-    font-size: var(--fs-sm);
+    font-size: var(--fs-md);
 }
 
 .winnerBy a {
@@ -608,10 +593,23 @@
     font-weight: 700;
 }
 
-.winnerScore {
-    color: var(--text-faint);
-    font-size: var(--fs-xs);
-    font-weight: 700;
+.winnerRating {
+    flex: 0 0 auto;
+    justify-content: flex-start;
+    gap: 8px;
+}
+
+.winnerRating .ratingMeta small {
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+}
+
+.winnerActions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 10px;
+    gap: 8px;
 }
 
 .sidebarText {
@@ -689,7 +687,7 @@
 
 .queueActive {
     background: var(--accent-soft);
-    box-shadow: inset 3px 0 0 var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent-border);
 }
 
 .queueThumb {
@@ -1022,12 +1020,18 @@
     }
 
     .winner {
-        grid-template-columns: 120px minmax(0, 1fr);
+        grid-template-columns: 1fr;
+        padding: 26px 18px 18px;
+        gap: 20px;
     }
 
-    .winnerReplay {
-        grid-column: 1 / -1;
-        justify-self: start;
+    .winnerSeal {
+        top: -16px;
+        right: -10px;
+    }
+
+    .winnerText h2 {
+        font-size: var(--fs-2xl);
     }
 
     .judgeQueue {
@@ -1088,9 +1092,3 @@
     }
 }
 
-@media (hover: none) {
-    .entry:hover {
-        transform: none;
-        box-shadow: var(--card-shadow);
-    }
-}

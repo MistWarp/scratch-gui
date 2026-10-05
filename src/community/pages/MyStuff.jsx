@@ -182,7 +182,7 @@ const Overview = ({stats, quota, username, onNavigate}) => {
                                     <span className={styles.ovRecentInfo}>
                                         <strong className={styles.ovRecentTitle}>{project.title}</strong>
                                         <span className={styles.ovRecentMeta}>
-                                            {communityText('{value1} · {value2} views · {value3} hearts', {value1: visibilityLabel(project), value2: fmt(project.views || 0), value3: fmt(project.loveCount || 0)})}
+                                            {communityText('{value1}, {value2} views, {value3} hearts', {value1: visibilityLabel(project), value2: fmt(project.views || 0), value3: fmt(project.loveCount || 0)})}
                                         </span>
                                     </span>
                                 </Link>

@@ -640,7 +640,7 @@ const ManageProject = () => {
                                     <label className={styles.field}>
                                         <span>{communityText('Vanity URL')}</span>
                                         <div className={styles.vanityField}><span>{communityText('/p/')}</span><input disabled={saving || (!perks?.mistwarp?.vanityProjectUrls && !project.vanityLapsed)} maxLength={40} value={form.vanitySlug} placeholder={communityText('my-project')} onChange={e => set('vanitySlug', e.target.value)} /></div>
-                                        <small>{project.vanityLapsed ? communityText('This vanity URL is paused because your plan no longer includes one. It stays yours for 30 days. Clear it to give it up now.') : null}{project.vanitySlug ? <Link to={projectUrl(project)}>{communityText('Open {value1}', {value1: `/p/${project.vanitySlug}`})}</Link> : null}{project.vanitySlug && perks?.mistwarp?.vanityProjectUrls ? ' · ' : ''}{project.vanityLapsed ? null : perks?.mistwarp?.vanityProjectUrls ? communityText('Your {value1} membership includes a vanity URL.', {value1: perks.tier}) : communityText('Vanity project URLs are included with Rotur Pro.')}</small>
+                                        <small>{project.vanityLapsed ? communityText('This vanity URL is paused because your plan no longer includes one. It stays yours for 30 days. Clear it to give it up now.') : null}{project.vanitySlug ? <Link to={projectUrl(project)}>{communityText('Open {value1}', {value1: `/p/${project.vanitySlug}`})}</Link> : null}{project.vanitySlug && perks?.mistwarp?.vanityProjectUrls ? '. ' : ''}{project.vanityLapsed ? null : perks?.mistwarp?.vanityProjectUrls ? communityText('Your {value1} membership includes a vanity URL.', {value1: perks.tier}) : communityText('Vanity project URLs are included with Rotur Pro.')}</small>
                                     </label>
                                     <div className={styles.formActions}>
                                         <span className={styles.formStatus} role="status" aria-live="polite">{status}</span>
@@ -787,7 +787,7 @@ const ManageProject = () => {
                                                             <strong>{prod.name}</strong>
                                                             <div style={{fontSize: '12px', color: 'var(--text-dim)'}}>
                                                                 <code>{prod.id}</code>
-                                                                {prod.description ? ` · ${prod.description}` : ''}
+                                                                {prod.description ? <div>{prod.description}</div> : null}
                                                             </div>
                                                         </div>
                                                     </div>

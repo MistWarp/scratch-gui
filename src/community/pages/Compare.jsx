@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import React from 'react';
 import {Link} from 'react-router-dom';
-import {ArrowRight, Blocks, Download, Gauge, GitCompareArrows, History, Palette, Play, Trophy, Users, UsersRound} from 'lucide-react';
+import {Blocks, Download, Gauge, GitCompareArrows, History, Palette, Play, Trophy, Users, UsersRound} from 'lucide-react';
 import {editorUrl} from '../api';
 import {useCommunityIntl} from '../i18n.jsx';
 import ScratchImport from '../components/ScratchImport.jsx';
@@ -78,8 +78,8 @@ const Compare = () => {
                         <div>
                             <h2>{text(title)}</h2>
                             <p>{text(body)}</p>
-                            {to ? <Link to={to}>{text(action)}<ArrowRight size={14} /></Link> : null}
-                            {href ? <a href={href}>{text(action)}<ArrowRight size={14} /></a> : null}
+                            {to ? <Link to={to}>{text(action)}</Link> : null}
+                            {href ? <a href={href}>{text(action)}</a> : null}
                         </div>
                     </section>
                 ))}

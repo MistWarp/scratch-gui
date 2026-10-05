@@ -6,7 +6,6 @@
     border-radius: var(--radius-sm);
     overflow: hidden;
     box-shadow: var(--card-shadow);
-    transition: transform 0.13s ease, box-shadow 0.13s ease;
 }
 
 .cardLink {
@@ -15,9 +14,8 @@
     inset: 0;
 }
 
-.card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+.card:hover .title {
+    color: var(--accent-strong);
 }
 
 .thumb {
@@ -145,13 +143,6 @@
     overflow: hidden;
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
-}
-
-@media (hover: none) {
-    .card:hover {
-        transform: none;
-        box-shadow: var(--card-shadow);
-    }
 }
 
 @media (max-width: 520px) {

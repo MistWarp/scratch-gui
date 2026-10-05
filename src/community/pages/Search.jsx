@@ -172,7 +172,7 @@ const Search = () => {
                         {person.group_tag ? <GroupTag tag={person.group_tag} compact linked={false} /> : null}
                         <span className={styles.personMeta}>
                             {communityText('{count, plural, one {# follower} other {# followers}}', {count: person.followers ?? 0})}
-                            {' · '}
+                            {', '}
                             {communityText('{count, plural, one {# project} other {# projects}}', {count: person.projects || 0})}
                         </span>
                     </div>

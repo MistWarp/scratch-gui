@@ -3,7 +3,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {CalendarDays, Check, Crown, ExternalLink, Gavel, Info, Medal, MessageCircle, PartyPopper, ScrollText, Settings, Sparkles, Star, Trophy, UserMinus, UserPlus, Users} from 'lucide-react';
+import {CalendarDays, Check, ExternalLink, Gavel, Info, Medal, MessageCircle, PartyPopper, Play, ScrollText, Settings, Sparkles, Star, Trophy, UserMinus, UserPlus, Users} from 'lucide-react';
 import api, {projectUrl} from '../api';
 import Avatar from '../components/Avatar.jsx';
 import Confetti, {useCelebration} from '../components/Confetti.jsx';
@@ -18,6 +18,8 @@ import SpaceProjectPicker from '../components/SpaceProjectPicker.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import {tabPanelProps} from '../components/SectionTabs.jsx';
 import Button from '../components/ui/Button.jsx';
+import IconButton from '../components/ui/IconButton.jsx';
+import WinnerSeal from '../components/WinnerSeal.jsx';
 import CardGrid from '../components/ui/CardGrid.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import Notice from '../components/ui/Notice.jsx';
@@ -123,30 +125,6 @@ export const challengeWinner = space => {
     };
 };
 
-const WinnerBanner = ({challengeId, winner, audienceJudged}) => {
-    const {text: communityText} = useCommunityText();
-    const [burst, replay] = useCelebration(`challenge:${challengeId}:${winner.id}`);
-    return (
-        <section className={styles.winner} aria-label={communityText('Challenge winner')}>
-            <Confetti burst={burst} />
-            <Link to={projectUrl(winner)} className={styles.winnerThumb}>
-                <ProjectThumbnail project={winner} fallbackClassName={styles.judgeFallback} />
-            </Link>
-            <div className={styles.winnerText}>
-                <span className={styles.winnerLabel}><Crown size={15} aria-hidden="true" />{communityText('Winner')}</span>
-                <h2><Link to={projectUrl(winner)}>{winner.title}</Link></h2>
-                <span className={styles.winnerBy}>{communityText('by')}{' '}<UserLink username={winner.owner}>{winner.owner}</UserLink></span>
-                <span className={styles.winnerScore}>
-                    {audienceJudged ?
-                        communityText('{value1} / 5 from {value2} ratings', {value1: challengeScore(winner.score), value2: winner.voteCount || 0}) :
-                        communityText('{value1} / 10 from the judges', {value1: challengeScore(winner.score)})}
-                </span>
-            </div>
-            <Button className={styles.winnerReplay} onClick={replay}><PartyPopper size={16} />{communityText('Celebrate')}</Button>
-        </section>
-    );
-};
-
 const isScored = project => Boolean(project.myScore && project.myScore.edited);
 
 const savedRatings = project => Object.fromEntries(((project.myScore && project.myScore.ratings) || []).map(rating => [rating.criterionId, rating.value]));
@@ -159,7 +137,7 @@ export const nextUnscoredEntry = (projects, currentId) => {
 
 const STAR_VALUES = [1, 2, 3, 4, 5];
 
-const StarRating = ({average, count, myVote, revealed, interactive, busy, note, title, onRate}) => {
+const StarRating = ({className, average, count, myVote, revealed, interactive, busy, note, title, onRate}) => {
     const {text: communityText} = useCommunityText();
     const [preview, setPreview] = useState(0);
     // Until voting ends nobody sees the averages, so the stars show your own vote.
@@ -175,7 +153,7 @@ const StarRating = ({average, count, myVote, revealed, interactive, busy, note, 
         </span>
     );
     return (
-        <div className={styles.rating} title={title || label}>
+        <div className={className ? `${styles.rating} ${className}` : styles.rating} title={title || label}>
             {interactive ? (
                 <div className={preview ? styles.starsPreview : styles.stars} role="radiogroup" aria-label={communityText('Your rating')} onMouseLeave={() => setPreview(0)}>
                     {STAR_VALUES.map(value => (
@@ -205,6 +183,39 @@ const StarRating = ({average, count, myVote, revealed, interactive, busy, note, 
                 </span>
             ) : <span className={styles.ratingMeta}><small>{communityText('No ratings')}</small></span>}
         </div>
+    );
+};
+
+const WinnerBanner = ({challengeId, winner, audienceJudged}) => {
+    const {text: communityText} = useCommunityText();
+    const [burst, replay] = useCelebration(`challenge:${challengeId}:${winner.id}`);
+    return (
+        <section className={styles.winner} aria-label={communityText('Challenge winner')}>
+            <Confetti burst={burst} />
+            <div className={styles.winnerArt}>
+                <Link to={projectUrl(winner)} className={styles.winnerThumb} tabIndex={-1} aria-hidden="true">
+                    <ProjectThumbnail project={winner} fallbackClassName={styles.judgeFallback} />
+                </Link>
+                <WinnerSeal className={styles.winnerSeal} />
+            </div>
+            <div className={styles.winnerText}>
+                <h2><Link to={projectUrl(winner)}>{winner.title}</Link></h2>
+                <p className={styles.winnerBy}>{communityText('Winning entry by')}{' '}<UserLink username={winner.owner}>{winner.owner}</UserLink></p>
+                {audienceJudged ? (
+                    <StarRating
+                        className={styles.winnerRating}
+                        average={winner.score}
+                        count={winner.voteCount}
+                        revealed
+                        note={communityText('{value1} average from {value2} ratings', {value1: challengeScore(winner.score), value2: winner.voteCount || 0})}
+                    />
+                ) : <p className={styles.winnerScore}>{communityText('Scored {value1} out of 10 by the judges', {value1: challengeScore(winner.score)})}</p>}
+                <div className={styles.winnerActions}>
+                    <Button as={Link} to={projectUrl(winner)} variant="primary"><Play size={16} />{communityText('Play the winner')}</Button>
+                    <IconButton label={communityText('Replay the celebration')} onClick={replay}><PartyPopper size={17} /></IconButton>
+                </div>
+            </div>
+        </section>
     );
 };
 
@@ -708,7 +719,7 @@ const Challenge = ({id, space, user, login, load}) => {
                 {tab === 'results' ? (
                     <section>
                         <SectionHeading icon={Medal} title={communityText('Final results')} lead={audienceJudged ? communityText('Ranked by average audience rating. Ties go to the entry with more ratings.') : communityText('Ranked by the judges using the criteria shown on the overview.')} />
-                        {space.projects.length ? <ol className={styles.resultList}>{space.projects.map(project => <li key={project.id}><span className={project.place <= 3 ? styles.resultPlaceWinner : styles.resultPlace}>{project.place ? `#${project.place}` : '-'}</span><div><Link to={`/project/${project.id}`}>{project.title}</Link><span>{communityText('by')}{' '}<UserLink username={project.owner}>{project.owner}</UserLink></span></div>{audienceJudged ? (project.audienceVoteCount ? <strong>{challengeScore(project.audienceScore)}<small>{communityText('/ 5 · {value1} ratings', {value1: project.audienceVoteCount})}</small></strong> : <small>{communityText('No ratings')}</small>) : <strong>{challengeScore(project.judgeScore)}<small>{communityText('/ 10')}</small></strong>}</li>)}</ol> : <EmptyState compact icon={Medal} title={communityText('No results')}>{communityText('This challenge did not receive any submissions.')}</EmptyState>}
+                        {space.projects.length ? <ol className={styles.resultList}>{space.projects.map(project => <li key={project.id}><span className={project.place <= 3 ? styles.resultPlaceWinner : styles.resultPlace}>{project.place ? `#${project.place}` : '-'}</span><div><Link to={`/project/${project.id}`}>{project.title}</Link><span>{communityText('by')}{' '}<UserLink username={project.owner}>{project.owner}</UserLink></span></div>{audienceJudged ? (project.audienceVoteCount ? <strong>{challengeScore(project.audienceScore)}<small>{communityText('/ 5 from {value1} ratings', {value1: project.audienceVoteCount})}</small></strong> : <small>{communityText('No ratings')}</small>) : <strong>{challengeScore(project.judgeScore)}<small>{communityText('/ 10')}</small></strong>}</li>)}</ol> : <EmptyState compact icon={Medal} title={communityText('No results')}>{communityText('This challenge did not receive any submissions.')}</EmptyState>}
                     </section>
                 ) : null}
                 {tab === 'judging' ? (
