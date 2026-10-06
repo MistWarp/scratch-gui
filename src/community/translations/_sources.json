@@ -37,7 +37,7 @@
     "src/community/pages/ManageProject.jsx:866",
     "src/community/pages/ManageProject.jsx:901",
     "src/community/pages/Profile.jsx:928",
-    "src/community/pages/Wallet.jsx:212",
+    "src/community/pages/Wallet.jsx:209",
     "src/community/pages/admin/StatsOverview.jsx:148",
     "src/community/pages/admin/UserDetailCard.jsx:268"
   ],
@@ -2621,6 +2621,52 @@
   "{value1} downloads": [
     "src/community/components/ThemeCard.jsx:35"
   ],
+  "Today": [
+    "src/community/components/TransactionHistory.jsx:75",
+    "src/community/pages/admin/AnalyticsChart.jsx:61"
+  ],
+  "Yesterday": [
+    "src/community/components/TransactionHistory.jsx:76"
+  ],
+  "Search transactions": [
+    "src/community/components/TransactionHistory.jsx:87"
+  ],
+  "Search by note or username": [
+    "src/community/components/TransactionHistory.jsx:88"
+  ],
+  "Transaction type": [
+    "src/community/components/TransactionHistory.jsx:93"
+  ],
+  "All activity": [
+    "src/community/components/TransactionHistory.jsx:99"
+  ],
+  "Money in": [
+    "src/community/components/TransactionHistory.jsx:100"
+  ],
+  "Money out": [
+    "src/community/components/TransactionHistory.jsx:101"
+  ],
+  "Received credits": [
+    "src/community/components/TransactionHistory.jsx:125"
+  ],
+  "Sent credits": [
+    "src/community/components/TransactionHistory.jsx:126"
+  ],
+  "Page {value1} of {value2}": [
+    "src/community/components/TransactionHistory.jsx:153"
+  ],
+  "Previous page": [
+    "src/community/components/TransactionHistory.jsx:157"
+  ],
+  "Next page": [
+    "src/community/components/TransactionHistory.jsx:164"
+  ],
+  "No matching transactions": [
+    "src/community/components/TransactionHistory.jsx:175"
+  ],
+  "Try another search or show all activity.": [
+    "src/community/components/TransactionHistory.jsx:176"
+  ],
   "{size} of storage for your projects": [
     "src/community/components/UpgradeCelebration.jsx:37"
   ],
@@ -3785,7 +3831,7 @@
   ],
   "credits": [
     "src/community/pages/Group.jsx:256",
-    "src/community/pages/Wallet.jsx:165"
+    "src/community/pages/Wallet.jsx:162"
   ],
   "Request to join": [
     "src/community/pages/Group.jsx:259"
@@ -3874,7 +3920,7 @@
   ],
   "Explore projects": [
     "src/community/pages/Home.jsx:120",
-    "src/community/pages/Wallet.jsx:304"
+    "src/community/pages/Wallet.jsx:265"
   ],
   "Find a project you like and follow its creator.": [
     "src/community/pages/Home.jsx:120"
@@ -4773,7 +4819,7 @@
   ],
   "Wallet": [
     "src/community/pages/MyStuff.jsx:226",
-    "src/community/pages/Wallet.jsx:156"
+    "src/community/pages/Wallet.jsx:153"
   ],
   "Credits on Rotur": [
     "src/community/pages/MyStuff.jsx:233"
@@ -4829,8 +4875,7 @@
     "src/community/pages/MyStuff.jsx:303"
   ],
   "From {value1}": [
-    "src/community/pages/MyStuff.jsx:313",
-    "src/community/pages/Wallet.jsx:245"
+    "src/community/pages/MyStuff.jsx:313"
   ],
   "Your inventory is empty": [
     "src/community/pages/MyStuff.jsx:319"
@@ -5574,7 +5619,7 @@
   ],
   "Waiting for Rotur…": [
     "src/community/pages/Project.jsx:781",
-    "src/community/pages/Wallet.jsx:177"
+    "src/community/pages/Wallet.jsx:174"
   ],
   "Buy {value1} for a one-time payment of {value2} credits and support its creator?": [
     "src/community/pages/Project.jsx:786"
@@ -6890,85 +6935,73 @@
     "src/community/pages/UserLibrary.jsx:84"
   ],
   "Could not load your balance from Rotur.": [
-    "src/community/pages/Wallet.jsx:75"
+    "src/community/pages/Wallet.jsx:72"
   ],
   "Could not load purchase history.": [
-    "src/community/pages/Wallet.jsx:92"
+    "src/community/pages/Wallet.jsx:89"
   ],
   "Sign in to see your wallet.": [
-    "src/community/pages/Wallet.jsx:104"
+    "src/community/pages/Wallet.jsx:101"
   ],
   "Daily credits claimed.": [
-    "src/community/pages/Wallet.jsx:135"
+    "src/community/pages/Wallet.jsx:132"
   ],
   "MistWarp needs your permission on Rotur to claim daily credits.": [
-    "src/community/pages/Wallet.jsx:139"
+    "src/community/pages/Wallet.jsx:136"
   ],
   "Could not claim daily credits.": [
-    "src/community/pages/Wallet.jsx:145"
+    "src/community/pages/Wallet.jsx:142"
   ],
   "Your balance": [
-    "src/community/pages/Wallet.jsx:161"
+    "src/community/pages/Wallet.jsx:158"
   ],
   "Let MistWarp see your balance and transactions on Rotur.": [
-    "src/community/pages/Wallet.jsx:170"
+    "src/community/pages/Wallet.jsx:167"
   ],
   "Show my balance": [
-    "src/community/pages/Wallet.jsx:179"
+    "src/community/pages/Wallet.jsx:176"
   ],
   "You can claim daily credits again in {value1}h.": [
-    "src/community/pages/Wallet.jsx:187"
+    "src/community/pages/Wallet.jsx:184"
   ],
   "Claiming…": [
-    "src/community/pages/Wallet.jsx:196"
+    "src/community/pages/Wallet.jsx:193"
   ],
   "Claim daily credits": [
-    "src/community/pages/Wallet.jsx:199"
+    "src/community/pages/Wallet.jsx:196"
   ],
   "Open Rotur": [
-    "src/community/pages/Wallet.jsx:201"
+    "src/community/pages/Wallet.jsx:198"
   ],
   "Purchases": [
-    "src/community/pages/Wallet.jsx:213"
+    "src/community/pages/Wallet.jsx:210"
   ],
   "Wallet sections": [
-    "src/community/pages/Wallet.jsx:218"
-  ],
-  "Received credits": [
-    "src/community/pages/Wallet.jsx:239"
-  ],
-  "Sent credits": [
-    "src/community/pages/Wallet.jsx:240"
-  ],
-  "To {value1}": [
-    "src/community/pages/Wallet.jsx:246"
+    "src/community/pages/Wallet.jsx:215"
   ],
   "No transactions yet": [
-    "src/community/pages/Wallet.jsx:264"
+    "src/community/pages/Wallet.jsx:225"
   ],
   "Credits you send, receive and spend on Rotur show up here.": [
-    "src/community/pages/Wallet.jsx:265"
+    "src/community/pages/Wallet.jsx:226"
   ],
   "Your transactions are on Rotur": [
-    "src/community/pages/Wallet.jsx:268"
+    "src/community/pages/Wallet.jsx:229"
   ],
   "Show your balance to see them here too.": [
-    "src/community/pages/Wallet.jsx:269"
+    "src/community/pages/Wallet.jsx:230"
   ],
   "No purchases yet": [
-    "src/community/pages/Wallet.jsx:303"
+    "src/community/pages/Wallet.jsx:264"
   ],
   "You have not bought any projects yet.": [
-    "src/community/pages/Wallet.jsx:306"
+    "src/community/pages/Wallet.jsx:267"
   ],
   "Add admin": [
     "src/community/pages/admin/AdminsSection.jsx:22"
   ],
   "Super admin": [
     "src/community/pages/admin/AdminsSection.jsx:37"
-  ],
-  "Today": [
-    "src/community/pages/admin/AnalyticsChart.jsx:61"
   ],
   "Latest": [
     "src/community/pages/admin/AnalyticsChart.jsx:61"
