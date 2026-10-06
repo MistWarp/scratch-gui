@@ -39,7 +39,15 @@ const removeExtraneous = async () => {
   });
 };
 
+let cleanupStarted = false;
+
 const get = async (asset) => {
+  if (!cleanupStarted) {
+    cleanupStarted = true;
+    removeExtraneous().catch((err) => {
+      console.warn(err);
+    });
+  }
   const {transaction, store} = await db.createTransaction('readonly');
   return new Promise((resolve, reject) => {
     Database.setTransactionErrorHandler(transaction, reject);
@@ -72,8 +80,6 @@ const set = async (asset, content) => {
 };
 
 const resetAll = () => db.deleteEverything();
-
-removeExtraneous();
 
 export default {
   get,

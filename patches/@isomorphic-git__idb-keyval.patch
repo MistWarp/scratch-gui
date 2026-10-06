@@ -1,0 +1,142 @@
+diff --git a/dist/idb-keyval-cjs.js b/dist/idb-keyval-cjs.js
+index d8b578d3e669600ab0dc84248d42609454de6abf..0f646c6cc6a25bf76691bbc83f856dfec930b7a1 100644
+--- a/dist/idb-keyval-cjs.js
++++ b/dist/idb-keyval-cjs.js
+@@ -13,32 +13,52 @@ class Store {
+         if (this._dbp) {
+             return;
+         }
+-        this._dbp = new Promise((resolve, reject) => {
++        const dbp = this._dbp = new Promise((resolve, reject) => {
+             const openreq = indexedDB.open(this._dbName);
+             openreq.onerror = () => reject(openreq.error);
+-            openreq.onsuccess = () => resolve(openreq.result);
++            openreq.onsuccess = () => {
++                openreq.result.onclose = () => this._forget(dbp);
++                resolve(openreq.result);
++            };
+             // First time setup: create an empty object store
+             openreq.onupgradeneeded = () => {
+                 openreq.result.createObjectStore(this._storeName);
+             };
+         });
++        dbp.catch(() => this._forget(dbp));
+     }
+-    _withIDBStore(type, callback) {
+-        this._init();
+-        return this._dbp.then(db => new Promise((resolve, reject) => {
+-            const transaction = db.transaction(this.storeName, type);
+-            transaction.oncomplete = () => resolve();
+-            transaction.onabort = transaction.onerror = () => reject(transaction.error);
+-            callback(transaction.objectStore(this.storeName));
+-        }));
++    _forget(dbp) {
++        if (this._dbp === dbp) {
++            this._dbp = undefined;
++        }
+     }
+-    _close() {
++    _withIDBStore(type, callback, reopened = false) {
+         this._init();
+-        return this._dbp.then(db => {
+-            db.close();
+-            this._dbp = undefined;
++        const dbp = this._dbp;
++        return dbp.then(db => {
++            let transaction;
++            try {
++                transaction = db.transaction(this.storeName, type);
++            } catch (error) {
++                if (reopened || error.name !== 'InvalidStateError') throw error;
++                this._forget(dbp);
++                return this._withIDBStore(type, callback, true);
++            }
++            return new Promise((resolve, reject) => {
++                transaction.oncomplete = () => resolve();
++                transaction.onabort = transaction.onerror = () => reject(transaction.error);
++                callback(transaction.objectStore(this.storeName));
++            });
+         });
+     }
++    _close() {
++        const dbp = this._dbp;
++        this._dbp = undefined;
++        if (!dbp) {
++            return Promise.resolve();
++        }
++        return dbp.then(db => db.close(), () => {});
++    }
+ }
+ let store;
+ function getDefaultStore() {
+diff --git a/dist/idb-keyval.mjs b/dist/idb-keyval.mjs
+index 295ef23c5e1c0e6fc70232ef3da7277a2dc01b08..07c6e03c5b3344f89b38a4f06d53f74e650a23da 100644
+--- a/dist/idb-keyval.mjs
++++ b/dist/idb-keyval.mjs
+@@ -9,32 +9,52 @@ class Store {
+         if (this._dbp) {
+             return;
+         }
+-        this._dbp = new Promise((resolve, reject) => {
++        const dbp = this._dbp = new Promise((resolve, reject) => {
+             const openreq = indexedDB.open(this._dbName);
+             openreq.onerror = () => reject(openreq.error);
+-            openreq.onsuccess = () => resolve(openreq.result);
++            openreq.onsuccess = () => {
++                openreq.result.onclose = () => this._forget(dbp);
++                resolve(openreq.result);
++            };
+             // First time setup: create an empty object store
+             openreq.onupgradeneeded = () => {
+                 openreq.result.createObjectStore(this._storeName);
+             };
+         });
++        dbp.catch(() => this._forget(dbp));
+     }
+-    _withIDBStore(type, callback) {
+-        this._init();
+-        return this._dbp.then(db => new Promise((resolve, reject) => {
+-            const transaction = db.transaction(this.storeName, type);
+-            transaction.oncomplete = () => resolve();
+-            transaction.onabort = transaction.onerror = () => reject(transaction.error);
+-            callback(transaction.objectStore(this.storeName));
+-        }));
++    _forget(dbp) {
++        if (this._dbp === dbp) {
++            this._dbp = undefined;
++        }
+     }
+-    _close() {
++    _withIDBStore(type, callback, reopened = false) {
+         this._init();
+-        return this._dbp.then(db => {
+-            db.close();
+-            this._dbp = undefined;
++        const dbp = this._dbp;
++        return dbp.then(db => {
++            let transaction;
++            try {
++                transaction = db.transaction(this.storeName, type);
++            } catch (error) {
++                if (reopened || error.name !== 'InvalidStateError') throw error;
++                this._forget(dbp);
++                return this._withIDBStore(type, callback, true);
++            }
++            return new Promise((resolve, reject) => {
++                transaction.oncomplete = () => resolve();
++                transaction.onabort = transaction.onerror = () => reject(transaction.error);
++                callback(transaction.objectStore(this.storeName));
++            });
+         });
+     }
++    _close() {
++        const dbp = this._dbp;
++        this._dbp = undefined;
++        if (!dbp) {
++            return Promise.resolve();
++        }
++        return dbp.then(db => db.close(), () => {});
++    }
+ }
+ let store;
+ function getDefaultStore() {
