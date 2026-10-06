@@ -43,6 +43,35 @@ test.each(['unsandboxed is not defined', 'ReferenceError: unsandboxed is not def
     }
 );
 
+test.each(['Error: Script error.', 'Uncaught Error: Script error.', 'Error: Error: Script error.'])(
+    'skips wrapped cross-origin script errors: %s', message => {
+        const {reportSiteError, request} = load();
+        reportSiteError({message, stack: message, kind: 'react'});
+        expect(request).not.toHaveBeenCalled();
+    }
+);
+
+test.each([
+    'Error: Uncaught Error: This extension must run unsandboxed.',
+    'Error: Error: Popup Phoenix must run unsandboxed!',
+    'Error: Uncaught Error: AKL requires an unsandboxed extension environment.',
+    'Error: Uncaught Error: La extensión s32 necesita ejecutarse sin sandbox (unsandboxed) para poder recibir mensajes.',
+    'Error: Uncaught TypeError: Cannot read properties of undefined (reading \'runtime\')'
+])('skips errors relayed from sandboxed extensions: %s', message => {
+    const {reportSiteError, request} = load();
+    reportSiteError({message, stack: message, kind: 'rejection'});
+    expect(request).not.toHaveBeenCalled();
+});
+
+test.each([
+    'Script error in the project player',
+    'Error: Could not load the project script.'
+])('still reports MistWarp errors that mention scripts: %s', message => {
+    const {reportSiteError, request} = load();
+    reportSiteError({message, stack: `Error: ${message}\n    at run (https://mistwarp.org/assets/api.js:1:10)`});
+    expect(request).toHaveBeenCalledTimes(1);
+});
+
 test('skips errors thrown by browser extensions', () => {
     const {reportSiteError, request} = load();
     reportSiteError({

@@ -10,7 +10,7 @@ import {updateBlockDrag} from '../../reducers/block-drag';
 import {updateMonitors} from '../../reducers/monitors';
 import {setProjectChanged, setProjectUnchanged} from '../../reducers/project-changed';
 import {setRunningState, setTurboState, setStartedState} from '../../reducers/vm-status';
-import {showExtensionAlert} from '../../reducers/alerts';
+import {showExtensionAlert, showStandardAlert} from '../../reducers/alerts';
 import {updateMicIndicator} from '../../reducers/mic-indicator';
 import {
     setFramerateState,
@@ -118,6 +118,7 @@ const vmListenerHOC = function (WrappedComponent) {
             this.props.vm.on('RUNTIME_STOPPED', this.props.onRuntimeStopped);
             this.props.vm.on('PROJECT_START', this.props.onGreenFlag);
             this.props.vm.on('PERIPHERAL_CONNECTION_LOST_ERROR', this.props.onShowExtensionAlert);
+            this.props.vm.on('EXTENSION_LOAD_ERROR', this.props.onExtensionLoadError);
             this.props.vm.on('MIC_LISTENING', this.props.onMicListeningUpdate);
             this.props.vm.on('MIC_LISTENING', this.props.onMicListeningUpdate);
             // tw: add handlers for our events
@@ -169,6 +170,7 @@ const vmListenerHOC = function (WrappedComponent) {
             this.props.vm.off('RUNTIME_STOPPED', this.props.onRuntimeStopped);
             this.props.vm.off('PROJECT_START', this.props.onGreenFlag);
             this.props.vm.off('PERIPHERAL_CONNECTION_LOST_ERROR', this.props.onShowExtensionAlert);
+            this.props.vm.off('EXTENSION_LOAD_ERROR', this.props.onExtensionLoadError);
             this.props.vm.off('MIC_LISTENING', this.props.onMicListeningUpdate);
             this.props.vm.off('MIC_LISTENING', this.props.onMicListeningUpdate);
             this.props.vm.off('HAS_CLOUD_DATA_UPDATE', this.handleCloudDataUpdate);
@@ -330,6 +332,7 @@ const vmListenerHOC = function (WrappedComponent) {
                 onCompileError,
                 onClearCompileErrors,
                 onShowExtensionAlert,
+                onExtensionLoadError,
                 /* eslint-enable no-unused-vars */
                 ...props
             } = this.props;
@@ -353,6 +356,7 @@ const vmListenerHOC = function (WrappedComponent) {
         onRuntimeStarted: PropTypes.func.isRequired,
         onRuntimeStopped: PropTypes.func.isRequired,
         onShowExtensionAlert: PropTypes.func.isRequired,
+        onExtensionLoadError: PropTypes.func.isRequired,
         onTargetsUpdate: PropTypes.func.isRequired,
         onTurboModeOff: PropTypes.func.isRequired,
         onTurboModeOn: PropTypes.func.isRequired,
@@ -447,6 +451,7 @@ const vmListenerHOC = function (WrappedComponent) {
         onShowExtensionAlert: data => {
             dispatch(showExtensionAlert(data));
         },
+        onExtensionLoadError: () => dispatch(showStandardAlert('extensionLoadError')),
         onMicListeningUpdate: listening => {
             dispatch(updateMicIndicator(listening));
         }

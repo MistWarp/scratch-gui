@@ -59,9 +59,23 @@ const isCrawler = () => {
 
 const BROWSER_EXTENSION_FRAME = /(?:chrome|moz|safari|safari-web)-extension:\/\//;
 
+const ERROR_PREFIX = /^(?:Uncaught\s+)?(?:[A-Za-z]*Error:\s*)?/;
+
+const withoutErrorPrefixes = message => {
+    let text = message;
+    let previous;
+    do {
+        previous = text;
+        text = text.replace(ERROR_PREFIX, '');
+    } while (text !== previous);
+    return text;
+};
+
+const SANDBOXED_EXTENSION_ERROR = /^(?:[A-Za-z]*Error:\s*)+Uncaught\s/;
+
 const isUnactionable = (message, stack) => {
-    if (message === 'Script error.') return true;
-    if (/^(?:(?:ReferenceError:\s*)?unsandboxed is not defined|Can't find variable: unsandboxed)$/i.test(message)) return true;
+    if (withoutErrorPrefixes(message) === 'Script error.') return true;
+    if (/unsandboxed/i.test(message) || SANDBOXED_EXTENSION_ERROR.test(message)) return true;
     const frames = String(stack || '')
         .split('\n')
         .filter(line => /:\d+:\d+\)?\s*$/.test(line));
