@@ -2,6 +2,7 @@ import Emitter from './emitter.js';
 import {encodeFrames, FrameDecoder, bytesToBase64, base64ToBytes} from './wire.js';
 
 const RAW_SERIALIZATION = 'raw';
+const LEGACY_SERIALIZATION = 'binary';
 const RELAY_MARK = 'mw-relay-1';
 // Used when the browser does not report the SCTP message limit.
 const DEFAULT_FRAME_LIMIT = 16 * 1024;
@@ -227,6 +228,7 @@ class RelayLink extends Link {
 }
 
 export {
+    LEGACY_SERIALIZATION,
     RAW_SERIALIZATION,
     RELAY_MARK,
     DEFAULT_FRAME_LIMIT,
