@@ -41,12 +41,16 @@ export const retryableLazy = load => {
 
 // Community page navigation can recover from assets removed by a deployment.
 // Do not use this for editor imports, where a reload could discard project edits.
+const RELOAD_COOLDOWN = 60 * 1000;
+
 export const reloadStalePage = (error, browser = window) => {
     if (!isChunkLoadError(error)) return false;
     try {
         const key = `mw:chunk-reload:${BUILD_ID}`;
-        if (browser.sessionStorage.getItem(key)) return false;
-        browser.sessionStorage.setItem(key, '1');
+        const now = Date.now();
+        const last = Number(browser.sessionStorage.getItem(key));
+        if (last && now - last < RELOAD_COOLDOWN) return false;
+        browser.sessionStorage.setItem(key, String(now));
         browser.location.reload();
         return true;
     } catch (e) {
@@ -56,6 +60,6 @@ export const reloadStalePage = (error, browser = window) => {
 };
 
 export const lazyWithReload = load => lazy(() => importWithRetry(load).catch(error => {
-    reloadStalePage(error);
+    if (reloadStalePage(error)) return new Promise(() => {});
     throw error;
 }));
