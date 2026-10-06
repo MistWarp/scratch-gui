@@ -108,3 +108,33 @@ test.each([
     reportSiteError({message, name, stack: `${name}: ${message}`, kind: 'rejection'});
     expect(request).not.toHaveBeenCalled();
 });
+
+test.each([
+    ['AbortError', 'The operation was aborted.', 'rejection', ''],
+    ['NotSupportedError', 'The browser failed to lock the pointer.', 'rejection', ''],
+    ['TypeError', 'undefined is not an object (evaluating \'window.ethereum.selectedAddress = undefined\')', 'uncaught',
+        'global code@https://mistwarp.org/editor:1:16'],
+    ['ReferenceError', 'Can\'t find variable: EmptyRanges', 'uncaught', 'played@\nsyncControl@\nhandleEvent@'],
+    [undefined, 'Unhandled promise rejection', 'rejection', '']
+])('skips errors raised outside MistWarp: %s %s', (name, message, kind, stack) => {
+    const {reportSiteError, request} = load();
+    reportSiteError({message, name, kind, stack});
+    expect(request).not.toHaveBeenCalled();
+});
+
+test('skips React losing track of nodes only on a machine translated page', () => {
+    const message = 'Failed to execute \'removeChild\' on \'Node\': The node to be removed is not a child of this node.';
+    const stack = `NotFoundError: ${message}\n    at mf (https://mistwarp.org/assets/app-target.js:42:79383)`;
+    let loaded = load();
+    loaded.reportSiteError({message, name: 'NotFoundError', stack, kind: 'rejection'});
+    expect(loaded.request).toHaveBeenCalledTimes(1);
+    document.documentElement.classList.add('translated-ltr');
+    try {
+        jest.clearAllMocks();
+        loaded = load();
+        loaded.reportSiteError({message, name: 'NotFoundError', stack, kind: 'rejection'});
+        expect(loaded.request).not.toHaveBeenCalled();
+    } finally {
+        document.documentElement.classList.remove('translated-ltr');
+    }
+});
