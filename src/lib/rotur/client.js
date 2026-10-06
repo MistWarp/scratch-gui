@@ -21,6 +21,7 @@ const SIGN_IN_SCOPES = [
     'account:view', // Your Rotur ID, and the badge editor on your profile.
     'account:profile', // Reorder or hide badges, and show what you're editing.
     'signing:keys', // Register this device's public key to sign chat messages.
+    'credits:view',
     'notifications:view', // Notifications, live and on the notifications page.
     'posts:view', // Posts from people you follow, on Home.
     'posts:create', // The composer on your profile's Posts tab.

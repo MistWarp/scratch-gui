@@ -5,11 +5,12 @@ import React, {useEffect, useState, useCallback, useRef} from 'react';
 import {Link, useSearchParams} from 'react-router-dom';
 import {
     Plus, Trash2, Heart, ThumbsDown, Play, Upload, Star, MoreHorizontal, Pencil, ExternalLink, HardDrive,
-    SlidersHorizontal, Coins, Eye, TrendingUp, ShoppingBag, HeartHandshake, FolderOpen, LayoutDashboard,
+    SlidersHorizontal, Coins, Eye, TrendingUp, Wallet, HeartHandshake, FolderOpen, LayoutDashboard,
     AlertTriangle, Library, Layers3, RotateCcw, Package, Image, Palette, Bookmark
 } from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
 import {formatBytes, formatDate} from '../format';
+import {getWallet} from '../../lib/rotur/wallet.js';
 import {useUser} from '../UserContext.jsx';
 import Button from '../components/ui/Button.jsx';
 import CardGrid from '../components/ui/CardGrid.jsx';
@@ -79,6 +80,7 @@ const Overview = ({stats, quota, username, onNavigate}) => {
     const {text: communityText} = useCommunityText();
     const [recent, setRecent] = useState(null);
     const [recentFailed, setRecentFailed] = useState(false);
+    const [wallet, setWallet] = useState(null);
     const rows14 = historyRows(stats.viewHistory, 14);
     const weekViews = rows14.slice(7).reduce((sum, row) => sum + row.value, 0);
     const prevWeekViews = rows14.slice(0, 7).reduce((sum, row) => sum + row.value, 0);
@@ -89,6 +91,18 @@ const Overview = ({stats, quota, username, onNavigate}) => {
     const go = section => {
         if (onNavigate) onNavigate(section);
     };
+
+    useEffect(() => {
+        setWallet(null);
+        if (!username) return () => {};
+        let stale = false;
+        getWallet()
+            .then(data => !stale && setWallet(data))
+            .catch(() => {});
+        return () => {
+            stale = true;
+        };
+    }, [username]);
 
     useEffect(() => {
         if (!username) {
@@ -209,7 +223,16 @@ const Overview = ({stats, quota, username, onNavigate}) => {
             </div>
             <div className={styles.ovSide}>
                 <div className={styles.ovCard}>
-                    <SectionHeading icon={Coins} title={communityText('Earnings')} className={styles.cardHeading} />
+                    <SectionHeading icon={Wallet} title={communityText('Wallet')} className={styles.cardHeading} />
+                    {wallet && wallet.allowed ? (
+                        <div className={styles.ovWalletTop}>
+                            <span className={styles.ovWalletBalance}>
+                                <Coins size={18} aria-hidden="true" />
+                                {fmtCredits(wallet.balance).toLocaleString(getCommunityLocale())}
+                            </span>
+                            <span className={styles.ovStatLabel}>{communityText('Credits on Rotur')}</span>
+                        </div>
+                    ) : null}
                     <div className={styles.ovWalletRows}>
                         {stats.totalRevenue > 0 ? (
                             <div className={styles.ovWalletRow}>
@@ -224,9 +247,7 @@ const Overview = ({stats, quota, username, onNavigate}) => {
                         )}
                     </div>
                     <div className={styles.ovCardActions}>
-                        <Button as={Link} to="/purchases"><ShoppingBag size={14} />{communityText('Purchases')}</Button>
-                        <Button as="a" href="https://rotur.dev/me" target="_blank" rel="noopener noreferrer">
-                            <ExternalLink size={14} />{communityText('Balance on Rotur')}</Button>
+                        <Button as={Link} to="/wallet"><Wallet size={14} />{communityText('Open wallet')}</Button>
                     </div>
                 </div>
                 {quota ? (
