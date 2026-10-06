@@ -67,7 +67,7 @@ describe('Wallet', () => {
         expect(text).toContain('42.5');
         expect(text).toContain('Daily claim');
         expect(text).toContain('Sent credits');
-        expect(text).toContain('To kit');
+        expect(text).toContain('@kit');
         expect(text).not.toContain('Starfall');
         wrapper.unmount();
     });
