@@ -37,7 +37,7 @@
     "src/community/pages/ManageProject.jsx:866",
     "src/community/pages/ManageProject.jsx:901",
     "src/community/pages/Profile.jsx:928",
-    "src/community/pages/Wallet.jsx:209",
+    "src/community/pages/Wallet.jsx:210",
     "src/community/pages/admin/StatsOverview.jsx:148",
     "src/community/pages/admin/UserDetailCard.jsx:268"
   ],
@@ -3831,7 +3831,7 @@
   ],
   "credits": [
     "src/community/pages/Group.jsx:256",
-    "src/community/pages/Wallet.jsx:162"
+    "src/community/pages/Wallet.jsx:163"
   ],
   "Request to join": [
     "src/community/pages/Group.jsx:259"
@@ -3920,7 +3920,7 @@
   ],
   "Explore projects": [
     "src/community/pages/Home.jsx:120",
-    "src/community/pages/Wallet.jsx:265"
+    "src/community/pages/Wallet.jsx:276"
   ],
   "Find a project you like and follow its creator.": [
     "src/community/pages/Home.jsx:120"
@@ -4819,7 +4819,7 @@
   ],
   "Wallet": [
     "src/community/pages/MyStuff.jsx:226",
-    "src/community/pages/Wallet.jsx:153"
+    "src/community/pages/Wallet.jsx:154"
   ],
   "Credits on Rotur": [
     "src/community/pages/MyStuff.jsx:233"
@@ -5619,7 +5619,7 @@
   ],
   "Waiting for Rotur…": [
     "src/community/pages/Project.jsx:781",
-    "src/community/pages/Wallet.jsx:174"
+    "src/community/pages/Wallet.jsx:175"
   ],
   "Buy {value1} for a one-time payment of {value2} credits and support its creator?": [
     "src/community/pages/Project.jsx:786"
@@ -6935,67 +6935,73 @@
     "src/community/pages/UserLibrary.jsx:84"
   ],
   "Could not load your balance from Rotur.": [
-    "src/community/pages/Wallet.jsx:72"
+    "src/community/pages/Wallet.jsx:73"
   ],
   "Could not load purchase history.": [
-    "src/community/pages/Wallet.jsx:89"
+    "src/community/pages/Wallet.jsx:90"
   ],
   "Sign in to see your wallet.": [
-    "src/community/pages/Wallet.jsx:101"
+    "src/community/pages/Wallet.jsx:102"
   ],
   "Daily credits claimed.": [
-    "src/community/pages/Wallet.jsx:132"
+    "src/community/pages/Wallet.jsx:133"
   ],
   "MistWarp needs your permission on Rotur to claim daily credits.": [
-    "src/community/pages/Wallet.jsx:136"
+    "src/community/pages/Wallet.jsx:137"
   ],
   "Could not claim daily credits.": [
-    "src/community/pages/Wallet.jsx:142"
+    "src/community/pages/Wallet.jsx:143"
   ],
   "Your balance": [
-    "src/community/pages/Wallet.jsx:158"
+    "src/community/pages/Wallet.jsx:159"
   ],
   "Let MistWarp see your balance and transactions on Rotur.": [
-    "src/community/pages/Wallet.jsx:167"
+    "src/community/pages/Wallet.jsx:168"
   ],
   "Show my balance": [
-    "src/community/pages/Wallet.jsx:176"
+    "src/community/pages/Wallet.jsx:177"
   ],
   "You can claim daily credits again in {value1}h.": [
-    "src/community/pages/Wallet.jsx:184"
+    "src/community/pages/Wallet.jsx:185"
   ],
   "Claiming…": [
-    "src/community/pages/Wallet.jsx:193"
+    "src/community/pages/Wallet.jsx:194"
   ],
   "Claim daily credits": [
-    "src/community/pages/Wallet.jsx:196"
+    "src/community/pages/Wallet.jsx:197"
   ],
   "Open Rotur": [
-    "src/community/pages/Wallet.jsx:198"
+    "src/community/pages/Wallet.jsx:199"
   ],
   "Purchases": [
-    "src/community/pages/Wallet.jsx:210"
+    "src/community/pages/Wallet.jsx:211"
   ],
   "Wallet sections": [
-    "src/community/pages/Wallet.jsx:215"
+    "src/community/pages/Wallet.jsx:216"
   ],
-  "No transactions yet": [
-    "src/community/pages/Wallet.jsx:225"
-  ],
-  "Credits you send, receive and spend on Rotur show up here.": [
+  "Credits you spent and earned on MistWarp.": [
     "src/community/pages/Wallet.jsx:226"
   ],
+  "See your full wallet on rotur.dev": [
+    "src/community/pages/Wallet.jsx:228"
+  ],
+  "No MistWarp transactions yet": [
+    "src/community/pages/Wallet.jsx:234"
+  ],
+  "Buying projects and game items, donations and sales show up here.": [
+    "src/community/pages/Wallet.jsx:235"
+  ],
   "Your transactions are on Rotur": [
-    "src/community/pages/Wallet.jsx:229"
+    "src/community/pages/Wallet.jsx:240"
   ],
   "Show your balance to see them here too.": [
-    "src/community/pages/Wallet.jsx:230"
+    "src/community/pages/Wallet.jsx:241"
   ],
   "No purchases yet": [
-    "src/community/pages/Wallet.jsx:264"
+    "src/community/pages/Wallet.jsx:275"
   ],
   "You have not bought any projects yet.": [
-    "src/community/pages/Wallet.jsx:267"
+    "src/community/pages/Wallet.jsx:278"
   ],
   "Add admin": [
     "src/community/pages/admin/AdminsSection.jsx:22"

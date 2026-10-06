@@ -2680,8 +2680,6 @@
   "Wallet sections": "Wallet sections",
   "Received credits": "Received credits",
   "Sent credits": "Sent credits",
-  "No transactions yet": "No transactions yet",
-  "Credits you send, receive and spend on Rotur show up here.": "Credits you send, receive and spend on Rotur show up here.",
   "Your transactions are on Rotur": "Your transactions are on Rotur",
   "Show your balance to see them here too.": "Show your balance to see them here too.",
   "View account": "View account",
@@ -2767,5 +2765,9 @@
   "Previous page": "Previous page",
   "Next page": "Next page",
   "No matching transactions": "No matching transactions",
-  "Try another search or show all activity.": "Try another search or show all activity."
+  "Try another search or show all activity.": "Try another search or show all activity.",
+  "Credits you spent and earned on MistWarp.": "Credits you spent and earned on MistWarp.",
+  "See your full wallet on rotur.dev": "See your full wallet on rotur.dev",
+  "No MistWarp transactions yet": "No MistWarp transactions yet",
+  "Buying projects and game items, donations and sales show up here.": "Buying projects and game items, donations and sales show up here."
 }
