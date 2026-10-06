@@ -311,6 +311,19 @@ describe('Sound Editor Container', () => {
         expect(editor.submitNewSamples).not.toHaveBeenCalled();
     });
 
+    test('renders without a buffer when the sprite has no sound at its index', () => {
+        vm.editingTarget.sprite.sounds = [];
+        vm.getSoundBuffer = jest.fn(index => vm.editingTarget.sprite.sounds[index].soundId);
+        const wrapper = mountWithIntl(
+            <SoundEditor
+                soundIndex={soundIndex}
+                store={store}
+            />
+        );
+        expect(vm.getSoundBuffer).not.toHaveBeenCalled();
+        expect(wrapper.find(SoundEditorComponent).props().name).toEqual('');
+    });
+
     test('isStereo numberOfChannels=1', () => {
         soundBuffer.numberOfChannels = 1;
         const wrapper = mountWithIntl(
