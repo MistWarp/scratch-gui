@@ -1,6 +1,7 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useRef, useState} from 'react';
+import {useSearchParams} from 'react-router-dom';
 import {
     Activity, AlertTriangle, Ban, BarChart3, Flag, FolderOpen, HardDrive, Puzzle, ShieldCheck, User
 } from 'lucide-react';
@@ -29,12 +30,12 @@ const SECTIONS = [
     {key: 'overview', label: 'Overview', icon: BarChart3},
     {key: 'storage', label: 'Storage and runtime', icon: HardDrive, group: 'System'},
     {key: 'activity', label: 'Activity', icon: Activity, group: 'System'},
+    {key: 'errors', label: 'Errors', icon: AlertTriangle, group: 'System'},
     {key: 'reports', label: 'Reports', icon: Flag, group: 'Moderation'},
     {key: 'users', label: 'Users', icon: User, group: 'Moderation'},
     {key: 'bans', label: 'Bans', icon: Ban, group: 'Moderation'},
     {key: 'projects', label: 'Projects', icon: FolderOpen, group: 'Content'},
     {key: 'extensions', label: 'Extensions', icon: Puzzle, group: 'Content'},
-    {key: 'errors', label: 'Errors', icon: AlertTriangle, group: 'System'},
     {key: 'admins', label: 'Admins', icon: ShieldCheck, group: 'Access'}
 ];
 
@@ -43,7 +44,21 @@ const Admin = () => {
     const {user, loading} = useUser();
     const {reports, openErrors, bans, admins, error, setError, load} = useAdminData(user);
     const [newAdmin, setNewAdmin] = useState('');
-    const [active, setActive] = useState('overview');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const requested = searchParams.get('section');
+    const active = SECTIONS.some(section => section.key === requested) ? requested : 'overview';
+    const selectedUser = searchParams.get('user') || null;
+    const setActive = key => {
+        const params = new URLSearchParams();
+        if (key !== 'overview') params.set('section', key);
+        setSearchParams(params);
+    };
+    const selectUser = name => {
+        const params = new URLSearchParams();
+        params.set('section', 'users');
+        if (name) params.set('user', name);
+        setSearchParams(params);
+    };
     const [dialog, setDialog] = useState(null);
     const [dialogBusy, setDialogBusy] = useState(false);
     const [dialogError, setDialogError] = useState('');
@@ -271,7 +286,7 @@ const Admin = () => {
 
                     {active === 'users' ? (
                         <section className={styles.card}>
-                            <UserManager />
+                            <UserManager selected={selectedUser} onSelect={selectUser} />
                         </section>
                     ) : null}
 

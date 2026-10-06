@@ -112,10 +112,10 @@
 
 .userToolbar {
     display: grid;
-    grid-template-columns: minmax(220px, 1fr) auto auto;
+    grid-template-columns: minmax(220px, 1fr) auto;
     gap: 10px;
     align-items: center;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 .pagination {
@@ -814,4 +814,243 @@
 @media (max-width: 720px) {
     .storageGrid {grid-template-columns: 1fr;}
     .userToolbar {grid-template-columns: 1fr;}
+}
+
+.badgeWarn {
+    color: #E5A84B;
+    background: color-mix(in srgb, #E5A84B 14%, transparent);
+    border-color: transparent;
+}
+
+.userList,
+.flatList {
+    display: flex;
+    flex-direction: column;
+    padding: 2px 16px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+}
+
+.userRow,
+.flatRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.userRow:last-child,
+.flatRow:last-child {
+    border-bottom: 0;
+}
+
+.userRow:hover .row-title,
+.userRow:focus-visible .row-title {
+    color: var(--accent-strong);
+}
+
+.dossier {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.dossier > .backButton {
+    align-self: flex-start;
+    margin-bottom: 0;
+}
+
+.dossierHead {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 18px;
+    border-radius: var(--radius);
+    background: var(--bg-card);
+}
+
+.dossierIdentity {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    flex: 1;
+}
+
+.dossierName {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    font-size: var(--fs-xl);
+}
+
+.dossierName .badge {
+    margin-inline-start: 0;
+}
+
+.dossierBio {
+    margin: 4px 0 0;
+    font-size: var(--fs-sm);
+    color: var(--text-dim);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.idButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    border: 0;
+    border-radius: var(--radius-2xs);
+    background: var(--bg-raised);
+    color: var(--text-dim);
+    font: inherit;
+    cursor: pointer;
+}
+
+.idButton code {
+    font-size: var(--fs-xs);
+}
+
+.idButton:hover {
+    color: var(--mw-text);
+}
+
+.facts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.fact {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    padding: 14px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+}
+
+.factLabel {
+    font-size: var(--fs-xs);
+    color: var(--text-dim);
+}
+
+.factValue {
+    font-size: var(--fs-lg);
+    font-weight: 700;
+    color: var(--mw-text);
+    overflow-wrap: anywhere;
+}
+
+.factDetail {
+    font-size: var(--fs-xs);
+    color: var(--text-faint);
+}
+
+.dossierGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 12px;
+    align-items: start;
+}
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+}
+
+.panel .flatList {
+    padding: 0;
+    background: transparent;
+}
+
+.panelFooter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.detailList {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 8px 16px;
+    margin: 0;
+    font-size: var(--fs-sm);
+}
+
+.detailList dt {
+    color: var(--text-dim);
+}
+
+.detailList dd {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    margin: 0;
+    color: var(--mw-text);
+}
+
+.inlineLink {
+    color: var(--accent-strong);
+}
+
+.mutedLine {
+    margin: 0;
+    font-size: var(--fs-sm);
+    color: var(--text-dim);
+}
+
+.snapshot {
+    padding: 8px 10px;
+    border-radius: var(--radius-xs);
+    background: var(--bg-raised);
+    font-size: var(--fs-sm);
+    color: var(--text-dim);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.commentText {
+    font-size: var(--fs-md);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.stack {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+@media (max-width: 620px) {
+    .facts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dossierHead {
+        flex-wrap: wrap;
+    }
+
+    .dossierIdentity {
+        flex-basis: calc(100% - 72px);
+    }
+
+    .idButton code {
+        overflow-wrap: anywhere;
+    }
+
+    .userToolbar {
+        grid-template-columns: 1fr;
+    }
 }
