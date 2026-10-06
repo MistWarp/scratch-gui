@@ -87,17 +87,25 @@ test.each([
     expect(isChunkLoadError(new TypeError(message))).toBe(true);
 });
 
-test('stale community pages reload once per build without a reload loop', () => {
+test('stale community pages reload without a reload loop', () => {
     const entries = new Map();
     const browser = {
         sessionStorage: {getItem: key => entries.get(key), setItem: (key, value) => entries.set(key, value)},
         location: {reload: jest.fn()}
     };
     const error = new Error('Failed to fetch dynamically imported module: /assets/old.js');
-    expect(reloadStalePage(error, browser)).toBe(true);
-    expect(reloadStalePage(error, browser)).toBe(false);
-    expect(browser.location.reload).toHaveBeenCalledTimes(1);
-    expect(reloadStalePage(new Error('Module execution failed'), browser)).toBe(false);
+    const now = jest.spyOn(Date, 'now').mockReturnValue(1000000);
+    try {
+        expect(reloadStalePage(error, browser)).toBe(true);
+        expect(reloadStalePage(error, browser)).toBe(false);
+        expect(browser.location.reload).toHaveBeenCalledTimes(1);
+        now.mockReturnValue(1000000 + (61 * 1000));
+        expect(reloadStalePage(error, browser)).toBe(true);
+        expect(browser.location.reload).toHaveBeenCalledTimes(2);
+        expect(reloadStalePage(new Error('Module execution failed'), browser)).toBe(false);
+    } finally {
+        now.mockRestore();
+    }
 });
 
 test('blocked session storage leaves chunk recovery to the manual reload button', () => {

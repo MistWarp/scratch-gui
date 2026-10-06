@@ -1,4 +1,5 @@
 import {ensureScopes, getRotur} from '../rotur/client.js';
+import {isCancelled} from '../rotur/oauth.js';
 import {signContent} from './device-key.js';
 
 const SIGNING_SCOPE = 'signing:keys';
@@ -28,7 +29,11 @@ const signingStatus = async capabilities => {
 };
 
 const requestSigningPermission = async () => {
-    await ensureScopes([SIGNING_SCOPE], {prompt: true});
+    try {
+        await ensureScopes([SIGNING_SCOPE], {prompt: true});
+    } catch (error) {
+        if (!isCancelled(error)) throw error;
+    }
     return scopeGranted();
 };
 

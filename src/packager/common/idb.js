@@ -83,8 +83,16 @@ class Database {
   }
 
   async createTransaction (readwrite) {
-    const db = await this.open();
-    const transaction = db.transaction(this.storeName, readwrite);
+    let db = await this.open();
+    let transaction;
+    try {
+      transaction = db.transaction(this.storeName, readwrite);
+    } catch (e) {
+      if (e.name !== 'InvalidStateError') throw e;
+      if (this.db === db) this.db = null;
+      db = await this.open();
+      transaction = db.transaction(this.storeName, readwrite);
+    }
     const store = transaction.objectStore(this.storeName);
     return {
       db,

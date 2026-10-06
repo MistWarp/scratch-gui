@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {act} from 'react-dom/test-utils';
-import {retryableLazy} from '../../../src/lib/lazy-with-retry';
+import {lazyWithReload, retryableLazy} from '../../../src/lib/lazy-with-retry';
 
 class Boundary extends React.Component {
     static getDerivedStateFromError (error) {
@@ -69,4 +69,35 @@ test('preload starts the import without rendering', async () => {
     const LazyPanel = retryableLazy(load);
     await LazyPanel.preload();
     expect(load).toHaveBeenCalledTimes(1);
+});
+
+test('a stale page that reloads does not reach the error boundary', async () => {
+    window.sessionStorage.clear();
+    const load = jest.fn().mockRejectedValue(new TypeError('Failed to fetch dynamically imported module: /assets/Old.js'));
+    const LazyPage = lazyWithReload(load);
+    const container = document.createElement('div');
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+        act(() => {
+            ReactDOM.render(
+                <Boundary>
+                    <React.Suspense fallback={<p>{'loading'}</p>}>
+                        <LazyPage />
+                    </React.Suspense>
+                </Boundary>,
+                container
+            );
+        });
+        await act(async () => {
+            await new Promise(resolve => setTimeout(resolve, 1100));
+        });
+        await flush();
+        expect(load).toHaveBeenCalledTimes(2);
+        expect(window.sessionStorage.length).toBe(1);
+        expect(container.textContent).toBe('loading');
+    } finally {
+        consoleError.mockRestore();
+        ReactDOM.unmountComponentAtNode(container);
+        window.sessionStorage.clear();
+    }
 });

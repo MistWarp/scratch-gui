@@ -1,8 +1,8 @@
 diff --git a/src/DefaultBackend.js b/src/DefaultBackend.js
-index d0563618bc975277ee39193858534a294892e6ce..e3ff3efa6a0c9840875dd7c6834d5349edeb4394 100644
+index d0563618bc975277ee39193858534a294892e6ce..404899955f70bc35d7f3e0e6c51011cf8fc3d158 100644
 --- a/src/DefaultBackend.js
 +++ b/src/DefaultBackend.js
-@@ -6,7 +6,6 @@ const { ENOENT, ENOTEMPTY, ETIMEDOUT } = require("./errors.js");
+@@ -6,14 +6,13 @@ const { ENOENT, ENOTEMPTY, ETIMEDOUT } = require("./errors.js");
  const IdbBackend = require("./IdbBackend.js");
  const HttpBackend = require("./HttpBackend.js")
  const Mutex = require("./Mutex.js");
@@ -10,6 +10,14 @@ index d0563618bc975277ee39193858534a294892e6ce..e3ff3efa6a0c9840875dd7c6834d5349
  
  const path = require("./path.js");
  
+ module.exports = class DefaultBackend {
+   constructor() {
+     this.saveSuperblock = debounce(() => {
+-      this.flush();
++      this.flush().catch(err => console.warn(err));
+     }, 500);
+   }
+   async init (name, {
 @@ -28,7 +27,11 @@ module.exports = class DefaultBackend {
    } = {}) {
      this._name = name
@@ -23,32 +31,44 @@ index d0563618bc975277ee39193858534a294892e6ce..e3ff3efa6a0c9840875dd7c6834d5349
      this._cache = new CacheFS(name);
      this._opts = { wipe, url };
      this._needsWipe = !!wipe;
-diff --git a/src/IdbBackend.js b/src/IdbBackend.js
-index c7af775e6e5e3a338256d7da872e05465b95b437..e51a3a36c7d785c7582a7a2c03189f0cb861bf45 100644
---- a/src/IdbBackend.js
-+++ b/src/IdbBackend.js
-@@ -5,6 +5,11 @@ module.exports = class IdbBackend {
-     this._database = dbname;
-     this._storename = storename;
-     this._store = new idb.Store(this._database, this._storename);
-+    // idb-keyval opens the database in the constructor and leaves the promise
-+    // unhandled until the first operation. Safari private browsing and sandboxed
-+    // frames reject it, which surfaced as unhandled rejections. Operations still
-+    // chain from this promise and report the error to their callers.
-+    this._store._dbp.catch(() => {});
+diff --git a/src/PromisifiedFS.js b/src/PromisifiedFS.js
+index aaa6984556a2ecde5816efdd1ae280f318150312..04cc40ceaeaa47c7f5aa237375463f51906b68a4 100644
+--- a/src/PromisifiedFS.js
++++ b/src/PromisifiedFS.js
+@@ -121,7 +121,9 @@ module.exports = class PromisifiedFS {
+         if (mutating) this._backend.saveSuperblock() // this is debounced
+         if (this._operations.size === 0) {
+           if (!this._deactivationTimeout) clearTimeout(this._deactivationTimeout)
+-          this._deactivationTimeout = setTimeout(this._deactivate.bind(this), 500)
++          this._deactivationTimeout = setTimeout(() => {
++            this._deactivate().catch(err => console.warn(err))
++          }, 500)
+         }
+       }
+     }
+@@ -136,7 +138,11 @@ module.exports = class PromisifiedFS {
+     if (this._deactivationPromise) await this._deactivationPromise
+     this._deactivationPromise = null
+     if (!this._activationPromise) {
+-      this._activationPromise = this._backend.activate ? this._backend.activate() : Promise.resolve();
++      const activation = this._backend.activate ? this._backend.activate() : Promise.resolve();
++      this._activationPromise = activation
++      activation.catch(() => {
++        if (this._activationPromise === activation) this._activationPromise = null
++      })
+     }
+     await this._activationPromise
    }
-   saveSuperblock(superblock) {
-     return idb.set("!root", superblock, this._store);
-diff --git a/src/Mutex.js b/src/Mutex.js
-index d7df3579919eb4e3238fe0fdcbad73fb265b3c1b..75c9dd82763e672e3355c616936ab3c7c6d790ab 100644
---- a/src/Mutex.js
-+++ b/src/Mutex.js
-@@ -8,6 +8,8 @@ module.exports = class Mutex {
-     this._database = dbname
-     this._storename = storename
-     this._store = new idb.Store(this._database, this._storename)
-+    // See IdbBackend: operations still receive the error.
-+    this._store._dbp.catch(() => {})
-     this._lock = null
-   }
-   async has ({ margin = 2000 } = {}) {
+@@ -144,7 +150,11 @@ module.exports = class PromisifiedFS {
+     if (this._activationPromise) await this._activationPromise
+ 
+     if (!this._deactivationPromise) {
+-      this._deactivationPromise = this._backend.deactivate ? this._backend.deactivate() : Promise.resolve();
++      const deactivation = this._backend.deactivate ? this._backend.deactivate() : Promise.resolve();
++      this._deactivationPromise = deactivation
++      deactivation.catch(() => {
++        if (this._deactivationPromise === deactivation) this._deactivationPromise = null
++      })
+     }
+     this._activationPromise = null
+     if (this._gracefulShutdownResolve) this._gracefulShutdownResolve()

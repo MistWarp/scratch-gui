@@ -43,6 +43,35 @@ test.each(['unsandboxed is not defined', 'ReferenceError: unsandboxed is not def
     }
 );
 
+test.each(['Error: Script error.', 'Uncaught Error: Script error.', 'Error: Error: Script error.'])(
+    'skips wrapped cross-origin script errors: %s', message => {
+        const {reportSiteError, request} = load();
+        reportSiteError({message, stack: message, kind: 'react'});
+        expect(request).not.toHaveBeenCalled();
+    }
+);
+
+test.each([
+    'Error: Uncaught Error: This extension must run unsandboxed.',
+    'Error: Error: Popup Phoenix must run unsandboxed!',
+    'Error: Uncaught Error: AKL requires an unsandboxed extension environment.',
+    'Error: Uncaught Error: La extensión s32 necesita ejecutarse sin sandbox (unsandboxed) para poder recibir mensajes.',
+    'Error: Uncaught TypeError: Cannot read properties of undefined (reading \'runtime\')'
+])('skips errors relayed from sandboxed extensions: %s', message => {
+    const {reportSiteError, request} = load();
+    reportSiteError({message, stack: message, kind: 'rejection'});
+    expect(request).not.toHaveBeenCalled();
+});
+
+test.each([
+    'Script error in the project player',
+    'Error: Could not load the project script.'
+])('still reports MistWarp errors that mention scripts: %s', message => {
+    const {reportSiteError, request} = load();
+    reportSiteError({message, stack: `Error: ${message}\n    at run (https://mistwarp.org/assets/api.js:1:10)`});
+    expect(request).toHaveBeenCalledTimes(1);
+});
+
 test('skips errors thrown by browser extensions', () => {
     const {reportSiteError, request} = load();
     reportSiteError({
@@ -107,4 +136,34 @@ test.each([
     const {reportSiteError, request} = load();
     reportSiteError({message, name, stack: `${name}: ${message}`, kind: 'rejection'});
     expect(request).not.toHaveBeenCalled();
+});
+
+test.each([
+    ['AbortError', 'The operation was aborted.', 'rejection', ''],
+    ['NotSupportedError', 'The browser failed to lock the pointer.', 'rejection', ''],
+    ['TypeError', 'undefined is not an object (evaluating \'window.ethereum.selectedAddress = undefined\')', 'uncaught',
+        'global code@https://mistwarp.org/editor:1:16'],
+    ['ReferenceError', 'Can\'t find variable: EmptyRanges', 'uncaught', 'played@\nsyncControl@\nhandleEvent@'],
+    [undefined, 'Unhandled promise rejection', 'rejection', '']
+])('skips errors raised outside MistWarp: %s %s', (name, message, kind, stack) => {
+    const {reportSiteError, request} = load();
+    reportSiteError({message, name, kind, stack});
+    expect(request).not.toHaveBeenCalled();
+});
+
+test('skips React losing track of nodes only on a machine translated page', () => {
+    const message = 'Failed to execute \'removeChild\' on \'Node\': The node to be removed is not a child of this node.';
+    const stack = `NotFoundError: ${message}\n    at mf (https://mistwarp.org/assets/app-target.js:42:79383)`;
+    let loaded = load();
+    loaded.reportSiteError({message, name: 'NotFoundError', stack, kind: 'rejection'});
+    expect(loaded.request).toHaveBeenCalledTimes(1);
+    document.documentElement.classList.add('translated-ltr');
+    try {
+        jest.clearAllMocks();
+        loaded = load();
+        loaded.reportSiteError({message, name: 'NotFoundError', stack, kind: 'rejection'});
+        expect(loaded.request).not.toHaveBeenCalled();
+    } finally {
+        document.documentElement.classList.remove('translated-ltr');
+    }
 });

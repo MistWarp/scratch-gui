@@ -809,6 +809,20 @@ describe('older clients', () => {
         expect(conn.frames).toEqual([]);
         transport.destroy();
     });
+
+    test('a channel no MistWarp client opens is closed before it can deliver data', async () => {
+        const {transport, peers} = makeTransport();
+        const hosted = transport.host('room1');
+        peers[0].simulateOpen();
+        await hosted;
+        const connected = jest.fn();
+        transport.on('peer-connected', connected);
+        const conn = peers[0].simulateIncomingConnection('stranger', {serialization: 'json'});
+        expect(conn.closed).toBe(true);
+        conn.simulateOpen();
+        expect(connected).not.toHaveBeenCalled();
+        transport.destroy();
+    });
 });
 
 describe('connection lifecycle regressions', () => {
