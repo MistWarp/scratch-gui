@@ -39,6 +39,8 @@ const configure = options => Object.assign(config, options);
 
 const oauthError = (code, message, extra) => Object.assign(new Error(message), {code}, extra);
 
+const isCancelled = error => Boolean(error) && (error.code === 'closed' || error.code === 'access_denied');
+
 const base64url = bytes => btoa(String.fromCharCode(...bytes))
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
@@ -374,6 +376,7 @@ export {
     completeRedirect,
     configure,
     getAccessToken,
+    isCancelled,
     onSessionChange,
     readSession,
     signIn,

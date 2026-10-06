@@ -144,3 +144,16 @@ test('checks signing:keys without prompting and requests it only on a click', as
     await expect(signingStatus(['message_signatures_v1'])).resolves.toBe('needs_permission');
     await expect(signingStatus([])).resolves.toBe('off');
 });
+
+test('closing the Rotur sign-in window leaves signing off without an error', async () => {
+    const {requestSigningPermission} = loadSigning();
+    mockClient.allowed = false;
+    mockEnsureScopes.mockImplementationOnce(() => Promise.reject(
+        Object.assign(new Error('The Rotur sign-in window was closed'), {code: 'closed'})
+    ));
+    await expect(requestSigningPermission()).resolves.toBe(false);
+    mockEnsureScopes.mockImplementationOnce(() => Promise.reject(
+        Object.assign(new Error('Rotur sign-in failed (500)'), {code: 'token_failed'})
+    ));
+    await expect(requestSigningPermission()).rejects.toThrow('Rotur sign-in failed (500)');
+});
