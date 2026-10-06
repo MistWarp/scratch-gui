@@ -94,7 +94,7 @@ const STATIC_META = {
     },
     '/wallet': {
         title: 'Wallet - MistWarp',
-        description: 'Your MistWarp credits and purchases.',
+        description: 'Your Rotur credits and MistWarp purchases.',
         noindex: true
     },
     '/purchases': {

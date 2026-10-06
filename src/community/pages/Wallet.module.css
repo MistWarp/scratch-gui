@@ -1,0 +1,184 @@
+.page {
+    max-width: var(--maxw-narrow);
+    margin: 0 auto;
+    padding: var(--page-pad);
+}
+
+.balanceCard {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 22px;
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+    margin-bottom: 16px;
+}
+
+.balanceIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: var(--radius);
+    background: color-mix(in srgb, #FF8C1A 18%, transparent);
+    color: #FF8C1A;
+    flex-shrink: 0;
+}
+
+.balanceText {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.balanceLabel {
+    font-size: var(--fs-sm);
+    color: var(--text-dim);
+}
+
+.balanceValue {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: var(--fs-3xl);
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--mw-text);
+}
+
+.balanceUnit {
+    font-size: var(--fs-md);
+    font-weight: 500;
+    color: var(--text-dim);
+}
+
+.balanceHint {
+    font-size: var(--fs-md);
+    color: var(--mw-text);
+}
+
+.allowButton {
+    align-self: flex-start;
+    margin-top: 8px;
+}
+
+.claimMsg {
+    font-size: var(--fs-sm);
+    color: var(--text-dim);
+}
+
+.balanceActions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-inline-start: auto;
+}
+
+.tabs {
+    margin: 8px 0 16px;
+}
+
+.list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+}
+
+.inIcon,
+.outIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+}
+
+.inIcon {
+    background: color-mix(in srgb, var(--mw-success) 16%, transparent);
+    color: var(--mw-success);
+}
+
+.outIcon {
+    background: var(--bg-raised);
+    color: var(--text-dim);
+}
+
+.rowText {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+
+.rowTitle {
+    font-weight: 600;
+    font-size: var(--fs-md);
+    color: var(--mw-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+a.rowTitle:hover {
+    color: var(--accent-strong);
+}
+
+.rowMeta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    font-size: var(--fs-sm);
+    color: var(--text-dim);
+}
+
+.inAmount,
+.outAmount {
+    font-weight: 600;
+    font-size: var(--fs-md);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.inAmount {
+    color: var(--mw-success);
+}
+
+.outAmount {
+    color: var(--mw-text);
+}
+
+@media (max-width: 620px) {
+    .page {
+        padding: 20px 14px 64px;
+    }
+
+    .balanceCard {
+        flex-wrap: wrap;
+    }
+
+    .balanceActions {
+        justify-content: flex-start;
+        margin-inline-start: 0;
+        width: 100%;
+    }
+}

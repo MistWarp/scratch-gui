@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
 import {FormattedMessage} from 'react-intl';
-import {LogOut, Settings, ShieldCheck, ShoppingBag, Trophy, User, UserCog, Users} from 'lucide-react';
+import {LogOut, Settings, ShieldCheck, Trophy, User, UserCog, Users, Wallet} from 'lucide-react';
 
 import MenuLabel from './tw-menu-label.jsx';
 import MenuBarMenu from './menu-bar-menu.jsx';
@@ -142,12 +142,12 @@ const RoturAccount = props => {
                                 id="mw.rotur.accountMenu.leaderboard"
                             />
                         </MenuItemContainer>
-                        <MenuItemContainer onClick={go('/purchases')}>
-                            <ShoppingBag />
+                        <MenuItemContainer onClick={go('/wallet')}>
+                            <Wallet />
                             <FormattedMessage
-                                defaultMessage="Purchases"
-                                description="Link to your MistWarp purchases, in the Rotur account navigation menu"
-                                id="mw.rotur.accountMenu.purchases"
+                                defaultMessage="Wallet"
+                                description="Link to your wallet, in the Rotur account navigation menu"
+                                id="mw.rotur.accountMenu.wallet"
                             />
                         </MenuItemContainer>
                         {props.isAdmin ? (

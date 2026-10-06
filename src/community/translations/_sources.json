@@ -37,6 +37,7 @@
     "src/community/pages/ManageProject.jsx:866",
     "src/community/pages/ManageProject.jsx:901",
     "src/community/pages/Profile.jsx:928",
+    "src/community/pages/Wallet.jsx:205",
     "src/community/pages/admin/StatsOverview.jsx:148"
   ],
   "On {value1}": [
@@ -64,7 +65,7 @@
   ],
   "Loading projects…": [
     "src/community/components/CardGridSkeleton.jsx:28",
-    "src/community/pages/MyStuff.jsx:170"
+    "src/community/pages/MyStuff.jsx:184"
   ],
   "Could not load the challenge calendar.": [
     "src/community/components/ChallengeCalendar.jsx:118"
@@ -301,7 +302,7 @@
     "src/community/components/ui/ConfirmModal.jsx:22",
     "src/community/pages/ManageProject.jsx:1128",
     "src/community/pages/ManageSpace.jsx:759",
-    "src/community/pages/MyStuff.jsx:1262",
+    "src/community/pages/MyStuff.jsx:1283",
     "src/community/pages/News.jsx:293",
     "src/community/pages/Roadmap.jsx:501",
     "src/community/pages/Spaces.jsx:301",
@@ -408,7 +409,7 @@
     "src/community/components/SpaceProjectPicker.jsx:250",
     "src/community/components/ui/StatusMessage.jsx:24",
     "src/community/pages/Explore.jsx:225",
-    "src/community/pages/MyStuff.jsx:1561",
+    "src/community/pages/MyStuff.jsx:1582",
     "src/community/pages/Profile.jsx:449",
     "src/community/pages/Profile.jsx:624",
     "src/community/pages/Project.jsx:643",
@@ -448,8 +449,8 @@
     "src/community/components/NewsItem.jsx:132",
     "src/community/components/ProfilePosts.jsx:220",
     "src/community/pages/ManageSpace.jsx:783",
-    "src/community/pages/MyStuff.jsx:1288",
-    "src/community/pages/MyStuff.jsx:1304",
+    "src/community/pages/MyStuff.jsx:1309",
+    "src/community/pages/MyStuff.jsx:1325",
     "src/community/pages/Project.jsx:728",
     "src/community/pages/Settings.jsx:993",
     "src/community/pages/Settings.jsx:1008",
@@ -639,7 +640,7 @@
     "src/community/components/ExploreNav.jsx:12",
     "src/community/components/MyStuffSpaces.jsx:33",
     "src/community/pages/Group.jsx:178",
-    "src/community/pages/MyStuff.jsx:488",
+    "src/community/pages/MyStuff.jsx:509",
     "src/community/pages/Spaces.jsx:23"
   ],
   "Groups": [
@@ -656,7 +657,7 @@
     "src/community/components/ExploreNav.jsx:15",
     "src/community/components/Footer.jsx:41",
     "src/community/components/MyStuffThemes.jsx:218",
-    "src/community/pages/MyStuff.jsx:490",
+    "src/community/pages/MyStuff.jsx:511",
     "src/community/pages/Profile.jsx:543"
   ],
   "Explore sections": [
@@ -671,7 +672,7 @@
     "src/community/components/FeaturedProject.jsx:68",
     "src/community/pages/ManageProject.jsx:72",
     "src/community/pages/ManageProject.jsx:627",
-    "src/community/pages/MyStuff.jsx:1508"
+    "src/community/pages/MyStuff.jsx:1529"
   ],
   "Play {value1}": [
     "src/community/components/FeaturedProject.jsx:90"
@@ -725,7 +726,7 @@
     "src/community/components/NavBar.jsx:645",
     "src/community/components/NavBar.jsx:645",
     "src/community/pages/ManageProject.jsx:488",
-    "src/community/pages/MyStuff.jsx:1209"
+    "src/community/pages/MyStuff.jsx:1230"
   ],
   "Community": [
     "src/community/components/Footer.jsx:37",
@@ -945,7 +946,7 @@
   "Could not load your projects.": [
     "src/community/components/HomeWorkspace.jsx:76",
     "src/community/components/SpaceProjectPicker.jsx:81",
-    "src/community/pages/MyStuff.jsx:1401"
+    "src/community/pages/MyStuff.jsx:1422"
   ],
   "Your first project starts here": [
     "src/community/components/HomeWorkspace.jsx:79"
@@ -1088,7 +1089,7 @@
   "Hearts": [
     "src/community/components/MembershipPreviews.jsx:25",
     "src/community/pages/ManageProject.jsx:536",
-    "src/community/pages/MyStuff.jsx:145"
+    "src/community/pages/MyStuff.jsx:159"
   ],
   "Buyers": [
     "src/community/components/MembershipPreviews.jsx:26",
@@ -1146,7 +1147,7 @@
   ],
   "Restore": [
     "src/community/components/MembershipPreviews.jsx:114",
-    "src/community/pages/MyStuff.jsx:1376"
+    "src/community/pages/MyStuff.jsx:1397"
   ],
   "Not played yet": [
     "src/community/components/MyStuffLibrary.jsx:20",
@@ -1198,7 +1199,7 @@
   ],
   "Library": [
     "src/community/components/MyStuffLibrary.jsx:143",
-    "src/community/pages/MyStuff.jsx:487"
+    "src/community/pages/MyStuff.jsx:508"
   ],
   "Games you saved, with your playtime and public profile controls.": [
     "src/community/components/MyStuffLibrary.jsx:144"
@@ -1224,7 +1225,7 @@
   "Spaces": [
     "src/community/components/MyStuffSpaces.jsx:59",
     "src/community/components/NavBar.jsx:72",
-    "src/community/pages/MyStuff.jsx:489",
+    "src/community/pages/MyStuff.jsx:510",
     "src/community/pages/Search.jsx:226"
   ],
   "Studios you curate or follow, and challenges you host, join, judge, or follow.": [
@@ -2382,7 +2383,7 @@
   ],
   "Shared with you": [
     "src/community/components/SharedProjects.jsx:107",
-    "src/community/pages/MyStuff.jsx:486"
+    "src/community/pages/MyStuff.jsx:507"
   ],
   "Pick up where your team left off.": [
     "src/community/components/SharedProjects.jsx:108"
@@ -2466,7 +2467,7 @@
   ],
   "Delete": [
     "src/community/components/SocialPost.jsx:327",
-    "src/community/pages/MyStuff.jsx:1548",
+    "src/community/pages/MyStuff.jsx:1569",
     "src/community/pages/Theme.jsx:228",
     "src/community/pages/admin/ErrorManager.jsx:249",
     "src/community/pages/admin/ProjectManager.jsx:145",
@@ -2569,7 +2570,7 @@
   ],
   "Load more projects": [
     "src/community/components/SpaceProjectPicker.jsx:250",
-    "src/community/pages/MyStuff.jsx:1563",
+    "src/community/pages/MyStuff.jsx:1584",
     "src/community/pages/Profile.jsx:626"
   ],
   "Could not load more projects. Try again.": [
@@ -2942,7 +2943,7 @@
   "Overview": [
     "src/community/pages/Admin.jsx:29",
     "src/community/pages/Challenge.jsx:586",
-    "src/community/pages/MyStuff.jsx:484"
+    "src/community/pages/MyStuff.jsx:505"
   ],
   "Storage and runtime": [
     "src/community/pages/Admin.jsx:30",
@@ -3137,8 +3138,8 @@
     "src/community/pages/Bounty.jsx:151",
     "src/community/pages/Challenge.jsx:628",
     "src/community/pages/Collection.jsx:76",
-    "src/community/pages/MyStuff.jsx:1473",
-    "src/community/pages/MyStuff.jsx:1480",
+    "src/community/pages/MyStuff.jsx:1494",
+    "src/community/pages/MyStuff.jsx:1501",
     "src/community/pages/Studio.jsx:120",
     "src/community/pages/Theme.jsx:226"
   ],
@@ -3634,7 +3635,7 @@
   ],
   "Could not load more projects.": [
     "src/community/pages/Explore.jsx:172",
-    "src/community/pages/MyStuff.jsx:1567",
+    "src/community/pages/MyStuff.jsx:1588",
     "src/community/pages/Profile.jsx:630",
     "src/community/pages/Search.jsx:125"
   ],
@@ -3708,8 +3709,8 @@
   ],
   "No projects yet": [
     "src/community/pages/Group.jsx:217",
-    "src/community/pages/MyStuff.jsx:195",
-    "src/community/pages/MyStuff.jsx:1573",
+    "src/community/pages/MyStuff.jsx:209",
+    "src/community/pages/MyStuff.jsx:1594",
     "src/community/pages/Space.jsx:313",
     "src/community/pages/Studio.jsx:144"
   ],
@@ -3772,7 +3773,8 @@
     "src/community/pages/Group.jsx:255"
   ],
   "credits": [
-    "src/community/pages/Group.jsx:256"
+    "src/community/pages/Group.jsx:256",
+    "src/community/pages/Wallet.jsx:164"
   ],
   "Request to join": [
     "src/community/pages/Group.jsx:259"
@@ -3861,7 +3863,7 @@
   ],
   "Explore projects": [
     "src/community/pages/Home.jsx:120",
-    "src/community/pages/Purchases.jsx:117"
+    "src/community/pages/Wallet.jsx:297"
   ],
   "Find a project you like and follow its creator.": [
     "src/community/pages/Home.jsx:120"
@@ -4100,7 +4102,7 @@
   ],
   "Credits earned": [
     "src/community/pages/ManageProject.jsx:562",
-    "src/community/pages/MyStuff.jsx:216"
+    "src/community/pages/MyStuff.jsx:239"
   ],
   "Credits per buyer": [
     "src/community/pages/ManageProject.jsx:573"
@@ -4119,7 +4121,7 @@
   ],
   "Views over the last 2 weeks": [
     "src/community/pages/ManageProject.jsx:591",
-    "src/community/pages/MyStuff.jsx:154"
+    "src/community/pages/MyStuff.jsx:168"
   ],
   "Publish checklist": [
     "src/community/pages/ManageProject.jsx:597"
@@ -4505,7 +4507,7 @@
   ],
   "Uploading…": [
     "src/community/pages/ManageSpace.jsx:634",
-    "src/community/pages/MyStuff.jsx:1222"
+    "src/community/pages/MyStuff.jsx:1243"
   ],
   "Choose image": [
     "src/community/pages/ManageSpace.jsx:634"
@@ -4718,287 +4720,288 @@
     "src/community/pages/ManageSpace.jsx:779"
   ],
   "Performance": [
-    "src/community/pages/MyStuff.jsx:120",
+    "src/community/pages/MyStuff.jsx:134",
     "src/community/pages/News.jsx:324"
   ],
   "{value1}{value2}% vs prior week": [
-    "src/community/pages/MyStuff.jsx:126"
-  ],
-  "New this week": [
-    "src/community/pages/MyStuff.jsx:127"
-  ],
-  "Views this week": [
-    "src/community/pages/MyStuff.jsx:135"
-  ],
-  "Total views": [
     "src/community/pages/MyStuff.jsx:140"
   ],
+  "New this week": [
+    "src/community/pages/MyStuff.jsx:141"
+  ],
+  "Views this week": [
+    "src/community/pages/MyStuff.jsx:149"
+  ],
+  "Total views": [
+    "src/community/pages/MyStuff.jsx:154"
+  ],
   "Recent projects": [
-    "src/community/pages/MyStuff.jsx:159"
+    "src/community/pages/MyStuff.jsx:173"
   ],
   "{value1} total, {value2} shared": [
-    "src/community/pages/MyStuff.jsx:163"
+    "src/community/pages/MyStuff.jsx:177"
   ],
   "Could not load recent projects.": [
-    "src/community/pages/MyStuff.jsx:168"
+    "src/community/pages/MyStuff.jsx:182"
   ],
   "{value1}, {value2} views, {value3} hearts": [
-    "src/community/pages/MyStuff.jsx:185"
+    "src/community/pages/MyStuff.jsx:199"
   ],
   "Start a new project": [
-    "src/community/pages/MyStuff.jsx:198"
-  ],
-  "You have not created any projects yet.": [
-    "src/community/pages/MyStuff.jsx:201",
-    "src/community/pages/MyStuff.jsx:1579"
-  ],
-  "View all projects": [
-    "src/community/pages/MyStuff.jsx:206"
-  ],
-  "Earnings": [
     "src/community/pages/MyStuff.jsx:212"
   ],
+  "You have not created any projects yet.": [
+    "src/community/pages/MyStuff.jsx:215",
+    "src/community/pages/MyStuff.jsx:1600"
+  ],
+  "View all projects": [
+    "src/community/pages/MyStuff.jsx:220"
+  ],
+  "Wallet": [
+    "src/community/pages/MyStuff.jsx:226",
+    "src/community/pages/Wallet.jsx:155"
+  ],
+  "Credits on Rotur": [
+    "src/community/pages/MyStuff.jsx:233"
+  ],
   "No earnings yet": [
-    "src/community/pages/MyStuff.jsx:221"
+    "src/community/pages/MyStuff.jsx:244"
   ],
   "Offer a project for purchase so people can support your work.": [
-    "src/community/pages/MyStuff.jsx:222"
+    "src/community/pages/MyStuff.jsx:245"
   ],
-  "Purchases": [
-    "src/community/pages/MyStuff.jsx:227",
-    "src/community/pages/Purchases.jsx:58"
-  ],
-  "Balance on Rotur": [
-    "src/community/pages/MyStuff.jsx:229"
+  "Open wallet": [
+    "src/community/pages/MyStuff.jsx:250"
   ],
   "Storage": [
-    "src/community/pages/MyStuff.jsx:234",
-    "src/community/pages/MyStuff.jsx:492",
+    "src/community/pages/MyStuff.jsx:255",
+    "src/community/pages/MyStuff.jsx:513",
     "src/community/pages/PaidPerks.jsx:218",
     "src/community/pages/admin/QuotaTile.jsx:15",
     "src/community/pages/admin/UserDetailCard.jsx:229"
   ],
   "of {value1} used": [
-    "src/community/pages/MyStuff.jsx:237",
+    "src/community/pages/MyStuff.jsx:258",
     "src/community/pages/admin/QuotaTile.jsx:18"
   ],
   "{value1}% full": [
-    "src/community/pages/MyStuff.jsx:246",
-    "src/community/pages/MyStuff.jsx:349",
+    "src/community/pages/MyStuff.jsx:267",
+    "src/community/pages/MyStuff.jsx:370",
     "src/community/pages/admin/QuotaTile.jsx:26"
   ],
   "Manage storage": [
-    "src/community/pages/MyStuff.jsx:249"
+    "src/community/pages/MyStuff.jsx:270"
   ],
   "Inventory": [
-    "src/community/pages/MyStuff.jsx:263",
-    "src/community/pages/MyStuff.jsx:491"
+    "src/community/pages/MyStuff.jsx:284",
+    "src/community/pages/MyStuff.jsx:512"
   ],
   "Items collected across MistWarp games.": [
-    "src/community/pages/MyStuff.jsx:264"
+    "src/community/pages/MyStuff.jsx:285"
   ],
   "1 item type": [
-    "src/community/pages/MyStuff.jsx:267"
+    "src/community/pages/MyStuff.jsx:288"
   ],
   "{value1} item types": [
-    "src/community/pages/MyStuff.jsx:267"
+    "src/community/pages/MyStuff.jsx:288"
   ],
   "Could not load your inventory.": [
-    "src/community/pages/MyStuff.jsx:272"
+    "src/community/pages/MyStuff.jsx:293"
   ],
   "Loading inventory…": [
-    "src/community/pages/MyStuff.jsx:274"
+    "src/community/pages/MyStuff.jsx:295"
   ],
   "{value1}, from {value2}, quantity {value3}": [
-    "src/community/pages/MyStuff.jsx:282"
+    "src/community/pages/MyStuff.jsx:303"
   ],
   "From {value1}": [
-    "src/community/pages/MyStuff.jsx:292"
+    "src/community/pages/MyStuff.jsx:313",
+    "src/community/pages/Wallet.jsx:238"
   ],
   "Your inventory is empty": [
-    "src/community/pages/MyStuff.jsx:298"
+    "src/community/pages/MyStuff.jsx:319"
   ],
   "Items you collect in MistWarp games will appear here.": [
-    "src/community/pages/MyStuff.jsx:299"
-  ],
-  "Could not load storage usage.": [
-    "src/community/pages/MyStuff.jsx:309"
-  ],
-  "Loading storage usage…": [
-    "src/community/pages/MyStuff.jsx:312"
-  ],
-  "Used": [
     "src/community/pages/MyStuff.jsx:320"
   ],
-  "Limit": [
-    "src/community/pages/MyStuff.jsx:321"
-  ],
-  "Remaining": [
-    "src/community/pages/MyStuff.jsx:322"
-  ],
-  "Waiting for a save": [
-    "src/community/pages/MyStuff.jsx:323"
-  ],
-  "Your Rotur {value1} membership includes {value2} of storage, {value3} of assets per project, and {value4} per asset.": [
+  "Could not load storage usage.": [
     "src/community/pages/MyStuff.jsx:330"
   ],
+  "Loading storage usage…": [
+    "src/community/pages/MyStuff.jsx:333"
+  ],
+  "Used": [
+    "src/community/pages/MyStuff.jsx:341"
+  ],
+  "Limit": [
+    "src/community/pages/MyStuff.jsx:342"
+  ],
+  "Remaining": [
+    "src/community/pages/MyStuff.jsx:343"
+  ],
+  "Waiting for a save": [
+    "src/community/pages/MyStuff.jsx:344"
+  ],
+  "Your Rotur {value1} membership includes {value2} of storage, {value3} of assets per project, and {value4} per asset.": [
+    "src/community/pages/MyStuff.jsx:351"
+  ],
   "Full": [
-    "src/community/pages/MyStuff.jsx:350"
+    "src/community/pages/MyStuff.jsx:371"
   ],
   "Nearly full": [
-    "src/community/pages/MyStuff.jsx:350"
+    "src/community/pages/MyStuff.jsx:371"
   ],
   "Largest projects": [
-    "src/community/pages/MyStuff.jsx:362"
+    "src/community/pages/MyStuff.jsx:383"
   ],
   "Each project counts its assets, project data and version history, including projects in the trash. When your storage is full you can still save a project at the same size or smaller. To free space, delete projects you no longer need and empty them from the trash.": [
-    "src/community/pages/MyStuff.jsx:364"
+    "src/community/pages/MyStuff.jsx:385"
   ],
   "Untitled": [
-    "src/community/pages/MyStuff.jsx:371",
-    "src/community/pages/MyStuff.jsx:373"
+    "src/community/pages/MyStuff.jsx:392",
+    "src/community/pages/MyStuff.jsx:394"
   ],
   "{value1}, in the trash": [
-    "src/community/pages/MyStuff.jsx:377"
+    "src/community/pages/MyStuff.jsx:398"
   ],
   "Your projects are not using any storage yet.": [
-    "src/community/pages/MyStuff.jsx:384"
+    "src/community/pages/MyStuff.jsx:405"
   ],
   "Could not load the agreement.": [
-    "src/community/pages/MyStuff.jsx:434"
+    "src/community/pages/MyStuff.jsx:455"
   ],
   "Loading agreement…": [
-    "src/community/pages/MyStuff.jsx:440"
-  ],
-  "No agreement yet": [
-    "src/community/pages/MyStuff.jsx:445"
-  ],
-  "No agreement has been set yet.": [
-    "src/community/pages/MyStuff.jsx:446"
-  ],
-  "You have accepted version {value1} (updated {value2}).": [
     "src/community/pages/MyStuff.jsx:461"
   ],
+  "No agreement yet": [
+    "src/community/pages/MyStuff.jsx:466"
+  ],
+  "No agreement has been set yet.": [
+    "src/community/pages/MyStuff.jsx:467"
+  ],
+  "You have accepted version {value1} (updated {value2}).": [
+    "src/community/pages/MyStuff.jsx:482"
+  ],
   "To continue using the platform, please accept this agreement.": [
-    "src/community/pages/MyStuff.jsx:465"
+    "src/community/pages/MyStuff.jsx:486"
   ],
   "Accepting…": [
-    "src/community/pages/MyStuff.jsx:472",
-    "src/community/pages/MyStuff.jsx:1267"
+    "src/community/pages/MyStuff.jsx:493",
+    "src/community/pages/MyStuff.jsx:1288"
   ],
   "Accept v{value1}": [
-    "src/community/pages/MyStuff.jsx:474"
+    "src/community/pages/MyStuff.jsx:495"
   ],
   "My Projects": [
-    "src/community/pages/MyStuff.jsx:485"
+    "src/community/pages/MyStuff.jsx:506"
   ],
   "Trash": [
-    "src/community/pages/MyStuff.jsx:493"
+    "src/community/pages/MyStuff.jsx:514"
   ],
   "Agreement": [
-    "src/community/pages/MyStuff.jsx:494"
+    "src/community/pages/MyStuff.jsx:515"
   ],
   "Sign in to see your projects.": [
-    "src/community/pages/MyStuff.jsx:1201"
+    "src/community/pages/MyStuff.jsx:1222"
   ],
   "Upload .sb3": [
-    "src/community/pages/MyStuff.jsx:1225"
+    "src/community/pages/MyStuff.jsx:1246"
   ],
   "New project": [
-    "src/community/pages/MyStuff.jsx:1227",
-    "src/community/pages/MyStuff.jsx:1576"
+    "src/community/pages/MyStuff.jsx:1248",
+    "src/community/pages/MyStuff.jsx:1597"
   ],
   "Your storage is full: your projects use {value1} of your {value2}. You can still save a project at the same size or smaller. To add more, delete projects you no longer need and empty them from the trash.": [
-    "src/community/pages/MyStuff.jsx:1239"
+    "src/community/pages/MyStuff.jsx:1260"
   ],
   "Your projects use {value1} of your {value2} of storage ({value3}%).": [
-    "src/community/pages/MyStuff.jsx:1243"
+    "src/community/pages/MyStuff.jsx:1264"
   ],
   "Upload agreement v{value1}": [
-    "src/community/pages/MyStuff.jsx:1254"
+    "src/community/pages/MyStuff.jsx:1275"
   ],
   "Accept v{value1} & upload": [
-    "src/community/pages/MyStuff.jsx:1269"
+    "src/community/pages/MyStuff.jsx:1290"
   ],
   "You must accept this agreement before you can upload projects.": [
-    "src/community/pages/MyStuff.jsx:1278"
+    "src/community/pages/MyStuff.jsx:1299"
   ],
   "Delete project?": [
-    "src/community/pages/MyStuff.jsx:1285",
+    "src/community/pages/MyStuff.jsx:1306",
     "src/community/pages/Project.jsx:725",
     "src/community/pages/admin/ProjectManager.jsx:68",
     "src/community/pages/admin/UserDetailCard.jsx:123"
   ],
   "Delete project": [
-    "src/community/pages/MyStuff.jsx:1286",
+    "src/community/pages/MyStuff.jsx:1307",
     "src/community/pages/Project.jsx:726",
     "src/community/pages/admin/ProjectManager.jsx:70",
     "src/community/pages/admin/UserDetailCard.jsx:125",
     "src/community/pages/project/ProjectHeader.jsx:245"
   ],
   "{value1} will move to Trash. You can restore it until its recovery period ends.": [
-    "src/community/pages/MyStuff.jsx:1293"
+    "src/community/pages/MyStuff.jsx:1314"
   ],
   "Could not load your overview.": [
-    "src/community/pages/MyStuff.jsx:1330"
+    "src/community/pages/MyStuff.jsx:1351"
   ],
   "Could not load Trash.": [
-    "src/community/pages/MyStuff.jsx:1366"
+    "src/community/pages/MyStuff.jsx:1387"
   ],
   "Loading Trash…": [
-    "src/community/pages/MyStuff.jsx:1367"
-  ],
-  "Deletes forever {value1}": [
-    "src/community/pages/MyStuff.jsx:1373"
-  ],
-  "Delete forever": [
-    "src/community/pages/MyStuff.jsx:1384"
-  ],
-  "No deleted projects": [
     "src/community/pages/MyStuff.jsx:1388"
   ],
+  "Deletes forever {value1}": [
+    "src/community/pages/MyStuff.jsx:1394"
+  ],
+  "Delete forever": [
+    "src/community/pages/MyStuff.jsx:1405"
+  ],
+  "No deleted projects": [
+    "src/community/pages/MyStuff.jsx:1409"
+  ],
   "Trash is empty. Projects you delete stay here until their recovery period ends.": [
-    "src/community/pages/MyStuff.jsx:1389"
+    "src/community/pages/MyStuff.jsx:1410"
   ],
   "{value1} earned": [
-    "src/community/pages/MyStuff.jsx:1452"
+    "src/community/pages/MyStuff.jsx:1473"
   ],
   "Remixes of projects offered for purchase stay private. Contribute your changes back to the original creator.": [
-    "src/community/pages/MyStuff.jsx:1467"
+    "src/community/pages/MyStuff.jsx:1488"
   ],
   "Contribution only": [
-    "src/community/pages/MyStuff.jsx:1468"
+    "src/community/pages/MyStuff.jsx:1489"
   ],
   "Unshare": [
-    "src/community/pages/MyStuff.jsx:1475",
+    "src/community/pages/MyStuff.jsx:1496",
     "src/community/pages/admin/ProjectManager.jsx:143",
     "src/community/pages/admin/ReportsSection.jsx:83",
     "src/community/pages/admin/UserDetailCard.jsx:258"
   ],
   "Share": [
-    "src/community/pages/MyStuff.jsx:1482"
+    "src/community/pages/MyStuff.jsx:1503"
   ],
   "Actions for {value1}": [
-    "src/community/pages/MyStuff.jsx:1490"
+    "src/community/pages/MyStuff.jsx:1511"
   ],
   "Open in editor": [
-    "src/community/pages/MyStuff.jsx:1506",
+    "src/community/pages/MyStuff.jsx:1527",
     "src/community/pages/project/ProjectStage.jsx:39"
   ],
   "Manage & analytics": [
-    "src/community/pages/MyStuff.jsx:1511",
+    "src/community/pages/MyStuff.jsx:1532",
     "src/community/pages/project/ProjectHeader.jsx:193"
   ],
   "Save to collection": [
-    "src/community/pages/MyStuff.jsx:1519",
+    "src/community/pages/MyStuff.jsx:1540",
     "src/community/pages/project/ProjectHeader.jsx:163"
   ],
   "Remove profile feature": [
-    "src/community/pages/MyStuff.jsx:1534",
+    "src/community/pages/MyStuff.jsx:1555",
     "src/community/pages/project/ProjectHeader.jsx:220"
   ],
   "Feature on profile": [
-    "src/community/pages/MyStuff.jsx:1534",
+    "src/community/pages/MyStuff.jsx:1555",
     "src/community/pages/project/ProjectHeader.jsx:220"
   ],
   "Add at least two poll options.": [
@@ -5552,7 +5555,8 @@
     "src/community/pages/Project.jsx:777"
   ],
   "Waiting for Rotur…": [
-    "src/community/pages/Project.jsx:781"
+    "src/community/pages/Project.jsx:781",
+    "src/community/pages/Wallet.jsx:182"
   ],
   "Buy {value1} for a one-time payment of {value2} credits and support its creator?": [
     "src/community/pages/Project.jsx:786"
@@ -5709,30 +5713,6 @@
   ],
   "Pull requests will show up here once someone contributes.": [
     "src/community/pages/PullRequests.jsx:91"
-  ],
-  "Could not load purchase history.": [
-    "src/community/pages/Purchases.jsx:39"
-  ],
-  "Sign in to see your purchases.": [
-    "src/community/pages/Purchases.jsx:51"
-  ],
-  "Your credits are on Rotur": [
-    "src/community/pages/Purchases.jsx:63"
-  ],
-  "See your balance, claim daily credits and check your transactions on rotur.dev.": [
-    "src/community/pages/Purchases.jsx:66"
-  ],
-  "Open Rotur": [
-    "src/community/pages/Purchases.jsx:78"
-  ],
-  "Purchase history": [
-    "src/community/pages/Purchases.jsx:82"
-  ],
-  "No purchases yet": [
-    "src/community/pages/Purchases.jsx:116"
-  ],
-  "You have not bought any projects yet.": [
-    "src/community/pages/Purchases.jsx:119"
   ],
   "Random project": [
     "src/community/pages/Random.jsx:36"
@@ -6889,6 +6869,78 @@
   ],
   "Games ranked by total playtime.": [
     "src/community/pages/UserLibrary.jsx:84"
+  ],
+  "Could not load your balance from Rotur.": [
+    "src/community/pages/Wallet.jsx:75"
+  ],
+  "Could not load purchase history.": [
+    "src/community/pages/Wallet.jsx:92"
+  ],
+  "Sign in to see your wallet.": [
+    "src/community/pages/Wallet.jsx:104"
+  ],
+  "Daily credits claimed.": [
+    "src/community/pages/Wallet.jsx:135"
+  ],
+  "MistWarp needs your permission on Rotur to claim daily credits.": [
+    "src/community/pages/Wallet.jsx:139"
+  ],
+  "Could not claim daily credits.": [
+    "src/community/pages/Wallet.jsx:144"
+  ],
+  "Your balance": [
+    "src/community/pages/Wallet.jsx:160"
+  ],
+  "Let MistWarp see your balance and transactions on Rotur.": [
+    "src/community/pages/Wallet.jsx:168"
+  ],
+  "You can claim daily credits again in {value1}h.": [
+    "src/community/pages/Wallet.jsx:176"
+  ],
+  "Show my balance": [
+    "src/community/pages/Wallet.jsx:183"
+  ],
+  "Claiming…": [
+    "src/community/pages/Wallet.jsx:189"
+  ],
+  "Claim daily credits": [
+    "src/community/pages/Wallet.jsx:192"
+  ],
+  "Open Rotur": [
+    "src/community/pages/Wallet.jsx:194"
+  ],
+  "Purchases": [
+    "src/community/pages/Wallet.jsx:206"
+  ],
+  "Wallet sections": [
+    "src/community/pages/Wallet.jsx:211"
+  ],
+  "Received credits": [
+    "src/community/pages/Wallet.jsx:232"
+  ],
+  "Sent credits": [
+    "src/community/pages/Wallet.jsx:233"
+  ],
+  "To {value1}": [
+    "src/community/pages/Wallet.jsx:239"
+  ],
+  "No transactions yet": [
+    "src/community/pages/Wallet.jsx:257"
+  ],
+  "Credits you send, receive and spend on Rotur show up here.": [
+    "src/community/pages/Wallet.jsx:258"
+  ],
+  "Your transactions are on Rotur": [
+    "src/community/pages/Wallet.jsx:261"
+  ],
+  "Show your balance to see them here too.": [
+    "src/community/pages/Wallet.jsx:262"
+  ],
+  "No purchases yet": [
+    "src/community/pages/Wallet.jsx:296"
+  ],
+  "You have not bought any projects yet.": [
+    "src/community/pages/Wallet.jsx:299"
   ],
   "Add admin": [
     "src/community/pages/admin/AdminsSection.jsx:22"

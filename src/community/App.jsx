@@ -33,7 +33,7 @@ const Followers = lazy(() => import('./pages/Followers.jsx'));
 const Settings = lazy(() => import('./pages/Settings.jsx'));
 const MyStuff = lazy(() => import('./pages/MyStuff.jsx'));
 const ManageProject = lazy(() => import('./pages/ManageProject.jsx'));
-const Purchases = lazy(() => import('./pages/Purchases.jsx'));
+const Wallet = lazy(() => import('./pages/Wallet.jsx'));
 const Notifications = lazy(() => import('./pages/Notifications.jsx'));
 const Post = lazy(() => import('./pages/Post.jsx'));
 const News = lazy(() => import('./pages/News.jsx'));
@@ -68,7 +68,7 @@ const ROUTE_TITLES = [
     ['/perks', 'Memberships'],
     ['/mystuff/project/', 'Manage project'],
     ['/mystuff', 'My Stuff'],
-    ['/purchases', 'Purchases'],
+    ['/wallet', 'Wallet'],
     ['/notifications', 'Notifications'],
     ['/posts/', 'Post'],
     ['/news', 'News'],
@@ -203,8 +203,8 @@ const App = () => {
                         <Route path="/settings" element={<Settings />} />
                         <Route path="/mystuff" element={<MyStuff />} />
                         <Route path="/mystuff/project/:id" element={<ManageProject />} />
-                        <Route path="/purchases" element={<Purchases />} />
-                        <Route path="/wallet" element={<Navigate to="/purchases" replace />} />
+                        <Route path="/wallet" element={<Wallet />} />
+                        <Route path="/purchases" element={<Navigate to="/wallet?tab=purchases" replace />} />
                         <Route path="/notifications" element={<Notifications />} />
                         <Route path="/posts/:id" element={<Post />} />
                         <Route path="/news" element={<News />} />
