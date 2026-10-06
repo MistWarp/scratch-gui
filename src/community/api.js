@@ -331,13 +331,15 @@ const api = {
             request('/admin/user/message', {method: 'POST', body: {username, message}}),
         updateUserProfile: (username, patch) =>
             request('/admin/user/profile', {method: 'POST', body: {username, ...patch}}),
+        setUserNote: (username, note) =>
+            request('/admin/user/note', {method: 'POST', body: {username, note}}),
         searchProjects: q => request(`/admin/projects?q=${encodeURIComponent(q)}`),
         stats: (days = 30) => request(`/admin/stats?days=${encodeURIComponent(days)}`),
         storage: () => request('/admin/storage'),
         syncStorage: () => request('/admin/storage/sync', {method: 'POST'}),
-        users: ({q = '', offset = 0, limit = 30, sort = 'name'} = {}) => request(
+        users: ({q = '', offset = 0, limit = 30, sort = 'name', filter = ''} = {}) => request(
             `/admin/users?q=${encodeURIComponent(q)}&offset=${encodeURIComponent(offset)}` +
-            `&limit=${encodeURIComponent(limit)}&sort=${encodeURIComponent(sort)}`
+            `&limit=${encodeURIComponent(limit)}&sort=${encodeURIComponent(sort)}&filter=${encodeURIComponent(filter)}`
         ),
         extensions: () => request('/admin/extensions', {cache: false}),
         setExtensionPolicy: (hash, status) =>
