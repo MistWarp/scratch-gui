@@ -52,3 +52,11 @@ if (!Object.fromEntries) {
         return object;
     };
 }
+
+if (typeof Object.hasOwn !== 'function') {
+    Object.defineProperty(Object, 'hasOwn', {
+        value: (object, property) => Object.prototype.hasOwnProperty.call(object, property),
+        configurable: true,
+        writable: true
+    });
+}

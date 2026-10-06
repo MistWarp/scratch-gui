@@ -1,3 +1,4 @@
+import '../lib/utils/tw-polyfill';
 import * as fakeIndexedDB from 'fake-indexeddb';
 
 const originOf = url => {
