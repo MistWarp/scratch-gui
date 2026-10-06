@@ -369,6 +369,17 @@ export class BlockTypeInfo {
     }
 
     /**
+     * Identifies the variables, lists and broadcasts the enumerated dropdowns were built from.
+     * @param {*} workspace The workspace to describe
+     * @returns {string} A key that changes whenever one is created, deleted or renamed
+     */
+    static getVariablesKey (workspace) {
+        return workspace.getAllVariables()
+            .map(variable => `${variable.type}\u0000${variable.getId()}\u0000${variable.name}`)
+            .join('\u0000');
+    }
+
+    /**
      * Enumerates all the different types of blocks, given a workspace.
      * @param {Blockly} Blockly The Blockly instance
      * @param {*} vm The VM instance

@@ -258,6 +258,7 @@ export default function NativeSpotlight ({vm, locale, activeTabIndex, isPlayerOn
             let selectedPreviewIdx = 0;
             let blockTypes = null;
             let indexedTargetId = null;
+            let indexedVariablesKey = null;
             let limited = false;
 
             let allowMenuClose = true;
@@ -337,7 +338,11 @@ export default function NativeSpotlight ({vm, locale, activeTabIndex, isPlayerOn
                 popupRoot.style.display = '';
                 popupInput.focus();
 
-                if (blockTypes && indexedTargetId === (vm.editingTarget && vm.editingTarget.id)) {
+                if (
+                    blockTypes &&
+                    indexedTargetId === (vm.editingTarget && vm.editingTarget.id) &&
+                    indexedVariablesKey === BlockTypeInfo.getVariablesKey(workspace)
+                ) {
                     doPerformSearch();
                     return;
                 }
@@ -361,6 +366,7 @@ export default function NativeSpotlight ({vm, locale, activeTabIndex, isPlayerOn
                 try {
                     blockTypes = BlockTypeInfo.getBlocks(Blockly, vm, workspace, msg);
                     indexedTargetId = vm.editingTarget && vm.editingTarget.id;
+                    indexedVariablesKey = BlockTypeInfo.getVariablesKey(workspace);
 
                     if (!blockTypes || blockTypes.length === 0) {
                         console.warn('Spotlight: No block types available, showing empty search');
@@ -836,6 +842,7 @@ export default function NativeSpotlight ({vm, locale, activeTabIndex, isPlayerOn
             const invalidateIndex = () => {
                 blockTypes = null;
                 indexedTargetId = null;
+                indexedVariablesKey = null;
                 querier.clearWorkspaceIndex();
             };
             vm.on('EXTENSION_ADDED', invalidateIndex);
