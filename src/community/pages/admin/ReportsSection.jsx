@@ -2,7 +2,7 @@
 import React from 'react';
 import {Link} from 'react-router-dom';
 import {useCommunityIntl as useCommunityText} from '../../i18n.jsx';
-import {Flag} from 'lucide-react';
+import {Flag, UserSearch} from 'lucide-react';
 import {projectUrl} from '../../api';
 import Button from '../../components/ui/Button.jsx';
 import EmptyState from '../../components/ui/EmptyState.jsx';
@@ -11,6 +11,7 @@ import StatusMessage from '../../components/ui/StatusMessage.jsx';
 import {timeAgo} from '../../format';
 import styles from '../Admin.module.css';
 import EvidencePanel from './EvidencePanel.jsx';
+import {adminUserPath} from './admin-links.js';
 
 // The open moderation queue: reports and support requests with their actions.
 const ReportsSection = ({reports, openCount, replyToSupport, act, warnFromReport, banFromReport}) => {
@@ -76,6 +77,10 @@ const ReportsSection = ({reports, openCount, replyToSupport, act, warnFromReport
                                 ) : null}
                             </div>
                             <div className={styles.rowActions}>
+                                {report.type === 'support' || report.subject || report.targetUser || report.type === 'user' ? (
+                                    <Button as={Link} to={adminUserPath(report.type === 'support' ? report.reporter : (report.subject || report.targetUser || report.target))}>
+                                        <UserSearch size={15} />{communityText('View account')}</Button>
+                                ) : null}
                                 {report.type === 'support' ? (
                                     <Button onClick={() => replyToSupport(report)}>{communityText('Reply and close')}</Button>
                                 ) : null}
