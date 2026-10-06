@@ -1,0 +1,136 @@
+.history {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter {
+    flex-shrink: 0;
+}
+
+.surface {
+    padding: 4px 18px 8px;
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+}
+
+.day + .day {
+    margin-top: 10px;
+}
+
+.dayHeading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 0;
+    padding: 10px 0 6px;
+    border-bottom: 1px solid var(--border-soft);
+    font-size: var(--fs-xs);
+    font-weight: 500;
+    color: var(--text-dim);
+}
+
+.dayHeading > span:last-child {
+    font-variant-numeric: tabular-nums;
+}
+
+.rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.row:last-child {
+    border-bottom: 0;
+}
+
+.lead {
+    display: inline-flex;
+    width: 24px;
+    height: 24px;
+}
+
+.body {
+    min-width: 0;
+}
+
+.title {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--fs-sm);
+    font-weight: 500;
+    color: var(--mw-text);
+}
+
+.meta {
+    display: block;
+    margin-top: 1px;
+    font-size: var(--fs-xs);
+    color: var(--text-dim);
+}
+
+.meta a {
+    color: var(--accent-strong);
+}
+
+.meta time {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.amount,
+.amountIn {
+    min-width: 56px;
+    text-align: end;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--mw-text);
+}
+
+.amountIn,
+.income {
+    color: var(--mw-success);
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0 2px;
+    border-top: 1px solid var(--border-soft);
+    font-size: var(--fs-sm);
+    color: var(--text-dim);
+}
+
+.pageButtons {
+    display: flex;
+    gap: 4px;
+}
+
+@media (max-width: 520px) {
+    .surface {
+        padding: 2px 12px 6px;
+    }
+}

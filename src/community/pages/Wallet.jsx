@@ -3,7 +3,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useRef, useState} from 'react';
 import {Link, useSearchParams} from 'react-router-dom';
 import {
-    ArrowDownLeft, ArrowUpRight, CalendarCheck, Coins, ExternalLink, History, ShoppingBag, Wallet as WalletIcon
+    CalendarCheck, Coins, ExternalLink, History, ShoppingBag, Wallet as WalletIcon
 } from 'lucide-react';
 import api, {projectUrl} from '../api';
 import {allowWallet, claimDailyCredits, getDailyWait, getWallet} from '../../lib/rotur/wallet.js';
@@ -12,21 +12,19 @@ import Button from '../components/ui/Button.jsx';
 import EmptyState, {SignInPrompt} from '../components/ui/EmptyState.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
+import TransactionHistory from '../components/TransactionHistory.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import {tabPanelProps} from '../components/SectionTabs.jsx';
-import {formatDate, safeDate} from '../format';
+import {formatDate} from '../format';
 import styles from './Wallet.module.css';
 
 const ROTUR_ACCOUNT = 'https://rotur.dev/me';
+const ROTUR_ACTIVITY = 'https://rotur.dev/me/activity';
 const HOUR_MS = 60 * 60 * 1000;
 const TABS = ['activity', 'purchases'];
 
 const fmtCredits = value => Math.round((Number(value) || 0) * 100) / 100;
 
-const transactionDate = value => {
-    const date = safeDate(value);
-    return date ? date.toLocaleString(getCommunityLocale(), {dateStyle: 'medium', timeStyle: 'short'}) : '';
-};
 
 const Wallet = () => {
     const {text: communityText} = useCommunityText();
@@ -149,7 +147,9 @@ const Wallet = () => {
     };
 
     const waitHours = dailyWait > 0 ? Math.ceil(dailyWait / HOUR_MS) : 0;
-    const transactions = wallet && wallet.allowed ? wallet.transactions : [];
+    const transactions = wallet && wallet.allowed ?
+        wallet.transactions.filter(transaction => transaction.mistwarp) :
+        [];
 
     return (
         <main className={styles.page}>
@@ -222,48 +222,27 @@ const Wallet = () => {
                 {tab === 'activity' ? (
                     wallet === null && !walletError ? (
                         <StatusMessage compact />
-                    ) : transactions.length ? (
-                        <ul className={styles.list}>
-                            {transactions.map(transaction => {
-                                const when = safeDate(transaction.time);
-                                return (
-                                    <li key={transaction.id} className={styles.row}>
-                                        <span className={transaction.incoming ? styles.inIcon : styles.outIcon}>
-                                            {transaction.incoming ?
-                                                <ArrowDownLeft size={17} aria-hidden="true" /> :
-                                                <ArrowUpRight size={17} aria-hidden="true" />}
-                                        </span>
-                                        <span className={styles.rowText}>
-                                            <strong className={styles.rowTitle}>
-                                                {transaction.note || (transaction.incoming ?
-                                                    communityText('Received credits') :
-                                                    communityText('Sent credits'))}
-                                            </strong>
-                                            <span className={styles.rowMeta}>
-                                                {transaction.user ? (
-                                                    transaction.incoming ?
-                                                        communityText('From {value1}', {value1: transaction.user}) :
-                                                        communityText('To {value1}', {value1: transaction.user})
-                                                ) : null}
-                                                {when ? (
-                                                    <time dateTime={when.toISOString()}>
-                                                        {transactionDate(transaction.time)}
-                                                    </time>
-                                                ) : null}
-                                            </span>
-                                        </span>
-                                        <strong className={transaction.incoming ? styles.inAmount : styles.outAmount}>
-                                            {transaction.incoming ? '+' : '-'}
-                                            {fmtCredits(transaction.amount).toLocaleString(getCommunityLocale())}
-                                        </strong>
-                                    </li>
-                                );
-                            })}
-                        </ul>
                     ) : wallet && wallet.allowed ? (
-                        <EmptyState compact icon={History} title={communityText('No transactions yet')}>
-                            {communityText('Credits you send, receive and spend on Rotur show up here.')}
-                        </EmptyState>
+                        <React.Fragment>
+                            <div className={styles.activityLead}>
+                                <span>{communityText('Credits you spent and earned on MistWarp.')}</span>
+                                <a href={ROTUR_ACTIVITY} target="_blank" rel="noopener noreferrer">
+                                    {communityText('See your full wallet on rotur.dev')}
+                                    <ExternalLink size={14} aria-hidden="true" />
+                                </a>
+                            </div>
+                            {transactions.length ? (
+                                <TransactionHistory transactions={transactions} />
+                            ) : (
+                                <EmptyState
+                                    compact
+                                    icon={History}
+                                    title={communityText('No MistWarp transactions yet')}
+                                >
+                                    {communityText('Buying projects and game items, donations and sales show up here.')}
+                                </EmptyState>
+                            )}
+                        </React.Fragment>
                     ) : (
                         <EmptyState compact icon={History} title={communityText('Your transactions are on Rotur')}>
                             {communityText('Show your balance to see them here too.')}

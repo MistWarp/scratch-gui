@@ -52,23 +52,37 @@ describe('Wallet', () => {
             allowed: true,
             balance: 42.5,
             transactions: [
-                {id: 't1', incoming: true, amount: 3, user: 'rotur', note: 'Daily claim', time: 1700000000000},
-                {id: 't2', incoming: false, amount: 10, user: 'kit', note: '', time: 1700000100000}
+                {id: 't1', incoming: true, amount: 3, user: 'rotur', note: 'Daily claim', time: 1700000000000, mistwarp: false},
+                {id: 't2', incoming: false, amount: 10, user: 'kit', note: '', time: 1700000100000, mistwarp: true},
+                {id: 't3', incoming: true, amount: 9, user: 'lee', note: 'Starfall Racer', time: 1700000200000, mistwarp: true}
             ]
         });
         getDailyWait.mockResolvedValue(0);
         api.purchases.mockResolvedValue({purchases: [{projectId: 'p1', title: 'Starfall', amount: 10, at: 1700000000000}]});
     });
 
-    test('shows the Rotur balance and transactions', async () => {
+    test('shows the Rotur balance and only MistWarp transactions, with a link to the full wallet', async () => {
         const wrapper = await render();
         const text = wrapper.text();
         expect(text).toContain('Your balance');
         expect(text).toContain('42.5');
-        expect(text).toContain('Daily claim');
         expect(text).toContain('Sent credits');
-        expect(text).toContain('To kit');
-        expect(text).not.toContain('Starfall');
+        expect(text).toContain('@kit');
+        expect(text).toContain('Starfall Racer');
+        expect(text).not.toContain('Daily claim');
+        expect(wrapper.find('a[href="https://rotur.dev/me/activity"]').exists()).toBe(true);
+        wrapper.unmount();
+    });
+
+    test('says so when nothing was spent or earned on MistWarp', async () => {
+        getWallet.mockResolvedValueOnce({
+            allowed: true,
+            balance: 3,
+            transactions: [{id: 't1', incoming: true, amount: 3, user: 'rotur', note: 'Daily claim', time: 1700000000000, mistwarp: false}]
+        });
+        const wrapper = await render();
+        expect(wrapper.text()).toContain('No MistWarp transactions yet');
+        expect(wrapper.find('a[href="https://rotur.dev/me/activity"]').exists()).toBe(true);
         wrapper.unmount();
     });
 
