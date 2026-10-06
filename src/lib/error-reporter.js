@@ -101,6 +101,24 @@ const isProjectScriptError = (name, stack) => (
 // NetworkError is a transport failure with no stack, so nothing in it can be acted on.
 const BROWSER_REFUSAL = /^(NotAllowedError|NetworkError)$/;
 
+const BROWSER_NOISE = /window\.ethereum|^Can't find variable: EmptyRanges$|lock the pointer|pointer lock/i;
+const DETACHED_NODE = /(?:removeChild|insertBefore).*not a child of this node/;
+
+const isMachineTranslated = () => {
+    try {
+        return /\btranslated-(?:ltr|rtl)\b/.test(document.documentElement.className);
+    } catch (e) {
+        return false;
+    }
+};
+
+const isOutsideMistWarp = (message, name, stack, kind) => (
+    BROWSER_NOISE.test(message) ||
+    name === 'AbortError' ||
+    (kind === 'rejection' && message === 'Unhandled promise rejection' && !stack) ||
+    (DETACHED_NODE.test(message) && isMachineTranslated())
+);
+
 export const reportSiteError = ({message, stack = '', kind = 'uncaught', url = '', projectId = '', componentStack = '', name = ''}) => {
     try {
         const text = String(message || '').trim();
@@ -108,6 +126,7 @@ export const reportSiteError = ({message, stack = '', kind = 'uncaught', url = '
         if (isBenignResizeObserverLoop(text, stack)) return;
         if (isUnactionable(text, stack) || isCrawler() || isRehostedCopy()) return;
         if (isProjectScriptError(name, stack) || BROWSER_REFUSAL.test(String(name || ''))) return;
+        if (isOutsideMistWarp(text, name, stack, kind)) return;
         const href = String(url || window.location.href || '').slice(0, 2000);
         if (href.includes('/errors')) return;
         const signature = `${text.slice(0, 200)}|${href.slice(0, 200)}|${String(stack).slice(0, 200)}`;
