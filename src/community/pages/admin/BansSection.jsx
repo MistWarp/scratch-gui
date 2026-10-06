@@ -1,5 +1,6 @@
 /* eslint-disable max-len */
 import React from 'react';
+import {Link} from 'react-router-dom';
 import {useCommunityIntl as useCommunityText} from '../../i18n.jsx';
 import {Ban} from 'lucide-react';
 import Avatar from '../../components/Avatar.jsx';
@@ -8,6 +9,7 @@ import EmptyState from '../../components/ui/EmptyState.jsx';
 import SectionHeading from '../../components/ui/SectionHeading.jsx';
 import {timeAgo} from '../../format';
 import styles from '../Admin.module.css';
+import {adminUserPath} from './admin-links.js';
 
 // Banned users, with a button to ban someone by name.
 const BansSection = ({bans, banByName, unban}) => {
@@ -31,7 +33,7 @@ const BansSection = ({bans, banByName, unban}) => {
                                 size={28}
                             />
                             <div className={styles.rowInfo}>
-                                <span className={styles.rowTitle}>{`@${ban.username}`}</span>
+                                <span className={styles.rowTitle}><Link to={adminUserPath(ban.username)}>{`@${ban.username}`}</Link></span>
                                 <span className={styles.rowMeta}>
                                     {communityText('Banned by @{value1}{value2}', {value1: ban.by, value2: timeAgo(ban.created) ? ` · ${timeAgo(ban.created)} ago` : ''})}
                                     {ban.reason ? ` · ${ban.reason}` : ''}
