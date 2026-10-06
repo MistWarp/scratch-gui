@@ -78,6 +78,25 @@
     margin-inline-start: auto;
 }
 
+.activityLead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px 16px;
+    margin-bottom: 12px;
+    font-size: var(--fs-sm);
+    color: var(--text-dim);
+}
+
+.activityLead a {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--accent-strong);
+    font-weight: 600;
+}
+
 .tabs {
     margin: 8px 0 16px;
 }

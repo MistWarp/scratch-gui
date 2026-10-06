@@ -27,7 +27,7 @@ describe('Rotur wallet', () => {
         me.get.mockResolvedValue({
             'sys.currency': 120.456,
             'sys.transactions': [
-                {type: 'out', user: 'kit', amount: 5, note: 'Starfall', time: 1700000000000, new_total: 120.45},
+                {type: 'out', user: 'kit', amount: 5, note: 'Starfall', time: 1700000000000, new_total: 120.45, provider: 'app-mistwarp'},
                 {type: 'in', user: 'rotur', amount: 3, note: 'Daily claim', time: 1700000100},
                 {type: 'in', user: 'nobody', amount: 0, time: 1700000200000}
             ]
@@ -38,7 +38,8 @@ describe('Rotur wallet', () => {
         expect(wallet.balance).toBe(120.46);
         expect(wallet.transactions.map(transaction => transaction.note)).toEqual(['Daily claim', 'Starfall']);
         expect(wallet.transactions[0]).toMatchObject({incoming: true, amount: 3, user: 'rotur', time: 1700000100000});
-        expect(wallet.transactions[1]).toMatchObject({incoming: false, amount: 5, total: 120.45});
+        expect(wallet.transactions[1]).toMatchObject({incoming: false, amount: 5, total: 120.45, mistwarp: true});
+        expect(wallet.transactions[0].mistwarp).toBe(false);
     });
 
     test('says so without asking when this sign-in cannot see credits', async () => {
@@ -77,6 +78,16 @@ describe('Rotur wallet', () => {
         expect(await getDailyWait()).toBe(0);
         ensureScopes.mockResolvedValue(false);
         expect(await getDailyWait()).toBe(null);
+    });
+
+    test('knows which transactions came from MistWarp', () => {
+        const marked = normalizeTransactions([
+            {type: 'out', amount: 1, provider: 'app-mistwarp', time: 3},
+            {type: 'out', amount: 1, provider: 'mistwarp', time: 2},
+            {type: 'out', amount: 1, provider: 'app-mistwarpish', time: 1},
+            {type: 'out', amount: 1, time: 0}
+        ]);
+        expect(marked.map(transaction => transaction.mistwarp)).toEqual([true, true, false, false]);
     });
 
     test('ignores transactions that are not objects', () => {

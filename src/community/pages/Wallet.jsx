@@ -19,6 +19,7 @@ import {formatDate} from '../format';
 import styles from './Wallet.module.css';
 
 const ROTUR_ACCOUNT = 'https://rotur.dev/me';
+const ROTUR_ACTIVITY = 'https://rotur.dev/me/activity';
 const HOUR_MS = 60 * 60 * 1000;
 const TABS = ['activity', 'purchases'];
 
@@ -146,7 +147,9 @@ const Wallet = () => {
     };
 
     const waitHours = dailyWait > 0 ? Math.ceil(dailyWait / HOUR_MS) : 0;
-    const transactions = wallet && wallet.allowed ? wallet.transactions : [];
+    const transactions = wallet && wallet.allowed ?
+        wallet.transactions.filter(transaction => transaction.mistwarp) :
+        [];
 
     return (
         <main className={styles.page}>
@@ -219,12 +222,27 @@ const Wallet = () => {
                 {tab === 'activity' ? (
                     wallet === null && !walletError ? (
                         <StatusMessage compact />
-                    ) : transactions.length ? (
-                        <TransactionHistory transactions={transactions} />
                     ) : wallet && wallet.allowed ? (
-                        <EmptyState compact icon={History} title={communityText('No transactions yet')}>
-                            {communityText('Credits you send, receive and spend on Rotur show up here.')}
-                        </EmptyState>
+                        <React.Fragment>
+                            <div className={styles.activityLead}>
+                                <span>{communityText('Credits you spent and earned on MistWarp.')}</span>
+                                <a href={ROTUR_ACTIVITY} target="_blank" rel="noopener noreferrer">
+                                    {communityText('See your full wallet on rotur.dev')}
+                                    <ExternalLink size={14} aria-hidden="true" />
+                                </a>
+                            </div>
+                            {transactions.length ? (
+                                <TransactionHistory transactions={transactions} />
+                            ) : (
+                                <EmptyState
+                                    compact
+                                    icon={History}
+                                    title={communityText('No MistWarp transactions yet')}
+                                >
+                                    {communityText('Buying projects and game items, donations and sales show up here.')}
+                                </EmptyState>
+                            )}
+                        </React.Fragment>
                     ) : (
                         <EmptyState compact icon={History} title={communityText('Your transactions are on Rotur')}>
                             {communityText('Show your balance to see them here too.')}

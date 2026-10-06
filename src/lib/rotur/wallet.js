@@ -4,6 +4,8 @@ const VIEW_SCOPE = 'credits:view';
 const DAILY_SCOPE = 'credits:daily';
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+const MISTWARP_PROVIDERS = /^(app-)?mistwarp$/i;
+
 const roundCredits = value => Math.round((Number(value) || 0) * 100) / 100;
 
 const normalizeTransactions = transactions => {
@@ -21,6 +23,7 @@ const normalizeTransactions = transactions => {
             amount: Math.abs(amount),
             user: String(transaction.user || ''),
             note: String(transaction.note || ''),
+            mistwarp: MISTWARP_PROVIDERS.test(String(transaction.provider || '')),
             time: Number.isFinite(time) ? time : 0,
             total: Number.isFinite(Number(transaction.new_total)) ? roundCredits(transaction.new_total) : null
         });
