@@ -2,7 +2,7 @@ import PeerModule from 'peerjs';
 import {resolvePeerConstructor} from './peer-constructor.js';
 import Emitter from './emitter.js';
 import {validateEnvelope, makeCtrl, KIND, CTRL, PROTOCOL_VERSION} from './protocol.js';
-import {DirectLink, RelayLink, RAW_SERIALIZATION, RELAY_MARK} from './links.js';
+import {DirectLink, RelayLink, LEGACY_SERIALIZATION, RAW_SERIALIZATION, RELAY_MARK} from './links.js';
 import {APP_NAME} from '../constants/brand.js';
 
 const DEFAULT_PEER_CONFIG = {
@@ -827,7 +827,8 @@ class Transport extends Emitter {
     }
 
     _wireConnection (conn) {
-        if (this.destroyed) {
+        if (this.destroyed ||
+            (conn.serialization !== RAW_SERIALIZATION && conn.serialization !== LEGACY_SERIALIZATION)) {
             conn.close();
             return;
         }

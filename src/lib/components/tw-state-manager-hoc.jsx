@@ -32,6 +32,7 @@ import CollaborationService from '../collaboration/index.js';
 import {setSearchParams} from '../utils/navigation';
 import {defaultStageSize} from '../../reducers/custom-stage-size';
 import {openSimpleDialog} from '../../reducers/modals';
+import {showStandardAlert} from '../../reducers/alerts';
 
 const USERNAME_KEY = 'tw:username';
 
@@ -403,7 +404,10 @@ const TWStateManager = function (WrappedComponent) {
             }
 
             for (const extension of urlParams.getAll('extension')) {
-                this.props.vm.extensionManager.loadExtensionURL(extension);
+                Promise.resolve(this.props.vm.extensionManager.loadExtensionURL(extension)).catch(error => {
+                    log.error(`Could not load extension from URL parameter: ${extension}`, error);
+                    this.props.onExtensionLoadError();
+                });
             }
 
             // Handle room codes for automatic collaboration
@@ -699,6 +703,7 @@ const TWStateManager = function (WrappedComponent) {
                 onSetCollaborationRoomId,
                 onSetCollaborationInvite,
                 onOpenCollaborationModal,
+                onExtensionLoadError,
                 reduxProjectId,
                 routingStyle,
                 username,
@@ -748,6 +753,7 @@ const TWStateManager = function (WrappedComponent) {
         onSetCollaborationRoomId: PropTypes.func,
         onSetCollaborationInvite: PropTypes.func,
         onOpenCollaborationModal: PropTypes.func,
+        onExtensionLoadError: PropTypes.func,
         openSimpleDialog: PropTypes.func.isRequired,
         confirmWithMessage: PropTypes.func,
         reduxProjectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
@@ -785,6 +791,7 @@ const TWStateManager = function (WrappedComponent) {
         onSetCollaborationRoomId: roomId => dispatch(setCollaborationRoomId(roomId)),
         onSetCollaborationInvite: invite => dispatch(setCollaborationInvite(invite)),
         onOpenCollaborationModal: () => dispatch(openCollaborationModal()),
+        onExtensionLoadError: () => dispatch(showStandardAlert('extensionLoadError')),
         openSimpleDialog: config => dispatch(openSimpleDialog(config))
     });
     return connect(

@@ -89,8 +89,12 @@ const openDB = () => new Promise((resolve, reject) => {
     };
 
     request.onsuccess = event => {
-        _db = event.target.result;
-        resolve(_db);
+        const db = event.target.result;
+        db.onclose = () => {
+            if (_db === db) _db = null;
+        };
+        _db = db;
+        resolve(db);
     };
 
     request.onerror = event => {
@@ -98,14 +102,25 @@ const openDB = () => new Promise((resolve, reject) => {
     };
 });
 
+const openTransaction = async mode => {
+    const db = await openDB();
+    try {
+        return db.transaction(STORE_NAME, mode);
+    } catch (error) {
+        if (error.name !== 'InvalidStateError') throw error;
+        if (_db === db) _db = null;
+        const reopened = await openDB();
+        return reopened.transaction(STORE_NAME, mode);
+    }
+};
+
 const getBackpackContents = async ({
     limit,
     offset
 }) => {
-    const db = await openDB();
+    const transaction = await openTransaction('readonly');
     return new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_NAME, 'readonly');
-        transaction.onerror = event => {
+        transaction.onerror = transaction.onabort = event => {
             reject(new Error(`Getting contents: ${event.target.error}`));
         };
         const store = transaction.objectStore(STORE_NAME);
@@ -141,10 +156,9 @@ const saveBackpackObject = async ({
     // User interaction -- fine to show a permission dialog
     requestPersistentStorage();
 
-    const db = await openDB();
+    const transaction = await openTransaction('readwrite');
     return new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_NAME, 'readwrite');
-        transaction.onerror = event => {
+        transaction.onerror = transaction.onabort = event => {
             reject(new Error(`Sving object: ${event.target.error}`));
         };
         const store = transaction.objectStore(STORE_NAME);
@@ -170,10 +184,9 @@ const deleteBackpackObject = async ({
     id
 }) => {
     id = +id;
-    const db = await openDB();
+    const transaction = await openTransaction('readwrite');
     return new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_NAME, 'readwrite');
-        transaction.onerror = event => {
+        transaction.onerror = transaction.onabort = event => {
             reject(new Error(`Deleting object: ${event.target.error}`));
         };
         const store = transaction.objectStore(STORE_NAME);
@@ -190,10 +203,9 @@ const updateBackpackObject = async ({
     name
 }) => {
     id = +id;
-    const db = await openDB();
+    const transaction = await openTransaction('readwrite');
     return new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_NAME, 'readwrite');
-        transaction.onerror = event => {
+        transaction.onerror = transaction.onabort = event => {
             reject(new Error(`Updating object: ${event.target.error}`));
         };
         const store = transaction.objectStore(STORE_NAME);

@@ -547,7 +547,7 @@ const mapStateToProps = (state, {soundIndex}) => {
     // A sound whose asset failed to load never gets a soundId, so the audio
     // engine has no player for it and getSoundBuffer returns null. Render the
     // editor with empty data instead of crashing.
-    const audioBuffer = state.scratchGui.vm.getSoundBuffer(index);
+    const audioBuffer = sound ? state.scratchGui.vm.getSoundBuffer(index) : null;
     return {
         isStereo: audioBuffer ? audioBuffer.numberOfChannels !== 1 : false,
         duration: sound && sound.rate ? sound.sampleCount / sound.rate : 0,

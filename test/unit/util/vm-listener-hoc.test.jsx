@@ -53,6 +53,22 @@ describe('VMListenerHOC', () => {
         expect(child.props().onGreenFlag).toBeUndefined();
     });
 
+    test('an extension that fails to load shows the extension load alert', () => {
+        const Component = () => (<div />);
+        const WrappedComponent = vmListenerHOC(Component);
+        mount(
+            <WrappedComponent
+                store={store}
+                vm={vm}
+            />
+        );
+        vm.emit('EXTENSION_LOAD_ERROR', {extensionID: 'fetch', url: 'https://example.com/fetch.js', error: 'failed'});
+        expect(store.getActions()).toContainEqual(expect.objectContaining({
+            type: 'scratch-gui/alerts/SHOW_ALERT',
+            alertId: 'extensionLoadError'
+        }));
+    });
+
     test('targetsUpdate event from vm triggers targets update action', () => {
         const Component = () => (<div />);
         const WrappedComponent = vmListenerHOC(Component);

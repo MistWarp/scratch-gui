@@ -59,9 +59,23 @@ const isCrawler = () => {
 
 const BROWSER_EXTENSION_FRAME = /(?:chrome|moz|safari|safari-web)-extension:\/\//;
 
+const ERROR_PREFIX = /^(?:Uncaught\s+)?(?:[A-Za-z]*Error:\s*)?/;
+
+const withoutErrorPrefixes = message => {
+    let text = message;
+    let previous;
+    do {
+        previous = text;
+        text = text.replace(ERROR_PREFIX, '');
+    } while (text !== previous);
+    return text;
+};
+
+const SANDBOXED_EXTENSION_ERROR = /^(?:[A-Za-z]*Error:\s*)+Uncaught\s/;
+
 const isUnactionable = (message, stack) => {
-    if (message === 'Script error.') return true;
-    if (/^(?:(?:ReferenceError:\s*)?unsandboxed is not defined|Can't find variable: unsandboxed)$/i.test(message)) return true;
+    if (withoutErrorPrefixes(message) === 'Script error.') return true;
+    if (/unsandboxed/i.test(message) || SANDBOXED_EXTENSION_ERROR.test(message)) return true;
     const frames = String(stack || '')
         .split('\n')
         .filter(line => /:\d+:\d+\)?\s*$/.test(line));
@@ -101,6 +115,24 @@ const isProjectScriptError = (name, stack) => (
 // NetworkError is a transport failure with no stack, so nothing in it can be acted on.
 const BROWSER_REFUSAL = /^(NotAllowedError|NetworkError)$/;
 
+const BROWSER_NOISE = /window\.ethereum|^Can't find variable: EmptyRanges$|lock the pointer|pointer lock/i;
+const DETACHED_NODE = /(?:removeChild|insertBefore).*not a child of this node/;
+
+const isMachineTranslated = () => {
+    try {
+        return /\btranslated-(?:ltr|rtl)\b/.test(document.documentElement.className);
+    } catch (e) {
+        return false;
+    }
+};
+
+const isOutsideMistWarp = (message, name, stack, kind) => (
+    BROWSER_NOISE.test(message) ||
+    name === 'AbortError' ||
+    (kind === 'rejection' && message === 'Unhandled promise rejection' && !stack) ||
+    (DETACHED_NODE.test(message) && isMachineTranslated())
+);
+
 export const reportSiteError = ({message, stack = '', kind = 'uncaught', url = '', projectId = '', componentStack = '', name = ''}) => {
     try {
         const text = String(message || '').trim();
@@ -108,6 +140,7 @@ export const reportSiteError = ({message, stack = '', kind = 'uncaught', url = '
         if (isBenignResizeObserverLoop(text, stack)) return;
         if (isUnactionable(text, stack) || isCrawler() || isRehostedCopy()) return;
         if (isProjectScriptError(name, stack) || BROWSER_REFUSAL.test(String(name || ''))) return;
+        if (isOutsideMistWarp(text, name, stack, kind)) return;
         const href = String(url || window.location.href || '').slice(0, 2000);
         if (href.includes('/errors')) return;
         const signature = `${text.slice(0, 200)}|${href.slice(0, 200)}|${String(stack).slice(0, 200)}`;
