@@ -32,7 +32,7 @@ const PHASES = {
     'submissions': {label: 'Submissions open', tone: 'open'},
     'judging': {label: 'Judging', tone: 'building'},
     'awaiting-results': {label: 'Results pending', tone: 'building'},
-    'results': {label: 'Results published', tone: 'shipped'}
+    'results': {label: 'Finished', tone: 'shipped'}
 };
 
 const AUDIENCE_PHASES = {
@@ -261,7 +261,7 @@ const Entry = ({challengeId, project, challenge, user, login, load, onError}) =>
     };
     return (
         <article className={styles.entry}>
-            {challenge.phase === 'results' && project.place ? <span className={project.place <= 3 ? styles.placeWinner : styles.place}>#{project.place}</span> : null}
+            {challenge.phase === 'results' && project.place ? <span className={styles.place} data-place={project.place}>#{project.place}</span> : null}
             <ProjectCard project={project} />
             {showRatings || showJudgeScore ? (
                 <div className={styles.entryFooter}>
@@ -456,6 +456,7 @@ const JudgingWorkspace = ({challengeId, projects, criteria, load}) => {
 const Timeline = ({space, phase, now, audienceJudged}) => {
     const {text: communityText} = useCommunityText();
     const finished = phase === 'results' || phase === 'awaiting-results';
+    const published = phase === 'results';
     const steps = [
         {
             key: 'open',
@@ -484,8 +485,18 @@ const Timeline = ({space, phase, now, audienceJudged}) => {
             at: space.judgingEndsAt,
             done: finished,
             active: phase === 'judging',
-            countdown: phase === 'judging' ? (audienceJudged ? communityText('{value1} of voting left', {value1: remaining(space.judgingEndsAt, now)}) : communityText('{value1} of judging left', {value1: remaining(space.judgingEndsAt, now)})) : ''
-        }
+            countdown: phase === 'judging' ? (audienceJudged ? communityText('{value1} of voting left', {value1: remaining(space.judgingEndsAt, now)}) : communityText('{value1} of judging left', {value1: remaining(space.judgingEndsAt, now)})) : '',
+            ...(published ? {progress: 1} : {})
+        },
+        ...(published ? [{
+            key: 'results',
+            icon: Medal,
+            label: communityText('Winner announced'),
+            at: space.resultsPublishedAt,
+            done: true,
+            active: false,
+            countdown: ''
+        }] : [])
     ];
     return (
         <ol className={styles.timeline} aria-label={communityText('Challenge schedule')}>
@@ -501,6 +512,53 @@ const Timeline = ({space, phase, now, audienceJudged}) => {
                 </li>
             ))}
         </ol>
+    );
+};
+
+const resultScore = (project, audienceJudged, communityText) => {
+    if (!audienceJudged) return <strong>{challengeScore(project.judgeScore)}<small>{communityText('/ 10')}</small></strong>;
+    if (!project.audienceVoteCount) return <small>{communityText('No ratings')}</small>;
+    return <strong>{challengeScore(project.audienceScore)}<small>{communityText('/ 5 from {value1} ratings', {value1: project.audienceVoteCount})}</small></strong>;
+};
+
+const Results = ({projects, audienceJudged}) => {
+    const {text: communityText} = useCommunityText();
+    const podium = projects.filter(project => project.place && project.place <= 3);
+    const rest = projects.filter(project => !project.place || project.place > 3);
+    return (
+        <React.Fragment>
+            {podium.length ? (
+                <ol className={styles.podium} aria-label={communityText('Top three')}>
+                    {podium.map(project => (
+                        <li key={project.id} className={styles.podiumEntry}>
+                            <Link to={projectUrl(project)} className={styles.podiumThumb} tabIndex={-1} aria-hidden="true">
+                                <ProjectThumbnail project={project} fallbackClassName={styles.judgeFallback} lazy />
+                            </Link>
+                            <span className={styles.medal} data-place={project.place}>{`#${project.place}`}</span>
+                            <div className={styles.podiumText}>
+                                <Link to={projectUrl(project)}>{project.title}</Link>
+                                <span>{communityText('by')}{' '}<UserLink username={project.owner}>{project.owner}</UserLink></span>
+                            </div>
+                            <div className={styles.podiumScore}>{resultScore(project, audienceJudged, communityText)}</div>
+                        </li>
+                    ))}
+                </ol>
+            ) : null}
+            {rest.length ? (
+                <ol className={styles.resultList} aria-label={podium.length ? communityText('Other entries') : communityText('All entries')}>
+                    {rest.map(project => (
+                        <li key={project.id}>
+                            <span className={styles.resultPlace}>{project.place ? `#${project.place}` : '-'}</span>
+                            <Link to={projectUrl(project)} className={styles.resultThumb} tabIndex={-1} aria-hidden="true">
+                                <ProjectThumbnail project={project} fallbackClassName={styles.queueFallback} lazy />
+                            </Link>
+                            <div><Link to={projectUrl(project)}>{project.title}</Link><span>{communityText('by')}{' '}<UserLink username={project.owner}>{project.owner}</UserLink></span></div>
+                            {resultScore(project, audienceJudged, communityText)}
+                        </li>
+                    ))}
+                </ol>
+            ) : null}
+        </React.Fragment>
     );
 };
 
@@ -663,7 +721,9 @@ const Challenge = ({id, space, user, login, load}) => {
                             {audienceJudged ? (
                                 <div className={styles.sidebarBlock}>
                                     <h2><Star size={16} aria-hidden="true" />{communityText('Audience vote')}</h2>
-                                    <p className={styles.sidebarText}>{communityText('Once submissions close, anyone signed in can rate each entry from 1 to 5 stars. Ratings stay hidden until voting ends, and the entry with the highest average rating wins.')}</p>
+                                    <p className={styles.sidebarText}>{currentPhase === 'results' ? communityText('Voting has closed. Signed-in members rated each entry from 1 to 5 stars, and the entry with the highest average rating won.') :
+                                        currentPhase === 'awaiting-results' ? communityText('Voting has closed. The winner will be announced when the host publishes the results.') :
+                                            communityText('Once submissions close, anyone signed in can rate each entry from 1 to 5 stars. Ratings stay hidden until voting ends, and the entry with the highest average rating wins.')}</p>
                                 </div>
                             ) : null}
                             {!audienceJudged && space.communityVoting ? <p className={styles.sidebarText}>{communityText('Audience ratings are open during judging. They are shown next to each entry but do not decide the winner.')}</p> : null}
@@ -710,7 +770,8 @@ const Challenge = ({id, space, user, login, load}) => {
                             count={space.projects.length}
                             lead={currentPhase === 'submissions' ? communityText('Enter a shared or unlisted project before submissions close.') :
                                 currentPhase === 'judging' && (audienceJudged || space.communityVoting) ? communityText('Click the stars to rate an entry. Ratings stay hidden until voting ends, and you can change yours until then.') :
-                                    communityText('Submissions are locked for this challenge.')}
+                                    currentPhase === 'results' ? communityText('This challenge has finished. Entries are shown in their final ranking.') :
+                                        communityText('Submissions are locked for this challenge.')}
                             actions={currentPhase === 'submissions' && (space.openSubmissions || space.canManage) ? <SpaceProjectPicker space={liveSpace} onAdded={load} /> : null}
                         />
                         {space.projects.length ? <CardGrid>{space.projects.map(project => <Entry key={project.id} challengeId={id} project={project} challenge={liveSpace} user={user} login={login} load={load} onError={setError} />)}</CardGrid> : <EmptyState icon={Trophy} title={communityText('No submissions yet')}>{communityText('The first entry will appear here.')}</EmptyState>}
@@ -719,7 +780,7 @@ const Challenge = ({id, space, user, login, load}) => {
                 {tab === 'results' ? (
                     <section>
                         <SectionHeading icon={Medal} title={communityText('Final results')} lead={audienceJudged ? communityText('Ranked by average audience rating. Ties go to the entry with more ratings.') : communityText('Ranked by the judges using the criteria shown on the overview.')} />
-                        {space.projects.length ? <ol className={styles.resultList}>{space.projects.map(project => <li key={project.id}><span className={project.place <= 3 ? styles.resultPlaceWinner : styles.resultPlace}>{project.place ? `#${project.place}` : '-'}</span><div><Link to={`/project/${project.id}`}>{project.title}</Link><span>{communityText('by')}{' '}<UserLink username={project.owner}>{project.owner}</UserLink></span></div>{audienceJudged ? (project.audienceVoteCount ? <strong>{challengeScore(project.audienceScore)}<small>{communityText('/ 5 from {value1} ratings', {value1: project.audienceVoteCount})}</small></strong> : <small>{communityText('No ratings')}</small>) : <strong>{challengeScore(project.judgeScore)}<small>{communityText('/ 10')}</small></strong>}</li>)}</ol> : <EmptyState compact icon={Medal} title={communityText('No results')}>{communityText('This challenge did not receive any submissions.')}</EmptyState>}
+                        {space.projects.length ? <Results projects={space.projects} audienceJudged={audienceJudged} /> : <EmptyState compact icon={Medal} title={communityText('No results')}>{communityText('This challenge did not receive any submissions.')}</EmptyState>}
                     </section>
                 ) : null}
                 {tab === 'judging' ? (
