@@ -1508,7 +1508,6 @@
   "Starts soon": "Starts soon",
   "Judging": "Judging",
   "Results pending": "Results pending",
-  "Results published": "Results published",
   "Finding this commit": "Finding this commit",
   "Reading project details": "Reading project details",
   "Files at this commit": "Files at this commit",
@@ -2769,5 +2768,13 @@
   "Credits you spent and earned on MistWarp.": "Credits you spent and earned on MistWarp.",
   "See your full wallet on rotur.dev": "See your full wallet on rotur.dev",
   "No MistWarp transactions yet": "No MistWarp transactions yet",
-  "Buying projects and game items, donations and sales show up here.": "Buying projects and game items, donations and sales show up here."
+  "Buying projects and game items, donations and sales show up here.": "Buying projects and game items, donations and sales show up here.",
+  "Finished": "Finished",
+  "Winner announced": "Winner announced",
+  "Top three": "Top three",
+  "Other entries": "Other entries",
+  "All entries": "All entries",
+  "Voting has closed. Signed-in members rated each entry from 1 to 5 stars, and the entry with the highest average rating won.": "Voting has closed. Signed-in members rated each entry from 1 to 5 stars, and the entry with the highest average rating won.",
+  "Voting has closed. The winner will be announced when the host publishes the results.": "Voting has closed. The winner will be announced when the host publishes the results.",
+  "This challenge has finished. Entries are shown in their final ranking.": "This challenge has finished. Entries are shown in their final ranking."
 }
