@@ -227,7 +227,7 @@ export const selectRecentWinner = (spaces, now = Date.now()) => spaces
     .sort((a, b) => Number(b.resultsPublishedAt) - Number(a.resultsPublishedAt))[0];
 
 const ChallengeWinnerCard = ({challenge}) => {
-    const {text: communityText} = useCommunityText();
+    const {text: communityText, rich: communityRich} = useCommunityText();
     const winner = challenge.winner;
     const [burst, replay] = useCelebration(`challenge:${challenge._id}:${winner.id}`);
     return (
@@ -242,7 +242,7 @@ const ChallengeWinnerCard = ({challenge}) => {
             <div className={styles.winnerText}>
                 <h2><Link to={projectUrl(winner)} onClick={() => track('challenge_winner_open', {source: 'home'})}>{winner.title}</Link></h2>
                 <p>{communityText('Winner of {value1}', {value1: challenge.title})}</p>
-                <p>{communityText('by')}{' '}<UserLink username={winner.owner}>{winner.owner}</UserLink></p>
+                <p>{communityRich('by {user}', {user: <UserLink username={winner.owner}>{winner.owner}</UserLink>})}</p>
             </div>
             <div className={styles.winnerActions}>
                 <Button as={Link} to={projectUrl(winner)} variant="primary" onClick={() => track('challenge_winner_open', {source: 'home'})}><Play size={16} />{communityText('Play the winner')}</Button>

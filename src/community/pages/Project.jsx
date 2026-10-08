@@ -249,7 +249,7 @@ const Project = () => {
 
     useEffect(() => {
         if (project) setTitle(project.title || '');
-    }, [project]);
+    }, [project?.id, project?.title]);
 
     useEffect(() => {
         if (!project) return;
@@ -373,7 +373,7 @@ const Project = () => {
             if (actionContextRef.current !== context) return;
             setActionError(null);
             setProject(data.project);
-            setProjectLoadContext(context);
+            setProjectLoadContext(id);
         } catch (e) {
             if (actionContextRef.current === context) {
                 setActionError(e.message || 'Could not update visibility.');
@@ -399,7 +399,7 @@ const Project = () => {
             const fresh = await buyProject(id);
             if (actionContextRef.current !== context) return;
             setProject(fresh);
-            setProjectLoadContext(context);
+            setProjectLoadContext(id);
             setConfirmBuy(false);
         } catch (e) {
             if (actionContextRef.current !== context) return;
@@ -421,7 +421,7 @@ const Project = () => {
             if (actionContextRef.current !== context) return;
             setActionError(null);
             setProject(data.project);
-            setProjectLoadContext(context);
+            setProjectLoadContext(id);
         } catch (e) {
             if (actionContextRef.current === context) {
                 setActionError(e.message || 'Could not update comments.');
@@ -450,12 +450,14 @@ const Project = () => {
     };
 
     const toggleLibrary = async () => {
+        if (!project) return;
         const context = actionContextRef.current;
         const actionKey = beginAction('library');
         if (!actionKey) return;
         setSavingLibrary(true);
         try {
             let result;
+            const nextSaved = !project.saved;
             if (project.saved) {
                 result = await api.unsaveProject(id);
             } else {
@@ -463,11 +465,12 @@ const Project = () => {
             }
             if (actionContextRef.current !== context) return;
             setProject(current => {
-                const wasSaved = Boolean(current.saved);
-                const fallbackCount = Math.max(0, (Number(current.saveCount) || 0) + (wasSaved ? -1 : 1));
+                if (!current) return current;
+                const count = Number(current.saveCount) || 0;
+                const fallbackCount = Boolean(current.saved) === nextSaved ? count : Math.max(0, count + (nextSaved ? 1 : -1));
                 return {
                     ...current,
-                    saved: !wasSaved,
+                    saved: nextSaved,
                     saveCount: Number.isFinite(result.saves) ? result.saves : fallbackCount
                 };
             });

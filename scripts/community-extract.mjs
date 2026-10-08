@@ -18,6 +18,7 @@ const record = (text, source, line) => {
     if (!locations[text]) locations[text] = [];
     locations[text].push(`${path.relative(root, source)}:${line}`);
 };
+const MESSAGE_FUNCTIONS = ['communityText', 'communityRich', 'text', 't', 'formatCommunityMessage'];
 const visit = directory => {
     for (const entry of fs.readdirSync(directory, {withFileTypes: true})) {
         const source = path.join(directory, entry.name);
@@ -28,7 +29,7 @@ const visit = directory => {
         const ast = parse(fs.readFileSync(source, 'utf8'), {sourceType: 'module', plugins: ['jsx']});
         traverse(ast, {
             CallExpression ({node}) {
-                if (!['communityText', 'text', 't', 'formatCommunityMessage'].includes(node.callee.name)) return;
+                if (!MESSAGE_FUNCTIONS.includes(node.callee.name)) return;
                 const argument = node.arguments[0];
                 if (argument?.type === 'StringLiteral') record(argument.value, source, argument.loc.start.line);
             },

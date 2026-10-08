@@ -5,7 +5,7 @@ import React from 'react';
 import {Clock3, Gamepad2} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import {projectUrl} from '../api';
-import {formatPlaytime, timeAgo} from '../format';
+import {formatPlaytime, timeAgoText} from '../format';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import Button from './ui/Button.jsx';
 import EmptyState from './ui/EmptyState.jsx';
@@ -15,16 +15,13 @@ import styles from './PlaytimeLibrary.module.css';
 const lastPlayed = value => {
     const timestamp = Number(value);
     if (!(timestamp > 0)) return '';
-    const relative = timeAgo(timestamp);
-    return relative === 'just now' ?
-        formatCommunityMessage('Played just now') :
-        formatCommunityMessage('Played {value1} ago', {value1: relative});
+    return formatCommunityMessage('Played {value1}', {value1: timeAgoText(timestamp)});
 };
 
 const PlaytimeLibrary = ({
     projects, total, visible, self, loading, error, moreBusy, hasMore, onRetry, onLoadMore
 }) => {
-    const {text: communityText} = useCommunityText();
+    const {text: communityText, rich: communityRich} = useCommunityText();
     if (loading) return <StatusMessage compact>{communityText('Loading game library…')}</StatusMessage>;
     if (error) {
         return (
@@ -75,8 +72,9 @@ const PlaytimeLibrary = ({
                         <span className={styles.details}>
                             <Link to={projectUrl(project)}><strong>{project.title}</strong></Link>
                             <small>
-                                {communityText('by')}{' '}
-                                <a href={`/users/${encodeURIComponent(project.owner)}`}>{project.owner}</a>
+                                {communityRich('by {user}', {
+                                    user: <a href={`/users/${encodeURIComponent(project.owner)}`}>{project.owner}</a>
+                                })}
                             </small>
                         </span>
                         <span className={styles.playtime}>

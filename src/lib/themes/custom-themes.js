@@ -791,6 +791,7 @@ class CustomThemeManager {
                 }
             }
         } catch (e) {
+            if (e && e.name === 'SecurityError') return;
             console.error('Failed to load custom themes from storage:', e);
         }
     }

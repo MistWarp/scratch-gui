@@ -8,7 +8,7 @@ import Button from '../../components/ui/Button.jsx';
 import EmptyState from '../../components/ui/EmptyState.jsx';
 import SectionHeading from '../../components/ui/SectionHeading.jsx';
 import StatusMessage from '../../components/ui/StatusMessage.jsx';
-import {timeAgo} from '../../format';
+import {timeAgoText} from '../../format';
 import styles from '../Admin.module.css';
 import EvidencePanel from './EvidencePanel.jsx';
 import {adminUserPath} from './admin-links.js';
@@ -67,7 +67,7 @@ const ReportsSection = ({reports, openCount, replyToSupport, act, warnFromReport
                                     )}
                                 </span>
                                 <span className={styles.rowMeta}>
-                                    {communityText('Reported by @{value1}{value2}', {value1: report.reporter, value2: timeAgo(report.created) ? ` · ${timeAgo(report.created)} ago` : ''})}
+                                    {communityText('Reported by @{value1}{value2}', {value1: report.reporter, value2: timeAgoText(report.created) ? ` · ${timeAgoText(report.created)}` : ''})}
                                     {report.type !== 'support' && report.context ? communityText(' · in {value1}', {value1: report.context}) : ''}
                                 </span>
                                 <span className={styles.reason}>{report.reason}</span>

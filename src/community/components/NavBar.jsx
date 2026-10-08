@@ -45,7 +45,7 @@ const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, 
                     <>
                         <ProjectThumbnail project={project} className={styles.suggestionThumb} fallbackClassName={styles.suggestionThumbFallback} />
                         <span>{project.title}</span>
-                        <span className={styles.suggestionMeta}>{communityText('by ')}{project.owner}</span>
+                        <span className={styles.suggestionMeta}>{communityText('by {user}', {user: project.owner})}</span>
                     </>
                 )
             }))

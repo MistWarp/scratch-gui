@@ -65,7 +65,7 @@ const registerKey = async account => {
     checkAccount(account);
     if (!response.ok) {
         const error = new Error(record.error || `Signing key registration failed (${response.status})`);
-        if (response.status >= 400 && response.status < 500) {
+        if (response.status === 400 || response.status === 403 || response.status === 409) {
             refused.add(account);
             error.signingUnavailable = true;
         }

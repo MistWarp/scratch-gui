@@ -342,7 +342,11 @@ const CommentThread = ({
     const [replyTo, setReplyTo] = useState(null);
     const [replyText, setReplyText] = useState('');
     const [busy, setBusy] = useState(false);
-    const [error, setError] = useState(null);
+    const [errorState, setErrorState] = useState(null);
+    const setError = useCallback((message, target = 'general') => {
+        setErrorState(message ? {text: message, target} : null);
+    }, []);
+    const errorFor = target => (errorState && errorState.target === target ? errorState.text : null);
     const [loadingComments, setLoadingComments] = useState(true);
     const [loadFailed, setLoadFailed] = useState(false);
     const [reportId, setReportId] = useState(null);
@@ -359,6 +363,7 @@ const CommentThread = ({
     const [nextOffset, setNextOffset] = useState(0);
     const [loadingMore, setLoadingMore] = useState(false);
     const [moreFailed, setMoreFailed] = useState(false);
+    const failedFullLoad = useRef('');
     const [allCommentsLoaded, setAllCommentsLoaded] = useState(false);
     const sourceRef = useRef(source);
     const viewerRef = useRef(viewerName);
@@ -484,36 +489,45 @@ const CommentThread = ({
         load();
     }, [beginExtraLoad, load]);
 
+    const latestComments = useRef(comments);
+    latestComments.current = comments;
+    const commentChanges = useRef(null);
+    commentChanges.current = {
+        created: comment => {
+            if (latestComments.current.some(item => item.id === comment.id)) return;
+            latestComments.current = addCreatedComment(latestComments.current, comment);
+            setComments(current => (current.some(item => item.id === comment.id) ?
+                current :
+                addCreatedComment(current, comment)));
+            if (!comment.parent) {
+                setTotalRoots(total => total + 1);
+                setNextOffset(offset => offset + 1);
+            }
+            if (onCountChange) onCountChange(1);
+        },
+        removed: commentId => {
+            const gone = item => item.id === commentId || item.parent === commentId;
+            const removed = latestComments.current.filter(gone);
+            if (!removed.length) return;
+            latestComments.current = latestComments.current.filter(item => !gone(item));
+            setComments(current => current.filter(item => !gone(item)));
+            if (removed.some(item => !item.parent)) {
+                setTotalRoots(total => Math.max(0, total - 1));
+                setNextOffset(offset => Math.max(0, offset - 1));
+            }
+            if (onCountChange) onCountChange(-removed.length);
+        }
+    };
+
     useEffect(() => {
         if (!source.subscribe) return;
         return source.subscribe(event => {
             if (event.type === 'comment_created' && event.comment) {
-                setComments(current => {
-                    if (current.some(comment => comment.id === event.comment.id)) return current;
-                    if (!event.comment.parent) {
-                        setTotalRoots(total => total + 1);
-                        setNextOffset(offset => offset + 1);
-                    }
-                    if (onCountChange) onCountChange(1);
-                    return addCreatedComment(current, event.comment);
-                });
+                commentChanges.current.created(event.comment);
                 return;
             }
             if (event.type === 'comment_deleted' && event.commentId) {
-                setComments(current => {
-                    const removed = current.filter(comment => (
-                        comment.id === event.commentId || comment.parent === event.commentId
-                    ));
-                    if (!removed.length) return current;
-                    if (removed.some(comment => !comment.parent)) {
-                        setTotalRoots(total => Math.max(0, total - 1));
-                        setNextOffset(offset => Math.max(0, offset - 1));
-                    }
-                    if (onCountChange) onCountChange(-removed.length);
-                    return current.filter(comment => (
-                        comment.id !== event.commentId && comment.parent !== event.commentId
-                    ));
-                });
+                commentChanges.current.removed(event.commentId);
                 return;
             }
             if (event.type === 'comment_edited' && event.comment) {
@@ -531,7 +545,7 @@ const CommentThread = ({
                 }));
             }
         });
-    }, [source, onCountChange]);
+    }, [source]);
 
     const loadMore = async () => {
         if (loadingMore || nextOffset >= totalRoots) return;
@@ -559,6 +573,8 @@ const CommentThread = ({
     useEffect(() => {
         if (!projectComments || allCommentsLoaded || loadingComments || loadingMore) return;
         if (!search.trim() && kindFilter === 'all') return;
+        const loadKey = `${search.trim()}\u0000${kindFilter}\u0000${sortOrder}`;
+        if (failedFullLoad.current === loadKey) return;
         const actionSource = source;
         const actionViewer = viewerName;
         const fresh = beginExtraLoad();
@@ -578,6 +594,7 @@ const CommentThread = ({
                     setLoadingMore(false);
                 }))
                 .catch(fresh(() => {
+                    failedFullLoad.current = loadKey;
                     setMoreFailed(true);
                     setLoadingMore(false);
                 }));
@@ -606,7 +623,7 @@ const CommentThread = ({
         if (!text.trim()) return;
         const attachedDonation = parent ? 0 : parseCommentDonation(donation);
         if (attachedDonation === null) {
-            setError(communityText('Enter a donation between 0.01 and 100000 credits.'));
+            setError(communityText('Enter a donation between 0.01 and 100000 credits.'), 'root');
             return;
         }
         const actionSource = source;
@@ -625,17 +642,7 @@ const CommentThread = ({
             }) : await actionSource.add(text.trim(), parent, commentKind);
             if (!parent) writeSessionDraft(`comment:${actionDraftKey}`, '');
             if (sourceRef.current !== actionSource || viewerRef.current !== actionViewer) return;
-            if (data && data.comment) {
-                setComments(current => {
-                    if (current.some(comment => comment.id === data.comment.id)) return current;
-                    if (!data.comment.parent) {
-                        setTotalRoots(total => total + 1);
-                        setNextOffset(offset => offset + 1);
-                    }
-                    if (onCountChange) onCountChange(1);
-                    return addCreatedComment(current, data.comment);
-                });
-            }
+            if (data && data.comment) commentChanges.current.created(data.comment);
             if (parent) {
                 setReplyText('');
                 setReplyTo(null);
@@ -648,7 +655,7 @@ const CommentThread = ({
             if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {
                 setError(e.cancelled ?
                     communityText('Payment cancelled.') :
-                    (e.message || communityText('Could not post comment.')));
+                    (e.message || communityText('Could not post comment.')), parent || 'root');
             }
         } finally {
             releaseAction();
@@ -666,24 +673,14 @@ const CommentThread = ({
         const releaseAction = beginAction(actionSource, actionViewer, `remove:${commentId}`);
         if (!releaseAction) return;
         setRemovingId(commentId);
-        const removingComment = comments.find(comment => comment.id === commentId);
         try {
             await actionSource.remove(commentId);
             if (sourceRef.current !== actionSource || viewerRef.current !== actionViewer) return;
-            setComments(current => {
-                const removedCount = current.filter(c => c.id === commentId || c.parent === commentId).length;
-                if (!removedCount) return current;
-                if (removingComment && !removingComment.parent) {
-                    setTotalRoots(total => Math.max(0, total - 1));
-                    setNextOffset(offset => Math.max(0, offset - 1));
-                }
-                if (onCountChange) onCountChange(-removedCount);
-                return current.filter(c => c.id !== commentId && c.parent !== commentId);
-            });
+            commentChanges.current.removed(commentId);
             setDeleteId(null);
         } catch (e) {
             if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {
-                setError(e.message || communityText('Could not delete comment.'));
+                setError(e.message || communityText('Could not delete comment.'), 'delete');
             }
         } finally {
             releaseAction();
@@ -847,7 +844,7 @@ const CommentThread = ({
                     placeholder={communityText('Add a comment')}
                     ariaLabel={communityText('Add a comment')}
                     busy={busy}
-                    error={replyTo === null ? error : null}
+                    error={errorFor('root') || (replyTo === null ? errorFor('general') : null)}
                     kind={projectComments ? kind : null}
                     onKindChange={projectComments ? setKind : null}
                     composerAction={composerAction}
@@ -1019,7 +1016,7 @@ const CommentThread = ({
                                         placeholder={communityText('Reply to {value1}', {value1: comment.author})}
                                         ariaLabel={communityText('Write a reply')}
                                         busy={busy}
-                                        error={error}
+                                        error={errorFor(comment.id)}
                                     />
                                 ) : null}
                             </div>
@@ -1069,7 +1066,7 @@ const CommentThread = ({
                             {communityText('No comments match those filters.')}
                         </EmptyState>
                     ) : null}
-                    {!loadingComments && !loadFailed && !comments.length ? (
+                    {!disabled && !loadingComments && !loadFailed && !comments.length ? (
                         <EmptyState compact icon={MessageSquare} title={communityText('No comments yet')}>
                             {communityText('Be the first to leave a comment.')}
                         </EmptyState>
@@ -1093,7 +1090,7 @@ const CommentThread = ({
                     confirmLabel={communityText('Delete comment')}
                     busy={removingId !== null}
                     busyLabel={communityText('Deleting…')}
-                    error={error}
+                    error={errorFor('delete')}
                     onConfirm={() => remove(deleteComment.id)}
                     onCancel={() => setDeleteId(null)}
                 >

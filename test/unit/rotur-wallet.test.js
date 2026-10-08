@@ -50,7 +50,7 @@ describe('Rotur wallet', () => {
 
     test('treats a hidden balance as not allowed', async () => {
         me.get.mockResolvedValue({username: 'sam'});
-        expect((await getWallet()).allowed).toBe(false);
+        expect(await getWallet()).toMatchObject({allowed: false, hidden: true});
     });
 
     test('claims daily credits, asking for the permission from the click', async () => {

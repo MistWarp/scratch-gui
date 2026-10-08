@@ -1,4 +1,4 @@
-import {getCommunityLocale} from '../locale.js';
+import {formatCommunityMessage, getCommunityLocale} from '../locale.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useRef, useState} from 'react';
@@ -48,7 +48,7 @@ const timestamp = value => {
 
 const dateTime = value => {
     const parsed = timestamp(value);
-    return parsed ? new Date(parsed).toLocaleString(getCommunityLocale(), {dateStyle: 'medium', timeStyle: 'short'}) : 'Not set';
+    return parsed ? new Date(parsed).toLocaleString(getCommunityLocale(), {dateStyle: 'medium', timeStyle: 'short'}) : formatCommunityMessage('Not set');
 };
 
 export const challengePhase = (space, now) => {
@@ -137,6 +137,20 @@ export const nextUnscoredEntry = (projects, currentId) => {
 
 const STAR_VALUES = [1, 2, 3, 4, 5];
 
+const RADIO_STEPS = {ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1};
+
+const radioKeyTarget = (event, index, count) => {
+    let next = null;
+    if (event.key in RADIO_STEPS) next = Math.max(0, Math.min(count - 1, index + RADIO_STEPS[event.key]));
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = count - 1;
+    if (next === null) return null;
+    event.preventDefault();
+    const button = event.currentTarget.parentElement.children[next];
+    if (button) button.focus();
+    return next;
+};
+
 const StarRating = ({className, average, count, myVote, revealed, interactive, busy, note, title, onRate}) => {
     const {text: communityText} = useCommunityText();
     const [preview, setPreview] = useState(0);
@@ -156,12 +170,14 @@ const StarRating = ({className, average, count, myVote, revealed, interactive, b
         <div className={className ? `${styles.rating} ${className}` : styles.rating} title={title || label}>
             {interactive ? (
                 <div className={preview ? styles.starsPreview : styles.stars} role="radiogroup" aria-label={communityText('Your rating')} onMouseLeave={() => setPreview(0)}>
-                    {STAR_VALUES.map(value => (
+                    {STAR_VALUES.map((value, index) => (
                         <button
                             key={value}
                             type="button"
                             role="radio"
                             aria-checked={myVote === value}
+                            tabIndex={myVote === value || (!myVote && index === 0) ? 0 : -1}
+                            onKeyDown={event => radioKeyTarget(event, index, STAR_VALUES.length)}
                             aria-label={communityText('Rate {value1} out of 5', {value1: value})}
                             disabled={busy}
                             onMouseEnter={() => setPreview(value)}
@@ -187,7 +203,7 @@ const StarRating = ({className, average, count, myVote, revealed, interactive, b
 };
 
 const WinnerBanner = ({challengeId, winner, audienceJudged}) => {
-    const {text: communityText} = useCommunityText();
+    const {text: communityText, rich: communityRich} = useCommunityText();
     const [burst, replay] = useCelebration(`challenge:${challengeId}:${winner.id}`);
     return (
         <section className={styles.winner} aria-label={communityText('Challenge winner')}>
@@ -200,7 +216,7 @@ const WinnerBanner = ({challengeId, winner, audienceJudged}) => {
             </div>
             <div className={styles.winnerText}>
                 <h2><Link to={projectUrl(winner)}>{winner.title}</Link></h2>
-                <p className={styles.winnerBy}>{communityText('Winning entry by')}{' '}<UserLink username={winner.owner}>{winner.owner}</UserLink></p>
+                <p className={styles.winnerBy}>{communityRich('Winning entry by {user}', {user: <UserLink username={winner.owner}>{winner.owner}</UserLink>})}</p>
                 {audienceJudged ? (
                     <StarRating
                         className={styles.winnerRating}
@@ -252,7 +268,7 @@ const Entry = ({challengeId, project, challenge, user, login, load, onError}) =>
             if (currentContext.current === actionContext) await load();
         } catch (requestError) {
             if (currentContext.current === actionContext) {
-                onError(requestError.message || 'Could not save your rating.');
+                onError(requestError.message || communityText('Could not save your rating.'));
             }
         } finally {
             releaseVote();
@@ -293,6 +309,11 @@ const ScoreScale = ({label, value, disabled, onChange}) => (
                 type="button"
                 role="radio"
                 aria-checked={Number(value) === step}
+                tabIndex={Number(value) === step || (!(Number(value) >= 1) && step === 1) ? 0 : -1}
+                onKeyDown={event => {
+                    const next = radioKeyTarget(event, step - 1, 10);
+                    if (next !== null) onChange(next + 1);
+                }}
                 className={Number(value) === step ? styles.scaleActive : ''}
                 disabled={disabled}
                 onClick={() => onChange(step)}
@@ -301,11 +322,10 @@ const ScoreScale = ({label, value, disabled, onChange}) => (
     </div>
 );
 
-const JudgingWorkspace = ({challengeId, projects, criteria, load}) => {
-    const {text: communityText} = useCommunityText();
+const JudgingWorkspace = ({challengeId, projects, criteria, drafts, setDrafts, load}) => {
+    const {text: communityText, rich: communityRich} = useCommunityText();
     const firstUnscored = () => (nextUnscoredEntry(projects, '') || projects[0] || {}).id || '';
     const [selectedId, setSelectedId] = useState(firstUnscored);
-    const [drafts, setDrafts] = useState({});
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState({text: '', error: false});
     const saveInFlight = useRef(false);
@@ -315,7 +335,6 @@ const JudgingWorkspace = ({challengeId, projects, criteria, load}) => {
 
     useEffect(() => {
         setSelectedId(firstUnscored());
-        setDrafts({});
         setSaving(false);
         setMessage({text: '', error: false});
     }, [challengeId]);
@@ -357,18 +376,18 @@ const JudgingWorkspace = ({challengeId, projects, criteria, load}) => {
                 feedback: draft.feedback.trim()
             });
             if (currentId.current !== actionId) return;
+            await load().catch(() => {});
+            if (currentId.current !== actionId) return;
             setDrafts(current => {
                 const next = {...current};
                 delete next[project.id];
                 return next;
             });
-            await load();
-            if (currentId.current !== actionId) return;
             const next = advance ? nextUnscoredEntry(projects, project.id) : null;
             if (next) select(next.id);
             setMessage({text: next ? communityText('Saved {value1}.', {value1: project.title}) : communityText('Score saved.'), error: false});
         } catch (error) {
-            if (currentId.current === actionId) setMessage({text: error.message || 'Could not save this score.', error: true});
+            if (currentId.current === actionId) setMessage({text: error.message || communityText('Could not save this score.'), error: true});
         } finally {
             releaseSave();
             if (currentId.current === actionId) setSaving(false);
@@ -413,7 +432,7 @@ const JudgingWorkspace = ({challengeId, projects, criteria, load}) => {
                         </Link>
                         <div className={styles.judgeEntryText}>
                             <h3>{selected.title}</h3>
-                            <span>{communityText('by')}{' '}<UserLink username={selected.owner}>{selected.owner}</UserLink></span>
+                            <span>{communityRich('by {user}', {user: <UserLink username={selected.owner}>{selected.owner}</UserLink>})}</span>
                             <Button as={Link} to={projectUrl(selected)} target="_blank" rel="noopener noreferrer"><ExternalLink size={15} />{communityText('Play in new tab')}</Button>
                         </div>
                     </header>
@@ -522,7 +541,7 @@ const resultScore = (project, audienceJudged, communityText) => {
 };
 
 const Results = ({projects, audienceJudged}) => {
-    const {text: communityText} = useCommunityText();
+    const {text: communityText, rich: communityRich} = useCommunityText();
     const podium = projects.filter(project => project.place && project.place <= 3);
     const rest = projects.filter(project => !project.place || project.place > 3);
     return (
@@ -537,7 +556,7 @@ const Results = ({projects, audienceJudged}) => {
                             <span className={styles.medal} data-place={project.place}>{`#${project.place}`}</span>
                             <div className={styles.podiumText}>
                                 <Link to={projectUrl(project)}>{project.title}</Link>
-                                <span>{communityText('by')}{' '}<UserLink username={project.owner}>{project.owner}</UserLink></span>
+                                <span>{communityRich('by {user}', {user: <UserLink username={project.owner}>{project.owner}</UserLink>})}</span>
                             </div>
                             <div className={styles.podiumScore}>{resultScore(project, audienceJudged, communityText)}</div>
                         </li>
@@ -552,7 +571,7 @@ const Results = ({projects, audienceJudged}) => {
                             <Link to={projectUrl(project)} className={styles.resultThumb} tabIndex={-1} aria-hidden="true">
                                 <ProjectThumbnail project={project} fallbackClassName={styles.queueFallback} lazy />
                             </Link>
-                            <div><Link to={projectUrl(project)}>{project.title}</Link><span>{communityText('by')}{' '}<UserLink username={project.owner}>{project.owner}</UserLink></span></div>
+                            <div><Link to={projectUrl(project)}>{project.title}</Link><span>{communityRich('by {user}', {user: <UserLink username={project.owner}>{project.owner}</UserLink>})}</span></div>
                             {resultScore(project, audienceJudged, communityText)}
                         </li>
                     ))}
@@ -563,15 +582,17 @@ const Results = ({projects, audienceJudged}) => {
 };
 
 const Challenge = ({id, space, user, login, load}) => {
-    const {text: communityText} = useCommunityText();
+    const {text: communityText, rich: communityRich} = useCommunityText();
     const [tab, setTab] = useState(space.phase === 'results' ? 'results' : 'overview');
     const [error, setError] = useState('');
     const [actionBusy, setActionBusy] = useState('');
+    const [judgeDrafts, setJudgeDrafts] = useState({});
     const [now, setNow] = useState(Date.now());
     const actionInFlight = useRef(new Set());
     const currentId = useRef(id);
     currentId.current = id;
-    const currentPhase = challengePhase(space, now);
+    const clockPhase = challengePhase(space, now);
+    const currentPhase = space.phase || clockPhase;
     const audienceJudged = challengeAudienceJudged(space);
     const phase = (audienceJudged ? AUDIENCE_PHASES : PHASES)[currentPhase] || PHASES.upcoming;
     const liveSpace = {...space, phase: currentPhase};
@@ -580,6 +601,9 @@ const Challenge = ({id, space, user, login, load}) => {
     const winner = currentPhase === 'results' ? challengeWinner(space) : null;
     const winnerBadges = winner && winner.owner ? {[String(winner.owner).toLowerCase()]: communityText('Winner')} : null;
     const commentSource = useSpaceCommentSource(id);
+    const viewerKey = user && user.username ? user.username.toLowerCase() : '';
+    const hasSubmitted = Boolean(viewerKey) && (space.projects || []).some(project => String(project.owner || '').toLowerCase() === viewerKey);
+    const judgeQueue = (space.projects || []).filter(project => !viewerKey || String(project.owner || '').toLowerCase() !== viewerKey);
 
     useEffect(() => {
         const timer = setInterval(() => setNow(Date.now()), 30000);
@@ -589,7 +613,25 @@ const Challenge = ({id, space, user, login, load}) => {
     useEffect(() => {
         setActionBusy('');
         setError('');
+        setJudgeDrafts({});
     }, [id]);
+
+    const phaseCheck = useRef({phase: '', attempts: 0, at: 0});
+    useEffect(() => {
+        if (!space.phase || clockPhase === space.phase) return;
+        const check = phaseCheck.current;
+        if (check.phase !== clockPhase) {
+            phaseCheck.current = {phase: clockPhase, attempts: 0, at: 0};
+        } else if (Date.now() - check.at < Math.min(30000 * (2 ** check.attempts), 600000)) {
+            return;
+        }
+        phaseCheck.current = {
+            phase: clockPhase,
+            attempts: phaseCheck.current.attempts + 1,
+            at: Date.now()
+        };
+        load().catch(() => {});
+    }, [clockPhase, space.phase, now, load]);
 
     const respondToJudgeInvite = async accepted => {
         const actionId = id;
@@ -605,7 +647,7 @@ const Challenge = ({id, space, user, login, load}) => {
             if (currentId.current === actionId) await load();
         } catch (requestError) {
             if (currentId.current === actionId) {
-                setError(requestError.message || 'Could not respond to the invitation.');
+                setError(requestError.message || communityText('Could not respond to the invitation.'));
             }
         } finally {
             releaseAction();
@@ -616,6 +658,10 @@ const Challenge = ({id, space, user, login, load}) => {
     const toggleJoined = async () => {
         if (!user) {
             login();
+            return;
+        }
+        if (space.joined && hasSubmitted) {
+            setError(communityText('Remove your submission before leaving the challenge.'));
             return;
         }
         const actionId = id;
@@ -632,7 +678,7 @@ const Challenge = ({id, space, user, login, load}) => {
             if (currentId.current === actionId) await load();
         } catch (requestError) {
             if (currentId.current === actionId) {
-                setError(requestError.message || 'Could not update your participation.');
+                setError(requestError.message || communityText('Could not update your participation.'));
             }
         } finally {
             releaseAction();
@@ -658,7 +704,7 @@ const Challenge = ({id, space, user, login, load}) => {
                 <Notice
                     icon={Gavel}
                     className={styles.invite}
-                    title={<><UserLink username={space.owner}>{space.owner}</UserLink>{' '}{communityText('invited you to judge this challenge.')}</>}
+                    title={communityRich('{user} invited you to judge this challenge.', {user: <UserLink username={space.owner}>{space.owner}</UserLink>})}
                     action={(
                         <React.Fragment>
                             <Button variant="primary" busy={actionBusy === 'invite'} busyLabel={communityText('Responding…')} disabled={Boolean(actionBusy)} onClick={() => respondToJudgeInvite(true)}>{communityText('Accept')}</Button>
@@ -691,7 +737,7 @@ const Challenge = ({id, space, user, login, load}) => {
                 <Timeline space={space} phase={currentPhase} now={now} audienceJudged={audienceJudged} />
             </PageHeader>
             {winner ? <WinnerBanner challengeId={id} winner={winner} audienceJudged={audienceJudged} /> : null}
-            <UnderlineTabs items={tabs} value={tab} onChange={setTab} className={styles.tabs} ariaLabel="Challenge sections" idPrefix="challenge" />
+            <UnderlineTabs items={tabs} value={tab} onChange={setTab} className={styles.tabs} ariaLabel={communityText('Challenge sections')} idPrefix="challenge" />
             {error ? <Notice variant="error" className={styles.pageNotice}>{error}</Notice> : null}
             <div {...tabPanelProps('challenge', tab)}>
                 {tab === 'overview' ? (
@@ -786,7 +832,7 @@ const Challenge = ({id, space, user, login, load}) => {
                 {tab === 'judging' ? (
                     <section>
                         <SectionHeading icon={Gavel} title={communityText('Judge entries')} lead={communityText('Play each entry, then score it from 1 to 10 on every criterion. Only the host sees your feedback.')} />
-                        {space.projects.length ? <JudgingWorkspace challengeId={id} projects={space.projects} criteria={criteria} load={load} /> : <EmptyState icon={Gavel} title={communityText('No entries to judge')}>{communityText('Submissions will appear here after the deadline.')}</EmptyState>}
+                        {judgeQueue.length ? <JudgingWorkspace challengeId={id} projects={judgeQueue} criteria={criteria} drafts={judgeDrafts} setDrafts={setJudgeDrafts} load={load} /> : <EmptyState icon={Gavel} title={communityText('No entries to judge')}>{space.projects.length ? communityText('The only entry is your own, and judges cannot score their own entry.') : communityText('Submissions will appear here after the deadline.')}</EmptyState>}
                     </section>
                 ) : null}
             </div>

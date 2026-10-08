@@ -17,9 +17,10 @@ import EmptyState from '../../components/ui/EmptyState.jsx';
 import Notice from '../../components/ui/Notice.jsx';
 import SectionHeading from '../../components/ui/SectionHeading.jsx';
 import StatusMessage from '../../components/ui/StatusMessage.jsx';
-import {formatBytes, formatDate, formatDateTime, timeAgo} from '../../format';
+import {formatBytes, formatDate, formatDateTime, timeAgoText} from '../../format';
 import styles from '../Admin.module.css';
 import AdminActionDialog from './AdminActionDialog.jsx';
+import {reportTypeLabel, standingLabel} from './labels.js';
 import {commentLocation} from './admin-links.js';
 
 const STANDING_LEVELS = ['good', 'warning', 'suspended', 'banned'];
@@ -66,10 +67,12 @@ const ReportList = ({reports, empty, communityText}) => (
                         </span>
                         <span className={styles.rowMeta}>
                             {report.subject && report.subject !== report.reporter ?
-                                communityText('Report on a {value1} by @{value2} about @{value3}', {value1: report.type, value2: report.reporter, value3: report.subject}) :
-                                communityText('Report on a {value1} by @{value2}', {value1: report.type, value2: report.reporter})}
+                                communityText('{value1} report by @{value2} about @{value3}', {value1: reportTypeLabel(report.type, communityText), value2: report.reporter, value3: report.subject}) :
+                                communityText('{value1} report by @{value2}', {value1: reportTypeLabel(report.type, communityText), value2: report.reporter})}
                             {' · '}{formatDateTime(report.created)}
-                            {report.resolved && report.action ? ` · ${report.action.replace(/_/g, ' ')}${report.resolvedBy ? ` by @${report.resolvedBy}` : ''}` : ''}
+                            {report.resolved && report.action ? ` · ${report.resolvedBy ?
+                                communityText('Closed as {value1} by @{value2}', {value1: report.action.replace(/_/g, ' '), value2: report.resolvedBy}) :
+                                communityText('Closed as {value1}', {value1: report.action.replace(/_/g, ' ')})}` : ''}
                         </span>
                         {report.reason ? <span className={styles.reason}>{report.reason}</span> : null}
                         {report.snapshot ? <span className={styles.snapshot}>{report.snapshot}</span> : null}
@@ -86,7 +89,7 @@ ReportList.propTypes = {
     communityText: PropTypes.func.isRequired
 };
 
-const UserDetailCard = ({username, onBack}) => {
+const UserDetailCard = ({username, onBack, onChanged}) => {
     const {text: communityText} = useCommunityText();
     const [data, setData] = useState(null);
     const [error, setError] = useState('');
@@ -100,7 +103,9 @@ const UserDetailCard = ({username, onBack}) => {
     const [dialog, setDialog] = useState(null);
     const [dialogBusy, setDialogBusy] = useState(false);
     const [dialogError, setDialogError] = useState('');
+    const [busyAction, setBusyAction] = useState('');
     const deleteInFlight = useRef(false);
+    const actionInFlight = useRef(false);
     const currentUsername = useRef(username);
     currentUsername.current = username;
 
@@ -114,6 +119,8 @@ const UserDetailCard = ({username, onBack}) => {
         setDialog(null);
         setDialogError('');
         setDialogBusy(false);
+        setBusyAction('');
+        actionInFlight.current = false;
         api.admin.getUser(username)
             .then(result => {
                 if (!active) return;
@@ -126,51 +133,86 @@ const UserDetailCard = ({username, onBack}) => {
             .catch(e => {
                 if (!active) return;
                 setData(null);
-                setError(e.message || 'Could not load that user.');
+                setError(e.message || communityText('Could not load that user.'));
             });
         return () => {
             active = false;
         };
     }, [username]);
 
-    const refresh = () => {
+    const refresh = actionUser => {
         if (!data) return;
-        const actionUsername = data.username;
-        api.admin.getUser(actionUsername)
+        api.admin.getUser(data.username)
             .then(result => {
-                if (currentUsername.current === actionUsername) setData(result);
+                if (currentUsername.current === actionUser) setData(result);
             })
             .catch(() => {});
     };
 
-    const run = async (action, success) => {
+    const run = async (key, action, success) => {
+        if (actionInFlight.current) return false;
+        const actionUser = currentUsername.current;
+        const releaseAction = () => {
+            actionInFlight.current = false;
+        };
+        actionInFlight.current = true;
+        setBusyAction(key);
         setError('');
         setNote('');
         try {
             await action();
+            if (currentUsername.current !== actionUser) return false;
             if (success) setNote(success);
-            refresh();
+            refresh(actionUser);
+            if (onChanged) onChanged();
+            return true;
         } catch (e) {
-            setError(e.message || 'Action failed.');
+            if (currentUsername.current === actionUser) setError(e.message || communityText('Action failed.'));
+            return false;
+        } finally {
+            if (currentUsername.current === actionUser) {
+                releaseAction();
+                setBusyAction('');
+            }
         }
     };
 
-    const applyStanding = () => run(
-        () => api.admin.setStanding(data.username, level, reasonText.trim()),
-        communityText('Standing updated.')
-    );
+    const submitStanding = async () => {
+        const done = await run(
+            'standing',
+            () => api.admin.setStanding(data.username, level, reasonText.trim()),
+            communityText('Standing updated.')
+        );
+        if (done) setReasonText('');
+        return done;
+    };
+
+    const applyStanding = () => {
+        if (level !== 'suspended' && level !== 'banned') return submitStanding();
+        setDialogError('');
+        setDialog({
+            kind: 'standing',
+            title: level === 'banned' ? communityText('Ban @{value1}?', {value1: data.username}) : communityText('Suspend @{value1}?', {value1: data.username}),
+            description: level === 'banned' ?
+                communityText('They will be banned from MistWarp and Rotur and get a notification with your reason.') :
+                communityText('They will be suspended and get a notification with your reason.'),
+            action: level === 'banned' ? communityText('Ban user') : communityText('Suspend user'),
+            danger: true,
+            icon: Gavel
+        });
+    };
 
     const sendMessage = async () => {
         if (!message.trim()) return;
-        await run(() => api.admin.messageUser(data.username, message.trim()), communityText('Message sent.'));
-        setMessage('');
+        const done = await run('message', () => api.admin.messageUser(data.username, message.trim()), communityText('Message sent.'));
+        if (done) setMessage('');
     };
 
-    const toggleComments = () => run(() => api.admin.updateUserProfile(data.username, {commentsOff: !data.commentsOff}));
+    const toggleComments = () => run('comments', () => api.admin.updateUserProfile(data.username, {commentsOff: !data.commentsOff}));
 
     const saveNote = async () => {
         setNoteBusy(true);
-        await run(() => api.admin.setUserNote(data.username, adminNote.trim()), communityText('Note saved.'));
+        await run('note', () => api.admin.setUserNote(data.username, adminNote.trim()), communityText('Note saved.'));
         setNoteBusy(false);
     };
 
@@ -178,16 +220,17 @@ const UserDetailCard = ({username, onBack}) => {
         if (navigator.clipboard && data.userId) navigator.clipboard.writeText(data.userId).catch(() => {});
     };
 
-    const unshareProject = pid => run(() => api.unpublish(pid), communityText('Project unshared.'));
+    const unshareProject = pid => run(`unshare:${pid}`, () => api.unpublish(pid), communityText('Project unshared.'));
 
     const deleteProject = pid => {
         if (deleteInFlight.current) return;
         const project = (data.projects || []).find(item => item.id === pid);
         setDialogError('');
         setDialog({
+            kind: 'delete',
             id: pid,
             title: communityText('Delete project?'),
-            description: communityText('Delete {value1} permanently?', {value1: project ? project.title : communityText('this project')}),
+            description: communityText('Move {value1} to its owner\'s trash? They can restore it from there.', {value1: project ? project.title : communityText('this project')}),
             action: communityText('Delete project'),
             danger: true,
             icon: FolderOpen
@@ -205,14 +248,27 @@ const UserDetailCard = ({username, onBack}) => {
             setDialogError('');
             await api.deleteProject(dialog.id);
             setDialog(null);
-            setNote(communityText('Project deleted.'));
-            refresh();
+            setNote(communityText('Project moved to trash.'));
+            refresh(currentUsername.current);
+            if (onChanged) onChanged();
         } catch (e) {
-            setDialogError(e.message || 'Could not delete.');
+            setDialogError(e.message || communityText('Could not delete this project.'));
         } finally {
             releaseDelete();
             setDialogBusy(false);
         }
+    };
+
+    const confirmDialog = async () => {
+        if (!dialog) return;
+        if (dialog.kind === 'standing') {
+            setDialogBusy(true);
+            const done = await submitStanding();
+            setDialogBusy(false);
+            if (done) setDialog(null);
+            return;
+        }
+        confirmDeleteProject();
     };
 
     if (error && !data) {
@@ -277,9 +333,9 @@ const UserDetailCard = ({username, onBack}) => {
                 error={dialogError}
                 onChange={() => {}}
                 onCancel={() => {
-                    if (!deleteInFlight.current) setDialog(null);
+                    if (!deleteInFlight.current && !dialogBusy) setDialog(null);
                 }}
-                onConfirm={confirmDeleteProject}
+                onConfirm={confirmDialog}
             />
             <Button className={styles.backButton} onClick={onBack}>
                 <ArrowLeft size={15} />
@@ -295,7 +351,7 @@ const UserDetailCard = ({username, onBack}) => {
                         {data.banned ? (
                             <span className={`${styles.badge} ${styles.badgeDanger}`}>{communityText('Banned')}</span>
                         ) : standing.level !== 'good' ? (
-                            <span className={`${styles.badge} ${styles.badgeWarn}`}>{standing.level}</span>
+                            <span className={`${styles.badge} ${styles.badgeWarn}`}>{standingLabel(standing.level, communityText)}</span>
                         ) : null}
                         {data.student ? <span className={styles.badge}>{communityText('Student')}</span> : null}
                         {data.minor && !data.student ? <span className={styles.badge}>{communityText('Under 18')}</span> : null}
@@ -320,12 +376,12 @@ const UserDetailCard = ({username, onBack}) => {
                 <Fact
                     label={communityText('Joined MistWarp')}
                     value={data.created ? formatDate(data.created) : communityText('Unknown')}
-                    detail={timeAgo(data.created) ? communityText('{value1} ago', {value1: timeAgo(data.created)}) : null}
+                    detail={timeAgoText(data.created) || null}
                 />
                 <Fact
                     label={communityText('Last signed in')}
-                    value={sessions.lastSignIn ? communityText('{value1} ago', {value1: timeAgo(sessions.lastSignIn)}) : communityText('Not in the last 7 days')}
-                    detail={sessions.active ? communityText('{value1} active sessions', {value1: sessions.active}) : null}
+                    value={sessions.lastSignIn ? timeAgoText(sessions.lastSignIn) : communityText('Not in the last 7 days')}
+                    detail={sessions.active ? communityText('{value1, plural, one {# active session} other {# active sessions}}', {value1: sessions.active}) : null}
                 />
                 <Fact
                     label={communityText('Plan')}
@@ -352,7 +408,7 @@ const UserDetailCard = ({username, onBack}) => {
             {error ? <Notice variant="error" className={styles.notice}>{error}</Notice> : null}
             {note ? <Notice variant="success" className={styles.notice}>{note}</Notice> : null}
 
-            <UnderlineTabs items={tabs} value={tab} onChange={setTab} className={styles.tabs} ariaLabel="User sections" idPrefix="admin-user" />
+            <UnderlineTabs items={tabs} value={tab} onChange={setTab} className={styles.tabs} ariaLabel={communityText('User sections')} idPrefix="admin-user" />
             <div {...tabPanelProps('admin-user', tab)}>
                 {tab === 'overview' ? (
                     <div className={styles.dossierGrid}>
@@ -367,7 +423,7 @@ const UserDetailCard = ({username, onBack}) => {
                             />
                             <div className={styles.panelFooter}>
                                 <span className={styles.rowMeta}>
-                                    {data.note && data.note.updated ? communityText('Last edited by @{value1} {value2} ago', {value1: data.note.by, value2: timeAgo(data.note.updated)}) : ''}
+                                    {data.note && data.note.updated ? communityText('Last edited by @{value1}, {value2}', {value1: data.note.by, value2: timeAgoText(data.note.updated)}) : ''}
                                 </span>
                                 <Button
                                     onClick={saveNote}
@@ -428,7 +484,7 @@ const UserDetailCard = ({username, onBack}) => {
                                     </div>
                                     <div className={styles.rowActions}>
                                         {project.shared ? (
-                                            <Button onClick={() => unshareProject(project.id)}>{communityText('Unshare')}</Button>
+                                            <Button busy={busyAction === `unshare:${project.id}`} onClick={() => unshareProject(project.id)}>{communityText('Unshare')}</Button>
                                         ) : null}
                                         <Button variant="danger" onClick={() => deleteProject(project.id)}>{communityText('Delete')}</Button>
                                     </div>
@@ -511,7 +567,7 @@ const UserDetailCard = ({username, onBack}) => {
                             <div className={styles.field}>
                                 <select className={styles.select} value={level} onChange={e => setLevel(e.target.value)} aria-label={communityText('Standing')}>
                                     {STANDING_LEVELS.map(l => (
-                                        <option key={l} value={l}>{l}</option>
+                                        <option key={l} value={l}>{standingLabel(l, communityText)}</option>
                                     ))}
                                 </select>
                                 <input
@@ -520,7 +576,11 @@ const UserDetailCard = ({username, onBack}) => {
                                     value={reasonText}
                                     onChange={e => setReasonText(e.target.value)}
                                 />
-                                <Button onClick={applyStanding}>{communityText('Apply')}</Button>
+                                <Button
+                                    busy={busyAction === 'standing'}
+                                    disabled={level === ((data.standing && data.standing.level) || 'good') && !reasonText.trim()}
+                                    onClick={applyStanding}
+                                >{communityText('Apply')}</Button>
                             </div>
                             {standing.recoverAt ? (
                                 <p className={styles.mutedLine}>{communityText('Goes back to good standing on {value1}.', {value1: formatDate(standing.recoverAt)})}</p>
@@ -536,7 +596,7 @@ const UserDetailCard = ({username, onBack}) => {
                                     {standing.history.map((entry, index) => (
                                         <div key={`${entry.created}-${index}`} className={styles.flatRow}>
                                             <div className={styles.rowInfo}>
-                                                <span className={styles.rowTitle}>{communityText('Changed from {value1} to {value2}', {value1: entry.previous || 'good', value2: entry.level})}</span>
+                                                <span className={styles.rowTitle}>{communityText('Changed from {value1} to {value2}', {value1: standingLabel(entry.previous || 'good', communityText), value2: standingLabel(entry.level, communityText)})}</span>
                                                 <span className={styles.rowMeta}>{communityText('By @{value1} · {value2}', {value1: entry.by || '', value2: formatDateTime(entry.created)})}</span>
                                                 {entry.reason ? <span className={styles.reason}>{entry.reason}</span> : null}
                                             </div>
@@ -556,12 +616,12 @@ const UserDetailCard = ({username, onBack}) => {
                             />
                             <div className={styles.panelFooter}>
                                 <span />
-                                <Button disabled={!message.trim()} onClick={sendMessage}>{communityText('Send')}</Button>
+                                <Button disabled={!message.trim()} busy={busyAction === 'message'} onClick={sendMessage}>{communityText('Send')}</Button>
                             </div>
                         </section>
                         <section className={styles.panel}>
                             <SectionHeading as="h3" icon={UserCog} title={communityText('Profile')} />
-                            <Button className={styles.inlineAction} onClick={toggleComments}>
+                            <Button className={styles.inlineAction} busy={busyAction === 'comments'} onClick={toggleComments}>
                                 {data.commentsOff ? communityText('Turn on profile comments') : communityText('Turn off profile comments')}
                             </Button>
                         </section>
@@ -574,7 +634,8 @@ const UserDetailCard = ({username, onBack}) => {
 
 UserDetailCard.propTypes = {
     username: PropTypes.string.isRequired,
-    onBack: PropTypes.func.isRequired
+    onBack: PropTypes.func.isRequired,
+    onChanged: PropTypes.func
 };
 
 export default UserDetailCard;

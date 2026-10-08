@@ -24,7 +24,7 @@ const projectIdsForSpace = space => new Set([
 ]);
 
 const SpaceProjectPicker = ({space, onAdded}) => {
-    const {text: communityText} = useCommunityText();
+    const {text: communityText, rich: communityRich} = useCommunityText();
     const {user, login} = useUser();
     const [open, setOpen] = useState(false);
     const [tab, setTab] = useState('mine');
@@ -230,7 +230,9 @@ const SpaceProjectPicker = ({space, onAdded}) => {
                                 <ProjectThumbnail project={project} className={styles.pickerThumb} fallbackClassName={styles.pickerThumbFallback} lazy />
                                 <div>
                                     <strong>{project.title}</strong>
-                                    <span>{communityText('by')} <UserLink username={project.owner}>{project.owner}</UserLink></span>
+                                    <span>{communityRich('by {user}', {
+                                        user: <UserLink username={project.owner}>{project.owner}</UserLink>
+                                    })}</span>
                                     {project.visibility === 'unlisted' ? <small>{communityText('Unlisted')}</small> : null}
                                 </div>
                                 <Button
