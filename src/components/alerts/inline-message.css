@@ -45,3 +45,11 @@
 :global(.mw-compact-save) .spinner {
     margin-right: 0;
 }
+
+:global([data-menu-fit~="save-label"]) .content {
+    display: none;
+}
+
+:global([data-menu-fit~="save-label"]) .spinner {
+    margin-right: 0;
+}

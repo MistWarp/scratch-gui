@@ -375,6 +375,21 @@
     }
 }
 
+.menu-bar[data-menu-fit~="menu-labels"] .file-group:not(.file-group-expanded) .collapsible-label,
+.menu-bar[data-menu-fit~="menu-labels"] .tutorials-label {
+    display: none;
+}
+
+.menu-bar[data-menu-fit~="menu-labels"] .help-icon {
+    margin-right: 0;
+}
+
+.labels-only[data-menu-fit~="menu-labels"] .file-group > .hoverable > img,
+.labels-only[data-menu-fit~="menu-labels"] .file-group > .hoverable > svg,
+.labels-only[data-menu-fit~="menu-labels"] [data-mw-item] > svg:first-child {
+    display: block !important;
+}
+
 /* Workspace bookmarks menu */
 
 .bookmark-item {

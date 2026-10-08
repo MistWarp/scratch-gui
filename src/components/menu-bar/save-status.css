@@ -137,3 +137,11 @@
 :global(.mw-compact-save) .status-text {
     display: none;
 }
+
+:global([data-menu-fit~="save-status"]) .status-text {
+    display: none;
+}
+
+:global([data-menu-fit~="save-label"]) .save-action {
+    display: none;
+}
