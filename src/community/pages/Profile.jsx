@@ -245,11 +245,13 @@ const Profile = () => {
     }, [name, viewerName, load]);
 
     useEffect(() => {
-        if (!user || !user.isAdmin) {
-            setAdminProjects([]);
-            setAdminUser(null);
-            return () => {};
-        }
+        setAdminProjects([]);
+        setAdminUser(null);
+        setAdminLevel('good');
+        setAdminReason('');
+        setAdminMessage('');
+        setAdminNote(null);
+        if (!user || !user.isAdmin) return () => {};
         let active = true;
         api.admin.getUser(name)
             .then(data => {
@@ -268,26 +270,30 @@ const Profile = () => {
         };
     }, [name, user]);
 
-    const refreshAdminUser = useCallback(async () => {
+    const refreshAdminUser = useCallback(async context => {
         const data = await api.admin.getUser(name);
+        if (actionContextRef.current !== context) return;
         setAdminUser(data);
-        setMwUser(current => (current ? {...current, banned: data.banned} : current));
+        setMwUser(current => (current ? {...current, banned: data.banned, commentsOff: data.commentsOff} : current));
         setAdminLevel((data.standing && data.standing.level) || 'good');
         setAdminProjects(data.projects || []);
     }, [name]);
 
     const runAdminAction = useCallback(async (key, action, success) => {
         if (adminBusy) return;
+        const context = actionContextRef.current;
         setAdminBusy(key);
         setAdminNote(null);
         try {
             await action();
-            await refreshAdminUser();
-            setAdminNote({text: success, error: false});
+            await refreshAdminUser(context);
+            if (actionContextRef.current === context) setAdminNote({text: success, error: false});
         } catch (requestError) {
-            setAdminNote({text: requestError.message || communityText('Moderation action failed.'), error: true});
+            if (actionContextRef.current === context) {
+                setAdminNote({text: requestError.message || communityText('Moderation action failed.'), error: true});
+            }
         } finally {
-            setAdminBusy('');
+            if (actionContextRef.current === context) setAdminBusy('');
         }
     }, [adminBusy, communityText, refreshAdminUser]);
 
@@ -388,7 +394,9 @@ const Profile = () => {
         setActionError(null);
         try {
             await api.updateProfile({commentsOff: !commentsOff});
-            if (actionContextRef.current === context) load();
+            if (actionContextRef.current === context) {
+                setMwUser(current => (current ? {...current, commentsOff: !commentsOff} : current));
+            }
         } catch (e) {
             if (actionContextRef.current === context) {
                 setActionError(e.message || 'Could not update comments.');
