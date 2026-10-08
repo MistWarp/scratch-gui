@@ -8,7 +8,7 @@ import styles from './ThemeCard.module.css';
 import UserLink from './UserLink.jsx';
 
 const ThemeCard = ({returnLabel = 'Back', theme}) => {
-    const {text: communityText} = useCommunityText();
+    const {text: communityText, rich: communityRich} = useCommunityText();
     const location = useLocation();
     const returnTo = `${location.pathname}${location.search}${location.hash}`;
     return (
@@ -25,8 +25,7 @@ const ThemeCard = ({returnLabel = 'Back', theme}) => {
                     <strong>{theme.name}</strong>
                 </span>
                 <span className={styles.author}>
-                    {communityText('by ')}
-                    <UserLink username={theme.owner}>{theme.owner}</UserLink>
+                    {communityRich('by {user}', {user: <UserLink username={theme.owner}>{theme.owner}</UserLink>})}
                 </span>
                 <span className={styles.stats}>
                     <span aria-label={communityText('{value1} likes', {value1: theme.likes || 0})}>

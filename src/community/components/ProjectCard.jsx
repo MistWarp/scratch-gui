@@ -9,7 +9,7 @@ import UserLink from './UserLink.jsx';
 import styles from './ProjectCard.module.css';
 
 const ProjectCard = ({project, showTrend = false}) => {
-    const {text: communityText} = useCommunityText();
+    const {text: communityText, rich: communityRich} = useCommunityText();
     const price = project.price || 0;
     const teamSize = Math.max(1, Number(project.teamSize) || 1);
     const acceptedChanges = Number(project.acceptedChanges) || 0;
@@ -47,8 +47,9 @@ const ProjectCard = ({project, showTrend = false}) => {
                     title={project.title}
                 >{project.title}</div>
                 <div className={styles.owner}>
-                    <span>{communityText('by')}</span>
-                    <UserLink username={project.owner}>{project.owner}</UserLink>
+                    <span>{communityRich('by {user}', {
+                        user: <UserLink username={project.owner}>{project.owner}</UserLink>
+                    })}</span>
                     <GroupTag username={project.owner} compact linked={false} />
                 </div>
                 {project.description ? (

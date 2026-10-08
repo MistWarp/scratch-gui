@@ -1,3 +1,4 @@
+import {formatCommunityMessage} from '../locale.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -64,32 +65,32 @@ const spaceConfirmationDetails = (confirmation, space) => {
     if (!confirmation || !space) return null;
     if (confirmation.type === 'remove-project') {
         return {
-            title: 'Remove project?',
-            body: `Remove ${confirmation.project.title} from ${space.title}? The project itself will not be deleted.`,
-            action: 'Remove project'
+            title: formatCommunityMessage('Remove project?'),
+            body: formatCommunityMessage('Remove {project} from {space}? The project itself will not be deleted.', {project: confirmation.project.title, space: space.title}),
+            action: formatCommunityMessage('Remove project')
         };
     }
     if (confirmation.type === 'publish-results') {
         return {
-            title: 'Publish final results?',
+            title: formatCommunityMessage('Publish final results?'),
             body: Number(space.judgingEndsAt) > Date.now() ?
-                'Voting and judging are still open. Publishing now closes them and reveals the final rankings to participants. You cannot hide the results again.' :
-                'This reveals the final rankings to participants. You cannot hide the results again.',
-            action: 'Publish results'
+                formatCommunityMessage('Voting and judging are still open. Publishing now closes them and reveals the final rankings to participants. You cannot hide the results again.') :
+                formatCommunityMessage('This reveals the final rankings to participants. You cannot hide the results again.'),
+            action: formatCommunityMessage('Publish results')
         };
     }
     if (confirmation.type === 'delete-space') {
         return {
-            title: `Delete ${space.title}?`,
-            body: 'This permanently deletes the space. Its projects will not be deleted.',
-            action: 'Delete space'
+            title: formatCommunityMessage('Delete {space}?', {space: space.title}),
+            body: formatCommunityMessage('This permanently deletes the space. Its projects will not be deleted.'),
+            action: formatCommunityMessage('Delete space')
         };
     }
     if (confirmation.type === 'transfer-space') {
         return {
-            title: 'Transfer space?',
-            body: `Transfer "${space.title}" to @${confirmation.owner}? Its group assignment will be cleared and your access may change.`,
-            action: `Transfer to @${confirmation.owner}`
+            title: formatCommunityMessage('Transfer space?'),
+            body: formatCommunityMessage('Transfer "{space}" to @{owner}? Its group assignment will be cleared and your access may change.', {space: space.title, owner: confirmation.owner}),
+            action: formatCommunityMessage('Transfer to @{owner}', {owner: confirmation.owner})
         };
     }
     return null;
@@ -146,7 +147,7 @@ const buildSpacePatch = (form, section, criteriaLocked) => {
 };
 
 const ManageSpace = () => {
-    const {text: communityText} = useCommunityText();
+    const {text: communityText, rich: communityRich} = useCommunityText();
     const {id} = useParams();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -771,7 +772,7 @@ const ManageSpace = () => {
                                 actions={<SpaceProjectPicker space={space} onAdded={load} />}
                             />
                             <div className={styles.manageProjectList}>
-                                {space.projects.map(project => <article key={project.id}><div><strong>{project.title}</strong><span>{communityText('by ')}<UserLink username={project.owner}>{project.owner}</UserLink></span>{space.kind === 'challenge' && (project.scoreBreakdown || []).length ? <div className={styles.submissionFeedback}>{project.scoreBreakdown.map(score => <span key={score.judge}><UserLink username={score.judge}><strong>{score.judge}</strong></UserLink>{score.feedback || communityText('Score submitted')}</span>)}</div> : null}</div><Link to={`/project/${project.id}`}>{communityText('View')}</Link><Button variant="danger" busy={busyProject === project.id} busyLabel={communityText('Removing…')} disabled={Boolean(busyProject)} onClick={() => removeProject(project)}><Trash2 size={15} />{communityText('Remove')}</Button></article>)}
+                                {space.projects.map(project => <article key={project.id}><div><strong>{project.title}</strong><span>{communityRich('by {user}', {user: <UserLink username={project.owner}>{project.owner}</UserLink>})}</span>{space.kind === 'challenge' && (project.scoreBreakdown || []).length ? <div className={styles.submissionFeedback}>{project.scoreBreakdown.map(score => <span key={score.judge}><UserLink username={score.judge}><strong>{score.judge}</strong></UserLink>{score.feedback || communityText('Score submitted')}</span>)}</div> : null}</div><Link to={`/project/${project.id}`}>{communityText('View')}</Link><Button variant="danger" busy={busyProject === project.id} busyLabel={communityText('Removing…')} disabled={Boolean(busyProject)} onClick={() => removeProject(project)}><Trash2 size={15} />{communityText('Remove')}</Button></article>)}
                                 {!space.projects.length ? <p className={styles.pickerEmpty}>{communityText('No projects have been added yet.')}</p> : null}
                             </div>
                         </section>
