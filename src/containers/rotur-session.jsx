@@ -15,6 +15,7 @@ import {
     login as identityLogin,
     logout as identityLogout
 } from '../lib/rotur/identity.js';
+import {takeRedirectError} from '../lib/rotur/oauth.js';
 import {subscribeRoturSettings} from '../lib/rotur/settings.js';
 import {onRoturLogin, getUsernameOverride} from '../lib/rotur/cloud-sync.js';
 import {getRememberedPlatformProject} from '../lib/community/publish.js';
@@ -239,6 +240,8 @@ class RoturSession extends React.Component {
             console.warn('[Rotur] restore failed', error);
             this.props.onClear();
         }
+        const redirectError = takeRedirectError();
+        if (redirectError) this.props.onSetError(redirectError);
     }
 
     /** Keep the byline on saved projects in step with who is signed in. */

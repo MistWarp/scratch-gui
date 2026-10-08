@@ -225,6 +225,22 @@ test('a revoked refresh token signs out and tells listeners', async () => {
     stop();
 });
 
+test('a refresh that leaves out the scopes and refresh token keeps the old ones', async () => {
+    store({accessToken: 'old', refreshToken: 'rrt_old', expiresAt: Date.now() + 1000, scopes: ['profile', 'credits:view']});
+    global.fetch.mockReturnValue(tokenResponse({access_token: 'new', expires_in: 3600}));
+    await expect(oauth.getAccessToken()).resolves.toBe('new');
+    expect(oauth.readSession()).toMatchObject({
+        accessToken: 'new', refreshToken: 'rrt_old', scopes: ['profile', 'credits:view']
+    });
+});
+
+test('a refresh token Rotur no longer accepts signs out instead of retrying', async () => {
+    store({accessToken: 'old', refreshToken: 'rrt_old', expiresAt: Date.now() - 1, scopes: []});
+    global.fetch.mockReturnValue(tokenResponse({error: 'invalid_token'}, false, 401));
+    await expect(oauth.getAccessToken()).resolves.toBeNull();
+    expect(oauth.readSession()).toBeNull();
+});
+
 test('a session from another tab keeps refreshing here, retries after errors, and catches up on waking', async () => {
     jest.useFakeTimers();
     const soon = {accessToken: 'old', refreshToken: 'rrt_old', expiresAt: Date.now() + (3 * 60 * 1000), scopes: []};

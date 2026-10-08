@@ -21,6 +21,7 @@ const config = {
 
 const STORAGE_KEY = 'mw:rotur-oauth';
 const PENDING_KEY = 'mw:rotur-oauth-pending';
+const REDIRECT_ERROR_KEY = 'mw:rotur-oauth-error';
 const CHANNEL = 'mw:rotur-oauth';
 const LOCK = 'mw:rotur-oauth-refresh';
 const POPUP_NAME = 'rotur-signin';
@@ -268,6 +269,14 @@ const completeRedirect = async () => {
         if (params.has('code')) {
             session = await exchangeCode(params.get('code'), pending.verifier, redirectUriFor(false));
             writeSession(session);
+        } else if (!isCancelled({code: params.get('error')})) {
+            throw oauthError(params.get('error'), params.get('error_description') || 'Rotur sign-in failed');
+        }
+    } catch (error) {
+        try {
+            sessionStorage.setItem(REDIRECT_ERROR_KEY, error.message || 'Rotur sign-in failed');
+        } catch (e) {
+            session = null;
         }
     } finally {
         // A full load of the page they were on, so the router sees it too,
@@ -389,7 +398,18 @@ if (typeof window !== 'undefined') {
     scheduleRefresh(readSession());
 }
 
+const takeRedirectError = () => {
+    try {
+        const message = sessionStorage.getItem(REDIRECT_ERROR_KEY);
+        sessionStorage.removeItem(REDIRECT_ERROR_KEY);
+        return message || '';
+    } catch (e) {
+        return '';
+    }
+};
+
 export {
+    takeRedirectError,
     completeRedirect,
     configure,
     getAccessToken,
