@@ -18,7 +18,7 @@ const spaceFollowerCount = space => (
 );
 
 const SpaceCard = ({space, to, onClick}) => {
-    const {text: communityText} = useCommunityText();
+    const {text: communityText, rich: communityRich} = useCommunityText();
     const Icon = KIND_ICONS[space.kind] || Layers3;
     const projects = space.projects || [];
     const thumbnailUrl = space.thumbnailUrl || (projects.find(project => project.thumbUrl) || {}).thumbUrl;
@@ -46,8 +46,9 @@ const SpaceCard = ({space, to, onClick}) => {
             <p>{space.description || communityText('No description yet.')}</p>
             {space.owner ? (
                 <span className={styles.owner}>
-                    {communityText('by ')}
-                    <UserLink username={space.owner}>{space.owner}</UserLink>
+                    <span>{communityRich('by {user}', {
+                        user: <UserLink username={space.owner}>{space.owner}</UserLink>
+                    })}</span>
                     <GroupTag username={space.owner} compact linked={false} />
                 </span>
             ) : null}

@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {BookmarkMinus, Clock3, Eye, EyeOff, Library, MoreHorizontal} from 'lucide-react';
 import {Link} from 'react-router-dom';
-import {formatPlaytime, timeAgo} from '../format';
+import {formatPlaytime, timeAgoText} from '../format';
 import {projectUrl} from '../api';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import Button from './ui/Button.jsx';
@@ -23,17 +23,14 @@ const playtimeLabel = project => {
 
 const lastPlayedLabel = project => {
     if (!(project.lastPlayed > 0)) return '';
-    const relative = timeAgo(project.lastPlayed);
-    return relative === 'just now' ?
-        formatCommunityMessage('Played just now') :
-        formatCommunityMessage('Last played {value1} ago', {value1: relative});
+    return formatCommunityMessage('Last played {value1}', {value1: timeAgoText(project.lastPlayed)});
 };
 
 const MyStuffLibrary = ({
     projects, total, loading, error, moreBusy, hasMore, actionBusy, actionError,
     onRetry, onLoadMore, onChangeVisibility, onRemove
 }) => {
-    const {text: communityText} = useCommunityText();
+    const {text: communityText, rich: communityRich} = useCommunityText();
     let body;
     if (loading) {
         body = <StatusMessage compact>{communityText('Loading your library…')}</StatusMessage>;
@@ -56,8 +53,9 @@ const MyStuffLibrary = ({
                                 <span className={styles.details}>
                                     <Link to={projectUrl(project)}><strong>{project.title}</strong></Link>
                                     <small>
-                                        {communityText('by')}{' '}
-                                        <UserLink username={project.owner}>{project.owner}</UserLink>
+                                        {communityRich('by {user}', {
+                                            user: <UserLink username={project.owner}>{project.owner}</UserLink>
+                                        })}
                                     </small>
                                 </span>
                             </div>

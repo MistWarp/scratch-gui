@@ -51,9 +51,34 @@ export const createTranslator = (locale, messages) => {
         }
     };
 };
+const RICH_MARK = '\u0001';
+const RICH_PART = new RegExp(`${RICH_MARK}(\\w+)${RICH_MARK}`);
+
+export const createRichTranslator = translate => (key, values = {}) => {
+    const plain = {};
+    const elements = {};
+    Object.entries(values).forEach(([name, value]) => {
+        if (React.isValidElement(value)) {
+            plain[name] = `${RICH_MARK}${name}${RICH_MARK}`;
+            elements[name] = value;
+        } else {
+            plain[name] = value;
+        }
+    });
+    return String(translate(key, plain)).split(RICH_PART)
+        .map((part, index) => (index % 2 ?
+            <React.Fragment key={index}>{elements[part]}</React.Fragment> :
+            part));
+};
+
 const defaultTranslate = createTranslator('en', english);
 const CommunityI18nContext = createContext({
-    locale: 'en', preference: 'auto', setPreference: () => {}, t: defaultTranslate, text: defaultTranslate
+    locale: 'en',
+    preference: 'auto',
+    setPreference: () => {},
+    t: defaultTranslate,
+    text: defaultTranslate,
+    rich: createRichTranslator(defaultTranslate)
 });
 
 export const CommunityIntlProvider = ({children}) => {
@@ -118,6 +143,7 @@ export const CommunityIntlProvider = ({children}) => {
             setPreference,
             t: translate,
             text: translate,
+            rich: createRichTranslator(translate),
             loading: requested !== active.locale && !loadError,
             loadError,
             retry: () => setAttempt(n => n + 1)

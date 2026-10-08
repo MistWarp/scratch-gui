@@ -35,7 +35,8 @@ import UserStatus from '../components/UserStatus.jsx';
 import useLatest from '../use-latest.js';
 import setPageMeta from '../page-meta.js';
 import scrollToAnchorWithRetry from '../scroll-to-anchor.js';
-import {formatPlaytime, safeDate, timeAgo} from '../format';
+import {formatPlaytime, safeDate, timeAgo, timeAgoText} from '../format';
+import {formatCommunityMessage} from '../locale.js';
 import styles from './Profile.module.css';
 
 const FOLLOWER_STRIP_COUNT = 16;
@@ -113,14 +114,13 @@ const joinYear = ms => {
 const lastPlayedLabel = value => {
     const timestamp = Number(value);
     if (!(timestamp > 0)) return '';
-    const relative = timeAgo(timestamp);
-    return relative === 'just now' ? 'last played just now' : `last played ${relative} ago`;
+    return formatCommunityMessage('Last played {value1}', {value1: timeAgoText(timestamp)});
 };
 
 const scrollToCommentAnchor = id => scrollToAnchorWithRetry(id);
 
 const Profile = () => {
-    const {text: communityText} = useCommunityText();
+    const {text: communityText, rich: communityRich} = useCommunityText();
     const {name} = useParams();
     const location = useLocation();
     const navigate = useNavigate();
@@ -586,7 +586,9 @@ const Profile = () => {
                                                                     className={styles.recentActivityTitle}
                                                                     title={item.title}
                                                                 >{item.title}</div>
-                                                                <div className={styles.recentActivityOwner}><span>{communityText('by')}</span><UserLink username={item.owner}>{item.owner}</UserLink></div>
+                                                                <div className={styles.recentActivityOwner}><span>{communityRich('by {user}', {
+                                                                    user: <UserLink username={item.owner}>{item.owner}</UserLink>
+                                                                })}</span></div>
                                                                 <div className={styles.recentActivityStats}>
                                                                     {item.duration > 0 ?
                                                                         <span>{formatPlaytime(item.duration, false)}</span> : null}
