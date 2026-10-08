@@ -12,12 +12,13 @@ import EmptyState from '../../components/ui/EmptyState.jsx';
 import SectionHeading from '../../components/ui/SectionHeading.jsx';
 import StatusMessage from '../../components/ui/StatusMessage.jsx';
 import {timeAgoText, formatBytes} from '../../format';
+import {standingLabel} from './labels.js';
 import styles from '../Admin.module.css';
 import UserDetailCard from './UserDetailCard.jsx';
 
 const PAGE_SIZE = 30;
 
-const UserManager = ({selected: controlledSelected, onSelect}) => {
+const UserManager = ({selected: controlledSelected, onSelect, onUserChanged}) => {
     const {text: communityText} = useCommunityText();
     const [query, setQuery] = useState('');
     const [users, setUsers] = useState([]);
@@ -48,7 +49,7 @@ const UserManager = ({selected: controlledSelected, onSelect}) => {
                 })
                 .catch(e => {
                     if (!active) return;
-                    setError(e.message || 'Could not load users.');
+                    setError(e.message || communityText('Could not load users.'));
                     setLoading(false);
                 });
         };
@@ -64,7 +65,14 @@ const UserManager = ({selected: controlledSelected, onSelect}) => {
         return (
             <div>
                 <SectionHeading icon={User} title={communityText('Users')} />
-                <UserDetailCard username={selected} onBack={() => select(null)} />
+                <UserDetailCard
+                    username={selected}
+                    onBack={() => select(null)}
+                    onChanged={() => {
+                        setLoadAttempt(value => value + 1);
+                        if (onUserChanged) onUserChanged();
+                    }}
+                />
             </div>
         );
     }
@@ -114,7 +122,7 @@ const UserManager = ({selected: controlledSelected, onSelect}) => {
                     setFilter(next);
                     setOffset(0);
                 }}
-                ariaLabel="Filter users"
+                ariaLabel={communityText('Filter users')}
                 variant="buttons"
             />
             {error ? (
@@ -149,7 +157,7 @@ const UserManager = ({selected: controlledSelected, onSelect}) => {
                                         {user.banned ? (
                                             <span className={`${styles.badge} ${styles.badgeDanger}`}>{communityText('Banned')}</span>
                                         ) : user.standingLevel && user.standingLevel !== 'good' ? (
-                                            <span className={`${styles.badge} ${styles.badgeWarn}`}>{user.standingLevel}</span>
+                                            <span className={`${styles.badge} ${styles.badgeWarn}`}>{standingLabel(user.standingLevel, communityText)}</span>
                                         ) : null}
                                         {user.minor ? <span className={styles.badge}>{communityText('Under 18')}</span> : null}
                                     </span>
@@ -200,7 +208,8 @@ const UserManager = ({selected: controlledSelected, onSelect}) => {
 
 UserManager.propTypes = {
     selected: PropTypes.string,
-    onSelect: PropTypes.func
+    onSelect: PropTypes.func,
+    onUserChanged: PropTypes.func
 };
 
 export default UserManager;
