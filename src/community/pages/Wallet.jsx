@@ -179,6 +179,11 @@ const Wallet = () => {
                             {fmtCredits(wallet.balance).toLocaleString(getCommunityLocale())}
                             <span className={styles.balanceUnit}>{communityText('credits')}</span>
                         </div>
+                    ) : wallet && wallet.hidden ? (
+                        <div className={styles.balanceHint}>
+                            {/* eslint-disable-next-line max-len */}
+                            {communityText('Rotur is not sharing your balance with MistWarp. You can still see it on rotur.dev.')}
+                        </div>
                     ) : wallet ? (
                         <React.Fragment>
                             <div className={styles.balanceHint}>
@@ -260,7 +265,10 @@ const Wallet = () => {
                         </React.Fragment>
                     ) : (
                         <EmptyState compact icon={History} title={communityText('Your transactions are on Rotur')}>
-                            {communityText('Show your balance to see them here too.')}
+                            {wallet && wallet.hidden ?
+                                // eslint-disable-next-line max-len
+                                communityText('Rotur is not sharing them with MistWarp. See your full wallet on rotur.dev.') :
+                                communityText('Show your balance to see them here too.')}
                         </EmptyState>
                     )
                 ) : null}
