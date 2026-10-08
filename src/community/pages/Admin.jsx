@@ -286,7 +286,7 @@ const Admin = () => {
 
                     {active === 'users' ? (
                         <section className={styles.card}>
-                            <UserManager selected={selectedUser} onSelect={selectUser} />
+                            <UserManager selected={selectedUser} onSelect={selectUser} onUserChanged={load} />
                         </section>
                     ) : null}
 

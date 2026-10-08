@@ -20,6 +20,7 @@ import StatusMessage from '../../components/ui/StatusMessage.jsx';
 import {formatBytes, formatDate, formatDateTime, timeAgoText} from '../../format';
 import styles from '../Admin.module.css';
 import AdminActionDialog from './AdminActionDialog.jsx';
+import {reportTypeLabel, standingLabel} from './labels.js';
 import {commentLocation} from './admin-links.js';
 
 const STANDING_LEVELS = ['good', 'warning', 'suspended', 'banned'];
@@ -66,10 +67,12 @@ const ReportList = ({reports, empty, communityText}) => (
                         </span>
                         <span className={styles.rowMeta}>
                             {report.subject && report.subject !== report.reporter ?
-                                communityText('Report on a {value1} by @{value2} about @{value3}', {value1: report.type, value2: report.reporter, value3: report.subject}) :
-                                communityText('Report on a {value1} by @{value2}', {value1: report.type, value2: report.reporter})}
+                                communityText('{value1} report by @{value2} about @{value3}', {value1: reportTypeLabel(report.type, communityText), value2: report.reporter, value3: report.subject}) :
+                                communityText('{value1} report by @{value2}', {value1: reportTypeLabel(report.type, communityText), value2: report.reporter})}
                             {' · '}{formatDateTime(report.created)}
-                            {report.resolved && report.action ? ` · ${report.action.replace(/_/g, ' ')}${report.resolvedBy ? ` by @${report.resolvedBy}` : ''}` : ''}
+                            {report.resolved && report.action ? ` · ${report.resolvedBy ?
+                                communityText('Closed as {value1} by @{value2}', {value1: report.action.replace(/_/g, ' '), value2: report.resolvedBy}) :
+                                communityText('Closed as {value1}', {value1: report.action.replace(/_/g, ' ')})}` : ''}
                         </span>
                         {report.reason ? <span className={styles.reason}>{report.reason}</span> : null}
                         {report.snapshot ? <span className={styles.snapshot}>{report.snapshot}</span> : null}
@@ -86,7 +89,7 @@ ReportList.propTypes = {
     communityText: PropTypes.func.isRequired
 };
 
-const UserDetailCard = ({username, onBack}) => {
+const UserDetailCard = ({username, onBack, onChanged}) => {
     const {text: communityText} = useCommunityText();
     const [data, setData] = useState(null);
     const [error, setError] = useState('');
@@ -130,7 +133,7 @@ const UserDetailCard = ({username, onBack}) => {
             .catch(e => {
                 if (!active) return;
                 setData(null);
-                setError(e.message || 'Could not load that user.');
+                setError(e.message || communityText('Could not load that user.'));
             });
         return () => {
             active = false;
@@ -161,6 +164,7 @@ const UserDetailCard = ({username, onBack}) => {
             if (currentUsername.current !== actionUser) return false;
             if (success) setNote(success);
             refresh(actionUser);
+            if (onChanged) onChanged();
             return true;
         } catch (e) {
             if (currentUsername.current === actionUser) setError(e.message || communityText('Action failed.'));
@@ -246,8 +250,9 @@ const UserDetailCard = ({username, onBack}) => {
             setDialog(null);
             setNote(communityText('Project moved to trash.'));
             refresh(currentUsername.current);
+            if (onChanged) onChanged();
         } catch (e) {
-            setDialogError(e.message || 'Could not delete.');
+            setDialogError(e.message || communityText('Could not delete this project.'));
         } finally {
             releaseDelete();
             setDialogBusy(false);
@@ -346,7 +351,7 @@ const UserDetailCard = ({username, onBack}) => {
                         {data.banned ? (
                             <span className={`${styles.badge} ${styles.badgeDanger}`}>{communityText('Banned')}</span>
                         ) : standing.level !== 'good' ? (
-                            <span className={`${styles.badge} ${styles.badgeWarn}`}>{standing.level}</span>
+                            <span className={`${styles.badge} ${styles.badgeWarn}`}>{standingLabel(standing.level, communityText)}</span>
                         ) : null}
                         {data.student ? <span className={styles.badge}>{communityText('Student')}</span> : null}
                         {data.minor && !data.student ? <span className={styles.badge}>{communityText('Under 18')}</span> : null}
@@ -376,7 +381,7 @@ const UserDetailCard = ({username, onBack}) => {
                 <Fact
                     label={communityText('Last signed in')}
                     value={sessions.lastSignIn ? timeAgoText(sessions.lastSignIn) : communityText('Not in the last 7 days')}
-                    detail={sessions.active ? communityText('{value1} active sessions', {value1: sessions.active}) : null}
+                    detail={sessions.active ? communityText('{value1, plural, one {# active session} other {# active sessions}}', {value1: sessions.active}) : null}
                 />
                 <Fact
                     label={communityText('Plan')}
@@ -403,7 +408,7 @@ const UserDetailCard = ({username, onBack}) => {
             {error ? <Notice variant="error" className={styles.notice}>{error}</Notice> : null}
             {note ? <Notice variant="success" className={styles.notice}>{note}</Notice> : null}
 
-            <UnderlineTabs items={tabs} value={tab} onChange={setTab} className={styles.tabs} ariaLabel="User sections" idPrefix="admin-user" />
+            <UnderlineTabs items={tabs} value={tab} onChange={setTab} className={styles.tabs} ariaLabel={communityText('User sections')} idPrefix="admin-user" />
             <div {...tabPanelProps('admin-user', tab)}>
                 {tab === 'overview' ? (
                     <div className={styles.dossierGrid}>
@@ -562,7 +567,7 @@ const UserDetailCard = ({username, onBack}) => {
                             <div className={styles.field}>
                                 <select className={styles.select} value={level} onChange={e => setLevel(e.target.value)} aria-label={communityText('Standing')}>
                                     {STANDING_LEVELS.map(l => (
-                                        <option key={l} value={l}>{l}</option>
+                                        <option key={l} value={l}>{standingLabel(l, communityText)}</option>
                                     ))}
                                 </select>
                                 <input
@@ -591,7 +596,7 @@ const UserDetailCard = ({username, onBack}) => {
                                     {standing.history.map((entry, index) => (
                                         <div key={`${entry.created}-${index}`} className={styles.flatRow}>
                                             <div className={styles.rowInfo}>
-                                                <span className={styles.rowTitle}>{communityText('Changed from {value1} to {value2}', {value1: entry.previous || 'good', value2: entry.level})}</span>
+                                                <span className={styles.rowTitle}>{communityText('Changed from {value1} to {value2}', {value1: standingLabel(entry.previous || 'good', communityText), value2: standingLabel(entry.level, communityText)})}</span>
                                                 <span className={styles.rowMeta}>{communityText('By @{value1} · {value2}', {value1: entry.by || '', value2: formatDateTime(entry.created)})}</span>
                                                 {entry.reason ? <span className={styles.reason}>{entry.reason}</span> : null}
                                             </div>
@@ -629,7 +634,8 @@ const UserDetailCard = ({username, onBack}) => {
 
 UserDetailCard.propTypes = {
     username: PropTypes.string.isRequired,
-    onBack: PropTypes.func.isRequired
+    onBack: PropTypes.func.isRequired,
+    onChanged: PropTypes.func
 };
 
 export default UserDetailCard;
