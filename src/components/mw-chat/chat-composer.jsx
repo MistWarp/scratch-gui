@@ -186,6 +186,11 @@ const messages = defineMessages({
         description: 'Button that asks Rotur for permission to sign chat messages',
         id: 'mw.chat.signingEnable'
     },
+    signingEnableFailed: {
+        defaultMessage: 'Could not turn on signing. Try again.',
+        description: 'Shown in the chat message box when asking Rotur for permission to sign messages fails',
+        id: 'mw.chat.signingEnableFailed'
+    },
     signingDismiss: {
         defaultMessage: 'Not now',
         description: 'Button that hides the chat message signing prompt',
@@ -412,6 +417,7 @@ const Composer = ({apiRef, connection, intl, onClearReply, onEditLast, onJump, o
     const [draft, setDraft] = useState('');
     const [uploads, setUploads] = useState([]);
     const [dismissed, setDismissed] = useState(readDismissed);
+    const [signingFailed, setSigningFailed] = useState(false);
     const [, setTick] = useState(0);
     const inputRef = useRef(null);
     const fileRef = useRef(null);
@@ -547,6 +553,9 @@ const Composer = ({apiRef, connection, intl, onClearReply, onEditLast, onJump, o
         else if (state.notice.kind === 'sign_failed') notice = intl.formatMessage(messages.signFailed);
         else notice = state.notice.text;
     }
+    if (!notice && signingFailed && state.signing === 'needs_permission') {
+        notice = intl.formatMessage(messages.signingEnableFailed);
+    }
 
     return (
         <form
@@ -567,7 +576,10 @@ const Composer = ({apiRef, connection, intl, onClearReply, onEditLast, onJump, o
                         <button
                             type="button"
                             className={styles.cardButton}
-                            onClick={() => connection.enableSigning()}
+                            onClick={() => {
+                                setSigningFailed(false);
+                                connection.enableSigning().catch(() => setSigningFailed(true));
+                            }}
                         >{intl.formatMessage(messages.signingEnable)}</button>
                         <button
                             type="button"
