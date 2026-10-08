@@ -204,7 +204,14 @@ const awaitPopup = (popup, state) => new Promise((resolve, reject) => {
 const signIn = async (scopes, {redirectFallback = true} = {}) => {
     const popup = window.open('about:blank', POPUP_NAME, `popup,width=480,height=720,left=${
         Math.max(0, (screen.width - 480) / 2)},top=${Math.max(0, (screen.height - 720) / 2)}`);
-    const {verifier, challenge} = await pkce();
+    let verifier;
+    let challenge;
+    try {
+        ({verifier, challenge} = await pkce());
+    } catch (error) {
+        if (popup && !popup.closed) popup.close();
+        throw error;
+    }
     const state = randomString();
     if (!popup) {
         if (!redirectFallback) throw oauthError('popup_blocked', 'Allow pop-ups for this site to sign in with Rotur');
@@ -286,13 +293,16 @@ const refresh = stale => withLock(async () => {
     }
     let next;
     try {
+        const fresh = await tokenRequest({grant_type: 'refresh_token', refresh_token: current.refreshToken});
         next = {
-            ...await tokenRequest({grant_type: 'refresh_token', refresh_token: current.refreshToken}),
+            ...fresh,
+            refreshToken: fresh.refreshToken || current.refreshToken,
+            scopes: fresh.scopes.length ? fresh.scopes : current.scopes,
             subject: current.subject,
             username: current.username
         };
     } catch (error) {
-        if (error.code !== 'invalid_grant') throw error;
+        if (error.code !== 'invalid_grant' && error.code !== 'invalid_token' && error.status !== 401) throw error;
         // Another tab without Web Locks may have won the race.
         const latest = readSession();
         if (latest && latest.refreshToken !== current.refreshToken) return latest;
@@ -328,7 +338,14 @@ const getAccessToken = async () => {
 
 scheduleRefresh = session => {
     clearTimeout(refreshTimer);
-    if (!session || !session.refreshToken) return;
+    if (!session) return;
+    if (!session.refreshToken) {
+        refreshTimer = setTimeout(() => {
+            const latest = readSession();
+            if (latest && !latest.refreshToken && latest.expiresAt <= Date.now()) writeSession(null);
+        }, Math.max(0, session.expiresAt - Date.now()) + 1000);
+        return;
+    }
     refreshTimer = setTimeout(() => {
         getAccessToken().catch(() => {
             refreshTimer = setTimeout(() => scheduleRefresh(readSession()), RETRY_DELAY);

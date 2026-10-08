@@ -43,7 +43,9 @@ const cache = new Map();
 const cacheKey = (path, params) => `${path}|${JSON.stringify(params)}|${roturToken() || ''}`;
 
 const mutate = async (path, {method = 'POST', params = {}, body, scopes = []} = {}) => {
-    if (scopes.length) await ensureScopes(scopes, {prompt: true});
+    if (scopes.length && !(await ensureScopes(scopes, {prompt: true}))) {
+        throw new Error(formatCommunityMessage('MistWarp needs your permission on Rotur to do this.'));
+    }
     const query = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
         if (value !== null && typeof value !== 'undefined') query.set(key, String(value));
