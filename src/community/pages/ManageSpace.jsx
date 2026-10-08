@@ -72,7 +72,9 @@ const spaceConfirmationDetails = (confirmation, space) => {
     if (confirmation.type === 'publish-results') {
         return {
             title: 'Publish final results?',
-            body: 'This reveals the final rankings to participants. You cannot hide the results again.',
+            body: Number(space.judgingEndsAt) > Date.now() ?
+                'Voting and judging are still open. Publishing now closes them and reveals the final rankings to participants. You cannot hide the results again.' :
+                'This reveals the final rankings to participants. You cannot hide the results again.',
             action: 'Publish results'
         };
     }
@@ -729,7 +731,7 @@ const ManageSpace = () => {
                             <section className={styles.manageCard}>
                                 <SectionHeading icon={Trophy} className={styles.manageCardHeading} title={communityText('Results')} lead={audienceMode ? communityText('Publishing reveals the ranking by average audience rating on the public challenge page.') : communityText('Publishing reveals the ranked judge scores on the public challenge page.')} />
                                 <div className={styles.publishRow}><span>{space.resultsPublishedAt ? communityText('Published {value1}', {value1: formatDateTime(space.resultsPublishedAt, 'date unavailable')}) : audienceMode ? communityText('{value1} of {value2} entries rated', {value1: space.projects.filter(project => project.audienceVoteCount > 0).length, value2: space.projects.length}) : communityText('{value1} of {value2} entries scored', {value1: space.projects.filter(project => project.judgeScoreCount > 0).length, value2: space.projects.length})}</span>{!space.resultsPublishedAt ? <Button
-                                    variant="primary" busy={publishing} busyLabel={communityText('Publishing…')} onClick={publishResults}
+                                    variant="primary" busy={publishing} busyLabel={communityText('Publishing…')} disabled={Number(space.endsAt) > Date.now()} title={Number(space.endsAt) > Date.now() ? communityText('You can publish results after submissions close.') : null} onClick={publishResults}
                                 >{communityText('Publish results')}</Button> : <span className={styles.published}><Check size={15} />{communityText('Results are live')}</span>}</div>
                             </section>
                         </section>

@@ -301,11 +301,10 @@ const ScoreScale = ({label, value, disabled, onChange}) => (
     </div>
 );
 
-const JudgingWorkspace = ({challengeId, projects, criteria, load}) => {
+const JudgingWorkspace = ({challengeId, projects, criteria, drafts, setDrafts, load}) => {
     const {text: communityText} = useCommunityText();
     const firstUnscored = () => (nextUnscoredEntry(projects, '') || projects[0] || {}).id || '';
     const [selectedId, setSelectedId] = useState(firstUnscored);
-    const [drafts, setDrafts] = useState({});
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState({text: '', error: false});
     const saveInFlight = useRef(false);
@@ -315,7 +314,6 @@ const JudgingWorkspace = ({challengeId, projects, criteria, load}) => {
 
     useEffect(() => {
         setSelectedId(firstUnscored());
-        setDrafts({});
         setSaving(false);
         setMessage({text: '', error: false});
     }, [challengeId]);
@@ -357,13 +355,13 @@ const JudgingWorkspace = ({challengeId, projects, criteria, load}) => {
                 feedback: draft.feedback.trim()
             });
             if (currentId.current !== actionId) return;
+            await load().catch(() => {});
+            if (currentId.current !== actionId) return;
             setDrafts(current => {
                 const next = {...current};
                 delete next[project.id];
                 return next;
             });
-            await load();
-            if (currentId.current !== actionId) return;
             const next = advance ? nextUnscoredEntry(projects, project.id) : null;
             if (next) select(next.id);
             setMessage({text: next ? communityText('Saved {value1}.', {value1: project.title}) : communityText('Score saved.'), error: false});
@@ -567,6 +565,7 @@ const Challenge = ({id, space, user, login, load}) => {
     const [tab, setTab] = useState(space.phase === 'results' ? 'results' : 'overview');
     const [error, setError] = useState('');
     const [actionBusy, setActionBusy] = useState('');
+    const [judgeDrafts, setJudgeDrafts] = useState({});
     const [now, setNow] = useState(Date.now());
     const actionInFlight = useRef(new Set());
     const currentId = useRef(id);
@@ -589,7 +588,15 @@ const Challenge = ({id, space, user, login, load}) => {
     useEffect(() => {
         setActionBusy('');
         setError('');
+        setJudgeDrafts({});
     }, [id]);
+
+    const reloadedPhase = useRef('');
+    useEffect(() => {
+        if (!space.phase || currentPhase === space.phase || reloadedPhase.current === currentPhase) return;
+        reloadedPhase.current = currentPhase;
+        load().catch(() => {});
+    }, [currentPhase, space.phase, load]);
 
     const respondToJudgeInvite = async accepted => {
         const actionId = id;
@@ -786,7 +793,7 @@ const Challenge = ({id, space, user, login, load}) => {
                 {tab === 'judging' ? (
                     <section>
                         <SectionHeading icon={Gavel} title={communityText('Judge entries')} lead={communityText('Play each entry, then score it from 1 to 10 on every criterion. Only the host sees your feedback.')} />
-                        {space.projects.length ? <JudgingWorkspace challengeId={id} projects={space.projects} criteria={criteria} load={load} /> : <EmptyState icon={Gavel} title={communityText('No entries to judge')}>{communityText('Submissions will appear here after the deadline.')}</EmptyState>}
+                        {space.projects.length ? <JudgingWorkspace challengeId={id} projects={space.projects} criteria={criteria} drafts={judgeDrafts} setDrafts={setJudgeDrafts} load={load} /> : <EmptyState icon={Gavel} title={communityText('No entries to judge')}>{communityText('Submissions will appear here after the deadline.')}</EmptyState>}
                     </section>
                 ) : null}
             </div>
