@@ -37,7 +37,7 @@ const ExploreSearch = ({ariaLabel, onChange, onSubmit, placeholder, value}) => {
             <Search size={16} aria-hidden="true" />
             <input
                 aria-label={ariaLabel}
-                enterKeyHint="search"
+                enterkeyhint="search"
                 placeholder={placeholder || ariaLabel}
                 type="search"
                 value={value}
