@@ -10,7 +10,7 @@ import Button from '../../components/ui/Button.jsx';
 import Notice from '../../components/ui/Notice.jsx';
 import SectionHeading from '../../components/ui/SectionHeading.jsx';
 import StatusMessage from '../../components/ui/StatusMessage.jsx';
-import {timeAgo, formatBytes, formatPlaytime} from '../../format';
+import {timeAgoText, formatBytes, formatPlaytime} from '../../format';
 import styles from '../Admin.module.css';
 import {buildSeries, num, percent, formatLoadTime} from './admin-format.js';
 import StatTile from './StatTile.jsx';
@@ -205,7 +205,7 @@ const StatsOverview = ({view}) => {
                             icon={Cloud}
                             data={storage.r2}
                             detail={storage.r2Configured ? (storage.r2SyncedAt ?
-                                communityText('{value1} objects · synced {value2} ago', {value1: num(storage.r2.objects), value2: timeAgo(storage.r2SyncedAt)}) :
+                                communityText('{value1} objects · synced {value2}', {value1: num(storage.r2.objects), value2: timeAgoText(storage.r2SyncedAt)}) :
                                 communityText('{value1} objects', {value1: num(storage.r2.objects)})) : communityText('Local mode')}
                         />
                         <StorageBreakdown
