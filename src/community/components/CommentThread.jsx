@@ -489,36 +489,45 @@ const CommentThread = ({
         load();
     }, [beginExtraLoad, load]);
 
+    const latestComments = useRef(comments);
+    latestComments.current = comments;
+    const commentChanges = useRef(null);
+    commentChanges.current = {
+        created: comment => {
+            if (latestComments.current.some(item => item.id === comment.id)) return;
+            latestComments.current = addCreatedComment(latestComments.current, comment);
+            setComments(current => (current.some(item => item.id === comment.id) ?
+                current :
+                addCreatedComment(current, comment)));
+            if (!comment.parent) {
+                setTotalRoots(total => total + 1);
+                setNextOffset(offset => offset + 1);
+            }
+            if (onCountChange) onCountChange(1);
+        },
+        removed: commentId => {
+            const gone = item => item.id === commentId || item.parent === commentId;
+            const removed = latestComments.current.filter(gone);
+            if (!removed.length) return;
+            latestComments.current = latestComments.current.filter(item => !gone(item));
+            setComments(current => current.filter(item => !gone(item)));
+            if (removed.some(item => !item.parent)) {
+                setTotalRoots(total => Math.max(0, total - 1));
+                setNextOffset(offset => Math.max(0, offset - 1));
+            }
+            if (onCountChange) onCountChange(-removed.length);
+        }
+    };
+
     useEffect(() => {
         if (!source.subscribe) return;
         return source.subscribe(event => {
             if (event.type === 'comment_created' && event.comment) {
-                setComments(current => {
-                    if (current.some(comment => comment.id === event.comment.id)) return current;
-                    if (!event.comment.parent) {
-                        setTotalRoots(total => total + 1);
-                        setNextOffset(offset => offset + 1);
-                    }
-                    if (onCountChange) onCountChange(1);
-                    return addCreatedComment(current, event.comment);
-                });
+                commentChanges.current.created(event.comment);
                 return;
             }
             if (event.type === 'comment_deleted' && event.commentId) {
-                setComments(current => {
-                    const removed = current.filter(comment => (
-                        comment.id === event.commentId || comment.parent === event.commentId
-                    ));
-                    if (!removed.length) return current;
-                    if (removed.some(comment => !comment.parent)) {
-                        setTotalRoots(total => Math.max(0, total - 1));
-                        setNextOffset(offset => Math.max(0, offset - 1));
-                    }
-                    if (onCountChange) onCountChange(-removed.length);
-                    return current.filter(comment => (
-                        comment.id !== event.commentId && comment.parent !== event.commentId
-                    ));
-                });
+                commentChanges.current.removed(event.commentId);
                 return;
             }
             if (event.type === 'comment_edited' && event.comment) {
@@ -536,7 +545,7 @@ const CommentThread = ({
                 }));
             }
         });
-    }, [source, onCountChange]);
+    }, [source]);
 
     const loadMore = async () => {
         if (loadingMore || nextOffset >= totalRoots) return;
@@ -633,17 +642,7 @@ const CommentThread = ({
             }) : await actionSource.add(text.trim(), parent, commentKind);
             if (!parent) writeSessionDraft(`comment:${actionDraftKey}`, '');
             if (sourceRef.current !== actionSource || viewerRef.current !== actionViewer) return;
-            if (data && data.comment) {
-                setComments(current => {
-                    if (current.some(comment => comment.id === data.comment.id)) return current;
-                    if (!data.comment.parent) {
-                        setTotalRoots(total => total + 1);
-                        setNextOffset(offset => offset + 1);
-                    }
-                    if (onCountChange) onCountChange(1);
-                    return addCreatedComment(current, data.comment);
-                });
-            }
+            if (data && data.comment) commentChanges.current.created(data.comment);
             if (parent) {
                 setReplyText('');
                 setReplyTo(null);
@@ -674,20 +673,10 @@ const CommentThread = ({
         const releaseAction = beginAction(actionSource, actionViewer, `remove:${commentId}`);
         if (!releaseAction) return;
         setRemovingId(commentId);
-        const removingComment = comments.find(comment => comment.id === commentId);
         try {
             await actionSource.remove(commentId);
             if (sourceRef.current !== actionSource || viewerRef.current !== actionViewer) return;
-            setComments(current => {
-                const removedCount = current.filter(c => c.id === commentId || c.parent === commentId).length;
-                if (!removedCount) return current;
-                if (removingComment && !removingComment.parent) {
-                    setTotalRoots(total => Math.max(0, total - 1));
-                    setNextOffset(offset => Math.max(0, offset - 1));
-                }
-                if (onCountChange) onCountChange(-removedCount);
-                return current.filter(c => c.id !== commentId && c.parent !== commentId);
-            });
+            commentChanges.current.removed(commentId);
             setDeleteId(null);
         } catch (e) {
             if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {
