@@ -38,7 +38,7 @@ const getWallet = async () => {
     }
     const me = await rotur.me.get();
     if (!me || typeof me['sys.currency'] !== 'number') {
-        return {allowed: false, balance: null, transactions: []};
+        return {allowed: false, hidden: true, balance: null, transactions: []};
     }
     return {
         allowed: true,
