@@ -13,6 +13,7 @@ import {
     login as identityLogin,
     logout as identityLogout
 } from '../lib/rotur/identity.js';
+import {takeRedirectError} from '../lib/rotur/oauth.js';
 
 const UserContext = createContext({user: null, login: () => {}, loginOrThrow: () => {}, logout: () => {}});
 
@@ -151,7 +152,12 @@ const UserProvider = ({children}) => {
 
     useEffect(() => {
         const unsubscribe = subscribeIdentity(handleIdentity);
-        identityRestore();
+        Promise.resolve(identityRestore())
+            .catch(() => null)
+            .then(() => {
+                const message = takeRedirectError();
+                if (message) setSignInError(signInErrorMessage({message}));
+            });
         return unsubscribe;
     }, [handleIdentity]);
 
