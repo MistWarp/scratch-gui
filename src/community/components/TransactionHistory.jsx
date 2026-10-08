@@ -16,6 +16,7 @@ const PAGE_SIZE = 25;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const dayStart = time => {
+    if (!(time > 0)) return 0;
     const date = new Date(time);
     date.setHours(0, 0, 0, 0);
     return date.getTime();
@@ -72,6 +73,7 @@ const TransactionHistory = ({transactions}) => {
     const today = dayStart(Date.now());
     const yesterday = dayStart(today - (DAY_MS / 2));
     const dayLabel = start => {
+        if (!start) return communityText('Date unknown');
         if (start === today) return communityText('Today');
         if (start === yesterday) return communityText('Yesterday');
         const sameYear = new Date(start).getFullYear() === new Date(today).getFullYear();
@@ -134,9 +136,11 @@ const TransactionHistory = ({transactions}) => {
                                                         <span aria-hidden="true">{' · '}</span>
                                                     </React.Fragment>
                                                 ) : null}
-                                                <time dateTime={new Date(transaction.time).toISOString()}>
-                                                    {clockText(transaction.time)}
-                                                </time>
+                                                {transaction.time > 0 ? (
+                                                    <time dateTime={new Date(transaction.time).toISOString()}>
+                                                        {clockText(transaction.time)}
+                                                    </time>
+                                                ) : null}
                                             </span>
                                         </span>
                                         <strong className={transaction.incoming ? styles.amountIn : styles.amount}>

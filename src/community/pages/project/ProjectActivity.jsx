@@ -75,7 +75,7 @@ const ProjectActivity = ({
                         canPin={project.isOwner}
                         disabled={Boolean(project.commentsOff) || locked}
                         disabledReason={locked && !project.commentsOff ?
-                            'Buy this project to comment.' : 'Comments are turned off.'}
+                            communityText('Buy this project to comment.') : communityText('Comments are turned off.')}
                         reportContext={`project ${id}`}
                         draftKey={`project:${project.id}`}
                         composerAction={project.isOwner ? (

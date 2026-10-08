@@ -9,7 +9,7 @@ import EmptyState from '../../components/ui/EmptyState.jsx';
 import Notice from '../../components/ui/Notice.jsx';
 import SectionHeading from '../../components/ui/SectionHeading.jsx';
 import StatusMessage from '../../components/ui/StatusMessage.jsx';
-import {timeAgo, formatDateTime} from '../../format';
+import {timeAgoText, formatDateTime} from '../../format';
 import copyText from '../../copy-text.js';
 import styles from '../Admin.module.css';
 import AdminActionDialog from './AdminActionDialog.jsx';
@@ -231,7 +231,7 @@ const ErrorManager = () => {
                                     <div className={styles.rowInfo}>
                                         <span className={styles.rowTitle}>{item.message || communityText('Unknown error')}</span>
                                         <span className={styles.rowMeta}>
-                                            {`${item.kind || 'uncaught'}${item.username ? ` · @${item.username}` : ' · anonymous'}${timeAgo(item.created) ? ` · ${timeAgo(item.created)} ago` : ''}`}
+                                            {`${item.kind || 'uncaught'}${item.username ? ` · @${item.username}` : ' · anonymous'}${timeAgoText(item.created) ? ` · ${timeAgoText(item.created)}` : ''}`}
                                         </span>
                                         {item.url ? (
                                             <span className={styles.extensionUrl}>{item.url}</span>

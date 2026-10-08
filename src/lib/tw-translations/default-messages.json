@@ -439,6 +439,7 @@
   "mw.chat.signFailed": "Your message could not be signed, so it was not sent. Try again.",
   "mw.chat.signingPrompt": "Sign your messages so others can check they really came from you.",
   "mw.chat.signingEnable": "Turn on signing",
+  "mw.chat.signingEnableFailed": "Could not turn on signing. Try again.",
   "mw.chat.signingDismiss": "Not now",
   "mw.chat.direct.newLabel": "Rotur username",
   "mw.chat.direct.newButton": "Message",

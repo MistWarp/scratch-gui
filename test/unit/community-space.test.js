@@ -47,4 +47,16 @@ describe('Space follow and project loading', () => {
             getProject.mockRestore();
         }
     });
+
+    test('ranked projects keep the server order when some are fetched separately', async () => {
+        const getProject = jest.spyOn(api, 'getProject').mockImplementation(id => Promise.resolve({project: {id}}));
+        const space = {projectIds: ['a', 'b', 'c', 'd'], projects: [{id: 'c'}, {id: 'a'}, {id: 'd'}]};
+        try {
+            await expect(loadMissingProjects(space, new Map())).resolves.toMatchObject({
+                projects: [{id: 'c'}, {id: 'a'}, {id: 'd'}, {id: 'b'}]
+            });
+        } finally {
+            getProject.mockRestore();
+        }
+    });
 });

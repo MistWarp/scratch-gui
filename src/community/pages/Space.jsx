@@ -66,7 +66,7 @@ const loadMissingProjects = async (space, known = new Map()) => {
         byId.set(project.id, project);
         known.set(project.id, project);
     });
-    return {...normalized, projects: ids.map(projectId => byId.get(projectId)).filter(Boolean)};
+    return {...normalized, projects: [...projects, ...missing.map(projectId => byId.get(projectId)).filter(Boolean)]};
 };
 
 // What following or unfollowing changes, applied before the server answers.
@@ -94,6 +94,7 @@ const Space = () => {
     const [followBusy, setFollowBusy] = useState(false);
     const followLocks = useRef(new Set());
     const knownProjects = useRef(new Map());
+    const shownContext = useRef('');
     const currentContext = useRef(loadContext);
     currentContext.current = loadContext;
     const beginLoad = useLatest();
@@ -110,13 +111,16 @@ const Space = () => {
             .then(fresh(loadedSpace => {
                 setSpace(loadedSpace);
                 setSpaceLoadContext(loadContext);
+                shownContext.current = loadContext;
                 setFailed('');
                 setFailedLoadContext('');
                 return loadedSpace;
             }))
             .catch(fresh(e => {
-                setFailed(spaceLoadMessage(e));
-                setFailedLoadContext(loadContext);
+                if (shownContext.current !== loadContext) {
+                    setFailed(spaceLoadMessage(e));
+                    setFailedLoadContext(loadContext);
+                }
                 throw e;
             }));
     }, [beginLoad, id, loadContext]);

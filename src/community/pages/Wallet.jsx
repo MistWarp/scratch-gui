@@ -38,7 +38,9 @@ const Wallet = () => {
     const [walletError, setWalletError] = useState('');
     const [walletAttempt, setWalletAttempt] = useState(0);
     const [allowing, setAllowing] = useState(false);
-    const [dailyWait, setDailyWait] = useState(null);
+    const [dailyReadyAt, setDailyReadyAt] = useState(0);
+    const [now, setNow] = useState(Date.now());
+    const walletViewer = useRef('');
     const [claiming, setClaiming] = useState(false);
     const [claimMsg, setClaimMsg] = useState('');
     const [purchases, setPurchases] = useState(null);
@@ -48,11 +50,11 @@ const Wallet = () => {
     useEffect(() => {
         setClaimMsg('');
         setClaiming(false);
-        setDailyWait(null);
+        setDailyReadyAt(0);
         if (!viewerName) return () => {};
         let stale = false;
         getDailyWait()
-            .then(wait => !stale && setDailyWait(wait))
+            .then(wait => !stale && setDailyReadyAt(wait > 0 ? Date.now() + wait : 0))
             .catch(() => {});
         return () => {
             stale = true;
@@ -66,7 +68,8 @@ const Wallet = () => {
             return () => {};
         }
         let stale = false;
-        setWallet(null);
+        if (walletViewer.current !== viewerName) setWallet(null);
+        walletViewer.current = viewerName;
         setWalletError('');
         getWallet()
             .then(data => !stale && setWallet(data))
@@ -75,6 +78,13 @@ const Wallet = () => {
             stale = true;
         };
     }, [walletAttempt, viewerName]);
+
+    useEffect(() => {
+        if (dailyReadyAt <= Date.now()) return () => {};
+        setNow(Date.now());
+        const timer = setInterval(() => setNow(Date.now()), 60000);
+        return () => clearInterval(timer);
+    }, [dailyReadyAt]);
 
     useEffect(() => {
         if (!viewerName) {
@@ -116,6 +126,10 @@ const Wallet = () => {
         setAllowing(true);
         try {
             if (await allowWallet() && viewerRef.current === context) setWalletAttempt(value => value + 1);
+        } catch (e) {
+            if (viewerRef.current === context) {
+                setWalletError(communityText('Could not get permission from Rotur. Try again.'));
+            }
         } finally {
             if (viewerRef.current === context) setAllowing(false);
         }
@@ -131,12 +145,12 @@ const Wallet = () => {
             if (viewerRef.current !== context) return;
             if (result.claimed) {
                 setClaimMsg(communityText('Daily credits claimed.'));
-                setDailyWait(24 * HOUR_MS);
+                setDailyReadyAt(Date.now() + (24 * HOUR_MS));
                 setWalletAttempt(value => value + 1);
             } else if (result.denied) {
                 setClaimMsg(communityText('MistWarp needs your permission on Rotur to claim daily credits.'));
             } else {
-                setDailyWait(result.waitMs);
+                setDailyReadyAt(result.waitMs > 0 ? Date.now() + result.waitMs : 0);
             }
         } catch (e) {
             if (viewerRef.current !== context) return;
@@ -146,6 +160,7 @@ const Wallet = () => {
         }
     };
 
+    const dailyWait = dailyReadyAt - now;
     const waitHours = dailyWait > 0 ? Math.ceil(dailyWait / HOUR_MS) : 0;
     const transactions = wallet && wallet.allowed ?
         wallet.transactions.filter(transaction => transaction.mistwarp) :
@@ -163,6 +178,11 @@ const Wallet = () => {
                         <div className={styles.balanceValue}>
                             {fmtCredits(wallet.balance).toLocaleString(getCommunityLocale())}
                             <span className={styles.balanceUnit}>{communityText('credits')}</span>
+                        </div>
+                    ) : wallet && wallet.hidden ? (
+                        <div className={styles.balanceHint}>
+                            {/* eslint-disable-next-line max-len */}
+                            {communityText('Rotur is not sharing your balance with MistWarp. You can still see it on rotur.dev.')}
                         </div>
                     ) : wallet ? (
                         <React.Fragment>
@@ -245,7 +265,10 @@ const Wallet = () => {
                         </React.Fragment>
                     ) : (
                         <EmptyState compact icon={History} title={communityText('Your transactions are on Rotur')}>
-                            {communityText('Show your balance to see them here too.')}
+                            {wallet && wallet.hidden ?
+                                // eslint-disable-next-line max-len
+                                communityText('Rotur is not sharing them with MistWarp. See your full wallet on rotur.dev.') :
+                                communityText('Show your balance to see them here too.')}
                         </EmptyState>
                     )
                 ) : null}

@@ -21,6 +21,7 @@ const config = {
 
 const STORAGE_KEY = 'mw:rotur-oauth';
 const PENDING_KEY = 'mw:rotur-oauth-pending';
+const REDIRECT_ERROR_KEY = 'mw:rotur-oauth-error';
 const CHANNEL = 'mw:rotur-oauth';
 const LOCK = 'mw:rotur-oauth-refresh';
 const POPUP_NAME = 'rotur-signin';
@@ -204,7 +205,14 @@ const awaitPopup = (popup, state) => new Promise((resolve, reject) => {
 const signIn = async (scopes, {redirectFallback = true} = {}) => {
     const popup = window.open('about:blank', POPUP_NAME, `popup,width=480,height=720,left=${
         Math.max(0, (screen.width - 480) / 2)},top=${Math.max(0, (screen.height - 720) / 2)}`);
-    const {verifier, challenge} = await pkce();
+    let verifier;
+    let challenge;
+    try {
+        ({verifier, challenge} = await pkce());
+    } catch (error) {
+        if (popup && !popup.closed) popup.close();
+        throw error;
+    }
     const state = randomString();
     if (!popup) {
         if (!redirectFallback) throw oauthError('popup_blocked', 'Allow pop-ups for this site to sign in with Rotur');
@@ -261,6 +269,14 @@ const completeRedirect = async () => {
         if (params.has('code')) {
             session = await exchangeCode(params.get('code'), pending.verifier, redirectUriFor(false));
             writeSession(session);
+        } else if (!isCancelled({code: params.get('error')})) {
+            throw oauthError(params.get('error'), params.get('error_description') || 'Rotur sign-in failed');
+        }
+    } catch (error) {
+        try {
+            sessionStorage.setItem(REDIRECT_ERROR_KEY, error.message || 'Rotur sign-in failed');
+        } catch (e) {
+            session = null;
         }
     } finally {
         // A full load of the page they were on, so the router sees it too,
@@ -286,13 +302,16 @@ const refresh = stale => withLock(async () => {
     }
     let next;
     try {
+        const fresh = await tokenRequest({grant_type: 'refresh_token', refresh_token: current.refreshToken});
         next = {
-            ...await tokenRequest({grant_type: 'refresh_token', refresh_token: current.refreshToken}),
+            ...fresh,
+            refreshToken: fresh.refreshToken || current.refreshToken,
+            scopes: fresh.scopes.length ? fresh.scopes : current.scopes,
             subject: current.subject,
             username: current.username
         };
     } catch (error) {
-        if (error.code !== 'invalid_grant') throw error;
+        if (error.code !== 'invalid_grant' && error.code !== 'invalid_token' && error.status !== 401) throw error;
         // Another tab without Web Locks may have won the race.
         const latest = readSession();
         if (latest && latest.refreshToken !== current.refreshToken) return latest;
@@ -328,7 +347,14 @@ const getAccessToken = async () => {
 
 scheduleRefresh = session => {
     clearTimeout(refreshTimer);
-    if (!session || !session.refreshToken) return;
+    if (!session) return;
+    if (!session.refreshToken) {
+        refreshTimer = setTimeout(() => {
+            const latest = readSession();
+            if (latest && !latest.refreshToken && latest.expiresAt <= Date.now()) writeSession(null);
+        }, Math.max(0, session.expiresAt - Date.now()) + 1000);
+        return;
+    }
     refreshTimer = setTimeout(() => {
         getAccessToken().catch(() => {
             refreshTimer = setTimeout(() => scheduleRefresh(readSession()), RETRY_DELAY);
@@ -372,7 +398,18 @@ if (typeof window !== 'undefined') {
     scheduleRefresh(readSession());
 }
 
+const takeRedirectError = () => {
+    try {
+        const message = sessionStorage.getItem(REDIRECT_ERROR_KEY);
+        sessionStorage.removeItem(REDIRECT_ERROR_KEY);
+        return message || '';
+    } catch (e) {
+        return '';
+    }
+};
+
 export {
+    takeRedirectError,
     completeRedirect,
     configure,
     getAccessToken,

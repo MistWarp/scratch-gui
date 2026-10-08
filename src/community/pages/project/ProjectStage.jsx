@@ -107,7 +107,7 @@ const ProjectStage = ({
                     activeReaction={project.myReaction || ''}
                     onReact={react}
                     disabled={locked || reactionBusy}
-                    disabledTitle={locked ? 'Buy this project to react' : 'Saving…'}
+                    disabledTitle={locked ? communityText('Buy this project to react.') : communityText('Saving…')}
                 />
                 <button
                     type="button"
@@ -115,7 +115,9 @@ const ProjectStage = ({
                     disabled={savingLibrary}
                     title={user ? (project.saved ? communityText('Remove from your library') : communityText('Save to your library')) :
                         communityText('Sign in to save to your library')}
-                    aria-label={communityText('{value1} library, {value2} saves', {value1: project.saved ? 'Remove from' : 'Save to', value2: project.saveCount || 0})}
+                    aria-label={project.saved ?
+                        communityText('Remove from library, {value1} saves', {value1: project.saveCount || 0}) :
+                        communityText('Save to library, {value1} saves', {value1: project.saveCount || 0})}
                     aria-pressed={Boolean(project.saved)}
                     onClick={saveAfterLogin}
                 >

@@ -7,7 +7,7 @@ import Avatar from '../../components/Avatar.jsx';
 import Button from '../../components/ui/Button.jsx';
 import EmptyState from '../../components/ui/EmptyState.jsx';
 import SectionHeading from '../../components/ui/SectionHeading.jsx';
-import {timeAgo} from '../../format';
+import {timeAgoText} from '../../format';
 import styles from '../Admin.module.css';
 import {adminUserPath} from './admin-links.js';
 
@@ -35,7 +35,7 @@ const BansSection = ({bans, banByName, unban}) => {
                             <div className={styles.rowInfo}>
                                 <span className={styles.rowTitle}><Link to={adminUserPath(ban.username)}>{`@${ban.username}`}</Link></span>
                                 <span className={styles.rowMeta}>
-                                    {communityText('Banned by @{value1}{value2}', {value1: ban.by, value2: timeAgo(ban.created) ? ` · ${timeAgo(ban.created)} ago` : ''})}
+                                    {communityText('Banned by @{value1}{value2}', {value1: ban.by, value2: timeAgoText(ban.created) ? ` · ${timeAgoText(ban.created)}` : ''})}
                                     {ban.reason ? ` · ${ban.reason}` : ''}
                                 </span>
                             </div>
