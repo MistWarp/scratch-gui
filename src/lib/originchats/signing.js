@@ -73,7 +73,11 @@ const verifyMessage = (message, signingUrl) => {
                 }, content)
                     .then(valid => (valid ? 'verified' : 'invalid'));
             })
-            .catch(() => 'unavailable'));
+            .catch(() => {
+                verifications.delete(key);
+                return 'unavailable';
+            }));
+        if (verifications.size > 500) verifications.delete(verifications.keys().next().value);
     }
     return verifications.get(key);
 };
