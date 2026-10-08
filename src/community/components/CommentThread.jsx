@@ -342,7 +342,11 @@ const CommentThread = ({
     const [replyTo, setReplyTo] = useState(null);
     const [replyText, setReplyText] = useState('');
     const [busy, setBusy] = useState(false);
-    const [error, setError] = useState(null);
+    const [errorState, setErrorState] = useState(null);
+    const setError = useCallback((message, target = 'general') => {
+        setErrorState(message ? {text: message, target} : null);
+    }, []);
+    const errorFor = target => (errorState && errorState.target === target ? errorState.text : null);
     const [loadingComments, setLoadingComments] = useState(true);
     const [loadFailed, setLoadFailed] = useState(false);
     const [reportId, setReportId] = useState(null);
@@ -359,6 +363,7 @@ const CommentThread = ({
     const [nextOffset, setNextOffset] = useState(0);
     const [loadingMore, setLoadingMore] = useState(false);
     const [moreFailed, setMoreFailed] = useState(false);
+    const failedFullLoad = useRef('');
     const [allCommentsLoaded, setAllCommentsLoaded] = useState(false);
     const sourceRef = useRef(source);
     const viewerRef = useRef(viewerName);
@@ -559,6 +564,8 @@ const CommentThread = ({
     useEffect(() => {
         if (!projectComments || allCommentsLoaded || loadingComments || loadingMore) return;
         if (!search.trim() && kindFilter === 'all') return;
+        const loadKey = `${search.trim()}\u0000${kindFilter}\u0000${sortOrder}`;
+        if (failedFullLoad.current === loadKey) return;
         const actionSource = source;
         const actionViewer = viewerName;
         const fresh = beginExtraLoad();
@@ -578,6 +585,7 @@ const CommentThread = ({
                     setLoadingMore(false);
                 }))
                 .catch(fresh(() => {
+                    failedFullLoad.current = loadKey;
                     setMoreFailed(true);
                     setLoadingMore(false);
                 }));
@@ -606,7 +614,7 @@ const CommentThread = ({
         if (!text.trim()) return;
         const attachedDonation = parent ? 0 : parseCommentDonation(donation);
         if (attachedDonation === null) {
-            setError(communityText('Enter a donation between 0.01 and 100000 credits.'));
+            setError(communityText('Enter a donation between 0.01 and 100000 credits.'), 'root');
             return;
         }
         const actionSource = source;
@@ -648,7 +656,7 @@ const CommentThread = ({
             if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {
                 setError(e.cancelled ?
                     communityText('Payment cancelled.') :
-                    (e.message || communityText('Could not post comment.')));
+                    (e.message || communityText('Could not post comment.')), parent || 'root');
             }
         } finally {
             releaseAction();
@@ -683,7 +691,7 @@ const CommentThread = ({
             setDeleteId(null);
         } catch (e) {
             if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {
-                setError(e.message || communityText('Could not delete comment.'));
+                setError(e.message || communityText('Could not delete comment.'), 'delete');
             }
         } finally {
             releaseAction();
@@ -847,7 +855,7 @@ const CommentThread = ({
                     placeholder={communityText('Add a comment')}
                     ariaLabel={communityText('Add a comment')}
                     busy={busy}
-                    error={replyTo === null ? error : null}
+                    error={errorFor('root') || (replyTo === null ? errorFor('general') : null)}
                     kind={projectComments ? kind : null}
                     onKindChange={projectComments ? setKind : null}
                     composerAction={composerAction}
@@ -1019,7 +1027,7 @@ const CommentThread = ({
                                         placeholder={communityText('Reply to {value1}', {value1: comment.author})}
                                         ariaLabel={communityText('Write a reply')}
                                         busy={busy}
-                                        error={error}
+                                        error={errorFor(comment.id)}
                                     />
                                 ) : null}
                             </div>
@@ -1069,7 +1077,7 @@ const CommentThread = ({
                             {communityText('No comments match those filters.')}
                         </EmptyState>
                     ) : null}
-                    {!loadingComments && !loadFailed && !comments.length ? (
+                    {!disabled && !loadingComments && !loadFailed && !comments.length ? (
                         <EmptyState compact icon={MessageSquare} title={communityText('No comments yet')}>
                             {communityText('Be the first to leave a comment.')}
                         </EmptyState>
@@ -1093,7 +1101,7 @@ const CommentThread = ({
                     confirmLabel={communityText('Delete comment')}
                     busy={removingId !== null}
                     busyLabel={communityText('Deleting…')}
-                    error={error}
+                    error={errorFor('delete')}
                     onConfirm={() => remove(deleteComment.id)}
                     onCancel={() => setDeleteId(null)}
                 >
