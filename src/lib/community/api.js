@@ -187,7 +187,8 @@ const requestValidator = async (roturToken, key) => {
     const status = response.status;
     const error = new Error(data.error || 'Could not validate Rotur login');
     error.status = status;
-    if (status === 403) error.code = data.code || 'account_blocked';
+    const permissionError = /lacks permission|OAuth access tokens/i.test(data.error || '');
+    if (status === 403 && !permissionError) error.code = data.code || 'account_blocked';
     else if (status === 429 || status >= 500) error.code = data.code || 'VALIDATOR_UNAVAILABLE';
     else error.code = data.code || 'VALIDATOR_GENERATION_FAILED';
     error.redirectUrl = data.redirect_url || 'https://rotur.dev/me';
@@ -207,6 +208,7 @@ const exchangeValidator = async roturToken => {
         try {
             validator = await requestValidator(roturToken, key);
         } catch (error) {
+            if (error.data && RESTRICTED_CODES.includes(error.data.code)) throw error;
             // Only MistWarp's own sign-in token can make app-ID validators, so
             // the desktop app's and older tokens get 403 and use the old key.
             // That needs validators:generate; without it, keep an earlier 401.
