@@ -24,6 +24,12 @@ const timeAgo = ms => {
     return `${Math.floor(days / 365)}y`;
 };
 
+const timeAgoText = ms => {
+    const relative = timeAgo(ms);
+    if (!relative || relative === 'just now' || getCommunityLocale() !== 'en') return relative;
+    return formatCommunityMessage('{value1} ago', {value1: relative});
+};
+
 const sameUser = (a, b) => Boolean(a && b) && a.toLowerCase() === b.toLowerCase();
 
 const safeDate = value => {
@@ -88,4 +94,6 @@ const formatCountdown = ms => {
     return restHours ? `${days}d ${restHours}h` : `${days}d`;
 };
 
-export {timeAgo, sameUser, formatBytes, formatCountdown, formatDate, formatDateTime, formatPlaytime, safeDate};
+export {
+    timeAgo, timeAgoText, sameUser, formatBytes, formatCountdown, formatDate, formatDateTime, formatPlaytime, safeDate
+};

@@ -11,7 +11,7 @@ import Button from '../../components/ui/Button.jsx';
 import EmptyState from '../../components/ui/EmptyState.jsx';
 import SectionHeading from '../../components/ui/SectionHeading.jsx';
 import StatusMessage from '../../components/ui/StatusMessage.jsx';
-import {timeAgo, formatBytes} from '../../format';
+import {timeAgoText, formatBytes} from '../../format';
 import styles from '../Admin.module.css';
 import UserDetailCard from './UserDetailCard.jsx';
 
@@ -126,7 +126,7 @@ const UserManager = ({selected: controlledSelected, onSelect}) => {
                 <div className={styles.userList}>
                     {users.map(user => {
                         const pct = user.quotaLimit > 0 ? (user.quotaUsed / user.quotaLimit) * 100 : 0;
-                        const joined = timeAgo(user.created);
+                        const joined = timeAgoText(user.created);
                         return (
                             <div
                                 key={user.username}
@@ -155,7 +155,7 @@ const UserManager = ({selected: controlledSelected, onSelect}) => {
                                     </span>
                                     <span className={styles.rowMeta}>
                                         {joined ?
-                                            communityText('Joined {value1} ago · {value2} projects · {value3} followers', {value1: joined, value2: user.projectCount, value3: user.followerCount}) :
+                                            communityText('Joined {value1} · {value2} projects · {value3} followers', {value1: joined, value2: user.projectCount, value3: user.followerCount}) :
                                             communityText('{value1} projects · {value2} followers', {value1: user.projectCount, value2: user.followerCount})}
                                     </span>
                                 </div>

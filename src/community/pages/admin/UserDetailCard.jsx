@@ -17,7 +17,7 @@ import EmptyState from '../../components/ui/EmptyState.jsx';
 import Notice from '../../components/ui/Notice.jsx';
 import SectionHeading from '../../components/ui/SectionHeading.jsx';
 import StatusMessage from '../../components/ui/StatusMessage.jsx';
-import {formatBytes, formatDate, formatDateTime, timeAgo} from '../../format';
+import {formatBytes, formatDate, formatDateTime, timeAgoText} from '../../format';
 import styles from '../Admin.module.css';
 import AdminActionDialog from './AdminActionDialog.jsx';
 import {commentLocation} from './admin-links.js';
@@ -100,7 +100,9 @@ const UserDetailCard = ({username, onBack}) => {
     const [dialog, setDialog] = useState(null);
     const [dialogBusy, setDialogBusy] = useState(false);
     const [dialogError, setDialogError] = useState('');
+    const [busyAction, setBusyAction] = useState('');
     const deleteInFlight = useRef(false);
+    const actionInFlight = useRef(false);
     const currentUsername = useRef(username);
     currentUsername.current = username;
 
@@ -114,6 +116,8 @@ const UserDetailCard = ({username, onBack}) => {
         setDialog(null);
         setDialogError('');
         setDialogBusy(false);
+        setBusyAction('');
+        actionInFlight.current = false;
         api.admin.getUser(username)
             .then(result => {
                 if (!active) return;
@@ -133,44 +137,78 @@ const UserDetailCard = ({username, onBack}) => {
         };
     }, [username]);
 
-    const refresh = () => {
+    const refresh = actionUser => {
         if (!data) return;
-        const actionUsername = data.username;
-        api.admin.getUser(actionUsername)
+        api.admin.getUser(data.username)
             .then(result => {
-                if (currentUsername.current === actionUsername) setData(result);
+                if (currentUsername.current === actionUser) setData(result);
             })
             .catch(() => {});
     };
 
-    const run = async (action, success) => {
+    const run = async (key, action, success) => {
+        if (actionInFlight.current) return false;
+        const actionUser = currentUsername.current;
+        const releaseAction = () => {
+            actionInFlight.current = false;
+        };
+        actionInFlight.current = true;
+        setBusyAction(key);
         setError('');
         setNote('');
         try {
             await action();
+            if (currentUsername.current !== actionUser) return false;
             if (success) setNote(success);
-            refresh();
+            refresh(actionUser);
+            return true;
         } catch (e) {
-            setError(e.message || 'Action failed.');
+            if (currentUsername.current === actionUser) setError(e.message || communityText('Action failed.'));
+            return false;
+        } finally {
+            if (currentUsername.current === actionUser) {
+                releaseAction();
+                setBusyAction('');
+            }
         }
     };
 
-    const applyStanding = () => run(
-        () => api.admin.setStanding(data.username, level, reasonText.trim()),
-        communityText('Standing updated.')
-    );
+    const submitStanding = async () => {
+        const done = await run(
+            'standing',
+            () => api.admin.setStanding(data.username, level, reasonText.trim()),
+            communityText('Standing updated.')
+        );
+        if (done) setReasonText('');
+        return done;
+    };
+
+    const applyStanding = () => {
+        if (level !== 'suspended' && level !== 'banned') return submitStanding();
+        setDialogError('');
+        setDialog({
+            kind: 'standing',
+            title: level === 'banned' ? communityText('Ban @{value1}?', {value1: data.username}) : communityText('Suspend @{value1}?', {value1: data.username}),
+            description: level === 'banned' ?
+                communityText('They will be banned from MistWarp and Rotur and get a notification with your reason.') :
+                communityText('They will be suspended and get a notification with your reason.'),
+            action: level === 'banned' ? communityText('Ban user') : communityText('Suspend user'),
+            danger: true,
+            icon: Gavel
+        });
+    };
 
     const sendMessage = async () => {
         if (!message.trim()) return;
-        await run(() => api.admin.messageUser(data.username, message.trim()), communityText('Message sent.'));
-        setMessage('');
+        const done = await run('message', () => api.admin.messageUser(data.username, message.trim()), communityText('Message sent.'));
+        if (done) setMessage('');
     };
 
-    const toggleComments = () => run(() => api.admin.updateUserProfile(data.username, {commentsOff: !data.commentsOff}));
+    const toggleComments = () => run('comments', () => api.admin.updateUserProfile(data.username, {commentsOff: !data.commentsOff}));
 
     const saveNote = async () => {
         setNoteBusy(true);
-        await run(() => api.admin.setUserNote(data.username, adminNote.trim()), communityText('Note saved.'));
+        await run('note', () => api.admin.setUserNote(data.username, adminNote.trim()), communityText('Note saved.'));
         setNoteBusy(false);
     };
 
@@ -178,16 +216,17 @@ const UserDetailCard = ({username, onBack}) => {
         if (navigator.clipboard && data.userId) navigator.clipboard.writeText(data.userId).catch(() => {});
     };
 
-    const unshareProject = pid => run(() => api.unpublish(pid), communityText('Project unshared.'));
+    const unshareProject = pid => run(`unshare:${pid}`, () => api.unpublish(pid), communityText('Project unshared.'));
 
     const deleteProject = pid => {
         if (deleteInFlight.current) return;
         const project = (data.projects || []).find(item => item.id === pid);
         setDialogError('');
         setDialog({
+            kind: 'delete',
             id: pid,
             title: communityText('Delete project?'),
-            description: communityText('Delete {value1} permanently?', {value1: project ? project.title : communityText('this project')}),
+            description: communityText('Move {value1} to its owner\'s trash? They can restore it from there.', {value1: project ? project.title : communityText('this project')}),
             action: communityText('Delete project'),
             danger: true,
             icon: FolderOpen
@@ -205,14 +244,26 @@ const UserDetailCard = ({username, onBack}) => {
             setDialogError('');
             await api.deleteProject(dialog.id);
             setDialog(null);
-            setNote(communityText('Project deleted.'));
-            refresh();
+            setNote(communityText('Project moved to trash.'));
+            refresh(currentUsername.current);
         } catch (e) {
             setDialogError(e.message || 'Could not delete.');
         } finally {
             releaseDelete();
             setDialogBusy(false);
         }
+    };
+
+    const confirmDialog = async () => {
+        if (!dialog) return;
+        if (dialog.kind === 'standing') {
+            setDialogBusy(true);
+            const done = await submitStanding();
+            setDialogBusy(false);
+            if (done) setDialog(null);
+            return;
+        }
+        confirmDeleteProject();
     };
 
     if (error && !data) {
@@ -277,9 +328,9 @@ const UserDetailCard = ({username, onBack}) => {
                 error={dialogError}
                 onChange={() => {}}
                 onCancel={() => {
-                    if (!deleteInFlight.current) setDialog(null);
+                    if (!deleteInFlight.current && !dialogBusy) setDialog(null);
                 }}
-                onConfirm={confirmDeleteProject}
+                onConfirm={confirmDialog}
             />
             <Button className={styles.backButton} onClick={onBack}>
                 <ArrowLeft size={15} />
@@ -320,11 +371,11 @@ const UserDetailCard = ({username, onBack}) => {
                 <Fact
                     label={communityText('Joined MistWarp')}
                     value={data.created ? formatDate(data.created) : communityText('Unknown')}
-                    detail={timeAgo(data.created) ? communityText('{value1} ago', {value1: timeAgo(data.created)}) : null}
+                    detail={timeAgoText(data.created) || null}
                 />
                 <Fact
                     label={communityText('Last signed in')}
-                    value={sessions.lastSignIn ? communityText('{value1} ago', {value1: timeAgo(sessions.lastSignIn)}) : communityText('Not in the last 7 days')}
+                    value={sessions.lastSignIn ? timeAgoText(sessions.lastSignIn) : communityText('Not in the last 7 days')}
                     detail={sessions.active ? communityText('{value1} active sessions', {value1: sessions.active}) : null}
                 />
                 <Fact
@@ -367,7 +418,7 @@ const UserDetailCard = ({username, onBack}) => {
                             />
                             <div className={styles.panelFooter}>
                                 <span className={styles.rowMeta}>
-                                    {data.note && data.note.updated ? communityText('Last edited by @{value1} {value2} ago', {value1: data.note.by, value2: timeAgo(data.note.updated)}) : ''}
+                                    {data.note && data.note.updated ? communityText('Last edited by @{value1}, {value2}', {value1: data.note.by, value2: timeAgoText(data.note.updated)}) : ''}
                                 </span>
                                 <Button
                                     onClick={saveNote}
@@ -428,7 +479,7 @@ const UserDetailCard = ({username, onBack}) => {
                                     </div>
                                     <div className={styles.rowActions}>
                                         {project.shared ? (
-                                            <Button onClick={() => unshareProject(project.id)}>{communityText('Unshare')}</Button>
+                                            <Button busy={busyAction === `unshare:${project.id}`} onClick={() => unshareProject(project.id)}>{communityText('Unshare')}</Button>
                                         ) : null}
                                         <Button variant="danger" onClick={() => deleteProject(project.id)}>{communityText('Delete')}</Button>
                                     </div>
@@ -520,7 +571,11 @@ const UserDetailCard = ({username, onBack}) => {
                                     value={reasonText}
                                     onChange={e => setReasonText(e.target.value)}
                                 />
-                                <Button onClick={applyStanding}>{communityText('Apply')}</Button>
+                                <Button
+                                    busy={busyAction === 'standing'}
+                                    disabled={level === ((data.standing && data.standing.level) || 'good') && !reasonText.trim()}
+                                    onClick={applyStanding}
+                                >{communityText('Apply')}</Button>
                             </div>
                             {standing.recoverAt ? (
                                 <p className={styles.mutedLine}>{communityText('Goes back to good standing on {value1}.', {value1: formatDate(standing.recoverAt)})}</p>
@@ -556,12 +611,12 @@ const UserDetailCard = ({username, onBack}) => {
                             />
                             <div className={styles.panelFooter}>
                                 <span />
-                                <Button disabled={!message.trim()} onClick={sendMessage}>{communityText('Send')}</Button>
+                                <Button disabled={!message.trim()} busy={busyAction === 'message'} onClick={sendMessage}>{communityText('Send')}</Button>
                             </div>
                         </section>
                         <section className={styles.panel}>
                             <SectionHeading as="h3" icon={UserCog} title={communityText('Profile')} />
-                            <Button className={styles.inlineAction} onClick={toggleComments}>
+                            <Button className={styles.inlineAction} busy={busyAction === 'comments'} onClick={toggleComments}>
                                 {data.commentsOff ? communityText('Turn on profile comments') : communityText('Turn off profile comments')}
                             </Button>
                         </section>
