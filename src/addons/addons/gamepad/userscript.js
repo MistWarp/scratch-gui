@@ -125,6 +125,7 @@ export default async function ({addon, console, msg}) {
     }
 
     const renderer = vm.runtime.renderer;
+    if (!renderer) return;
     const stageWidth = () => vm.runtime.stageWidth;
     const stageHeight = () => vm.runtime.stageHeight;
     const canvas = renderer.canvas;
