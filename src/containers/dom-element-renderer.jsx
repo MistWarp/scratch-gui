@@ -21,7 +21,9 @@ class DOMElementRenderer extends React.Component {
         this.container.appendChild(this.props.domElement);
     }
     componentWillUnmount () {
-        this.container.removeChild(this.props.domElement);
+        if (this.container && this.props.domElement.parentNode === this.container) {
+            this.container.removeChild(this.props.domElement);
+        }
     }
     setContainer (c) {
         this.container = c;

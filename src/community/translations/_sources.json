@@ -1067,7 +1067,7 @@
   ],
   "Try again": [
     "src/community/components/LanguagePicker.jsx:20",
-    "src/community/components/RouteErrorBoundary.jsx:23",
+    "src/community/components/RouteErrorBoundary.jsx:26",
     "src/community/components/ui/StatusMessage.jsx:26",
     "src/community/pages/Notifications.jsx:418",
     "src/community/pages/Random.jsx:56",
@@ -2309,14 +2309,20 @@
   "This only reads your public Rotur info.": [
     "src/community/components/RoturConsentModal.jsx:113"
   ],
+  "This page could not load.": [
+    "src/community/components/RouteErrorBoundary.jsx:20"
+  ],
   "Something went wrong on this page.": [
-    "src/community/components/RouteErrorBoundary.jsx:18"
+    "src/community/components/RouteErrorBoundary.jsx:21"
   ],
   "Go to home": [
-    "src/community/components/RouteErrorBoundary.jsx:27"
+    "src/community/components/RouteErrorBoundary.jsx:30"
+  ],
+  "Part of the site did not download. Check your connection and try again.": [
+    "src/community/components/RouteErrorBoundary.jsx:36"
   ],
   "The problem has been reported. Try again, or head back to the home page.": [
-    "src/community/components/RouteErrorBoundary.jsx:32"
+    "src/community/components/RouteErrorBoundary.jsx:37"
   ],
   "Loading page…": [
     "src/community/components/RouteLoading.jsx:53"
