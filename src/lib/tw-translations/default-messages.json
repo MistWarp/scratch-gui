@@ -799,6 +799,7 @@
   "gui.playButton.play": "Play",
   "gui.playButton.stop": "Stop",
   "mw.projectLoadError.title": "Could not load project",
+  "mw.projectLoadError.unknownExtension": "This project uses the extension {extension}, which MistWarp does not have. It was probably made in another Scratch mod.",
   "mw.projectLoadError.description": "Check your connection and try again.",
   "mw.projectLoadError.retry": "Try again",
   "mw.projectLoadError.newProject": "Start a new project",

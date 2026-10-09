@@ -37,4 +37,26 @@ describe('project load error', () => {
             .simulate('click');
         expect(onOpenFile).toHaveBeenCalledTimes(1);
     });
+
+    test('names a missing extension instead of offering a retry', () => {
+        const wrapper = mountWithIntl(
+            <ProjectLoadError error={new Error('Unknown extension: p7videosharing')} />
+        );
+        expect(wrapper.find('code').text()).toBe('p7videosharing');
+        expect(wrapper.text()).toContain('which MistWarp does not have');
+        expect(wrapper.find('button')).toHaveLength(0);
+        expect(wrapper.find('a').text()).toBe('Start a new project');
+    });
+
+    test('keeps an embed on the project page', () => {
+        const wrapper = mountWithIntl(
+            <ProjectLoadError
+                isEmbedded
+                error={new Error('Failed to fetch')}
+                onRetry={jest.fn()}
+            />
+        );
+        expect(wrapper.find('a')).toHaveLength(0);
+        expect(wrapper.find('button').text()).toBe('Try again');
+    });
 });
