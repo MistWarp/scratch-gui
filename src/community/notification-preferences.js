@@ -22,7 +22,7 @@ const setNotificationPreferences = preferences => {
 };
 
 const categoryForNotification = type => {
-    if (['standing', 'moderation', 'news', 'report_update'].includes(type)) return 'system';
+    if (['standing', 'moderation', 'project_hidden', 'project_restored', 'news', 'report_update'].includes(type)) return 'system';
     if (['purchase', 'donation', 'cosmetic_gift', 'item_received', 'item_sold', 'item_purchased'].includes(type)) return 'economy';
     if (['remix', 'contribution', 'project_feedback', 'project_review', 'roadmap_comment', 'space_project', 'space_comment', 'space_curator_invite', 'space_curator_accepted', 'space_curator_declined', 'space_curator_removed', 'release'].includes(type)) return 'projects';
     return 'social';

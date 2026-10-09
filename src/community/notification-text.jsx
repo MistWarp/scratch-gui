@@ -5,7 +5,7 @@ import {isMilestoneNotification, milestoneLink, milestoneText} from './milestone
 // Shared by the notifications page and the Home preview so both describe and
 // link notifications the same way.
 
-export const SYSTEM_TYPES = ['standing', 'moderation', 'news', 'report_update'];
+export const SYSTEM_TYPES = ['standing', 'moderation', 'project_hidden', 'project_restored', 'news', 'report_update'];
 
 export const GROUP_TYPES = [
     'group_invite',
@@ -138,6 +138,7 @@ const reportOutcome = (action, t) => {
     case 'warn_user': return t('Your report was actioned with a warning.');
     case 'ban_user': return t('Your report was actioned with a ban.');
     case 'unshare_project': return t('Your report was actioned; the project was unshared.');
+    case 'hide_project': return t('Your report was actioned; the project was hidden.');
     default: return t('Your report was reviewed.');
     }
 };
@@ -223,6 +224,18 @@ export const describeNotification = (n, t, actor) => {
     case 'standing': return n.reason ?
         t('Your account standing is now {level}: {reason}', {level: strong(n.level), reason: n.reason}) :
         t('Your account standing is now {level}.', {level: strong(n.level)});
+    case 'project_hidden':
+        if (project) {
+            return n.reason ?
+                t('A moderator hid {project}: {reason}', {project, reason: n.reason}) :
+                t('A moderator hid {project}.', {project});
+        }
+        return n.reason ?
+            t('A moderator hid your project: {reason}', {reason: n.reason}) :
+            t('A moderator hid your project.');
+    case 'project_restored': return project ?
+        t('A moderator restored {project}.', {project}) :
+        t('A moderator restored your project.');
     case 'moderation': return n.message ?
         t.plain(n.message) :
         t('A moderator sent you a message.');

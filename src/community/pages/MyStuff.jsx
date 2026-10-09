@@ -69,6 +69,7 @@ const trashPurgeConfirmation = project => ({
 });
 
 const visibilityLabel = project => {
+    if (project.moderationHidden) return 'Hidden by a moderator';
     if (project.contributionOnly) return 'Contribution only';
     const v = project.visibility || (project.shared ? 'public' : 'private');
     if (v === 'public') return 'Shared';
