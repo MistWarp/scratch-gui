@@ -14,7 +14,7 @@ import EvidencePanel from './EvidencePanel.jsx';
 import {adminUserPath} from './admin-links.js';
 
 // The open moderation queue: reports and support requests with their actions.
-const ReportsSection = ({reports, openCount, replyToSupport, act, warnFromReport, banFromReport}) => {
+const ReportsSection = ({reports, openCount, replyToSupport, act, hideFromReport, warnFromReport, banFromReport}) => {
     const {text: communityText} = useCommunityText();
     return (
         <section className={styles.card}>
@@ -85,7 +85,7 @@ const ReportsSection = ({reports, openCount, replyToSupport, act, warnFromReport
                                     <Button onClick={() => replyToSupport(report)}>{communityText('Reply and close')}</Button>
                                 ) : null}
                                 {report.type === 'project' ? (
-                                    <Button onClick={() => act(report.id, 'unshare_project')}>{communityText('Unshare')}</Button>
+                                    <Button onClick={() => hideFromReport(report)}>{communityText('Hide project')}</Button>
                                 ) : null}
                                 {report.type !== 'support' ? (
                                     <Button onClick={() => warnFromReport(report)}>

@@ -12,6 +12,7 @@ import StatusMessage from '../../components/ui/StatusMessage.jsx';
 import useLatest from '../../use-latest.js';
 import styles from '../Admin.module.css';
 import AdminActionDialog from './AdminActionDialog.jsx';
+import ProjectModerationDialog from './ProjectModerationDialog.jsx';
 
 const ProjectManager = () => {
     const {text: communityText} = useCommunityText();
@@ -22,6 +23,7 @@ const ProjectManager = () => {
     const [dialog, setDialog] = useState(null);
     const [dialogError, setDialogError] = useState('');
     const [dialogBusy, setDialogBusy] = useState(false);
+    const [moderation, setModeration] = useState(null);
     const actionInFlight = useRef(false);
     const beginSearch = useLatest();
 
@@ -41,22 +43,20 @@ const ProjectManager = () => {
         search('');
     }, [search]);
 
-    const unshare = async id => {
+    const moderate = (kind, project) => {
         if (actionInFlight.current) return;
-        const releaseAction = () => {
-            actionInFlight.current = false;
-        };
-        actionInFlight.current = true;
-        try {
-            setError('');
-            await api.unpublish(id);
-            setNote(communityText('Project unshared.'));
-            search(query);
-        } catch (e) {
-            setError(e.message || 'Could not unshare that project.');
-        } finally {
-            releaseAction();
-        }
+        setError('');
+        setNote('');
+        setModeration({kind, project});
+    };
+
+    const moderationDone = kind => {
+        setModeration(null);
+        if (kind === 'hide') setNote(communityText('Project hidden. Its creator was told why.'));
+        else if (kind === 'restore') setNote(communityText('Project restored.'));
+        else if (kind === 'shadow') setNote(communityText('Project shadow banned.'));
+        else setNote(communityText('Shadow ban lifted.'));
+        search(query);
     };
 
     const remove = id => {
@@ -106,6 +106,12 @@ const ProjectManager = () => {
                 }}
                 onConfirm={confirmRemove}
             />
+            <ProjectModerationDialog
+                kind={moderation ? moderation.kind : null}
+                project={moderation ? moderation.project : null}
+                onClose={() => setModeration(null)}
+                onDone={moderationDone}
+            />
             <SectionHeading icon={FolderOpen} title={communityText('Projects')} />
             <div className={styles.addAdmin}>
                 <input
@@ -133,15 +139,26 @@ const ProjectManager = () => {
                             <div className={styles.rowInfo}>
                                 <span className={styles.rowTitle}>
                                     <Link to={projectUrl(project)}>{project.title || project.id}</Link>
+                                    {project.moderationHidden ? <span className={`${styles.badge} ${styles.badgeWarn}`}>{communityText('Hidden')}</span> : null}
+                                    {project.projectShadowBanned ? <span className={`${styles.badge} ${styles.badgeWarn}`}>{communityText('Shadow banned')}</span> : null}
+                                    {project.ownerShadowBanned ? <span className={`${styles.badge} ${styles.badgeWarn}`}>{communityText('Creator shadow banned')}</span> : null}
+                                    {project.ownerBanned ? <span className={`${styles.badge} ${styles.badgeDanger}`}>{communityText('Creator banned')}</span> : null}
                                 </span>
                                 <span className={styles.rowMeta}>
                                     {communityText('by @{value1} · {value2}', {value1: project.owner, value2: project.shared ? communityText('Shared') : communityText('Unshared')})}
                                 </span>
                             </div>
                             <div className={styles.rowActions}>
-                                {project.shared ? (
-                                    <Button onClick={() => unshare(project.id)}>{communityText('Unshare')}</Button>
-                                ) : null}
+                                {project.moderationHidden ? (
+                                    <Button onClick={() => moderate('restore', project)}>{communityText('Restore')}</Button>
+                                ) : (
+                                    <Button onClick={() => moderate('hide', project)}>{communityText('Hide')}</Button>
+                                )}
+                                {project.projectShadowBanned ? (
+                                    <Button onClick={() => moderate('unshadow', project)}>{communityText('Lift shadow ban')}</Button>
+                                ) : (
+                                    <Button onClick={() => moderate('shadow', project)}>{communityText('Shadow ban')}</Button>
+                                )}
                                 <Button variant="danger" onClick={() => remove(project.id)}>{communityText('Delete')}</Button>
                             </div>
                         </div>

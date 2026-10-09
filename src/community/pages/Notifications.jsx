@@ -61,6 +61,8 @@ const TYPE_STYLE = {
     donation: {icon: Coins, color: '#e0a63c'},
     standing: {icon: ShieldAlert, color: '#e35d6a'},
     moderation: {icon: ShieldAlert, color: '#e35d6a'},
+    project_hidden: {icon: ShieldAlert, color: '#e35d6a'},
+    project_restored: {icon: ShieldAlert, color: '#3fae6a'},
     news: {icon: Megaphone, color: '#9a6ff0'},
     report_update: {icon: Flag, color: '#e35d6a'},
     contribution: {icon: GitPullRequest, color: '#4c8dff'},

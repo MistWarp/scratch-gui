@@ -49,6 +49,7 @@ import ProjectHeader from './project/ProjectHeader.jsx';
 import ForkSetupModal from './project/ForkSetupModal.jsx';
 import PlayerPrompts from './project/PlayerPrompts.jsx';
 import ProjectNotices from './project/ProjectNotices.jsx';
+import ProjectModerationDialog from './admin/ProjectModerationDialog.jsx';
 import ProjectStage from './project/ProjectStage.jsx';
 import ProjectActivity from './project/ProjectActivity.jsx';
 
@@ -86,6 +87,7 @@ const Project = () => {
     const [savingTitle, setSavingTitle] = useState(false);
     const [thumbnailStatus, setThumbnailStatus] = useState('idle');
     const [reporting, setReporting] = useState(false);
+    const [moderation, setModeration] = useState(null);
     const [copied, setCopied] = useState(false);
     const [collectionOpen, setCollectionOpen] = useState(false);
     const thumbInput = useRef(null);
@@ -718,7 +720,20 @@ const Project = () => {
                 menuReport={menuReport}
                 setActionError={setActionError}
                 setDeleteConfirm={setDeleteConfirm}
+                openModeration={setModeration}
             />
+
+            {user && user.isAdmin ? (
+                <ProjectModerationDialog
+                    kind={moderation}
+                    project={project}
+                    onClose={() => setModeration(null)}
+                    onDone={() => {
+                        setModeration(null);
+                        load();
+                    }}
+                />
+            ) : null}
 
             {collectionOpen ? <CollectionSaveModal project={project} onClose={() => setCollectionOpen(false)} /> : null}
 
@@ -802,6 +817,8 @@ const Project = () => {
                 projectThemeApplied={projectThemeApplied}
                 revertTheme={revertTheme}
                 setRevertTheme={setRevertTheme}
+                isAdmin={Boolean(user && user.isAdmin)}
+                openModeration={setModeration}
             />
 
             <div className={styles.stageRow}>

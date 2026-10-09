@@ -324,6 +324,14 @@ const api = {
         bans: () => request('/admin/bans'),
         ban: (username, reason) => request('/admin/ban', {method: 'POST', body: {username, reason}}),
         unban: username => request('/admin/unban', {method: 'POST', body: {username}}),
+        shadowBans: () => request('/admin/shadowbans', {cache: false}),
+        shadowBan: (username, reason) => request('/admin/shadowban', {method: 'POST', body: {username, reason}}),
+        liftShadowBan: username => request('/admin/unshadowban', {method: 'POST', body: {username}}),
+        hideProject: (id, reason) => request(`/admin/projects/${id}/hide`, {method: 'POST', body: {reason}}),
+        restoreProject: id => request(`/admin/projects/${id}/restore`, {method: 'POST'}),
+        shadowBanProject: (id, reason) =>
+            request(`/admin/projects/${id}/shadowban`, {method: 'POST', body: {reason}}),
+        liftProjectShadowBan: id => request(`/admin/projects/${id}/unshadowban`, {method: 'POST'}),
         getUser: username => request(`/admin/user?username=${encodeURIComponent(username)}`),
         setStanding: (username, level, reason) =>
             request('/admin/standing', {method: 'POST', body: {username, level, reason}}),
