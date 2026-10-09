@@ -1,21 +1,24 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import {Link} from 'react-router-dom';
-import {House, RotateCcw, TriangleAlert} from 'lucide-react';
+import {House, RotateCcw, TriangleAlert, WifiOff} from 'lucide-react';
 import log from '../../lib/utils/log.js';
 import {reportSiteError} from '../../lib/error-reporter.js';
+import {isChunkLoadError} from '../../lib/lazy-with-retry.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import Button from './ui/Button.jsx';
 import EmptyState from './ui/EmptyState.jsx';
 import styles from '../pages/InfoPage.module.css';
 
-const RouteErrorFallback = ({onRetry}) => {
+const RouteErrorFallback = ({offline, onRetry}) => {
     const {text: communityText} = useCommunityText();
     return (
         <main className={`${styles.page} ${styles.notFound}`}>
             <EmptyState
-                icon={TriangleAlert}
-                title={communityText('Something went wrong on this page.')}
+                icon={offline ? WifiOff : TriangleAlert}
+                title={offline ?
+                    communityText('This page could not load.') :
+                    communityText('Something went wrong on this page.')}
                 action={(
                     <React.Fragment>
                         <Button variant="primary" onClick={onRetry}>
@@ -29,13 +32,16 @@ const RouteErrorFallback = ({onRetry}) => {
                     </React.Fragment>
                 )}
             >
-                {communityText('The problem has been reported. Try again, or head back to the home page.')}
+                {offline ?
+                    communityText('Part of the site did not download. Check your connection and try again.') :
+                    communityText('The problem has been reported. Try again, or head back to the home page.')}
             </EmptyState>
         </main>
     );
 };
 
 RouteErrorFallback.propTypes = {
+    offline: PropTypes.bool,
     onRetry: PropTypes.func.isRequired
 };
 
@@ -61,6 +67,7 @@ class RouteErrorBoundary extends React.Component {
         const stack = (error && error.stack) || String(error);
         const componentStack = (errorInfo && errorInfo.componentStack) || '';
         log.error(`Community page crashed at ${this.props.resetKey}: ${stack}\nComponent stack: ${componentStack}`);
+        if (isChunkLoadError(error)) return;
         reportSiteError({
             message: (error && error.message) || String(error),
             stack: (error && error.stack) || '',
@@ -74,7 +81,14 @@ class RouteErrorBoundary extends React.Component {
     }
 
     render () {
-        if (this.state.error) return <RouteErrorFallback onRetry={this.handleRetry} />;
+        if (this.state.error) {
+            return (
+                <RouteErrorFallback
+                    offline={isChunkLoadError(this.state.error)}
+                    onRetry={this.handleRetry}
+                />
+            );
+        }
         return this.props.children;
     }
 }

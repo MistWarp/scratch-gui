@@ -2818,5 +2818,7 @@
   "Buy this project to comment.": "Buy this project to comment.",
   "Buy this project to react.": "Buy this project to react.",
   "Remove from library, {value1} saves": "Remove from library, {value1} saves",
-  "Save to library, {value1} saves": "Save to library, {value1} saves"
+  "Save to library, {value1} saves": "Save to library, {value1} saves",
+  "This page could not load.": "This page could not load.",
+  "Part of the site did not download. Check your connection and try again.": "Part of the site did not download. Check your connection and try again."
 }

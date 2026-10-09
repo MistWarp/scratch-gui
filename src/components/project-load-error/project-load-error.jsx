@@ -7,7 +7,13 @@ import styles from './project-load-error.css';
 const newProjectHref = () => (process.env.ROUTING_STYLE === 'wildcard' ?
     `${process.env.ROOT || '/'}editor` : 'editor.html');
 
-const ProjectLoadError = ({error, onNewProject, onOpenFile, onRetry}) => {
+export const unknownExtensionId = error => {
+    const match = /^Unknown extension: (.+)$/.exec(String((error && error.message) || error || ''));
+    return match ? match[1] : null;
+};
+
+const ProjectLoadError = ({error, isEmbedded, onNewProject, onOpenFile, onRetry}) => {
+    const missingExtension = unknownExtensionId(error);
     const handleNewProject = useCallback(event => {
         if (!onNewProject) return;
         event.preventDefault();
@@ -26,37 +32,56 @@ const ProjectLoadError = ({error, onNewProject, onOpenFile, onRetry}) => {
                         id="mw.projectLoadError.title"
                     />
                 </h1>
-                <p>
-                    <FormattedMessage
-                        defaultMessage="Check your connection and try again."
-                        description="Advice when a project download fails"
-                        id="mw.projectLoadError.description"
-                    />
-                </p>
-                <p className={styles.details}>{error.message || String(error)}</p>
+                {missingExtension ? (
+                    <p>
+                        <FormattedMessage
+                            // eslint-disable-next-line max-len
+                            defaultMessage="This project uses the extension {extension}, which MistWarp does not have. It was probably made in another Scratch mod."
+                            description="Shown when a project needs an extension MistWarp does not include"
+                            id="mw.projectLoadError.unknownExtension"
+                            values={{extension: <code>{missingExtension}</code>}}
+                        />
+                    </p>
+                ) : (
+                    <React.Fragment>
+                        <p>
+                            <FormattedMessage
+                                defaultMessage="Check your connection and try again."
+                                description="Advice when a project download fails"
+                                id="mw.projectLoadError.description"
+                            />
+                        </p>
+                        <p className={styles.details}>{error.message || String(error)}</p>
+                    </React.Fragment>
+                )}
                 <div className={styles.actions}>
-                    <button
-                        type="button"
-                        onClick={onRetry}
-                    >
-                        <FormattedMessage
-                            defaultMessage="Try again"
-                            description="Retry downloading the requested project"
-                            id="mw.projectLoadError.retry"
-                        />
-                    </button>
+                    {missingExtension || !onRetry ? null : (
+                        <button
+                            type="button"
+                            onClick={onRetry}
+                        >
+                            <FormattedMessage
+                                defaultMessage="Try again"
+                                description="Retry downloading the requested project"
+                                id="mw.projectLoadError.retry"
+                            />
+                        </button>
+                    )}
                     {/* A link, so it works even if the editor never finished starting. */}
-                    <a
-                        className={styles.secondary}
-                        href={newProjectHref()}
-                        onClick={handleNewProject}
-                    >
-                        <FormattedMessage
-                            defaultMessage="Start a new project"
-                            description="Link on the project load error screen that opens the editor with a new project"
-                            id="mw.projectLoadError.newProject"
-                        />
-                    </a>
+                    {isEmbedded ? null : (
+                        <a
+                            className={styles.secondary}
+                            href={newProjectHref()}
+                            onClick={handleNewProject}
+                        >
+                            <FormattedMessage
+                                defaultMessage="Start a new project"
+                                // eslint-disable-next-line max-len
+                                description="Link on the project load error screen that opens the editor with a new project"
+                                id="mw.projectLoadError.newProject"
+                            />
+                        </a>
+                    )}
                     {onOpenFile ? (
                         <button
                             type="button"
@@ -79,9 +104,10 @@ const ProjectLoadError = ({error, onNewProject, onOpenFile, onRetry}) => {
 
 ProjectLoadError.propTypes = {
     error: PropTypes.oneOfType([PropTypes.object, PropTypes.string]).isRequired,
+    isEmbedded: PropTypes.bool,
     onNewProject: PropTypes.func,
     onOpenFile: PropTypes.func,
-    onRetry: PropTypes.func.isRequired
+    onRetry: PropTypes.func
 };
 
 export default ProjectLoadError;

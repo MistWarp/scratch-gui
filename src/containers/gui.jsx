@@ -56,7 +56,7 @@ import vmManagerHOC from '../lib/components/vm-manager-hoc.jsx';
 import cloudManagerHOC from '../lib/components/cloud-manager-hoc.jsx';
 
 import GUIComponent from '../components/gui/gui.jsx';
-import ProjectLoadError from '../components/project-load-error/project-load-error.jsx';
+import ProjectLoadError, {unknownExtensionId} from '../components/project-load-error/project-load-error.jsx';
 import {setIsScratchDesktop} from '../lib/utils/isScratchDesktop.js';
 import TWFullScreenResizerHOC from '../lib/components/tw-fullscreen-resizer-hoc.jsx';
 import TWThemeManagerHOC from './tw-theme-manager-hoc.jsx';
@@ -188,12 +188,21 @@ class GUI extends React.Component {
     }
     render () {
         if (this.props.isError) {
+            if (unknownExtensionId(this.props.error)) {
+                return (
+                    <ProjectLoadError
+                        error={this.props.error}
+                        isEmbedded={this.props.isEmbedded}
+                    />
+                );
+            }
             throw this.props.error;
         }
         if (this.props.projectFetchError) {
             return (
                 <ProjectLoadError
                     error={this.props.projectFetchError}
+                    isEmbedded={this.props.isEmbedded}
                     onRetry={this.props.onRetryProjectFetch}
                 />
             );

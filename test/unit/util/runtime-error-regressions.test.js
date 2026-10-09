@@ -82,7 +82,8 @@ test.each([
     'Failed to fetch dynamically imported module: https://example.test/assets/Home.js',
     'error loading dynamically imported module',
     'Importing a module script failed.',
-    'Unable to preload CSS for /assets/Home.css'
+    'Unable to preload CSS for /assets/Home.css',
+    'Cross-origin script load denied by Cross-Origin Resource Sharing policy.'
 ])('recognizes Vite transport errors: %s', message => {
     expect(isChunkLoadError(new TypeError(message))).toBe(true);
 });
