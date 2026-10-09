@@ -8,6 +8,7 @@ const useAdminData = user => {
     const [reports, setReports] = useState(null);
     const [openErrors, setOpenErrors] = useState(0);
     const [bans, setBans] = useState([]);
+    const [shadowBans, setShadowBans] = useState({users: [], projects: []});
     const [admins, setAdmins] = useState([]);
     const [error, setError] = useState('');
     const beginLoad = useLatest();
@@ -23,6 +24,9 @@ const useAdminData = user => {
         api.admin.bans()
             .then(fresh(data => setBans(data.bans || [])))
             .catch(() => {});
+        api.admin.shadowBans()
+            .then(fresh(data => setShadowBans({users: data.users || [], projects: data.projects || []})))
+            .catch(() => {});
         api.admin.admins()
             .then(fresh(data => setAdmins(data.admins || [])))
             .catch(() => {});
@@ -37,7 +41,7 @@ const useAdminData = user => {
         return () => window.removeEventListener('mw:errors-updated', load);
     }, [load]);
 
-    return {reports, openErrors, bans, admins, error, setError, load};
+    return {reports, openErrors, bans, shadowBans, admins, error, setError, load};
 };
 
 export default useAdminData;

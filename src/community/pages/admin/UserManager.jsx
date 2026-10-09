@@ -80,6 +80,7 @@ const UserManager = ({selected: controlledSelected, onSelect, onUserChanged}) =>
     const filters = [
         {key: '', label: communityText('Everyone')},
         {key: 'flagged', label: communityText('Warned or banned')},
+        {key: 'shadowbanned', label: communityText('Shadow banned')},
         {key: 'new', label: communityText('Joined this week')},
         {key: 'minor', label: communityText('Under 18')},
         {key: 'admin', label: communityText('Admins')}
@@ -159,6 +160,7 @@ const UserManager = ({selected: controlledSelected, onSelect, onUserChanged}) =>
                                         ) : user.standingLevel && user.standingLevel !== 'good' ? (
                                             <span className={`${styles.badge} ${styles.badgeWarn}`}>{standingLabel(user.standingLevel, communityText)}</span>
                                         ) : null}
+                                        {user.shadowBanned ? <span className={`${styles.badge} ${styles.badgeWarn}`}>{communityText('Shadow banned')}</span> : null}
                                         {user.minor ? <span className={styles.badge}>{communityText('Under 18')}</span> : null}
                                     </span>
                                     <span className={styles.rowMeta}>
