@@ -1,5 +1,5 @@
 import JSZip from '@turbowarp/jszip';
-import {convertProject, buildProjectFromBuildDir, toPromiseFs} from 'fractch';
+import {convertProject, buildProjectFromBuildDir, toPromiseFs, writeExtensions} from 'fractch';
 import storage from '../persistence/storage';
 
 // Custom assets are mirrored into the repo as a real tracked folder with real
@@ -198,6 +198,7 @@ const writeProjectToFractchTree = async ({
     }
 
     await convertProject(projectJson, {outDir: dir, fs});
+    await writeExtensions(projectJson, dir, {fs});
 
     const vfs = toPromiseFs(fs);
 

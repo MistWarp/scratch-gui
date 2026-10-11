@@ -165,6 +165,31 @@ test('MWP files retain uncommitted scripts and costume bytes, and remove deleted
     }
 });
 
+test('MWP files preserve embedded custom extension source', async () => {
+    const files = projectFiles(0);
+    const project = JSON.parse(files['project.json']);
+    const extensionSource = 'const extensionSource = true;';
+    project.extensions = ['custom'];
+    project.extensionURLs = {
+        custom: `data:application/javascript,${encodeURIComponent(extensionSource)}`
+    };
+    files['project.json'] = JSON.stringify(project);
+
+    const saved = await createMwp({sb3Files: files, commitChanges: false});
+    const archive = await JSZip.loadAsync(await bytes(saved.blob));
+    expect(await archive.file('extensions/custom.js').async('text')).toBe(extensionSource);
+
+    await deleteRepo();
+    await importMwp(await bytes(saved.blob));
+    const rebuilt = await JSZip.loadAsync(await bytes(await buildSb3FromCurrentRepo()));
+    const reopened = JSON.parse(await rebuilt.file('project.json').async('text'));
+    const savedUrl = reopened.extensionURLs.custom;
+    const reopenedSource = savedUrl.includes(';base64,') ?
+        Buffer.from(savedUrl.slice(savedUrl.indexOf(',') + 1), 'base64').toString('utf8') :
+        decodeURIComponent(savedUrl.slice(savedUrl.indexOf(',') + 1));
+    expect(reopenedSource).toBe(extensionSource);
+});
+
 test('browsing another project preserves uncommitted files and incomplete repositories', async () => {
     const {inspectMwpFiles} = require('../../../src/lib/git/mwp.js');
     const archive = await createMwp({sb3Files: projectFiles(0), commitChanges: false});
