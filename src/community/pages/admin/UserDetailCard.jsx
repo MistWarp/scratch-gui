@@ -5,7 +5,7 @@ import {Link} from 'react-router-dom';
 import {useCommunityIntl as useCommunityText} from '../../i18n.jsx';
 import {getCommunityLocale} from '../../locale.js';
 import {
-    Activity, ArrowLeft, Copy, ExternalLink, Flag, FolderOpen, Gavel, LayoutDashboard,
+    Activity, ArrowLeft, Copy, ExternalLink, Flag, FolderOpen, Gavel, Ghost, LayoutDashboard,
     MessageSquare, NotebookPen, UserCog
 } from 'lucide-react';
 import api, {projectUrl} from '../../api';
@@ -20,6 +20,7 @@ import StatusMessage from '../../components/ui/StatusMessage.jsx';
 import {formatBytes, formatDate, formatDateTime, timeAgoText} from '../../format';
 import styles from '../Admin.module.css';
 import AdminActionDialog from './AdminActionDialog.jsx';
+import ProjectModerationDialog from './ProjectModerationDialog.jsx';
 import {reportTypeLabel, standingLabel} from './labels.js';
 import {commentLocation} from './admin-links.js';
 
@@ -104,6 +105,8 @@ const UserDetailCard = ({username, onBack, onChanged}) => {
     const [dialogBusy, setDialogBusy] = useState(false);
     const [dialogError, setDialogError] = useState('');
     const [busyAction, setBusyAction] = useState('');
+    const [shadowNote, setShadowNote] = useState('');
+    const [moderation, setModeration] = useState(null);
     const deleteInFlight = useRef(false);
     const actionInFlight = useRef(false);
     const currentUsername = useRef(username);
@@ -129,6 +132,8 @@ const UserDetailCard = ({username, onBack, onChanged}) => {
                 setAdminNote((result.note && result.note.text) || '');
                 setReasonText('');
                 setMessage('');
+                setShadowNote('');
+                setModeration(null);
             })
             .catch(e => {
                 if (!active) return;
@@ -220,7 +225,23 @@ const UserDetailCard = ({username, onBack, onChanged}) => {
         if (navigator.clipboard && data.userId) navigator.clipboard.writeText(data.userId).catch(() => {});
     };
 
-    const unshareProject = pid => run(`unshare:${pid}`, () => api.unpublish(pid), communityText('Project unshared.'));
+    const shadowBanned = Boolean(data && data.shadowBan && data.shadowBan.created);
+
+    const toggleShadowBan = async () => {
+        const done = await run(
+            'shadow',
+            () => (shadowBanned ? api.admin.liftShadowBan(data.username) : api.admin.shadowBan(data.username, shadowNote.trim())),
+            shadowBanned ? communityText('Shadow ban lifted.') : communityText('Shadow banned. They are not told.')
+        );
+        if (done) setShadowNote('');
+    };
+
+    const moderationDone = kind => {
+        setModeration(null);
+        setNote(kind === 'hide' ? communityText('Project hidden. Its creator was told why.') : communityText('Project restored.'));
+        refresh(currentUsername.current);
+        if (onChanged) onChanged();
+    };
 
     const deleteProject = pid => {
         if (deleteInFlight.current) return;
@@ -337,6 +358,12 @@ const UserDetailCard = ({username, onBack, onChanged}) => {
                 }}
                 onConfirm={confirmDialog}
             />
+            <ProjectModerationDialog
+                kind={moderation ? moderation.kind : null}
+                project={moderation ? moderation.project : null}
+                onClose={() => setModeration(null)}
+                onDone={moderationDone}
+            />
             <Button className={styles.backButton} onClick={onBack}>
                 <ArrowLeft size={15} />
                 {communityText('Back to list')}
@@ -353,6 +380,7 @@ const UserDetailCard = ({username, onBack, onChanged}) => {
                         ) : standing.level !== 'good' ? (
                             <span className={`${styles.badge} ${styles.badgeWarn}`}>{standingLabel(standing.level, communityText)}</span>
                         ) : null}
+                        {shadowBanned ? <span className={`${styles.badge} ${styles.badgeWarn}`}>{communityText('Shadow banned')}</span> : null}
                         {data.student ? <span className={styles.badge}>{communityText('Student')}</span> : null}
                         {data.minor && !data.student ? <span className={styles.badge}>{communityText('Under 18')}</span> : null}
                     </h3>
@@ -472,6 +500,7 @@ const UserDetailCard = ({username, onBack, onChanged}) => {
                                         <span className={styles.rowTitle}>
                                             <Link to={projectUrl(project)}>{project.title || project.id}</Link>
                                             <span className={styles.badge}>{project.shared ? communityText('Shared') : communityText('Not shared')}</span>
+                                            {project.moderationHidden ? <span className={`${styles.badge} ${styles.badgeWarn}`}>{communityText('Hidden')}</span> : null}
                                         </span>
                                         <span className={styles.rowMeta}>
                                             {communityText('{value1} views · {value2} hearts · {value3} · edited {value4}', {
@@ -483,9 +512,11 @@ const UserDetailCard = ({username, onBack, onChanged}) => {
                                         </span>
                                     </div>
                                     <div className={styles.rowActions}>
-                                        {project.shared ? (
-                                            <Button busy={busyAction === `unshare:${project.id}`} onClick={() => unshareProject(project.id)}>{communityText('Unshare')}</Button>
-                                        ) : null}
+                                        {project.moderationHidden ? (
+                                            <Button onClick={() => setModeration({kind: 'restore', project})}>{communityText('Restore')}</Button>
+                                        ) : (
+                                            <Button onClick={() => setModeration({kind: 'hide', project})}>{communityText('Hide')}</Button>
+                                        )}
                                         <Button variant="danger" onClick={() => deleteProject(project.id)}>{communityText('Delete')}</Button>
                                     </div>
                                 </div>
@@ -604,6 +635,35 @@ const UserDetailCard = ({username, onBack, onChanged}) => {
                                     ))}
                                 </div>
                             ) : <p className={styles.mutedLine}>{communityText('No standing changes recorded.')}</p>}
+                        </section>
+                        <section className={styles.panel}>
+                            <SectionHeading as="h3" icon={Ghost} title={communityText('Shadow ban')} />
+                            <p className={styles.mutedLine}>
+                                {communityText('Their projects, comments and profile leave every list for everyone else, and they stop sending notifications. Links still work, and they are not told.')}
+                            </p>
+                            {shadowBanned ? (
+                                <p className={styles.mutedLine}>
+                                    {communityText('Shadow banned by @{value1} on {value2}.', {value1: data.shadowBan.by || '', value2: formatDate(data.shadowBan.created)})}
+                                    {data.shadowBan.reason ? ` ${data.shadowBan.reason}` : ''}
+                                </p>
+                            ) : (
+                                <input
+                                    className={styles.input}
+                                    placeholder={communityText('Private note for admins')}
+                                    value={shadowNote}
+                                    maxLength={1000}
+                                    onChange={e => setShadowNote(e.target.value)}
+                                />
+                            )}
+                            <div className={styles.panelFooter}>
+                                <span />
+                                <Button
+                                    variant={shadowBanned ? 'secondary' : 'danger'}
+                                    disabled={data.admin}
+                                    busy={busyAction === 'shadow'}
+                                    onClick={toggleShadowBan}
+                                >{shadowBanned ? communityText('Lift shadow ban') : communityText('Shadow ban')}</Button>
+                            </div>
                         </section>
                         <section className={styles.panel}>
                             <SectionHeading as="h3" icon={MessageSquare} title={communityText('Message')} />

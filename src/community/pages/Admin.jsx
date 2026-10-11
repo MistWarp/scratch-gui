@@ -3,7 +3,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useRef, useState} from 'react';
 import {useSearchParams} from 'react-router-dom';
 import {
-    Activity, AlertTriangle, Ban, BarChart3, Flag, FolderOpen, HardDrive, Puzzle, ShieldCheck, User
+    Activity, AlertTriangle, Ban, BarChart3, EyeOff, Flag, FolderOpen, Ghost, HardDrive, Puzzle, ShieldCheck, User
 } from 'lucide-react';
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
@@ -23,6 +23,7 @@ import ExtensionManager from './admin/ExtensionManager.jsx';
 import ErrorManager from './admin/ErrorManager.jsx';
 import ReportsSection from './admin/ReportsSection.jsx';
 import BansSection from './admin/BansSection.jsx';
+import ShadowBansSection from './admin/ShadowBansSection.jsx';
 import AdminsSection from './admin/AdminsSection.jsx';
 import useAdminData from './admin/use-admin-data.js';
 
@@ -42,7 +43,7 @@ const SECTIONS = [
 const Admin = () => {
     const {text: communityText} = useCommunityText();
     const {user, loading} = useUser();
-    const {reports, openErrors, bans, admins, error, setError, load} = useAdminData(user);
+    const {reports, openErrors, bans, shadowBans, admins, error, setError, load} = useAdminData(user);
     const [newAdmin, setNewAdmin] = useState('');
     const [searchParams, setSearchParams] = useSearchParams();
     const requested = searchParams.get('section');
@@ -93,6 +94,20 @@ const Admin = () => {
         });
     };
 
+    const hideFromReport = report => {
+        setDialogError('');
+        setDialog({
+            kind: 'hide-report',
+            report,
+            title: communityText('Hide this project?'),
+            description: communityText('The project becomes private and its creator can\'t share it again until an admin restores it. They get a notification with your reason.'),
+            action: communityText('Hide project'),
+            danger: true,
+            fields: [{key: 'reason', label: communityText('Reason for the creator'), value: '', multiline: true, maxLength: 1000}],
+            icon: EyeOff
+        });
+    };
+
     const warnFromReport = report => {
         setDialogError('');
         setDialog({
@@ -137,6 +152,22 @@ const Admin = () => {
         });
     };
 
+    const shadowBanByName = () => {
+        setDialogError('');
+        setDialog({
+            kind: 'shadow-ban-user',
+            title: communityText('Shadow ban a user'),
+            description: communityText('Their projects, comments and profile leave every list for everyone else. They are not told and still see everything as normal.'),
+            action: communityText('Shadow ban'),
+            danger: true,
+            fields: [
+                {key: 'username', label: communityText('Username'), value: '', maxLength: 80},
+                {key: 'reason', label: communityText('Private note for admins'), value: '', multiline: true, maxLength: 1000}
+            ],
+            icon: Ghost
+        });
+    };
+
     const updateDialogField = (key, value) => {
         setDialog(current => ({
             ...current,
@@ -152,6 +183,14 @@ const Admin = () => {
         const values = Object.fromEntries((dialog.fields || []).map(field => [field.key, field.value.trim()]));
         if (dialog.kind === 'support-reply' && !values.message) {
             setDialogError(communityText('Enter a reply.'));
+            return;
+        }
+        if (dialog.kind === 'hide-report' && !values.reason) {
+            setDialogError(communityText('Tell the creator why their project is hidden.'));
+            return;
+        }
+        if (dialog.kind === 'shadow-ban-user' && !values.username) {
+            setDialogError(communityText('Enter a username.'));
             return;
         }
         if (dialog.kind === 'warn-report' && !values.reason) {
@@ -170,6 +209,9 @@ const Admin = () => {
                 await api.admin.messageUser(dialog.report.reporter, values.message);
                 await api.admin.reportAction(dialog.report.id, 'dismiss');
                 window.dispatchEvent(new Event('mw:reports-updated'));
+            } else if (dialog.kind === 'hide-report') {
+                await api.admin.reportAction(dialog.report.id, 'hide_project', values.reason);
+                window.dispatchEvent(new Event('mw:reports-updated'));
             } else if (dialog.kind === 'warn-report') {
                 await api.admin.reportAction(dialog.report.id, 'warn_user', values.reason);
                 window.dispatchEvent(new Event('mw:reports-updated'));
@@ -178,6 +220,8 @@ const Admin = () => {
                 window.dispatchEvent(new Event('mw:reports-updated'));
             } else if (dialog.kind === 'ban-user') {
                 await api.admin.ban(values.username, values.reason);
+            } else if (dialog.kind === 'shadow-ban-user') {
+                await api.admin.shadowBan(values.username, values.reason);
             }
             setDialog(null);
             load();
@@ -196,6 +240,26 @@ const Admin = () => {
             load();
         } catch (e) {
             setError(e.message || 'Could not unban that user.');
+        }
+    };
+
+    const liftShadowBan = async username => {
+        try {
+            setError('');
+            await api.admin.liftShadowBan(username);
+            load();
+        } catch (e) {
+            setError(e.message || 'Could not lift that shadow ban.');
+        }
+    };
+
+    const liftProjectShadowBan = async id => {
+        try {
+            setError('');
+            await api.admin.liftProjectShadowBan(id);
+            load();
+        } catch (e) {
+            setError(e.message || 'Could not lift that shadow ban.');
         }
     };
 
@@ -279,6 +343,7 @@ const Admin = () => {
                             openCount={openCount}
                             replyToSupport={replyToSupport}
                             act={act}
+                            hideFromReport={hideFromReport}
                             warnFromReport={warnFromReport}
                             banFromReport={banFromReport}
                         />
@@ -313,6 +378,15 @@ const Admin = () => {
                             bans={bans}
                             banByName={banByName}
                             unban={unban}
+                        />
+                    ) : null}
+
+                    {active === 'bans' ? (
+                        <ShadowBansSection
+                            shadowBans={shadowBans}
+                            shadowBanByName={shadowBanByName}
+                            liftUser={liftShadowBan}
+                            liftProject={liftProjectShadowBan}
                         />
                     ) : null}
 

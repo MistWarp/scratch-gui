@@ -4,7 +4,7 @@ import {Link} from 'react-router-dom';
 import {useCommunityIntl as useCommunityText} from '../../i18n.jsx';
 import {
     GitFork, ExternalLink, ImageUp, MonitorPlay, Flag, MoreHorizontal, Code2, Trash2, Link2, Coins,
-    SlidersHorizontal, Bookmark, BookmarkCheck, Star, Library
+    SlidersHorizontal, Bookmark, BookmarkCheck, Star, Library, Eye, EyeOff, Ghost, UserCog
 } from 'lucide-react';
 import {payLink} from '../../../lib/rotur/payment-window.js';
 import Avatar from '../../components/Avatar.jsx';
@@ -17,6 +17,7 @@ import Dropdown from '../../components/ui/Dropdown.jsx';
 import IconButton from '../../components/ui/IconButton.jsx';
 import styles from '../Project.module.css';
 import {track} from '../../analytics';
+import {adminUserPath} from '../admin/admin-links.js';
 
 // Title, byline and the action buttons and menu at the top of a project page.
 const ProjectHeader = ({
@@ -24,7 +25,7 @@ const ProjectHeader = ({
     changeVisibility, savingVisibility, remix, toggleLibrary, savingLibrary, seeInsideHref,
     copyLink, setCollectionOpen, thumbnailStatus, useStageThumbnail, chooseThumbnailUpload,
     menuRemix, toggleFeatured, savingFeatured, featuredProject, menuReport, setActionError,
-    setDeleteConfirm
+    setDeleteConfirm, openModeration
 }) => {
     const {text: communityText} = useCommunityText();
     const handleTitleKeyDown = event => {
@@ -84,7 +85,7 @@ const ProjectHeader = ({
                     <VisibilityMenu
                         value={visibility}
                         onChange={changeVisibility}
-                        disabled={savingVisibility}
+                        disabled={savingVisibility || Boolean(project.moderationHidden)}
                     />
                 ) : project.canRemix ? (
                     <Button
@@ -230,6 +231,38 @@ const ProjectHeader = ({
                                     }}
                                 >
                                     <Flag size={15} />{communityText('Report')}</button>
+                            ) : null}
+                            {user && user.isAdmin ? <div className={styles.menuSeparator} role="separator" /> : null}
+                            {user && user.isAdmin ? (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        close();
+                                        openModeration(project.moderationHidden ? 'restore' : 'hide');
+                                    }}
+                                >
+                                    {project.moderationHidden ? <Eye size={15} /> : <EyeOff size={15} />}
+                                    {project.moderationHidden ? communityText('Restore project') : communityText('Hide project…')}
+                                </button>
+                            ) : null}
+                            {user && user.isAdmin ? (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        close();
+                                        openModeration(project.shadowBan && project.shadowBan.project ? 'unshadow' : 'shadow');
+                                    }}
+                                >
+                                    <Ghost size={15} />
+                                    {project.shadowBan && project.shadowBan.project ? communityText('Lift shadow ban') : communityText('Shadow ban project…')}
+                                </button>
+                            ) : null}
+                            {user && user.isAdmin && !sameUser(project.owner, user.username) ? (
+                                <Link
+                                    to={adminUserPath(project.owner)}
+                                    onClick={close}
+                                >
+                                    <UserCog size={15} />{communityText('Moderate creator')}</Link>
                             ) : null}
                             {project.isOwner ? <div className={styles.menuSeparator} role="separator" /> : null}
                             {project.isOwner ? (
