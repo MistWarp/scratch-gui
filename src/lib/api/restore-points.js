@@ -313,13 +313,24 @@ const removeExtraneousRestorePoints = () => openDB().then(db => new Promise((res
  * @param {VirtualMachine} vm scratch-vm instance
  * @returns {Promise<{type: string; data: ArrayBuffer;}>} Thumbnail data
  */
+const BLANK_THUMBNAIL = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+
 const generateThumbnail = vm => new Promise(resolve => {
+    const renderer = vm.renderer;
+    if (!renderer) {
+        resolve({
+            type: 'image/png',
+            data: base64ToArrayBuffer(BLANK_THUMBNAIL)
+        });
+        return;
+    }
+
     // Piggyback off of the next draw if we can, otherwise just force it to render
     const drawTimeout = setTimeout(() => {
-        vm.renderer.draw();
+        renderer.draw();
     }, 100);
 
-    vm.renderer.requestSnapshot(dataURL => {
+    renderer.requestSnapshot(dataURL => {
         clearTimeout(drawTimeout);
 
         const index = dataURL.indexOf(',');
