@@ -2872,5 +2872,7 @@
   "It is left out of every list, but its link still works and its creator sees nothing different. Only admins see this notice.": "It is left out of every list, but its link still works and its creator sees nothing different. Only admins see this notice.",
   "Note: {value1}": "Note: {value1}",
   "{value1} is shadow banned": "{value1} is shadow banned",
-  "None of their projects or comments appear for anyone else. Only admins see this notice.": "None of their projects or comments appear for anyone else. Only admins see this notice."
+  "None of their projects or comments appear for anyone else. Only admins see this notice.": "None of their projects or comments appear for anyone else. Only admins see this notice.",
+  "This page could not load.": "This page could not load.",
+  "Part of the site did not download. Check your connection and try again.": "Part of the site did not download. Check your connection and try again."
 }
