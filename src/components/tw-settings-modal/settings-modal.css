@@ -1295,6 +1295,12 @@
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+/* normalize.module.css sets input[type="search"] to content-box, which out-specifies
+   the class and makes the field wider than the sidebar. */
+.sidebarSearchInput[type="search"] {
+    box-sizing: border-box;
+}
+
 .sidebarSearchInput:focus {
     outline: none;
     border-color: $looks-secondary;

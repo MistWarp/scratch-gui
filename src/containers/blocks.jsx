@@ -1491,6 +1491,14 @@ class Blocks extends React.Component {
             setScriptLoadProgress: setScriptLoadProgressProp,
             useCatBlocks,
             workspaceMetrics,
+            // Consumed here so they are not spread onto the blocks DOM node.
+            hasFileHandle,
+            isNewDefaultProject,
+            locale,
+            messages: _messages,
+            projectLoadingState,
+            theme,
+            intl,
             ...props
         } = this.props;
         /* eslint-enable no-unused-vars */

@@ -89,8 +89,9 @@ const createSettingsContent = addonId => {
     iframe.style.border = 'none';
     iframe.style.borderRadius = '0 0 8px 8px';
 
+    const root = process.env.ROOT || '/';
     const path = process.env.ROUTING_STYLE === 'wildcard' ? 'addons' : 'addons.html';
-    const url = `${process.env.ROOT}${path}${typeof addonId === 'string' ? `#${addonId}` : ''}`;
+    const url = `${root}${path}${typeof addonId === 'string' ? `#${addonId}` : ''}`;
 
     iframe.src = url;
 
@@ -125,8 +126,9 @@ const navigateToAddon = addonId => {
 const handleClickAddonSettings = addonId => {
     if (!windowManager) {
         // Fall back to original behavior if window manager isn't available
+        const root = process.env.ROOT || '/';
         const path = process.env.ROUTING_STYLE === 'wildcard' ? 'addons' : 'addons.html';
-        const url = `${process.env.ROOT}${path}${typeof addonId === 'string' ? `#${addonId}` : ''}`;
+        const url = `${root}${path}${typeof addonId === 'string' ? `#${addonId}` : ''}`;
         window.open(url);
         return;
     }

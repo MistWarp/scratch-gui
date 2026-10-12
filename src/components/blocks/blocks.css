@@ -82,7 +82,6 @@
 [dir="rtl"] .blocks :global(.blocklyToolboxDiv) {
     border-right: none;
     border-left: 1px solid $ui-black-transparent;
-    border-radius: 0 0 10px 10px;
 }
 
 .blocks :global(.blocklyToolboxDiv::-webkit-scrollbar) {
@@ -92,7 +91,6 @@
 .blocks :global(.blocklyFlyout) {
     border-right: 1px solid $ui-black-transparent;
     box-sizing: content-box;
-    border-radius: 0 10px 10px 0;
 }
 
 [dir="rtl"] .blocks :global(.blocklyFlyout) {

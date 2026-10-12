@@ -234,7 +234,7 @@ class MenuBarLayoutSetting extends React.Component {
         ), 0);
     }
     render () {
-        const currentAlign = (this.props.theme && this.props.theme.menuBarAlign) || 'center';
+        const currentAlign = (this.props.theme && this.props.theme.menuBarAlign) || 'left';
         return (
             <div className={styles.menuBarLayout}>
                 <div className={styles.menuBarZoneLabel}>

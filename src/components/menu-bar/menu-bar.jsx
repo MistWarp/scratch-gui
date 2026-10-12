@@ -1782,7 +1782,7 @@ class MenuBar extends React.Component {
                     className={classNames(
                         styles.mainMenu,
                         {
-                            [styles[`main-menu-align-${this.props.theme.menuBarAlign || 'center'}`]]: true
+                            [styles[`main-menu-align-${this.props.theme.menuBarAlign || 'left'}`]]: true
                         }
                     )}
                 >
@@ -2237,7 +2237,6 @@ class MenuBar extends React.Component {
                                 </MenuSection>}
                             </MenuBarMenu>
                         </MenuLabel>
-                        {this.props.isPlayerOnly ? null : this.renderWorkspaceBookmarksMenu()}
                         <MenuLabel
                             ariaLabel={this.props.intl.formatMessage(menuLabelMessages.tools)}
                             dataItem="tools"

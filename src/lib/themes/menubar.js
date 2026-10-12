@@ -22,7 +22,7 @@ const MENUBAR_ALIGN = {
         icon: alignRightIcon
     }
 };
-const MENUBAR_ALIGN_DEFAULT = 'center';
+const MENUBAR_ALIGN_DEFAULT = 'left';
 
 export {
     MENUBAR_ALIGN,

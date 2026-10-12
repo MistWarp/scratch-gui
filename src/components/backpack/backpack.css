@@ -46,7 +46,7 @@
 
 .backpack-container:not(.expanded) .backpack-header {
     min-height: 0;
-    padding: calc($space / 2);
+    padding: 0;
 }
 
 .header-toggle {
@@ -71,14 +71,6 @@
 
 .backpack-container:not(.expanded) .header-toggle {
     flex: 1;
-}
-
-.header-toggle:hover {
-    border-color: $looks-secondary;
-}
-
-.header-toggle:active {
-    background-color: $looks-transparent;
 }
 
 .header-toggle:focus-visible {
