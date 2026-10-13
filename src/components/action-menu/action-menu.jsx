@@ -21,12 +21,18 @@ class ActionMenu extends React.Component {
             'handleTouchStart',
             'handleTouchOutside',
             'hideTooltips',
+            'mountTooltips',
+            'replayAnchorEvent',
             'setButtonRef',
             'setContainerRef'
         ]);
         this.state = {
             isOpen: false,
-            forceHide: false
+            forceHide: false,
+            // Each react-tooltip watches all of document.body for DOM changes,
+            // which makes every block added or removed in the code area cost
+            // extra. Mount them the first time someone reaches for the menu.
+            tooltipsMounted: false
         };
         this.mainTooltipId = `tooltip-${Math.random()}`;
         this.moreTooltipId = `${this.mainTooltipId}-more`;
@@ -36,14 +42,52 @@ class ActionMenu extends React.Component {
     componentDidMount () {
         // Touch start on the main button is caught to trigger open and not click
         this.buttonRef.addEventListener('touchstart', this.handleTouchStart);
+        this.containerRef.addEventListener('pointerover', this.mountTooltips);
+        this.containerRef.addEventListener('focusin', this.mountTooltips);
         // Touch start on document is used to trigger close if it is outside
         document.addEventListener('touchstart', this.handleTouchOutside);
+    }
+    componentDidUpdate (prevProps, prevState) {
+        if (this.state.tooltipsMounted && !prevState.tooltipsMounted) {
+            // The pointer or focus that mounted the tooltips is already on an
+            // anchor, so its tooltip missed the enter event. react-tooltip
+            // wires up anchors over a couple of renders, so keep replaying
+            // the event for a few frames until the tooltip reports open.
+            this.replayAttempts = 0;
+            this.replayFrame = requestAnimationFrame(this.replayAnchorEvent);
+        }
     }
     componentWillUnmount () {
         if (this.closeTimeoutId) clearTimeout(this.closeTimeoutId);
         if (this.forceHideTimeoutId) clearTimeout(this.forceHideTimeoutId);
+        if (this.replayFrame) cancelAnimationFrame(this.replayFrame);
         this.buttonRef.removeEventListener('touchstart', this.handleTouchStart);
+        this.containerRef.removeEventListener('pointerover', this.mountTooltips);
+        this.containerRef.removeEventListener('focusin', this.mountTooltips);
         document.removeEventListener('touchstart', this.handleTouchOutside);
+    }
+    replayAnchorEvent () {
+        this.replayFrame = null;
+        if (!this.containerRef) return;
+        const anchors = Array.from(this.containerRef.querySelectorAll('[data-tooltip-id]'));
+        const hovered = anchors.find(el => el.matches(':hover'));
+        const anchor = hovered || anchors.find(el => el === document.activeElement);
+        if (!anchor) return;
+        const ids = [this.mainTooltipId, this.moreTooltipId, this.comingSoonTooltipId];
+        const tooltip = this.tooltipRefs[ids.indexOf(anchor.getAttribute('data-tooltip-id'))];
+        if (tooltip && tooltip.current && tooltip.current.isOpen) return;
+        if (hovered) {
+            anchor.dispatchEvent(new MouseEvent('mouseenter'));
+            anchor.dispatchEvent(new MouseEvent('mouseover', {bubbles: true}));
+        } else {
+            anchor.dispatchEvent(new FocusEvent('focus'));
+        }
+        if (++this.replayAttempts < 6) {
+            this.replayFrame = requestAnimationFrame(this.replayAnchorEvent);
+        }
+    }
+    mountTooltips () {
+        if (!this.state.tooltipsMounted) this.setState({tooltipsMounted: true});
     }
     hideTooltips () {
         for (const ref of this.tooltipRefs) {
@@ -187,13 +231,15 @@ class ActionMenu extends React.Component {
                         React.createElement(mainImg, {className: styles.mainIcon, size: 28})
                     ) : null}
                 </button>
-                <Tooltip
-                    className={styles.tooltip}
-                    classNameArrow={styles.tooltipArrow}
-                    id={this.mainTooltipId}
-                    place={tooltipPlace || 'left'}
-                    ref={this.tooltipRefs[0]}
-                />
+                {this.state.tooltipsMounted ? (
+                    <Tooltip
+                        className={styles.tooltip}
+                        classNameArrow={styles.tooltipArrow}
+                        id={this.mainTooltipId}
+                        place={tooltipPlace || 'left'}
+                        ref={this.tooltipRefs[0]}
+                    />
+                ) : null}
                 <div
                     className={styles.moreButtonsOuter}
                     aria-hidden={!this.state.isOpen}
@@ -246,20 +292,24 @@ class ActionMenu extends React.Component {
                         })}
                     </div>
                 </div>
-                <Tooltip
-                    className={styles.tooltip}
-                    classNameArrow={styles.tooltipArrow}
-                    id={this.moreTooltipId}
-                    place={tooltipPlace || 'left'}
-                    ref={this.tooltipRefs[1]}
-                />
-                <Tooltip
-                    className={classNames(styles.tooltip, styles.comingSoonTooltip)}
-                    classNameArrow={classNames(styles.tooltipArrow, styles.comingSoonTooltipArrow)}
-                    id={this.comingSoonTooltipId}
-                    place={tooltipPlace || 'left'}
-                    ref={this.tooltipRefs[2]}
-                />
+                {this.state.tooltipsMounted ? (
+                    <React.Fragment>
+                        <Tooltip
+                            className={styles.tooltip}
+                            classNameArrow={styles.tooltipArrow}
+                            id={this.moreTooltipId}
+                            place={tooltipPlace || 'left'}
+                            ref={this.tooltipRefs[1]}
+                        />
+                        <Tooltip
+                            className={classNames(styles.tooltip, styles.comingSoonTooltip)}
+                            classNameArrow={classNames(styles.tooltipArrow, styles.comingSoonTooltipArrow)}
+                            id={this.comingSoonTooltipId}
+                            place={tooltipPlace || 'left'}
+                            ref={this.tooltipRefs[2]}
+                        />
+                    </React.Fragment>
+                ) : null}
             </div>
         );
     }

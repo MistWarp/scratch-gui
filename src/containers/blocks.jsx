@@ -100,6 +100,9 @@ const messages = defineMessages({
     }
 });
 
+// Loads that finish sooner than this never show the script load indicator.
+const SCRIPT_LOAD_INDICATOR_DELAY_MS = 400;
+
 const addFunctionListener = (object, property, callback) => {
     const oldFn = object[property];
     object[property] = function (...args) {
@@ -153,6 +156,7 @@ class Blocks extends React.Component {
             'onTargetsUpdate',
             'onVisualReport',
             'onWorkspaceUpdate',
+            'handleScriptLoadProgress',
             'onWorkspaceMetricsChange',
             'setBlocks',
             'setPaletteResizer',
@@ -454,6 +458,7 @@ class Blocks extends React.Component {
     }
     componentWillUnmount () {
         this.props.setScriptLoadProgress(null);
+        clearTimeout(this.scriptLoadProgressTimer);
         clearTimeout(this.collabRefreshTimer);
         SettingsStore.removeEventListener('setting-changed', this.handleAddonSettingChanged);
         window.removeEventListener(VANILLA_PALETTE_CHANGED, this.handleToolboxPreferenceChanged);
@@ -1168,11 +1173,7 @@ class Blocks extends React.Component {
         this.ScratchBlocks.Events.disable();
         try {
             this.deferredWorkspaceLoad = loadWorkspace(this.ScratchBlocks, this.workspace, data, {
-                onProgress: progress => {
-                    if (!this.unmounted) {
-                        this.props.setScriptLoadProgress(progress.phase === 'idle' ? null : progress);
-                    }
-                },
+                onProgress: this.handleScriptLoadProgress,
                 onDone: () => {
                     this.deferredWorkspaceLoad = null;
                 }
@@ -1314,8 +1315,44 @@ class Blocks extends React.Component {
     setBlocks (blocks) {
         this.blocks = blocks;
     }
+    handleScriptLoadProgress (progress) {
+        if (this.unmounted) return;
+        const finished = progress.phase === 'idle';
+        if (finished || progress.phase === 'error') {
+            clearTimeout(this.scriptLoadProgressTimer);
+            this.scriptLoadProgressTimer = null;
+            this.pendingScriptLoadProgress = null;
+            if (finished && !this.scriptLoadProgressShown) return;
+            this.scriptLoadProgressShown = !finished;
+            this.props.setScriptLoadProgress(finished ? null : progress);
+            return;
+        }
+        if (this.scriptLoadProgressShown) {
+            this.props.setScriptLoadProgress(progress);
+            return;
+        }
+        // Most sprite switches finish within a few frames. Showing the
+        // indicator for those costs a forced page layout in the busiest frame
+        // and only flashes on screen, so wait to see if the load is slow.
+        this.pendingScriptLoadProgress = progress;
+        if (this.scriptLoadProgressTimer) return;
+        this.scriptLoadProgressTimer = setTimeout(() => {
+            this.scriptLoadProgressTimer = null;
+            const pending = this.pendingScriptLoadProgress;
+            this.pendingScriptLoadProgress = null;
+            if (!pending || this.unmounted) return;
+            this.scriptLoadProgressShown = true;
+            this.props.setScriptLoadProgress(pending);
+        }, SCRIPT_LOAD_INDICATOR_DELAY_MS);
+    }
     cancelDeferredWorkspaceLoad () {
-        this.props.setScriptLoadProgress(null);
+        clearTimeout(this.scriptLoadProgressTimer);
+        this.scriptLoadProgressTimer = null;
+        this.pendingScriptLoadProgress = null;
+        if (this.scriptLoadProgressShown) {
+            this.scriptLoadProgressShown = false;
+            this.props.setScriptLoadProgress(null);
+        }
         this.deferredWorkspaceLoad = null;
         if (this.workspace && this.workspace.cancelDeferredRender) {
             this.workspace.cancelDeferredRender();

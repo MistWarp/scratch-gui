@@ -52,11 +52,60 @@ describe('script loading progress', () => {
         blocks.props = {setScriptLoadProgress};
         blocks.workspace = {cancelDeferredRender: jest.fn()};
         blocks.deferredWorkspaceLoad = {};
+        blocks.scriptLoadProgressShown = true;
 
         blocks.cancelDeferredWorkspaceLoad();
 
         expect(setScriptLoadProgress).toHaveBeenCalledWith(null);
         expect(blocks.workspace.cancelDeferredRender).toHaveBeenCalled();
         expect(blocks.deferredWorkspaceLoad).toBeNull();
+    });
+
+    describe('delayed indicator', () => {
+        beforeEach(() => jest.useFakeTimers());
+        afterEach(() => jest.useRealTimers());
+
+        const makeBlocks = () => {
+            const blocks = Object.create(Blocks.prototype);
+            blocks.props = {setScriptLoadProgress: jest.fn()};
+            blocks.workspace = {cancelDeferredRender: jest.fn()};
+            return blocks;
+        };
+        const drawing = {phase: 'drawing', completed: 1, total: 10};
+
+        test('a load that finishes quickly never shows the indicator', () => {
+            const blocks = makeBlocks();
+            blocks.handleScriptLoadProgress(drawing);
+            blocks.handleScriptLoadProgress({phase: 'idle', completed: 0, total: 10});
+            jest.runAllTimers();
+            expect(blocks.props.setScriptLoadProgress).not.toHaveBeenCalled();
+        });
+
+        test('a slow load shows the latest progress, then clears it', () => {
+            const blocks = makeBlocks();
+            blocks.handleScriptLoadProgress(drawing);
+            const later = {phase: 'layout', completed: 5, total: 10};
+            blocks.handleScriptLoadProgress(later);
+            expect(blocks.props.setScriptLoadProgress).not.toHaveBeenCalled();
+            jest.runAllTimers();
+            expect(blocks.props.setScriptLoadProgress).toHaveBeenLastCalledWith(later);
+            blocks.handleScriptLoadProgress({phase: 'idle', completed: 0, total: 10});
+            expect(blocks.props.setScriptLoadProgress).toHaveBeenLastCalledWith(null);
+        });
+
+        test('errors show immediately', () => {
+            const blocks = makeBlocks();
+            const error = {phase: 'error', completed: 0, total: 10};
+            blocks.handleScriptLoadProgress(error);
+            expect(blocks.props.setScriptLoadProgress).toHaveBeenCalledWith(error);
+        });
+
+        test('cancelling before the delay drops the pending indicator', () => {
+            const blocks = makeBlocks();
+            blocks.handleScriptLoadProgress(drawing);
+            blocks.cancelDeferredWorkspaceLoad();
+            jest.runAllTimers();
+            expect(blocks.props.setScriptLoadProgress).not.toHaveBeenCalled();
+        });
     });
 });
