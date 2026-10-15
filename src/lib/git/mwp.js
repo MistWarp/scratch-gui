@@ -1,13 +1,14 @@
 import JSZip from '@turbowarp/jszip';
 import {
     abortEditorMerge,
+    buildRepoZip,
     commitProject,
     createRepoBackup,
+    collectExportableObjectOids,
     collectReachableObjectOids,
     completeEditorMerge,
     computeCommitGraph,
     ensureParentDir,
-    exportRepoToZip,
     getDefaultAuthor,
     getFs,
     git,
@@ -314,12 +315,12 @@ const exportCurrentMwp = async (metadata, {
     // objects, and traversing them throws "Could not find <oid>".
     if (baseHead) {
         const known = assumeBaseKnown ?
-            new Set([baseHead, ...knownBaseHeads].filter(Boolean)) : await collectReachableObjectOids(baseHead);
+            new Set([baseHead, ...knownBaseHeads].filter(Boolean)) : await collectExportableObjectOids(baseHead);
         includeObjectOids = new Set();
         const branches = await git.listBranches({fs: getFs(), dir: REPO_DIR});
         for (const branch of branches) {
             const head = await git.resolveRef({fs: getFs(), dir: REPO_DIR, ref: branch});
-            for (const oid of await collectReachableObjectOids(head, known)) includeObjectOids.add(oid);
+            for (const oid of await collectExportableObjectOids(head, known)) includeObjectOids.add(oid);
         }
         delta = true;
     }
@@ -329,15 +330,14 @@ const exportCurrentMwp = async (metadata, {
         const branches = await git.listBranches({fs: getFs(), dir: REPO_DIR});
         for (const branch of branches) {
             const head = await git.resolveRef({fs: getFs(), dir: REPO_DIR, ref: branch});
-            await collectReachableObjectOids(head);
+            await collectExportableObjectOids(head);
         }
     }
-    const repoBlob = await exportRepoToZip({
+    const zip = await buildRepoZip({
         includeGitDir: true,
         includeWorktree,
         includeObjectOids
     });
-    const zip = await JSZip.loadAsync(repoBlob);
     const manifest = {
         format: MWP_FORMAT,
         version: MWP_VERSION,

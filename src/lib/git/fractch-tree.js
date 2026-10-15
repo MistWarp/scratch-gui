@@ -13,17 +13,17 @@ const extensionOf = path => {
     return dot > 0 ? base.substring(dot + 1).toLowerCase() : 'bin';
 };
 
-const writeCustomAssets = async ({zip, projectJson, vfs, dir}) => {
+const writeCustomAssets = async ({readSb3File, projectJson, vfs, dir}) => {
     const customAssets = Array.isArray(projectJson.customAssets) ? projectJson.customAssets : [];
     for (const {name, md5ext} of customAssets) {
-        const entry = zip.file(md5ext);
-        if (!entry) {
+        const data = await readSb3File(md5ext);
+        if (!data) {
             console.warn('[fractch-tree] missing custom asset in sb3:', md5ext);
             continue;
         }
         const path = `${dir}/${CUSTOM_ASSETS_DIR}/${name}`;
         await vfs.mkdirp(path.substring(0, path.lastIndexOf('/')));
-        await vfs.writeFile(path, await entry.async('uint8array'));
+        await vfs.writeFile(path, data);
     }
 };
 
@@ -79,13 +79,19 @@ const targetAssetFiles = target => {
     return map;
 };
 
-const yieldToBrowser = () => new Promise(resolve => {
-    if (typeof requestAnimationFrame === 'function') {
-        requestAnimationFrame(() => resolve());
-    } else {
-        setTimeout(resolve, 0);
-    }
-});
+const yieldToBrowser = () => new Promise(resolve => setTimeout(resolve, 0));
+
+const YIELD_INTERVAL_MS = 30;
+
+const createYielder = () => {
+    let last = Date.now();
+    return () => {
+        const now = Date.now();
+        if (now - last < YIELD_INTERVAL_MS) return Promise.resolve();
+        last = now;
+        return yieldToBrowser();
+    };
+};
 
 const sanitize = name => String(name === null || typeof name === 'undefined' ? '' : name)
     .replace(/[^a-zA-Z0-9-_]/g, '_') || 'target';
@@ -120,6 +126,8 @@ const removeRecursive = async (pfs, filePath) => {
     }
 };
 
+const KEPT_ROOT_ENTRIES = new Set(['.git', '.gitignore', 'README.md']);
+
 const clearWorkingTree = async ({pfs, dir}) => {
     if (!pfs || typeof pfs.readdir !== 'function') {
         throw new Error('Invalid filesystem object');
@@ -138,22 +146,122 @@ const clearWorkingTree = async ({pfs, dir}) => {
     await Promise.all(entries.map(async entry => {
         // Keep git metadata and user-authored root docs; only the fractch tree is
         // regenerated from the project on each write.
-        if (entry === '.git' || entry === '.gitignore' || entry === 'README.md') return;
+        if (KEPT_ROOT_ENTRIES.has(entry)) return;
         await removeRecursive(pfs, `${dir}/${entry}`);
     }));
 };
 
-const loadSb3Zip = async ({vm, sb3ArrayBuffer, sb3Files}) => {
-    if (sb3Files) {
-        const zip = new JSZip();
-        for (const [name, data] of Object.entries(sb3Files)) {
-            zip.file(name, data);
+const listGeneratedTree = async (pfs, dir) => {
+    const files = [];
+    const dirs = [];
+    const walk = async (current, isRoot) => {
+        let entries;
+        try {
+            entries = await pfs.readdir(current);
+        } catch (e) {
+            return;
         }
-        const projectEntry = zip.file('project.json');
-        if (!projectEntry) {
+        for (const entry of entries) {
+            if (isRoot && KEPT_ROOT_ENTRIES.has(entry)) continue;
+            const path = `${current}/${entry}`;
+            let stat;
+            try {
+                stat = await pfs.stat(path);
+            } catch (e) {
+                continue;
+            }
+            if (stat.isDirectory()) {
+                dirs.push(path);
+                await walk(path, false);
+            } else {
+                files.push(path);
+            }
+        }
+    };
+    await walk(dir, true);
+    return {files, dirs};
+};
+
+const toBytes = data => {
+    if (data instanceof Uint8Array) return data;
+    if (typeof data === 'string') return new TextEncoder().encode(data);
+    if (ArrayBuffer.isView(data)) return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+    return new Uint8Array(data);
+};
+
+const sameBytes = (a, b) => {
+    if (a.byteLength !== b.byteLength) return false;
+    for (let i = 0; i < a.byteLength; i++) {
+        if (a[i] !== b[i]) return false;
+    }
+    return true;
+};
+
+const normalizeTreePath = path => path.replace(/\/+/g, '/');
+
+const createTreeSync = async ({pfs, dir}) => {
+    const previous = await listGeneratedTree(pfs, dir);
+    const stale = new Set(previous.files);
+    const writeFile = async (path, data, options) => {
+        const normalized = normalizeTreePath(path);
+        if (stale.has(normalized)) {
+            stale.delete(normalized);
+            let existing = null;
+            try {
+                existing = await pfs.readFile(normalized);
+            } catch (e) {
+                existing = null;
+            }
+            if (existing && sameBytes(toBytes(existing), toBytes(data))) return;
+        }
+        await pfs.writeFile(normalized, data, options);
+    };
+    const syncedFs = new Proxy(pfs, {
+        get: (target, property) => {
+            if (property === 'writeFile') return writeFile;
+            const value = target[property];
+            return typeof value === 'function' ? value.bind(target) : value;
+        }
+    });
+    const finish = async () => {
+        for (const path of stale) {
+            await pfs.unlink(path);
+        }
+        const dirs = [...previous.dirs].sort((a, b) => b.length - a.length);
+        for (const path of dirs) {
+            try {
+                if ((await pfs.readdir(path)).length === 0) await pfs.rmdir(path);
+            } catch (e) {
+                console.warn('Failed to remove directory:', path, e);
+            }
+        }
+    };
+    return {fs: syncedFs, finish};
+};
+
+const sb3FileReader = files => name => {
+    if (!Object.prototype.hasOwnProperty.call(files, name)) return null;
+    const data = files[name];
+    return data === null || typeof data === 'undefined' ? null : toBytes(data);
+};
+
+const zipFileReader = zip => name => {
+    const entry = zip.file(name);
+    return entry ? entry.async('uint8array') : null;
+};
+
+const loadSb3 = async ({vm, sb3ArrayBuffer, sb3Files}) => {
+    let files = sb3Files;
+    if (!files && !sb3ArrayBuffer && vm && typeof vm.saveProjectSb3DontZip === 'function') {
+        files = vm.saveProjectSb3DontZip();
+    }
+    if (files) {
+        const readSb3File = sb3FileReader(files);
+        const projectBytes = await readSb3File('project.json');
+        if (!projectBytes) {
             throw new Error('Invalid sb3 files: no project.json');
         }
-        return {zip, projectJson: JSON.parse(await projectEntry.async('string'))};
+        return {readSb3File, projectJson: JSON.parse(new TextDecoder().decode(projectBytes))};
     }
     let buffer = sb3ArrayBuffer;
     if (!buffer) {
@@ -172,7 +280,7 @@ const loadSb3Zip = async ({vm, sb3ArrayBuffer, sb3Files}) => {
         throw new Error('Invalid sb3: no project.json');
     }
     const projectJson = JSON.parse(await projectEntry.async('string'));
-    return {zip, projectJson};
+    return {readSb3File: zipFileReader(zip), projectJson};
 };
 
 const writeProjectToFractchTree = async ({
@@ -186,51 +294,64 @@ const writeProjectToFractchTree = async ({
         onProgress({phase: 'write', message: 'Reading project…', completed: 0, total: 1});
     }
 
-    const {zip, projectJson} = await loadSb3Zip({vm, sb3ArrayBuffer, sb3Files});
+    const {readSb3File, projectJson} = await loadSb3({vm, sb3ArrayBuffer, sb3Files});
 
-    if (clear) {
-        await clearWorkingTree({pfs: fs, dir});
-    }
-
-    if (typeof onProgress === 'function') {
-        onProgress({phase: 'write', message: 'Writing fractch source…', completed: 0, total: 1});
-        await yieldToBrowser();
-    }
-
-    await convertProject(projectJson, {outDir: dir, fs});
-    await writeExtensions(projectJson, dir, {fs});
-
-    const vfs = toPromiseFs(fs);
-
-    await writeCustomAssets({zip, projectJson, vfs, dir});
-
-    const targets = Array.isArray(projectJson.targets) ? projectJson.targets : [];
-    let completed = 0;
-    for (const target of targets) {
-        const fileMap = targetAssetFiles(target);
-        if (fileMap.size) {
-            const tDir = `${dir}/${sanitize(target.name)}`;
-            await vfs.mkdirp(`${tDir}/assets`);
-            for (const [md5ext, rel] of fileMap) {
-                const entry = zip.file(md5ext);
-                if (!entry) {
-                    console.warn('[fractch-tree] missing asset in sb3:', md5ext);
-                    continue;
-                }
-                const data = await entry.async('uint8array');
-                await vfs.writeFile(`${tDir}/${rel}`, data);
-            }
-        }
-        completed += 1;
+    const writeTree = async treeFs => {
         if (typeof onProgress === 'function') {
-            onProgress({
-                phase: 'write',
-                message: `Writing assets for ${target.name}…`,
-                completed,
-                total: Math.max(1, targets.length)
-            });
+            onProgress({phase: 'write', message: 'Writing fractch source…', completed: 0, total: 1});
+            await yieldToBrowser();
         }
-        await yieldToBrowser();
+
+        await convertProject(projectJson, {outDir: dir, fs: treeFs});
+        await writeExtensions(projectJson, dir, {fs: treeFs});
+
+        const vfs = toPromiseFs(treeFs);
+
+        await writeCustomAssets({readSb3File, projectJson, vfs, dir});
+
+        const maybeYield = createYielder();
+        const targets = Array.isArray(projectJson.targets) ? projectJson.targets : [];
+        let completed = 0;
+        for (const target of targets) {
+            const fileMap = targetAssetFiles(target);
+            if (fileMap.size) {
+                const tDir = `${dir}/${sanitize(target.name)}`;
+                await vfs.mkdirp(`${tDir}/assets`);
+                for (const [md5ext, rel] of fileMap) {
+                    const data = await readSb3File(md5ext);
+                    if (!data) {
+                        console.warn('[fractch-tree] missing asset in sb3:', md5ext);
+                        continue;
+                    }
+                    await vfs.writeFile(`${tDir}/${rel}`, data);
+                }
+            }
+            completed += 1;
+            if (typeof onProgress === 'function') {
+                onProgress({
+                    phase: 'write',
+                    message: `Writing assets for ${target.name}…`,
+                    completed,
+                    total: Math.max(1, targets.length)
+                });
+            }
+            await maybeYield();
+        }
+    };
+
+    if (!clear) {
+        await writeTree(fs);
+        return;
+    }
+
+    const sync = await createTreeSync({pfs: fs, dir});
+    try {
+        await writeTree(sync.fs);
+        await sync.finish();
+    } catch (error) {
+        console.warn('[fractch-tree] rewriting the whole tree after an incremental write failed:', error);
+        await clearWorkingTree({pfs: fs, dir});
+        await writeTree(fs);
     }
 };
 

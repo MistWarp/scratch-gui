@@ -102,3 +102,23 @@ test('a delta stacked on its base imports as a full workspace', async () => {
     expect(imported.baseHead).toBe(null);
     expect(await getFs().promises.readFile(`${REPO_DIR}/file.txt`, 'utf8')).toBe('edit');
 });
+
+test('a worktree save stores Git objects and media without deflating them again', async () => {
+    const fs = getFs();
+    await commit('text');
+    await fs.promises.writeFile(`${REPO_DIR}/picture.png`, new Uint8Array([137, 80, 78, 71, 1, 2, 3]));
+    await fs.promises.writeFile(`${REPO_DIR}/notes.txt`, 'uncommitted');
+    const exported = await exportCurrentMwp({}, {includeWorktree: true});
+    const zip = await JSZip.loadAsync(await bytes(exported.blob));
+    const method = name => zip.files[name]._data.compression.magic;
+    const objects = Object.keys(zip.files).filter(name => name.startsWith('.git/objects/') && !zip.files[name].dir);
+    expect(objects.length).toBeGreaterThan(0);
+    for (const name of objects) expect(method(name)).toBe('\x00\x00');
+    expect(method('picture.png')).toBe('\x00\x00');
+    expect(method('notes.txt')).toBe('\x08\x00');
+    expect(method('mwp.json')).toBe('\x08\x00');
+    expect(await zip.file('notes.txt').async('string')).toBe('uncommitted');
+    const imported = await importMwp(await bytes(exported.blob));
+    expect(imported.head).toBe(exported.manifest.head);
+    expect(await getFs().promises.readFile(`${REPO_DIR}/notes.txt`, 'utf8')).toBe('uncommitted');
+});

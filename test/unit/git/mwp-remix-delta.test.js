@@ -8,7 +8,7 @@ const DETACHED = '4444444444444444444444444444444444444444';
 const mockRepoExists = jest.fn();
 const mockInitRepo = jest.fn();
 const mockCollectReachableObjectOids = jest.fn();
-const mockExportRepoToZip = jest.fn();
+const mockBuildRepoZip = jest.fn();
 
 const mockGit = {
     currentBranch: jest.fn(() => Promise.resolve('main')),
@@ -33,8 +33,10 @@ const mockGit = {
 
 jest.mock('../../../src/lib/git/browser-git.js', () => ({
     abortEditorMerge: jest.fn(),
+    buildRepoZip: (...args) => mockBuildRepoZip(...args),
     commitProject: jest.fn(),
-    collectReachableObjectOids: (...args) => mockCollectReachableObjectOids(...args),
+    collectExportableObjectOids: (...args) => mockCollectReachableObjectOids(...args),
+    collectReachableObjectOids: jest.fn(),
     completeEditorMerge: jest.fn(),
     computeCommitGraph: jest.fn(() => Promise.resolve({
         branches: ['main'],
@@ -43,7 +45,6 @@ jest.mock('../../../src/lib/git/browser-git.js', () => ({
     })),
     deleteRepo: jest.fn(),
     ensureParentDir: jest.fn(),
-    exportRepoToZip: (...args) => mockExportRepoToZip(...args),
     getDefaultAuthor: jest.fn(() => ({name: 'Local', email: 'local@example.com'})),
     getFs: jest.fn(() => ({promises: {}})),
     git: mockGit,
@@ -95,7 +96,7 @@ describe('first remix delta export', () => {
         mockCollectReachableObjectOids.mockResolvedValue(new Set([NEW_OBJECT]));
         const zip = new JSZip();
         zip.file(`.git/objects/${NEW_OBJECT.slice(0, 2)}/${NEW_OBJECT.slice(2)}`, new Uint8Array([1]));
-        mockExportRepoToZip.mockResolvedValue(await zip.generateAsync({type: 'uint8array'}));
+        mockBuildRepoZip.mockResolvedValue(zip);
     });
 
     test('creates a shallow commit on the known base and exports only divergent objects', async () => {
@@ -129,7 +130,7 @@ describe('first remix delta export', () => {
         );
         const known = mockCollectReachableObjectOids.mock.calls[0][1];
         expect(known.has(BASE)).toBe(true);
-        expect(mockExportRepoToZip).toHaveBeenCalledWith(expect.objectContaining({
+        expect(mockBuildRepoZip).toHaveBeenCalledWith(expect.objectContaining({
             includeObjectOids: new Set([NEW_OBJECT]),
             includeWorktree: false
         }));
@@ -201,7 +202,7 @@ describe('first remix delta export', () => {
         mockCollectReachableObjectOids.mockRejectedValue(new Error('missing parent'));
         await expect(createMwp({projectId: 'fork', remixParent: 'parent', remoteHead: BASE}))
             .rejects.toThrow('missing parent');
-        expect(mockExportRepoToZip).not.toHaveBeenCalled();
+        expect(mockBuildRepoZip).not.toHaveBeenCalled();
     });
 
     test('does not create a root when inherited history is unavailable', async () => {
@@ -215,7 +216,7 @@ describe('first remix delta export', () => {
         mockCollectReachableObjectOids.mockRejectedValue(new Error('missing ancestor'));
         await expect(createMwp({projectId: 'fork', commitChanges: false}))
             .rejects.toThrow('missing ancestor');
-        expect(mockExportRepoToZip).not.toHaveBeenCalled();
+        expect(mockBuildRepoZip).not.toHaveBeenCalled();
     });
 
     test('initializes a shallow save on the selected inherited branch', async () => {
