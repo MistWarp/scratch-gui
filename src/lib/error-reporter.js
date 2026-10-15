@@ -103,6 +103,20 @@ const isRehostedCopy = () => {
     }
 };
 
+const FRAME_URL = /(https?:\/\/[^\s()]+?):\d+:\d+/g;
+
+// MistWarp pages run no inline script beyond the splash theme. Stacks that only point at the page
+// itself come from code a browser or a browser extension injected, such as Brave's ad blocker.
+const isInjectedPageScript = stack => {
+    try {
+        const urls = Array.from(String(stack || '').matchAll(FRAME_URL), match => match[1]);
+        const page = window.location.href.split('#')[0];
+        return urls.length > 0 && urls.every(url => url === page);
+    } catch (e) {
+        return false;
+    }
+};
+
 const PROJECT_THREAD_FRAME = /stepThread|executeBlock|executeInCompatibilityLayer/;
 
 // A ReferenceError or SyntaxError raised while a project thread runs comes from JavaScript
@@ -138,7 +152,7 @@ export const reportSiteError = ({message, stack = '', kind = 'uncaught', url = '
         const text = String(message || '').trim();
         if (!text || sending) return;
         if (isBenignResizeObserverLoop(text, stack)) return;
-        if (isUnactionable(text, stack) || isCrawler() || isRehostedCopy()) return;
+        if (isUnactionable(text, stack) || isCrawler() || isRehostedCopy() || isInjectedPageScript(stack)) return;
         if (isProjectScriptError(name, stack) || BROWSER_REFUSAL.test(String(name || ''))) return;
         if (isOutsideMistWarp(text, name, stack, kind)) return;
         const href = String(url || window.location.href || '').slice(0, 2000);

@@ -401,7 +401,8 @@ class Backpack extends React.Component {
         if (!payloader) return Promise.resolve(false);
 
         this.setState({loading: true, error: false});
-        return payloader(dragInfo.payload, this.props.vm)
+        return Promise.resolve()
+            .then(() => payloader(dragInfo.payload, this.props.vm))
             .then(payload => {
                 if (dragInfo.dragType === DragConstants.CODE) {
                     payload.name = this.getScriptName(dragInfo.payload, payload);

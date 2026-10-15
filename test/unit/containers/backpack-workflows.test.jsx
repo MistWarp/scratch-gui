@@ -244,6 +244,19 @@ describe('backpack workflows', () => {
         expect(saveBackpackObject).toHaveBeenCalledTimes(1);
     });
 
+    test('shows a sprite that cannot be exported as a backpack error', async () => {
+        spritePayload.mockImplementationOnce(() => {
+            throw new TypeError('Cannot save asset \'a.png\': unsupported asset data [object Object]');
+        });
+        const backpack = makeBackpack();
+
+        await expect(backpack.handleSaveRequest({dragType: DragConstants.SPRITE, payload: 'sprite-id'}))
+            .resolves.toBe(false);
+        expect(backpack.state.loading).toBe(false);
+        expect(backpack.state.error).toContain('unsupported asset data');
+        expect(saveBackpackObject).not.toHaveBeenCalled();
+    });
+
     test('renames an item inline and trims the new name', async () => {
         updateBackpackObject.mockResolvedValueOnce({id: 'item', name: 'New name'});
         const backpack = makeBackpack({host: 'local'});

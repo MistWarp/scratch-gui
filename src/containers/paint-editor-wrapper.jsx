@@ -84,6 +84,8 @@ class PaintEditorWrapper extends React.Component {
             vm,
             ...componentProps
         } = this.props;
+        const target = vm.editingTarget;
+        if (!target || !target.getCostumes()[selectedCostumeIndex]) return null;
         const costume = vm.getCostume(selectedCostumeIndex);
         return (
             <PaintEditor
@@ -107,8 +109,8 @@ PaintEditorWrapper.propTypes = {
         height: PropTypes.number
     }),
     onManageFonts: PropTypes.func.isRequired,
-    imageFormat: PropTypes.string.isRequired,
-    imageId: PropTypes.string.isRequired,
+    imageFormat: PropTypes.string,
+    imageId: PropTypes.string,
     theme: PropTypes.instanceOf(Theme),
     name: PropTypes.string,
     rotationCenterX: PropTypes.number,
@@ -119,19 +121,20 @@ PaintEditorWrapper.propTypes = {
 };
 
 const mapStateToProps = (state, {selectedCostumeIndex}) => {
-    const targetId = state.scratchGui.vm.editingTarget.id;
-    const sprite = state.scratchGui.vm.editingTarget.sprite;
+    const target = state.scratchGui.vm.editingTarget;
+    const targetId = target && target.id;
+    const costumes = target ? target.sprite.costumes : [];
     // Make sure the costume index doesn't go out of range.
-    const index = selectedCostumeIndex < sprite.costumes.length ?
-        selectedCostumeIndex : sprite.costumes.length - 1;
-    const costume = state.scratchGui.vm.editingTarget.sprite.costumes[index];
+    const index = selectedCostumeIndex < costumes.length ?
+        selectedCostumeIndex : costumes.length - 1;
+    const costume = costumes[index];
     return {
         customStageSize: state.scratchGui.customStageSize,
         name: costume && costume.name,
         rotationCenterX: costume && costume.rotationCenterX,
         rotationCenterY: costume && costume.rotationCenterY,
         imageFormat: costume && costume.dataFormat,
-        imageId: targetId && `${targetId}${costume.skinId}`,
+        imageId: targetId && costume ? `${targetId}${costume.skinId}` : null,
         rtl: state.locales.isRtl,
         selectedCostumeIndex: index,
         theme: state.scratchGui.theme.theme,
