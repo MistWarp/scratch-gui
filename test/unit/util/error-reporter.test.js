@@ -167,3 +167,22 @@ test('skips React losing track of nodes only on a machine translated page', () =
         document.documentElement.classList.remove('translated-ltr');
     }
 });
+
+test.each([
+    'TypeError: Failed to fetch\n    at http://localhost/:20:3585\n    at http://localhost/:20:3016\n    at Object.next (http://localhost/:20:3121)',
+    '@http://localhost/:17:6302'
+])('skips errors from scripts injected into the page: %s', stack => {
+    const {reportSiteError, request} = load();
+    reportSiteError({message: 'Failed to fetch', stack, kind: 'rejection'});
+    expect(request).not.toHaveBeenCalled();
+});
+
+test('still reports errors whose stack reaches a MistWarp bundle', () => {
+    const {reportSiteError, request} = load();
+    reportSiteError({
+        message: 'Failed to fetch',
+        stack: 'TypeError: Failed to fetch\n    at http://localhost/:20:3585\n    at load (http://localhost/assets/api-Dkeazk7Z.js:1:2)',
+        kind: 'rejection'
+    });
+    expect(request).toHaveBeenCalledTimes(1);
+});

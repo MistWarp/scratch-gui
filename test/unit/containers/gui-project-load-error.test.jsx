@@ -28,3 +28,18 @@ test('still reports fatal editor errors through the crash boundary', () => {
     const gui = new GUI({isError: true, error});
     expect(() => gui.render()).toThrow(error);
 });
+
+test.each([
+    'Failed to unzip and extract project.json, with error: Error: Corrupted zip: can\'t find end of central directory',
+    'SyntaxError: JSON Parse error: Unrecognized token \'�\'',
+    '{"validationError":"Could not parse as a valid SB2 or SB3 project.","sb3Errors":[],"sb2Errors":[]}'
+])('shows an unreadable project as a load error instead of crashing: %s', error => {
+    const gui = new GUI({isError: true, error});
+    const rendered = gui.render();
+    expect(rendered.type).toBe(ProjectLoadError);
+    const wrapper = mountWithIntl(rendered);
+    expect(wrapper.text()).toContain('This file is damaged or is not a Scratch project.');
+    expect(wrapper.text()).not.toContain('Check your connection');
+    expect(wrapper.find('button')).toHaveLength(0);
+    wrapper.unmount();
+});

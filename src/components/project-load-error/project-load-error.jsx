@@ -12,6 +12,14 @@ export const unknownExtensionId = error => {
     return match ? match[1] : null;
 };
 
+const UNREADABLE_PROJECT = /^(?:Failed to unzip and extract|SyntaxError: |\{"validationError")/;
+
+export const isUnreadableProject = error => (
+    UNREADABLE_PROJECT.test(String((error && error.message) || error || ''))
+);
+
+export const isProjectLoadError = error => Boolean(unknownExtensionId(error) || isUnreadableProject(error));
+
 const ProjectLoadError = ({error, isEmbedded, onNewProject, onOpenFile, onRetry}) => {
     const missingExtension = unknownExtensionId(error);
     const handleNewProject = useCallback(event => {
@@ -45,11 +53,19 @@ const ProjectLoadError = ({error, isEmbedded, onNewProject, onOpenFile, onRetry}
                 ) : (
                     <React.Fragment>
                         <p>
-                            <FormattedMessage
-                                defaultMessage="Check your connection and try again."
-                                description="Advice when a project download fails"
-                                id="mw.projectLoadError.description"
-                            />
+                            {isUnreadableProject(error) ? (
+                                <FormattedMessage
+                                    defaultMessage="This file is damaged or is not a Scratch project."
+                                    description="Shown when downloaded or opened project data cannot be read"
+                                    id="mw.projectLoadError.unreadable"
+                                />
+                            ) : (
+                                <FormattedMessage
+                                    defaultMessage="Check your connection and try again."
+                                    description="Advice when a project download fails"
+                                    id="mw.projectLoadError.description"
+                                />
+                            )}
                         </p>
                         <p className={styles.details}>{error.message || String(error)}</p>
                     </React.Fragment>
