@@ -286,12 +286,6 @@ const publishWorkspace = async ({
             Promise.resolve(thumbnailBlob || captureThumbnail(vm));
         await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
         const sb3Files = vm.saveProjectSb3DontZip();
-        let sb3Blob;
-        try {
-            sb3Blob = await buildSparseSb3(sb3Files, platformId);
-        } catch (e) {
-            sb3Blob = await zipProjectFiles(sb3Files, () => true);
-        }
         onProgress({phase: 'package', message: 'Preparing pushed history and extensions'});
         const remixBaseHead = createdNow && platformProject?.remixParent ?
             platformProject.remixBaseCommit || '' : '';
@@ -306,6 +300,9 @@ const publishWorkspace = async ({
             // missing. Ordinary saves never add speculative repair parents.
             await deleteRepo();
         }
+        const sb3BlobPromise = buildSparseSb3(sb3Files, platformId)
+            .catch(() => zipProjectFiles(sb3Files, () => true));
+        const extensionSourcesPromise = sb3BlobPromise.then(collectExtensionSources);
         const mwpPromise = createMwp({
             vm,
             sb3Files,
@@ -320,12 +317,15 @@ const publishWorkspace = async ({
             requireChanges: commitChanges && !createdNow && !replaceHistory,
             baseHistory
         });
-        const extensionSourcesPromise = collectExtensionSources(sb3Blob);
-        const [thumbnail, mwp, extensions] = await Promise.all([
+        const prepared = await Promise.allSettled([
             thumbnailPromise,
             mwpPromise,
+            sb3BlobPromise,
             extensionSourcesPromise
         ]);
+        const failed = prepared.find(result => result.status === 'rejected');
+        if (failed) throw failed.reason;
+        const [thumbnail, mwp, sb3Blob, extensions] = prepared.map(result => result.value);
         onProgress({phase: 'upload', message: 'Uploading project'});
         const uploaded = await uploadProject(platformId, sb3Blob, thumbnail, (loaded, total) => {
             const percent = total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : null;
@@ -355,8 +355,13 @@ const publishWorkspace = async ({
             platformProject = {...platformProject, gitHead: mwp.manifest.head, gitBranch: mwp.manifest.branch};
             adoptImportedProjectHistory(vm, mwp.manifest, platformProject, false);
         }
+        if (updateOnly) setSaveFeedback(vm, 'cloud');
         onProgress({phase: 'finish', message: 'Updating pushed history'});
-        await preloadProjectHistory(vm, {force: true});
+        try {
+            await preloadProjectHistory(vm, {force: true});
+        } catch (e) {
+            console.warn('Could not refresh project history after saving', e);
+        }
     } catch (e) {
         if (createdNow && e.code !== 'upload_processing_timeout') {
             try {
