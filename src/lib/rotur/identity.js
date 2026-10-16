@@ -57,15 +57,19 @@ const TOKEN_MARGIN = 60000;
 const SIGN_IN_POPUP = 'mw-account-signin';
 let editorToken = null;
 let editorTokenRequest = null;
+let tokenGeneration = 0;
+let identityGeneration = 0;
 let splitWired = false;
 
 const splitSession = {
     get: () => (editorToken && editorToken.expiresAt - TOKEN_MARGIN > Date.now() ? editorToken.token : null),
     refresh: () => {
-        if (!state.user) return Promise.resolve(null);
+        if (!state.user && !accountBridge.getIdentity().user) return Promise.resolve(null);
         if (!editorTokenRequest) {
+            const generation = tokenGeneration;
             editorTokenRequest = accountBridge.call('editorSession')
                 .then(next => {
+                    if (generation !== tokenGeneration) return null;
                     editorToken = next;
                     return next.token;
                 })
@@ -76,7 +80,9 @@ const splitSession = {
         return editorTokenRequest;
     },
     clear: () => {
+        tokenGeneration += 1;
         editorToken = null;
+        editorTokenRequest = null;
     }
 };
 
@@ -87,9 +93,18 @@ const userFromBridge = user => (user && user.username ? {
     bio: user.bio
 } : null);
 
-const applyBridgeIdentity = next => {
+const applyBridgeIdentity = async next => {
+    const generation = ++identityGeneration;
     const user = userFromBridge(next.user);
-    if (!user || (state.user && state.user.username !== user.username)) editorToken = null;
+    if (!user || !state.user || state.user.username !== user.username) storeSession(null);
+    if (user && !splitSession.get()) {
+        try {
+            await splitSession.refresh();
+        } catch (_) {
+            storeSession(null);
+        }
+        if (generation !== identityGeneration) return;
+    }
     setState({
         status: next.status === 'restoring' ? 'restoring' : (user ? 'ready' : 'idle'),
         user,
@@ -113,14 +128,7 @@ const restoreSplitEditor = async () => {
         setState({status: 'idle', user: null});
         return null;
     }
-    applyBridgeIdentity(accountBridge.getIdentity());
-    if (state.user && !splitSession.get()) {
-        try {
-            await splitSession.refresh();
-        } catch (_) {
-            editorToken = null;
-        }
-    }
+    await applyBridgeIdentity(accountBridge.getIdentity());
     return state.user;
 };
 
@@ -296,7 +304,8 @@ const login = async () => {
 
 const logout = () => {
     if (isSplitEditor()) {
-        editorToken = null;
+        identityGeneration += 1;
+        storeSession(null);
         accountBridge.call('signOut').catch(() => null);
         try {
             onRoturLogout();

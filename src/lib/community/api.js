@@ -274,6 +274,17 @@ const runExchange = token => {
     return exchangeInFlight;
 };
 
+const currentSession = async () => {
+    if (!sessionProvider) return loadSession();
+    const existing = sessionProvider.get();
+    if (existing) return existing;
+    try {
+        return (await sessionProvider.refresh()) || null;
+    } catch (e) {
+        return null;
+    }
+};
+
 const refreshSession = async () => {
     if (sessionProvider) {
         try {
@@ -303,8 +314,7 @@ const request = async (path, {method = 'GET', body, headers = {}, raw = false, c
     }
     const generation = cacheGeneration;
     const run = async () => {
-        const fetchOnce = () => {
-            const session = loadSession();
+        const fetchWith = session => {
             const finalHeaders = {...headers};
             if (session) {
                 finalHeaders.Authorization = `Bearer ${session}`;
@@ -328,6 +338,7 @@ const request = async (path, {method = 'GET', body, headers = {}, raw = false, c
                     if (timer) clearTimeout(timer);
                 });
         };
+        const fetchOnce = () => (sessionProvider ? currentSession().then(fetchWith) : fetchWith(loadSession()));
         // A GET changes nothing, so a dropped connection or a server error
         // gets one more try. A timeout doesn't, so the wait stays bounded.
         const doFetch = async () => {
@@ -390,7 +401,7 @@ const createProject = payload => request('/projects', {method: 'POST', body: pay
 const UPLOAD_STALL_TIMEOUT = 120000;
 const UPLOAD_PROCESSING_TIMEOUT = 180000;
 
-const uploadXhr = (path, form, onUploadProgress) => new Promise((resolve, reject) => {
+const sendUploadXhr = (path, form, onUploadProgress, session) => new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     let timeoutId = null;
     let settled = false;
@@ -415,7 +426,6 @@ const uploadXhr = (path, form, onUploadProgress) => new Promise((resolve, reject
         }, delay);
     };
     xhr.open('POST', `${API_BASE}${path}`);
-    const session = loadSession();
     if (session) {
         xhr.setRequestHeader('Authorization', `Bearer ${session}`);
     }
@@ -449,6 +459,11 @@ const uploadXhr = (path, form, onUploadProgress) => new Promise((resolve, reject
     scheduleTimeout(UPLOAD_STALL_TIMEOUT, false);
     xhr.send(form);
 });
+
+const uploadXhr = (path, form, onUploadProgress) => (sessionProvider ?
+    currentSession().then(session => sendUploadXhr(path, form, onUploadProgress, session)) :
+    sendUploadXhr(path, form, onUploadProgress, loadSession()));
+
 
 const getCustomExtensionUrls = project => {
     const urls = {...(project.extensionURLs || {})};

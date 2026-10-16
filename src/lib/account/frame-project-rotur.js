@@ -7,8 +7,9 @@ import {getRoturSettings, setRoturSetting} from '../rotur/settings.js';
 import {blockProjectPrompts, isProjectPromptBlocked} from '../project-prompt-blocking.js';
 import ProjectActivityScope from '../rotur/project-activity-scope.js';
 
-const projectMeta = project => (project.id ? {name: project.name, projectId: project.id} : {name: project.name});
-const promptDetails = project => ({id: project.id || '', name: project.name});
+const projectKeyId = project => project.id || `local:${project.name}`;
+const projectMeta = project => ({name: project.name, projectId: projectKeyId(project)});
+const promptDetails = project => ({id: projectKeyId(project), name: project.name});
 const activityKey = project => project.id || `name:${project.name}`;
 
 const createProjectRotur = ({prompt, getUsername, call = callRotur}) => {

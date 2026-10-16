@@ -1,14 +1,16 @@
 import {publicIdentity, toError} from './protocol.js';
 
 const EDITOR_ROTUR_METHODS = new Set([
-    'me.get',
-    'me.abilities',
     'notifications.list'
 ]);
 
+const RESERVED_IDS = ['__proto__', 'constructor', 'prototype'];
+
+const validProjectId = id => typeof id === 'undefined' ||
+    (typeof id === 'string' && /^[A-Za-z0-9_-]{1,80}$/.test(id) && !RESERVED_IDS.includes(id));
+
 const validProject = project => project && typeof project === 'object' &&
-    typeof project.name === 'string' && project.name.length <= 200 &&
-    (typeof project.id === 'undefined' || (typeof project.id === 'string' && /^[A-Za-z0-9_-]{0,80}$/.test(project.id)));
+    typeof project.name === 'string' && project.name.length <= 200 && validProjectId(project.id);
 
 const createFrameServer = ({identity, createEditorSession, callRotur, projectRotur}) => {
     const handlers = {

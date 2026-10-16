@@ -12,7 +12,6 @@ let nextId = 0;
 let identity = {status: 'restoring', user: null, banMessage: null};
 const pending = new Map();
 const identityListeners = new Set();
-const eventListeners = new Set();
 
 const setIdentity = next => {
     identity = next;
@@ -51,16 +50,6 @@ const handleMessage = ({data}) => {
         setShown(data.kind === 'show');
         return;
     }
-    if (data.kind === 'event') {
-        for (const listener of eventListeners) {
-            try {
-                listener(data.name, data.detail);
-            } catch (e) {
-                // ignore
-            }
-        }
-        return;
-    }
     const request = pending.get(data.id);
     if (!request) return;
     pending.delete(data.id);
@@ -76,12 +65,17 @@ const connect = () => {
         frame.src = `${ACCOUNT_ORIGIN}${FRAME_PATH}`;
         frame.title = 'MistWarp account';
         setShown(false);
+        const thisFrame = frame;
         const timer = setTimeout(() => {
             connection = null;
+            if (frame === thisFrame) frame = null;
+            thisFrame.remove();
             reject(new Error('Could not reach your MistWarp account. Check your connection and reload.'));
         }, CONNECT_TIMEOUT);
-        frame.addEventListener('load', () => {
+        thisFrame.addEventListener('load', () => {
+            if (frame !== thisFrame) return;
             const channel = new MessageChannel();
+            setShown(false);
             if (port) {
                 port.close();
                 rejectAll(new Error('Your MistWarp account reloaded. Try again.'));
@@ -97,9 +91,9 @@ const connect = () => {
                 handleMessage(event);
             };
             port.start();
-            frame.contentWindow.postMessage({type: CHANNEL, kind: 'connect'}, ACCOUNT_ORIGIN, [channel.port2]);
+            thisFrame.contentWindow.postMessage({type: CHANNEL, kind: 'connect'}, ACCOUNT_ORIGIN, [channel.port2]);
         });
-        document.body.appendChild(frame);
+        document.body.appendChild(thisFrame);
     });
     return connection;
 };
@@ -130,15 +124,9 @@ const subscribeIdentity = listener => {
     return () => identityListeners.delete(listener);
 };
 
-const subscribeEvents = listener => {
-    eventListeners.add(listener);
-    return () => eventListeners.delete(listener);
-};
-
 export {
     connect,
     call,
     getIdentity,
-    subscribeIdentity,
-    subscribeEvents
+    subscribeIdentity
 };

@@ -16,8 +16,7 @@ jest.mock('../../../src/lib/account/bridge.js', () => ({
     subscribeIdentity: listener => {
         mockIdentityListeners.add(listener);
         return () => mockIdentityListeners.delete(listener);
-    },
-    subscribeEvents: () => () => {}
+    }
 }));
 
 const identity = require('../../../src/lib/rotur/identity.js');
@@ -78,4 +77,38 @@ test('signing out elsewhere reaches the editor', async () => {
     expect(identity.getState().user).toBeNull();
     expect(loadSession()).toBeNull();
     mockIdentity = {status: 'ready', user: {username: 'mist', id: 'u1', bio: null}, banMessage: null};
+});
+
+test('the editor learns who is signed in only once it holds an editor token', async () => {
+    await identity.restore();
+    identity.logout();
+    let release;
+    mockCall.mockImplementation(method => (method === 'editorSession' ?
+        new Promise(resolve => {
+            release = () => resolve({token: 'late-token', expiresAt: Date.now() + 3600000});
+        }) :
+        Promise.resolve(null)));
+    const seen = [];
+    const unsubscribe = identity.subscribe(state => seen.push(state.user ? loadSession() : 'signed out'));
+    for (const listener of mockIdentityListeners) listener(mockIdentity);
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(identity.getState().user).toBeNull();
+    release();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(identity.getState().user).toMatchObject({username: 'mist'});
+    expect(seen.filter(value => value !== 'signed out')).toEqual(['late-token']);
+    unsubscribe();
+});
+
+test('switching accounts drops the old editor token', async () => {
+    await identity.restore();
+    const before = loadSession();
+    expect(before).toBeTruthy();
+    for (const listener of mockIdentityListeners) {
+        listener({status: 'ready', user: {username: 'someone-else', id: 'u2', bio: null}, banMessage: null});
+    }
+    expect(loadSession()).toBeNull();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(identity.getState().user).toMatchObject({username: 'someone-else'});
+    expect(loadSession()).not.toBe(before);
 });

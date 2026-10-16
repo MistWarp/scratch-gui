@@ -17,7 +17,7 @@ const publicIdentity = state => {
 };
 
 const toError = error => ({
-    message: String((error && error.message) || error || 'The MistWarp account request failed'),
+    message: String((error && error.message) || error || 'The MistWarp account request failed').slice(0, 300),
     code: error && error.code ? String(error.code) : '',
     status: error && typeof error.status === 'number' ? error.status : 0
 });
