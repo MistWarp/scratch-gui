@@ -242,20 +242,29 @@ const SENSITIVE_FIELD = new RegExp([
 ].join('|'), 'i');
 const PROJECT_SYSTEM_FIELDS = new Set([
     'sys.id', 'sys.index', 'sys.badges', 'sys.banner', 'sys.banner_unlocked', 'sys.banner_updated_at',
-    'sys.overlay', 'sys.social_links', 'sys.group', 'sys.status', 'sys.subscription', 'sys.auth_providers',
-    'sys.moderator', 'sys.admin', 'sys.banned', 'sys.last_seen', 'sys.account_type', 'sys.tos_accepted',
-    'sys.email_verified', 'sys.terms_updated', 'sys.policy_updated', 'sys.friends', 'sys.requests',
-    'sys.blocked', 'sys.currency', 'sys.transactions', 'sys.credit_receipts', 'sys.sable_credits',
-    'sys.sable_credit_receipts', 'sys.purchases', 'sys.items'
+    'sys.overlay', 'sys.social_links', 'sys.group', 'sys.status', 'sys.subscription', 'sys.moderator',
+    'sys.admin', 'sys.banned', 'sys.account_type', 'sys.tos_accepted', 'sys.email_verified',
+    'sys.terms_updated', 'sys.policy_updated', 'sys.friends', 'sys.requests', 'sys.blocked', 'sys.currency',
+    'sys.sable_credits', 'sys.items'
 ]);
+const ALLOWED_FIELDS = new Set(['next_billing', 'token_type', 'sys.email_verified']);
 const HIDDEN_PROFILE_FIELDS = new Set(['email', 'sexuality', 'identity', 'nationality', 'birthday', 'age',
     'relationship_status', 'timezone', 'language', 'favorite_website']);
 const METHOD_SECRET_FIELDS = {
     'gifts.mine': new Set(['code']),
     'gifts.get': new Set(['code']),
     'keys.get': new Set(['webhook']),
-    'keys.mine': new Set(['webhook'])
+    'keys.mine': new Set(['webhook']),
+    'items.get': new Set(['private_data']),
+    'items.list': new Set(['private_data']),
+    'items.selling': new Set(['private_data'])
 };
+
+const subscriptionSummary = value => (value && typeof value === 'object' && !Array.isArray(value) ? {
+    active: value.active,
+    tier: value.tier,
+    next_billing: value.next_billing
+} : value);
 
 const tokenVariants = tokens => {
     const variants = new Set();
@@ -283,10 +292,13 @@ const withoutSecrets = (value, rules, ancestors = new Set(), depth = 0) => {
         for (const [field, item] of Object.entries(value)) {
             const lower = field.toLowerCase();
             if (rules.fields && rules.fields.has(lower)) continue;
-            if (rules.account && (SECRET_FIELDS.has(lower) || SENSITIVE_FIELD.test(lower))) continue;
+            if (rules.account && !ALLOWED_FIELDS.has(lower) &&
+                (SECRET_FIELDS.has(lower) || SENSITIVE_FIELD.test(lower))) continue;
             if (rules.account && depth === 0 && (HIDDEN_PROFILE_FIELDS.has(lower) ||
                 (lower.startsWith('sys.') && !PROJECT_SYSTEM_FIELDS.has(lower)))) continue;
-            clean[field] = withoutSecrets(item, rules, ancestors, depth + 1);
+            const summarise = rules.account && depth === 0 && lower === 'sys.subscription';
+            const kept = summarise ? subscriptionSummary(item) : item;
+            clean[field] = withoutSecrets(kept, rules, ancestors, depth + 1);
         }
     }
     ancestors.delete(value);
@@ -322,7 +334,11 @@ const invokeProjectMethod = async (client, method, args) => {
     }
     const [namespace, name] = method.split('.');
     if (namespace === 'socket' && (!client.socket || !client.socket.connected)) {
-        await client.connectSocket();
+        try {
+            await client.connectSocket();
+        } catch (error) {
+            throw projectSafeError(error, [client.token]);
+        }
     }
     const owner = namespace === 'socket' ? client.socket : client[namespace];
     const fn = owner && owner[name];

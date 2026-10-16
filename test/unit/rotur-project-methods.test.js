@@ -285,6 +285,16 @@ describe('Rotur results handed to projects', () => {
         await expect(invokeProjectMethod(client, 'keys.mine', [])).resolves.toEqual([{key: 'k1', name: 'VIP'}]);
     });
 
+    test('item private data and token types are handled', async () => {
+        const client = makeClient({
+            items: {get: jest.fn(async () => ({id: 'i1', name: 'Sword', private_data: 'secret contents'}))},
+            me: {abilities: jest.fn(async () => ({token_type: 'main', permissions: ['full']}))}
+        });
+        await expect(invokeProjectMethod(client, 'items.get', ['i1'])).resolves.toEqual({id: 'i1', name: 'Sword'});
+        await expect(invokeProjectMethod(client, 'me.abilities', [])).resolves
+            .toEqual({token_type: 'main', permissions: ['full']});
+    });
+
     test('errors reach projects as plain messages without the response or token', async () => {
         const apiError = Object.assign(new Error('Email address not verified'), {
             status: 403,
