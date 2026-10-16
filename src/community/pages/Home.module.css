@@ -4,62 +4,38 @@
     padding: var(--page-pad);
 }
 
-.hero {
-    display: grid;
-    grid-template-columns: 1.7fr .7fr;
-    gap: 24px;
+.intro {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 32px;
     align-items: center;
-    padding: 28px 36px;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    padding: 24px 28px;
     border-radius: var(--radius);
     background: var(--bg-header);
-    overflow: hidden;
 }
 
-.heroText h1 {
-    max-width: 20ch;
-    margin: 0 0 10px;
-    font-size: var(--fs-4xl);
-    line-height: 1.1;
-    letter-spacing: -.025em;
+.intro h1 {
+    margin: 0 0 6px;
+    font-size: var(--fs-3xl);
+    line-height: 1.15;
+    letter-spacing: -.02em;
     text-wrap: balance;
 }
 
-.heroText p {
-    max-width: 46ch;
-    margin: 0 0 18px;
+.intro p {
+    max-width: 56ch;
+    margin: 0;
     color: var(--text-dim);
-    font-size: var(--fs-lg);
+    font-size: var(--fs-md);
     line-height: 1.45;
 }
 
-.heroActions {
+.actions {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
-}
-
-.heroDemo {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 22px;
-    border-radius: var(--radius-sm);
-    background: var(--bg-raised);
-    font-size: var(--fs-md);
-}
-
-.heroDemo span {
-    padding-inline-start: 14px;
-    border-inline-start: 3px solid var(--accent);
-    line-height: 1.5;
-}
-
-.heroDemo a {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    color: var(--accent-strong);
-    font-weight: 700;
 }
 
 .feedBox {
@@ -306,11 +282,6 @@
         scroll-padding-inline: 24px;
         mask-image: linear-gradient(to left, transparent, #000 24px);
     }
-
-    .hero {
-        grid-template-columns: 1fr;
-        padding: 24px;
-    }
 }
 
 @media (max-width: 520px) {
@@ -318,31 +289,22 @@
         padding: 12px 12px 56px;
     }
 
-    .hero {
-        gap: 0;
-        padding: 22px 20px;
-        border-radius: var(--radius);
+    .intro {
+        margin-bottom: 24px;
+        padding: 20px;
     }
 
-    .heroText h1 {
-        margin-bottom: 8px;
-        font-size: var(--fs-3xl);
-        line-height: 1.06;
+    .intro h1 {
+        font-size: var(--fs-2xl);
     }
 
-    .heroText p {
-        margin-bottom: 16px;
-        font-size: var(--fs-md);
-    }
-
-    .heroActions {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+    .actions {
         gap: 9px;
+        width: 100%;
     }
 
-    .heroActions > :last-child {
-        grid-column: 1 / -1;
+    .actions > * {
+        flex: 1 1 auto;
     }
 
     .feedBox {
@@ -388,13 +350,14 @@
     font-size: var(--fs-md);
 }
 
-.heroImport {
+.importRow {
     display: grid;
     gap: 10px;
-    margin-top: 22px;
+    max-width: 560px;
+    margin-top: 20px;
 }
 
-.heroImport > a {
+.importRow > a {
     display: inline-flex;
     align-items: center;
     gap: 5px;

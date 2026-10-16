@@ -2,8 +2,8 @@
 import {isMilestoneNotification} from '../milestone-notifications.js';
 import React, {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Bell, Bug, Clock, Gamepad2, Rocket, UserPlus, GitFork, Globe, Heart, Lightbulb, Megaphone, MessageCircle, Sparkles, Star, Trophy, Users} from 'lucide-react';
-import api, {editorUrl, projectUrl} from '../api';
+import {Bell, Bug, Clock, Compass, Gamepad2, LogIn, Rocket, UserPlus, GitFork, Globe, Heart, Lightbulb, Megaphone, MessageCircle, Sparkles, Star, Trophy, Users} from 'lucide-react';
+import api, {projectUrl} from '../api';
 import rotur from '../rotur';
 import {fetchFollowingFeed, fetchNotifications} from '../../lib/rotur/client.js';
 import {useUser} from '../UserContext.jsx';
@@ -286,45 +286,160 @@ const Home = () => {
     const {text: communityText} = useCommunityIntl();
     const {user, login, loading} = useUser();
     const viewerName = (user && user.username) || '';
-    const {t} = useCommunityIntl();
     const [projectCount, setProjectCount] = useState(null);
-    const showStarters = !loading && (!user ||
-        (projectCount && projectCount.username === viewerName && projectCount.total < 4));
+    const showStarters = Boolean(projectCount && projectCount.username === viewerName && projectCount.total < 4);
     useEffect(() => {
         track('home_view');
     }, []);
+    const discovery = (
+        <div id="discover">
+            <HomeDiscovery
+                viewerName={viewerName}
+                side={user && !user.isNew ? (
+                    <HomeTabs
+                        id="home-activity"
+                        label={communityText('Your activity')}
+                        tabs={[
+                            {
+                                key: 'following',
+                                title: communityText('Following'),
+                                icon: Users,
+                                render: () => <FriendsSection bare user={user} login={login} />
+                            },
+                            {
+                                key: 'notifications',
+                                title: communityText('Notifications'),
+                                icon: Bell,
+                                link: '/notifications',
+                                render: () => <NotificationsSection bare user={user} login={login} />
+                            }
+                        ]}
+                    />
+                ) : null}
+            />
+        </div>
+    );
+    const challenges = (
+        <>
+            <ChallengeWinner />
+            <ActiveChallenge />
+        </>
+    );
+    const projects = (
+        <HomeTabs
+            className={styles.projectSection}
+            id="home-projects"
+            label={communityText('Projects')}
+            tabs={[
+                {
+                    key: 'trending',
+                    title: communityText('Trending'),
+                    icon: Sparkles,
+                    link: '/explore?sort=trending',
+                    render: () => <ProjectFeedRow bare sort="trending" />
+                },
+                {
+                    key: 'recent',
+                    title: communityText('Freshly shared'),
+                    icon: Clock,
+                    link: '/explore?sort=recent',
+                    render: () => <ProjectFeedRow bare sort="recent" />
+                },
+                {
+                    key: 'feedback',
+                    title: communityText('Looking for feedback'),
+                    icon: MessageCircle,
+                    link: '/explore?tag=feedback',
+                    render: () => <ProjectFeedRow bare sort="recent" tag="feedback" />
+                },
+                ...(user ? [{
+                    key: 'playing',
+                    title: communityText('Continue playing'),
+                    icon: Gamepad2,
+                    link: `/users/${viewerName}/library`,
+                    linkLabel: communityText('Game library'),
+                    render: () => <ContinuePlaying username={viewerName} />
+                }] : [])
+            ]}
+        />
+    );
+    const community = (
+        <HomeTabs
+            className={styles.projectSection}
+            id="home-community"
+            label={communityText('Community updates')}
+            tabs={[
+                {
+                    key: 'news',
+                    title: communityText('News'),
+                    icon: Megaphone,
+                    link: '/news',
+                    linkLabel: communityText('All updates'),
+                    render: () => <NewsSection bare />
+                },
+                {
+                    key: 'roadmap',
+                    title: communityText('Roadmap'),
+                    icon: Lightbulb,
+                    link: '/roadmap',
+                    linkLabel: communityText('Suggest and vote'),
+                    render: () => <RoadmapSection bare viewerName={viewerName} />
+                },
+                {
+                    key: 'challenges',
+                    title: communityText('Challenges'),
+                    icon: Trophy,
+                    link: '/spaces?kind=challenge',
+                    linkLabel: communityText('All challenges'),
+                    render: () => <ChallengeCalendar bare />
+                }
+            ]}
+        />
+    );
+    if (loading) {
+        return (
+            <main className={styles.page}>
+                <StatusMessage>{communityText('Loading your workspace…')}</StatusMessage>
+            </main>
+        );
+    }
+    if (!user) {
+        return (
+            <main className={styles.page}>
+                <section className={styles.intro}>
+                    <div>
+                        <h1>{communityText('See what people are making on MistWarp')}</h1>
+                        <p>{communityText('Play games, animations, and tools built with blocks, and follow the creators behind them.')}</p>
+                    </div>
+                    <div className={styles.actions}>
+                        <Button variant="primary" as={Link} to="/explore"><Compass size={16} />{communityText('Explore projects')}</Button>
+                        <Button variant="secondary" onClick={login}><LogIn size={16} />{communityText('Sign in')}</Button>
+                    </div>
+                </section>
+                <DeviceBackup />
+                {discovery}
+                {projects}
+                {challenges}
+                {community}
+                <StarterGallery>
+                    <div className={styles.importRow}>
+                        <ScratchImport source="home" />
+                        <Link to="/compare">
+                            {communityText('Coming from Scratch or TurboWarp? See what is different')}
+                        </Link>
+                    </div>
+                </StarterGallery>
+            </main>
+        );
+    }
     return (
         <main className={styles.page}>
-            {loading ? <StatusMessage>{communityText('Loading your workspace…')}</StatusMessage> : user ?
-                <ContinueProjects username={viewerName} onProjectCount={setProjectCount} /> : (
-                    <section className={styles.hero}>
-                        <div className={styles.heroText}>
-                            <h1>{t('home.title')}</h1>
-                            <p>{t('home.lead')}</p>
-                            <div className={styles.heroActions}>
-                                <Button variant="primary" as="a" href="#starters"><Rocket size={16} />{communityText('Try a starter')}</Button>
-                                <Button variant="secondary" as={Link} to="/explore">{t('home.explore')}</Button>
-                            </div>
-                            <div className={styles.heroImport}>
-                                <ScratchImport source="home" />
-                                <Link to="/compare">
-                                    {communityText('Coming from Scratch or TurboWarp? See what is different')}
-                                </Link>
-                            </div>
-                        </div>
-                        <div className={styles.heroDemo} aria-label={communityText('Build together, keep your progress')}>
-                            <span>{communityText('Make your first version')}</span>
-                            <span>{communityText('Invite someone to improve it')}</span>
-                            <span>{communityText('Keep earlier versions to return to')}</span>
-                            <a href={editorUrl({starter: 'clicker'})}>{communityText('Start with a working clicker')}</a>
-                        </div>
-                    </section>
-                )}
-            {user && user.isNew ? (
+            <ContinueProjects username={viewerName} onProjectCount={setProjectCount} />
+            {user.isNew ? (
                 <section className={styles.welcome}>
                     <h2>{communityText('Welcome to MistWarp, {value1}', {value1: viewerName})}</h2>
                     <p>{communityText('Start from a working project, or follow a few creators to fill your feed.')}</p>
-                    <div className={styles.heroActions}>
+                    <div className={styles.actions}>
                         <Button variant="primary" as="a" href="#starters">
                             <Rocket size={16} />{communityText('Try a starter')}
                         </Button>
@@ -336,101 +451,10 @@ const Home = () => {
             ) : null}
             <DeviceBackup />
             {showStarters ? <StarterGallery /> : null}
-            <div id="discover">
-                <HomeDiscovery
-                    viewerName={viewerName}
-                    side={user && !user.isNew ? (
-                        <HomeTabs
-                            id="home-activity"
-                            label={communityText('Your activity')}
-                            tabs={[
-                                {
-                                    key: 'following',
-                                    title: communityText('Following'),
-                                    icon: Users,
-                                    render: () => <FriendsSection bare user={user} login={login} />
-                                },
-                                {
-                                    key: 'notifications',
-                                    title: communityText('Notifications'),
-                                    icon: Bell,
-                                    link: '/notifications',
-                                    render: () => <NotificationsSection bare user={user} login={login} />
-                                }
-                            ]}
-                        />
-                    ) : null}
-                />
-            </div>
-            <ChallengeWinner />
-            <ActiveChallenge />
-            <HomeTabs
-                className={styles.projectSection}
-                id="home-projects"
-                label={communityText('Projects')}
-                tabs={[
-                    {
-                        key: 'trending',
-                        title: communityText('Trending'),
-                        icon: Sparkles,
-                        link: '/explore?sort=trending',
-                        render: () => <ProjectFeedRow bare sort="trending" />
-                    },
-                    {
-                        key: 'recent',
-                        title: communityText('Freshly shared'),
-                        icon: Clock,
-                        link: '/explore?sort=recent',
-                        render: () => <ProjectFeedRow bare sort="recent" />
-                    },
-                    {
-                        key: 'feedback',
-                        title: communityText('Looking for feedback'),
-                        icon: MessageCircle,
-                        link: '/explore?tag=feedback',
-                        render: () => <ProjectFeedRow bare sort="recent" tag="feedback" />
-                    },
-                    ...(user ? [{
-                        key: 'playing',
-                        title: communityText('Continue playing'),
-                        icon: Gamepad2,
-                        link: `/users/${viewerName}/library`,
-                        linkLabel: communityText('Game library'),
-                        render: () => <ContinuePlaying username={viewerName} />
-                    }] : [])
-                ]}
-            />
-            <HomeTabs
-                className={styles.projectSection}
-                id="home-community"
-                label={communityText('Community updates')}
-                tabs={[
-                    {
-                        key: 'news',
-                        title: communityText('News'),
-                        icon: Megaphone,
-                        link: '/news',
-                        linkLabel: communityText('All updates'),
-                        render: () => <NewsSection bare />
-                    },
-                    {
-                        key: 'roadmap',
-                        title: communityText('Roadmap'),
-                        icon: Lightbulb,
-                        link: '/roadmap',
-                        linkLabel: communityText('Suggest and vote'),
-                        render: () => <RoadmapSection bare viewerName={viewerName} />
-                    },
-                    {
-                        key: 'challenges',
-                        title: communityText('Challenges'),
-                        icon: Trophy,
-                        link: '/spaces?kind=challenge',
-                        linkLabel: communityText('All challenges'),
-                        render: () => <ChallengeCalendar bare />
-                    }
-                ]}
-            />
+            {discovery}
+            {challenges}
+            {projects}
+            {community}
         </main>
     );
 };

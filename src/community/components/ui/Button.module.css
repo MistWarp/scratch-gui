@@ -15,6 +15,10 @@
     white-space: nowrap;
 }
 
+.button > svg {
+    flex-shrink: 0;
+}
+
 .button:disabled {
     opacity: 0.6;
     cursor: default;
