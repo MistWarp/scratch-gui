@@ -102,6 +102,18 @@ describe('SB3PostMessageHOC', () => {
         expect(stateDuringLoad).toBeNull();
     });
 
+    test('a failed external load keeps the previous project\'s MistWarp link', async () => {
+        rememberPlatformProject({id: 'project-1', isOwner: true, gitHead: 'abc', edited: 5});
+        const before = getRememberedPlatformProjectState();
+        vm.loadProject = jest.fn(() => Promise.reject(new Error('corrupt project')));
+        const instance = createInstance();
+
+        await instance.handleMessage(createEvent(new Uint8Array([5])));
+
+        expect(vm.loadProject).toHaveBeenCalled();
+        expect(getRememberedPlatformProjectState()).toEqual(before);
+    });
+
     test('invalid project data replies to the caller with an error', () => {
         const source = {postMessage: jest.fn()};
         const instance = createInstance();
