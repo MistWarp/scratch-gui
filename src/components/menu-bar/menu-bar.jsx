@@ -1043,7 +1043,6 @@ class MenuBar extends React.Component {
                 message: 'Initial version',
                 commitChanges: false
             });
-            await preloadProjectHistory(this.props.vm, {force: true});
             if (handle) {
                 const writable = await handle.createWritable();
                 await writable.write(exported.blob);
@@ -1053,6 +1052,11 @@ class MenuBar extends React.Component {
                 downloadBlob(filename, exported.blob);
             }
             this.props.onGitStatusDone('twSaveToDiskSuccess');
+            try {
+                await preloadProjectHistory(this.props.vm, {force: true});
+            } catch (error) {
+                console.warn('Could not refresh project history after saving:', error);
+            }
             return true;
         } catch (error) {
             this.props.onCloseGitStatus('savingMwp');

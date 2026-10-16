@@ -98,7 +98,8 @@ const stageAll = async (fs, dir, {onProgress} = {}) => {
     }
 
     const matrix = await git.statusMatrix({fs, dir});
-    const rows = matrix.filter(row => row && row[0] !== '.gitignore');
+    const rows = matrix.filter(row => row && row[0] !== '.gitignore' &&
+        !(row[1] === 1 && row[2] === 1 && row[3] === 1));
     const total = Math.max(1, rows.length);
     let completed = 0;
     let lastReport = 0;
@@ -807,9 +808,12 @@ const commitProject = async ({vm, sb3Files, message, author, rememberAuthor = tr
     }
 
     let sb3ArrayBuffer;
+    let projectFiles = sb3Files;
 
     try {
-        if (!sb3Files) {
+        if (!projectFiles && typeof vm.saveProjectSb3DontZip === 'function') {
+            projectFiles = vm.saveProjectSb3DontZip();
+        } else if (!projectFiles) {
             sb3ArrayBuffer = await vm.saveProjectSb3('arraybuffer');
             if (!sb3ArrayBuffer || sb3ArrayBuffer.byteLength === 0) {
                 throw new Error('Failed to save project');
@@ -824,7 +828,9 @@ const commitProject = async ({vm, sb3Files, message, author, rememberAuthor = tr
     }
 
     try {
-        await writeProjectToFractchTree({vm, sb3ArrayBuffer, sb3Files, fs: pfs, dir: REPO_DIR, onProgress});
+        await writeProjectToFractchTree({
+            vm, sb3ArrayBuffer, sb3Files: projectFiles, fs: pfs, dir: REPO_DIR, onProgress
+        });
 
         // Ensure any new files are discoverable by isomorphic-git (it uses callback fs,
         // but LightningFS mirrors state).
@@ -1224,7 +1230,7 @@ const computeCommitGraph = async ({depth = 50} = {}) => {
     return {branches, nodes, branchLogs};
 };
 
-const collectReachableObjectOids = async (head, known = new Set(), dir = REPO_DIR) => {
+const collectReachableObjectOids = async (head, known = new Set(), dir = REPO_DIR, {verifyBlobs = true} = {}) => {
     // Verify objects on every export/import. A prior traversal cannot establish
     // that objects still exist after another checkout or import.
     const fs = getFs();
@@ -1236,7 +1242,8 @@ const collectReachableObjectOids = async (head, known = new Set(), dir = REPO_DI
         for (const entry of tree) {
             if (entry.type === 'tree') await visitTree(entry.oid);
             else if (!known.has(entry.oid) && !found.has(entry.oid)) {
-                await git.readBlob({fs, dir, oid: entry.oid});
+                if (verifyBlobs) await git.readBlob({fs, dir, oid: entry.oid});
+                else await git.readObject({fs, dir, oid: entry.oid, format: 'deflated'});
                 found.add(entry.oid);
             }
         }
@@ -1253,7 +1260,13 @@ const collectReachableObjectOids = async (head, known = new Set(), dir = REPO_DI
     return found;
 };
 
-const exportRepoToZip = async ({
+const STORED_EXTENSIONS = /\.(?:png|jpe?g|gif|webp|bmp|ico|wav|mp3|ogg|m4a|flac|aac|mp4|webm|mov|woff2?|zip|sb3|mwp)$/i;
+
+const zipCompressionFor = relPath => (
+    relPath.startsWith('.git/objects/') || STORED_EXTENSIONS.test(relPath) ? 'STORE' : 'DEFLATE'
+);
+
+const buildRepoZip = async ({
     includeGitDir = true, includeWorktree = true, includeObjectOids = null
 } = {}) => {
     const fs = getFs();
@@ -1294,7 +1307,7 @@ const exportRepoToZip = async ({
                 zip.file(relPath, bytes, {
                     // Loose Git objects are already zlib-compressed. Deflating them again
                     // burns CPU without making the upload meaningfully smaller.
-                    compression: relPath.startsWith('.git/objects/') ? 'STORE' : 'DEFLATE'
+                    compression: zipCompressionFor(relPath)
                 });
             } catch (e) {
                 console.warn('Skipping file during zip export:', relPath, e);
@@ -1303,6 +1316,15 @@ const exportRepoToZip = async ({
         if (i + batchSize < selected.length) await new Promise(resolve => setTimeout(resolve, 0));
     }
 
+    return zip;
+};
+
+const collectExportableObjectOids = (head, known = new Set()) => (
+    collectReachableObjectOids(head, known, REPO_DIR, {verifyBlobs: false})
+);
+
+const exportRepoToZip = async options => {
+    const zip = await buildRepoZip(options);
     return zip.generateAsync({
         type: 'blob',
         compression: 'DEFLATE',
@@ -1667,6 +1689,7 @@ export {
     deleteRepo,
     deleteBranch,
     commitProject,
+    collectExportableObjectOids,
     collectReachableObjectOids,
     mergeBranchesPreview,
     mergeBranchesApply,
@@ -1675,6 +1698,7 @@ export {
     getRemotes,
     push,
     pull,
+    buildRepoZip,
     exportRepoToZip,
     createRepoBackup,
     downloadRepoZip,
