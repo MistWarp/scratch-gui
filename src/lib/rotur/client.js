@@ -8,6 +8,8 @@ import {
     formatActivityStatus
 } from './settings.js';
 import {ROTUR_TOKEN_KEY} from './token-key.js';
+import {isSplitEditor} from '../account/origins.js';
+import * as accountBridge from '../account/bridge.js';
 import * as oauth from './oauth.js';
 import {hasRotur, roturOfflineError} from './availability.js';
 
@@ -118,6 +120,10 @@ oauth.onSessionChange(session => {
  * @returns {string} The key, or '' when signed out.
  */
 const accountKey = () => {
+    if (isSplitEditor()) {
+        const user = accountBridge.getIdentity().user;
+        return (user && (user.id || user.username)) || '';
+    }
     const session = oauth.readSession();
     return (session && session.subject) || loadLegacyToken() || '';
 };
@@ -127,7 +133,7 @@ const accountKey = () => {
  * reconnect with Sign in with Rotur.
  * @returns {boolean} True to offer reconnecting.
  */
-const needsReconnect = () => webOrigin && !oauth.readSession() && Boolean(loadLegacyToken());
+const needsReconnect = () => !isSplitEditor() && webOrigin && !oauth.readSession() && Boolean(loadLegacyToken());
 
 /**
  * Stable avatar URL derived only from username.
@@ -239,7 +245,7 @@ const writeRestoreCache = user => {
  * @returns {Promise<string|null>} The token, or null when signed out.
  */
 const getAccessToken = async () => {
-    if (!hasRotur()) return null;
+    if (!hasRotur() || isSplitEditor()) return null;
     return (await oauth.getAccessToken()) || loadLegacyToken();
 };
 
@@ -470,7 +476,7 @@ const ensureNotificationSocketListener = () => {
 };
 
 const subscribeNotifications = listener => {
-    if (typeof listener !== 'function') {
+    if (typeof listener !== 'function' || isSplitEditor()) {
         return () => {};
     }
     notificationListeners.add(listener);
@@ -488,7 +494,7 @@ const subscribeNotifications = listener => {
 };
 
 const subscribeNotificationRemovals = listener => {
-    if (typeof listener !== 'function') {
+    if (typeof listener !== 'function' || isSplitEditor()) {
         return () => {};
     }
     notificationRemovalListeners.add(listener);
@@ -506,6 +512,7 @@ const subscribeNotificationRemovals = listener => {
 };
 
 const subscribeTier = listener => {
+    if (isSplitEditor()) return () => {};
     let off = null;
     let cancelled = false;
     const read = value => (value && typeof value === 'object' ? String(value.tier || 'Free') : 'Free');
@@ -530,6 +537,7 @@ const subscribeTier = listener => {
  * @param {object} [extra] - Extra activity fields.
  */
 const syncActivity = async (projectTitleOrCtx, extra = {}) => {
+    if (isSplitEditor()) return;
     const rotur = getClient();
     if (!rotur.loggedIn) {
         return;
@@ -593,13 +601,13 @@ const syncActivity = async (projectTitleOrCtx, extra = {}) => {
     }
 };
 
-const isLoggedIn = () => getClient().loggedIn;
+const isLoggedIn = () => (isSplitEditor() ? Boolean(accountBridge.getIdentity().user) : getClient().loggedIn);
 const getRotur = () => getClient();
 
 // Read the shared inbox and MistWarp's local fallback using the current account.
 const fetchNotifications = afterDays => {
     const rotur = getClient();
-    if (!rotur.loggedIn) {
+    if (!isLoggedIn()) {
         return Promise.resolve([]);
     }
     const key = `${getClient().token || ''}:${loadSession() || ''}:${afterDays}`;
@@ -621,7 +629,9 @@ const fetchNotifications = afterDays => {
         }
         let remote = [];
         try {
-            const list = await rotur.notifications.list(afterDays);
+            const list = isSplitEditor() ?
+                await accountBridge.call('rotur', {method: 'notifications.list', args: [afterDays]}) :
+                await rotur.notifications.list(afterDays);
             remote = Array.isArray(list) ? list : [];
         } catch (error) {
             if (!localLoaded) throw error;
@@ -699,7 +709,7 @@ const hasScopes = scopes => {
 // never leaves the page. Someone can switch scopes off on Rotur's consent
 // screen, so reads just find out, and fail quietly if they can't.
 const ensureScopes = async (scopes, {prompt = false} = {}) => {
-    if (!hasRotur()) return false;
+    if (!hasRotur() || isSplitEditor()) return false;
     const wanted = Array.isArray(scopes) ? scopes.filter(Boolean) : [];
     const session = oauth.readSession();
     if (session) {
