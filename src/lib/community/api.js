@@ -574,6 +574,35 @@ const getPerks = () => request('/perks');
 
 const getEditorProject = id => request(`/projects/${id}/editor`, {cache: false});
 
+const sameProjectJson = (a, b) => {
+    try {
+        const first = new URL(a, location.href);
+        const second = new URL(b, location.href);
+        return first.origin === second.origin && first.pathname === second.pathname;
+    } catch (e) {
+        return false;
+    }
+};
+
+const getServerTrustedExtensions = async (id, projectJsonUrl) => {
+    const params = new URLSearchParams();
+    try {
+        const key = new URL(projectJsonUrl, location.href).searchParams.get('k');
+        if (key) params.set('k', key);
+    } catch (e) {
+        return [];
+    }
+    const query = params.toString();
+    try {
+        const path = `/projects/${encodeURIComponent(id)}${query ? `?${query}` : ''}`;
+        const {project} = await request(path, {cache: false});
+        if (!project || !sameProjectJson(project.projectJsonUrl, projectJsonUrl)) return [];
+        return Array.isArray(project.trustedExtensions) ? project.trustedExtensions : [];
+    } catch (e) {
+        return [];
+    }
+};
+
 const getProjectCommits = (id, projectJsonUrl = '') => {
     const params = new URLSearchParams();
     try {
@@ -609,6 +638,7 @@ export {
     getProject,
     getPerks,
     getEditorProject,
+    getServerTrustedExtensions,
     getProjectCommits,
     getRandomProject,
     remixProject,

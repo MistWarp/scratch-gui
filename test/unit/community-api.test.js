@@ -4,6 +4,7 @@ import {
     onBanned,
     getPerks,
     getEditorProject,
+    getServerTrustedExtensions,
     prepareSparseProjectUpload,
     request,
     runExchange
@@ -185,6 +186,27 @@ test('editor project loads use the permission checked endpoint', async () => {
 
     await expect(getEditorProject('project-1')).resolves.toMatchObject({project: {id: 'project-1'}});
     expect(window.fetch.mock.calls[0][0]).toBe('https://api.mistwarp.org/v1/projects/project-1/editor');
+});
+
+test('embedded projects only trust extensions the server lists for the same project data', async () => {
+    const json = 'https://api.mistwarp.org/v1/projects/project-1/project.json?k=view-key';
+    const serve = projectJsonUrl => {
+        window.fetch = jest.fn(() => Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve({ok: true, project: {id: 'project-1', projectJsonUrl, trustedExtensions: ['hash-1']}})
+        }));
+    };
+
+    serve(json);
+    await expect(getServerTrustedExtensions('project-1', json)).resolves.toEqual(['hash-1']);
+    expect(window.fetch.mock.calls[0][0]).toBe('https://api.mistwarp.org/v1/projects/project-1?k=view-key');
+
+    serve('https://api.mistwarp.org/v1/projects/project-1/project.json');
+    await expect(getServerTrustedExtensions('project-1', 'https://example.com/other.json')).resolves.toEqual([]);
+
+    window.fetch = jest.fn(() => Promise.resolve({ok: false, status: 404, json: () => Promise.resolve({})}));
+    await expect(getServerTrustedExtensions('project-1', json)).resolves.toEqual([]);
 });
 
 test('the editor reads paid limits from the MistWarp perks endpoint', async () => {
