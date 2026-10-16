@@ -342,16 +342,18 @@ class GradientControls extends React.Component {
                                 </button>
                             ))}
                         </div>
-                        <input
-                            type="range"
-                            min="0"
-                            max="359"
-                            value={direction}
-                            className={styles.directionSlider}
-                            aria-label={intl.formatMessage(messages.direction)}
-                            onChange={this.handleDirectionSlider}
-                        />
-                        <span className={styles.directionValue}>{`${direction}°`}</span>
+                        <div className={styles.directionFine}>
+                            <input
+                                type="range"
+                                min="0"
+                                max="359"
+                                value={direction}
+                                className={styles.directionSlider}
+                                aria-label={intl.formatMessage(messages.direction)}
+                                onChange={this.handleDirectionSlider}
+                            />
+                            <span className={styles.directionValue}>{`${direction}°`}</span>
+                        </div>
                     </div>
                 </div>
 
