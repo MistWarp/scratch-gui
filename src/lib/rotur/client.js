@@ -386,8 +386,19 @@ const normalizeNotification = notification => {
     return out;
 };
 
-// MistWarp only shows its own activity plus Rotur's account-level follow
-// notifications. Other apps share the same Rotur notification inbox.
+const CLAW_TYPES = new Set(['like', 'reply', 'repost', 'mention']);
+
+const isClawNotification = notification => {
+    const platform = String(notification.platform || '').toLowerCase();
+    if (platform && platform !== 'rotur' && platform !== 'claw') return false;
+    const postId = notification.post_id || notification.original_post_id;
+    return CLAW_TYPES.has(String(notification.type || '').toLowerCase()) &&
+        typeof postId === 'string' && postId !== '';
+};
+
+// MistWarp only shows its own activity, Rotur's account-level follow
+// notifications and claw activity on your posts. Other apps share the same
+// Rotur notification inbox.
 const isVisibleNotification = notification => {
     const normalized = normalizeNotification(notification);
     if (!normalized || typeof normalized !== 'object') {
@@ -397,6 +408,9 @@ const isVisibleNotification = notification => {
         return false;
     }
     if (String(normalized.type || '').toLowerCase() === 'follow') {
+        return true;
+    }
+    if (isClawNotification(normalized)) {
         return true;
     }
     const platformData = normalized.platform_data && typeof normalized.platform_data === 'object' ?

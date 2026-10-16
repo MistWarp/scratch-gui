@@ -38,6 +38,16 @@ const messages = defineMessages({
         description: 'Button that picks a thumbnail image from the computer',
         id: 'mw.shareWindow.uploadImage'
     },
+    postToClaw: {
+        defaultMessage: 'Post to claw',
+        description: 'Button on the saved screen that opens a composer to post the shared project to claw',
+        id: 'mw.shareWindow.postToClaw'
+    },
+    clawSignIn: {
+        defaultMessage: 'Sign in to Rotur to post to claw.',
+        description: 'Shown when posting to claw needs a Rotur sign-in first',
+        id: 'mw.shareWindow.clawSignIn'
+    },
     saving: {defaultMessage: 'Saving…', description: 'Busy label while the project saves', id: 'mw.shareWindow.saving'},
     remix: {defaultMessage: 'Remix', description: 'Confirm button when remixing', id: 'mw.shareWindow.remix'},
     update: {defaultMessage: 'Update', description: 'Confirm button when updating', id: 'mw.shareWindow.update'},
@@ -60,6 +70,7 @@ class ShareWindow extends React.Component {
         this.handleChangeMessage = this.handleChangeMessage.bind(this);
         this.handleAcceptAgreement = this.handleAcceptAgreement.bind(this);
         this.handleProgress = this.handleProgress.bind(this);
+        this.handlePostToClaw = this.handlePostToClaw.bind(this);
         this.prepareThumbnail = this.prepareThumbnail.bind(this);
         this.releaseAgreement = this.releaseAgreement.bind(this);
         this.releasePublish = this.releasePublish.bind(this);
@@ -142,6 +153,22 @@ class ShareWindow extends React.Component {
     }
     handleProgress ({phase, message, loaded = 0, total = 0}) {
         this.setState({phase, status: message, loaded, total});
+    }
+    async handlePostToClaw () {
+        const done = this.state.done;
+        let opened = false;
+        try {
+            const {default: openClawPost} = await import('../../lib/mw/open-claw-post.js');
+            opened = await openClawPost({id: String(done.id), title: this.state.title});
+        } catch (e) {
+            this.setState({notice: e.message || 'Could not open the claw composer.'});
+            return;
+        }
+        if (opened) {
+            this.props.onClose();
+        } else {
+            this.setState({notice: this.props.intl.formatMessage(messages.clawSignIn)});
+        }
     }
     releaseAgreement () {
         this.agreementInFlight = false;
@@ -416,6 +443,13 @@ class ShareWindow extends React.Component {
                             variant="secondary"
                             onClick={this.props.onClose}
                         >{intl.formatMessage(messages.close)}</Button>
+                        {this.state.done.shared && this.state.done.id ? (
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={this.handlePostToClaw}
+                            >{intl.formatMessage(messages.postToClaw)}</Button>
+                        ) : null}
                         <Button
                             type="button"
                             variant="primary"

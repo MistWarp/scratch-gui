@@ -7,12 +7,67 @@
     box-shadow: var(--card-shadow);
 }
 
+.bare {
+    margin-bottom: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.composer.bare > textarea {
+    min-height: 110px;
+    padding: 10px 12px;
+    border-radius: var(--radius-xs);
+    background: var(--bg-field);
+}
+
+.composer.bare > textarea:focus {
+    box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.bare .foot {
+    margin-top: 10px;
+    border-top: 0;
+}
+
+.project {
+    position: relative;
+    margin-bottom: 8px;
+}
+
+.project > button {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    display: grid;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-faint);
+    transform: translateY(-50%);
+}
+
+.project > button:hover {
+    background: var(--bg-field);
+    color: var(--mw-text);
+}
+
+.project > a {
+    padding-inline-end: 44px;
+}
+
 .dragging {
     border-color: var(--accent-strong);
     background: var(--accent-soft);
 }
 
 .composer > textarea {
+    box-sizing: border-box;
     width: 100%;
     min-height: 72px;
     resize: vertical;
@@ -156,6 +211,7 @@
 
 .pollEditor input,
 .schedule input {
+    box-sizing: border-box;
     min-width: 0;
     padding: 8px 10px;
     border: 0;

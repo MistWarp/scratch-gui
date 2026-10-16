@@ -23,6 +23,8 @@ import ChallengeCalendar from '../components/ChallengeCalendar.jsx';
 import ReactionButtons from '../components/ReactionButtons.jsx';
 import CardGridSkeleton from '../components/CardGridSkeleton.jsx';
 import UserLink from '../components/UserLink.jsx';
+import PostProjectCard from '../components/PostProjectCard.jsx';
+import {madeWithProject} from '../claw-links.js';
 import {roadmapStatusMatches} from '../roadmap-filters';
 import {categoryForNotification, getNotificationPreferences} from '../notification-preferences';
 import {ActiveChallenge, ChallengeWinner, ContinueProjects, DeviceBackup, StarterGallery} from '../components/HomeWorkspace.jsx';
@@ -138,6 +140,7 @@ const FriendsSection = ({user, login, bare = false}) => {
                                         t('{actor} posted: {post}', {actor, post: item.content || communityText('View post')}) :
                                         describeActivity(item, t, actor)}
                                 </span>
+                                {isPost && madeWithProject(item) ? <PostProjectCard project={madeWithProject(item)} thumbOnly /> : null}
                                 <span className={styles.activityTime}>{timeAgo(item.created || item.timestamp)}</span>
                             </div>
                         );

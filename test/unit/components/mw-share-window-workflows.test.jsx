@@ -126,4 +126,17 @@ describe('MistWarp share window workflows', () => {
         expect(wrapper.state('error')).toBeNull();
         wrapper.unmount();
     });
+
+    test('offers to post a shared project to claw', () => {
+        const postButton = wrapper => wrapper.findWhere(node => (
+            node.prop('onClick') === wrapper.instance().handlePostToClaw
+        ));
+        const wrapper = makeWindow('save');
+        wrapper.setState({done: {id: 'p1', url: '/project/p1', shared: true}});
+        expect(postButton(wrapper)).toHaveLength(1);
+
+        wrapper.setState({done: {id: 'p1', url: '/project/p1', shared: false}});
+        expect(postButton(wrapper)).toHaveLength(0);
+        wrapper.unmount();
+    });
 });

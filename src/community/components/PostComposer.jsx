@@ -1,8 +1,10 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React, {useEffect, useRef, useState} from 'react';
-import {Clock, Image, ListChecks, Plus, Send, X} from 'lucide-react';
+import {Clock, Image, ListChecks, Plus, Send, UserRound, X} from 'lucide-react';
 import rotur from '../rotur.js';
+import {attachmentLimit, postLimit, useClawPostLength} from '../claw-limits.js';
+import {madeWithProject} from '../claw-links.js';
 import {formatDateTime} from '../format';
 import {readSessionDraft, writeSessionDraft} from '../session-draft.js';
 import {ATTACHMENT_TYPES, uploadPostAttachment} from '../post-upload.js';
@@ -10,31 +12,26 @@ import Button from './ui/Button.jsx';
 import Notice from './ui/Notice.jsx';
 import GifPicker from './GifPicker.jsx';
 import PostAttachment from './PostAttachment.jsx';
+import PostProjectCard from './PostProjectCard.jsx';
 import styles from './PostComposer.module.css';
 
-const tierRank = tier => ({lite: 1, plus: 2, drive: 3, pro: 3, max: 4}[String(tier || '').toLowerCase()] || 0);
-const postLimit = tier => {
-    const rank = tierRank(tier);
-    return rank >= 4 ? 1000 : rank >= 3 ? 800 : rank >= 2 ? 600 : rank >= 1 ? 400 : 300;
-};
-const attachmentLimit = tier => {
-    const rank = tierRank(tier);
-    return rank >= 3 ? 4 : rank >= 2 ? 2 : 1;
-};
-
-// The value format a datetime-local input expects, in the viewer's time zone.
 const localDateTimeValue = time => {
     const date = new Date(time);
     date.setSeconds(0, 0);
     return new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
 };
 
-const PostComposer = ({user, onPosted, profileOnly = false}) => {
+const PostComposer = ({
+    user, onPosted, profileOnly = false, allowProfileOnly = true, initialContent = '', madeWith = null, bare = false
+}) => {
     const {text: communityText} = useCommunityText();
     const fileInput = useRef(null);
     const submitInFlight = useRef(false);
-    const draftKey = `post:${user.username || ''}:${profileOnly ? 'profile' : 'feed'}`;
-    const [content, setContent] = useState(() => readSessionDraft(draftKey));
+    const draftScope = madeWith ? `project:${madeWith.ref}` : (profileOnly ? 'profile' : 'feed');
+    const draftKey = `post:${user.username || ''}:${draftScope}`;
+    const [content, setContent] = useState(() => readSessionDraft(draftKey) || initialContent);
+    const [onProfile, setOnProfile] = useState(profileOnly);
+    const [project, setProject] = useState(madeWith);
     const [attachments, setAttachments] = useState([]);
     const [poll, setPoll] = useState(null);
     const [scheduledFor, setScheduledFor] = useState('');
@@ -49,13 +46,13 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
     useEffect(() => {
         if (draftKeyRef.current === draftKey) return;
         draftKeyRef.current = draftKey;
-        setContent(readSessionDraft(draftKey));
+        setContent(readSessionDraft(draftKey) || initialContent);
     }, [draftKey]);
     const releaseSubmit = () => {
         submitInFlight.current = false;
     };
     const tier = user.subscription || user.tier || '';
-    const maxLength = postLimit(tier);
+    const maxLength = useClawPostLength(user);
     const maxAttachments = attachmentLimit(tier);
     const pollValid = !poll || poll.filter(value => value.trim()).length >= 2;
     const canPost = (content.trim() || attachments.length || (poll && pollValid)) &&
@@ -102,15 +99,17 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
         setBusy(true);
         setError('');
         setNotice('');
-        const options = {profileOnly};
+        const options = {profileOnly: onProfile};
+        if (project) options.madeWith = project;
         if (attachments.length === 1) options.attachment = attachments[0];
         else if (attachments.length > 1) options.attachments = attachments;
         if (poll) options.poll = poll.map(value => value.trim()).filter(Boolean);
         if (scheduledFor) options.scheduledFor = new Date(scheduledFor).getTime();
+        let posted = null;
         try {
             const created = await rotur.createPost(content.trim(), options);
             if (!created.scheduled && !scheduledFor) {
-                onPosted({...created, user: created.user || user.username});
+                posted = {...created, user: created.user || user.username};
             } else {
                 setNotice(communityText('Scheduled for {value1}', {
                     value1: formatDateTime(options.scheduledFor || created.scheduledFor)
@@ -128,6 +127,7 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
             releaseSubmit();
             setBusy(false);
         }
+        if (posted) onPosted(posted);
     };
     const handlePaste = event => {
         const files = Array.from(event.clipboardData?.items || [])
@@ -142,7 +142,7 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
 
     return (
         <form
-            className={`${styles.composer}${dragging ? ` ${styles.dragging}` : ''}`}
+            className={`${styles.composer}${bare ? ` ${styles.bare}` : ''}${dragging ? ` ${styles.dragging}` : ''}`}
             onSubmit={submit}
             onDragOver={event => {
                 event.preventDefault();
@@ -159,7 +159,7 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
                 value={content}
                 maxLength={maxLength}
                 disabled={busy}
-                placeholder={profileOnly ?
+                placeholder={onProfile ?
                     communityText('Post something to your profile') :
                     communityText('Post something')}
                 aria-label={communityText('Post content')}
@@ -177,6 +177,17 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
                 accept={ATTACHMENT_TYPES.join(',')}
                 onChange={chooseFiles}
             />
+            {project && madeWithProject({made_with: project}) ? (
+                <div className={styles.project}>
+                    <PostProjectCard project={madeWithProject({made_with: project})} compact />
+                    <button
+                        type="button"
+                        onClick={() => setProject(null)}
+                        aria-label={communityText('Remove the project card')}
+                        title={communityText('Remove the project card')}
+                    ><X size={14} /></button>
+                </div>
+            ) : null}
             {uploading ? (
                 <div className={styles.upload}>
                     <span style={{width: `${progress}%`}} />
@@ -273,6 +284,15 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
                         onClick={() => setScheduledFor(current => (current ? '' : defaultSchedule()))}
                         title={communityText('Schedule post')}
                     ><Clock size={16} /><span>{communityText('Schedule')}</span></button>
+                    {allowProfileOnly ? (
+                        <button
+                            type="button"
+                            className={onProfile ? styles.active : ''}
+                            aria-pressed={onProfile}
+                            onClick={() => setOnProfile(value => !value)}
+                            title={communityText('Only show this post on your profile')}
+                        ><UserRound size={16} /><span>{communityText('Profile only')}</span></button>
+                    ) : null}
                 </div>
                 <span className={content.length >= maxLength ? styles.over : ''}>{content.length}/{maxLength}</span>
                 <Button type="submit" variant="primary" busy={busy} disabled={!canPost}>
@@ -293,7 +313,18 @@ const PostComposer = ({user, onPosted, profileOnly = false}) => {
 PostComposer.propTypes = {
     user: PropTypes.object.isRequired,
     onPosted: PropTypes.func.isRequired,
-    profileOnly: PropTypes.bool
+    profileOnly: PropTypes.bool,
+    allowProfileOnly: PropTypes.bool,
+    initialContent: PropTypes.string,
+    madeWith: PropTypes.shape({
+        app: PropTypes.string,
+        kind: PropTypes.string,
+        ref: PropTypes.string,
+        url: PropTypes.string,
+        title: PropTypes.string,
+        image: PropTypes.string
+    }),
+    bare: PropTypes.bool
 };
 
 export {attachmentLimit, localDateTimeValue, postLimit};

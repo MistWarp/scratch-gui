@@ -1,5 +1,6 @@
 import React from 'react';
 import {projectUrl} from './api';
+import {postUrl} from './following-feed.js';
 import {isMilestoneNotification, milestoneLink, milestoneText} from './milestone-notifications.js';
 
 // Shared by the notifications page and the Home preview so both describe and
@@ -50,6 +51,7 @@ const groupUrl = n => (n.group_tag ? `https://rotur.dev/groups/${encodeURICompon
 // pages, or null when there is nothing to open.
 export const targetFor = (n, viewerName) => {
     if (isMilestoneNotification(n)) return {to: milestoneLink(n)};
+    if (!n.projectId && (n.post_id || n.original_post_id)) return {to: postUrl(n.post_id || n.original_post_id)};
     if (GROUP_TYPES.includes(n.type) && groupUrl(n)) return {href: groupUrl(n)};
     if (n.spaceId) return {to: `/spaces/${n.spaceId}${commentAnchor(n)}`};
     if (n.roadmapId) return {to: `/roadmap#idea-${n.roadmapId}`};
