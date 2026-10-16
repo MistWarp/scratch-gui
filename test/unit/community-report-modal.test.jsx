@@ -53,6 +53,36 @@ describe('community report dialog', () => {
         wrapper.unmount();
     });
 
+    test('reports chat with the named player, and says who sees it', async () => {
+        const report = jest.spyOn(api, 'report').mockResolvedValue({ok: true});
+        const wrapper = mount(<ReportModal
+            type="chat"
+            target="p1"
+            onClose={() => {}}
+        />);
+        wrapper.find('select').simulate('change', {target: {value: 'harassment'}});
+        expect(wrapper.text()).toContain('creator both see this report');
+        wrapper.find('input').simulate('change', {target: {value: '@griefer'}});
+        wrapper.find('textarea').simulate('change', {target: {value: 'called me names'}});
+        await submit(wrapper);
+        expect(report).toHaveBeenCalledWith('chat', 'p1', 'Harassment or bullying: called me names', undefined,
+            undefined, 'harassment', 'griefer');
+        wrapper.unmount();
+    });
+
+    test('keeps urgent chat reports away from the creator', () => {
+        const wrapper = mount(<ReportModal
+            type="chat"
+            target="p1"
+            onClose={() => {}}
+        />);
+        wrapper.find('select').simulate('change', {target: {value: 'csea'}});
+        expect(wrapper.text()).toContain('Only moderators see this report, not the creator.');
+        wrapper.find('select').simulate('change', {target: {value: 'sexual'}});
+        expect(wrapper.text()).toContain('Only MistWarp moderators see this report, not the creator.');
+        wrapper.unmount();
+    });
+
     test('labels the reason and details fields', () => {
         const wrapper = mount(<ReportModal
             type="comment"

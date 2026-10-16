@@ -86,7 +86,9 @@ const ReportModal = ({type, target, context, targetUser, onClose}) => {
         const reason = details.trim() ? `${chosen.label}: ${details.trim()}` : chosen.label;
         try {
             const reportedPlayer = chat ? player.trim().replace(/^@/, '') : '';
-            await api.report(type, target, reason, context, targetUser, chosen.category, reportedPlayer || null);
+            const reportArgs = [type, target, reason, context, targetUser, chosen.category];
+            if (reportedPlayer) reportArgs.push(reportedPlayer);
+            await api.report(...reportArgs);
             if (currentRequestKey.current === requestKey) setSent(true);
         } catch (e) {
             if (currentRequestKey.current === requestKey) {
