@@ -234,39 +234,88 @@ const appFilePath = async (client, path) => {
     return full;
 };
 
-/**
- * Run an allowlisted method on a Rotur client. The path is a key of the
- * allowlist, never something taken straight from a project.
- * @param {object} client A rotur-sdk Rotur instance.
- * @param {string} method An allowlisted method name.
- * @param {Array} args Arguments.
- * @returns {Promise<unknown>} The SDK result.
- */
 const SECRET_FIELDS = new Set(['key', 'token', 'access_token', 'refresh_token', 'accesstoken', 'refreshtoken',
-    'password', 'validator', 'sys.key', 'sys.token']);
+    'password', 'validator', 'code', 'webhook']);
+const SENSITIVE_FIELD = new RegExp([
+    'token', 'secret', 'passw', 'email', 'reset', 'verif', 'login', 'hmac', 'stripe', 'billing', 'session',
+    'webhook', 'recovery', 'totp', 'phone', 'birth', '^dob$', '(^|[._])(ip|ips|last_ip)$'
+].join('|'), 'i');
+const PROJECT_SYSTEM_FIELDS = new Set([
+    'sys.id', 'sys.index', 'sys.badges', 'sys.banner', 'sys.banner_unlocked', 'sys.banner_updated_at',
+    'sys.overlay', 'sys.social_links', 'sys.group', 'sys.status', 'sys.subscription', 'sys.auth_providers',
+    'sys.moderator', 'sys.admin', 'sys.banned', 'sys.last_seen', 'sys.account_type', 'sys.tos_accepted',
+    'sys.email_verified', 'sys.terms_updated', 'sys.policy_updated', 'sys.friends', 'sys.requests',
+    'sys.blocked', 'sys.currency', 'sys.transactions', 'sys.credit_receipts', 'sys.sable_credits',
+    'sys.sable_credit_receipts', 'sys.purchases', 'sys.items'
+]);
+const HIDDEN_PROFILE_FIELDS = new Set(['email', 'sexuality', 'identity', 'nationality', 'birthday', 'age',
+    'relationship_status', 'timezone', 'language', 'favorite_website']);
+const METHOD_SECRET_FIELDS = {
+    'gifts.mine': new Set(['code']),
+    'gifts.get': new Set(['code']),
+    'keys.get': new Set(['webhook']),
+    'keys.mine': new Set(['webhook'])
+};
 
-const withoutSecrets = (value, secrets, accountRecord, seen = new WeakSet()) => {
-    if (typeof value === 'string') {
-        return secrets.some(secret => value.includes(secret)) ? null : value;
+const tokenVariants = tokens => {
+    const variants = new Set();
+    for (const token of tokens) {
+        if (typeof token !== 'string' || token.length < 8) continue;
+        variants.add(token);
+        variants.add(encodeURIComponent(token));
     }
+    return [...variants];
+};
+
+const scrubString = (value, secrets) => (secrets.some(secret => value.includes(secret)) ? null : value);
+
+const withoutSecrets = (value, rules, ancestors = new Set(), depth = 0) => {
+    if (typeof value === 'string') return scrubString(value, rules.secrets);
     if (!value || typeof value !== 'object') return value;
-    if (seen.has(value)) return null;
-    seen.add(value);
-    if (Array.isArray(value)) return value.map(item => withoutSecrets(item, secrets, accountRecord, seen));
-    const clean = {};
-    for (const [field, item] of Object.entries(value)) {
-        if (accountRecord && SECRET_FIELDS.has(field.toLowerCase())) continue;
-        clean[field] = withoutSecrets(item, secrets, accountRecord, seen);
+    if (value instanceof ArrayBuffer || ArrayBuffer.isView(value) || value instanceof Date) return value;
+    if (ancestors.has(value)) return null;
+    ancestors.add(value);
+    let clean;
+    if (Array.isArray(value)) {
+        clean = value.map(item => withoutSecrets(item, rules, ancestors, depth + 1));
+    } else {
+        clean = {};
+        for (const [field, item] of Object.entries(value)) {
+            const lower = field.toLowerCase();
+            if (rules.fields && rules.fields.has(lower)) continue;
+            if (rules.account && (SECRET_FIELDS.has(lower) || SENSITIVE_FIELD.test(lower))) continue;
+            if (rules.account && depth === 0 && (HIDDEN_PROFILE_FIELDS.has(lower) ||
+                (lower.startsWith('sys.') && !PROJECT_SYSTEM_FIELDS.has(lower)))) continue;
+            clean[field] = withoutSecrets(item, rules, ancestors, depth + 1);
+        }
     }
+    ancestors.delete(value);
     return clean;
 };
 
-const projectSafeResult = (client, method, result) => {
-    const secrets = [client && client.token].filter(secret => typeof secret === 'string' && secret.length >= 8);
-    const accountRecord = method.startsWith('me.') || method.startsWith('profiles.');
-    return withoutSecrets(result, secrets, accountRecord);
+const projectSafeResult = (method, result, tokens) => withoutSecrets(result, {
+    secrets: tokenVariants(tokens),
+    account: method.startsWith('me.') || method.startsWith('profiles.'),
+    fields: METHOD_SECRET_FIELDS[method] || null
+});
+
+const projectSafeError = (error, tokens) => {
+    const secrets = tokenVariants(tokens);
+    const message = String((error && error.message) || error || 'The Rotur request failed');
+    const safe = new Error(scrubString(message, secrets) === null ? 'The Rotur request failed' : message.slice(0, 300));
+    if (error && typeof error.status === 'number') safe.status = error.status;
+    return safe;
 };
 
+/**
+ * Run an allowlisted method on a Rotur client. The path is a key of the
+ * allowlist, never something taken straight from a project. Results and
+ * errors are filtered so no credential reaches the project.
+ * @param {object} client A rotur-sdk Rotur instance.
+ * @param {string} method An allowlisted method name.
+ * @param {Array} args Arguments.
+ * @returns {Promise<unknown>} The filtered SDK result.
+ */
 const invokeProjectMethod = async (client, method, args) => {
     if (!projectMethod(method)) {
         throw new Error(`Projects cannot call Rotur method: ${String(method).slice(0, 80)}`);
@@ -280,10 +329,16 @@ const invokeProjectMethod = async (client, method, args) => {
     if (typeof fn !== 'function') {
         throw new Error(`Rotur method is unavailable: ${method}`);
     }
-    if (method === 'files.getByPath') {
-        return projectSafeResult(client, method, await fn.call(owner, await appFilePath(client, args[0])));
+    const tokenBefore = client.token;
+    let result;
+    try {
+        result = method === 'files.getByPath' ?
+            await fn.call(owner, await appFilePath(client, args[0])) :
+            await fn.apply(owner, args);
+    } catch (error) {
+        throw projectSafeError(error, [tokenBefore, client.token]);
     }
-    return projectSafeResult(client, method, await fn.apply(owner, args));
+    return projectSafeResult(method, result, [tokenBefore, client.token]);
 };
 
 export {
