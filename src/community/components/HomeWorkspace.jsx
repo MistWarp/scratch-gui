@@ -140,7 +140,7 @@ export const DeviceBackup = () => {
 
 const STARTER_ICONS = {clicker: MousePointer2, explorer: Gamepad2, animation: Sparkles};
 
-export const StarterGallery = () => {
+export const StarterGallery = ({children}) => {
     const {text: communityText} = useCommunityText();
     return (
         <section className={styles.section} id="starters" aria-labelledby="starter-heading">
@@ -176,6 +176,7 @@ export const StarterGallery = () => {
                     );
                 })}
             </CardGrid>
+            {children}
         </section>
     );
 };
