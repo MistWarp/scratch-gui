@@ -7,7 +7,7 @@ import {MousePointerClick} from 'lucide-react';
 import PaintEditorWrapper from '../../containers/paint-editor-wrapper.jsx';
 import SoundEditor from '../../containers/sound-editor.jsx';
 import SoundEditorNotSupported from '../tw-sound-editor-not-supported/sound-editor-not-supported.jsx';
-import {isAssetEditorActive} from '../../lib/code-mode/key-scope.js';
+import {isPaintEditorKeyActive, isSoundEditorKeyActive} from '../../lib/code-mode/key-scope.js';
 import messages from './messages.js';
 import styles from './workbench.css';
 
@@ -16,10 +16,11 @@ const shouldMountAssetEditor = (tab, editingTargetId) =>
 
 const AssetTab = props => {
     const {editingTargetId, index, intl, ownerName, soundSupported, tab} = props;
-    if (!shouldMountAssetEditor(tab, editingTargetId)) {
+    if (props.blocked || !shouldMountAssetEditor(tab, editingTargetId)) {
         return (
             <div className={styles.assetPlaceholder}>
-                <p>{intl.formatMessage(messages.otherSprite, {name: ownerName})}</p>
+                <p>{props.blocked ? intl.formatMessage(messages.otherGroup) :
+                    intl.formatMessage(messages.otherSprite, {name: ownerName})}</p>
                 <button
                     className={styles.primaryButton}
                     type="button"
@@ -34,16 +35,17 @@ const AssetTab = props => {
     return (
         <div
             className={styles.assetTab}
+            data-mw-asset-kind={tab.kind}
             data-mw-region="asset"
         >
             {tab.kind === 'costume' ? (
                 <PaintEditorWrapper
-                    isActive={isAssetEditorActive}
+                    isActive={isPaintEditorKeyActive}
                     selectedCostumeIndex={index}
                 />
             ) : (soundSupported ? (
                 <SoundEditor
-                    isActive={isAssetEditorActive}
+                    isActive={isSoundEditorKeyActive}
                     soundIndex={index}
                 />
             ) : <SoundEditorNotSupported />)}
@@ -52,6 +54,7 @@ const AssetTab = props => {
 };
 
 AssetTab.propTypes = {
+    blocked: PropTypes.bool,
     editingTargetId: PropTypes.string,
     index: PropTypes.number.isRequired,
     intl: intlShape,

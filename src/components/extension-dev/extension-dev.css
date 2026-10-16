@@ -153,6 +153,7 @@ $mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospa
 .editor-pane {
     display: flex;
     flex: 1;
+    min-width: 0;
     min-height: 0;
     flex-direction: column;
 }

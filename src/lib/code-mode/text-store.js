@@ -1,6 +1,7 @@
 import {hasUnappliedEdits as hasUnappliedExtensionEdits, unappliedIds} from '../extension-dev/session.js';
 
 const states = new Map();
+const assetDrafts = new Map();
 const listeners = new Set();
 
 const notify = () => {
@@ -34,9 +35,29 @@ const allTexts = () => Array.from(states.entries());
 
 const dirtyTargetIds = () => Array.from(states.keys()).filter(id => isDirty(states.get(id)));
 
-const unappliedFileCount = () => dirtyTargetIds().length + unappliedIds().length;
+const unappliedFileCount = () => dirtyTargetIds().length + unappliedIds().length + assetDrafts.size;
 
-const hasUnappliedCode = () => dirtyTargetIds().length > 0 || hasUnappliedExtensionEdits();
+const hasUnappliedCode = () => dirtyTargetIds().length > 0 || hasUnappliedExtensionEdits() || assetDrafts.size > 0;
+
+const assetDraftKey = name => String(name).toLowerCase();
+
+const getAssetDraft = name => assetDrafts.get(assetDraftKey(name)) || null;
+
+const setAssetDraft = (name, draft) => {
+    const key = assetDraftKey(name);
+    const had = assetDrafts.has(key);
+    if (draft) assetDrafts.set(key, {...draft, name});
+    else assetDrafts.delete(key);
+    if (had !== Boolean(draft)) notify();
+};
+
+const assetDraftNames = () => Array.from(assetDrafts.values()).map(draft => draft.name);
+
+const clearAssetDrafts = () => {
+    if (!assetDrafts.size) return;
+    assetDrafts.clear();
+    notify();
+};
 
 const takeAllTexts = () => {
     const all = Array.from(states.entries());
@@ -53,11 +74,15 @@ const clearTexts = () => {
 
 export {
     allTexts,
+    assetDraftNames,
+    clearAssetDrafts,
     clearTexts,
     dirtyTargetIds,
+    getAssetDraft,
     getText,
     hasUnappliedCode,
     isDirty,
+    setAssetDraft,
     setText,
     subscribeTexts,
     takeAllTexts,

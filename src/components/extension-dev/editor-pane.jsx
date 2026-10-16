@@ -52,6 +52,14 @@ const DOCS_URL = `${DOCS_BASE}/building-extensions/introduction`;
 
 const normalizeNewlines = value => value.replace(/\r\n?/g, '\n');
 
+const mirrors = new Map();
+
+const mirrorText = (id, sender, value) => {
+    for (const listener of mirrors.get(id) || []) {
+        if (listener !== sender) listener(value);
+    }
+};
+
 const EditorPane = props => {
     const {intl, entry, vm} = props;
     const cachedSource = props.stateKey ? getCachedSource(props.stateKey) : null;
@@ -85,6 +93,8 @@ const EditorPane = props => {
     const linted = useRef({text: null, diagnostics: []});
     const doApplyRef = useRef(null);
     const live = useRef({});
+    const mirror = useRef(null);
+    const onMirror = useRef(null);
 
     const persistDraft = value => {
         const base = latest.current.source;
@@ -310,11 +320,32 @@ const EditorPane = props => {
     const patchesInternals = lintDiagnostics.some(item => item.code === 'patches-internals');
     const lintErrors = lintDiagnostics.filter(item => item.severity === 'error').length;
 
+    onMirror.current = value => {
+        if (!mounted.current || latest.current.text === value) return;
+        latest.current.text = value;
+        setText(value);
+        if (!applying.current) setStatus(value === latest.current.source ? 'idle' : 'dirty');
+        runLint(value);
+    };
+
+    useEffect(() => {
+        const listener = value => onMirror.current(value);
+        const set = mirrors.get(entry.id) || new Set();
+        set.add(listener);
+        mirrors.set(entry.id, set);
+        mirror.current = listener;
+        return () => {
+            set.delete(listener);
+            if (!set.size) mirrors.delete(entry.id);
+        };
+    }, [entry.id]);
+
     const onChange = value => {
         if (live.current.readOnly) return;
         const wasClean = latest.current.text === latest.current.source;
         setText(value);
         latest.current.text = value;
+        mirrorText(entry.id, mirror.current, value);
         setNotice(null);
         setRestored(false);
         persistDraft(value);

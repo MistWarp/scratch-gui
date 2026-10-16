@@ -23,6 +23,8 @@ import {openExtension, openExtensionAt, openNewExtension, openRemoveExtensions} 
 import {extensionCompletionSource, referenceGroups} from '../../../src/lib/code-mode/extension-completion.js';
 import {codeUnitsExtension, setRunning, setUnits} from '../../../src/lib/code-mode/editor-units.js';
 import {clearTexts, setText} from '../../../src/lib/code-mode/text-store.js';
+import {openInLayout, singleLayout, splitTab} from '../../../src/lib/code-mode/editor-groups.js';
+import {scriptTab} from '../../../src/lib/code-mode/tabs.js';
 import {TWSecurityManagerComponent} from '../../../src/containers/tw-security-manager.jsx';
 import SecurityModals from '../../../src/lib/constants/security-manager.js';
 import {previewOf} from '../../../src/components/tw-security-manager-modal/unsandboxed-from-file.jsx';
@@ -403,8 +405,8 @@ describe('extension tabs in the workbench', () => {
         ];
         const calls = [];
         const view = {state: {field: () => new Set()}, dispatch: tr => calls.push(Array.from(tr.effects.value))};
-        instance.activeTab = () => ({kind: 'script', targetId: 'sprite'});
-        instance.activeEditorView = () => view;
+        instance.state = {...instance.state, layout: openInLayout(singleLayout(), scriptTab('sprite'))};
+        instance.groupView = () => view;
         instance.pollRunning();
         expect(calls).toEqual([['a']]);
         wrapper.unmount();
@@ -432,5 +434,29 @@ describe('running script markers', () => {
         setRunning(view, []);
         expect(parent.querySelectorAll('button.running')).toHaveLength(0);
         view.destroy();
+    });
+
+    test('the reference opens as an editor tab and splits into a second group', async () => {
+        const vm = makeVm();
+        const wrapper = render({vm});
+        const instance = wrapper.find(CodeWorkbench).instance();
+        instance.handleOpenReferenceTab();
+        await flush();
+        wrapper.update();
+        expect(wrapper.find('[role="tab"]').map(node => node.text())).toContain('Reference');
+        expect(wrapper.find('input[type="search"]')).toHaveLength(1);
+        instance.updateLayout(layout => splitTab(layout, layout.focused, 'reference', 'row'));
+        await flush();
+        wrapper.update();
+        expect(wrapper.find('[role="tablist"][aria-label]').hostNodes()).toHaveLength(2);
+        expect(wrapper.find('[role="separator"][aria-orientation="vertical"]').hostNodes()
+            .filterWhere(node => node.prop('aria-label') === 'Resize editor groups')).toHaveLength(1);
+        const second = instance.state.layout.groups[1].id;
+        instance.handleCloseTab('reference', second);
+        await flush();
+        wrapper.update();
+        expect(instance.state.layout.groups).toHaveLength(1);
+        instance.updateLayout(() => singleLayout());
+        wrapper.unmount();
     });
 });

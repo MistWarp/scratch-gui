@@ -719,5 +719,115 @@ export default defineMessages({
         id: 'mw.codeMode.renamed',
         defaultMessage: 'Renamed {from} to {to}',
         description: 'Shown after a successful rename'
+    },
+    openReferenceTab: {
+        id: 'mw.codeMode.openReferenceTab',
+        defaultMessage: 'Open in editor',
+        description: 'Button on the Reference panel tab that opens the reference as an editor tab'
+    },
+    otherGroup: {
+        id: 'mw.codeMode.otherGroup',
+        defaultMessage: 'This editor is open in the other editor group.',
+        description: 'Shown on a costume or sound tab when the other split group already shows an editor of that kind'
+    },
+    splitRight: {
+        id: 'mw.codeMode.splitRight',
+        defaultMessage: 'Split right',
+        description: 'Editor tab menu item that opens the tab in a second editor group beside the first'
+    },
+    splitDown: {
+        id: 'mw.codeMode.splitDown',
+        defaultMessage: 'Split down',
+        description: 'Editor tab menu item that opens the tab in a second editor group below the first'
+    },
+    openInOtherGroup: {
+        id: 'mw.codeMode.openInOtherGroup',
+        defaultMessage: 'Open in other group',
+        description: 'Editor tab menu item that also opens the tab in the other editor group'
+    },
+    moveToOtherGroup: {
+        id: 'mw.codeMode.moveToOtherGroup',
+        defaultMessage: 'Move to other group',
+        description: 'Editor tab menu item that moves the tab to the other editor group'
+    },
+    resizeGroups: {
+        id: 'mw.codeMode.resizeGroups',
+        defaultMessage: 'Resize editor groups',
+        description: 'Accessible label of the divider between two editor groups'
+    },
+    assets: {
+        id: 'mw.codeMode.assets',
+        defaultMessage: 'Assets',
+        description: 'Explorer folder that holds the project assets, files the assets blocks can read and write'
+    },
+    noAssets: {
+        id: 'mw.codeMode.noAssets',
+        defaultMessage: 'No assets yet',
+        description: 'Muted row shown in the empty Assets folder of the Code mode explorer'
+    },
+    newTextFile: {
+        id: 'mw.codeMode.newTextFile',
+        defaultMessage: 'New text file',
+        description: 'Context menu item that creates an empty text asset'
+    },
+    newFolder: {
+        id: 'mw.codeMode.newFolder',
+        defaultMessage: 'New folder',
+        description: 'Context menu item that creates a folder in the project assets'
+    },
+    uploadAsset: {
+        id: 'mw.codeMode.uploadAsset',
+        defaultMessage: 'Upload',
+        description: 'Context menu item that adds files from the computer to the project assets'
+    },
+    download: {
+        id: 'mw.codeMode.download',
+        defaultMessage: 'Download',
+        description: 'Button and menu item that saves a project asset to the computer'
+    },
+    binaryAsset: {
+        id: 'mw.codeMode.binaryAsset',
+        defaultMessage: 'This file has no preview',
+        description: 'Shown in the tab of a project asset that is neither text, an image nor audio'
+    },
+    assetInfo: {
+        id: 'mw.codeMode.assetInfo',
+        defaultMessage: '{format} file, {size}',
+        description: 'Format and size of a project asset, such as "png file, 4.2 KB"'
+    },
+    newTextFileMessage: {
+        id: 'mw.codeMode.newTextFileMessage',
+        defaultMessage: 'Name the file. Use slashes for folders, such as data/level1.txt',
+        description: 'Prompt message when creating a text asset'
+    },
+    newFolderMessage: {
+        id: 'mw.codeMode.newFolderMessage',
+        defaultMessage: 'Name the folder',
+        description: 'Prompt message when creating an asset folder'
+    },
+    deleteAssetTitle: {
+        id: 'mw.codeMode.deleteAssetTitle',
+        defaultMessage: 'Delete {name}?',
+        description: 'Title of the confirmation before deleting a project asset or asset folder'
+    },
+    deleteAssetMessage: {
+        id: 'mw.codeMode.deleteAssetMessage',
+        defaultMessage: 'The file is removed from the project. Blocks that read it get nothing.',
+        description: 'Confirmation message before deleting a project asset'
+    },
+    deleteFolderMessage: {
+        id: 'mw.codeMode.deleteFolderMessage',
+        defaultMessage: '{count, plural, one {# file is} other {# files are}} removed from the project.',
+        description: 'Confirmation message before deleting an asset folder'
+    },
+    currentFile: {
+        id: 'mw.codeMode.currentFile',
+        defaultMessage: 'Current file',
+        description: 'Diff legend for the text of a project asset as it is now'
+    },
+    assetChanged: {
+        id: 'mw.codeMode.assetChanged',
+        defaultMessage: 'The project changed this file since you started editing. Apply replaces it with your text.',
+        description: 'Message in an asset text tab when blocks changed the asset while the tab had unapplied text'
     }
 });

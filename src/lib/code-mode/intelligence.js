@@ -5,6 +5,7 @@ import opcodeTable from 'scratch-vm/src/engine/opcodes.generated.json';
 
 import {extensionBlocks, extensionCompletionSource} from './extension-completion.js';
 import {symbolAt} from './definition.js';
+import {allFolders} from './custom-assets.js';
 
 const IDENT = /^[A-Za-z_][\w]*$/;
 const SKIPPED_NAMESPACES = new Set(['argument', 'procedures']);
@@ -14,6 +15,9 @@ const LIST_BEFORE = new RegExp(`\\b(?:${LIST_FUNCTIONS})\\(\\s*$`);
 const IMAGE_GLYPHS = [['rotate-left', '↺'], ['rotate-right', '↻'], ['green-flag', '⚑']];
 
 const STRING_CONTEXTS = [
+    [/\b(?:assets\.infolder\(\s*|FOLDER:\s*)"[^"]*$/, ['assetFolders']],
+    [/(?:\bassets\.(?:menu|get|set|load|unload|check|delete|byte)\(\s*|\bASSET:\s*(?:assets\.menu\(\s*)?)"[^"]*$/,
+        ['assets']],
     [/\b(?:costume|switchCostume)\s*\(?\s*"[^"]*$/, ['costumes']],
     [/\b(?:backdrop|backdropAndWait|when\s+backdrop)\s*\(?\s*"[^"]*$/, ['backdrops']],
     [/\b(?:playSound|playSoundUntilDone|sound)\s*\(?\s*"[^"]*$/, ['sounds']],
@@ -28,7 +32,9 @@ const KIND_LABELS = {
     broadcasts: 'broadcast',
     sprites: 'sprite',
     variables: 'variable',
-    lists: 'list'
+    lists: 'list',
+    assets: 'asset',
+    assetFolders: 'folder'
 };
 
 let referenceCache = null;
@@ -176,6 +182,8 @@ const projectNames = (vm, targetId) => {
     }
     if (stage) names.backdrops = stage.getCostumes().map(costume => costume.name);
     names.sprites = runtime.targets.filter(each => each.isOriginal && !each.isStage).map(each => each.getName());
+    names.assets = runtime.assetManager ? runtime.assetManager.assets.map(entry => entry.name) : [];
+    names.assetFolders = allFolders(names.assets);
     return names;
 };
 

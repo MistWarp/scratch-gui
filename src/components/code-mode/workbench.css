@@ -292,9 +292,95 @@ $mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospa
 .editor-column {
     display: flex;
     flex: 1;
+    min-width: 0;
+    min-height: 0;
+}
+
+.editor-column-stacked {
+    flex-direction: column;
+}
+
+.editor-group {
+    display: flex;
+    flex: 1;
     flex-direction: column;
     min-width: 0;
     min-height: 0;
+}
+
+.group-resizer,
+.group-resizer-stacked {
+    flex-shrink: 0;
+    background: $sidebar;
+}
+
+.group-resizer {
+    width: 4px;
+    cursor: col-resize;
+}
+
+.group-resizer-stacked {
+    height: 4px;
+    cursor: row-resize;
+}
+
+.group-resizer:hover,
+.group-resizer:focus-visible,
+.group-resizer-stacked:hover,
+.group-resizer-stacked:focus-visible {
+    background: color-mix(in srgb, $accent 45%, transparent);
+    outline: none;
+}
+
+.tab-strip-unfocused .editor-tab-active {
+    color: $muted;
+}
+
+.editor-tab-drop-before::before,
+.editor-tab-drop-after::after {
+    content: "";
+    position: absolute;
+    top: 0.25rem;
+    bottom: 0;
+    width: 2px;
+    background: $accent;
+}
+
+.editor-tab-drop-before::before {
+    inset-inline-start: -2px;
+}
+
+.editor-tab-drop-after::after {
+    inset-inline-end: -2px;
+}
+
+.drop-catcher {
+    position: absolute;
+    inset: 0;
+    z-index: $z-index-drag-layer;
+}
+
+.drop-zone {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, $accent 18%, transparent);
+    pointer-events: none;
+}
+
+.drop-zone-end {
+    inset-inline-start: 50%;
+}
+
+.drop-zone-bottom {
+    top: 50%;
+}
+
+.reference-tab {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+    padding: 0.25rem 0.75rem 0.75rem;
 }
 
 .tab-strip {
@@ -319,6 +405,7 @@ $mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospa
 }
 
 .editor-tab {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 0.35rem;
@@ -1096,8 +1183,10 @@ $mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospa
 
 .extension-host {
     display: flex;
+    flex: 1;
     flex-direction: column;
     height: 100%;
+    min-width: 0;
     min-height: 0;
 }
 
@@ -1284,4 +1373,68 @@ $mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospa
 .block-hover-opcode {
     color: $muted;
     font-size: 0.75rem;
+}
+
+.custom-asset {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+}
+
+.custom-asset-body {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    padding: 1rem;
+    overflow: auto;
+    background: $sidebar;
+}
+
+.custom-asset-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    background: repeating-conic-gradient($raised 0% 25%, transparent 0% 50%) 0 0 / 16px 16px;
+}
+
+.custom-asset-audio {
+    width: min(100%, 28rem);
+}
+
+.custom-asset-binary {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    color: $muted;
+}
+
+.custom-asset-binary p {
+    margin: 0;
+}
+
+.custom-asset-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    flex-shrink: 0;
+}
+
+.custom-asset-name {
+    min-width: 0;
+    overflow: hidden;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.custom-asset-meta {
+    flex: 1;
+    color: $muted;
+    white-space: nowrap;
 }

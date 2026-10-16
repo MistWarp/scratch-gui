@@ -168,6 +168,7 @@ const TEXT_TAB_GLOBALS = [
     'toggleExplorer',
     'togglePanel',
     'quickOpen',
+    'openReferenceTab',
     'save',
     'extensionManager',
     'closeTab',

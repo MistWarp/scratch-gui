@@ -12,6 +12,7 @@ import {
 } from './apply-pipeline.js';
 import {
     allTexts,
+    clearAssetDrafts,
     getText,
     isDirty,
     setText,
@@ -411,6 +412,7 @@ const createTextController = ({vm, client = getFractchClient()}) => {
         for (const timer of autoTimers.values()) clearTimeout(timer);
         autoTimers.clear();
         regenerations.clear();
+        clearAssetDrafts();
         for (const [, state] of takeAllTexts()) {
             if (!isDirty(state) || state.draft) continue;
             const info = state.info || null;

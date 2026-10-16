@@ -6,16 +6,32 @@ const scriptTab = targetId => ({key: `script:${targetId}`, kind: 'script', targe
 
 const assetTab = (kind, targetId, itemId) => ({key: `${kind}:${targetId}:${itemId}`, kind, targetId, itemId});
 
+const customAssetTab = name => ({key: `customAsset:${String(name).toLowerCase()}`, kind: 'customAsset', name});
+
 const extensionTab = extensionId => ({key: `extension:${extensionId}`, kind: 'extension', extensionId});
 
 const newExtensionTab = source => ({key: 'new-extension', kind: 'newExtension', source: source || null});
 
 const removeExtensionsTab = ids => ({key: 'remove-extensions', kind: 'removeExtensions', ids: ids.slice()});
 
+const referenceTab = () => ({key: 'reference', kind: 'reference'});
+
 const replaceTab = (state, tab) => ({
     ...state,
     tabs: state.tabs.map(item => (item.key === tab.key ? tab : item))
 });
+
+const renameTab = (state, fromKey, tab) => {
+    if (!state.tabs.some(item => item.key === fromKey)) return state;
+    const keyOf = key => (key === fromKey ? tab.key : key);
+    return {
+        ...state,
+        tabs: state.tabs.filter(item => item.key !== tab.key || item.key === fromKey)
+            .map(item => (item.key === fromKey ? tab : item)),
+        activeKey: keyOf(state.activeKey),
+        previewKey: keyOf(state.previewKey)
+    };
+};
 
 const openTab = (state, tab, {preview = false} = {}) => {
     const existing = state.tabs.find(item => item.key === tab.key);
@@ -97,16 +113,19 @@ export {
     assetTab,
     closeOtherTabs,
     closeTab,
+    customAssetTab,
     cycleTab,
     emptyTabs,
     extensionTab,
     loadSession,
     newExtensionTab,
     removeExtensionsTab,
+    renameTab,
     replaceTab,
     openTab,
     pinTab,
     pruneTabs,
+    referenceTab,
     saveSession,
     scriptTab
 };

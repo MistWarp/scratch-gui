@@ -6,7 +6,7 @@ import {closeAssetsModal} from '../reducers/modals';
 import {showStandardAlert} from '../reducers/alerts';
 import downloadBlob from '../lib/utils/download-blob';
 import storage from '../lib/persistence/storage';
-import log from '../lib/utils/log';
+import {addAssetFiles, baseName as getBaseName, folderOf as getFolder} from '../lib/code-mode/custom-assets.js';
 import AssetsModalComponent from '../components/mw-assets-modal/assets-modal.jsx';
 
 const IMAGE_FORMATS = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg'];
@@ -14,21 +14,6 @@ const AUDIO_FORMATS = ['wav', 'mp3', 'ogg'];
 const TEXT_FORMATS = ['txt', 'json', 'csv', 'html', 'md', 'xml', 'js', 'css', 'fractch'];
 
 const PREVIEW_TEXT_LIMIT = 5000;
-
-const getExtension = fileName => {
-    const dot = fileName.lastIndexOf('.');
-    if (dot <= 0 || dot === fileName.length - 1) {
-        return 'bin';
-    }
-    return fileName.substring(dot + 1).toLowerCase();
-};
-
-const getBaseName = path => path.substring(path.lastIndexOf('/') + 1);
-
-const getFolder = path => {
-    const slash = path.lastIndexOf('/');
-    return slash === -1 ? '' : path.substring(0, slash);
-};
 
 class MWAssetsModal extends React.Component {
     constructor (props) {
@@ -153,28 +138,9 @@ class MWAssetsModal extends React.Component {
     }
 
     async runAddFiles (files, folder) {
-        let failed = 0;
-        let added = 0;
-        for (const file of Array.from(files)) {
-            try {
-                const buffer = await file.arrayBuffer();
-                const asset = storage.createAsset(
-                    storage.AssetType.CustomAsset,
-                    getExtension(file.name),
-                    new Uint8Array(buffer),
-                    null,
-                    true
-                );
-                const path = folder ? `${folder}/${file.name}` : file.name;
-                this.assetManager.addAsset(this.assetManager.getUnusedName(path), asset);
-                added++;
-            } catch (e) {
-                failed++;
-                log.error(`could not add custom asset "${file.name}"`, e);
-            }
-        }
+        const {added, failed} = await addAssetFiles(this.assetManager, files, folder, storage);
         if (failed && this.mounted) this.props.onShowImportError();
-        return {added, failed};
+        return {added: added.length, failed};
     }
 
     handleClose () {

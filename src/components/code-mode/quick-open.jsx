@@ -4,7 +4,15 @@ import PropTypes from 'prop-types';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import ReactDOM from 'react-dom';
 import {injectIntl, intlShape} from 'react-intl';
-import {AudioWaveform, Blocks as BlocksIcon, FileCode2, Image as ImageIcon, Search} from 'lucide-react';
+import {
+    AudioWaveform,
+    Blocks as BlocksIcon,
+    BookOpen,
+    FileCode2,
+    FileText,
+    Image as ImageIcon,
+    Search
+} from 'lucide-react';
 
 import {matchFiles} from '../../lib/code-mode/files.js';
 import messages from './messages.js';
@@ -14,7 +22,9 @@ const KIND_ICONS = {
     script: FileCode2,
     costume: ImageIcon,
     sound: AudioWaveform,
-    extension: BlocksIcon
+    extension: BlocksIcon,
+    reference: BookOpen,
+    customAsset: FileText
 };
 
 const MAX_RESULTS = 200;

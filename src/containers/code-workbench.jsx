@@ -1,5 +1,6 @@
 /* eslint-disable react/jsx-no-bind */
 import bindAll from 'lodash.bindall';
+import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {injectIntl, intlShape} from 'react-intl';
@@ -11,6 +12,7 @@ import {
     BookOpen,
     Check,
     CircleAlert,
+    Columns2,
     Copy,
     Crosshair,
     Download,
@@ -30,6 +32,7 @@ import {
     Pencil,
     Redo2,
     ReplaceAll,
+    Rows2,
     Save,
     Search,
     SearchCode,
@@ -44,12 +47,13 @@ import {
 } from 'lucide-react';
 
 import Explorer, {DRAG_TYPE} from '../components/code-mode/explorer.jsx';
-import EditorTabs from '../components/code-mode/editor-tabs.jsx';
+import EditorTabs, {hasTabDrag} from '../components/code-mode/editor-tabs.jsx';
 import TextTab from '../components/code-mode/text-tab.jsx';
 import AssetTab from '../components/code-mode/asset-tab.jsx';
-import Panel from '../components/code-mode/panel.jsx';
+import Panel, {ReferenceView} from '../components/code-mode/panel.jsx';
 import QuickOpen from '../components/code-mode/quick-open.jsx';
 import ContextMenu from '../components/code-mode/context-menu.jsx';
+import AssetWorkbench from './code-workbench-assets.jsx';
 import EditorPane from '../components/extension-dev/editor-pane.jsx';
 import NewPane from '../components/extension-dev/new-pane.jsx';
 import RemovePane from '../components/extension-dev/remove-pane.jsx';
@@ -109,7 +113,13 @@ import {
     fractchHover,
     procedureRenameChanges
 } from '../lib/code-mode/intelligence.js';
-import {broadcastReceivers, extensionForSymbol, procedureDefinition, symbolAt} from '../lib/code-mode/definition.js';
+import {
+    assetAt,
+    broadcastReceivers,
+    extensionForSymbol,
+    procedureDefinition,
+    symbolAt
+} from '../lib/code-mode/definition.js';
 import {referenceGroups} from '../lib/code-mode/extension-completion.js';
 import {
     SCRIPT_FILE,
@@ -122,20 +132,36 @@ import {
 import {
     assetTab,
     closeOtherTabs,
-    closeTab,
+    customAssetTab,
     cycleTab,
-    emptyTabs,
     extensionTab,
     loadSession,
     newExtensionTab,
-    openTab,
     pinTab,
     pruneTabs,
+    referenceTab,
     removeExtensionsTab,
     replaceTab,
     saveSession,
     scriptTab
 } from '../lib/code-mode/tabs.js';
+import {
+    MAX_GROUPS,
+    activeTabOf,
+    closeEverywhere,
+    closeInGroup,
+    focusGroup,
+    focusedGroup,
+    groupById,
+    mapGroups,
+    mountsAssetEditor,
+    moveTab,
+    openInLayout,
+    setGroupTabs,
+    setRatio,
+    singleLayout,
+    splitTab
+} from '../lib/code-mode/editor-groups.js';
 import {
     downloadSource,
     fileNameOf,
@@ -179,6 +205,12 @@ const SOUND_ACCEPT = '.wav, .mp3, .ogg, .oga, .flac, .m4a, .aac';
 const SPRITE_ACCEPT = '.sprite3, .sprite2, .sprite, .svg, .png, .bmp, .jpg, .jpeg, .gif';
 
 const EMPTY = [];
+const EDGE_ZONE = 0.65;
+
+const activeId = layout => {
+    const group = focusedGroup(layout);
+    return `${group.id}:${group.activeKey}`;
+};
 
 const readPreference = (key, fallback) => {
     try {
@@ -260,6 +292,10 @@ class CodeWorkbench extends React.Component {
             'handleExplorerResizeKeyDown',
             'handleExplorerSelect',
             'handleExplorerToggle',
+            'handleGroupResizeKeyDown',
+            'handleGroupResizePointerDown',
+            'handleOpenReferenceTab',
+            'handleTabDragEnd',
             'handleFileInputChange',
             'handlePanelJump',
             'handlePanelOpenFile',
@@ -302,17 +338,19 @@ class CodeWorkbench extends React.Component {
             'handleOpenQuickOpen',
             'canDrop',
             'setFileInput',
-            'setRoot',
-            'setTextTab'
+            'setGroupsNode',
+            'setRoot'
         ]);
         const projectKey = projectKeyOf(props.vm);
         const session = loadSession(projectKey);
         this.state = {
             projectKey,
-            tabsState: session ? session.tabsState : emptyTabs(),
+            layout: session ? session.layout : singleLayout(),
             expanded: session ? session.expanded : {},
             selectedKey: null,
             textsVersion: 0,
+            tabDrag: null,
+            dropZone: null,
             overlays: {},
             autoApply: readPreference(AUTO_APPLY_KEY, false) === true,
             focus: null,
@@ -382,12 +420,17 @@ class CodeWorkbench extends React.Component {
         this.dragSource = null;
         this.lastAssetEditorKey = null;
         this.root = null;
-        this.textTab = null;
+        this.groupsNode = null;
+        this.groupNodes = {};
+        this.groupRefs = new Map();
+        this.tabDrag = null;
         this.fileInput = null;
+        this.assets = new AssetWorkbench(this);
     }
     componentDidMount () {
         const {vm} = this.props;
         this.uninstallKeyScope = installKeyScope(document);
+        this.assets.attach();
         vm.runtime.on('PROJECT_CHANGED', this.handleProjectChanged);
         vm.runtime.on('PROJECT_LOADED', this.handleProjectLoaded);
         vm.runtime.on('EXTENSION_RELOADED', this.handleRefreshEntries);
@@ -423,15 +466,20 @@ class CodeWorkbench extends React.Component {
                 return true;
             },
             closeTab: () => {
-                if (this.state.tabsState.activeKey) this.handleCloseTab(this.state.tabsState.activeKey);
+                const group = this.focusedTabs();
+                if (group.activeKey) this.handleCloseTab(group.activeKey, group.id);
                 return true;
             },
             nextTab: () => {
-                this.updateTabs(cycleTab(this.state.tabsState, 1));
+                this.updateTabs(cycleTab(this.focusedTabs(), 1));
                 return true;
             },
             previousTab: () => {
-                this.updateTabs(cycleTab(this.state.tabsState, -1));
+                this.updateTabs(cycleTab(this.focusedTabs(), -1));
+                return true;
+            },
+            openReferenceTab: () => {
+                this.handleOpenReferenceTab();
                 return true;
             }
         });
@@ -456,14 +504,13 @@ class CodeWorkbench extends React.Component {
         }
         if (this.props.sprites !== prevProps.sprites || this.props.stage !== prevProps.stage ||
             this.state.entries !== prevState.entries) {
-            const pruned = pruneTabs(this.state.tabsState,
-                tab => resolveTab(this.props.vm, tab, this.state.entries).exists);
-            if (pruned !== this.state.tabsState) this.updateTabs(pruned);
+            this.updateLayout(layout => mapGroups(layout, group => pruneTabs(group,
+                tab => resolveTab(this.props.vm, tab, this.state.entries).exists)));
         }
-        if (this.state.tabsState !== prevState.tabsState || this.state.expanded !== prevState.expanded) {
-            saveSession(this.state.projectKey, {tabsState: this.state.tabsState, expanded: this.state.expanded});
+        if (this.state.layout !== prevState.layout || this.state.expanded !== prevState.expanded) {
+            saveSession(this.state.projectKey, {layout: this.state.layout, expanded: this.state.expanded});
         }
-        if (this.state.tabsState.activeKey !== prevState.tabsState.activeKey) {
+        if (activeId(this.state.layout) !== activeId(prevState.layout)) {
             this.afterTabsChange({focus: true});
         }
         if (this.state.textsVersion !== prevState.textsVersion) this.applyPendingFocus();
@@ -473,6 +520,7 @@ class CodeWorkbench extends React.Component {
     componentWillUnmount () {
         const {vm} = this.props;
         clearTimeout(this.regenerateTimer);
+        this.assets.detach();
         vm.runtime.off('PROJECT_CHANGED', this.handleProjectChanged);
         vm.runtime.off('PROJECT_LOADED', this.handleProjectLoaded);
         vm.runtime.off('EXTENSION_RELOADED', this.handleRefreshEntries);
@@ -495,20 +543,40 @@ class CodeWorkbench extends React.Component {
             applyAndSave: () => executeShortcut({actionType: 'callback', action: 'saveSmart'}),
             closeTab: off,
             nextTab: off,
-            previousTab: off
+            previousTab: off,
+            openReferenceTab: off
         });
         setCursorBlockProvider(null);
         if (this.resizeObserver) this.resizeObserver.disconnect();
         if (this.uninstallKeyScope) this.uninstallKeyScope();
         this.unmounted = true;
         if (this.lastAssetEditorKey !== null) this.props.dispatch(assetEditorActivated(null));
-        saveSession(this.state.projectKey, {tabsState: this.state.tabsState, expanded: this.state.expanded});
+        saveSession(this.state.projectKey, {layout: this.state.layout, expanded: this.state.expanded});
     }
     setRoot (root) {
         this.root = root;
     }
-    setTextTab (node) {
-        this.textTab = node;
+    setGroupsNode (node) {
+        this.groupsNode = node;
+    }
+    groupAreaRef (id) {
+        if (!this.groupRefs.has(id)) {
+            this.groupRefs.set(id, node => {
+                if (node) this.groupNodes[id] = node;
+                else delete this.groupNodes[id];
+            });
+        }
+        return this.groupRefs.get(id);
+    }
+    groupView (id) {
+        const node = this.groupNodes[id];
+        const host = node && node.querySelector('.cm-editor');
+        return host ? EditorView.findFromDOM(host) : null;
+    }
+    orderedGroups () {
+        const {layout} = this.state;
+        const focused = focusedGroup(layout);
+        return [focused].concat(layout.groups.filter(group => group !== focused));
     }
     setFileInput (input) {
         this.fileInput = input;
@@ -573,10 +641,10 @@ class CodeWorkbench extends React.Component {
         return this.textExtensions.get(targetId);
     }
     syncActiveView () {
-        const tab = this.activeTab();
-        if (!tab || tab.kind !== 'script') return;
-        const state = this.textState(tab.targetId);
-        this.pushToView(this.activeEditorView(), state);
+        for (const group of this.state.layout.groups) {
+            const tab = activeTabOf(group);
+            if (tab && tab.kind === 'script') this.pushToView(this.groupView(group.id), this.textState(tab.targetId));
+        }
     }
     pushToView (view, state) {
         if (!view || !state || state.status !== 'ready') return;
@@ -586,14 +654,15 @@ class CodeWorkbench extends React.Component {
             setUnits(view, this.cmUnits(state));
         }
     }
-    handleEditorReady (view) {
-        const tab = this.activeTab();
+    handleEditorReady (tab, view) {
         if (tab && tab.kind === 'script') this.pushToView(view, this.textState(tab.targetId));
     }
-    handleTextChange (text, changes) {
-        const tab = this.activeTab();
+    handleTextChange (groupId, tab, text, changes) {
         if (!tab || tab.kind !== 'script') return;
-        if (tab.key === this.state.tabsState.previewKey) this.updateTabs(pinTab(this.state.tabsState, tab.key));
+        const group = groupById(this.state.layout, groupId);
+        if (group && tab.key === group.previewKey) {
+            this.updateLayout(layout => setGroupTabs(layout, groupId, pinTab(groupById(layout, groupId), tab.key)));
+        }
         this.controller.edit(tab.targetId, text, changes);
     }
     save () {
@@ -608,6 +677,7 @@ class CodeWorkbench extends React.Component {
     }
     applyActive ({save}) {
         const tab = this.activeTab();
+        if (tab && tab.kind === 'customAsset') return this.assets.apply(tab, {save});
         if (tab && tab.kind === 'extension') {
             const apply = this.extensionApply.current;
             if (!apply || this.props.collaborating || getDraft(tab.extensionId) === null) {
@@ -656,6 +726,7 @@ class CodeWorkbench extends React.Component {
         showBlock({dispatch: this.props.dispatch, vm: this.props.vm, targetId: tab.targetId, blockId: topId});
     }
     resolveAssetName (item) {
+        if (item && item.type === 'assetFile') return item.assetName || null;
         if (!item || (item.type !== 'costume' && item.type !== 'sound')) return null;
         const target = this.props.vm.runtime.getTargetById(item.targetId);
         const found = target && itemsOf(target, item.type).find(entry => itemIdFor(entry) === item.itemId);
@@ -683,7 +754,7 @@ class CodeWorkbench extends React.Component {
         this.textExtensions.clear();
         this.setState({
             projectKey,
-            tabsState: session ? session.tabsState : emptyTabs(),
+            layout: session ? session.layout : singleLayout(),
             expanded: session ? session.expanded : {},
             overlays: {},
             selectedKey: null,
@@ -717,12 +788,22 @@ class CodeWorkbench extends React.Component {
     isDrawer () {
         return typeof this.state.width === 'number' && this.state.width < DRAWER_WIDTH;
     }
+    focusedTabs () {
+        return focusedGroup(this.state.layout);
+    }
     activeTab () {
-        const {tabs, activeKey} = this.state.tabsState;
-        return tabs.find(tab => tab.key === activeKey) || null;
+        return activeTabOf(this.focusedTabs());
+    }
+    updateLayout (fn) {
+        this.setState(state => {
+            const layout = fn(state.layout);
+            return layout === state.layout ? null : {layout};
+        });
     }
     updateTabs (tabsState) {
-        if (tabsState !== this.state.tabsState) this.setState({tabsState});
+        const {layout} = this.state;
+        const next = setGroupTabs(layout, layout.focused, tabsState);
+        if (next !== layout) this.setState({layout: next});
     }
     afterTabsChange ({focus}) {
         const tab = this.activeTab();
@@ -772,11 +853,16 @@ class CodeWorkbench extends React.Component {
         this.setState({focus: {targetId: pending.targetId, from: range.from, to: range.from, at: Date.now()}});
     }
     syncAssetEditor () {
-        const tab = this.activeTab();
         let editor = null;
-        if (tab && (tab.kind === 'costume' || tab.kind === 'sound') && tab.targetId === this.props.editingTarget) {
+        for (const group of this.orderedGroups()) {
+            const tab = activeTabOf(group);
+            if (!tab || !mountsAssetEditor(this.state.layout, group.id) ||
+                tab.targetId !== this.props.editingTarget) continue;
             const resolved = resolveTab(this.props.vm, tab, this.state.entries);
-            if (resolved.exists) editor = {kind: tab.kind, targetId: tab.targetId, index: resolved.index};
+            if (resolved.exists) {
+                editor = {kind: tab.kind, targetId: tab.targetId, index: resolved.index};
+                break;
+            }
         }
         const key = editor ? `${editor.kind}:${editor.targetId}:${editor.index}` : null;
         if (key === this.lastAssetEditorKey) return;
@@ -828,14 +914,14 @@ class CodeWorkbench extends React.Component {
             return;
         case 'newExtension': {
             const tab = newExtensionTab(reveal.source);
-            this.setState(state => ({tabsState: replaceTab(state.tabsState, tab)}),
+            this.setState(state => ({layout: mapGroups(state.layout, group => replaceTab(group, tab))}),
                 () => this.openFile(tab, {preview: false}));
             return;
         }
         case 'removeExtensions': {
             if (!reveal.ids || !reveal.ids.length) return;
             const tab = removeExtensionsTab(reveal.ids);
-            this.setState(state => ({tabsState: replaceTab(state.tabsState, tab)}),
+            this.setState(state => ({layout: mapGroups(state.layout, group => replaceTab(group, tab))}),
                 () => this.openFile(tab, {preview: false}));
             return;
         }
@@ -873,43 +959,153 @@ class CodeWorkbench extends React.Component {
     openFile (tab, {preview}) {
         const resolved = resolveTab(this.props.vm, tab, this.state.entries);
         if (!resolved.exists) return;
-        const next = openTab(this.state.tabsState, tab, {preview});
-        if (next.activeKey === this.state.tabsState.activeKey) {
-            this.focusTarget(tab);
-            if (next !== this.state.tabsState) this.setState({tabsState: next});
-        } else {
-            this.setState({tabsState: next});
-        }
+        const layout = this.state.layout;
+        const next = openInLayout(layout, tab, {preview});
+        if (activeId(next) === activeId(layout)) this.focusTarget(tab);
+        if (next !== layout) this.setState({layout: next});
         if (this.isDrawer()) this.setState({drawerOpen: false});
     }
-    handleActivateTab (key) {
-        this.updateTabs({...this.state.tabsState, activeKey: key});
+    updateGroup (groupId, fn) {
+        this.updateLayout(layout => {
+            const group = groupById(layout, groupId);
+            return group ? setGroupTabs(focusGroup(layout, groupId), groupId, fn(group)) : layout;
+        });
     }
-    handlePinTab (key) {
-        this.updateTabs(pinTab(this.state.tabsState, key));
+    handleFocusGroup (groupId) {
+        if (this.state.layout.focused !== groupId) this.updateLayout(layout => focusGroup(layout, groupId));
     }
-    handleCloseTab (key) {
-        this.updateTabs(closeTab(this.state.tabsState, key));
+    handleActivateTab (key, groupId = this.state.layout.focused) {
+        this.updateGroup(groupId, group => ({...group, activeKey: key}));
     }
-    handleTabContextMenu (key, event) {
+    handlePinTab (key, groupId = this.state.layout.focused) {
+        this.updateGroup(groupId, group => pinTab(group, key));
+    }
+    handleCloseTab (key, groupId) {
+        this.updateLayout(layout => {
+            const focused = focusedGroup(layout);
+            const owner = groupId ? groupById(layout, groupId) :
+                [focused].concat(layout.groups).find(group => group.tabs.some(tab => tab.key === key));
+            return owner ? closeInGroup(layout, owner.id, key) : layout;
+        });
+    }
+    handleOpenReferenceTab () {
+        this.openFile(referenceTab(), {preview: false});
+    }
+    handleTabContextMenu (groupId, key, event) {
         const {intl} = this.props;
         const shortcutHint = id => formatShortcutDisplay(getShortcutKey(id, this.props.customShortcuts)) || null;
+        const split = this.state.layout.groups.length >= MAX_GROUPS;
         this.openMenu(event, [
             {label: intl.formatMessage(messages.close),
                 icon: X,
                 hint: shortcutHint('closeTab'),
-                onClick: () => this.handleCloseTab(key)},
+                onClick: () => this.handleCloseTab(key, groupId)},
             {label: intl.formatMessage(messages.closeOthers),
-                onClick: () => this.updateTabs(
-                    closeOtherTabs(this.state.tabsState, key))},
+                onClick: () => this.updateGroup(groupId, group => closeOtherTabs(group, key))},
+            split ? {label: intl.formatMessage(messages.openInOtherGroup),
+                icon: Columns2,
+                separator: true,
+                onClick: () => this.updateLayout(layout => splitTab(layout, groupId, key, layout.direction,
+                    {copy: true}))} :
+                {label: intl.formatMessage(messages.splitRight),
+                    icon: Columns2,
+                    separator: true,
+                    onClick: () => this.updateLayout(layout => splitTab(layout, groupId, key, 'row', {copy: true}))},
+            split ? {label: intl.formatMessage(messages.moveToOtherGroup),
+                onClick: () => this.updateLayout(layout => splitTab(layout, groupId, key, layout.direction))} :
+                {label: intl.formatMessage(messages.splitDown),
+                    icon: Rows2,
+                    onClick: () => this.updateLayout(layout => splitTab(layout, groupId, key, 'column',
+                        {copy: true}))},
             {label: intl.formatMessage(messages.nextTab),
                 separator: true,
                 hint: shortcutHint('nextTab'),
-                onClick: () => this.updateTabs(cycleTab({...this.state.tabsState, activeKey: key}, 1))},
+                onClick: () => this.updateGroup(groupId, group => cycleTab({...group, activeKey: key}, 1))},
             {label: intl.formatMessage(messages.previousTab),
                 hint: shortcutHint('previousTab'),
-                onClick: () => this.updateTabs(cycleTab({...this.state.tabsState, activeKey: key}, -1))}
+                onClick: () => this.updateGroup(groupId, group => cycleTab({...group, activeKey: key}, -1))}
         ]);
+    }
+    handleTabDragStart (groupId, key) {
+        this.tabDrag = {groupId, key};
+        setTimeout(() => {
+            if (this.tabDrag && !this.unmounted) this.setState({tabDrag: this.tabDrag});
+        }, 0);
+    }
+    handleTabDragEnd () {
+        this.tabDrag = null;
+        if (this.state.tabDrag || this.state.dropZone) this.setState({tabDrag: null, dropZone: null});
+    }
+    handleTabDrop (groupId, index) {
+        const drag = this.tabDrag;
+        this.handleTabDragEnd();
+        if (drag) this.updateLayout(layout => moveTab(layout, drag.groupId, drag.key, groupId, index));
+    }
+    dropZoneFor (groupId, event) {
+        const drag = this.tabDrag;
+        const {layout} = this.state;
+        if (!drag) return null;
+        if (layout.groups.length >= MAX_GROUPS) return drag.groupId === groupId ? null : 'center';
+        const source = groupById(layout, drag.groupId);
+        if (!source || source.tabs.length < 2) return null;
+        const rect = event.currentTarget.getBoundingClientRect();
+        if (!rect.width || !rect.height) return null;
+        const x = (this.props.isRtl ? rect.right - event.clientX : event.clientX - rect.left) / rect.width;
+        const y = (event.clientY - rect.top) / rect.height;
+        if (x > EDGE_ZONE && x >= y) return 'end';
+        if (y > EDGE_ZONE) return 'bottom';
+        return null;
+    }
+    handleAreaDragOver (groupId, event) {
+        if (!hasTabDrag(event)) return;
+        event.preventDefault();
+        const zone = this.dropZoneFor(groupId, event);
+        event.dataTransfer.dropEffect = zone ? 'move' : 'none';
+        const current = this.state.dropZone;
+        if (zone ? !current || current.groupId !== groupId || current.zone !== zone : current) {
+            this.setState({dropZone: zone ? {groupId, zone} : null});
+        }
+    }
+    handleAreaDrop (groupId, event) {
+        if (!hasTabDrag(event)) return;
+        event.preventDefault();
+        const zone = this.dropZoneFor(groupId, event);
+        const drag = this.tabDrag;
+        this.handleTabDragEnd();
+        if (!drag || !zone) return;
+        this.updateLayout(layout => (zone === 'center' ?
+            moveTab(layout, drag.groupId, drag.key, groupId) :
+            splitTab(layout, drag.groupId, drag.key, zone === 'end' ? 'row' : 'column')));
+    }
+    handleGroupResizePointerDown (event) {
+        if (event.button !== 0 || !this.groupsNode) return;
+        event.preventDefault();
+        const rect = this.groupsNode.getBoundingClientRect();
+        const row = this.state.layout.direction === 'row';
+        const rtl = this.props.isRtl;
+        const move = moveEvent => {
+            const size = row ? rect.width : rect.height;
+            if (!size) return;
+            let offset = moveEvent.clientY - rect.top;
+            if (row) offset = rtl ? rect.right - moveEvent.clientX : moveEvent.clientX - rect.left;
+            this.updateLayout(layout => setRatio(layout, offset / size));
+        };
+        const up = () => {
+            window.removeEventListener('pointermove', move);
+            window.removeEventListener('pointerup', up);
+        };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
+    }
+    handleGroupResizeKeyDown (event) {
+        const row = this.state.layout.direction === 'row';
+        const keys = row ? ['ArrowLeft', 'ArrowRight'] : ['ArrowUp', 'ArrowDown'];
+        if (!keys.includes(event.key)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        let step = event.key === keys[1] ? 0.05 : -0.05;
+        if (row && this.props.isRtl) step = -step;
+        this.updateLayout(layout => setRatio(layout, layout.ratio + step));
     }
     openMenu (event, items) {
         this.setState({menu: {x: event.clientX, y: event.clientY, items: items.filter(Boolean)}});
@@ -1093,9 +1289,11 @@ class CodeWorkbench extends React.Component {
                 });
             }
         }
+        rows.push(...this.assets.rows());
         return rows;
     }
     rowTab (row) {
+        if (row.type === 'assetFile') return customAssetTab(row.assetName);
         if (row.type === 'script') return scriptTab(row.targetId);
         if (row.type === 'costume' || row.type === 'sound') return assetTab(row.type, row.targetId, row.itemId);
         if (row.type === 'extension') return {key: row.key, kind: 'extension', extensionId: row.extensionId};
@@ -1122,6 +1320,10 @@ class CodeWorkbench extends React.Component {
         this.setState({renamingKey: null});
         const name = String(value || '').trim();
         if (!name || name === row.label) return;
+        if (this.assets.owns(row)) {
+            this.assets.rename(row, name);
+            return;
+        }
         const {vm} = this.props;
         try {
             if (row.type === 'target') {
@@ -1145,6 +1347,10 @@ class CodeWorkbench extends React.Component {
     }
     handleExplorerDelete (row) {
         const {dispatch, vm} = this.props;
+        if (this.assets.owns(row)) {
+            this.assets.remove(row);
+            return;
+        }
         if (row.type === 'target' && !row.isStage) {
             try {
                 const restoreFun = vm.deleteSprite(row.targetId);
@@ -1234,6 +1440,12 @@ class CodeWorkbench extends React.Component {
         const request = this.pendingUpload;
         this.pendingUpload = null;
         if (!request) return;
+        if (request.kind === 'customAsset') {
+            const files = Array.from(event.target.files || []);
+            event.target.value = null;
+            this.assets.addFiles(files, request.folder);
+            return;
+        }
         this.uploadFiles(event.target, request.kind, request.targetId);
     }
     uploadFiles (files, kind, targetId) {
@@ -1322,6 +1534,11 @@ class CodeWorkbench extends React.Component {
         this.openMenu(event, this.rootItems());
     }
     handleExplorerContextMenu (row, event) {
+        const assetItems = this.assets.contextMenu(row);
+        if (assetItems) {
+            this.openMenu(event, assetItems);
+            return;
+        }
         const {dispatch, intl, vm} = this.props;
         const locked = this.props.collaborating;
         const m = descriptor => intl.formatMessage(descriptor);
@@ -1421,7 +1638,14 @@ class CodeWorkbench extends React.Component {
             event.preventDefault();
             return;
         }
-        this.dragSource = {type: row.type, targetId: row.targetId, itemId: row.itemId, extensionId: row.extensionId};
+        this.dragSource = {
+            type: row.type,
+            targetId: row.targetId,
+            itemId: row.itemId,
+            extensionId: row.extensionId,
+            assetName: row.assetName,
+            folderPath: row.folderPath
+        };
         event.dataTransfer.effectAllowed = 'copyMove';
         event.dataTransfer.setData(DRAG_TYPE, JSON.stringify(this.dragSource));
         event.dataTransfer.setData('text/plain', row.label);
@@ -1435,6 +1659,7 @@ class CodeWorkbench extends React.Component {
         if (!types.includes(DRAG_TYPE) || !this.dragSource) return false;
         const source = this.dragSource;
         if (!row) return false;
+        if (this.assets.owns(source)) return this.assets.canDrop(row, source);
         if (source.type === 'extension') return row.type === 'extension';
         if (row.type === 'target' || row.type === 'script') return row.targetId !== source.targetId;
         if (row.type === 'folder') return row.folderKind === source.type;
@@ -1455,6 +1680,10 @@ class CodeWorkbench extends React.Component {
     dropInternal (source, row) {
         const {vm} = this.props;
         if (!row) return;
+        if (this.assets.owns(source)) {
+            this.assets.move(source, row);
+            return;
+        }
         if (source.type === 'extension') {
             if (row.type !== 'extension' || row.extensionId === source.extensionId) return;
             const loaded = this.state.entries.filter(entry => entry.status === 'loaded').map(entry => entry.id);
@@ -1489,6 +1718,10 @@ class CodeWorkbench extends React.Component {
     }
     dropFiles (files, row) {
         const {dispatch, vm} = this.props;
+        if (this.assets.owns(row)) {
+            this.assets.addFiles(files, this.assets.folderOfRow(row));
+            return;
+        }
         const fail = () => dispatch(showStandardAlert('assetImportError'));
         const byKind = {image: [], sound: [], sprite: [], extension: []};
         let unsupported = false;
@@ -1551,8 +1784,7 @@ class CodeWorkbench extends React.Component {
             });
     }
     activeEditorView () {
-        const host = this.textTab && this.textTab.querySelector('.cm-editor');
-        return host ? EditorView.findFromDOM(host) : null;
+        return this.groupView(this.state.layout.focused);
     }
     getCursorBlock () {
         const tab = this.activeTab();
@@ -1587,7 +1819,8 @@ class CodeWorkbench extends React.Component {
                 label: intl.formatMessage(messages.goToDefinition),
                 icon: Navigation,
                 hint: 'F12',
-                disabled: offset === null || !symbolAt(view.state.doc.toString(), offset),
+                disabled: offset === null || !(assetAt(view.state.doc.toString(), offset) ||
+                    symbolAt(view.state.doc.toString(), offset)),
                 onClick: () => this.handleGoToDefinition(offset)
             },
             {
@@ -1867,8 +2100,11 @@ class CodeWorkbench extends React.Component {
         this.props.dispatch(openHelp('ext-debugging'));
     }
     handleInsertReference (item) {
-        const tab = this.activeTab();
-        const view = tab && tab.kind === 'script' ? this.activeEditorView() : null;
+        const group = this.orderedGroups().find(each => {
+            const tab = activeTabOf(each);
+            return tab && tab.kind === 'script';
+        });
+        const view = group ? this.groupView(group.id) : null;
         if (!view || view.state.readOnly) return;
         const {from, to} = view.state.selection.main;
         view.dispatch({
@@ -1912,18 +2148,19 @@ class CodeWorkbench extends React.Component {
         });
     }
     pollRunning () {
-        const tab = this.activeTab();
-        if (!tab || tab.kind !== 'script') return;
-        const view = this.activeEditorView();
-        if (!view) return;
-        const running = [];
-        for (const thread of this.props.vm.runtime.threads) {
-            if (thread.isKilled || thread.status === 4 || thread.updateMonitor || !thread.target) continue;
-            const target = thread.target.sprite && thread.target.sprite.clones[0];
-            if ((target || thread.target).id === tab.targetId) running.push(thread.topBlock);
+        for (const group of this.state.layout.groups) {
+            const tab = activeTabOf(group);
+            const view = tab && tab.kind === 'script' ? this.groupView(group.id) : null;
+            if (!view) continue;
+            const running = [];
+            for (const thread of this.props.vm.runtime.threads) {
+                if (thread.isKilled || thread.status === 4 || thread.updateMonitor || !thread.target) continue;
+                const target = thread.target.sprite && thread.target.sprite.clones[0];
+                if ((target || thread.target).id === tab.targetId) running.push(thread.topBlock);
+            }
+            setRunning(view, running);
+            this.debug.syncView(view, tab.targetId);
         }
-        setRunning(view, running);
-        this.debug.syncView(view, tab.targetId);
     }
     showMessage (targetId, text) {
         this.controller.setMessage(targetId, {kind: 'info', text});
@@ -1935,6 +2172,8 @@ class CodeWorkbench extends React.Component {
         const {intl, vm} = this.props;
         const at = offset === null ? view.state.selection.main.head : offset;
         const doc = view.state.doc.toString();
+        const asset = assetAt(doc, at);
+        if (asset) return this.assets.goTo(asset, tab.targetId);
         const symbol = symbolAt(doc, at);
         if (!symbol) return false;
         const name = symbol.kind === 'extension' ? `${symbol.id}.${symbol.member}` : symbol.name;
@@ -2243,20 +2482,22 @@ class CodeWorkbench extends React.Component {
         }
         return null;
     }
-    tabDescriptors () {
+    tabDescriptors (group) {
         const {vm} = this.props;
-        return this.state.tabsState.tabs.map(tab => {
+        return group.tabs.map(tab => {
             const resolved = resolveTab(vm, tab, this.state.entries);
             let title = resolved.title || '';
             if (tab.kind === 'newExtension') title = this.props.intl.formatMessage(messages.newExtensionTab);
             if (tab.kind === 'removeExtensions') title = this.props.intl.formatMessage(messages.removeExtensionsTab);
+            if (tab.kind === 'reference') title = this.props.intl.formatMessage(messages.reference);
             return {
                 key: tab.key,
                 kind: tab.kind,
                 title,
                 detail: resolved.detail || null,
                 dirty: (tab.kind === 'script' && isDirty(this.textState(tab.targetId))) ||
-                    (tab.kind === 'extension' && getDraft(tab.extensionId) !== null)
+                    (tab.kind === 'extension' && getDraft(tab.extensionId) !== null) ||
+                    (tab.kind === 'customAsset' && this.assets.isDirty(tab))
             };
         });
     }
@@ -2266,7 +2507,7 @@ class CodeWorkbench extends React.Component {
         return createExtensionFromSource({vm, dispatch, intl, messages: extensionMessages, source, unsandboxed})
             .then(ids => {
                 const entries = getEntries(vm);
-                this.setState(state => ({entries, tabsState: closeTab(state.tabsState, tab.key)}), () => {
+                this.setState(state => ({entries, layout: closeEverywhere(state.layout, tab.key)}), () => {
                     if (ids[0]) this.openFile(extensionTab(ids[0]), {preview: false});
                 });
             });
@@ -2282,10 +2523,10 @@ class CodeWorkbench extends React.Component {
             ids,
             projectTitle: this.props.projectTitle
         }).then(() => {
-            this.setState(state => ({entries: getEntries(vm), tabsState: closeTab(state.tabsState, tab.key)}));
+            this.setState(state => ({entries: getEntries(vm), layout: closeEverywhere(state.layout, tab.key)}));
         });
     }
-    renderExtensionTab (tab, entry) {
+    renderExtensionTab (tab, entry, focused) {
         const {devState, dispatch, vm} = this.props;
         const focus = this.state.extensionFocus;
         const stateKey = `${devState.generation}:${entry.id}`;
@@ -2293,14 +2534,13 @@ class CodeWorkbench extends React.Component {
             <div className={styles.extensionHost}>
                 <EditorPane
                     applyHint={formatShortcutDisplay(getShortcutKey('applyFile', this.props.customShortcuts))}
-                    applyRef={this.extensionApply}
+                    applyRef={focused ? this.extensionApply : null}
                     confirmImpact={this.confirmExtension}
-                    containerRef={this.setTextTab}
                     dark={this.props.dark}
                     dispatch={dispatch}
                     draftIdentity={this.controller.identity ? this.controller.identity() : null}
                     entry={entry}
-                    focus={focus && focus.extensionId === entry.id ? focus : null}
+                    focus={focused && focus && focus.extensionId === entry.id ? focus : null}
                     key={stateKey}
                     loadProblems={devState.loadProblems[entry.id] || EMPTY}
                     locked={this.props.collaborating}
@@ -2320,9 +2560,10 @@ class CodeWorkbench extends React.Component {
             </div>
         );
     }
-    renderEditor () {
+    renderEditor (group) {
         const {intl, vm} = this.props;
-        const tab = this.activeTab();
+        const tab = activeTabOf(group);
+        const focused = group.id === this.state.layout.focused;
         if (!tab) {
             const hint = formatShortcutDisplay(getShortcutKey('quickOpen', this.props.customShortcuts));
             return (
@@ -2362,28 +2603,40 @@ class CodeWorkbench extends React.Component {
                     applyDisabled={!this.canApplyState(state)}
                     applyHint={formatShortcutDisplay(getShortcutKey('applyFile', this.props.customShortcuts))}
                     completion={this.completion}
-                    containerRef={this.setTextTab}
                     dark={this.props.dark}
                     diagnostics={(state && state.diagnostics) || EMPTY}
                     extensions={this.extensionsFor(tab.targetId)}
-                    focus={focus && focus.targetId === tab.targetId ? focus : null}
+                    focus={focused && focus && focus.targetId === tab.targetId ? focus : null}
                     key={tab.key}
                     keymap={this.textKeymap}
                     messages={this.textMessages(tab.targetId, state)}
                     overlay={this.textOverlay(tab.targetId, state)}
                     readOnly={!ready || this.props.collaborating || Boolean(state.draft)}
-                    tabKey={`${this.state.projectKey}:${tab.key}`}
+                    tabKey={`${this.state.projectKey}:${tab.key}${group.id === 'g0' ? '' : `:${group.id}`}`}
                     value={ready ? state.doc : ''}
                     onApply={this.handleApply}
-                    onChange={this.handleTextChange}
+                    onChange={(text, changes) => this.handleTextChange(group.id, tab, text, changes)}
                     onContextMenu={this.handleTextContextMenu}
-                    onReady={this.handleEditorReady}
+                    onReady={view => this.handleEditorReady(tab, view)}
                     onRunAll={this.handleRunAll}
                     onStop={this.handleStop}
                 />
             );
         }
-        if (tab.kind === 'extension') return this.renderExtensionTab(tab, resolved.entry);
+        if (tab.kind === 'extension') return this.renderExtensionTab(tab, resolved.entry, focused);
+        if (tab.kind === 'reference') {
+            return (
+                <div
+                    className={styles.referenceTab}
+                    data-mw-region="panel"
+                >
+                    <ReferenceView
+                        groups={referenceGroups(vm)}
+                        onInsert={this.handleInsertReference}
+                    />
+                </div>
+            );
+        }
         if (tab.kind === 'newExtension') {
             return (
                 <div className={styles.extensionHost}>
@@ -2413,26 +2666,122 @@ class CodeWorkbench extends React.Component {
                 </div>
             );
         }
+        if (tab.kind === 'customAsset') return this.assets.render(tab, resolved, group);
         return (
             <AssetTab
+                blocked={!mountsAssetEditor(this.state.layout, group.id)}
                 editingTargetId={this.props.editingTarget}
                 index={resolved.index}
                 ownerName={resolved.target.getName()}
                 soundSupported={Boolean(vm.runtime.audioEngine && SharedAudioContext())}
                 tab={tab}
-                onOpenToEdit={() => vm.setEditingTarget(tab.targetId)}
+                onOpenToEdit={() => {
+                    this.handleFocusGroup(group.id);
+                    if (tab.targetId !== this.props.editingTarget) vm.setEditingTarget(tab.targetId);
+                }}
             />
+        );
+    }
+    renderDropTarget (group) {
+        const zone = this.state.dropZone && this.state.dropZone.groupId === group.id ? this.state.dropZone.zone : null;
+        return (
+            <div
+                className={styles.dropCatcher}
+                onDragLeave={event => {
+                    if (event.currentTarget.contains(event.relatedTarget)) return;
+                    if (this.state.dropZone && this.state.dropZone.groupId === group.id) {
+                        this.setState({dropZone: null});
+                    }
+                }}
+                onDragOver={event => this.handleAreaDragOver(group.id, event)}
+                onDrop={event => this.handleAreaDrop(group.id, event)}
+            >
+                {zone ? (
+                    <div
+                        className={classNames(styles.dropZone, {
+                            [styles.dropZoneEnd]: zone === 'end',
+                            [styles.dropZoneBottom]: zone === 'bottom'
+                        })}
+                    />
+                ) : null}
+            </div>
+        );
+    }
+    renderGroups (explorerVisible) {
+        const {intl} = this.props;
+        const {layout} = this.state;
+        const split = layout.groups.length > 1;
+        const nodes = [];
+        layout.groups.forEach((group, index) => {
+            if (index) {
+                nodes.push(
+                    <div
+                        aria-label={intl.formatMessage(messages.resizeGroups)}
+                        aria-orientation={layout.direction === 'row' ? 'vertical' : 'horizontal'}
+                        className={layout.direction === 'row' ? styles.groupResizer : styles.groupResizerStacked}
+                        key="resizer"
+                        role="separator"
+                        tabIndex={0}
+                        onKeyDown={this.handleGroupResizeKeyDown}
+                        onPointerDown={this.handleGroupResizePointerDown}
+                    />
+                );
+            }
+            nodes.push(
+                <div
+                    className={styles.editorGroup}
+                    key={group.id}
+                    style={split ? {flex: `${index ? 1 - layout.ratio : layout.ratio} 1 0`} : null}
+                    onFocusCapture={() => this.handleFocusGroup(group.id)}
+                    onPointerDownCapture={() => this.handleFocusGroup(group.id)}
+                >
+                    <EditorTabs
+                        activeKey={group.activeKey}
+                        explorerHint={index ? null : formatShortcutDisplay(
+                            getShortcutKey('toggleExplorer', this.props.customShortcuts))}
+                        explorerOpen={explorerVisible}
+                        focused={!split || group.id === layout.focused}
+                        previewKey={group.previewKey}
+                        rtl={this.props.isRtl}
+                        tabs={this.tabDescriptors(group)}
+                        onActivate={key => this.handleActivateTab(key, group.id)}
+                        onClose={key => this.handleCloseTab(key, group.id)}
+                        onContextMenu={(key, event) => this.handleTabContextMenu(group.id, key, event)}
+                        onPin={key => this.handlePinTab(key, group.id)}
+                        onTabDragEnd={this.handleTabDragEnd}
+                        onTabDragStart={key => this.handleTabDragStart(group.id, key)}
+                        onTabDrop={at => this.handleTabDrop(group.id, at)}
+                        onToggleExplorer={index ? null : this.handleToggleExplorer}
+                    />
+                    <div
+                        className={styles.editorArea}
+                        ref={this.groupAreaRef(group.id)}
+                    >
+                        {this.renderEditor(group)}
+                        {this.state.tabDrag ? this.renderDropTarget(group) : null}
+                    </div>
+                </div>
+            );
+        });
+        return (
+            <div
+                className={classNames(styles.editorColumn, {
+                    [styles.editorColumnStacked]: split && layout.direction === 'column'
+                })}
+                ref={this.setGroupsNode}
+            >
+                {nodes}
+            </div>
         );
     }
     render () {
         const {intl} = this.props;
-        const {tabsState} = this.state;
         const drawer = this.isDrawer();
         const explorerVisible = drawer ? this.state.drawerOpen : this.state.explorerOpen;
         const rows = this.buildRows();
         const explorer = explorerVisible ? (
             <Explorer
-                activeKey={tabsState.activeKey}
+                activeKey={this.focusedTabs().activeKey}
                 canDrop={this.canDrop}
                 dropKey={this.state.dropKey}
                 renamingKey={this.state.renamingKey}
@@ -2488,24 +2837,7 @@ class CodeWorkbench extends React.Component {
                             ) : null}
                         </React.Fragment>
                     )}
-                    <div className={styles.editorColumn}>
-                        <EditorTabs
-                            activeKey={tabsState.activeKey}
-                            explorerHint={formatShortcutDisplay(
-                                getShortcutKey('toggleExplorer', this.props.customShortcuts))}
-                            explorerOpen={explorerVisible}
-                            previewKey={tabsState.previewKey}
-                            tabs={this.tabDescriptors()}
-                            onActivate={this.handleActivateTab}
-                            onClose={this.handleCloseTab}
-                            onContextMenu={this.handleTabContextMenu}
-                            onPin={this.handlePinTab}
-                            onToggleExplorer={this.handleToggleExplorer}
-                        />
-                        <div className={styles.editorArea}>
-                            {this.renderEditor()}
-                        </div>
-                    </div>
+                    {this.renderGroups(explorerVisible)}
                 </div>
                 <Panel
                     groups={this.problemGroups()}
@@ -2517,6 +2849,7 @@ class CodeWorkbench extends React.Component {
                     tab={this.state.panelTab}
                     onClearOutput={this.handleClearOutput}
                     onInsertReference={this.handleInsertReference}
+                    onOpenReferenceTab={this.handleOpenReferenceTab}
                     onJump={this.handlePanelJump}
                     onOpenHelp={this.handleOpenDebugHelp}
                     onOutputJump={this.handleOutputJump}
@@ -2535,7 +2868,12 @@ class CodeWorkbench extends React.Component {
                 />
                 {this.state.quickOpen ? (
                     <QuickOpen
-                        files={listFiles(this.props.vm, this.props.sprites, this.state.entries)}
+                        files={listFiles(this.props.vm, this.props.sprites, this.state.entries).concat([{
+                            tab: referenceTab(),
+                            title: intl.formatMessage(messages.reference),
+                            detail: null,
+                            kind: 'reference'
+                        }])}
                         onClose={this.handleCloseQuickOpen}
                         onPick={this.handlePickQuickOpen}
                     />

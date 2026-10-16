@@ -329,6 +329,16 @@ export const getDefaultShortcuts = () => [
         label: 'Quick Open'
     },
     {
+        id: 'openReferenceTab',
+        key: '',
+        defaultKey: '',
+        category: SHORTCUT_CATEGORIES.EDITOR_NAVIGATION,
+        actionType: 'callback',
+        action: 'openReferenceTab',
+        params: [],
+        label: 'Open Block Reference'
+    },
+    {
         id: 'applyFile',
         key: 'Ctrl+Enter',
         defaultKey: 'Ctrl+Enter',

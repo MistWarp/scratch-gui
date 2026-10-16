@@ -16,6 +16,7 @@ import {
     Info,
     ListTree,
     Search,
+    SquareArrowOutUpRight,
     Terminal
 } from 'lucide-react';
 
@@ -165,6 +166,16 @@ const Panel = props => {
                     </button>
                 ) : null}
                 <span className={styles.flexSpacer} />
+                {open && tab === 'reference' ? (
+                    <button
+                        className={styles.panelAction}
+                        type="button"
+                        onClick={props.onOpenReferenceTab}
+                    >
+                        <SquareArrowOutUpRight size={13} />
+                        {intl.formatMessage(messages.openReferenceTab)}
+                    </button>
+                ) : null}
                 {open && tab === 'output' ? (
                     <React.Fragment>
                         <button
@@ -305,6 +316,7 @@ Panel.propTypes = {
     onInsertReference: PropTypes.func,
     onJump: PropTypes.func.isRequired,
     onOpenHelp: PropTypes.func,
+    onOpenReferenceTab: PropTypes.func,
     onOutputJump: PropTypes.func,
     onOpenFile: PropTypes.func.isRequired,
     onTab: PropTypes.func.isRequired,
@@ -317,7 +329,11 @@ Panel.defaultProps = {
     onClearOutput: () => {},
     onInsertReference: () => {},
     onOpenHelp: () => {},
+    onOpenReferenceTab: () => {},
     onOutputJump: () => {}
 };
 
+const ReferenceView = injectIntl(Reference);
+
+export {ReferenceView};
 export default injectIntl(Panel);

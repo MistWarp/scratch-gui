@@ -163,26 +163,30 @@ const TextTab = props => {
                         <Check size={14} />
                         <span>{applyLabel}</span>
                     </button>
-                    <button
-                        aria-label={runAllLabel}
-                        className={styles.stripButton}
-                        title={runAllLabel}
-                        type="button"
-                        onClick={props.onRunAll}
-                    >
-                        <Play size={14} />
-                        <span>{runAllLabel}</span>
-                    </button>
-                    <button
-                        aria-label={stopLabel}
-                        className={styles.stripButton}
-                        title={stopLabel}
-                        type="button"
-                        onClick={props.onStop}
-                    >
-                        <Square size={13} />
-                        <span>{stopLabel}</span>
-                    </button>
+                    {props.onRunAll ? (
+                        <button
+                            aria-label={runAllLabel}
+                            className={styles.stripButton}
+                            title={runAllLabel}
+                            type="button"
+                            onClick={props.onRunAll}
+                        >
+                            <Play size={14} />
+                            <span>{runAllLabel}</span>
+                        </button>
+                    ) : null}
+                    {props.onStop ? (
+                        <button
+                            aria-label={stopLabel}
+                            className={styles.stripButton}
+                            title={stopLabel}
+                            type="button"
+                            onClick={props.onStop}
+                        >
+                            <Square size={13} />
+                            <span>{stopLabel}</span>
+                        </button>
+                    ) : null}
                 </div>
             </div>
             <div
@@ -202,7 +206,7 @@ const TextTab = props => {
                         extensions={props.extensions}
                         focus={props.focus}
                         keymap={props.keymap}
-                        language="fractch"
+                        language={props.language}
                         readOnly={props.readOnly}
                         stateKey={props.tabKey}
                         value={props.value}
@@ -226,6 +230,7 @@ TextTab.propTypes = {
     focus: PropTypes.object,
     intl: intlShape,
     keymap: PropTypes.arrayOf(PropTypes.object),
+    language: PropTypes.string,
     messages: PropTypes.arrayOf(PropTypes.object).isRequired,
     overlay: PropTypes.object,
     readOnly: PropTypes.bool,
@@ -235,12 +240,13 @@ TextTab.propTypes = {
     onChange: PropTypes.func,
     onContextMenu: PropTypes.func,
     onReady: PropTypes.func,
-    onRunAll: PropTypes.func.isRequired,
-    onStop: PropTypes.func.isRequired
+    onRunAll: PropTypes.func,
+    onStop: PropTypes.func
 };
 
 TextTab.defaultProps = {
-    diagnostics: []
+    diagnostics: [],
+    language: 'fractch'
 };
 
 export default injectIntl(TextTab);

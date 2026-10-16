@@ -1,6 +1,9 @@
 const BROADCAST = /\b(?:when\s+broadcast|broadcastWait|broadcast)\s+("(?:[^"\\]|\\.)*"|[A-Za-z_]\w*)/g;
 const PROCEDURE = /@([A-Za-z_]\w*)/g;
 const MEMBER = /\b([A-Za-z][A-Za-z0-9]*)\.([A-Za-z_$][\w$]*)/g;
+const STRING = /"(?:[^"\\]|\\.)*"/g;
+const ASSET_CALL = '\\bassets\\.(menu|get|set|load|unload|check|delete|byte|infolder)\\(\\s*';
+const ASSET_ARGUMENT = new RegExp(`(?:${ASSET_CALL}|\\b(ASSET|FOLDER):\\s*(?:assets\\.menu\\(\\s*)?)$`);
 
 const escapeRegExp = text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -28,6 +31,25 @@ const symbolAt = (text, offset) => {
     }
     for (const match of line.matchAll(MEMBER)) {
         if (covers(match)) return {kind: 'extension', id: match[1], member: match[2]};
+    }
+    return null;
+};
+
+const lineAround = (text, offset) => {
+    const doc = String(text || '');
+    const lineStart = doc.lastIndexOf('\n', Math.max(0, offset - 1)) + 1;
+    const nextBreak = doc.indexOf('\n', offset);
+    return {line: doc.slice(lineStart, nextBreak === -1 ? doc.length : nextBreak), column: offset - lineStart};
+};
+
+const assetAt = (text, offset) => {
+    const {line, column} = lineAround(text, offset);
+    for (const match of line.matchAll(STRING)) {
+        if (column <= match.index || column >= match.index + match[0].length) continue;
+        const context = ASSET_ARGUMENT.exec(line.slice(0, match.index));
+        if (!context) return null;
+        const folder = context[1] === 'infolder' || context[2] === 'FOLDER';
+        return {kind: folder ? 'assetFolder' : 'asset', name: parseName(match[0])};
     }
     return null;
 };
@@ -65,4 +87,4 @@ const extensionForSymbol = (vm, symbol) => {
     return manager.isExtensionLoaded(symbol.id) ? {id: symbol.id, opcode: symbol.member} : null;
 };
 
-export {broadcastReceivers, extensionForSymbol, procedureDefinition, symbolAt};
+export {assetAt, broadcastReceivers, extensionForSymbol, procedureDefinition, symbolAt};

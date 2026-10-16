@@ -9,9 +9,11 @@ import {
     ChevronDown,
     ChevronRight,
     FileCode2,
+    Folder,
     FolderTree,
     Image as ImageIcon,
     Monitor,
+    Package,
     Plus,
     Puzzle,
     Shapes
@@ -29,7 +31,9 @@ const ROW_ICONS = {
     costume: ImageIcon,
     sound: AudioWaveform,
     extensions: Puzzle,
-    extension: BlocksIcon
+    extension: BlocksIcon,
+    assets: Package,
+    assetFolder: Folder
 };
 
 const RenameInput = ({initial, onCancel, onCommit}) => {
@@ -183,7 +187,8 @@ const Explorer = props => {
                 onKeyDown={handleKeyDown}
             >
                 {rows.map(row => {
-                    const Icon = row.type === 'target' && row.isStage ? ROW_ICONS.stage : ROW_ICONS[row.type];
+                    const Icon = row.icon ||
+                        (row.type === 'target' && row.isStage ? ROW_ICONS.stage : ROW_ICONS[row.type]);
                     const selected = row.key === selectedKey;
                     return (
                         <div

@@ -151,6 +151,8 @@ const languageExtensions = props => {
         if (props.hover) extensions.push(props.hover);
         return extensions;
     }
+    if (props.language === 'text') return [];
+    if (props.language === 'json') return [javascript()];
     const completion = typeof props.completion === 'undefined' ? scratchCompletionSource : props.completion;
     const hover = typeof props.hover === 'undefined' ? scratchHoverTooltip : props.hover;
     const extensions = [javascript()];
@@ -386,7 +388,7 @@ CodeEditor.propTypes = {
     hover: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
     keymap: PropTypes.arrayOf(PropTypes.object),
     // eslint-disable-next-line react/no-unused-prop-types
-    language: PropTypes.oneOf(['javascript', 'fractch']),
+    language: PropTypes.oneOf(['javascript', 'fractch', 'json', 'text']),
     // eslint-disable-next-line react/no-unused-prop-types
     onChange: PropTypes.func,
     // eslint-disable-next-line react/no-unused-prop-types

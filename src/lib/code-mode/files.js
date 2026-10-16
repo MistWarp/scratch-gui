@@ -1,8 +1,14 @@
 import {indexOfItem, itemIdFor} from '../asset-identity.js';
 import {getEntries} from '../extension-dev/session.js';
-import {assetTab, extensionTab, scriptTab} from './tabs.js';
+import {assetTab, customAssetTab, extensionTab, scriptTab} from './tabs.js';
+import {baseName, folderOf} from './custom-assets.js';
 
 const SCRIPT_FILE = 'scripts.fractch';
+const ASSETS_ROOT = 'Assets';
+
+const customAssetDetail = name => (folderOf(name) ? `${ASSETS_ROOT}/${folderOf(name)}` : ASSETS_ROOT);
+
+const customAssets = vm => (vm.runtime.assetManager ? vm.runtime.assetManager.assets : []);
 
 const orderedSprites = (vm, spritesState) => {
     const sprites = vm.runtime.targets.filter(target => target.isOriginal && !target.isStage);
@@ -27,11 +33,16 @@ const resolveTab = (vm, tab, entries) => {
         const entry = list.find(item => item.id === tab.extensionId);
         return entry ? {exists: true, title: extensionFileName(entry), detail: entry.name, entry} : {exists: false};
     }
-    if (tab.kind === 'newExtension') return {exists: true};
+    if (tab.kind === 'newExtension' || tab.kind === 'reference') return {exists: true};
     if (tab.kind === 'removeExtensions') {
         const list = entries || getEntries(vm);
         const ids = tab.ids.filter(id => list.some(item => item.id === id));
         return ids.length ? {exists: true, ids, detail: ids.map(id => `${id}.js`).join(', ')} : {exists: false};
+    }
+    if (tab.kind === 'customAsset') {
+        const entry = vm.runtime.assetManager ? vm.runtime.assetManager.getAsset(tab.name) : null;
+        return entry ? {exists: true, entry, title: baseName(entry.name), detail: customAssetDetail(entry.name)} :
+            {exists: false};
     }
     const target = vm.runtime.getTargetById(tab.targetId);
     if (!target || !target.isOriginal) return {exists: false};
@@ -67,6 +78,14 @@ const listFiles = (vm, spritesState, entries) => {
                 kind: 'sound'
             });
         }
+    }
+    for (const entry of customAssets(vm)) {
+        files.push({
+            tab: customAssetTab(entry.name),
+            title: baseName(entry.name),
+            detail: customAssetDetail(entry.name),
+            kind: 'customAsset'
+        });
     }
     for (const entry of entries || getEntries(vm)) {
         files.push({

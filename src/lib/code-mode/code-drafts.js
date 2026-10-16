@@ -9,9 +9,12 @@ const pendingWrites = new Map();
 let writeTimer = null;
 let databasePromise = null;
 
-const draftKey = (identity, {targetName, isStage, extensionId}) => (extensionId ?
-    `${identity}\u0001extension\u0001${extensionId}` :
-    `${identity}\u0001${isStage ? 'stage' : 'sprite'}\u0001${isStage ? '' : targetName}`);
+const draftKey = (identity, {targetName, isStage, extensionId, assetName}) => {
+    if (assetName) return `${identity}\u0001asset\u0001${String(assetName).toLowerCase()}`;
+    return extensionId ?
+        `${identity}\u0001extension\u0001${extensionId}` :
+        `${identity}\u0001${isStage ? 'stage' : 'sprite'}\u0001${isStage ? '' : targetName}`;
+};
 
 const baseHash = text => hashString(String(text || ''));
 

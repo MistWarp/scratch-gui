@@ -2,6 +2,7 @@ const REGION_ATTRIBUTE = 'data-mw-region';
 const ASSET_REGION = 'asset';
 
 let region = null;
+let assetKind = null;
 let installedOn = null;
 
 const regionOf = target => {
@@ -12,15 +13,23 @@ const regionOf = target => {
 
 const record = event => {
     region = regionOf(event.target);
+    const host = region === ASSET_REGION && event.target && typeof event.target.closest === 'function' ?
+        event.target.closest('[data-mw-asset-kind]') : null;
+    assetKind = host ? host.getAttribute('data-mw-asset-kind') : null;
 };
 
 const getKeyRegion = () => region;
 
 const setKeyRegion = next => {
     region = next || null;
+    assetKind = null;
 };
 
 const isAssetEditorActive = () => region === ASSET_REGION;
+
+const isPaintEditorKeyActive = () => isAssetEditorActive() && assetKind !== 'sound';
+
+const isSoundEditorKeyActive = () => isAssetEditorActive() && assetKind !== 'costume';
 
 const installKeyScope = doc => {
     const root = doc || (typeof document === 'undefined' ? null : document);
@@ -44,6 +53,8 @@ export {
     getKeyRegion,
     installKeyScope,
     isAssetEditorActive,
+    isPaintEditorKeyActive,
+    isSoundEditorKeyActive,
     regionOf,
     setKeyRegion
 };
