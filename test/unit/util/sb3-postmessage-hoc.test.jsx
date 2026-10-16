@@ -4,6 +4,7 @@ import {shallow} from 'enzyme';
 
 import SB3PostMessageHOC from '../../../src/lib/components/sb3-postmessage-hoc.jsx';
 import RestorePointAPI from '../../../src/lib/api/restore-points';
+import {getRememberedPlatformProjectState, rememberPlatformProject} from '../../../src/lib/community/publish.js';
 
 jest.mock('../../../src/lib/api/restore-points', () => ({
     createSafetyRestorePoint: jest.fn(() => Promise.resolve())
@@ -84,6 +85,21 @@ describe('SB3PostMessageHOC', () => {
             expect.objectContaining({status: 'error'}),
             window.location.origin
         );
+    });
+
+    test('a project sent by another page does not keep the previous project\'s trust', async () => {
+        rememberPlatformProject({id: 'project-1', isOwner: true, trustedExtensions: ['hash-1']});
+        let stateDuringLoad = 'not loaded';
+        vm.loadProject = jest.fn(() => {
+            stateDuringLoad = getRememberedPlatformProjectState();
+            return Promise.resolve();
+        });
+        const instance = createInstance();
+
+        await instance.handleMessage(createEvent(new Uint8Array([4])));
+
+        expect(vm.loadProject).toHaveBeenCalled();
+        expect(stateDuringLoad).toBeNull();
     });
 
     test('invalid project data replies to the caller with an error', () => {

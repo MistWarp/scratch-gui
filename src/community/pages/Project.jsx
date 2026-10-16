@@ -673,7 +673,6 @@ const Project = () => {
         project.id,
         project.projectJsonUrl,
         project.assetsBase,
-        project.trustedExtensions || [],
         Boolean(unsandboxed),
         Boolean(themeAllowed)
     ]);

@@ -188,25 +188,51 @@ test('editor project loads use the permission checked endpoint', async () => {
     expect(window.fetch.mock.calls[0][0]).toBe('https://api.mistwarp.org/v1/projects/project-1/editor');
 });
 
-test('embedded projects only trust extensions the server lists for the same project data', async () => {
-    const json = 'https://api.mistwarp.org/v1/projects/project-1/project.json?k=view-key';
-    const serve = projectJsonUrl => {
+describe('embedded project extension trust', () => {
+    const base = 'https://api.mistwarp.org/v1/projects/project-1/project.json';
+    const release = 'https://cdn.mistwarp.org/releases/r1/project.json';
+    const serve = body => {
         window.fetch = jest.fn(() => Promise.resolve({
             ok: true,
             status: 200,
-            json: () => Promise.resolve({ok: true, project: {id: 'project-1', projectJsonUrl, trustedExtensions: ['hash-1']}})
+            json: () => Promise.resolve({ok: true, ...body})
         }));
     };
 
-    serve(json);
-    await expect(getServerTrustedExtensions('project-1', json)).resolves.toEqual(['hash-1']);
-    expect(window.fetch.mock.calls[0][0]).toBe('https://api.mistwarp.org/v1/projects/project-1?k=view-key');
+    test('uses the trust list for the data the server serves, passing the view key', async () => {
+        serve({jsonUrls: [base, release], trustedExtensions: ['hash-1']});
+        await expect(getServerTrustedExtensions('project-1', `${base}?k=view-key`)).resolves.toEqual(['hash-1']);
+        expect(window.fetch.mock.calls[0][0])
+            .toBe('https://api.mistwarp.org/v1/projects/project-1/trusted-extensions?k=view-key');
+        await expect(getServerTrustedExtensions('project-1', release)).resolves.toEqual(['hash-1']);
+    });
 
-    serve('https://api.mistwarp.org/v1/projects/project-1/project.json');
-    await expect(getServerTrustedExtensions('project-1', 'https://example.com/other.json')).resolves.toEqual([]);
+    test('trusts nothing when the loaded data is not what the server serves', async () => {
+        serve({jsonUrls: [base], trustedExtensions: ['hash-1']});
+        const otherProject = 'https://api.mistwarp.org/v1/projects/project-2/project.json';
+        const otherHost = 'https://example.com/v1/projects/project-1/project.json';
+        await expect(getServerTrustedExtensions('project-1', otherProject)).resolves.toEqual([]);
+        await expect(getServerTrustedExtensions('project-1', otherHost)).resolves.toEqual([]);
+    });
 
-    window.fetch = jest.fn(() => Promise.resolve({ok: false, status: 404, json: () => Promise.resolve({})}));
-    await expect(getServerTrustedExtensions('project-1', json)).resolves.toEqual([]);
+    test('trusts nothing when the server lists no data or the request fails', async () => {
+        serve({jsonUrls: [], trustedExtensions: ['hash-1']});
+        await expect(getServerTrustedExtensions('project-1', base)).resolves.toEqual([]);
+        serve({jsonUrls: [''], trustedExtensions: ['hash-1']});
+        await expect(getServerTrustedExtensions('project-1', base)).resolves.toEqual([]);
+        serve({trustedExtensions: ['hash-1']});
+        await expect(getServerTrustedExtensions('project-1', base)).resolves.toEqual([]);
+        window.fetch = jest.fn(() => Promise.resolve({ok: false, status: 404, json: () => Promise.resolve({})}));
+        await expect(getServerTrustedExtensions('project-1', base)).resolves.toEqual([]);
+    });
+
+    test('does not ask the server about data that is not an absolute web URL', async () => {
+        window.fetch = jest.fn();
+        for (const url of ['', 'project.json', '/embed.html', 'data:application/json,{}']) {
+            await expect(getServerTrustedExtensions('project-1', url)).resolves.toEqual([]);
+        }
+        expect(window.fetch).not.toHaveBeenCalled();
+    });
 });
 
 test('the editor reads paid limits from the MistWarp perks endpoint', async () => {

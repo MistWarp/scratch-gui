@@ -574,30 +574,29 @@ const getPerks = () => request('/perks');
 
 const getEditorProject = id => request(`/projects/${id}/editor`, {cache: false});
 
-const sameProjectJson = (a, b) => {
+const projectDataLocation = value => {
     try {
-        const first = new URL(a, location.href);
-        const second = new URL(b, location.href);
-        return first.origin === second.origin && first.pathname === second.pathname;
+        const parsed = new URL(String(value || ''));
+        if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return '';
+        return `${parsed.origin}${parsed.pathname}`;
     } catch (e) {
-        return false;
+        return '';
     }
 };
 
 const getServerTrustedExtensions = async (id, projectJsonUrl) => {
+    const loading = projectDataLocation(projectJsonUrl);
+    if (!id || !loading) return [];
     const params = new URLSearchParams();
-    try {
-        const key = new URL(projectJsonUrl, location.href).searchParams.get('k');
-        if (key) params.set('k', key);
-    } catch (e) {
-        return [];
-    }
+    const key = new URL(projectJsonUrl).searchParams.get('k');
+    if (key) params.set('k', key);
     const query = params.toString();
     try {
-        const path = `/projects/${encodeURIComponent(id)}${query ? `?${query}` : ''}`;
-        const {project} = await request(path, {cache: false});
-        if (!project || !sameProjectJson(project.projectJsonUrl, projectJsonUrl)) return [];
-        return Array.isArray(project.trustedExtensions) ? project.trustedExtensions : [];
+        const path = `/projects/${encodeURIComponent(id)}/trusted-extensions${query ? `?${query}` : ''}`;
+        const result = await request(path, {cache: false, timeoutMs: 5000});
+        const served = Array.isArray(result && result.jsonUrls) ? result.jsonUrls.map(projectDataLocation) : [];
+        if (!served.includes(loading)) return [];
+        return Array.isArray(result.trustedExtensions) ? result.trustedExtensions : [];
     } catch (e) {
         return [];
     }

@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import log from '../utils/log';
 import {withProjectReplacement} from '../project-replacement.js';
 import {detachWorkspace} from '../workspace-state.js';
+import {rememberPlatformProject} from '../community/publish.js';
 import {importRepoFromSb3} from '../git/browser-git.js';
 import {openSimpleDialog} from '../../reducers/modals';
 
@@ -240,6 +241,7 @@ const SB3PostMessageHOC = function (WrappedComponent) {
                 await withProjectReplacement(this.props.vm, 'Before external load', async () => {
                     if (!this.isCurrentRequest(request)) throw new Error('A newer open request replaced this one.');
                     this.props.vm.quit();
+                    rememberPlatformProject(null);
                     await this.props.vm.loadProject(arrayBuffer, {skipGitImport: true, mwPreserveProjectSource: true});
                     await importRepoFromSb3(arrayBuffer);
                 });
