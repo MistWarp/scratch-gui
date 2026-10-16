@@ -79,7 +79,7 @@ const DATA_TABS = [
     {key: 'account', label: 'Account data'},
     {key: 'games', label: 'Games'}
 ];
-const CUSTOM_THEME_ACTIONS = new Set(['create', 'import']);
+const CUSTOM_THEME_ACTIONS = new Set(['create', 'gradient']);
 const getProjectThemeMode = () => {
     try {
         const value = localStorage.getItem(PROJECT_THEME_MODE_KEY);
