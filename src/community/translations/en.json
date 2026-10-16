@@ -6,10 +6,7 @@
   "nav.random": "Random",
   "nav.spaces": "Spaces",
   "nav.search": "Search projects, people, and spaces",
-  "home.title": "Build something you want to come back to.",
-  "home.lead": "Make games and animations with blocks. Build together, share your work, and restore earlier versions whenever you need them.",
   "home.start": "Start creating",
-  "home.explore": "Explore projects",
   "home.signin": "Sign in with Rotur",
   "home.github": "Follow on GitHub",
   "status.title": "Service status",
@@ -651,10 +648,6 @@
   "Change preferences": "Change preferences",
   "Loading your workspace…": "Loading your workspace…",
   "Try a starter": "Try a starter",
-  "Build together, keep your progress": "Build together, keep your progress",
-  "Make your first version": "Make your first version",
-  "Invite someone to improve it": "Invite someone to improve it",
-  "Keep earlier versions to return to": "Keep earlier versions to return to",
   "Start with a working clicker →": "Start with a working clicker →",
   "Trending": "Trending",
   "Freshly shared": "Freshly shared",
@@ -2019,7 +2012,6 @@
   "Sign in to see your notifications.": "Sign in to see your notifications.",
   "Couldn't load notifications.": "Couldn't load notifications.",
   "Nothing new yet": "Nothing new yet",
-  "Start with a working clicker": "Start with a working clicker",
   "Nothing played yet": "Nothing played yet",
   "Couldn't load projects.": "Couldn't load projects.",
   "{count} loves": "{count} loves",
@@ -2882,5 +2874,7 @@
   "Rotur took action": "Rotur took action",
   "Rotur found no rule broken": "Rotur found no rule broken",
   "With Rotur, sent by @{value1}": "With Rotur, sent by @{value1}",
-  "With Rotur, sent automatically": "With Rotur, sent automatically"
+  "With Rotur, sent automatically": "With Rotur, sent automatically",
+  "See what people are making on MistWarp": "See what people are making on MistWarp",
+  "Play games, animations, and tools built with blocks, and follow the creators behind them.": "Play games, animations, and tools built with blocks, and follow the creators behind them."
 }
