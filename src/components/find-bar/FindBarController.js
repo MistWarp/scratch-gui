@@ -598,6 +598,8 @@ export default class FindBarController {
 
     eventKeyDown (e) {
         if (this.isPlayerOnlyRef.current || !this.findBarOuter) return;
+        if (this.activeTabIndexRef.current < 0) return;
+        if (e.target && typeof e.target.closest === 'function' && e.target.closest('[data-mw-code-editor]')) return;
 
         const ctrlKey = e.ctrlKey || e.metaKey;
         const key = typeof e.key === 'string' ? e.key : '';

@@ -22,6 +22,11 @@ const manifest = {
     {
       "id": "hide-icons-update",
       "text": "To hide menu bar icons, use the \"Customizable menu bar\" addon."
+    },
+    {
+      "type": "notice",
+      "id": "code-mode",
+      "text": "Not available in Code mode."
     }
   ],
   "userstyles": [

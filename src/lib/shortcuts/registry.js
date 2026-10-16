@@ -202,7 +202,7 @@ export const getDefaultShortcuts = () => [
         actionType: 'redux',
         action: 'openExtensionManagerModal',
         params: [],
-        label: 'Extension Manager'
+        label: 'Reveal Extensions'
     },
     {
         id: 'duplicateSprite',
@@ -289,6 +289,98 @@ export const getDefaultShortcuts = () => [
         label: 'Cut'
     },
     {
+        id: 'toggleEditorMode',
+        key: 'Ctrl+Shift+Y',
+        defaultKey: 'Ctrl+Shift+Y',
+        category: SHORTCUT_CATEGORIES.VIEW,
+        actionType: 'callback',
+        action: 'toggleEditorMode',
+        params: [],
+        label: 'Switch Between Blocks and Code'
+    },
+    {
+        id: 'toggleExplorer',
+        key: 'Ctrl+B',
+        defaultKey: 'Ctrl+B',
+        category: SHORTCUT_CATEGORIES.VIEW,
+        actionType: 'callback',
+        action: 'toggleExplorer',
+        params: [],
+        label: 'Toggle Explorer'
+    },
+    {
+        id: 'togglePanel',
+        key: 'Ctrl+J',
+        defaultKey: 'Ctrl+J',
+        category: SHORTCUT_CATEGORIES.VIEW,
+        actionType: 'callback',
+        action: 'togglePanel',
+        params: [],
+        label: 'Toggle Panel'
+    },
+    {
+        id: 'quickOpen',
+        key: 'Ctrl+E',
+        defaultKey: 'Ctrl+E',
+        category: SHORTCUT_CATEGORIES.EDITOR_NAVIGATION,
+        actionType: 'callback',
+        action: 'quickOpen',
+        params: [],
+        label: 'Quick Open'
+    },
+    {
+        id: 'applyFile',
+        key: 'Ctrl+Enter',
+        defaultKey: 'Ctrl+Enter',
+        context: 'textTab',
+        category: SHORTCUT_CATEGORIES.EDIT,
+        actionType: 'callback',
+        action: 'applyFile',
+        params: [],
+        label: 'Apply File'
+    },
+    {
+        id: 'applyAndSave',
+        key: 'Ctrl+S',
+        defaultKey: 'Ctrl+S',
+        context: 'textTab',
+        category: SHORTCUT_CATEGORIES.FILE,
+        actionType: 'callback',
+        action: 'applyAndSave',
+        params: [],
+        label: 'Apply and Save'
+    },
+    {
+        id: 'closeTab',
+        key: '',
+        defaultKey: '',
+        category: SHORTCUT_CATEGORIES.EDITOR_NAVIGATION,
+        actionType: 'callback',
+        action: 'closeTab',
+        params: [],
+        label: 'Close Editor Tab'
+    },
+    {
+        id: 'nextTab',
+        key: '',
+        defaultKey: '',
+        category: SHORTCUT_CATEGORIES.EDITOR_NAVIGATION,
+        actionType: 'callback',
+        action: 'nextTab',
+        params: [],
+        label: 'Next Editor Tab'
+    },
+    {
+        id: 'previousTab',
+        key: '',
+        defaultKey: '',
+        category: SHORTCUT_CATEGORIES.EDITOR_NAVIGATION,
+        actionType: 'callback',
+        action: 'previousTab',
+        params: [],
+        label: 'Previous Editor Tab'
+    },
+    {
         id: 'closeWindow',
         key: 'Ctrl+Shift+K',
         defaultKey: 'Ctrl+Shift+K',
@@ -343,6 +435,46 @@ const formatKeyCombo = (components, platform = 'windows') => {
     return parts.join('+');
 };
 
+const GLOBAL_CONTEXT = 'global';
+const TEXT_TAB_CONTEXT = 'textTab';
+
+const contextOf = shortcut => (shortcut && shortcut.context) || GLOBAL_CONTEXT;
+
+const sameKey = (shortcut, normalized) => Boolean(shortcut.key) && normalizeKey(shortcut.key) === normalized;
+
+const usesCtrlOrAlt = normalized => {
+    const parts = normalized.split('+');
+    return parts.includes('ctrl') || parts.includes('alt');
+};
+
+const matchShortcut = (shortcuts, keyCombo, {context = GLOBAL_CONTEXT, altGraph = false} = {}) => {
+    const normalized = normalizeKey(keyCombo);
+    if (!normalized) return null;
+    if (altGraph && usesCtrlOrAlt(normalized)) return null;
+    const candidates = shortcuts.filter(shortcut => sameKey(shortcut, normalized));
+    if (context === TEXT_TAB_CONTEXT) {
+        const own = candidates.find(shortcut => contextOf(shortcut) === TEXT_TAB_CONTEXT);
+        if (own) return own;
+    }
+    return candidates.find(shortcut => contextOf(shortcut) === GLOBAL_CONTEXT) || null;
+};
+
+const getShortcutConflict = (shortcuts, keyCombo, selfId) => {
+    const normalized = normalizeKey(keyCombo);
+    if (!normalized) return null;
+    const self = shortcuts.find(shortcut => shortcut.id === selfId);
+    const context = contextOf(self);
+    return shortcuts.find(shortcut =>
+        shortcut.id !== selfId && contextOf(shortcut) === context && sameKey(shortcut, normalized)
+    ) || null;
+};
+
+const getOverriddenShortcut = (shortcuts, shortcut) => {
+    if (contextOf(shortcut) !== TEXT_TAB_CONTEXT || !shortcut.key) return null;
+    const normalized = normalizeKey(shortcut.key);
+    return shortcuts.find(other => contextOf(other) === GLOBAL_CONTEXT && sameKey(other, normalized)) || null;
+};
+
 const findShortcutByKey = (shortcuts, keyCombo) => {
     const normalizedQuery = normalizeKey(keyCombo);
     return shortcuts.find(shortcut => normalizeKey(shortcut.key) === normalizedQuery);
@@ -379,6 +511,12 @@ const getShortcutKey = (shortcutId, customShortcuts) => {
 };
 
 export {
+    GLOBAL_CONTEXT,
+    TEXT_TAB_CONTEXT,
+    contextOf,
+    getOverriddenShortcut,
+    getShortcutConflict,
+    matchShortcut,
     getShortcutKey,
     normalizeKey,
     parseKeyCombo,

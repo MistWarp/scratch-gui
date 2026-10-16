@@ -1,3 +1,4 @@
+import { isSoundsTabVisible } from "../../../lib/editor-visibility.js";
 import EventTarget from "../../event-target.js"; /* inserted by pull.js */
 
 import { eventTarget as tooltipUpdateEventTarget } from "./force-tooltip-update.js";
@@ -54,12 +55,13 @@ export default async function ({ addon, global, console }) {
       markAsSeen: true,
       reduxEvents: [
         "scratch-gui/navigation/ACTIVATE_TAB",
+        "scratch-gui/navigation/SHOW_BLOCKS_TAB",
         "scratch-gui/mode/SET_PLAYER",
         "fontsLoaded/SET_FONTS_LOADED",
         "scratch-gui/locales/SELECT_LOCALE",
         "scratch-gui/targets/UPDATE_TARGET_LIST",
       ],
-      reduxCondition: (state) => !state.scratchGui.mode.isPlayerOnly && state.scratchGui.editorTab.activeTabIndex === 2,
+      reduxCondition: (state) => !state.scratchGui.mode.isPlayerOnly && isSoundsTabVisible(state),
     });
     updateTooltips();
   }

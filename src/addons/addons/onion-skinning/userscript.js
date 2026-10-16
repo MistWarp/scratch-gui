@@ -1,3 +1,4 @@
+import { isCostumesTabVisible } from "../../../lib/editor-visibility.js";
 import {sanitizeSvg} from '@turbowarp/scratch-svg-renderer';
 
 export default async function ({ addon, console, msg }) {
@@ -777,13 +778,13 @@ export default async function ({ addon, console, msg }) {
         markAsSeen: true,
         reduxEvents: [
           "scratch-gui/navigation/ACTIVATE_TAB",
+          "scratch-gui/navigation/SHOW_BLOCKS_TAB",
           "scratch-gui/mode/SET_PLAYER",
           "fontsLoaded/SET_FONTS_LOADED",
           "scratch-gui/locales/SELECT_LOCALE",
           "scratch-gui/targets/UPDATE_TARGET_LIST",
         ],
-        reduxCondition: (state) =>
-          state.scratchGui.editorTab.activeTabIndex === 1 && !state.scratchGui.mode.isPlayerOnly,
+        reduxCondition: (state) => isCostumesTabVisible(state) && !state.scratchGui.mode.isPlayerOnly,
       });
       const zoomControlsContainer = canvasControls.querySelector("[class^='paint-editor_zoom-controls']");
 

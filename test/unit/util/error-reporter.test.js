@@ -1,3 +1,4 @@
+/** @jest-environment-options {"url": "https://mistwarp.org/editor"} */
 jest.mock('../../../src/lib/community/api', () => ({request: jest.fn(() => Promise.resolve())}));
 
 const load = () => {
@@ -169,8 +170,8 @@ test('skips React losing track of nodes only on a machine translated page', () =
 });
 
 test.each([
-    'TypeError: Failed to fetch\n    at http://localhost/:20:3585\n    at http://localhost/:20:3016\n    at Object.next (http://localhost/:20:3121)',
-    '@http://localhost/:17:6302'
+    'TypeError: Failed to fetch\n    at https://mistwarp.org/editor:20:3585\n    at https://mistwarp.org/editor:20:3016\n    at Object.next (https://mistwarp.org/editor:20:3121)',
+    '@https://mistwarp.org/editor:17:6302'
 ])('skips errors from scripts injected into the page: %s', stack => {
     const {reportSiteError, request} = load();
     reportSiteError({message: 'Failed to fetch', stack, kind: 'rejection'});
@@ -181,8 +182,18 @@ test('still reports errors whose stack reaches a MistWarp bundle', () => {
     const {reportSiteError, request} = load();
     reportSiteError({
         message: 'Failed to fetch',
-        stack: 'TypeError: Failed to fetch\n    at http://localhost/:20:3585\n    at load (http://localhost/assets/api-Dkeazk7Z.js:1:2)',
+        stack: 'TypeError: Failed to fetch\n    at https://mistwarp.org/editor:20:3585\n    at load (https://mistwarp.org/assets/api-Dkeazk7Z.js:1:2)',
         kind: 'rejection'
     });
     expect(request).toHaveBeenCalledTimes(1);
+});
+
+test('skips reports from hosts other than mistwarp.org', () => {
+    const {reportSiteError, request} = load();
+    window.history.replaceState(null, '', '/editor');
+    const spy = jest.spyOn(window, 'location', 'get');
+    spy.mockReturnValue({hostname: 'editor.turboshare.org.uk', host: 'editor.turboshare.org.uk', href: 'https://editor.turboshare.org.uk/editor'});
+    reportSiteError({message: 'Off site failure'});
+    spy.mockRestore();
+    expect(request).not.toHaveBeenCalled();
 });

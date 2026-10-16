@@ -1,3 +1,4 @@
+import { isCostumesTabVisible, isSoundsTabVisible } from "../../../lib/editor-visibility.js";
 const DIVIDER = "//";
 
 /**
@@ -1341,7 +1342,8 @@ export default async function ({ addon, console, msg }) {
   // Costume and sound list
   {
     const selectorListItem = await addon.tab.waitForElement("[class*='selector_list-item']", {
-      reduxCondition: (state) => state.scratchGui.editorTab.activeTabIndex !== 0 && !state.scratchGui.mode.isPlayerOnly,
+      reduxCondition: (state) =>
+        (isCostumesTabVisible(state) || isSoundsTabVisible(state)) && !state.scratchGui.mode.isPlayerOnly,
     });
     const sortableHOCInstance = getSortableHOCFromElement(selectorListItem);
     verifySortableHOC(sortableHOCInstance);

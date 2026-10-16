@@ -44,3 +44,24 @@ test('Escape that a field already handled does not close the window', () => {
     document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true, cancelable: true}));
     expect(onClose).toHaveBeenCalledTimes(1);
 });
+
+const pointer = (type, x, y) => {
+    const event = new MouseEvent(type, {clientX: x, clientY: y, button: 0, bubbles: true, cancelable: true});
+    Object.defineProperty(event, 'pointerId', {value: 1});
+    return event;
+};
+
+test('dragging moves the window with a transform and commits the position on release', () => {
+    const win = WindowManager.createWindow({id: 'test-drag', x: 100, y: 100, width: 400, height: 300});
+    win.show();
+    const header = win.headerElement;
+    const startLeft = win.element.style.left;
+    header.dispatchEvent(pointer('pointerdown', 150, 110));
+    header.dispatchEvent(pointer('pointermove', 190, 140));
+    expect(win.element.style.left).toBe(startLeft);
+    expect(win.element.style.transform).toBe('translate3d(40px, 30px, 0)');
+    header.dispatchEvent(pointer('pointerup', 190, 140));
+    expect(win.element.style.transform).toBe('');
+    expect(win.element.style.left).toBe(`${win.x}px`);
+    expect(win.element.style.top).toBe(`${win.y}px`);
+});

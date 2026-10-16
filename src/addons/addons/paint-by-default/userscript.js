@@ -1,3 +1,4 @@
+import { isSoundEditorActive } from "../../../lib/editor-visibility.js";
 export default async function ({ addon, console }) {
   const spriteMeta = Object.assign(Object.create(null), {
     upload: {
@@ -80,7 +81,7 @@ export default async function ({ addon, console }) {
   const getButtonToClick = (mainButton) => {
     const assetPanelWrapper = mainButton.closest("[class*=asset-panel_wrapper_]");
     if (assetPanelWrapper) {
-      if (addon.tab.redux.state.scratchGui.editorTab.activeTabIndex === 2) {
+      if (isSoundEditorActive(addon.tab.redux.state)) {
         return soundMeta[getSetting("sound")] || soundMeta.library;
       } else {
         return costumeMeta[getSetting("costume")] || costumeMeta.library;

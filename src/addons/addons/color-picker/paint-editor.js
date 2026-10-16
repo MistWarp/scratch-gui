@@ -1,3 +1,4 @@
+import { isPaintEditorActive } from "../../../lib/editor-visibility.js";
 /**
  * !!! TW: This file is unused.
  */
@@ -65,7 +66,7 @@ export default async ({ addon, console, msg }) => {
   while (true) {
     const element = await addon.tab.waitForElement('div[class*="color-picker_swatch-row"]', {
       markAsSeen: true,
-      reduxCondition: (state) => state.scratchGui.editorTab.activeTabIndex === 1 && !state.scratchGui.mode.isPlayerOnly,
+      reduxCondition: (state) => isPaintEditorActive(state) && !state.scratchGui.mode.isPlayerOnly,
     });
     rateLimiter.abort(false);
     addon.tab.redux.initialize();

@@ -147,12 +147,22 @@ const isOutsideMistWarp = (message, name, stack, kind) => (
     (DETACHED_NODE.test(message) && isMachineTranslated())
 );
 
+const SITE_HOSTS = new Set(['mistwarp.org', 'www.mistwarp.org']);
+
+const isOffSite = () => {
+    try {
+        return !SITE_HOSTS.has(window.location.hostname);
+    } catch (e) {
+        return true;
+    }
+};
+
 export const reportSiteError = ({message, stack = '', kind = 'uncaught', url = '', projectId = '', componentStack = '', name = ''}) => {
     try {
         const text = String(message || '').trim();
         if (!text || sending) return;
         if (isBenignResizeObserverLoop(text, stack)) return;
-        if (isUnactionable(text, stack) || isCrawler() || isRehostedCopy() || isInjectedPageScript(stack)) return;
+        if (isOffSite() || isUnactionable(text, stack) || isCrawler() || isRehostedCopy() || isInjectedPageScript(stack)) return;
         if (isProjectScriptError(name, stack) || BROWSER_REFUSAL.test(String(name || ''))) return;
         if (isOutsideMistWarp(text, name, stack, kind)) return;
         const href = String(url || window.location.href || '').slice(0, 2000);

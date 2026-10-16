@@ -38,6 +38,7 @@ import {customThemeManager} from '../lib/themes/custom-themes.js';
 import {applyLayout} from '../lib/mw-menu-bar-layout.js';
 import {setAuthorName} from '../lib/git/config.js';
 import describeActivity from '../lib/collaboration/describe-activity.js';
+import {isCodeMode} from '../lib/editor-visibility.js';
 import {setProjectAuthor} from '../lib/mw-project-metadata.js';
 
 /**
@@ -332,7 +333,7 @@ RoturSession.propTypes = {
     loggedIn: PropTypes.bool,
     projectTitle: PropTypes.string,
     isCollaborating: PropTypes.bool,
-    activeTabIndex: PropTypes.number,
+    activeTabIndex: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     editingTargetId: PropTypes.string,
     roturId: PropTypes.string,
     // eslint-disable-next-line react/forbid-prop-types
@@ -355,7 +356,7 @@ const mapStateToProps = state => ({
     roturUsername: (state.scratchGui.rotur && state.scratchGui.rotur.username) || null,
     roturId: (state.scratchGui.rotur && state.scratchGui.rotur.id) || null,
     isCollaborating: state.scratchGui.collaboration.isConnected,
-    activeTabIndex: state.scratchGui.editorTab.activeTabIndex,
+    activeTabIndex: isCodeMode(state) ? 'code' : state.scratchGui.editorTab.activeTabIndex,
     editingTargetId: state.scratchGui.targets.editingTarget,
     vm: state.scratchGui.vm
 });

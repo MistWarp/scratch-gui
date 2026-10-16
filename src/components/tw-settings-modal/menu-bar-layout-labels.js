@@ -8,6 +8,7 @@ const labels = defineMessages({
     'tools': {defaultMessage: 'Project', id: 'mw.settings.menuBar.item.project'},
     'mode': {defaultMessage: 'Mode', id: 'mw.settings.menuBar.item.mode'},
     'block-count': {defaultMessage: 'Block count', id: 'mw.settings.menuBar.item.blockCount'},
+    'editor-mode': {defaultMessage: 'Blocks and Code switch', id: 'mw.settings.menuBar.item.editorMode'},
     'save-status': {defaultMessage: 'Save status', id: 'mw.settings.menuBar.item.saveStatus'},
     'about': {defaultMessage: 'About', id: 'mw.settings.menuBar.item.about'},
     'project-title': {defaultMessage: 'Project title', id: 'mw.settings.menuBar.item.projectTitle'},

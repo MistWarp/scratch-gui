@@ -116,6 +116,29 @@
 .button-row {
     display: flex;
     justify-content: flex-end;
+    gap: 0.5rem;
+}
+.open-in-editor-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2rem;
+    padding: 0 0.9rem;
+    border-radius: 6px;
+    border: none;
+    background: color-mix(in srgb, $text-primary 8%, transparent);
+    color: $text-primary;
+    font: inherit;
+    font-weight: 700;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+.open-in-editor-button:hover:not(:disabled) {
+    background: color-mix(in srgb, $text-primary 14%, transparent);
+}
+.open-in-editor-button:disabled {
+    opacity: 0.6;
+    cursor: default;
 }
 .load-button {
     display: inline-flex;

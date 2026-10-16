@@ -1,3 +1,4 @@
+/** @jest-environment-options {"url": "https://mistwarp.org/editor"} */
 import React from 'react';
 import {mountWithIntl} from '../../helpers/intl-helpers.jsx';
 import PanelErrorBoundary from '../../../src/components/panel-error-boundary/panel-error-boundary.jsx';

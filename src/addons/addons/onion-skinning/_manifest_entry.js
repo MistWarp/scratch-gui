@@ -8,6 +8,13 @@ const manifest = {
       "name": "GarboMuffin"
     }
   ],
+  "info": [
+    {
+      "type": "notice",
+      "id": "code-mode",
+      "text": "Not available in Code mode."
+    }
+  ],
   "userscripts": [
     {
       "url": "userscript.js"

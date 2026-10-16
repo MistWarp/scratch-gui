@@ -12,13 +12,12 @@ import addSoundFromRecordingIcon from '../components/asset-panel/icon--add-sound
 import fileUploadIcon from '../components/action-menu/icon--file-upload.svg';
 import surpriseIcon from '../components/action-menu/icon--surprise.svg';
 
-import RecordModal from './record-modal.jsx';
 import SoundEditor from './sound-editor.jsx';
 import SoundLibrary from './sound-library.jsx';
 import SoundEditorNotSupported from '../components/tw-sound-editor-not-supported/sound-editor-not-supported.jsx';
 
 import {getSoundLibrary} from '../lib/libraries/tw-async-libraries';
-import {handleFileUpload, soundUpload} from '../lib/file-uploader.js';
+import {SOUND_RECORDED_EVENT, uploadSounds} from '../lib/asset-upload.js';
 import errorBoundaryHOC from '../lib/components/error-boundary-hoc.jsx';
 import DragConstants from '../lib/constants/drag-constants';
 import downloadBlob from '../lib/utils/download-blob';
@@ -75,6 +74,7 @@ class SoundTab extends React.Component {
             'handleDuplicateSound',
             'handleExportSound',
             'handleNewSound',
+            'handleSoundRecorded',
             'handleSurpriseSound',
             'handleFileUploadClick',
             'handleSoundUpload',
@@ -84,6 +84,10 @@ class SoundTab extends React.Component {
         this.state = {selectedSoundIndex: 0};
         this.unmounted = false;
         this.deletingSounds = new Set();
+    }
+
+    componentDidMount () {
+        window.addEventListener(SOUND_RECORDED_EVENT, this.handleSoundRecorded);
     }
 
     UNSAFE_componentWillReceiveProps (nextProps) {
@@ -115,6 +119,11 @@ class SoundTab extends React.Component {
 
     componentWillUnmount () {
         this.unmounted = true;
+        window.removeEventListener(SOUND_RECORDED_EVENT, this.handleSoundRecorded);
+    }
+
+    handleSoundRecorded (event) {
+        this.handleNewSound(event.detail && event.detail.targetId);
     }
 
     handleSelectSound (soundIndex) {
@@ -217,31 +226,16 @@ class SoundTab extends React.Component {
     }
 
     handleSoundUpload (e) {
-        const storage = this.props.vm.runtime.storage;
         const targetId = this.props.vm.editingTarget.id;
-        const completedFiles = new Set();
-        const finishFile = (fileIndex, fileCount) => {
-            completedFiles.add(fileIndex);
-            if (completedFiles.size === fileCount) {
-                this.props.onCloseImporting();
-            }
-        };
-        const failFile = (error, fileIndex, fileCount) => {
-            this.props.onShowImportError(error);
-            finishFile(fileIndex, fileCount);
-        };
-        this.props.onShowImporting();
-        const fileCount = handleFileUpload(e.target, (buffer, fileType, fileName, fileIndex, totalFiles) => {
-            soundUpload(buffer, fileType, storage, newSound => {
-                newSound.name = fileName;
-                this.props.vm.addSound(newSound, targetId).then(() => {
-                    this.handleNewSound(targetId);
-                    finishFile(fileIndex, totalFiles);
-                })
-                    .catch(error => failFile(error, fileIndex, totalFiles));
-            }, error => failFile(error, fileIndex, totalFiles));
-        }, failFile);
-        if (fileCount === 0) this.props.onCloseImporting();
+        return uploadSounds({
+            vm: this.props.vm,
+            files: e.target,
+            targetId,
+            onAdded: () => this.handleNewSound(targetId),
+            onStart: this.props.onShowImporting,
+            onEnd: this.props.onCloseImporting,
+            onError: this.props.onShowImportError
+        });
     }
 
     handleDrop (dropInfo) {
@@ -340,11 +334,6 @@ class SoundTab extends React.Component {
                         <SoundEditorNotSupported />
                     )
                 ) : null}
-                {this.props.soundRecorderVisible ? (
-                    <RecordModal
-                        onNewSound={this.handleNewSound}
-                    />
-                ) : null}
                 {this.props.soundLibraryVisible ? (
                     <SoundLibrary
                         vm={this.props.vm}
@@ -372,7 +361,6 @@ SoundTab.propTypes = {
     onRequestCloseSoundLibrary: PropTypes.func.isRequired,
     onShowImporting: PropTypes.func.isRequired,
     soundLibraryVisible: PropTypes.bool,
-    soundRecorderVisible: PropTypes.bool,
     sprites: PropTypes.shape({
         id: PropTypes.shape({
             sounds: PropTypes.arrayOf(PropTypes.shape({
@@ -393,8 +381,7 @@ const mapStateToProps = state => ({
     isRtl: state.locales.isRtl,
     sprites: state.scratchGui.targets.sprites,
     stage: state.scratchGui.targets.stage,
-    soundLibraryVisible: state.scratchGui.modals.soundLibrary,
-    soundRecorderVisible: state.scratchGui.modals.soundRecorder
+    soundLibraryVisible: state.scratchGui.modals.soundLibrary
 });
 
 const mapDispatchToProps = dispatch => ({

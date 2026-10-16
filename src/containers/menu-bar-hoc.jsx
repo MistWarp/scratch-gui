@@ -7,6 +7,7 @@ import {openSimpleDialog} from '../reducers/modals';
 import ToastNotification from '../components/toast-notification/toast-notification.jsx';
 import smartSave from '../lib/mw/smart-save.js';
 import {setProjectUnchanged} from '../reducers/project-changed';
+import {hasUnappliedCode} from '../lib/code-mode/text-store.js';
 
 const messages = defineMessages({
     newProjectTitle: {
@@ -21,7 +22,7 @@ const messages = defineMessages({
     }
 });
 
-const shouldConfirmProjectReplacement = ({projectChanged}) => Boolean(projectChanged);
+const shouldConfirmProjectReplacement = ({projectChanged}) => Boolean(projectChanged) || hasUnappliedCode();
 
 const MenuBarHOC = function (WrappedComponent) {
     class MenuBarContainer extends React.PureComponent {

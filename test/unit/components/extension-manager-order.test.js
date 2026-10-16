@@ -1,4 +1,4 @@
-import {reorderItems} from '../../../src/components/mw-extension-manager-modal/extension-manager-modal.jsx';
+import {reorderItems} from '../../../src/components/extension-dev/reorder.js';
 import makeToolboxXML from '../../../src/lib/make-toolbox-xml.js';
 import extensionData from '../../../src/lib/libraries/extensions/index.jsx';
 

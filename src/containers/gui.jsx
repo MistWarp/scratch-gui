@@ -16,10 +16,19 @@ import {
 } from '../reducers/project-state';
 import {
     activateTab,
+    showBlocksTab,
+    storeEditorMode,
     BLOCKS_TAB_INDEX,
-    COSTUMES_TAB_INDEX,
-    SOUNDS_TAB_INDEX
+    CODE_MODE
 } from '../reducers/editor-tab';
+import {
+    isBlocksEditorVisible,
+    isCostumesTabVisible,
+    isSoundsTabVisible,
+    getActiveAssetEditor
+} from '../lib/editor-visibility.js';
+import {toggleEditorMode} from '../lib/code-mode/mode-switch.js';
+import {isAssetEditorActive} from '../lib/code-mode/key-scope.js';
 import {STAGE_SIZE_MODES} from '../lib/constants/layout-constants';
 import {setStageSize} from '../reducers/stage-size';
 import {setProjectUnchanged} from '../reducers/project-changed';
@@ -65,6 +74,11 @@ import {dispose as disposeShortcuts, initialize as initializeShortcuts} from
 import startFractchLiveReload from '../lib/fractch-live';
 import LazyScratchBlocks from '../lib/tw-lazy-scratch-blocks.js';
 import {undoLatest} from '../lib/undo-history';
+import {attachCodeMode} from '../lib/code-mode/text-controller.js';
+import {projectIdentity} from '../lib/code-mode/code-drafts.js';
+import {latestRedo, latestUndo} from '../lib/code-mode/code-history.js';
+import {flushBlockly, isCollaborating as isCodeLocked} from '../lib/code-mode/apply-pipeline.js';
+import {runCodeHistory} from '../lib/code-mode/code-dialogs.js';
 import smartSave from '../lib/mw/smart-save.js';
 import MwAutosave from './mw-autosave.jsx';
 import MwCreatorSession from './mw-creator-session.jsx';
@@ -87,6 +101,13 @@ class GUI extends React.Component {
         this.props.onStorageInit(storage);
         this.props.onVmInit(this.props.vm);
         setProjectIdMetadata(this.props.projectId);
+        this.detachCodeMode = attachCodeMode(this.props.vm, {
+            getIdentity: () => projectIdentity({
+                projectId: this.props.projectId,
+                fileHandle: this.props.fileHandle,
+                isScratchDesktop: this.props.isScratchDesktop
+            })
+        });
 
         initializeShortcuts(
             {
@@ -100,7 +121,7 @@ class GUI extends React.Component {
                 openExtensionLibrary: this.props.onOpenExtensionLibrary,
                 openExtensionManagerModal: this.props.openExtensionManagerModal,
                 openRestorePointModal: this.props.openRestorePointModal,
-                activateTab: this.props.activateTab
+                activateTab: this.props.showBlocksTab
             },
             this.props.vm,
             {
@@ -115,6 +136,15 @@ class GUI extends React.Component {
                 deleteSprite: () => this.props.onDeleteEditingSprite(this.props.vm),
                 undo: () => this.handleUndo(),
                 redo: () => this.handleRedo(),
+                toggleEditorMode: () => {
+                    toggleEditorMode({
+                        dispatch: this.props.dispatchAction,
+                        vm: this.props.vm,
+                        isCode: this.props.editorMode === CODE_MODE,
+                        blocksVisible: this.props.blocksTabVisible
+                    });
+                    return true;
+                },
                 toggleStageSize: () => {
                     this.props.onSetStageSize(
                         this.props.stageSizeMode === STAGE_SIZE_MODES.large ?
@@ -132,9 +162,15 @@ class GUI extends React.Component {
             }
         );
 
-        this.fractchLiveReloadDispose = startFractchLiveReload(this.props.vm);
+        this.fractchLiveReloadDispose = startFractchLiveReload(this.props.vm, {
+            dispatch: this.props.dispatchAction,
+            intl: this.props.intl
+        });
     }
     componentDidUpdate (prevProps) {
+        if (this.props.editorMode !== prevProps.editorMode && !this.props.isPlayerOnly) {
+            storeEditorMode(this.props.editorMode);
+        }
         if (this.props.projectId !== prevProps.projectId) {
             if (this.props.projectId !== null) {
                 this.props.onUpdateProjectId(this.props.projectId);
@@ -158,6 +194,7 @@ class GUI extends React.Component {
     }
     componentWillUnmount () {
         disposeShortcuts();
+        if (this.detachCodeMode) this.detachCodeMode();
         if (this.fractchLiveReloadDispose) {
             this.fractchLiveReloadDispose();
             this.fractchLiveReloadDispose = null;
@@ -169,19 +206,44 @@ class GUI extends React.Component {
         if (!workspace || typeof workspace.undo !== 'function') return null;
         return workspace;
     }
+    assetEditorOwnsKeys () {
+        if (this.props.editorMode !== CODE_MODE) return !this.props.blocksTabVisible;
+        return Boolean(this.props.activeAssetEditor) && isAssetEditorActive();
+    }
+    codeHistoryTarget () {
+        if (this.props.editorMode === CODE_MODE) return null;
+        return this.props.vm.editingTarget ? this.props.vm.editingTarget.id : null;
+    }
+    runCode (direction, entry) {
+        return runCodeHistory({
+            vm: this.props.vm,
+            dispatch: this.props.dispatchAction,
+            intl: this.props.intl,
+            direction,
+            entry
+        });
+    }
     handleRedo () {
-        // The costume and sound editors own the keys on their tabs.
-        if (!this.props.blocksTabVisible) return false;
-        const workspace = this.getMainWorkspace();
-        if (!workspace) return false;
-        workspace.undo(true);
+        if (this.assetEditorOwnsKeys()) return false;
+        const workspace = this.props.blocksTabVisible ? this.getMainWorkspace() : null;
+        const hasWorkspaceRedo = Boolean(workspace) && (workspace.redoStack_ ? workspace.redoStack_.length > 0 : true);
+        if (hasWorkspaceRedo) {
+            workspace.undo(true);
+            return true;
+        }
+        const entry = isCodeLocked(this.props.vm) ? null : latestRedo(this.codeHistoryTarget());
+        if (!entry) return false;
+        this.runCode('redo', entry);
         return true;
     }
     handleUndo () {
-        if (!this.props.blocksTabVisible) return false;
+        if (this.assetEditorOwnsKeys()) return false;
+        flushBlockly(this.props.vm);
+        const entry = isCodeLocked(this.props.vm) ? null : latestUndo(this.codeHistoryTarget());
         return undoLatest({
-            workspace: this.getMainWorkspace(),
+            workspace: this.props.blocksTabVisible ? this.getMainWorkspace() : null,
             deletion: this.props.restoreDeletion,
+            code: entry ? {sequence: entry.sequence, undo: () => this.runCode('undo', entry)} : null,
             onRestored: this.props.onClearDeletionRestore,
             onRestoreError: this.props.onShowRestoreError
         });
@@ -210,9 +272,13 @@ class GUI extends React.Component {
         const {
             /* eslint-disable no-unused-vars */
             activateTab: _activateTab,
+            activeAssetEditor,
+            dispatchAction,
+            showBlocksTab: _showBlocksTab,
             assetHost,
             cloudHost,
             error,
+            fileHandle,
             isError,
             isScratchDesktop,
             isShowingProject,
@@ -275,6 +341,7 @@ GUI.propTypes = {
     isEmbedded: PropTypes.bool,
     isFullScreen: PropTypes.bool,
     isLoading: PropTypes.bool,
+    fileHandle: PropTypes.object,
     isScratchDesktop: PropTypes.bool,
     isShowingProject: PropTypes.bool,
     loadingStateVisible: PropTypes.bool,
@@ -315,7 +382,11 @@ GUI.propTypes = {
     telemetryModalVisible: PropTypes.bool,
     vm: PropTypes.instanceOf(VM).isRequired,
     activeTabIndex: PropTypes.number,
-    blocksTabVisible: PropTypes.bool
+    activeAssetEditor: PropTypes.object,
+    blocksTabVisible: PropTypes.bool,
+    dispatchAction: PropTypes.func,
+    editorMode: PropTypes.string,
+    showBlocksTab: PropTypes.func
 };
 
 GUI.defaultProps = {
@@ -330,12 +401,14 @@ const mapStateToProps = state => {
     const loadingState = state.scratchGui.projectState.loadingState;
     return {
         activeTabIndex: state.scratchGui.editorTab.activeTabIndex,
+        activeAssetEditor: getActiveAssetEditor(state),
         alertsVisible: state.scratchGui.alerts.visible,
         backdropLibraryVisible: state.scratchGui.modals.backdropLibrary,
-        blocksTabVisible: state.scratchGui.editorTab.activeTabIndex === BLOCKS_TAB_INDEX,
+        blocksTabVisible: isBlocksEditorVisible(state),
         connectionModalVisible: state.scratchGui.modals.connectionModal,
         costumeLibraryVisible: state.scratchGui.modals.costumeLibrary,
-        costumesTabVisible: state.scratchGui.editorTab.activeTabIndex === COSTUMES_TAB_INDEX,
+        costumesTabVisible: isCostumesTabVisible(state),
+        editorMode: state.scratchGui.editorTab.editorMode,
         error: state.scratchGui.projectState.error,
         extensionLibraryVisible: state.scratchGui.modals.extensionLibrary,
         isError: getIsError(loadingState),
@@ -346,10 +419,12 @@ const mapStateToProps = state => {
         isShowingProject: getIsShowingProject(loadingState),
         loadingStateVisible: state.scratchGui.modals.loadingProject,
         projectId: state.scratchGui.projectState.projectId,
+        fileHandle: state.scratchGui.tw.fileHandle,
         projectTitle: state.scratchGui.projectTitle,
         restoreDeletion: state.scratchGui.restoreDeletion,
         soundLibraryVisible: state.scratchGui.modals.soundLibrary,
-        soundsTabVisible: state.scratchGui.editorTab.activeTabIndex === SOUNDS_TAB_INDEX,
+        soundRecorderVisible: state.scratchGui.modals.soundRecorder,
+        soundsTabVisible: isSoundsTabVisible(state),
         // The toggle-stage-size shortcut needs the current size to pick the other one.
         stageSizeMode: state.scratchGui.stageSize.stageSize,
         targetIsStage: (
@@ -372,7 +447,9 @@ const mapStateToProps = state => {
 
 export const mapDispatchToProps = dispatch => ({
     onExtensionButtonClick: () => dispatch(openExtensionLibrary()),
-    onActivateTab: tab => dispatch(activateTab(tab)),
+    onActivateTab: tab => dispatch(showBlocksTab(tab)),
+    dispatchAction: action => dispatch(action),
+    showBlocksTab: tab => dispatch(showBlocksTab(tab)),
     onOpenExtensionLibrary: () => dispatch(openExtensionLibrary()),
     onOpenExtensionManagerModal: () => dispatch(openExtensionManagerModal()),
     onOpenCustomExtensionModal: () => dispatch(openCustomExtensionModal()),

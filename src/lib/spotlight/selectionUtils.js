@@ -1,4 +1,6 @@
 // Selection and navigation utilities
+import {showBlocksTab} from '../../reducers/editor-tab.js';
+import {whenWorkspaceReady} from '../code-mode/workspace-ready.js';
 
 /**
  * Find the next selectable (non-header) item index
@@ -85,13 +87,11 @@ const handleCostumeSelection = (costumeData, vm, redux) => {
  */
 const handleCustomBlockSelection = (customBlockData, vm, Blockly, redux) => {
     vm.setEditingTarget(customBlockData.targetId);
-    
-    redux.dispatch({
-        type: 'scratch-gui/navigation/ACTIVATE_TAB',
-        activeTabIndex: 0
-    });
-    
-    setTimeout(() => {
+
+    redux.dispatch(showBlocksTab(0));
+
+    whenWorkspaceReady(customBlockData.targetId).then(ready => {
+        if (!ready) return;
         const workspace = Blockly.getMainWorkspace();
         if (workspace) {
             const block = workspace.getBlockById(customBlockData.blockId);
@@ -104,7 +104,7 @@ const handleCustomBlockSelection = (customBlockData, vm, Blockly, redux) => {
                 }, 500);
             }
         }
-    }, 100);
+    });
 };
 
 /**

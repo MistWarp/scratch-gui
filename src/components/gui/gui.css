@@ -258,6 +258,19 @@
     flex-direction: column;
 }
 
+.code-workbench-slot {
+    position: relative;
+    display: flex;
+    flex-grow: 1;
+    min-width: 0;
+    min-height: 0;
+    contain: inline-size;
+}
+
+.mobile-mode-switch {
+    flex-shrink: 0;
+}
+
 .tab-panel {
     position: relative;
     flex-grow: 1;
