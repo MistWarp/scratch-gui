@@ -26,7 +26,6 @@ import UserLink from '../components/UserLink.jsx';
 import {roadmapStatusMatches} from '../roadmap-filters';
 import {categoryForNotification, getNotificationPreferences} from '../notification-preferences';
 import {ActiveChallenge, ChallengeWinner, ContinueProjects, DeviceBackup, StarterGallery} from '../components/HomeWorkspace.jsx';
-import {track} from '../analytics.js';
 import {useCommunityIntl} from '../i18n.jsx';
 import {normalizeFollowingPosts, postUrl, timestampMs} from '../following-feed.js';
 import {
@@ -290,9 +289,6 @@ const Home = () => {
     const [projectCount, setProjectCount] = useState(null);
     const showStarters = !loading && (!user ||
         (projectCount && projectCount.username === viewerName && projectCount.total < 4));
-    useEffect(() => {
-        track('home_view');
-    }, []);
     return (
         <main className={styles.page}>
             {loading ? <StatusMessage>{communityText('Loading your workspace…')}</StatusMessage> : user ?
@@ -306,7 +302,7 @@ const Home = () => {
                                 <Button variant="secondary" as={Link} to="/explore">{t('home.explore')}</Button>
                             </div>
                             <div className={styles.heroImport}>
-                                <ScratchImport source="home" />
+                                <ScratchImport />
                                 <Link to="/compare">
                                     {communityText('Coming from Scratch or TurboWarp? See what is different')}
                                 </Link>

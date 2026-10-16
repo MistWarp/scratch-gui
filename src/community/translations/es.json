@@ -25,8 +25,6 @@
   "status.history": "Disponibilidad de siete días",
   "settings.language": "Idioma",
   "settings.languageHelp": "Establece el idioma del sitio de la comunidad y del editor. El texto sin traducir se muestra en inglés.",
-  "settings.analytics": "Análisis anónimo del producto",
-  "settings.analyticsHelp": "Registra hitos de creación y regreso durante 31 días. MistWarp no envía nombres de usuario, identificadores de proyecto, URLs, direcciones IP ni datos del navegador.",
   "Language": "Idioma",
   "Use browser language": "Usar el idioma del navegador",
   "Create": "Crear",

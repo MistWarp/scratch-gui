@@ -9,7 +9,6 @@ import {deleteRepo} from '../git/browser-git.js';
 import {syncConfiguredRemotes} from '../git/sync-remotes.js';
 import {enableAfterCloudSave} from '../mw/autosave-settings.js';
 import {setSaveFeedback} from '../mw/save-feedback.js';
-import {trackDaily} from '../../community/analytics.js';
 import {
     adoptImportedProjectHistory,
     isProjectHistoryHydrated,
@@ -412,7 +411,6 @@ const publishWorkspace = async ({
 
     enableAfterCloudSave();
     setSaveFeedback(vm, 'cloud');
-    trackDaily('project_saved', {kind: 'cloud'});
 
     const vanitySlug = platformProject && typeof platformProject.vanitySlug === 'string' ?
         platformProject.vanitySlug.trim() : '';

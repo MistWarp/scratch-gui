@@ -5,7 +5,6 @@ import {MemoryRouter} from 'react-router-dom';
 import Settings from '../../src/community/pages/Settings.jsx';
 import api from '../../src/community/api';
 import {setMinorAccount} from '../../src/lib/minor-account.js';
-import {setAnalyticsEnabled} from '../../src/community/analytics.js';
 
 let mockUser = null;
 
@@ -122,16 +121,12 @@ describe('Settings privacy for under-18 accounts', () => {
         wrapper.unmount();
     });
 
-    test('anonymous analytics stay off and locked for minors', async () => {
-        setAnalyticsEnabled(true);
-        mockUser = {username: 'sam', minor: true};
-        setMinorAccount(true);
+    test('the data section has no analytics switch', async () => {
+        mockUser = {username: 'maya', minor: false};
         api.getUser.mockResolvedValue({});
         const wrapper = await renderSettings('data');
-        const analytics = wrapper.find('input[aria-label="settings.analytics"]');
-        expect(analytics.prop('checked')).toBe(false);
-        expect(analytics.prop('disabled')).toBe(true);
-        expect(wrapper.text()).toContain('Anonymous analytics stay off for accounts under 18.');
+        expect(wrapper.find('input[aria-label="settings.analytics"]').exists()).toBe(false);
+        expect(wrapper.text()).not.toContain('analytics');
         wrapper.unmount();
     });
 });

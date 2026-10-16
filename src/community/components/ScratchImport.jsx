@@ -1,7 +1,5 @@
-import PropTypes from 'prop-types';
 import React, {useState} from 'react';
 import {Import} from 'lucide-react';
-import {track} from '../analytics';
 import {useCommunityIntl} from '../i18n.jsx';
 import styles from './ScratchImport.module.css';
 
@@ -11,7 +9,7 @@ export const scratchProjectId = value => {
     return match ? match[1] || match[2] : null;
 };
 
-const ScratchImport = ({source}) => {
+const ScratchImport = () => {
     const {text} = useCommunityIntl();
     const [value, setValue] = useState('');
     const [invalid, setInvalid] = useState(false);
@@ -22,7 +20,6 @@ const ScratchImport = ({source}) => {
             setInvalid(true);
             return;
         }
-        track('scratch_import', {source});
         window.location.href = `/editor#${id}`;
     };
     return (
@@ -47,8 +44,5 @@ const ScratchImport = ({source}) => {
     );
 };
 
-ScratchImport.propTypes = {
-    source: PropTypes.string.isRequired
-};
 
 export default ScratchImport;

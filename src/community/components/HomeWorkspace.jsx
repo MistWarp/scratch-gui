@@ -19,7 +19,6 @@ import Notice from './ui/Notice.jsx';
 import PageHeader from './ui/PageHeader.jsx';
 import SectionHeading from './ui/SectionHeading.jsx';
 import StatusMessage from './ui/StatusMessage.jsx';
-import {track} from '../analytics';
 import fog from '../../lib/default-project/fog.svg';
 import styles from './HomeWorkspace.module.css';
 
@@ -212,7 +211,7 @@ export const ActiveChallenge = () => {
                 <h2>{challenge.title}</h2>
                 <p>{summary}</p>
             </div>
-            <Link className={styles.link} to={`/spaces/${challenge._id}`} onClick={() => track('challenge_open', {source: 'home'})}>
+            <Link className={styles.link} to={`/spaces/${challenge._id}`}>
                 {communityText('View challenge and enter')}
             </Link>
         </section>
@@ -240,12 +239,12 @@ const ChallengeWinnerCard = ({challenge}) => {
                 <WinnerSeal small className={styles.winnerSeal} />
             </div>
             <div className={styles.winnerText}>
-                <h2><Link to={projectUrl(winner)} onClick={() => track('challenge_winner_open', {source: 'home'})}>{winner.title}</Link></h2>
+                <h2><Link to={projectUrl(winner)}>{winner.title}</Link></h2>
                 <p>{communityText('Winner of {value1}', {value1: challenge.title})}</p>
                 <p>{communityRich('by {user}', {user: <UserLink username={winner.owner}>{winner.owner}</UserLink>})}</p>
             </div>
             <div className={styles.winnerActions}>
-                <Button as={Link} to={projectUrl(winner)} variant="primary" onClick={() => track('challenge_winner_open', {source: 'home'})}><Play size={16} />{communityText('Play the winner')}</Button>
+                <Button as={Link} to={projectUrl(winner)} variant="primary"><Play size={16} />{communityText('Play the winner')}</Button>
                 <Button as={Link} to={`/spaces/${challenge._id}`}>{communityText('See the results')}</Button>
                 <IconButton label={communityText('Replay the celebration')} onClick={replay}><PartyPopper size={17} /></IconButton>
             </div>

@@ -7,10 +7,12 @@ import App from '../community/App.jsx';
 import {CommunityIntlProvider} from '../community/i18n.jsx';
 import {applyThemeVisuals, detectTheme, onSystemPreferenceChange} from '../lib/themes/themePersistance.js';
 import {CustomTheme} from '../lib/themes/custom-themes.js';
+import clearAnalyticsStorage from '../lib/clear-analytics-storage.js';
 import render from './app-target.js';
 import tokenStyles from '../community/styles/tokens.module.css';
 
 document.documentElement.classList.add(tokenStyles.root);
+clearAnalyticsStorage();
 
 // The dev server rewrites /<id>/embed to the embed player, but in production
 // that path falls through to this community bundle. Bounce it to the embed

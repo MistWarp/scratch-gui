@@ -5,7 +5,6 @@ import ReactionButtons from '../../src/community/components/ReactionButtons.jsx'
 import {useUser} from '../../src/community/UserContext.jsx';
 
 jest.mock('../../src/community/UserContext.jsx', () => ({useUser: jest.fn()}));
-jest.mock('../../src/community/analytics.js', () => ({track: jest.fn()}));
 
 describe('ReactionButtons signed-out flow', () => {
     test('opens sign-in instead of presenting dead controls', () => {

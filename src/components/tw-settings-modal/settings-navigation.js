@@ -68,7 +68,7 @@ const getSettingsSidebarGroups = (intl, includeDesktop) => {
                     keywords: intl.formatMessage({
                         id: 'mw.settings.keywords.privacy',
                         description: 'Extra search terms for the Privacy settings page, separated by spaces',
-                        defaultMessage: 'privacy permissions blocked projects analytics usage data tracking'
+                        defaultMessage: 'privacy permissions blocked projects prompts'
                     })
                 }
             ]

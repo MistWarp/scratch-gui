@@ -3,7 +3,6 @@ import React, {useEffect, useState} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
 import {SkipForward, Sparkles} from 'lucide-react';
 import api, {projectUrl} from '../api';
-import {track} from '../analytics';
 import {useCommunityIntl} from '../i18n.jsx';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import SectionHeading from './ui/SectionHeading.jsx';
@@ -38,10 +37,7 @@ export const NextProjectButton = ({id, className}) => {
         try {
             const data = await api.relatedProjects(id, {exclude: seenProjects(), limit: 1});
             const project = (data.projects || [])[0];
-            if (project) {
-                track('next_project_click', {from: id, to: project.id});
-                navigate(projectUrl(project));
-            }
+            if (project) navigate(projectUrl(project));
         } catch (e) {
             navigate('/random');
         } finally {
@@ -87,7 +83,6 @@ const RelatedProjects = ({id}) => {
                         key={project.id}
                         className={styles.item}
                         to={projectUrl(project)}
-                        onClick={() => track('related_project_click', {from: id, to: project.id})}
                     >
                         <ProjectThumbnail
                             project={project}

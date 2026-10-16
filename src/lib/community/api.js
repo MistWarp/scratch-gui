@@ -1,7 +1,6 @@
 import JSZip from '@turbowarp/jszip';
 import {clearContentCache} from './cached-fetch.js';
 import {isGalleryExtensionUrl} from '../trusted-extension.js';
-import {trackApiSuccess} from '../../community/analytics.js';
 import {setMinorAccount} from '../minor-account.js';
 import {sleep} from '../utils/async.js';
 import {
@@ -335,7 +334,6 @@ const request = async (path, {method = 'GET', body, headers = {}, raw = false, c
         }
         if (raw) return response;
         const data = await parseResponse(response);
-        trackApiSuccess(path, method);
         if (cacheable && generation === cacheGeneration) {
             writeApiCache(cacheKey, data);
         }

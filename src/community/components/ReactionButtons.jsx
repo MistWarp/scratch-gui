@@ -18,7 +18,7 @@ const ReactionButtons = ({
 }) => {
     const {user} = useUser();
     const {text: communityText} = useCommunityIntl();
-    const reactAfterLogin = useAfterLogin(key => onReact(key), 'react');
+    const reactAfterLogin = useAfterLogin(key => onReact(key));
     const lists = reactions || {};
     const keys = {heart: heartKey, down: downKey};
     const classes = [styles.row, small ? styles.rowSmall : '', styles[variant] || '', className]

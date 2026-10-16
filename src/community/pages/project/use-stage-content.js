@@ -1,7 +1,6 @@
 import {useEffect, useState} from 'react';
 import {preloadContent} from '../../../lib/community/cached-fetch.js';
 import projectRealtime from '../../project-realtime.js';
-import {track} from '../../analytics';
 import {analyzeBlocks, getCustomExtensions} from './embed-helpers.js';
 
 // What the player frame reports about the running project: its stage size, block count
@@ -30,9 +29,6 @@ const useStageContent = (id, project, stageFrame) => {
             }
             if (event.data.type === 'mw:diagnostic') {
                 projectRealtime.diagnostic(id, event.data.diagnostic);
-                if (event.data.diagnostic && event.data.diagnostic.type === 'playtime_start') {
-                    track('project_play_start', {project: id});
-                }
             }
         };
         window.addEventListener('message', onMessage);

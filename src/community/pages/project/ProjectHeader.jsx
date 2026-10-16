@@ -16,7 +16,6 @@ import Button from '../../components/ui/Button.jsx';
 import Dropdown from '../../components/ui/Dropdown.jsx';
 import IconButton from '../../components/ui/IconButton.jsx';
 import styles from '../Project.module.css';
-import {track} from '../../analytics';
 import {adminUserPath} from '../admin/admin-links.js';
 
 // Title, byline and the action buttons and menu at the top of a project page.
@@ -144,7 +143,6 @@ const ProjectHeader = ({
                                     type="button"
                                     onClick={() => {
                                         close();
-                                        track('embed_code_copied', {project: project.id});
                                         copyLink(`<iframe src="${window.location.origin}/embed.html?mw=${
                                             encodeURIComponent(project.id)
                                         }" width="482" height="412" frameborder="0" scrolling="no" ` +

@@ -26,7 +26,6 @@ import scrollToAnchorWithRetry from '../scroll-to-anchor.js';
 import projectRealtime from '../project-realtime.js';
 import styles from './Project.module.css';
 import RelatedProjects, {rememberProject} from '../components/RelatedProjects.jsx';
-import {track} from '../analytics';
 import {
     activityHash, activityTabForHash, initialActivityTab, initialVersionControlTab, VERSION_CONTROL_HASHES
 } from './project/activity-tabs.js';
@@ -238,7 +237,6 @@ const Project = () => {
         if (userLoading || !id) return;
         api.view(id).catch(() => {});
         rememberProject(id);
-        track('project_view', {project: id, signedIn: Boolean(user)});
     }, [id, userLoading]);
 
     // Scroll to a comment anchor after the comments section renders
@@ -331,7 +329,7 @@ const Project = () => {
         });
     };
 
-    const remixAfterLogin = useAfterLogin(startRemix, 'remix');
+    const remixAfterLogin = useAfterLogin(startRemix);
     const remix = () => {
         if (!userLoading) remixAfterLogin();
     };
@@ -486,7 +484,7 @@ const Project = () => {
             if (actionContextRef.current === context) setSavingLibrary(false);
         }
     };
-    const saveAfterLogin = useAfterLogin(toggleLibrary, 'library');
+    const saveAfterLogin = useAfterLogin(toggleLibrary);
 
     const toggleFeatured = async () => {
         const context = actionContextRef.current;

@@ -665,7 +665,7 @@ const CommentThread = ({
     const submitAfterLogin = useAfterLogin(async (text, parent, commentKind) => {
         await submit(text, parent, commentKind);
         load();
-    }, 'comment');
+    });
 
     const remove = async commentId => {
         const actionSource = source;

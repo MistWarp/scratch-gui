@@ -5,7 +5,6 @@ import {customThemeManager} from '../lib/themes/custom-themes.js';
 import {onRoturLogin} from '../lib/rotur/cloud-sync.js';
 import {subscribeNotifications, subscribeNotificationRemovals} from '../lib/rotur/client.js';
 import rotur from './rotur.js';
-import {track} from './analytics.js';
 import {setMinorAccount} from '../lib/minor-account.js';
 import {
     subscribe as subscribeIdentity,
@@ -27,16 +26,6 @@ const optionalRequest = request => Promise.resolve().then(request).catch(() => n
 
 const NEW_ACCOUNT_WINDOW = 30 * 60 * 1000;
 const isNewAccount = me => Boolean(me && me.created > 0 && Date.now() - me.created < NEW_ACCOUNT_WINDOW);
-const trackSignupOnce = username => {
-    try {
-        const key = `mw:signup-tracked:${username.toLowerCase()}`;
-        if (localStorage.getItem(key)) return;
-        localStorage.setItem(key, '1');
-    } catch (e) {
-        return;
-    }
-    track('signup_completed');
-};
 
 const UserProvider = ({children}) => {
     const [user, setUser] = useState(null);
@@ -97,7 +86,6 @@ const UserProvider = ({children}) => {
         // A transient /me failure while Rotur is logged in should not flip the
         // UI to signed-out; fall back to a minimal user so it stays logged in.
         const baseUser = me || (identityUser ? {username: identityUser.username} : null);
-        if (isNewAccount(me)) trackSignupOnce(me.username);
         setUser(normalizeUser(baseUser ? {
             ...baseUser,
             isNew: isNewAccount(me),
@@ -169,7 +157,6 @@ const UserProvider = ({children}) => {
         setSignInError('');
         try {
             await identityLogin();
-            track('signin_completed');
         } catch (error) {
             if (!error || error.code !== 'banned') setSignInError(signInErrorMessage(error));
             throw error;

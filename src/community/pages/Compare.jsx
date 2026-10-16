@@ -69,7 +69,7 @@ const Compare = () => {
                 title={text('MistWarp compared with Scratch and TurboWarp')}
                 lead={text('MistWarp is a Scratch mod built on TurboWarp. Your Scratch projects open as they are.')}
             >
-                <ScratchImport source="compare" />
+                <ScratchImport />
             </PageHeader>
             <div className={styles.grid}>
                 {FEATURES.map(({icon: Icon, title, body, to, href, action}) => (

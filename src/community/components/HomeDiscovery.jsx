@@ -4,7 +4,6 @@ import {Link} from 'react-router-dom';
 import {Star, UserPlus} from 'lucide-react';
 import api from '../api';
 import rotur from '../rotur.js';
-import {track} from '../analytics';
 import {useCommunityIntl} from '../i18n.jsx';
 import useAfterLogin from '../use-after-login.js';
 import Avatar from './Avatar.jsx';
@@ -41,11 +40,10 @@ const SuggestedCreators = ({viewerName}) => {
         setFollowed(current => ({...current, [username]: true}));
         try {
             await rotur.follow(username);
-            track('suggested_creator_followed');
         } catch (e) {
             setFollowed(current => ({...current, [username]: false}));
         }
-    }, 'follow');
+    });
     if (!creators.length) return null;
     return (
         <section>

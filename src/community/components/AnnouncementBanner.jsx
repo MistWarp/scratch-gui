@@ -1,7 +1,6 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useState} from 'react';
 import {Megaphone, X} from 'lucide-react';
-import {track} from '../analytics.js';
 import JoinCommunityModal from './JoinCommunityModal.jsx';
 import styles from './AnnouncementBanner.module.css';
 
@@ -28,7 +27,6 @@ const AnnouncementBanner = () => {
         }
     };
     const openJoin = () => {
-        track('community_join_open');
         setJoinOpen(true);
     };
     return (

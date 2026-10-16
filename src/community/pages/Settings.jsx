@@ -18,7 +18,7 @@ import Notice from '../components/ui/Notice.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import SectionHeading from '../components/ui/SectionHeading.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
-import {Switch, SwitchRow} from '../components/ui/Switch.jsx';
+import {SwitchRow} from '../components/ui/Switch.jsx';
 import {useUser} from '../UserContext.jsx';
 import {
     getUsernameOverride,
@@ -38,7 +38,6 @@ import {presenceSupported} from '../../lib/rotur/client.js';
 import styles from './Settings.module.css';
 import {getNotificationPreferences, setNotificationPreferences} from '../notification-preferences';
 import api from '../api';
-import {analyticsEnabled, setAnalyticsEnabled} from '../analytics.js';
 import {useCommunityIntl} from '../i18n.jsx';
 import LanguagePicker from '../components/LanguagePicker.jsx';
 import downloadBlob from '../../lib/utils/download-blob.js';
@@ -194,7 +193,6 @@ const Settings = () => {
     const [saveToDelete, setSaveToDelete] = useState(null);
     const [deleteConfirmation, setDeleteConfirmation] = useState('');
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-    const [shareAnalytics, setShareAnalytics] = useState(analyticsEnabled());
     const [showRecentActivity, setShowRecentActivity] = useState(!minorAccount);
     const [profileComments, setProfileComments] = useState(!minorAccount);
     const [privacyBusy, setPrivacyBusy] = useState(false);
@@ -367,7 +365,6 @@ const Settings = () => {
         setAccentMenuBarState(getAccentMenuBar());
         setMenuBarTextState(getMenuBarText());
         setPresence(getRoturSettings());
-        setShareAnalytics(analyticsEnabled());
     }, [user]);
 
     useEffect(() => subscribeRoturSettings(next => setPresence(next)), []);
@@ -408,10 +405,6 @@ const Settings = () => {
         setNotificationPreferencesState(next);
         setNotificationPreferences(next);
         notifyLocalChange();
-    };
-    const changeAnalytics = enabled => {
-        setAnalyticsEnabled(enabled);
-        setShareAnalytics(enabled);
     };
     const changeProfileComments = async enabled => {
         if (!user || privacyBusy) return;
@@ -856,20 +849,6 @@ const Settings = () => {
                             />
                             <UnderlineTabs items={DATA_TABS} value={dataTab} onChange={setDataTab} className={styles.themeTabs} ariaLabel="Data sections" idPrefix="settings-data" />
                             {dataTab === 'account' ? <div {...tabPanelProps('settings-data', dataTab)}>
-                                <div className={styles.dataAction}>
-                                    <div>
-                                        <h3>{t('settings.analytics')}</h3>
-                                        <p>{minorAccount ?
-                                            communityText('Anonymous analytics stay off for accounts under 18.') :
-                                            t('settings.analyticsHelp')}</p>
-                                    </div>
-                                    <Switch
-                                        ariaLabel={t('settings.analytics')}
-                                        checked={shareAnalytics && !minorAccount}
-                                        disabled={minorAccount}
-                                        onChange={changeAnalytics}
-                                    />
-                                </div>
                                 {!user ? (
                                     <SignInPrompt compact onSignIn={login}>
                                         {communityText('Sign in to download or delete your MistWarp data.')}

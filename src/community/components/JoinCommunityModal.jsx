@@ -2,7 +2,6 @@ import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {ArrowUpRight, MessageCircle, Users} from 'lucide-react';
-import {track} from '../analytics.js';
 import {useCommunityIntl} from '../i18n.jsx';
 import Modal from './ui/Modal.jsx';
 import styles from './JoinCommunityModal.module.css';
@@ -42,10 +41,7 @@ const JoinCommunityModal = ({onClose}) => {
                         href={community.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={() => {
-                            track('community_join', {destination: community.key});
-                            onClose();
-                        }}
+                        onClick={onClose}
                     >
                         <span className={styles.optionIcon}><MessageCircle size={18} /></span>
                         <span className={styles.optionText}>
