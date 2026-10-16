@@ -2874,5 +2874,13 @@
   "{value1} is shadow banned": "{value1} is shadow banned",
   "None of their projects or comments appear for anyone else. Only admins see this notice.": "None of their projects or comments appear for anyone else. Only admins see this notice.",
   "This page could not load.": "This page could not load.",
-  "Part of the site did not download. Check your connection and try again.": "Part of the site did not download. Check your connection and try again."
+  "Part of the site did not download. Check your connection and try again.": "Part of the site did not download. Check your connection and try again.",
+  "Send this report to Rotur?": "Send this report to Rotur?",
+  "Rotur's safety team reviews it and tells the reporter the outcome. It stays open here until they decide.": "Rotur's safety team reviews it and tells the reporter the outcome. It stays open here until they decide.",
+  "Send to Rotur": "Send to Rotur",
+  "Note for Rotur (optional)": "Note for Rotur (optional)",
+  "Rotur took action": "Rotur took action",
+  "Rotur found no rule broken": "Rotur found no rule broken",
+  "With Rotur, sent by @{value1}": "With Rotur, sent by @{value1}",
+  "With Rotur, sent automatically": "With Rotur, sent automatically"
 }

@@ -317,6 +317,8 @@ const api = {
         reports: () => request('/admin/reports'),
         reportAction: (id, action, reason) =>
             request('/admin/reports/action', {method: 'POST', body: {id, action, reason}}),
+        escalateReport: (id, note) =>
+            request('/admin/reports/escalate', {method: 'POST', body: {id, note}}),
         reportEvidence: id => request(`/admin/reports/evidence/${id}`),
         admins: () => request('/admin/admins'),
         addAdmin: username => request('/admin/admins', {method: 'POST', body: {username}}),

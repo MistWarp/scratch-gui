@@ -56,7 +56,7 @@
     "src/community/components/StandingBanner.jsx:37",
     "src/community/components/StandingBanner.jsx:57",
     "src/community/components/ui/Notice.jsx:35",
-    "src/community/pages/admin/ReportsSection.jsx:100"
+    "src/community/pages/admin/ReportsSection.jsx:118"
   ],
   "Could not render blocks.": [
     "src/community/components/BlocksCompare.jsx:93"
@@ -3091,7 +3091,7 @@
   "Hide project": [
     "src/community/pages/Admin.jsx:104",
     "src/community/pages/admin/ProjectModerationDialog.jsx:14",
-    "src/community/pages/admin/ReportsSection.jsx:88"
+    "src/community/pages/admin/ReportsSection.jsx:101"
   ],
   "Reason for the creator": [
     "src/community/pages/Admin.jsx:106",
@@ -3108,74 +3108,87 @@
   ],
   "Reason": [
     "src/community/pages/Admin.jsx:119",
-    "src/community/pages/Admin.jsx:149"
+    "src/community/pages/Admin.jsx:162"
   ],
-  "the owner of this project": [
-    "src/community/pages/Admin.jsx:125"
+  "Send this report to Rotur?": [
+    "src/community/pages/Admin.jsx:129"
   ],
-  "Ban {value1}?": [
-    "src/community/pages/Admin.jsx:131"
+  "Rotur's safety team reviews it and tells the reporter the outcome. It stays open here until they decide.": [
+    "src/community/pages/Admin.jsx:130"
   ],
-  "They will be locked out of MistWarp until an admin unbans them.": [
+  "Send to Rotur": [
+    "src/community/pages/Admin.jsx:131",
+    "src/community/pages/admin/ReportsSection.jsx:115"
+  ],
+  "Note for Rotur (optional)": [
     "src/community/pages/Admin.jsx:132"
   ],
+  "the owner of this project": [
+    "src/community/pages/Admin.jsx:138"
+  ],
+  "Ban {value1}?": [
+    "src/community/pages/Admin.jsx:144"
+  ],
+  "They will be locked out of MistWarp until an admin unbans them.": [
+    "src/community/pages/Admin.jsx:145"
+  ],
   "Ban user": [
-    "src/community/pages/Admin.jsx:133",
-    "src/community/pages/Admin.jsx:143",
-    "src/community/pages/Admin.jsx:145",
+    "src/community/pages/Admin.jsx:146",
+    "src/community/pages/Admin.jsx:156",
+    "src/community/pages/Admin.jsx:158",
     "src/community/pages/Profile.jsx:1019",
-    "src/community/pages/admin/ReportsSection.jsx:97",
+    "src/community/pages/admin/ReportsSection.jsx:110",
     "src/community/pages/admin/UserDetailCard.jsx:204"
   ],
   "The user will be locked out of MistWarp until an admin unbans them.": [
-    "src/community/pages/Admin.jsx:144"
+    "src/community/pages/Admin.jsx:157"
   ],
   "Username": [
-    "src/community/pages/Admin.jsx:148",
-    "src/community/pages/Admin.jsx:164",
+    "src/community/pages/Admin.jsx:161",
+    "src/community/pages/Admin.jsx:177",
     "src/community/pages/ManageProject.jsx:976",
     "src/community/pages/admin/AdminsSection.jsx:18"
   ],
   "Shadow ban a user": [
-    "src/community/pages/Admin.jsx:159"
+    "src/community/pages/Admin.jsx:172"
   ],
   "Their projects, comments and profile leave every list for everyone else. They are not told and still see everything as normal.": [
-    "src/community/pages/Admin.jsx:160"
+    "src/community/pages/Admin.jsx:173"
   ],
   "Shadow ban": [
-    "src/community/pages/Admin.jsx:161",
+    "src/community/pages/Admin.jsx:174",
     "src/community/pages/admin/ProjectManager.jsx:160",
     "src/community/pages/admin/ProjectModerationDialog.jsx:32",
     "src/community/pages/admin/UserDetailCard.jsx:640",
     "src/community/pages/admin/UserDetailCard.jsx:665"
   ],
   "Private note for admins": [
-    "src/community/pages/Admin.jsx:165",
+    "src/community/pages/Admin.jsx:178",
     "src/community/pages/admin/ProjectModerationDialog.jsx:35",
     "src/community/pages/admin/UserDetailCard.jsx:652"
   ],
   "Enter a reply.": [
-    "src/community/pages/Admin.jsx:185"
+    "src/community/pages/Admin.jsx:198"
   ],
   "Tell the creator why their project is hidden.": [
-    "src/community/pages/Admin.jsx:189",
+    "src/community/pages/Admin.jsx:202",
     "src/community/pages/admin/ProjectModerationDialog.jsx:79"
   ],
   "Enter a username.": [
-    "src/community/pages/Admin.jsx:193",
-    "src/community/pages/Admin.jsx:201"
+    "src/community/pages/Admin.jsx:206",
+    "src/community/pages/Admin.jsx:214"
   ],
   "Enter a warning reason.": [
-    "src/community/pages/Admin.jsx:197"
+    "src/community/pages/Admin.jsx:210"
   ],
   "Admins only": [
-    "src/community/pages/Admin.jsx:295"
+    "src/community/pages/Admin.jsx:311"
   ],
   "This page is for admins.": [
-    "src/community/pages/Admin.jsx:296"
+    "src/community/pages/Admin.jsx:312"
   ],
   "Admin": [
-    "src/community/pages/Admin.jsx:322",
+    "src/community/pages/Admin.jsx:338",
     "src/community/pages/admin/AdminsSection.jsx:37",
     "src/community/pages/admin/UserDetailCard.jsx:377",
     "src/community/pages/admin/UserManager.jsx:157"
@@ -7480,50 +7493,62 @@
   "Could not update this project.": [
     "src/community/pages/admin/ProjectModerationDialog.jsx:91"
   ],
+  "Rotur took action": [
+    "src/community/pages/admin/ReportsSection.jsx:18"
+  ],
+  "Rotur found no rule broken": [
+    "src/community/pages/admin/ReportsSection.jsx:19"
+  ],
+  "With Rotur, sent by @{value1}": [
+    "src/community/pages/admin/ReportsSection.jsx:20"
+  ],
+  "With Rotur, sent automatically": [
+    "src/community/pages/admin/ReportsSection.jsx:21"
+  ],
   "Open reports": [
-    "src/community/pages/admin/ReportsSection.jsx:21",
+    "src/community/pages/admin/ReportsSection.jsx:28",
     "src/community/pages/admin/StatsOverview.jsx:267"
   ],
   "{value1} request from @{value2}": [
-    "src/community/pages/admin/ReportsSection.jsx:33"
+    "src/community/pages/admin/ReportsSection.jsx:40"
   ],
   "Project {value1}": [
-    "src/community/pages/admin/ReportsSection.jsx:36"
+    "src/community/pages/admin/ReportsSection.jsx:43"
   ],
   "Bounty {value1}": [
-    "src/community/pages/admin/ReportsSection.jsx:42"
+    "src/community/pages/admin/ReportsSection.jsx:49"
   ],
   "Comment {value1}": [
-    "src/community/pages/admin/ReportsSection.jsx:52",
-    "src/community/pages/admin/ReportsSection.jsx:60",
-    "src/community/pages/admin/ReportsSection.jsx:66"
+    "src/community/pages/admin/ReportsSection.jsx:59",
+    "src/community/pages/admin/ReportsSection.jsx:67",
+    "src/community/pages/admin/ReportsSection.jsx:73"
   ],
   "Reported by @{value1}{value2}": [
-    "src/community/pages/admin/ReportsSection.jsx:70"
+    "src/community/pages/admin/ReportsSection.jsx:77"
   ],
   " · in {value1}": [
-    "src/community/pages/admin/ReportsSection.jsx:71"
+    "src/community/pages/admin/ReportsSection.jsx:78"
   ],
   "View account": [
-    "src/community/pages/admin/ReportsSection.jsx:82"
+    "src/community/pages/admin/ReportsSection.jsx:95"
   ],
   "Reply and close": [
-    "src/community/pages/admin/ReportsSection.jsx:85"
+    "src/community/pages/admin/ReportsSection.jsx:98"
   ],
   "Warn owner": [
-    "src/community/pages/admin/ReportsSection.jsx:92"
+    "src/community/pages/admin/ReportsSection.jsx:105"
   ],
   "Warn user": [
-    "src/community/pages/admin/ReportsSection.jsx:92"
+    "src/community/pages/admin/ReportsSection.jsx:105"
   ],
   "Ban owner": [
-    "src/community/pages/admin/ReportsSection.jsx:97"
+    "src/community/pages/admin/ReportsSection.jsx:110"
   ],
   "No open reports": [
-    "src/community/pages/admin/ReportsSection.jsx:106"
+    "src/community/pages/admin/ReportsSection.jsx:124"
   ],
   "The moderation queue is clear.": [
-    "src/community/pages/admin/ReportsSection.jsx:107"
+    "src/community/pages/admin/ReportsSection.jsx:125"
   ],
   "Shadow banned by @{value1}{value2}": [
     "src/community/pages/admin/ShadowBansSection.jsx:20"

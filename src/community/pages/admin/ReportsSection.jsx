@@ -2,7 +2,7 @@
 import React from 'react';
 import {Link} from 'react-router-dom';
 import {useCommunityIntl as useCommunityText} from '../../i18n.jsx';
-import {Flag, UserSearch} from 'lucide-react';
+import {Flag, ShieldAlert, ShieldCheck, UserSearch} from 'lucide-react';
 import {projectUrl} from '../../api';
 import Button from '../../components/ui/Button.jsx';
 import EmptyState from '../../components/ui/EmptyState.jsx';
@@ -14,7 +14,14 @@ import EvidencePanel from './EvidencePanel.jsx';
 import {adminUserPath} from './admin-links.js';
 
 // The open moderation queue: reports and support requests with their actions.
-const ReportsSection = ({reports, openCount, replyToSupport, act, hideFromReport, warnFromReport, banFromReport}) => {
+const roturStatusText = (report, communityText) => {
+    if (report.roturOutcome === 'action_taken') return communityText('Rotur took action');
+    if (report.roturOutcome === 'no_action') return communityText('Rotur found no rule broken');
+    if (report.roturEscalatedBy) return communityText('With Rotur, sent by @{value1}', {value1: report.roturEscalatedBy});
+    return communityText('With Rotur, sent automatically');
+};
+
+const ReportsSection = ({reports, openCount, replyToSupport, act, hideFromReport, warnFromReport, banFromReport, escalateReport}) => {
     const {text: communityText} = useCommunityText();
     return (
         <section className={styles.card}>
@@ -72,6 +79,12 @@ const ReportsSection = ({reports, openCount, replyToSupport, act, hideFromReport
                                 </span>
                                 <span className={styles.reason}>{report.reason}</span>
                                 {report.type === 'support' && report.context ? <span className={styles.reason}>{report.context}</span> : null}
+                                {report.roturEscalated ? (
+                                    <span className={styles.roturStatus}>
+                                        {report.roturOutcome ? <ShieldCheck size={14} /> : <ShieldAlert size={14} />}
+                                        {roturStatusText(report, communityText)}
+                                    </span>
+                                ) : null}
                                 {report.type === 'project' ? (
                                     <EvidencePanel target={report.target} />
                                 ) : null}
@@ -95,6 +108,11 @@ const ReportsSection = ({reports, openCount, replyToSupport, act, hideFromReport
                                 {report.type !== 'support' ? (
                                     <Button variant="danger" onClick={() => banFromReport(report)}>
                                         {report.type === 'project' ? communityText('Ban owner') : communityText('Ban user')}
+                                    </Button>
+                                ) : null}
+                                {report.rotur === 'filed' && !report.roturEscalated ? (
+                                    <Button onClick={() => escalateReport(report)}>
+                                        <ShieldAlert size={15} />{communityText('Send to Rotur')}
                                     </Button>
                                 ) : null}
                                 <Button onClick={() => act(report.id, 'dismiss')}>{communityText('Dismiss')}</Button>
