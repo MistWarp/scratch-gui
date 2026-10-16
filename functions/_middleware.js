@@ -7,6 +7,7 @@ const DEFAULT_IMAGE = 'https://mistwarp.org/images/apple-touch-icon.png';
 const FETCH_TIMEOUT_MS = 3000;
 const STATIC_FILE_PATH = /^\/(?:assets|js|static\/assets)\//;
 const DOCS_PATH = /^\/docs(?:\/|$)/;
+const LEGACY_EMBED_PATH = /^\/(\d+|p[A-Za-z0-9]+)\/embed\/?$/;
 // Standalone HTML entries with their own tags; the community SPA is index.html.
 const SKIP_PATHS = new Set([
     '/editor',
@@ -528,6 +529,12 @@ export const onRequest = async context => {
             return new Response('Sitemap unavailable', {status: 503});
         }
         return new Response('Sitemap unavailable', {status: 503});
+    }
+
+    const legacyEmbed = url.pathname.match(LEGACY_EMBED_PATH);
+    if (legacyEmbed) {
+        const id = legacyEmbed[1];
+        return Response.redirect(`${url.origin}/embed${url.search}#${/^\d+$/.test(id) ? id : `mw-${id}`}`, 302);
     }
 
     const response = await next();

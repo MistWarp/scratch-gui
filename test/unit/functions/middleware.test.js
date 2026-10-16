@@ -738,3 +738,21 @@ describe('unexpected API data', () => {
         await expect(result.text()).resolves.toBe(HTML);
     });
 });
+
+describe('legacy embed links', () => {
+    test('/<id>/embed redirects to the frameable embed page', async () => {
+        const {result, next} = await run('/123/embed/?autoplay');
+        expect(next).not.toHaveBeenCalled();
+        expect(result.status).toBe(302);
+        expect(result.headers.get('location')).toBe('https://mistwarp.org/embed?autoplay#123');
+        const platform = await run('/pAbc123/embed');
+        expect(platform.result.headers.get('location')).toBe('https://mistwarp.org/embed#mw-pAbc123');
+    });
+
+    test('community pages that end in /embed are not treated as embeds', async () => {
+        for (const path of ['/users/embed', '/groups/embed', '/p/embed', '/settings/embed']) {
+            const {next} = await run(path);
+            expect(next).toHaveBeenCalledTimes(1);
+        }
+    });
+});

@@ -84,7 +84,7 @@ const splitSession = {
                     editorToken = {...next, username};
                     return next.token;
                 }, error => {
-                    mintFailedAt = Date.now();
+                    if (!error || error.code !== 'bridge') mintFailedAt = Date.now();
                     throw error;
                 })
                 .finally(() => {
@@ -107,30 +107,35 @@ const userFromBridge = user => (user && user.username ? {
     bio: user.bio
 } : null);
 
-const applyIdentity = async (next, generation) => {
-    const user = userFromBridge(next.user);
+const applyIdentity = async (entry, generation) => {
+    const user = userFromBridge(entry.next.user);
     if (!user || (editorToken && editorToken.username !== user.username)) storeSession(null);
     if (user && !splitSession.get()) {
         await splitSession.refresh().catch(() => null);
         if (generation !== identityGeneration) return;
     }
+    const latest = entry.next;
     setState({
-        status: next.status === 'restoring' ? 'restoring' : (user ? 'ready' : 'idle'),
+        status: latest.status === 'restoring' ? 'restoring' : (user ? 'ready' : 'idle'),
         user,
-        banMessage: next.banMessage || null,
+        banMessage: latest.banMessage || null,
         reconnect: false
     });
 };
 
 const applyBridgeIdentity = next => {
     const username = next && next.user && next.user.username ? next.user.username : '';
-    if (applying && applying.username === username) return applying.promise;
+    if (applying && applying.username === username) {
+        applying.next = next;
+        return applying.promise;
+    }
     const generation = ++identityGeneration;
-    const promise = applyIdentity(next, generation).finally(() => {
-        if (applying && applying.promise === promise) applying = null;
+    const entry = {username, next};
+    entry.promise = applyIdentity(entry, generation).finally(() => {
+        if (applying === entry) applying = null;
     });
-    applying = {username, promise};
-    return promise;
+    applying = entry;
+    return entry.promise;
 };
 
 const wireSplitEditor = () => {

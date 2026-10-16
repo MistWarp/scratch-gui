@@ -70,7 +70,8 @@ const connect = () => {
             connection = null;
             if (frame === thisFrame) frame = null;
             thisFrame.remove();
-            reject(new Error('Could not reach your MistWarp account. Check your connection and reload.'));
+            reject(Object.assign(new Error('Could not reach your MistWarp account. Check your connection and reload.'),
+                {code: 'bridge'}));
         }, CONNECT_TIMEOUT);
         thisFrame.addEventListener('load', () => {
             if (frame !== thisFrame) return;
@@ -78,7 +79,7 @@ const connect = () => {
             setShown(false);
             if (port) {
                 port.close();
-                rejectAll(new Error('Your MistWarp account reloaded. Try again.'));
+                rejectAll(Object.assign(new Error('Your MistWarp account reloaded. Try again.'), {code: 'bridge'}));
             }
             port = channel.port1;
             port.onmessage = event => {
@@ -104,7 +105,8 @@ const call = async (method, args = {}) => {
         const id = ++nextId;
         const timer = setTimeout(() => {
             pending.delete(id);
-            reject(new Error('Your MistWarp account did not answer. Check for an open dialog and try again.'));
+            const message = 'Your MistWarp account did not answer. Check for an open dialog and try again.';
+            reject(Object.assign(new Error(message), {code: 'bridge'}));
         }, CALL_TIMEOUT);
         pending.set(id, {resolve, reject, timer});
         try {
