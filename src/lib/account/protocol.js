@@ -1,7 +1,8 @@
 const CHANNEL = 'mw:account';
 const FRAME_PATH = '/account-frame.html';
 const CALL_TIMEOUT = 240000;
-const CONNECT_TIMEOUT = 15000;
+const CONNECT_TIMEOUT = 30000;
+const PROMPT_LIFETIME = 210000;
 
 const publicIdentity = state => {
     const user = state && state.user;
@@ -34,6 +35,7 @@ export {
     FRAME_PATH,
     CALL_TIMEOUT,
     CONNECT_TIMEOUT,
+    PROMPT_LIFETIME,
     publicIdentity,
     toError,
     fromError

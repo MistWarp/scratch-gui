@@ -55,23 +55,37 @@ const subscribe = cb => {
 
 const TOKEN_MARGIN = 60000;
 const SIGN_IN_POPUP = 'mw-account-signin';
+const MINT_RETRY_DELAY = 30000;
 let editorToken = null;
 let editorTokenRequest = null;
+let mintFailedAt = 0;
 let tokenGeneration = 0;
 let identityGeneration = 0;
+let applying = null;
 let splitWired = false;
 
+const bridgeUsername = () => {
+    const user = accountBridge.getIdentity().user;
+    return user && user.username ? user.username : '';
+};
+
 const splitSession = {
-    get: () => (editorToken && editorToken.expiresAt - TOKEN_MARGIN > Date.now() ? editorToken.token : null),
+    get: () => (editorToken && editorToken.username === bridgeUsername() &&
+        editorToken.expiresAt - TOKEN_MARGIN > Date.now() ? editorToken.token : null),
     refresh: () => {
-        if (!state.user && !accountBridge.getIdentity().user) return Promise.resolve(null);
+        const username = bridgeUsername();
+        if (!username || Date.now() - mintFailedAt < MINT_RETRY_DELAY) return Promise.resolve(null);
         if (!editorTokenRequest) {
             const generation = tokenGeneration;
             editorTokenRequest = accountBridge.call('editorSession')
                 .then(next => {
-                    if (generation !== tokenGeneration) return null;
-                    editorToken = next;
+                    if (generation !== tokenGeneration || username !== bridgeUsername()) return null;
+                    mintFailedAt = 0;
+                    editorToken = {...next, username};
                     return next.token;
+                }, error => {
+                    mintFailedAt = Date.now();
+                    throw error;
                 })
                 .finally(() => {
                     editorTokenRequest = null;
@@ -93,16 +107,11 @@ const userFromBridge = user => (user && user.username ? {
     bio: user.bio
 } : null);
 
-const applyBridgeIdentity = async next => {
-    const generation = ++identityGeneration;
+const applyIdentity = async (next, generation) => {
     const user = userFromBridge(next.user);
-    if (!user || !state.user || state.user.username !== user.username) storeSession(null);
+    if (!user || (editorToken && editorToken.username !== user.username)) storeSession(null);
     if (user && !splitSession.get()) {
-        try {
-            await splitSession.refresh();
-        } catch (_) {
-            storeSession(null);
-        }
+        await splitSession.refresh().catch(() => null);
         if (generation !== identityGeneration) return;
     }
     setState({
@@ -111,6 +120,17 @@ const applyBridgeIdentity = async next => {
         banMessage: next.banMessage || null,
         reconnect: false
     });
+};
+
+const applyBridgeIdentity = next => {
+    const username = next && next.user && next.user.username ? next.user.username : '';
+    if (applying && applying.username === username) return applying.promise;
+    const generation = ++identityGeneration;
+    const promise = applyIdentity(next, generation).finally(() => {
+        if (applying && applying.promise === promise) applying = null;
+    });
+    applying = {username, promise};
+    return promise;
 };
 
 const wireSplitEditor = () => {
@@ -122,6 +142,7 @@ const wireSplitEditor = () => {
 
 const restoreSplitEditor = async () => {
     wireSplitEditor();
+    if (!state.user) setState({status: 'restoring'});
     try {
         await accountBridge.connect();
     } catch (_) {
@@ -305,6 +326,7 @@ const login = async () => {
 const logout = () => {
     if (isSplitEditor()) {
         identityGeneration += 1;
+        applying = null;
         storeSession(null);
         accountBridge.call('signOut').catch(() => null);
         try {

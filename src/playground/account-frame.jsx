@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import * as identity from '../lib/rotur/identity.js';
 import {request} from '../lib/community/api.js';
 import {callRotur} from '../lib/rotur/extension-bridge.js';
-import {CHANNEL, CALL_TIMEOUT} from '../lib/account/protocol.js';
+import {CHANNEL, PROMPT_LIFETIME} from '../lib/account/protocol.js';
 import {ACCOUNT_ORIGIN, isEditorOrigin} from '../lib/account/origins.js';
 import {createFrameServer} from '../lib/account/frame-server.js';
 import {createProjectRotur} from '../lib/account/frame-project-rotur.js';
@@ -11,13 +11,14 @@ import FramePrompt, {supportsVisibilityCheck} from '../components/account-frame/
 import {applyThemeVisuals, detectTheme} from '../lib/themes/themePersistance.js';
 
 const REVIEW_CHANNEL = 'mw:account-review';
-const PROMPT_TIMEOUT = CALL_TIMEOUT - 30000;
+const RESTORE_WAIT = 10000;
+const REVIEW_WAIT = 5000;
 const root = document.getElementById('app');
-const ports = new Set();
+const ports = new Map();
 let promptOpen = false;
 
 const broadcast = message => {
-    for (const port of ports) {
+    for (const port of ports.keys()) {
         try {
             port.postMessage(message);
         } catch (e) {
@@ -39,7 +40,7 @@ const openReviewWindow = id => {
         `popup,width=480,height=640,left=${left},top=${top}`);
 };
 
-const prompt = (type, data) => new Promise(resolve => {
+const prompt = (type, data, lifetime = PROMPT_LIFETIME) => new Promise(resolve => {
     promptOpen = true;
     broadcast({kind: 'show'});
     const reviewId = randomId();
@@ -58,7 +59,7 @@ const prompt = (type, data) => new Promise(resolve => {
         broadcast({kind: 'hide'});
         resolve(answer);
     };
-    timer = setTimeout(() => finish(false), PROMPT_TIMEOUT);
+    timer = setTimeout(() => finish(false), lifetime);
     const render = reviewError => {
         ReactDOM.render(React.createElement(FramePrompt, {
             type,
@@ -100,15 +101,22 @@ const startFrame = () => {
         callRotur,
         projectRotur: createProjectRotur({prompt, getUsername})
     });
-    const restored = Promise.resolve(identity.restore()).catch(() => null);
+    const restored = Promise.race([
+        Promise.resolve(identity.restore()).catch(() => null),
+        new Promise(resolve => setTimeout(resolve, RESTORE_WAIT))
+    ]);
     window.addEventListener('message', event => {
         const data = event.data;
         if (event.source !== window.parent || !isEditorOrigin(event.origin) || !data ||
             data.type !== CHANNEL || data.kind !== 'connect' || !event.ports[0]) return;
         const port = event.ports[0];
         restored.then(() => {
-            ports.add(port);
-            server.serve(port);
+            for (const [oldPort, unsubscribe] of ports) {
+                unsubscribe();
+                oldPort.close();
+            }
+            ports.clear();
+            ports.set(port, server.serve(port));
             if (promptOpen) port.postMessage({kind: 'show'});
         });
     });
@@ -134,8 +142,12 @@ const startSignIn = async () => {
 const startReview = id => {
     applyThemeVisuals(detectTheme());
     const review = new BroadcastChannel(REVIEW_CHANNEL);
+    const ended = setTimeout(() => {
+        root.textContent = 'This request has ended. You can close this window.';
+    }, REVIEW_WAIT);
     review.onmessage = ({data: message}) => {
         if (!message || message.id !== id || message.kind !== 'prompt') return;
+        clearTimeout(ended);
         ReactDOM.render(React.createElement(FramePrompt, {
             type: message.type,
             data: message.data,

@@ -16,6 +16,12 @@
 /player
   ! Content-Security-Policy
 
+/:id/embed
+  ! Content-Security-Policy
+
+/:id/embed/
+  ! Content-Security-Policy
+
 /player.html
   ! Content-Security-Policy
 

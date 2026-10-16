@@ -41,7 +41,7 @@ test('a frame that never connects is removed, and the next try starts fresh', as
     const bridge = loadBridge();
     const first = bridge.connect();
     expect(accountFrames()).toHaveLength(1);
-    jest.advanceTimersByTime(16000);
+    jest.advanceTimersByTime(31000);
     await expect(first).rejects.toThrow('Could not reach your MistWarp account');
     expect(accountFrames()).toHaveLength(0);
     bridge.connect().catch(() => null);

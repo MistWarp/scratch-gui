@@ -89,3 +89,9 @@ test('signed out projects are refused', async () => {
     await expect(host.ensureConsent(game, ['account:view'])).rejects.toThrow('Log in');
     await expect(host.call(game, 'me.get', [])).rejects.toThrow('Log in');
 });
+
+test('a request whose deadline passed while queued is refused without a prompt', async () => {
+    const {host, prompts} = setup([true]);
+    await expect(host.ensureConsent({name: 'Late', id: 'p7'}, ['blocked:manage'], Date.now() - 1)).resolves.toBe(false);
+    expect(prompts).toEqual([]);
+});

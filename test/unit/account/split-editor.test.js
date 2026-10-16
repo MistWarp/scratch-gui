@@ -10,7 +10,10 @@ let mockIdentity = {status: 'ready', user: {username: 'mist', id: 'u1', bio: nul
 const mockCall = jest.fn();
 let mockTokens = 0;
 jest.mock('../../../src/lib/account/bridge.js', () => ({
-    connect: jest.fn(() => Promise.resolve()),
+    connect: jest.fn(() => {
+        for (const listener of mockIdentityListeners) listener(mockIdentity);
+        return Promise.resolve();
+    }),
     call: (...args) => mockCall(...args),
     getIdentity: () => mockIdentity,
     subscribeIdentity: listener => {
@@ -111,4 +114,23 @@ test('switching accounts drops the old editor token', async () => {
     await new Promise(resolve => setTimeout(resolve, 0));
     expect(identity.getState().user).toMatchObject({username: 'someone-else'});
     expect(loadSession()).not.toBe(before);
+});
+
+test('one editor load mints one token even when the frame announces the user while connecting', async () => {
+    identity.logout();
+    mockCall.mockClear();
+    await identity.restore();
+    expect(mockCall.mock.calls.filter(([method]) => method === 'editorSession')).toHaveLength(1);
+});
+
+test('a failed mint is not retried on every request', async () => {
+    identity.logout();
+    mockCall.mockImplementation(method => (method === 'editorSession' ?
+        Promise.reject(new Error('rate limited')) :
+        Promise.resolve(null)));
+    await identity.restore();
+    window.fetch = jest.fn(() => Promise.resolve({ok: true, status: 200, json: () => Promise.resolve({ok: true})}));
+    await request('/me/quota', {cache: false});
+    await request('/me/quota', {cache: false});
+    expect(mockCall.mock.calls.filter(([method]) => method === 'editorSession')).toHaveLength(1);
 });

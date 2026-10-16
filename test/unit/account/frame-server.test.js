@@ -97,7 +97,7 @@ test('project requests need a valid project and pass through to the project host
     const {send, deps} = setup();
     expect((await send('projectRotur', {action: 'call', project: {name: 'Game', id: 'p1'}, method: 'me.get', args: []})).result)
         .toBe('result');
-    expect(deps.projectRotur.call).toHaveBeenCalledWith({name: 'Game', id: 'p1'}, 'me.get', []);
+    expect(deps.projectRotur.call).toHaveBeenCalledWith({name: 'Game', id: 'p1'}, 'me.get', [], expect.any(Number));
     expect((await send('projectRotur', {action: 'call', project: {name: 'x', id: '../p'}, method: 'me.get'})).error)
         .toBeTruthy();
     expect((await send('projectRotur', {action: 'ensureConsent', project: {name: 'x'}, scopes: [{}]})).error)

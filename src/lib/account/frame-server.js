@@ -1,4 +1,4 @@
-import {publicIdentity, toError} from './protocol.js';
+import {PROMPT_LIFETIME, publicIdentity, toError} from './protocol.js';
 
 const EDITOR_ROTUR_METHODS = new Set([
     'notifications.list'
@@ -33,15 +33,16 @@ const createFrameServer = ({identity, createEditorSession, callRotur, projectRot
         },
         projectRotur: ({action, project, scopes, method, args}) => {
             if (!validProject(project)) throw new Error('This project cannot use Rotur');
+            const deadline = Date.now() + PROMPT_LIFETIME;
             if (action === 'ensureConsent') {
                 if (!Array.isArray(scopes) || !scopes.every(scope => typeof scope === 'string')) {
                     throw new Error('Projects cannot ask for that Rotur permission');
                 }
-                return projectRotur.ensureConsent(project, scopes);
+                return projectRotur.ensureConsent(project, scopes, deadline);
             }
             if (action === 'call') {
                 if (typeof method !== 'string') throw new Error('This project cannot make that Rotur request');
-                return projectRotur.call(project, method, Array.isArray(args) ? args : []);
+                return projectRotur.call(project, method, Array.isArray(args) ? args : [], deadline);
             }
             if (action === 'clear') return projectRotur.clear(project);
             throw new Error('This project cannot make that Rotur request');

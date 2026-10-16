@@ -274,14 +274,24 @@ const runExchange = token => {
     return exchangeInFlight;
 };
 
+const SESSION_WAIT = 15000;
+
 const currentSession = async () => {
     if (!sessionProvider) return loadSession();
     const existing = sessionProvider.get();
     if (existing) return existing;
+    let timer = null;
     try {
-        return (await sessionProvider.refresh()) || null;
+        return (await Promise.race([
+            sessionProvider.refresh(),
+            new Promise(resolve => {
+                timer = setTimeout(() => resolve(null), SESSION_WAIT);
+            })
+        ])) || null;
     } catch (e) {
         return null;
+    } finally {
+        clearTimeout(timer);
     }
 };
 
@@ -300,6 +310,7 @@ const refreshSession = async () => {
 
 const request = async (path, {method = 'GET', body, headers = {}, raw = false, cache = true, timeoutMs} = {}) => {
     const cacheable = method === 'GET' && !raw && cache;
+    if (cacheable && sessionProvider) await currentSession();
     const cacheKey = cacheable ? getCacheKey(path) : '';
     // Uploads and raw downloads (project history) can take far longer than a
     // JSON GET, so only those get a deadline unless the caller asks for one.
@@ -463,7 +474,6 @@ const sendUploadXhr = (path, form, onUploadProgress, session) => new Promise((re
 const uploadXhr = (path, form, onUploadProgress) => (sessionProvider ?
     currentSession().then(session => sendUploadXhr(path, form, onUploadProgress, session)) :
     sendUploadXhr(path, form, onUploadProgress, loadSession()));
-
 
 const getCustomExtensionUrls = project => {
     const urls = {...(project.extensionURLs || {})};
