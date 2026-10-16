@@ -7,24 +7,27 @@ import {ArrowLeft, CircleAlert, Eye} from 'lucide-react';
 import {Theme} from '../../lib/themes/index.js';
 import {CustomTheme, GradientUtils} from '../../lib/themes/custom-themes.js';
 import CustomThemePreview from './custom-theme-preview.jsx';
-import GradientControls, {createGradientValue} from './gradient-builder.jsx';
+import GradientControls, {createGradientValue, gradientSignature, sortStops} from './gradient-builder.jsx';
 import messages from './custom-themes-messages.js';
 
 import styles from './custom-themes.css';
 
 const NAME_LIMIT = 50;
 const DESCRIPTION_LIMIT = 200;
+const PREVIEW_DELAY = 150;
 
 const TITLES = {
-    current: {message: messages.titleCurrent},
-    gradient: {message: messages.titleGradient},
-    edit: {message: messages.titleEdit}
+    current: messages.titleCurrent,
+    gradient: messages.titleGradient,
+    edit: messages.titleEdit
 };
 
 const gradientTheme = (base, gradient, name, description) => new CustomTheme(
     name,
     description,
-    GradientUtils.createGradientAccent(gradient.stops, gradient.primaryColor, {direction: gradient.direction}),
+    GradientUtils.createGradientAccent(sortStops(gradient.stops), gradient.primaryColor, {
+        direction: gradient.direction
+    }),
     base.gui || 'light',
     base.blocks || 'three',
     base.menuBarAlign || 'left',
@@ -42,6 +45,7 @@ const CustomThemeEditor = ({
     intl,
     mode,
     onCancel,
+    onInput,
     onPreview,
     onSubmit
 }) => {
@@ -51,11 +55,16 @@ const CustomThemeEditor = ({
     const [gradient, setGradient] = React.useState(() => (
         hasGradient ? createGradientValue(initialGradient || {}) : null
     ));
+    const [initialSignature] = React.useState(() => (gradient ? gradientSignature(gradient) : ''));
     const [trying, setTrying] = React.useState(false);
     const nameRef = React.useRef(null);
+    const backRef = React.useRef(null);
+    const previewRef = React.useRef(onPreview);
+    previewRef.current = onPreview;
 
     React.useEffect(() => {
-        if (nameRef.current && mode === 'current') nameRef.current.focus();
+        const target = mode === 'current' ? nameRef.current : backRef.current;
+        if (target) target.focus();
     }, []);
 
     const previewTheme = React.useMemo(() => {
@@ -64,20 +73,32 @@ const CustomThemeEditor = ({
         return base;
     }, [baseTheme, editingTheme, gradient, name, description]);
 
+    const previewThemeRef = React.useRef(previewTheme);
+    previewThemeRef.current = previewTheme;
+
     React.useEffect(() => {
-        if (trying) onPreview(previewTheme);
+        if (!trying) return;
+        const timeout = setTimeout(() => previewRef.current(previewThemeRef.current), PREVIEW_DELAY);
+        return () => clearTimeout(timeout);
     }, [trying, gradient]);
 
-    React.useEffect(() => () => onPreview(null), []);
+    React.useEffect(() => () => previewRef.current(null), []);
 
     const handleTryToggle = React.useCallback(() => {
-        setTrying(was => {
-            if (was) onPreview(null);
-            return !was;
-        });
-    }, [onPreview]);
+        if (trying) {
+            previewRef.current(null);
+            setTrying(false);
+        } else {
+            previewRef.current(previewThemeRef.current);
+            setTrying(true);
+        }
+    }, [trying]);
 
-    const handleNameChange = React.useCallback(e => setName(e.target.value), []);
+    const handleNameChange = React.useCallback(e => {
+        setName(e.target.value);
+        if (onInput) onInput();
+    }, [onInput]);
+
     const handleDescriptionChange = React.useCallback(e => setDescription(e.target.value), []);
 
     const handleSubmit = React.useCallback(e => {
@@ -86,14 +107,14 @@ const CustomThemeEditor = ({
             name: name.trim(),
             description: description.trim(),
             gradient: gradient ? {
-                stops: gradient.stops.map(stop => ({color: stop.color, position: stop.position})),
+                stops: sortStops(gradient.stops).map(stop => ({color: stop.color, position: stop.position})),
                 direction: gradient.direction,
                 primaryColor: gradient.primaryColor
-            } : null
+            } : null,
+            gradientChanged: gradient ? gradientSignature(gradient) !== initialSignature : false
         });
-    }, [onSubmit, name, description, gradient]);
+    }, [onSubmit, name, description, gradient, initialSignature]);
 
-    const title = TITLES[mode];
     const canSubmit = name.trim().length > 0;
 
     return (
@@ -103,6 +124,7 @@ const CustomThemeEditor = ({
         >
             <div className={styles.editorTitleRow}>
                 <button
+                    ref={backRef}
                     type="button"
                     className={styles.iconButton}
                     aria-label={intl.formatMessage(messages.back)}
@@ -112,7 +134,7 @@ const CustomThemeEditor = ({
                     <ArrowLeft size={18} />
                 </button>
                 <h3 className={styles.editorTitle}>
-                    <FormattedMessage {...title.message} />
+                    <FormattedMessage {...TITLES[mode]} />
                 </h3>
             </div>
 
@@ -229,6 +251,7 @@ CustomThemeEditor.propTypes = {
     intl: intlShape.isRequired,
     mode: PropTypes.oneOf(['current', 'gradient', 'edit']).isRequired,
     onCancel: PropTypes.func.isRequired,
+    onInput: PropTypes.func,
     onPreview: PropTypes.func.isRequired,
     onSubmit: PropTypes.func.isRequired
 };

@@ -167,6 +167,46 @@ const messages = defineMessages({
         description: 'Label for the list of ready-made gradients',
         id: 'mw.customThemes.gradient.presets'
     },
+    presetSunset: {
+        defaultMessage: 'Sunset',
+        description: 'Name of a ready-made gradient',
+        id: 'mw.customThemes.preset.sunset'
+    },
+    presetOcean: {
+        defaultMessage: 'Ocean',
+        description: 'Name of a ready-made gradient',
+        id: 'mw.customThemes.preset.ocean'
+    },
+    presetForest: {
+        defaultMessage: 'Forest',
+        description: 'Name of a ready-made gradient',
+        id: 'mw.customThemes.preset.forest'
+    },
+    presetPurpleRain: {
+        defaultMessage: 'Purple rain',
+        description: 'Name of a ready-made gradient',
+        id: 'mw.customThemes.preset.purpleRain'
+    },
+    presetFire: {
+        defaultMessage: 'Fire',
+        description: 'Name of a ready-made gradient',
+        id: 'mw.customThemes.preset.fire'
+    },
+    presetAurora: {
+        defaultMessage: 'Aurora',
+        description: 'Name of a ready-made gradient',
+        id: 'mw.customThemes.preset.aurora'
+    },
+    presetSpace: {
+        defaultMessage: 'Space',
+        description: 'Name of a ready-made gradient',
+        id: 'mw.customThemes.preset.space'
+    },
+    presetCherry: {
+        defaultMessage: 'Cherry',
+        description: 'Name of a ready-made gradient',
+        id: 'mw.customThemes.preset.cherry'
+    },
     direction: {
         defaultMessage: 'Direction',
         description: 'Label for the gradient direction controls',

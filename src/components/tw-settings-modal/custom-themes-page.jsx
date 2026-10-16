@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 
 import {Theme} from '../../lib/themes/index.js';
-import {customThemeManager, CustomTheme} from '../../lib/themes/custom-themes.js';
+import {customThemeManager, CustomTheme, GradientUtils} from '../../lib/themes/custom-themes.js';
 import CustomThemeEditor from './custom-theme-editor.jsx';
 import CustomThemePreview from './custom-theme-preview.jsx';
 import messages from './custom-themes-messages.js';
@@ -55,7 +55,11 @@ class CustomThemesPage extends React.Component {
             pendingDelete: null
         };
         this.previewOriginal = null;
+        this.pendingFocus = null;
         this.fileInputRef = React.createRef();
+        this.pageRef = React.createRef();
+        this.primaryActionRef = React.createRef();
+        this.confirmCancelRef = React.createRef();
     }
 
     componentDidMount () {
@@ -64,7 +68,14 @@ class CustomThemesPage extends React.Component {
         });
     }
 
-    componentDidUpdate (previousProps) {
+    componentDidUpdate (previousProps, previousState) {
+        if (this.state.pendingDelete && this.state.pendingDelete !== previousState.pendingDelete &&
+            this.confirmCancelRef.current) {
+            this.confirmCancelRef.current.focus();
+        }
+        if (this.pendingFocus && this.state.view === 'library') {
+            this.applyPendingFocus();
+        }
         if (previousProps.initialTab === this.props.initialTab) return;
         const next = customThemesTab(this.props.initialTab);
         if (next !== this.state.view && !(next === 'library' && this.state.view === 'edit')) {
@@ -75,6 +86,16 @@ class CustomThemesPage extends React.Component {
     componentWillUnmount () {
         if (this.unsubscribe) this.unsubscribe();
         this.stopPreview();
+    }
+
+    applyPendingFocus () {
+        const target = this.pendingFocus;
+        this.pendingFocus = null;
+        const page = this.pageRef.current;
+        const tile = target.uuid && page ?
+            page.querySelector(`button[data-uuid="${target.uuid}"]`) : null;
+        const element = tile || this.primaryActionRef.current;
+        if (element) element.focus();
     }
 
     message (descriptor, values) {
@@ -99,11 +120,16 @@ class CustomThemesPage extends React.Component {
         this.setState({status: {kind, text}});
     }
 
+    previewTheme (theme) {
+        if (this.props.onPreviewTheme) this.props.onPreviewTheme(theme);
+        else this.props.onChangeTheme(theme);
+    }
+
     stopPreview () {
         if (!this.previewOriginal) return;
         const original = this.previewOriginal;
         this.previewOriginal = null;
-        this.props.onChangeTheme(original);
+        this.previewTheme(original);
     }
 
     baseTheme () {
@@ -116,14 +142,21 @@ class CustomThemesPage extends React.Component {
             return;
         }
         if (!this.previewOriginal) this.previewOriginal = this.props.theme;
-        this.props.onChangeTheme(theme);
+        this.previewTheme(theme);
     };
 
     handleOpenCreate = () => this.openView('create');
 
     handleOpenGradient = () => this.openView('gradient');
 
-    handleBack = () => this.openView('library');
+    handleBack = () => {
+        this.pendingFocus = {uuid: this.state.view === 'edit' ? this.state.editingUuid : null};
+        this.openView('library');
+    };
+
+    handleEditorInput = () => {
+        if (this.state.editorError) this.setState({editorError: ''});
+    };
 
     handleDismissStatus = () => this.setState({status: null});
 
@@ -199,10 +232,14 @@ class CustomThemesPage extends React.Component {
         this.setState({pendingDelete: e.currentTarget.dataset.uuid});
     };
 
-    handleCancelDelete = () => this.setState({pendingDelete: null});
+    handleCancelDelete = () => {
+        this.pendingFocus = {uuid: this.state.pendingDelete};
+        this.setState({pendingDelete: null});
+    };
 
     handleConfirmDelete = () => {
         const theme = customThemeManager.getTheme(this.state.pendingDelete);
+        this.pendingFocus = {uuid: null};
         this.setState({pendingDelete: null});
         if (!theme) return;
         try {
@@ -213,8 +250,10 @@ class CustomThemesPage extends React.Component {
         }
     };
 
-    nameError (name, ignoreUuid) {
+    nameError (name, editingTheme) {
         if (!name) return this.message(messages.errorNameRequired);
+        if (editingTheme && editingTheme.name === name) return '';
+        const ignoreUuid = editingTheme ? editingTheme.uuid : null;
         const lower = name.toLowerCase();
         const taken = this.state.customThemes.some(theme => theme.uuid !== ignoreUuid &&
             theme.name.trim().toLowerCase() === lower);
@@ -222,10 +261,15 @@ class CustomThemesPage extends React.Component {
         return '';
     }
 
-    handleSubmit = ({name, description, gradient}) => {
+    handleSubmit = ({name, description, gradient, gradientChanged}) => {
         const {view, editingUuid} = this.state;
+        const editingTheme = view === 'edit' ? customThemeManager.getTheme(editingUuid) : null;
         const editing = view === 'edit';
-        const nameError = this.nameError(name, editing ? editingUuid : null);
+        if (editing && !editingTheme) {
+            this.setState({editorError: this.message(messages.errorSave)});
+            return;
+        }
+        const nameError = this.nameError(name, editingTheme);
         if (nameError) {
             this.setState({editorError: nameError});
             return;
@@ -236,16 +280,21 @@ class CustomThemesPage extends React.Component {
         }
 
         const base = this.baseTheme();
-        this.stopPreview();
+        const wasActive = editing && base instanceof CustomTheme && base.uuid === editingUuid;
         let saved;
         try {
             if (editing) {
-                if (gradient) {
-                    customThemeManager.updateThemeGradient(editingUuid, gradient.stops, gradient.primaryColor, {
+                const updates = {name, description};
+                if (gradient && gradientChanged) {
+                    const accent = GradientUtils.createGradientAccent(gradient.stops, gradient.primaryColor, {
                         direction: gradient.direction
                     });
+                    const foreground = editingTheme.customAccent && editingTheme.customAccent.guiColors &&
+                        editingTheme.customAccent.guiColors['menu-bar-foreground'];
+                    if (foreground) accent.guiColors['menu-bar-foreground'] = foreground;
+                    updates.accent = accent;
                 }
-                saved = customThemeManager.updateTheme(editingUuid, {name, description});
+                saved = customThemeManager.updateTheme(editingUuid, updates);
             } else if (gradient) {
                 saved = customThemeManager.createGradientTheme(
                     name,
@@ -263,9 +312,11 @@ class CustomThemesPage extends React.Component {
             return;
         }
 
-        const current = this.props.theme;
-        const wasActive = current instanceof CustomTheme && current.uuid === saved.uuid;
+        const original = this.previewOriginal;
+        this.previewOriginal = null;
         if (!editing || wasActive) this.props.onChangeTheme(saved);
+        else if (original) this.previewTheme(original);
+        this.pendingFocus = {uuid: saved.uuid};
         this.openView('library');
         this.showStatus('success', this.message(editing ? messages.updated : messages.saved, {themeName: saved.name}));
     };
@@ -275,6 +326,7 @@ class CustomThemesPage extends React.Component {
             <div className={styles.toolbar}>
                 <div className={styles.toolbarGroup}>
                     <button
+                        ref={this.primaryActionRef}
                         type="button"
                         className={styles.primaryButton}
                         onClick={this.handleOpenCreate}
@@ -412,6 +464,7 @@ class CustomThemesPage extends React.Component {
                             <FormattedMessage {...messages.deleteConfirm} />
                         </span>
                         <button
+                            ref={this.confirmCancelRef}
                             type="button"
                             className={styles.smallButton}
                             onClick={this.handleCancelDelete}
@@ -499,7 +552,7 @@ class CustomThemesPage extends React.Component {
         let initialGradient = null;
         if (editingTheme) {
             const info = customThemeManager.getThemeGradientInfo(editingUuid);
-            if (info) {
+            if (info && info.colorStops.length >= 2) {
                 initialGradient = {
                     stops: info.colorStops,
                     direction: info.direction,
@@ -516,6 +569,7 @@ class CustomThemesPage extends React.Component {
                 initialGradient={initialGradient}
                 mode={EDITOR_MODES[view]}
                 onCancel={this.handleBack}
+                onInput={this.handleEditorInput}
                 onPreview={this.handlePreview}
                 onSubmit={this.handleSubmit}
             />
@@ -524,7 +578,10 @@ class CustomThemesPage extends React.Component {
 
     render () {
         return (
-            <div className={styles.page}>
+            <div
+                className={styles.page}
+                ref={this.pageRef}
+            >
                 {this.state.view === 'library' ? this.renderLibrary() : this.renderEditor()}
                 <input
                     ref={this.fileInputRef}
@@ -544,6 +601,7 @@ CustomThemesPage.propTypes = {
     theme: PropTypes.instanceOf(Theme),
     onChangeTheme: PropTypes.func,
     onOpenThemeMarketplace: PropTypes.func,
+    onPreviewTheme: PropTypes.func,
     onTabChange: PropTypes.func
 };
 

@@ -5,7 +5,7 @@ import {
     Palette, Radio, User, Bell, Eye, Shield, Database, Trash2, ExternalLink, SlidersHorizontal,
     PanelTop, Paintbrush, Brush, Lock, Ban, VolumeX, Save, Package
 } from 'lucide-react';
-import {applyTheme, detectTheme} from '../../lib/themes/themePersistance.js';
+import {applyTheme, applyThemeVisuals, detectTheme} from '../../lib/themes/themePersistance.js';
 import {ThemeAccentPanel} from '../../components/tw-settings-modal/theme-accent-panel.jsx';
 import CustomThemesPage from '../../components/tw-settings-modal/custom-themes-page.jsx';
 import Sidebar from '../components/Sidebar.jsx';
@@ -376,6 +376,10 @@ const Settings = () => {
         applyTheme(next);
         setTheme(detectTheme());
     };
+    const previewTheme = next => {
+        applyThemeVisuals(next);
+        setTheme(next);
+    };
 
     const changeUsername = value => {
         setUsername(value);
@@ -599,6 +603,7 @@ const Settings = () => {
                                     theme={theme}
                                     onChangeTheme={applyAndPersist}
                                     onOpenThemeMarketplace={() => navigate('/themes')}
+                                    onPreviewTheme={previewTheme}
                                     onTabChange={setCustomThemeTab}
                                 />
                             </div> : null}

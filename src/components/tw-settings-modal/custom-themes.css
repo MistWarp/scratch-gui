@@ -787,7 +787,7 @@
 }
 
 .stop-position {
-    min-width: 2.25rem;
+    padding-right: 0.125rem;
     color: color-mix(in srgb, $text-primary 70%, transparent);
     font-size: 0.75rem;
     font-variant-numeric: tabular-nums;
@@ -935,7 +935,10 @@
     height: 2.25rem;
 }
 
-.accent-row .color-input::-webkit-color-swatch,
+.accent-row .color-input::-webkit-color-swatch {
+    border-radius: 0.5rem;
+}
+
 .accent-row .color-input::-moz-color-swatch {
     border-radius: 0.5rem;
 }

@@ -7,6 +7,18 @@ import {Theme, GUI_MAP} from './index.js';
 import {mergeStoredAppearance} from './appearance.js';
 
 const CUSTOM_THEMES_STORAGE_KEY = 'tw:custom-themes';
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+const gradientDirection = direction => {
+    const value = Number(direction);
+    return direction !== '' && direction !== null && Number.isFinite(value) ? value : 90;
+};
+const gradientPrimaryColor = accent => {
+    if (accent && typeof accent.primaryColor === 'string' && HEX_COLOR.test(accent.primaryColor)) {
+        return accent.primaryColor;
+    }
+    const first = accent && Array.isArray(accent.colors) ? accent.colors[0] : null;
+    return first && first.color ? first.color : '#ff6b6b';
+};
 const MAX_CUSTOM_THEMES = 50; // Reasonable limit to prevent storage issues
 
 /**
@@ -205,7 +217,10 @@ class GradientUtils {
             color: this.hexToRgba(stop.color, 0.8),
             position: stop.position
         }));
-        const gradientWithOpacity = this.createLinearGradient(gradientStopsWithOpacity, options.direction || 90);
+        const gradientWithOpacity = this.createLinearGradient(
+            gradientStopsWithOpacity,
+            gradientDirection(options.direction)
+        );
 
         return {
             guiColors: {
@@ -350,8 +365,8 @@ class CustomTheme extends Theme {
         const resolved = isGradientData ?
             GradientUtils.createGradientAccent(
                 accent.colors,
-                accent.colors[0] ? accent.colors[0].color : '#ff6b6b',
-                {direction: accent.direction || '90'}
+                gradientPrimaryColor(accent),
+                {direction: gradientDirection(accent.direction)}
             ) :
             accent;
         this.customAccent = resolved && typeof resolved === 'object' && resolved.guiColors ? resolved : null;
@@ -641,9 +656,11 @@ class CustomTheme extends Theme {
 
         colorStops.sort((a, b) => a.position - b.position);
 
+        const primaryColor = this.customAccent.guiColors['motion-primary'];
         return {
             colors: colorStops,
-            direction: direction.toString()
+            direction: direction.toString(),
+            ...(typeof primaryColor === 'string' && HEX_COLOR.test(primaryColor) ? {primaryColor} : {})
         };
     }
 
@@ -682,10 +699,9 @@ class CustomTheme extends Theme {
             };
         } else if (accentToUse && typeof accentToUse === 'object' && Array.isArray(accentToUse.colors)) {
             // Check if accent is in gradient format (colors array)
-            const colors = accentToUse.colors;
-            const direction = accentToUse.direction || '90';
-            const primaryColor = colors[0] ? colors[0].color : '#ff6b6b';
-            accentToUse = GradientUtils.createGradientAccent(colors, primaryColor, {direction});
+            accentToUse = GradientUtils.createGradientAccent(accentToUse.colors, gradientPrimaryColor(accentToUse), {
+                direction: gradientDirection(accentToUse.direction)
+            });
         }
 
         if (data.menuBarForeground && accentToUse && typeof accentToUse === 'object') {
@@ -916,7 +932,7 @@ class CustomThemeManager {
         const updatedTheme = new CustomTheme(
             updates.name || existingTheme.name,
             typeof updates.description === 'undefined' ? existingTheme.description : updates.description,
-            updates.accent || existingTheme.originalAccent || existingTheme.accent,
+            updates.accent || existingTheme.customAccent || existingTheme.originalAccent || existingTheme.accent,
             updates.gui || existingTheme.gui,
             updates.blocks || existingTheme.blocks,
             updates.menuBarAlign || existingTheme.menuBarAlign,
@@ -1088,15 +1104,10 @@ class CustomThemeManager {
         // Sort color stops by position
         colorStops.sort((a, b) => a.position - b.position);
 
-        // Try to extract primary color from accent colors
-        let primaryColor = '#ff6b6b'; // fallback
-        if (theme.customAccent.guiColors['motion-primary']) {
-            primaryColor = theme.customAccent.guiColors['motion-primary'];
-        }
-
-        // If we have color stops, use the first one as primary color
-        if (colorStops.length > 0) {
-            primaryColor = colorStops[0].color;
+        const accentPrimary = theme.customAccent.guiColors['motion-primary'];
+        let primaryColor = colorStops.length > 0 ? colorStops[0].color : '#ff6b6b';
+        if (typeof accentPrimary === 'string' && HEX_COLOR.test(accentPrimary)) {
+            primaryColor = accentPrimary;
         }
 
         return {
@@ -1277,10 +1288,13 @@ class CustomThemeManager {
             throw new Error('Theme name is required');
         }
 
+        const accent = currentTheme instanceof CustomTheme && currentTheme.customAccent ?
+            currentTheme.customAccent :
+            currentTheme.accent;
         const customTheme = new CustomTheme(
             name.trim(),
             description.trim(),
-            currentTheme.accent,
+            accent,
             currentTheme.gui,
             currentTheme.blocks,
             currentTheme.menuBarAlign,
