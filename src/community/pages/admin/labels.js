@@ -9,7 +9,8 @@ const reportTypeLabel = (type, communityText) => ({
     project: communityText('Project'),
     user: communityText('Profile'),
     comment: communityText('Comment'),
-    bounty: communityText('Bounty')
+    bounty: communityText('Bounty'),
+    chat: communityText('Chat')
 }[type] || type);
 
 export {standingLabel, reportTypeLabel};

@@ -2,9 +2,10 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {FileText, Gavel, Lock, ShieldCheck, SlidersHorizontal, UserRound} from 'lucide-react';
+import {FileText, Gavel, Lock, MessagesSquare, ShieldCheck, SlidersHorizontal, UserRound} from 'lucide-react';
 import api from '../api';
 import Markdown from '../components/Markdown.jsx';
+import {PlayerChatRules} from '../components/PlayerChat.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import SectionHeading from '../components/ui/SectionHeading.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
@@ -62,6 +63,13 @@ const Trust = () => {
                 <p>{communityText('Use the report button on a project, profile, or comment when another user or piece of content breaks the community rules. Reports go to MistWarp moderators.')}</p>
                 <p>{communityText('If you think an account action was wrong, send a moderation appeal through support. Include the affected Rotur username and explain what you want reviewed.')}</p>
                 <p><Link to="/support?topic=appeal">{communityText('Send a moderation appeal')}</Link></p>
+            </section>
+            <section className={styles.section} id="player-chat">
+                <SectionHeading icon={MessagesSquare} title={communityText('Projects that let players talk')} />
+                <p>{communityText('Some projects let players send each other messages through extensions such as CloudLink, WebSocket or OriginChats. Those messages go through services MistWarp doesn\'t run, so MistWarp only sees the chat that players report.')}</p>
+                <p>{communityText('The creator of a project like this is responsible for its chat. Before sharing it, they add a contact for chat that is shown on the project page, and agree to these rules:')}</p>
+                <PlayerChatRules />
+                <p>{communityText('Use Report chat below a project to report a message. Everyday problems go to the creator and to MistWarp moderators. Sexual, violent and urgent reports go to moderators only. Class accounts can\'t open these projects.')}</p>
             </section>
         </main>
     );

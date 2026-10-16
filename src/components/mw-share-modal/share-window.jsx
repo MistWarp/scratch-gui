@@ -12,6 +12,11 @@ import styles from './share-window.css';
 
 const messages = defineMessages({
     cancel: {defaultMessage: 'Cancel', description: 'Cancel button in the share window', id: 'mw.shareWindow.cancel'},
+    addChatDetails: {
+        defaultMessage: 'Add chat details',
+        description: 'Button that opens the project settings where a creator adds a contact for chat before sharing',
+        id: 'mw.shareWindow.addChatDetails'
+    },
     close: {defaultMessage: 'Close', description: 'Close button in the share window', id: 'mw.shareWindow.close'},
     openProjectPage: {
         defaultMessage: 'Open project page',
@@ -307,6 +312,18 @@ class ShareWindow extends React.Component {
                         onClick={this.props.onReviewStorage}
                     >
                         {'Check project storage'}
+                    </button>
+                )}
+                {this.state.errorCode === 'player_contact_required' && getRememberedPlatformProjectState()?.id && (
+                    <button
+                        type="button"
+                        className={styles.reviewStorage}
+                        onClick={() => {
+                            const id = encodeURIComponent(getRememberedPlatformProjectState().id);
+                            window.open(`/mystuff/project/${id}?section=publishing`, '_blank', 'noopener');
+                        }}
+                    >
+                        {this.props.intl.formatMessage(messages.addChatDetails)}
                     </button>
                 )}
             </div>

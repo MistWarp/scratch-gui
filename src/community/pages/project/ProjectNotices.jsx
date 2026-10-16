@@ -2,13 +2,14 @@
 import React from 'react';
 import {Link} from 'react-router-dom';
 import {useCommunityIntl as useCommunityText} from '../../i18n.jsx';
-import {EyeOff, Ghost, Link as LinkIcon, Coins, Palette, ShieldAlert} from 'lucide-react';
+import {EyeOff, Ghost, Link as LinkIcon, Coins, MessagesSquare, Palette, ShieldAlert} from 'lucide-react';
 import LiveProjectSession from '../../components/LiveProjectSession.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Notice from '../../components/ui/Notice.jsx';
 import styles from '../Project.module.css';
 import {restoreUserTheme} from './embed-helpers.js';
 import {adminUserPath} from '../admin/admin-links.js';
+import {formatServiceNames} from '../../components/PlayerChat.jsx';
 
 // Status notices above the stage: errors, copy and thumbnail feedback, visibility, price and the project theme.
 const ProjectNotices = ({
@@ -18,6 +19,7 @@ const ProjectNotices = ({
     const {text: communityText} = useCommunityText();
     const hold = project.moderationHidden;
     const shadowBan = isAdmin ? project.shadowBan : null;
+    const chat = project.playerContact || {};
     return (
         <React.Fragment>
             {actionError ? (
@@ -47,6 +49,19 @@ const ProjectNotices = ({
                     <p>{communityText('Only you can see it, and it can\'t be shared again until a moderator restores it.')}</p>
                     {hold.reason ? <p>{communityText('Reason: {value1}', {value1: hold.reason})}</p> : null}
                     {isAdmin && hold.by ? <p>{communityText('Hidden by @{value1}.', {value1: hold.by})}</p> : null}
+                </Notice>
+            ) : null}
+            {project.isOwner && chat.missing ? (
+                <Notice
+                    variant="warning"
+                    icon={MessagesSquare}
+                    className={styles.pageNotice}
+                    title={communityText('Add chat details to share this project')}
+                    action={<Button as={Link} to={`/mystuff/project/${project.id}?section=publishing`}>{communityText('Add chat details')}</Button>}
+                >
+                    {visibility === 'private' ?
+                        communityText('It uses {value1}, which lets players talk to each other. Add a contact for chat and agree to the chat rules before you share it.', {value1: formatServiceNames(chat.services, communityText)}) :
+                        communityText('It uses {value1}, which lets players talk to each other. It is left out of lists until you add a contact for chat and agree to the chat rules.', {value1: formatServiceNames(chat.services, communityText)})}
                 </Notice>
             ) : null}
             {shadowBan && shadowBan.project ? (

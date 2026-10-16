@@ -86,7 +86,7 @@ const Project = () => {
     const [title, setTitle] = useState('');
     const [savingTitle, setSavingTitle] = useState(false);
     const [thumbnailStatus, setThumbnailStatus] = useState('idle');
-    const [reporting, setReporting] = useState(false);
+    const [reporting, setReporting] = useState('');
     const [moderation, setModeration] = useState(null);
     const [copied, setCopied] = useState(false);
     const [collectionOpen, setCollectionOpen] = useState(false);
@@ -180,7 +180,7 @@ const Project = () => {
         setProjectFileCount(null);
         setError(null);
         setActionError(null);
-        setReporting(false);
+        setReporting('');
         setTab(initialActivityTab());
         setVersionControlTab(initialVersionControlTab());
         setCollectionOpen(false);
@@ -529,7 +529,7 @@ const Project = () => {
         remix();
     };
     const menuReport = () => {
-        setReporting(true);
+        setReporting('project');
     };
 
     const pickThumbnail = event => {
@@ -775,9 +775,9 @@ const Project = () => {
 
             {reporting ? (
                 <ReportModal
-                    type="project"
+                    type={reporting}
                     target={id}
-                    onClose={() => setReporting(false)}
+                    onClose={() => setReporting('')}
                 />
             ) : null}
             <PlayerPrompts
@@ -848,6 +848,7 @@ const Project = () => {
                     saveAfterLogin={saveAfterLogin}
                     thumbInput={thumbInput}
                     pickThumbnail={pickThumbnail}
+                    reportChat={() => setReporting('chat')}
                 />
 
                 <div className={styles.sideCol}>

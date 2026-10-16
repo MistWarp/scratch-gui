@@ -41,6 +41,10 @@ const ReportsSection = ({reports, openCount, replyToSupport, act, hideFromReport
                                         <Link
                                             to={projectUrl(report.target)}
                                         >{communityText('Project {value1}', {value1: report.target})}</Link>
+                                    ) : report.type === 'chat' ? (
+                                        <Link
+                                            to={projectUrl(report.target)}
+                                        >{communityText('Chat in project {value1}', {value1: report.target})}</Link>
                                     ) : report.type === 'user' ? (
                                         <Link
                                             to={`/users/${report.target}`}
@@ -78,6 +82,7 @@ const ReportsSection = ({reports, openCount, replyToSupport, act, hideFromReport
                                     {report.type !== 'support' && report.context ? communityText(' · in {value1}', {value1: report.context}) : ''}
                                 </span>
                                 <span className={styles.reason}>{report.reason}</span>
+                                {report.type === 'chat' && report.snapshot ? <span className={styles.reason}>{report.snapshot}</span> : null}
                                 {report.type === 'support' && report.context ? <span className={styles.reason}>{report.context}</span> : null}
                                 {report.roturEscalated ? (
                                     <span className={styles.roturStatus}>
@@ -85,7 +90,7 @@ const ReportsSection = ({reports, openCount, replyToSupport, act, hideFromReport
                                         {roturStatusText(report, communityText)}
                                     </span>
                                 ) : null}
-                                {report.type === 'project' ? (
+                                {report.type === 'project' || report.type === 'chat' ? (
                                     <EvidencePanel target={report.target} />
                                 ) : null}
                             </div>
@@ -97,17 +102,19 @@ const ReportsSection = ({reports, openCount, replyToSupport, act, hideFromReport
                                 {report.type === 'support' ? (
                                     <Button onClick={() => replyToSupport(report)}>{communityText('Reply and close')}</Button>
                                 ) : null}
-                                {report.type === 'project' ? (
+                                {report.type === 'project' || report.type === 'chat' ? (
                                     <Button onClick={() => hideFromReport(report)}>{communityText('Hide project')}</Button>
                                 ) : null}
-                                {report.type !== 'support' ? (
+                                {report.type !== 'support' && (report.type !== 'chat' || report.subject) ? (
                                     <Button onClick={() => warnFromReport(report)}>
-                                        {report.type === 'project' ? communityText('Warn owner') : communityText('Warn user')}
+                                        {report.type === 'project' ? communityText('Warn owner') :
+                                            report.type === 'chat' ? communityText('Warn player') : communityText('Warn user')}
                                     </Button>
                                 ) : null}
-                                {report.type !== 'support' ? (
+                                {report.type !== 'support' && (report.type !== 'chat' || report.subject) ? (
                                     <Button variant="danger" onClick={() => banFromReport(report)}>
-                                        {report.type === 'project' ? communityText('Ban owner') : communityText('Ban user')}
+                                        {report.type === 'project' ? communityText('Ban owner') :
+                                            report.type === 'chat' ? communityText('Ban player') : communityText('Ban user')}
                                     </Button>
                                 ) : null}
                                 {report.rotur === 'filed' && !report.roturEscalated ? (

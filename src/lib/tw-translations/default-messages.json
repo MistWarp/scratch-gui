@@ -773,6 +773,7 @@
   "mw.roturLogin.reconnect": "Reconnect",
   "mw.roturLogin.continue": "Continue with Rotur",
   "mw.shareWindow.cancel": "Cancel",
+  "mw.shareWindow.addChatDetails": "Add chat details",
   "mw.shareWindow.close": "Close",
   "mw.shareWindow.openProjectPage": "Open project page",
   "mw.shareWindow.saveWithoutVersion": "Save without a version",

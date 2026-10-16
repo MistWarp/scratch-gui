@@ -26,6 +26,7 @@ import SectionHeading from '../components/ui/SectionHeading.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import UserLink from '../components/UserLink.jsx';
 import {SwitchRow} from '../components/ui/Switch.jsx';
+import PlayerChatSettings from './project/PlayerChatSettings.jsx';
 import useLatest from '../use-latest.js';
 import {formatDate, formatDateTime, formatPlaytime} from '../format.js';
 import {listCommerceBounties, cancelCommerceBounty} from '../credits';
@@ -602,7 +603,9 @@ const ManageProject = () => {
                                         [communityText('Instructions added'), Boolean(project.instructions)],
                                         [communityText('Description or notes added'), Boolean(project.description || project.notes)],
                                         [communityText('Tags added'), Boolean(project.tags && project.tags.length)],
-                                        [communityText('Thumbnail ready'), Boolean(project.thumbUrl)]
+                                        [communityText('Thumbnail ready'), Boolean(project.thumbUrl)],
+                                        ...(project.playerContact && project.playerContact.required ?
+                                            [[communityText('Chat details added'), !project.playerContact.missing]] : [])
                                     ].map(([label, done]) => (
                                         <li key={label} className={done ? styles.checkDone : styles.checkTodo}>
                                             <Check size={15} /> {label}
@@ -708,6 +711,14 @@ const ManageProject = () => {
                                     </div>
                                 </div>
                             </div>
+                            <PlayerChatSettings
+                                project={project}
+                                onSaved={updated => {
+                                    if (currentLoadContext.current !== loadContext) return;
+                                    setProject(updated);
+                                    setProjectLoadContext(loadContext);
+                                }}
+                            />
                             {!project.contributionOnly ? <div className={styles.card}>
                                 <SectionHeading as="h3" icon={Link2} title={communityText('Private preview')} lead={communityText('Create a private play link that expires after 24 hours.')} />
                                 <div className={styles.inlineAction}>

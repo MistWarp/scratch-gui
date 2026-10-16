@@ -136,7 +136,7 @@ const Admin = () => {
 
     const banFromReport = report => {
         const who = report.type === 'project' ? communityText('the owner of this project') :
-            `@${report.targetUser || report.target}`;
+            `@${report.subject || report.targetUser || report.target}`;
         setDialogError('');
         setDialog({
             kind: 'ban-report',

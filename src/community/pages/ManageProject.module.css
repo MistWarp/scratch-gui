@@ -312,6 +312,31 @@
     display: grid;
 }
 
+.field small {
+    color: var(--text-faint);
+    font-size: var(--fs-xs);
+    line-height: 1.45;
+}
+
+.chatRules {
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+}
+
+.agree {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: var(--fs-sm);
+    font-weight: 500;
+    color: var(--mw-text);
+}
+
+.agree input {
+    margin: 3px 0 0;
+    accent-color: var(--accent);
+}
+
 .formActions {
     display: flex;
     align-items: center;

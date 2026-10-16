@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import React, {useEffect, useRef, useState, useCallback} from 'react';
 import {useCommunityIntl as useCommunityText} from '../../i18n.jsx';
-import {Puzzle} from 'lucide-react';
+import {MessagesSquare, Puzzle} from 'lucide-react';
 import api from '../../api';
 import UnderlineTabs from '../../components/UnderlineTabs.jsx';
 import Button from '../../components/ui/Button.jsx';
@@ -134,6 +134,35 @@ const ExtensionManager = () => {
         applyUrlPolicy(url, blocked);
     };
 
+    const setConnectsPlayers = async (hash, connectsPlayers) => {
+        if (policyInFlight.current) return;
+        const releasePolicy = () => {
+            policyInFlight.current = false;
+        };
+        policyInFlight.current = true;
+        setError('');
+        try {
+            const result = await api.admin.setExtensionConnectsPlayers(hash, connectsPlayers);
+            if (!connectsPlayers) {
+                setNote(communityText('No longer marked as connecting players.'));
+            } else if (result.affected) {
+                setNote(communityText('Marked as connecting players. {value1, plural, one {# shared project is} other {# shared projects are}} left out of lists until their creators add chat details, and the owners were notified.', {value1: result.affected}));
+            } else {
+                setNote(communityText('Marked as connecting players.'));
+            }
+            setData(current => ({
+                ...current,
+                extensions: (current.extensions || []).map(extension => (
+                    extension.hash === hash ? {...extension, connectsPlayers} : extension
+                ))
+            }));
+        } catch (e) {
+            setError(e.message || 'Could not update the extension.');
+        } finally {
+            releasePolicy();
+        }
+    };
+
     const confirmPolicy = () => {
         if (!dialog) return;
         if (dialog.kind === 'hash') return applyPolicy(dialog.hash, dialog.status);
@@ -264,6 +293,14 @@ const ExtensionManager = () => {
                                     <span className={styles.rowMeta}>
                                         {communityText('Used in {value1, plural, one {# project} other {# projects}}', {value1: extension.projectCount})}
                                     </span>
+                                    {extension.connectsPlayers ? (
+                                        <span className={styles.rowMeta}>
+                                            <MessagesSquare size={13} aria-hidden="true" />{' '}
+                                            {extension.connectsPlayersBuiltIn ?
+                                                communityText('Connects players. MistWarp recognises this gallery extension.') :
+                                                communityText('Connects players. Projects using it need chat details to be listed.')}
+                                        </span>
+                                    ) : null}
                                     {extension.urls.map(url => (
                                         <span
                                             key={url}
@@ -282,6 +319,13 @@ const ExtensionManager = () => {
                                 <div className={styles.rowActions}>
                                     {extension.sourceAvailable ? (
                                         <Button onClick={() => viewSource(extension.hash)}>{communityText('View source')}</Button>
+                                    ) : null}
+                                    {!extension.connectsPlayersBuiltIn && tab !== 'blocked' ? (
+                                        <Button onClick={() => setConnectsPlayers(extension.hash, !extension.connectsPlayers)}>
+                                            {extension.connectsPlayers ?
+                                                communityText('Unmark connecting players') :
+                                                communityText('Mark as connecting players')}
+                                        </Button>
                                     ) : null}
                                     {!extension.gallery && tab !== 'trusted' ? (
                                         <Button onClick={() => setPolicy(extension.hash, 'trusted')}>{communityText('Trust')}</Button>

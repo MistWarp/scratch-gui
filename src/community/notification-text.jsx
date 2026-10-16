@@ -5,7 +5,10 @@ import {isMilestoneNotification, milestoneLink, milestoneText} from './milestone
 // Shared by the notifications page and the Home preview so both describe and
 // link notifications the same way.
 
-export const SYSTEM_TYPES = ['standing', 'moderation', 'project_hidden', 'project_restored', 'news', 'report_update'];
+export const SYSTEM_TYPES = [
+    'standing', 'moderation', 'project_hidden', 'project_restored', 'news', 'report_update',
+    'player_contact_needed', 'player_chat_report'
+];
 
 export const GROUP_TYPES = [
     'group_invite',
@@ -54,6 +57,9 @@ export const targetFor = (n, viewerName) => {
     if (n.spaceId) return {to: `/spaces/${n.spaceId}${commentAnchor(n)}`};
     if (n.roadmapId) return {to: `/roadmap#idea-${n.roadmapId}`};
     if (n.projectId && n.pull) return {to: `/project/${n.projectId}/pulls/${n.pull}${commentAnchor(n)}`};
+    if (n.projectId && n.type === 'player_contact_needed') {
+        return {to: `/mystuff/project/${n.projectId}?section=publishing`};
+    }
     if (n.projectId) return {to: `${projectUrl(n.projectId)}${commentAnchor(n)}`};
     if (n.type === 'profile_comment' || n.profile) {
         return {to: `/users/${n.profile || viewerName}${commentAnchor(n)}`};
@@ -241,6 +247,19 @@ export const describeNotification = (n, t, actor) => {
         t('A moderator sent you a message.');
     case 'news': return t('New announcement: {title}', {title: strong(n.title)});
     case 'report_update': return reportOutcome(n.action, t);
+    case 'player_contact_needed': return project ?
+        t('{project} lets players talk to each other, so it is left out of lists until you add chat details.',
+            {project}) :
+        t('Your project lets players talk to each other, so it is left out of lists until you add chat details.');
+    case 'player_chat_report':
+        if (n.player) {
+            return project ?
+                t('Someone reported chat from {player} in {project}.', {player: strong(`@${n.player}`), project}) :
+                t('Someone reported chat from {player} in your project.', {player: strong(`@${n.player}`)});
+        }
+        return project ?
+            t('Someone reported chat in {project}.', {project}) :
+            t('Someone reported chat in your project.');
     case 'contribution':
         if (pull) {
             return project ?

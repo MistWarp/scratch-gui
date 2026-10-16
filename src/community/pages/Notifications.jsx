@@ -5,7 +5,7 @@ import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {
     AppWindow, AtSign, Bell, Coins, ExternalLink, Flag, Gavel, GitFork, Heart, Megaphone,
-    MessageCircle, Reply, ShieldAlert, UserPlus, Users, GitPullRequest, GitMerge, Layers3,
+    MessageCircle, MessagesSquare, Reply, ShieldAlert, UserPlus, Users, GitPullRequest, GitMerge, Layers3,
     Lightbulb, Star
 } from 'lucide-react';
 import {projectUrl} from '../api';
@@ -65,6 +65,8 @@ const TYPE_STYLE = {
     project_restored: {icon: ShieldAlert, color: '#3fae6a'},
     news: {icon: Megaphone, color: '#9a6ff0'},
     report_update: {icon: Flag, color: '#e35d6a'},
+    player_contact_needed: {icon: MessagesSquare, color: '#e0a63c'},
+    player_chat_report: {icon: Flag, color: '#e35d6a'},
     contribution: {icon: GitPullRequest, color: '#4c8dff'},
     contribution_merged: {icon: GitMerge, color: '#3fae6a'},
     space_project: {icon: Layers3, color: '#ef8f3c'},

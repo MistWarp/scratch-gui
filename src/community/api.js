@@ -239,6 +239,7 @@ const api = {
     publish: id => request(`/projects/${id}/publish`, {method: 'POST'}),
     unpublish: id => request(`/projects/${id}/unpublish`, {method: 'POST'}),
     setVisibility: (id, visibility) => request(`/projects/${id}/visibility`, {method: 'POST', body: {visibility}}),
+    setPlayerContact: (id, declaration) => request(`/projects/${id}/player-contact`, {method: 'PUT', body: declaration}),
     purchaseIntent: (id, returnUrl) => request(`/projects/${id}/purchase/intent`, {method: 'POST', body: {returnUrl}}),
     purchaseConfirm: (id, key) => request(`/projects/${id}/purchase/confirm`, {method: 'POST', body: {key}}),
     gameProducts: id => request(`/projects/${id}/products`, {cache: false}),
@@ -310,8 +311,8 @@ const api = {
         request(`/users/${encodeURIComponent(name)}/comments/${commentId}/pin`, {method: 'POST', body: {pinned}}),
     agreement: () => request('/agreement'),
     acceptAgreement: () => request('/agreement/accept', {method: 'POST'}),
-    report: (type, target, reason, context, targetUser, category) =>
-        request('/reports', {method: 'POST', body: {type, target, reason, context, targetUser, category}}),
+    report: (type, target, reason, context, targetUser, category, player) =>
+        request('/reports', {method: 'POST', body: {type, target, reason, context, targetUser, category, player}}),
     reportError: payload => request('/errors', {method: 'POST', body: payload}),
     admin: {
         reports: () => request('/admin/reports'),
@@ -356,6 +357,8 @@ const api = {
             request('/admin/extensions/policy', {method: 'POST', body: {hash, status}}),
         setExtensionUrlPolicy: (url, blocked) =>
             request('/admin/extensions/url-policy', {method: 'POST', body: {url, blocked}}),
+        setExtensionConnectsPlayers: (hash, connectsPlayers) =>
+            request('/admin/extensions/connects-players', {method: 'POST', body: {hash, connectsPlayers}}),
         extensionSource: hash =>
             request(`/admin/extensions/${hash}/source`, {raw: true}).then(response => {
                 if (!response.ok) throw new Error(`Could not load source (${response.status})`);

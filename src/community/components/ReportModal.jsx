@@ -26,6 +26,7 @@ const URGENT_REASONS = [
     {id: 'terrorism', category: 'terrorism', label: 'Terrorism'}
 ];
 const ALL_REASONS = REASONS.concat(URGENT_REASONS);
+const CREATOR_CATEGORIES = ['spam', 'harassment', 'hate', 'scam', 'other'];
 let nextReportId = 0;
 
 const ReportModal = ({type, target, context, targetUser, onClose}) => {
@@ -48,12 +49,15 @@ const ReportModal = ({type, target, context, targetUser, onClose}) => {
         project: communityText('Report this project'),
         user: communityText('Report this user'),
         comment: communityText('Report this comment'),
-        bounty: communityText('Report this bounty')
+        bounty: communityText('Report this bounty'),
+        chat: communityText('Report chat in this project')
     };
+    const chat = type === 'chat';
     const [reasonId, setReasonId] = useState(REASONS[0].id);
     const chosen = ALL_REASONS.find(item => item.id === reasonId) || REASONS[0];
     const urgent = URGENT_REASONS.includes(chosen);
     const [details, setDetails] = useState('');
+    const [player, setPlayer] = useState('');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
     const [sent, setSent] = useState(false);
@@ -68,6 +72,7 @@ const ReportModal = ({type, target, context, targetUser, onClose}) => {
         if (firstRef.current) firstRef.current.focus();
         setReasonId(REASONS[0].id);
         setDetails('');
+        setPlayer('');
         setBusy(false);
         setError('');
         setSent(false);
@@ -80,7 +85,8 @@ const ReportModal = ({type, target, context, targetUser, onClose}) => {
         setError('');
         const reason = details.trim() ? `${chosen.label}: ${details.trim()}` : chosen.label;
         try {
-            await api.report(type, target, reason, context, targetUser, chosen.category);
+            const reportedPlayer = chat ? player.trim().replace(/^@/, '') : '';
+            await api.report(type, target, reason, context, targetUser, chosen.category, reportedPlayer || null);
             if (currentRequestKey.current === requestKey) setSent(true);
         } catch (e) {
             if (currentRequestKey.current === requestKey) {
@@ -146,13 +152,45 @@ const ReportModal = ({type, target, context, targetUser, onClose}) => {
                             ))}
                         </optgroup>
                     </select>
-                    {urgent ? (
+                    {urgent && chat ? (
+                        <Notice variant="warning">
+                            {communityText(
+                                // eslint-disable-next-line max-len
+                                'Only moderators see this report, not the creator. Name the player if you can, so Rotur\'s safety team can act on their account straight away. If someone is in danger right now, contact your local emergency services.'
+                            )}
+                        </Notice>
+                    ) : urgent ? (
                         <Notice variant="warning">
                             {communityText(
                                 // eslint-disable-next-line max-len
                                 'Rotur\'s safety team sees this report straight away. If someone is in danger right now, contact your local emergency services.'
                             )}
                         </Notice>
+                    ) : chat ? (
+                        <Notice variant="info">
+                            {CREATOR_CATEGORIES.includes(chosen.category) ?
+                                // eslint-disable-next-line max-len
+                                communityText('MistWarp moderators and the project\'s creator both see this report, so the creator can act on it in their chat. They don\'t see who sent it.') :
+                                communityText('Only MistWarp moderators see this report, not the creator.')}
+                        </Notice>
+                    ) : null}
+                    {chat ? (
+                        <React.Fragment>
+                            <label
+                                className={styles.label}
+                                htmlFor={`${fieldId}-player`}
+                            >{communityText('Player\'s username (optional)')}</label>
+                            <input
+                                id={`${fieldId}-player`}
+                                className={styles.select}
+                                value={player}
+                                disabled={busy}
+                                maxLength={40}
+                                autoComplete="off"
+                                placeholder={communityText('The name they use in the chat')}
+                                onChange={e => setPlayer(e.target.value)}
+                            />
+                        </React.Fragment>
                     ) : null}
                     <label
                         className={styles.label}
@@ -164,7 +202,9 @@ const ReportModal = ({type, target, context, targetUser, onClose}) => {
                         value={details}
                         disabled={busy}
                         maxLength={1000}
-                        placeholder={communityText('Add anything that helps a moderator understand the problem.')}
+                        placeholder={chat ?
+                            communityText('What did they say, and when? Copy the messages if you can.') :
+                            communityText('Add anything that helps a moderator understand the problem.')}
                         onChange={e => setDetails(e.target.value)}
                     />
                     {error ? <Notice variant="error">{error}</Notice> : null}
