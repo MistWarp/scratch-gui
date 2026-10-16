@@ -295,6 +295,21 @@ describe('Rotur results handed to projects', () => {
             .toEqual({token_type: 'main', permissions: ['full']});
     });
 
+    test('field names holding the token are dropped and __proto__ stays an ordinary field', async () => {
+        const client = makeClient({
+            storage: {get: jest.fn(async () => JSON.parse(
+                `{"data": {"__proto__": {"inherited": "yes"}, "${token}": 1, "score": 3}}`
+            ))},
+            profiles: {get: jest.fn(async () => ({username: 'mist', discord_verified: true}))}
+        });
+        const bag = await invokeProjectMethod(client, 'storage.get', ['mistwarp']);
+        expect(Object.keys(bag.data)).toEqual(['__proto__', 'score']);
+        expect(bag.data.inherited).toBeUndefined();
+        expect(Object.getPrototypeOf(bag.data)).toBe(Object.prototype);
+        await expect(invokeProjectMethod(client, 'profiles.get', ['mist'])).resolves
+            .toEqual({username: 'mist', discord_verified: true});
+    });
+
     test('errors reach projects as plain messages without the response or token', async () => {
         const apiError = Object.assign(new Error('Email address not verified'), {
             status: 403,

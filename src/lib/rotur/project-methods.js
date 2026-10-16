@@ -247,7 +247,7 @@ const PROJECT_SYSTEM_FIELDS = new Set([
     'sys.terms_updated', 'sys.policy_updated', 'sys.friends', 'sys.requests', 'sys.blocked', 'sys.currency',
     'sys.sable_credits', 'sys.items'
 ]);
-const ALLOWED_FIELDS = new Set(['next_billing', 'token_type', 'sys.email_verified']);
+const ALLOWED_FIELDS = new Set(['next_billing', 'token_type', 'sys.email_verified', 'discord_verified']);
 const HIDDEN_PROFILE_FIELDS = new Set(['email', 'sexuality', 'identity', 'nationality', 'birthday', 'age',
     'relationship_status', 'timezone', 'language', 'favorite_website']);
 const METHOD_SECRET_FIELDS = {
@@ -291,6 +291,7 @@ const withoutSecrets = (value, rules, ancestors = new Set(), depth = 0) => {
         clean = {};
         for (const [field, item] of Object.entries(value)) {
             const lower = field.toLowerCase();
+            if (scrubString(field, rules.secrets) === null) continue;
             if (rules.fields && rules.fields.has(lower)) continue;
             if (rules.account && !ALLOWED_FIELDS.has(lower) &&
                 (SECRET_FIELDS.has(lower) || SENSITIVE_FIELD.test(lower))) continue;
@@ -298,7 +299,12 @@ const withoutSecrets = (value, rules, ancestors = new Set(), depth = 0) => {
                 (lower.startsWith('sys.') && !PROJECT_SYSTEM_FIELDS.has(lower)))) continue;
             const summarise = rules.account && depth === 0 && lower === 'sys.subscription';
             const kept = summarise ? subscriptionSummary(item) : item;
-            clean[field] = withoutSecrets(kept, rules, ancestors, depth + 1);
+            Object.defineProperty(clean, field, {
+                value: withoutSecrets(kept, rules, ancestors, depth + 1),
+                enumerable: true,
+                writable: true,
+                configurable: true
+            });
         }
     }
     ancestors.delete(value);
@@ -312,9 +318,9 @@ const projectSafeResult = (method, result, tokens) => withoutSecrets(result, {
 });
 
 const projectSafeError = (error, tokens) => {
-    const secrets = tokenVariants(tokens);
     const message = String((error && error.message) || error || 'The Rotur request failed');
-    const safe = new Error(scrubString(message, secrets) === null ? 'The Rotur request failed' : message.slice(0, 300));
+    const safe = new Error(scrubString(message, tokenVariants(tokens)) === null ?
+        'The Rotur request failed' : message.slice(0, 300));
     if (error && typeof error.status === 'number') safe.status = error.status;
     return safe;
 };
