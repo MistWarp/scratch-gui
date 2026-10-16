@@ -151,7 +151,7 @@ const normalizeUser = data => {
     if (!username || typeof username !== 'string') {
         return null;
     }
-    const id = data['sys.id'] || data.id || data.key || data.sys_id || null;
+    const id = data['sys.id'] || data.id || data.sys_id || null;
     return {
         username,
         id: id === null ? null : String(id),

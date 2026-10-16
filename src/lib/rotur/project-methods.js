@@ -242,6 +242,31 @@ const appFilePath = async (client, path) => {
  * @param {Array} args Arguments.
  * @returns {Promise<unknown>} The SDK result.
  */
+const SECRET_FIELDS = new Set(['key', 'token', 'access_token', 'refresh_token', 'accesstoken', 'refreshtoken',
+    'password', 'validator', 'sys.key', 'sys.token']);
+
+const withoutSecrets = (value, secrets, accountRecord, seen = new WeakSet()) => {
+    if (typeof value === 'string') {
+        return secrets.some(secret => value.includes(secret)) ? null : value;
+    }
+    if (!value || typeof value !== 'object') return value;
+    if (seen.has(value)) return null;
+    seen.add(value);
+    if (Array.isArray(value)) return value.map(item => withoutSecrets(item, secrets, accountRecord, seen));
+    const clean = {};
+    for (const [field, item] of Object.entries(value)) {
+        if (accountRecord && SECRET_FIELDS.has(field.toLowerCase())) continue;
+        clean[field] = withoutSecrets(item, secrets, accountRecord, seen);
+    }
+    return clean;
+};
+
+const projectSafeResult = (client, method, result) => {
+    const secrets = [client && client.token].filter(secret => typeof secret === 'string' && secret.length >= 8);
+    const accountRecord = method.startsWith('me.') || method.startsWith('profiles.');
+    return withoutSecrets(result, secrets, accountRecord);
+};
+
 const invokeProjectMethod = async (client, method, args) => {
     if (!projectMethod(method)) {
         throw new Error(`Projects cannot call Rotur method: ${String(method).slice(0, 80)}`);
@@ -256,9 +281,9 @@ const invokeProjectMethod = async (client, method, args) => {
         throw new Error(`Rotur method is unavailable: ${method}`);
     }
     if (method === 'files.getByPath') {
-        return fn.call(owner, await appFilePath(client, args[0]));
+        return projectSafeResult(client, method, await fn.call(owner, await appFilePath(client, args[0])));
     }
-    return fn.apply(owner, args);
+    return projectSafeResult(client, method, await fn.apply(owner, args));
 };
 
 export {
@@ -269,5 +294,6 @@ export {
     validateProjectScopes,
     authorizeProjectCall,
     invokeProjectMethod,
+    projectSafeResult,
     appFilePath
 };

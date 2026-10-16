@@ -221,3 +221,33 @@ describe('project files stay in MistWarp\'s own Origin FS folder', () => {
         expect(rotur.files.getByPath).toHaveBeenCalledTimes(1);
     });
 });
+
+describe('Rotur results handed to projects', () => {
+    const token = 'tok_0123456789abcdef';
+    const client = {
+        token,
+        me: {
+            get: jest.fn(async () => ({
+                'username': 'mist',
+                'sys.id': 'u1',
+                'key': token,
+                token,
+                'refresh_token': 'refresh-secret-value',
+                'nested': {note: `Bearer ${token}`, keep: 'yes'},
+                'bio': 'hello'
+            }))
+        },
+        gifts: {get: jest.fn(async () => ({id: 'p1', key: 'post-key', text: `leaked ${token}`}))}
+    };
+
+    test('me.get never includes the account token or other secrets', async () => {
+        const result = await invokeProjectMethod(client, 'me.get', []);
+        expect(result).toEqual({'username': 'mist', 'sys.id': 'u1', 'nested': {note: null, keep: 'yes'}, 'bio': 'hello'});
+        expect(JSON.stringify(result)).not.toContain(token);
+    });
+
+    test('any method drops values that contain the token but keeps ordinary fields', async () => {
+        const result = await invokeProjectMethod(client, 'gifts.get', ['p1']);
+        expect(result).toEqual({id: 'p1', key: 'post-key', text: null});
+    });
+});
