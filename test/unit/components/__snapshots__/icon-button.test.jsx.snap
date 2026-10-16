@@ -23,7 +23,7 @@ exports[`IconButtonComponent matches snapshot 1`] = `
         },
         "gui": "light",
         "id": 4,
-        "menuBarAlign": "center",
+        "menuBarAlign": "left",
         "name": undefined,
         "wallpaper": {
           "darkness": 0,
