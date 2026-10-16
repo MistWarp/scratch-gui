@@ -141,6 +141,8 @@ class Backpack extends React.Component {
         this.loadAllContents = false;
         this.hasLoaded = false;
         this.refreshQueued = false;
+        this.refreshInFlight = false;
+        this.morePending = false;
         this.changeTimer = null;
         this.unsubscribeChanges = null;
         this.dropRequest = null;
@@ -342,7 +344,6 @@ class Backpack extends React.Component {
         this.setState({
             error: `${error}`,
             loading: false,
-            refreshing: false,
             busyId: null
         });
         return false;
@@ -564,7 +565,9 @@ class Backpack extends React.Component {
             }));
             return true;
         } catch (error) {
-            return this.handleError(error);
+            const result = this.handleError(error);
+            if (!this.unmounted) this.refreshContents();
+            return result;
         } finally {
             this.renamingItems.delete(id);
         }
@@ -579,7 +582,10 @@ class Backpack extends React.Component {
         if (!this.canLoadContents()) return;
 
         this.loadAllContents = this.loadAllContents || loadAll;
-        if (this.contentsRequest) return;
+        if (this.contentsRequest) {
+            if (!loadAll && this.refreshInFlight) this.morePending = true;
+            return;
+        }
         this.loadContents(false);
     }
     refreshContents () {
@@ -596,11 +602,16 @@ class Backpack extends React.Component {
     loadContents (refresh) {
         this.hasLoaded = true;
         this.refreshQueued = false;
+        this.refreshInFlight = refresh;
+        const wantsMore = this.morePending;
+        this.morePending = false;
+        this.loadAllContents = this.loadAllContents || Boolean(this.state.searchQuery.trim());
         this.setState({loading: true, refreshing: refresh, error: false});
         const pageSize = this.state.itemsPerPage;
         const loaded = refresh ? [] : this.state.contents.slice();
+        const shownCount = this.state.contents.length + (wantsMore ? pageSize : 0);
         const minimumCount = refresh ?
-            Math.max(pageSize, Math.ceil(this.state.contents.length / pageSize) * pageSize) :
+            Math.max(pageSize, Math.ceil(shownCount / pageSize) * pageSize) :
             0;
         const loadPage = () => getBackpackContents({
             host: this.props.host,
@@ -611,7 +622,8 @@ class Backpack extends React.Component {
         }).then(contents => {
             loaded.push(...contents);
             const fullPage = contents.length === pageSize;
-            if (fullPage && (this.loadAllContents || loaded.length < minimumCount)) {
+            const stale = refresh && this.refreshQueued;
+            if (fullPage && !stale && (this.loadAllContents || loaded.length < minimumCount)) {
                 return loadPage();
             }
             return fullPage;
@@ -620,7 +632,10 @@ class Backpack extends React.Component {
         this.contentsRequest = loadPage()
             .then(moreToLoad => {
                 if (this.unmounted) return false;
-                if (refresh && this.refreshQueued) return false;
+                if (refresh && this.refreshQueued && this.canLoadContents()) {
+                    if (wantsMore) this.morePending = true;
+                    return false;
+                }
                 const loadedIds = new Set(loaded.map(item => item.id));
                 this.setState(oldState => {
                     if (refresh) {
@@ -642,13 +657,23 @@ class Backpack extends React.Component {
                 });
                 return true;
             })
-            .catch(error => this.handleError(error))
+            .catch(error => {
+                const result = this.handleError(error);
+                if (!this.unmounted) this.setState({refreshing: false});
+                return result;
+            })
             .then(() => {
                 this.contentsRequest = null;
+                this.refreshInFlight = false;
                 this.loadAllContents = false;
-                if (this.unmounted || !this.refreshQueued) return;
-                this.refreshQueued = false;
-                this.refreshContents();
+                if (this.unmounted) return;
+                if (this.refreshQueued) {
+                    this.refreshQueued = false;
+                    this.refreshContents();
+                } else if (this.morePending) {
+                    this.morePending = false;
+                    this.getContents();
+                }
             });
     }
     handleExternalChange () {
@@ -656,6 +681,7 @@ class Backpack extends React.Component {
         this.changeTimer = setTimeout(this.refreshContents, CHANGE_REFRESH_DELAY);
     }
     handleRefresh () {
+        if (this.state.refreshing) return;
         this.refreshContents();
     }
     handleBlockDragHook (type) {

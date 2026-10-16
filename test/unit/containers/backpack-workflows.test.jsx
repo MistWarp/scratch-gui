@@ -399,4 +399,82 @@ describe('backpack workflows', () => {
         expect(getBackpackContents).toHaveBeenCalledTimes(2);
         expect(backpack.state.contents.map(item => item.id)).toEqual(['saved', 'old']);
     });
+
+    test('a search keeps loading everything when its refresh is replaced', async () => {
+        const page = start => Array.from({length: 100}, (_, i) => ({id: `${start + i}`}));
+        let finishStale;
+        getBackpackContents
+            .mockImplementationOnce(() => new Promise(resolve => {
+                finishStale = resolve;
+            }))
+            .mockResolvedValueOnce(page(0))
+            .mockResolvedValueOnce(page(100))
+            .mockResolvedValueOnce([{id: '200'}]);
+        const backpack = makeBackpack({host: 'local'});
+        backpack.state.contents = page(0);
+        backpack.state.moreToLoad = true;
+
+        backpack.refreshContents();
+        backpack.handleSearchChange({target: {value: 'walk'}});
+        backpack.handleExternalChange();
+        backpack.refreshContents();
+
+        const stale = backpack.contentsRequest;
+        finishStale(page(0));
+        await stale;
+        await backpack.contentsRequest;
+
+        expect(getBackpackContents).toHaveBeenCalledTimes(4);
+        expect(backpack.state.contents).toHaveLength(201);
+        expect(backpack.state.moreToLoad).toBe(false);
+        clearTimeout(backpack.changeTimer);
+    });
+
+    test('More pressed during a refresh loads the next page with it', async () => {
+        const page = start => Array.from({length: 100}, (_, i) => ({id: `${start + i}`}));
+        let finishRefresh;
+        getBackpackContents
+            .mockImplementationOnce(() => new Promise(resolve => {
+                finishRefresh = resolve;
+            }))
+            .mockResolvedValueOnce(page(100));
+        const backpack = makeBackpack({host: 'local'});
+        backpack.state.contents = page(0);
+
+        backpack.refreshContents();
+        backpack.handleMore();
+        const refresh = backpack.contentsRequest;
+        finishRefresh(page(0));
+        await refresh;
+        await backpack.contentsRequest;
+
+        expect(getBackpackContents).toHaveBeenCalledTimes(2);
+        expect(backpack.state.contents).toHaveLength(200);
+        expect(backpack.morePending).toBe(false);
+    });
+
+    test('an unrelated error does not stop the refresh spinner', () => {
+        getBackpackContents.mockImplementationOnce(() => new Promise(() => {}));
+        const backpack = makeBackpack({host: 'local'});
+        backpack.handleRefresh();
+        backpack.handleError(new Error('insert failed'));
+        expect(backpack.state.refreshing).toBe(true);
+
+        backpack.handleRefresh();
+        expect(getBackpackContents).toHaveBeenCalledTimes(1);
+        expect(backpack.refreshQueued).toBe(false);
+    });
+
+    test('a failed rename refreshes the list', async () => {
+        updateBackpackObject.mockRejectedValueOnce(new Error('Updating object: item no longer exists'));
+        getBackpackContents.mockResolvedValueOnce([]);
+        const backpack = makeBackpack({host: 'local'});
+        backpack.state.contents = [{id: 'gone', name: 'Old name', type: 'costume'}];
+
+        await expect(backpack.handleRenameSubmit('gone', 'New name')).resolves.toBe(false);
+        await backpack.contentsRequest;
+
+        expect(backpack.state.contents).toEqual([]);
+        expect(backpack.state.error).toBe(false);
+    });
 });

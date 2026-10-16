@@ -125,10 +125,6 @@
     outline: none;
 }
 
-.refresh-button:hover {
-    background-color: $looks-light-transparent;
-}
-
 .refresh-button:active {
     background-color: $looks-transparent;
 }

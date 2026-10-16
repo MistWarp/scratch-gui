@@ -92,7 +92,7 @@ const notifyChange = () => {
     try {
         channel.postMessage({changed: true});
     } catch (e) {
-        // Other tabs refresh when the backpack is next opened.
+        changeChannel = null;
     }
 };
 
