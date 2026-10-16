@@ -2908,7 +2908,6 @@
   "Projects that let players talk": "Projects that let players talk",
   "Some projects let players send each other messages through extensions such as CloudLink, WebSocket or OriginChats. Those messages go through services MistWarp doesn't run, so MistWarp only sees the chat that players report.": "Some projects let players send each other messages through extensions such as CloudLink, WebSocket or OriginChats. Those messages go through services MistWarp doesn't run, so MistWarp only sees the chat that players report.",
   "The creator of a project like this is responsible for its chat. Before sharing it, they add a contact for chat that is shown on the project page, and agree to these rules:": "The creator of a project like this is responsible for its chat. Before sharing it, they add a contact for chat that is shown on the project page, and agree to these rules:",
-  "Use Report chat below a project to report a message. Everyday problems go to the creator and to MistWarp moderators. Sexual, violent and urgent reports go to moderators only. Class accounts can't open these projects.": "Use Report chat below a project to report a message. Everyday problems go to the creator and to MistWarp moderators. Sexual, violent and urgent reports go to moderators only. Class accounts can't open these projects.",
   "No longer marked as connecting players.": "No longer marked as connecting players.",
   "Marked as connecting players. {value1, plural, one {# shared project is} other {# shared projects are}} left out of lists until their creators add chat details, and the owners were notified.": "Marked as connecting players. {value1, plural, one {# shared project is} other {# shared projects are}} left out of lists until their creators add chat details, and the owners were notified.",
   "Marked as connecting players.": "Marked as connecting players.",
@@ -2931,8 +2930,6 @@
   "Always on while the project uses an extension that connects players.": "Always on while the project uses an extension that connects players.",
   "Turn this on if players can send each other messages in any way, including through your own server.": "Turn this on if players can send each other messages in any way, including through your own server.",
   "Contact for chat": "Contact for chat",
-  "An email address, Discord server or website": "An email address, Discord server or website",
-  "Shown on the project page so players can reach you about chat.": "Shown on the project page so players can reach you about chat.",
   "Chat rules": "Chat rules",
   "I will moderate chat in this project by these rules.": "I will moderate chat in this project by these rules.",
   "Save chat details": "Save chat details",
@@ -2950,5 +2947,10 @@
   "Don't share personal information, and report anyone who makes you uncomfortable.": "Don't share personal information, and report anyone who makes you uncomfortable.",
   "Report chat": "Report chat",
   "{user} moderates chat in this project. Reach them at {contact}.": "{user} moderates chat in this project. Reach them at {contact}.",
-  "{user} hasn't added a contact for chat yet. Report anything that breaks the rules.": "{user} hasn't added a contact for chat yet. Report anything that breaks the rules."
+  "{user} hasn't added a contact for chat yet. Report anything that breaks the rules.": "{user} hasn't added a contact for chat yet. Report anything that breaks the rules.",
+  "The reporter named this player and MistWarp hasn't checked it. The player will see this reason in their moderation notice.": "The reporter named this player and MistWarp hasn't checked it. The player will see this reason in their moderation notice.",
+  "The reporter named this player and MistWarp hasn't checked it. They will be locked out of MistWarp until an admin unbans them.": "The reporter named this player and MistWarp hasn't checked it. They will be locked out of MistWarp until an admin unbans them.",
+  "Use Report chat below a project to report a message. Everyday problems go to the creator and to MistWarp moderators. Sexual, violent and urgent reports go to moderators only. Class accounts can't open other people's projects like these.": "Use Report chat below a project to report a message. Everyday problems go to the creator and to MistWarp moderators. Sexual, violent and urgent reports go to moderators only. Class accounts can't open other people's projects like these.",
+  "A website or email address": "A website or email address",
+  "Shown on the project page so players can reach you about chat. Use a contact you are happy for anyone to see.": "Shown on the project page so players can reach you about chat. Use a contact you are happy for anyone to see."
 }

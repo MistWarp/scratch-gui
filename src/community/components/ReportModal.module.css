@@ -5,6 +5,7 @@
 }
 
 .select,
+.input,
 .textarea {
     width: 100%;
     font: inherit;
@@ -21,6 +22,7 @@
 }
 
 .select:focus,
+.input:focus,
 .textarea:focus {
     outline: none;
     border-color: var(--accent);

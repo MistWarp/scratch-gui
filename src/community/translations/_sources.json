@@ -186,7 +186,7 @@
     "src/community/pages/Theme.jsx:225",
     "src/community/pages/Theme.jsx:258",
     "src/community/pages/project/PlayerChatSettings.jsx:118",
-    "src/community/pages/project/ProjectStage.jsx:189",
+    "src/community/pages/project/ProjectStage.jsx:187",
     "src/community/pages/project/ReviewPanel.jsx:172"
   ],
   "Saved": [
@@ -299,7 +299,7 @@
     "src/community/components/CommentThread.jsx:316",
     "src/community/components/GameMarketplaceModal.jsx:226",
     "src/community/components/ProjectInfoPanel.jsx:384",
-    "src/community/components/ReportModal.jsx:113",
+    "src/community/components/ReportModal.jsx:116",
     "src/community/components/RoturConsentModal.jsx:70",
     "src/community/components/SocialPost.jsx:219",
     "src/community/components/SocialPost.jsx:265",
@@ -422,7 +422,7 @@
     "src/community/pages/Search.jsx:213",
     "src/community/pages/Spaces.jsx:329",
     "src/community/pages/Themes.jsx:185",
-    "src/community/pages/admin/ExtensionManager.jsx:172"
+    "src/community/pages/admin/ExtensionManager.jsx:175"
   ],
   "Could not load more comments. Try again.": [
     "src/community/components/CommentThread.jsx:1050"
@@ -522,8 +522,8 @@
     "src/community/components/DiffView.jsx:239",
     "src/community/pages/Admin.jsx:39",
     "src/community/pages/Roadmap.jsx:497",
-    "src/community/pages/admin/ExtensionManager.jsx:183",
-    "src/community/pages/admin/ExtensionManager.jsx:232"
+    "src/community/pages/admin/ExtensionManager.jsx:186",
+    "src/community/pages/admin/ExtensionManager.jsx:235"
   ],
   "New in this commit.": [
     "src/community/components/DiffView.jsx:283"
@@ -687,7 +687,7 @@
   "Loading project…": [
     "src/community/components/FeaturedProject.jsx:103",
     "src/community/pages/Bounties.jsx:115",
-    "src/community/pages/project/ProjectStage.jsx:127"
+    "src/community/pages/project/ProjectStage.jsx:125"
   ],
   "Play project": [
     "src/community/components/FeaturedProject.jsx:103"
@@ -1168,7 +1168,7 @@
   ],
   "Not played yet": [
     "src/community/components/MyStuffLibrary.jsx:20",
-    "src/community/pages/project/ProjectStage.jsx:214"
+    "src/community/pages/project/ProjectStage.jsx:212"
   ],
   "{duration} played": [
     "src/community/components/MyStuffLibrary.jsx:21",
@@ -2256,59 +2256,59 @@
     "src/community/components/ReportModal.jsx:53"
   ],
   "Could not send the report.": [
-    "src/community/components/ReportModal.jsx:92"
+    "src/community/components/ReportModal.jsx:95"
   ],
   "Report this content": [
-    "src/community/components/ReportModal.jsx:103"
+    "src/community/components/ReportModal.jsx:106"
   ],
   "Done": [
-    "src/community/components/ReportModal.jsx:110",
+    "src/community/components/ReportModal.jsx:113",
     "src/community/pages/ManageProject.jsx:942",
     "src/community/pages/Roadmap.jsx:34"
   ],
   "Sending…": [
-    "src/community/components/ReportModal.jsx:117",
+    "src/community/components/ReportModal.jsx:120",
     "src/community/pages/Support.jsx:141",
     "src/community/pages/project/ContributionPanel.jsx:219"
   ],
   "Send report": [
-    "src/community/components/ReportModal.jsx:119"
+    "src/community/components/ReportModal.jsx:122"
   ],
   "Thanks. Your report was sent to the moderators.": [
-    "src/community/components/ReportModal.jsx:124"
+    "src/community/components/ReportModal.jsx:127"
   ],
   "What is wrong?": [
-    "src/community/components/ReportModal.jsx:130"
+    "src/community/components/ReportModal.jsx:133"
   ],
   "Urgent": [
-    "src/community/components/ReportModal.jsx:145"
+    "src/community/components/ReportModal.jsx:148"
   ],
   "Only moderators see this report, not the creator. Name the player if you can, so Rotur's safety team can act on their account straight away. If someone is in danger right now, contact your local emergency services.": [
-    "src/community/components/ReportModal.jsx:158"
+    "src/community/components/ReportModal.jsx:161"
   ],
   "Rotur's safety team sees this report straight away. If someone is in danger right now, contact your local emergency services.": [
-    "src/community/components/ReportModal.jsx:165"
+    "src/community/components/ReportModal.jsx:168"
   ],
   "MistWarp moderators and the project's creator both see this report, so the creator can act on it in their chat. They don't see who sent it.": [
-    "src/community/components/ReportModal.jsx:171"
+    "src/community/components/ReportModal.jsx:175"
   ],
   "Only MistWarp moderators see this report, not the creator.": [
-    "src/community/components/ReportModal.jsx:172"
+    "src/community/components/ReportModal.jsx:176"
   ],
   "Player's username (optional)": [
-    "src/community/components/ReportModal.jsx:180"
+    "src/community/components/ReportModal.jsx:184"
   ],
   "The name they use in the chat": [
-    "src/community/components/ReportModal.jsx:188"
+    "src/community/components/ReportModal.jsx:192"
   ],
   "Details (optional)": [
-    "src/community/components/ReportModal.jsx:196"
+    "src/community/components/ReportModal.jsx:200"
   ],
   "What did they say, and when? Copy the messages if you can.": [
-    "src/community/components/ReportModal.jsx:204"
+    "src/community/components/ReportModal.jsx:208"
   ],
   "Add anything that helps a moderator understand the problem.": [
-    "src/community/components/ReportModal.jsx:205"
+    "src/community/components/ReportModal.jsx:209"
   ],
   "This project": [
     "src/community/components/RoturConsentModal.jsx:23"
@@ -2831,269 +2831,269 @@
     "src/community/milestone-notifications.js:24"
   ],
   "Your report was reviewed; no action was taken.": [
-    "src/community/notification-text.jsx:141"
-  ],
-  "Your report was actioned with a warning.": [
-    "src/community/notification-text.jsx:142"
-  ],
-  "Your report was actioned with a ban.": [
     "src/community/notification-text.jsx:143"
   ],
-  "Your report was actioned; the project was unshared.": [
+  "Your report was actioned with a warning.": [
     "src/community/notification-text.jsx:144"
   ],
-  "Your report was actioned; the project was hidden.": [
+  "Your report was actioned with a ban.": [
     "src/community/notification-text.jsx:145"
   ],
-  "Your report was reviewed.": [
+  "Your report was actioned; the project was unshared.": [
     "src/community/notification-text.jsx:146"
   ],
+  "Your report was actioned; the project was hidden.": [
+    "src/community/notification-text.jsx:147"
+  ],
+  "Your report was reviewed.": [
+    "src/community/notification-text.jsx:148"
+  ],
   "{actor} shared {project} with you": [
-    "src/community/notification-text.jsx:163"
+    "src/community/notification-text.jsx:165"
   ],
   "{actor} shared a project with you": [
-    "src/community/notification-text.jsx:164"
+    "src/community/notification-text.jsx:166"
   ],
   "{actor} loved {project}": [
-    "src/community/notification-text.jsx:166",
+    "src/community/notification-text.jsx:168",
     "src/community/pages/Home.jsx:44"
   ],
   "{actor} loved your project": [
-    "src/community/notification-text.jsx:167"
+    "src/community/notification-text.jsx:169"
   ],
   "{actor} commented on PR #{pull} in {project}": [
-    "src/community/notification-text.jsx:171"
+    "src/community/notification-text.jsx:173"
   ],
   "{actor} commented on PR #{pull}": [
-    "src/community/notification-text.jsx:172"
+    "src/community/notification-text.jsx:174"
   ],
   "{actor} commented on {project}": [
-    "src/community/notification-text.jsx:175"
-  ],
-  "{actor} commented on your project": [
-    "src/community/notification-text.jsx:176"
-  ],
-  "{actor} commented on your profile": [
     "src/community/notification-text.jsx:177"
   ],
-  "{actor} replied to your post": [
+  "{actor} commented on your project": [
+    "src/community/notification-text.jsx:178"
+  ],
+  "{actor} commented on your profile": [
     "src/community/notification-text.jsx:179"
   ],
+  "{actor} replied to your post": [
+    "src/community/notification-text.jsx:181"
+  ],
   "{actor} replied to your comment on PR #{pull} in {project}": [
-    "src/community/notification-text.jsx:182"
+    "src/community/notification-text.jsx:184"
   ],
   "{actor} replied to your comment on PR #{pull}": [
-    "src/community/notification-text.jsx:183"
+    "src/community/notification-text.jsx:185"
   ],
   "{actor} replied to your comment on {project}": [
-    "src/community/notification-text.jsx:186"
+    "src/community/notification-text.jsx:188"
   ],
   "{actor} replied to your comment": [
-    "src/community/notification-text.jsx:187"
+    "src/community/notification-text.jsx:189"
   ],
   "{actor} bought {project} for {amount, plural, one {# credit} other {# credits}}": [
-    "src/community/notification-text.jsx:191"
-  ],
-  "{actor} bought your project for {amount, plural, one {# credit} other {# credits}}": [
     "src/community/notification-text.jsx:193"
   ],
+  "{actor} bought your project for {amount, plural, one {# credit} other {# credits}}": [
+    "src/community/notification-text.jsx:195"
+  ],
   "{actor} bought {project}": [
-    "src/community/notification-text.jsx:197"
+    "src/community/notification-text.jsx:199"
   ],
   "{actor} bought your project": [
-    "src/community/notification-text.jsx:198"
-  ],
-  "{actor} donated {amount, plural, one {# credit} other {# credits}} to you": [
     "src/community/notification-text.jsx:200"
   ],
+  "{actor} donated {amount, plural, one {# credit} other {# credits}} to you": [
+    "src/community/notification-text.jsx:202"
+  ],
   "{actor} donated credits to you": [
-    "src/community/notification-text.jsx:201"
+    "src/community/notification-text.jsx:203"
   ],
   "{actor} remixed {project}": [
-    "src/community/notification-text.jsx:203",
+    "src/community/notification-text.jsx:205",
     "src/community/pages/Home.jsx:47"
   ],
   "{actor} remixed your project": [
-    "src/community/notification-text.jsx:204"
+    "src/community/notification-text.jsx:206"
   ],
   "{actor} followed you": [
-    "src/community/notification-text.jsx:205"
-  ],
-  "{actor} mentioned you in a post": [
     "src/community/notification-text.jsx:207"
   ],
+  "{actor} mentioned you in a post": [
+    "src/community/notification-text.jsx:209"
+  ],
   "{actor} mentioned you on PR #{pull} in {project}": [
-    "src/community/notification-text.jsx:210"
+    "src/community/notification-text.jsx:212"
   ],
   "{actor} mentioned you on PR #{pull}": [
-    "src/community/notification-text.jsx:211"
+    "src/community/notification-text.jsx:213"
   ],
   "{actor} mentioned you on {project}": [
-    "src/community/notification-text.jsx:214"
-  ],
-  "{actor} mentioned you in a comment": [
-    "src/community/notification-text.jsx:215"
-  ],
-  "{actor} liked your post": [
     "src/community/notification-text.jsx:216"
   ],
-  "{actor} reposted your post": [
+  "{actor} mentioned you in a comment": [
     "src/community/notification-text.jsx:217"
   ],
-  "{actor} invited you to join {group}": [
+  "{actor} liked your post": [
     "src/community/notification-text.jsx:218"
   ],
-  "{actor} accepted your request to join {group}": [
+  "{actor} reposted your post": [
     "src/community/notification-text.jsx:219"
   ],
-  "{actor} declined your request to join {group}": [
+  "{actor} invited you to join {group}": [
     "src/community/notification-text.jsx:220"
   ],
-  "{actor} removed you from {group}": [
+  "{actor} accepted your request to join {group}": [
     "src/community/notification-text.jsx:221"
   ],
-  "{actor} banned you from {group}": [
+  "{actor} declined your request to join {group}": [
     "src/community/notification-text.jsx:222"
   ],
-  "{actor} transferred {group} to you": [
+  "{actor} removed you from {group}": [
     "src/community/notification-text.jsx:223"
   ],
-  "{actor} sent you {item}": [
-    "src/community/notification-text.jsx:224",
+  "{actor} banned you from {group}": [
+    "src/community/notification-text.jsx:224"
+  ],
+  "{actor} transferred {group} to you": [
     "src/community/notification-text.jsx:225"
   ],
-  "{actor} bought {item} from you": [
-    "src/community/notification-text.jsx:226"
-  ],
-  "You bought {item} from {actor}": [
+  "{actor} sent you {item}": [
+    "src/community/notification-text.jsx:226",
     "src/community/notification-text.jsx:227"
   ],
-  "Your account standing is now {level}: {reason}": [
+  "{actor} bought {item} from you": [
+    "src/community/notification-text.jsx:228"
+  ],
+  "You bought {item} from {actor}": [
     "src/community/notification-text.jsx:229"
   ],
+  "Your account standing is now {level}: {reason}": [
+    "src/community/notification-text.jsx:231"
+  ],
   "Your account standing is now {level}.": [
-    "src/community/notification-text.jsx:230"
+    "src/community/notification-text.jsx:232"
   ],
   "A moderator hid {project}: {reason}": [
-    "src/community/notification-text.jsx:234"
+    "src/community/notification-text.jsx:236"
   ],
   "A moderator hid {project}.": [
-    "src/community/notification-text.jsx:235"
+    "src/community/notification-text.jsx:237"
   ],
   "A moderator hid your project: {reason}": [
-    "src/community/notification-text.jsx:238"
+    "src/community/notification-text.jsx:240"
   ],
   "A moderator hid your project.": [
-    "src/community/notification-text.jsx:239"
-  ],
-  "A moderator restored {project}.": [
     "src/community/notification-text.jsx:241"
   ],
+  "A moderator restored {project}.": [
+    "src/community/notification-text.jsx:243"
+  ],
   "A moderator restored your project.": [
-    "src/community/notification-text.jsx:242"
+    "src/community/notification-text.jsx:244"
   ],
   "A moderator sent you a message.": [
-    "src/community/notification-text.jsx:245"
+    "src/community/notification-text.jsx:247"
   ],
   "New announcement: {title}": [
-    "src/community/notification-text.jsx:246"
+    "src/community/notification-text.jsx:248"
   ],
   "{project} lets players talk to each other, so it is left out of lists until you add chat details.": [
-    "src/community/notification-text.jsx:249"
+    "src/community/notification-text.jsx:251"
   ],
   "Your project lets players talk to each other, so it is left out of lists until you add chat details.": [
-    "src/community/notification-text.jsx:250"
+    "src/community/notification-text.jsx:253"
   ],
   "Someone reported chat from {player} in {project}.": [
-    "src/community/notification-text.jsx:254"
+    "src/community/notification-text.jsx:257"
   ],
   "Someone reported chat from {player} in your project.": [
-    "src/community/notification-text.jsx:255"
-  ],
-  "Someone reported chat in {project}.": [
     "src/community/notification-text.jsx:258"
   ],
+  "Someone reported chat in {project}.": [
+    "src/community/notification-text.jsx:261"
+  ],
   "Someone reported chat in your project.": [
-    "src/community/notification-text.jsx:259"
+    "src/community/notification-text.jsx:262"
   ],
   "{actor} sent changes for {project} in PR #{pull}": [
-    "src/community/notification-text.jsx:263"
+    "src/community/notification-text.jsx:266"
   ],
   "{actor} sent changes in PR #{pull}": [
-    "src/community/notification-text.jsx:264"
-  ],
-  "{actor} sent changes for {project}": [
     "src/community/notification-text.jsx:267"
   ],
+  "{actor} sent changes for {project}": [
+    "src/community/notification-text.jsx:270"
+  ],
   "{actor} sent changes": [
-    "src/community/notification-text.jsx:268"
+    "src/community/notification-text.jsx:271"
   ],
   "{actor} merged changes for {project} in PR #{pull}": [
-    "src/community/notification-text.jsx:272"
+    "src/community/notification-text.jsx:275"
   ],
   "{actor} merged changes in PR #{pull}": [
-    "src/community/notification-text.jsx:273"
-  ],
-  "{actor} merged changes for {project}": [
     "src/community/notification-text.jsx:276"
   ],
-  "{actor} merged changes": [
-    "src/community/notification-text.jsx:277"
-  ],
-  "{actor} added {project} to {space}": [
+  "{actor} merged changes for {project}": [
     "src/community/notification-text.jsx:279"
   ],
-  "{actor} added a project to {space}": [
+  "{actor} merged changes": [
     "src/community/notification-text.jsx:280"
   ],
-  "{actor} commented on {space}": [
-    "src/community/notification-text.jsx:281"
-  ],
-  "{actor} invited you to curate {space}": [
+  "{actor} added {project} to {space}": [
     "src/community/notification-text.jsx:282"
   ],
-  "{actor} accepted your invitation to curate {space}": [
+  "{actor} added a project to {space}": [
     "src/community/notification-text.jsx:283"
   ],
-  "{actor} declined your invitation to curate {space}": [
+  "{actor} commented on {space}": [
     "src/community/notification-text.jsx:284"
   ],
-  "{actor} removed you as a curator of {space}": [
+  "{actor} invited you to curate {space}": [
     "src/community/notification-text.jsx:285"
   ],
-  "{actor} invited you to judge {space}": [
+  "{actor} accepted your invitation to curate {space}": [
     "src/community/notification-text.jsx:286"
   ],
-  "{actor} accepted your invitation to judge {space}": [
+  "{actor} declined your invitation to curate {space}": [
     "src/community/notification-text.jsx:287"
   ],
-  "{actor} joined {space}": [
+  "{actor} removed you as a curator of {space}": [
     "src/community/notification-text.jsx:288"
   ],
-  "{actor} sent feedback for {project}": [
+  "{actor} invited you to judge {space}": [
+    "src/community/notification-text.jsx:289"
+  ],
+  "{actor} accepted your invitation to judge {space}": [
     "src/community/notification-text.jsx:290"
   ],
-  "{actor} sent feedback for your project": [
+  "{actor} joined {space}": [
     "src/community/notification-text.jsx:291"
   ],
+  "{actor} sent feedback for {project}": [
+    "src/community/notification-text.jsx:293"
+  ],
+  "{actor} sent feedback for your project": [
+    "src/community/notification-text.jsx:294"
+  ],
   "{actor} rated {project} {rating} out of 5": [
-    "src/community/notification-text.jsx:293",
+    "src/community/notification-text.jsx:296",
     "src/community/pages/Home.jsx:48"
   ],
   "{actor} rated your project {rating} out of 5": [
-    "src/community/notification-text.jsx:294"
-  ],
-  "{actor} commented on {suggestion}": [
-    "src/community/notification-text.jsx:296"
-  ],
-  "{actor} commented on your suggestion": [
     "src/community/notification-text.jsx:297"
   ],
+  "{actor} commented on {suggestion}": [
+    "src/community/notification-text.jsx:299"
+  ],
+  "{actor} commented on your suggestion": [
+    "src/community/notification-text.jsx:300"
+  ],
   "{actor} {message}": [
-    "src/community/notification-text.jsx:301"
+    "src/community/notification-text.jsx:304"
   ],
   "{actor} sent you a notification": [
-    "src/community/notification-text.jsx:302"
+    "src/community/notification-text.jsx:305"
   ],
   "Overview": [
     "src/community/pages/Admin.jsx:31",
@@ -3165,95 +3165,101 @@
   "Warn user?": [
     "src/community/pages/Admin.jsx:116"
   ],
-  "The user will see this reason in their moderation notice.": [
-    "src/community/pages/Admin.jsx:117"
-  ],
-  "Send warning": [
+  "The reporter named this player and MistWarp hasn't checked it. The player will see this reason in their moderation notice.": [
     "src/community/pages/Admin.jsx:118"
   ],
+  "The user will see this reason in their moderation notice.": [
+    "src/community/pages/Admin.jsx:119"
+  ],
+  "Send warning": [
+    "src/community/pages/Admin.jsx:120"
+  ],
   "Reason": [
-    "src/community/pages/Admin.jsx:119",
-    "src/community/pages/Admin.jsx:162"
+    "src/community/pages/Admin.jsx:121",
+    "src/community/pages/Admin.jsx:166"
   ],
   "Send this report to Rotur?": [
-    "src/community/pages/Admin.jsx:129"
+    "src/community/pages/Admin.jsx:131"
   ],
   "Rotur's safety team reviews it and tells the reporter the outcome. It stays open here until they decide.": [
-    "src/community/pages/Admin.jsx:130"
+    "src/community/pages/Admin.jsx:132"
   ],
   "Send to Rotur": [
-    "src/community/pages/Admin.jsx:131",
+    "src/community/pages/Admin.jsx:133",
     "src/community/pages/admin/ReportsSection.jsx:122"
   ],
   "Note for Rotur (optional)": [
-    "src/community/pages/Admin.jsx:132"
+    "src/community/pages/Admin.jsx:134"
   ],
   "the owner of this project": [
-    "src/community/pages/Admin.jsx:138"
+    "src/community/pages/Admin.jsx:140"
   ],
   "Ban {value1}?": [
-    "src/community/pages/Admin.jsx:144"
+    "src/community/pages/Admin.jsx:146"
+  ],
+  "The reporter named this player and MistWarp hasn't checked it. They will be locked out of MistWarp until an admin unbans them.": [
+    "src/community/pages/Admin.jsx:148"
   ],
   "They will be locked out of MistWarp until an admin unbans them.": [
-    "src/community/pages/Admin.jsx:145"
+    "src/community/pages/Admin.jsx:149"
   ],
   "Ban user": [
-    "src/community/pages/Admin.jsx:146",
-    "src/community/pages/Admin.jsx:156",
-    "src/community/pages/Admin.jsx:158",
+    "src/community/pages/Admin.jsx:150",
+    "src/community/pages/Admin.jsx:160",
+    "src/community/pages/Admin.jsx:162",
     "src/community/pages/Profile.jsx:1019",
     "src/community/pages/admin/ReportsSection.jsx:117",
     "src/community/pages/admin/UserDetailCard.jsx:204"
   ],
   "The user will be locked out of MistWarp until an admin unbans them.": [
-    "src/community/pages/Admin.jsx:157"
+    "src/community/pages/Admin.jsx:161"
   ],
   "Username": [
-    "src/community/pages/Admin.jsx:161",
-    "src/community/pages/Admin.jsx:177",
+    "src/community/pages/Admin.jsx:165",
+    "src/community/pages/Admin.jsx:181",
     "src/community/pages/ManageProject.jsx:987",
     "src/community/pages/admin/AdminsSection.jsx:18"
   ],
   "Shadow ban a user": [
-    "src/community/pages/Admin.jsx:172"
+    "src/community/pages/Admin.jsx:176"
   ],
   "Their projects, comments and profile leave every list for everyone else. They are not told and still see everything as normal.": [
-    "src/community/pages/Admin.jsx:173"
+    "src/community/pages/Admin.jsx:177"
   ],
   "Shadow ban": [
-    "src/community/pages/Admin.jsx:174",
+    "src/community/pages/Admin.jsx:178",
     "src/community/pages/admin/ProjectManager.jsx:160",
     "src/community/pages/admin/ProjectModerationDialog.jsx:32",
     "src/community/pages/admin/UserDetailCard.jsx:640",
     "src/community/pages/admin/UserDetailCard.jsx:665"
   ],
   "Private note for admins": [
-    "src/community/pages/Admin.jsx:178",
+    "src/community/pages/Admin.jsx:182",
     "src/community/pages/admin/ProjectModerationDialog.jsx:35",
     "src/community/pages/admin/UserDetailCard.jsx:652"
   ],
   "Enter a reply.": [
-    "src/community/pages/Admin.jsx:198"
+    "src/community/pages/Admin.jsx:202"
   ],
   "Tell the creator why their project is hidden.": [
-    "src/community/pages/Admin.jsx:202",
+    "src/community/pages/Admin.jsx:206",
     "src/community/pages/admin/ProjectModerationDialog.jsx:79"
   ],
   "Enter a username.": [
-    "src/community/pages/Admin.jsx:206",
-    "src/community/pages/Admin.jsx:214"
+    "src/community/pages/Admin.jsx:210",
+    "src/community/pages/Admin.jsx:218"
   ],
   "Enter a warning reason.": [
-    "src/community/pages/Admin.jsx:210"
+    "src/community/pages/Admin.jsx:214"
   ],
   "Admins only": [
-    "src/community/pages/Admin.jsx:311"
+    "src/community/pages/Admin.jsx:315"
   ],
   "This page is for admins.": [
-    "src/community/pages/Admin.jsx:312"
+    "src/community/pages/Admin.jsx:316"
   ],
   "Admin": [
-    "src/community/pages/Admin.jsx:338",
+    "src/community/pages/Admin.jsx:342",
     "src/community/pages/admin/AdminsSection.jsx:37",
     "src/community/pages/admin/UserDetailCard.jsx:377",
     "src/community/pages/admin/UserManager.jsx:157"
@@ -3293,7 +3299,7 @@
   ],
   "Project unavailable": [
     "src/community/pages/Bounties.jsx:115",
-    "src/community/pages/project/ProjectStage.jsx:103"
+    "src/community/pages/project/ProjectStage.jsx:101"
   ],
   "View bounty": [
     "src/community/pages/Bounties.jsx:118"
@@ -5289,7 +5295,7 @@
   ],
   "Open in editor": [
     "src/community/pages/MyStuff.jsx:1528",
-    "src/community/pages/project/ProjectStage.jsx:73"
+    "src/community/pages/project/ProjectStage.jsx:71"
   ],
   "Manage & analytics": [
     "src/community/pages/MyStuff.jsx:1533",
@@ -5754,7 +5760,7 @@
   "Unblock": [
     "src/community/pages/Profile.jsx:897",
     "src/community/pages/Settings.jsx:793",
-    "src/community/pages/admin/ExtensionManager.jsx:340"
+    "src/community/pages/admin/ExtensionManager.jsx:343"
   ],
   "Block": [
     "src/community/pages/Profile.jsx:897"
@@ -7172,7 +7178,7 @@
   "The creator of a project like this is responsible for its chat. Before sharing it, they add a contact for chat that is shown on the project page, and agree to these rules:": [
     "src/community/pages/Trust.jsx:70"
   ],
-  "Use Report chat below a project to report a message. Everyday problems go to the creator and to MistWarp moderators. Sexual, violent and urgent reports go to moderators only. Class accounts can't open these projects.": [
+  "Use Report chat below a project to report a message. Everyday problems go to the creator and to MistWarp moderators. Sexual, violent and urgent reports go to moderators only. Class accounts can't open other people's projects like these.": [
     "src/community/pages/Trust.jsx:72"
   ],
   "{name}'s game library": [
@@ -7423,93 +7429,93 @@
   ],
   "Block URL": [
     "src/community/pages/admin/ExtensionManager.jsx:128",
-    "src/community/pages/admin/ExtensionManager.jsx:259",
-    "src/community/pages/admin/ExtensionManager.jsx:311"
+    "src/community/pages/admin/ExtensionManager.jsx:262",
+    "src/community/pages/admin/ExtensionManager.jsx:314"
   ],
   "No longer marked as connecting players.": [
-    "src/community/pages/admin/ExtensionManager.jsx:144"
+    "src/community/pages/admin/ExtensionManager.jsx:147"
   ],
   "Marked as connecting players. {value1, plural, one {# shared project is} other {# shared projects are}} left out of lists until their creators add chat details, and the owners were notified.": [
-    "src/community/pages/admin/ExtensionManager.jsx:146"
+    "src/community/pages/admin/ExtensionManager.jsx:149"
   ],
   "Marked as connecting players.": [
-    "src/community/pages/admin/ExtensionManager.jsx:148"
+    "src/community/pages/admin/ExtensionManager.jsx:151"
   ],
   "To be verified": [
-    "src/community/pages/admin/ExtensionManager.jsx:206"
-  ],
-  "Ignored": [
-    "src/community/pages/admin/ExtensionManager.jsx:207"
-  ],
-  "Trusted": [
-    "src/community/pages/admin/ExtensionManager.jsx:208"
-  ],
-  "Blocked": [
     "src/community/pages/admin/ExtensionManager.jsx:209"
   ],
+  "Ignored": [
+    "src/community/pages/admin/ExtensionManager.jsx:210"
+  ],
+  "Trusted": [
+    "src/community/pages/admin/ExtensionManager.jsx:211"
+  ],
+  "Blocked": [
+    "src/community/pages/admin/ExtensionManager.jsx:212"
+  ],
   "Search extensions": [
-    "src/community/pages/admin/ExtensionManager.jsx:236",
-    "src/community/pages/admin/ExtensionManager.jsx:237"
+    "src/community/pages/admin/ExtensionManager.jsx:239",
+    "src/community/pages/admin/ExtensionManager.jsx:240"
   ],
   "Block an extension URL": [
-    "src/community/pages/admin/ExtensionManager.jsx:252"
+    "src/community/pages/admin/ExtensionManager.jsx:255"
   ],
   "ID: {value1}": [
-    "src/community/pages/admin/ExtensionManager.jsx:276"
+    "src/community/pages/admin/ExtensionManager.jsx:279"
   ],
   "By: {value1}": [
-    "src/community/pages/admin/ExtensionManager.jsx:282"
+    "src/community/pages/admin/ExtensionManager.jsx:285"
   ],
   "License: {value1}": [
-    "src/community/pages/admin/ExtensionManager.jsx:286"
+    "src/community/pages/admin/ExtensionManager.jsx:289"
   ],
   "Used in {value1, plural, one {# project} other {# projects}}": [
-    "src/community/pages/admin/ExtensionManager.jsx:291"
+    "src/community/pages/admin/ExtensionManager.jsx:294"
   ],
   "Connects players. MistWarp recognises this gallery extension.": [
-    "src/community/pages/admin/ExtensionManager.jsx:297"
+    "src/community/pages/admin/ExtensionManager.jsx:300"
   ],
   "Connects players. Projects using it need chat details to be listed.": [
-    "src/community/pages/admin/ExtensionManager.jsx:298"
+    "src/community/pages/admin/ExtensionManager.jsx:301"
   ],
   "View source": [
-    "src/community/pages/admin/ExtensionManager.jsx:318"
+    "src/community/pages/admin/ExtensionManager.jsx:321"
   ],
   "Unmark connecting players": [
-    "src/community/pages/admin/ExtensionManager.jsx:323"
+    "src/community/pages/admin/ExtensionManager.jsx:326"
   ],
   "Mark as connecting players": [
-    "src/community/pages/admin/ExtensionManager.jsx:324"
+    "src/community/pages/admin/ExtensionManager.jsx:327"
   ],
   "Trust": [
-    "src/community/pages/admin/ExtensionManager.jsx:328"
+    "src/community/pages/admin/ExtensionManager.jsx:331"
   ],
   "Untrust": [
-    "src/community/pages/admin/ExtensionManager.jsx:330"
-  ],
-  "Ignore": [
     "src/community/pages/admin/ExtensionManager.jsx:333"
   ],
-  "Review again": [
-    "src/community/pages/admin/ExtensionManager.jsx:335"
+  "Ignore": [
+    "src/community/pages/admin/ExtensionManager.jsx:336"
   ],
-  "Block hash": [
+  "Review again": [
     "src/community/pages/admin/ExtensionManager.jsx:338"
   ],
+  "Block hash": [
+    "src/community/pages/admin/ExtensionManager.jsx:341"
+  ],
   "No extensions": [
-    "src/community/pages/admin/ExtensionManager.jsx:351"
+    "src/community/pages/admin/ExtensionManager.jsx:354"
   ],
   "No matching extensions.": [
-    "src/community/pages/admin/ExtensionManager.jsx:353"
+    "src/community/pages/admin/ExtensionManager.jsx:356"
   ],
   "No extensions to verify.": [
-    "src/community/pages/admin/ExtensionManager.jsx:354"
+    "src/community/pages/admin/ExtensionManager.jsx:357"
   ],
   "No {value1} extension hashes.": [
-    "src/community/pages/admin/ExtensionManager.jsx:354"
+    "src/community/pages/admin/ExtensionManager.jsx:357"
   ],
   "Unblock URL": [
-    "src/community/pages/admin/ExtensionManager.jsx:365"
+    "src/community/pages/admin/ExtensionManager.jsx:368"
   ],
   "Project hidden. Its creator was told why.": [
     "src/community/pages/admin/ProjectManager.jsx:55",
@@ -8452,10 +8458,10 @@
   "Contact for chat": [
     "src/community/pages/project/PlayerChatSettings.jsx:88"
   ],
-  "An email address, Discord server or website": [
+  "A website or email address": [
     "src/community/pages/project/PlayerChatSettings.jsx:93"
   ],
-  "Shown on the project page so players can reach you about chat.": [
+  "Shown on the project page so players can reach you about chat. Use a contact you are happy for anyone to see.": [
     "src/community/pages/project/PlayerChatSettings.jsx:96"
   ],
   "Chat rules": [
@@ -8619,97 +8625,97 @@
     "src/community/pages/project/ProjectNotices.jsx:122"
   ],
   "Nothing here yet": [
-    "src/community/pages/project/ProjectStage.jsx:70"
+    "src/community/pages/project/ProjectStage.jsx:68"
   ],
   "No content yet. Open it in the editor and save to upload.": [
-    "src/community/pages/project/ProjectStage.jsx:77"
+    "src/community/pages/project/ProjectStage.jsx:75"
   ],
   "This project has not been uploaded yet.": [
-    "src/community/pages/project/ProjectStage.jsx:78"
+    "src/community/pages/project/ProjectStage.jsx:76"
   ],
   "Support this creator": [
-    "src/community/pages/project/ProjectStage.jsx:85"
+    "src/community/pages/project/ProjectStage.jsx:83"
   ],
   "Buy for {value1} credits": [
-    "src/community/pages/project/ProjectStage.jsx:88"
+    "src/community/pages/project/ProjectStage.jsx:86"
   ],
   "Your purchase supports the creator and gives you access to play {value1}. Pay once, with no recurring charge.": [
-    "src/community/pages/project/ProjectStage.jsx:91"
+    "src/community/pages/project/ProjectStage.jsx:89"
   ],
   "Sign in to purchase and support this creator.": [
-    "src/community/pages/project/ProjectStage.jsx:92"
+    "src/community/pages/project/ProjectStage.jsx:90"
   ],
   "Not available on class accounts": [
-    "src/community/pages/project/ProjectStage.jsx:97"
+    "src/community/pages/project/ProjectStage.jsx:95"
   ],
   "This project lets players talk to each other, so class accounts can't open it.": [
-    "src/community/pages/project/ProjectStage.jsx:98"
+    "src/community/pages/project/ProjectStage.jsx:96"
   ],
   "The project file could not be loaded. The creator may need to save it again.": [
-    "src/community/pages/project/ProjectStage.jsx:104"
+    "src/community/pages/project/ProjectStage.jsx:102"
   ],
   "You can talk to other players here": [
-    "src/community/pages/project/ProjectStage.jsx:111"
+    "src/community/pages/project/ProjectStage.jsx:109"
   ],
   "Play": [
-    "src/community/pages/project/ProjectStage.jsx:114"
+    "src/community/pages/project/ProjectStage.jsx:112"
   ],
   "Messages go through {value1}, not MistWarp, so moderators only see chat that players report.": [
-    "src/community/pages/project/ProjectStage.jsx:118"
+    "src/community/pages/project/ProjectStage.jsx:116"
   ],
   "Messages go through a service MistWarp doesn't run, so moderators only see chat that players report.": [
-    "src/community/pages/project/ProjectStage.jsx:119"
+    "src/community/pages/project/ProjectStage.jsx:117"
   ],
   "Never share your real name, age, address, school or photos. If anyone makes you uncomfortable, stop playing, report them and tell an adult you trust.": [
-    "src/community/pages/project/ProjectStage.jsx:122"
+    "src/community/pages/project/ProjectStage.jsx:120"
   ],
   "Don't share personal information, and report anyone who makes you uncomfortable.": [
-    "src/community/pages/project/ProjectStage.jsx:123"
+    "src/community/pages/project/ProjectStage.jsx:121"
   ],
   "Back to sandbox": [
-    "src/community/pages/project/ProjectStage.jsx:152"
+    "src/community/pages/project/ProjectStage.jsx:150"
   ],
   "Run without sandbox": [
-    "src/community/pages/project/ProjectStage.jsx:154"
+    "src/community/pages/project/ProjectStage.jsx:152"
   ],
   "Running with full access to your account. Only for projects you trust.": [
-    "src/community/pages/project/ProjectStage.jsx:158"
+    "src/community/pages/project/ProjectStage.jsx:156"
   ],
   "Uses custom extensions, running in a sandbox. Saved data can persist to browser storage.": [
-    "src/community/pages/project/ProjectStage.jsx:159"
+    "src/community/pages/project/ProjectStage.jsx:157"
   ],
   "Report chat": [
-    "src/community/pages/project/ProjectStage.jsx:169"
+    "src/community/pages/project/ProjectStage.jsx:167"
   ],
   "{user} moderates chat in this project. Reach them at {contact}.": [
-    "src/community/pages/project/ProjectStage.jsx:173"
+    "src/community/pages/project/ProjectStage.jsx:171"
   ],
   "{user} hasn't added a contact for chat yet. Report anything that breaks the rules.": [
-    "src/community/pages/project/ProjectStage.jsx:177"
+    "src/community/pages/project/ProjectStage.jsx:175"
   ],
   "Buy this project to react.": [
-    "src/community/pages/project/ProjectStage.jsx:189"
+    "src/community/pages/project/ProjectStage.jsx:187"
   ],
   "Remove from your library": [
-    "src/community/pages/project/ProjectStage.jsx:195"
+    "src/community/pages/project/ProjectStage.jsx:193"
   ],
   "Save to your library": [
-    "src/community/pages/project/ProjectStage.jsx:195"
+    "src/community/pages/project/ProjectStage.jsx:193"
   ],
   "Sign in to save to your library": [
-    "src/community/pages/project/ProjectStage.jsx:196"
+    "src/community/pages/project/ProjectStage.jsx:194"
   ],
   "Remove from library, {value1} saves": [
-    "src/community/pages/project/ProjectStage.jsx:198"
+    "src/community/pages/project/ProjectStage.jsx:196"
   ],
   "Save to library, {value1} saves": [
-    "src/community/pages/project/ProjectStage.jsx:199"
+    "src/community/pages/project/ProjectStage.jsx:197"
   ],
   "Your playtime on this project": [
-    "src/community/pages/project/ProjectStage.jsx:211"
+    "src/community/pages/project/ProjectStage.jsx:209"
   ],
   "{value1} played": [
-    "src/community/pages/project/ProjectStage.jsx:214"
+    "src/community/pages/project/ProjectStage.jsx:212"
   ],
   "{value1} closed": [
     "src/community/pages/project/PullList.jsx:59"

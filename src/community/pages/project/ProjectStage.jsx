@@ -1,6 +1,6 @@
 /* eslint-disable max-len */
 import {getCommunityLocale} from '../../locale.js';
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {useCommunityIntl as useCommunityText} from '../../i18n.jsx';
 import {
     Play, ExternalLink, Clock3, Upload, ShieldCheck, ShieldAlert, Lock, Coins, Bookmark, BookmarkCheck, Flag, MessagesSquare
@@ -47,13 +47,11 @@ const ProjectStage = ({
     const chat = project.playerContact || {};
     const minor = Boolean(user) && isMinorAccount();
     const chatGate = Boolean(chat.connects) && !project.isOwner;
-    const [chatAccepted, setChatAccepted] = useState(() => !minor && readChatSeen(project.id));
-    useEffect(() => {
-        setChatAccepted(!minor && readChatSeen(project.id));
-    }, [project.id, minor]);
+    const [acceptedProject, setAcceptedProject] = useState('');
+    const chatAccepted = acceptedProject === project.id || (!minor && readChatSeen(project.id));
     const acceptChat = () => {
         if (!minor) rememberChatSeen(project.id);
-        setChatAccepted(true);
+        setAcceptedProject(project.id);
     };
     const chatServices = formatServiceNames(chat.services, communityText);
     return (

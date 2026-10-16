@@ -114,7 +114,9 @@ const Admin = () => {
             kind: 'warn-report',
             report,
             title: communityText('Warn user?'),
-            description: communityText('The user will see this reason in their moderation notice.'),
+            description: report.type === 'chat' ?
+                communityText('The reporter named this player and MistWarp hasn\'t checked it. The player will see this reason in their moderation notice.') :
+                communityText('The user will see this reason in their moderation notice.'),
             action: communityText('Send warning'),
             fields: [{key: 'reason', label: communityText('Reason'), value: '', multiline: true, maxLength: 1000}],
             icon: AlertTriangle
@@ -142,7 +144,9 @@ const Admin = () => {
             kind: 'ban-report',
             report,
             title: communityText('Ban {value1}?', {value1: who}),
-            description: communityText('They will be locked out of MistWarp until an admin unbans them.'),
+            description: report.type === 'chat' ?
+                communityText('The reporter named this player and MistWarp hasn\'t checked it. They will be locked out of MistWarp until an admin unbans them.') :
+                communityText('They will be locked out of MistWarp until an admin unbans them.'),
             action: communityText('Ban user'),
             danger: true,
             icon: Ban

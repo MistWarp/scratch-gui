@@ -90,10 +90,10 @@ const PlayerChatSettings = ({project, onSaved}) => {
                                 value={contact}
                                 maxLength={200}
                                 disabled={busy}
-                                placeholder={communityText('An email address, Discord server or website')}
+                                placeholder={communityText('A website or email address')}
                                 onChange={e => setContact(e.target.value)}
                             />
-                            <small>{communityText('Shown on the project page so players can reach you about chat.')}</small>
+                            <small>{communityText('Shown on the project page so players can reach you about chat. Use a contact you are happy for anyone to see.')}</small>
                         </label>
                         <div className={styles.field}>
                             <span>{communityText('Chat rules')}</span>

@@ -69,7 +69,7 @@ const Trust = () => {
                 <p>{communityText('Some projects let players send each other messages through extensions such as CloudLink, WebSocket or OriginChats. Those messages go through services MistWarp doesn\'t run, so MistWarp only sees the chat that players report.')}</p>
                 <p>{communityText('The creator of a project like this is responsible for its chat. Before sharing it, they add a contact for chat that is shown on the project page, and agree to these rules:')}</p>
                 <PlayerChatRules />
-                <p>{communityText('Use Report chat below a project to report a message. Everyday problems go to the creator and to MistWarp moderators. Sexual, violent and urgent reports go to moderators only. Class accounts can\'t open these projects.')}</p>
+                <p>{communityText('Use Report chat below a project to report a message. Everyday problems go to the creator and to MistWarp moderators. Sexual, violent and urgent reports go to moderators only. Class accounts can\'t open other people\'s projects like these.')}</p>
             </section>
         </main>
     );

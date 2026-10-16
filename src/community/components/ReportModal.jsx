@@ -184,7 +184,7 @@ const ReportModal = ({type, target, context, targetUser, onClose}) => {
                             >{communityText('Player\'s username (optional)')}</label>
                             <input
                                 id={`${fieldId}-player`}
-                                className={styles.select}
+                                className={styles.input}
                                 value={player}
                                 disabled={busy}
                                 maxLength={40}
