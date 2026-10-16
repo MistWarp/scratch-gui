@@ -3,7 +3,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useRef, useState} from 'react';
 import {useSearchParams} from 'react-router-dom';
 import {
-    Activity, AlertTriangle, Ban, BarChart3, EyeOff, Flag, FolderOpen, Ghost, HardDrive, Puzzle, ShieldCheck, User
+    Activity, AlertTriangle, Ban, BarChart3, EyeOff, Flag, FolderOpen, Ghost, HardDrive, Puzzle, ShieldAlert, ShieldCheck, User
 } from 'lucide-react';
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
@@ -121,6 +121,19 @@ const Admin = () => {
         });
     };
 
+    const escalateReport = report => {
+        setDialogError('');
+        setDialog({
+            kind: 'escalate-report',
+            report,
+            title: communityText('Send this report to Rotur?'),
+            description: communityText('Rotur\'s safety team reviews it and tells the reporter the outcome. It stays open here until they decide.'),
+            action: communityText('Send to Rotur'),
+            fields: [{key: 'note', label: communityText('Note for Rotur (optional)'), value: '', multiline: true, maxLength: 1000}],
+            icon: ShieldAlert
+        });
+    };
+
     const banFromReport = report => {
         const who = report.type === 'project' ? communityText('the owner of this project') :
             `@${report.targetUser || report.target}`;
@@ -214,6 +227,9 @@ const Admin = () => {
                 window.dispatchEvent(new Event('mw:reports-updated'));
             } else if (dialog.kind === 'warn-report') {
                 await api.admin.reportAction(dialog.report.id, 'warn_user', values.reason);
+                window.dispatchEvent(new Event('mw:reports-updated'));
+            } else if (dialog.kind === 'escalate-report') {
+                await api.admin.escalateReport(dialog.report.id, values.note);
                 window.dispatchEvent(new Event('mw:reports-updated'));
             } else if (dialog.kind === 'ban-report') {
                 await api.admin.reportAction(dialog.report.id, 'ban_user');
@@ -345,6 +361,7 @@ const Admin = () => {
                             act={act}
                             hideFromReport={hideFromReport}
                             warnFromReport={warnFromReport}
+                            escalateReport={escalateReport}
                             banFromReport={banFromReport}
                         />
                     ) : null}

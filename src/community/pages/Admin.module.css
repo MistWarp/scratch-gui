@@ -79,6 +79,18 @@
     font-size: var(--fs-sm);
 }
 
+.rotur-status {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: 6px;
+    margin-top: 4px;
+    padding: 3px 8px;
+    border-radius: var(--radius-2xs);
+    background: var(--accent-softer);
+    font-size: var(--fs-sm);
+}
+
 .reason {
     font-size: var(--fs-md);
     white-space: pre-wrap;
@@ -87,8 +99,11 @@
 
 .row-actions {
     display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
     gap: 8px;
     flex-shrink: 0;
+    max-width: 60%;
 }
 
 .error-actions {
