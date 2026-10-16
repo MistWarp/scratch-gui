@@ -115,6 +115,10 @@
     opacity: 0.8;
 }
 
+.inline-button {
+    margin-inline-start: 8px;
+}
+
 .upload-status {
     display: flex;
     flex-direction: column;

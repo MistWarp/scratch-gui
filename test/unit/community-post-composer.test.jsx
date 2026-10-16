@@ -109,6 +109,7 @@ describe('PostComposer', () => {
         toggle.simulate('click');
         expect(wrapper.find('button[title="Only show this post on your profile"]').prop('aria-pressed')).toBe(true);
         expect(wrapper.find('textarea').prop('placeholder')).toBe('Post something to your profile');
+        expect(wrapper.text()).toContain('Posts to your profile only');
         wrapper.find('textarea').simulate('change', {target: {value: 'Just here'}});
         await act(async () => {
             wrapper.find('form').simulate('submit');
@@ -119,7 +120,7 @@ describe('PostComposer', () => {
     });
 
     test('shares a project with its made_with reference', async () => {
-        api.getProject.mockResolvedValue({project: {id: 'p1', title: 'Cool game', owner: 'me'}});
+        api.getProject.mockResolvedValue({project: {id: 'p1', title: 'Cool game', owner: 'me', shared: true}});
         rotur.createPost.mockResolvedValue({id: 'p4'});
         const madeWith = {
             app: 'MistWarp', kind: 'project', ref: 'p1', url: 'https://mistwarp.org/project/p1', title: 'Cool game'
@@ -136,7 +137,8 @@ describe('PostComposer', () => {
         });
         wrapper.update();
         expect(wrapper.find('textarea').prop('value')).toBe('https://mistwarp.org/project/p1');
-        expect(wrapper.find('PostProjectCard').prop('project')).toEqual({id: 'p1', title: 'Cool game'});
+        expect(wrapper.find('PostProjectCard').prop('project')).toEqual({id: 'p1'});
+        expect(wrapper.text()).toContain('Posts to everyone');
         await act(async () => {
             wrapper.find('form').simulate('submit');
             await Promise.resolve();

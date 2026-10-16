@@ -71,17 +71,14 @@ const madeWithProject = post => {
         made.kind === 'project') {
         const ref = typeof made.ref === 'string' && PROJECT_ID.test(made.ref) ? made.ref : null;
         const fromUrl = ref ? null : mistwarpProjectRef(made.url);
-        if (ref || fromUrl) {
-            const project = ref ? {id: ref} : {...fromUrl};
-            const title = typeof made.title === 'string' ? made.title.trim().slice(0, 120) : '';
-            const image = httpUrl(made.image);
-            if (title) project.title = title;
-            if (image) project.image = image;
-            return project;
-        }
+        if (ref) return {id: ref};
+        if (fromUrl) return fromUrl;
     }
     return projectRefInText(post.content);
 };
+
+const isPublicProject = project => Boolean(project && project.shared === true &&
+    project.visibility !== 'private' && !project.moderationHidden);
 
 const projectShareUrl = project => `${SITE}${projectUrl(project)}`;
 
@@ -98,6 +95,7 @@ const projectMadeWith = project => {
 const sitePostUrl = id => `${SITE}/posts/${encodeURIComponent(id)}`;
 
 export {
+    isPublicProject,
     madeWithProject,
     mistwarpProjectRef,
     pouncePostId,

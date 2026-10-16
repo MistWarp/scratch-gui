@@ -3,7 +3,12 @@ import PropTypes from 'prop-types';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 
 import useEscape from '../../use-escape.js';
+import Layer from './Layer.jsx';
 import styles from './Dropdown.module.css';
+
+const SHEET_QUERY = '(max-width: 620px)';
+const opensAsSheet = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' &&
+    window.matchMedia(SHEET_QUERY).matches;
 
 const Dropdown = ({renderTrigger, children, align, className, menuClassName, width}) => {
     const [open, setOpen] = useState(false);
@@ -25,7 +30,8 @@ const Dropdown = ({renderTrigger, children, align, className, menuClassName, wid
 
     useEffect(() => {
         const onDown = event => {
-            if (ref.current && !ref.current.contains(event.target)) {
+            if (ref.current && !ref.current.contains(event.target) &&
+                !(menuRef.current && menuRef.current.contains(event.target))) {
                 close(false);
             }
         };
@@ -55,23 +61,26 @@ const Dropdown = ({renderTrigger, children, align, className, menuClassName, wid
         items[nextIndex].focus();
     };
 
+    const sheet = open && opensAsSheet();
+    const menu = open ? (
+        <div
+            ref={menuRef}
+            role="menu"
+            className={classNames(align === 'left' ? styles.menuLeft : styles.menu, menuClassName)}
+            style={width ? {width} : null}
+            onKeyDown={handleMenuKeyDown}
+        >
+            {typeof children === 'function' ? children({close}) : children}
+        </div>
+    ) : null;
+
     return (
         <div
             className={classNames(styles.wrap, className)}
             ref={ref}
         >
             {renderTrigger({open, toggle, close})}
-            {open ? (
-                <div
-                    ref={menuRef}
-                    role="menu"
-                    className={classNames(align === 'left' ? styles.menuLeft : styles.menu, menuClassName)}
-                    style={width ? {width} : null}
-                    onKeyDown={handleMenuKeyDown}
-                >
-                    {typeof children === 'function' ? children({close}) : children}
-                </div>
-            ) : null}
+            {sheet ? <Layer>{menu}</Layer> : menu}
         </div>
     );
 };

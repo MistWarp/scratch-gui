@@ -12,7 +12,7 @@ jest.mock('../../src/community/api.js', () => ({
     default: {
         checkPostMilestones: jest.fn(() => Promise.resolve()),
         getProject: jest.fn(id => Promise.resolve({project: {
-            id, title: `Game ${id}`, owner: 'alice', loveCount: 3, views: 12
+            id, title: `Game ${id}`, owner: 'alice', loveCount: 3, views: 12, shared: id !== 'secret'
         }}))
     }
 }));
@@ -95,6 +95,34 @@ describe('social post list actions', () => {
         wrapper.update();
         expect(wrapper.find('PostProjectCard').find('a')
             .prop('href')).toBe('/project/p77');
+        wrapper.unmount();
+    });
+
+    test('falls back to the plain link for projects that are not shared', async () => {
+        const wrapper = mount(
+            <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+                <SocialPost
+                    initialPost={{
+                        id: 'post-4',
+                        user: 'alice',
+                        content: 'see https://mistwarp.org/project/secret',
+                        made_with: {
+                            app: 'MistWarp',
+                            kind: 'project',
+                            ref: 'secret',
+                            url: 'https://mistwarp.org/project/secret',
+                            image: 'https://tracker.example/pixel.png'
+                        }
+                    }}
+                />
+            </MemoryRouter>
+        );
+        await act(async () => {
+            await Promise.resolve();
+        });
+        wrapper.update();
+        expect(wrapper.find('PostProjectCard').find('a')).toHaveLength(0);
+        expect(wrapper.html()).not.toContain('tracker.example');
         wrapper.unmount();
     });
 });

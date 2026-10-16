@@ -160,8 +160,8 @@
     "src/community/components/CollectionSaveModal.jsx:166",
     "src/community/components/CommentThread.jsx:228",
     "src/community/components/ProjectInfoPanel.jsx:392",
-    "src/community/components/SocialPost.jsx:354",
-    "src/community/components/SocialPost.jsx:399",
+    "src/community/components/SocialPost.jsx:363",
+    "src/community/components/SocialPost.jsx:408",
     "src/community/pages/Challenge.jsx:465",
     "src/community/pages/ManageSpace.jsx:718"
   ],
@@ -190,7 +190,7 @@
   ],
   "Saved": [
     "src/community/components/CollectionSaveModal.jsx:168",
-    "src/community/components/SocialPost.jsx:399"
+    "src/community/components/SocialPost.jsx:408"
   ],
   "Save to a collection": [
     "src/community/components/CollectionSaveModal.jsx:192"
@@ -259,13 +259,13 @@
   ],
   "Pinned": [
     "src/community/components/CommentThread.jsx:149",
-    "src/community/components/SocialPost.jsx:272"
+    "src/community/components/SocialPost.jsx:281"
   ],
   "Reply": [
     "src/community/components/CommentThread.jsx:157",
     "src/community/components/CommentThread.jsx:158",
     "src/community/components/CommentThread.jsx:256",
-    "src/community/components/SocialPost.jsx:456"
+    "src/community/components/SocialPost.jsx:465"
   ],
   "Comment actions": [
     "src/community/components/CommentThread.jsx:170",
@@ -277,8 +277,8 @@
   ],
   "Unpin": [
     "src/community/components/CommentThread.jsx:192",
-    "src/community/components/SocialPost.jsx:319",
-    "src/community/components/SocialPost.jsx:409"
+    "src/community/components/SocialPost.jsx:328",
+    "src/community/components/SocialPost.jsx:418"
   ],
   "Pin to top": [
     "src/community/components/CommentThread.jsx:192"
@@ -296,12 +296,12 @@
   "Cancel": [
     "src/community/components/CommentThread.jsx:220",
     "src/community/components/CommentThread.jsx:316",
-    "src/community/components/GameMarketplaceModal.jsx:226",
+    "src/community/components/GameMarketplaceModal.jsx:227",
     "src/community/components/ProjectInfoPanel.jsx:384",
     "src/community/components/ReportModal.jsx:108",
     "src/community/components/RoturConsentModal.jsx:70",
-    "src/community/components/SocialPost.jsx:238",
-    "src/community/components/SocialPost.jsx:352",
+    "src/community/components/SocialPost.jsx:247",
+    "src/community/components/SocialPost.jsx:361",
     "src/community/components/ui/ConfirmModal.jsx:22",
     "src/community/pages/ManageProject.jsx:1128",
     "src/community/pages/ManageSpace.jsx:762",
@@ -314,7 +314,7 @@
   ],
   "Post": [
     "src/community/components/CommentThread.jsx:256",
-    "src/community/components/PostComposer.jsx:300",
+    "src/community/components/PostComposer.jsx:308",
     "src/community/pages/News.jsx:322",
     "src/community/pages/Post.jsx:56"
   ],
@@ -338,7 +338,7 @@
   ],
   "Payment cancelled.": [
     "src/community/components/CommentThread.jsx:657",
-    "src/community/components/GameMarketplaceModal.jsx:156",
+    "src/community/components/GameMarketplaceModal.jsx:157",
     "src/community/pages/Project.jsx:409"
   ],
   "Could not post comment.": [
@@ -674,9 +674,9 @@
   ],
   "by {value1}": [
     "src/community/components/FeaturedProject.jsx:62",
-    "src/community/components/PostProjectCard.jsx:68",
+    "src/community/components/PostProjectCard.jsx:74",
     "src/community/components/RelatedProjects.jsx:100",
-    "src/community/pages/project/ProjectHeader.jsx:81"
+    "src/community/pages/project/ProjectHeader.jsx:82"
   ],
   "Project page": [
     "src/community/components/FeaturedProject.jsx:68",
@@ -805,7 +805,7 @@
     "src/community/components/Footer.jsx:76",
     "src/community/pages/Group.jsx:180",
     "src/community/pages/Support.jsx:101",
-    "src/community/pages/project/ProjectHeader.jsx:98"
+    "src/community/pages/project/ProjectHeader.jsx:99"
   ],
   "Trust, privacy, and terms": [
     "src/community/components/Footer.jsx:77",
@@ -824,45 +824,45 @@
     "src/community/components/Footer.jsx:89"
   ],
   "Could not load this game shop.": [
-    "src/community/components/GameMarketplaceModal.jsx:118"
+    "src/community/components/GameMarketplaceModal.jsx:119"
   ],
   "Could not complete the purchase.": [
-    "src/community/components/GameMarketplaceModal.jsx:157"
+    "src/community/components/GameMarketplaceModal.jsx:158"
   ],
   "Purchase game content": [
-    "src/community/components/GameMarketplaceModal.jsx:173"
+    "src/community/components/GameMarketplaceModal.jsx:174"
   ],
   "Game shop": [
-    "src/community/components/GameMarketplaceModal.jsx:173"
+    "src/community/components/GameMarketplaceModal.jsx:174"
   ],
   "Block this project": [
-    "src/community/components/GameMarketplaceModal.jsx:181",
+    "src/community/components/GameMarketplaceModal.jsx:182",
     "src/community/components/RoturConsentModal.jsx:32",
     "src/community/components/RoturConsentModal.jsx:68"
   ],
   "Loading shop…": [
-    "src/community/components/GameMarketplaceModal.jsx:184"
+    "src/community/components/GameMarketplaceModal.jsx:185"
   ],
   "No matching products": [
-    "src/community/components/GameMarketplaceModal.jsx:186"
-  ],
-  "This project does not have any matching products.": [
     "src/community/components/GameMarketplaceModal.jsx:187"
   ],
+  "This project does not have any matching products.": [
+    "src/community/components/GameMarketplaceModal.jsx:188"
+  ],
   "Would you like to buy {value1} for {value2} credits?": [
-    "src/community/components/GameMarketplaceModal.jsx:192"
+    "src/community/components/GameMarketplaceModal.jsx:193"
   ],
   "This is a test purchase, so no credits are charged.": [
-    "src/community/components/GameMarketplaceModal.jsx:195"
+    "src/community/components/GameMarketplaceModal.jsx:196"
   ],
   "Processing…": [
-    "src/community/components/GameMarketplaceModal.jsx:213"
+    "src/community/components/GameMarketplaceModal.jsx:214"
   ],
   "Already owned": [
-    "src/community/components/GameMarketplaceModal.jsx:219"
+    "src/community/components/GameMarketplaceModal.jsx:220"
   ],
   "Buy ({value1} credits)": [
-    "src/community/components/GameMarketplaceModal.jsx:220"
+    "src/community/components/GameMarketplaceModal.jsx:221"
   ],
   "Could not load GIFs.": [
     "src/community/components/GifPicker.jsx:31"
@@ -1202,7 +1202,7 @@
   ],
   "Remove from library": [
     "src/community/components/MyStuffLibrary.jsx:107",
-    "src/community/pages/project/ProjectHeader.jsx:123"
+    "src/community/pages/project/ProjectHeader.jsx:124"
   ],
   "Load more games": [
     "src/community/components/MyStuffLibrary.jsx:124",
@@ -1519,7 +1519,7 @@
   ],
   "{value1} views": [
     "src/community/components/NewsItem.jsx:211",
-    "src/community/components/SocialPost.jsx:215"
+    "src/community/components/SocialPost.jsx:224"
   ],
   "{value1} likes": [
     "src/community/components/NewsItem.jsx:215",
@@ -1674,42 +1674,54 @@
   "Profile only": [
     "src/community/components/PostComposer.jsx:294"
   ],
+  "Posts to your profile only": [
+    "src/community/components/PostComposer.jsx:302"
+  ],
+  "Posts to everyone": [
+    "src/community/components/PostComposer.jsx:302"
+  ],
   "MistWarp project": [
-    "src/community/components/PostProjectCard.jsx:43",
-    "src/community/components/PostProjectCard.jsx:63"
+    "src/community/components/PostProjectCard.jsx:69",
+    "src/community/components/PostProjectCard.jsx:96"
   ],
   "{value1, plural, one {# love} other {# loves}}": [
-    "src/community/components/PostProjectCard.jsx:74",
+    "src/community/components/PostProjectCard.jsx:80",
     "src/community/components/ProjectCard.jsx:63"
   ],
   "{value1, plural, one {# view} other {# views}}": [
-    "src/community/components/PostProjectCard.jsx:80",
+    "src/community/components/PostProjectCard.jsx:86",
     "src/community/components/ProjectCard.jsx:70"
   ],
   "Post to claw": [
-    "src/community/components/PostToClawModal.jsx:32",
-    "src/community/pages/project/ProjectHeader.jsx:180"
+    "src/community/components/PostToClawModal.jsx:34",
+    "src/community/pages/project/ProjectHeader.jsx:181"
   ],
   "Close": [
-    "src/community/components/PostToClawModal.jsx:36",
+    "src/community/components/PostToClawModal.jsx:38",
     "src/community/components/UpgradeCelebration.jsx:54",
-    "src/community/components/ui/Modal.jsx:98"
+    "src/community/components/ui/Modal.jsx:101"
   ],
   "View post": [
-    "src/community/components/PostToClawModal.jsx:40",
+    "src/community/components/PostToClawModal.jsx:42",
     "src/community/pages/Home.jsx:140"
   ],
   "Your post about {value1} is on claw.": [
-    "src/community/components/PostToClawModal.jsx:49"
+    "src/community/components/PostToClawModal.jsx:51"
   ],
   "Your post is on claw.": [
-    "src/community/components/PostToClawModal.jsx:50"
+    "src/community/components/PostToClawModal.jsx:52"
+  ],
+  "Could not load this project. Try again later.": [
+    "src/community/components/PostToClawModal.jsx:59"
+  ],
+  "Only shared projects can be posted to claw. Share this project first.": [
+    "src/community/components/PostToClawModal.jsx:60"
   ],
   "Share {value1} with people on claw, the Rotur social network.": [
-    "src/community/components/PostToClawModal.jsx:58"
+    "src/community/components/PostToClawModal.jsx:67"
   ],
   "Share your project with people on claw, the Rotur social network.": [
-    "src/community/components/PostToClawModal.jsx:61"
+    "src/community/components/PostToClawModal.jsx:70"
   ],
   "Level {value1}": [
     "src/community/components/ProfileBadges.jsx:65"
@@ -1940,8 +1952,8 @@
   "Remix": [
     "src/community/components/ProjectCard.jsx:104",
     "src/community/pages/project/ProjectBounties.jsx:54",
-    "src/community/pages/project/ProjectHeader.jsx:113",
-    "src/community/pages/project/ProjectHeader.jsx:231"
+    "src/community/pages/project/ProjectHeader.jsx:114",
+    "src/community/pages/project/ProjectHeader.jsx:232"
   ],
   "Touch": [
     "src/community/components/ProjectCompatibility.jsx:7"
@@ -2434,71 +2446,71 @@
     "src/community/components/SocialPost.jsx:116"
   ],
   "Removed from saved posts.": [
-    "src/community/components/SocialPost.jsx:184"
+    "src/community/components/SocialPost.jsx:193"
   ],
   "Post saved.": [
-    "src/community/components/SocialPost.jsx:184"
+    "src/community/components/SocialPost.jsx:193"
   ],
   "Link copied.": [
-    "src/community/components/SocialPost.jsx:189"
+    "src/community/components/SocialPost.jsx:198"
   ],
   "Could not copy the link.": [
-    "src/community/components/SocialPost.jsx:191"
+    "src/community/components/SocialPost.jsx:200"
   ],
   "1 view": [
-    "src/community/components/SocialPost.jsx:215"
+    "src/community/components/SocialPost.jsx:224"
   ],
   "Delete post?": [
-    "src/community/components/SocialPost.jsx:223"
+    "src/community/components/SocialPost.jsx:232"
   ],
   "Delete post": [
-    "src/community/components/SocialPost.jsx:224",
-    "src/community/components/SocialPost.jsx:325"
+    "src/community/components/SocialPost.jsx:233",
+    "src/community/components/SocialPost.jsx:334"
   ],
   "This permanently deletes the post.": [
-    "src/community/components/SocialPost.jsx:229"
+    "src/community/components/SocialPost.jsx:238"
   ],
   "Report reply": [
-    "src/community/components/SocialPost.jsx:235",
-    "src/community/components/SocialPost.jsx:474"
+    "src/community/components/SocialPost.jsx:244",
+    "src/community/components/SocialPost.jsx:483"
   ],
   "Report post": [
-    "src/community/components/SocialPost.jsx:235"
+    "src/community/components/SocialPost.jsx:244"
   ],
   "Report submitted.": [
-    "src/community/components/SocialPost.jsx:249"
+    "src/community/components/SocialPost.jsx:258"
   ],
   "Submit report": [
-    "src/community/components/SocialPost.jsx:252"
-  ],
-  "What is wrong with this reply?": [
-    "src/community/components/SocialPost.jsx:260"
-  ],
-  "What is wrong with this post?": [
     "src/community/components/SocialPost.jsx:261"
   ],
+  "What is wrong with this reply?": [
+    "src/community/components/SocialPost.jsx:269"
+  ],
+  "What is wrong with this post?": [
+    "src/community/components/SocialPost.jsx:270"
+  ],
   "edited": [
-    "src/community/components/SocialPost.jsx:280"
+    "src/community/components/SocialPost.jsx:289"
   ],
   "Post actions": [
-    "src/community/components/SocialPost.jsx:286"
+    "src/community/components/SocialPost.jsx:295"
   ],
   "Copy link": [
-    "src/community/components/SocialPost.jsx:302",
-    "src/community/components/SocialPost.jsx:401",
-    "src/community/pages/project/ProjectHeader.jsx:157"
+    "src/community/components/SocialPost.jsx:311",
+    "src/community/components/SocialPost.jsx:410",
+    "src/community/pages/project/ProjectHeader.jsx:158"
   ],
   "Edit": [
-    "src/community/components/SocialPost.jsx:309",
-    "src/community/components/SocialPost.jsx:405"
+    "src/community/components/SocialPost.jsx:318",
+    "src/community/components/SocialPost.jsx:414"
   ],
   "Pin": [
-    "src/community/components/SocialPost.jsx:319",
-    "src/community/components/SocialPost.jsx:409"
+    "src/community/components/SocialPost.jsx:328",
+    "src/community/components/SocialPost.jsx:418"
   ],
   "Delete": [
-    "src/community/components/SocialPost.jsx:330",
-    "src/community/components/SocialPost.jsx:413",
+    "src/community/components/SocialPost.jsx:339",
+    "src/community/components/SocialPost.jsx:422",
     "src/community/pages/MyStuff.jsx:1570",
     "src/community/pages/Theme.jsx:228",
     "src/community/pages/admin/ErrorManager.jsx:249",
@@ -2507,53 +2519,53 @@
     "src/community/pages/project/ReviewPanel.jsx:186"
   ],
   "Report": [
-    "src/community/components/SocialPost.jsx:337",
-    "src/community/components/SocialPost.jsx:419",
+    "src/community/components/SocialPost.jsx:346",
+    "src/community/components/SocialPost.jsx:428",
     "src/community/pages/Bounty.jsx:149",
     "src/community/pages/Profile.jsx:904",
-    "src/community/pages/project/ProjectHeader.jsx:259"
+    "src/community/pages/project/ProjectHeader.jsx:260"
   ],
   "Posted from {value1}, {value2}": [
-    "src/community/components/SocialPost.jsx:375"
+    "src/community/components/SocialPost.jsx:384"
   ],
   "Posted from {value1}": [
-    "src/community/components/SocialPost.jsx:377"
+    "src/community/components/SocialPost.jsx:386"
   ],
   "Unlike post": [
-    "src/community/components/SocialPost.jsx:384"
+    "src/community/components/SocialPost.jsx:393"
   ],
   "Like post": [
-    "src/community/components/SocialPost.jsx:384"
+    "src/community/components/SocialPost.jsx:393"
   ],
   "Reposted to your profile.": [
-    "src/community/components/SocialPost.jsx:394"
+    "src/community/components/SocialPost.jsx:403"
   ],
   "Repost": [
-    "src/community/components/SocialPost.jsx:396"
+    "src/community/components/SocialPost.jsx:405"
   ],
   "Unblocked {value1}.": [
-    "src/community/components/SocialPost.jsx:428"
+    "src/community/components/SocialPost.jsx:437"
   ],
   "Blocked {value1}.": [
-    "src/community/components/SocialPost.jsx:429"
+    "src/community/components/SocialPost.jsx:438"
   ],
   "Unblock {value1}": [
-    "src/community/components/SocialPost.jsx:434"
+    "src/community/components/SocialPost.jsx:443"
   ],
   "Block {value1}": [
-    "src/community/components/SocialPost.jsx:435"
+    "src/community/components/SocialPost.jsx:444"
   ],
   "Post your reply": [
-    "src/community/components/SocialPost.jsx:448"
+    "src/community/components/SocialPost.jsx:457"
   ],
   "Sign in to reply": [
-    "src/community/components/SocialPost.jsx:458"
+    "src/community/components/SocialPost.jsx:467"
   ],
   "No replies yet": [
-    "src/community/components/SocialPost.jsx:481"
+    "src/community/components/SocialPost.jsx:490"
   ],
   "Be the first to reply.": [
-    "src/community/components/SocialPost.jsx:482"
+    "src/community/components/SocialPost.jsx:491"
   ],
   "No description yet.": [
     "src/community/components/SpaceCard.jsx:46",
@@ -5186,7 +5198,7 @@
     "src/community/pages/Project.jsx:743",
     "src/community/pages/admin/ProjectManager.jsx:70",
     "src/community/pages/admin/UserDetailCard.jsx:255",
-    "src/community/pages/project/ProjectHeader.jsx:304"
+    "src/community/pages/project/ProjectHeader.jsx:305"
   ],
   "{value1} will move to Trash. You can restore it until its recovery period ends.": [
     "src/community/pages/MyStuff.jsx:1315"
@@ -5236,19 +5248,19 @@
   ],
   "Manage & analytics": [
     "src/community/pages/MyStuff.jsx:1533",
-    "src/community/pages/project/ProjectHeader.jsx:220"
+    "src/community/pages/project/ProjectHeader.jsx:221"
   ],
   "Save to collection": [
     "src/community/pages/MyStuff.jsx:1541",
-    "src/community/pages/project/ProjectHeader.jsx:190"
+    "src/community/pages/project/ProjectHeader.jsx:191"
   ],
   "Remove profile feature": [
     "src/community/pages/MyStuff.jsx:1556",
-    "src/community/pages/project/ProjectHeader.jsx:247"
+    "src/community/pages/project/ProjectHeader.jsx:248"
   ],
   "Feature on profile": [
     "src/community/pages/MyStuff.jsx:1556",
-    "src/community/pages/project/ProjectHeader.jsx:247"
+    "src/community/pages/project/ProjectHeader.jsx:248"
   ],
   "Add at least two poll options.": [
     "src/community/pages/News.jsx:115"
@@ -5714,7 +5726,7 @@
   ],
   "Send {value1} credits on Rotur": [
     "src/community/pages/Profile.jsx:872",
-    "src/community/pages/project/ProjectHeader.jsx:96"
+    "src/community/pages/project/ProjectHeader.jsx:97"
   ],
   "Donate": [
     "src/community/pages/Profile.jsx:874"
@@ -7502,7 +7514,7 @@
     "src/community/pages/admin/ShadowBansSection.jsx:49",
     "src/community/pages/admin/ShadowBansSection.jsx:70",
     "src/community/pages/admin/UserDetailCard.jsx:665",
-    "src/community/pages/project/ProjectHeader.jsx:283",
+    "src/community/pages/project/ProjectHeader.jsx:284",
     "src/community/pages/project/ProjectNotices.jsx:58"
   ],
   "Try a different title, owner, or id.": [
@@ -7519,7 +7531,7 @@
   ],
   "Restore project": [
     "src/community/pages/admin/ProjectModerationDialog.jsx:24",
-    "src/community/pages/project/ProjectHeader.jsx:271"
+    "src/community/pages/project/ProjectHeader.jsx:272"
   ],
   "Shadow ban {value1}?": [
     "src/community/pages/admin/ProjectModerationDialog.jsx:30"
@@ -8389,40 +8401,40 @@
     "src/community/pages/project/ProjectBounties.jsx:87"
   ],
   "Project title": [
-    "src/community/pages/project/ProjectHeader.jsx:69"
+    "src/community/pages/project/ProjectHeader.jsx:70"
   ],
   "for @": [
-    "src/community/pages/project/ProjectHeader.jsx:83"
+    "src/community/pages/project/ProjectHeader.jsx:84"
   ],
   "Sign in to remix": [
-    "src/community/pages/project/ProjectHeader.jsx:111"
+    "src/community/pages/project/ProjectHeader.jsx:112"
   ],
   "Save to library": [
-    "src/community/pages/project/ProjectHeader.jsx:123"
+    "src/community/pages/project/ProjectHeader.jsx:124"
   ],
   "See inside": [
-    "src/community/pages/project/ProjectHeader.jsx:132"
+    "src/community/pages/project/ProjectHeader.jsx:133"
   ],
   "More actions": [
-    "src/community/pages/project/ProjectHeader.jsx:139"
+    "src/community/pages/project/ProjectHeader.jsx:140"
   ],
   "Copy embed code": [
-    "src/community/pages/project/ProjectHeader.jsx:170"
+    "src/community/pages/project/ProjectHeader.jsx:171"
   ],
   "Use stage as thumbnail": [
-    "src/community/pages/project/ProjectHeader.jsx:202"
+    "src/community/pages/project/ProjectHeader.jsx:203"
   ],
   "Upload thumbnail": [
-    "src/community/pages/project/ProjectHeader.jsx:213"
+    "src/community/pages/project/ProjectHeader.jsx:214"
   ],
   "Hide project…": [
-    "src/community/pages/project/ProjectHeader.jsx:271"
+    "src/community/pages/project/ProjectHeader.jsx:272"
   ],
   "Shadow ban project…": [
-    "src/community/pages/project/ProjectHeader.jsx:283"
+    "src/community/pages/project/ProjectHeader.jsx:284"
   ],
   "Moderate creator": [
-    "src/community/pages/project/ProjectHeader.jsx:291",
+    "src/community/pages/project/ProjectHeader.jsx:292",
     "src/community/pages/project/ProjectNotices.jsx:70"
   ],
   "Copied to clipboard.": [

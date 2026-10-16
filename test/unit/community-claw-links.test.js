@@ -1,5 +1,5 @@
 import {
-    madeWithProject, mistwarpProjectRef, pouncePostId, projectMadeWith, projectRefInText
+    isPublicProject, madeWithProject, mistwarpProjectRef, pouncePostId, projectMadeWith, projectRefInText
 } from '../../src/community/claw-links.js';
 
 describe('pounce post links', () => {
@@ -58,7 +58,7 @@ describe('MistWarp project references', () => {
                 title: ' Cool game ',
                 image: 'https://thumbs.example/a.png'
             }
-        })).toEqual({id: 'fromapi', title: 'Cool game', image: 'https://thumbs.example/a.png'});
+        })).toEqual({id: 'fromapi'});
         expect(madeWithProject({
             content: 'https://mistwarp.org/project/fromtext',
             made_with: {app: 'originChats', kind: 'server', ref: 'x', url: 'https://example.com'}
@@ -90,5 +90,14 @@ describe('MistWarp project references', () => {
         expect(projectMadeWith({id: 'p2'})).toEqual({
             app: 'MistWarp', kind: 'project', ref: 'p2', url: 'https://mistwarp.org/project/p2'
         });
+    });
+
+    test('only treats shared, visible projects as public', () => {
+        expect(isPublicProject({shared: true, visibility: 'public'})).toBe(true);
+        expect(isPublicProject({shared: true, visibility: 'unlisted'})).toBe(true);
+        expect(isPublicProject({shared: true, visibility: 'private'})).toBe(false);
+        expect(isPublicProject({shared: false, visibility: 'public'})).toBe(false);
+        expect(isPublicProject({shared: true, moderationHidden: true})).toBe(false);
+        expect(isPublicProject(null)).toBe(false);
     });
 });

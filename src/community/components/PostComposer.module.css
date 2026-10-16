@@ -92,7 +92,24 @@
     font-size: var(--fs-2xs);
 }
 
-.foot > .over {
+.meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    text-align: end;
+}
+
+.destination {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-dim);
+    font-size: var(--fs-xs);
+    white-space: nowrap;
+}
+
+.meta > .over {
     color: var(--mw-danger);
 }
 
@@ -252,6 +269,12 @@
 
     .foot > span {
         margin-inline-start: 0;
+    }
+
+    .meta {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
     }
 
     .tools span {

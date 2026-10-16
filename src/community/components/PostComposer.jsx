@@ -1,7 +1,7 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React, {useEffect, useRef, useState} from 'react';
-import {Clock, Image, ListChecks, Plus, Send, UserRound, X} from 'lucide-react';
+import {Clock, Globe, Image, ListChecks, Plus, Send, UserRound, X} from 'lucide-react';
 import rotur from '../rotur.js';
 import {attachmentLimit, postLimit, useClawPostLength} from '../claw-limits.js';
 import {madeWithProject} from '../claw-links.js';
@@ -294,7 +294,15 @@ const PostComposer = ({
                         ><UserRound size={16} /><span>{communityText('Profile only')}</span></button>
                     ) : null}
                 </div>
-                <span className={content.length >= maxLength ? styles.over : ''}>{content.length}/{maxLength}</span>
+                <span className={styles.meta}>
+                    <span className={styles.destination}>
+                        {onProfile ?
+                            <UserRound size={13} aria-hidden="true" /> :
+                            <Globe size={13} aria-hidden="true" />}
+                        {onProfile ? communityText('Posts to your profile only') : communityText('Posts to everyone')}
+                    </span>
+                    <span className={content.length >= maxLength ? styles.over : ''}>{content.length}/{maxLength}</span>
+                </span>
                 <Button type="submit" variant="primary" busy={busy} disabled={!canPost}>
                     <Send size={15} />
                     {communityText('Post')}

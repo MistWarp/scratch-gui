@@ -15,6 +15,7 @@ jest.mock('../../../src/lib/community/publish.js', () => ({
 jest.mock('../../../src/lib/community/api.js', () => ({
     request: jest.fn()
 }));
+jest.mock('../../../src/lib/rotur/identity.js', () => ({login: jest.fn()}));
 jest.mock('../../../src/lib/git/browser-git.js', () => ({
     getRepoChanges: jest.fn()
 }));

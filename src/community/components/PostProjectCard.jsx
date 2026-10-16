@@ -5,6 +5,7 @@ import React, {useEffect, useState} from 'react';
 import {Link, useInRouterContext} from 'react-router-dom';
 import {Gamepad2, Heart, Play} from 'lucide-react';
 import {projectUrl} from '../api.js';
+import {isPublicProject} from '../claw-links.js';
 import loadProjectPreview from '../project-preview.js';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import styles from './PostProjectCard.module.css';
@@ -20,7 +21,7 @@ const PostProjectCard = ({project: ref, compact, thumbOnly, onLayoutChange}) => 
         setState({status: 'loading', project: null});
         loadProjectPreview(ref).then(project => {
             if (!active) return;
-            setState({status: project ? 'ready' : 'missing', project});
+            setState(isPublicProject(project) ? {status: 'ready', project} : {status: 'missing', project: null});
         });
         return () => {
             active = false;
@@ -30,22 +31,19 @@ const PostProjectCard = ({project: ref, compact, thumbOnly, onLayoutChange}) => 
         if (state.status !== 'loading' && onLayoutChange) onLayoutChange();
     }, [state.status]);
 
+    if (state.status === 'missing') return null;
     const project = state.project;
-    const title = (project && project.title) || ref.title || '';
-    if (state.status === 'missing' && !title) return null;
-    const route = project ? projectUrl(project) : (ref.id ? projectUrl(ref.id) : `/p/${ref.slug}`);
-    const loading = state.status === 'loading' && !title;
-    const thumbnail = {title, thumbUrl: (project && project.thumbUrl) || ref.image || ''};
+    const loading = !project;
+    const title = project ? project.title || '' : '';
     const className = classNames(thumbOnly ? styles.thumbOnly : styles.card, {
         [styles.compact]: compact,
         [styles.loading]: loading
     });
-    const linkProps = thumbOnly ? {title, 'aria-label': title || communityText('MistWarp project')} : {};
     const thumb = (
         <span className={styles.thumb}>
-            {thumbnail.thumbUrl ? (
+            {project && project.thumbUrl ? (
                 <ProjectThumbnail
-                    project={thumbnail}
+                    project={{title, thumbUrl: project.thumbUrl}}
                     fallbackClassName={styles.placeholder}
                     lazy
                     onError={onLayoutChange}
@@ -53,6 +51,14 @@ const PostProjectCard = ({project: ref, compact, thumbOnly, onLayoutChange}) => 
             ) : <Gamepad2 size={compact || thumbOnly ? 18 : 24} aria-hidden="true" />}
         </span>
     );
+    if (loading) {
+        return (
+            <span className={className} aria-hidden="true">
+                {thumb}
+                {thumbOnly ? null : <span className={styles.body}><span className={styles.title} /></span>}
+            </span>
+        );
+    }
     const content = thumbOnly ? thumb : (
         <React.Fragment>
             {thumb}
@@ -64,10 +70,10 @@ const PostProjectCard = ({project: ref, compact, thumbOnly, onLayoutChange}) => 
                     </span>
                 )}
                 <span className={styles.title}>{title}</span>
-                {project && project.owner ? (
+                {project.owner ? (
                     <span className={styles.owner}>{communityText('by {value1}', {value1: project.owner})}</span>
                 ) : null}
-                {!compact && project ? (
+                {compact ? null : (
                     <span className={styles.stats}>
                         <span>
                             <Heart size={12} aria-hidden="true" />
@@ -82,10 +88,12 @@ const PostProjectCard = ({project: ref, compact, thumbOnly, onLayoutChange}) => 
                             })}
                         </span>
                     </span>
-                ) : null}
+                )}
             </span>
         </React.Fragment>
     );
+    const route = projectUrl(project);
+    const linkProps = thumbOnly ? {'title': title, 'aria-label': title || communityText('MistWarp project')} : {};
     if (!inRouter) {
         return (
             <a
@@ -106,9 +114,7 @@ PostProjectCard.propTypes = {
     onLayoutChange: PropTypes.func,
     project: PropTypes.shape({
         id: PropTypes.string,
-        image: PropTypes.string,
-        slug: PropTypes.string,
-        title: PropTypes.string
+        slug: PropTypes.string
     }).isRequired
 };
 

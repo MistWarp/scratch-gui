@@ -13,25 +13,26 @@ const attachmentLimit = tier => {
     return rank >= 3 ? 4 : rank >= 2 ? 2 : 1;
 };
 
+const LENGTH_TTL = 10 * 60 * 1000;
 const lengths = new Map();
 
 const perksPostLength = username => {
     const key = String(username || '').toLowerCase();
-    if (!lengths.has(key)) {
-        const promise = Promise.resolve()
-            .then(() => (api.loadSession() ? api.perks() : null))
-            .then(data => {
-                const value = Number(data && data.current && data.current.rotur && data.current.rotur.clawPostLength);
-                return Number.isInteger(value) && value >= 100 && value <= 10000 ? value : null;
-            })
-            .catch(() => null)
-            .then(value => {
-                if (value === null && lengths.get(key) === promise) lengths.delete(key);
-                return value;
-            });
-        lengths.set(key, promise);
-    }
-    return lengths.get(key);
+    const cached = lengths.get(key);
+    if (cached && Date.now() - cached.at < LENGTH_TTL) return cached.promise;
+    const promise = Promise.resolve()
+        .then(() => (api.loadSession() ? api.perks() : null))
+        .then(data => {
+            const value = Number(data && data.current && data.current.rotur && data.current.rotur.clawPostLength);
+            return Number.isInteger(value) && value >= 100 && value <= 10000 ? value : null;
+        })
+        .catch(() => null)
+        .then(value => {
+            if (value === null && lengths.get(key)?.promise === promise) lengths.delete(key);
+            return value;
+        });
+    lengths.set(key, {at: Date.now(), promise});
+    return promise;
 };
 
 const useClawPostLength = user => {

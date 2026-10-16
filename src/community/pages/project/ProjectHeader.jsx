@@ -17,6 +17,7 @@ import Dropdown from '../../components/ui/Dropdown.jsx';
 import IconButton from '../../components/ui/IconButton.jsx';
 import PostToClawModal from '../../components/PostToClawModal.jsx';
 import {postUrl} from '../../following-feed.js';
+import {isPublicProject} from '../../claw-links.js';
 import styles from '../Project.module.css';
 import {track} from '../../analytics';
 import {adminUserPath} from '../admin/admin-links.js';
@@ -32,7 +33,7 @@ const ProjectHeader = ({
     const {text: communityText} = useCommunityText();
     const navigate = useNavigate();
     const [clawOpen, setClawOpen] = useState(false);
-    const canPostToClaw = Boolean(user && project.shared && visibility !== 'private' && !project.moderationHidden);
+    const canPostToClaw = Boolean(user && isPublicProject({...project, visibility}));
     const handleTitleKeyDown = event => {
         if (event.key === 'Enter') {
             event.currentTarget.blur();

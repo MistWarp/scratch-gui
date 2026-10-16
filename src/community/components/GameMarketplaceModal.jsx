@@ -6,6 +6,7 @@ import {Coins, ShoppingBag} from 'lucide-react';
 import api from '../api';
 import {buyGameProduct} from '../purchase';
 import Modal from './ui/Modal.jsx';
+import {LayerScopeContext} from './ui/Layer.jsx';
 import Button from './ui/Button.jsx';
 import EmptyState from './ui/EmptyState.jsx';
 import Notice from './ui/Notice.jsx';
@@ -167,7 +168,7 @@ const GameMarketplaceModal = ({projectId, productId, isDraft, vm, username, onBl
     const list = productId ? (focused ? [focused] : []) : products;
 
     return (
-        <div className={scopeStyles.scope}>
+        <LayerScopeContext.Provider value={scopeStyles.scope}>
             <Modal
                 icon={ShoppingBag}
                 title={productId ? communityText('Purchase game content') : communityText('Game shop')}
@@ -232,7 +233,7 @@ const GameMarketplaceModal = ({projectId, productId, isDraft, vm, username, onBl
                 })}
                 {error ? <Notice variant="error">{error}</Notice> : null}
             </Modal>
-        </div>
+        </LayerScopeContext.Provider>
     );
 };
 

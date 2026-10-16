@@ -125,6 +125,15 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete, onLayoutCh
         setEditText(initialPost.content || '');
     }, [initialPost]);
 
+    const laidOut = useRef(false);
+    useEffect(() => {
+        if (!laidOut.current) {
+            laidOut.current = true;
+            return;
+        }
+        if (onLayoutChange) onLayoutChange();
+    }, [editing, notice, error, post.content, post.poll, post.pinned, post.edited_at]);
+
     useEffect(() => {
         if (!user || !detail) return;
         let active = true;

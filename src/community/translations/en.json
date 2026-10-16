@@ -250,8 +250,6 @@
   "Delete post": "Delete post",
   "Unlike post": "Unlike post",
   "Like post": "Like post",
-  "Delete profile post?": "Delete profile post?",
-  "This permanently deletes the post from your Rotur profile.": "This permanently deletes the post from your Rotur profile.",
   "You have not posted anything yet.": "You have not posted anything yet.",
   "Loading branches…": "Loading branches…",
   "Each branch points to its latest saved project version.": "Each branch points to its latest saved project version.",
@@ -1755,7 +1753,6 @@
   "Hide {value1}": "Hide {value1}",
   "{value1}: {value2}": "{value1}: {value2}",
   "Badge": "Badge",
-  "Could not delete this post.": "Could not delete this post.",
   "Could not update this post.": "Could not update this post.",
   "Open post": "Open post",
   "No posts yet": "No posts yet",
@@ -2896,5 +2893,9 @@
   "Time range": "Time range",
   "Loading posts…": "Loading posts…",
   "No posts found": "No posts found",
-  "Nobody has posted much in this time range. Try a longer one.": "Nobody has posted much in this time range. Try a longer one."
+  "Nobody has posted much in this time range. Try a longer one.": "Nobody has posted much in this time range. Try a longer one.",
+  "Posts to your profile only": "Posts to your profile only",
+  "Posts to everyone": "Posts to everyone",
+  "Could not load this project. Try again later.": "Could not load this project. Try again later.",
+  "Only shared projects can be posted to claw. Share this project first.": "Only shared projects can be posted to claw. Share this project first."
 }

@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
 import {ExternalLink, PawPrint} from 'lucide-react';
 import loadProjectPreview from '../project-preview.js';
-import {projectMadeWith, projectShareUrl} from '../claw-links.js';
+import {isPublicProject, projectMadeWith, projectShareUrl} from '../claw-links.js';
 import Button from './ui/Button.jsx';
 import Modal from './ui/Modal.jsx';
 import Notice from './ui/Notice.jsx';
@@ -19,22 +19,24 @@ const PostToClawModal = ({project, user, onClose, onViewPost}) => {
         let active = true;
         setDetails(null);
         loadProjectPreview({id: project.id}).then(found => {
-            if (active) setDetails({...project, ...(found || {})});
+            if (active) setDetails(found ? {...project, ...found} : {...project, missing: true});
         });
         return () => {
             active = false;
         };
     }, [project.id]);
 
+    const allowed = Boolean(details && isPublicProject(details));
+
     return (
         <Modal
             icon={PawPrint}
             title={communityText('Post to claw')}
             onClose={onClose}
-            actions={posted ? (
+            actions={posted || (details && !allowed) ? (
                 <React.Fragment>
                     <Button onClick={onClose}>{communityText('Close')}</Button>
-                    {posted.id && onViewPost ? (
+                    {posted && posted.id && onViewPost ? (
                         <Button variant="primary" onClick={() => onViewPost(posted.id)}>
                             <ExternalLink size={15} />
                             {communityText('View post')}
@@ -51,7 +53,14 @@ const PostToClawModal = ({project, user, onClose, onViewPost}) => {
                 </Notice>
             ) : null}
             {!posted && !details ? <StatusMessage compact /> : null}
-            {!posted && details ? (
+            {!posted && details && !allowed ? (
+                <Notice variant={details.missing ? 'error' : 'info'}>
+                    {details.missing ?
+                        communityText('Could not load this project. Try again later.') :
+                        communityText('Only shared projects can be posted to claw. Share this project first.')}
+                </Notice>
+            ) : null}
+            {!posted && allowed ? (
                 <React.Fragment>
                     <p className={styles.lead}>
                         {details.title ?

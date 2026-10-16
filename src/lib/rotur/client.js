@@ -396,9 +396,6 @@ const isClawNotification = notification => {
         typeof postId === 'string' && postId !== '';
 };
 
-// MistWarp only shows its own activity, Rotur's account-level follow
-// notifications and claw activity on your posts. Other apps share the same
-// Rotur notification inbox.
 const isVisibleNotification = notification => {
     const normalized = normalizeNotification(notification);
     if (!normalized || typeof normalized !== 'object') {

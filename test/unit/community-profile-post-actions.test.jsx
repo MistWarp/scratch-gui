@@ -135,7 +135,7 @@ describe('profile post actions', () => {
         wrapper.find('button[aria-label="Post actions"]').simulate('click');
         wrapper.find('button[aria-label="Delete post"]').simulate('click');
         expect(rotur.deletePost).not.toHaveBeenCalled();
-        expect(wrapper.text()).toContain('This permanently deletes the post');
+        expect(wrapper.find('ConfirmModal').text()).toContain('This permanently deletes the post');
 
         const confirm = wrapper.find('button').filterWhere(button => button.text() === 'Delete post')
             .prop('onClick');
