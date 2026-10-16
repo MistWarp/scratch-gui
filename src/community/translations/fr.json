@@ -100,5 +100,8 @@
   "status.incidents": "Historique des incidents",
   "status.noIncidents": "Aucun incident signalé.",
   "status.history": "Disponibilité sur sept jours",
-  "status.lead": "Les vérifications sont effectuées toutes les cinq minutes en dehors du déploiement principal de MistWarp."
+  "status.lead": "Les vérifications sont effectuées toutes les cinq minutes en dehors du déploiement principal de MistWarp.",
+  "Explore projects": "Explorer les projets",
+  "See what people are making on MistWarp": "Découvrez ce que les gens créent sur MistWarp",
+  "Play games, animations, and tools built with blocks, and follow the creators behind them.": "Jouez à des jeux, des animations et des outils créés avec des blocs, et suivez les personnes qui les ont faits."
 }

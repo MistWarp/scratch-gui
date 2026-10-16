@@ -287,12 +287,13 @@ const Home = () => {
     const {user, login, loading} = useUser();
     const viewerName = (user && user.username) || '';
     const [projectCount, setProjectCount] = useState(null);
-    const showStarters = Boolean(projectCount && projectCount.username === viewerName && projectCount.total < 4);
+    const signedOut = !loading && !user;
+    const showStarters = Boolean(!loading && user && projectCount && projectCount.username === viewerName && projectCount.total < 4);
     useEffect(() => {
         track('home_view');
     }, []);
     const discovery = (
-        <div id="discover">
+        <div id="discover" key="discover">
             <HomeDiscovery
                 viewerName={viewerName}
                 side={user && !user.isNew ? (
@@ -319,14 +320,9 @@ const Home = () => {
             />
         </div>
     );
-    const challenges = (
-        <>
-            <ChallengeWinner />
-            <ActiveChallenge />
-        </>
-    );
     const projects = (
         <HomeTabs
+            key="projects"
             className={styles.projectSection}
             id="home-projects"
             label={communityText('Projects')}
@@ -365,6 +361,7 @@ const Home = () => {
     );
     const community = (
         <HomeTabs
+            key="community"
             className={styles.projectSection}
             id="home-community"
             label={communityText('Community updates')}
@@ -396,16 +393,34 @@ const Home = () => {
             ]}
         />
     );
-    if (loading) {
-        return (
-            <main className={styles.page}>
-                <StatusMessage>{communityText('Loading your workspace…')}</StatusMessage>
-            </main>
-        );
-    }
-    if (!user) {
-        return (
-            <main className={styles.page}>
+    const winner = <ChallengeWinner key="winner" />;
+    const challenge = <ActiveChallenge key="challenge" />;
+    const sections = signedOut ? [
+        discovery,
+        projects,
+        winner,
+        challenge,
+        community,
+        <StarterGallery key="starters">
+            <div className={styles.importRow}>
+                <ScratchImport source="home" />
+                <Link to="/compare">
+                    {communityText('Coming from Scratch or TurboWarp? See what is different')}
+                </Link>
+            </div>
+        </StarterGallery>
+    ] : [
+        showStarters ? <StarterGallery key="starters" /> : null,
+        discovery,
+        winner,
+        challenge,
+        projects,
+        community
+    ];
+    return (
+        <main className={styles.page}>
+            {loading ? <StatusMessage>{communityText('Loading your workspace…')}</StatusMessage> : null}
+            {signedOut ? (
                 <section className={styles.intro}>
                     <div>
                         <h1>{communityText('See what people are making on MistWarp')}</h1>
@@ -416,26 +431,9 @@ const Home = () => {
                         <Button variant="secondary" onClick={login}><LogIn size={16} />{communityText('Sign in')}</Button>
                     </div>
                 </section>
-                <DeviceBackup />
-                {discovery}
-                {projects}
-                {challenges}
-                {community}
-                <StarterGallery>
-                    <div className={styles.importRow}>
-                        <ScratchImport source="home" />
-                        <Link to="/compare">
-                            {communityText('Coming from Scratch or TurboWarp? See what is different')}
-                        </Link>
-                    </div>
-                </StarterGallery>
-            </main>
-        );
-    }
-    return (
-        <main className={styles.page}>
-            <ContinueProjects username={viewerName} onProjectCount={setProjectCount} />
-            {user.isNew ? (
+            ) : null}
+            {!loading && user ? <ContinueProjects username={viewerName} onProjectCount={setProjectCount} /> : null}
+            {user && user.isNew ? (
                 <section className={styles.welcome}>
                     <h2>{communityText('Welcome to MistWarp, {value1}', {value1: viewerName})}</h2>
                     <p>{communityText('Start from a working project, or follow a few creators to fill your feed.')}</p>
@@ -450,11 +448,7 @@ const Home = () => {
                 </section>
             ) : null}
             <DeviceBackup />
-            {showStarters ? <StarterGallery /> : null}
-            {discovery}
-            {challenges}
-            {projects}
-            {community}
+            {sections}
         </main>
     );
 };
