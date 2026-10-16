@@ -303,7 +303,9 @@ const publishWorkspace = async ({
         const sb3BlobPromise = buildSparseSb3(sb3Files, platformId)
             .catch(() => zipProjectFiles(sb3Files, () => true));
         const extensionSourcesPromise = sb3BlobPromise.then(collectExtensionSources);
-        const mwpPromise = createMwp({
+        const referenceStoredAssets = !replaceHistory &&
+            (platformProject?.uploadFeatures || []).includes('worktreeAssets');
+        const mwpOptions = {
             vm,
             sb3Files,
             projectId: platformId,
@@ -316,7 +318,8 @@ const publishWorkspace = async ({
             commitChanges,
             requireChanges: commitChanges && !createdNow && !replaceHistory,
             baseHistory
-        });
+        };
+        const mwpPromise = createMwp({...mwpOptions, referenceStoredAssets});
         const prepared = await Promise.allSettled([
             thumbnailPromise,
             mwpPromise,
@@ -325,9 +328,13 @@ const publishWorkspace = async ({
         ]);
         const failed = prepared.find(result => result.status === 'rejected');
         if (failed) throw failed.reason;
-        const [thumbnail, mwp, sb3Blob, extensions] = prepared.map(result => result.value);
+        const [thumbnail, preparedMwp, sb3Blob, extensions] = prepared.map(result => result.value);
+        let mwp = preparedMwp;
+        const uploadId = platformId;
+        const expectedHead = platformProject.gitHead || '';
+        const expectedEdited = platformProject.edited;
         onProgress({phase: 'upload', message: 'Uploading project'});
-        const uploaded = await uploadProject(platformId, sb3Blob, thumbnail, (loaded, total) => {
+        const upload = () => uploadProject(uploadId, sb3Blob, thumbnail, (loaded, total) => {
             const percent = total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : null;
             onProgress({
                 phase: 'upload',
@@ -340,8 +347,16 @@ const publishWorkspace = async ({
             git: mwp.manifest,
             replaceHistory,
             extensions,
-            expectedHead: platformProject.gitHead || '',
-            expectedEdited: platformProject.edited});
+            expectedHead,
+            expectedEdited});
+        let uploaded;
+        try {
+            uploaded = await upload();
+        } catch (e) {
+            if (!referenceStoredAssets || e.code !== 'worktree_assets_unavailable') throw e;
+            mwp = await createMwp(mwpOptions);
+            uploaded = await upload();
+        }
         platformProject = {...platformProject,
             ...(uploaded && uploaded.project),
             gitHead: uploaded?.project?.gitHead || mwp.manifest.head,

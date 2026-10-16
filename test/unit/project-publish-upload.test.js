@@ -144,6 +144,43 @@ describe('MistWarp project upload packaging', () => {
         warn.mockRestore();
     });
 
+    test('references stored assets when the server supports it and retries with full files', async () => {
+        const project = {
+            id: 'project-1',
+            isOwner: true,
+            gitHead: 'opened',
+            edited: 10,
+            workspaceUrl: '/w.mwp',
+            uploadFeatures: ['worktreeAssets']
+        };
+        rememberPlatformProject(project);
+        mockGetProject.mockResolvedValue({project});
+        mockUploadProject
+            .mockRejectedValueOnce(Object.assign(new Error('missing'), {code: 'worktree_assets_unavailable'}))
+            .mockResolvedValueOnce({ok: true, project: {gitHead: 'abc', edited: 20}});
+        const refsBlob = new Blob(['refs']);
+        const fullBlob = new Blob(['full']);
+        mockCreateMwp
+            .mockResolvedValueOnce({blob: refsBlob, manifest: {head: 'abc'}})
+            .mockResolvedValueOnce({blob: fullBlob, manifest: {head: 'abc'}});
+        const vm = {saveProjectSb3DontZip: () => ({'project.json': '{}'})};
+        await publishToMistWarp({vm, updateOnly: true, commitChanges: false});
+        expect(mockCreateMwp.mock.calls[0][0].referenceStoredAssets).toBe(true);
+        expect(mockCreateMwp.mock.calls[1][0].referenceStoredAssets).toBeUndefined();
+        expect(mockUploadProject).toHaveBeenCalledTimes(2);
+        expect(mockUploadProject.mock.calls[0][4].workspace).toBe(refsBlob);
+        expect(mockUploadProject.mock.calls[1][4].workspace).toBe(fullBlob);
+    });
+
+    test('does not reference stored assets on servers without the feature', async () => {
+        const project = {id: 'project-1', isOwner: true, gitHead: 'opened', edited: 10, workspaceUrl: '/w.mwp'};
+        rememberPlatformProject(project);
+        mockGetProject.mockResolvedValue({project});
+        const vm = {saveProjectSb3DontZip: () => ({'project.json': '{}'})};
+        await publishToMistWarp({vm, updateOnly: true, commitChanges: false});
+        expect(mockCreateMwp.mock.calls[0][0].referenceStoredAssets).toBe(false);
+    });
+
     test('approved contributors save directly without becoming owners', async () => {
         const project = {id: 'project-1', isOwner: false, canSaveDirectly: true, edited: 123};
         rememberPlatformProject(project);

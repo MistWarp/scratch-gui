@@ -20,7 +20,7 @@ import {
     writeWorktreeFile,
     REPO_DIR
 } from './browser-git.js';
-import {buildSb3FromFractchTree, writeProjectToFractchTree} from './fractch-tree.js';
+import {buildSb3FromFractchTree, worktreeAssetPaths, writeProjectToFractchTree} from './fractch-tree.js';
 import {getMistWarpAuthor} from '../rotur/identity.js';
 import {
     computeLineDiff,
@@ -302,7 +302,8 @@ const currentRepoMeta = async ({baseHead = '', baseHistory = null} = {}) => {
 };
 
 const exportCurrentMwp = async (metadata, {
-    baseHead = '', includeWorktree = false, assumeBaseKnown = false, baseHistory = null, knownBaseHeads = []
+    baseHead = '', includeWorktree = false, assumeBaseKnown = false, baseHistory = null, knownBaseHeads = [],
+    worktreeAssetRefs = null
 } = {}) => {
     const repo = await currentRepoMeta({
         baseHead: assumeBaseKnown ? baseHead : '',
@@ -333,10 +334,13 @@ const exportCurrentMwp = async (metadata, {
             await collectExportableObjectOids(head);
         }
     }
+    const referencedAssets = {};
     const zip = await buildRepoZip({
         includeGitDir: true,
         includeWorktree,
-        includeObjectOids
+        includeObjectOids,
+        worktreeAssetRefs: delta && includeWorktree ? worktreeAssetRefs : null,
+        referencedAssets
     });
     const manifest = {
         format: MWP_FORMAT,
@@ -353,7 +357,8 @@ const exportCurrentMwp = async (metadata, {
         commits: repo.commits,
         graph: repo.graph
     };
-    zip.file(MWP_MANIFEST, JSON.stringify(manifest, null, 2));
+    zip.file(MWP_MANIFEST, JSON.stringify(Object.keys(referencedAssets).length ?
+        {...manifest, worktreeAssets: referencedAssets} : manifest, null, 2));
     const blob = await zip.generateAsync({
         type: 'blob',
         mimeType: 'application/x-mistwarp-project',
@@ -368,7 +373,8 @@ const preserveCurrentRepo = () => createRepoBackup();
 
 const createMwp = async ({
     vm, sb3Files, projectId, remixParent, baseCommit, remoteHead, branch = 'main', additionalParents = [],
-    message = 'Save project', commitChanges = true, requireChanges = false, baseHistory = null
+    message = 'Save project', commitChanges = true, requireChanges = false, baseHistory = null,
+    referenceStoredAssets = false
 } = {}) => {
     // Cloud history records the Rotur account. A save to the user's computer
     // uploads nothing, so it falls back to the local author when signed out.
@@ -417,7 +423,9 @@ const createMwp = async ({
             includeWorktree: !commitChanges,
             assumeBaseKnown: shallowBase,
             baseHistory,
-            knownBaseHeads: additionalParents
+            knownBaseHeads: additionalParents,
+            worktreeAssetRefs: referenceStoredAssets && !commitChanges && remoteHead && sb3Files ?
+                await worktreeAssetPaths(sb3Files) : null
         }
     );
 };

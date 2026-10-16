@@ -250,6 +250,25 @@ const zipFileReader = zip => name => {
     return entry ? entry.async('uint8array') : null;
 };
 
+const MD5EXT = /^[0-9a-f]{32}\.[a-z0-9]{1,8}$/;
+
+const worktreeAssetPaths = async sb3Files => {
+    const projectBytes = await sb3FileReader(sb3Files)('project.json');
+    if (!projectBytes) return new Map();
+    const projectJson = JSON.parse(new TextDecoder().decode(projectBytes));
+    const paths = new Map();
+    const ambiguous = new Set();
+    for (const target of Array.isArray(projectJson.targets) ? projectJson.targets : []) {
+        for (const [md5ext, rel] of targetAssetFiles(target)) {
+            const path = `${sanitize(target.name)}/${rel}`;
+            if (!MD5EXT.test(md5ext) || (paths.has(path) && paths.get(path) !== md5ext)) ambiguous.add(path);
+            paths.set(path, md5ext);
+        }
+    }
+    for (const path of ambiguous) paths.delete(path);
+    return paths;
+};
+
 const loadSb3 = async ({vm, sb3ArrayBuffer, sb3Files}) => {
     let files = sb3Files;
     if (!files && !sb3ArrayBuffer && vm && typeof vm.saveProjectSb3DontZip === 'function') {
@@ -414,6 +433,7 @@ const buildSb3FromFractchTree = async ({fs, dir, onProgress} = {}) => {
 
 export {
     clearWorkingTree,
+    worktreeAssetPaths,
     writeProjectToFractchTree,
     buildSb3FromFractchTree,
     yieldToBrowser,
