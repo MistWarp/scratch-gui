@@ -241,19 +241,26 @@ const SB3PostMessageHOC = function (WrappedComponent) {
             return consent.then(async accepted => {
                 if (!accepted || !this.isCurrentRequest(request)) return false;
                 const previousPlatformProject = snapshotPlatformProject();
+                let loadError = null;
                 try {
                     await withProjectReplacement(this.props.vm, 'Before external load', async () => {
                         if (!this.isCurrentRequest(request)) throw new Error('A newer open request replaced this one.');
                         this.props.vm.quit();
                         rememberPlatformProject(null);
-                        await this.props.vm.loadProject(arrayBuffer, {
-                            skipGitImport: true,
-                            mwPreserveProjectSource: true
-                        });
-                        await importRepoFromSb3(arrayBuffer);
+                        try {
+                            await this.props.vm.loadProject(arrayBuffer, {
+                                skipGitImport: true,
+                                mwPreserveProjectSource: true
+                            });
+                            await importRepoFromSb3(arrayBuffer);
+                        } catch (error) {
+                            loadError = error;
+                            restorePlatformProject(previousPlatformProject);
+                            throw error;
+                        }
                     });
                 } catch (error) {
-                    restorePlatformProject(previousPlatformProject);
+                    if (loadError && error !== loadError) rememberPlatformProject(null);
                     throw error;
                 }
                 detachWorkspace(this.props.vm);

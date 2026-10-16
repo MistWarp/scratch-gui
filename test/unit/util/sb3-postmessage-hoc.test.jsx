@@ -7,7 +7,8 @@ import RestorePointAPI from '../../../src/lib/api/restore-points';
 import {getRememberedPlatformProjectState, rememberPlatformProject} from '../../../src/lib/community/publish.js';
 
 jest.mock('../../../src/lib/api/restore-points', () => ({
-    createSafetyRestorePoint: jest.fn(() => Promise.resolve())
+    createSafetyRestorePoint: jest.fn(() => Promise.resolve()),
+    loadRestorePoint: jest.fn(() => Promise.resolve())
 }));
 
 jest.mock('../../../src/lib/git/browser-git.js', () => ({
@@ -56,6 +57,8 @@ describe('SB3PostMessageHOC', () => {
         });
         RestorePointAPI.createSafetyRestorePoint.mockReset();
         RestorePointAPI.createSafetyRestorePoint.mockResolvedValue();
+        RestorePointAPI.loadRestorePoint.mockReset();
+        RestorePointAPI.loadRestorePoint.mockResolvedValue();
     });
 
     test('a request canceled during backup cannot replace the project', async () => {
@@ -105,13 +108,32 @@ describe('SB3PostMessageHOC', () => {
     test('a failed external load keeps the previous project\'s MistWarp link', async () => {
         rememberPlatformProject({id: 'project-1', isOwner: true, gitHead: 'abc', edited: 5});
         const before = getRememberedPlatformProjectState();
+        let stateDuringRollback = 'not restored';
+        RestorePointAPI.loadRestorePoint.mockImplementation(() => {
+            stateDuringRollback = getRememberedPlatformProjectState();
+            return Promise.resolve();
+        });
         vm.loadProject = jest.fn(() => Promise.reject(new Error('corrupt project')));
         const instance = createInstance();
 
         await instance.handleMessage(createEvent(new Uint8Array([5])));
 
         expect(vm.loadProject).toHaveBeenCalled();
+        expect(RestorePointAPI.loadRestorePoint).toHaveBeenCalled();
+        expect(stateDuringRollback).toEqual(before);
         expect(getRememberedPlatformProjectState()).toEqual(before);
+    });
+
+    test('a failed external load whose rollback also fails leaves no MistWarp link', async () => {
+        rememberPlatformProject({id: 'project-1', isOwner: true, gitHead: 'abc', edited: 5});
+        RestorePointAPI.loadRestorePoint.mockRejectedValue(new Error('backup unreadable'));
+        vm.loadProject = jest.fn(() => Promise.reject(new Error('corrupt project')));
+        const instance = createInstance();
+
+        await instance.handleMessage(createEvent(new Uint8Array([6])));
+
+        expect(RestorePointAPI.loadRestorePoint).toHaveBeenCalled();
+        expect(getRememberedPlatformProjectState()).toBeNull();
     });
 
     test('invalid project data replies to the caller with an error', () => {
