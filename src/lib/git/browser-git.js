@@ -1267,7 +1267,8 @@ const zipCompressionFor = relPath => (
 );
 
 const buildRepoZip = async ({
-    includeGitDir = true, includeWorktree = true, includeObjectOids = null
+    includeGitDir = true, includeWorktree = true, includeObjectOids = null,
+    worktreeAssetRefs = null, referencedAssets = null
 } = {}) => {
     const fs = getFs();
     const pfs = fs.promises;
@@ -1288,6 +1289,10 @@ const buildRepoZip = async ({
         if (!includeWorktree && !absPath.startsWith(`${REPO_DIR}/.git/`)) return false;
         const relPath = absPath.replace(`${REPO_DIR}/`, '');
         if (relPath.startsWith('.git/logs/')) return false;
+        if (worktreeAssetRefs && referencedAssets && worktreeAssetRefs.has(relPath)) {
+            referencedAssets[relPath] = worktreeAssetRefs.get(relPath);
+            return false;
+        }
         if (includeObjectOids && relPath.startsWith('.git/objects/')) {
             const parts = relPath.split('/');
             if (parts.length !== 4) return false;
