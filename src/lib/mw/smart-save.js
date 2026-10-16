@@ -10,10 +10,16 @@ import {projectFilename} from '../utils/safe-filename.js';
 import {setSaveFeedback} from './save-feedback.js';
 import {trackDaily} from '../../community/analytics.js';
 
+let agreementConfirmed = false;
+
 const agreementAccepted = async () => {
+    if (agreementConfirmed) return true;
     try {
         const {agreement} = await request('/agreement');
-        return !(agreement.version > 0 && !agreement.accepted);
+        const accepted = !(agreement.version > 0 && !agreement.accepted);
+        // eslint-disable-next-line require-atomic-updates
+        if (accepted) agreementConfirmed = true;
+        return accepted;
     } catch (e) {
         return false;
     }
@@ -76,6 +82,7 @@ const runSmartSave = async ({vm, title, onSaved}) => {
     } catch (e) {
         // An autosave or other operation won the race: not a failure to report.
         if (isProjectOperationActiveError(e)) return false;
+        if (e && e.code === 'agreement_required') agreementConfirmed = false;
         openMistWarpShareWindow({
             vm,
             initialTitle: title,

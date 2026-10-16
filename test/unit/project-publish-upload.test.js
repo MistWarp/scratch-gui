@@ -109,6 +109,41 @@ describe('MistWarp project upload packaging', () => {
         expect(adoptImportedProjectHistory).not.toHaveBeenCalled();
     });
 
+    test('reports a save as soon as the server accepts it', async () => {
+        const project = {id: 'project-1', isOwner: true, gitHead: 'opened', edited: 10};
+        rememberPlatformProject(project);
+        mockGetProject.mockResolvedValue({project});
+        mockUploadProject.mockResolvedValue({ok: true, project: {gitHead: 'abc', edited: 20}});
+        const {preloadProjectHistory} = require('../../src/lib/git/project-history.js');
+        let finishRefresh;
+        preloadProjectHistory.mockImplementationOnce(() => new Promise(resolve => {
+            finishRefresh = resolve;
+        }));
+        const vm = {saveProjectSb3DontZip: () => ({'project.json': '{}'})};
+        const saving = publishToMistWarp({vm, updateOnly: true, commitChanges: false});
+        await new Promise(resolve => setTimeout(resolve, 20));
+        const {getSaveFeedback} = require('../../src/lib/mw/save-feedback.js');
+        expect(getSaveFeedback(vm)).toBe('cloud');
+        finishRefresh();
+        await saving;
+    });
+
+    test('a failed history refresh does not fail an uploaded save', async () => {
+        const project = {id: 'project-1', isOwner: true, gitHead: 'opened', edited: 10};
+        rememberPlatformProject(project);
+        mockGetProject.mockResolvedValue({project});
+        mockUploadProject.mockResolvedValue({ok: true, project: {gitHead: 'abc', edited: 20}});
+        const {preloadProjectHistory} = require('../../src/lib/git/project-history.js');
+        preloadProjectHistory.mockRejectedValueOnce(new Error('offline'));
+        const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+        const vm = {saveProjectSb3DontZip: () => ({'project.json': '{}'})};
+        await expect(publishToMistWarp({vm, updateOnly: true, commitChanges: false}))
+            .resolves.toMatchObject({id: 'project-1'});
+        const {getRememberedPlatformProjectState} = require('../../src/lib/community/publish.js');
+        expect(getRememberedPlatformProjectState().saveBase).toEqual({head: 'abc', edited: 20});
+        warn.mockRestore();
+    });
+
     test('approved contributors save directly without becoming owners', async () => {
         const project = {id: 'project-1', isOwner: false, canSaveDirectly: true, edited: 123};
         rememberPlatformProject(project);
