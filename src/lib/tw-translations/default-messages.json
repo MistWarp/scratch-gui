@@ -30,6 +30,7 @@
   "gui.backpack.header": "Backpack",
   "mw.backpack.expandStrip": "Show backpack items",
   "mw.backpack.collapseStrip": "Hide backpack items",
+  "mw.backpack.refresh": "Refresh backpack",
   "mw.backpack.resizeStrip": "Resize the backpack",
   "gui.unsupportedBrowser.label": "Browser is not supported",
   "tw.browserModal.desktopTitle": "System is not supported",

@@ -2,6 +2,7 @@ import {Backpack} from '../../../src/containers/backpack.jsx';
 import {
     codePayload,
     costumePayload,
+    getBackpackContents,
     saveBackpackObject,
     spritePayload,
     updateBackpackObject
@@ -18,7 +19,8 @@ jest.mock('../../../src/lib/api/backpack', () => ({
     getBackpackContents: jest.fn(),
     saveBackpackObject: jest.fn(() => Promise.resolve({id: 'saved', name: 'Costume'})),
     deleteBackpackObject: jest.fn(),
-    updateBackpackObject: jest.fn()
+    updateBackpackObject: jest.fn(),
+    subscribeBackpackChanges: jest.fn(() => () => {})
 }));
 jest.mock('../../../src/lib/persistence/storage', () => ({
     AssetType: {
@@ -305,5 +307,96 @@ describe('backpack workflows', () => {
         backpack.state.filter = 'script';
         backpack.state.searchQuery = 'walk';
         expect(backpack.getFilteredContents().map(item => item.id)).toEqual(['1']);
+    });
+
+    test('a refresh replaces the list with what is stored now', async () => {
+        getBackpackContents.mockResolvedValueOnce([{id: 'new'}, {id: 'kept'}]);
+        const backpack = makeBackpack({host: 'local'});
+        backpack.hasLoaded = true;
+        backpack.state.contents = [{id: 'kept'}, {id: 'deleted elsewhere'}];
+        backpack.state.renamingId = 'deleted elsewhere';
+
+        backpack.handleRefresh();
+        expect(backpack.render().props.refreshing).toBe(true);
+        await backpack.contentsRequest;
+
+        expect(getBackpackContents).toHaveBeenCalledWith(expect.objectContaining({offset: 0, limit: 100}));
+        expect(backpack.state.contents.map(item => item.id)).toEqual(['new', 'kept']);
+        expect(backpack.state.renamingId).toBe(null);
+        expect(backpack.state.refreshing).toBe(false);
+    });
+
+    test('a refresh reloads as many pages as were already shown', async () => {
+        const page = start => Array.from({length: 100}, (_, i) => ({id: `${start + i}`}));
+        getBackpackContents
+            .mockResolvedValueOnce(page(0))
+            .mockResolvedValueOnce(page(100))
+            .mockResolvedValueOnce(page(200));
+        const backpack = makeBackpack({host: 'local'});
+        backpack.state.contents = page(0).concat(page(100).slice(0, 50));
+
+        backpack.refreshContents();
+        await backpack.contentsRequest;
+
+        expect(getBackpackContents).toHaveBeenCalledTimes(2);
+        expect(backpack.state.contents).toHaveLength(200);
+        expect(backpack.state.moreToLoad).toBe(true);
+    });
+
+    test('reopening a loaded backpack refreshes it', async () => {
+        getBackpackContents.mockResolvedValue([{id: 'fresh'}]);
+        const backpack = makeBackpack({host: 'local'});
+        backpack.getContents();
+        await backpack.contentsRequest;
+        getBackpackContents.mockClear();
+
+        backpack.setExpanded(true);
+        await backpack.contentsRequest;
+        expect(getBackpackContents).toHaveBeenCalledTimes(1);
+
+        backpack.setExpanded(false);
+        expect(backpack.contentsRequest).toBe(null);
+        getBackpackContents.mockReset();
+    });
+
+    test('changes from another tab refresh the list after a short delay', async () => {
+        jest.useFakeTimers();
+        try {
+            getBackpackContents.mockResolvedValue([{id: 'from other tab'}]);
+            const backpack = makeBackpack({host: 'local'});
+            backpack.handleExternalChange();
+            backpack.handleExternalChange();
+            expect(getBackpackContents).not.toHaveBeenCalled();
+
+            jest.advanceTimersByTime(100);
+            expect(getBackpackContents).toHaveBeenCalledTimes(1);
+        } finally {
+            jest.useRealTimers();
+            getBackpackContents.mockReset();
+        }
+    });
+
+    test('a save made during a refresh is not lost to the stale result', async () => {
+        let finishStale;
+        getBackpackContents
+            .mockImplementationOnce(() => new Promise(resolve => {
+                finishStale = resolve;
+            }))
+            .mockResolvedValueOnce([{id: 'saved', name: 'Costume'}, {id: 'old'}]);
+        const backpack = makeBackpack({host: 'local'});
+        backpack.state.contents = [{id: 'old'}];
+
+        backpack.refreshContents();
+        await backpack.saveDrop({dragType: DragConstants.COSTUME, payload: {asset: {clean: true}}});
+        expect(backpack.state.contents.map(item => item.id)).toEqual(['saved', 'old']);
+
+        const stale = backpack.contentsRequest;
+        finishStale([{id: 'old'}]);
+        await stale;
+        expect(backpack.state.contents.map(item => item.id)).toEqual(['saved', 'old']);
+        await backpack.contentsRequest;
+
+        expect(getBackpackContents).toHaveBeenCalledTimes(2);
+        expect(backpack.state.contents.map(item => item.id)).toEqual(['saved', 'old']);
     });
 });
