@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import {FormattedMessage, defineMessages, injectIntl, intlShape} from 'react-intl';
-import {Backpack as BackpackIcon, ChevronDown, ChevronUp} from 'lucide-react';
+import {Backpack as BackpackIcon, ChevronDown, ChevronUp, RefreshCw} from 'lucide-react';
 
 import {
     BackpackFilters,
@@ -28,6 +28,11 @@ const messages = defineMessages({
         id: 'mw.backpack.collapseStrip',
         defaultMessage: 'Hide backpack items',
         description: 'Accessible label of the button that collapses the backpack strip'
+    },
+    refresh: {
+        id: 'mw.backpack.refresh',
+        defaultMessage: 'Refresh backpack',
+        description: 'Accessible label and tooltip of the button that reloads the backpack items'
     },
     resize: {
         id: 'mw.backpack.resizeStrip',
@@ -55,6 +60,7 @@ const Backpack = ({
     intl,
     loading,
     panelRef,
+    refreshing,
     renamingId,
     searchQuery,
     showMore,
@@ -63,6 +69,7 @@ const Backpack = ({
     onFilterChange,
     onInsert,
     onMore,
+    onRefresh,
     onRenameCancel,
     onRenameStart,
     onRenameSubmit,
@@ -137,6 +144,21 @@ const Backpack = ({
                             searchQuery={searchQuery}
                             onSearchChange={onSearchChange}
                         />
+                        <button
+                            aria-busy={refreshing}
+                            aria-label={intl.formatMessage(messages.refresh)}
+                            className={classNames(styles.refreshButton, {
+                                [styles.refreshing]: refreshing
+                            })}
+                            title={intl.formatMessage(messages.refresh)}
+                            type="button"
+                            onClick={onRefresh}
+                        >
+                            <RefreshCw
+                                className={styles.refreshIcon}
+                                size={16}
+                            />
+                        </button>
                     </React.Fragment>
                 ) : null}
             </div>
@@ -202,6 +224,7 @@ Backpack.propTypes = {
     intl: intlShape,
     loading: PropTypes.bool,
     panelRef: PropTypes.func,
+    refreshing: PropTypes.bool,
     renamingId: PropTypes.string,
     searchQuery: PropTypes.string,
     showMore: PropTypes.bool,
@@ -210,6 +233,7 @@ Backpack.propTypes = {
     onFilterChange: PropTypes.func,
     onInsert: PropTypes.func,
     onMore: PropTypes.func,
+    onRefresh: PropTypes.func,
     onRenameCancel: PropTypes.func,
     onRenameStart: PropTypes.func,
     onRenameSubmit: PropTypes.func,
@@ -229,6 +253,7 @@ Backpack.defaultProps = {
     filter: 'all',
     height: null,
     loading: false,
+    refreshing: false,
     searchQuery: '',
     showMore: false,
     totalCount: 0,
@@ -236,6 +261,7 @@ Backpack.defaultProps = {
     onFilterChange: noop,
     onInsert: noop,
     onMore: noop,
+    onRefresh: noop,
     onRenameCancel: noop,
     onRenameStart: noop,
     onRenameSubmit: noop,

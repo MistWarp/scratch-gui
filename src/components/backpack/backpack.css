@@ -108,6 +108,48 @@
     margin-left: auto;
 }
 
+.refresh-button {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: calc(2rem + 2px);
+    height: calc(2rem + 2px);
+    padding: 0;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 10px;
+    background: none;
+    color: $text-primary;
+    cursor: pointer;
+    outline: none;
+}
+
+.refresh-button:active {
+    background-color: $looks-transparent;
+}
+
+.refresh-button:focus-visible {
+    border-color: $looks-secondary;
+}
+
+.refreshing .refresh-icon {
+    animation: refresh-spin 0.8s linear infinite;
+}
+
+@keyframes refresh-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .refreshing .refresh-icon {
+        animation: none;
+        opacity: 0.55;
+    }
+}
+
 .header-drop-zone {
     background-color: $drop-highlight;
 }

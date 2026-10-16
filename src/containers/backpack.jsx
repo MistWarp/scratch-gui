@@ -11,6 +11,7 @@ import {
     saveBackpackObject,
     deleteBackpackObject,
     updateBackpackObject,
+    subscribeBackpackChanges,
     soundPayload,
     costumePayload,
     spritePayload,
@@ -39,6 +40,7 @@ const STRIP_MIN_HEIGHT = 8.75 * 16;
 const STRIP_DEFAULT_HEIGHT = STRIP_MIN_HEIGHT;
 const MIN_WORKSPACE_HEIGHT = 240;
 const ALERT_DURATION = 3000;
+const CHANGE_REFRESH_DELAY = 100;
 
 const messages = defineMessages({
     scriptAutoName: {
@@ -114,6 +116,9 @@ class Backpack extends React.Component {
             'handleRenameCancel',
             'getBackpackAssetURL',
             'getContents',
+            'refreshContents',
+            'handleExternalChange',
+            'handleRefresh',
             'handleBlockDragEnd',
             'handleBlockDragUpdate',
             'handleBlockDragHook',
@@ -135,6 +140,11 @@ class Backpack extends React.Component {
         this.contentsRequest = null;
         this.loadAllContents = false;
         this.hasLoaded = false;
+        this.refreshQueued = false;
+        this.refreshInFlight = false;
+        this.morePending = false;
+        this.changeTimer = null;
+        this.unsubscribeChanges = null;
         this.dropRequest = null;
         this.dropRequestInfo = null;
         this.deletingItems = new Set();
@@ -158,6 +168,7 @@ class Backpack extends React.Component {
             itemsPerPage: 100,
             moreToLoad: false,
             loading: false,
+            refreshing: false,
             expanded: false,
             contents: [],
             height: getBackpackHeight(STRIP_MIN_HEIGHT) || STRIP_DEFAULT_HEIGHT,
@@ -189,6 +200,7 @@ class Backpack extends React.Component {
         this.shortcutTimer = setTimeout(() => {
             updateCallbacks({toggleBackpack: this.handleToggle});
         }, 0);
+        this.unsubscribeChanges = subscribeBackpackChanges(this.props.host, this.handleExternalChange);
         this.getContents();
     }
     UNSAFE_componentWillReceiveProps (nextProps) {
@@ -223,7 +235,9 @@ class Backpack extends React.Component {
         window.removeEventListener('pointercancel', this.handleResizePointerUp);
 
         if (this.unsubscribeBlockDrag) this.unsubscribeBlockDrag();
+        if (this.unsubscribeChanges) this.unsubscribeChanges();
         this.unregisterSaver();
+        clearTimeout(this.changeTimer);
         clearTimeout(this.shortcutTimer);
         clearTimeout(this.pendingBlockDropTimer);
         clearTimeout(this.alertTimer);
@@ -301,7 +315,10 @@ class Backpack extends React.Component {
             }
         }
         this.setState(nextState, this.emitResize);
-        if (expanded && !this.hasLoaded) {
+        if (!expanded) return;
+        if (this.hasLoaded) {
+            this.refreshContents();
+        } else {
             this.getContents();
         }
     }
@@ -425,6 +442,7 @@ class Backpack extends React.Component {
             }))
             .then(item => {
                 if (this.unmounted) return false;
+                this.queueRefreshIfLoading();
                 this.setState(oldState => ({
                     loading: false,
                     contents: [item].concat(oldState.contents.filter(existing => existing.id !== item.id))
@@ -446,6 +464,7 @@ class Backpack extends React.Component {
         })
             .then(() => {
                 if (this.unmounted) return false;
+                this.queueRefreshIfLoading();
                 this.setState(oldState => ({
                     loading: false,
                     contents: oldState.contents.filter(o => o.id !== id),
@@ -539,13 +558,16 @@ class Backpack extends React.Component {
                 name: newName
             });
             if (this.unmounted) return false;
+            this.queueRefreshIfLoading();
             this.setState(oldState => ({
                 loading: false,
                 contents: oldState.contents.map(i => (i.id === id ? newItem : i))
             }));
             return true;
         } catch (error) {
-            return this.handleError(error);
+            const result = this.handleError(error);
+            if (!this.unmounted) this.refreshContents();
+            return result;
         } finally {
             this.renamingItems.delete(id);
         }
@@ -553,52 +575,114 @@ class Backpack extends React.Component {
     canRename () {
         return this.props.host === LOCAL_API;
     }
+    canLoadContents () {
+        return this.props.host === LOCAL_API || Boolean(this.props.token && this.props.username);
+    }
     getContents (loadAll = false) {
-        if ((!this.props.token || !this.props.username) && this.props.host !== LOCAL_API) return;
+        if (!this.canLoadContents()) return;
 
         this.loadAllContents = this.loadAllContents || loadAll;
-        if (this.contentsRequest) return;
-
+        if (this.contentsRequest) {
+            if (!loadAll && this.refreshInFlight) this.morePending = true;
+            return;
+        }
+        this.loadContents(false);
+    }
+    refreshContents () {
+        if (!this.canLoadContents()) return;
+        if (this.contentsRequest) {
+            this.refreshQueued = true;
+            return;
+        }
+        this.loadContents(true);
+    }
+    queueRefreshIfLoading () {
+        if (this.contentsRequest) this.refreshQueued = true;
+    }
+    loadContents (refresh) {
         this.hasLoaded = true;
-        this.setState({loading: true, error: false});
-        const loaded = this.state.contents.slice();
+        this.refreshQueued = false;
+        this.refreshInFlight = refresh;
+        const wantsMore = this.morePending;
+        this.morePending = false;
+        this.loadAllContents = this.loadAllContents || Boolean(this.state.searchQuery.trim());
+        this.setState({loading: true, refreshing: refresh, error: false});
+        const pageSize = this.state.itemsPerPage;
+        const loaded = refresh ? [] : this.state.contents.slice();
+        const shownCount = this.state.contents.length + (wantsMore ? pageSize : 0);
+        const minimumCount = refresh ?
+            Math.max(pageSize, Math.ceil(shownCount / pageSize) * pageSize) :
+            0;
         const loadPage = () => getBackpackContents({
             host: this.props.host,
             token: this.props.token,
             username: this.props.username,
             offset: loaded.length,
-            limit: this.state.itemsPerPage
+            limit: pageSize
         }).then(contents => {
             loaded.push(...contents);
-            if (this.loadAllContents && contents.length === this.state.itemsPerPage) {
+            const fullPage = contents.length === pageSize;
+            const stale = refresh && this.refreshQueued;
+            if (fullPage && !stale && (this.loadAllContents || loaded.length < minimumCount)) {
                 return loadPage();
             }
-            return contents.length === this.state.itemsPerPage;
+            return fullPage;
         });
 
         this.contentsRequest = loadPage()
             .then(moreToLoad => {
                 if (this.unmounted) return false;
+                if (refresh && this.refreshQueued && this.canLoadContents()) {
+                    if (wantsMore) this.morePending = true;
+                    return false;
+                }
+                const loadedIds = new Set(loaded.map(item => item.id));
                 this.setState(oldState => {
-                    const loadedIds = new Set(loaded.map(item => item.id));
+                    if (refresh) {
+                        return {
+                            contents: loaded,
+                            moreToLoad,
+                            loading: false,
+                            refreshing: false,
+                            renamingId: loadedIds.has(oldState.renamingId) ? oldState.renamingId : null
+                        };
+                    }
                     const newerItems = oldState.contents.filter(item => !loadedIds.has(item.id));
                     return {
                         contents: newerItems.concat(loaded),
                         moreToLoad,
-                        loading: false
+                        loading: false,
+                        refreshing: false
                     };
                 });
                 return true;
             })
             .catch(error => {
-                this.contentsRequest = null;
-                this.loadAllContents = false;
-                return this.handleError(error);
+                const result = this.handleError(error);
+                if (!this.unmounted) this.setState({refreshing: false});
+                return result;
             })
             .then(() => {
                 this.contentsRequest = null;
+                this.refreshInFlight = false;
                 this.loadAllContents = false;
+                if (this.unmounted) return;
+                if (this.refreshQueued) {
+                    this.refreshQueued = false;
+                    this.refreshContents();
+                } else if (this.morePending) {
+                    this.morePending = false;
+                    this.getContents();
+                }
             });
+    }
+    handleExternalChange () {
+        clearTimeout(this.changeTimer);
+        this.changeTimer = setTimeout(this.refreshContents, CHANGE_REFRESH_DELAY);
+    }
+    handleRefresh () {
+        if (this.state.refreshing) return;
+        this.refreshContents();
     }
     handleBlockDragHook (type) {
         if (this.unmounted) return;
@@ -713,6 +797,7 @@ class Backpack extends React.Component {
                 height={this.state.height}
                 loading={this.state.loading && this.state.contents.length === 0}
                 panelRef={this.setPanelRef}
+                refreshing={this.state.refreshing}
                 renamingId={this.state.renamingId}
                 searchQuery={this.state.searchQuery}
                 showMore={!this.state.searchQuery && this.state.moreToLoad}
@@ -721,6 +806,7 @@ class Backpack extends React.Component {
                 onFilterChange={this.handleFilterChange}
                 onInsert={this.handleInsert}
                 onMore={this.handleMore}
+                onRefresh={this.handleRefresh}
                 onRenameCancel={this.handleRenameCancel}
                 onRenameStart={this.handleRenameStart}
                 onRenameSubmit={this.handleRenameSubmit}

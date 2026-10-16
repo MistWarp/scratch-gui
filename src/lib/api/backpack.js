@@ -110,6 +110,11 @@ const updateBackpackObject = ({
     reject(new Error('updateBackpackObject not supported'));
 });
 
+const subscribeBackpackChanges = (host, listener) => {
+    if (host !== LOCAL_API) return () => {};
+    return localBackpackAPI.subscribeBackpackChanges(listener);
+};
+
 // Two types of backpack items are not retreivable through storage
 // code, as json and sprite3 as arraybuffer zips.
 const fetchAs = (responseType, uri) => new Promise((resolve, reject) => {
@@ -131,6 +136,7 @@ export {
     saveBackpackObject,
     deleteBackpackObject,
     updateBackpackObject,
+    subscribeBackpackChanges,
     costumePayload,
     soundPayload,
     spritePayload,

@@ -8,6 +8,7 @@ import {requestPersistentStorage} from '../utils/storage-request';
 const DATABASE_NAME = 'TW_Backpack';
 const DATABASE_VERSION = 1;
 const STORE_NAME = 'backpack';
+const CHANGE_CHANNEL_NAME = 'mw:backpack-changes';
 
 const SOUND_FORMAT_BY_MIME = {
     'audio/mp3': 'mp3',
@@ -64,6 +65,43 @@ const idbItemToBackpackItem = item => {
     }
 
     return item;
+};
+
+let changeChannel = null;
+let changeChannelOpened = false;
+const changeListeners = new Set();
+
+const getChangeChannel = () => {
+    if (changeChannelOpened) return changeChannel;
+    changeChannelOpened = true;
+    if (typeof BroadcastChannel === 'undefined') return changeChannel;
+    try {
+        changeChannel = new BroadcastChannel(CHANGE_CHANNEL_NAME);
+        changeChannel.onmessage = () => {
+            changeListeners.forEach(listener => listener());
+        };
+    } catch (e) {
+        changeChannel = null;
+    }
+    return changeChannel;
+};
+
+const notifyChange = () => {
+    const channel = getChangeChannel();
+    if (!channel) return;
+    try {
+        channel.postMessage({changed: true});
+    } catch (e) {
+        changeChannel = null;
+    }
+};
+
+const subscribeBackpackChanges = listener => {
+    getChangeChannel();
+    changeListeners.add(listener);
+    return () => {
+        changeListeners.delete(listener);
+    };
 };
 
 let _db;
@@ -175,6 +213,9 @@ const saveBackpackObject = async ({
         const putRequest = store.put(idbItem);
         putRequest.onsuccess = () => {
             idbItem.id = putRequest.result;
+        };
+        transaction.oncomplete = () => {
+            notifyChange();
             resolve(idbItemToBackpackItem(idbItem));
         };
     });
@@ -191,8 +232,9 @@ const deleteBackpackObject = async ({
         };
         const store = transaction.objectStore(STORE_NAME);
         // Convert string IDs to number IDs
-        const deleteRequest = store.delete(id);
-        deleteRequest.onsuccess = () => {
+        store.delete(id);
+        transaction.oncomplete = () => {
+            notifyChange();
             resolve();
         };
     });
@@ -209,16 +251,23 @@ const updateBackpackObject = async ({
             reject(new Error(`Updating object: ${event.target.error}`));
         };
         const store = transaction.objectStore(STORE_NAME);
+        let newItem;
         const getRequest = store.get(id);
         getRequest.onsuccess = () => {
-            const newItem = {
+            if (!getRequest.result) return;
+            newItem = {
                 ...getRequest.result,
                 name: name
             };
-            const putRequest = store.put(newItem);
-            putRequest.onsuccess = () => {
-                resolve(idbItemToBackpackItem(newItem));
-            };
+            store.put(newItem);
+        };
+        transaction.oncomplete = () => {
+            if (!newItem) {
+                reject(new Error('Updating object: item no longer exists'));
+                return;
+            }
+            notifyChange();
+            resolve(idbItemToBackpackItem(newItem));
         };
     });
 };
@@ -227,5 +276,6 @@ export default {
     getBackpackContents,
     saveBackpackObject,
     deleteBackpackObject,
-    updateBackpackObject
+    updateBackpackObject,
+    subscribeBackpackChanges
 };
