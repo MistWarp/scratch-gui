@@ -9,6 +9,7 @@ import Notice from '../../components/ui/Notice.jsx';
 import SectionHeading from '../../components/ui/SectionHeading.jsx';
 import {SwitchRow} from '../../components/ui/Switch.jsx';
 import {PLAYER_CONTACT_TERMS_VERSION, PlayerChatRules, formatServiceNames} from '../../components/PlayerChat.jsx';
+import {isMinorAccount} from '../../../lib/minor-account.js';
 import styles from '../ManageProject.module.css';
 
 const PlayerChatSettings = ({project, onSaved}) => {
@@ -27,6 +28,8 @@ const PlayerChatSettings = ({project, onSaved}) => {
     }, [project.id, chat.declared, chat.required, chat.contact, chat.termsCurrent]);
 
     const services = formatServiceNames(chat.services, communityText);
+    const owner = !project.myRole || project.myRole === 'owner';
+    const minor = isMinorAccount();
 
     const save = async () => {
         if (busy) return;
@@ -63,7 +66,14 @@ const PlayerChatSettings = ({project, onSaved}) => {
                 title={communityText('Player chat')}
                 lead={communityText('If players can send each other messages in this project, you are responsible for moderating them.')}
             />
-            <div className={styles.form}>
+            {owner ? null : (
+                <p className={styles.cardHint}>
+                    {chat.declared ?
+                        communityText('@{value1} moderates chat in this project. Only the owner can change the chat details.', {value1: project.owner}) :
+                        communityText('Only the owner, @{value1}, can add chat details and take responsibility for chat in this project.', {value1: project.owner})}
+                </p>
+            )}
+            {owner ? <div className={styles.form}>
                 {chat.required ? (
                     <Notice variant={chat.missing ? 'warning' : 'info'}>
                         {chat.missing ?
@@ -90,10 +100,14 @@ const PlayerChatSettings = ({project, onSaved}) => {
                                 value={contact}
                                 maxLength={200}
                                 disabled={busy}
-                                placeholder={communityText('A website or email address')}
+                                placeholder={minor ? communityText('A website link') : communityText('A website or email address')}
                                 onChange={e => setContact(e.target.value)}
                             />
-                            <small>{communityText('Shown on the project page so players can reach you about chat. Use a contact you are happy for anyone to see.')}</small>
+                            <small>
+                                {minor ?
+                                    communityText('Shown on the project page so players can reach you about chat. Use a website link, never your email address or real name.') :
+                                    communityText('Shown on the project page so players can reach you about chat. Use a contact you are happy for anyone to see.')}
+                            </small>
                         </label>
                         <div className={styles.field}>
                             <span>{communityText('Chat rules')}</span>
@@ -120,7 +134,7 @@ const PlayerChatSettings = ({project, onSaved}) => {
                     >
                         <Check size={16} />{communityText('Save chat details')}</Button>
                 </div>
-            </div>
+            </div> : null}
         </div>
     );
 };
@@ -128,6 +142,8 @@ const PlayerChatSettings = ({project, onSaved}) => {
 PlayerChatSettings.propTypes = {
     project: PropTypes.shape({
         id: PropTypes.string,
+        myRole: PropTypes.string,
+        owner: PropTypes.string,
         playerContact: PropTypes.object
     }).isRequired,
     onSaved: PropTypes.func.isRequired

@@ -2952,5 +2952,9 @@
   "The reporter named this player and MistWarp hasn't checked it. They will be locked out of MistWarp until an admin unbans them.": "The reporter named this player and MistWarp hasn't checked it. They will be locked out of MistWarp until an admin unbans them.",
   "Use Report chat below a project to report a message. Everyday problems go to the creator and to MistWarp moderators. Sexual, violent and urgent reports go to moderators only. Class accounts can't open other people's projects like these.": "Use Report chat below a project to report a message. Everyday problems go to the creator and to MistWarp moderators. Sexual, violent and urgent reports go to moderators only. Class accounts can't open other people's projects like these.",
   "A website or email address": "A website or email address",
-  "Shown on the project page so players can reach you about chat. Use a contact you are happy for anyone to see.": "Shown on the project page so players can reach you about chat. Use a contact you are happy for anyone to see."
+  "Shown on the project page so players can reach you about chat. Use a contact you are happy for anyone to see.": "Shown on the project page so players can reach you about chat. Use a contact you are happy for anyone to see.",
+  "@{value1} moderates chat in this project. Only the owner can change the chat details.": "@{value1} moderates chat in this project. Only the owner can change the chat details.",
+  "Only the owner, @{value1}, can add chat details and take responsibility for chat in this project.": "Only the owner, @{value1}, can add chat details and take responsibility for chat in this project.",
+  "A website link": "A website link",
+  "Shown on the project page so players can reach you about chat. Use a website link, never your email address or real name.": "Shown on the project page so players can reach you about chat. Use a website link, never your email address or real name."
 }

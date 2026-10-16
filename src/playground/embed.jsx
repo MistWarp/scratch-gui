@@ -129,10 +129,46 @@ const WrappedGUI = compose(
 
 const publicEmbedId = urlParams.get('mw');
 
+const showPlayOnMistWarpOnly = id => {
+    const message = document.createElement('p');
+    message.textContent = 'This project lets players talk to each other, so it opens on MistWarp.';
+    const link = document.createElement('a');
+    link.href = `${location.origin}/project/${encodeURIComponent(id)}`;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = 'Play on MistWarp';
+    Object.assign(document.body.style, {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '12px',
+        minHeight: '100vh',
+        margin: '0',
+        background: '#1e1e1e',
+        color: '#eeeeee',
+        font: '14px Helvetica Neue, Helvetica, Arial, sans-serif',
+        textAlign: 'center'
+    });
+    Object.assign(link.style, {
+        padding: '8px 14px',
+        borderRadius: '8px',
+        background: '#855cd6',
+        color: '#ffffff',
+        fontWeight: '600',
+        textDecoration: 'none'
+    });
+    document.body.replaceChildren(message, link);
+};
+
 const resolvePublicEmbed = async () => {
     try {
         const data = await request(`/projects/${encodeURIComponent(publicEmbedId)}`);
         const project = data && data.project;
+        if (project && project.playerContact && project.playerContact.connects) {
+            showPlayOnMistWarpOnly(project.id);
+            return;
+        }
         if (!project || !project.projectJsonUrl) throw new Error('unavailable');
         const params = new URLSearchParams();
         params.set('project_url', project.projectJsonUrl);

@@ -185,7 +185,7 @@
     "src/community/pages/News.jsx:299",
     "src/community/pages/Theme.jsx:225",
     "src/community/pages/Theme.jsx:258",
-    "src/community/pages/project/PlayerChatSettings.jsx:118",
+    "src/community/pages/project/PlayerChatSettings.jsx:132",
     "src/community/pages/project/ProjectStage.jsx:187",
     "src/community/pages/project/ReviewPanel.jsx:172"
   ],
@@ -8423,55 +8423,67 @@
     "src/community/pages/project/OutgoingPullNotice.jsx:39"
   ],
   "Add a contact for chat.": [
-    "src/community/pages/project/PlayerChatSettings.jsx:34"
+    "src/community/pages/project/PlayerChatSettings.jsx:37"
   ],
   "Agree to the chat rules to continue.": [
-    "src/community/pages/project/PlayerChatSettings.jsx:38"
+    "src/community/pages/project/PlayerChatSettings.jsx:41"
   ],
   "Chat details saved.": [
-    "src/community/pages/project/PlayerChatSettings.jsx:49"
-  ],
-  "Could not save the chat details.": [
     "src/community/pages/project/PlayerChatSettings.jsx:52"
   ],
+  "Could not save the chat details.": [
+    "src/community/pages/project/PlayerChatSettings.jsx:55"
+  ],
   "Player chat": [
-    "src/community/pages/project/PlayerChatSettings.jsx:63"
+    "src/community/pages/project/PlayerChatSettings.jsx:66"
   ],
   "If players can send each other messages in this project, you are responsible for moderating them.": [
-    "src/community/pages/project/PlayerChatSettings.jsx:64"
+    "src/community/pages/project/PlayerChatSettings.jsx:67"
+  ],
+  "@{value1} moderates chat in this project. Only the owner can change the chat details.": [
+    "src/community/pages/project/PlayerChatSettings.jsx:72"
+  ],
+  "Only the owner, @{value1}, can add chat details and take responsibility for chat in this project.": [
+    "src/community/pages/project/PlayerChatSettings.jsx:73"
   ],
   "This project uses {value1}, which lets players talk to each other. Add chat details to share it. Until you do, it is left out of lists.": [
-    "src/community/pages/project/PlayerChatSettings.jsx:70"
-  ],
-  "This project uses {value1}, which lets players talk to each other.": [
-    "src/community/pages/project/PlayerChatSettings.jsx:71"
-  ],
-  "Players can talk to each other in this project": [
-    "src/community/pages/project/PlayerChatSettings.jsx:78"
-  ],
-  "Always on while the project uses an extension that connects players.": [
     "src/community/pages/project/PlayerChatSettings.jsx:80"
   ],
-  "Turn this on if players can send each other messages in any way, including through your own server.": [
+  "This project uses {value1}, which lets players talk to each other.": [
     "src/community/pages/project/PlayerChatSettings.jsx:81"
   ],
-  "Contact for chat": [
+  "Players can talk to each other in this project": [
     "src/community/pages/project/PlayerChatSettings.jsx:88"
   ],
+  "Always on while the project uses an extension that connects players.": [
+    "src/community/pages/project/PlayerChatSettings.jsx:90"
+  ],
+  "Turn this on if players can send each other messages in any way, including through your own server.": [
+    "src/community/pages/project/PlayerChatSettings.jsx:91"
+  ],
+  "Contact for chat": [
+    "src/community/pages/project/PlayerChatSettings.jsx:98"
+  ],
+  "A website link": [
+    "src/community/pages/project/PlayerChatSettings.jsx:103"
+  ],
   "A website or email address": [
-    "src/community/pages/project/PlayerChatSettings.jsx:93"
+    "src/community/pages/project/PlayerChatSettings.jsx:103"
+  ],
+  "Shown on the project page so players can reach you about chat. Use a website link, never your email address or real name.": [
+    "src/community/pages/project/PlayerChatSettings.jsx:108"
   ],
   "Shown on the project page so players can reach you about chat. Use a contact you are happy for anyone to see.": [
-    "src/community/pages/project/PlayerChatSettings.jsx:96"
-  ],
-  "Chat rules": [
-    "src/community/pages/project/PlayerChatSettings.jsx:99"
-  ],
-  "I will moderate chat in this project by these rules.": [
     "src/community/pages/project/PlayerChatSettings.jsx:109"
   ],
+  "Chat rules": [
+    "src/community/pages/project/PlayerChatSettings.jsx:113"
+  ],
+  "I will moderate chat in this project by these rules.": [
+    "src/community/pages/project/PlayerChatSettings.jsx:123"
+  ],
   "Save chat details": [
-    "src/community/pages/project/PlayerChatSettings.jsx:121"
+    "src/community/pages/project/PlayerChatSettings.jsx:135"
   ],
   "Files": [
     "src/community/pages/project/ProjectActivity.jsx:36"
