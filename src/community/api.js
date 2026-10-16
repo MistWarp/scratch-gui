@@ -125,9 +125,6 @@ const embedUrl = (project, {
             }
         }
     }
-    if (project.trustedExtensions && project.trustedExtensions.length) {
-        params.set('mw_te', JSON.stringify(project.trustedExtensions));
-    }
     if (!applyProjectTheme) {
         params.set('apply_project_theme', '0');
     }

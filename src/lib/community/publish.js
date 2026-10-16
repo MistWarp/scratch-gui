@@ -94,6 +94,27 @@ const rememberPlatformProject = (project, {resetSaveBase = false} = {}) => {
 };
 
 
+const snapshotPlatformProject = () => {
+    try {
+        return sessionStorage.getItem(PLATFORM_ID_KEY);
+    } catch (e) {
+        return null;
+    }
+};
+
+const restorePlatformProject = snapshot => {
+    try {
+        if (snapshot === null) {
+            sessionStorage.removeItem(PLATFORM_ID_KEY);
+        } else {
+            sessionStorage.setItem(PLATFORM_ID_KEY, snapshot);
+        }
+        window.dispatchEvent(new Event('mw:platform-project-changed'));
+    } catch (e) {
+        // ignore
+    }
+};
+
 const getRememberedPlatformProject = () => {
     const project = getRememberedPlatformProjectState();
     return project && project.id;
@@ -434,6 +455,8 @@ const publishToMistWarp = options => withProjectOperation(options.vm, async () =
 });
 
 export {
+    snapshotPlatformProject,
+    restorePlatformProject,
     publishToMistWarp,
     captureThumbnail,
     captureThumbnailDataUri,

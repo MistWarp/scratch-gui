@@ -574,6 +574,34 @@ const getPerks = () => request('/perks');
 
 const getEditorProject = id => request(`/projects/${id}/editor`, {cache: false});
 
+const projectDataLocation = value => {
+    try {
+        const parsed = new URL(String(value || ''));
+        if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return '';
+        return `${parsed.origin}${parsed.pathname}`;
+    } catch (e) {
+        return '';
+    }
+};
+
+const getServerTrustedExtensions = async (id, projectJsonUrl) => {
+    const loading = projectDataLocation(projectJsonUrl);
+    if (!id || !loading) return [];
+    const params = new URLSearchParams();
+    const key = new URL(projectJsonUrl).searchParams.get('k');
+    if (key) params.set('k', key);
+    const query = params.toString();
+    try {
+        const path = `/projects/${encodeURIComponent(id)}/trusted-extensions${query ? `?${query}` : ''}`;
+        const result = await request(path, {cache: false, timeoutMs: 5000});
+        const served = Array.isArray(result && result.jsonUrls) ? result.jsonUrls.map(projectDataLocation) : [];
+        if (!served.includes(loading)) return [];
+        return Array.isArray(result.trustedExtensions) ? result.trustedExtensions : [];
+    } catch (e) {
+        return [];
+    }
+};
+
 const getProjectCommits = (id, projectJsonUrl = '') => {
     const params = new URLSearchParams();
     try {
@@ -609,6 +637,7 @@ export {
     getProject,
     getPerks,
     getEditorProject,
+    getServerTrustedExtensions,
     getProjectCommits,
     getRandomProject,
     remixProject,

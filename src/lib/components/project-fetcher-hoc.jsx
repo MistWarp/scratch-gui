@@ -42,7 +42,8 @@ import {buildSb3FromCurrentRepo, importMwp, isMwpArchive} from '../git/mwp.js';
 import {getAuth as getRoturGitAuth} from '../rotur/git-api.js';
 import {getRememberedPlatformProjectState, rememberPlatformProject} from '../community/publish.js';
 import {
-    getEditorProject as getMistWarpEditorProject
+    getEditorProject as getMistWarpEditorProject,
+    getServerTrustedExtensions
 } from '../community/api.js';
 import {hasBridge, bridgeFetch} from '../community/embed-bridge.js';
 import {cachedFetchBuffer} from '../community/cached-fetch.js';
@@ -106,8 +107,11 @@ const fetchArrayBuffer = url => cachedFetchBuffer(url);
 
 const loadPlatformProject = async (id, source) => {
     const project = source || (await getMistWarpEditorProject(id)).project;
-    const data = await (hasBridge() ? bridgeFetch(project.projectJsonUrl) : fetchArrayBuffer(project.projectJsonUrl));
-    return {data, title: project.title, platformProject: project};
+    const [data, trustedExtensions] = await Promise.all([
+        hasBridge() ? bridgeFetch(project.projectJsonUrl) : fetchArrayBuffer(project.projectJsonUrl),
+        source ? getServerTrustedExtensions(id, source.projectJsonUrl) : project.trustedExtensions
+    ]);
+    return {data, title: project.title, platformProject: {...project, trustedExtensions: trustedExtensions || []}};
 };
 
 // TW: Temporary hack for project tokens
@@ -259,12 +263,6 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 location.hash.match(/^#mw-([\w-]+)/);
             const hashProjectId = hashMatch && hashMatch[1];
             const mistwarpAssets = searchParams && searchParams.get('mw_assets');
-            let mistwarpTrustedExtensions = [];
-            try {
-                mistwarpTrustedExtensions = JSON.parse((searchParams && searchParams.get('mw_te')) || '[]');
-            } catch (e) {
-                mistwarpTrustedExtensions = [];
-            }
             if (mistwarpAssets && isHttpUrl(mistwarpAssets)) {
                 storage.addMistWarpAssetStore(mistwarpAssets);
             }
@@ -276,8 +274,7 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 const source = this.props.isEmbedded && platformProject && !hashProjectId && projectUrl ? {
                     id,
                     projectJsonUrl: projectUrl,
-                    assetsBase: mistwarpAssets,
-                    trustedExtensions: mistwarpTrustedExtensions
+                    assetsBase: mistwarpAssets
                 } : null;
                 assetPromise = loadPlatformProject(id, source);
             } else if (cloneUrl) {
