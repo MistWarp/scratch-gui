@@ -4,6 +4,7 @@ import {
     logout as roturLogout,
     accountKey,
     getAccessToken,
+    getAvatarUrl,
     getRotur,
     needsReconnect,
     onSessionChange
@@ -17,8 +18,12 @@ import {
     loadSession,
     storeSession,
     setRoturTokenGetter,
+    setSessionProvider,
     logout as mistLogout
 } from '../community/api.js';
+import {ACCOUNT_ORIGIN, isSplitEditor} from '../account/origins.js';
+import {FRAME_PATH} from '../account/protocol.js';
+import * as accountBridge from '../account/bridge.js';
 import {setMinorAccount} from '../minor-account.js';
 import {ROTUR_TOKEN_KEY} from './token-key.js';
 import {sleep} from '../utils/async.js';
@@ -48,7 +53,112 @@ const subscribe = cb => {
     return () => listeners.delete(cb);
 };
 
+const TOKEN_MARGIN = 60000;
+const SIGN_IN_POPUP = 'mw-account-signin';
+let editorToken = null;
+let editorTokenRequest = null;
+let splitWired = false;
+
+const splitSession = {
+    get: () => (editorToken && editorToken.expiresAt - TOKEN_MARGIN > Date.now() ? editorToken.token : null),
+    refresh: () => {
+        if (!state.user) return Promise.resolve(null);
+        if (!editorTokenRequest) {
+            editorTokenRequest = accountBridge.call('editorSession')
+                .then(next => {
+                    editorToken = next;
+                    return next.token;
+                })
+                .finally(() => {
+                    editorTokenRequest = null;
+                });
+        }
+        return editorTokenRequest;
+    },
+    clear: () => {
+        editorToken = null;
+    }
+};
+
+const userFromBridge = user => (user && user.username ? {
+    username: user.username,
+    id: user.id || null,
+    avatarUrl: getAvatarUrl(user.username),
+    bio: user.bio
+} : null);
+
+const applyBridgeIdentity = next => {
+    const user = userFromBridge(next.user);
+    if (!user || (state.user && state.user.username !== user.username)) editorToken = null;
+    setState({
+        status: next.status === 'restoring' ? 'restoring' : (user ? 'ready' : 'idle'),
+        user,
+        banMessage: next.banMessage || null,
+        reconnect: false
+    });
+};
+
+const wireSplitEditor = () => {
+    if (splitWired) return;
+    splitWired = true;
+    setSessionProvider(splitSession);
+    accountBridge.subscribeIdentity(applyBridgeIdentity);
+};
+
+const restoreSplitEditor = async () => {
+    wireSplitEditor();
+    try {
+        await accountBridge.connect();
+    } catch (_) {
+        setState({status: 'idle', user: null});
+        return null;
+    }
+    applyBridgeIdentity(accountBridge.getIdentity());
+    if (state.user && !splitSession.get()) {
+        try {
+            await splitSession.refresh();
+        } catch (_) {
+            editorToken = null;
+        }
+    }
+    return state.user;
+};
+
+const loginSplitEditor = () => {
+    wireSplitEditor();
+    const left = Math.max(0, (screen.width - 480) / 2);
+    const top = Math.max(0, (screen.height - 720) / 2);
+    const popup = window.open(`${ACCOUNT_ORIGIN}${FRAME_PATH}?signin=1`, SIGN_IN_POPUP,
+        `popup,width=480,height=720,left=${left},top=${top}`);
+    if (!popup) {
+        return Promise.reject(Object.assign(new Error('Allow pop-ups for this site to sign in with Rotur'),
+            {code: 'popup_blocked'}));
+    }
+    return new Promise((resolve, reject) => {
+        let unsubscribe = null;
+        let watch = null;
+        const finish = () => {
+            clearInterval(watch);
+            if (unsubscribe) unsubscribe();
+        };
+        unsubscribe = accountBridge.subscribeIdentity(next => {
+            if (!next.user) return;
+            finish();
+            restoreSplitEditor().then(resolve, reject);
+        });
+        watch = setInterval(() => {
+            if (!popup.closed) return;
+            finish();
+            restoreSplitEditor().then(user => {
+                if (user) resolve(user);
+                else reject(Object.assign(new Error('The Rotur sign-in window was closed'), {code: 'closed'}));
+            }, reject);
+        }, 500);
+    });
+};
+
 const ensureMistSession = async () => {
+    if (isSplitEditor()) return splitSession.get() || splitSession.refresh();
     const existing = loadSession();
     if (existing) {
         return existing;
@@ -144,6 +254,14 @@ const doRestore = async () => {
 };
 
 const restore = () => {
+    if (isSplitEditor()) {
+        if (!restoreInFlight) {
+            restoreInFlight = restoreSplitEditor().finally(() => {
+                restoreInFlight = null;
+            });
+        }
+        return restoreInFlight;
+    }
     wireSession();
     if (!restoreInFlight) {
         restoreInFlight = doRestore().finally(() => {
@@ -154,6 +272,7 @@ const restore = () => {
 };
 
 const login = async () => {
+    if (isSplitEditor()) return loginSplitEditor();
     wireSession();
     const previousUser = state.user;
     setState({status: 'logging-in'});
@@ -176,6 +295,18 @@ const login = async () => {
 };
 
 const logout = () => {
+    if (isSplitEditor()) {
+        editorToken = null;
+        accountBridge.call('signOut').catch(() => null);
+        try {
+            onRoturLogout();
+        } catch (_) {
+            // ignore
+        }
+        setMinorAccount(false);
+        setState({status: 'idle', user: null, banMessage: null, reconnect: false});
+        return;
+    }
     mistLogout().catch(() => null);
     try {
         onRoturLogout();
@@ -194,7 +325,7 @@ const logout = () => {
 };
 
 const getMistSession = () => loadSession();
-const getRoturToken = () => getRotur().token;
+const getRoturToken = () => (isSplitEditor() ? null : getRotur().token);
 
 const getMistWarpAuthor = async () => {
     const user = state.user || await restore();

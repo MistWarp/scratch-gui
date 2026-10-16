@@ -3,3 +3,11 @@
 
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
+
+/account-frame
+  Content-Security-Policy: frame-ancestors https://editor.mistwarp.org
+  Referrer-Policy: no-referrer
+
+/account-frame.html
+  Content-Security-Policy: frame-ancestors https://editor.mistwarp.org
+  Referrer-Policy: no-referrer

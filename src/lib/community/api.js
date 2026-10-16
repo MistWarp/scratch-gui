@@ -30,7 +30,16 @@ const setRoturTokenGetter = getter => {
 
 let exchangeInFlight = null;
 
+let sessionProvider = null;
+
+const setSessionProvider = provider => {
+    sessionProvider = provider;
+    cacheGeneration += 1;
+    inFlightGets.clear();
+};
+
 const loadSession = () => {
+    if (sessionProvider) return sessionProvider.get() || null;
     try {
         return localStorage.getItem(SESSION_KEY) || null;
     } catch (e) {
@@ -39,6 +48,12 @@ const loadSession = () => {
 };
 
 const storeSession = token => {
+    if (sessionProvider) {
+        if (!token) sessionProvider.clear();
+        cacheGeneration += 1;
+        inFlightGets.clear();
+        return;
+    }
     try {
         const previous = localStorage.getItem(SESSION_KEY);
         if (token) {
@@ -259,6 +274,19 @@ const runExchange = token => {
     return exchangeInFlight;
 };
 
+const refreshSession = async () => {
+    if (sessionProvider) {
+        try {
+            return await sessionProvider.refresh();
+        } catch (e) {
+            return null;
+        }
+    }
+    const roturToken = await roturTokenGetter();
+    if (!roturToken) return null;
+    return runExchange(roturToken);
+};
+
 const request = async (path, {method = 'GET', body, headers = {}, raw = false, cache = true, timeoutMs} = {}) => {
     const cacheable = method === 'GET' && !raw && cache;
     const cacheKey = cacheable ? getCacheKey(path) : '';
@@ -320,14 +348,10 @@ const request = async (path, {method = 'GET', body, headers = {}, raw = false, c
             !path.startsWith('/logout')
         ) {
             storeSession(null);
-            const roturToken = await roturTokenGetter();
-            if (roturToken) {
-                try {
-                    await runExchange(roturToken);
-                    response = await doFetch();
-                } catch (e) {
-                    // keep the original 401 response
-                }
+            try {
+                if (await refreshSession()) response = await doFetch();
+            } catch (e) {
+                // keep the original 401 response
             }
         }
         if (path === '/me' && response.status === 401) {
@@ -533,9 +557,7 @@ const uploadProject = async (id, sb3Blob, thumbnailBlob, onUploadProgress, {
     } catch (e) {
         if (e.status !== 401) throw e;
         storeSession(null);
-        const roturToken = await roturTokenGetter();
-        if (!roturToken) throw e;
-        await runExchange(roturToken);
+        if (!(await refreshSession())) throw e;
         return uploadXhr(path, form, onUploadProgress);
     } finally {
         clearApiCache();
@@ -591,6 +613,7 @@ const remixProject = (id, setup) => request(`/projects/${id}/remix`, {method: 'P
 const deleteProject = id => request(`/projects/${id}`, {method: 'DELETE'});
 
 export {
+    setSessionProvider,
     uploadXhr,
     loadSession,
     storeSession,

@@ -1,0 +1,113 @@
+import {createFrameServer, EDITOR_ROTUR_METHODS} from '../../../src/lib/account/frame-server.js';
+
+const createPort = () => {
+    const sent = [];
+    return {
+        sent,
+        postMessage: message => sent.push(message),
+        start: jest.fn(),
+        onmessage: null
+    };
+};
+
+const createIdentity = user => {
+    let state = {status: user ? 'ready' : 'idle', user};
+    const listeners = new Set();
+    return {
+        getState: () => state,
+        subscribe: listener => {
+            listeners.add(listener);
+            return () => listeners.delete(listener);
+        },
+        logout: jest.fn(() => {
+            state = {status: 'idle', user: null};
+            for (const listener of listeners) listener(state);
+        }),
+        set: next => {
+            state = next;
+            for (const listener of listeners) listener(state);
+        }
+    };
+};
+
+const setup = (user = {username: 'mist', id: 'u1', bio: 'hi', avatarUrl: 'x'}) => {
+    const identity = createIdentity(user);
+    const deps = {
+        identity,
+        createEditorSession: jest.fn(async () => ({token: 'editor-token', expiresAt: 123, extra: 'dropped'})),
+        callRotur: jest.fn(async (method, args) => ({method, args})),
+        projectRotur: {
+            ensureConsent: jest.fn(async () => true),
+            call: jest.fn(async () => 'result'),
+            clear: jest.fn(async () => true)
+        }
+    };
+    const server = createFrameServer(deps);
+    const port = createPort();
+    server.serve(port);
+    const send = async (method, args) => {
+        const id = port.sent.length + 1000;
+        await port.onmessage({data: {id, method, args}});
+        return port.sent.find(message => message.id === id);
+    };
+    return {deps, identity, port, send};
+};
+
+test('announces the public identity on connect and when it changes', () => {
+    const {port, identity} = setup();
+    expect(port.sent[0]).toEqual({
+        kind: 'ready',
+        identity: {status: 'ready', user: {username: 'mist', id: 'u1', bio: 'hi'}, banMessage: null}
+    });
+    identity.set({status: 'idle', user: null});
+    expect(port.sent[1]).toEqual({kind: 'identity', identity: {status: 'idle', user: null, banMessage: null}});
+});
+
+test('hands the editor only an editor session token', async () => {
+    const {send} = setup();
+    await expect(send('editorSession')).resolves.toEqual({id: expect.any(Number), result: {token: 'editor-token', expiresAt: 123}});
+});
+
+test('refuses an editor session when signed out', async () => {
+    const {send, deps} = setup(null);
+    const reply = await send('editorSession');
+    expect(reply.error).toMatchObject({code: 'signed_out'});
+    expect(deps.createEditorSession).not.toHaveBeenCalled();
+});
+
+test('only allowlisted Rotur methods run for the editor', async () => {
+    const {send, deps} = setup();
+    expect((await send('rotur', {method: 'notifications.list', args: [7]})).result)
+        .toEqual({method: 'notifications.list', args: [7]});
+    for (const method of ['_http.getToken', 'credits.transfer', 'me.update', 'validators.generate', 'constructor']) {
+        expect((await send('rotur', {method, args: []})).error).toBeTruthy();
+    }
+    expect(deps.callRotur).toHaveBeenCalledTimes(1);
+    expect([...EDITOR_ROTUR_METHODS].every(method => !method.startsWith('_'))).toBe(true);
+});
+
+test('unknown requests and prototype keys are refused', async () => {
+    const {send} = setup();
+    for (const method of ['toString', '__proto__', 'hasOwnProperty', 'fetch']) {
+        expect((await send(method)).error.message).toBe('Unknown MistWarp account request');
+    }
+});
+
+test('project requests need a valid project and pass through to the project host', async () => {
+    const {send, deps} = setup();
+    expect((await send('projectRotur', {action: 'call', project: {name: 'Game', id: 'p1'}, method: 'me.get', args: []})).result)
+        .toBe('result');
+    expect(deps.projectRotur.call).toHaveBeenCalledWith({name: 'Game', id: 'p1'}, 'me.get', []);
+    expect((await send('projectRotur', {action: 'call', project: {name: 'x', id: '../p'}, method: 'me.get'})).error)
+        .toBeTruthy();
+    expect((await send('projectRotur', {action: 'ensureConsent', project: {name: 'x'}, scopes: [{}]})).error)
+        .toBeTruthy();
+    expect((await send('projectRotur', {action: 'delete', project: {name: 'x'}})).error).toBeTruthy();
+});
+
+test('signing out goes through the account', async () => {
+    const {send, deps} = setup();
+    const reply = await send('signOut');
+    expect(deps.identity.logout).toHaveBeenCalled();
+    expect(reply.result.user).toBeNull();
+});

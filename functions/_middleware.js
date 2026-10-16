@@ -16,6 +16,8 @@ const SKIP_PATHS = new Set([
     '/fullscreen',
     '/fullscreen.html',
     '/embed.html',
+    '/account-frame',
+    '/account-frame.html',
     '/privacy.html'
 ]);
 
