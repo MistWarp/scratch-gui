@@ -28,7 +28,7 @@ const PlayerChatSettings = ({project, onSaved}) => {
     }, [project.id, chat.declared, chat.required, chat.contact, chat.termsCurrent]);
 
     const services = formatServiceNames(chat.services, communityText);
-    const owner = !project.myRole || project.myRole === 'owner';
+    const owner = project.myRole === 'owner';
     const minor = isMinorAccount();
 
     const save = async () => {

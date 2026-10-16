@@ -711,14 +711,16 @@ const ManageProject = () => {
                                     </div>
                                 </div>
                             </div>
-                            <PlayerChatSettings
-                                project={project}
-                                onSaved={updated => {
-                                    if (currentLoadContext.current !== loadContext) return;
-                                    setProject(updated);
-                                    setProjectLoadContext(loadContext);
-                                }}
-                            />
+                            {project.playerContact ? (
+                                <PlayerChatSettings
+                                    project={project}
+                                    onSaved={updated => {
+                                        if (currentLoadContext.current !== loadContext) return;
+                                        setProject(updated);
+                                        setProjectLoadContext(loadContext);
+                                    }}
+                                />
+                            ) : null}
                             {!project.contributionOnly ? <div className={styles.card}>
                                 <SectionHeading as="h3" icon={Link2} title={communityText('Private preview')} lead={communityText('Create a private play link that expires after 24 hours.')} />
                                 <div className={styles.inlineAction}>

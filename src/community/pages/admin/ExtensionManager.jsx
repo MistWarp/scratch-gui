@@ -320,7 +320,7 @@ const ExtensionManager = () => {
                                     {extension.sourceAvailable ? (
                                         <Button onClick={() => viewSource(extension.hash)}>{communityText('View source')}</Button>
                                     ) : null}
-                                    {!extension.connectsPlayersBuiltIn && tab !== 'blocked' ? (
+                                    {'connectsPlayers' in extension && !extension.connectsPlayersBuiltIn && tab !== 'blocked' ? (
                                         <Button onClick={() => setConnectsPlayers(extension.hash, !extension.connectsPlayers)}>
                                             {extension.connectsPlayers ?
                                                 communityText('Unmark connecting players') :
