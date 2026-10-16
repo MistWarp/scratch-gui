@@ -93,7 +93,8 @@ class CustomThemesPage extends React.Component {
         this.pendingFocus = null;
         const page = this.pageRef.current;
         const tile = target.uuid && page ?
-            page.querySelector(`button[data-uuid="${target.uuid}"]`) : null;
+            Array.from(page.querySelectorAll('button[data-uuid]'))
+                .find(button => button.dataset.uuid === target.uuid) : null;
         const element = tile || this.primaryActionRef.current;
         if (element) element.focus();
     }

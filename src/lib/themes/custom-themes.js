@@ -12,6 +12,7 @@ const gradientDirection = direction => {
     const value = Number(direction);
     return direction !== '' && direction !== null && Number.isFinite(value) ? value : 90;
 };
+const hasGradientStops = accent => Boolean(accent && typeof accent === 'object' && Array.isArray(accent.colors));
 const gradientPrimaryColor = accent => {
     if (accent && typeof accent.primaryColor === 'string' && HEX_COLOR.test(accent.primaryColor)) {
         return accent.primaryColor;
@@ -334,6 +335,14 @@ class GradientUtils {
     }
 }
 
+const solidAccent = primaryColor => ({
+    guiColors: GradientUtils.generateAccentColors(primaryColor),
+    blockColors: {
+        checkboxActiveBackground: primaryColor,
+        checkboxActiveBorder: GradientUtils.darkenColor(primaryColor, 10)
+    }
+});
+
 /**
  * CustomTheme class extends Theme with additional metadata
  */
@@ -511,7 +520,8 @@ class CustomTheme extends Theme {
             description: this.description,
             author: this.author,
             sourceId: this.sourceId || null,
-            accent: accentExport || (typeof this.originalAccent === 'string' ? this.originalAccent : null),
+            accent: accentExport || this._exportSolidAccent() ||
+                (typeof this.originalAccent === 'string' ? this.originalAccent : null),
             menuBarForeground: menuBarForeground || null,
             gui: this.gui,
             blocks: this.blocks,
@@ -569,6 +579,15 @@ class CustomTheme extends Theme {
   * Export gradient accent to format
  * @returns {object} Gradient format
   */
+    _exportSolidAccent () {
+        const guiColors = this.customAccent && this.customAccent.guiColors;
+        if (!guiColors) return null;
+        const image = guiColors['menu-bar-background-image'];
+        if (image && image !== 'none') return null;
+        const primaryColor = guiColors['motion-primary'];
+        return typeof primaryColor === 'string' && HEX_COLOR.test(primaryColor) ? {primaryColor} : null;
+    }
+
     _exportGradient () {
         if (this.originalAccent && typeof this.originalAccent === 'object' &&
             Array.isArray(this.originalAccent.colors)) {
@@ -702,6 +721,9 @@ class CustomTheme extends Theme {
             accentToUse = GradientUtils.createGradientAccent(accentToUse.colors, gradientPrimaryColor(accentToUse), {
                 direction: gradientDirection(accentToUse.direction)
             });
+        } else if (accentToUse && typeof accentToUse === 'object' && !accentToUse.guiColors &&
+            typeof accentToUse.primaryColor === 'string' && HEX_COLOR.test(accentToUse.primaryColor)) {
+            accentToUse = solidAccent(accentToUse.primaryColor);
         }
 
         if (data.menuBarForeground && accentToUse && typeof accentToUse === 'object') {
@@ -946,6 +968,9 @@ class CustomThemeManager {
         // Preserve original UUID and creation date
         Object.defineProperty(updatedTheme, 'uuid', {value: uuid, writable: false});
         Object.defineProperty(updatedTheme, 'createdAt', {value: existingTheme.createdAt, writable: false});
+        if (!updates.accent && hasGradientStops(existingTheme.originalAccent)) {
+            updatedTheme.originalAccent = existingTheme.originalAccent;
+        }
 
         this.themes.set(uuid, updatedTheme);
         this.saveCustomThemes();
@@ -1303,6 +1328,9 @@ class CustomThemeManager {
             'User',
             mergeStoredAppearance(currentTheme.appearance)
         );
+        if (currentTheme instanceof CustomTheme && hasGradientStops(currentTheme.originalAccent)) {
+            customTheme.originalAccent = currentTheme.originalAccent;
+        }
 
         this.addTheme(customTheme);
         return customTheme;

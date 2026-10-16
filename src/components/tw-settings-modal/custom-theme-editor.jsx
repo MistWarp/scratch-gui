@@ -57,6 +57,8 @@ const CustomThemeEditor = ({
     ));
     const [initialSignature] = React.useState(() => (gradient ? gradientSignature(gradient) : ''));
     const [trying, setTrying] = React.useState(false);
+    const tryingRef = React.useRef(false);
+    tryingRef.current = trying;
     const nameRef = React.useRef(null);
     const backRef = React.useRef(null);
     const previewRef = React.useRef(onPreview);
@@ -78,7 +80,9 @@ const CustomThemeEditor = ({
 
     React.useEffect(() => {
         if (!trying) return;
-        const timeout = setTimeout(() => previewRef.current(previewThemeRef.current), PREVIEW_DELAY);
+        const timeout = setTimeout(() => {
+            if (tryingRef.current) previewRef.current(previewThemeRef.current);
+        }, PREVIEW_DELAY);
         return () => clearTimeout(timeout);
     }, [trying, gradient]);
 
@@ -86,12 +90,10 @@ const CustomThemeEditor = ({
 
     const handleTryToggle = React.useCallback(() => {
         if (trying) {
+            tryingRef.current = false;
             previewRef.current(null);
-            setTrying(false);
-        } else {
-            previewRef.current(previewThemeRef.current);
-            setTrying(true);
         }
+        setTrying(!trying);
     }, [trying]);
 
     const handleNameChange = React.useCallback(e => {
