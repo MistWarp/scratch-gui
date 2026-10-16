@@ -2882,5 +2882,8 @@
   "Rotur took action": "Rotur took action",
   "Rotur found no rule broken": "Rotur found no rule broken",
   "With Rotur, sent by @{value1}": "With Rotur, sent by @{value1}",
-  "With Rotur, sent automatically": "With Rotur, sent automatically"
+  "With Rotur, sent automatically": "With Rotur, sent automatically",
+  "MistWarp is part of Rotur, so the Rotur Privacy Policy explains how your information is handled. The Children's Privacy Notice explains what happens when children use MistWarp, including the editor without an account.": "MistWarp is part of Rotur, so the Rotur Privacy Policy explains how your information is handled. The Children's Privacy Notice explains what happens when children use MistWarp, including the editor without an account.",
+  "Read the Rotur Privacy Policy": "Read the Rotur Privacy Policy",
+  "Read the Children's Privacy Notice": "Read the Children's Privacy Notice"
 }

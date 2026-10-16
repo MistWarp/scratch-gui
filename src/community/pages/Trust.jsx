@@ -9,6 +9,7 @@ import PageHeader from '../components/ui/PageHeader.jsx';
 import SectionHeading from '../components/ui/SectionHeading.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import styles from './InfoPage.module.css';
+import {CHILDREN_PRIVACY_URL, PRIVACY_URL} from '../../lib/constants/brand.js';
 
 const Trust = () => {
     const {text: communityText} = useCommunityText();
@@ -46,6 +47,9 @@ const Trust = () => {
             </div>
             <section className={styles.section}>
                 <SectionHeading icon={Lock} title={communityText('Privacy')} />
+                <p>{communityText('MistWarp is part of Rotur, so the Rotur Privacy Policy explains how your information is handled. The Children\'s Privacy Notice explains what happens when children use MistWarp, including the editor without an account.')}</p>
+                <p><a href={PRIVACY_URL} target="_blank" rel="noreferrer">{communityText('Read the Rotur Privacy Policy')}</a></p>
+                <p><a href={CHILDREN_PRIVACY_URL} target="_blank" rel="noreferrer">{communityText('Read the Children\'s Privacy Notice')}</a></p>
                 <p>{communityText("MistWarp stores the profile details you add, projects and their assets, comments, reactions, activity, notification history, settings, moderation records, and safety preferences. Project diagnostics may include load time, input device type, and a short runtime error. They do not include scripts, variable values, or the viewer's username.")}</p>
                 <p>{communityText('Project blobs may be stored in Cloudflare R2. Project repositories and contribution history may be stored on git.rotur.dev. MistWarp uses Rotur for identity and notifications.')}</p>
                 <p>{communityText('Public projects, profiles, comments, and activity can be seen by other people. Unlisted content is available to anyone with its link. Do not put private information in a project or public profile.')}</p>

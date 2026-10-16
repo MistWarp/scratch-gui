@@ -43,7 +43,7 @@ import {isBrowserSupported} from '../lib/utils/tw-environment-support-prober';
 import AddonChannels from '../addons/channels';
 import {loadServiceWorker} from './load-service-worker';
 import runAddons from '../addons/entry';
-import {APP_NAME, FEEDBACK_URL, GITHUB_URL} from '../lib/constants/brand.js';
+import {APP_NAME, CHILDREN_PRIVACY_URL, FEEDBACK_URL, GITHUB_URL, PRIVACY_URL} from '../lib/constants/brand.js';
 
 import windowManager from '../addons/window-system/window-manager';
 
@@ -278,11 +278,18 @@ const Footer = () => (
                             id="tw.code"
                         />
                     </a>
-                    <a href="privacy.html">
+                    <a href={PRIVACY_URL}>
                         <FormattedMessage
                             defaultMessage="Privacy Policy"
                             description="Link to privacy policy"
                             id="tw.privacy"
+                        />
+                    </a>
+                    <a href={CHILDREN_PRIVACY_URL}>
+                        <FormattedMessage
+                            defaultMessage="Children's Privacy"
+                            description="Link in footer to the notice about how MistWarp handles children's information"
+                            id="tw.footer.childrensPrivacy"
                         />
                     </a>
                 </div>

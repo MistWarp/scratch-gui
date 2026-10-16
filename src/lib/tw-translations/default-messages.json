@@ -1613,6 +1613,7 @@
   "tw.feedback": "Feedback & Bugs",
   "tw.code": "Source Code",
   "tw.privacy": "Privacy Policy",
+  "tw.footer.childrensPrivacy": "Children's Privacy",
   "tw.unshared2.1": "Unshared projects are no longer visible.",
   "tw.unshared.2": "For more information, visit: {link}",
   "tw.unshared.cache": "If the project was shared recently, this message may appear incorrectly for a few minutes.",
