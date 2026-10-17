@@ -57,6 +57,7 @@ describe('Rotur notification visibility', () => {
         expect(isVisibleNotification({type: 'reply', post_id: 'p1', reply_id: 'r1', user: 'alice'})).toBe(true);
         expect(isVisibleNotification({type: 'repost', original_post_id: 'p1', repost_id: 'p2', user: 'a'})).toBe(true);
         expect(isVisibleNotification({type: 'mention', post_id: 'p1', user: 'alice', platform: 'rotur'})).toBe(true);
+        expect(isVisibleNotification({type: 'pounce', post_id: 'p1', user: 'alice'})).toBe(true);
     });
 
     test('hides claw-shaped activity that belongs to another app or has no post', () => {

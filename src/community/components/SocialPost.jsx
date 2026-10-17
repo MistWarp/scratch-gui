@@ -3,8 +3,8 @@ import PropTypes from 'prop-types';
 import React, {useEffect, useRef, useState} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
 import {
-    Bookmark, Check, Copy, Edit3, Flag, Heart, MessageCircle, MoreHorizontal, Pin, Repeat2,
-    ShieldOff, Trash2
+    Bookmark, Check, Copy, CornerDownRight, Edit3, ExternalLink, Flag, Heart, Megaphone, MessageCircle,
+    MoreHorizontal, PawPrint, Pin, Repeat2, ShieldOff, Trash2
 } from 'lucide-react';
 import api from '../api.js';
 import rotur from '../rotur.js';
@@ -12,6 +12,10 @@ import {timeAgo} from '../format.js';
 import copyText from '../copy-text.js';
 import {postUrl, timestampMs} from '../following-feed.js';
 import {madeWithProject} from '../claw-links.js';
+import {
+    canPounce, mayPromote, postStats, pouncePostLink, replyContext, withLike
+} from '../claw-posts.js';
+import {useImpression} from '../impressions.js';
 import {useUser} from '../UserContext.jsx';
 import Avatar from './Avatar.jsx';
 import Button from './ui/Button.jsx';
@@ -24,11 +28,11 @@ import Notice from './ui/Notice.jsx';
 import GroupTag from './GroupTag.jsx';
 import PostAttachment from './PostAttachment.jsx';
 import PostProjectCard from './PostProjectCard.jsx';
+import PostReasons from './PostReasons.jsx';
+import PounceButton from './PounceButton.jsx';
 import RichText from './RichText.jsx';
 import UserLink from './UserLink.jsx';
 import styles from './SocialPost.module.css';
-
-const count = value => (Array.isArray(value) ? value.length : Number(value) || 0);
 
 const Poll = ({postId, poll, onChange}) => {
     const {text: communityText} = useCommunityText();
@@ -72,7 +76,9 @@ Poll.propTypes = {
     onChange: PropTypes.func.isRequired
 };
 
-const SocialPost = ({initialPost, detail = false, onChange, onDelete, onLayoutChange}) => {
+const SocialPost = ({
+    initialPost, detail = false, hideReplies = false, showReplyContext = true, onChange, onDelete, onLayoutChange
+}) => {
     const {text: communityText} = useCommunityText();
     const {user, login} = useUser();
     const navigate = useNavigate();
@@ -89,12 +95,16 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete, onLayoutCh
     const [reportTarget, setReportTarget] = useState(null);
     const [reportReason, setReportReason] = useState('');
     const deleteInFlight = useRef(false);
+    const articleRef = useRef(null);
     const mine = Boolean(user && String(user.username).toLowerCase() === String(post.user).toLowerCase());
-    const likes = Array.isArray(post.likes) ? post.likes : [];
-    const liked = Boolean(user && likes.some(name => (
-        String(name).toLowerCase() === String(user.username).toLowerCase()
-    )));
+    const stats = postStats(post, user && user.username);
+    const {liked} = stats;
     const replies = Array.isArray(post.replies) ? post.replies : [];
+    const context = showReplyContext ? replyContext(post) : null;
+    const reasonSaysPounced = (Array.isArray(post.reasons) ? post.reasons : [])
+        .some(reason => reason && reason.type === 'pounced_by');
+    const pouncedBy = (Array.isArray(post.pounced_by) && !reasonSaysPounced ? post.pounced_by : [])
+        .filter(name => typeof name === 'string' && name).slice(0, 3);
     const media = post.attachments && post.attachments.length ? post.attachments :
         (post.attachment ? [post.attachment] : []);
 
@@ -132,7 +142,9 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete, onLayoutCh
             return;
         }
         if (onLayoutChange) onLayoutChange();
-    }, [editing, notice, error, post.content, post.poll, post.pinned, post.edited_at]);
+    }, [editing, notice, error, post.content, post.poll, post.pinned, post.edited_at, pouncedBy.length]);
+
+    useImpression(articleRef, post.impression);
 
     useEffect(() => {
         if (!user || !detail) return;
@@ -154,15 +166,13 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete, onLayoutCh
     }, [detail, post.id, post.user, user && user.username]);
 
     const toggleLike = () => run('like', async () => {
-        const nextLikes = liked ? likes.filter(name => String(name).toLowerCase() !== user.username.toLowerCase()) :
-            [...likes, user.username];
-        update({...post, likes: nextLikes});
+        update(withLike(post, !liked, user.username));
         try {
             if (liked) await rotur.unlikePost(post.id);
             else await rotur.likePost(post.id);
             api.checkPostMilestones(post.id).catch(() => {});
         } catch (cause) {
-            update({...post, likes});
+            update(post);
             throw cause;
         }
     });
@@ -172,7 +182,11 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete, onLayoutCh
         if (!content) return;
         run('reply', async () => {
             const created = await rotur.replyToPost(post.id, content);
-            update({...post, replies: [...replies, {...created, user: created.user || user.username}]});
+            update({
+                ...post,
+                replies: [...replies, {...created, user: created.user || user.username}],
+                reply_count: stats.replyCount + 1
+            });
             setReply('');
         });
     };
@@ -220,11 +234,12 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete, onLayoutCh
     const reportingReply = Boolean(reportTarget && reportTarget.type === 'reply');
     const when = timestampMs(post.timestamp);
     const project = post.is_repost ? null : madeWithProject(post);
-    const views = Number(post.views) || 0;
+    const views = stats.views;
+    const promotable = mayPromote(post, user && user.username);
     const viewsText = views === 1 ? communityText('1 view') : communityText('{value1} views', {value1: views});
 
     return (
-        <article className={detail ? styles.detail : styles.card}>
+        <article className={detail ? styles.detail : styles.card} ref={articleRef}>
             {confirmDelete ? (
                 <ConfirmModal
                     destructive
@@ -329,6 +344,14 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete, onLayoutCh
                                             {post.pinned ? communityText('Unpin') : communityText('Pin')}
                                         </DropdownItem>
                                     ) : null}
+                                    {promotable ? (
+                                        <DropdownItem
+                                            onClick={() => {
+                                                close();
+                                                window.open(pouncePostLink(post.id), '_blank', 'noopener');
+                                            }}
+                                        ><Megaphone size={15} />{communityText('Promote on pounce')}</DropdownItem>
+                                    ) : null}
                                     {mine ? (
                                         <DropdownItem
                                             danger
@@ -351,6 +374,26 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete, onLayoutCh
                         </Dropdown>
                     ) : null}
                 </header>
+                {context ? (
+                    <p className={styles.context}>
+                        <CornerDownRight size={13} aria-hidden="true" />
+                        <Link to={postUrl(context.parentId)}>
+                            {context.user ?
+                                communityText('Replying to {value1}', {value1: `@${context.user}`}) :
+                                communityText('Replying to a post')}
+                        </Link>
+                        {context.selfThread && context.rootId ? (
+                            <Link to={postUrl(context.rootId)}>{communityText('Show this thread')}</Link>
+                        ) : null}
+                    </p>
+                ) : null}
+                <PostReasons post={post} onLayoutChange={onLayoutChange} />
+                {pouncedBy.length ? (
+                    <p className={styles.pouncedBy}>
+                        <PawPrint size={13} aria-hidden="true" />
+                        {communityText('Pounced by {value1}', {value1: pouncedBy.map(name => `@${name}`).join(', ')})}
+                    </p>
+                ) : null}
                 {editing ? (
                     <form className={styles.editForm} onSubmit={saveEdit}>
                         <textarea
@@ -393,10 +436,15 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete, onLayoutCh
                         disabled={Boolean(busy)}
                         aria-label={liked ? communityText('Unlike post') : communityText('Like post')}
                     >
-                        <Heart size={16} fill={liked ? 'currentColor' : 'none'} /> {count(likes)}
+                        <Heart size={16} fill={liked ? 'currentColor' : 'none'} /> {stats.likeCount}
                     </Button>
-                    <Button onClick={() => (detail ? null : navigate(postUrl(post.id)))}>
-                        <MessageCircle size={16} /> {count(replies)}
+                    <Button
+                        aria-label={communityText('{value1, plural, one {Reply, # reply} other {Reply, # replies}}', {
+                            value1: stats.replyCount
+                        })}
+                        onClick={() => (detail ? null : navigate(postUrl(post.id)))}
+                    >
+                        <MessageCircle size={16} /> {stats.replyCount}
                     </Button>
                     {!post.is_repost && !post.profile_only ? <Button
                         disabled={Boolean(busy)} onClick={() => run('repost', async () => {
@@ -404,6 +452,21 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete, onLayoutCh
                             setNotice(communityText('Reposted to your profile.'));
                         })}
                     ><Repeat2 size={16} /> {detail ? communityText('Repost') : null}</Button> : null}
+                    {canPounce(post) ? (
+                        <PounceButton
+                            post={post}
+                            mine={mine}
+                            onChange={update}
+                            onNotice={message => {
+                                setError('');
+                                setNotice(message);
+                            }}
+                            onError={message => {
+                                setNotice('');
+                                setError(message);
+                            }}
+                        />
+                    ) : null}
                     <Button disabled={Boolean(busy)} onClick={toggleSaved}>
                         <Bookmark size={16} fill={saved ? 'currentColor' : 'none'} />
                         {detail ? (saved ? communityText('Saved') : communityText('Save')) : null}
@@ -417,6 +480,13 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete, onLayoutCh
                     {mine ? <Button
                         onClick={togglePin}
                     ><Pin size={15} /> {post.pinned ? communityText('Unpin') : communityText('Pin')}</Button> : null}
+                    {promotable ? (
+                        <Button as="a" href={pouncePostLink(post.id)} target="_blank" rel="noopener noreferrer">
+                            <Megaphone size={15} />
+                            {communityText('Promote on pounce')}
+                            <ExternalLink size={13} aria-hidden="true" />
+                        </Button>
+                    ) : null}
                     {mine ? (
                         <Button variant="danger" onClick={() => setConfirmDelete(true)}>
                             <Trash2 size={15} />
@@ -447,7 +517,7 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete, onLayoutCh
                 </div>
                 {error ? <Notice variant="error" className={styles.message}>{error}</Notice> : null}
                 {notice ? <Notice variant="success" className={styles.message}>{notice}</Notice> : null}
-                {detail ? (
+                {detail && !hideReplies ? (
                     <div className={styles.replies}>
                         {user ? (
                             <form onSubmit={sendReply}>
@@ -502,6 +572,8 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete, onLayoutCh
 SocialPost.propTypes = {
     initialPost: PropTypes.object.isRequired,
     detail: PropTypes.bool,
+    hideReplies: PropTypes.bool,
+    showReplyContext: PropTypes.bool,
     onChange: PropTypes.func,
     onDelete: PropTypes.func,
     onLayoutChange: PropTypes.func

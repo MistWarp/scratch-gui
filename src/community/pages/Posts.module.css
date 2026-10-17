@@ -7,11 +7,42 @@
 
 .period {
     flex: 0 0 auto;
-    width: 150px;
+    width: 190px;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: minmax(0, 680px) minmax(220px, 300px);
+    align-items: start;
+    gap: 24px;
+}
+
+.layout > aside {
+    position: sticky;
+    top: 76px;
+}
+
+.feed {
+    display: grid;
+    gap: 12px;
+    max-width: 680px;
+}
+
+.more {
+    justify-self: center;
+}
+
+@media (max-width: 960px) {
+    .layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .layout > aside {
+        position: static;
+    }
 }
 
 .list {
     display: grid;
     gap: 12px;
-    max-width: 680px;
 }

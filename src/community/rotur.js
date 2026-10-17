@@ -12,7 +12,15 @@ const ROTUR_APP_ID = 'app_1938b6a87799f862';
 
 const roturToken = () => getRoturToken();
 
-const get = async (path, params = {}) => {
+const roturError = (response, data) => {
+    const error = new Error(responseMessage(response.status, data && data.error));
+    error.status = response.status;
+    if (data && typeof data.code === 'string') error.code = data.code;
+    if (data && typeof data === 'object') error.data = data;
+    return error;
+};
+
+const get = async (path, params = {}, {optionalAuth = false} = {}) => {
     const query = new URLSearchParams();
     for (const [key, value] of Object.entries(params)) {
         if (value !== null && typeof value !== 'undefined') {
@@ -20,20 +28,17 @@ const get = async (path, params = {}) => {
         }
     }
     const token = roturToken();
-    const headers = token ? {Authorization: `Bearer ${token}`} : {};
     const search = query.toString();
-    const response = await fetch(`${ROTUR_API}${path}${search ? `?${search}` : ''}`, {headers});
+    const url = `${ROTUR_API}${path}${search ? `?${search}` : ''}`;
+    let response = await fetch(url, {headers: token ? {Authorization: `Bearer ${token}`} : {}});
+    if (optionalAuth && token && response.status === 401) response = await fetch(url);
     let data = null;
     try {
         data = await response.json();
     } catch (e) {
         data = null;
     }
-    if (!response.ok || (data && data.error)) {
-        const error = new Error(responseMessage(response.status, data && data.error));
-        error.status = response.status;
-        throw error;
-    }
+    if (!response.ok || (data && data.error)) throw roturError(response, data);
     return data;
 };
 
@@ -61,11 +66,7 @@ const mutate = async (path, {method = 'POST', params = {}, body, scopes = []} = 
         ...(typeof body === 'undefined' ? {} : {body: JSON.stringify(body)})
     });
     const data = await response.json().catch(() => null);
-    if (!response.ok || (data && data.error)) {
-        const error = new Error(responseMessage(response.status, data && data.error));
-        error.status = response.status;
-        throw error;
-    }
+    if (!response.ok || (data && data.error)) throw roturError(response, data);
     cache.clear();
     return data;
 };
@@ -217,6 +218,91 @@ const postBody = (content, options, madeWith) => {
     return body;
 };
 
+const missingEndpoints = new Set();
+
+const routeMissing = error => Boolean(error) && (
+    ((error.status === 404 || error.status === 405) && (!error.code || error.code === 'not_found')) ||
+    error.status === 501 || error.code === 'not_available'
+);
+
+const optionalEndpoint = async (name, request) => {
+    if (missingEndpoints.has(name)) return null;
+    try {
+        return await request();
+    } catch (error) {
+        if (routeMissing(error)) {
+            missingEndpoints.add(name);
+            return null;
+        }
+        throw error;
+    }
+};
+
+const asPage = data => (data && Array.isArray(data.items) ? {
+    ...data,
+    items: data.items.filter(item => item && item.id),
+    next_cursor: typeof data.next_cursor === 'string' && data.next_cursor ? data.next_cursor : null
+} : null);
+
+const asList = data => (Array.isArray(data) ? data : ((data && Array.isArray(data.items)) ? data.items : []));
+
+const postPath = (id, rest = '') => `/v2/posts/${encodeURIComponent(id)}${rest}`;
+
+const forYou = ({cursor, limit = 20} = {}) => optionalEndpoint('for-you', async () => {
+    const page = asPage(await get('/v2/feed/for-you', {cursor: cursor || null, limit: cursor ? null : limit}, {
+        optionalAuth: true
+    }));
+    if (!page) {
+        missingEndpoints.add('for-you');
+        return null;
+    }
+    return {...page, personalised: Boolean(page.personalised)};
+});
+
+const thread = (id, {sort = 'relevant', limit = 20} = {}) => optionalEndpoint('thread', async () => {
+    const data = await get(postPath(id, '/thread'), {sort, limit}, {optionalAuth: true});
+    if (!data || !data.post || !data.post.id) {
+        missingEndpoints.add('thread');
+        return null;
+    }
+    return {
+        ancestors: Array.isArray(data.ancestors) ? data.ancestors.filter(item => item && item.id) : [],
+        post: data.post,
+        replies: asPage(data.replies) || {items: [], next_cursor: null},
+        sort: data.sort || sort
+    };
+});
+
+const threadReplies = (id, {sort = 'relevant', cursor, limit = 20} = {}) => get(postPath(id, '/replies'), {
+    sort, cursor: cursor || '', limit
+}, {optionalAuth: true}).then(data => asPage(data) || {items: [], next_cursor: null});
+
+const pounceAllowance = () => (roturToken() ? optionalEndpoint('pounces', async () => {
+    const data = await get('/v2/me/pounces');
+    return data && typeof data.left === 'number' ? data : null;
+}) : Promise.resolve(null));
+
+const setPounce = (id, pounced) => mutate(postPath(id, '/pounce'), {
+    method: pounced ? 'PUT' : 'DELETE',
+    scopes: ['posts:like']
+});
+
+const reportImpressions = async (impressions, {keepalive = false} = {}) => {
+    const token = roturToken();
+    if (!token || missingEndpoints.has('impressions')) return null;
+    const response = await fetch(`${ROTUR_API}/v2/impressions`, {
+        method: 'POST',
+        keepalive,
+        headers: {'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json'},
+        body: JSON.stringify({impressions})
+    });
+    const data = await response.json().catch(() => null);
+    if (response.ok) return data;
+    const error = roturError(response, data);
+    if (routeMissing(error) || error.status === 403) missingEndpoints.add('impressions');
+    throw error;
+};
+
 const rotur = {
     avatar,
     banner,
@@ -246,7 +332,14 @@ const rotur = {
     createPost: (content, {madeWith, ...options} = {}) => (madeWith ?
         mutate('/v2/posts', {method: 'POST', body: postBody(content, options, madeWith), scopes: ['posts:create']}) :
         authenticatedAction(['posts:create'], client => client.posts.create(content, {...options, os: 'MistWarp'}))),
-    post: id => getRotur().posts.get(id),
+    post: id => get(postPath(id), {}, {optionalAuth: true}),
+    forYou,
+    thread,
+    threadReplies,
+    pounceAllowance,
+    pounce: id => setPounce(id, true),
+    unpounce: id => setPounce(id, false),
+    reportImpressions,
     viewPost: id => authenticatedAction([], client => client.posts.view(id)),
     likePost: id => mutate(`/v2/posts/${encodeURIComponent(id)}/like`, {
         method: 'PUT',
@@ -273,8 +366,10 @@ const rotur = {
     unbookmarkPost: id => authenticatedAction([], client => client.posts.unbookmark(id)),
     bookmarks: () => authenticatedAction([], client => client.posts.bookmarks()),
     scheduledPosts: () => authenticatedAction([], client => client.posts.scheduled()),
-    topPosts: (limit = 50, hours = 24) => getRotur().posts.top(limit, hours),
-    searchPosts: (query, limit = 20) => getRotur().posts.search(query, limit),
+    topPosts: (limit = 50, hours = 24) => get('/v2/posts/top', {limit, time_period: hours}, {
+        optionalAuth: true
+    }).then(asList),
+    searchPosts: (query, limit = 20) => get('/v2/posts/search', {q: query, limit}, {optionalAuth: true}).then(asList),
     votePost: (id, option) => authenticatedAction([], client => client.posts.vote(id, option)),
     reportPost: (type, id, reason) => authenticatedAction(
         [],

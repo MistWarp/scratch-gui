@@ -33,7 +33,8 @@ describe('notification targets', () => {
         [{type: 'follow', actor: 'alice'}, null],
         [{type: 'like', post_id: 'p 1', user: 'alice'}, {to: '/posts/p%201'}],
         [{type: 'reply', post_id: 'p1', reply_id: 'r1'}, {to: '/posts/p1'}],
-        [{type: 'repost', original_post_id: 'p1', repost_id: 'p2'}, {to: '/posts/p1'}]
+        [{type: 'repost', original_post_id: 'p1', repost_id: 'p2'}, {to: '/posts/p1'}],
+        [{type: 'pounce', post_id: 'p1', user: 'alice'}, {to: '/posts/p1'}]
     ])('links %o', (notification, target) => {
         expect(targetFor(notification, 'viewer')).toEqual(target);
     });
@@ -95,6 +96,7 @@ describe('notification sentences', () => {
     test.each([
         [{type: 'space_comment', spaceTitle: 'Game Jam'}, 'alice commented on Game Jam'],
         [{type: 'love'}, 'alice loved your project'],
+        [{type: 'pounce', post_id: 'p1'}, 'alice pounced on your post'],
         [{type: 'donation', amount: 1}, 'alice donated 1 credit to you'],
         [{type: 'donation', amount: 20}, 'alice donated 20 credits to you'],
         [{type: 'contribution_merged', projectTitle: 'Cool Game', pull: 2},
