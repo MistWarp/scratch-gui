@@ -97,7 +97,7 @@ const splitSession = {
     },
     clear: () => {
         tokenGeneration += 1;
-        staleToken = editorToken ? editorToken.token : null;
+        if (editorToken) staleToken = editorToken.token;
         editorToken = null;
         editorTokenRequest = null;
     }

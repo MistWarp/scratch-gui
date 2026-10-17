@@ -14,6 +14,7 @@ import ChevronDown from './ChevronDown.jsx';
 import menuBarStyles from './menu-bar.css';
 import accountNavStyles from './account-nav.css';
 import {getRoturSessionApi} from '../../lib/rotur/session-api.js';
+import {getState as getIdentityState} from '../../lib/rotur/identity.js';
 import {
     openAccountMenu,
     closeAccountMenu,
@@ -24,12 +25,9 @@ import communityEnabled from '../../lib/community/enabled.js';
 import {hasRotur} from '../../lib/rotur/availability.js';
 
 const logout = onLogout => {
-    if (onLogout) {
-        onLogout();
-        return;
-    }
+    if (onLogout) return onLogout();
     const api = getRoturSessionApi();
-    if (api && api.logout) api.logout();
+    return api && api.logout ? api.logout() : null;
 };
 
 const getAdminLabel = (openReports, openErrors) => {
@@ -56,8 +54,11 @@ const getAdminLabel = (openReports, openErrors) => {
 const RoturAccount = props => {
     const handleSwitchAccount = React.useCallback(() => {
         props.onCloseMenu();
-        logout(props.onLogout);
-        props.onOpenLogin();
+        Promise.resolve(logout(props.onLogout))
+            .catch(() => null)
+            .then(() => {
+                if (!getIdentityState().user) props.onOpenLogin();
+            });
     }, [props.onCloseMenu, props.onLogout, props.onOpenLogin]);
 
     const handleOpenSettings = React.useCallback(() => {

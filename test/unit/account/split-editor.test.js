@@ -90,6 +90,23 @@ test('a rejected token is reported to the frame as stale', async () => {
     expect(mockCall).toHaveBeenCalledWith('editorSession', {stale: first});
 });
 
+test('several requests rejected at once still report the token as stale', async () => {
+    await identity.restore();
+    const first = loadSession();
+    mockCall.mockClear();
+    window.fetch = jest.fn(() => Promise.resolve({ok: false, status: 401, json: () => Promise.resolve({})}));
+    await Promise.all([
+        request('/me/quota', {cache: false}).catch(() => null),
+        request('/me/settings', {cache: false}).catch(() => null),
+        request('/notifications', {cache: false}).catch(() => null)
+    ]);
+    const sessionCalls = mockCall.mock.calls.filter(([method]) => method === 'editorSession');
+    expect(sessionCalls.length).toBeGreaterThan(0);
+    expect(sessionCalls[sessionCalls.length - 1][1]).toEqual({stale: expect.any(String)});
+    expect(sessionCalls.every(([, args]) => args.stale)).toBe(true);
+    expect(sessionCalls[0][1]).toEqual({stale: first});
+});
+
 test('signing out elsewhere reaches the editor', async () => {
     await identity.restore();
     mockIdentity = {status: 'idle', user: null, banMessage: null};

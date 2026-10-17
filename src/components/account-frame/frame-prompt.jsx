@@ -71,8 +71,8 @@ class FramePrompt extends React.Component {
                 <h2>{'Sign out of MistWarp?'}</h2>
                 <p>
                     {this.props.data.username ?
-                        `This signs @${this.props.data.username} out of MistWarp in every tab on this browser.` :
-                        'This signs you out of MistWarp in every tab on this browser.'}
+                        `This signs @${this.props.data.username} out of MistWarp in every tab in this browser.` :
+                        'This signs you out of MistWarp in every tab in this browser.'}
                 </p>
                 <div className={modalStyles.buttons}>
                     <button
