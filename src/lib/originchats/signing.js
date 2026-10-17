@@ -1,6 +1,9 @@
 import {ensureScopes, getRotur} from '../rotur/client.js';
 import {isCancelled} from '../rotur/oauth.js';
 import {signContent} from './device-key.js';
+import {ACCOUNT_ORIGIN, isSplitEditor} from '../account/origins.js';
+import {FRAME_PATH} from '../account/protocol.js';
+import * as accountBridge from '../account/bridge.js';
 
 const SIGNING_SCOPE = 'signing:keys';
 const SIGNING_CAPABILITY = 'message_signatures_v1';
@@ -20,7 +23,30 @@ const hasEd25519 = () => {
     return nativeSupport;
 };
 
-const scopeGranted = () => (getRotur().loggedIn ? ensureScopes([SIGNING_SCOPE]) : Promise.resolve(false));
+const scopeGranted = () => {
+    if (isSplitEditor()) {
+        return accountBridge.call('chat', {action: 'signingStatus'}).then(Boolean, () => false);
+    }
+    return getRotur().loggedIn ? ensureScopes([SIGNING_SCOPE]) : Promise.resolve(false);
+};
+
+const GRANT_WINDOW = 'mw-account-grant';
+
+const requestSplitPermission = () => new Promise((resolve, reject) => {
+    const left = Math.max(0, (screen.width - 480) / 2);
+    const top = Math.max(0, (screen.height - 640) / 2);
+    const popup = window.open(`${ACCOUNT_ORIGIN}${FRAME_PATH}?grant=signing`, GRANT_WINDOW,
+        `popup,width=480,height=640,left=${left},top=${top}`);
+    if (!popup) {
+        reject(new Error('Allow pop-ups for this site, then try again.'));
+        return;
+    }
+    const watch = setInterval(() => {
+        if (!popup.closed) return;
+        clearInterval(watch);
+        resolve();
+    }, 500);
+});
 
 const signingStatus = async capabilities => {
     if (!Array.isArray(capabilities) || !capabilities.includes(SIGNING_CAPABILITY)) return 'off';
@@ -29,6 +55,10 @@ const signingStatus = async capabilities => {
 };
 
 const requestSigningPermission = async () => {
+    if (isSplitEditor()) {
+        await requestSplitPermission();
+        return scopeGranted();
+    }
     try {
         await ensureScopes([SIGNING_SCOPE], {prompt: true});
     } catch (error) {
@@ -42,6 +72,18 @@ const messageSigningContent = (authorId, content, attachments, timestamp, signin
 ];
 
 const signMessage = async ({content, attachments, timestamp, signingUrl}) => {
+    if (isSplitEditor()) {
+        return accountBridge.call('chat', {
+            action: 'sign',
+            content: content || '',
+            attachments: attachments || [],
+            timestamp,
+            signingUrl
+        }).catch(error => {
+            if (error && error.code === 'signing_unavailable') error.signingUnavailable = true;
+            throw error;
+        });
+    }
     if (!await scopeGranted()) {
         throw Object.assign(new Error('Message signing permission was not granted'), {signingUnavailable: true});
     }

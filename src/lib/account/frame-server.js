@@ -119,8 +119,10 @@ const mintEditorSession = async ({ensureMistSession, dropMistSession, mint}) => 
 
 const EDITOR_DATA_ACTIONS = ['status', 'settings', 'restorePoints', 'restorePoint', 'asset', 'backpack', 'done'];
 
+const CHAT_ACTIONS = ['validator', 'signingStatus', 'sign'];
+
 const createFrameServer = ({
-    identity, createEditorSession, mistSession, callRotur, projectRotur, editorData, confirmSignOut,
+    identity, createEditorSession, mistSession, callRotur, projectRotur, chat, editorData, confirmSignOut,
     tokenRejected = () => Promise.resolve(false),
     store = createMemoryStore(), lock = createSerialLock(), now = Date.now
 }) => {
@@ -212,6 +214,10 @@ const createFrameServer = ({
             const action = args.action;
             if (!EDITOR_DATA_ACTIONS.includes(action) || !editorData) throw new Error('Unknown editor data request');
             return editorData[action](args);
+        },
+        chat: args => {
+            if (!CHAT_ACTIONS.includes(args.action) || !chat) throw new Error('Unknown chat request');
+            return chat[args.action](args);
         },
         projectRotur: ({action, project, scopes, method, args}) => {
             if (!validProject(project)) throw new Error('This project cannot use Rotur');
