@@ -9,6 +9,7 @@ import {
     createFrameServer, createSerialLock, createStorageStore, mintEditorSession
 } from '../lib/account/frame-server.js';
 import {createProjectRotur} from '../lib/account/frame-project-rotur.js';
+import {createEditorData} from '../lib/account/frame-editor-data.js';
 import FramePrompt, {supportsVisibilityCheck} from '../components/account-frame/frame-prompt.jsx';
 import {applyThemeVisuals, detectTheme} from '../lib/themes/themePersistance.js';
 
@@ -155,7 +156,8 @@ const startFrame = () => {
         lock: lockEditorSession,
         callRotur,
         projectRotur: createProjectRotur({prompt, getUsername}),
-        confirmSignOut: username => prompt('signout', {username})
+        confirmSignOut: username => prompt('signout', {username}),
+        editorData: createEditorData()
     });
     const restored = Promise.race([
         Promise.resolve(identity.restore()).catch(() => null),

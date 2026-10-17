@@ -22,5 +22,11 @@ import {prepareLocale} from '../lib/editor-locales';
 
 import Interface from './render-interface.jsx';
 import render from './app-target';
+import {moveEditorData} from '../lib/account/data-move.js';
 
-render(<Interface />, prepareLocale);
+const prepare = async () => {
+    if (await moveEditorData()) await new Promise(() => {});
+    await prepareLocale();
+};
+
+render(<Interface />, prepare);
