@@ -1,13 +1,15 @@
 /* global HTMLRewriter */
 
-const API_BASE = 'https://api.mistwarp.org/v1';
+import {
+    API_BASE, CARD_HEIGHT, CARD_WIDTH, DEFAULT_IMAGE, FETCH_TIMEOUT_MS, apiJson, cardUrl, escapeAttribute,
+    fetchJson, flatten, projectDetails, projectPath
+} from './_share/project.js';
+
 const WARPTHEME_API_BASE = 'https://warptheme.mistium.com/api';
 const AVATARS = 'https://avatars.rotur.dev';
 const ROTUR_API_BASE = 'https://api.rotur.dev/v2';
 const POST_ID = /^[A-Za-z0-9_-]{1,64}$/;
 const VIDEO_URL = /\.(?:mp4|webm|mov|m4v|ogv)(?:[?#]|$)/i;
-const DEFAULT_IMAGE = 'https://mistwarp.org/images/apple-touch-icon.png';
-const FETCH_TIMEOUT_MS = 3000;
 const STATIC_FILE_PATH = /^\/(?:assets|js|static\/assets)\//;
 const DOCS_PATH = /^\/docs(?:\/|$)/;
 const LEGACY_EMBED_PATH = /^\/(\d+|p[A-Za-z0-9]+)\/embed\/?$/;
@@ -148,12 +150,6 @@ const NOT_FOUND_META = {
     description: 'This page does not exist on MistWarp.'
 };
 
-const escapeAttribute = value => String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-
 class AttrSetter {
     constructor (name, value) {
         this.name = name;
@@ -181,91 +177,67 @@ class HeadAppender {
         this.url = url;
     }
     element (el) {
-        const title = escapeAttribute(this.meta.title);
-        const description = escapeAttribute(this.meta.description);
-        const image = escapeAttribute(this.meta.image);
-        const url = escapeAttribute(this.url);
-        const robots = this.meta.noindex ? '<meta name="robots" content="noindex">' : '';
-        el.append(`<meta name="twitter:title" content="${title}">` +
-            `<meta name="twitter:description" content="${description}">` +
-            `<meta name="twitter:image" content="${image}">` +
-            `${robots}<link rel="canonical" href="${url}">`, {html: true});
+        const meta = this.meta;
+        const tag = (name, value) => `<meta ${name}="${escapeAttribute(value)}">`;
+        const tags = [
+            tag('name="twitter:title" content', meta.ogTitle),
+            tag('name="twitter:description" content', meta.description),
+            tag('name="twitter:image" content', meta.image)
+        ];
+        if (meta.imageAlt) {
+            tags.push(tag('name="twitter:image:alt" content', meta.imageAlt),
+                tag('property="og:image:alt" content', meta.imageAlt));
+        }
+        if (meta.imageWidth) {
+            tags.push(tag('property="og:image:width" content', meta.imageWidth),
+                tag('property="og:image:height" content', meta.imageHeight));
+        }
+        if (meta.themeColor) tags.push(tag('name="theme-color" content', meta.themeColor));
+        if (meta.noindex) tags.push('<meta name="robots" content="noindex">');
+        tags.push(`<link rel="canonical" href="${escapeAttribute(this.url)}">`);
+        if (meta.oembedUrl) {
+            tags.push(`<link rel="alternate" type="application/json+oembed" ` +
+                `href="${escapeAttribute(meta.oembedUrl)}" title="${escapeAttribute(meta.ogTitle)}">`);
+        }
+        el.append(tags.join(''), {html: true});
     }
 }
 
-const fetchJson = async (base, path) => {
-    try {
-        const res = await fetch(`${base}${path}`, {
-            signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-            headers: {accept: 'application/json'}
-        });
-        if (res.ok) return await res.json();
-    } catch (e) {
-        return null;
-    }
-    return null;
+const PROJECT_FALLBACK = {
+    title: 'Project - MistWarp',
+    description: 'View this project on MistWarp.'
 };
 
-const apiJson = path => fetchJson(API_BASE, path);
+const sentence = value => (/[.!?~\u2026]$/.test(value) ? value : `${value}.`);
 
-const flatten = text => (text || '').replace(/\s+/g, ' ').trim()
-    .slice(0, 200);
+const playLine = (details, subject) => `Play${subject ? ` ${subject}` : ''}${details.free ? ' free' : ''} ` +
+    'in your browser on MistWarp.';
 
-const projectDetails = async id => {
-    const data = await apiJson(`/projects/${encodeURIComponent(id)}`);
-    if (!data || !data.project || data.project.shared !== true) return null;
-    const project = data.project;
-    const name = project.title || 'Untitled project';
+const gameMeta = details => {
+    const byline = `${details.name} by @${details.owner}`;
     return {
-        name,
-        owner: project.owner || 'unknown',
-        description: flatten(project.instructions || project.description) ||
-            `Play ${name} on MistWarp.`,
-        image: project.thumbUrl || null
+        title: `${byline} - MistWarp`,
+        ogTitle: byline,
+        description: details.pitch ?
+            `${sentence(details.pitch)} ${playLine(details)}` :
+            playLine(details, details.name),
+        image: cardUrl(details),
+        imageWidth: CARD_WIDTH,
+        imageHeight: CARD_HEIGHT,
+        imageAlt: details.name,
+        card: 'summary_large_image',
+        themeColor: details.accent,
+        canonicalPath: projectPath(details),
+        oembed: details.public
     };
 };
 
 const projectMeta = async id => {
     const details = await projectDetails(id);
-    if (!details) {
-        return {
-            title: 'Project - MistWarp',
-            description: 'View this project on MistWarp.'
-        };
-    }
-    return {
-        title: `${details.name} by ${details.owner} - MistWarp`,
-        description: details.description,
-        image: details.image,
-        card: details.image ? 'summary_large_image' : 'summary'
-    };
+    return details ? gameMeta(details) : PROJECT_FALLBACK;
 };
 
-const vanityMeta = async (slug, suffix) => {
-    const data = await apiJson(`/vanity/${encodeURIComponent(slug)}`);
-    if (!data || !data.id) {
-        return {
-            title: 'Project - MistWarp',
-            description: 'View this project on MistWarp.'
-        };
-    }
-    if (!suffix) return projectMeta(data.id);
-    const details = await projectDetails(data.id);
-    if (!details) {
-        return {
-            title: `${suffix} - MistWarp`,
-            description: 'View this project on MistWarp.'
-        };
-    }
-    return {
-        title: `${details.name} · ${suffix} - MistWarp`,
-        description: details.description,
-        image: details.image,
-        card: details.image ? 'summary_large_image' : 'summary'
-    };
-};
-
-const projectSubMeta = async (id, suffix) => {
+const projectSubMeta = async (id, suffix, rest) => {
     const details = await projectDetails(id);
     if (!details) {
         return {
@@ -277,8 +249,15 @@ const projectSubMeta = async (id, suffix) => {
         title: `${details.name} · ${suffix} - MistWarp`,
         description: details.description,
         image: details.image,
-        card: details.image ? 'summary_large_image' : 'summary'
+        card: details.image ? 'summary_large_image' : 'summary',
+        canonicalPath: `${projectPath(details)}${rest}`
     };
+};
+
+const vanityMeta = async (slug, suffix, rest) => {
+    const data = await apiJson(`/vanity/${encodeURIComponent(slug)}`);
+    if (!data || !data.id) return PROJECT_FALLBACK;
+    return suffix ? projectSubMeta(data.id, suffix, rest) : projectMeta(data.id);
 };
 
 const pullMeta = async (id, index) => {
@@ -288,13 +267,14 @@ const pullMeta = async (id, index) => {
     ]);
     const pull = data && data.pull;
     const projectName = details ? details.name : 'Project';
-    if (!pull) return projectSubMeta(id, 'Pull requests');
+    if (!pull) return projectSubMeta(id, 'Pull requests', '/pulls');
     return {
         title: `${pull.title || `Pull request #${index}`} · ${projectName} - MistWarp`,
         description: flatten(pull.body) ||
             (details ? details.description : `Pull request #${index} on ${projectName}.`),
         image: details ? details.image : null,
-        card: details && details.image ? 'summary_large_image' : 'summary'
+        card: details && details.image ? 'summary_large_image' : 'summary',
+        canonicalPath: details ? `${projectPath(details)}/pulls/${encodeURIComponent(index)}` : null
     };
 };
 
@@ -436,6 +416,14 @@ const themeMeta = async id => {
     };
 };
 
+const absoluteImage = (image, origin) => {
+    try {
+        return new URL(image || DEFAULT_IMAGE, origin).href;
+    } catch (e) {
+        return DEFAULT_IMAGE;
+    }
+};
+
 const hostOf = url => url.hostname.replace(/\.$/, '');
 
 const isFilePath = pathname => STATIC_FILE_PATH.test(pathname) || FILE_PATH.test(pathname);
@@ -511,15 +499,15 @@ const metaForPath = pathname => {
         if (slug === null) return NOT_FOUND_META;
         const rest = match[2] || '';
         if (!rest) return vanityMeta(slug);
-        if (rest === '/remixes') return vanityMeta(slug, 'Remix tree');
-        if (rest === '/pulls') return vanityMeta(slug, 'Pull requests');
+        if (rest === '/remixes') return vanityMeta(slug, 'Remix tree', rest);
+        if (rest === '/pulls') return vanityMeta(slug, 'Pull requests', rest);
         const pullMatch = rest.match(/^\/pulls\/([^/]+)$/);
         if (pullMatch) {
             const index = decodeSegment(pullMatch[1]);
             if (index === null) return NOT_FOUND_META;
             return vanityPullMeta(slug, index);
         }
-        if (/^\/commits\/[^/]+$/.test(rest)) return vanityMeta(slug, 'Commit');
+        if (/^\/commits\/[^/]+$/.test(rest)) return vanityMeta(slug, 'Commit', rest);
         return NOT_FOUND_META;
     }
 
@@ -529,15 +517,15 @@ const metaForPath = pathname => {
         if (id === null) return NOT_FOUND_META;
         const rest = match[2] || '';
         if (!rest) return projectMeta(id);
-        if (rest === '/remixes') return projectSubMeta(id, 'Remix tree');
-        if (rest === '/pulls') return projectSubMeta(id, 'Pull requests');
+        if (rest === '/remixes') return projectSubMeta(id, 'Remix tree', rest);
+        if (rest === '/pulls') return projectSubMeta(id, 'Pull requests', rest);
         const pullMatch = rest.match(/^\/pulls\/([^/]+)$/);
         if (pullMatch) {
             const index = decodeSegment(pullMatch[1]);
             if (index === null) return NOT_FOUND_META;
             return pullMeta(id, index);
         }
-        if (/^\/commits\/[^/]+$/.test(rest)) return projectSubMeta(id, 'Commit');
+        if (/^\/commits\/[^/]+$/.test(rest)) return projectSubMeta(id, 'Commit', rest);
         return NOT_FOUND_META;
     }
 
@@ -681,17 +669,19 @@ export const onRequest = async context => {
     }
     if (!meta) return response;
 
-    const canonicalUrl = `${url.origin}${url.pathname}`;
+    const canonicalUrl = `${url.origin}${meta.canonicalPath || url.pathname}`;
     const completeMeta = {
         ...meta,
-        image: meta.image || DEFAULT_IMAGE,
-        card: meta.card || 'summary'
+        ogTitle: meta.ogTitle || meta.title,
+        image: absoluteImage(meta.image, url.origin),
+        card: meta.card || 'summary',
+        oembedUrl: meta.oembed ? `${url.origin}/oembed?url=${encodeURIComponent(canonicalUrl)}&format=json` : null
     };
 
     return new HTMLRewriter()
         .on('title', new TextReplacer(completeMeta.title))
         .on('meta[name="description"]', new AttrSetter('content', completeMeta.description))
-        .on('meta[property="og:title"]', new AttrSetter('content', completeMeta.title))
+        .on('meta[property="og:title"]', new AttrSetter('content', completeMeta.ogTitle))
         .on('meta[property="og:description"]', new AttrSetter('content', completeMeta.description))
         .on('meta[property="og:url"]', new AttrSetter('content', canonicalUrl))
         .on('meta[property="og:image"]', new AttrSetter('content', completeMeta.image))

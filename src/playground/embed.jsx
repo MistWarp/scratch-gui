@@ -14,6 +14,7 @@ import TWStateManagerHOC from '../lib/components/tw-state-manager-hoc.jsx';
 import {applyEmbedThemeMessage} from '../lib/themes/embed-theme';
 import {request} from '../lib/community/api.js';
 import {ACCOUNT_ORIGIN, isSplitEditor} from '../lib/account/origins.js';
+import initDebugger from '../lib/debugger/controller.js';
 
 import GUI from './render-gui.jsx';
 import render from './app-target';
@@ -41,6 +42,14 @@ const urlParams = new URLSearchParams(location.search);
 const projectId = urlParams.get('platform_project') || getProjectId();
 const sessionStartedAt = performance.now();
 let playing = false;
+const LINK_BACK_REFS = new Set(['embed', 'oembed']);
+const linkBack = urlParams.get('mw_public') === '1' ? document.createElement('a') : null;
+let projectRunning = false;
+let projectPaused = false;
+
+const updateLinkBack = () => {
+    if (linkBack) linkBack.hidden = projectRunning && !projectPaused;
+};
 
 const reportDiagnostic = diagnostic => {
     if (window.parent !== window && urlParams.get('mw_bridge') === '1') {
@@ -83,13 +92,25 @@ const finishPlaytime = () => {
 const onVmInit = _vm => {
     vm = _vm;
     vm.on('PROJECT_RUN_START', () => {
+        projectRunning = true;
+        updateLinkBack();
         if (!playing) {
             playing = true;
             reportDiagnostic({type: 'playtime_start'});
         }
         reportDiagnostic({type: 'start'});
     });
-    vm.on('PROJECT_RUN_STOP', finishPlaytime);
+    vm.on('PROJECT_RUN_STOP', () => {
+        projectRunning = false;
+        updateLinkBack();
+        finishPlaytime();
+    });
+    if (linkBack) {
+        initDebugger(vm).events.addEventListener('pause', event => {
+            projectPaused = event.paused;
+            updateLinkBack();
+        });
+    }
 };
 
 const onProjectLoaded = () => {
@@ -139,7 +160,8 @@ const resolvePublicEmbed = async () => {
         params.set('project_url', project.projectJsonUrl);
         params.set('mw_assets', project.assetsBase);
         params.set('platform_project', project.id);
-        params.set('mw_public', '1');
+        if (project.shared === true && project.visibility === 'public') params.set('mw_public', '1');
+        if (LINK_BACK_REFS.has(urlParams.get('ref'))) params.set('ref', urlParams.get('ref'));
         if (urlParams.has('autoplay')) params.set('autoplay', '');
         location.replace(`${location.pathname}?${params.toString()}`);
     } catch (e) {
@@ -147,31 +169,32 @@ const resolvePublicEmbed = async () => {
     }
 };
 
-const addPlayOnMistWarpLink = () => {
-    const link = document.createElement('a');
-    link.href = `${isSplitEditor() ? ACCOUNT_ORIGIN : location.origin}/project/${encodeURIComponent(projectId)}`;
-    link.target = '_blank';
-    link.rel = 'noopener';
-    link.textContent = 'Play on MistWarp';
-    Object.assign(link.style, {
+const addLinkBack = () => {
+    const ref = LINK_BACK_REFS.has(urlParams.get('ref')) ? urlParams.get('ref') : 'embed';
+    const origin = isSplitEditor() ? ACCOUNT_ORIGIN : location.origin;
+    linkBack.href = `${origin}/project/${encodeURIComponent(projectId)}?ref=${ref}`;
+    linkBack.target = '_blank';
+    linkBack.rel = 'noopener';
+    linkBack.textContent = 'Made with MistWarp · Play more';
+    Object.assign(linkBack.style, {
         position: 'fixed',
         right: '8px',
         bottom: '8px',
         zIndex: '1000',
-        padding: '5px 9px',
-        borderRadius: '8px',
+        padding: '4px 8px',
+        borderRadius: '6px',
         background: 'rgba(0, 0, 0, 0.62)',
         color: '#ffffff',
-        font: '600 12px Helvetica Neue, Helvetica, Arial, sans-serif',
+        font: '500 11px Helvetica Neue, Helvetica, Arial, sans-serif',
         textDecoration: 'none'
     });
-    document.body.appendChild(link);
+    document.body.appendChild(linkBack);
 };
 
 if (publicEmbedId && !urlParams.get('project_url')) {
     resolvePublicEmbed();
 } else {
-    if (urlParams.get('mw_public') === '1') addPlayOnMistWarpLink();
+    if (linkBack) addLinkBack();
     render(<WrappedGUI
         isEmbedded
         projectId={projectId}
