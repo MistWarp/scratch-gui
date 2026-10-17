@@ -2,11 +2,12 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React, {useEffect, useRef} from 'react';
 import {Link} from 'react-router-dom';
-import {Building2, Coins, Gamepad2, Layers3, Library, Palette, Trophy} from 'lucide-react';
+import {Building2, Coins, Gamepad2, Layers3, Library, MessageSquare, Palette, Trophy} from 'lucide-react';
 import styles from './ExploreNav.module.css';
 
 const ITEMS = [
     {key: 'projects', label: 'Projects', to: '/explore', icon: Gamepad2},
+    {key: 'posts', label: 'Posts', to: '/posts', icon: MessageSquare},
     {key: 'studios', label: 'Studios', to: '/spaces?kind=studio', icon: Layers3},
     {key: 'challenges', label: 'Challenges', to: '/spaces?kind=challenge', icon: Trophy},
     {key: 'collections', label: 'Collections', to: '/spaces?kind=collection', icon: Library},

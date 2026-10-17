@@ -26,6 +26,13 @@ describe('MistWarp rich text links', () => {
         expect(internalMistWarpRoute('/users/sophie/followers')).toBe('/users/sophie/followers');
     });
 
+    test('opens claw posts inside MistWarp', () => {
+        expect(internalMistWarpRoute('https://pounce.rotur.dev/p/245259f462c2a3de')).toBe('/posts/245259f462c2a3de');
+        expect(internalMistWarpRoute('https://pounce.rotur.dev/#/p/abc_def')).toBe('/posts/abc_def');
+        expect(internalMistWarpRoute('https://mistwarp.org/posts/abc123')).toBe('/posts/abc123');
+        expect(internalMistWarpRoute('https://pounce.rotur.dev/u/mist')).toBeNull();
+    });
+
     test('rejects external and private destinations', () => {
         expect(internalMistWarpRoute('https://example.com/spaces/studio-1')).toBeNull();
         expect(internalMistWarpRoute('//example.com/project/abc123')).toBeNull();

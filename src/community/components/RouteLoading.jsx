@@ -19,11 +19,13 @@ const SECTION_LEADS = {
     groups: 'Organisations that share projects, spaces, members, and funding.',
     bounties: 'Funded improvements open across public MistWarp projects.',
     themes: 'Discover community-made looks for MistWarp.',
-    mine: 'Spaces you own, curate, follow, or have been invited to.'
+    mine: 'Spaces you own, curate, follow, or have been invited to.',
+    posts: 'Popular posts from claw, the Rotur social network.'
 };
 
 const getExploreSection = (pathname, search) => {
     if (pathname === '/explore') return {active: 'projects', lead: null};
+    if (pathname === '/posts') return {active: 'posts', lead: 'posts'};
     if (pathname === '/groups') return {active: 'groups', lead: 'groups'};
     if (pathname === '/bounties') return {active: 'bounties', lead: 'bounties'};
     if (pathname === '/themes') return {active: 'themes', lead: 'themes'};

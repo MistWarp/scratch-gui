@@ -1,25 +1,14 @@
-import {getCommunityLocale} from '../locale.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useEffect, useMemo} from 'react';
 import AutoSizer from 'react-virtualized/dist/commonjs/AutoSizer';
 import {CellMeasurer, CellMeasurerCache} from 'react-virtualized/dist/commonjs/CellMeasurer';
 import List from 'react-virtualized/dist/commonjs/List';
 import WindowScroller from 'react-virtualized/dist/commonjs/WindowScroller';
-import {Link} from 'react-router-dom';
-import {ExternalLink, Heart, MessageCircle, MessageSquare, Pin, Trash2} from 'lucide-react';
-import api from '../api.js';
-import rotur from '../rotur';
-import {timeAgo} from '../format';
-import Avatar from './Avatar.jsx';
-import ConfirmModal from './ui/ConfirmModal.jsx';
+import {MessageSquare} from 'lucide-react';
 import EmptyState from './ui/EmptyState.jsx';
-import Notice from './ui/Notice.jsx';
-import RichText from './RichText.jsx';
-import GroupTag from './GroupTag.jsx';
-import PostAttachment from './PostAttachment.jsx';
 import PostComposer from './PostComposer.jsx';
-import UserLink from './UserLink.jsx';
+import SocialPost from './SocialPost.jsx';
 import {postUrl} from '../following-feed.js';
 import styles from './ProfilePosts.module.css';
 
@@ -86,153 +75,30 @@ VirtualPostList.propTypes = {
     renderPost: PropTypes.func.isRequired
 };
 
-const ProfilePosts = ({posts, username, viewer, editable, onChange, onLogin}) => {
+const ProfilePosts = ({posts, username, viewer, editable, onChange}) => {
     const {text: communityText} = useCommunityText();
-    const [deleting, setDeleting] = useState('');
-    const [confirmingDelete, setConfirmingDelete] = useState('');
-    const [liking, setLiking] = useState('');
-    const [error, setError] = useState('');
-    const deleteInFlight = useRef(new Set());
-
-    const remove = async id => {
-        if (deleteInFlight.current.has(id)) return;
-        deleteInFlight.current.add(id);
-        setDeleting(id);
-        setError('');
-        try {
-            await rotur.deletePost(id);
-            onChange(posts.filter(post => post.id !== id));
-            setConfirmingDelete('');
-        } catch (cause) {
-            setError(cause.message || communityText('Could not delete this post.'));
-        } finally {
-            deleteInFlight.current.delete(id);
-            setDeleting('');
-        }
-    };
-    const cancelDelete = () => {
-        setConfirmingDelete('');
-        setError('');
-    };
-
-    const sorted = sortProfilePosts(posts);
-    const toggleLike = async post => {
-        if (!viewer || !viewer.username) {
-            onLogin();
-            return;
-        }
-        if (liking === post.id) return;
-        const likes = Array.isArray(post.likes) ? post.likes : [];
-        const viewerName = viewer.username.toLowerCase();
-        const liked = likes.some(name => String(name).toLowerCase() === viewerName);
-        const nextLikes = liked ? likes.filter(name => String(name).toLowerCase() !== viewerName) :
-            [...likes, viewer.username];
-        const nextPosts = posts.map(item => (item.id === post.id ? {...item, likes: nextLikes} : item));
-        setLiking(post.id);
-        setError('');
-        onChange(nextPosts);
-        try {
-            if (liked) await rotur.unlikePost(post.id);
-            else await rotur.likePost(post.id);
-            api.checkPostMilestones(post.id).catch(() => {});
-        } catch (cause) {
-            onChange(posts);
-            setError(cause.message || communityText('Could not update this post.'));
-        } finally {
-            setLiking('');
-        }
-    };
-    const renderPost = (post, measure) => {
-        const when = postTimestamp(post.timestamp);
-        const likes = Array.isArray(post.likes) ? post.likes : [];
-        const liked = Boolean(viewer && likes.some(name => (
-            String(name).toLowerCase() === String(viewer.username).toLowerCase()
-        )));
-        const media = post.attachments && post.attachments.length ? post.attachments :
-            (post.attachment ? [post.attachment] : []);
-        return (
-            <article key={post.id} className={styles.post}>
-                <UserLink username={post.user || username}>
-                    <Avatar username={post.user || username} size={42} />
-                </UserLink>
-                <div className={styles.body}>
-                    <header>
-                        <UserLink username={post.user || username}><strong>{post.user || username}</strong></UserLink>
-                        <GroupTag username={post.user || username} compact />
-                        {post.pinned ? (
-                            <span className={styles.pinned}><Pin size={11} />{communityText('Pinned')}</span>
-                        ) : null}
-                        {when ? (
-                            <time
-                                dateTime={new Date(when).toISOString()}
-                                title={new Date(when).toLocaleString(getCommunityLocale())}
-                            >{timeAgo(when)}</time>
-                        ) : null}
-                        {editable ? (
-                            <button
-                                type="button"
-                                className={styles.delete}
-                                disabled={deleting === post.id}
-                                onClick={() => {
-                                    setError('');
-                                    setConfirmingDelete(post.id);
-                                }}
-                                aria-label={communityText('Delete post')}
-                            ><Trash2 size={15} /></button>
-                        ) : null}
-                    </header>
-                    <div className={styles.content}><RichText text={post.content || ''} /></div>
-                    {media.length ? (
-                        <div className={styles.media}>
-                            {media.map(url => (
-                                <PostAttachment key={url} url={url} onPreviewChange={measure} />
-                            ))}
-                        </div>
-                    ) : null}
-                    <footer>
-                        <button
-                            type="button"
-                            className={liked ? styles.liked : ''}
-                            disabled={liking === post.id}
-                            aria-label={liked ? communityText('Unlike post') : communityText('Like post')}
-                            onClick={() => toggleLike(post)}
-                        >
-                            <Heart size={15} fill={liked ? 'currentColor' : 'none'} /> {postMetricCount(post.likes)}
-                        </button>
-                        <span aria-label={communityText('{value1} replies', {value1: postMetricCount(post.replies)})}>
-                            <MessageCircle size={15} /> {postMetricCount(post.replies)}
-                        </span>
-                        <Link to={pouncePostUrl(post.id)}>{communityText('Open post')}<ExternalLink size={13} /></Link>
-                    </footer>
-                </div>
-            </article>
-        );
-    };
+    const sorted = useMemo(() => sortProfilePosts(posts).map(post => (
+        post.user ? post : {...post, user: username}
+    )), [posts, username]);
+    const replacePost = next => onChange(posts.map(item => (item.id === next.id ? {...item, ...next} : item)));
+    const removePost = id => onChange(posts.filter(item => item.id !== id));
+    const renderPost = (post, measure) => (
+        <SocialPost
+            key={post.id}
+            initialPost={post}
+            onChange={replacePost}
+            onDelete={removePost}
+            onLayoutChange={measure}
+        />
+    );
     return (
         <div className={styles.posts}>
-            {confirmingDelete ? (
-                <ConfirmModal
-                    destructive
-                    icon={Trash2}
-                    title={communityText('Delete profile post?')}
-                    confirmLabel={communityText('Delete post')}
-                    busy={deleting === confirmingDelete}
-                    busyLabel={communityText('Deleting…')}
-                    error={error}
-                    onConfirm={() => remove(confirmingDelete)}
-                    onCancel={cancelDelete}
-                >
-                    {communityText('This permanently deletes the post from your Rotur profile.')}
-                </ConfirmModal>
-            ) : null}
             {editable && viewer ? (
                 <PostComposer
                     user={viewer}
-                    profileOnly
                     onPosted={post => onChange([post, ...posts])}
                 />
             ) : null}
-            {error ? <Notice variant="error" className={styles.message}>{error}</Notice> : null}
             {!sorted.length ? (
                 <EmptyState compact icon={MessageSquare} title={communityText('No posts yet')}>
                     {editable ?
@@ -254,8 +120,7 @@ ProfilePosts.propTypes = {
     username: PropTypes.string.isRequired,
     viewer: PropTypes.object,
     editable: PropTypes.bool,
-    onChange: PropTypes.func.isRequired,
-    onLogin: PropTypes.func.isRequired
+    onChange: PropTypes.func.isRequired
 };
 
 export default ProfilePosts;
