@@ -32,6 +32,7 @@ import CollaborationService from '../collaboration/index.js';
 import {setSearchParams} from '../utils/navigation';
 import {defaultStageSize} from '../../reducers/custom-stage-size';
 import {openSimpleDialog} from '../../reducers/modals';
+import {isSplitEditor} from '../account/origins.js';
 import {showStandardAlert} from '../../reducers/alerts';
 
 const USERNAME_KEY = 'tw:username';
@@ -181,6 +182,7 @@ class WildcardRouter extends Router {
     constructor (callbacks) {
         super(callbacks);
         this.root = process.env.ROOT;
+        this.editorAtRoot = isSplitEditor();
     }
 
     async onhashchange () {
@@ -233,7 +235,7 @@ class WildcardRouter extends Router {
             parsePageType(parts[1]);
         } else {
             if (!await this.onSetProjectId(defaultProjectId)) return false;
-            parsePageType(parts[0]);
+            parsePageType(parts[0] || (this.editorAtRoot ? 'editor' : ''));
         }
         return true;
     }
@@ -244,10 +246,13 @@ class WildcardRouter extends Router {
         if (projectId !== '0') {
             parts.push(projectId);
         }
+        const defaultProject = projectId === '0';
         if (isFullScreen) {
             parts.push('fullscreen');
         } else if (!isPlayerOnly) {
-            parts.push('editor');
+            if (!this.editorAtRoot || !defaultProject) parts.push('editor');
+        } else if (this.editorAtRoot && defaultProject) {
+            parts.push('player');
         }
 
         const path = `${this.root}${parts.join('/')}`;
@@ -801,6 +806,7 @@ const TWStateManager = function (WrappedComponent) {
 };
 
 export {
+    WildcardRouter,
     confirmProjectSwitch,
     parseNonNegativeURLNumber,
     restoreRouterURL,

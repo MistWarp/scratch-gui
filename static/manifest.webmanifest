@@ -14,7 +14,8 @@
       "sizes": "512x512"
     }
   ],
-  "start_url": "editor",
+  "id": "editor",
+  "start_url": "./",
   "background_color": "#333333",
   "display": "standalone",
   "theme_color": "#333333"

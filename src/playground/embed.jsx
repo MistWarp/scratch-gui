@@ -13,6 +13,7 @@ import TWEmbedFullScreenHOC from '../lib/components/tw-embed-fullscreen-hoc.jsx'
 import TWStateManagerHOC from '../lib/components/tw-state-manager-hoc.jsx';
 import {applyEmbedThemeMessage} from '../lib/themes/embed-theme';
 import {request} from '../lib/community/api.js';
+import {ACCOUNT_ORIGIN, isSplitEditor} from '../lib/account/origins.js';
 
 import GUI from './render-gui.jsx';
 import render from './app-target';
@@ -148,7 +149,7 @@ const resolvePublicEmbed = async () => {
 
 const addPlayOnMistWarpLink = () => {
     const link = document.createElement('a');
-    link.href = `${location.origin}/project/${encodeURIComponent(projectId)}`;
+    link.href = `${isSplitEditor() ? ACCOUNT_ORIGIN : location.origin}/project/${encodeURIComponent(projectId)}`;
     link.target = '_blank';
     link.rel = 'noopener';
     link.textContent = 'Play on MistWarp';
