@@ -808,6 +808,43 @@ describe('editor host', () => {
         expect(next).toHaveBeenCalled();
     });
 
+    test.each([
+        '/editor/',
+        '/player/',
+        '/embed/',
+        '/fullscreen/',
+        '/addons/',
+        '/credits/'
+    ])('%s stays on the editor host', async path => {
+        const {result, next} = await editor(path);
+        expect(next).toHaveBeenCalled();
+        expect(result.status).toBe(200);
+    });
+
+    test('a trailing dot on the host is still the editor host', async () => {
+        const {result, next} = await run('/settings', {origin: 'https://editor.mistwarp.org.'});
+        expect(result.status).toBe(302);
+        expect(result.headers.get('location')).toBe('https://mistwarp.org/settings');
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    test.each([
+        '/missing.png',
+        '/account-frame.HTML',
+        '/users/alice.json'
+    ])('the community fallback page for %s is not served on the editor host', async path => {
+        const {result, next} = await editor(path);
+        expect(next).toHaveBeenCalled();
+        expect(result.status).toBe(404);
+        expect(result.headers.get('content-type')).toContain('text/plain');
+    });
+
+    test('a POST to a community page is redirected without reaching the site', async () => {
+        const {result, next} = await editor('/settings', {method: 'POST'});
+        expect(result.status).toBe(302);
+        expect(next).not.toHaveBeenCalled();
+    });
+
     test('legacy embed links still go to the editor host embed page', async () => {
         const {result} = await editor('/p123/embed');
         expect(result.status).toBe(302);
@@ -817,5 +854,10 @@ describe('editor host', () => {
     test('mistwarp.org keeps serving community pages', async () => {
         const {next} = await run('/explore');
         expect(next).toHaveBeenCalled();
+    });
+
+    test('mistwarp.org keeps its single-page fallback for paths with an extension', async () => {
+        const {result} = await run('/users/alice.json');
+        expect(result.status).not.toBe(404);
     });
 });

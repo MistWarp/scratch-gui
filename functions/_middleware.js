@@ -394,7 +394,11 @@ const themeMeta = async id => {
     };
 };
 
-const servedOnEditorHost = pathname => EDITOR_HOST_PAGES.has(pathname) ||
+const isEditorHost = url => url.hostname.replace(/\.$/, '') === EDITOR_HOST;
+
+const isEditorHostPage = pathname => EDITOR_HOST_PAGES.has(pathname.replace(/(.)\/+$/, '$1'));
+
+const servedOnEditorHost = pathname => isEditorHostPage(pathname) ||
     STATIC_FILE_PATH.test(pathname) || FILE_PATH.test(pathname);
 
 const decodeSegment = segment => {
@@ -551,7 +555,8 @@ export const onRequest = async context => {
         return new Response('Sitemap unavailable', {status: 503});
     }
 
-    if (url.hostname === EDITOR_HOST && !servedOnEditorHost(url.pathname) && !LEGACY_EMBED_PATH.test(url.pathname)) {
+    const editorHost = isEditorHost(url);
+    if (editorHost && !servedOnEditorHost(url.pathname) && !LEGACY_EMBED_PATH.test(url.pathname)) {
         return Response.redirect(`${ACCOUNT_ORIGIN}${url.pathname}${url.search}`, 302);
     }
 
@@ -563,7 +568,8 @@ export const onRequest = async context => {
 
     const response = await next();
     const contentType = response.headers.get('content-type') || '';
-    if (STATIC_FILE_PATH.test(url.pathname) && contentType.includes('text/html')) {
+    const strayPage = editorHost && !isEditorHostPage(url.pathname);
+    if ((strayPage || STATIC_FILE_PATH.test(url.pathname)) && contentType.includes('text/html')) {
         return new Response('Not found', {
             status: 404,
             headers: {
