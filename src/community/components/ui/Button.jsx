@@ -9,10 +9,15 @@ const VARIANTS = {
     danger: styles.danger
 };
 
-const Button = ({as: Component, busy, busyLabel, children, className, disabled, type, variant, ...props}) => (
+const Button = ({as: Component, busy, busyLabel, children, className, disabled, size, type, variant, ...props}) => (
     <Component
         type={Component === 'button' ? type : null}
-        className={classNames(styles.button, VARIANTS[variant] || styles.secondary, className)}
+        className={classNames(
+            styles.button,
+            VARIANTS[variant] || styles.secondary,
+            {[styles.small]: size === 'small'},
+            className
+        )}
         disabled={Component === 'button' ? disabled || busy : null}
         aria-disabled={Component !== 'button' && (disabled || busy) ? true : null}
         aria-busy={busy || null}
@@ -30,6 +35,7 @@ Button.propTypes = {
     children: PropTypes.node,
     className: PropTypes.string,
     disabled: PropTypes.bool,
+    size: PropTypes.oneOf(['default', 'small']),
     type: PropTypes.oneOf(['button', 'reset', 'submit']),
     variant: PropTypes.oneOf(Object.keys(VARIANTS))
 };
@@ -38,6 +44,7 @@ Button.defaultProps = {
     as: 'button',
     busy: false,
     disabled: false,
+    size: 'default',
     type: 'button',
     variant: 'secondary'
 };

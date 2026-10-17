@@ -1,400 +1,270 @@
 .page {
     max-width: var(--maxw);
     margin: 0 auto;
-    padding: var(--page-pad);
+    padding: var(--space-6) var(--space-5) 80px;
+}
+
+.page > * + * {
+    margin-top: var(--section-gap);
 }
 
 .intro {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px 32px;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 32px;
-    padding: 24px 28px;
-    border-radius: var(--radius);
-    background: var(--bg-header);
+    display: grid;
+    justify-items: start;
+    gap: var(--space-3);
+    padding: var(--space-4) 0 var(--space-2);
 }
 
 .intro h1 {
-    margin: 0 0 6px;
-    font-size: var(--fs-3xl);
+    max-width: 26ch;
+    margin: 0;
+    font-size: var(--fs-hero);
+    font-weight: 700;
     line-height: 1.15;
     letter-spacing: -.02em;
     text-wrap: balance;
 }
 
 .intro p {
-    max-width: 56ch;
+    max-width: 60ch;
     margin: 0;
     color: var(--text-dim);
-    font-size: var(--fs-md);
-    line-height: 1.45;
+    font-size: var(--fs-lg);
+    line-height: 1.5;
 }
 
 .actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
 }
 
-.feedBox {
-    display: flex;
+.introBackup {
+    margin-top: var(--space-1);
+}
+
+.columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--section-gap);
+    align-items: start;
+}
+
+.panel {
     min-width: 0;
-    height: 340px;
-    flex-direction: column;
 }
 
-.feedScroll {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
+.quietLink {
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+    font-weight: 500;
 }
 
-.skeleton {
-    min-height: 130px;
-    margin-bottom: 10px;
-    border-radius: var(--radius-sm);
+.quietLink:hover {
+    color: var(--mw-text);
+    text-decoration: underline;
+}
+
+.empty {
+    margin: 0;
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+}
+
+.listSkeleton {
+    height: 180px;
+    border-radius: var(--radius-xs);
     background: var(--bg-card);
-    animation: pulse 1.4s infinite ease-in-out;
 }
 
-@keyframes pulse {
-    0%,
-    100% { opacity: 1; }
-    50% { opacity: .55; }
+.list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
 
-.newsList,
-.activityList,
-.roadmapList {
+.row {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 72px;
+    padding: var(--space-2) 0;
+    border-top: 1px solid var(--border-soft);
+}
+
+.row:first-child {
+    border-top: 0;
+}
+
+.rowThumb {
+    display: grid;
+    flex-shrink: 0;
+    width: 80px;
+    aspect-ratio: 4 / 3;
+    place-items: center;
+    overflow: hidden;
+    border-radius: var(--radius-2xs);
+    background: var(--bg-card);
+}
+
+.rowThumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.thumbFallback {
+    color: var(--text-faint);
+    font-size: var(--fs-lg);
+    font-weight: 600;
+}
+
+.rowText {
+    display: grid;
+    flex: 1;
+    gap: 2px;
+    min-width: 0;
+}
+
+.rowText h3 {
+    margin: 0;
+    overflow: hidden;
+    font-size: var(--fs-md);
+    font-weight: 600;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rowText p {
+    margin: 0;
+    overflow: hidden;
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rowText a:hover {
+    text-decoration: underline;
+}
+
+.rowAction {
+    flex-shrink: 0;
 }
 
 .activityItem {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    border-radius: var(--radius-sm);
-    background: var(--bg-card);
-    box-shadow: var(--card-shadow);
+    gap: var(--space-3);
+    min-height: 52px;
+    padding: var(--space-2) 0;
+    border-top: 1px solid var(--border-soft);
     font-size: var(--fs-md);
 }
 
-.activityIcon {
-    display: inline-flex;
-    color: var(--accent-strong);
+.activityItem:first-child {
+    border-top: 0;
+}
+
+.activityItem > a {
+    display: flex;
     flex-shrink: 0;
+}
+
+.activityIcon {
+    margin-inline-end: 6px;
+    color: var(--text-faint);
+    vertical-align: -2px;
 }
 
 .activityText {
     flex: 1 1 auto;
     min-width: 0;
     overflow: hidden;
+    color: var(--text-dim);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
+.activityText strong,
+.activityText a {
+    color: var(--mw-text);
+}
+
 .activityText a:hover {
-    color: var(--accent-strong);
+    text-decoration: underline;
 }
 
 .activityActor {
-    font-weight: 700;
+    font-weight: 600;
 }
 
 .activityTime {
-    margin-inline-start: auto;
+    flex-shrink: 0;
     color: var(--text-faint);
     font-size: var(--fs-xs);
-    flex-shrink: 0;
 }
 
 .notificationAvatar {
     display: inline-grid;
-    place-items: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    color: var(--accent-strong);
-    background: var(--accent-soft);
-}
-
-.roadmapItem {
-    position: relative;
-    border-radius: var(--radius-sm);
-    background: var(--bg-card);
-    box-shadow: var(--card-shadow);
-    display: grid;
-    grid-template-columns: 38px minmax(0, 1fr);
-    gap: 14px;
-    padding: 14px;
-}
-
-.roadmapLink {
-    position: absolute;
-    z-index: 1;
-    inset: 0;
-}
-
-.roadmapVotes {
-    display: flex;
-    align-items: center;
-    align-self: start;
-    flex-direction: column;
-    gap: 4px;
-    color: var(--text-faint);
-    font-size: var(--fs-2xs);
-}
-
-.roadmapVotes span {
-    display: flex;
-    align-items: center;
-    justify-content: center;
     width: 32px;
-    height: 30px;
-    border: 1px solid transparent;
-    border-radius: var(--radius-xs);
-}
-
-.roadmapVotes strong {
-    color: var(--mw-text);
-    font-size: var(--fs-md);
-}
-
-.roadmapBody {
-    min-width: 0;
-}
-
-.roadmapItem h3 {
-    margin: 10px 0 4px;
-    font-size: var(--fs-lg);
-    letter-spacing: -.01em;
-}
-
-.roadmapItem p {
-    display: -webkit-box;
-    margin: 0;
+    height: 32px;
+    place-items: center;
+    border-radius: 50%;
     color: var(--text-dim);
-    font-size: var(--fs-sm);
-    line-height: 1.45;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
-}
-
-.roadmapLabels,
-.roadmapMeta {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.roadmapLabels span,
-.roadmapMeta span {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.roadmapLabels span {
-    padding: 3px 6px;
-    border-radius: var(--radius-2xs);
-    color: var(--accent-strong);
-    background: var(--accent-soft);
-    font-size: var(--fs-2xs);
-    font-weight: 700;
-    text-transform: capitalize;
-}
-
-.roadmapLabels .roadmapStatusshipped {
-    color: #58c78b;
-    background: color-mix(in srgb, #58c78b 13%, transparent);
-}
-
-.roadmapLabels .roadmapStatusbuilding,
-.roadmapLabels .roadmapStatusplanned {
-    color: #dfaa52;
-    background: color-mix(in srgb, #dfaa52 13%, transparent);
-}
-
-.roadmapLabels .roadmapStatusdeclined {
-    color: var(--text-faint);
     background: var(--bg-raised);
 }
 
-.roadmapMeta {
-    margin-top: 12px;
-    padding-top: 10px;
-    border-top: 1px solid var(--border-soft);
-    color: var(--text-faint);
-    font-size: var(--fs-2xs);
-}
-
-.roadmapMeta span:first-child {
-    color: var(--text-dim);
-    font-weight: 700;
-}
-
-.roadmapMeta .roadmapComments {
-    margin-inline-start: auto;
-}
-
-.roadmapAuthor {
-    position: relative;
-    z-index: 2;
-}
-
-.roadmapAuthor a {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    color: inherit;
-}
-
-.roadmapAuthor a:hover {
-    color: var(--accent-strong);
-    text-decoration: underline;
-}
-
-.projectSection {
-    margin-top: 40px;
-}
-
-.projectGrid {
+.importRow {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 18px;
+    justify-items: start;
+    gap: var(--space-2);
+    max-width: 560px;
+    margin-top: var(--space-5);
 }
 
-@media (max-width: 1000px) {
-    .projectGrid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+@media (max-width: 860px) {
+    .columns {
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
-@media (max-width: 700px) {
-    .homeTabs {
-        gap: 18px;
-        padding-inline-end: 24px;
-        scroll-padding-inline: 24px;
-        mask-image: linear-gradient(to left, transparent, #000 24px);
+@media (max-width: 760px) {
+    .page > * + * {
+        margin-top: var(--space-6);
+    }
+
+    .columns {
+        gap: var(--space-6);
     }
 }
 
 @media (max-width: 520px) {
     .page {
-        padding: 12px 12px 56px;
+        padding: var(--space-4) var(--space-3) 56px;
     }
 
     .intro {
-        margin-bottom: 24px;
-        padding: 20px;
+        padding-top: var(--space-2);
     }
 
-    .intro h1 {
-        font-size: var(--fs-2xl);
+    .intro p {
+        font-size: var(--fs-md);
     }
 
     .actions {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 9px;
-    }
-
-    .actions > :last-child {
-        grid-column: 1 / -1;
-    }
-
-    .intro .actions {
-        display: flex;
         width: 100%;
     }
 
-    .intro .actions > * {
-        flex: 1 1 auto;
+    .rowThumb {
+        width: 64px;
     }
-
-    .feedBox {
-        height: auto;
-        padding: 0;
-        border: 0;
-        border-radius: 0;
-    }
-
-    .feedScroll {
-        overflow: visible;
-    }
-
-    .newsList > :nth-child(n + 3) {
-        display: none;
-    }
-
-    .projectSection {
-        margin-top: 32px;
-    }
-
-    .projectGrid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
-    }
-}
-
-.welcome {
-    margin-bottom: 28px;
-    padding: 24px;
-    border-radius: var(--radius);
-    background: var(--accent-soft);
-}
-
-.welcome h2 {
-    margin: 0 0 6px;
-    font-size: var(--fs-2xl);
-}
-
-.welcome p {
-    margin: 0 0 16px;
-    color: var(--text-dim);
-    font-size: var(--fs-md);
-}
-
-.importRow {
-    display: grid;
-    gap: 10px;
-    max-width: 560px;
-    margin-top: 20px;
-}
-
-.importRow > a {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    color: var(--accent-strong);
-    font-size: var(--fs-sm);
-    font-weight: 600;
-}
-
-.tabHead {
-    display: flex;
-    align-items: stretch;
-    margin-bottom: 16px;
-}
-
-.tabHead > nav {
-    flex: 1;
-    min-width: 0;
-}
-
-.tabHead > a {
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-    padding-inline-start: 16px;
-    border-bottom: 1px solid var(--border);
-    color: var(--accent-strong);
-    font-size: var(--fs-sm);
-    font-weight: 600;
 }
