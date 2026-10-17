@@ -218,7 +218,7 @@ const persistTheme = theme => {
 
     if (next !== previous) {
         try {
-            require('../rotur/cloud-sync.js').notifyLocalChange();
+            require('../rotur/cloud-sync.js').notifyLocalChange('theme');
         } catch (_) {
             // cloud sync optional
         }

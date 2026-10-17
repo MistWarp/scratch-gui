@@ -411,7 +411,7 @@ const Settings = () => {
         const next = {...notificationPreferences, [key]: enabled};
         setNotificationPreferencesState(next);
         setNotificationPreferences(next);
-        notifyLocalChange();
+        notifyLocalChange('notificationPreferences');
     };
     const changeAnalytics = enabled => {
         setAnalyticsEnabled(enabled);

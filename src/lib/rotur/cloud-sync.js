@@ -28,24 +28,48 @@ let pushChain = Promise.resolve();
 const USERNAME_OVERRIDE_KEY = 'tw:username-override';
 const DIRTY_KEY = 'tw:settings-dirty';
 
-const markDirty = dirty => {
+const SECTIONS = ['theme', 'customThemes', 'rotur', 'menuBar', 'notificationPreferences', 'username'];
+const ALL = 'all';
+
+const readDirty = () => {
+    let raw = null;
     try {
-        if (dirty) {
-            localStorage.setItem(DIRTY_KEY, '1');
-        } else {
-            localStorage.removeItem(DIRTY_KEY);
-        }
+        raw = localStorage.getItem(DIRTY_KEY);
+    } catch (_) {
+        return [];
+    }
+    if (raw === null) return [];
+    if (raw === '1') return ALL;
+    try {
+        const parsed = JSON.parse(raw);
+        if (parsed === ALL) return ALL;
+        return Array.isArray(parsed) ? parsed.filter(section => SECTIONS.includes(section)) : ALL;
+    } catch (_) {
+        return ALL;
+    }
+};
+
+const writeDirty = dirty => {
+    try {
+        if (dirty === ALL || dirty.length) localStorage.setItem(DIRTY_KEY, JSON.stringify(dirty));
+        else localStorage.removeItem(DIRTY_KEY);
     } catch (_) {
         // ignore
     }
 };
 
-const isDirty = () => {
-    try {
-        return localStorage.getItem(DIRTY_KEY) === '1';
-    } catch (_) {
-        return false;
+const markDirty = section => {
+    const current = readDirty();
+    if (current === ALL || !SECTIONS.includes(section)) {
+        writeDirty(ALL);
+        return;
     }
+    if (!current.includes(section)) writeDirty(current.concat(section));
+};
+
+const isDirty = () => {
+    const dirty = readDirty();
+    return dirty === ALL || dirty.length > 0;
 };
 
 const getUsernameOverride = () => {
@@ -190,13 +214,45 @@ const applySnapshotLocally = snapshot => {
     }
 };
 
+const emptySnapshot = snapshot => !snapshot || typeof snapshot !== 'object' || Object.keys(snapshot).length === 0;
+
+const mergeSnapshot = (cloud, local, dirty) => {
+    if (dirty === ALL || emptySnapshot(cloud)) return local;
+    const cloudSettings = cloud.settings && typeof cloud.settings === 'object' ? cloud.settings : {};
+    const merged = {
+        theme: typeof cloud.theme === 'undefined' ? null : cloud.theme,
+        customThemes: Array.isArray(cloud.customThemes) ? cloud.customThemes : [],
+        settings: {...cloudSettings, version: 1, updatedAt: local.settings.updatedAt}
+    };
+    for (const section of dirty) {
+        if (section === 'theme' || section === 'customThemes') {
+            merged[section] = local[section];
+        } else if (section === 'username') {
+            if (local.settings.username) merged.settings.username = local.settings.username;
+            else delete merged.settings.username;
+        } else {
+            merged.settings[section] = local.settings[section];
+        }
+    }
+    return merged;
+};
+
+const cloudSnapshot = async () => {
+    const response = await request('/me/settings', {cache: false});
+    return response && response.settings;
+};
+
 const pushToCloud = () => {
     if (suppressPush || !loadSession()) return Promise.resolve(false);
     pushChain = pushChain.catch(() => null).then(async () => {
         if (suppressPush || !loadSession()) return false;
+        const dirty = readDirty();
         try {
-            await request('/me/settings', {method: 'PUT', body: collectLocalSnapshot()});
-            markDirty(false);
+            const cloud = dirty === ALL ? null : await cloudSnapshot();
+            const merged = mergeSnapshot(cloud, collectLocalSnapshot(), dirty);
+            await request('/me/settings', {method: 'PUT', body: merged});
+            writeDirty([]);
+            if (dirty !== ALL && !emptySnapshot(cloud)) applySnapshotLocally(merged);
             return true;
         } catch (e) {
             // eslint-disable-next-line no-console
@@ -239,12 +295,15 @@ const pullFromCloud = async () => {
 
 /**
  * Debounced push after local preference writes.
- * @param {number} delayMs debounce delay in milliseconds
+ * @param {string|number} [sectionOrDelay] the settings section that changed, or the delay
+ * @param {number} [delayMs] debounce delay in milliseconds
  */
-const notifyLocalChange = (delayMs = 800) => {
+const notifyLocalChange = (sectionOrDelay, delayMs = 800) => {
     if (suppressPush) return;
     if (!loadSession()) return;
-    markDirty(true);
+    const section = typeof sectionOrDelay === 'string' ? sectionOrDelay : null;
+    const delay = typeof sectionOrDelay === 'number' ? sectionOrDelay : delayMs;
+    markDirty(section);
     if (pushTimer) clearTimeout(pushTimer);
     pushTimer = setTimeout(() => {
         pushTimer = null;
@@ -252,7 +311,7 @@ const notifyLocalChange = (delayMs = 800) => {
             // eslint-disable-next-line no-console
             console.warn('[cloud-sync] push failed', err);
         });
-    }, delayMs);
+    }, delay);
 };
 
 const setUsernameOverride = value => {
@@ -265,12 +324,12 @@ const setUsernameOverride = value => {
     } catch (_) {
         // ignore
     }
-    notifyLocalChange();
+    notifyLocalChange('username');
 };
 
 // Keep cloud in sync when Rotur presence settings change (avoids circular require)
 subscribeRoturSettings(() => {
-    notifyLocalChange();
+    notifyLocalChange('rotur');
 });
 
 const onRoturLogin = async () => {
@@ -283,7 +342,7 @@ const onRoturLogout = () => {
         clearTimeout(pushTimer);
         pushTimer = null;
     }
-    markDirty(false);
+    writeDirty([]);
     try {
         localStorage.removeItem(USERNAME_OVERRIDE_KEY);
     } catch (_) {
@@ -292,6 +351,7 @@ const onRoturLogout = () => {
 };
 
 export {
+    mergeSnapshot,
     notifyLocalChange,
     getUsernameOverride,
     setUsernameOverride,

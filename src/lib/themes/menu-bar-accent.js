@@ -10,7 +10,7 @@ const MENU_BAR_TEXT_DARK = '#2e2e2e';
 
 const notifyCloudSync = () => {
     try {
-        require('../rotur/cloud-sync.js').notifyLocalChange();
+        require('../rotur/cloud-sync.js').notifyLocalChange('menuBar');
     } catch (_) {
         // cloud sync optional
     }

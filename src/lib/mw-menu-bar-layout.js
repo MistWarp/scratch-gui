@@ -41,7 +41,7 @@ const writeJSON = (key, value) => {
         // ignore
     }
     try {
-        require('./rotur/cloud-sync.js').notifyLocalChange();
+        require('./rotur/cloud-sync.js').notifyLocalChange('menuBar');
     } catch (_) {
         // cloud sync optional
     }
