@@ -116,11 +116,13 @@ const htmlResponse = (body = HTML, headers = {}) => new Response(body, {
     headers: {'content-type': 'text/html; charset=utf-8', ...headers}
 });
 
-const run = async (path, {response = htmlResponse(), method = 'GET', origin = 'https://mistwarp.org'} = {}) => {
+const run = async (path, {
+    response = htmlResponse(), method = 'GET', origin = 'https://mistwarp.org', headers = {}
+} = {}) => {
     const next = jest.fn(() => Promise.resolve(response));
     const assets = jest.fn(() => Promise.resolve(response));
     const result = await onRequest({
-        request: new Request(`${origin}${path}`, {method}),
+        request: new Request(`${origin}${path}`, {method, headers}),
         next,
         env: {ASSETS: {fetch: assets}}
     });
@@ -421,13 +423,13 @@ describe('rewritten pages', () => {
         const meta = await renderPath('/project/1');
         const head = meta.head[0].content;
         expect(head).toContain(
-            'content="&lt;script&gt;&quot;x&quot;&amp;&lt;/script&gt; by alice - MistWarp"'
+            'content="&lt;script&gt;&quot;x&quot;&amp;&lt;/script&gt; by @alice"'
         );
-        expect(head).toContain('content="a &lt; b &gt; c"');
+        expect(head).toContain('content="a &lt; b &gt; c. Play free in your browser on MistWarp."');
         expect(head).not.toContain('<script>');
         // setAttribute and text replacement escape on their own, so those get the raw value.
-        expect(meta.ogTitle).toBe('<script>"x"&</script> by alice - MistWarp');
-        expect(meta.title).toBe('<script>"x"&</script> by alice - MistWarp');
+        expect(meta.ogTitle).toBe('<script>"x"&</script> by @alice');
+        expect(meta.title).toBe('<script>"x"&</script> by @alice - MistWarp');
     });
 });
 
@@ -439,37 +441,50 @@ describe('project pages', () => {
             signal: expect.any(AbortSignal),
             headers: {accept: 'application/json'}
         });
-        expect(meta.title).toBe('Cool Game by alice - MistWarp');
-        expect(meta.description).toBe('Use the arrow keys.');
-        expect(meta.ogImage).toBe('https://thumbs.example/1.png');
+        expect(meta.title).toBe('Cool Game by @alice - MistWarp');
+        expect(meta.ogTitle).toBe('Cool Game by @alice');
+        expect(meta.description).toBe('Use the arrow keys. Play free in your browser on MistWarp.');
+        expect(meta.ogImage).toBe(`${API}/projects/123/card.png?v=0`);
         expect(meta.twitterCard).toBe('summary_large_image');
     });
 
-    test('falls back to the description, then to a generated one', async () => {
-        stubApi({[`${API}/projects/1`]: sharedProject({instructions: '', description: 'About it'})});
-        expect((await renderPath('/project/1')).description).toBe('About it');
+    test.each([
+        [{branding: {tagline: 'A tiny cat clicker'}, description: 'About it'}, 'A tiny cat clicker.'],
+        [{instructions: 'Click', description: 'About it!'}, 'About it!'],
+        [{instructions: 'Use the arrow keys', description: '  '}, 'Use the arrow keys.']
+    ])('the pitch comes from the tagline, then the description, then the instructions', async (fields, pitch) => {
+        stubApi({[`${API}/projects/1`]: sharedProject(fields)});
+        expect((await renderPath('/project/1')).description).toBe(`${pitch} Play free in your browser on MistWarp.`);
+    });
 
+    test('a project with no text gets a generated description', async () => {
         stubApi({[`${API}/projects/1`]: sharedProject({instructions: '  ', description: null})});
-        expect((await renderPath('/project/1')).description).toBe('Play Cool Game on MistWarp.');
+        expect((await renderPath('/project/1')).description).toBe('Play Cool Game free in your browser on MistWarp.');
+    });
+
+    test('a priced project is not called free', async () => {
+        stubApi({[`${API}/projects/1`]: sharedProject({price: 2})});
+        expect((await renderPath('/project/1')).description).toBe('Use the arrow keys. Play in your browser on MistWarp.');
     });
 
     test('a project without a title or owner still reads well', async () => {
         stubApi({[`${API}/projects/1`]: sharedProject({title: '', owner: '', instructions: ''})});
         const meta = await renderPath('/project/1');
-        expect(meta.title).toBe('Untitled project by unknown - MistWarp');
-        expect(meta.description).toBe('Play Untitled project on MistWarp.');
+        expect(meta.title).toBe('Untitled project by @unknown - MistWarp');
+        expect(meta.description).toBe('Play Untitled project free in your browser on MistWarp.');
     });
 
-    test('long descriptions are cut to 200 characters', async () => {
+    test('long pitches are cut to 200 characters', async () => {
         stubApi({[`${API}/projects/1`]: sharedProject({instructions: 'x'.repeat(500)})});
-        expect((await renderPath('/project/1')).description).toHaveLength(200);
+        expect((await renderPath('/project/1')).description)
+            .toBe(`${'x'.repeat(200)}. Play free in your browser on MistWarp.`);
     });
 
-    test('a project without a thumbnail uses the default image and a small card', async () => {
+    test('a project without a thumbnail still gets the large share card', async () => {
         stubApi({[`${API}/projects/1`]: sharedProject({thumbUrl: null})});
         const meta = await renderPath('/project/1');
-        expect(meta.ogImage).toBe(DEFAULT_IMAGE);
-        expect(meta.twitterCard).toBe('summary');
+        expect(meta.ogImage).toBe(`${API}/projects/1/card.png?v=0`);
+        expect(meta.twitterCard).toBe('summary_large_image');
     });
 
     test.each([
@@ -502,7 +517,8 @@ describe('project pages', () => {
         stubApi({[`${API}/projects/a%2Fb%20c`]: sharedProject()});
         const meta = await renderPath('/project/a%2Fb%20c');
         expect(fetchedUrls()).toEqual([`${API}/projects/a%2Fb%20c`]);
-        expect(meta.title).toBe('Cool Game by alice - MistWarp');
+        expect(meta.title).toBe('Cool Game by @alice - MistWarp');
+        expect(meta.ogImage).toBe(`${API}/projects/a%2Fb%20c/card.png?v=0`);
     });
 
     test.each([
@@ -566,11 +582,11 @@ describe('vanity project pages', () => {
     test('/p/:slug resolves the slug, then the project', async () => {
         stubApi({
             [`${API}/vanity/cool-game`]: {id: '55'},
-            [`${API}/projects/55`]: sharedProject()
+            [`${API}/projects/55`]: sharedProject({vanitySlug: 'cool-game'})
         });
         const meta = await renderPath('/p/cool-game');
         expect(fetchedUrls()).toEqual([`${API}/vanity/cool-game`, `${API}/projects/55`]);
-        expect(meta.title).toBe('Cool Game by alice - MistWarp');
+        expect(meta.title).toBe('Cool Game by @alice - MistWarp');
         expect(meta.ogUrl).toBe('https://mistwarp.org/p/cool-game');
     });
 
@@ -613,6 +629,139 @@ describe('vanity project pages', () => {
         const meta = await renderPath('/p/missing/pulls/3');
         expect(meta.title).toBe('Pull request - MistWarp');
         expect(meta.description).toBe('View this MistWarp pull request.');
+    });
+});
+
+describe('canonical URLs for projects', () => {
+    const vanityProject = sharedProject({id: '55', vanitySlug: 'cool-game'});
+
+    test.each([
+        ['/project/55', 'https://mistwarp.org/p/cool-game'],
+        ['/project/55/remixes', 'https://mistwarp.org/p/cool-game/remixes'],
+        ['/project/55/pulls', 'https://mistwarp.org/p/cool-game/pulls'],
+        ['/project/55/commits/abc', 'https://mistwarp.org/p/cool-game/commits/abc'],
+        ['/p/Cool-Game', 'https://mistwarp.org/p/cool-game'],
+        ['/p/Cool-Game/remixes', 'https://mistwarp.org/p/cool-game/remixes']
+    ])('%s points to %s', async (path, canonical) => {
+        stubApi({
+            [`${API}/vanity/Cool-Game`]: {id: '55'},
+            [`${API}/projects/55`]: vanityProject
+        });
+        const meta = await renderPath(path);
+        expect(meta.ogUrl).toBe(canonical);
+        expect(meta.head[0].content).toContain(`<link rel="canonical" href="${canonical}">`);
+    });
+
+    test('a pull request page points to its vanity URL', async () => {
+        stubApi({
+            [`${API}/projects/55`]: vanityProject,
+            [`${API}/projects/55/pulls/3`]: {pull: {title: 'Add levels'}}
+        });
+        expect((await renderPath('/project/55/pulls/3')).ogUrl).toBe('https://mistwarp.org/p/cool-game/pulls/3');
+    });
+
+    test('a slug the project no longer holds points to the project id', async () => {
+        stubApi({
+            [`${API}/vanity/old-name`]: {id: '55'},
+            [`${API}/projects/55`]: sharedProject({id: '55', vanitySlug: ''})
+        });
+        expect((await renderPath('/p/old-name')).ogUrl).toBe('https://mistwarp.org/project/55');
+    });
+
+    test('a project without a vanity URL keeps /project/:id', async () => {
+        stubApi({[`${API}/projects/55`]: sharedProject({id: '55'})});
+        expect((await renderPath('/project/55')).ogUrl).toBe('https://mistwarp.org/project/55');
+    });
+
+    test('a hidden project keeps the requested path', async () => {
+        expect((await renderPath('/project/55/remixes')).ogUrl).toBe('https://mistwarp.org/project/55/remixes');
+    });
+});
+
+describe('share tags on game pages', () => {
+    const headOf = meta => meta.head[0].content;
+
+    test('the share card has its size and alt text', async () => {
+        stubApi({[`${API}/projects/55`]: sharedProject({id: '55', edited: 1789856223544})});
+        const meta = await renderPath('/project/55');
+        expect(meta.ogImage).toBe(`${API}/projects/55/card.png?v=1789856223544`);
+        expect(headOf(meta)).toContain(
+            `<meta name="twitter:image" content="${API}/projects/55/card.png?v=1789856223544">` +
+            '<meta name="twitter:image:alt" content="Cool Game">' +
+            '<meta property="og:image:alt" content="Cool Game">' +
+            '<meta property="og:image:width" content="1200">' +
+            '<meta property="og:image:height" content="630">'
+        );
+    });
+
+    test.each([
+        [{accentColor: '#22AA88'}, '#22aa88'],
+        [{accentColor: 'red'}, '#855cd6'],
+        [undefined, '#855cd6']
+    ])('the Discord colour comes from the project accent %j', async (branding, color) => {
+        stubApi({[`${API}/projects/55`]: sharedProject({branding})});
+        expect(headOf(await renderPath('/project/55'))).toContain(`<meta name="theme-color" content="${color}">`);
+    });
+
+    test('a public project advertises its oEmbed endpoint for the canonical URL', async () => {
+        stubApi({[`${API}/projects/55`]: sharedProject({id: '55', vanitySlug: 'cool-game', visibility: 'public'})});
+        expect(headOf(await renderPath('/project/55'))).toContain(
+            '<link rel="alternate" type="application/json+oembed" ' +
+            'href="https://mistwarp.org/oembed?url=https%3A%2F%2Fmistwarp.org%2Fp%2Fcool-game&amp;format=json" ' +
+            'title="Cool Game by @alice">'
+        );
+    });
+
+    test('an unlisted project gets no oEmbed link', async () => {
+        stubApi({[`${API}/projects/55`]: sharedProject({visibility: 'unlisted'})});
+        expect(headOf(await renderPath('/project/55'))).not.toContain('oembed');
+    });
+
+    test('sub-pages keep the cover and add no share-only tags', async () => {
+        stubApi({[`${API}/projects/55`]: sharedProject({visibility: 'public'})});
+        const meta = await renderPath('/project/55/remixes');
+        expect(meta.ogImage).toBe('https://thumbs.example/1.png');
+        expect(headOf(meta)).not.toContain('theme-color');
+        expect(headOf(meta)).not.toContain('oembed');
+    });
+
+    test('other pages are unchanged', async () => {
+        expect(headOf(await renderPath('/explore'))).not.toMatch(/theme-color|oembed|og:image:width/);
+    });
+});
+
+describe('crawlers and people', () => {
+    const userAgents = {
+        Discordbot: 'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)',
+        Twitterbot: 'Twitterbot/1.0',
+        facebookexternalhit: 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+        Firefox: 'Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0'
+    };
+
+    test.each(Object.keys(userAgents))('%s gets the same game page tags as everyone else', async name => {
+        stubApi({[`${API}/projects/55`]: sharedProject({id: '55', vanitySlug: 'cool-game', visibility: 'public'})});
+        const plain = await renderPath('/project/55');
+        const {result} = await run('/project/55', {headers: {'user-agent': userAgents[name]}});
+        expect(result.rewriter.render()).toEqual(plain);
+    });
+
+    test.each(Object.keys(userAgents))('%s is redirected from the editor host like everyone else', async name => {
+        const {result} = await run('/project/55', {
+            origin: 'https://editor.mistwarp.org',
+            headers: {'user-agent': userAgents[name]}
+        });
+        expect(result.status).toBe(301);
+        expect(result.headers.get('location')).toBe('https://mistwarp.org/project/55');
+    });
+});
+
+describe('the oEmbed endpoint', () => {
+    test('reaches its function on mistwarp.org untouched', async () => {
+        const response = new Response('{}', {headers: {'content-type': 'application/json'}});
+        const {result, next} = await run('/oembed?url=https%3A%2F%2Fmistwarp.org%2Fproject%2F1', {response});
+        expect(next).toHaveBeenCalled();
+        expect(result).toBe(response);
+        expect(global.fetch).not.toHaveBeenCalled();
     });
 });
 
