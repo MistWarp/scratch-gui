@@ -55,6 +55,42 @@
     color: var(--text-faint);
 }
 
+.context,
+.pouncedBy {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin: 4px 0 0;
+    color: var(--text-faint);
+    font-size: var(--fs-xs);
+}
+
+.context a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.context a:hover {
+    color: var(--accent-strong);
+    text-decoration: underline;
+}
+
+
+.pouncedBy {
+    color: var(--accent-strong);
+    font-weight: 600;
+}
+
+.actions button[aria-pressed="true"],
+.card .actions button[aria-pressed="true"] {
+    color: var(--accent-strong);
+}
+
+.actions button[aria-disabled="true"] {
+    opacity: 0.6;
+}
+
 .edited::before {
     content: "· ";
 }

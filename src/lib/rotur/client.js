@@ -386,7 +386,7 @@ const normalizeNotification = notification => {
     return out;
 };
 
-const CLAW_TYPES = new Set(['like', 'reply', 'repost', 'mention']);
+const CLAW_TYPES = new Set(['like', 'reply', 'repost', 'mention', 'pounce']);
 
 const isClawNotification = notification => {
     const platform = String(notification.platform || '').toLowerCase();

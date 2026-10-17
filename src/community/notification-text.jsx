@@ -213,6 +213,7 @@ export const describeNotification = (n, t, actor) => {
             t('{actor} mentioned you in a comment', {actor});
     case 'like': return t('{actor} liked your post', {actor});
     case 'repost': return t('{actor} reposted your post', {actor});
+    case 'pounce': return t('{actor} pounced on your post', {actor});
     case 'group_invite': return t('{actor} invited you to join {group}', {actor, group});
     case 'group_request_accepted': return t('{actor} accepted your request to join {group}', {actor, group});
     case 'group_request_declined': return t('{actor} declined your request to join {group}', {actor, group});

@@ -6,7 +6,7 @@ import {Link} from 'react-router-dom';
 import {
     AppWindow, AtSign, Bell, Coins, ExternalLink, Flag, Gavel, GitFork, Heart, Megaphone,
     MessageCircle, Reply, ShieldAlert, UserPlus, Users, GitPullRequest, GitMerge, Layers3,
-    Lightbulb, Star
+    Lightbulb, PawPrint, Star
 } from 'lucide-react';
 import {projectUrl} from '../api';
 import {
@@ -38,6 +38,7 @@ const TYPE_STYLE = {
     project_shared: {icon: Users, color: '#38b8a5'},
     love: {icon: Heart, color: '#e5639c'},
     like: {icon: Heart, color: '#e5639c'},
+    pounce: {icon: PawPrint, color: '#9a6ff0'},
     like_milestone: {icon: Heart, color: '#e5639c'},
     follower_milestone: {icon: Users, color: '#38b8a5'},
     comment: {icon: MessageCircle, color: '#4c8dff'},

@@ -37,7 +37,8 @@
     "src/community/claw-posts.js:69"
   ],
   "Pounced by {value1}": [
-    "src/community/claw-posts.js:74"
+    "src/community/claw-posts.js:74",
+    "src/community/components/SocialPost.jsx:394"
   ],
   "Pounced by people you follow": [
     "src/community/claw-posts.js:75"
@@ -76,10 +77,12 @@
     "src/community/claw-posts.js:98"
   ],
   "Promoted by {value1}": [
-    "src/community/claw-posts.js:100"
+    "src/community/claw-posts.js:100",
+    "src/community/components/PostReasons.jsx:34"
   ],
   "Promoted": [
-    "src/community/claw-posts.js:101"
+    "src/community/claw-posts.js:101",
+    "src/community/components/PostReasons.jsx:35"
   ],
   "Activity": [
     "src/community/components/ActivityCard.jsx:28",
@@ -211,8 +214,8 @@
     "src/community/components/CollectionSaveModal.jsx:166",
     "src/community/components/CommentThread.jsx:228",
     "src/community/components/ProjectInfoPanel.jsx:392",
-    "src/community/components/SocialPost.jsx:364",
-    "src/community/components/SocialPost.jsx:409",
+    "src/community/components/SocialPost.jsx:407",
+    "src/community/components/SocialPost.jsx:472",
     "src/community/pages/Challenge.jsx:465",
     "src/community/pages/ManageSpace.jsx:718"
   ],
@@ -241,7 +244,7 @@
   ],
   "Saved": [
     "src/community/components/CollectionSaveModal.jsx:168",
-    "src/community/components/SocialPost.jsx:409"
+    "src/community/components/SocialPost.jsx:472"
   ],
   "Save to a collection": [
     "src/community/components/CollectionSaveModal.jsx:192"
@@ -310,13 +313,13 @@
   ],
   "Pinned": [
     "src/community/components/CommentThread.jsx:149",
-    "src/community/components/SocialPost.jsx:281"
+    "src/community/components/SocialPost.jsx:296"
   ],
   "Reply": [
     "src/community/components/CommentThread.jsx:157",
     "src/community/components/CommentThread.jsx:158",
     "src/community/components/CommentThread.jsx:256",
-    "src/community/components/SocialPost.jsx:466"
+    "src/community/components/SocialPost.jsx:536"
   ],
   "Comment actions": [
     "src/community/components/CommentThread.jsx:170",
@@ -328,8 +331,8 @@
   ],
   "Unpin": [
     "src/community/components/CommentThread.jsx:192",
-    "src/community/components/SocialPost.jsx:329",
-    "src/community/components/SocialPost.jsx:419"
+    "src/community/components/SocialPost.jsx:344",
+    "src/community/components/SocialPost.jsx:482"
   ],
   "Pin to top": [
     "src/community/components/CommentThread.jsx:192"
@@ -351,8 +354,8 @@
     "src/community/components/ProjectInfoPanel.jsx:384",
     "src/community/components/ReportModal.jsx:108",
     "src/community/components/RoturConsentModal.jsx:70",
-    "src/community/components/SocialPost.jsx:247",
-    "src/community/components/SocialPost.jsx:362",
+    "src/community/components/SocialPost.jsx:262",
+    "src/community/components/SocialPost.jsx:405",
     "src/community/components/ui/ConfirmModal.jsx:22",
     "src/community/pages/ManageProject.jsx:1128",
     "src/community/pages/ManageSpace.jsx:762",
@@ -646,7 +649,7 @@
   "Nothing to show": [
     "src/community/components/DiffView.jsx:647",
     "src/community/pages/Home.jsx:252",
-    "src/community/pages/Notifications.jsx:459"
+    "src/community/pages/Notifications.jsx:460"
   ],
   "Explore": [
     "src/community/components/ExploreHeader.jsx:17",
@@ -1124,7 +1127,7 @@
     "src/community/components/LanguagePicker.jsx:20",
     "src/community/components/RouteErrorBoundary.jsx:26",
     "src/community/components/ui/StatusMessage.jsx:26",
-    "src/community/pages/Notifications.jsx:431",
+    "src/community/pages/Notifications.jsx:432",
     "src/community/pages/Random.jsx:56",
     "src/community/pages/Settings.jsx:720",
     "src/community/pages/Settings.jsx:782"
@@ -1467,7 +1470,7 @@
     "src/community/components/NavBar.jsx:636",
     "src/community/components/NavBar.jsx:637",
     "src/community/pages/Home.jsx:315",
-    "src/community/pages/Notifications.jsx:421",
+    "src/community/pages/Notifications.jsx:422",
     "src/community/pages/Settings.jsx:105",
     "src/community/pages/Settings.jsx:667"
   ],
@@ -1570,7 +1573,7 @@
   ],
   "{value1} views": [
     "src/community/components/NewsItem.jsx:211",
-    "src/community/components/SocialPost.jsx:224"
+    "src/community/components/SocialPost.jsx:239"
   ],
   "{value1} likes": [
     "src/community/components/NewsItem.jsx:215",
@@ -1743,6 +1746,13 @@
     "src/community/components/PostProjectCard.jsx:86",
     "src/community/components/ProjectCard.jsx:70"
   ],
+  "Why you are seeing this post": [
+    "src/community/components/PostReasons.jsx:49",
+    "src/community/components/PostReasons.jsx:58"
+  ],
+  "Open For You settings on pounce": [
+    "src/community/components/PostReasons.jsx:61"
+  ],
   "Post to claw": [
     "src/community/components/PostToClawModal.jsx:34",
     "src/community/pages/project/ProjectHeader.jsx:181"
@@ -1773,6 +1783,50 @@
   ],
   "Share your project with people on claw, the Rotur social network.": [
     "src/community/components/PostToClawModal.jsx:70"
+  ],
+  "You have used all of today's pounces. You get more at {value1}.": [
+    "src/community/components/PounceButton.jsx:30"
+  ],
+  "You have used all of today's pounces. You get more tomorrow.": [
+    "src/community/components/PounceButton.jsx:31"
+  ],
+  "Pounce to help more people see this post.": [
+    "src/community/components/PounceButton.jsx:33"
+  ],
+  "Sign in to pounce.": [
+    "src/community/components/PounceButton.jsx:34"
+  ],
+  "You cannot pounce your own post.": [
+    "src/community/components/PounceButton.jsx:35",
+    "src/community/components/PounceButton.jsx:51"
+  ],
+  "Undo pounce": [
+    "src/community/components/PounceButton.jsx:37"
+  ],
+  "{value1, plural, one {You have # pounce left today.} other {You have # pounces left today.}}": [
+    "src/community/components/PounceButton.jsx:40"
+  ],
+  "Pounced. That was your last pounce today.": [
+    "src/community/components/PounceButton.jsx:69"
+  ],
+  "Pounced.": [
+    "src/community/components/PounceButton.jsx:70"
+  ],
+  "{value1, plural, one {Pounced. # pounce left today.} other {Pounced. # pounces left today.}}": [
+    "src/community/components/PounceButton.jsx:73"
+  ],
+  "This post cannot be pounced.": [
+    "src/community/components/PounceButton.jsx:85"
+  ],
+  "Could not update this post.": [
+    "src/community/components/PounceButton.jsx:87",
+    "src/community/components/SocialPost.jsx:126"
+  ],
+  "{value1, plural, one {Undo pounce, # pounce} other {Undo pounce, # pounces}}": [
+    "src/community/components/PounceButton.jsx:99"
+  ],
+  "{value1, plural, one {Pounce, # pounce} other {Pounce, # pounces}}": [
+    "src/community/components/PounceButton.jsx:102"
   ],
   "Level {value1}": [
     "src/community/components/ProfileBadges.jsx:65"
@@ -2488,80 +2542,81 @@
     "src/community/components/SharedProjects.jsx:113"
   ],
   "1 vote": [
-    "src/community/components/SocialPost.jsx:64"
+    "src/community/components/SocialPost.jsx:68"
   ],
   "{value1} votes": [
-    "src/community/components/SocialPost.jsx:64"
-  ],
-  "Could not update this post.": [
-    "src/community/components/SocialPost.jsx:116"
+    "src/community/components/SocialPost.jsx:68"
   ],
   "Removed from saved posts.": [
-    "src/community/components/SocialPost.jsx:193"
+    "src/community/components/SocialPost.jsx:207"
   ],
   "Post saved.": [
-    "src/community/components/SocialPost.jsx:193"
+    "src/community/components/SocialPost.jsx:207"
   ],
   "Link copied.": [
-    "src/community/components/SocialPost.jsx:198"
+    "src/community/components/SocialPost.jsx:212"
   ],
   "Could not copy the link.": [
-    "src/community/components/SocialPost.jsx:200"
+    "src/community/components/SocialPost.jsx:214"
   ],
   "1 view": [
-    "src/community/components/SocialPost.jsx:224"
+    "src/community/components/SocialPost.jsx:239"
   ],
   "Delete post?": [
-    "src/community/components/SocialPost.jsx:232"
+    "src/community/components/SocialPost.jsx:247"
   ],
   "Delete post": [
-    "src/community/components/SocialPost.jsx:233",
-    "src/community/components/SocialPost.jsx:335"
+    "src/community/components/SocialPost.jsx:248",
+    "src/community/components/SocialPost.jsx:358"
   ],
   "This permanently deletes the post.": [
-    "src/community/components/SocialPost.jsx:238"
+    "src/community/components/SocialPost.jsx:253"
   ],
   "Report reply": [
-    "src/community/components/SocialPost.jsx:244",
-    "src/community/components/SocialPost.jsx:484"
+    "src/community/components/SocialPost.jsx:259",
+    "src/community/components/SocialPost.jsx:554"
   ],
   "Report post": [
-    "src/community/components/SocialPost.jsx:244"
+    "src/community/components/SocialPost.jsx:259"
   ],
   "Report submitted.": [
-    "src/community/components/SocialPost.jsx:258"
+    "src/community/components/SocialPost.jsx:273"
   ],
   "Submit report": [
-    "src/community/components/SocialPost.jsx:261"
+    "src/community/components/SocialPost.jsx:276"
   ],
   "What is wrong with this reply?": [
-    "src/community/components/SocialPost.jsx:269"
+    "src/community/components/SocialPost.jsx:284"
   ],
   "What is wrong with this post?": [
-    "src/community/components/SocialPost.jsx:270"
+    "src/community/components/SocialPost.jsx:285"
   ],
   "edited": [
-    "src/community/components/SocialPost.jsx:289"
+    "src/community/components/SocialPost.jsx:304"
   ],
   "Post actions": [
-    "src/community/components/SocialPost.jsx:296"
+    "src/community/components/SocialPost.jsx:311"
   ],
   "Copy link": [
-    "src/community/components/SocialPost.jsx:312",
-    "src/community/components/SocialPost.jsx:411",
+    "src/community/components/SocialPost.jsx:327",
+    "src/community/components/SocialPost.jsx:474",
     "src/community/pages/project/ProjectHeader.jsx:158"
   ],
   "Edit": [
-    "src/community/components/SocialPost.jsx:319",
-    "src/community/components/SocialPost.jsx:415"
+    "src/community/components/SocialPost.jsx:334",
+    "src/community/components/SocialPost.jsx:478"
   ],
   "Pin": [
-    "src/community/components/SocialPost.jsx:329",
-    "src/community/components/SocialPost.jsx:419"
+    "src/community/components/SocialPost.jsx:344",
+    "src/community/components/SocialPost.jsx:482"
+  ],
+  "Promote on pounce": [
+    "src/community/components/SocialPost.jsx:353",
+    "src/community/components/SocialPost.jsx:486"
   ],
   "Delete": [
-    "src/community/components/SocialPost.jsx:340",
-    "src/community/components/SocialPost.jsx:423",
+    "src/community/components/SocialPost.jsx:363",
+    "src/community/components/SocialPost.jsx:493",
     "src/community/pages/MyStuff.jsx:1570",
     "src/community/pages/Theme.jsx:228",
     "src/community/pages/admin/ErrorManager.jsx:249",
@@ -2570,53 +2625,65 @@
     "src/community/pages/project/ReviewPanel.jsx:186"
   ],
   "Report": [
-    "src/community/components/SocialPost.jsx:347",
-    "src/community/components/SocialPost.jsx:429",
+    "src/community/components/SocialPost.jsx:370",
+    "src/community/components/SocialPost.jsx:499",
     "src/community/pages/Bounty.jsx:149",
     "src/community/pages/Profile.jsx:904",
     "src/community/pages/project/ProjectHeader.jsx:260"
   ],
+  "Replying to {value1}": [
+    "src/community/components/SocialPost.jsx:382"
+  ],
+  "Replying to a post": [
+    "src/community/components/SocialPost.jsx:383"
+  ],
+  "Show this thread": [
+    "src/community/components/SocialPost.jsx:386"
+  ],
   "Posted from {value1}, {value2}": [
-    "src/community/components/SocialPost.jsx:385"
+    "src/community/components/SocialPost.jsx:428"
   ],
   "Posted from {value1}": [
-    "src/community/components/SocialPost.jsx:387"
+    "src/community/components/SocialPost.jsx:430"
   ],
   "Unlike post": [
-    "src/community/components/SocialPost.jsx:394"
+    "src/community/components/SocialPost.jsx:437"
   ],
   "Like post": [
-    "src/community/components/SocialPost.jsx:394"
+    "src/community/components/SocialPost.jsx:437"
+  ],
+  "{value1, plural, one {Reply, # reply} other {Reply, # replies}}": [
+    "src/community/components/SocialPost.jsx:442"
   ],
   "Reposted to your profile.": [
-    "src/community/components/SocialPost.jsx:404"
+    "src/community/components/SocialPost.jsx:452"
   ],
   "Repost": [
-    "src/community/components/SocialPost.jsx:406"
+    "src/community/components/SocialPost.jsx:454"
   ],
   "Unblocked {value1}.": [
-    "src/community/components/SocialPost.jsx:438"
+    "src/community/components/SocialPost.jsx:508"
   ],
   "Blocked {value1}.": [
-    "src/community/components/SocialPost.jsx:439"
+    "src/community/components/SocialPost.jsx:509"
   ],
   "Unblock {value1}": [
-    "src/community/components/SocialPost.jsx:444"
+    "src/community/components/SocialPost.jsx:514"
   ],
   "Block {value1}": [
-    "src/community/components/SocialPost.jsx:445"
+    "src/community/components/SocialPost.jsx:515"
   ],
   "Post your reply": [
-    "src/community/components/SocialPost.jsx:458"
+    "src/community/components/SocialPost.jsx:528"
   ],
   "Sign in to reply": [
-    "src/community/components/SocialPost.jsx:468"
+    "src/community/components/SocialPost.jsx:538"
   ],
   "No replies yet": [
-    "src/community/components/SocialPost.jsx:491"
+    "src/community/components/SocialPost.jsx:561"
   ],
   "Be the first to reply.": [
-    "src/community/components/SocialPost.jsx:492"
+    "src/community/components/SocialPost.jsx:562"
   ],
   "No description yet.": [
     "src/community/components/SpaceCard.jsx:46",
@@ -2987,142 +3054,145 @@
   "{actor} reposted your post": [
     "src/community/notification-text.jsx:215"
   ],
-  "{actor} invited you to join {group}": [
+  "{actor} pounced on your post": [
     "src/community/notification-text.jsx:216"
   ],
-  "{actor} accepted your request to join {group}": [
+  "{actor} invited you to join {group}": [
     "src/community/notification-text.jsx:217"
   ],
-  "{actor} declined your request to join {group}": [
+  "{actor} accepted your request to join {group}": [
     "src/community/notification-text.jsx:218"
   ],
-  "{actor} removed you from {group}": [
+  "{actor} declined your request to join {group}": [
     "src/community/notification-text.jsx:219"
   ],
-  "{actor} banned you from {group}": [
+  "{actor} removed you from {group}": [
     "src/community/notification-text.jsx:220"
   ],
-  "{actor} transferred {group} to you": [
+  "{actor} banned you from {group}": [
     "src/community/notification-text.jsx:221"
   ],
-  "{actor} sent you {item}": [
-    "src/community/notification-text.jsx:222",
-    "src/community/notification-text.jsx:223"
+  "{actor} transferred {group} to you": [
+    "src/community/notification-text.jsx:222"
   ],
-  "{actor} bought {item} from you": [
+  "{actor} sent you {item}": [
+    "src/community/notification-text.jsx:223",
     "src/community/notification-text.jsx:224"
   ],
-  "You bought {item} from {actor}": [
+  "{actor} bought {item} from you": [
     "src/community/notification-text.jsx:225"
   ],
-  "Your account standing is now {level}: {reason}": [
-    "src/community/notification-text.jsx:227"
+  "You bought {item} from {actor}": [
+    "src/community/notification-text.jsx:226"
   ],
-  "Your account standing is now {level}.": [
+  "Your account standing is now {level}: {reason}": [
     "src/community/notification-text.jsx:228"
   ],
-  "A moderator hid {project}: {reason}": [
-    "src/community/notification-text.jsx:232"
+  "Your account standing is now {level}.": [
+    "src/community/notification-text.jsx:229"
   ],
-  "A moderator hid {project}.": [
+  "A moderator hid {project}: {reason}": [
     "src/community/notification-text.jsx:233"
   ],
-  "A moderator hid your project: {reason}": [
-    "src/community/notification-text.jsx:236"
+  "A moderator hid {project}.": [
+    "src/community/notification-text.jsx:234"
   ],
-  "A moderator hid your project.": [
+  "A moderator hid your project: {reason}": [
     "src/community/notification-text.jsx:237"
   ],
-  "A moderator restored {project}.": [
-    "src/community/notification-text.jsx:239"
+  "A moderator hid your project.": [
+    "src/community/notification-text.jsx:238"
   ],
-  "A moderator restored your project.": [
+  "A moderator restored {project}.": [
     "src/community/notification-text.jsx:240"
   ],
-  "A moderator sent you a message.": [
-    "src/community/notification-text.jsx:243"
+  "A moderator restored your project.": [
+    "src/community/notification-text.jsx:241"
   ],
-  "New announcement: {title}": [
+  "A moderator sent you a message.": [
     "src/community/notification-text.jsx:244"
   ],
-  "{actor} sent changes for {project} in PR #{pull}": [
-    "src/community/notification-text.jsx:249"
+  "New announcement: {title}": [
+    "src/community/notification-text.jsx:245"
   ],
-  "{actor} sent changes in PR #{pull}": [
+  "{actor} sent changes for {project} in PR #{pull}": [
     "src/community/notification-text.jsx:250"
   ],
-  "{actor} sent changes for {project}": [
-    "src/community/notification-text.jsx:253"
+  "{actor} sent changes in PR #{pull}": [
+    "src/community/notification-text.jsx:251"
   ],
-  "{actor} sent changes": [
+  "{actor} sent changes for {project}": [
     "src/community/notification-text.jsx:254"
   ],
-  "{actor} merged changes for {project} in PR #{pull}": [
-    "src/community/notification-text.jsx:258"
+  "{actor} sent changes": [
+    "src/community/notification-text.jsx:255"
   ],
-  "{actor} merged changes in PR #{pull}": [
+  "{actor} merged changes for {project} in PR #{pull}": [
     "src/community/notification-text.jsx:259"
   ],
-  "{actor} merged changes for {project}": [
-    "src/community/notification-text.jsx:262"
+  "{actor} merged changes in PR #{pull}": [
+    "src/community/notification-text.jsx:260"
   ],
-  "{actor} merged changes": [
+  "{actor} merged changes for {project}": [
     "src/community/notification-text.jsx:263"
   ],
-  "{actor} added {project} to {space}": [
-    "src/community/notification-text.jsx:265"
+  "{actor} merged changes": [
+    "src/community/notification-text.jsx:264"
   ],
-  "{actor} added a project to {space}": [
+  "{actor} added {project} to {space}": [
     "src/community/notification-text.jsx:266"
   ],
-  "{actor} commented on {space}": [
+  "{actor} added a project to {space}": [
     "src/community/notification-text.jsx:267"
   ],
-  "{actor} invited you to curate {space}": [
+  "{actor} commented on {space}": [
     "src/community/notification-text.jsx:268"
   ],
-  "{actor} accepted your invitation to curate {space}": [
+  "{actor} invited you to curate {space}": [
     "src/community/notification-text.jsx:269"
   ],
-  "{actor} declined your invitation to curate {space}": [
+  "{actor} accepted your invitation to curate {space}": [
     "src/community/notification-text.jsx:270"
   ],
-  "{actor} removed you as a curator of {space}": [
+  "{actor} declined your invitation to curate {space}": [
     "src/community/notification-text.jsx:271"
   ],
-  "{actor} invited you to judge {space}": [
+  "{actor} removed you as a curator of {space}": [
     "src/community/notification-text.jsx:272"
   ],
-  "{actor} accepted your invitation to judge {space}": [
+  "{actor} invited you to judge {space}": [
     "src/community/notification-text.jsx:273"
   ],
-  "{actor} joined {space}": [
+  "{actor} accepted your invitation to judge {space}": [
     "src/community/notification-text.jsx:274"
   ],
-  "{actor} sent feedback for {project}": [
-    "src/community/notification-text.jsx:276"
+  "{actor} joined {space}": [
+    "src/community/notification-text.jsx:275"
   ],
-  "{actor} sent feedback for your project": [
+  "{actor} sent feedback for {project}": [
     "src/community/notification-text.jsx:277"
   ],
+  "{actor} sent feedback for your project": [
+    "src/community/notification-text.jsx:278"
+  ],
   "{actor} rated {project} {rating} out of 5": [
-    "src/community/notification-text.jsx:279",
+    "src/community/notification-text.jsx:280",
     "src/community/pages/Home.jsx:50"
   ],
   "{actor} rated your project {rating} out of 5": [
-    "src/community/notification-text.jsx:280"
+    "src/community/notification-text.jsx:281"
   ],
   "{actor} commented on {suggestion}": [
-    "src/community/notification-text.jsx:282"
-  ],
-  "{actor} commented on your suggestion": [
     "src/community/notification-text.jsx:283"
   ],
+  "{actor} commented on your suggestion": [
+    "src/community/notification-text.jsx:284"
+  ],
   "{actor} {message}": [
-    "src/community/notification-text.jsx:287"
+    "src/community/notification-text.jsx:288"
   ],
   "{actor} sent you a notification": [
-    "src/community/notification-text.jsx:288"
+    "src/community/notification-text.jsx:289"
   ],
   "Overview": [
     "src/community/pages/Admin.jsx:31",
@@ -4149,7 +4219,7 @@
   ],
   "Couldn't load activity.": [
     "src/community/pages/Home.jsx:121",
-    "src/community/pages/Notifications.jsx:425"
+    "src/community/pages/Notifications.jsx:426"
   ],
   "No recent activity yet": [
     "src/community/pages/Home.jsx:122"
@@ -4194,7 +4264,7 @@
   ],
   "Sign in to see your notifications.": [
     "src/community/pages/Home.jsx:247",
-    "src/community/pages/Notifications.jsx:410"
+    "src/community/pages/Notifications.jsx:411"
   ],
   "Couldn't load notifications.": [
     "src/community/pages/Home.jsx:249"
@@ -4204,7 +4274,7 @@
   ],
   "Change preferences": [
     "src/community/pages/Home.jsx:252",
-    "src/community/pages/Notifications.jsx:462"
+    "src/community/pages/Notifications.jsx:463"
   ],
   "Your notification preferences hide all recent activity.": [
     "src/community/pages/Home.jsx:253"
@@ -5426,25 +5496,25 @@
     "src/community/pages/NotFound.jsx:21"
   ],
   "{message} in #{channel}": [
-    "src/community/pages/Notifications.jsx:176"
+    "src/community/pages/Notifications.jsx:177"
   ],
   "posted": [
-    "src/community/pages/Notifications.jsx:246"
+    "src/community/pages/Notifications.jsx:247"
   ],
   "Open post": [
-    "src/community/pages/Notifications.jsx:254"
+    "src/community/pages/Notifications.jsx:255"
   ],
   "Some activity may be missing.": [
-    "src/community/pages/Notifications.jsx:433"
+    "src/community/pages/Notifications.jsx:434"
   ],
   "Your notification preferences hide all current activity.": [
-    "src/community/pages/Notifications.jsx:466"
+    "src/community/pages/Notifications.jsx:467"
   ],
   "Nothing yet": [
-    "src/community/pages/Notifications.jsx:469"
+    "src/community/pages/Notifications.jsx:470"
   ],
   "Notifications and posts from people you follow show up here.": [
-    "src/community/pages/Notifications.jsx:470"
+    "src/community/pages/Notifications.jsx:471"
   ],
   "{count} days": [
     "src/community/pages/PaidPerks.jsx:32",
