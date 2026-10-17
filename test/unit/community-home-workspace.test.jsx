@@ -3,7 +3,7 @@ import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
 import {MemoryRouter} from 'react-router-dom';
 import Home from '../../src/community/pages/Home';
-import {ContinueProjects, Jams, StarterGallery, selectActiveChallenge} from '../../src/community/components/HomeWorkspace';
+import {ContinueProjects, StarterGallery} from '../../src/community/components/HomeWorkspace';
 import {useUser} from '../../src/community/UserContext';
 import {rememberEditedProject} from '../../src/lib/mw/recent-projects';
 import api from '../../src/community/api';
@@ -98,14 +98,6 @@ test('ignores a late project response from the previous account', async () => {
     await act(async () => wrapper.unmount());
 });
 
-test('only highlights a challenge that is accepting submissions', () => {
-    expect(selectActiveChallenge([
-        {_id: 'ended', startsAt: 1, endsAt: 10, participantCount: 100},
-        {_id: 'next', startsAt: 30, endsAt: 50, participantCount: 100},
-        {_id: 'open', startsAt: 1, endsAt: 50, participantCount: 2}
-    ], 20)._id).toBe('open');
-});
-
 test('gives every recent project the same quiet action', async () => {
     api.myProjectPage.mockResolvedValue({projects: [
         {id: 'a', owner: 'alice', title: 'First', edited: 3},
@@ -121,21 +113,5 @@ test('gives every recent project the same quiet action', async () => {
         .first()
         .prop('className'));
     expect(new Set(actions).size).toBe(1);
-    await act(async () => wrapper.unmount());
-});
-
-test('lists running jams and the latest winner', async () => {
-    const now = Date.now();
-    api.spaces.mockImplementation(({resultsAfter}) => Promise.resolve({spaces: resultsAfter ? [
-        {_id: 'done', title: 'Spring jam', resultsPublishedAt: now - 1000, winner: {id: 'w1', title: 'Winning game', owner: 'bob'}}
-    ] : [
-        {_id: 'small', title: 'Small jam', startsAt: now - 1000, endsAt: now + 100000, participantCount: 1},
-        {_id: 'big', title: 'Big jam', startsAt: now - 1000, endsAt: now + 100000, participantCount: 9}
-    ]}));
-    const wrapper = render(<Jams />);
-    await flush(wrapper);
-    expect(wrapper.find('h3').map(node => node.text())).toEqual(['Big jam', 'Small jam', 'Winning game']);
-    expect(wrapper.text()).toContain('9 creators have joined');
-    expect(wrapper.text()).toContain('Won Spring jam, by bob');
     await act(async () => wrapper.unmount());
 });

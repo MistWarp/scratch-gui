@@ -2,10 +2,6 @@
     scroll-margin-top: 80px;
 }
 
-.panel {
-    min-width: 0;
-}
-
 .quietLink {
     display: inline-flex;
     align-items: center;
@@ -131,92 +127,6 @@
     color: var(--text-faint);
 }
 
-.list {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.listSkeleton {
-    height: 180px;
-    border-radius: var(--radius-xs);
-    background: var(--bg-card);
-}
-
-.empty {
-    margin: 0;
-    color: var(--text-dim);
-    font-size: var(--fs-sm);
-    line-height: 1.5;
-}
-
-.row {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    min-height: 72px;
-    padding: var(--space-2) 0;
-    border-top: 1px solid var(--border-soft);
-}
-
-.row:first-child {
-    border-top: 0;
-}
-
-.rowThumb {
-    display: grid;
-    flex-shrink: 0;
-    width: 80px;
-    aspect-ratio: 4 / 3;
-    place-items: center;
-    overflow: hidden;
-    border-radius: var(--radius-2xs);
-    background: var(--bg-card);
-}
-
-.rowThumb img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.rowText {
-    display: grid;
-    flex: 1;
-    gap: 2px;
-    min-width: 0;
-}
-
-.rowText h3 {
-    margin: 0;
-    overflow: hidden;
-    font-size: var(--fs-md);
-    font-weight: 600;
-    line-height: 1.35;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.rowText h3 a:hover {
-    text-decoration: underline;
-}
-
-.rowText p {
-    margin: 0;
-    overflow: hidden;
-    color: var(--text-dim);
-    font-size: var(--fs-sm);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.rowAction {
-    flex-shrink: 0;
-}
-
 @media (max-width: 1000px) {
     .cards {
         grid-template-columns: minmax(0, 1fr);
@@ -227,10 +137,6 @@
 @media (max-width: 520px) {
     .cardThumb {
         width: 80px;
-    }
-
-    .rowThumb {
-        width: 64px;
     }
 }
 

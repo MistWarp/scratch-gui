@@ -9,7 +9,6 @@ import {
     nextUnscoredEntry
 } from '../../src/community/pages/Challenge.jsx';
 import {confettiPieces} from '../../src/community/components/Confetti.jsx';
-import {selectRecentWinner, WINNER_SHOWCASE_MS} from '../../src/community/components/HomeWorkspace.jsx';
 
 describe('Challenge state', () => {
     test('calculates phases from numeric or ISO dates', () => {
@@ -73,18 +72,6 @@ describe('Challenge state', () => {
         expect(challengeWinner({resultsPublishedAt: 5, projects})).toMatchObject({id: 'a', score: 8, scoreOutOf: 10});
         expect(challengeWinner({resultsPublishedAt: 5, votingMode: 'audience', projects})).toMatchObject({id: 'a', score: 4, scoreOutOf: 5, voteCount: 3});
         expect(challengeWinner({resultsPublishedAt: 5, winner: {id: 'z', owner: 'zed'}, projects})).toMatchObject({id: 'z'});
-    });
-
-    test('shows the most recent winner from the last two weeks on the home page', () => {
-        const now = 100 * 86400000;
-        const spaces = [
-            {_id: 'old', resultsPublishedAt: now - WINNER_SHOWCASE_MS - 1, winner: {id: 'p1'}},
-            {_id: 'recent', resultsPublishedAt: now - 1000, winner: {id: 'p2'}},
-            {_id: 'older', resultsPublishedAt: now - 86400000, winner: {id: 'p3'}},
-            {_id: 'none', resultsPublishedAt: now, winner: {}}
-        ];
-        expect(selectRecentWinner(spaces, now)._id).toBe('recent');
-        expect(selectRecentWinner([spaces[0]], now)).toBeUndefined();
     });
 
     test('generates confetti inside the viewport', () => {

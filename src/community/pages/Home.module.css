@@ -87,75 +87,16 @@
     list-style: none;
 }
 
-.row {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    min-height: 72px;
-    padding: var(--space-2) 0;
-    border-top: 1px solid var(--border-soft);
-}
-
-.row:first-child {
-    border-top: 0;
-}
-
-.rowThumb {
+.gameGrid {
     display: grid;
-    flex-shrink: 0;
-    width: 80px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-5) var(--space-4);
+}
+
+.gameSkeleton {
     aspect-ratio: 4 / 3;
-    place-items: center;
-    overflow: hidden;
-    border-radius: var(--radius-2xs);
+    border-radius: var(--radius-xs);
     background: var(--bg-card);
-}
-
-.rowThumb img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.thumbFallback {
-    color: var(--text-faint);
-    font-size: var(--fs-lg);
-    font-weight: 600;
-}
-
-.rowText {
-    display: grid;
-    flex: 1;
-    gap: 2px;
-    min-width: 0;
-}
-
-.rowText h3 {
-    margin: 0;
-    overflow: hidden;
-    font-size: var(--fs-md);
-    font-weight: 600;
-    line-height: 1.35;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.rowText p {
-    margin: 0;
-    overflow: hidden;
-    color: var(--text-dim);
-    font-size: var(--fs-sm);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.rowText a:hover {
-    text-decoration: underline;
-}
-
-.rowAction {
-    flex-shrink: 0;
 }
 
 .activityItem {
@@ -229,6 +170,13 @@
     margin-top: var(--space-5);
 }
 
+@media (max-width: 1000px) {
+    .gameGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-4) var(--space-3);
+    }
+}
+
 @media (max-width: 860px) {
     .columns {
         grid-template-columns: minmax(0, 1fr);
@@ -264,7 +212,4 @@
         width: 100%;
     }
 
-    .rowThumb {
-        width: 64px;
-    }
 }

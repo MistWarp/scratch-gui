@@ -36,7 +36,6 @@ jest.mock('../../src/community/components/HomeWorkspace.jsx', () => {
     const mockReact = jest.requireActual('react');
     return {
         ...actual,
-        Jams: () => <div data-section="jams" />,
         ContinueProjects: ({onProjectCount, username, welcome}) => {
             mockReact.useEffect(() => {
                 onProjectCount({username, total: global.projectTotal});
@@ -80,7 +79,7 @@ describe('home layout', () => {
         global.featuredMounts = 0;
     });
 
-    test('tells signed-out visitors what MistWarp is and leads with games, jams, and creators', () => {
+    test('tells signed-out visitors what MistWarp is, then shows games and starters without jams', () => {
         const login = jest.fn();
         useUser.mockReturnValue({user: null, login, loading: false});
         const wrapper = render();
@@ -88,8 +87,8 @@ describe('home layout', () => {
         expect(wrapper.find('h1').text()).toBe('Make games with blocks, and play what others make');
         expect(wrapper.find('a[href="/editor"]').first()
             .text()).toBe('Start creating');
-        expect(sectionOrder(wrapper)).toEqual(['games', 'jams', 'creators', 'starters', 'import']);
-        expect(wrapper.text()).not.toMatch(/membership/i);
+        expect(sectionOrder(wrapper)).toEqual(['games', 'starters', 'import']);
+        expect(wrapper.text()).not.toMatch(/membership|jam/i);
 
         wrapper.find('button')
             .filterWhere(button => button.text() === 'Sign in')
@@ -98,24 +97,24 @@ describe('home layout', () => {
         wrapper.unmount();
     });
 
-    test('shows games and jams while the session is restored', () => {
+    test('shows games while the session is restored', () => {
         useUser.mockReturnValue({user: null, login: jest.fn(), loading: true});
         const wrapper = render();
 
         expect(wrapper.find('h1').exists()).toBe(false);
-        expect(sectionOrder(wrapper)).toEqual(['games', 'jams', 'creators']);
+        expect(sectionOrder(wrapper)).toEqual(['games']);
         wrapper.unmount();
     });
 
-    test('puts the workspace first for signed-in creators, then what is happening, games, and activity', () => {
+    test('puts the workspace first for signed-in creators, then games from follows, featured games, and activity', () => {
         useUser.mockReturnValue({user: {username: 'alice'}, login: jest.fn(), loading: false});
         const wrapper = render();
 
         expect(wrapper.find('h1').exists()).toBe(false);
         expect(sectionOrder(wrapper)).toEqual([
-            'continue', 'jams', 'following-games', 'games', 'friends', 'notifications'
+            'continue', 'following-games', 'games', 'friends', 'notifications'
         ]);
-        expect(wrapper.text()).not.toMatch(/membership/i);
+        expect(wrapper.text()).not.toMatch(/membership|jam/i);
         wrapper.unmount();
     });
 
@@ -126,7 +125,7 @@ describe('home layout', () => {
         wrapper.update();
 
         expect(sectionOrder(wrapper)).toEqual([
-            'welcome', 'starters', 'jams', 'following-games', 'games', 'friends', 'notifications'
+            'welcome', 'starters', 'following-games', 'games', 'friends', 'notifications'
         ]);
         wrapper.unmount();
     });
@@ -142,7 +141,7 @@ describe('home layout', () => {
         wrapper.update();
 
         expect(sectionOrder(wrapper)).toEqual([
-            'continue', 'jams', 'following-games', 'games', 'friends', 'notifications'
+            'continue', 'following-games', 'games', 'friends', 'notifications'
         ]);
         expect(global.featuredMounts).toBe(1);
         wrapper.unmount();
