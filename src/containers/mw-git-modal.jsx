@@ -54,6 +54,7 @@ import {
     getCommitParents,
     computeLineDiff
 } from '../lib/git/git-diff.js';
+import {isSplitEditor} from '../lib/account/origins.js';
 import {TOKEN_KEY, authForRemoteUrl} from '../lib/git/sync-remotes.js';
 import {
     ensureProjectHistoryHydrated,
@@ -545,8 +546,8 @@ export class TWGitModal extends React.Component {
         try {
             await this.waitForPollIdle();
             const cloneOpts = {url, onProgress: this.handleGitProgress};
-            if (isRoturGitUrl(url) && this.props.roturUsername) {
-                cloneOpts.onAuth = getRoturGitAuth;
+            if (isRoturGitUrl(url)) {
+                if (this.props.roturUsername && !isSplitEditor()) cloneOpts.onAuth = getRoturGitAuth;
             } else if (token) {
                 cloneOpts.onAuth = () => (username ?
                     {username, password: token} :

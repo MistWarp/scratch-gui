@@ -3,9 +3,12 @@ import ReactDOM from 'react-dom';
 import * as identity from '../lib/rotur/identity.js';
 import {request, storeSession} from '../lib/community/api.js';
 import {callRotur} from '../lib/rotur/extension-bridge.js';
-import {ensureScopes, getRotur} from '../lib/rotur/client.js';
+import {clearActivity, ensureScopes, getRotur, syncActivity} from '../lib/rotur/client.js';
 import {signMessage} from '../lib/originchats/signing.js';
 import {createFrameChat} from '../lib/account/frame-chat.js';
+import {createFrameActivity} from '../lib/account/frame-activity.js';
+import {ROTUR_SETTINGS_KEY} from '../lib/rotur/settings.js';
+import {MINOR_ACCOUNT_KEY} from '../lib/minor-account.js';
 import {CHANNEL, PROMPT_LIFETIME} from '../lib/account/protocol.js';
 import {ACCOUNT_ORIGIN, isEditorOrigin} from '../lib/account/origins.js';
 import {
@@ -142,10 +145,40 @@ const getUsername = () => {
     return user && user.username ? String(user.username) : '';
 };
 
+const PRESENCE_KEYS = [null, ROTUR_SETTINGS_KEY, MINOR_ACCOUNT_KEY];
+const PRESENCE_SENT_KEY = 'mw:presence-sent-at';
+
+const presenceSlot = {
+    get: () => {
+        try {
+            return Number(localStorage.getItem(PRESENCE_SENT_KEY));
+        } catch (e) {
+            return 0;
+        }
+    },
+    set: value => {
+        try {
+            localStorage.setItem(PRESENCE_SENT_KEY, String(value));
+        } catch (e) {
+            return;
+        }
+    }
+};
+
 const startFrame = () => {
     applyThemeVisuals(detectTheme());
     document.documentElement.style.background = 'transparent';
     document.body.style.background = 'transparent';
+    const activity = createFrameActivity({syncActivity, clearActivity, lastSent: presenceSlot});
+    window.addEventListener('storage', event => {
+        if (PRESENCE_KEYS.includes(event.key)) activity.refresh();
+    });
+    let presenceOwner = '';
+    identity.subscribe(state => {
+        const owner = state.user ? String(state.user.id || state.user.username || '') : '';
+        if (owner !== presenceOwner) activity.forget();
+        presenceOwner = owner;
+    });
     const server = createFrameServer({
         identity,
         createEditorSession: () => mintEditorSession({
@@ -161,7 +194,8 @@ const startFrame = () => {
         projectRotur: createProjectRotur({prompt, getUsername}),
         confirmSignOut: username => prompt('signout', {username}),
         editorData: createEditorData(),
-        chat: createFrameChat({ensureScopes, getRotur, signMessage})
+        chat: createFrameChat({ensureScopes, getRotur, signMessage}),
+        activity
     });
     const restored = Promise.race([
         Promise.resolve(identity.restore()).catch(() => null),

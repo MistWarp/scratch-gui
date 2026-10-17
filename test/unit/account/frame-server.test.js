@@ -91,6 +91,10 @@ const setup = (user = {username: 'mist', id: 'u1', bio: 'hi', avatarUrl: 'x'}, {
             signingStatus: jest.fn(async () => true),
             sign: jest.fn(async () => ({signature: 'sig'}))
         },
+        activity: {
+            set: jest.fn(async () => true),
+            clear: jest.fn(() => true)
+        },
         projectRotur: {
             ensureConsent: jest.fn(async () => true),
             call: jest.fn(async () => 'result'),
@@ -415,4 +419,16 @@ test('chat requests reach only the chat actions', async () => {
     for (const action of ['toString', '__proto__', 'constructor', 'generate', undefined]) {
         expect((await send('chat', {action})).error.message).toBe('Unknown chat request');
     }
+});
+
+test('activity requests reach only set and clear, and only while signed in', async () => {
+    const {send, deps} = setup();
+    expect((await send('activity', {action: 'set', context: {projectTitle: 'Game'}})).result).toBe(true);
+    expect(deps.activity.set).toHaveBeenCalledWith({action: 'set', context: {projectTitle: 'Game'}});
+    for (const action of ['toString', '__proto__', 'publish', undefined]) {
+        expect((await send('activity', {action})).error.message).toBe('Unknown activity request');
+    }
+    const signedOut = setup(null);
+    expect((await signedOut.send('activity', {action: 'set', context: {}})).result).toBe(false);
+    expect(signedOut.deps.activity.set).not.toHaveBeenCalled();
 });
