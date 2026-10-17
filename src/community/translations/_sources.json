@@ -154,6 +154,29 @@
   "{value1} joined, {value2} submissions": [
     "src/community/components/ChallengeCalendar.jsx:155"
   ],
+  "For You settings": [
+    "src/community/components/ClawSidebar.jsx:14"
+  ],
+  "Your promotions": [
+    "src/community/components/ClawSidebar.jsx:15"
+  ],
+  "Creator dashboard": [
+    "src/community/components/ClawSidebar.jsx:16"
+  ],
+  "Pounces": [
+    "src/community/components/ClawSidebar.jsx:20",
+    "src/community/components/ClawSidebar.jsx:21"
+  ],
+  "{value1, plural, one {You have # pounce left today.} other {You have # pounces left today.}}": [
+    "src/community/components/ClawSidebar.jsx:24",
+    "src/community/components/PounceButton.jsx:40"
+  ],
+  "Everyone gets {value1} pounces a day. Pounce a post to help more people see it.": [
+    "src/community/components/ClawSidebar.jsx:29"
+  ],
+  "For You settings, promotions and creator earnings are on pounce, the claw app.": [
+    "src/community/components/ClawSidebar.jsx:34"
+  ],
   "Public": [
     "src/community/components/CollectionSaveModal.jsx:32",
     "src/community/components/CollectionSaveModal.jsx:219",
@@ -1853,9 +1876,6 @@
   "Undo pounce": [
     "src/community/components/PounceButton.jsx:37"
   ],
-  "{value1, plural, one {You have # pounce left today.} other {You have # pounces left today.}}": [
-    "src/community/components/PounceButton.jsx:40"
-  ],
   "Pounced. That was your last pounce today.": [
     "src/community/components/PounceButton.jsx:69"
   ],
@@ -2840,7 +2860,6 @@
   ],
   "Today": [
     "src/community/components/TransactionHistory.jsx:77",
-    "src/community/pages/Posts.jsx:19",
     "src/community/pages/admin/AnalyticsChart.jsx:61"
   ],
   "Yesterday": [
@@ -3444,7 +3463,7 @@
   "Try a different search term.": [
     "src/community/pages/Bounties.jsx:125",
     "src/community/pages/Groups.jsx:100",
-    "src/community/pages/Posts.jsx:112",
+    "src/community/pages/Posts.jsx:105",
     "src/community/pages/PullRequests.jsx:91",
     "src/community/pages/Search.jsx:291",
     "src/community/pages/Search.jsx:297",
@@ -5441,8 +5460,8 @@
   ],
   "New post": [
     "src/community/pages/News.jsx:173",
-    "src/community/pages/Posts.jsx:67",
-    "src/community/pages/Posts.jsx:84"
+    "src/community/pages/Posts.jsx:123",
+    "src/community/pages/Posts.jsx:142"
   ],
   "View blog": [
     "src/community/pages/News.jsx:176"
@@ -5725,35 +5744,51 @@
   "Go back": [
     "src/community/pages/Post.jsx:70"
   ],
-  "This week": [
+  "Popular today": [
     "src/community/pages/Posts.jsx:20"
   ],
-  "This month": [
+  "Popular this week": [
     "src/community/pages/Posts.jsx:21"
   ],
-  "This year": [
+  "Popular this month": [
     "src/community/pages/Posts.jsx:22"
   ],
+  "Popular this year": [
+    "src/community/pages/Posts.jsx:23"
+  ],
   "Could not load posts.": [
-    "src/community/pages/Posts.jsx:50"
-  ],
-  "Popular posts from claw, the Rotur social network.": [
-    "src/community/pages/Posts.jsx:80"
-  ],
-  "Search posts": [
-    "src/community/pages/Posts.jsx:89"
-  ],
-  "Time range": [
-    "src/community/pages/Posts.jsx:97"
-  ],
-  "Loading posts…": [
-    "src/community/pages/Posts.jsx:108"
-  ],
-  "No posts found": [
-    "src/community/pages/Posts.jsx:110"
+    "src/community/pages/Posts.jsx:75",
+    "src/community/pages/Posts.jsx:98"
   ],
   "Nobody has posted much in this time range. Try a longer one.": [
-    "src/community/pages/Posts.jsx:113"
+    "src/community/pages/Posts.jsx:104"
+  ],
+  "Nothing new from the last week. Try Popular this month.": [
+    "src/community/pages/Posts.jsx:106"
+  ],
+  "For you": [
+    "src/community/pages/Posts.jsx:109"
+  ],
+  "Posts from claw, the Rotur social network, picked for you.": [
+    "src/community/pages/Posts.jsx:137"
+  ],
+  "Popular posts from claw, the Rotur social network.": [
+    "src/community/pages/Posts.jsx:138"
+  ],
+  "Search posts": [
+    "src/community/pages/Posts.jsx:147"
+  ],
+  "Show posts": [
+    "src/community/pages/Posts.jsx:155"
+  ],
+  "Loading posts…": [
+    "src/community/pages/Posts.jsx:168"
+  ],
+  "No posts found": [
+    "src/community/pages/Posts.jsx:170"
+  ],
+  "Show more posts": [
+    "src/community/pages/Posts.jsx:188"
   ],
   "Moderation action failed.": [
     "src/community/pages/Profile.jsx:293"
