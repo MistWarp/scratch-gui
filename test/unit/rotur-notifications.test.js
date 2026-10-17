@@ -60,6 +60,13 @@ describe('Rotur notification visibility', () => {
         expect(isVisibleNotification({type: 'pounce', post_id: 'p1', user: 'alice'})).toBe(true);
     });
 
+    test('shows claw reach and settings notices', () => {
+        expect(isVisibleNotification({type: 'post_milestone', post_id: 'p1', milestone: 100})).toBe(true);
+        expect(isVisibleNotification({type: 'claw_weekly_recap', week: '2026-10-12', views: 3})).toBe(true);
+        expect(isVisibleNotification({type: 'claw_teen_lock', platform: 'rotur', body: 'Turned off'})).toBe(true);
+        expect(isVisibleNotification({type: 'post_milestone', post_id: 'p1', platform: 'originChats'})).toBe(false);
+    });
+
     test('hides claw-shaped activity that belongs to another app or has no post', () => {
         expect(isVisibleNotification({type: 'like', post_id: 'p1', platform: 'originChats'})).toBe(false);
         expect(isVisibleNotification({type: 'like', user: 'alice'})).toBe(false);

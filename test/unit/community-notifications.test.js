@@ -215,7 +215,7 @@ describe('notification read state', () => {
         markNotificationsRead.mockResolvedValue(true);
         fetchNotifications.mockResolvedValue([
             {id: 'one', type: 'follow', actor: 'alice', read: false, created: Date.now()},
-            {id: 'two', type: 'follow', actor: 'bob', read: true, created: Date.now() - 1000}
+            {id: 'two', type: 'like', actor: 'bob', user: 'bob', post_id: 'p1', read: true, created: Date.now() - 1000}
         ]);
         const wrapper = render();
 
@@ -226,15 +226,49 @@ describe('notification read state', () => {
         });
         wrapper.update();
 
+        const rows = wrapper.find('li[data-notification-row]').hostNodes();
         expect(markNotificationsRead).toHaveBeenCalledTimes(1);
-        expect(wrapper.find('.module-itemUnread').hostNodes()
+        expect(rows.filterWhere(node => node.hasClass('module-unread'))
             .map(node => node.text())).toEqual([
             expect.stringContaining('alice followed you')
         ]);
-        expect(wrapper.find('.module-item').hostNodes()
+        expect(rows.filterWhere(node => !node.hasClass('module-unread'))
             .map(node => node.text())).toEqual([
-            expect.stringContaining('bob followed you')
+            expect.stringContaining('bob liked your post')
         ]);
+        wrapper.unmount();
+    });
+
+    test('collapses one person\'s run into a row that expands to each post', async () => {
+        markNotificationsRead.mockResolvedValue(false);
+        const andrew = (id, type, post, ago, extra = {}) => ({
+            id, type, post_id: post, user: 'andrew', actor: 'andrew', read: true, timestamp: Date.now() - ago, ...extra
+        });
+        fetchNotifications.mockResolvedValue([
+            andrew('a1', 'reply', 'p1', 0, {content: 'wrong'}),
+            andrew('a2', 'pounce', 'p2', 60000),
+            andrew('a3', 'like', 'p2', 120000)
+        ]);
+        const wrapper = render();
+
+        await act(async () => {
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+        wrapper.update();
+
+        const rows = wrapper.find('li[data-notification-row]').hostNodes();
+        expect(rows).toHaveLength(1);
+        expect(rows.text()).toContain('andrew liked, pounced and replied to your posts');
+        expect(rows.text()).toContain('wrong');
+        const toggle = wrapper.find('button[aria-expanded=false]').hostNodes();
+        act(() => {
+            toggle.simulate('click');
+        });
+        wrapper.update();
+        expect(wrapper.find('button[aria-expanded=true]').hostNodes()).toHaveLength(1);
+        expect(wrapper.find('a[href="/posts/p1"]').hostNodes()).toHaveLength(1);
+        expect(wrapper.find('a[href="/posts/p2"]').hostNodes()).toHaveLength(2);
         wrapper.unmount();
     });
 
