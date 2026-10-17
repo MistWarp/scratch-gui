@@ -230,7 +230,7 @@ const openThemeMarketplace = () => {
     window.open('/themes', '_blank', 'noopener');
 };
 
-const UnconnectedCustomThemesSettingsPage = ({theme, onChangeTheme}) => (
+const UnconnectedCustomThemesSettingsPage = ({theme, onChangeTheme, onPreviewTheme}) => (
     <Box className={styles.body}>
         <PageHeader>
             <FormattedMessage
@@ -242,12 +242,14 @@ const UnconnectedCustomThemesSettingsPage = ({theme, onChangeTheme}) => (
             theme={theme}
             onChangeTheme={onChangeTheme}
             onOpenThemeMarketplace={communityEnabled ? openThemeMarketplace : null}
+            onPreviewTheme={onPreviewTheme}
         />
     </Box>
 );
 UnconnectedCustomThemesSettingsPage.propTypes = {
     theme: PropTypes.instanceOf(Theme),
-    onChangeTheme: PropTypes.func
+    onChangeTheme: PropTypes.func,
+    onPreviewTheme: PropTypes.func
 };
 export const CustomThemesSettingsPage = connect(
     themeStateToProps,

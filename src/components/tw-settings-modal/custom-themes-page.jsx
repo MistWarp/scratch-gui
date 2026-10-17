@@ -1,61 +1,65 @@
-/* eslint-disable react/jsx-no-bind */
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {FormattedMessage} from 'react-intl';
-
-import Box from '../box/box.jsx';
-import {Theme} from '../../lib/themes/index.js';
-import {customThemeManager, CustomTheme, GradientUtils} from '../../lib/themes/custom-themes.js';
-import GradientBuilder from './gradient-builder.jsx';
-
-import styles from './settings-modal.css';
-
+import {FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import {
-    Bookmark, Check, CirclePlus, Download, Edit, FolderInput,
-    Palette, Sparkles, Store, Trash, Upload
+    Blend, Check, CircleAlert, CircleCheck, Download, Palette, PenLine, Sparkles, Store, Trash2, Upload, X
 } from 'lucide-react';
 
-const TABS = {
-    LIBRARY: 'library',
-    CREATE: 'create',
-    IMPORT: 'import'
-};
-const customThemesTab = value => (Object.values(TABS).includes(value) ? value : TABS.LIBRARY);
+import {Theme} from '../../lib/themes/index.js';
+import {customThemeManager, CustomTheme, GradientUtils} from '../../lib/themes/custom-themes.js';
+import CustomThemeEditor from './custom-theme-editor.jsx';
+import CustomThemePreview from './custom-theme-preview.jsx';
+import messages from './custom-themes-messages.js';
 
-const themePreviewStyle = theme => {
-    try {
-        const colors = theme.getGuiColors ? theme.getGuiColors() : {};
-        const image = colors['menu-bar-background-image'];
-        if (image) {
-            return {backgroundImage: image, backgroundSize: 'cover'};
-        }
-        const solid = colors['looks-secondary'] || colors['menu-bar-background'] || '#4c97ff';
-        return {background: solid};
-    } catch (_) {
-        return {background: '#4c97ff'};
-    }
+import styles from './custom-themes.css';
+
+const MAX_THEMES = 50;
+const VIEWS = ['library', 'create', 'gradient'];
+const customThemesTab = value => (VIEWS.includes(value) ? value : 'library');
+
+const EDITOR_MODES = {
+    create: 'current',
+    gradient: 'gradient',
+    edit: 'edit'
+};
+
+const downloadJSON = (data, filename) => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+};
+
+const themeFileName = name => {
+    const slug = name.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '')
+        .toLowerCase();
+    return `${slug || 'custom'}-theme.json`;
 };
 
 class CustomThemesPage extends React.Component {
     constructor (props) {
         super(props);
         this.state = {
-            tab: customThemesTab(props.initialTab),
-            createMode: 'current', // 'current' | 'gradient'
+            view: customThemesTab(props.initialTab),
             customThemes: customThemeManager.getAllThemes(),
-            activeEditor: null,
-            editingThemeUuid: null,
-            editorInitial: {},
-            createName: '',
-            createDescription: '',
-            originalThemeBeforePreview: null,
-            statusMessage: '',
-            errorMessage: '',
-            pendingDelete: null,
-            deleteError: ''
+            editingUuid: null,
+            editorKey: 0,
+            editorError: '',
+            status: null,
+            pendingDelete: null
         };
+        this.previewOriginal = null;
+        this.pendingFocus = null;
         this.fileInputRef = React.createRef();
+        this.pageRef = React.createRef();
+        this.primaryActionRef = React.createRef();
+        this.confirmCancelRef = React.createRef();
     }
 
     componentDidMount () {
@@ -64,847 +68,543 @@ class CustomThemesPage extends React.Component {
         });
     }
 
-    componentDidUpdate (previousProps) {
-        const nextTab = customThemesTab(this.props.initialTab);
-        if (previousProps.initialTab !== this.props.initialTab && nextTab !== this.state.tab) {
-            this.setTab(nextTab, {notify: false});
+    componentDidUpdate (previousProps, previousState) {
+        if (this.state.pendingDelete && this.state.pendingDelete !== previousState.pendingDelete &&
+            this.confirmCancelRef.current) {
+            this.confirmCancelRef.current.focus();
+        }
+        if (this.pendingFocus && this.state.view === 'library') {
+            this.applyPendingFocus();
+        }
+        if (previousProps.initialTab === this.props.initialTab) return;
+        const next = customThemesTab(this.props.initialTab);
+        if (next !== this.state.view && !(next === 'library' && this.state.view === 'edit')) {
+            this.openView(next, {notify: false});
         }
     }
 
     componentWillUnmount () {
         if (this.unsubscribe) this.unsubscribe();
-        if (this.state.originalThemeBeforePreview) {
-            this.props.onChangeTheme(this.state.originalThemeBeforePreview);
-        }
+        this.stopPreview();
     }
 
-    notifyTabChange = tab => {
-        if (this.props.onTabChange) this.props.onTabChange(tab);
-    };
+    applyPendingFocus () {
+        const target = this.pendingFocus;
+        this.pendingFocus = null;
+        const page = this.pageRef.current;
+        const tile = target.uuid && page ?
+            Array.from(page.querySelectorAll('button[data-uuid]'))
+                .find(button => button.dataset.uuid === target.uuid) : null;
+        const element = tile || this.primaryActionRef.current;
+        if (element) element.focus();
+    }
 
-    setTab = (tab, {notify = true} = {}) => {
+    message (descriptor, values) {
+        return this.props.intl.formatMessage(descriptor, values);
+    }
+
+    openView (view, {notify = true, editingUuid = null} = {}) {
         this.stopPreview();
-        this.setState({
-            tab,
-            activeEditor: null,
-            editingThemeUuid: null,
-            editorInitial: {},
+        this.setState(state => ({
+            view,
+            editingUuid,
+            editorKey: state.editorKey + 1,
+            editorError: '',
             pendingDelete: null,
-            deleteError: '',
-            statusMessage: '',
-            errorMessage: ''
-        }, () => {
-            if (notify) this.notifyTabChange(tab);
+            status: view === 'library' ? state.status : null
+        }), () => {
+            if (notify && this.props.onTabChange && view !== 'edit') this.props.onTabChange(view);
         });
-    };
+    }
+
+    showStatus (kind, text) {
+        this.setState({status: {kind, text}});
+    }
+
+    previewTheme (theme) {
+        if (this.props.onPreviewTheme) this.props.onPreviewTheme(theme);
+        else this.props.onChangeTheme(theme);
+    }
 
     stopPreview () {
-        if (this.state.originalThemeBeforePreview) {
-            this.props.onChangeTheme(this.state.originalThemeBeforePreview);
-            this.setState({originalThemeBeforePreview: null});
-        }
+        if (!this.previewOriginal) return;
+        const original = this.previewOriginal;
+        this.previewOriginal = null;
+        this.previewTheme(original);
     }
 
-    closeEditor = () => {
-        this.stopPreview();
-        this.setState({
-            activeEditor: null,
-            editingThemeUuid: null,
-            editorInitial: {},
-            createMode: 'current'
-        });
-    };
+    baseTheme () {
+        return this.previewOriginal || this.props.theme;
+    }
 
-    showError = message => {
-        this.setState({errorMessage: message, statusMessage: ''});
-    };
-
-    handleCreateFromCurrent = () => {
-        const name = this.state.createName.trim();
-        if (!name) {
-            this.showError('Theme name is required.');
-            return;
-        }
-        try {
-            const customTheme = customThemeManager.createFromCurrentTheme(
-                this.props.theme,
-                name,
-                this.state.createDescription.trim()
-            );
-            this.setState({
-                createName: '',
-                createDescription: '',
-                tab: TABS.LIBRARY,
-                errorMessage: '',
-                statusMessage: `“${customTheme.name}” saved to your library.`
-            }, () => this.notifyTabChange(TABS.LIBRARY));
-            this.props.onChangeTheme(customTheme);
-        } catch (error) {
-            this.showError(`Failed to create theme: ${error.message}`);
-        }
-    };
-
-    handlePreviewGradient = (name, gradientColors, primaryColor, direction) => {
-        if (!name || this.state.originalThemeBeforePreview) {
+    handlePreview = theme => {
+        if (!theme) {
             this.stopPreview();
             return;
         }
-
-        const currentTheme = this.props.theme;
-        const gradientAccent = GradientUtils.createGradientAccent(gradientColors, primaryColor, {direction});
-        const previewTheme = new CustomTheme(
-            name,
-            this.state.createDescription,
-            gradientAccent,
-            currentTheme.gui || 'light',
-            currentTheme.blocks || 'three',
-            currentTheme.menuBarAlign || 'left',
-            currentTheme.wallpaper,
-            currentTheme.fonts,
-            'User',
-            currentTheme.appearance
-        );
-
-        this.setState({originalThemeBeforePreview: currentTheme});
-        this.props.onChangeTheme(previewTheme);
+        if (!this.previewOriginal) this.previewOriginal = this.props.theme;
+        this.previewTheme(theme);
     };
 
-    handleCreateGradient = (name, description, colorStops, primary, direction) => {
-        if (!name.trim()) {
-            this.showError('Theme name is required.');
-            return;
-        }
-        this.stopPreview();
+    handleOpenCreate = () => this.openView('create');
+
+    handleOpenGradient = () => this.openView('gradient');
+
+    handleBack = () => {
+        this.pendingFocus = {uuid: this.state.view === 'edit' ? this.state.editingUuid : null};
+        this.openView('library');
+    };
+
+    handleEditorInput = () => {
+        if (this.state.editorError) this.setState({editorError: ''});
+    };
+
+    handleDismissStatus = () => this.setState({status: null});
+
+    handleApply = e => {
+        const theme = customThemeManager.getTheme(e.currentTarget.dataset.uuid);
+        if (theme) this.props.onChangeTheme(theme);
+    };
+
+    handleEdit = e => {
+        this.openView('edit', {editingUuid: e.currentTarget.dataset.uuid});
+    };
+
+    handleExportOne = e => {
+        const theme = customThemeManager.getTheme(e.currentTarget.dataset.uuid);
+        if (!theme) return;
         try {
-            const customTheme = customThemeManager.createGradientTheme(
-                name.trim(),
-                description.trim(),
-                colorStops.map(stop => ({color: stop.color, position: stop.position})),
-                primary,
-                {direction},
-                this.props.theme
-            );
-            this.closeEditor();
-            this.setState({
-                tab: TABS.LIBRARY,
-                errorMessage: '',
-                statusMessage: `“${customTheme.name}” saved to your library.`
-            }, () => this.notifyTabChange(TABS.LIBRARY));
-            this.props.onChangeTheme(customTheme);
-        } catch (error) {
-            this.showError(`Failed to create gradient theme: ${error.message}`);
-        }
-    };
-
-    handleEditGradient = themeUuid => {
-        try {
-            const gradientInfo = customThemeManager.getThemeGradientInfo(themeUuid);
-            const theme = customThemeManager.getTheme(themeUuid);
-            if (!gradientInfo || !theme) {
-                this.showError('Could not load gradient information for this theme.');
-                return;
-            }
-            this.setState({
-                tab: TABS.CREATE,
-                createMode: 'gradient',
-                activeEditor: 'editGradient',
-                editingThemeUuid: themeUuid,
-                createDescription: theme.description,
-                editorInitial: {
-                    name: theme.name,
-                    description: theme.description,
-                    gradientColors: gradientInfo.colorStops,
-                    direction: gradientInfo.direction,
-                    primaryColor: gradientInfo.primaryColor
-                }
-            }, () => this.notifyTabChange(TABS.CREATE));
-        } catch (error) {
-            this.showError(`Failed to load gradient theme: ${error.message}`);
-        }
-    };
-
-    handleUpdateGradient = (name, description, colorStops, primary, direction) => {
-        const {editingThemeUuid} = this.state;
-        if (!name.trim()) {
-            this.showError('Theme name is required.');
-            return;
-        }
-        this.stopPreview();
-        try {
-            const updatedTheme = customThemeManager.updateThemeGradient(
-                editingThemeUuid,
-                colorStops.map(stop => ({color: stop.color, position: stop.position})),
-                primary,
-                {direction}
-            );
-
-            if (updatedTheme.name !== name.trim() || updatedTheme.description !== description.trim()) {
-                const newTheme = new CustomTheme(
-                    name.trim(),
-                    description.trim(),
-                    updatedTheme.customAccent,
-                    updatedTheme.gui,
-                    updatedTheme.blocks,
-                    updatedTheme.menuBarAlign,
-                    updatedTheme.wallpaper,
-                    updatedTheme.fonts,
-                    updatedTheme.author,
-                    updatedTheme.appearance,
-                    updatedTheme.sourceId
-                );
-                Object.defineProperty(newTheme, 'uuid', {value: editingThemeUuid, writable: false});
-                Object.defineProperty(newTheme, 'createdAt', {value: updatedTheme.createdAt, writable: false});
-                customThemeManager.themes.set(editingThemeUuid, newTheme);
-                customThemeManager.saveCustomThemes();
-            }
-
-            this.closeEditor();
-            this.setState({
-                tab: TABS.LIBRARY,
-                errorMessage: '',
-                statusMessage: 'Theme updated.'
-            }, () => this.notifyTabChange(TABS.LIBRARY));
-
-            const {theme} = this.props;
-            if (theme instanceof CustomTheme && theme.uuid === editingThemeUuid) {
-                this.props.onChangeTheme(customThemeManager.getTheme(editingThemeUuid));
-            }
-        } catch (error) {
-            this.showError(`Failed to update gradient theme: ${error.message}`);
-        }
-    };
-
-    handleDeleteTheme = (themeUuid, themeName) => {
-        this.setState({
-            pendingDelete: {uuid: themeUuid, name: themeName},
-            deleteError: ''
-        });
-    };
-
-    handleConfirmDeleteTheme = () => {
-        const {pendingDelete} = this.state;
-        if (!pendingDelete) return;
-        try {
-            customThemeManager.removeTheme(pendingDelete.uuid);
-            this.setState({
-                pendingDelete: null,
-                deleteError: '',
-                errorMessage: '',
-                statusMessage: `“${pendingDelete.name}” deleted.`
-            });
-        } catch (error) {
-            this.setState({deleteError: error.message || 'Could not delete this theme.'});
-        }
-    };
-
-    downloadJSON (data, filename) {
-        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-    }
-
-    handleExportThemes = () => {
-        try {
-            const date = new Date().toISOString()
-                .split('T')[0];
-            this.downloadJSON(
-                customThemeManager.exportAllThemes(),
-                `mistwarp-themes-${date}.json`
-            );
-            this.setState({errorMessage: '', statusMessage: 'Exported all themes.'});
-        } catch (error) {
-            this.showError(`Failed to export themes: ${error.message}`);
-        }
-    };
-
-    handleExportSingleTheme = theme => {
-        try {
-            this.downloadJSON({
+            downloadJSON({
                 version: '2.0',
                 timestamp: Date.now(),
                 themes: [theme.export()],
                 platform: 'MistWarp'
-            }, `${theme.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-theme.json`);
+            }, themeFileName(theme.name));
         } catch (error) {
-            this.showError(`Failed to export theme: ${error.message}`);
+            this.showStatus('error', this.message(messages.errorExport));
         }
     };
 
-    handleImportFile = event => {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = e => {
-            try {
-                const data = JSON.parse(e.target.result);
-                const results = customThemeManager.importThemes(data, false);
-
-                let message = `Imported ${results.imported}`;
-                if (results.skipped > 0) message += `, skipped ${results.skipped}`;
-                if (results.errors.length > 0) message += `, ${results.errors.length} error(s)`;
-                this.setState({
-                    tab: TABS.LIBRARY,
-                    errorMessage: '',
-                    statusMessage: `${message}.`
-                }, () => this.notifyTabChange(TABS.LIBRARY));
-                if (results.errors.length > 0) {
-                    this.showError(results.errors.join(' '));
-                }
-            } catch (error) {
-                this.showError(`Failed to import themes: ${error.message}`);
-            }
-        };
-        reader.readAsText(file);
-        event.target.value = '';
+    handleExportAll = () => {
+        try {
+            const date = new Date().toISOString()
+                .split('T')[0];
+            downloadJSON(customThemeManager.exportAllThemes(), `mistwarp-themes-${date}.json`);
+            this.showStatus('success', this.message(messages.exported, {count: this.state.customThemes.length}));
+        } catch (error) {
+            this.showStatus('error', this.message(messages.errorExport));
+        }
     };
 
-    renderTabs () {
-        const {tab, customThemes} = this.state;
-        const items = [
-            {
-                id: TABS.LIBRARY,
-                label: (
-                    <FormattedMessage
-                        defaultMessage="Library"
-                        id="mw.customThemes.tab.library"
-                    />
-                ),
-                icon: Bookmark,
-                badge: customThemes.length || null
-            },
-            {
-                id: TABS.CREATE,
-                label: (
-                    <FormattedMessage
-                        defaultMessage="Create"
-                        id="mw.customThemes.tab.create"
-                    />
-                ),
-                icon: CirclePlus
-            },
-            {
-                id: TABS.IMPORT,
-                label: (
-                    <FormattedMessage
-                        defaultMessage="Import / Export"
-                        id="mw.customThemes.tab.importExport"
-                    />
-                ),
-                icon: FolderInput
-            }
-        ];
+    handleImportClick = () => {
+        if (this.fileInputRef.current) this.fileInputRef.current.click();
+    };
 
+    handleImportFile = e => {
+        const file = e.target.files[0];
+        e.target.value = '';
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            let results;
+            try {
+                results = customThemeManager.importThemes(JSON.parse(reader.result), false);
+            } catch (error) {
+                this.showStatus('error', this.message(messages.errorImport));
+                return;
+            }
+            if (results.errors.length > 0 && results.imported === 0) {
+                this.showStatus('error', this.message(messages.importedWithErrors, {failed: results.errors.length}));
+                return;
+            }
+            const parts = [results.skipped > 0 ?
+                this.message(messages.importedWithSkipped, {imported: results.imported, skipped: results.skipped}) :
+                this.message(messages.imported, {imported: results.imported})];
+            if (results.errors.length > 0) {
+                parts.push(this.message(messages.importedWithErrors, {failed: results.errors.length}));
+            }
+            this.showStatus(results.errors.length > 0 ? 'error' : 'success', parts.join(' '));
+        };
+        reader.onerror = () => this.showStatus('error', this.message(messages.errorImport));
+        reader.readAsText(file);
+    };
+
+    handleRequestDelete = e => {
+        this.setState({pendingDelete: e.currentTarget.dataset.uuid});
+    };
+
+    handleCancelDelete = () => {
+        this.pendingFocus = {uuid: this.state.pendingDelete};
+        this.setState({pendingDelete: null});
+    };
+
+    handleConfirmDelete = () => {
+        const theme = customThemeManager.getTheme(this.state.pendingDelete);
+        this.pendingFocus = {uuid: null};
+        this.setState({pendingDelete: null});
+        if (!theme) return;
+        try {
+            customThemeManager.removeTheme(theme.uuid);
+            this.showStatus('success', this.message(messages.deleted, {themeName: theme.name}));
+        } catch (error) {
+            this.showStatus('error', this.message(messages.errorDelete));
+        }
+    };
+
+    nameError (name, editingTheme) {
+        if (!name) return this.message(messages.errorNameRequired);
+        if (editingTheme && editingTheme.name === name) return '';
+        const ignoreUuid = editingTheme ? editingTheme.uuid : null;
+        const lower = name.toLowerCase();
+        const taken = this.state.customThemes.some(theme => theme.uuid !== ignoreUuid &&
+            theme.name.trim().toLowerCase() === lower);
+        if (taken) return this.message(messages.errorNameTaken, {themeName: name});
+        return '';
+    }
+
+    handleSubmit = ({name, description, gradient, gradientChanged}) => {
+        const {view, editingUuid} = this.state;
+        const editingTheme = view === 'edit' ? customThemeManager.getTheme(editingUuid) : null;
+        const editing = view === 'edit';
+        if (editing && !editingTheme) {
+            this.setState({editorError: this.message(messages.errorSave)});
+            return;
+        }
+        const nameError = this.nameError(name, editingTheme);
+        if (nameError) {
+            this.setState({editorError: nameError});
+            return;
+        }
+        if (!editing && this.state.customThemes.length >= MAX_THEMES) {
+            this.setState({editorError: this.message(messages.errorLimit)});
+            return;
+        }
+
+        const base = this.baseTheme();
+        const wasActive = editing && base instanceof CustomTheme && base.uuid === editingUuid;
+        let saved;
+        try {
+            if (editing) {
+                const updates = {name, description};
+                if (gradient && gradientChanged) {
+                    const accent = GradientUtils.createGradientAccent(gradient.stops, gradient.primaryColor, {
+                        direction: gradient.direction
+                    });
+                    const foreground = editingTheme.customAccent && editingTheme.customAccent.guiColors &&
+                        editingTheme.customAccent.guiColors['menu-bar-foreground'];
+                    if (foreground) accent.guiColors['menu-bar-foreground'] = foreground;
+                    updates.accent = accent;
+                }
+                saved = customThemeManager.updateTheme(editingUuid, updates);
+            } else if (gradient) {
+                saved = customThemeManager.createGradientTheme(
+                    name,
+                    description,
+                    gradient.stops,
+                    gradient.primaryColor,
+                    {direction: gradient.direction},
+                    base
+                );
+            } else {
+                saved = customThemeManager.createFromCurrentTheme(base, name, description);
+            }
+        } catch (error) {
+            this.setState({editorError: this.message(messages.errorSave)});
+            return;
+        }
+
+        const original = this.previewOriginal;
+        this.previewOriginal = null;
+        if (!editing || wasActive) this.props.onChangeTheme(saved);
+        else if (original) this.previewTheme(original);
+        this.pendingFocus = {uuid: saved.uuid};
+        this.openView('library');
+        this.showStatus('success', this.message(editing ? messages.updated : messages.saved, {themeName: saved.name}));
+    };
+
+    renderToolbar () {
+        return (
+            <div className={styles.toolbar}>
+                <div className={styles.toolbarGroup}>
+                    <button
+                        ref={this.primaryActionRef}
+                        type="button"
+                        className={styles.primaryButton}
+                        onClick={this.handleOpenCreate}
+                    >
+                        <Sparkles size={16} />
+                        <FormattedMessage {...messages.saveCurrent} />
+                    </button>
+                    <button
+                        type="button"
+                        className={styles.secondaryButton}
+                        onClick={this.handleOpenGradient}
+                    >
+                        <Blend size={16} />
+                        <FormattedMessage {...messages.newGradient} />
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    renderStatus () {
+        const {status} = this.state;
+        if (!status) return null;
+        const error = status.kind === 'error';
+        const Icon = error ? CircleAlert : CircleCheck;
         return (
             <div
-                className={styles.ctTabs}
-                role="tablist"
+                className={classNames(styles.status, error ? styles.statusError : styles.statusSuccess)}
+                role={error ? 'alert' : 'status'}
             >
-                {items.map(item => {
-                    const Icon = item.icon;
-                    const selected = tab === item.id;
-                    return (
-                        <button
-                            key={item.id}
-                            role="tab"
-                            type="button"
-                            aria-selected={selected}
-                            className={classNames(styles.ctTab, {
-                                [styles.ctTabSelected]: selected
-                            })}
-                            onClick={() => this.setTab(item.id)}
-                        >
-                            <Icon size={15} />
-                            <span>{item.label}</span>
-                            {typeof item.badge === 'number' && item.badge > 0 && (
-                                <span className={styles.ctTabBadge}>{item.badge}</span>
-                            )}
-                        </button>
-                    );
-                })}
+                <Icon size={16} />
+                <span className={styles.statusText}>{status.text}</span>
+                <button
+                    type="button"
+                    className={styles.statusDismiss}
+                    aria-label={this.message(messages.dismiss)}
+                    title={this.message(messages.dismiss)}
+                    onClick={this.handleDismissStatus}
+                >
+                    <X size={14} />
+                </button>
             </div>
+        );
+    }
+
+    renderEmpty () {
+        return (
+            <div className={styles.empty}>
+                <span className={styles.emptyIcon}>
+                    <Palette size={22} />
+                </span>
+                <span className={styles.emptyTitle}>
+                    <FormattedMessage {...messages.emptyTitle} />
+                </span>
+                <span className={styles.emptyText}>
+                    <FormattedMessage {...messages.emptyHint} />
+                </span>
+            </div>
+        );
+    }
+
+    renderTile (customTheme) {
+        const {theme} = this.props;
+        const active = theme instanceof CustomTheme && theme.uuid === customTheme.uuid;
+        const confirming = this.state.pendingDelete === customTheme.uuid;
+        const isGradient = Boolean(customThemeManager.hasCustomGradient(customTheme.uuid));
+        const themeName = customTheme.name;
+        const author = customTheme.author && customTheme.author !== 'User' && customTheme.author !== 'Unknown' ?
+            customTheme.author : '';
+        let meta = customTheme.description;
+        if (!meta && author) meta = this.message(messages.byAuthor, {author});
+        if (!meta) meta = this.message(isGradient ? messages.gradientKind : messages.savedKind);
+
+        return (
+            <li
+                key={customTheme.uuid}
+                className={classNames(styles.tile, {
+                    [styles.tileActive]: active,
+                    [styles.tileConfirming]: confirming
+                })}
+            >
+                <button
+                    type="button"
+                    className={styles.tilePreviewButton}
+                    data-uuid={customTheme.uuid}
+                    aria-pressed={active}
+                    aria-label={this.message(messages.applyTheme, {themeName})}
+                    onClick={this.handleApply}
+                >
+                    <CustomThemePreview theme={customTheme} />
+                    {active ? (
+                        <span className={styles.activeBadge}>
+                            <Check size={12} />
+                            <FormattedMessage {...messages.active} />
+                        </span>
+                    ) : null}
+                </button>
+                {confirming ? null : (
+                    <div className={styles.tileActions}>
+                        <button
+                            type="button"
+                            className={styles.iconButton}
+                            data-uuid={customTheme.uuid}
+                            aria-label={this.message(messages.editTheme, {themeName})}
+                            title={this.message(messages.editTheme, {themeName})}
+                            onClick={this.handleEdit}
+                        >
+                            <PenLine size={16} />
+                        </button>
+                        <button
+                            type="button"
+                            className={styles.iconButton}
+                            data-uuid={customTheme.uuid}
+                            aria-label={this.message(messages.exportTheme, {themeName})}
+                            title={this.message(messages.exportTheme, {themeName})}
+                            onClick={this.handleExportOne}
+                        >
+                            <Download size={16} />
+                        </button>
+                        <button
+                            type="button"
+                            className={styles.iconButton}
+                            data-uuid={customTheme.uuid}
+                            aria-label={this.message(messages.deleteTheme, {themeName})}
+                            title={this.message(messages.deleteTheme, {themeName})}
+                            onClick={this.handleRequestDelete}
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    </div>
+                )}
+                {confirming ? (
+                    <div className={styles.tileConfirm}>
+                        <span className={styles.tileConfirmText}>
+                            <FormattedMessage {...messages.deleteConfirm} />
+                        </span>
+                        <button
+                            ref={this.confirmCancelRef}
+                            type="button"
+                            className={styles.smallButton}
+                            onClick={this.handleCancelDelete}
+                        >
+                            <FormattedMessage {...messages.cancel} />
+                        </button>
+                        <button
+                            type="button"
+                            className={classNames(styles.smallButton, styles.dangerButton)}
+                            onClick={this.handleConfirmDelete}
+                        >
+                            <FormattedMessage {...messages.deleteAction} />
+                        </button>
+                    </div>
+                ) : (
+                    <div className={styles.tileInfo}>
+                        <span
+                            className={styles.tileName}
+                            title={themeName}
+                        >
+                            {themeName}
+                        </span>
+                        <span
+                            className={styles.tileMeta}
+                            title={meta}
+                        >
+                            {meta}
+                        </span>
+                    </div>
+                )}
+            </li>
         );
     }
 
     renderLibrary () {
-        const {theme} = this.props;
-        const {customThemes, deleteError, pendingDelete} = this.state;
-
-        if (customThemes.length === 0) {
-            return (
-                <div className={styles.ctEmpty}>
-                    <Palette size={28} />
-                    <h3>
-                        <FormattedMessage
-                            defaultMessage="No custom themes yet"
-                            id="tw.customThemes.empty"
-                        />
-                    </h3>
-                    <p className={styles.detail}>
-                        {this.props.onOpenThemeMarketplace ? (
-                            <FormattedMessage
-                                defaultMessage="Create one from your current look, or browse the marketplace."
-                                id="mw.customThemes.empty.hint"
-                            />
-                        ) : (
-                            <FormattedMessage
-                                defaultMessage="Create one from your current look, or import a theme file."
-                                id="mw.customThemes.empty.hintOffline"
-                            />
-                        )}
-                    </p>
-                    <div className={styles.ctEmptyActions}>
-                        <button
-                            type="button"
-                            className={styles.button}
-                            onClick={() => this.setTab(TABS.CREATE)}
-                        >
-                            <CirclePlus size={14} />
-                            <FormattedMessage
-                                defaultMessage="Create a theme"
-                                id="mw.customThemes.empty.create"
-                            />
-                        </button>
-                        {this.props.onOpenThemeMarketplace ? (
-                            <button
-                                type="button"
-                                className={styles.ctButtonSecondary}
-                                onClick={this.props.onOpenThemeMarketplace}
-                            >
-                                <Store size={14} />
-                                <FormattedMessage
-                                    defaultMessage="Browse marketplace"
-                                    id="mw.customThemes.empty.marketplace"
-                                />
-                            </button>
-                        ) : null}
-                    </div>
-                </div>
-            );
-        }
-
-        return (
-            <div className={styles.ctLibrary}>
-                {customThemes.map(customTheme => {
-                    const isSelected = theme instanceof CustomTheme && theme.uuid === customTheme.uuid;
-                    const isGradient = customThemeManager.hasCustomGradient(customTheme.uuid);
-                    const confirmingDelete = pendingDelete && pendingDelete.uuid === customTheme.uuid;
-                    return (
-                        <div
-                            key={customTheme.uuid}
-                            className={classNames(styles.ctCard, {
-                                [styles.ctCardSelected]: isSelected
-                            })}
-                        >
-                            {confirmingDelete ? (
-                                <div className={styles.ctDeleteConfirm}>
-                                    <span>
-                                        <strong>
-                                            <FormattedMessage
-                                                defaultMessage="Delete “{themeName}”?"
-                                                id="mw.customThemes.delete.confirm"
-                                                values={{themeName: customTheme.name}}
-                                            />
-                                        </strong>
-                                        <small>
-                                            <FormattedMessage
-                                                defaultMessage="This cannot be undone."
-                                                id="mw.customThemes.delete.warning"
-                                            />
-                                        </small>
-                                        {deleteError ? (
-                                            <small className={styles.ctDeleteError}>{deleteError}</small>
-                                        ) : null}
-                                    </span>
-                                    <span className={styles.ctDeleteActions}>
-                                        <button
-                                            type="button"
-                                            className={styles.ctButtonSecondary}
-                                            onClick={() => this.setState({pendingDelete: null, deleteError: ''})}
-                                        >
-                                            <FormattedMessage
-                                                defaultMessage="Cancel"
-                                                id="general.cancel"
-                                            />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className={styles.button}
-                                            onClick={this.handleConfirmDeleteTheme}
-                                        >
-                                            <FormattedMessage
-                                                defaultMessage="Delete theme"
-                                                id="mw.customThemes.delete.action"
-                                            />
-                                        </button>
-                                    </span>
-                                </div>
-                            ) : (
-                                <React.Fragment>
-                                    <button
-                                        type="button"
-                                        className={styles.ctCardMain}
-                                        onClick={() => this.props.onChangeTheme(customTheme)}
-                                    >
-                                        <span
-                                            className={styles.ctCardSwatch}
-                                            style={themePreviewStyle(customTheme)}
-                                        />
-                                        <span className={styles.ctCardBody}>
-                                            <span className={styles.ctCardTitleRow}>
-                                                <span className={styles.ctCardName}>{customTheme.name}</span>
-                                                {isSelected && (
-                                                    <span className={styles.ctActivePill}>
-                                                        <Check size={12} />
-                                                        <FormattedMessage
-                                                            defaultMessage="Active"
-                                                            id="mw.customThemes.active"
-                                                        />
-                                                    </span>
-                                                )}
-                                            </span>
-                                            {customTheme.description ? (
-                                                <span className={styles.ctCardDesc}>{customTheme.description}</span>
-                                            ) : (
-                                                <span className={styles.ctCardDescMuted}>
-                                                    {isGradient ? 'Gradient theme' : 'Custom theme'}
-                                                    {customTheme.author && customTheme.author !== 'User' ?
-                                                        ` · ${customTheme.author}` : ''}
-                                                </span>
-                                            )}
-                                        </span>
-                                    </button>
-                                    <div className={styles.ctCardActions}>
-                                        {isGradient && (
-                                            <button
-                                                type="button"
-                                                className={styles.iconButton}
-                                                title="Edit gradient"
-                                                onClick={() => this.handleEditGradient(customTheme.uuid)}
-                                            >
-                                                <Edit size={15} />
-                                            </button>
-                                        )}
-                                        <button
-                                            type="button"
-                                            className={styles.iconButton}
-                                            title="Export theme"
-                                            onClick={() => this.handleExportSingleTheme(customTheme)}
-                                        >
-                                            <Download size={15} />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className={styles.iconButton}
-                                            title="Delete theme"
-                                            onClick={() => this.handleDeleteTheme(customTheme.uuid, customTheme.name)}
-                                        >
-                                            <Trash size={15} />
-                                        </button>
-                                    </div>
-                                </React.Fragment>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
-        );
-    }
-
-    renderCreate () {
-        const {createMode, activeEditor, editorInitial} = this.state;
-
-        if (activeEditor === 'editGradient') {
-            return (
-                <div className={styles.ctPanel}>
-                    <div className={styles.ctPanelHeader}>
-                        <h3>
-                            <FormattedMessage
-                                defaultMessage="Edit gradient"
-                                id="mw.customThemes.editGradient"
-                            />
-                        </h3>
-                    </div>
-                    <GradientBuilder
-                        mode="edit"
-                        initialName={editorInitial.name}
-                        initialDescription={editorInitial.description}
-                        initialGradientColors={editorInitial.gradientColors}
-                        initialDirection={editorInitial.direction}
-                        initialPrimaryColor={editorInitial.primaryColor}
-                        onSubmit={this.handleUpdateGradient}
-                        onPreview={this.handlePreviewGradient}
-                        onCancel={() => {
-                            this.closeEditor();
-                            this.setTab(TABS.LIBRARY);
-                        }}
-                    />
-                </div>
-            );
-        }
-
-        return (
-            <div className={styles.ctCreate}>
-                <div className={styles.ctModeSwitch}>
-                    <button
-                        type="button"
-                        className={classNames(styles.ctModeBtn, {
-                            [styles.ctModeBtnSelected]: createMode === 'current'
-                        })}
-                        onClick={() => this.setState({createMode: 'current'})}
-                    >
-                        <Sparkles size={15} />
-                        <FormattedMessage
-                            defaultMessage="From current"
-                            id="mw.customThemes.create.fromCurrent"
-                        />
-                    </button>
-                    <button
-                        type="button"
-                        className={classNames(styles.ctModeBtn, {
-                            [styles.ctModeBtnSelected]: createMode === 'gradient'
-                        })}
-                        onClick={() => this.setState({createMode: 'gradient'})}
-                    >
-                        <Palette size={15} />
-                        <FormattedMessage
-                            defaultMessage="Gradient"
-                            id="mw.customThemes.create.gradient"
-                        />
-                    </button>
-                </div>
-
-                {createMode === 'current' ? (
-                    <div className={styles.ctPanel}>
-                        <div className={styles.ctSnapshot}>
-                            <div
-                                className={styles.ctSnapshotSwatch}
-                                style={themePreviewStyle(this.props.theme)}
-                            />
-                            <div className={styles.ctSnapshotMeta}>
-                                <strong>
-                                    <FormattedMessage
-                                        defaultMessage="Current look"
-                                        id="mw.customThemes.create.snapshot"
-                                    />
-                                </strong>
-                                <span>
-                                    <FormattedMessage
-                                        defaultMessage="Saves accent, GUI mode, blocks, wallpaper, and fonts."
-                                        id="mw.customThemes.create.fromCurrent.hint"
-                                    />
-                                </span>
-                            </div>
-                        </div>
-
-                        <label className={styles.ctField}>
-                            <span className={styles.ctLabel}>
-                                <FormattedMessage
-                                    defaultMessage="Name"
-                                    id="tw.customThemes.createDialog.name"
-                                />
-                            </span>
-                            <input
-                                type="text"
-                                className={styles.ctInput}
-                                value={this.state.createName}
-                                onChange={e => this.setState({createName: e.target.value})}
-                                placeholder="My Custom Theme"
-                                maxLength={50}
-                                autoComplete="off"
-                            />
-                        </label>
-
-                        <label className={styles.ctField}>
-                            <span className={styles.ctLabel}>
-                                <FormattedMessage
-                                    defaultMessage="Description (optional)"
-                                    id="tw.customThemes.createDialog.description"
-                                />
-                            </span>
-                            <textarea
-                                className={styles.ctTextarea}
-                                value={this.state.createDescription}
-                                onChange={e => this.setState({createDescription: e.target.value})}
-                                placeholder="A custom theme based on current settings"
-                                maxLength={200}
-                                rows={3}
-                            />
-                        </label>
-
-                        <div className={styles.ctFormActions}>
-                            <button
-                                type="button"
-                                className={styles.button}
-                                disabled={!this.state.createName.trim()}
-                                onClick={this.handleCreateFromCurrent}
-                            >
-                                <FormattedMessage
-                                    defaultMessage="Save to library"
-                                    id="mw.customThemes.create.save"
-                                />
-                            </button>
-                        </div>
-                    </div>
-                ) : (
-                    <div className={styles.ctPanel}>
-                        <GradientBuilder
-                            mode="create"
-                            onSubmit={this.handleCreateGradient}
-                            onPreview={this.handlePreviewGradient}
-                            onCancel={() => this.setTab(TABS.LIBRARY)}
-                        />
-                    </div>
-                )}
-            </div>
-        );
-    }
-
-    renderImportExport () {
         const {customThemes} = this.state;
         return (
-            <div className={styles.ctImport}>
-                <div className={styles.ctActionCard}>
-                    <div className={styles.ctActionIcon}><Upload size={18} /></div>
-                    <div className={styles.ctActionBody}>
-                        <h3>
-                            <FormattedMessage
-                                defaultMessage="Import"
-                                id="tw.customThemes.import"
-                            />
-                        </h3>
-                        <p className={styles.detail}>
-                            <FormattedMessage
-                                defaultMessage="Load themes from a MistWarp or NitroBolt JSON file."
-                                id="mw.customThemes.import.hint"
-                            />
-                        </p>
-                    </div>
-                    <button
-                        type="button"
-                        className={styles.button}
-                        onClick={() => this.fileInputRef.current && this.fileInputRef.current.click()}
-                    >
-                        <FolderInput size={14} />
-                        <FormattedMessage
-                            defaultMessage="Choose file"
-                            id="mw.customThemes.import.choose"
-                        />
-                    </button>
-                </div>
-
-                <div className={styles.ctActionCard}>
-                    <div className={styles.ctActionIcon}><Download size={18} /></div>
-                    <div className={styles.ctActionBody}>
-                        <h3>
-                            <FormattedMessage
-                                defaultMessage="Export all"
-                                id="tw.customThemes.export"
-                            />
-                        </h3>
-                        <p className={styles.detail}>
-                            <FormattedMessage
-                                defaultMessage="Download every theme in your library as one JSON file."
-                                id="mw.customThemes.export.hint"
-                            />
-                        </p>
-                    </div>
-                    <button
-                        type="button"
-                        className={styles.ctButtonSecondary}
-                        disabled={customThemes.length === 0}
-                        onClick={this.handleExportThemes}
-                    >
-                        <Download size={14} />
-                        <FormattedMessage
-                            defaultMessage="Export"
-                            id="mw.customThemes.export.button"
-                        />
-                    </button>
-                </div>
-
-                {this.props.onOpenThemeMarketplace ? (
-                    <div className={styles.ctActionCard}>
-                        <div className={styles.ctActionIcon}><Store size={18} /></div>
-                        <div className={styles.ctActionBody}>
-                            <h3>
-                                <FormattedMessage
-                                    defaultMessage="WarpTheme marketplace"
-                                    id="mw.customThemes.marketplace.title"
-                                />
-                            </h3>
-                            <p className={styles.detail}>
-                                <FormattedMessage
-                                    defaultMessage="Browse community themes and add them to your library."
-                                    id="mw.customThemes.marketplace.hint"
-                                />
-                            </p>
-                        </div>
+            <React.Fragment>
+                {this.renderToolbar()}
+                {this.renderStatus()}
+                {customThemes.length === 0 ? this.renderEmpty() : (
+                    <ul className={styles.grid}>
+                        {customThemes.map(customTheme => this.renderTile(customTheme))}
+                    </ul>
+                )}
+                <div className={styles.libraryFooter}>
+                    <div className={styles.toolbarGroup}>
                         <button
                             type="button"
-                            className={styles.ctButtonSecondary}
-                            onClick={this.props.onOpenThemeMarketplace}
+                            className={styles.ghostButton}
+                            onClick={this.handleImportClick}
                         >
-                            <Store size={14} />
-                            <FormattedMessage
-                                defaultMessage="Open"
-                                id="mw.customThemes.marketplace.open"
-                            />
+                            <Upload size={16} />
+                            <FormattedMessage {...messages.importFile} />
+                        </button>
+                        <button
+                            type="button"
+                            className={styles.ghostButton}
+                            disabled={customThemes.length === 0}
+                            onClick={this.handleExportAll}
+                        >
+                            <Download size={16} />
+                            <FormattedMessage {...messages.exportAll} />
                         </button>
                     </div>
-                ) : null}
-            </div>
+                    {this.props.onOpenThemeMarketplace ? (
+                        <button
+                            type="button"
+                            className={styles.linkButton}
+                            onClick={this.props.onOpenThemeMarketplace}
+                        >
+                            <Store size={16} />
+                            <FormattedMessage {...messages.browse} />
+                        </button>
+                    ) : null}
+                </div>
+            </React.Fragment>
+        );
+    }
+
+    renderEditor () {
+        const {view, editingUuid, editorKey, editorError} = this.state;
+        const editingTheme = view === 'edit' ? customThemeManager.getTheme(editingUuid) : null;
+        if (view === 'edit' && !editingTheme) return this.renderLibrary();
+        let initialGradient = null;
+        if (editingTheme) {
+            const info = customThemeManager.getThemeGradientInfo(editingUuid);
+            if (info && info.colorStops.length >= 2) {
+                initialGradient = {
+                    stops: info.colorStops,
+                    direction: info.direction,
+                    primaryColor: info.primaryColor
+                };
+            }
+        }
+        return (
+            <CustomThemeEditor
+                key={editorKey}
+                baseTheme={this.baseTheme()}
+                editingTheme={editingTheme}
+                error={editorError}
+                initialGradient={initialGradient}
+                mode={EDITOR_MODES[view]}
+                onCancel={this.handleBack}
+                onInput={this.handleEditorInput}
+                onPreview={this.handlePreview}
+                onSubmit={this.handleSubmit}
+            />
         );
     }
 
     render () {
-        const {tab, statusMessage, errorMessage} = this.state;
-
         return (
-            <Box className={styles.ctPage}>
-                {this.renderTabs()}
-
-                {statusMessage && (
-                    <div className={styles.ctStatus}>{statusMessage}</div>
-                )}
-                {errorMessage && (
-                    <div
-                        className={styles.ctDeleteError}
-                        role="alert"
-                    >{errorMessage}</div>
-                )}
-
-                <div className={styles.ctContent}>
-                    {tab === TABS.LIBRARY && this.renderLibrary()}
-                    {tab === TABS.CREATE && this.renderCreate()}
-                    {tab === TABS.IMPORT && this.renderImportExport()}
-                </div>
-
+            <div
+                className={styles.page}
+                ref={this.pageRef}
+            >
+                {this.state.view === 'library' ? this.renderLibrary() : this.renderEditor()}
                 <input
                     ref={this.fileInputRef}
                     type="file"
-                    accept=".json"
-                    style={{display: 'none'}}
+                    accept=".json,application/json"
+                    className={styles.hiddenInput}
                     onChange={this.handleImportFile}
                 />
-            </Box>
+            </div>
         );
     }
 }
 
 CustomThemesPage.propTypes = {
-    initialTab: PropTypes.oneOf(Object.values(TABS)),
+    initialTab: PropTypes.string,
+    intl: intlShape.isRequired,
     theme: PropTypes.instanceOf(Theme),
     onChangeTheme: PropTypes.func,
     onOpenThemeMarketplace: PropTypes.func,
+    onPreviewTheme: PropTypes.func,
     onTabChange: PropTypes.func
 };
 
 export {customThemesTab};
-export default CustomThemesPage;
+export default injectIntl(CustomThemesPage);
