@@ -18,6 +18,11 @@ const manifest = {
     {
       "text": "\"Palette area hover\" mode only extends the viewing area. If you want to be able to drag blocks into that area without them getting trashed, use one of the other modes.",
       "id": "hoverExplanation"
+    },
+    {
+      "type": "notice",
+      "id": "code-mode",
+      "text": "Not available in Code mode."
     }
   ],
   "dynamicDisable": true,

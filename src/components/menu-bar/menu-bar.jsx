@@ -67,6 +67,9 @@ import downloadBlob from '../../lib/utils/download-blob.js';
 import {projectFilename} from '../../lib/utils/safe-filename.js';
 import RestorePointAPI from '../../lib/api/restore-points';
 import {getShortcutKey} from '../../lib/shortcuts/registry.js';
+import formatShortcutDisplay from '../../lib/shortcuts/display.js';
+import {isBlocksEditorVisible, isCodeMode} from '../../lib/editor-visibility.js';
+import ModeSwitch from '../code-mode/mode-switch.jsx';
 
 import TWDesktopSettings from './tw-desktop-settings.jsx';
 import RoturAccount from './mw-rotur-account.jsx';
@@ -89,7 +92,6 @@ import {
     openSimpleDialog
 } from '../../reducers/modals';
 import {openCollaborationModal} from '../../reducers/collaboration';
-import {BLOCKS_TAB_INDEX} from '../../reducers/editor-tab';
 import {setPlayer} from '../../reducers/mode';
 import {
     getIsUpdating,
@@ -127,6 +129,9 @@ import {setProjectUnchanged} from '../../reducers/project-changed';
 import {showStandardAlert, showAlertWithTimeout, closeAlertWithId} from '../../reducers/alerts';
 import {removeRestore} from '../../reducers/restore-deletion';
 import {nextUndoSource, undoLatest} from '../../lib/undo-history';
+import {latestRedo, latestUndo, subscribeCodeHistory} from '../../lib/code-mode/code-history.js';
+import {isCollaborating as isCodeLocked} from '../../lib/code-mode/apply-pipeline.js';
+import {runCodeHistory} from '../../lib/code-mode/code-dialogs.js';
 import collectMetadata from '../../lib/collect-metadata';
 import LazyScratchBlocks from '../../lib/tw-lazy-scratch-blocks';
 import {mediaRecorderSupported} from '../../addons/environment.js';
@@ -167,12 +172,15 @@ import {
     FilePen, PencilRuler, TriangleAlert, Info,
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, PackagePlus, Puzzle,
-    GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Wrench,
+    GitBranch, FileCog, Bug, Database, Undo, Redo, Undo2, Redo2, Handshake, Wrench,
     Download, AppWindow, Computer, Shield, Code, Code2,
     Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, Video,
     ShoppingBag, Backpack, Check, Zap,
-    Bookmark, BookmarkPlus, Trash2, FolderOpen
+    Bookmark, BookmarkPlus, Trash2, FolderOpen, FilePlus2
 } from 'lucide-react';
+import {countAllProblems} from '../../reducers/extension-dev.js';
+import {openExtension, openNewExtension} from '../../lib/extension-dev/actions.js';
+import extensionDevMessages from '../extension-dev/messages.js';
 
 import sharedMessages from '../../lib/constants/shared-messages';
 
@@ -251,9 +259,24 @@ const twMessages = defineMessages({
         defaultMessage: 'Could not start a new project. Your current project is still open.',
         description: 'Toast shown when File > New fails'
     },
+    undoCodeChange: {
+        id: 'mw.menuBar.undoCodeChange',
+        defaultMessage: 'Undo code change',
+        description: 'Edit menu item that undoes the latest apply of code text'
+    },
+    redoCodeChange: {
+        id: 'mw.menuBar.redoCodeChange',
+        defaultMessage: 'Redo code change',
+        description: 'Edit menu item that redoes the code apply that was undone'
+    },
+    codeHistoryCollaborating: {
+        id: 'mw.menuBar.codeHistoryCollaborating',
+        defaultMessage: 'Unavailable during collaboration',
+        description: 'Explanation under Undo code change while a collaboration session is running'
+    },
     codeTabOnly: {
-        id: 'mw.menuBar.codeTabOnly',
-        defaultMessage: 'Available on the Code tab',
+        id: 'mw.menuBar.scriptsTabOnly',
+        defaultMessage: 'Available on the Scripts tab',
         description: 'Explanation under Undo and Redo in the Edit menu while the Costumes or Sounds tab is open'
     },
     cloudSettings: {
@@ -385,18 +408,6 @@ MenuItemLink.propTypes = {
     href: PropTypes.string.isRequired
 };
 
-const formatShortcutDisplay = keyCombo => {
-    if (!keyCombo) return '';
-    const platform = isMac ? 'mac' : 'windows';
-    return keyCombo
-        .replace(/Ctrl/g, platform === 'mac' ? '⌘' : 'Ctrl')
-        .replace(/Cmd/g, '⌘')
-        .replace(/Alt/g, platform === 'mac' ? '⌥' : 'Alt')
-        .replace(/Shift/g, '⇧')
-        .replace(/Space/g, '␣')
-        .replace(/Enter/g, '↵')
-        .replace(/ /g, '');
-};
 
 const shortcutHint = (shortcutId, customShortcuts) =>
     formatShortcutDisplay(getShortcutKey(shortcutId, customShortcuts));
@@ -464,6 +475,8 @@ class MenuBar extends React.Component {
             'handleClickSeeMistWarpPage',
             'refreshMistWarpShared',
             'handleClickUndo',
+            'handleClickUndoCode',
+            'handleClickRedoCode',
             'handleClickRedo',
             'handleClickCollaboration',
             'handleClickAddonSettings',
@@ -475,6 +488,8 @@ class MenuBar extends React.Component {
             'handleClickMediaRecorder',
             'handleOpenExtensionLibrary',
             'handleOpenExtensionManager',
+            'handleNewExtension',
+            'handleOpenExtensionProblems',
             'handleClickFile',
             'refreshGitMenuState',
             'handleClickGitCommit',
@@ -513,6 +528,9 @@ class MenuBar extends React.Component {
         document.addEventListener('mousedown', this.handleDocumentMouseDown);
         this.observeMenuBarWidth();
         this.refreshMistWarpShared();
+        this.disposeCodeHistory = subscribeCodeHistory(() => {
+            if (!this.unmounted) this.setState(state => ({codeHistoryTick: (state.codeHistoryTick || 0) + 1}));
+        });
         this.disposeProjectHistory = subscribeProjectHistory(historyState => {
             if (historyState.phase === 'loading') {
                 this.setState({gitRepoExists: false, gitRemotes: []});
@@ -577,6 +595,7 @@ class MenuBar extends React.Component {
     }
     componentWillUnmount () {
         this.unmounted = true;
+        if (this.disposeCodeHistory) this.disposeCodeHistory();
         window.removeEventListener('mw:request-new-project', this.handleClickNew);
         document.removeEventListener('keydown', this.handleKeyPress);
         document.removeEventListener('mousedown', this.handleDocumentMouseDown);
@@ -794,6 +813,14 @@ class MenuBar extends React.Component {
     handleOpenExtensionManager () {
         this.props.onRequestCloseTools();
         this.props.onOpenExtensionManagerModal();
+    }
+    handleNewExtension () {
+        this.props.onRequestCloseTools();
+        this.props.onNewExtension();
+    }
+    handleOpenExtensionProblems () {
+        this.props.onRequestCloseTools();
+        this.props.onOpenExtensionProblemsFor(this.props.extensionProblemFirstId);
     }
     refreshMistWarpShared () {
         const remembered = communityEnabled ? getRememberedPlatformProjectState() : null;
@@ -1552,6 +1579,28 @@ class MenuBar extends React.Component {
                 if (!this.unmounted) this.updateUndoRedoState();
             });
     }
+    codeHistoryTarget () {
+        if (this.props.codeMode || !this.props.vm.editingTarget) return null;
+        return this.props.vm.editingTarget.id;
+    }
+    runCodeHistory (direction) {
+        const target = this.codeHistoryTarget();
+        const entry = direction === 'undo' ? latestUndo(target) : latestRedo(target);
+        if (!entry || isCodeLocked(this.props.vm)) return;
+        runCodeHistory({
+            vm: this.props.vm,
+            dispatch: this.props.dispatchAction,
+            intl: this.props.intl,
+            direction,
+            entry
+        });
+    }
+    handleClickUndoCode () {
+        this.runCodeHistory('undo');
+    }
+    handleClickRedoCode () {
+        this.runCodeHistory('redo');
+    }
     handleClickRedo () {
         if (!this.props.isPlayerOnly && this.props.blocksTabVisible && this.state.canRedo) {
             this.ensureScratchBlocks().then(ScratchBlocks => {
@@ -1766,6 +1815,12 @@ class MenuBar extends React.Component {
         // Show the About button only if we have a handler for it (like in the desktop app)
         const aboutButton = this.buildAboutMenu(this.props.onClickAbout);
         const canUseUndoRedo = !this.props.isPlayerOnly && this.props.blocksTabVisible;
+        const codeLocked = isCodeLocked(this.props.vm);
+        const codeTarget = this.codeHistoryTarget();
+        const canUndoCode = !this.props.isPlayerOnly && !codeLocked && Boolean(latestUndo(codeTarget));
+        const canRedoCode = !this.props.isPlayerOnly && !codeLocked && Boolean(latestRedo(codeTarget));
+        const codeHistoryReason = codeLocked ?
+            this.props.intl.formatMessage(twMessages.codeHistoryCollaborating) : null;
         const undoRedoUnavailableReason = this.props.isPlayerOnly || this.props.blocksTabVisible ?
             null : this.props.intl.formatMessage(twMessages.codeTabOnly);
         const menuBar = (
@@ -2147,6 +2202,22 @@ class MenuBar extends React.Component {
                                             id="gui.menuBar.redo"
                                         />
                                     </MenuItem>
+                                    <MenuItem
+                                        disabled={!canUndoCode}
+                                        onClick={this.handleClickUndoCode}
+                                        subtitle={codeHistoryReason}
+                                    >
+                                        <Undo2 />
+                                        {this.props.intl.formatMessage(twMessages.undoCodeChange)}
+                                    </MenuItem>
+                                    <MenuItem
+                                        disabled={!canRedoCode}
+                                        onClick={this.handleClickRedoCode}
+                                        subtitle={codeHistoryReason}
+                                    >
+                                        <Redo2 />
+                                        {this.props.intl.formatMessage(twMessages.redoCodeChange)}
+                                    </MenuItem>
                                 </MenuSection>
                                 <MenuSection>
                                     <TurboMode>{(toggleTurboMode, {turboMode}) => (
@@ -2347,22 +2418,48 @@ class MenuBar extends React.Component {
                                         />
                                     </MenuItem>
                                     <MenuItem
+                                        onClick={this.handleNewExtension}
+                                    >
+                                        <FilePlus2 />
+                                        {this.props.intl.formatMessage(extensionDevMessages.newExtensionMenu)}
+                                    </MenuItem>
+                                    <MenuItem
                                         onClick={this.handleOpenExtensionManager}
                                         shortcut={shortcutHint('extensionManager', this.props.customShortcuts)}
                                     >
                                         <FileCog />
                                         <FormattedMessage
-                                            defaultMessage="Manage Extensions"
-                                            description="Menu bar item for managing loaded extensions"
-                                            id="tw.menuBar.extensions.manage"
+                                            defaultMessage="Show Extensions in Code Mode"
+                                            // eslint-disable-next-line max-len
+                                            description="Menu bar item that switches to Code mode and shows the project's extensions"
+                                            id="mw.menuBar.extensions.reveal"
                                         />
                                     </MenuItem>
+                                    {this.props.extensionProblemCount > 0 ? (
+                                        <MenuItem
+                                            onClick={this.handleOpenExtensionProblems}
+                                        >
+                                            <TriangleAlert />
+                                            {this.props.intl.formatMessage(extensionDevMessages.problemsMenu, {
+                                                count: this.props.extensionProblemCount
+                                            })}
+                                        </MenuItem>
+                                    ) : null}
                                 </MenuSection>
                             </MenuBarMenu>
                         </MenuLabel>
                         {(this.props.canChangeTheme || this.props.canChangeLanguage) && <SettingsMenu />}
                         <HelpMenu />
                     </div>
+
+                    {!this.props.isPlayerOnly && (
+                        <div
+                            data-mw-item="editor-mode"
+                            className={styles.menuBarLayoutItem}
+                        >
+                            <ModeSwitch />
+                        </div>
+                    )}
 
                     {!this.props.isPlayerOnly && (
                         <button
@@ -2498,6 +2595,8 @@ MenuBar.propTypes = {
     authorThumbnailUrl: PropTypes.string,
     authorUsername: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]),
     blocksTabVisible: PropTypes.bool,
+    codeMode: PropTypes.bool,
+    dispatchAction: PropTypes.func,
     canChangeLanguage: PropTypes.bool,
     canChangeTheme: PropTypes.bool,
     canEditTitle: PropTypes.bool,
@@ -2556,6 +2655,10 @@ MenuBar.propTypes = {
     onClickVariableManager: PropTypes.func,
     onClickAddRestorePoint: PropTypes.func,
     onClickExtensionManager: PropTypes.func,
+    extensionProblemCount: PropTypes.number,
+    extensionProblemFirstId: PropTypes.string,
+    onNewExtension: PropTypes.func,
+    onOpenExtensionProblemsFor: PropTypes.func,
     openSimpleDialog: PropTypes.func.isRequired,
     showToast: PropTypes.func,
     onClickEdit: PropTypes.func,
@@ -2605,14 +2708,31 @@ MenuBar.contextTypes = {
     store: PropTypes.object
 };
 
+const countProblemsFor = (devState, id) => countAllProblems({
+    staticProblems: {[id]: devState.staticProblems[id] || []},
+    loadProblems: {[id]: devState.loadProblems[id] || []},
+    runtimeProblems: {[id]: devState.runtimeProblems[id] || []}
+});
+
+const firstProblemExtension = devState => {
+    const ids = Object.keys(devState.loadProblems).concat(
+        Object.keys(devState.staticProblems),
+        Object.keys(devState.runtimeProblems)
+    );
+    return ids.find(id => countProblemsFor(devState, id) > 0) || null;
+};
+
 const mapStateToProps = (state, ownProps) => {
     const loadingState = state.scratchGui.projectState.loadingState;
     return {
         authorUsername: state.scratchGui.tw.author.username,
         authorThumbnailUrl: state.scratchGui.tw.author.thumbnail,
-        blocksTabVisible: state.scratchGui.editorTab.activeTabIndex === BLOCKS_TAB_INDEX,
+        blocksTabVisible: isBlocksEditorVisible(state),
+        codeMode: isCodeMode(state),
         projectId: state.scratchGui.projectState.projectId,
         aboutMenuOpen: aboutMenuOpen(state),
+        extensionProblemCount: countAllProblems(state.scratchGui.extensionDev),
+        extensionProblemFirstId: firstProblemExtension(state.scratchGui.extensionDev),
         accountMenuOpen: accountMenuOpen(state),
         currentLocale: state.locales.locale,
         customShortcuts: state.scratchGui.shortcuts && state.scratchGui.shortcuts.customShortcuts,
@@ -2638,6 +2758,7 @@ const mapStateToProps = (state, ownProps) => {
 };
 
 const mapDispatchToProps = dispatch => ({
+    dispatchAction: action => dispatch(action),
     onClickSeeInside: () => dispatch(setPlayer(false)),
     onOpenExtensionLibrary: () => dispatch(openExtensionLibrary()),
     onClickAccount: () => dispatch(openAccountMenu()),
@@ -2669,6 +2790,8 @@ const mapDispatchToProps = dispatch => ({
     onClickGameItems: () => dispatch(openGameItemsModal()),
     onClickVariableManager: () => dispatch(openVariableManagerModal()),
     onClickExtensionManager: () => dispatch(openExtensionManagerModal()),
+    onNewExtension: () => openNewExtension(dispatch, null),
+    onOpenExtensionProblemsFor: id => openExtension(dispatch, id),
     onClickGitModal: () => {
         dispatch(closeEditMenu());
         dispatch(openGitModal());

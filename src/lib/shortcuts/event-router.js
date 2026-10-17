@@ -1,5 +1,5 @@
 import {isMac} from '../utils/browser';
-import {getDefaultShortcuts, applyCustomShortcuts} from './registry.js';
+import {getDefaultShortcuts, applyCustomShortcuts, matchShortcut, TEXT_TAB_CONTEXT} from './registry.js';
 import WindowManager from '../../addons/window-system/window-manager.js';
 
 let dispatch = null;
@@ -161,10 +161,23 @@ const normalizeEventKey = event => {
     return parts.join('+');
 };
 
-const findMatchingShortcut = keyCombo => shortcuts.find(shortcut => {
-    const shortcutKey = shortcut.key.toLowerCase().replace(/\s+/g, '');
-    return shortcutKey === keyCombo.toLowerCase().replace(/\s+/g, '');
-});
+const findMatchingShortcut = (keyCombo, options) => matchShortcut(shortcuts, keyCombo, options);
+
+const TEXT_TAB_GLOBALS = [
+    'toggleEditorMode',
+    'toggleExplorer',
+    'togglePanel',
+    'quickOpen',
+    'openReferenceTab',
+    'save',
+    'extensionManager',
+    'closeTab',
+    'nextTab',
+    'previousTab',
+    'stopAll'
+];
+
+const hasAltGraph = event => Boolean(event.getModifierState && event.getModifierState('AltGraph'));
 
 const executeReduxAction = shortcut => {
     if (!dispatch) return;
@@ -367,6 +380,9 @@ const executeCallbackAction = shortcut => {
             }
             break;
         default:
+            if (typeof callbacks[shortcut.action] === 'function') {
+                return callbacks[shortcut.action]();
+            }
             console.warn(`Unknown callback action: ${shortcut.action}`);
         }
     } catch (error) {
@@ -386,11 +402,37 @@ const executeShortcut = shortcut => {
     }
 };
 
+const closestOf = (target, selector) => (
+    target && typeof target.closest === 'function' ? target.closest(selector) : null
+);
+
+const isCodeEditorTarget = target => Boolean(closestOf(target, '[data-mw-code-editor]'));
+
+const isTextTabTarget = target => Boolean(closestOf(target, '[data-mw-text-tab]'));
+
+const handleTextTabKeyDown = (event, keyCombo) => {
+    const matchingShortcut = findMatchingShortcut(keyCombo, {
+        context: TEXT_TAB_CONTEXT,
+        altGraph: hasAltGraph(event)
+    });
+    if (!matchingShortcut || !isAllowedInMode(matchingShortcut)) return;
+    if (matchingShortcut.context !== TEXT_TAB_CONTEXT && !TEXT_TAB_GLOBALS.includes(matchingShortcut.id)) return;
+    if (matchingShortcut.actionType === null) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    executeShortcut(matchingShortcut);
+};
+
 const handleKeyDown = event => {
     if (event.repeat) return;
-
     const keyCombo = normalizeEventKey(event);
-    const matchingShortcut = findMatchingShortcut(keyCombo);
+    if (isTextTabTarget(event.target)) {
+        handleTextTabKeyDown(event, keyCombo);
+        return;
+    }
+    if (isCodeEditorTarget(event.target)) return;
+
+    const matchingShortcut = findMatchingShortcut(keyCombo, {altGraph: hasAltGraph(event)});
     if (!matchingShortcut || !isAllowedInMode(matchingShortcut)) return;
 
     if (isTypingTarget(event.target)) {
@@ -467,5 +509,6 @@ export {
     dispose,
     normalizeEventKey,
     findMatchingShortcut,
-    executeShortcut
+    executeShortcut,
+    TEXT_TAB_GLOBALS
 };

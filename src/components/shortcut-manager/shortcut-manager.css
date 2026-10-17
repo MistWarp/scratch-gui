@@ -100,6 +100,12 @@
     color: $text-primary;
 }
 
+.shortcutNote {
+    margin-top: 0.125rem;
+    font-size: 0.75rem;
+    color: color-mix(in srgb, $text-primary 60%, transparent);
+}
+
 .shortcutControls {
     display: flex;
     align-items: center;

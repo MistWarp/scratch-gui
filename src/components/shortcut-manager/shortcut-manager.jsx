@@ -20,6 +20,8 @@ import {
 import {
     getDefaultShortcuts,
     getCategoryLabel,
+    getOverriddenShortcut,
+    getShortcutConflict,
     normalizeKey,
     SHORTCUT_CATEGORIES
 } from '../../lib/shortcuts/registry.js';
@@ -114,10 +116,7 @@ class ShortcutManager extends React.Component {
     }
 
     getConflict (key, selfId) {
-        const normalized = normalizeKey(key);
-        const match = this.getAllShortcuts().find(shortcut =>
-            shortcut.id !== selfId && normalizeKey(shortcut.key) === normalized
-        );
+        const match = getShortcutConflict(this.getAllShortcuts(), key, selfId);
         return match ? match.label : null;
     }
 
@@ -125,7 +124,7 @@ class ShortcutManager extends React.Component {
         const defaultShortcuts = getDefaultShortcuts();
         const customShortcuts = this.props.customShortcuts || {};
 
-        return defaultShortcuts.map(shortcut => {
+        const shortcuts = defaultShortcuts.map(shortcut => {
             if (customShortcuts[shortcut.id]) {
                 return {
                     ...shortcut,
@@ -133,6 +132,10 @@ class ShortcutManager extends React.Component {
                 };
             }
             return shortcut;
+        });
+        return shortcuts.map(shortcut => {
+            const overridden = getOverriddenShortcut(shortcuts, shortcut);
+            return overridden ? {...shortcut, overrides: overridden.label} : shortcut;
         });
     }
 

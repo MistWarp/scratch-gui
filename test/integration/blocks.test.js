@@ -34,7 +34,7 @@ describe('Working with the blocks', () => {
 
     test('Blocks report when clicked in the toolbox', async () => {
         await loadUri(uri);
-        await clickText('Code');
+        await clickText('Scripts');
         await clickBlocksCategory('Operators');
         await clickText('join', scope.blocksTab); // Click "join <hello> <world>" block
         await findByText('apple banana', scope.reportedValue); // Tooltip with result
@@ -46,7 +46,7 @@ describe('Working with the blocks', () => {
         await loadUri(uri);
         await clickText('Sounds');
         await addSoundFromLibrary('meow', 'Meow');
-        await clickText('Code');
+        await clickText('Scripts');
         await clickBlocksCategory('Sound');
         // "Meow" sound block should be visible
         await findByText('Meow', scope.blocksTab);
@@ -63,7 +63,7 @@ describe('Working with the blocks', () => {
 
     test('Creating variables', async () => {
         await loadUri(uri);
-        await clickText('Code');
+        await clickText('Scripts');
         await clickBlocksCategory('Variables');
 
         // Expect a default variable "my variable" to be visible
@@ -110,7 +110,7 @@ describe('Working with the blocks', () => {
 
     test('Creating a list', async () => {
         await loadUri(uri);
-        await clickText('Code');
+        await clickText('Scripts');
         await clickBlocksCategory('Variables');
 
         await clickText('Make a List');
@@ -182,7 +182,7 @@ describe('Working with the blocks', () => {
         await loadUri(uri);
         await clickText('Sounds');
         await addSoundFromLibrary('meow', 'Meow');
-        await clickText('Code');
+        await clickText('Scripts');
         await clickBlocksCategory('Sound');
         await clickText('Meow', scope.blocksTab); // Click "play sound <Meow> until done" block
         await clickText('record'); // Click "record..." option in the block's sound menu
@@ -206,7 +206,7 @@ describe('Working with the blocks', () => {
             "//div[contains(text(), 'newname')]");
 
         // Make sure it is updated in the block menu
-        await clickText('Code');
+        await clickText('Scripts');
         await clickBlocksCategory('Looks');
         await clickText('newname', scope.blocksTab);
     });
@@ -225,7 +225,7 @@ describe('Working with the blocks', () => {
             "//div[contains(text(), '<NewCostume>')]");
 
         // Make sure it is updated in the block menu
-        await clickText('Code');
+        await clickText('Scripts');
         await clickBlocksCategory('Looks');
         await clickText('<NewCostume>', scope.blocksTab);
 
@@ -251,7 +251,7 @@ describe('Working with the blocks', () => {
             "//div[contains(text(), 'costume2')]");
         await clickText('costume2', scope.costumesTab);
         // Check that the menu has been updated
-        await clickText('Code');
+        await clickText('Scripts');
         await clickText('costume2', scope.blocksTab);
     });
 
@@ -263,7 +263,7 @@ describe('Working with the blocks', () => {
         // wait until the selected sound appears in sounds item list panel
         await findByXpath("//div[contains(@class,'sprite-selector-item_is-selected_')]" +
             "//div[contains(text(), 'A Bass')]");
-        await clickText('Code');
+        await clickText('Scripts');
         await clickBlocksCategory('Sound');
         await clickText('A\u00A0Bass', scope.blocksTab); // Need &nbsp; for block text
     });
@@ -273,7 +273,7 @@ describe('Working with the blocks', () => {
     test('Creating variables after adding extensions updates the toolbox', async () => {
         await loadUri(uri);
         await clickText('Costumes');
-        await clickText('Code');
+        await clickText('Scripts');
         await clickBlocksCategory('Variables');
         await clickText('Make a List');
         const el = await findByXpath("//input[@name='New list name:']");
@@ -288,7 +288,7 @@ describe('Working with the blocks', () => {
 
         await loadUri(uri);
 
-        await clickText('Code');
+        await clickText('Scripts');
         await clickBlocksCategory('Variables');
 
         // change "my variable" by 1

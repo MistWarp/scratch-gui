@@ -35,6 +35,8 @@ const describeActivity = (vm, activity) => {
         return asset ?
             `Editing sound "${asset.name}" in ${where}` :
             `Editing sounds in ${where}`;
+    case 'code':
+        return `Editing ${where} in Code mode`;
     default:
         return `Editing code in ${where}`;
     }

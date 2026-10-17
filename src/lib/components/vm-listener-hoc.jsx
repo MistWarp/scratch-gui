@@ -29,7 +29,7 @@ import {setTheme} from '../../reducers/theme';
 import {Theme} from '../themes';
 import {CustomTheme} from '../themes/custom-themes.js';
 import implementGuiAPI from '../api/extension-gui';
-import {BLOCKS_TAB_INDEX} from '../../reducers/editor-tab';
+import {isBlocksEditorVisible} from '../editor-visibility.js';
 
 const projectThemeSuppressed = () => {
     try {
@@ -392,7 +392,7 @@ const vmListenerHOC = function (WrappedComponent) {
         isEditorUsable: (
             !state.scratchGui.mode.isPlayerOnly &&
             !state.scratchGui.mode.isFullScreen &&
-            state.scratchGui.editorTab.activeTabIndex === BLOCKS_TAB_INDEX
+            isBlocksEditorVisible(state)
         ),
         projectChanged: state.scratchGui.projectChanged,
         isEmbedded: state.scratchGui.mode.isEmbedded,

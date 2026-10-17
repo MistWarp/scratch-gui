@@ -8,6 +8,11 @@ const manifest = {
       "type": "notice",
       "text": "Users with this feature enabled will be able to see the folders in your project. Anyone else will see sprite lists normally (no folders).",
       "id": "notice-folders-are-public"
+    },
+    {
+      "type": "notice",
+      "id": "code-mode",
+      "text": "Not available in Code mode."
     }
   ],
   "credits": [

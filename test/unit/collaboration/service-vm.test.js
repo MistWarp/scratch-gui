@@ -30,6 +30,7 @@ const makeVM = () => {
     vm.attachStorage(new Storage());
     const renderer = new Renderer();
     renderer.destroyDrawable = () => {};
+    renderer.destroySkin = () => {};
     vm.attachRenderer(renderer);
     const asset = vm.runtime.storage.get(vm.runtime.storage.defaultAssetId.ImageVector);
     for (const [name, stage] of [['Stage', true], ['Sprite', false]]) {

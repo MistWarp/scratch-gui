@@ -94,17 +94,24 @@ const runSmartSave = async ({vm, title, onSaved}) => {
     }
 };
 
+const EXPLICIT_SAVE_EVENT = 'mw:explicit-save';
+
 const smartSave = async ({vm, title, onSaved = () => {}}) => {
     if (vm && (savesInFlight.has(vm) || isProjectOperationActive(vm))) return false;
     if (vm) savesInFlight.add(vm);
     try {
-        return await runSmartSave({vm, title, onSaved});
+        const saved = await runSmartSave({vm, title, onSaved});
+        if (saved && typeof window !== 'undefined' && typeof CustomEvent === 'function') {
+            window.dispatchEvent(new CustomEvent(EXPLICIT_SAVE_EVENT, {detail: {vm}}));
+        }
+        return saved;
     } finally {
         if (vm) savesInFlight.delete(vm);
     }
 };
 
 export {
+    EXPLICIT_SAVE_EVENT,
     guardSavedCallback
 };
 

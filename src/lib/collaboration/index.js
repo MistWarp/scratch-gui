@@ -468,8 +468,9 @@ class CollabService extends Emitter {
                 continue;
             }
             try {
-                if (!builtin && this.vm.securityManager &&
-                    !(await this.vm.securityManager.canLoadExtensionFromProject(url))) {
+                const checkURL = builtin ? (id === 'patching' ? 'builtin:patching' : null) : url;
+                if (checkURL && this.vm.securityManager &&
+                    !(await this.vm.securityManager.canLoadExtensionFromProject(checkURL))) {
                     skipped.push(id);
                     continue;
                 }

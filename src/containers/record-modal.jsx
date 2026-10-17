@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import VM from 'scratch-vm';
 import {connect} from 'react-redux';
-import {encodeAndAddSoundToVM} from '../lib/audio/audio-util.js';
+import {addRecordedSound, SOUND_RECORDED_EVENT} from '../lib/asset-upload.js';
 
 import RecordModalComponent from '../components/record-modal/record-modal.jsx';
 
@@ -84,18 +84,18 @@ class RecordModal extends React.Component {
                 const endIndex = Math.floor(this.state.trimEnd * sampleCount);
                 const clippedSamples = this.state.samples.slice(startIndex, endIndex);
 
-                encodeAndAddSoundToVM(
-                    this.props.vm,
-                    clippedSamples,
-                    this.state.sampleRate,
-                    'recording1',
-                    null,
+                addRecordedSound({
+                    vm: this.props.vm,
+                    samples: clippedSamples,
+                    sampleRate: this.state.sampleRate,
+                    name: 'recording1',
                     targetId
-                ).then(() => {
+                }).then(() => {
                     if (this._isMounted) {
                         this.props.onClose();
-                        this.props.onNewSound(targetId);
+                        if (this.props.onNewSound) this.props.onNewSound(targetId);
                     }
+                    window.dispatchEvent(new CustomEvent(SOUND_RECORDED_EVENT, {detail: {targetId}}));
                     resolve(true);
                 })
                     .catch(() => {

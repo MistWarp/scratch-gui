@@ -11,7 +11,7 @@ describe('editor control accessibility', () => {
     test('editor tabs keep accessible names when their visible labels are hidden', () => {
         const intl = {formatMessage: message => message.defaultMessage};
         expect(getEditorTabLabels(intl, false)).toEqual({
-            code: 'Code',
+            code: 'Scripts',
             costumes: 'Costumes',
             sounds: 'Sounds'
         });

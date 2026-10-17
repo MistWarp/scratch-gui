@@ -60,6 +60,8 @@ export default async function ({ addon, console, msg }) {
         "fontsLoaded/SET_FONTS_LOADED",
         "scratch-gui/locales/SELECT_LOCALE",
         "scratch-gui/navigation/ACTIVATE_TAB",
+        "scratch-gui/navigation/SHOW_BLOCKS_TAB",
+        "scratch-gui/navigation/ASSET_EDITOR_ACTIVATED",
       ],
     });
     let container =

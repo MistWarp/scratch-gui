@@ -1,4 +1,5 @@
 import {withProjectReplacement} from '../lib/project-replacement.js';
+import {hasUnappliedCode} from '../lib/code-mode/text-store.js';
 import {detachWorkspace} from '../lib/workspace-state.js';
 import {deleteRepo} from '../lib/git/browser-git.js';
 import React from 'react';
@@ -49,6 +50,11 @@ const messages = defineMessages({
         defaultMessage: 'Your current code will be kept in Device backups first. Your saved MistWarp project will stay unchanged. Cancel keeps the current workspace open.',
         description: 'Confirmation that appears when loading a device backup to confirm overwriting unsaved changes.',
         id: 'mw.restorePoints.confirmLoad'
+    },
+    confirmLoadUnapplied: {
+        defaultMessage: 'Code mode text that was not applied is not in the backup and will become a read only draft.',
+        description: 'Extra line in the device backup load confirmation when Code mode has unapplied text',
+        id: 'mw.restorePoints.confirmLoadUnapplied'
     },
     confirmLoadTitle: {
         defaultMessage: 'Open this backup in a new workspace?',
@@ -327,7 +333,10 @@ export class TWRestorePointManager extends React.Component {
                 type: 'load',
                 id,
                 title: this.props.intl.formatMessage(messages.confirmLoadTitle),
-                message: this.props.intl.formatMessage(messages.confirmLoad),
+                message: [
+                    this.props.intl.formatMessage(messages.confirmLoad),
+                    hasUnappliedCode() ? this.props.intl.formatMessage(messages.confirmLoadUnapplied) : null
+                ].filter(Boolean).join(' '),
                 action: this.props.intl.formatMessage(messages.confirmLoadAction)
             },
             confirmationError: ''

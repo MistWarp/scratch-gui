@@ -11,12 +11,32 @@ const SEQUENCE = '_mwUndoSequence';
 let lastSequence = 0;
 let trackedWorkspace = null;
 let pendingDeletionRestore = null;
+const deletionListeners = new Set();
+const blockEditListeners = new Set();
 
 const nextUndoSequence = () => ++lastSequence;
+
+const onDeletionRecorded = listener => {
+    deletionListeners.add(listener);
+    return () => deletionListeners.delete(listener);
+};
+
+const onBlockEdit = listener => {
+    blockEditListeners.add(listener);
+    return () => blockEditListeners.delete(listener);
+};
 
 const stampEvent = event => {
     if (event && event.recordUndo && !event[SEQUENCE]) {
         event[SEQUENCE] = nextUndoSequence();
+        const targetId = trackedWorkspace ? trackedWorkspace._mwEditingTargetId || null : null;
+        for (const listener of Array.from(blockEditListeners)) listener(targetId);
+    }
+};
+
+const clearWorkspaceRedo = () => {
+    if (trackedWorkspace && trackedWorkspace.redoStack_) {
+        trackedWorkspace.redoStack_.length = 0;
     }
 };
 
@@ -49,21 +69,27 @@ const trackWorkspaceUndo = workspace => {
  * @returns {number} the deletion's place in the history
  */
 const recordDeletion = () => {
-    if (trackedWorkspace && trackedWorkspace.redoStack_) {
-        trackedWorkspace.redoStack_.length = 0;
-    }
+    clearWorkspaceRedo();
+    for (const listener of Array.from(deletionListeners)) listener();
     return nextUndoSequence();
 };
 
 /**
  * @param {?object} workspace scratch-blocks main workspace, if loaded
  * @param {?object} deletion latest restorable deletion, if any
- * @returns {?string} 'deletion', 'blocks' or null when there is nothing to undo
+ * @param {?object} code latest undoable code apply, if any
+ * @returns {?string} 'code', 'deletion', 'blocks' or null when there is nothing to undo
  */
-const nextUndoSource = (workspace, deletion) => {
+const nextUndoSource = (workspace, deletion, code) => {
     const blocks = topSequence(workspace && workspace.undoStack_);
     const hasDeletion = !!deletion && typeof deletion.restoreFun === 'function';
-    if (hasDeletion && (blocks === null || (deletion.sequence || 0) > blocks)) return 'deletion';
+    const deletionSequence = hasDeletion ? (deletion.sequence || 0) : null;
+    const codeSequence = code && typeof code.sequence === 'number' ? code.sequence : null;
+    if (codeSequence !== null && (blocks === null || codeSequence > blocks) &&
+        (deletionSequence === null || codeSequence > deletionSequence)) {
+        return 'code';
+    }
+    if (hasDeletion && (blocks === null || deletionSequence > blocks)) return 'deletion';
     if (blocks !== null) return 'blocks';
     // Some workspaces (and test doubles) do not expose their stack. Let the
     // workspace decide whether it has anything to undo.
@@ -78,13 +104,15 @@ const nextUndoSource = (workspace, deletion) => {
  * @param {object} options what to undo and how to report the result
  * @param {?object} options.workspace scratch-blocks main workspace, if loaded
  * @param {?object} options.deletion latest restorable deletion, if any
+ * @param {?object} options.code latest code apply, as {sequence, undo}
  * @param {function} options.onRestored called with the restored deletion's restoreFun
  * @param {function} options.onRestoreError called when restoring fails
  * @returns {Promise<boolean>} whether anything was undone
  */
-const undoLatest = ({workspace, deletion, onRestored, onRestoreError}) => {
+const undoLatest = ({workspace, deletion, code, onRestored, onRestoreError}) => {
     if (pendingDeletionRestore) return pendingDeletionRestore;
-    const source = nextUndoSource(workspace, deletion);
+    const source = nextUndoSource(workspace, deletion, code);
+    if (source === 'code') return Promise.resolve(code.undo());
     if (source === 'blocks') {
         workspace.undo(false);
         return Promise.resolve(true);
@@ -110,7 +138,11 @@ const undoLatest = ({workspace, deletion, onRestored, onRestoreError}) => {
 };
 
 export {
+    clearWorkspaceRedo,
+    nextUndoSequence,
     nextUndoSource,
+    onBlockEdit,
+    onDeletionRecorded,
     recordDeletion,
     trackWorkspaceUndo,
     undoLatest,

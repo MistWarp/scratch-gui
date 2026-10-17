@@ -148,6 +148,20 @@ const CustomExtensionModal = props => (
             )}
 
             <div className={styles.buttonRow}>
+                {props.type === 'text' && props.onOpenInEditor ? (
+                    <button
+                        type="button"
+                        className={styles.openInEditorButton}
+                        onClick={props.onOpenInEditor}
+                        disabled={!props.text.trim() || props.loading}
+                    >
+                        <FormattedMessage
+                            defaultMessage="Open in editor"
+                            description="Button that opens the pasted code in the extension editor"
+                            id="mw.extensionDev.openInEditor"
+                        />
+                    </button>
+                ) : null}
                 <button
                     type="button"
                     className={styles.loadButton}
@@ -193,6 +207,7 @@ CustomExtensionModal.propTypes = {
     text: PropTypes.string.isRequired,
     onChangeText: PropTypes.func.isRequired,
     onLoadExtension: PropTypes.func.isRequired,
+    onOpenInEditor: PropTypes.func,
     onClose: PropTypes.func.isRequired
 };
 

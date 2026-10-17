@@ -17,7 +17,7 @@ const HELP_ENTRIES = [
         short: 'The editor is split into the stage, the sprite pane, the block palette, and the code workspace. The menu bar across the top holds every project and tool command.',
         howTo: [
             'Drag the divider between the workspace and the stage to resize either side.',
-            'Use the tabs above the palette to switch between Code, Costumes, and Sounds.',
+            'Use the tabs above the palette to switch between Scripts, Costumes, and Sounds, or the Blocks and Code buttons in the menu bar to switch modes.',
             'Click Settings in the menu bar to change the theme, layout, and performance options.'
         ],
         docsPath: '/editor/interface'
@@ -99,6 +99,45 @@ const HELP_ENTRIES = [
             'Use the zoom controls in the corner, or scroll to pan around large projects.'
         ],
         docsPath: '/editor/workspace'
+    },
+    {
+        id: 'code-mode',
+        title: 'Code mode',
+        category: 'Editor',
+        keywords: ['text', 'fractch', 'explorer', 'files', 'workbench', 'blocks mode', 'quick open'],
+        short: 'Code mode shows the whole project as files: each sprite\'s scripts as fractch text, its costumes and sounds, and the project\'s extensions. Both modes edit the same project.',
+        howTo: [
+            'Click Code in the menu bar, or press Ctrl+Shift+Y, to switch modes.',
+            'Open files from the explorer (Ctrl+B) or with Quick open (Ctrl+E).',
+            'Press Ctrl+J to show Problems, Output, Reference, and Watch.'
+        ],
+        docsPath: '/editor/code-mode/overview'
+    },
+    {
+        id: 'code-mode-apply',
+        title: 'Applying code',
+        category: 'Editor',
+        keywords: ['apply', 'undo code change', 'locked', 'conflict', 'draft', 'live reload', 'fractch run'],
+        short: 'Text reaches the project only when you apply it, and only if it parses, validates, and converts back to the same blocks. Scripts you did not edit keep their exact blocks, and every apply can be undone.',
+        howTo: [
+            'Press Ctrl+Enter or click Apply. Ctrl+S applies and then saves.',
+            'Use Edit > Undo code change to undo an apply.',
+            'Locked scripts show a lock icon and are kept as they are. Edit them in Blocks mode.'
+        ],
+        docsPath: '/editor/code-mode/applying'
+    },
+    {
+        id: 'code-mode-debugging',
+        title: 'Running and debugging code',
+        category: 'Editor',
+        keywords: ['run', 'stop', 'breakpoint', 'watch', 'step', 'pause', 'runtime error'],
+        short: 'Run a script from the gutter, set breakpoints, step through blocks, and watch variables, all in Code mode.',
+        howTo: [
+            'Click the play icon beside a script to run it.',
+            'Click the breakpoint gutter beside a line to stop there, then use Continue or Step in the Watch tab.',
+            'Hover a variable and choose Pin to Watch to follow its value.'
+        ],
+        docsPath: '/editor/code-mode/debugging'
     },
     {
         id: 'blocks-palette',
@@ -276,7 +315,7 @@ const HELP_ENTRIES = [
         keywords: ['search blocks', 'jump', 'definition'],
         short: 'The find bar searches your scripts and jumps straight to a block, variable, or custom block definition.',
         howTo: [
-            'Click Find next to the Code, Costumes, and Sounds tabs, or press Ctrl+F, and type part of a block or variable name.',
+            'Click Find next to the Scripts, Costumes, and Sounds tabs, or press Ctrl+F, and type part of a block or variable name.',
             'Select a result to scroll the workspace to it.',
             'Use it to jump to a custom block definition quickly.'
         ],
@@ -477,6 +516,33 @@ const HELP_ENTRIES = [
             'See Building Extensions to write your own.'
         ],
         docsPath: '/extensions/custom-extension'
+    },
+    {
+        id: 'ext-writing',
+        title: 'Writing extensions in the editor',
+        category: 'Extensions',
+        keywords: ['new extension', 'code', 'code mode', 'javascript', 'apply', 'manage extensions', 'template'],
+        short: 'Create an extension with New Extension, edit its code in a Code mode tab, and apply it to the running project. The code is saved inside the project.',
+        howTo: [
+            'Choose Project > New Extension, give it a name, and pick a template.',
+            'Edit the code and press Ctrl+Enter or Apply. Running scripts use the new code right away.',
+            'Turn on Apply as I type to apply whenever the code has no errors.'
+        ],
+        docsPath: '/building-extensions/in-editor'
+    },
+    {
+        id: 'ext-debugging',
+        title: 'Fixing extension errors',
+        category: 'Extensions',
+        keywords: ['error', 'problem', 'debug', 'debugger', 'console', 'output', 'devtools', 'line', 'go to definition'],
+        short: 'Load errors, warnings, console output and errors thrown by extension blocks are listed in the Problems and Output tabs of the Code mode panel, with the line that caused them. To step through extension code, add a debugger; statement and open the browser developer tools.',
+        howTo: [
+            'Open the panel with Ctrl+J and choose Problems or Output.',
+            'Click an entry to jump to its line in the extension or to the script that called it.',
+            'Add debugger; where you want to pause, open the browser developer tools, then run the block.',
+            'Right-click an extension block and choose Go to definition or Show problem.'
+        ],
+        docsPath: '/building-extensions/in-editor'
     },
     {
         id: 'ext-music',

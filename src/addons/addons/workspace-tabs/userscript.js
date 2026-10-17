@@ -4,6 +4,7 @@ import folderUpIconSvg from './folder-up.svg?raw';
 import binIconSvg from './bin.svg?raw';
 
 import dropdownCaretSvg from '../../../components/menu-bar/dropdown-caret.svg?raw';
+import {isBlocksEditorVisible} from '../../../lib/editor-visibility.js';
 
 const newSvg = (src, width, height) => {
     const img = document.createElement('svg');
@@ -847,6 +848,8 @@ export default async function ({addon, console, msg}) {
 
     // Keyboard shortcuts
     document.addEventListener('keydown', e => {
+        if (!isBlocksEditorVisible(addon.tab.redux.state)) return;
+        if (e.getModifierState && e.getModifierState('AltGraph')) return;
         if (!addon.self.disabled && e.ctrlKey && e.altKey) {
             if (e.key >= '1' && e.key <= '9') {
                 e.preventDefault();

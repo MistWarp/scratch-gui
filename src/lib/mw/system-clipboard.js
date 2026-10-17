@@ -221,8 +221,13 @@ const installSystemClipboardForBlocks = (ScratchBlocks, vm, onImportError) => {
 
             const url = urls[id];
             if (url) {
-                await vm.extensionManager.loadExtensionURL(url);
+                if (!await vm.extensionManager.securityManager.canLoadExtensionFromProject(url)) continue;
+                await vm.extensionManager.loadExtensionURL(url, id);
             } else {
+                if (id === 'patching' &&
+                    !await vm.extensionManager.securityManager.canLoadExtensionFromProject('builtin:patching')) {
+                    continue;
+                }
                 vm.extensionManager.loadExtensionIdSync(id);
             }
         }
