@@ -45,7 +45,7 @@ const FeaturedProject = ({project}) => {
 
     const displayProject = details || project;
     const canEmbed = Boolean(
-        details && details.hasContent !== false && !details.locked && details.projectJsonUrl && details.assetsBase
+        details && details.hasContent !== false && details.projectJsonUrl && details.assetsBase
     );
 
     return (

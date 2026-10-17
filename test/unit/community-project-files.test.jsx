@@ -25,11 +25,11 @@ describe('ProjectFiles', () => {
         expect(canLoadProjectSnapshot({id: 'project-1'})).toBe(false);
     });
 
-    test('only retains file data from free public projects', () => {
-        expect(canCacheProjectSnapshot({shared: true, visibility: 'public', price: 0})).toBe(true);
-        expect(canCacheProjectSnapshot({shared: true, visibility: 'unlisted', price: 0})).toBe(false);
-        expect(canCacheProjectSnapshot({shared: true, visibility: 'public', price: 5})).toBe(false);
-        expect(canCacheProjectSnapshot({shared: false, visibility: 'private', price: 0})).toBe(false);
+    test('only retains file data from public projects with See inside on', () => {
+        expect(canCacheProjectSnapshot({shared: true, visibility: 'public'})).toBe(true);
+        expect(canCacheProjectSnapshot({shared: true, visibility: 'unlisted'})).toBe(false);
+        expect(canCacheProjectSnapshot({shared: true, visibility: 'public', seeInside: false})).toBe(false);
+        expect(canCacheProjectSnapshot({shared: false, visibility: 'private'})).toBe(false);
     });
 
     test('starts sprite source folders open and asset folders closed', () => {

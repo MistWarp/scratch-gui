@@ -403,33 +403,6 @@
     color: #FF8C1A;
 }
 
-.ovWalletRows {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    border-top: 1px solid var(--border-soft);
-    padding-top: 12px;
-}
-
-.ovWalletRow {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    font-size: var(--fs-sm);
-}
-
-.ovWalletRow span {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    color: var(--text-dim);
-}
-
-.ovWalletRow strong {
-    color: var(--mw-text);
-}
-
 .ovStorageTop {
     display: flex;
     align-items: baseline;

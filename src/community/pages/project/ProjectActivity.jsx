@@ -24,7 +24,7 @@ const tabKey = name => name.toLowerCase().replace(/\s+/g, '-');
 
 // The tabbed activity area under the stage: comments, files, reviews, version control, bounties and contributions.
 const ProjectActivity = ({
-    id, project, user, login, userLoading, viewerName, ownsProject, locked, baseProjectUrl, tab,
+    id, project, user, login, userLoading, viewerName, ownsProject, baseProjectUrl, tab,
     showActivity, openBountyCount, projectFileCount, setProjectFileCount, commentSource,
     toggleComments, savingComments, versionControlTab, versionHistory, refreshProjectAndHistory,
     openPullCount, setOpenPullCount, remix, remixForBounty, preferredBountyId,
@@ -73,9 +73,8 @@ const ProjectActivity = ({
                         donationRecipient={project.owner}
                         canModerate={project.isOwner}
                         canPin={project.isOwner}
-                        disabled={Boolean(project.commentsOff) || locked}
-                        disabledReason={locked && !project.commentsOff ?
-                            communityText('Buy this project to comment.') : communityText('Comments are turned off.')}
+                        disabled={Boolean(project.commentsOff)}
+                        disabledReason={communityText('Comments are turned off.')}
                         reportContext={`project ${id}`}
                         draftKey={`project:${project.id}`}
                         composerAction={project.isOwner ? (

@@ -259,7 +259,7 @@ const Wallet = () => {
                                     icon={History}
                                     title={communityText('No MistWarp transactions yet')}
                                 >
-                                    {communityText('Buying projects and game items, donations and sales show up here.')}
+                                    {communityText('Game item purchases, donations and sales show up here.')}
                                 </EmptyState>
                             )}
                         </React.Fragment>
@@ -305,7 +305,7 @@ const Wallet = () => {
                             title={communityText('No purchases yet')}
                             action={<Button as={Link} to="/explore">{communityText('Explore projects')}</Button>}
                         >
-                            {communityText('You have not bought any projects yet.')}
+                            {communityText('Things you buy in games on MistWarp show up here.')}
                         </EmptyState>
                     )
                 ) : null}
