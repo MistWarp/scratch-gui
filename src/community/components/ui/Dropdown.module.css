@@ -62,6 +62,10 @@
     background: color-mix(in srgb, var(--mw-danger) 10%, transparent);
 }
 
+.layered {
+    z-index: 10050;
+}
+
 @media (max-width: 620px) {
     .menu,
     .menu-left {

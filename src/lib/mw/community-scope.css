@@ -18,10 +18,22 @@
     --text-dim: color-mix(in srgb, var(--text-primary, #eeeeee) 80%, transparent);
     --text-faint: color-mix(in srgb, var(--text-primary, #eeeeee) 62%, transparent);
     --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
+    --bg-field: color-mix(in srgb, var(--text-primary, #eeeeee) 6%, transparent);
+    --bg-inset: var(--page-background, #111111);
+    --mw-danger: #d94747;
+    --mw-success: #2f9e5b;
+
+    --fs-2xs: 11px;
+    --fs-xs: 12px;
+    --fs-sm: 13px;
+    --fs-md: 14px;
+    --fs-lg: 16px;
+    --fs-xl: 18px;
 
     --radius: 16px;
     --radius-sm: 12px;
     --radius-xs: 8px;
+    --radius-2xs: 5px;
     --maxw: 1180px;
 
     --sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;

@@ -1,0 +1,6 @@
+.lead {
+    margin: 0 0 12px;
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+}

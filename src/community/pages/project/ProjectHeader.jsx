@@ -1,10 +1,10 @@
 /* eslint-disable max-len */
-import React from 'react';
-import {Link} from 'react-router-dom';
+import React, {useState} from 'react';
+import {Link, useNavigate} from 'react-router-dom';
 import {useCommunityIntl as useCommunityText} from '../../i18n.jsx';
 import {
     GitFork, ExternalLink, ImageUp, MonitorPlay, Flag, MoreHorizontal, Code2, Trash2, Link2, Coins,
-    SlidersHorizontal, Bookmark, BookmarkCheck, Star, Library, Eye, EyeOff, Ghost, UserCog
+    SlidersHorizontal, Bookmark, BookmarkCheck, Star, Library, Eye, EyeOff, Ghost, UserCog, PawPrint
 } from 'lucide-react';
 import {payLink} from '../../../lib/rotur/payment-window.js';
 import Avatar from '../../components/Avatar.jsx';
@@ -15,6 +15,9 @@ import {sameUser} from '../../format';
 import Button from '../../components/ui/Button.jsx';
 import Dropdown from '../../components/ui/Dropdown.jsx';
 import IconButton from '../../components/ui/IconButton.jsx';
+import PostToClawModal from '../../components/PostToClawModal.jsx';
+import {postUrl} from '../../following-feed.js';
+import {isPublicProject} from '../../claw-links.js';
 import styles from '../Project.module.css';
 import {track} from '../../analytics';
 import {adminUserPath} from '../admin/admin-links.js';
@@ -28,6 +31,9 @@ const ProjectHeader = ({
     setDeleteConfirm, openModeration
 }) => {
     const {text: communityText} = useCommunityText();
+    const navigate = useNavigate();
+    const [clawOpen, setClawOpen] = useState(false);
+    const canPostToClaw = Boolean(user && isPublicProject({...project, visibility}));
     const handleTitleKeyDown = event => {
         if (event.key === 'Enter') {
             event.currentTarget.blur();
@@ -36,6 +42,17 @@ const ProjectHeader = ({
 
     return (
         <div className={styles.topBar}>
+            {clawOpen && canPostToClaw ? (
+                <PostToClawModal
+                    project={project}
+                    user={user}
+                    onClose={() => setClawOpen(false)}
+                    onViewPost={id => {
+                        setClawOpen(false);
+                        navigate(postUrl(id));
+                    }}
+                />
+            ) : null}
             <div className={styles.titleBlock}>
                 <Link to={`/users/${project.owner}`}>
                     <Avatar
@@ -152,6 +169,16 @@ const ProjectHeader = ({
                                     }}
                                 >
                                     <Code2 size={15} />{communityText('Copy embed code')}</button>
+                            ) : null}
+                            {canPostToClaw ? (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        close();
+                                        setClawOpen(true);
+                                    }}
+                                >
+                                    <PawPrint size={15} />{communityText('Post to claw')}</button>
                             ) : null}
                             {user ? (
                                 <button

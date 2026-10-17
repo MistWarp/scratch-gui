@@ -66,6 +66,10 @@
     box-sizing: border-box;
 }
 
+html:where(.root) {
+    scrollbar-gutter: stable;
+}
+
 html:where(.root),
 :where(.root) body {
     margin: 0;

@@ -2,6 +2,8 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 import api, {projectUrl} from '../api';
+import {pouncePostId} from '../claw-links.js';
+import loadProjectPreview from '../project-preview.js';
 import styles from './RichText.module.css';
 
 const MENTION = /^@[A-Za-z0-9][A-Za-z0-9_-]{0,19}$/;
@@ -19,6 +21,7 @@ const PUBLIC_ROUTES = [
     /^\/spaces\/?$/,
     /^\/spaces\/[A-Za-z0-9_-]+\/?$/,
     /^\/news(?:\/[A-Za-z0-9_-]+)?\/?$/,
+    /^\/posts\/[A-Za-z0-9_-]{1,64}\/?$/,
     /^\/(?:leaderboard|roadmap|trust|support|status|stats)\/?$/
 ];
 
@@ -41,17 +44,9 @@ export const splitParts = text => {
     return parts;
 };
 
-const titleCache = new Map();
 const spaceCache = new Map();
 
-const fetchTitle = id => {
-    if (!titleCache.has(id)) {
-        titleCache.set(id, api.getProject(id)
-            .then(data => (data.project && data.project.title) || id)
-            .catch(() => id));
-    }
-    return titleCache.get(id);
-};
+const fetchTitle = id => loadProjectPreview({id}).then(project => (project && project.title) || id);
 
 const ProjectLink = ({id}) => {
     const [title, setTitle] = useState(null);
@@ -91,6 +86,8 @@ const SpaceLink = ({id}) => {
 };
 
 export const internalMistWarpRoute = destination => {
+    const pounceId = pouncePostId(destination);
+    if (pounceId) return `/posts/${encodeURIComponent(pounceId)}`;
     try {
         if (destination.startsWith('//')) return null;
         const base = typeof window === 'undefined' ? 'https://mistwarp.org' : window.location.origin;
@@ -160,7 +157,10 @@ const RichText = ({text}) => splitParts(String(text || ''))
         if (route) {
             return (
                 <React.Fragment key={index}>
-                    <InternalLink route={route} />
+                    <InternalLink
+                        route={route}
+                        label={route.startsWith('/posts/') ? url.replace(/^https?:\/\//, '') : null}
+                    />
                     {rest}
                 </React.Fragment>
             );
