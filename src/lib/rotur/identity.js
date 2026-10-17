@@ -57,6 +57,7 @@ const TOKEN_MARGIN = 60000;
 const SIGN_IN_POPUP = 'mw-account-signin';
 const MINT_RETRY_DELAY = 30000;
 let editorToken = null;
+let staleToken = null;
 let editorTokenRequest = null;
 let mintFailedAt = 0;
 let tokenGeneration = 0;
@@ -77,10 +78,11 @@ const splitSession = {
         if (!username || Date.now() - mintFailedAt < MINT_RETRY_DELAY) return Promise.resolve(null);
         if (!editorTokenRequest) {
             const generation = tokenGeneration;
-            editorTokenRequest = accountBridge.call('editorSession')
+            editorTokenRequest = accountBridge.call('editorSession', staleToken ? {stale: staleToken} : {})
                 .then(next => {
                     if (generation !== tokenGeneration || username !== bridgeUsername()) return null;
                     mintFailedAt = 0;
+                    staleToken = null;
                     editorToken = {...next, username};
                     return next.token;
                 }, error => {
@@ -95,6 +97,7 @@ const splitSession = {
     },
     clear: () => {
         tokenGeneration += 1;
+        if (editorToken) staleToken = editorToken.token;
         editorToken = null;
         editorTokenRequest = null;
     }
@@ -330,18 +333,20 @@ const login = async () => {
 
 const logout = () => {
     if (isSplitEditor()) {
-        identityGeneration += 1;
-        applying = null;
-        storeSession(null);
-        accountBridge.call('signOut').catch(() => null);
-        try {
-            onRoturLogout();
-        } catch (_) {
-            // ignore
-        }
-        setMinorAccount(false);
-        setState({status: 'idle', user: null, banMessage: null, reconnect: false});
-        return;
+        return accountBridge.call('signOut').then(next => {
+            if (next && next.user) return;
+            identityGeneration += 1;
+            applying = null;
+            storeSession(null);
+            try {
+                onRoturLogout();
+            } catch (_) {
+                // ignore
+            }
+            setMinorAccount(false);
+            setState({status: 'idle', user: null, banMessage: null, reconnect: false});
+        })
+            .catch(() => null);
     }
     mistLogout().catch(() => null);
     try {

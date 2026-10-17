@@ -1,4 +1,4 @@
-import {PROMPT_LIFETIME, publicIdentity, toError} from './protocol.js';
+import {PROMPT_LIFETIME, publicIdentity, toError, fromError} from './protocol.js';
 
 const EDITOR_ROTUR_METHODS = new Set([
     'notifications.list'
@@ -12,17 +12,192 @@ const validProjectId = id => typeof id === 'undefined' ||
 const validProject = project => project && typeof project === 'object' &&
     typeof project.name === 'string' && project.name.length <= 200 && validProjectId(project.id);
 
-const createFrameServer = ({identity, createEditorSession, callRotur, projectRotur}) => {
+const TOKEN_REUSE_MARGIN = 300000;
+const RENEW_INTERVAL = 300000;
+const FAILED_MINT_WAIT = 10000;
+const MINT_TIMEOUT = 30000;
+const CHECK_INTERVAL = 10000;
+
+const signedInName = state => (state && state.user && state.user.username ? String(state.user.username) : '');
+
+const fingerprint = text => {
+    let first = 0xdeadbeef;
+    let second = 0x41c6ce57;
+    for (let i = 0; i < text.length; i++) {
+        const code = text.charCodeAt(i);
+        first = Math.imul(first ^ code, 2654435761);
+        second = Math.imul(second ^ code, 1597334677);
+    }
+    first = Math.imul(first ^ (first >>> 16), 2246822507) ^ Math.imul(second ^ (second >>> 13), 3266489909);
+    second = Math.imul(second ^ (second >>> 16), 2246822507) ^ Math.imul(first ^ (first >>> 13), 3266489909);
+    return `${(second >>> 0).toString(16)}${(first >>> 0).toString(16)}`;
+};
+
+const createMemoryStore = () => {
+    let saved = null;
+    return {
+        read: () => saved,
+        write: next => {
+            saved = next;
+        }
+    };
+};
+
+const createStorageStore = (getStorage, key) => {
+    const memory = createMemoryStore();
+    return {
+        read: () => {
+            try {
+                return JSON.parse(getStorage().getItem(key) || 'null');
+            } catch (e) {
+                return memory.read();
+            }
+        },
+        write: next => {
+            memory.write(next);
+            try {
+                getStorage().setItem(key, JSON.stringify(next));
+            } catch (e) {
+                // ignore
+            }
+        }
+    };
+};
+
+const createSerialLock = () => {
+    let tail = Promise.resolve();
+    return task => {
+        const run = tail.then(() => task());
+        tail = run.catch(() => null);
+        return run;
+    };
+};
+
+const validSession = session => session && typeof session === 'object' && typeof session.token === 'string' &&
+    session.token !== '' && Number.isFinite(session.expiresAt) && typeof session.username === 'string' &&
+    typeof session.parent === 'string' && session.parent !== '';
+
+const readMints = store => {
+    let saved = null;
+    try {
+        saved = store.read();
+    } catch (e) {
+        saved = null;
+    }
+    if (!saved || typeof saved !== 'object') saved = {};
+    const failure = saved.failure && typeof saved.failure === 'object' ? saved.failure : null;
+    return {
+        session: validSession(saved.session) ? saved.session : null,
+        lastMint: Number(saved.lastMint) || 0,
+        checkedAt: Number(saved.checkedAt) || 0,
+        failedAt: failure ? Number(saved.failedAt) || 0 : 0,
+        failure
+    };
+};
+
+const withTimeout = (promise, delay) => {
+    let timer = null;
+    return Promise.race([
+        promise,
+        new Promise((resolve, reject) => {
+            timer = setTimeout(() => reject(new Error('MistWarp took too long to answer. Try again.')), delay);
+        })
+    ]).finally(() => clearTimeout(timer));
+};
+
+const mintEditorSession = async ({ensureMistSession, dropMistSession, mint}) => {
+    await ensureMistSession();
+    try {
+        return await mint();
+    } catch (error) {
+        if (!error || error.status !== 401) throw error;
+        dropMistSession();
+        await ensureMistSession();
+        return mint();
+    }
+};
+
+const createFrameServer = ({
+    identity, createEditorSession, mistSession, callRotur, projectRotur, confirmSignOut,
+    tokenRejected = () => Promise.resolve(false),
+    store = createMemoryStore(), lock = createSerialLock(), now = Date.now
+}) => {
+    let signingOut = null;
+
+    const parentKey = () => {
+        const token = mistSession();
+        return token ? fingerprint(String(token)) : '';
+    };
+
+    const elapsedSince = time => {
+        const elapsed = now() - time;
+        return elapsed < 0 ? Infinity : elapsed;
+    };
+
+    const mintFor = async (username, saved) => {
+        if (saved.failure && elapsedSince(saved.failedAt) < FAILED_MINT_WAIT) throw fromError(saved.failure);
+        let next;
+        try {
+            const result = await withTimeout(Promise.resolve().then(createEditorSession), MINT_TIMEOUT);
+            next = {
+                token: String((result && result.token) || ''),
+                expiresAt: Number(result && result.expiresAt),
+                username,
+                parent: parentKey()
+            };
+            if (!validSession(next)) throw new Error('MistWarp could not start an editor session. Try again.');
+        } catch (error) {
+            store.write({...readMints(store), failedAt: now(), failure: toError(error)});
+            throw error;
+        }
+        const kept = signedInName(identity.getState()) === username;
+        store.write({session: kept ? next : null, lastMint: now(), failedAt: 0, failure: null});
+        if (!kept) throw Object.assign(new Error('Your MistWarp account changed. Try again.'), {code: 'bridge'});
+        return next;
+    };
+
+    const editorSession = async stale => {
+        const username = signedInName(identity.getState());
+        if (!username) throw Object.assign(new Error('Sign in to MistWarp first'), {code: 'signed_out'});
+        const saved = readMints(store);
+        const session = saved.session;
+        const parent = parentKey();
+        const reusable = Boolean(session) && parent !== '' && session.parent === parent &&
+            session.username === username && session.expiresAt - TOKEN_REUSE_MARGIN > now();
+        const reported = reusable && typeof stale === 'string' && stale === session.token;
+        let renew = reported && elapsedSince(saved.lastMint) >= RENEW_INTERVAL;
+        if (reported && !renew && elapsedSince(saved.checkedAt) >= CHECK_INTERVAL) {
+            store.write({...readMints(store), checkedAt: now()});
+            renew = await withTimeout(Promise.resolve().then(() => tokenRejected(session.token)), MINT_TIMEOUT)
+                .catch(() => false) === true;
+        }
+        const result = reusable && !renew ? session : await mintFor(username, saved);
+        return {token: result.token, expiresAt: result.expiresAt};
+    };
+
+    const forgetSession = () => {
+        store.write({...readMints(store), session: null});
+    };
+
     const handlers = {
         identity: () => publicIdentity(identity.getState()),
-        editorSession: async () => {
-            const state = identity.getState();
-            if (!state.user) throw Object.assign(new Error('Sign in to MistWarp first'), {code: 'signed_out'});
-            const result = await createEditorSession();
-            return {token: String(result.token), expiresAt: Number(result.expiresAt)};
-        },
-        signOut: () => {
-            identity.logout();
+        editorSession: ({stale}) => lock(() => editorSession(stale)),
+        signOut: async () => {
+            const username = signedInName(identity.getState());
+            if (!username) return publicIdentity(identity.getState());
+            if (!signingOut) {
+                signingOut = Promise.resolve()
+                    .then(() => confirmSignOut(username))
+                    .then(answer => {
+                        if (answer !== true || signedInName(identity.getState()) !== username) return;
+                        identity.logout();
+                        forgetSession();
+                    })
+                    .finally(() => {
+                        signingOut = null;
+                    });
+            }
+            await signingOut;
             return publicIdentity(identity.getState());
         },
         rotur: ({method, args}) => {
@@ -77,5 +252,8 @@ const createFrameServer = ({identity, createEditorSession, callRotur, projectRot
 
 export {
     EDITOR_ROTUR_METHODS,
-    createFrameServer
+    createFrameServer,
+    createSerialLock,
+    createStorageStore,
+    mintEditorSession
 };

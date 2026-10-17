@@ -111,3 +111,34 @@ test('a MistWarp window can approve after the delay', () => {
     click(wrapper, 'Allow once');
     expect(onAnswer).toHaveBeenCalledWith(true);
 });
+
+test('sign-out confirmation names the account and needs the same visible delay', () => {
+    const onAnswer = jest.fn();
+    const wrapper = mount(<FramePrompt
+        type="signout"
+        data={{username: 'mist'}}
+        mode="inline"
+        onAnswer={onAnswer}
+    />);
+    expect(wrapper.text()).toContain('Sign out of MistWarp?');
+    expect(wrapper.text()).toContain('@mist');
+    click(wrapper, 'Sign out');
+    expect(onAnswer).not.toHaveBeenCalled();
+    setVisible(wrapper, true);
+    jest.advanceTimersByTime(800);
+    wrapper.update();
+    click(wrapper, 'Sign out');
+    expect(onAnswer).toHaveBeenCalledWith(true);
+});
+
+test('cancelling a sign-out works straight away', () => {
+    const onAnswer = jest.fn();
+    const wrapper = mount(<FramePrompt
+        type="signout"
+        data={{username: 'mist'}}
+        mode="inline"
+        onAnswer={onAnswer}
+    />);
+    click(wrapper, 'Cancel');
+    expect(onAnswer).toHaveBeenCalledWith(false);
+});

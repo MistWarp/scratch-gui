@@ -1,11 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import * as identity from '../lib/rotur/identity.js';
-import {request} from '../lib/community/api.js';
+import {request, storeSession} from '../lib/community/api.js';
 import {callRotur} from '../lib/rotur/extension-bridge.js';
 import {CHANNEL, PROMPT_LIFETIME} from '../lib/account/protocol.js';
 import {ACCOUNT_ORIGIN, isEditorOrigin} from '../lib/account/origins.js';
-import {createFrameServer} from '../lib/account/frame-server.js';
+import {
+    createFrameServer, createSerialLock, createStorageStore, mintEditorSession
+} from '../lib/account/frame-server.js';
 import {createProjectRotur} from '../lib/account/frame-project-rotur.js';
 import FramePrompt, {supportsVisibilityCheck} from '../components/account-frame/frame-prompt.jsx';
 import {applyThemeVisuals, detectTheme} from '../lib/themes/themePersistance.js';
@@ -13,6 +15,11 @@ import {applyThemeVisuals, detectTheme} from '../lib/themes/themePersistance.js'
 const REVIEW_CHANNEL = 'mw:account-review';
 const RESTORE_WAIT = 10000;
 const REVIEW_WAIT = 5000;
+const EDITOR_SESSION_KEY = 'mw:editor-session';
+const PROMPT_TYPES = ['consent', 'confirm', 'share', 'signout'];
+const ANSWERS = [true, false, 'block', 'this', 'all'];
+const API_BASE = process.env.MW_API_BASE || 'https://api.mistwarp.org/v1';
+const TOKEN_CHECK_TIMEOUT = 10000;
 const root = document.getElementById('app');
 const ports = new Map();
 let promptOpen = false;
@@ -33,55 +40,98 @@ const randomId = () => {
     return [...bytes].map(byte => byte.toString(16).padStart(2, '0')).join('');
 };
 
-const openReviewWindow = id => {
+const openReviewWindow = (id, attempt) => {
     const left = Math.max(0, (screen.width - 480) / 2);
     const top = Math.max(0, (screen.height - 640) / 2);
-    return window.open(`${location.origin}/account-frame.html?review=${id}`, `mw-account-review-${id}`,
+    return window.open(`${location.origin}/account-frame.html?review=${id}`, `mw-account-review-${id}-${attempt}`,
         `popup,width=480,height=640,left=${left},top=${top}`);
 };
 
-const prompt = (type, data, lifetime = PROMPT_LIFETIME) => new Promise(resolve => {
+const fromReviewWindow = (event, reviewWindow) => Boolean(reviewWindow) && event.source === reviewWindow &&
+    event.origin === location.origin && event.data && event.data.type === REVIEW_CHANNEL;
+
+const showPrompt = (type, data, lifetime) => new Promise(resolve => {
     promptOpen = true;
     broadcast({kind: 'show'});
     const reviewId = randomId();
-    const review = supportsVisibilityCheck() ? null : new BroadcastChannel(REVIEW_CHANNEL);
+    const review = !supportsVisibilityCheck();
     let reviewWindow = null;
+    let attempts = 0;
     let timer = null;
     let settled = false;
+    let onReviewMessage = null;
     const finish = answer => {
         if (settled) return;
         settled = true;
         clearTimeout(timer);
-        if (review) review.close();
+        window.removeEventListener('message', onReviewMessage);
         if (reviewWindow && !reviewWindow.closed) reviewWindow.close();
         ReactDOM.unmountComponentAtNode(root);
         promptOpen = false;
         broadcast({kind: 'hide'});
         resolve(answer);
     };
+    onReviewMessage = event => {
+        if (!fromReviewWindow(event, reviewWindow) || event.data.id !== reviewId) return;
+        if (event.data.kind === 'request') {
+            reviewWindow.postMessage({type: REVIEW_CHANNEL, kind: 'prompt', id: reviewId, prompt: type, data},
+                location.origin);
+        }
+        if (event.data.kind === 'answer') finish(ANSWERS.includes(event.data.answer) ? event.data.answer : false);
+    };
     timer = setTimeout(() => finish(false), lifetime);
     const render = reviewError => {
         ReactDOM.render(React.createElement(FramePrompt, {
+            key: reviewId,
             type,
             data,
             mode: review ? 'review' : 'inline',
             reviewError,
             onAnswer: finish,
             onReview: () => {
-                reviewWindow = openReviewWindow(reviewId);
+                if (reviewWindow && !reviewWindow.closed) reviewWindow.close();
+                attempts += 1;
+                reviewWindow = openReviewWindow(reviewId, attempts);
                 if (!reviewWindow) render('Allow pop-ups for this site, then try again.');
             }
         }), root);
     };
-    if (review) {
-        review.onmessage = ({data: message}) => {
-            if (!message || message.id !== reviewId) return;
-            if (message.kind === 'request') review.postMessage({kind: 'prompt', id: reviewId, type, data});
-            if (message.kind === 'answer') finish(message.answer);
-        };
-    }
+    if (review) window.addEventListener('message', onReviewMessage);
     render('');
 });
+
+let promptQueue = Promise.resolve();
+
+const prompt = (type, data, lifetime = PROMPT_LIFETIME) => {
+    const deadline = Date.now() + Math.min(lifetime, PROMPT_LIFETIME);
+    const run = promptQueue.then(() => {
+        const remaining = deadline - Date.now();
+        return remaining > 0 ? showPrompt(type, data, remaining) : false;
+    });
+    promptQueue = run.catch(() => null);
+    return run;
+};
+
+const lockEditorSession = navigator.locks && typeof navigator.locks.request === 'function' ?
+    task => navigator.locks.request(EDITOR_SESSION_KEY, () => task()) :
+    createSerialLock();
+
+const editorTokenRejected = async token => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TOKEN_CHECK_TIMEOUT);
+    try {
+        const response = await fetch(`${API_BASE}/me`, {
+            headers: {Authorization: `Bearer ${token}`},
+            cache: 'no-store',
+            signal: controller.signal
+        });
+        return response.status === 401;
+    } catch (e) {
+        return false;
+    } finally {
+        clearTimeout(timer);
+    }
+};
 
 const getUsername = () => {
     const user = identity.getState().user;
@@ -94,12 +144,18 @@ const startFrame = () => {
     document.body.style.background = 'transparent';
     const server = createFrameServer({
         identity,
-        createEditorSession: async () => {
-            await identity.ensureMistSession();
-            return request('/auth/editor-session', {method: 'POST', cache: false});
-        },
+        createEditorSession: () => mintEditorSession({
+            ensureMistSession: identity.ensureMistSession,
+            dropMistSession: () => storeSession(null),
+            mint: () => request('/auth/editor-session', {method: 'POST', cache: false, timeoutMs: 20000})
+        }),
+        mistSession: identity.getMistSession,
+        tokenRejected: editorTokenRejected,
+        store: createStorageStore(() => localStorage, EDITOR_SESSION_KEY),
+        lock: lockEditorSession,
         callRotur,
-        projectRotur: createProjectRotur({prompt, getUsername})
+        projectRotur: createProjectRotur({prompt, getUsername}),
+        confirmSignOut: username => prompt('signout', {username})
     });
     const restored = Promise.race([
         Promise.resolve(identity.restore()).catch(() => null),
@@ -141,24 +197,27 @@ const startSignIn = async () => {
 
 const startReview = id => {
     applyThemeVisuals(detectTheme());
-    const review = new BroadcastChannel(REVIEW_CHANNEL);
+    const opener = window.opener;
     const ended = setTimeout(() => {
         root.textContent = 'This request has ended. You can close this window.';
     }, REVIEW_WAIT);
-    review.onmessage = ({data: message}) => {
-        if (!message || message.id !== id || message.kind !== 'prompt') return;
+    window.addEventListener('message', event => {
+        const message = event.data;
+        if (event.source !== opener || event.origin !== location.origin || !message ||
+            message.type !== REVIEW_CHANNEL || message.id !== id || message.kind !== 'prompt' ||
+            !PROMPT_TYPES.includes(message.prompt) || !message.data || typeof message.data !== 'object') return;
         clearTimeout(ended);
         ReactDOM.render(React.createElement(FramePrompt, {
-            type: message.type,
+            type: message.prompt,
             data: message.data,
             mode: 'window',
             onAnswer: answer => {
-                review.postMessage({kind: 'answer', id, answer});
+                opener.postMessage({type: REVIEW_CHANNEL, kind: 'answer', id, answer}, location.origin);
                 window.close();
             }
         }), root);
-    };
-    review.postMessage({kind: 'request', id});
+    });
+    opener.postMessage({type: REVIEW_CHANNEL, kind: 'request', id}, location.origin);
 };
 
 const params = new URLSearchParams(location.search);

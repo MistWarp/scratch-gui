@@ -65,13 +65,45 @@ class FramePrompt extends React.Component {
         if (event.key === 'Escape') this.answer(false);
     }
 
+    renderSignOut () {
+        return (
+            <div className={modalStyles.body}>
+                <h2>{'Sign out of MistWarp?'}</h2>
+                <p>
+                    {this.props.data.username ?
+                        `This signs @${this.props.data.username} out of MistWarp in every tab in this browser.` :
+                        'This signs you out of MistWarp in every tab in this browser.'}
+                </p>
+                <div className={modalStyles.buttons}>
+                    <button
+                        type="button"
+                        className={modalStyles.denyButton}
+                        onClick={this.handleDenied}
+                    >
+                        {'Cancel'}
+                    </button>
+                    <button
+                        type="button"
+                        className={modalStyles.allowButton}
+                        onClick={this.handleAllowed}
+                    >
+                        {'Sign out'}
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     renderReview () {
         return (
             <div className={modalStyles.body}>
                 <h2>{'Review this request'}</h2>
                 <p>
-                    {`"${this.props.data.name || 'This project'}" is asking to use your Rotur account. ` +
-                        'Open a MistWarp window to see the request and answer it.'}
+                    {this.props.type === 'signout' ?
+                        'The editor is asking to sign you out of MistWarp. ' +
+                            'Open a MistWarp window to see the request and answer it.' :
+                        `"${this.props.data.name || 'This project'}" is asking to use your Rotur account. ` +
+                            'Open a MistWarp window to see the request and answer it.'}
                 </p>
                 {this.props.reviewError ? <p>{this.props.reviewError}</p> : null}
                 <div className={modalStyles.buttons}>
@@ -105,7 +137,7 @@ class FramePrompt extends React.Component {
                     className={styles.dialog}
                     role="dialog"
                     aria-modal="true"
-                    aria-label="Rotur"
+                    aria-label={this.props.type === 'signout' ? 'MistWarp' : 'Rotur'}
                     tabIndex={-1}
                     ref={this.dialog}
                 >
@@ -115,7 +147,7 @@ class FramePrompt extends React.Component {
                             className={styles.fields}
                             disabled={!enabled}
                         >
-                            <RoturConsentBody
+                            {this.props.type === 'signout' ? this.renderSignOut() : <RoturConsentBody
                                 type={this.props.type}
                                 data={this.props.data}
                                 onAllowed={this.handleAllowed}
@@ -124,7 +156,7 @@ class FramePrompt extends React.Component {
                                 onShareThis={this.handleShareThis}
                                 onShareAll={this.handleShareAll}
                                 onShareNo={this.handleDenied}
-                            />
+                            />}
                         </fieldset>
                     )}
                 </div>
@@ -134,7 +166,7 @@ class FramePrompt extends React.Component {
 }
 
 FramePrompt.propTypes = {
-    type: PropTypes.oneOf(['consent', 'confirm', 'share']).isRequired,
+    type: PropTypes.oneOf(['consent', 'confirm', 'share', 'signout']).isRequired,
     // eslint-disable-next-line react/forbid-prop-types
     data: PropTypes.object.isRequired,
     mode: PropTypes.oneOf(['inline', 'review', 'window']).isRequired,
