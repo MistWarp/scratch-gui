@@ -1,427 +1,399 @@
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {FormattedMessage} from 'react-intl';
+import {FormattedMessage, injectIntl, intlShape} from 'react-intl';
+import {ArrowUp, Plus, X} from 'lucide-react';
 
 import {GradientUtils} from '../../lib/themes/custom-themes.js';
+import messages from './custom-themes-messages.js';
 
-import styles from '../menu-bar/settings-menu.css';
+import styles from './custom-themes.css';
 
-const startDrag = (index, e, dragging, setGradientColors, previewRef) => {
-    e.preventDefault();
-    const rect = previewRef.current && previewRef.current.getBoundingClientRect();
-    dragging.current = {index, rect};
+const MAX_STOPS = 8;
+const MIN_STOPS = 2;
+const DIRECTIONS = [0, 45, 90, 135, 180, 225, 270, 315];
+const PRESET_MESSAGES = {
+    'Sunset': messages.presetSunset,
+    'Ocean': messages.presetOcean,
+    'Forest': messages.presetForest,
+    'Purple Rain': messages.presetPurpleRain,
+    'Fire': messages.presetFire,
+    'Aurora': messages.presetAurora,
+    'Space': messages.presetSpace,
+    'Cherry': messages.presetCherry
+};
+const gradientPresets = () => GradientUtils.getGradientPresets();
 
-    const move = ev => {
-        const clientX = typeof ev.clientX === 'number' ?
-            ev.clientX : (ev.touches && ev.touches[0] && ev.touches[0].clientX);
-        if (!clientX || !dragging.current.rect) return;
+let nextStopId = 1;
+const withIds = stops => stops.map(stop => ({
+    id: stop.id || `stop-${nextStopId++}`,
+    color: stop.color,
+    position: stop.position
+}));
 
-        const val = ((clientX - dragging.current.rect.left) / dragging.current.rect.width);
-        const pct = Math.max(0, Math.min(100, val * 100));
-        setGradientColors(prev => {
-            const next = prev.slice();
-            next[dragging.current.index] = {...next[dragging.current.index], position: pct};
-            return next;
+const sortStops = stops => stops.slice().sort((a, b) => a.position - b.position);
+
+const presetStops = preset => preset.colors.map((color, index) => ({
+    color,
+    position: (index / (preset.colors.length - 1)) * 100
+}));
+
+const presetMatches = (preset, value, sorted) => value.direction === preset.direction &&
+    sorted.length === preset.colors.length &&
+    sorted.every((stop, index) => stop.color.toLowerCase() === preset.colors[index].toLowerCase() &&
+        Math.round(stop.position) === Math.round((index / (preset.colors.length - 1)) * 100));
+
+const clampPosition = position => Math.max(0, Math.min(100, position));
+
+const createGradientValue = ({stops, direction, primaryColor} = {}) => {
+    const fallback = gradientPresets()[0];
+    const initialStops = stops && stops.length >= MIN_STOPS ? sortStops(stops) : presetStops(fallback);
+    return {
+        stops: withIds(initialStops),
+        direction: typeof direction === 'number' ? direction : fallback.direction,
+        primaryColor: primaryColor || initialStops[0].color
+    };
+};
+
+const gradientSignature = value => JSON.stringify({
+    stops: sortStops(value.stops).map(stop => [stop.color.toLowerCase(), Math.round(stop.position * 10) / 10]),
+    direction: value.direction,
+    primaryColor: value.primaryColor.toLowerCase()
+});
+
+class GradientControls extends React.Component {
+    constructor (props) {
+        super(props);
+        this.trackRef = React.createRef();
+        this.state = {dragging: null};
+    }
+
+    update (patch) {
+        this.props.onChange({...this.props.value, ...patch});
+    }
+
+    setStops (stops) {
+        this.update({stops});
+    }
+
+    positionFromPointer (clientX) {
+        const track = this.trackRef.current;
+        if (!track) return null;
+        const rect = track.getBoundingClientRect();
+        if (!rect.width) return null;
+        return clampPosition(((clientX - rect.left) / rect.width) * 100);
+    }
+
+    moveStop (id, position) {
+        this.setStops(this.props.value.stops.map(stop => (
+            stop.id === id ? {...stop, position: Math.round(position * 10) / 10} : stop
+        )));
+    }
+
+    handlePointerDown = e => {
+        const id = e.currentTarget.dataset.id;
+        e.preventDefault();
+        e.currentTarget.focus();
+        if (e.currentTarget.setPointerCapture) e.currentTarget.setPointerCapture(e.pointerId);
+        this.setState({dragging: id});
+    };
+
+    handlePointerMove = e => {
+        const id = e.currentTarget.dataset.id;
+        if (this.state.dragging !== id) return;
+        if (e.buttons === 0) {
+            this.setState({dragging: null});
+            return;
+        }
+        const position = this.positionFromPointer(e.clientX);
+        if (position !== null) this.moveStop(id, position);
+    };
+
+    handlePointerUp = e => {
+        if (e.currentTarget.releasePointerCapture && e.currentTarget.hasPointerCapture &&
+            e.currentTarget.hasPointerCapture(e.pointerId)) {
+            e.currentTarget.releasePointerCapture(e.pointerId);
+        }
+        this.setState({dragging: null});
+    };
+
+    handleLostPointerCapture = () => {
+        if (this.state.dragging !== null) this.setState({dragging: null});
+    };
+
+    handleHandleKeyDown = e => {
+        const id = e.currentTarget.dataset.id;
+        const stop = this.props.value.stops.find(item => item.id === id);
+        if (!stop) return;
+        const step = e.shiftKey ? 10 : 1;
+        let position = null;
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') position = stop.position - step;
+        else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') position = stop.position + step;
+        else if (e.key === 'Home') position = 0;
+        else if (e.key === 'End') position = 100;
+        if (position === null) return;
+        e.preventDefault();
+        this.moveStop(id, clampPosition(position));
+    };
+
+    handleColorChange = e => {
+        const id = e.currentTarget.dataset.id;
+        const color = e.currentTarget.value;
+        const {stops, primaryColor} = this.props.value;
+        const first = sortStops(stops)[0];
+        const patch = {
+            stops: stops.map(stop => (stop.id === id ? {...stop, color} : stop))
+        };
+        if (first && first.id === id && first.color.toLowerCase() === primaryColor.toLowerCase()) {
+            patch.primaryColor = color;
+        }
+        this.update(patch);
+    };
+
+    handleRemoveStop = e => {
+        const id = e.currentTarget.dataset.id;
+        const {stops} = this.props.value;
+        if (stops.length <= MIN_STOPS) return;
+        this.setStops(stops.filter(stop => stop.id !== id));
+    };
+
+    handleAddStop = () => {
+        const stops = sortStops(this.props.value.stops);
+        if (stops.length >= MAX_STOPS) return;
+        let gapStart = stops[0];
+        let gapEnd = stops[1];
+        for (let i = 0; i < stops.length - 1; i++) {
+            if (stops[i + 1].position - stops[i].position > gapEnd.position - gapStart.position) {
+                gapStart = stops[i];
+                gapEnd = stops[i + 1];
+            }
+        }
+        const position = Math.round((gapStart.position + gapEnd.position) / 2);
+        this.setStops([...stops, ...withIds([{color: gapEnd.color, position}])]);
+    };
+
+    handleDirectionClick = e => {
+        this.update({direction: Number(e.currentTarget.dataset.direction)});
+    };
+
+    handleDirectionSlider = e => {
+        this.update({direction: parseInt(e.currentTarget.value, 10)});
+    };
+
+    handlePresetClick = e => {
+        const preset = gradientPresets()[Number(e.currentTarget.dataset.index)];
+        if (!preset) return;
+        this.update({
+            stops: withIds(presetStops(preset)),
+            direction: preset.direction,
+            primaryColor: preset.colors[0]
         });
     };
 
-    const up = () => {
-        document.removeEventListener('mousemove', move);
-        document.removeEventListener('mouseup', up);
-        document.removeEventListener('touchmove', move);
-        document.removeEventListener('touchend', up);
-        setGradientColors(prev => prev.slice().sort((a, b) => a.position - b.position));
-        dragging.current = {index: null, rect: null};
+    handlePrimaryColorChange = e => {
+        this.update({primaryColor: e.currentTarget.value});
     };
 
-    dragging.current.moveHandler = move;
-    dragging.current.upHandler = up;
+    render () {
+        const {intl, value} = this.props;
+        const {stops, direction, primaryColor} = value;
+        const sorted = sortStops(stops);
+        const order = new Map(sorted.map((stop, index) => [stop.id, index + 1]));
+        const gradient = GradientUtils.createLinearGradient(sorted, 90);
 
-    document.addEventListener('mousemove', move);
-    document.addEventListener('mouseup', up);
-    document.addEventListener('touchmove', move, {passive: false});
-    document.addEventListener('touchend', up);
-};
-
-const GRADIENT_DIRECTIONS = [0, 45, 90, 135, 180, 225, 270, 315];
-const DIRECTION_ARROWS = ['↑', '↗', '→', '↘', '↓', '↙', '←', '↖'];
-
-const GradientBuilder = props => {
-    const isEdit = props.mode === 'edit';
-    const [name, setName] = React.useState(props.initialName || '');
-    const [description, setDescription] = React.useState(props.initialDescription || '');
-    const [gradientColors, setGradientColors] = React.useState(props.initialGradientColors || [
-        {color: '#ff6b6b', position: 0},
-        {color: '#4ecdc4', position: 100}
-    ]);
-    const [direction, setDirection] = React.useState(props.initialDirection || 90);
-    const [primaryColor, setPrimaryColor] = React.useState(props.initialPrimaryColor || '#ff6b6b');
-    const [selectedPreset, setSelectedPreset] = React.useState('');
-    const [isDragging, setIsDragging] = React.useState(null);
-    const [isPreviewActive, setIsPreviewActive] = React.useState(false);
-
-    const previewRef = React.useRef(null);
-    const dragging = React.useRef({index: null, rect: null});
-
-    const handleSubmit = React.useCallback(() => {
-        if (props.onSubmit) props.onSubmit(name, description, gradientColors, primaryColor, direction);
-    }, [props.onSubmit, name, description, gradientColors, primaryColor, direction]);
-
-    const handlePreview = React.useCallback(() => {
-        if (isPreviewActive) {
-            setIsPreviewActive(false);
-            if (props.onPreview) {
-                props.onPreview('', [], '', 90);
-            }
-            return;
-        }
-
-        if (!name.trim()) return;
-
-        if (props.onPreview) {
-            props.onPreview(name, gradientColors, primaryColor, direction);
-            setIsPreviewActive(true);
-        }
-    }, [props.onPreview, isPreviewActive, name, gradientColors, primaryColor, direction]);
-
-    const handleAddColorStop = React.useCallback(() => {
-        const next = [...gradientColors, {color: '#ffffff', position: 50}];
-        next.sort((a, b) => a.position - b.position);
-        setGradientColors(next);
-    }, [gradientColors]);
-
-    const handleRemoveColorStop = React.useCallback(e => {
-        const index = Number(e.currentTarget.dataset.index);
-        if (gradientColors.length <= 2) return;
-        setGradientColors(gradientColors.filter((_, i) => i !== index));
-    }, [gradientColors]);
-
-    const handleColorChange = React.useCallback(e => {
-        const index = Number(e.currentTarget.dataset.index);
-        const color = e.target.value;
-        const next = gradientColors.slice();
-        next[index] = {...next[index], color};
-        setGradientColors(next);
-        if (index === 0) setPrimaryColor(color);
-    }, [gradientColors]);
-
-    const handleStopDragStart = React.useCallback(e => {
-        const index = Number(e.currentTarget.dataset.index);
-        setIsDragging(index);
-        startDrag(index, e, dragging, setGradientColors, previewRef);
-    }, []);
-
-    const handleStopDragEnd = React.useCallback(() => setIsDragging(null), []);
-
-    const handleDirectionSliderChange = React.useCallback(e => setDirection(parseInt(e.target.value, 10)), []);
-
-    const handleDirectionPresetClick = React.useCallback(e => {
-        setDirection(Number(e.currentTarget.dataset.direction));
-    }, []);
-
-    const handlePrimaryColorChange = React.useCallback(e => setPrimaryColor(e.target.value), []);
-
-    const handleNameChange = React.useCallback(e => setName(e.target.value), []);
-
-    const handleDescriptionChange = React.useCallback(e => setDescription(e.target.value), []);
-
-    const handleCancel = React.useCallback(() => {
-        if (props.onCancel) props.onCancel();
-    }, [props.onCancel]);
-
-    const handlePresetSelect = React.useCallback(e => {
-        const presetName = e.currentTarget.dataset.preset;
-        const preset = GradientUtils.getGradientPresets().find(pr => pr.name === presetName);
-        if (preset) {
-            const colorStops = preset.colors.map(
-                (color, index) => ({color, position: (index / (preset.colors.length - 1)) * 100})
-            );
-            setGradientColors(colorStops);
-            setDirection(preset.direction);
-            setPrimaryColor(preset.colors[0]);
-            setSelectedPreset(presetName);
-        }
-    }, []);
-
-    const handleKeyDown = e => {
-        if (e.key === 'Escape' && props.onCancel) {
-            e.preventDefault();
-            props.onCancel();
-        }
-        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmit();
-    };
-
-    React.useEffect(() => {
-        document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [name, description, gradientColors, primaryColor, direction]);
-
-    React.useEffect(() => () => {
-        if (dragging.current.moveHandler && dragging.current.upHandler) {
-            document.removeEventListener('mousemove', dragging.current.moveHandler);
-            document.removeEventListener('mouseup', dragging.current.upHandler);
-        }
-    }, []);
-
-    return (
-        <div className={styles.gcRoot}>
-            <div className={styles.gcBody}>
-                <div
-                    ref={previewRef}
-                    className={styles.gcPreview}
-                >
+        return (
+            <div className={styles.gradientControls}>
+                <div className={styles.field}>
+                    <span className={styles.fieldLabel}>
+                        <FormattedMessage {...messages.colors} />
+                    </span>
                     <div
-                        className={styles.gcPreviewFill}
-                        style={{background: GradientUtils.createLinearGradient(gradientColors, direction)}}
-                    />
-                    {gradientColors.map((stop, index) => (
-                        <button
-                            key={index}
-                            type="button"
-                            className={classNames(
-                                styles.gcStopHandle,
-                                isDragging === index && styles.gcStopHandleActive
-                            )}
-                            style={{left: `${stop.position}%`, background: stop.color}}
-                            title={`${stop.color} · ${Math.round(stop.position)}%`}
-                            data-index={index}
-                            onMouseDown={handleStopDragStart}
-                            onTouchStart={handleStopDragStart}
-                            onMouseUp={handleStopDragEnd}
-                            onTouchEnd={handleStopDragEnd}
-                        />
-                    ))}
-                </div>
-
-                <div className={styles.gcStops}>
-                    {gradientColors.map((stop, index) => (
+                        className={styles.gradientTrack}
+                        ref={this.trackRef}
+                    >
                         <div
-                            key={index}
-                            className={styles.gcStopChip}
-                        >
-                            <input
-                                type="color"
-                                value={stop.color}
-                                data-index={index}
-                                onChange={handleColorChange}
-                                className={styles.gcStopColor}
-                                title={stop.color}
-                            />
-                            <span className={styles.gcStopPos}>{`${Math.round(stop.position)}%`}</span>
-                            {gradientColors.length > 2 && (
-                                <button
-                                    type="button"
-                                    data-index={index}
-                                    onClick={handleRemoveColorStop}
-                                    className={styles.gcStopRemove}
-                                    title="Remove color"
-                                >
-                                    {'×'}
-                                </button>
-                            )}
-                        </div>
-                    ))}
-                    {gradientColors.length < 8 && (
-                        <button
-                            type="button"
-                            onClick={handleAddColorStop}
-                            className={styles.gcAddStop}
-                        >
-                            <FormattedMessage
-                                defaultMessage="+ Add"
-                                id="tw.customThemes.gradientCreator.addColor"
-                            />
-                        </button>
-                    )}
-                </div>
-
-                <div className={styles.gcField}>
-                    <label className={styles.gcLabel}>
-                        <FormattedMessage
-                            defaultMessage="Direction"
-                            id="tw.customThemes.gradientCreator.direction"
+                            className={styles.gradientTrackFill}
+                            style={{background: gradient}}
                         />
-                    </label>
-                    <div className={styles.gcDirectionRow}>
-                        <input
-                            type="range"
-                            min="0"
-                            max="360"
-                            value={direction}
-                            onChange={handleDirectionSliderChange}
-                            className={styles.gcSlider}
-                        />
-                        <span className={styles.gcDegrees}>{`${direction}°`}</span>
-                        <div className={styles.gcDirectionPresets}>
-                            {GRADIENT_DIRECTIONS.map((dir, i) => (
-                                <button
-                                    key={dir}
-                                    type="button"
-                                    data-direction={dir}
-                                    onClick={handleDirectionPresetClick}
-                                    className={classNames(
-                                        styles.gcDirBtn,
-                                        direction === dir && styles.gcDirBtnActive
-                                    )}
-                                    title={`${dir}°`}
-                                >
-                                    {DIRECTION_ARROWS[i]}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                <div className={styles.gcField}>
-                    <label className={styles.gcLabel}>
-                        <FormattedMessage
-                            defaultMessage="Quick Presets"
-                            id="tw.customThemes.gradientCreator.quickPresets"
-                        />
-                    </label>
-                    <div className={styles.gcPresets}>
-                        {GradientUtils.getGradientPresets().map(preset => (
+                        {stops.map(stop => (
                             <button
-                                key={preset.name}
+                                key={stop.id}
                                 type="button"
-                                data-preset={preset.name}
-                                onClick={handlePresetSelect}
-                                className={classNames(
-                                    styles.gcPresetSwatch,
-                                    selectedPreset === preset.name && styles.gcPresetSwatchActive
-                                )}
-                                style={{background: GradientUtils.createLinearGradient(preset.colors.map((c, i) => ({
-                                    color: c,
-                                    position: (i / (preset.colors.length - 1)) * 100
-                                })), preset.direction)}}
-                                title={preset.name}
+                                role="slider"
+                                aria-label={intl.formatMessage(messages.colorStop, {number: order.get(stop.id)})}
+                                aria-valuemin={0}
+                                aria-valuemax={100}
+                                aria-valuenow={Math.round(stop.position)}
+                                aria-valuetext={`${Math.round(stop.position)}%`}
+                                data-id={stop.id}
+                                className={classNames(styles.gradientHandle, {
+                                    [styles.gradientHandleDragging]: this.state.dragging === stop.id
+                                })}
+                                style={{left: `${stop.position}%`, background: stop.color}}
+                                onPointerDown={this.handlePointerDown}
+                                onPointerMove={this.handlePointerMove}
+                                onPointerUp={this.handlePointerUp}
+                                onPointerCancel={this.handlePointerUp}
+                                onLostPointerCapture={this.handleLostPointerCapture}
+                                onKeyDown={this.handleHandleKeyDown}
                             />
                         ))}
                     </div>
+                    <ul className={styles.stopList}>
+                        {sorted.map((stop, index) => (
+                            <li
+                                key={stop.id}
+                                className={styles.stopChip}
+                            >
+                                <input
+                                    type="color"
+                                    className={styles.colorInput}
+                                    value={stop.color}
+                                    data-id={stop.id}
+                                    aria-label={intl.formatMessage(messages.colorValue, {number: index + 1})}
+                                    onChange={this.handleColorChange}
+                                />
+                                <span className={styles.stopPosition}>{`${Math.round(stop.position)}%`}</span>
+                                {stops.length > MIN_STOPS ? (
+                                    <button
+                                        type="button"
+                                        className={styles.stopRemove}
+                                        data-id={stop.id}
+                                        aria-label={intl.formatMessage(messages.removeColor, {number: index + 1})}
+                                        title={intl.formatMessage(messages.removeColor, {number: index + 1})}
+                                        onClick={this.handleRemoveStop}
+                                    >
+                                        <X size={12} />
+                                    </button>
+                                ) : null}
+                            </li>
+                        ))}
+                        {stops.length < MAX_STOPS ? (
+                            <li>
+                                <button
+                                    type="button"
+                                    className={styles.addStop}
+                                    onClick={this.handleAddStop}
+                                >
+                                    <Plus size={14} />
+                                    <FormattedMessage {...messages.addColor} />
+                                </button>
+                            </li>
+                        ) : null}
+                    </ul>
                 </div>
 
-                <div className={styles.gcField}>
-                    <label className={styles.gcLabel}>
-                        <FormattedMessage
-                            defaultMessage="Primary Color (for UI accents)"
-                            id="tw.customThemes.gradientCreator.primaryColor"
-                        />
-                    </label>
-                    <div className={styles.gcAccentRow}>
-                        <input
-                            type="color"
-                            value={primaryColor}
-                            onChange={handlePrimaryColorChange}
-                            className={styles.gcStopColor}
-                        />
-                        <span className={styles.gcHex}>{primaryColor}</span>
+                <div className={styles.field}>
+                    <span className={styles.fieldLabel}>
+                        <FormattedMessage {...messages.presets} />
+                    </span>
+                    <div className={styles.presetRow}>
+                        {gradientPresets().map((preset, index) => {
+                            const selected = presetMatches(preset, value, sorted);
+                            const presetName = PRESET_MESSAGES[preset.name] ?
+                                intl.formatMessage(PRESET_MESSAGES[preset.name]) : preset.name;
+                            return (
+                                <button
+                                    key={preset.name}
+                                    type="button"
+                                    data-index={index}
+                                    aria-pressed={selected}
+                                    aria-label={presetName}
+                                    title={presetName}
+                                    className={classNames(styles.preset, {
+                                        [styles.presetSelected]: selected
+                                    })}
+                                    style={{
+                                        background: GradientUtils.createLinearGradient(
+                                            presetStops(preset),
+                                            preset.direction
+                                        )
+                                    }}
+                                    onClick={this.handlePresetClick}
+                                />
+                            );
+                        })}
                     </div>
                 </div>
 
-                <div className={styles.gcField}>
-                    <label className={styles.gcLabel}>
-                        <FormattedMessage
-                            defaultMessage="Name"
-                            id="tw.customThemes.gradientDialog.name"
-                        />
-                    </label>
-                    <input
-                        type="text"
-                        value={name}
-                        onChange={handleNameChange}
-                        placeholder="My Gradient Theme"
-                        className={styles.gcInput}
-                        maxLength={50}
-                    />
+                <div className={styles.field}>
+                    <span className={styles.fieldLabel}>
+                        <FormattedMessage {...messages.direction} />
+                    </span>
+                    <div className={styles.directionRow}>
+                        <div className={styles.directionButtons}>
+                            {DIRECTIONS.map(degrees => (
+                                <button
+                                    key={degrees}
+                                    type="button"
+                                    data-direction={degrees}
+                                    aria-pressed={direction === degrees}
+                                    aria-label={intl.formatMessage(messages.directionValue, {degrees})}
+                                    title={`${degrees}°`}
+                                    className={classNames(styles.directionButton, {
+                                        [styles.directionButtonSelected]: direction === degrees
+                                    })}
+                                    onClick={this.handleDirectionClick}
+                                >
+                                    <ArrowUp
+                                        size={14}
+                                        style={{transform: `rotate(${degrees}deg)`}}
+                                    />
+                                </button>
+                            ))}
+                        </div>
+                        <div className={styles.directionFine}>
+                            <input
+                                type="range"
+                                min="0"
+                                max="359"
+                                value={direction}
+                                className={styles.directionSlider}
+                                aria-label={intl.formatMessage(messages.direction)}
+                                onChange={this.handleDirectionSlider}
+                            />
+                            <span className={styles.directionValue}>{`${direction}°`}</span>
+                        </div>
+                    </div>
                 </div>
-                <div className={styles.gcField}>
-                    <label className={styles.gcLabel}>
-                        <FormattedMessage
-                            defaultMessage="Description (optional)"
-                            id="tw.customThemes.createDialog.description"
+
+                <div className={styles.field}>
+                    <span className={styles.fieldLabel}>
+                        <FormattedMessage {...messages.accentColor} />
+                    </span>
+                    <label className={styles.accentRow}>
+                        <input
+                            type="color"
+                            className={styles.colorInput}
+                            value={primaryColor}
+                            onChange={this.handlePrimaryColorChange}
                         />
+                        <span className={styles.accentText}>
+                            <span className={styles.accentHex}>{primaryColor}</span>
+                            <span className={styles.fieldHint}>
+                                <FormattedMessage {...messages.accentHint} />
+                            </span>
+                        </span>
                     </label>
-                    <textarea
-                        value={description}
-                        onChange={handleDescriptionChange}
-                        placeholder="Describe your gradient theme..."
-                        className={styles.gcTextarea}
-                        maxLength={200}
-                        rows={2}
-                    />
                 </div>
             </div>
+        );
+    }
+}
 
-            <div className={styles.gcFooter}>
-                {props.onPreview && (
-                    <button
-                        type="button"
-                        className={classNames(styles.gcBtn, isPreviewActive && styles.gcBtnActive)}
-                        onClick={handlePreview}
-                        disabled={!name.trim()}
-                        title="Apply this theme to see how it looks"
-                    >
-                        {isPreviewActive ? (
-                            <FormattedMessage
-                                defaultMessage="Stop Preview"
-                                id="tw.customThemes.gradientCreator.stopPreview"
-                            />
-                        ) : (
-                            <FormattedMessage
-                                defaultMessage="Preview"
-                                id="tw.customThemes.gradientCreator.previewTheme"
-                            />
-                        )}
-                    </button>
-                )}
-                <div className={styles.gcFooterSpacer} />
-                <button
-                    type="button"
-                    className={styles.gcBtn}
-                    onClick={handleCancel}
-                >
-                    <FormattedMessage
-                        defaultMessage="Cancel"
-                        id="tw.customThemes.createDialog.cancel"
-                    />
-                </button>
-                <button
-                    type="button"
-                    className={classNames(styles.gcBtn, styles.gcBtnPrimary)}
-                    onClick={handleSubmit}
-                    disabled={!name.trim()}
-                >
-                    {isEdit ? (
-                        <FormattedMessage
-                            defaultMessage="Save Changes"
-                            id="tw.customThemes.gradientEditor.update"
-                        />
-                    ) : (
-                        <FormattedMessage
-                            defaultMessage="Create Theme"
-                            id="tw.customThemes.createDialog.create"
-                        />
-                    )}
-                </button>
-            </div>
-        </div>
-    );
+GradientControls.propTypes = {
+    intl: intlShape.isRequired,
+    value: PropTypes.shape({
+        stops: PropTypes.arrayOf(PropTypes.shape({
+            id: PropTypes.string,
+            color: PropTypes.string,
+            position: PropTypes.number
+        })),
+        direction: PropTypes.number,
+        primaryColor: PropTypes.string
+    }).isRequired,
+    onChange: PropTypes.func.isRequired
 };
 
-GradientBuilder.propTypes = {
-    mode: PropTypes.oneOf(['create', 'edit']),
-    initialName: PropTypes.string,
-    initialDescription: PropTypes.string,
-    initialGradientColors: PropTypes.arrayOf(PropTypes.shape({
-        color: PropTypes.string,
-        position: PropTypes.number
-    })),
-    initialDirection: PropTypes.number,
-    initialPrimaryColor: PropTypes.string,
-    onCancel: PropTypes.func,
-    onSubmit: PropTypes.func,
-    onPreview: PropTypes.func
-};
-
-export default GradientBuilder;
+export {createGradientValue, gradientSignature, sortStops};
+export default injectIntl(GradientControls);

@@ -1,0 +1,966 @@
+@import "../../css/colors.css";
+
+.page {
+    container-type: inline-size;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    margin-top: 1rem;
+    color: $text-primary;
+    font-size: 0.875rem;
+}
+
+.hidden-input {
+    display: none;
+}
+
+.primary-button,
+.secondary-button,
+.ghost-button,
+.small-button,
+.icon-button,
+.link-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 0;
+    border: 0;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.primary-button,
+.secondary-button,
+.ghost-button {
+    height: 2.25rem;
+    padding: 0 0.875rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.primary-button {
+    background: $looks-secondary;
+    color: #ffffff;
+}
+
+.primary-button:hover:not(:disabled) {
+    background: color-mix(in srgb, $looks-secondary 88%, #000000);
+}
+
+.secondary-button {
+    background: color-mix(in srgb, $text-primary 8%, transparent);
+    color: $text-primary;
+}
+
+.secondary-button:hover:not(:disabled) {
+    background: color-mix(in srgb, $text-primary 13%, transparent);
+}
+
+.ghost-button {
+    background: transparent;
+    color: color-mix(in srgb, $text-primary 82%, transparent);
+}
+
+.ghost-button:hover:not(:disabled) {
+    background: color-mix(in srgb, $text-primary 8%, transparent);
+    color: $text-primary;
+}
+
+.small-button {
+    height: 1.875rem;
+    padding: 0 0.75rem;
+    border-radius: 0.5rem;
+    background: color-mix(in srgb, $text-primary 8%, transparent);
+    color: $text-primary;
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.small-button:hover {
+    background: color-mix(in srgb, $text-primary 13%, transparent);
+}
+
+.danger-button,
+.danger-button:hover {
+    background: $status-danger;
+    color: #ffffff;
+}
+
+.icon-button {
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border-radius: 0.5rem;
+    background: transparent;
+    color: color-mix(in srgb, $text-primary 70%, transparent);
+}
+
+.icon-button:hover {
+    background: color-mix(in srgb, $text-primary 8%, transparent);
+    color: $text-primary;
+}
+
+.link-button {
+    gap: 0.375rem;
+    padding: 0.25rem 0;
+    background: transparent;
+    color: $looks-secondary;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.link-button:hover {
+    text-decoration: underline;
+}
+
+.primary-button:disabled,
+.secondary-button:disabled,
+.ghost-button:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.primary-button:focus-visible,
+.secondary-button:focus-visible,
+.ghost-button:focus-visible,
+.small-button:focus-visible,
+.icon-button:focus-visible,
+.link-button:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px $looks-transparent;
+}
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.library-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    margin-top: 1.5rem;
+    margin-left: -0.5rem;
+}
+
+.toolbar-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 0.5rem 0.5rem 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+}
+
+.status > svg {
+    flex-shrink: 0;
+}
+
+.status-success {
+    background: color-mix(in srgb, $status-success 12%, transparent);
+}
+
+.status-success > svg {
+    color: $status-success;
+}
+
+.status-error {
+    background: color-mix(in srgb, $status-danger 12%, transparent);
+}
+
+.status-error > svg {
+    color: $status-danger;
+}
+
+.status-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.status-dismiss {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border: 0;
+    border-radius: 0.375rem;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.status-dismiss:hover {
+    background: color-mix(in srgb, $text-primary 10%, transparent);
+}
+
+.empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 2.5rem 1.5rem;
+    border-radius: 0.75rem;
+    background: color-mix(in srgb, $text-primary 5%, transparent);
+    text-align: center;
+}
+
+.empty-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    margin-bottom: 0.25rem;
+    border-radius: 50%;
+    background: color-mix(in srgb, $looks-secondary 14%, transparent);
+    color: $looks-secondary;
+}
+
+.empty-title {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.empty-text {
+    max-width: 26rem;
+    color: color-mix(in srgb, $text-primary 72%, transparent);
+    line-height: 1.5;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+    gap: 1.25rem 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.tile-preview-button {
+    position: relative;
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0.75rem;
+    background: transparent;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tile-preview-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.tile-preview-button:focus-visible {
+    outline: 2px solid $looks-secondary;
+    outline-offset: 3px;
+}
+
+.tile-active .tile-preview-button {
+    box-shadow: 0 0 0 2px $looks-secondary;
+}
+
+.tile-active .tile-preview-button:hover {
+    box-shadow: 0 0 0 2px $looks-secondary, 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.tile-confirming .tile-preview-button {
+    opacity: 0.5;
+}
+
+.active-badge {
+    position: absolute;
+    right: 0.5rem;
+    bottom: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.1875rem 0.5rem 0.1875rem 0.375rem;
+    border-radius: 999px;
+    background: $looks-secondary;
+    color: #ffffff;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.tile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+    padding: 0.625rem 0.125rem 0;
+}
+
+.tile-name,
+.tile-meta {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tile-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.tile-meta {
+    color: color-mix(in srgb, $text-primary 65%, transparent);
+    font-size: 0.75rem;
+}
+
+.tile-actions {
+    position: absolute;
+    z-index: 1;
+    top: 0.375rem;
+    right: 0.375rem;
+    display: flex;
+    gap: 0.125rem;
+    padding: 0.1875rem;
+    border-radius: 0.625rem;
+    background: $ui-modal-background;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.tile-actions .icon-button {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 0.4375rem;
+}
+
+@media (hover: hover) {
+    .tile-actions {
+        opacity: 0;
+        transform: translateY(-2px);
+        pointer-events: none;
+    }
+
+    .tile:hover .tile-actions,
+    .tile:focus-within .tile-actions {
+        opacity: 1;
+        transform: none;
+        pointer-events: auto;
+    }
+}
+
+.tile-confirm {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem;
+    padding-top: 0.625rem;
+}
+
+.tile-confirm-text {
+    flex: 1 1 100%;
+    margin-bottom: 0.125rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.preview {
+    container-type: inline-size;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, $text-primary 14%, transparent);
+    pointer-events: none;
+}
+
+.preview-menu {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 3cqw;
+    height: 11cqw;
+    padding: 0 4cqw;
+}
+
+.preview-logo {
+    width: 4.5cqw;
+    height: 4.5cqw;
+    border-radius: 50%;
+    opacity: 0.95;
+}
+
+.preview-menu-item {
+    width: 9cqw;
+    height: 2cqw;
+    border-radius: 1cqw;
+    opacity: 0.7;
+}
+
+.preview-body {
+    display: flex;
+    flex: 1;
+    gap: 2.5cqw;
+    min-height: 0;
+    padding: 2.5cqw;
+}
+
+.preview-categories {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2.5cqw;
+    width: 10cqw;
+    padding-top: 3cqw;
+    border-radius: 2cqw;
+}
+
+.preview-category {
+    width: 5cqw;
+    height: 5cqw;
+    border-radius: 50%;
+}
+
+.preview-workspace {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    border-radius: 2cqw;
+}
+
+.preview-wallpaper {
+    position: absolute;
+    inset: 0;
+    background-position: center;
+    background-size: cover;
+}
+
+.preview-script {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1cqw;
+    padding: 5cqw 0 0 5cqw;
+}
+
+.preview-block {
+    height: 5cqw;
+    border-radius: 1.25cqw;
+}
+
+.preview-block:first-child {
+    border-radius: 3cqw 3cqw 1.25cqw 1.25cqw;
+}
+
+.preview-side {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5cqw;
+    width: 26cqw;
+}
+
+.preview-stage {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    box-sizing: border-box;
+    border: 1px solid;
+    border-radius: 2cqw;
+}
+
+.preview-button {
+    width: 60%;
+    height: 4.5cqw;
+    border-radius: 1.5cqw;
+}
+
+.preview-large {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, $text-primary 14%, transparent), 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.editor {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    min-width: 0;
+}
+
+.editor-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: -0.375rem;
+}
+
+.editor-title {
+    margin: 0;
+    font-size: 1.0625rem;
+    font-weight: 600;
+}
+
+.editor-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+}
+
+@container (min-width: 32rem) {
+    .editor-layout {
+        grid-template-columns: minmax(0, 13rem) minmax(0, 1fr);
+        gap: 1.75rem;
+    }
+
+    .editor-aside {
+        position: sticky;
+        top: 0;
+    }
+}
+
+.editor-aside {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+.editor-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    min-width: 0;
+}
+
+.editor-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding-top: 0.25rem;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+    margin: 0;
+}
+
+.field-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.field-hint {
+    color: color-mix(in srgb, $text-primary 65%, transparent);
+    font-size: 0.75rem;
+    line-height: 1.45;
+}
+
+.text-input {
+    box-sizing: border-box;
+    width: 100%;
+    height: 2.5rem;
+    margin: 0;
+    padding: 0 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 0.5rem;
+    background: color-mix(in srgb, $text-primary 6%, transparent);
+    color: $text-primary;
+    font-family: inherit;
+    font-size: 0.875rem;
+    outline: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.text-input::placeholder {
+    color: color-mix(in srgb, $text-primary 45%, transparent);
+}
+
+.text-input:hover {
+    background: color-mix(in srgb, $text-primary 9%, transparent);
+}
+
+.text-input:focus {
+    border-color: $looks-secondary;
+    background: color-mix(in srgb, $text-primary 3%, transparent);
+    box-shadow: 0 0 0 3px $looks-transparent;
+}
+
+.text-input[aria-invalid="true"] {
+    border-color: $status-danger;
+}
+
+.text-area {
+    height: auto;
+    min-height: 4.5rem;
+    padding: 0.625rem 0.75rem;
+    line-height: 1.45;
+    resize: vertical;
+}
+
+.try-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    height: 2.5rem;
+    margin: 0;
+    padding: 0 0.75rem;
+    border: 0;
+    border-radius: 0.5rem;
+    background: color-mix(in srgb, $text-primary 6%, transparent);
+    color: $text-primary;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.try-button:hover {
+    background: color-mix(in srgb, $text-primary 9%, transparent);
+}
+
+.try-button:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px $looks-transparent;
+}
+
+.try-label {
+    flex: 1;
+    text-align: left;
+}
+
+.try-switch {
+    position: relative;
+    flex-shrink: 0;
+    width: 2rem;
+    height: 1.125rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, $text-primary 28%, transparent);
+    transition: background-color 0.15s ease;
+}
+
+.try-switch::after {
+    content: "";
+    position: absolute;
+    top: 0.125rem;
+    left: 0.125rem;
+    width: 0.875rem;
+    height: 0.875rem;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    transition: transform 0.15s ease;
+}
+
+.try-button-on .try-switch {
+    background: $looks-secondary;
+}
+
+.try-button-on .try-switch::after {
+    transform: translateX(0.875rem);
+}
+
+.gradient-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.gradient-track {
+    position: relative;
+    height: 2.5rem;
+    margin: 0 0.75rem;
+}
+
+.gradient-track-fill {
+    position: absolute;
+    inset: 0 -0.75rem;
+    border-radius: 0.5rem;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.gradient-handle {
+    position: absolute;
+    top: 50%;
+    width: 1.375rem;
+    height: 1.375rem;
+    margin: 0;
+    padding: 0;
+    border: 3px solid #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    transform: translate(-50%, -50%);
+    cursor: grab;
+    touch-action: none;
+    transition: transform 0.1s ease;
+}
+
+.gradient-handle:focus-visible {
+    outline: none;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35), 0 0 0 3px $looks-secondary;
+}
+
+.gradient-handle-dragging {
+    transform: translate(-50%, -50%) scale(1.15);
+    cursor: grabbing;
+}
+
+.stop-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.stop-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    height: 2.25rem;
+    padding: 0 0.25rem 0 0.3125rem;
+    border-radius: 0.5rem;
+    background: color-mix(in srgb, $text-primary 6%, transparent);
+}
+
+.color-input {
+    flex-shrink: 0;
+    width: 1.625rem;
+    height: 1.625rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0.375rem;
+    background: transparent;
+    cursor: pointer;
+    appearance: none;
+}
+
+.color-input::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.color-input::-webkit-color-swatch {
+    border: 0;
+    border-radius: 0.375rem;
+}
+
+.color-input::-moz-color-swatch {
+    border: 0;
+    border-radius: 0.375rem;
+}
+
+.color-input:focus-visible {
+    outline: 2px solid $looks-secondary;
+    outline-offset: 2px;
+}
+
+.stop-position {
+    padding-right: 0.125rem;
+    color: color-mix(in srgb, $text-primary 70%, transparent);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.stop-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.375rem;
+    height: 1.375rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0.375rem;
+    background: transparent;
+    color: color-mix(in srgb, $text-primary 65%, transparent);
+    cursor: pointer;
+}
+
+.stop-remove:hover {
+    background: color-mix(in srgb, $text-primary 10%, transparent);
+    color: $text-primary;
+}
+
+.add-stop {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    height: 2.25rem;
+    margin: 0;
+    padding: 0 0.75rem;
+    border: 0;
+    border-radius: 0.5rem;
+    background: transparent;
+    color: $looks-secondary;
+    font-family: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.add-stop:hover {
+    background: color-mix(in srgb, $looks-secondary 10%, transparent);
+}
+
+.preset-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.preset {
+    width: 1.75rem;
+    height: 1.75rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.preset:hover {
+    transform: scale(1.08);
+}
+
+.preset:focus-visible,
+.preset-selected {
+    outline: 2px solid $looks-secondary;
+    outline-offset: 2px;
+}
+
+.direction-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.direction-buttons {
+    display: inline-flex;
+    gap: 0.125rem;
+    padding: 0.1875rem;
+    border-radius: 0.625rem;
+    background: color-mix(in srgb, $text-primary 6%, transparent);
+}
+
+.direction-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0.4375rem;
+    background: transparent;
+    color: color-mix(in srgb, $text-primary 75%, transparent);
+    cursor: pointer;
+}
+
+.direction-button:hover {
+    background: color-mix(in srgb, $text-primary 9%, transparent);
+    color: $text-primary;
+}
+
+.direction-button:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px $looks-secondary;
+}
+
+.direction-button-selected,
+.direction-button-selected:hover {
+    background: $looks-secondary;
+    color: #ffffff;
+}
+
+.direction-fine {
+    display: flex;
+    flex: 1 1 10rem;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 10rem;
+}
+
+.direction-slider {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    accent-color: $looks-secondary;
+}
+
+.direction-value {
+    min-width: 2.5rem;
+    color: color-mix(in srgb, $text-primary 75%, transparent);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.accent-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+}
+
+.accent-row .color-input {
+    width: 2.25rem;
+    height: 2.25rem;
+}
+
+.accent-row .color-input::-webkit-color-swatch {
+    border-radius: 0.5rem;
+}
+
+.accent-row .color-input::-moz-color-swatch {
+    border-radius: 0.5rem;
+}
+
+.accent-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+}
+
+.accent-hex {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    text-transform: uppercase;
+}

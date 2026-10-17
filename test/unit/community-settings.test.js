@@ -11,6 +11,7 @@ import {customThemesTab} from '../../src/components/tw-settings-modal/custom-the
 
 jest.mock('../../src/lib/themes/custom-themes.js', () => ({
     CustomTheme: {},
+    GradientUtils: {getGradientPresets: () => []},
     customThemeManager: {themes: {clear: jest.fn()}, loadCustomThemes: jest.fn()}
 }));
 
@@ -25,9 +26,10 @@ describe('community Settings URL state', () => {
         expect(settingsThemeTab('unknown')).toBe('appearance');
     });
 
-    test('opens valid custom-theme deep links on the requested inner tab', () => {
+    test('opens valid custom-theme deep links on the requested view', () => {
         expect(customThemesTab('create')).toBe('create');
-        expect(customThemesTab('import')).toBe('import');
+        expect(customThemesTab('gradient')).toBe('gradient');
+        expect(customThemesTab('import')).toBe('library');
         expect(customThemesTab('missing')).toBe('library');
     });
 
@@ -37,8 +39,10 @@ describe('community Settings URL state', () => {
         expect(normalizeSettingsParams(new URLSearchParams('section=theme&tab=games')).toString()).toBe('');
         expect(normalizeSettingsParams(new URLSearchParams('tab=custom&themeAction=create')).toString())
             .toBe('tab=custom&themeAction=create');
+        expect(normalizeSettingsParams(new URLSearchParams('tab=custom&themeAction=gradient')).toString())
+            .toBe('tab=custom&themeAction=gradient');
         expect(normalizeSettingsParams(new URLSearchParams('tab=custom&themeAction=import')).toString())
-            .toBe('tab=custom&themeAction=import');
+            .toBe('tab=custom');
         expect(normalizeSettingsParams(new URLSearchParams('tab=custom&themeAction=missing')).toString())
             .toBe('tab=custom');
     });
