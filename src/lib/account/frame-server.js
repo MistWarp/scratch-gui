@@ -117,8 +117,10 @@ const mintEditorSession = async ({ensureMistSession, dropMistSession, mint}) => 
     }
 };
 
+const EDITOR_DATA_ACTIONS = ['status', 'settings', 'restorePoints', 'restorePoint', 'asset', 'backpack', 'done'];
+
 const createFrameServer = ({
-    identity, createEditorSession, mistSession, callRotur, projectRotur, confirmSignOut,
+    identity, createEditorSession, mistSession, callRotur, projectRotur, editorData, confirmSignOut,
     tokenRejected = () => Promise.resolve(false),
     store = createMemoryStore(), lock = createSerialLock(), now = Date.now
 }) => {
@@ -206,6 +208,11 @@ const createFrameServer = ({
             }
             return callRotur(method, Array.isArray(args) ? args : []);
         },
+        editorData: args => {
+            const action = args.action;
+            if (!EDITOR_DATA_ACTIONS.includes(action) || !editorData) throw new Error('Unknown editor data request');
+            return editorData[action](args);
+        },
         projectRotur: ({action, project, scopes, method, args}) => {
             if (!validProject(project)) throw new Error('This project cannot use Rotur');
             const deadline = Date.now() + PROMPT_LIFETIME;
@@ -234,9 +241,10 @@ const createFrameServer = ({
             try {
                 if (!handler) throw new Error('Unknown MistWarp account request');
                 const result = await handler(data.args && typeof data.args === 'object' ? data.args : {});
+                const plain = typeof result === 'undefined' ? null : result;
                 port.postMessage({
                     id: data.id,
-                    result: typeof result === 'undefined' ? null : JSON.parse(JSON.stringify(result))
+                    result: data.method === 'editorData' || plain === null ? plain : JSON.parse(JSON.stringify(plain))
                 });
             } catch (error) {
                 port.postMessage({id: data.id, error: toError(error)});

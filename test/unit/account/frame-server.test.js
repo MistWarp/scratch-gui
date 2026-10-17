@@ -82,6 +82,10 @@ const setup = (user = {username: 'mist', id: 'u1', bio: 'hi', avatarUrl: 'x'}, {
         confirmSignOut: jest.fn(async () => signOutAnswer),
         createEditorSession,
         callRotur: jest.fn(async (method, args) => ({method, args})),
+        editorData: {
+            status: jest.fn(() => ({moved: false})),
+            asset: jest.fn(async () => new Uint8Array([1, 2, 3]))
+        },
         projectRotur: {
             ensureConsent: jest.fn(async () => true),
             call: jest.fn(async () => 'result'),
@@ -386,4 +390,15 @@ test('stale reports check the token at most every ten seconds', async () => {
     expect((await send('editorSession', {stale: 'not-the-token'})).result.token).toBe('editor-token');
     expect(tokenRejected).toHaveBeenCalledTimes(1);
     expect(deps.createEditorSession).toHaveBeenCalledTimes(1);
+});
+
+test('editor data keeps binary data and only runs known actions', async () => {
+    const {send, deps} = setup();
+    const reply = await send('editorData', {action: 'asset', id: 'x'});
+    expect(reply.result).toBeInstanceOf(Uint8Array);
+    expect(Array.from(reply.result)).toEqual([1, 2, 3]);
+    for (const action of ['toString', '__proto__', 'constructor', 'delete', undefined]) {
+        expect((await send('editorData', {action})).error.message).toBe('Unknown editor data request');
+    }
+    expect(deps.editorData.status).not.toHaveBeenCalled();
 });
