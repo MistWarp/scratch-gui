@@ -1,47 +1,226 @@
-.grid {
+.section {
+    min-width: 0;
+}
+
+.quietLink {
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+    font-weight: 500;
+}
+
+.quietLink:hover {
+    color: var(--mw-text);
+    text-decoration: underline;
+}
+
+.grid,
+.bento {
     display: grid;
-    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-    gap: 18px 32px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     align-items: start;
-    margin-top: 40px;
+    gap: var(--space-5) var(--space-4);
 }
 
-.creators {
+.bentoLead {
+    display: flex;
+    grid-row: span 2;
+    grid-column: span 2;
+    align-self: stretch;
+    min-width: 0;
+}
+
+.skeleton {
+    aspect-ratio: 4 / 3;
+    border-radius: var(--radius-xs);
+    background: var(--bg-card);
+}
+
+.skeleton.bentoLead {
+    aspect-ratio: auto;
+}
+
+.featured {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.poster {
+    position: relative;
+    display: block;
+    flex: 1;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: var(--radius-xs);
+    background: var(--bg-card);
+    color: inherit;
+    font: inherit;
+}
+
+.poster img,
+.posterFallback {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.posterFallback {
     display: grid;
-    gap: 10px;
+    place-items: center;
+    color: var(--text-faint);
+    font-size: var(--fs-3xl);
+    font-weight: 600;
 }
 
-.creator {
+.play {
+    position: absolute;
+    bottom: var(--space-4);
+    left: var(--space-4);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 38px;
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-xs);
+    background: var(--accent);
+    color: var(--accent-contrast);
+    font-size: var(--fs-md);
+    font-weight: 600;
+}
+
+.poster:hover .play {
+    background: color-mix(in srgb, var(--accent) 88%, #000);
+}
+
+.poster:disabled {
+    cursor: progress;
+}
+
+.stageWrap {
+    position: relative;
+    height: 0;
+    overflow: hidden;
+    border-radius: var(--radius-xs);
+    background: #000;
+}
+
+.stage {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.caption {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.caption h3 {
+    margin: 0;
+    overflow: hidden;
+    font-size: var(--fs-lg);
+    font-weight: 600;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.caption h3 a:hover,
+.caption p a:hover {
+    text-decoration: underline;
+}
+
+.caption p {
+    display: flex;
+    gap: var(--space-2);
+    margin: 0;
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+}
+
+.captionLabel {
+    color: var(--accent-strong);
+    font-weight: 600;
+}
+
+.list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.listSkeleton {
+    height: 180px;
+    border-radius: var(--radius-xs);
+    background: var(--bg-card);
+}
+
+.row {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px 14px;
-    border-radius: var(--radius-sm);
-    background: var(--bg-card);
-    box-shadow: var(--card-shadow);
+    gap: var(--space-3);
+    min-height: 60px;
+    padding: var(--space-2) 0;
+    border-top: 1px solid var(--border-soft);
 }
 
-.creatorBody {
+.row:first-child {
+    border-top: 0;
+}
+
+.rowBody {
     display: grid;
     flex: 1;
     gap: 2px;
     min-width: 0;
 }
 
-.creatorBody strong {
+.rowBody strong {
     overflow: hidden;
     font-size: var(--fs-md);
+    font-weight: 600;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.creatorBody span {
+.rowBody span {
     color: var(--text-dim);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-sm);
 }
 
-@media (max-width: 860px) {
-    .grid {
-        grid-template-columns: 1fr;
+.rowAction {
+    flex-shrink: 0;
+}
+
+@media (max-width: 1000px) {
+    .grid,
+    .bento {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-4) var(--space-3);
+    }
+
+    .bentoLead {
+        grid-row: auto;
+    }
+
+    .poster {
+        flex: none;
+        aspect-ratio: 4 / 3;
+    }
+
+    .skeleton.bentoLead {
+        aspect-ratio: 4 / 3;
     }
 }
+

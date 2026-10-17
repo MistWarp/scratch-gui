@@ -60,18 +60,11 @@
   "Try a starter below. Save it to MistWarp and continue here next time.": "Essayez un modèle ci-dessous. Enregistrez-le sur MistWarp pour le retrouver ici la prochaine fois.",
   "Shared": "Partagé",
   "Draft": "Brouillon",
-  "Device backup available": "Sauvegarde disponible sur cet appareil",
   "Starter projects": "Modèles de projets",
   "Run a project, change one thing, and save your own version. No sign-in needed to try.": "Lancez un projet, modifiez un élément et enregistrez votre version. Pas besoin de vous connecter pour essayer.",
   "Looking for feedback": "En attente de commentaires",
   "Trending": "Tendances",
-  "Freshly shared": "Récemment partagés",
   "See all": "Tout voir",
-  "All updates": "Toutes les actualités",
-  "Suggest and vote": "Proposer et voter",
-  "Recent notifications": "Notifications récentes",
-  "Loading your workspace…": "Chargement de votre espace de travail…",
-  "Try a starter": "Essayer un modèle",
   "Start with a working clicker →": "Commencer avec un jeu de clics →",
   "No shared projects yet.": "Aucun projet partagé pour le moment.",
   "Build, share, and remix projects together.": "Créez, partagez et remixez des projets ensemble.",
@@ -101,7 +94,5 @@
   "status.noIncidents": "Aucun incident signalé.",
   "status.history": "Disponibilité sur sept jours",
   "status.lead": "Les vérifications sont effectuées toutes les cinq minutes en dehors du déploiement principal de MistWarp.",
-  "Explore projects": "Explorer les projets",
-  "See what people are making on MistWarp": "Découvrez ce que les gens créent sur MistWarp",
-  "Play games, animations, and tools built with blocks, and follow the creators behind them.": "Jouez à des jeux, des animations et des outils créés avec des blocs, et suivez les personnes qui les ont faits."
+  "Explore projects": "Explorer les projets"
 }

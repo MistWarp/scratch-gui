@@ -1,35 +1,25 @@
 /* eslint-disable max-len */
 import {isMilestoneNotification} from '../milestone-notifications.js';
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Bell, Bug, Clock, Compass, Gamepad2, LogIn, Rocket, UserPlus, GitFork, Globe, Heart, Lightbulb, Megaphone, MessageCircle, Star, TrendingUp, Trophy, Users} from 'lucide-react';
-import api, {projectUrl} from '../api';
+import {Bell, GitFork, Globe, Heart, MessageCircle, Plus, Star} from 'lucide-react';
+import api, {editorUrl, projectUrl} from '../api';
 import rotur from '../rotur';
 import {fetchFollowingFeed, fetchNotifications} from '../../lib/rotur/client.js';
 import {useUser} from '../UserContext.jsx';
 import {timeAgo} from '../format';
 import Avatar from '../components/Avatar.jsx';
 import Button from '../components/ui/Button.jsx';
-import EmptyState, {SignInPrompt} from '../components/ui/EmptyState.jsx';
 import SectionHeading from '../components/ui/SectionHeading.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
-import NewsItem from '../components/NewsItem.jsx';
-import ProjectCard from '../components/ProjectCard.jsx';
-import HomeDiscovery from '../components/HomeDiscovery.jsx';
-import UnderlineTabs from '../components/UnderlineTabs.jsx';
-import {tabPanelProps} from '../components/SectionTabs.jsx';
+import ProjectThumbnail from '../components/ProjectThumbnail.jsx';
 import ScratchImport from '../components/ScratchImport.jsx';
-import ChallengeCalendar from '../components/ChallengeCalendar.jsx';
-import ReactionButtons from '../components/ReactionButtons.jsx';
-import CardGridSkeleton from '../components/CardGridSkeleton.jsx';
-import UserLink from '../components/UserLink.jsx';
-import PostProjectCard from '../components/PostProjectCard.jsx';
-import {madeWithProject} from '../claw-links.js';
-import {roadmapStatusMatches} from '../roadmap-filters';
-import {categoryForNotification, getNotificationPreferences} from '../notification-preferences';
-import {ActiveChallenge, ChallengeWinner, ContinueProjects, DeviceBackup, StarterGallery} from '../components/HomeWorkspace.jsx';
+import {FeaturedGames, SuggestedCreators} from '../components/HomeDiscovery.jsx';
+import {ContinueProjects, DeviceBackup, Jams, StarterGallery} from '../components/HomeWorkspace.jsx';
+import loadProjectPreview from '../project-preview.js';
 import {track} from '../analytics.js';
 import {useCommunityIntl} from '../i18n.jsx';
+import {categoryForNotification, getNotificationPreferences} from '../notification-preferences';
 import {normalizeFollowingPosts, postUrl, timestampMs} from '../following-feed.js';
 import {
     SYSTEM_TYPES, USERNAME_RE, actorFor, describeNotification, richTranslator, targetFor
@@ -37,9 +27,7 @@ import {
 import styles from './Home.module.css';
 
 const ACTIVITY_ICONS = {love: Heart, favorite: Star, share: Globe, remix: GitFork, review: Star};
-const ROADMAP_STATUS_LABELS = {open: 'Suggested', planned: 'Planned', building: 'In progress', shipped: 'Shipped', declined: 'Not planned'};
 
-// `t` comes from richTranslator; `actor` is the linked name for {actor}.
 const describeActivity = (item, t, actor) => {
     const project = <strong>{item.projectTitle}</strong>;
     switch (item.type) {
@@ -52,37 +40,137 @@ const describeActivity = (item, t, actor) => {
     }
 };
 
-const PanelLoading = () => <div className={styles.feedScroll}>{[0, 1].map(i => <div key={i} className={styles.skeleton} />)}</div>;
+const ListSkeleton = () => <div className={styles.listSkeleton} />;
 
-const NewsSection = ({bare = false}) => {
+const QuietLink = ({to, children}) => (
+    <Link
+        className={styles.quietLink}
+        to={to}
+    >{children}</Link>
+);
+
+const loadFollowedActivity = viewerName => rotur.following(viewerName).then(data => {
+    const following = data.following || [];
+    return following.length ? api.activity(following).then(result => ({following, activity: result.activity || []})) :
+        {following, activity: []};
+});
+
+const FollowingGames = ({viewerName}) => {
     const {text: communityText} = useCommunityIntl();
-    const [items, setItems] = useState(null);
-    const [failed, setFailed] = useState(false);
-    const [attempt, setAttempt] = useState(0);
-    const load = () => setAttempt(value => value + 1);
+    const [state, setState] = useState(null);
     useEffect(() => {
         let active = true;
-        setItems(null);
-        setFailed(false);
-        api.news()
-            .then(data => active && setItems((data.news || []).filter(item => !item.archived)))
-            .catch(() => active && setFailed(true));
+        setState(null);
+        loadFollowedActivity(viewerName)
+            .then(({following, activity}) => {
+                const seen = new Set();
+                const shares = activity
+                    .filter(item => item.type === 'share' && item.projectId && !seen.has(item.projectId) && seen.add(item.projectId))
+                    .sort((left, right) => timestampMs(right.created) - timestampMs(left.created))
+                    .slice(0, 4);
+                return Promise.all(shares.map(item => loadProjectPreview({id: item.projectId})
+                    .then(project => ({item, project}))))
+                    .then(games => ({following, games: games.filter(game => game.project)}));
+            })
+            .then(result => active && setState(result))
+            .catch(() => active && setState({following: [], games: [], failed: true}));
         return () => {
             active = false;
         };
-    }, [attempt]);
+    }, [viewerName]);
+    if (state && !state.failed && !state.following.length) {
+        return (
+            <section
+                className={styles.panel}
+                aria-labelledby="home-creators-heading"
+            >
+                <SectionHeading
+                    id="home-creators-heading"
+                    title={communityText('Creators to follow')}
+                    actions={<QuietLink to="/leaderboard">{communityText('See all')}</QuietLink>}
+                />
+                <SuggestedCreators
+                    viewerName={viewerName}
+                    limit={4}
+                />
+            </section>
+        );
+    }
     return (
-        <section className={styles.feedBox}>
-            {bare ? null : <SectionHeading icon={Megaphone} title={communityText('News')} link="/news" linkLabel={communityText('All updates')} />}
-            {!items && !failed ? <PanelLoading /> : null}
-            {failed ? <StatusMessage compact error onRetry={load}>{communityText("Couldn't load news.")}</StatusMessage> : null}
-            {items && !items.length ? <EmptyState compact icon={Megaphone} title={communityText('No updates yet')}>{communityText('News from MistWarp will show up here.')}</EmptyState> : null}
-            {items && items.length ? <div className={`${styles.newsList} ${styles.feedScroll}`}>{items.map(item => <NewsItem compact key={item.id} item={item} onChanged={load} />)}</div> : null}
+        <section
+            className={styles.panel}
+            aria-labelledby="home-following-games-heading"
+        >
+            <SectionHeading
+                id="home-following-games-heading"
+                title={communityText('New from people you follow')}
+            />
+            {state === null ? <ListSkeleton /> : null}
+            {state && state.failed ? <StatusMessage compact>{communityText("Couldn't load activity.")}</StatusMessage> : null}
+            {state && !state.failed && !state.games.length ? (
+                <p className={styles.empty}>
+                    {communityText('Nobody you follow has shared a game lately.')}
+                    {' '}
+                    <QuietLink to="/explore?sort=recent">{communityText('See new games')}</QuietLink>
+                </p>
+            ) : null}
+            {state && state.games.length ? (
+                <ul className={styles.list}>
+                    {state.games.map(({item, project}) => (
+                        <li
+                            key={project.id}
+                            className={styles.row}
+                        >
+                            <Link
+                                className={styles.rowThumb}
+                                to={projectUrl(project)}
+                                tabIndex={-1}
+                                aria-hidden="true"
+                            >
+                                <ProjectThumbnail
+                                    project={project}
+                                    fallbackClassName={styles.thumbFallback}
+                                    lazy
+                                />
+                            </Link>
+                            <div className={styles.rowText}>
+                                <h3><Link to={projectUrl(project)}>{project.title}</Link></h3>
+                                <p>
+                                    <Link to={`/users/${project.owner}`}>{project.owner}</Link>
+                                    <span aria-hidden="true">{' · '}</span>
+                                    {timeAgo(item.created)}
+                                </p>
+                            </div>
+                            <Button
+                                as={Link}
+                                size="small"
+                                to={projectUrl(project)}
+                                className={styles.rowAction}
+                            >{communityText('Play')}</Button>
+                        </li>
+                    ))}
+                </ul>
+            ) : null}
         </section>
     );
 };
 
-const FriendsSection = ({user, login, bare = false}) => {
+const ActivityRow = ({avatar, icon: Icon, children, time}) => (
+    <li className={styles.activityItem}>
+        {avatar}
+        <span className={styles.activityText}>
+            {Icon ? <Icon
+                size={13}
+                aria-hidden="true"
+                className={styles.activityIcon}
+            /> : null}
+            {children}
+        </span>
+        <span className={styles.activityTime}>{time}</span>
+    </li>
+);
+
+export const FriendsSection = ({user}) => {
     const {text: communityText} = useCommunityIntl();
     const viewerName = (user && user.username) || '';
     const [items, setItems] = useState(null);
@@ -96,15 +184,13 @@ const FriendsSection = ({user, login, bare = false}) => {
             return () => {};
         }
         setItems(null);
-        const projectActivity = rotur.following(viewerName).then(data => {
-            const following = data.following || [];
-            return following.length ? api.activity(following) : {activity: []};
-        }).then(data => (data.activity || []).map(item => ({...item, timelineType: 'project-activity'})));
+        const projectActivity = loadFollowedActivity(viewerName)
+            .then(data => data.activity.filter(item => item.type !== 'share').map(item => ({...item, timelineType: 'project-activity'})));
         Promise.allSettled([projectActivity, fetchFollowingFeed(40)]).then(results => {
             if (!active) return;
             const activity = results[0].status === 'fulfilled' ? results[0].value : [];
             const posts = results[1].status === 'fulfilled' ? normalizeFollowingPosts(results[1].value) : [];
-            setFailed(results.some(result => result.status === 'rejected'));
+            setFailed(results.every(result => result.status === 'rejected'));
             setItems([...activity, ...posts].sort((left, right) => (
                 timestampMs(right.created || right.timestamp) - timestampMs(left.created || left.timestamp)
             )));
@@ -114,105 +200,58 @@ const FriendsSection = ({user, login, bare = false}) => {
         };
     }, [attempt, viewerName]);
     return (
-        <section className={styles.feedBox}>
-            {bare ? null : <SectionHeading icon={Users} title={communityText('From people you follow')} />}
-            {!user ? <SignInPrompt compact onSignIn={login}>{communityText('Sign in to see projects, reviews, and activity from people you follow.')}</SignInPrompt> : null}
-            {user && !items && !failed ? <PanelLoading /> : null}
-            {failed ? <StatusMessage compact error onRetry={() => setAttempt(value => value + 1)}>{communityText("Couldn't load activity.")}</StatusMessage> : null}
-            {items && !items.length && user ? <EmptyState compact icon={Users} title={communityText('No recent activity yet')} action={<Button as={Link} to="/explore">{communityText('Explore projects')}</Button>}>{communityText('Find a project you like and follow its creator.')}</EmptyState> : null}
+        <section
+            className={styles.panel}
+            aria-labelledby="home-friends-heading"
+        >
+            <SectionHeading
+                id="home-friends-heading"
+                title={communityText('From people you follow')}
+                actions={<QuietLink to="/posts">{communityText('See all')}</QuietLink>}
+            />
+            {!items && !failed ? <ListSkeleton /> : null}
+            {failed ? <StatusMessage
+                compact
+                error
+                onRetry={() => setAttempt(value => value + 1)}
+            >{communityText("Couldn't load activity.")}</StatusMessage> : null}
+            {items && !items.length && !failed ? (
+                <p className={styles.empty}>{communityText('Find a project you like and follow its creator.')}</p>
+            ) : null}
             {items && items.length ? (
-                <div className={`${styles.activityList} ${styles.feedScroll}`}>
-                    {items.slice(0, 4).map((item, index) => {
+                <ul className={styles.list}>
+                    {items.slice(0, 5).map((item, index) => {
                         const isPost = item.timelineType === 'following-post';
-                        const Icon = isPost ? MessageCircle : (ACTIVITY_ICONS[item.type] || Heart);
                         const name = isPost ? item.user : item.actor;
-                        const actor = <Link to={`/users/${name}`} className={styles.activityActor}>{name}</Link>;
+                        const actor = (<Link
+                            to={`/users/${name}`}
+                            className={styles.activityActor}
+                        >{name}</Link>);
                         const to = isPost ? postUrl(item.id) : item.projectId ? projectUrl(item.projectId) : null;
                         const t = richTranslator(communityText, to ? children => <Link to={to}>{children}</Link> : null);
                         return (
-                            <div key={isPost ? `post:${item.id}` : `${item.actor}-${item.created}-${index}`} className={styles.activityItem}>
-                                <Link to={`/users/${name}`}>
-                                    <Avatar username={name} size={34} />
-                                </Link>
-                                <span className={styles.activityIcon}><Icon size={14} /></span>
-                                <span className={styles.activityText}>
-                                    {isPost ?
-                                        t('{actor} posted: {post}', {actor, post: item.content || communityText('View post')}) :
-                                        describeActivity(item, t, actor)}
-                                </span>
-                                {isPost && madeWithProject(item) ? <PostProjectCard project={madeWithProject(item)} thumbOnly /> : null}
-                                <span className={styles.activityTime}>{timeAgo(item.created || item.timestamp)}</span>
-                            </div>
+                            <ActivityRow
+                                key={isPost ? `post:${item.id}` : `${item.actor}-${item.created}-${index}`}
+                                avatar={<Link to={`/users/${name}`}><Avatar
+                                    username={name}
+                                    size={32}
+                                /></Link>}
+                                icon={isPost ? MessageCircle : (ACTIVITY_ICONS[item.type] || Heart)}
+                                time={timeAgo(item.created || item.timestamp)}
+                            >
+                                {isPost ?
+                                    t('{actor} posted: {post}', {actor, post: item.content || communityText('View post')}) :
+                                    describeActivity(item, t, actor)}
+                            </ActivityRow>
                         );
                     })}
-                </div>
+                </ul>
             ) : null}
         </section>
     );
 };
 
-const RoadmapSection = ({viewerName, bare = false}) => {
-    const {text: communityText} = useCommunityIntl();
-    const [ideas, setIdeas] = useState(null);
-    const [failed, setFailed] = useState(false);
-    const [attempt, setAttempt] = useState(0);
-    useEffect(() => {
-        let active = true;
-        setIdeas(null);
-        setFailed(false);
-        api.roadmap()
-            .then(data => active && setIdeas(data.ideas || []))
-            .catch(() => active && setFailed(true));
-        return () => {
-            active = false;
-        };
-    }, [attempt, viewerName]);
-    const activeIdeas = ideas ? ideas.filter(idea => roadmapStatusMatches(idea.status, '')) : null;
-    return (
-        <section className={styles.feedBox}>
-            {bare ? null : <SectionHeading icon={Lightbulb} title={communityText('Roadmap')} link="/roadmap" linkLabel={communityText('Suggest and vote')} />}
-            {!ideas && !failed ? <PanelLoading /> : null}
-            {failed ? <StatusMessage compact error onRetry={() => setAttempt(value => value + 1)}>{communityText("Couldn't load roadmap suggestions.")}</StatusMessage> : null}
-            {ideas && !ideas.length ? <EmptyState compact icon={Lightbulb} title={communityText('No suggestions yet')} action={<Button as={Link} to="/roadmap">{communityText('Add the first one')}</Button>} /> : null}
-            {ideas && ideas.length && !activeIdeas.length ? <EmptyState compact icon={Lightbulb} title={communityText('No active suggestions')} action={<Button as={Link} to="/roadmap">{communityText('View the roadmap')}</Button>} /> : null}
-            {activeIdeas && activeIdeas.length ? (
-                <div className={`${styles.roadmapList} ${styles.feedScroll}`}>
-                    {activeIdeas.slice(0, 4).map(idea => (
-                        <article key={idea._id} className={styles.roadmapItem}>
-                            <Link className={styles.roadmapLink} to={`/roadmap#idea-${idea._id}`} aria-label={communityText('Open {value1}', {value1: idea.title})} />
-                            <ReactionButtons
-                                variant="vertical"
-                                heartKey="like"
-                                downKey="dislike"
-                                activeReaction={idea.myVote || ''}
-                                showCounts={false}
-                                interactive={false}
-                                className={styles.roadmapVotes}
-                                between={<strong>{idea.score || 0}</strong>}
-                            />
-                            <div className={styles.roadmapBody}>
-                                <div className={styles.roadmapLabels}>
-                                    {idea.kind === 'bug' ? <span><Bug size={10} />{communityText('Bug')}</span> : null}
-                                    <span>{idea.category}</span>
-                                    <span className={styles[`roadmapStatus${idea.status}`]}>{communityText(ROADMAP_STATUS_LABELS[idea.status] || idea.status)}</span>
-                                </div>
-                                <h3>{idea.title}</h3>
-                                <p>{idea.description}</p>
-                                <div className={styles.roadmapMeta}>
-                                    <span className={styles.roadmapAuthor}><UserLink username={idea.author}><Avatar username={idea.author} size={22} />{idea.author}</UserLink></span>
-                                    <span>{timeAgo(idea.created)}</span>
-                                    <span className={styles.roadmapComments}><MessageCircle size={13} />{idea.commentCount || 0}</span>
-                                </div>
-                            </div>
-                        </article>
-                    ))}
-                </div>
-            ) : null}
-        </section>
-    );
-};
-
-const NotificationsSection = ({user, login, bare = false}) => {
+export const NotificationsSection = ({user}) => {
     const {text: communityText} = useCommunityIntl();
     const viewerName = (user && user.username) || '';
     const [items, setItems] = useState(null);
@@ -242,45 +281,92 @@ const NotificationsSection = ({user, login, bare = false}) => {
     const visibleItems = (items || [])
         .filter(item => preferences[categoryForNotification(item.type)] !== false);
     return (
-        <section className={styles.feedBox}>
-            {bare ? null : <SectionHeading icon={Bell} title={communityText('Recent notifications')} link={user ? '/notifications' : null} linkLabel={communityText('See all')} />}
-            {!user ? <SignInPrompt compact onSignIn={login}>{communityText('Sign in to see your notifications.')}</SignInPrompt> : null}
-            {user && !items && !failed ? <PanelLoading /> : null}
-            {failed ? <StatusMessage compact error onRetry={() => setAttempt(value => value + 1)}>{communityText("Couldn't load notifications.")}</StatusMessage> : null}
-            {items && !items.length && user ? <EmptyState compact icon={Bell} title={communityText('Nothing new yet')} /> : null}
+        <section
+            className={styles.panel}
+            aria-labelledby="home-notifications-heading"
+        >
+            <SectionHeading
+                id="home-notifications-heading"
+                title={communityText('Notifications')}
+                actions={<QuietLink to="/notifications">{communityText('See all')}</QuietLink>}
+            />
+            {user && !items && !failed ? <ListSkeleton /> : null}
+            {failed ? <StatusMessage
+                compact
+                error
+                onRetry={() => setAttempt(value => value + 1)}
+            >{communityText("Couldn't load notifications.")}</StatusMessage> : null}
+            {items && !items.length && user ? <p className={styles.empty}>{communityText('Nothing new yet')}</p> : null}
             {items && items.length && !visibleItems.length ? (
-                <EmptyState compact icon={Bell} title={communityText('Nothing to show')} action={<Button as={Link} to="/settings?section=notifications">{communityText('Change preferences')}</Button>}>
+                <p className={styles.empty}>
                     {communityText('Your notification preferences hide all recent activity.')}
-                </EmptyState>
+                    {' '}
+                    <QuietLink to="/settings?section=notifications">{communityText('Change preferences')}</QuietLink>
+                </p>
             ) : null}
             {visibleItems.length ? (
-                <div className={`${styles.activityList} ${styles.feedScroll}`}>
-                    {visibleItems.slice(0, 4).map((item, index) => {
+                <ul className={styles.list}>
+                    {visibleItems.slice(0, 5).map((item, index) => {
                         const system = isMilestoneNotification(item) || SYSTEM_TYPES.includes(item.type);
                         const name = system ? null : actorFor(item);
                         const profile = name && USERNAME_RE.test(name) ? name : null;
                         const target = targetFor(item, viewerName) || {to: profile ? `/users/${profile}` : '/notifications'};
                         const wrap = target.href ?
-                            children => <a href={target.href} target="_blank" rel="noreferrer">{children}</a> :
+                            children => (<a
+                                href={target.href}
+                                target="_blank"
+                                rel="noreferrer"
+                            >{children}</a>) :
                             children => <Link to={target.to}>{children}</Link>;
                         const actor = profile ?
-                            <Link to={`/users/${profile}`} className={styles.activityActor}>{profile}</Link> :
+                            (<Link
+                                to={`/users/${profile}`}
+                                className={styles.activityActor}
+                            >{profile}</Link>) :
                             <strong className={styles.activityActor}>{name || 'MistWarp'}</strong>;
-                        const avatar = profile ? <Avatar username={profile} size={34} /> : <span className={styles.notificationAvatar}><Bell size={15} /></span>;
+                        const avatar = profile ? (<Avatar
+                            username={profile}
+                            size={32}
+                        />) : <span className={styles.notificationAvatar}><Bell size={14} /></span>;
                         const avatarLink = profile ? `/users/${profile}` : target.to;
                         return (
-                            <div key={item.id || index} className={styles.activityItem}>
-                                {avatarLink ? <Link to={avatarLink}>{avatar}</Link> : avatar}
-                                <span className={styles.activityIcon}><Bell size={14} /></span>
-                                <span className={styles.activityText}>
-                                    {describeNotification(item, richTranslator(communityText, wrap), actor)}
-                                </span>
-                                <span className={styles.activityTime}>{timeAgo(item.created || item.timestamp)}</span>
-                            </div>
+                            <ActivityRow
+                                key={item.id || index}
+                                avatar={avatarLink ? <Link to={avatarLink}>{avatar}</Link> : avatar}
+                                time={timeAgo(item.created || item.timestamp)}
+                            >
+                                {describeNotification(item, richTranslator(communityText, wrap), actor)}
+                            </ActivityRow>
                         );
                     })}
-                </div>
+                </ul>
             ) : null}
+        </section>
+    );
+};
+
+const Intro = ({login}) => {
+    const {text: communityText} = useCommunityIntl();
+    return (
+        <section className={styles.intro}>
+            <h1>{communityText('Make games with blocks, and play what others make')}</h1>
+            <p>{communityText('MistWarp is a free block-based editor with a community of games, jams, and creators.')}</p>
+            <div className={styles.actions}>
+                <Button
+                    as="a"
+                    variant="primary"
+                    href={editorUrl()}
+                    onClick={() => track('start_creating', {source: 'home'})}
+                >
+                    <Plus
+                        size={16}
+                        aria-hidden="true"
+                    />
+                    {communityText('Start creating')}
+                </Button>
+                <Button onClick={login}>{communityText('Sign in')}</Button>
+            </div>
+            <DeviceBackup className={styles.introBackup} />
         </section>
     );
 };
@@ -290,284 +376,73 @@ const Home = () => {
     const {user, login, loading} = useUser();
     const viewerName = (user && user.username) || '';
     const [projectCount, setProjectCount] = useState(null);
+    const signedIn = Boolean(!loading && user);
     const signedOut = !loading && !user;
-    const showStarters = Boolean(!loading && user && projectCount && projectCount.username === viewerName && projectCount.total < 4);
+    const showStarters = Boolean(signedIn && projectCount && projectCount.username === viewerName && projectCount.total < 4);
     useEffect(() => {
         track('home_view');
     }, []);
-    const discovery = (
-        <div id="discover" key="discover">
-            <HomeDiscovery
-                viewerName={viewerName}
-                side={user && !user.isNew ? (
-                    <HomeTabs
-                        id="home-activity"
-                        label={communityText('Your activity')}
-                        tabs={[
-                            {
-                                key: 'following',
-                                title: communityText('Following'),
-                                icon: Users,
-                                render: () => <FriendsSection bare user={user} login={login} />
-                            },
-                            {
-                                key: 'notifications',
-                                title: communityText('Notifications'),
-                                icon: Bell,
-                                link: '/notifications',
-                                render: () => <NotificationsSection bare user={user} login={login} />
-                            }
-                        ]}
-                    />
-                ) : null}
-            />
-        </div>
-    );
-    const projects = (
-        <HomeTabs
-            key="projects"
-            className={styles.projectSection}
-            id="home-projects"
-            label={communityText('Projects')}
-            tabs={[
-                {
-                    key: 'trending',
-                    title: communityText('Trending'),
-                    icon: TrendingUp,
-                    link: '/explore?sort=trending',
-                    render: () => <ProjectFeedRow bare sort="trending" />
-                },
-                {
-                    key: 'recent',
-                    title: communityText('Freshly shared'),
-                    icon: Clock,
-                    link: '/explore?sort=recent',
-                    render: () => <ProjectFeedRow bare sort="recent" />
-                },
-                {
-                    key: 'feedback',
-                    title: communityText('Looking for feedback'),
-                    icon: MessageCircle,
-                    link: '/explore?tag=feedback',
-                    render: () => <ProjectFeedRow bare sort="recent" tag="feedback" />
-                },
-                ...(user ? [{
-                    key: 'playing',
-                    title: communityText('Continue playing'),
-                    icon: Gamepad2,
-                    link: `/users/${viewerName}/library`,
-                    linkLabel: communityText('Game library'),
-                    render: () => <ContinuePlaying username={viewerName} />
-                }] : [])
-            ]}
-        />
-    );
-    const community = (
-        <HomeTabs
-            key="community"
-            className={styles.projectSection}
-            id="home-community"
-            label={communityText('Community updates')}
-            tabs={[
-                {
-                    key: 'news',
-                    title: communityText('News'),
-                    icon: Megaphone,
-                    link: '/news',
-                    linkLabel: communityText('All updates'),
-                    render: () => <NewsSection bare />
-                },
-                {
-                    key: 'roadmap',
-                    title: communityText('Roadmap'),
-                    icon: Lightbulb,
-                    link: '/roadmap',
-                    linkLabel: communityText('Suggest and vote'),
-                    render: () => <RoadmapSection bare viewerName={viewerName} />
-                },
-                {
-                    key: 'challenges',
-                    title: communityText('Challenges'),
-                    icon: Trophy,
-                    link: '/spaces?kind=challenge',
-                    linkLabel: communityText('All challenges'),
-                    render: () => <ChallengeCalendar bare />
-                }
-            ]}
-        />
-    );
-    const winner = <ChallengeWinner key="winner" />;
-    const challenge = <ActiveChallenge key="challenge" />;
-    const sections = signedOut ? [
-        discovery,
-        projects,
-        winner,
-        challenge,
-        community,
-        <StarterGallery key="starters">
-            <div className={styles.importRow}>
-                <ScratchImport source="home" />
-                <Link to="/compare">
-                    {communityText('Coming from Scratch or TurboWarp? See what is different')}
-                </Link>
-            </div>
-        </StarterGallery>
-    ] : [
+    const games = <FeaturedGames key="games" />;
+    const sections = signedIn ? [
+        <ContinueProjects
+            key="continue"
+            username={viewerName}
+            onProjectCount={setProjectCount}
+            welcome={Boolean(user.isNew)}
+        />,
         showStarters ? <StarterGallery key="starters" /> : null,
-        discovery,
-        winner,
-        challenge,
-        projects,
-        community
+        <div
+            key="happening"
+            className={styles.columns}
+        >
+            <Jams />
+            <FollowingGames viewerName={viewerName} />
+        </div>,
+        games,
+        <div
+            key="activity"
+            className={styles.columns}
+        >
+            <FriendsSection user={user} />
+            <NotificationsSection user={user} />
+        </div>
+    ] : [
+        signedOut ? <Intro
+            key="intro"
+            login={login}
+        /> : null,
+        games,
+        <div
+            key="happening"
+            className={styles.columns}
+        >
+            <Jams />
+            <section
+                className={styles.panel}
+                aria-labelledby="home-creators-heading"
+            >
+                <SectionHeading
+                    id="home-creators-heading"
+                    title={communityText('Creators to follow')}
+                    actions={<QuietLink to="/leaderboard">{communityText('See all')}</QuietLink>}
+                />
+                <SuggestedCreators limit={4} />
+            </section>
+        </div>,
+        signedOut ? (
+            <StarterGallery key="starters">
+                <div className={styles.importRow}>
+                    <ScratchImport source="home" />
+                    <QuietLink to="/compare">{communityText('Coming from Scratch or TurboWarp? See what is different')}</QuietLink>
+                </div>
+            </StarterGallery>
+        ) : null
     ];
     return (
         <main className={styles.page}>
-            {loading ? <StatusMessage>{communityText('Loading your workspace…')}</StatusMessage> : null}
-            {signedOut ? (
-                <section className={styles.intro}>
-                    <div>
-                        <h1>{communityText('See what people are making on MistWarp')}</h1>
-                        <p>{communityText('Play games, animations, and tools built with blocks, and follow the creators behind them.')}</p>
-                    </div>
-                    <div className={styles.actions}>
-                        <Button variant="primary" as={Link} to="/explore"><Compass size={16} />{communityText('Explore projects')}</Button>
-                        <Button variant="secondary" onClick={login}><LogIn size={16} />{communityText('Sign in')}</Button>
-                    </div>
-                </section>
-            ) : null}
-            {!loading && user ? <ContinueProjects username={viewerName} onProjectCount={setProjectCount} /> : null}
-            {user && user.isNew ? (
-                <section className={styles.welcome}>
-                    <h2>{communityText('Welcome to MistWarp, {value1}', {value1: viewerName})}</h2>
-                    <p>{communityText('Start from a working project, or follow a few creators to fill your feed.')}</p>
-                    <div className={styles.actions}>
-                        <Button variant="primary" as="a" href="#starters">
-                            <Rocket size={16} />{communityText('Try a starter')}
-                        </Button>
-                        <Button variant="secondary" as="a" href="#discover">
-                            <UserPlus size={16} />{communityText('Find creators')}
-                        </Button>
-                    </div>
-                </section>
-            ) : null}
-            <DeviceBackup />
             {sections}
         </main>
     );
 };
 
-// Panels stay mounted once visited (hidden while inactive), so switching
-// back keeps their loaded content instead of refetching it.
-const HomeTabs = ({id, label, tabs, className}) => {
-    const {text: communityText} = useCommunityIntl();
-    const [active, setActive] = useState(tabs[0].key);
-    const [visited, setVisited] = useState(() => [tabs[0].key]);
-    const current = tabs.find(tab => tab.key === active) || tabs[0];
-    const headRef = useRef(null);
-    const revealTab = key => {
-        const index = tabs.findIndex(tab => tab.key === key);
-        const tab = headRef.current && headRef.current.querySelectorAll('[role="tab"]')[index];
-        if (tab) tab.scrollIntoView({block: 'nearest', inline: 'nearest', behavior: 'smooth'});
-    };
-    return (
-        <section className={className}>
-            <div className={styles.tabHead} ref={headRef}>
-                <UnderlineTabs
-                    className={styles.homeTabs}
-                    items={tabs.map(({key, title, icon: Icon}) => ({key, label: <><Icon size={16} />{title}</>}))}
-                    value={current.key}
-                    onChange={key => {
-                        setActive(key);
-                        setVisited(keys => (keys.includes(key) ? keys : [...keys, key]));
-                        revealTab(key);
-                    }}
-                    ariaLabel={label}
-                    idPrefix={id}
-                />
-                {current.link ? <Link to={current.link}>{current.linkLabel || communityText('See all')}</Link> : null}
-            </div>
-            {tabs.filter(tab => tab.key === current.key || visited.includes(tab.key)).map(tab => (
-                <div key={tab.key} {...tabPanelProps(id, tab.key)} hidden={tab.key !== current.key}>
-                    {tab.render()}
-                </div>
-            ))}
-        </section>
-    );
-};
-
-const ContinuePlaying = ({username}) => {
-    const {text: communityText} = useCommunityIntl();
-    const [projects, setProjects] = useState(null);
-    const [attempt, setAttempt] = useState(0);
-    useEffect(() => {
-        let active = true;
-        setProjects(null);
-        api.getUser(username)
-            .then(data => {
-                if (!active) return;
-                setProjects((data.recentActivity || [])
-                    .filter(project => Number(project.lastPlayed) > 0)
-                    .sort((a, b) => Number(b.lastPlayed) - Number(a.lastPlayed))
-                    .slice(0, 4));
-            })
-            .catch(() => active && setProjects(false));
-        return () => {
-            active = false;
-        };
-    }, [attempt, username]);
-    return (
-        <ProjectRow
-            bare
-            emptyTitle={communityText('Nothing played yet')}
-            emptyText={communityText('Games you save to your library show up here after you play them.')}
-            title={communityText('Continue playing')}
-            icon={Gamepad2}
-            projects={projects}
-            onRetry={() => setAttempt(value => value + 1)}
-        />
-    );
-};
-
-const ProjectFeedRow = ({title, icon, sort, link, tag = '', hideEmpty = false, bare = false}) => {
-    const [projects, setProjects] = useState(null);
-    const [attempt, setAttempt] = useState(0);
-    useEffect(() => {
-        let active = true;
-        setProjects(null);
-        api.explore({sort, limit: 8, ...(tag ? {tag} : {})})
-            .then(data => {
-                if (active) setProjects(data.projects || []);
-            })
-            .catch(() => {
-                if (active) setProjects(false);
-            });
-        return () => {
-            active = false;
-        };
-    }, [attempt, sort, tag]);
-    if (hideEmpty && Array.isArray(projects) && !projects.length) return null;
-    return (
-        <ProjectRow
-            title={title}
-            icon={icon}
-            projects={projects}
-            link={link}
-            bare={bare}
-            onRetry={() => setAttempt(value => value + 1)}
-        />
-    );
-};
-
-const ProjectRow = ({title, icon: Icon, projects, link, onRetry, bare = false, emptyTitle, emptyText}) => {
-    const {text: communityText} = useCommunityIntl();
-    return (<section className={bare ? null : styles.projectSection}>
-        {bare ? null : <SectionHeading icon={Icon} title={title} link={link} />}
-        {projects === null ? <CardGridSkeleton className={styles.projectGrid} count={4} /> : null}
-        {projects === false ? <StatusMessage compact error onRetry={onRetry}>{communityText("Couldn't load projects.")}</StatusMessage> : null}
-        {Array.isArray(projects) && !projects.length ? <EmptyState compact icon={Icon} title={emptyTitle || communityText('No shared projects yet')}>{emptyText}</EmptyState> : null}
-        {Array.isArray(projects) && projects.length ? <div className={styles.projectGrid}>{projects.slice(0, projects.length > 4 ? projects.length - (projects.length % 4) : 4).map(project => <ProjectCard key={project.id} project={project} />)}</div> : null}
-    </section>);
-};
-
-export {ContinuePlaying, FriendsSection, HomeTabs, NewsSection, NotificationsSection, ProjectFeedRow, RoadmapSection};
 export default Home;

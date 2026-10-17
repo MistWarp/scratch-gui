@@ -3,7 +3,7 @@ import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
 import {MemoryRouter} from 'react-router-dom';
 import Home from '../../src/community/pages/Home';
-import {ContinueProjects, StarterGallery, selectActiveChallenge} from '../../src/community/components/HomeWorkspace';
+import {ContinueProjects, Jams, StarterGallery, selectActiveChallenge} from '../../src/community/components/HomeWorkspace';
 import {useUser} from '../../src/community/UserContext';
 import {rememberEditedProject} from '../../src/lib/mw/recent-projects';
 import api from '../../src/community/api';
@@ -20,7 +20,8 @@ jest.mock('../../src/community/api', () => ({
         roadmap: jest.fn(),
         featuredProject: jest.fn(() => Promise.resolve({})),
         leaderboard: jest.fn(() => Promise.resolve({users: []})),
-        getUser: jest.fn(() => Promise.resolve({recentActivity: []}))
+        getUser: jest.fn(() => Promise.resolve({recentActivity: []})),
+        activity: jest.fn(() => Promise.resolve({activity: []}))
     },
     editorUrl: ({platformProject, starter} = {}) => (platformProject ? `/editor#mw-${platformProject}` : `/editor${starter ? `?starter=${starter}` : ''}`),
     projectUrl: id => `/project/${id}`
@@ -78,7 +79,7 @@ test('puts the last edited project first and removes duplicates', async () => {
     const wrapper = render(<ContinueProjects username="alice" />);
     await flush(wrapper);
     expect(wrapper.find('a[href="/editor#mw-last"]')).toHaveLength(1);
-    expect(wrapper.find('h2').map(node => node.text())).toEqual(['Last edited', 'Newest saved']);
+    expect(wrapper.find('h3').map(node => node.text())).toEqual(['Last edited', 'Newest saved']);
     await act(async () => wrapper.unmount());
 });
 
@@ -103,4 +104,38 @@ test('only highlights a challenge that is accepting submissions', () => {
         {_id: 'next', startsAt: 30, endsAt: 50, participantCount: 100},
         {_id: 'open', startsAt: 1, endsAt: 50, participantCount: 2}
     ], 20)._id).toBe('open');
+});
+
+test('gives every recent project the same quiet action', async () => {
+    api.myProjectPage.mockResolvedValue({projects: [
+        {id: 'a', owner: 'alice', title: 'First', edited: 3},
+        {id: 'b', owner: 'alice', title: 'Second', edited: 2},
+        {id: 'c', owner: 'alice', title: 'Third', edited: 1}
+    ],
+    total: 3});
+    const wrapper = render(<ContinueProjects username="alice" />);
+    await flush(wrapper);
+    const cards = wrapper.find('a[href^="/editor#mw-"]');
+    expect(cards).toHaveLength(3);
+    const actions = cards.map(card => card.find('span').filterWhere(node => node.text() === 'Open')
+        .first()
+        .prop('className'));
+    expect(new Set(actions).size).toBe(1);
+    await act(async () => wrapper.unmount());
+});
+
+test('lists running jams and the latest winner', async () => {
+    const now = Date.now();
+    api.spaces.mockImplementation(({resultsAfter}) => Promise.resolve({spaces: resultsAfter ? [
+        {_id: 'done', title: 'Spring jam', resultsPublishedAt: now - 1000, winner: {id: 'w1', title: 'Winning game', owner: 'bob'}}
+    ] : [
+        {_id: 'small', title: 'Small jam', startsAt: now - 1000, endsAt: now + 100000, participantCount: 1},
+        {_id: 'big', title: 'Big jam', startsAt: now - 1000, endsAt: now + 100000, participantCount: 9}
+    ]}));
+    const wrapper = render(<Jams />);
+    await flush(wrapper);
+    expect(wrapper.find('h3').map(node => node.text())).toEqual(['Big jam', 'Small jam', 'Winning game']);
+    expect(wrapper.text()).toContain('9 creators have joined');
+    expect(wrapper.text()).toContain('Won Spring jam, by bob');
+    await act(async () => wrapper.unmount());
 });

@@ -581,7 +581,6 @@ const NavBar = () => {
                         </>
                     ) : loading ? null : (
                         <Button
-                            variant="primary"
                             className={styles.signIn}
                             onClick={doLogin}
                             busy={signingIn}
