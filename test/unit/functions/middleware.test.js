@@ -712,8 +712,66 @@ describe('space, group, news and theme pages', () => {
         expect((await renderPath('/themes/t1')).title).toBe('Theme - MistWarp');
     });
 
+    test('post fetches the real post from Rotur', async () => {
+        const url = 'https://api.rotur.dev/v2/posts/abc_123';
+        stubApi({[url]: {
+            id: 'abc_123',
+            user: 'alice',
+            content: 'Play   my "new" <game>\n now',
+            attachments: ['https://cdn.example/clip.mp4', 'https://cdn.example/shot.png']
+        }});
+        const meta = await renderPath('/posts/abc_123');
+        expect(fetchedUrls()).toEqual([url]);
+        expect(meta.title).toBe('Post by alice - MistWarp');
+        expect(meta.description).toBe('Play my "new" <game> now');
+        expect(meta.ogImage).toBe('https://cdn.example/shot.png');
+        expect(meta.twitterCard).toBe('summary_large_image');
+        const head = meta.head.map(item => item.content).join('');
+        expect(head).toContain('content="Play my &quot;new&quot; &lt;game&gt; now"');
+        expect(head).not.toContain('<game>');
+    });
+
+    test('post without text or images falls back to the author', async () => {
+        stubApi({'https://api.rotur.dev/v2/posts/abcdef': {
+            id: 'abcdef',
+            user: 'Bob',
+            content: '',
+            made_with: {app: 'MistWarp', kind: 'project', image: 'javascript:alert(1)'}
+        }});
+        const meta = await renderPath('/posts/abcdef');
+        expect(meta.description).toBe('A post by Bob on claw.');
+        expect(meta.ogImage).toBe('https://avatars.rotur.dev/bob');
+        expect(meta.twitterCard).toBe('summary');
+    });
+
+    test('post uses the project image it was made with', async () => {
+        stubApi({'https://api.rotur.dev/v2/posts/abcdef': {
+            id: 'abcdef',
+            user: 'Bob',
+            content: 'New game',
+            made_with: {app: 'MistWarp', kind: 'project', image: 'https://thumbs.example/p.png'}
+        }});
+        expect((await renderPath('/posts/abcdef')).ogImage).toBe('https://thumbs.example/p.png');
+    });
+
     test.each([
-        ['/posts/1', 'Post - MistWarp'],
+        ['missing', () => jsonResponse({error: 'Post not found'}, 404)],
+        ['unreachable', new Error('offline')],
+        ['odd', {user: 42}]
+    ])('%s post gets the generic post tags', async (name, route) => {
+        stubApi({'https://api.rotur.dev/v2/posts/abcdef': route});
+        const meta = await renderPath('/posts/abcdef');
+        expect(meta.title).toBe('Post - MistWarp');
+        expect(meta.description).toBe('View this MistWarp community post.');
+    });
+
+    test('post ids that cannot be Rotur ids are not fetched', async () => {
+        const meta = await renderPath('/posts/a%2Fb%3F');
+        expect(meta.title).toBe('Post - MistWarp');
+        expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test.each([
         ['/bounties/1', 'Bounty - MistWarp'],
         ['/spaces/1/manage', 'Manage space - MistWarp'],
         ['/mystuff/project/1', 'Manage project - MistWarp']

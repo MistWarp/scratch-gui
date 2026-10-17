@@ -4,9 +4,18 @@ import {mount} from 'enzyme';
 
 import PostComposer, {localDateTimeValue} from '../../src/community/components/PostComposer.jsx';
 import rotur from '../../src/community/rotur.js';
+import api from '../../src/community/api.js';
 
 jest.mock('../../src/community/rotur.js', () => ({createPost: jest.fn()}));
 jest.mock('../../src/community/components/GifPicker.jsx', () => () => null);
+jest.mock('../../src/community/api.js', () => {
+    const actual = jest.requireActual('../../src/community/api.js');
+    return {
+        ...actual,
+        __esModule: true,
+        default: {...actual.default, getProject: jest.fn(), loadSession: jest.fn(), perks: jest.fn()}
+    };
+});
 
 const user = {username: 'me'};
 const DRAFT = 'mw-community-draft:post:me:profile';
@@ -77,6 +86,92 @@ describe('PostComposer', () => {
         wrapper.update();
         expect(onPosted).not.toHaveBeenCalled();
         expect(wrapper.find('[role="status"]').text()).toContain('Scheduled for');
+        wrapper.unmount();
+    });
+
+    test('posts to the main feed unless profile only is switched on', async () => {
+        rotur.createPost.mockResolvedValue({id: 'p3'});
+        const wrapper = mount(<PostComposer
+            user={user}
+            onPosted={() => {}}
+        />);
+        expect(wrapper.find('textarea').prop('placeholder')).toBe('Post something');
+        wrapper.find('textarea').simulate('change', {target: {value: 'To everyone'}});
+        await act(async () => {
+            wrapper.find('form').simulate('submit');
+            await Promise.resolve();
+        });
+        expect(rotur.createPost).toHaveBeenLastCalledWith('To everyone', {profileOnly: false});
+
+        wrapper.update();
+        const toggle = wrapper.find('button[title="Only show this post on your profile"]');
+        expect(toggle.prop('aria-pressed')).toBe(false);
+        toggle.simulate('click');
+        expect(wrapper.find('button[title="Only show this post on your profile"]').prop('aria-pressed')).toBe(true);
+        expect(wrapper.find('textarea').prop('placeholder')).toBe('Post something to your profile');
+        expect(wrapper.text()).toContain('Posts to your profile only');
+        wrapper.find('textarea').simulate('change', {target: {value: 'Just here'}});
+        await act(async () => {
+            wrapper.find('form').simulate('submit');
+            await Promise.resolve();
+        });
+        expect(rotur.createPost).toHaveBeenLastCalledWith('Just here', {profileOnly: true});
+        wrapper.unmount();
+    });
+
+    test('shares a project with its made_with reference', async () => {
+        api.getProject.mockResolvedValue({project: {id: 'p1', title: 'Cool game', owner: 'me', shared: true}});
+        rotur.createPost.mockResolvedValue({id: 'p4'});
+        const madeWith = {
+            app: 'MistWarp', kind: 'project', ref: 'p1', url: 'https://mistwarp.org/project/p1', title: 'Cool game'
+        };
+        const wrapper = mount(<PostComposer
+            user={user}
+            bare
+            initialContent="https://mistwarp.org/project/p1"
+            madeWith={madeWith}
+            onPosted={() => {}}
+        />);
+        await act(async () => {
+            await Promise.resolve();
+        });
+        wrapper.update();
+        expect(wrapper.find('textarea').prop('value')).toBe('https://mistwarp.org/project/p1');
+        expect(wrapper.find('PostProjectCard').prop('project')).toEqual({id: 'p1'});
+        expect(wrapper.text()).toContain('Posts to everyone');
+        await act(async () => {
+            wrapper.find('form').simulate('submit');
+            await Promise.resolve();
+        });
+        expect(rotur.createPost).toHaveBeenCalledWith('https://mistwarp.org/project/p1', {profileOnly: false, madeWith});
+
+        wrapper.find('textarea').simulate('change', {target: {value: 'Again'}});
+        wrapper.find('button[aria-label="Remove the project card"]').simulate('click');
+        await act(async () => {
+            wrapper.find('form').simulate('submit');
+            await Promise.resolve();
+        });
+        expect(rotur.createPost).toHaveBeenLastCalledWith('Again', {profileOnly: false});
+        wrapper.unmount();
+    });
+
+    test('takes the post length limit from the account perks', async () => {
+        api.loadSession.mockReturnValue('session');
+        api.perks.mockResolvedValue({current: {rotur: {clawPostLength: 420}}});
+        const wrapper = mount(<PostComposer
+            user={{username: 'perky', subscription: 'Max'}}
+            onPosted={() => {}}
+        />);
+        expect(wrapper.find('textarea').prop('maxLength')).toBe(1000);
+        await act(async () => {
+            await Promise.resolve();
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+        wrapper.update();
+        expect(wrapper.find('textarea').prop('maxLength')).toBe(420);
+        expect(wrapper.text()).toContain('0/420');
+        api.loadSession.mockReset();
         wrapper.unmount();
     });
 

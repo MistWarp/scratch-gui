@@ -127,16 +127,16 @@ describe('community Modal dismissal', () => {
     });
 
     test('locks background scrolling and restores the previous style', () => {
-        document.body.style.overflow = 'scroll';
+        document.documentElement.style.overflow = 'scroll';
         const wrapper = mount(<Modal
             title="Ready"
             onClose={() => {}}
         >Done</Modal>);
 
-        expect(document.body.style.overflow).toBe('hidden');
+        expect(document.documentElement.style.overflow).toBe('hidden');
         wrapper.unmount();
-        expect(document.body.style.overflow).toBe('scroll');
-        document.body.style.overflow = '';
+        expect(document.documentElement.style.overflow).toBe('scroll');
+        document.documentElement.style.overflow = '';
     });
 
     test('dismisses only when the press starts and ends on the backdrop', () => {

@@ -776,7 +776,6 @@ const Profile = () => {
                                     viewer={user}
                                     editable={isSelf}
                                     onChange={setProfilePosts}
-                                    onLogin={login}
                                 />
                             </section>
                         ) : null}

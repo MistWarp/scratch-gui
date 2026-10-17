@@ -3,6 +3,9 @@
 const API_BASE = 'https://api.mistwarp.org/v1';
 const WARPTHEME_API_BASE = 'https://warptheme.mistium.com/api';
 const AVATARS = 'https://avatars.rotur.dev';
+const ROTUR_API_BASE = 'https://api.rotur.dev/v2';
+const POST_ID = /^[A-Za-z0-9_-]{1,64}$/;
+const VIDEO_URL = /\.(?:mp4|webm|mov|m4v|ogv)(?:[?#]|$)/i;
 const DEFAULT_IMAGE = 'https://mistwarp.org/images/apple-touch-icon.png';
 const FETCH_TIMEOUT_MS = 3000;
 const STATIC_FILE_PATH = /^\/(?:assets|js|static\/assets)\//;
@@ -43,6 +46,10 @@ const STATIC_META = {
     '/groups': {
         title: 'Groups - MistWarp',
         description: 'Organisations that share projects, spaces, members, and funding on MistWarp.'
+    },
+    '/posts': {
+        title: 'Posts - MistWarp',
+        description: 'Popular posts from claw, the Rotur social network, on MistWarp.'
     },
     '/news': {
         title: 'News - MistWarp',
@@ -361,6 +368,39 @@ const newsMeta = async id => {
     };
 };
 
+const imageUrl = value => {
+    if (typeof value !== 'string' || VIDEO_URL.test(value)) return null;
+    try {
+        const url = new URL(value);
+        return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : null;
+    } catch (e) {
+        return null;
+    }
+};
+
+const postMeta = async id => {
+    const fallback = {
+        title: 'Post - MistWarp',
+        description: 'View this MistWarp community post.'
+    };
+    if (!POST_ID.test(id)) return fallback;
+    const post = await fetchJson(ROTUR_API_BASE, `/posts/${encodeURIComponent(id)}`);
+    if (!post || typeof post !== 'object' || post.error || typeof post.user !== 'string' || !post.user) {
+        return fallback;
+    }
+    const author = post.user.slice(0, 40);
+    const attachments = Array.isArray(post.attachments) ? post.attachments : [post.attachment];
+    const madeWith = post.made_with && typeof post.made_with === 'object' ? post.made_with : null;
+    const image = attachments.map(imageUrl).find(Boolean) || (madeWith && imageUrl(madeWith.image));
+    return {
+        title: `Post by ${author} - MistWarp`,
+        description: flatten(typeof post.content === 'string' ? post.content : '') ||
+            `A post by ${author} on claw.`,
+        image: image || `${AVATARS}/${encodeURIComponent(author.toLowerCase())}`,
+        card: image ? 'summary_large_image' : 'summary'
+    };
+};
+
 const themeMeta = async id => {
     const data = await fetchJson(WARPTHEME_API_BASE, `/theme?uuid=${encodeURIComponent(id)}`);
     const theme = data && data.theme;
@@ -465,10 +505,8 @@ const metaForPath = pathname => {
 
     match = normalizedPath.match(/^\/posts\/([^/]+)$/);
     if (match) {
-        return match[1] ? {
-            title: 'Post - MistWarp',
-            description: 'View this MistWarp community post.'
-        } : NOT_FOUND_META;
+        const id = decodeSegment(match[1]);
+        return id === null ? NOT_FOUND_META : postMeta(id);
     }
 
     match = normalizedPath.match(/^\/bounties\/([^/]+)$/);

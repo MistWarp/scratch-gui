@@ -30,7 +30,10 @@ describe('notification targets', () => {
         [{type: 'news'}, {to: '/news'}],
         [{type: 'group_invite', group_tag: 'cats'}, {href: 'https://rotur.dev/groups/cats'}],
         [{type: 'like_milestone', milestone: 5, path: '/posts/p1'}, {to: '/posts/p1'}],
-        [{type: 'follow', actor: 'alice'}, null]
+        [{type: 'follow', actor: 'alice'}, null],
+        [{type: 'like', post_id: 'p 1', user: 'alice'}, {to: '/posts/p%201'}],
+        [{type: 'reply', post_id: 'p1', reply_id: 'r1'}, {to: '/posts/p1'}],
+        [{type: 'repost', original_post_id: 'p1', repost_id: 'p2'}, {to: '/posts/p1'}]
     ])('links %o', (notification, target) => {
         expect(targetFor(notification, 'viewer')).toEqual(target);
     });

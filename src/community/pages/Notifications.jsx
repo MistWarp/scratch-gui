@@ -19,6 +19,8 @@ import Notice from '../components/ui/Notice.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import RichText from '../components/RichText.jsx';
+import PostProjectCard from '../components/PostProjectCard.jsx';
+import {madeWithProject} from '../claw-links.js';
 import {useUser} from '../UserContext.jsx';
 import {
     fetchFollowingFeed,
@@ -100,12 +102,19 @@ const PREVIEW_TYPES = new Set([
 
 const canPreview = n => {
     if (typeof n.preview === 'string' && n.preview.trim()) return true;
+    if (n.post_id) return false;
     if (PREVIEW_TYPES.has(n.type)) return true;
     return n.type === 'like_milestone' && n.contentKind === 'comment';
 };
 
+const inlinePreview = n => {
+    if (typeof n.preview === 'string' && n.preview.trim()) return n.preview;
+    if (n.post_id && typeof n.content === 'string' && n.content.trim()) return n.content;
+    return null;
+};
+
 const CommentPreview = ({n}) => {
-    const inline = typeof n.preview === 'string' && n.preview.trim() ? n.preview : null;
+    const inline = inlinePreview(n);
     const [fetched, setFetched] = useState(null);
     useEffect(() => {
         if (inline || !canPreview(n)) return () => {};
@@ -225,6 +234,7 @@ const FollowingPost = ({post}) => {
     const {text: communityText} = useCommunityText();
     const likes = Array.isArray(post.likes) ? post.likes.length : Number(post.likes) || 0;
     const replies = Array.isArray(post.replies) ? post.replies.length : Number(post.replies) || 0;
+    const project = madeWithProject(post);
     return (
         <div className={styles.followingPost}>
             <span className={styles.avatarWrap}>
@@ -237,6 +247,7 @@ const FollowingPost = ({post}) => {
                     <time>{timeAgo(post.timestamp)}</time>
                 </div>
                 <div className={styles.postContent}><RichText text={post.content} /></div>
+                {project ? <PostProjectCard project={project} compact /> : null}
                 <div className={styles.postMeta}>
                     <span><Heart size={13} /> {likes}</span>
                     <span><MessageCircle size={13} /> {replies}</span>

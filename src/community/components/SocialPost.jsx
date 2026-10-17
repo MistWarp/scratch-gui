@@ -1,24 +1,29 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
-import React, {useEffect, useState} from 'react';
-import {useNavigate} from 'react-router-dom';
+import React, {useEffect, useRef, useState} from 'react';
+import {Link, useNavigate} from 'react-router-dom';
 import {
-    Bookmark, Check, Copy, Edit3, Flag, Heart, MessageCircle, Pin, Repeat2,
+    Bookmark, Check, Copy, Edit3, Flag, Heart, MessageCircle, MoreHorizontal, Pin, Repeat2,
     ShieldOff, Trash2
 } from 'lucide-react';
 import api from '../api.js';
 import rotur from '../rotur.js';
 import {timeAgo} from '../format.js';
 import copyText from '../copy-text.js';
-import {postUrl} from '../following-feed.js';
+import {postUrl, timestampMs} from '../following-feed.js';
+import {madeWithProject} from '../claw-links.js';
 import {useUser} from '../UserContext.jsx';
 import Avatar from './Avatar.jsx';
 import Button from './ui/Button.jsx';
 import ConfirmModal from './ui/ConfirmModal.jsx';
+import {Dropdown, DropdownItem} from './ui/Dropdown.jsx';
 import EmptyState from './ui/EmptyState.jsx';
+import IconButton from './ui/IconButton.jsx';
 import Modal from './ui/Modal.jsx';
 import Notice from './ui/Notice.jsx';
+import GroupTag from './GroupTag.jsx';
 import PostAttachment from './PostAttachment.jsx';
+import PostProjectCard from './PostProjectCard.jsx';
 import RichText from './RichText.jsx';
 import UserLink from './UserLink.jsx';
 import styles from './SocialPost.module.css';
@@ -67,7 +72,7 @@ Poll.propTypes = {
     onChange: PropTypes.func.isRequired
 };
 
-const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
+const SocialPost = ({initialPost, detail = false, onChange, onDelete, onLayoutChange}) => {
     const {text: communityText} = useCommunityText();
     const {user, login} = useUser();
     const navigate = useNavigate();
@@ -83,6 +88,7 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [reportTarget, setReportTarget] = useState(null);
     const [reportReason, setReportReason] = useState('');
+    const deleteInFlight = useRef(false);
     const mine = Boolean(user && String(user.username).toLowerCase() === String(post.user).toLowerCase());
     const likes = Array.isArray(post.likes) ? post.likes : [];
     const liked = Boolean(user && likes.some(name => (
@@ -118,6 +124,15 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
         setPost(initialPost);
         setEditText(initialPost.content || '');
     }, [initialPost]);
+
+    const laidOut = useRef(false);
+    useEffect(() => {
+        if (!laidOut.current) {
+            laidOut.current = true;
+            return;
+        }
+        if (onLayoutChange) onLayoutChange();
+    }, [editing, notice, error, post.content, post.poll, post.pinned, post.edited_at]);
 
     useEffect(() => {
         if (!user || !detail) return;
@@ -185,13 +200,26 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
             setError(communityText('Could not copy the link.'));
         }
     };
-    const deletePost = () => run('delete', async () => {
-        await rotur.deletePost(post.id);
-        setConfirmDelete(false);
-        if (onDelete) onDelete(post.id);
-        else navigate(`/users/${post.user}`);
+    const deletePost = () => {
+        if (deleteInFlight.current) return null;
+        deleteInFlight.current = true;
+        return run('delete', async () => {
+            await rotur.deletePost(post.id);
+            setConfirmDelete(false);
+            if (onDelete) onDelete(post.id);
+            else navigate(`/users/${post.user}`);
+        }).finally(() => {
+            deleteInFlight.current = false;
+        });
+    };
+    const togglePin = () => run('pin', async () => {
+        if (post.pinned) await rotur.unpinPost(post.id);
+        else await rotur.pinPost(post.id);
+        update({...post, pinned: !post.pinned});
     });
     const reportingReply = Boolean(reportTarget && reportTarget.type === 'reply');
+    const when = timestampMs(post.timestamp);
+    const project = post.is_repost ? null : madeWithProject(post);
     const views = Number(post.views) || 0;
     const viewsText = views === 1 ? communityText('1 view') : communityText('{value1} views', {value1: views});
 
@@ -248,11 +276,80 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
             <div className={styles.body}>
                 <header>
                     <UserLink username={post.user}><strong>{post.user}</strong></UserLink>
+                    <GroupTag tag={post.group_tag} username={post.user} compact />
                     {post.pinned ? (
                         <span className={styles.tag}><Pin size={11} />{communityText('Pinned')}</span>
                     ) : null}
-                    <time>{timeAgo(post.timestamp)}</time>
+                    {when && detail ? <time dateTime={new Date(when).toISOString()}>{timeAgo(when)}</time> : null}
+                    {when && !detail ? (
+                        <Link className={styles.timeLink} to={postUrl(post.id)}>
+                            <time dateTime={new Date(when).toISOString()}>{timeAgo(when)}</time>
+                        </Link>
+                    ) : null}
                     {post.edited_at ? <span className={styles.edited}>{communityText('edited')}</span> : null}
+                    {!detail && user ? (
+                        <Dropdown
+                            portal
+                            className={styles.more}
+                            renderTrigger={({open, toggle}) => (
+                                <IconButton
+                                    label={communityText('Post actions')}
+                                    aria-expanded={open}
+                                    aria-haspopup="menu"
+                                    onClick={toggle}
+                                >
+                                    <MoreHorizontal size={16} />
+                                </IconButton>
+                            )}
+                        >
+                            {({close}) => (
+                                <React.Fragment>
+                                    <DropdownItem
+                                        onClick={() => {
+                                            close();
+                                            copyLink();
+                                        }}
+                                    ><Copy size={15} />{communityText('Copy link')}</DropdownItem>
+                                    {mine && !post.is_repost ? (
+                                        <DropdownItem
+                                            onClick={() => {
+                                                close();
+                                                setEditing(true);
+                                            }}
+                                        ><Edit3 size={15} />{communityText('Edit')}</DropdownItem>
+                                    ) : null}
+                                    {mine ? (
+                                        <DropdownItem
+                                            onClick={() => {
+                                                close();
+                                                togglePin();
+                                            }}
+                                        >
+                                            <Pin size={15} />
+                                            {post.pinned ? communityText('Unpin') : communityText('Pin')}
+                                        </DropdownItem>
+                                    ) : null}
+                                    {mine ? (
+                                        <DropdownItem
+                                            danger
+                                            aria-label={communityText('Delete post')}
+                                            onClick={() => {
+                                                close();
+                                                setConfirmDelete(true);
+                                            }}
+                                        ><Trash2 size={15} />{communityText('Delete')}</DropdownItem>
+                                    ) : (
+                                        <DropdownItem
+                                            onClick={() => {
+                                                close();
+                                                setReportTarget({type: 'post', id: post.id});
+                                            }}
+                                        ><Flag size={15} />{communityText('Report')}</DropdownItem>
+                                    )}
+                                </React.Fragment>
+                            )}
+                        </Dropdown>
+                    ) : null}
                 </header>
                 {editing ? (
                     <form className={styles.editForm} onSubmit={saveEdit}>
@@ -271,12 +368,15 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
                 ) : <div className={styles.content}><RichText text={post.content || ''} /></div>}
                 {media.length ? (
                     <div className={styles.media} data-count={media.length}>
-                        {media.map(url => <PostAttachment key={url} url={url} />)}
+                        {media.map(url => (
+                            <PostAttachment key={url} url={url} onPreviewChange={onLayoutChange} />
+                        ))}
                     </div>
                 ) : null}
                 {post.poll ? (
                     <Poll postId={post.id} poll={post.poll} onChange={poll => update({...post, poll})} />
                 ) : null}
+                {project ? <PostProjectCard project={project} onLayoutChange={onLayoutChange} /> : null}
                 {post.is_repost && post.original_post ? (
                     <div className={styles.quoted}><SocialPost initialPost={post.original_post} /></div>
                 ) : null}
@@ -315,11 +415,7 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete}) => {
                         <Button onClick={() => setEditing(true)}><Edit3 size={15} />{communityText('Edit')}</Button>
                     ) : null}
                     {mine ? <Button
-                        onClick={() => run('pin', async () => {
-                            if (post.pinned) await rotur.unpinPost(post.id);
-                            else await rotur.pinPost(post.id);
-                            update({...post, pinned: !post.pinned});
-                        })}
+                        onClick={togglePin}
                     ><Pin size={15} /> {post.pinned ? communityText('Unpin') : communityText('Pin')}</Button> : null}
                     {mine ? (
                         <Button variant="danger" onClick={() => setConfirmDelete(true)}>
@@ -407,7 +503,8 @@ SocialPost.propTypes = {
     initialPost: PropTypes.object.isRequired,
     detail: PropTypes.bool,
     onChange: PropTypes.func,
-    onDelete: PropTypes.func
+    onDelete: PropTypes.func,
+    onLayoutChange: PropTypes.func
 };
 
 export default SocialPost;

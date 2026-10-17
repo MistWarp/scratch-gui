@@ -207,6 +207,16 @@ const withGroupTags = users => Promise.all((users || []).map(async user => {
     return tag ? {...user, group_tag: tag} : user;
 }));
 
+const postBody = (content, options, madeWith) => {
+    const body = {content, os: 'MistWarp', made_with: madeWith};
+    if (options.attachment) body.attachment = options.attachment;
+    if (options.attachments) body.attachments = options.attachments.join(',');
+    if (options.profileOnly) body.profile_only = '1';
+    if (options.poll) body.poll = options.poll;
+    if (options.scheduledFor) body.scheduled_for = options.scheduledFor;
+    return body;
+};
+
 const rotur = {
     avatar,
     banner,
@@ -233,10 +243,9 @@ const rotur = {
         ['posts:create'],
         client => client.posts.create(content, {profileOnly: true, os: 'MistWarp'})
     ),
-    createPost: (content, options = {}) => authenticatedAction(
-        ['posts:create'],
-        client => client.posts.create(content, {...options, os: 'MistWarp'})
-    ),
+    createPost: (content, {madeWith, ...options} = {}) => (madeWith ?
+        mutate('/v2/posts', {method: 'POST', body: postBody(content, options, madeWith), scopes: ['posts:create']}) :
+        authenticatedAction(['posts:create'], client => client.posts.create(content, {...options, os: 'MistWarp'}))),
     post: id => getRotur().posts.get(id),
     viewPost: id => authenticatedAction([], client => client.posts.view(id)),
     likePost: id => mutate(`/v2/posts/${encodeURIComponent(id)}/like`, {
