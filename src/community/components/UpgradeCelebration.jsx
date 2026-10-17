@@ -1,7 +1,7 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Check, PartyPopper, Sparkles} from 'lucide-react';
+import {Check, Crown, PartyPopper} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import {formatBytes} from '../format';
 import {watchTier} from '../tier-watch.js';
@@ -57,7 +57,7 @@ const UpgradeCelebration = () => {
                     to="/perks"
                     variant="primary"
                     onClick={close}
-                ><Sparkles size={16} />{communityText('View your membership benefits')}</Button>
+                ><Crown size={16} />{communityText('View your membership benefits')}</Button>
             </>}
         >
             <Confetti burst={1} />

@@ -12,9 +12,9 @@
 
 .layout {
     display: grid;
-    grid-template-columns: minmax(0, 680px) minmax(220px, 300px);
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
     align-items: start;
-    gap: 24px;
+    gap: 28px;
 }
 
 .layout > aside {
@@ -25,7 +25,16 @@
 .feed {
     display: grid;
     gap: 12px;
-    max-width: 680px;
+    min-width: 0;
+}
+
+.list {
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+}
+
+.list > * + * {
+    border-top: 1px solid var(--border-soft);
 }
 
 .more {
@@ -40,9 +49,4 @@
     .layout > aside {
         position: static;
     }
-}
-
-.list {
-    display: grid;
-    gap: 12px;
 }

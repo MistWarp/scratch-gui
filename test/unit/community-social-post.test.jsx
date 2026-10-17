@@ -24,7 +24,9 @@ jest.mock('../../src/community/rotur.js', () => ({
     pounce: jest.fn(),
     unpounce: jest.fn(),
     pounceAllowance: jest.fn(),
-    reportImpressions: jest.fn()
+    reportImpressions: jest.fn(),
+    bookmarks: jest.fn(() => Promise.resolve([])),
+    blockedUsers: jest.fn(() => Promise.resolve({blocked: []}))
 }));
 jest.mock('../../src/lib/themes/custom-themes.js', () => ({
     customThemeManager: {themes: {clear: jest.fn()}, loadCustomThemes: jest.fn()}
@@ -164,7 +166,8 @@ describe('social post list actions', () => {
     test('hides the pounce button when the API has no pounces', async () => {
         const wrapper = mountPost({id: 'old', user: 'alice', content: 'Hi', likes: []});
         await settle(wrapper);
-        expect(wrapper.find('button[aria-pressed]').exists()).toBe(false);
+        expect(wrapper.find('button[aria-label^="Pounce"]').exists()).toBe(false);
+        expect(wrapper.find('button[aria-label^="Undo pounce"]').exists()).toBe(false);
         wrapper.unmount();
     });
 
@@ -214,6 +217,8 @@ describe('social post list actions', () => {
         wrapper.unmount();
     });
 
+    const whyButton = wrapper => wrapper.find('button[aria-label="Why am I seeing this post?"]');
+
     test('shows why a For You post is there', async () => {
         const wrapper = mountPost({
             id: 'fy',
@@ -223,15 +228,132 @@ describe('social post list actions', () => {
             pounced_by: ['mist']
         });
         await settle(wrapper);
-        const chip = wrapper.find('button[aria-expanded]').filterWhere(node => node.text().includes('Pounced by @mist'));
-        expect(chip).toHaveLength(1);
+        const why = whyButton(wrapper);
+        expect(why).toHaveLength(1);
+        expect(why.text()).toBe('Why?');
+        expect(why.closest('header').exists()).toBe(true);
+        expect(wrapper.find('li')).toHaveLength(0);
         act(() => {
-            chip.simulate('click');
+            why.simulate('click');
         });
         wrapper.update();
         const items = wrapper.find('li').map(node => node.text());
         expect(items).toEqual(['Pounced by @mist', 'Posted recently']);
         expect(wrapper.find('a[href="https://pounce.rotur.dev/settings/for-you"]').exists()).toBe(true);
+        wrapper.unmount();
+    });
+
+    test('only offers a why for reasons that say something', async () => {
+        const weak = mountPost({
+            id: 'weak',
+            user: 'alice',
+            content: 'Hi',
+            reasons: [{type: 'fresh'}, {type: 'recent'}, {type: 'from_earlier'}]
+        });
+        await settle(weak);
+        expect(whyButton(weak).exists()).toBe(false);
+        weak.unmount();
+
+        for (const reason of [
+            {type: 'new_voice'}, {type: 'followed_author'}, {type: 'friend_replied', count: 2}, {type: 'popular'},
+            {type: 'conversation', replies: 3}, {type: 'made_with', app: 'MistWarp'}, {type: 'group_match', group: 'iswt'}
+        ]) {
+            const wrapper = mountPost({id: `s-${reason.type}`, user: 'alice', content: 'Hi', reasons: [reason, {type: 'fresh'}]});
+            await settle(wrapper);
+            expect(whyButton(wrapper)).toHaveLength(1);
+            wrapper.unmount();
+        }
+    });
+
+    test('labels a pinned post only on its author\'s profile', async () => {
+        const pinned = {id: 'pin', user: 'alice', content: 'Pinned one', pinned: true};
+        const feed = mountPost(pinned);
+        await settle(feed);
+        expect(feed.find('p').filterWhere(node => node.text() === 'Pinned')).toHaveLength(0);
+        feed.unmount();
+
+        const profile = mount(
+            <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+                <SocialPost
+                    initialPost={pinned}
+                    onProfile
+                />
+            </MemoryRouter>
+        );
+        await settle(profile);
+        expect(profile.find('p').filterWhere(node => node.text() === 'Pinned')).toHaveLength(1);
+        profile.unmount();
+
+        const detail = mount(
+            <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+                <SocialPost
+                    initialPost={pinned}
+                    onProfile
+                    detail
+                    hideReplies
+                />
+            </MemoryRouter>
+        );
+        await settle(detail);
+        expect(detail.find('p').filterWhere(node => node.text() === 'Pinned')).toHaveLength(0);
+        detail.unmount();
+    });
+
+    test('keeps line breaks without breaking links or mentions', async () => {
+        const wrapper = mountPost({
+            id: 'lines',
+            user: 'alice',
+            content: '\nfirst line @bob\nhttps://example.com/a\n\nlast line\n',
+            like_count: 0
+        });
+        await settle(wrapper);
+        const content = wrapper.find('RichText');
+        expect(content.prop('text')).toBe('first line @bob\nhttps://example.com/a\n\nlast line');
+        expect(content.text()).toBe('first line @bob\nexample.com/a\n\nlast line');
+        expect(wrapper.find('a[href="/users/bob"]').text()).toBe('@bob');
+        expect(wrapper.find('a[href="https://example.com/a"]').text()).toBe('example.com/a');
+        wrapper.unmount();
+    });
+
+    test('shows only the icon when a count is zero', async () => {
+        const wrapper = mountPost({
+            id: 'zero',
+            user: 'alice',
+            content: 'Hi',
+            like_count: 0,
+            reply_count: 0,
+            pounce_count: 0,
+            viewer: {liked: false, pounced: false}
+        });
+        await settle(wrapper);
+        expect(wrapper.find('button[aria-label="Like post"]').text()).toBe('');
+        expect(wrapper.find('button[aria-label="Reply, 0 replies"]').text()).toBe('');
+        expect(wrapper.find('button[aria-label="Pounce, 0 pounces"]').text()).toBe('');
+        wrapper.unmount();
+
+        const counted = mountPost({
+            id: 'some',
+            user: 'alice',
+            content: 'Hi',
+            like_count: 4,
+            reply_count: 1,
+            pounce_count: 2,
+            viewer: {liked: false, pounced: false}
+        });
+        await settle(counted);
+        expect(counted.find('button[aria-label="Like post"]').text()).toBe('4');
+        expect(counted.find('button[aria-label="Reply, 1 reply"]').text()).toBe('1');
+        expect(counted.find('button[aria-label="Pounce, 2 pounces"]').text()).toBe('2');
+        counted.unmount();
+    });
+
+    test('shortens long links but keeps where they go', async () => {
+        const url = 'https://originchats.com/message/chats.mistium.com/general/5e105412-c2bb-420f-a37e-a10ecee38c9a';
+        const wrapper = mountPost({id: 'link', user: 'alice', content: `true... ${url}`});
+        await settle(wrapper);
+        const link = wrapper.find(`a[href="${url}"]`);
+        expect(link.text()).toBe('originchats.com/message/\u2026/5e105\u2026');
+        expect(link.prop('title')).toBe(url);
         wrapper.unmount();
     });
 

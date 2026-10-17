@@ -1,14 +1,17 @@
 .ancestors,
 .list {
-    display: grid;
-    gap: 10px;
     margin: 0;
     padding: 0;
     list-style: none;
 }
 
-.ancestors {
-    margin-bottom: 10px;
+.list {
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+}
+
+.list > li + li {
+    border-top: 1px solid var(--border-soft);
 }
 
 .linked {
@@ -18,8 +21,8 @@
 .linked::after {
     content: "";
     position: absolute;
-    top: 61px;
-    bottom: -23px;
+    top: 56px;
+    bottom: -8px;
     left: 35px;
     z-index: 1;
     width: 2px;
@@ -30,7 +33,7 @@
 
 .reply {
     display: grid;
-    gap: 10px;
+    padding-bottom: 2px;
 }
 
 .replies {
@@ -74,15 +77,13 @@
 
 .placeholder {
     padding: 14px 16px;
-    border-radius: var(--radius-sm);
-    background: var(--bg-raised);
     color: var(--text-faint);
     font-size: var(--fs-sm);
 }
 
 .moreLink {
     justify-self: start;
-    margin-inline-start: 58px;
+    margin: 0 0 12px 68px;
     color: var(--accent-strong);
     font-size: var(--fs-sm);
     text-decoration: none;
@@ -98,9 +99,7 @@
 
 @media (max-width: 620px) {
     .linked::after {
-        top: 52px;
-        bottom: -22px;
-        left: 29px;
+        left: 31px;
     }
 
     .composer {
@@ -112,6 +111,6 @@
     }
 
     .moreLink {
-        margin-inline-start: 48px;
+        margin-inline-start: 64px;
     }
 }

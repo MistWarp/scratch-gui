@@ -25,6 +25,25 @@ const PUBLIC_ROUTES = [
     /^\/(?:leaderboard|roadmap|trust|support|status|stats)\/?$/
 ];
 
+const LINK_TEXT_MAX = 32;
+
+export const shortLinkText = (url, max = LINK_TEXT_MAX) => {
+    const bare = String(url).replace(/^https?:\/\//i, '')
+        .replace(/^www\./i, '')
+        .replace(/\/$/, '');
+    if (bare.length <= max) return bare;
+    const cut = `${bare.slice(0, max - 1)}\u2026`;
+    const match = bare.match(/^([^/?#]+)\/([^?#]*)([?#].*)?$/);
+    const segments = match ? match[2].split('/').filter(Boolean) : [];
+    if (segments.length < 2) return cut;
+    const last = segments[segments.length - 1];
+    const prefix = `${match[1]}/${segments[0]}/${segments.length > 2 ? '\u2026/' : ''}`;
+    const room = max - prefix.length;
+    if (room < 5) return cut;
+    if (last.length > room || match[3]) return `${prefix}${last.slice(0, Math.min(last.length, room - 1))}\u2026`;
+    return `${prefix}${last}`;
+};
+
 export const splitParts = text => {
     const parts = [];
     let last = 0;
@@ -159,7 +178,7 @@ const RichText = ({text}) => splitParts(String(text || ''))
                 <React.Fragment key={index}>
                     <InternalLink
                         route={route}
-                        label={route.startsWith('/posts/') ? url.replace(/^https?:\/\//, '') : null}
+                        label={route.startsWith('/posts/') ? shortLinkText(url) : null}
                     />
                     {rest}
                 </React.Fragment>
@@ -170,9 +189,10 @@ const RichText = ({text}) => splitParts(String(text || ''))
                 <a
                     className={styles.externalLink}
                     href={url}
+                    title={url}
                     target="_blank"
                     rel="noreferrer"
-                >{url.replace(/^https?:\/\//, '')}</a>
+                >{shortLinkText(url)}</a>
                 {rest}
             </React.Fragment>
         );

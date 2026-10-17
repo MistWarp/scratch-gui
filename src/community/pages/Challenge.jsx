@@ -3,7 +3,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {CalendarDays, Check, ExternalLink, Gavel, Info, Medal, MessageCircle, PartyPopper, Play, ScrollText, Settings, Sparkles, Star, Trophy, UserMinus, UserPlus, Users} from 'lucide-react';
+import {CalendarDays, Check, ExternalLink, Gavel, Info, Lightbulb, Medal, MessageCircle, PartyPopper, Play, ScrollText, Settings, Star, Trophy, UserMinus, UserPlus, Users} from 'lucide-react';
 import api, {projectUrl} from '../api';
 import Avatar from '../components/Avatar.jsx';
 import Confetti, {useCelebration} from '../components/Confetti.jsx';
@@ -745,7 +745,7 @@ const Challenge = ({id, space, user, login, load}) => {
                         <div className={styles.mainColumn}>
                             {space.theme ? (
                                 <section className={styles.theme}>
-                                    <Sparkles size={22} aria-hidden="true" />
+                                    <Lightbulb size={22} aria-hidden="true" />
                                     <div><span>{communityText('Theme')}</span><strong>{space.theme}</strong></div>
                                 </section>
                             ) : null}

@@ -3,17 +3,17 @@ import PropTypes from 'prop-types';
 import React, {useEffect, useRef, useState} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
 import {
-    Bookmark, Check, Copy, CornerDownRight, Edit3, ExternalLink, Flag, Heart, Megaphone, MessageCircle,
+    Bookmark, Check, Copy, CornerDownRight, Edit3, Flag, Heart, Megaphone, MessageCircle,
     MoreHorizontal, PawPrint, Pin, Repeat2, ShieldOff, Trash2
 } from 'lucide-react';
 import api from '../api.js';
 import rotur from '../rotur.js';
-import {timeAgo} from '../format.js';
+import {formatDateTime, timeAgo} from '../format.js';
 import copyText from '../copy-text.js';
 import {postUrl, timestampMs} from '../following-feed.js';
 import {madeWithProject} from '../claw-links.js';
 import {
-    canPounce, mayPromote, postStats, pouncePostLink, replyContext, withLike
+    canPounce, mayPromote, postStats, pouncePostLink, promotedBy, replyContext, withLike
 } from '../claw-posts.js';
 import {useImpression} from '../impressions.js';
 import {useUser} from '../UserContext.jsx';
@@ -77,7 +77,8 @@ Poll.propTypes = {
 };
 
 const SocialPost = ({
-    initialPost, detail = false, hideReplies = false, showReplyContext = true, onChange, onDelete, onLayoutChange
+    initialPost, detail = false, hideReplies = false, showReplyContext = true, onProfile = false, onChange, onDelete,
+    onLayoutChange
 }) => {
     const {text: communityText} = useCommunityText();
     const {user, login} = useUser();
@@ -101,9 +102,7 @@ const SocialPost = ({
     const {liked} = stats;
     const replies = Array.isArray(post.replies) ? post.replies : [];
     const context = showReplyContext ? replyContext(post) : null;
-    const reasonSaysPounced = (Array.isArray(post.reasons) ? post.reasons : [])
-        .some(reason => reason && reason.type === 'pounced_by');
-    const pouncedBy = (Array.isArray(post.pounced_by) && !reasonSaysPounced ? post.pounced_by : [])
+    const pouncedBy = (Array.isArray(post.pounced_by) ? post.pounced_by : [])
         .filter(name => typeof name === 'string' && name).slice(0, 3);
     const media = post.attachments && post.attachments.length ? post.attachments :
         (post.attachment ? [post.attachment] : []);
@@ -237,6 +236,17 @@ const SocialPost = ({
     const views = stats.views;
     const promotable = mayPromote(post, user && user.username);
     const viewsText = views === 1 ? communityText('1 view') : communityText('{value1} views', {value1: views});
+    const promoter = detail ? null : promotedBy(post);
+    const pinnedHere = Boolean(onProfile && post.pinned && !detail);
+    const text = String(post.content || '').trim();
+    const toggleBlock = () => run('block', async () => {
+        if (blocked) await rotur.unblockUser(post.user);
+        else await rotur.blockUser(post.user);
+        setBlocked(!blocked);
+        setNotice(blocked ?
+            communityText('Unblocked {value1}.', {value1: post.user}) :
+            communityText('Blocked {value1}.', {value1: post.user}));
+    });
 
     return (
         <article className={detail ? styles.detail : styles.card} ref={articleRef}>
@@ -287,92 +297,133 @@ const SocialPost = ({
                     />
                 </Modal>
             ) : null}
-            <UserLink username={post.user}><Avatar username={post.user} size={44} /></UserLink>
+            {promoter === null ? null : (
+                <p className={styles.social}>
+                    <Megaphone size={13} aria-hidden="true" />
+                    <span>
+                        {promoter ?
+                            communityText('Promoted by {value1}', {value1: `@${promoter}`}) :
+                            communityText('Promoted')}
+                    </span>
+                </p>
+            )}
+            {pinnedHere ? (
+                <p className={styles.social}>
+                    <Pin size={13} aria-hidden="true" />
+                    <span>{communityText('Pinned')}</span>
+                </p>
+            ) : null}
+            {pouncedBy.length ? (
+                <p className={styles.social}>
+                    <PawPrint size={13} aria-hidden="true" />
+                    <span>
+                        {communityText('Pounced by {value1}', {value1: pouncedBy.map(name => `@${name}`).join(', ')})}
+                    </span>
+                </p>
+            ) : null}
+            <UserLink className={styles.avatar} username={post.user}>
+                <Avatar username={post.user} size={40} />
+            </UserLink>
             <div className={styles.body}>
                 <header>
-                    <UserLink username={post.user}><strong>{post.user}</strong></UserLink>
-                    <GroupTag tag={post.group_tag} username={post.user} compact />
-                    {post.pinned ? (
-                        <span className={styles.tag}><Pin size={11} />{communityText('Pinned')}</span>
-                    ) : null}
-                    {when && detail ? <time dateTime={new Date(when).toISOString()}>{timeAgo(when)}</time> : null}
-                    {when && !detail ? (
-                        <Link className={styles.timeLink} to={postUrl(post.id)}>
-                            <time dateTime={new Date(when).toISOString()}>{timeAgo(when)}</time>
-                        </Link>
-                    ) : null}
-                    {post.edited_at ? <span className={styles.edited}>{communityText('edited')}</span> : null}
-                    {!detail && user ? (
-                        <Dropdown
-                            portal
-                            className={styles.more}
-                            renderTrigger={({open, toggle}) => (
-                                <IconButton
-                                    label={communityText('Post actions')}
-                                    aria-expanded={open}
-                                    aria-haspopup="menu"
-                                    onClick={toggle}
-                                >
-                                    <MoreHorizontal size={16} />
-                                </IconButton>
-                            )}
-                        >
-                            {({close}) => (
-                                <React.Fragment>
+                    <div className={styles.who}>
+                        <UserLink className={styles.name} username={post.user}>{post.user}</UserLink>
+                        <GroupTag tag={post.group_tag} username={post.user} compact className={styles.group} />
+                        {when && !detail ? (
+                            <React.Fragment>
+                                <span className={styles.dot} aria-hidden="true">·</span>
+                                <Link className={styles.timeLink} to={postUrl(post.id)}>
+                                    <time dateTime={new Date(when).toISOString()}>{timeAgo(when)}</time>
+                                </Link>
+                            </React.Fragment>
+                        ) : null}
+                        {post.edited_at ? <span className={styles.edited}>{communityText('edited')}</span> : null}
+                    </div>
+                    {detail ? null : <PostReasons post={post} />}
+                    <Dropdown
+                        portal
+                        className={styles.more}
+                        renderTrigger={({open, toggle}) => (
+                            <IconButton
+                                label={communityText('Post actions')}
+                                aria-expanded={open}
+                                aria-haspopup="menu"
+                                onClick={toggle}
+                            >
+                                <MoreHorizontal size={17} />
+                            </IconButton>
+                        )}
+                    >
+                        {({close}) => (
+                            <React.Fragment>
+                                <DropdownItem
+                                    onClick={() => {
+                                        close();
+                                        copyLink();
+                                    }}
+                                ><Copy size={15} />{communityText('Copy link')}</DropdownItem>
+                                {mine && !post.is_repost ? (
                                     <DropdownItem
                                         onClick={() => {
                                             close();
-                                            copyLink();
+                                            setEditing(true);
                                         }}
-                                    ><Copy size={15} />{communityText('Copy link')}</DropdownItem>
-                                    {mine && !post.is_repost ? (
-                                        <DropdownItem
-                                            onClick={() => {
-                                                close();
-                                                setEditing(true);
-                                            }}
-                                        ><Edit3 size={15} />{communityText('Edit')}</DropdownItem>
-                                    ) : null}
-                                    {mine ? (
-                                        <DropdownItem
-                                            onClick={() => {
-                                                close();
-                                                togglePin();
-                                            }}
-                                        >
-                                            <Pin size={15} />
-                                            {post.pinned ? communityText('Unpin') : communityText('Pin')}
-                                        </DropdownItem>
-                                    ) : null}
-                                    {promotable ? (
-                                        <DropdownItem
-                                            onClick={() => {
-                                                close();
-                                                window.open(pouncePostLink(post.id), '_blank', 'noopener');
-                                            }}
-                                        ><Megaphone size={15} />{communityText('Promote on pounce')}</DropdownItem>
-                                    ) : null}
-                                    {mine ? (
-                                        <DropdownItem
-                                            danger
-                                            aria-label={communityText('Delete post')}
-                                            onClick={() => {
-                                                close();
-                                                setConfirmDelete(true);
-                                            }}
-                                        ><Trash2 size={15} />{communityText('Delete')}</DropdownItem>
-                                    ) : (
-                                        <DropdownItem
-                                            onClick={() => {
-                                                close();
-                                                setReportTarget({type: 'post', id: post.id});
-                                            }}
-                                        ><Flag size={15} />{communityText('Report')}</DropdownItem>
-                                    )}
-                                </React.Fragment>
-                            )}
-                        </Dropdown>
-                    ) : null}
+                                    ><Edit3 size={15} />{communityText('Edit')}</DropdownItem>
+                                ) : null}
+                                {mine ? (
+                                    <DropdownItem
+                                        onClick={() => {
+                                            close();
+                                            togglePin();
+                                        }}
+                                    >
+                                        <Pin size={15} />
+                                        {post.pinned ? communityText('Unpin') : communityText('Pin')}
+                                    </DropdownItem>
+                                ) : null}
+                                {promotable ? (
+                                    <DropdownItem
+                                        onClick={() => {
+                                            close();
+                                            window.open(pouncePostLink(post.id), '_blank', 'noopener');
+                                        }}
+                                    ><Megaphone size={15} />{communityText('Promote on pounce')}</DropdownItem>
+                                ) : null}
+                                {!mine && user ? (
+                                    <DropdownItem
+                                        onClick={() => {
+                                            close();
+                                            setReportTarget({type: 'post', id: post.id});
+                                        }}
+                                    ><Flag size={15} />{communityText('Report')}</DropdownItem>
+                                ) : null}
+                                {!mine && user && detail ? (
+                                    <DropdownItem
+                                        danger={!blocked}
+                                        onClick={() => {
+                                            close();
+                                            toggleBlock();
+                                        }}
+                                    >
+                                        <ShieldOff size={15} />
+                                        {blocked ?
+                                            communityText('Unblock {value1}', {value1: post.user}) :
+                                            communityText('Block {value1}', {value1: post.user})}
+                                    </DropdownItem>
+                                ) : null}
+                                {mine ? (
+                                    <DropdownItem
+                                        danger
+                                        aria-label={communityText('Delete post')}
+                                        onClick={() => {
+                                            close();
+                                            setConfirmDelete(true);
+                                        }}
+                                    ><Trash2 size={15} />{communityText('Delete')}</DropdownItem>
+                                ) : null}
+                            </React.Fragment>
+                        )}
+                    </Dropdown>
                 </header>
                 {context ? (
                     <p className={styles.context}>
@@ -385,13 +436,6 @@ const SocialPost = ({
                         {context.selfThread && context.rootId ? (
                             <Link to={postUrl(context.rootId)}>{communityText('Show this thread')}</Link>
                         ) : null}
-                    </p>
-                ) : null}
-                <PostReasons post={post} onLayoutChange={onLayoutChange} />
-                {pouncedBy.length ? (
-                    <p className={styles.pouncedBy}>
-                        <PawPrint size={13} aria-hidden="true" />
-                        {communityText('Pounced by {value1}', {value1: pouncedBy.map(name => `@${name}`).join(', ')})}
                     </p>
                 ) : null}
                 {editing ? (
@@ -408,7 +452,8 @@ const SocialPost = ({
                             </Button>
                         </div>
                     </form>
-                ) : <div className={styles.content}><RichText text={post.content || ''} /></div>}
+                ) : null}
+                {!editing && text ? <div className={styles.content}><RichText text={text} /></div> : null}
                 {media.length ? (
                     <div className={styles.media} data-count={media.length}>
                         {media.map(url => (
@@ -423,35 +468,46 @@ const SocialPost = ({
                 {post.is_repost && post.original_post ? (
                     <div className={styles.quoted}><SocialPost initialPost={post.original_post} /></div>
                 ) : null}
-                <div className={styles.via}>
-                    {post.os && views ?
-                        communityText('Posted from {value1}, {value2}', {value1: post.os, value2: viewsText}) :
-                        null}
-                    {post.os && !views ? communityText('Posted from {value1}', {value1: post.os}) : null}
-                    {!post.os && views ? viewsText : null}
-                </div>
+                {detail ? (
+                    <p className={styles.stamp}>
+                        {when ? <time dateTime={new Date(when).toISOString()}>{formatDateTime(when)}</time> : null}
+                        {post.os ? <span>{communityText('Posted from {value1}', {value1: post.os})}</span> : null}
+                        {views ? <span>{viewsText}</span> : null}
+                    </p>
+                ) : null}
                 <div className={styles.actions}>
                     <Button
-                        onClick={toggleLike}
-                        disabled={Boolean(busy)}
-                        aria-label={liked ? communityText('Unlike post') : communityText('Like post')}
-                    >
-                        <Heart size={16} fill={liked ? 'currentColor' : 'none'} /> {stats.likeCount}
-                    </Button>
-                    <Button
+                        onClick={() => (detail ? null : navigate(postUrl(post.id)))}
                         aria-label={communityText('{value1, plural, one {Reply, # reply} other {Reply, # replies}}', {
                             value1: stats.replyCount
                         })}
-                        onClick={() => (detail ? null : navigate(postUrl(post.id)))}
+                        title={communityText('Reply')}
                     >
-                        <MessageCircle size={16} /> {stats.replyCount}
+                        <MessageCircle size={17} aria-hidden="true" />
+                        {stats.replyCount ? <span>{stats.replyCount}</span> : null}
                     </Button>
-                    {!post.is_repost && !post.profile_only ? <Button
-                        disabled={Boolean(busy)} onClick={() => run('repost', async () => {
-                            await rotur.repost(post.id);
-                            setNotice(communityText('Reposted to your profile.'));
-                        })}
-                    ><Repeat2 size={16} /> {detail ? communityText('Repost') : null}</Button> : null}
+                    {!post.is_repost && !post.profile_only ? (
+                        <Button
+                            disabled={Boolean(busy)}
+                            aria-label={communityText('Repost')}
+                            title={communityText('Repost')}
+                            onClick={() => run('repost', async () => {
+                                await rotur.repost(post.id);
+                                setNotice(communityText('Reposted to your profile.'));
+                            })}
+                        ><Repeat2 size={17} aria-hidden="true" /></Button>
+                    ) : null}
+                    <Button
+                        className={styles.like}
+                        onClick={toggleLike}
+                        disabled={Boolean(busy)}
+                        aria-pressed={liked}
+                        aria-label={liked ? communityText('Unlike post') : communityText('Like post')}
+                        title={liked ? communityText('Unlike post') : communityText('Like post')}
+                    >
+                        <Heart size={17} fill={liked ? 'currentColor' : 'none'} aria-hidden="true" />
+                        {stats.likeCount ? <span>{stats.likeCount}</span> : null}
+                    </Button>
                     {canPounce(post) ? (
                         <PounceButton
                             post={post}
@@ -467,53 +523,15 @@ const SocialPost = ({
                             }}
                         />
                     ) : null}
-                    <Button disabled={Boolean(busy)} onClick={toggleSaved}>
-                        <Bookmark size={16} fill={saved ? 'currentColor' : 'none'} />
-                        {detail ? (saved ? communityText('Saved') : communityText('Save')) : null}
-                    </Button>
-                    {detail ? <Button onClick={copyLink}><Copy size={16} />{communityText('Copy link')}</Button> : null}
-                </div>
-                <div className={styles.manage}>
-                    {mine && !post.is_repost ? (
-                        <Button onClick={() => setEditing(true)}><Edit3 size={15} />{communityText('Edit')}</Button>
-                    ) : null}
-                    {mine ? <Button
-                        onClick={togglePin}
-                    ><Pin size={15} /> {post.pinned ? communityText('Unpin') : communityText('Pin')}</Button> : null}
-                    {promotable ? (
-                        <Button as="a" href={pouncePostLink(post.id)} target="_blank" rel="noopener noreferrer">
-                            <Megaphone size={15} />
-                            {communityText('Promote on pounce')}
-                            <ExternalLink size={13} aria-hidden="true" />
-                        </Button>
-                    ) : null}
-                    {mine ? (
-                        <Button variant="danger" onClick={() => setConfirmDelete(true)}>
-                            <Trash2 size={15} />
-                            {communityText('Delete')}
-                        </Button>
-                    ) : null}
-                    {!mine ? (
-                        <Button onClick={() => setReportTarget({type: 'post', id: post.id})}>
-                            <Flag size={15} />
-                            {communityText('Report')}
-                        </Button>
-                    ) : null}
-                    {!mine && user ? <Button
-                        onClick={() => run('block', async () => {
-                            if (blocked) await rotur.unblockUser(post.user);
-                            else await rotur.blockUser(post.user);
-                            setBlocked(!blocked);
-                            setNotice(blocked ?
-                                communityText('Unblocked {value1}.', {value1: post.user}) :
-                                communityText('Blocked {value1}.', {value1: post.user}));
-                        })}
+                    <Button
+                        disabled={Boolean(busy)}
+                        aria-pressed={saved}
+                        aria-label={communityText('Save')}
+                        title={saved ? communityText('Saved') : communityText('Save')}
+                        onClick={toggleSaved}
                     >
-                        <ShieldOff size={15} />
-                        {blocked ?
-                            communityText('Unblock {value1}', {value1: post.user}) :
-                            communityText('Block {value1}', {value1: post.user})}
-                    </Button> : null}
+                        <Bookmark size={17} fill={saved ? 'currentColor' : 'none'} aria-hidden="true" />
+                    </Button>
                 </div>
                 {error ? <Notice variant="error" className={styles.message}>{error}</Notice> : null}
                 {notice ? <Notice variant="success" className={styles.message}>{notice}</Notice> : null}
@@ -546,7 +564,9 @@ const SocialPost = ({
                                         <UserLink username={item.user}><strong>{item.user}</strong></UserLink>
                                         <time>{timeAgo(item.timestamp)}</time>
                                     </header>
-                                    <RichText text={item.content || ''} />
+                                    <div className={styles.replyText}>
+                                        <RichText text={String(item.content || '').trim()} />
+                                    </div>
                                 </div>
                                 {user && item.user.toLowerCase() !== user.username.toLowerCase() ? (
                                     <button
@@ -574,6 +594,7 @@ SocialPost.propTypes = {
     detail: PropTypes.bool,
     hideReplies: PropTypes.bool,
     showReplyContext: PropTypes.bool,
+    onProfile: PropTypes.bool,
     onChange: PropTypes.func,
     onDelete: PropTypes.func,
     onLayoutChange: PropTypes.func

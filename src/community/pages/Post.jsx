@@ -76,16 +76,19 @@ const Post = () => {
             {error ? (
                 <StatusMessage error onRetry={() => setAttempt(value => value + 1)}>{error}</StatusMessage>
             ) : null}
-            {thread ? <ThreadAncestors ancestors={thread.ancestors} /> : null}
-            {post && isPlaceholder(post) ? <Placeholder item={post} /> : null}
-            {post && !isPlaceholder(post) ? (
-                <SocialPost
-                    initialPost={post}
-                    detail
-                    hideReplies={Boolean(thread)}
-                    showReplyContext={!thread}
-                    onChange={setPost}
-                />
+            {post ? (
+                <div className={styles.conversation}>
+                    {thread ? <ThreadAncestors ancestors={thread.ancestors} /> : null}
+                    {isPlaceholder(post) ? <Placeholder item={post} /> : (
+                        <SocialPost
+                            initialPost={post}
+                            detail
+                            hideReplies={Boolean(thread)}
+                            showReplyContext={!thread}
+                            onChange={setPost}
+                        />
+                    )}
+                </div>
             ) : null}
             {post && thread ? (
                 <ThreadReplies

@@ -1,14 +1,25 @@
 .posts {
+    display: grid;
+    gap: 12px;
     max-width: 680px;
 }
 
 .list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+}
+
+.list:empty {
+    display: none;
+}
+
+.list > article + article,
+.virtualRow + .virtualRow {
+    border-top: 1px solid var(--border-soft);
 }
 
 .virtualRow {
     box-sizing: border-box;
-    padding-bottom: 12px;
 }
