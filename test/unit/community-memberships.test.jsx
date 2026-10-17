@@ -32,7 +32,8 @@ const plans = ['Free', 'Lite', 'Plus', 'Pro'].map((tier, index) => ({
         vanityProjectUrls: index === 3,
         salesFeeBasisPoints: [1000, 1000, 700, 500][index],
         maxProjectPrice: [100, 100, 250, 500][index]
-    }
+    },
+    rotur: {dailyCreditMultiplier: [1, 1, 2, 3][index]}
 }));
 const renderPage = async () => {
     let wrapper;
@@ -62,7 +63,7 @@ test('shows actual plan entitlements and keeps checkout on Rotur without marking
         expect(cards.at(2).text()).toContain('Custom project branding');
         expect(cards.at(2).text()).not.toContain('Custom project URLs');
         expect(cards.at(3).text()).toContain('Custom project URLs');
-        expect(wrapper.find('a[href="https://rotur.dev/premium"]')).toHaveLength(3);
+        expect(wrapper.find('a[href="https://rotur.dev/premium"]')).toHaveLength(4);
         expect(wrapper.text()).not.toContain('Your membership');
         expect(wrapper.find('a[href="https://editor.mistwarp.org/"]').length).toBeGreaterThan(0);
         wrapper.unmount();
@@ -82,7 +83,35 @@ test('keeps storage allowances and sales fees accessible in the comparison', asy
     wrapper.find('button[role="tab"]').at(3)
         .simulate('click');
     expect(wrapper.find('table').text()).toContain('10%10%7%5%');
+    expect(wrapper.find('table').text()).toContain('100 credits100 credits250 credits500 credits');
     expect(wrapper.text()).toContain('A membership does not include access to every project');
+    wrapper.unmount();
+});
+
+test('explains how daily credits pay for Lite using the plan allowances', async () => {
+    const wrapper = await renderPage();
+    const callout = wrapper.find('section#lite-free');
+    const copy = callout.text().replace(/\u00a0/g, ' ');
+    expect(copy).toContain('Get Lite free by showing up');
+    expect(copy).toContain('At 1 credit a day, 15 days of claims pays for a month of Lite');
+    expect(copy).toContain('2 GB of project storage instead of 500 MB');
+    expect(copy).toContain('fewer than 15 credits when it renews, you go back to Free');
+    expect(callout.find('a[href="/wallet"]').text()).toBe('Claim daily credits');
+    expect(callout.find('a[href="https://rotur.dev/premium"]').text()).toBe('Get Lite with credits');
+    const lite = wrapper.find('article').filterWhere(node => node.find('h3').text() === 'Lite');
+    expect(lite.find('strong').text()).toBe('15 credits/month');
+    expect(lite.find('p').text()).toBe('Free with daily credits, or pay with credits you already have.');
+    expect(lite.find('a[href="#lite-free"]').text()).toBe('Free with daily credits');
+    expect(wrapper.text()).not.toContain('RC');
+    wrapper.unmount();
+});
+
+test('leaves out the daily credit note for members above Lite', async () => {
+    useUser.mockReturnValue({user: {username: 'Member', subscription: 'Pro'}, login: jest.fn()});
+    api.perks.mockResolvedValue({plans, current: plans[3], roturMembershipUrl: 'https://rotur.dev/premium'});
+    const wrapper = await renderPage();
+    expect(wrapper.find('section#lite-free')).toHaveLength(0);
+    expect(wrapper.find('a[href="#lite-free"]')).toHaveLength(0);
     wrapper.unmount();
 });
 
