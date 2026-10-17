@@ -1,4 +1,6 @@
 import {loadSession, request} from '../community/api.js';
+import {isSplitEditor} from '../account/origins.js';
+import {getIdentity as getAccountIdentity} from '../account/bridge.js';
 import {ORDER_KEY as MENU_BAR_ORDER_KEY, HIDDEN_KEY as MENU_BAR_HIDDEN_KEY} from '../mw-menu-bar-layout.js';
 import {
     CHANGE_EVENT as MENU_BAR_SETTINGS_CHANGE_EVENT,
@@ -43,6 +45,12 @@ const ALL = 'all';
 let stampCount = 0;
 const newStamp = () => `${Date.now().toString(36)}.${Math.random().toString(36)
     .slice(2)}.${stampCount++}`;
+
+const signedInAs = () => {
+    if (!isSplitEditor()) return loadSession() || null;
+    const user = getAccountIdentity().user;
+    return user && user.username ? `account:${user.username}` : null;
+};
 
 const isObject = value => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
@@ -273,9 +281,9 @@ const cloudSnapshot = async () => {
 const NOT_APPLIED = {ok: false, applied: false};
 
 const pushToCloud = () => {
-    if (suppressPush || !loadSession()) return Promise.resolve(NOT_APPLIED);
+    if (suppressPush || !signedInAs()) return Promise.resolve(NOT_APPLIED);
     pushChain = pushChain.catch(() => null).then(async () => {
-        const session = loadSession();
+        const session = signedInAs();
         if (suppressPush || !session) return NOT_APPLIED;
         let pushed = readDirty();
         try {
@@ -290,7 +298,7 @@ const pushToCloud = () => {
             const merged = mergeSnapshot(cloud, collectLocalSnapshot(), sections);
             await request('/me/settings', {method: 'PUT', body: merged});
             const remaining = dirtySections(clearPushed(pushed));
-            if (sections === ALL || seeding || remaining === ALL || loadSession() !== session) {
+            if (sections === ALL || seeding || remaining === ALL || signedInAs() !== session) {
                 return {ok: true, applied: false};
             }
             applySnapshotLocally(mergeSnapshot(merged, collectLocalSnapshot(), remaining));
@@ -305,7 +313,7 @@ const pushToCloud = () => {
 };
 
 const pullFromCloud = async () => {
-    if (!loadSession()) {
+    if (!signedInAs()) {
         return {applied: false};
     }
 
@@ -341,7 +349,7 @@ const pullFromCloud = async () => {
  */
 const notifyLocalChange = (sectionOrDelay, delayMs = 800) => {
     if (suppressPush) return;
-    if (!loadSession()) return;
+    if (!signedInAs()) return;
     const section = typeof sectionOrDelay === 'string' ? sectionOrDelay : null;
     const delay = typeof sectionOrDelay === 'number' ? sectionOrDelay : delayMs;
     markDirty(section);
