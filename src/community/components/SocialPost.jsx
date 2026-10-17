@@ -289,6 +289,7 @@ const SocialPost = ({initialPost, detail = false, onChange, onDelete, onLayoutCh
                     {post.edited_at ? <span className={styles.edited}>{communityText('edited')}</span> : null}
                     {!detail && user ? (
                         <Dropdown
+                            portal
                             className={styles.more}
                             renderTrigger={({open, toggle}) => (
                                 <IconButton

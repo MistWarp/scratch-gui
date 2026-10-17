@@ -48,10 +48,34 @@ describe('community layers', () => {
         wrapper.detach();
     });
 
-    test('dropdowns open in place on wide screens and as a body sheet on narrow ones', () => {
+    test('dropdowns stay in place unless they ask for a portal', () => {
+        setNarrow(true);
+        const wrapper = mount(
+            <Dropdown
+                width={320}
+                renderTrigger={({toggle}) => (<button
+                    type="button"
+                    onClick={toggle}
+                >{'More'}</button>)}
+            >
+                {() => <DropdownItem>{'Pick'}</DropdownItem>}
+            </Dropdown>,
+            {attachTo: host}
+        );
+        act(() => {
+            wrapper.find('button').first()
+                .simulate('click');
+        });
+        expect(host.querySelector('[role="menu"]')).not.toBeNull();
+        expect(host.querySelector('[role="menu"]').style.width).toBe('');
+        wrapper.detach();
+    });
+
+    test('portal dropdowns open in place on wide screens and as a body sheet on narrow ones', () => {
         const onPick = jest.fn();
         const render = () => mount(
             <Dropdown
+                portal
                 renderTrigger={({toggle}) => (<button
                     type="button"
                     onClick={toggle}
@@ -85,6 +109,37 @@ describe('community layers', () => {
         expect(document.querySelector('[role="menu"]')).not.toBeNull();
         wrapper.find(DropdownItem).simulate('click');
         expect(onPick).toHaveBeenCalled();
+        wrapper.detach();
+    });
+
+    test('a portal sheet closes when focus leaves it', () => {
+        setNarrow(true);
+        const outside = document.createElement('button');
+        document.body.appendChild(outside);
+        const wrapper = mount(
+            <Dropdown
+                portal
+                renderTrigger={({toggle}) => (<button
+                    type="button"
+                    onClick={toggle}
+                >{'More'}</button>)}
+            >
+                {() => <DropdownItem>{'Pick'}</DropdownItem>}
+            </Dropdown>,
+            {attachTo: host}
+        );
+        act(() => {
+            wrapper.find('button').first()
+                .simulate('click');
+        });
+        expect(document.querySelector('[role="menu"]').className).toContain('layered');
+        wrapper.update();
+        act(() => {
+            wrapper.find('[role="menu"]').simulate('blur', {relatedTarget: outside});
+        });
+        wrapper.update();
+        expect(document.querySelector('[role="menu"]')).toBeNull();
+        outside.remove();
         wrapper.detach();
     });
 });

@@ -10,7 +10,7 @@ const SHEET_QUERY = '(max-width: 620px)';
 const opensAsSheet = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' &&
     window.matchMedia(SHEET_QUERY).matches;
 
-const Dropdown = ({renderTrigger, children, align, className, menuClassName, width}) => {
+const Dropdown = ({renderTrigger, children, align, className, menuClassName, portal, width}) => {
     const [open, setOpen] = useState(false);
     const ref = useRef(null);
     const menuRef = useRef(null);
@@ -61,14 +61,24 @@ const Dropdown = ({renderTrigger, children, align, className, menuClassName, wid
         items[nextIndex].focus();
     };
 
-    const sheet = open && opensAsSheet();
+    const narrow = open && opensAsSheet();
+    const sheet = Boolean(portal && narrow);
+    const leaveSheet = event => {
+        const next = event.relatedTarget;
+        if (!next || (menuRef.current && menuRef.current.contains(next)) ||
+            (ref.current && ref.current.contains(next))) return;
+        close(false);
+    };
     const menu = open ? (
         <div
             ref={menuRef}
             role="menu"
-            className={classNames(align === 'left' ? styles.menuLeft : styles.menu, menuClassName)}
-            style={width ? {width} : null}
+            className={classNames(align === 'left' ? styles.menuLeft : styles.menu, menuClassName, {
+                [styles.layered]: sheet
+            })}
+            style={width && !narrow ? {width} : null}
             onKeyDown={handleMenuKeyDown}
+            onBlur={sheet ? leaveSheet : null}
         >
             {typeof children === 'function' ? children({close}) : children}
         </div>
@@ -90,6 +100,7 @@ Dropdown.propTypes = {
     children: PropTypes.oneOfType([PropTypes.func, PropTypes.node]).isRequired,
     className: PropTypes.string,
     menuClassName: PropTypes.string,
+    portal: PropTypes.bool,
     renderTrigger: PropTypes.func.isRequired,
     width: PropTypes.oneOfType([PropTypes.number, PropTypes.string])
 };
