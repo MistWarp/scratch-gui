@@ -3,6 +3,9 @@ import ReactDOM from 'react-dom';
 import * as identity from '../lib/rotur/identity.js';
 import {request, storeSession} from '../lib/community/api.js';
 import {callRotur} from '../lib/rotur/extension-bridge.js';
+import {ensureScopes, getRotur} from '../lib/rotur/client.js';
+import {signMessage} from '../lib/originchats/signing.js';
+import {createFrameChat} from '../lib/account/frame-chat.js';
 import {CHANNEL, PROMPT_LIFETIME} from '../lib/account/protocol.js';
 import {ACCOUNT_ORIGIN, isEditorOrigin} from '../lib/account/origins.js';
 import {
@@ -157,7 +160,8 @@ const startFrame = () => {
         callRotur,
         projectRotur: createProjectRotur({prompt, getUsername}),
         confirmSignOut: username => prompt('signout', {username}),
-        editorData: createEditorData()
+        editorData: createEditorData(),
+        chat: createFrameChat({ensureScopes, getRotur, signMessage})
     });
     const restored = Promise.race([
         Promise.resolve(identity.restore()).catch(() => null),
@@ -197,6 +201,42 @@ const startSignIn = async () => {
     }
 };
 
+const GRANTS = {
+    signing: ['signing:keys']
+};
+
+const startGrant = async name => {
+    applyThemeVisuals(detectTheme());
+    root.textContent = 'Checking your MistWarp account…';
+    const user = identity.getState().user || await identity.restore().catch(() => null);
+    if (!user) {
+        root.textContent = 'Sign in to MistWarp first, then try again from the editor.';
+        return;
+    }
+    if (await ensureScopes(GRANTS[name]).catch(() => false)) {
+        window.close();
+        return;
+    }
+    root.textContent = '';
+    let answered = false;
+    ReactDOM.render(React.createElement(FramePrompt, {
+        type: 'grant',
+        data: {username: user.username},
+        mode: 'window',
+        onAnswer: answer => {
+            if (answered) return;
+            answered = true;
+            if (answer !== true) {
+                window.close();
+                return;
+            }
+            ensureScopes(GRANTS[name], {prompt: true})
+                .catch(() => false)
+                .then(() => window.close());
+        }
+    }), root);
+};
+
 const startReview = id => {
     applyThemeVisuals(detectTheme());
     const opener = window.opener;
@@ -228,6 +268,8 @@ if (location.origin !== ACCOUNT_ORIGIN) {
     root.textContent = 'This page only works on the MistWarp site.';
 } else if (params.has('signin') && topLevel && window.opener) {
     startSignIn();
+} else if (Object.prototype.hasOwnProperty.call(GRANTS, params.get('grant') || '') && topLevel && window.opener) {
+    startGrant(params.get('grant'));
 } else if (/^[0-9a-f]{32}$/.test(params.get('review') || '') && topLevel && window.opener) {
     startReview(params.get('review'));
 } else if (topLevel) {

@@ -86,6 +86,11 @@ const setup = (user = {username: 'mist', id: 'u1', bio: 'hi', avatarUrl: 'x'}, {
             status: jest.fn(() => ({moved: false})),
             asset: jest.fn(async () => new Uint8Array([1, 2, 3]))
         },
+        chat: {
+            validator: jest.fn(async () => 'validator'),
+            signingStatus: jest.fn(async () => true),
+            sign: jest.fn(async () => ({signature: 'sig'}))
+        },
         projectRotur: {
             ensureConsent: jest.fn(async () => true),
             call: jest.fn(async () => 'result'),
@@ -401,4 +406,13 @@ test('editor data keeps binary data and only runs known actions', async () => {
         expect((await send('editorData', {action})).error.message).toBe('Unknown editor data request');
     }
     expect(deps.editorData.status).not.toHaveBeenCalled();
+});
+
+test('chat requests reach only the chat actions', async () => {
+    const {send, deps} = setup();
+    expect((await send('chat', {action: 'validator', key: 'k'})).result).toBe('validator');
+    expect(deps.chat.validator).toHaveBeenCalledWith({action: 'validator', key: 'k'});
+    for (const action of ['toString', '__proto__', 'constructor', 'generate', undefined]) {
+        expect((await send('chat', {action})).error.message).toBe('Unknown chat request');
+    }
 });

@@ -1,4 +1,6 @@
 import {ensureScopes, getRotur} from '../rotur/client.js';
+import {isSplitEditor} from '../account/origins.js';
+import * as accountBridge from '../account/bridge.js';
 import {SIGNING_CAPABILITY, requestSigningPermission, signMessage, signingStatus} from './signing.js';
 import {
     CHAT_INVITE,
@@ -534,6 +536,7 @@ const storeChannel = (key, name) => {
 };
 
 const requestValidator = async key => {
+    if (isSplitEditor()) return accountBridge.call('chat', {action: 'validator', key});
     await ensureScopes(['validators:generate']);
     const client = getRotur();
     if (!client.loggedIn) {

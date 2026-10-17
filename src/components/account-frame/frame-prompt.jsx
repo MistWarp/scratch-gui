@@ -94,6 +94,40 @@ class FramePrompt extends React.Component {
         );
     }
 
+    renderBody () {
+        if (this.props.type === 'signout') return this.renderSignOut();
+        if (this.props.type === 'grant') return this.renderGrant();
+        return null;
+    }
+
+    renderGrant () {
+        return (
+            <div className={modalStyles.body}>
+                <h2>{'Sign your chat messages?'}</h2>
+                <p>
+                    {'MistWarp registers a signing key for this browser with your Rotur account, ' +
+                        'so people can check that your chat messages really came from you.'}
+                </p>
+                <div className={modalStyles.buttons}>
+                    <button
+                        type="button"
+                        className={modalStyles.denyButton}
+                        onClick={this.handleDenied}
+                    >
+                        {'Not now'}
+                    </button>
+                    <button
+                        type="button"
+                        className={modalStyles.allowButton}
+                        onClick={this.handleAllowed}
+                    >
+                        {'Allow'}
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     renderReview () {
         return (
             <div className={modalStyles.body}>
@@ -147,7 +181,7 @@ class FramePrompt extends React.Component {
                             className={styles.fields}
                             disabled={!enabled}
                         >
-                            {this.props.type === 'signout' ? this.renderSignOut() : <RoturConsentBody
+                            {this.renderBody() || <RoturConsentBody
                                 type={this.props.type}
                                 data={this.props.data}
                                 onAllowed={this.handleAllowed}
@@ -166,7 +200,7 @@ class FramePrompt extends React.Component {
 }
 
 FramePrompt.propTypes = {
-    type: PropTypes.oneOf(['consent', 'confirm', 'share', 'signout']).isRequired,
+    type: PropTypes.oneOf(['consent', 'confirm', 'share', 'signout', 'grant']).isRequired,
     // eslint-disable-next-line react/forbid-prop-types
     data: PropTypes.object.isRequired,
     mode: PropTypes.oneOf(['inline', 'review', 'window']).isRequired,
