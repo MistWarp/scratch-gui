@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import React, {useState} from 'react';
 import {Import} from 'lucide-react';
+import {editorUrl} from '../api';
 import {track} from '../analytics';
 import {useCommunityIntl} from '../i18n.jsx';
 import styles from './ScratchImport.module.css';
@@ -23,7 +24,7 @@ const ScratchImport = ({source}) => {
             return;
         }
         track('scratch_import', {source});
-        window.location.href = `/editor#${id}`;
+        window.location.href = editorUrl({scratchProject: id});
     };
     return (
         <form className={styles.form} onSubmit={submit}>

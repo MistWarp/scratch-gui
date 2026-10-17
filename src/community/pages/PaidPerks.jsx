@@ -3,7 +3,7 @@ import React, {useEffect, useState} from 'react';
 import PropTypes from 'prop-types';
 import {BarChart3, Check, Coins, ExternalLink, FileSpreadsheet, Heart, History, Link2, Palette, Plus, RotateCcw, Server, Sparkles, Users, X} from 'lucide-react';
 import {Link} from 'react-router-dom';
-import api from '../api.js';
+import api, {editorUrl} from '../api.js';
 import {getCommunityLocale} from '../locale.js';
 import {formatBytes} from '../../lib/utils/bytes.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
@@ -146,7 +146,7 @@ const PaidPerks = () => {
             >
                 <p className={styles.freeNote}>
                     {communityText('You can create, share, and take part with a free account. Membership is an optional way to support MistWarp and get extra tools.')}{' '}
-                    <Link to="/editor">{communityText('Start creating for free')}</Link>
+                    <a href={editorUrl()}>{communityText('Start creating for free')}</a>
                 </p>
             </PageHeader>
 
@@ -200,7 +200,7 @@ const PaidPerks = () => {
                                     {plan.mistwarp.vanityProjectUrls ? <li><Link2 size={15} />{communityText('Custom project URLs')}</li> : null}
                                     {plan.tier !== 'Free' ? <li><Coins size={15} />{communityText('{fee}% project sales fee', {fee: plan.mistwarp.salesFeeBasisPoints / 100})}</li> : null}
                                 </ul>
-                                {plan.tier === 'Free' ? <Button as={Link} to="/editor"><Plus size={15} />{communityText('Start creating')}</Button> : (
+                                {plan.tier === 'Free' ? <Button as="a" href={editorUrl()}><Plus size={15} />{communityText('Start creating')}</Button> : (
                                     <Button as="a" href={data.roturMembershipUrl} target="_blank" rel="noopener noreferrer" variant={isFeatured ? 'primary' : 'secondary'}>
                                         <ExternalLink size={15} />{communityText('View {tier} on Rotur', {tier: plan.tier})}
                                     </Button>

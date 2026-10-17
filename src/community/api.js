@@ -11,10 +11,15 @@ import {
     friendlyError
 } from '../lib/community/api.js';
 import warpthemeApi from '../lib/warptheme-api.js';
+import {editorRoot} from '../lib/account/origins.js';
 
-const editorUrl = ({chat, clone, platformProject, projectJson, assets, starter, restore} = {}) => {
+const editorUrl = ({chat, clone, platformProject, scratchProject, projectJson, assets, starter, restore} = {}) => {
+    const root = editorRoot();
     if (platformProject) {
-        return `/editor#mw-${platformProject}`;
+        return `${root}#mw-${platformProject}`;
+    }
+    if (scratchProject) {
+        return `${root}#${scratchProject}`;
     }
     const params = new URLSearchParams();
     if (starter) params.set('starter', starter);
@@ -24,7 +29,7 @@ const editorUrl = ({chat, clone, platformProject, projectJson, assets, starter, 
     if (assets) params.set('mw_assets', assets);
     if (chat) params.set('chat', '1');
     const query = params.toString();
-    return `/editor${query ? `?${query}` : ''}`;
+    return `${root}${query ? `?${query}` : ''}`;
 };
 
 const readStored = key => {

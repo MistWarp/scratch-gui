@@ -7,9 +7,18 @@ const isSplitEditor = () => EDITOR_ORIGIN !== ACCOUNT_ORIGIN && currentOrigin() 
 
 const isEditorOrigin = origin => EDITOR_ORIGIN !== ACCOUNT_ORIGIN && origin === EDITOR_ORIGIN;
 
+const editorRoot = () => {
+    if (EDITOR_ORIGIN === ACCOUNT_ORIGIN) return '/editor';
+    const origin = currentOrigin();
+    if (origin === EDITOR_ORIGIN) return '/';
+    if (origin === ACCOUNT_ORIGIN) return `${EDITOR_ORIGIN}/`;
+    return '/editor';
+};
+
 export {
     ACCOUNT_ORIGIN,
     EDITOR_ORIGIN,
+    editorRoot,
     isSplitEditor,
     isEditorOrigin
 };

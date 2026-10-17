@@ -1,11 +1,15 @@
 import React, {useCallback} from 'react';
 import PropTypes from 'prop-types';
 import {FormattedMessage} from 'react-intl';
+import {isSplitEditor} from '../../lib/account/origins.js';
 import styles from './project-load-error.css';
 
 // A fresh editor with the default project, without the project that failed.
-const newProjectHref = () => (process.env.ROUTING_STYLE === 'wildcard' ?
-    `${process.env.ROOT || '/'}editor` : 'editor.html');
+const newProjectHref = () => {
+    if (process.env.ROUTING_STYLE !== 'wildcard') return 'editor.html';
+    const root = process.env.ROOT || '/';
+    return isSplitEditor() ? root : `${root}editor`;
+};
 
 export const unknownExtensionId = error => {
     const match = /^Unknown extension: (.+)$/.exec(String((error && error.message) || error || ''));

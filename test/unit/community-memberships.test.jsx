@@ -6,7 +6,11 @@ import api from '../../src/community/api.js';
 import {useUser} from '../../src/community/UserContext.jsx';
 import PaidPerks from '../../src/community/pages/PaidPerks.jsx';
 
-jest.mock('../../src/community/api.js', () => ({__esModule: true, default: {perks: jest.fn()}}));
+jest.mock('../../src/community/api.js', () => ({
+    __esModule: true,
+    default: {perks: jest.fn()},
+    editorUrl: () => 'https://editor.mistwarp.org/'
+}));
 jest.mock('../../src/community/UserContext.jsx', () => ({useUser: jest.fn()}));
 
 const plans = ['Free', 'Lite', 'Plus', 'Pro'].map((tier, index) => ({
@@ -60,7 +64,7 @@ test('shows actual plan entitlements and keeps checkout on Rotur without marking
         expect(cards.at(3).text()).toContain('Custom project URLs');
         expect(wrapper.find('a[href="https://rotur.dev/premium"]')).toHaveLength(3);
         expect(wrapper.text()).not.toContain('Your membership');
-        expect(wrapper.find('a[href="/editor"]').length).toBeGreaterThan(0);
+        expect(wrapper.find('a[href="https://editor.mistwarp.org/"]').length).toBeGreaterThan(0);
         wrapper.unmount();
     });
 
