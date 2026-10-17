@@ -546,8 +546,8 @@ export class TWGitModal extends React.Component {
         try {
             await this.waitForPollIdle();
             const cloneOpts = {url, onProgress: this.handleGitProgress};
-            if (isRoturGitUrl(url) && this.props.roturUsername && !isSplitEditor()) {
-                cloneOpts.onAuth = getRoturGitAuth;
+            if (isRoturGitUrl(url)) {
+                if (this.props.roturUsername && !isSplitEditor()) cloneOpts.onAuth = getRoturGitAuth;
             } else if (token) {
                 cloneOpts.onAuth = () => (username ?
                     {username, password: token} :

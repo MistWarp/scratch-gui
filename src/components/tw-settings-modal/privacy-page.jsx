@@ -72,28 +72,6 @@ class PrivacyPage extends React.Component {
                         id="mw.settingsModal.blockedProjectsHelp"
                     />
                 </p>
-                {isSplitEditor() ? (
-                    <p className={styles.detail}>
-                        <FormattedMessage
-                            defaultMessage="Projects you blocked from using your Rotur account, the Rotur permissions you gave projects, and your editing presence are in your {link}."
-                            id="mw.settingsModal.accountPermissions"
-                            values={{
-                                link: (
-                                    <a
-                                        href={`${ACCOUNT_ORIGIN}/settings?section=safety`}
-                                        rel="noopener noreferrer"
-                                        target="_blank"
-                                    >
-                                        <FormattedMessage
-                                            defaultMessage="MistWarp account settings"
-                                            id="mw.settingsModal.accountSettingsLink"
-                                        />
-                                    </a>
-                                )
-                            }}
-                        />
-                    </p>
-                ) : null}
                 {blocked.length ? (
                     <div className={styles.menuBarSettings}>
                         {blocked.map(([key, value]) => (
@@ -124,6 +102,50 @@ class PrivacyPage extends React.Component {
                         />
                     </p>
                 )}
+                {isSplitEditor() ? (
+                    <React.Fragment>
+                        <p className={styles.detail}>
+                            <FormattedMessage
+                                defaultMessage="Projects you blocked from using your Rotur account are listed in your account {link}."
+                                id="mw.settingsModal.accountPermissions"
+                                values={{
+                                    link: (
+                                        <a
+                                            href={`${ACCOUNT_ORIGIN}/settings?section=safety`}
+                                            rel="noopener noreferrer"
+                                            target="_blank"
+                                        >
+                                            <FormattedMessage
+                                                defaultMessage="Safety settings"
+                                                id="mw.settingsModal.accountSafetyLink"
+                                            />
+                                        </a>
+                                    )
+                                }}
+                            />
+                        </p>
+                        <p className={styles.detail}>
+                            <FormattedMessage
+                                defaultMessage="Your editing presence on Rotur, and which projects may show activity on your profile, are set in your account {link}."
+                                id="mw.settingsModal.accountPresence"
+                                values={{
+                                    link: (
+                                        <a
+                                            href={`${ACCOUNT_ORIGIN}/settings?section=presence`}
+                                            rel="noopener noreferrer"
+                                            target="_blank"
+                                        >
+                                            <FormattedMessage
+                                                defaultMessage="Presence settings"
+                                                id="mw.settingsModal.accountPresenceLink"
+                                            />
+                                        </a>
+                                    )
+                                }}
+                            />
+                        </p>
+                    </React.Fragment>
+                ) : null}
                 <PageHeader>
                     <FormattedMessage
                         defaultMessage="Usage data"

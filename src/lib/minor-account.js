@@ -43,6 +43,7 @@ const subscribeMinorAccount = listener => {
 };
 
 export {
+    STORAGE_KEY as MINOR_ACCOUNT_KEY,
     isMinorAccount,
     setMinorAccount,
     subscribeMinorAccount

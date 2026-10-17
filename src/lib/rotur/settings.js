@@ -164,6 +164,7 @@ const subscribeRoturSettings = handler => {
 };
 
 export {
+    STORAGE_KEY as ROTUR_SETTINGS_KEY,
     getRoturSettings,
     getRoturSettingsSnapshot,
     applyRoturSettingsSnapshot,
