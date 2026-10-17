@@ -2935,5 +2935,14 @@
   "Replying to a post": "Replying to a post",
   "Show this thread": "Show this thread",
   "{value1, plural, one {Reply, # reply} other {Reply, # replies}}": "{value1, plural, one {Reply, # reply} other {Reply, # replies}}",
-  "{actor} pounced on your post": "{actor} pounced on your post"
+  "{actor} pounced on your post": "{actor} pounced on your post",
+  "This post was deleted.": "This post was deleted.",
+  "This post is not available.": "This post is not available.",
+  "Could not load more replies.": "Could not load more replies.",
+  "Could not post your reply.": "Could not post your reply.",
+  "Replies": "Replies",
+  "Sort replies": "Sort replies",
+  "Most relevant": "Most relevant",
+  "{value1, plural, one {Show # more reply} other {Show # more replies}}": "{value1, plural, one {Show # more reply} other {Show # more replies}}",
+  "Show more replies": "Show more replies"
 }

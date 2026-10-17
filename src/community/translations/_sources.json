@@ -319,6 +319,7 @@
     "src/community/components/CommentThread.jsx:157",
     "src/community/components/CommentThread.jsx:158",
     "src/community/components/CommentThread.jsx:256",
+    "src/community/components/PostThread.jsx:160",
     "src/community/components/SocialPost.jsx:536"
   ],
   "Comment actions": [
@@ -370,7 +371,7 @@
     "src/community/components/CommentThread.jsx:256",
     "src/community/components/PostComposer.jsx:308",
     "src/community/pages/News.jsx:322",
-    "src/community/pages/Post.jsx:56"
+    "src/community/pages/Post.jsx:73"
   ],
   "Sign in to post": [
     "src/community/components/CommentThread.jsx:257"
@@ -1753,6 +1754,55 @@
   "Open For You settings on pounce": [
     "src/community/components/PostReasons.jsx:61"
   ],
+  "This post was deleted.": [
+    "src/community/components/PostThread.jsx:24"
+  ],
+  "This post is not available.": [
+    "src/community/components/PostThread.jsx:24"
+  ],
+  "Could not load more replies.": [
+    "src/community/components/PostThread.jsx:95",
+    "src/community/components/PostThread.jsx:140"
+  ],
+  "Could not post your reply.": [
+    "src/community/components/PostThread.jsx:124"
+  ],
+  "Replies": [
+    "src/community/components/PostThread.jsx:147"
+  ],
+  "Post your reply": [
+    "src/community/components/PostThread.jsx:152",
+    "src/community/components/PostThread.jsx:156",
+    "src/community/components/SocialPost.jsx:528"
+  ],
+  "Sign in to reply": [
+    "src/community/components/PostThread.jsx:163",
+    "src/community/components/SocialPost.jsx:538"
+  ],
+  "Sort replies": [
+    "src/community/components/PostThread.jsx:170"
+  ],
+  "Most relevant": [
+    "src/community/components/PostThread.jsx:176"
+  ],
+  "Latest": [
+    "src/community/components/PostThread.jsx:176",
+    "src/community/pages/admin/AnalyticsChart.jsx:61"
+  ],
+  "{value1, plural, one {Show # more reply} other {Show # more replies}}": [
+    "src/community/components/PostThread.jsx:203"
+  ],
+  "No replies yet": [
+    "src/community/components/PostThread.jsx:213",
+    "src/community/components/SocialPost.jsx:561"
+  ],
+  "Be the first to reply.": [
+    "src/community/components/PostThread.jsx:214",
+    "src/community/components/SocialPost.jsx:562"
+  ],
+  "Show more replies": [
+    "src/community/components/PostThread.jsx:219"
+  ],
   "Post to claw": [
     "src/community/components/PostToClawModal.jsx:34",
     "src/community/pages/project/ProjectHeader.jsx:181"
@@ -2672,18 +2722,6 @@
   ],
   "Block {value1}": [
     "src/community/components/SocialPost.jsx:515"
-  ],
-  "Post your reply": [
-    "src/community/components/SocialPost.jsx:528"
-  ],
-  "Sign in to reply": [
-    "src/community/components/SocialPost.jsx:538"
-  ],
-  "No replies yet": [
-    "src/community/components/SocialPost.jsx:561"
-  ],
-  "Be the first to reply.": [
-    "src/community/components/SocialPost.jsx:562"
   ],
   "No description yet.": [
     "src/community/components/SpaceCard.jsx:46",
@@ -5477,14 +5515,14 @@
   ],
   "Could not load this post.": [
     "src/community/pages/NewsPost.jsx:23",
-    "src/community/pages/Post.jsx:38"
+    "src/community/pages/Post.jsx:55"
   ],
   "All news": [
     "src/community/pages/NewsPost.jsx:32"
   ],
   "Loading post…": [
     "src/community/pages/NewsPost.jsx:34",
-    "src/community/pages/Post.jsx:58"
+    "src/community/pages/Post.jsx:75"
   ],
   "Page not found": [
     "src/community/pages/NotFound.jsx:12"
@@ -5679,13 +5717,13 @@
     "src/community/pages/PaidPerks.jsx:227"
   ],
   "Post not found.": [
-    "src/community/pages/Post.jsx:28"
+    "src/community/pages/Post.jsx:45"
   ],
   "Post by {value1}": [
-    "src/community/pages/Post.jsx:47"
+    "src/community/pages/Post.jsx:64"
   ],
   "Go back": [
-    "src/community/pages/Post.jsx:53"
+    "src/community/pages/Post.jsx:70"
   ],
   "This week": [
     "src/community/pages/Posts.jsx:20"
@@ -7369,9 +7407,6 @@
   ],
   "Super admin": [
     "src/community/pages/admin/AdminsSection.jsx:37"
-  ],
-  "Latest": [
-    "src/community/pages/admin/AnalyticsChart.jsx:61"
   ],
   "No data": [
     "src/community/pages/admin/AnalyticsChart.jsx:61"
