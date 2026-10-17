@@ -11,8 +11,8 @@
   "Sign in to continue": [
     "src/community/api-errors.js:31",
     "src/community/components/ui/EmptyState.jsx:36",
-    "src/community/rotur.js:54",
-    "src/community/rotur.js:147"
+    "src/community/rotur.js:59",
+    "src/community/rotur.js:148"
   ],
   "You don't have permission to do that.": [
     "src/community/api-errors.js:32"
@@ -29,6 +29,57 @@
   "Something went wrong.": [
     "src/community/api-errors.js:36",
     "src/community/components/ui/StatusMessage.jsx:24"
+  ],
+  "You follow {value1}": [
+    "src/community/claw-posts.js:68"
+  ],
+  "You and {value1} are friends": [
+    "src/community/claw-posts.js:69"
+  ],
+  "Pounced by {value1}": [
+    "src/community/claw-posts.js:74"
+  ],
+  "Pounced by people you follow": [
+    "src/community/claw-posts.js:75"
+  ],
+  "{value1} people you follow replied": [
+    "src/community/claw-posts.js:80"
+  ],
+  "Someone you follow replied": [
+    "src/community/claw-posts.js:81"
+  ],
+  "Made with {value1}": [
+    "src/community/claw-posts.js:84"
+  ],
+  "You use {value1}": [
+    "src/community/claw-posts.js:86"
+  ],
+  "From {value1}, a group you are in": [
+    "src/community/claw-posts.js:88"
+  ],
+  "{value1, plural, one {# reply so far} other {# replies so far}}": [
+    "src/community/claw-posts.js:92"
+  ],
+  "People are replying": [
+    "src/community/claw-posts.js:93"
+  ],
+  "Popular right now": [
+    "src/community/claw-posts.js:95"
+  ],
+  "New to claw": [
+    "src/community/claw-posts.js:96"
+  ],
+  "Posted recently": [
+    "src/community/claw-posts.js:97"
+  ],
+  "From this week": [
+    "src/community/claw-posts.js:98"
+  ],
+  "Promoted by {value1}": [
+    "src/community/claw-posts.js:100"
+  ],
+  "Promoted": [
+    "src/community/claw-posts.js:101"
   ],
   "Activity": [
     "src/community/components/ActivityCard.jsx:28",
@@ -160,8 +211,8 @@
     "src/community/components/CollectionSaveModal.jsx:166",
     "src/community/components/CommentThread.jsx:228",
     "src/community/components/ProjectInfoPanel.jsx:392",
-    "src/community/components/SocialPost.jsx:363",
-    "src/community/components/SocialPost.jsx:408",
+    "src/community/components/SocialPost.jsx:364",
+    "src/community/components/SocialPost.jsx:409",
     "src/community/pages/Challenge.jsx:465",
     "src/community/pages/ManageSpace.jsx:718"
   ],
@@ -190,7 +241,7 @@
   ],
   "Saved": [
     "src/community/components/CollectionSaveModal.jsx:168",
-    "src/community/components/SocialPost.jsx:408"
+    "src/community/components/SocialPost.jsx:409"
   ],
   "Save to a collection": [
     "src/community/components/CollectionSaveModal.jsx:192"
@@ -265,7 +316,7 @@
     "src/community/components/CommentThread.jsx:157",
     "src/community/components/CommentThread.jsx:158",
     "src/community/components/CommentThread.jsx:256",
-    "src/community/components/SocialPost.jsx:465"
+    "src/community/components/SocialPost.jsx:466"
   ],
   "Comment actions": [
     "src/community/components/CommentThread.jsx:170",
@@ -277,8 +328,8 @@
   ],
   "Unpin": [
     "src/community/components/CommentThread.jsx:192",
-    "src/community/components/SocialPost.jsx:328",
-    "src/community/components/SocialPost.jsx:418"
+    "src/community/components/SocialPost.jsx:329",
+    "src/community/components/SocialPost.jsx:419"
   ],
   "Pin to top": [
     "src/community/components/CommentThread.jsx:192"
@@ -301,7 +352,7 @@
     "src/community/components/ReportModal.jsx:108",
     "src/community/components/RoturConsentModal.jsx:70",
     "src/community/components/SocialPost.jsx:247",
-    "src/community/components/SocialPost.jsx:361",
+    "src/community/components/SocialPost.jsx:362",
     "src/community/components/ui/ConfirmModal.jsx:22",
     "src/community/pages/ManageProject.jsx:1128",
     "src/community/pages/ManageSpace.jsx:762",
@@ -2465,14 +2516,14 @@
   ],
   "Delete post": [
     "src/community/components/SocialPost.jsx:233",
-    "src/community/components/SocialPost.jsx:334"
+    "src/community/components/SocialPost.jsx:335"
   ],
   "This permanently deletes the post.": [
     "src/community/components/SocialPost.jsx:238"
   ],
   "Report reply": [
     "src/community/components/SocialPost.jsx:244",
-    "src/community/components/SocialPost.jsx:483"
+    "src/community/components/SocialPost.jsx:484"
   ],
   "Report post": [
     "src/community/components/SocialPost.jsx:244"
@@ -2493,24 +2544,24 @@
     "src/community/components/SocialPost.jsx:289"
   ],
   "Post actions": [
-    "src/community/components/SocialPost.jsx:295"
+    "src/community/components/SocialPost.jsx:296"
   ],
   "Copy link": [
-    "src/community/components/SocialPost.jsx:311",
-    "src/community/components/SocialPost.jsx:410",
+    "src/community/components/SocialPost.jsx:312",
+    "src/community/components/SocialPost.jsx:411",
     "src/community/pages/project/ProjectHeader.jsx:158"
   ],
   "Edit": [
-    "src/community/components/SocialPost.jsx:318",
-    "src/community/components/SocialPost.jsx:414"
+    "src/community/components/SocialPost.jsx:319",
+    "src/community/components/SocialPost.jsx:415"
   ],
   "Pin": [
-    "src/community/components/SocialPost.jsx:328",
-    "src/community/components/SocialPost.jsx:418"
+    "src/community/components/SocialPost.jsx:329",
+    "src/community/components/SocialPost.jsx:419"
   ],
   "Delete": [
-    "src/community/components/SocialPost.jsx:339",
-    "src/community/components/SocialPost.jsx:422",
+    "src/community/components/SocialPost.jsx:340",
+    "src/community/components/SocialPost.jsx:423",
     "src/community/pages/MyStuff.jsx:1570",
     "src/community/pages/Theme.jsx:228",
     "src/community/pages/admin/ErrorManager.jsx:249",
@@ -2519,53 +2570,53 @@
     "src/community/pages/project/ReviewPanel.jsx:186"
   ],
   "Report": [
-    "src/community/components/SocialPost.jsx:346",
-    "src/community/components/SocialPost.jsx:428",
+    "src/community/components/SocialPost.jsx:347",
+    "src/community/components/SocialPost.jsx:429",
     "src/community/pages/Bounty.jsx:149",
     "src/community/pages/Profile.jsx:904",
     "src/community/pages/project/ProjectHeader.jsx:260"
   ],
   "Posted from {value1}, {value2}": [
-    "src/community/components/SocialPost.jsx:384"
+    "src/community/components/SocialPost.jsx:385"
   ],
   "Posted from {value1}": [
-    "src/community/components/SocialPost.jsx:386"
+    "src/community/components/SocialPost.jsx:387"
   ],
   "Unlike post": [
-    "src/community/components/SocialPost.jsx:393"
+    "src/community/components/SocialPost.jsx:394"
   ],
   "Like post": [
-    "src/community/components/SocialPost.jsx:393"
+    "src/community/components/SocialPost.jsx:394"
   ],
   "Reposted to your profile.": [
-    "src/community/components/SocialPost.jsx:403"
+    "src/community/components/SocialPost.jsx:404"
   ],
   "Repost": [
-    "src/community/components/SocialPost.jsx:405"
+    "src/community/components/SocialPost.jsx:406"
   ],
   "Unblocked {value1}.": [
-    "src/community/components/SocialPost.jsx:437"
-  ],
-  "Blocked {value1}.": [
     "src/community/components/SocialPost.jsx:438"
   ],
-  "Unblock {value1}": [
-    "src/community/components/SocialPost.jsx:443"
+  "Blocked {value1}.": [
+    "src/community/components/SocialPost.jsx:439"
   ],
-  "Block {value1}": [
+  "Unblock {value1}": [
     "src/community/components/SocialPost.jsx:444"
   ],
+  "Block {value1}": [
+    "src/community/components/SocialPost.jsx:445"
+  ],
   "Post your reply": [
-    "src/community/components/SocialPost.jsx:457"
+    "src/community/components/SocialPost.jsx:458"
   ],
   "Sign in to reply": [
-    "src/community/components/SocialPost.jsx:467"
+    "src/community/components/SocialPost.jsx:468"
   ],
   "No replies yet": [
-    "src/community/components/SocialPost.jsx:490"
+    "src/community/components/SocialPost.jsx:491"
   ],
   "Be the first to reply.": [
-    "src/community/components/SocialPost.jsx:491"
+    "src/community/components/SocialPost.jsx:492"
   ],
   "No description yet.": [
     "src/community/components/SpaceCard.jsx:46",
@@ -8696,6 +8747,6 @@
     "src/community/pages/project/VersionControlPanel.jsx:25"
   ],
   "MistWarp needs your permission on Rotur to do this.": [
-    "src/community/rotur.js:47"
+    "src/community/rotur.js:52"
   ]
 }

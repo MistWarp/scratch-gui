@@ -2897,5 +2897,22 @@
   "Posts to your profile only": "Posts to your profile only",
   "Posts to everyone": "Posts to everyone",
   "Could not load this project. Try again later.": "Could not load this project. Try again later.",
-  "Only shared projects can be posted to claw. Share this project first.": "Only shared projects can be posted to claw. Share this project first."
+  "Only shared projects can be posted to claw. Share this project first.": "Only shared projects can be posted to claw. Share this project first.",
+  "You follow {value1}": "You follow {value1}",
+  "You and {value1} are friends": "You and {value1} are friends",
+  "Pounced by {value1}": "Pounced by {value1}",
+  "Pounced by people you follow": "Pounced by people you follow",
+  "{value1} people you follow replied": "{value1} people you follow replied",
+  "Someone you follow replied": "Someone you follow replied",
+  "Made with {value1}": "Made with {value1}",
+  "You use {value1}": "You use {value1}",
+  "From {value1}, a group you are in": "From {value1}, a group you are in",
+  "{value1, plural, one {# reply so far} other {# replies so far}}": "{value1, plural, one {# reply so far} other {# replies so far}}",
+  "People are replying": "People are replying",
+  "Popular right now": "Popular right now",
+  "New to claw": "New to claw",
+  "Posted recently": "Posted recently",
+  "From this week": "From this week",
+  "Promoted by {value1}": "Promoted by {value1}",
+  "Promoted": "Promoted"
 }
