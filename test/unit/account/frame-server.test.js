@@ -181,3 +181,15 @@ test('signing out when already signed out does not prompt', async () => {
     await send('signOut');
     expect(deps.confirmSignOut).not.toHaveBeenCalled();
 });
+
+test('a failed mint is not retried for ten seconds', async () => {
+    const {send, deps} = setup();
+    deps.createEditorSession.mockImplementation(async () => {
+        throw new Error('not authenticated');
+    });
+    for (let i = 0; i < 5; i++) expect((await send('editorSession')).error.message).toBe('not authenticated');
+    expect(deps.createEditorSession).toHaveBeenCalledTimes(1);
+    clock += 10000;
+    await send('editorSession');
+    expect(deps.createEditorSession).toHaveBeenCalledTimes(2);
+});

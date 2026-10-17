@@ -14,6 +14,7 @@ const validProject = project => project && typeof project === 'object' &&
 
 const TOKEN_REUSE_MARGIN = 300000;
 const RENEW_INTERVAL = 300000;
+const FAILED_MINT_WAIT = 10000;
 
 const signedInName = state => (state && state.user && state.user.username ? String(state.user.username) : '');
 
@@ -23,15 +24,24 @@ const createFrameServer = ({
     let session = null;
     let minting = null;
     let lastMint = -Infinity;
+    let lastFailure = null;
 
     const mint = username => {
+        if (!minting && lastFailure && now() - lastFailure.at < FAILED_MINT_WAIT) {
+            return Promise.reject(lastFailure.error);
+        }
         if (!minting) {
-            minting = Promise.resolve(createEditorSession())
+            minting = Promise.resolve()
+                .then(createEditorSession)
                 .then(result => {
                     lastMint = now();
+                    lastFailure = null;
                     const next = {token: String(result.token), expiresAt: Number(result.expiresAt), username};
                     if (signedInName(identity.getState()) === username) session = next;
                     return next;
+                }, error => {
+                    lastFailure = {at: now(), error};
+                    throw error;
                 })
                 .finally(() => {
                     minting = null;
