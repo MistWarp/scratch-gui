@@ -28,49 +28,73 @@ let pushChain = Promise.resolve();
 const USERNAME_OVERRIDE_KEY = 'tw:username-override';
 const DIRTY_KEY = 'tw:settings-dirty';
 
-const SECTIONS = ['theme', 'customThemes', 'rotur', 'menuBar', 'notificationPreferences', 'username'];
+const MENU_BAR_PARTS = ['order', 'hidden', 'accent', 'text', 'compactSave', 'features'];
+const SECTIONS = [
+    'theme',
+    'customThemes',
+    'rotur',
+    'menuBar',
+    'notificationPreferences',
+    'username',
+    ...MENU_BAR_PARTS.map(part => `menuBar.${part}`)
+];
 const ALL = 'all';
+
+let stampCount = 0;
+const newStamp = () => `${Date.now().toString(36)}.${Math.random().toString(36)
+    .slice(2)}.${stampCount++}`;
+
+const isObject = value => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
 const readDirty = () => {
     let raw = null;
     try {
         raw = localStorage.getItem(DIRTY_KEY);
     } catch (_) {
-        return [];
+        return {};
     }
-    if (raw === null) return [];
-    if (raw === '1') return ALL;
+    if (raw === null) return {};
+    let parsed = null;
     try {
-        const parsed = JSON.parse(raw);
-        if (parsed === ALL) return ALL;
-        return Array.isArray(parsed) ? parsed.filter(section => SECTIONS.includes(section)) : ALL;
+        parsed = JSON.parse(raw);
     } catch (_) {
-        return ALL;
+        parsed = null;
     }
+    if (!isObject(parsed)) return {[ALL]: raw};
+    const dirty = {};
+    for (const key of Object.keys(parsed)) {
+        if (key === ALL || SECTIONS.includes(key)) dirty[key] = String(parsed[key]);
+    }
+    return dirty;
 };
 
 const writeDirty = dirty => {
     try {
-        if (dirty === ALL || dirty.length) localStorage.setItem(DIRTY_KEY, JSON.stringify(dirty));
+        if (Object.keys(dirty).length) localStorage.setItem(DIRTY_KEY, JSON.stringify(dirty));
         else localStorage.removeItem(DIRTY_KEY);
     } catch (_) {
         // ignore
     }
 };
 
+const dirtySections = dirty => (Object.prototype.hasOwnProperty.call(dirty, ALL) ? ALL : Object.keys(dirty));
+
 const markDirty = section => {
-    const current = readDirty();
-    if (current === ALL || !SECTIONS.includes(section)) {
-        writeDirty(ALL);
-        return;
-    }
-    if (!current.includes(section)) writeDirty(current.concat(section));
+    const dirty = readDirty();
+    dirty[SECTIONS.includes(section) ? section : ALL] = newStamp();
+    writeDirty(dirty);
 };
 
-const isDirty = () => {
+const clearPushed = pushed => {
     const dirty = readDirty();
-    return dirty === ALL || dirty.length > 0;
+    for (const key of Object.keys(pushed)) {
+        if (dirty[key] === pushed[key]) delete dirty[key];
+    }
+    writeDirty(dirty);
+    return dirty;
 };
+
+const isDirty = () => Object.keys(readDirty()).length > 0;
 
 const getUsernameOverride = () => {
     try {
@@ -218,10 +242,10 @@ const emptySnapshot = snapshot => !snapshot || typeof snapshot !== 'object' || O
 
 const mergeSnapshot = (cloud, local, dirty) => {
     if (dirty === ALL || emptySnapshot(cloud)) return local;
-    const cloudSettings = cloud.settings && typeof cloud.settings === 'object' ? cloud.settings : {};
+    const cloudSettings = isObject(cloud.settings) ? cloud.settings : {};
     const merged = {
-        theme: typeof cloud.theme === 'undefined' ? null : cloud.theme,
-        customThemes: Array.isArray(cloud.customThemes) ? cloud.customThemes : [],
+        theme: typeof cloud.theme === 'undefined' ? local.theme : cloud.theme,
+        customThemes: Array.isArray(cloud.customThemes) ? cloud.customThemes : local.customThemes,
         settings: {...cloudSettings, version: 1, updatedAt: local.settings.updatedAt}
     };
     for (const section of dirty) {
@@ -230,6 +254,10 @@ const mergeSnapshot = (cloud, local, dirty) => {
         } else if (section === 'username') {
             if (local.settings.username) merged.settings.username = local.settings.username;
             else delete merged.settings.username;
+        } else if (section.startsWith('menuBar.')) {
+            const part = section.slice('menuBar.'.length);
+            const menuBar = isObject(merged.settings.menuBar) ? merged.settings.menuBar : {};
+            merged.settings.menuBar = {...menuBar, [part]: local.settings.menuBar[part]};
         } else {
             merged.settings[section] = local.settings[section];
         }
@@ -242,22 +270,35 @@ const cloudSnapshot = async () => {
     return response && response.settings;
 };
 
+const NOT_APPLIED = {ok: false, applied: false};
+
 const pushToCloud = () => {
-    if (suppressPush || !loadSession()) return Promise.resolve(false);
+    if (suppressPush || !loadSession()) return Promise.resolve(NOT_APPLIED);
     pushChain = pushChain.catch(() => null).then(async () => {
-        if (suppressPush || !loadSession()) return false;
-        const dirty = readDirty();
+        const session = loadSession();
+        if (suppressPush || !session) return NOT_APPLIED;
+        let pushed = readDirty();
         try {
-            const cloud = dirty === ALL ? null : await cloudSnapshot();
-            const merged = mergeSnapshot(cloud, collectLocalSnapshot(), dirty);
+            let cloud = null;
+            if (dirtySections(pushed) !== ALL) {
+                cloud = await cloudSnapshot();
+                pushed = readDirty();
+            }
+            const sections = dirtySections(pushed);
+            const seeding = emptySnapshot(cloud);
+            if (sections !== ALL && sections.length === 0 && !seeding) return {ok: true, applied: false};
+            const merged = mergeSnapshot(cloud, collectLocalSnapshot(), sections);
             await request('/me/settings', {method: 'PUT', body: merged});
-            writeDirty([]);
-            if (dirty !== ALL && !emptySnapshot(cloud)) applySnapshotLocally(merged);
-            return true;
+            const remaining = dirtySections(clearPushed(pushed));
+            if (sections === ALL || seeding || remaining === ALL || loadSession() !== session) {
+                return {ok: true, applied: false};
+            }
+            applySnapshotLocally(mergeSnapshot(merged, collectLocalSnapshot(), remaining));
+            return {ok: true, applied: true};
         } catch (e) {
             // eslint-disable-next-line no-console
             console.warn('[cloud-sync] Failed to save settings', e);
-            return false;
+            return NOT_APPLIED;
         }
     });
     return pushChain;
@@ -270,7 +311,7 @@ const pullFromCloud = async () => {
 
     let snapshot;
     try {
-        const response = await request('/me/settings');
+        const response = await request('/me/settings', {cache: false});
         snapshot = response.settings;
     } catch (e) {
         // eslint-disable-next-line no-console
@@ -285,8 +326,8 @@ const pullFromCloud = async () => {
     }
 
     if (isDirty()) {
-        await pushToCloud();
-        return {applied: false};
+        const result = await pushToCloud();
+        return {applied: Boolean(result && result.applied)};
     }
 
     applySnapshotLocally(snapshot);
@@ -342,7 +383,7 @@ const onRoturLogout = () => {
         clearTimeout(pushTimer);
         pushTimer = null;
     }
-    writeDirty([]);
+    writeDirty({});
     try {
         localStorage.removeItem(USERNAME_OVERRIDE_KEY);
     } catch (_) {

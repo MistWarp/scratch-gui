@@ -100,7 +100,7 @@ const setSetting = (id, value) => {
     const normalized = normalize(definition, value);
     try {
         localStorage.setItem(`${STORAGE_PREFIX}${id}`, String(normalized));
-        require('../rotur/cloud-sync.js').notifyLocalChange('menuBar');
+        require('../rotur/cloud-sync.js').notifyLocalChange('menuBar.features');
     } catch (_) {
         // ignore
     }
