@@ -12,10 +12,10 @@ import Avatar from '../components/Avatar.jsx';
 import Button from '../components/ui/Button.jsx';
 import SectionHeading from '../components/ui/SectionHeading.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
-import ProjectThumbnail from '../components/ProjectThumbnail.jsx';
+import GameCard from '../components/GameCard.jsx';
 import ScratchImport from '../components/ScratchImport.jsx';
 import {FeaturedGames, SuggestedCreators} from '../components/HomeDiscovery.jsx';
-import {ContinueProjects, DeviceBackup, Jams, StarterGallery} from '../components/HomeWorkspace.jsx';
+import {ContinueProjects, DeviceBackup, StarterGallery} from '../components/HomeWorkspace.jsx';
 import loadProjectPreview from '../project-preview.js';
 import {track} from '../analytics.js';
 import {useCommunityIntl} from '../i18n.jsx';
@@ -69,9 +69,8 @@ const FollowingGames = ({viewerName}) => {
                     .filter(item => item.type === 'share' && item.projectId && !seen.has(item.projectId) && seen.add(item.projectId))
                     .sort((left, right) => timestampMs(right.created) - timestampMs(left.created))
                     .slice(0, 4);
-                return Promise.all(shares.map(item => loadProjectPreview({id: item.projectId})
-                    .then(project => ({item, project}))))
-                    .then(games => ({following, games: games.filter(game => game.project)}));
+                return Promise.all(shares.map(item => loadProjectPreview({id: item.projectId})))
+                    .then(projects => ({following, games: projects.filter(Boolean)}));
             })
             .then(result => active && setState(result))
             .catch(() => active && setState({following: [], games: [], failed: true}));
@@ -93,6 +92,7 @@ const FollowingGames = ({viewerName}) => {
                 <SuggestedCreators
                     viewerName={viewerName}
                     limit={4}
+                    columns
                 />
             </section>
         );
@@ -105,52 +105,29 @@ const FollowingGames = ({viewerName}) => {
             <SectionHeading
                 id="home-following-games-heading"
                 title={communityText('New from people you follow')}
+                actions={<QuietLink to="/explore?sort=recent">{communityText('See new games')}</QuietLink>}
             />
-            {state === null ? <ListSkeleton /> : null}
+            {state === null ? (
+                <div className={styles.gameGrid}>
+                    {[0, 1, 2, 3].map(index => (<div
+                        key={index}
+                        className={styles.gameSkeleton}
+                    />))}
+                </div>
+            ) : null}
             {state && state.failed ? <StatusMessage compact>{communityText("Couldn't load activity.")}</StatusMessage> : null}
             {state && !state.failed && !state.games.length ? (
-                <p className={styles.empty}>
-                    {communityText('Nobody you follow has shared a game lately.')}
-                    {' '}
-                    <QuietLink to="/explore?sort=recent">{communityText('See new games')}</QuietLink>
-                </p>
+                <p className={styles.empty}>{communityText('Nobody you follow has shared a game lately.')}</p>
             ) : null}
             {state && state.games.length ? (
-                <ul className={styles.list}>
-                    {state.games.map(({item, project}) => (
-                        <li
+                <div className={styles.gameGrid}>
+                    {state.games.map(project => (
+                        <GameCard
                             key={project.id}
-                            className={styles.row}
-                        >
-                            <Link
-                                className={styles.rowThumb}
-                                to={projectUrl(project)}
-                                tabIndex={-1}
-                                aria-hidden="true"
-                            >
-                                <ProjectThumbnail
-                                    project={project}
-                                    fallbackClassName={styles.thumbFallback}
-                                    lazy
-                                />
-                            </Link>
-                            <div className={styles.rowText}>
-                                <h3><Link to={projectUrl(project)}>{project.title}</Link></h3>
-                                <p>
-                                    <Link to={`/users/${project.owner}`}>{project.owner}</Link>
-                                    <span aria-hidden="true">{' · '}</span>
-                                    {timeAgo(item.created)}
-                                </p>
-                            </div>
-                            <Button
-                                as={Link}
-                                size="small"
-                                to={projectUrl(project)}
-                                className={styles.rowAction}
-                            >{communityText('Play')}</Button>
-                        </li>
+                            project={project}
+                        />
                     ))}
-                </ul>
+                </div>
             ) : null}
         </section>
     );
@@ -351,7 +328,7 @@ const Intro = ({login}) => {
     return (
         <section className={styles.intro}>
             <h1>{communityText('Make games with blocks, and play what others make')}</h1>
-            <p>{communityText('MistWarp is a free block-based editor with a community of games, jams, and creators.')}</p>
+            <p>{communityText('MistWarp is a free block-based editor for making games and sharing them with everyone.')}</p>
             <div className={styles.actions}>
                 <Button
                     as="a"
@@ -392,13 +369,10 @@ const Home = () => {
             welcome={Boolean(user.isNew)}
         />,
         showStarters ? <StarterGallery key="starters" /> : null,
-        <div
-            key="happening"
-            className={styles.columns}
-        >
-            <Jams />
-            <FollowingGames viewerName={viewerName} />
-        </div>,
+        <FollowingGames
+            key="following"
+            viewerName={viewerName}
+        />,
         games,
         <div
             key="activity"
@@ -413,23 +387,6 @@ const Home = () => {
             login={login}
         /> : null,
         games,
-        <div
-            key="happening"
-            className={styles.columns}
-        >
-            <Jams />
-            <section
-                className={styles.panel}
-                aria-labelledby="home-creators-heading"
-            >
-                <SectionHeading
-                    id="home-creators-heading"
-                    title={communityText('Creators to follow')}
-                    actions={<QuietLink to="/leaderboard">{communityText('See all')}</QuietLink>}
-                />
-                <SuggestedCreators limit={4} />
-            </section>
-        </div>,
         signedOut ? (
             <StarterGallery key="starters">
                 <div className={styles.importRow}>

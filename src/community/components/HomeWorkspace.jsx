@@ -4,8 +4,8 @@ import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {HardDrive, Plus} from 'lucide-react';
-import api, {editorUrl, projectUrl} from '../api';
-import {formatDate, sameUser, timeAgo} from '../format';
+import api, {editorUrl} from '../api';
+import {sameUser, timeAgo} from '../format';
 import {STARTERS} from '../../lib/starter-projects';
 import {getLastEditedProject} from '../../lib/mw/recent-projects';
 import {MOVED_KEY} from '../../lib/account/frame-editor-data.js';
@@ -14,7 +14,6 @@ import Button from './ui/Button.jsx';
 import EmptyState from './ui/EmptyState.jsx';
 import SectionHeading from './ui/SectionHeading.jsx';
 import StatusMessage from './ui/StatusMessage.jsx';
-import {track} from '../analytics';
 import styles from './HomeWorkspace.module.css';
 
 const editorDataMoved = () => {
@@ -273,150 +272,4 @@ export const StarterGallery = ({children}) => {
 
 StarterGallery.propTypes = {
     children: PropTypes.node
-};
-
-export const runningChallenges = (spaces, now = Date.now()) => spaces
-    .filter(space => Number(space.startsAt) <= now && Number(space.endsAt) > now && !space.resultsPublishedAt)
-    .sort((a, b) => (Number(b.participantCount) || 0) - (Number(a.participantCount) || 0) || Number(a.endsAt) - Number(b.endsAt));
-
-export const selectActiveChallenge = (spaces, now = Date.now()) => runningChallenges(spaces, now)[0];
-
-export const WINNER_SHOWCASE_MS = 14 * 86400000;
-
-export const selectRecentWinner = (spaces, now = Date.now()) => spaces
-    .filter(space => space.winner && space.winner.id && Number(space.resultsPublishedAt) >= now - WINNER_SHOWCASE_MS)
-    .sort((a, b) => Number(b.resultsPublishedAt) - Number(a.resultsPublishedAt))[0];
-
-const JamRow = ({to, image, title, meta, action, onOpen}) => (
-    <li className={styles.row}>
-        <Link
-            className={styles.rowThumb}
-            to={to}
-            tabIndex={-1}
-            aria-hidden="true"
-            onClick={onOpen}
-        >
-            {image}
-        </Link>
-        <div className={styles.rowText}>
-            <h3><Link
-                to={to}
-                onClick={onOpen}
-            >{title}</Link></h3>
-            <p>{meta}</p>
-        </div>
-        <Button
-            as={Link}
-            size="small"
-            to={to}
-            className={styles.rowAction}
-            onClick={onOpen}
-        >{action}</Button>
-    </li>
-);
-
-JamRow.propTypes = {
-    action: PropTypes.node,
-    image: PropTypes.node,
-    meta: PropTypes.node,
-    onOpen: PropTypes.func,
-    title: PropTypes.node,
-    to: PropTypes.string
-};
-
-export const Jams = ({limit}) => {
-    const {text: communityText} = useCommunityText();
-    const [state, setState] = useState(null);
-    useEffect(() => {
-        let active = true;
-        const now = Date.now();
-        Promise.allSettled([
-            api.spaces({kind: 'challenge', limit: 100, endsAfter: now, startsBefore: now}),
-            api.spaces({kind: 'challenge', limit: 5, resultsAfter: now - WINNER_SHOWCASE_MS})
-        ]).then(([running, finished]) => {
-            if (!active) return;
-            setState({
-                running: running.status === 'fulfilled' ? runningChallenges(running.value.spaces || []).slice(0, limit) : [],
-                winner: finished.status === 'fulfilled' ? selectRecentWinner(finished.value.spaces || []) || null : null,
-                failed: running.status === 'rejected' && finished.status === 'rejected'
-            });
-        });
-        return () => {
-            active = false;
-        };
-    }, [limit]);
-    const open = () => track('challenge_open', {source: 'home'});
-    return (
-        <section
-            className={styles.panel}
-            aria-labelledby="home-jams-heading"
-        >
-            <SectionHeading
-                id="home-jams-heading"
-                title={communityText('Jams and challenges')}
-                actions={<Link
-                    className={styles.quietLink}
-                    to="/spaces?kind=challenge"
-                >{communityText('See all')}</Link>}
-            />
-            {state === null ? <div className={styles.listSkeleton} /> : null}
-            {state && state.failed ? <StatusMessage compact>{communityText("Couldn't load challenges.")}</StatusMessage> : null}
-            {state && !state.failed && !state.running.length && !state.winner ? (
-                <p className={styles.empty}>
-                    {communityText('No jams are running right now.')}
-                    {' '}
-                    <Link
-                        className={styles.quietLink}
-                        to="/spaces?kind=challenge"
-                    >{communityText('See past challenges')}</Link>
-                </p>
-            ) : null}
-            {state && (state.running.length || state.winner) ? (
-                <ul className={styles.list}>
-                    {state.running.map(space => {
-                        const joined = Number(space.participantCount) || 0;
-                        return (
-                            <JamRow
-                                key={space._id}
-                                to={`/spaces/${space._id}`}
-                                onOpen={open}
-                                image={space.thumbnailUrl ? <img
-                                    src={space.thumbnailUrl}
-                                    alt=""
-                                    loading="lazy"
-                                /> : <span className={styles.thumbFallback}>{(space.title || '?').slice(0, 1)}</span>}
-                                title={space.title}
-                                meta={joined === 1 ?
-                                    communityText('Ends {value1}, 1 creator has joined', {value1: formatDate(space.endsAt)}) :
-                                    communityText('Ends {value1}, {value2} creators have joined', {value1: formatDate(space.endsAt), value2: joined})}
-                                action={communityText('Enter')}
-                            />
-                        );
-                    })}
-                    {state.winner ? (
-                        <JamRow
-                            to={projectUrl(state.winner.winner)}
-                            onOpen={() => track('challenge_winner_open', {source: 'home'})}
-                            image={<ProjectThumbnail
-                                project={state.winner.winner}
-                                fallbackClassName={styles.thumbFallback}
-                                lazy
-                            />}
-                            title={state.winner.winner.title}
-                            meta={communityText('Won {value1}, by {value2}', {value1: state.winner.title, value2: state.winner.winner.owner})}
-                            action={communityText('Play')}
-                        />
-                    ) : null}
-                </ul>
-            ) : null}
-        </section>
-    );
-};
-
-Jams.propTypes = {
-    limit: PropTypes.number
-};
-
-Jams.defaultProps = {
-    limit: 3
 };

@@ -2974,5 +2974,14 @@
   "Show all {count}": "Show all {count}",
   "Hide people": "Hide people",
   "Show people": "Show people",
-  "Nothing here yet.": "Nothing here yet."
+  "Nothing here yet.": "Nothing here yet.",
+  "Play": "Play",
+  "Featured games": "Featured games",
+  "Browse all games": "Browse all games",
+  "Couldn't load games.": "Couldn't load games.",
+  "New from people you follow": "New from people you follow",
+  "See new games": "See new games",
+  "Nobody you follow has shared a game lately.": "Nobody you follow has shared a game lately.",
+  "Make games with blocks, and play what others make": "Make games with blocks, and play what others make",
+  "MistWarp is a free block-based editor for making games and sharing them with everyone.": "MistWarp is a free block-based editor for making games and sharing them with everyone."
 }

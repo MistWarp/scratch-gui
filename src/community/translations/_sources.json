@@ -145,8 +145,7 @@
   ],
   "All challenges": [
     "src/community/components/ChallengeCalendar.jsx:144",
-    "src/community/pages/Challenge.jsx:720",
-    "src/community/pages/Home.jsx:394"
+    "src/community/pages/Challenge.jsx:720"
   ],
   "{value1}, {value2} to {value3}": [
     "src/community/components/ChallengeCalendar.jsx:155"
@@ -275,7 +274,7 @@
     "src/community/pages/News.jsx:299",
     "src/community/pages/Theme.jsx:225",
     "src/community/pages/Theme.jsx:258",
-    "src/community/pages/project/ProjectStage.jsx:96",
+    "src/community/pages/project/ProjectStage.jsx:95",
     "src/community/pages/project/ReviewPanel.jsx:172"
   ],
   "Saved": [
@@ -498,6 +497,7 @@
   ],
   "Loading…": [
     "src/community/components/CommentThread.jsx:1042",
+    "src/community/components/HomeDiscovery.jsx:189",
     "src/community/components/MyStuffLibrary.jsx:121",
     "src/community/components/PlaytimeLibrary.jsx:92",
     "src/community/components/SpaceProjectPicker.jsx:252",
@@ -684,14 +684,13 @@
   ],
   "Nothing to show": [
     "src/community/components/DiffView.jsx:647",
-    "src/community/pages/Home.jsx:253",
     "src/community/pages/Notifications.jsx:737"
   ],
   "Explore": [
     "src/community/components/ExploreHeader.jsx:17",
     "src/community/components/Footer.jsx:38",
-    "src/community/components/NavBar.jsx:626",
-    "src/community/components/NavBar.jsx:626"
+    "src/community/components/NavBar.jsx:625",
+    "src/community/components/NavBar.jsx:625"
   ],
   "Projects": [
     "src/community/components/ExploreNav.jsx:9",
@@ -699,7 +698,6 @@
     "src/community/pages/Admin.jsx:38",
     "src/community/pages/Collection.jsx:38",
     "src/community/pages/Group.jsx:175",
-    "src/community/pages/Home.jsx:332",
     "src/community/pages/ManageSpace.jsx:28",
     "src/community/pages/ManageSpace.jsx:770",
     "src/community/pages/Notifications.jsx:102",
@@ -733,7 +731,6 @@
     "src/community/components/Footer.jsx:40",
     "src/community/components/MyStuffSpaces.jsx:79",
     "src/community/pages/Group.jsx:177",
-    "src/community/pages/Home.jsx:391",
     "src/community/pages/Spaces.jsx:22"
   ],
   "Collections": [
@@ -776,15 +773,16 @@
     "src/community/pages/MyStuff.jsx:1500"
   ],
   "Play {value1}": [
-    "src/community/components/FeaturedProject.jsx:90"
+    "src/community/components/FeaturedProject.jsx:89",
+    "src/community/components/HomeDiscovery.jsx:172"
   ],
   "Loading project…": [
-    "src/community/components/FeaturedProject.jsx:103",
+    "src/community/components/FeaturedProject.jsx:102",
     "src/community/pages/Bounties.jsx:115",
     "src/community/pages/project/ProjectStage.jsx:54"
   ],
   "Play project": [
-    "src/community/components/FeaturedProject.jsx:103"
+    "src/community/components/FeaturedProject.jsx:102"
   ],
   "Filter files": [
     "src/community/components/FileBrowserTree.jsx:118"
@@ -810,8 +808,8 @@
   ],
   "Create": [
     "src/community/components/Footer.jsx:32",
-    "src/community/components/NavBar.jsx:629",
-    "src/community/components/NavBar.jsx:629",
+    "src/community/components/NavBar.jsx:628",
+    "src/community/components/NavBar.jsx:628",
     "src/community/pages/Spaces.jsx:300"
   ],
   "Editor": [
@@ -824,8 +822,8 @@
     "src/community/components/Footer.jsx:34",
     "src/community/components/NavBar.jsx:564",
     "src/community/components/NavBar.jsx:565",
-    "src/community/components/NavBar.jsx:645",
-    "src/community/components/NavBar.jsx:645",
+    "src/community/components/NavBar.jsx:644",
+    "src/community/components/NavBar.jsx:644",
     "src/community/pages/ManageProject.jsx:476",
     "src/community/pages/MyStuff.jsx:1217"
   ],
@@ -840,8 +838,6 @@
   ],
   "News": [
     "src/community/components/Footer.jsx:43",
-    "src/community/pages/Home.jsx:76",
-    "src/community/pages/Home.jsx:375",
     "src/community/pages/News.jsx:166"
   ],
   "Stats": [
@@ -849,8 +845,6 @@
   ],
   "Roadmap": [
     "src/community/components/Footer.jsx:45",
-    "src/community/pages/Home.jsx:174",
-    "src/community/pages/Home.jsx:383",
     "src/community/pages/Roadmap.jsx:478"
   ],
   "Compare with Scratch": [
@@ -913,6 +907,16 @@
   ],
   "Version": [
     "src/community/components/Footer.jsx:89"
+  ],
+  "{value1, plural, one {# love} other {# loves}}": [
+    "src/community/components/GameCard.jsx:43",
+    "src/community/components/PostProjectCard.jsx:80",
+    "src/community/components/ProjectCard.jsx:56"
+  ],
+  "{value1, plural, one {# view} other {# views}}": [
+    "src/community/components/GameCard.jsx:50",
+    "src/community/components/PostProjectCard.jsx:86",
+    "src/community/components/ProjectCard.jsx:63"
   ],
   "Could not load this game shop.": [
     "src/community/components/GameMarketplaceModal.jsx:119"
@@ -1003,133 +1007,96 @@
   "Restore this version": [
     "src/community/components/GitGraph.jsx:129"
   ],
-  "Creators to follow": [
-    "src/community/components/HomeDiscovery.jsx:54"
-  ],
-  "See all": [
-    "src/community/components/HomeDiscovery.jsx:56",
-    "src/community/components/ui/SectionHeading.jsx:21",
-    "src/community/pages/Home.jsx:247",
-    "src/community/pages/Home.jsx:488"
-  ],
   "{value1} projects, {value2} hearts": [
-    "src/community/components/HomeDiscovery.jsx:65"
+    "src/community/components/HomeDiscovery.jsx:70"
   ],
   "Following": [
-    "src/community/components/HomeDiscovery.jsx:76",
+    "src/community/components/HomeDiscovery.jsx:82",
     "src/community/pages/Collection.jsx:76",
-    "src/community/pages/Home.jsx:310",
     "src/community/pages/Profile.jsx:825",
     "src/community/pages/Space.jsx:247",
     "src/community/pages/Studio.jsx:120",
     "src/community/pages/admin/UserDetailCard.jsx:468"
   ],
   "Follow": [
-    "src/community/components/HomeDiscovery.jsx:76",
+    "src/community/components/HomeDiscovery.jsx:82",
     "src/community/pages/Collection.jsx:76",
     "src/community/pages/Profile.jsx:825",
     "src/community/pages/Space.jsx:247"
   ],
+  "Play": [
+    "src/community/components/HomeDiscovery.jsx:189"
+  ],
   "Featured today": [
-    "src/community/components/HomeDiscovery.jsx:105"
+    "src/community/components/HomeDiscovery.jsx:198"
+  ],
+  "Featured games": [
+    "src/community/components/HomeDiscovery.jsx:247"
+  ],
+  "Browse all games": [
+    "src/community/components/HomeDiscovery.jsx:251"
+  ],
+  "Couldn't load games.": [
+    "src/community/components/HomeDiscovery.jsx:258"
+  ],
+  "{value1}, {value2}, on this browser only": [
+    "src/community/components/HomeWorkspace.jsx:50"
+  ],
+  "Open backup": [
+    "src/community/components/HomeWorkspace.jsx:56"
+  ],
+  "Shared, saved {value1}": [
+    "src/community/components/HomeWorkspace.jsx:84"
+  ],
+  "Draft, saved {value1}": [
+    "src/community/components/HomeWorkspace.jsx:85"
+  ],
+  "Open": [
+    "src/community/components/HomeWorkspace.jsx:93",
+    "src/community/components/HomeWorkspace.jsx:263",
+    "src/community/pages/ManageProject.jsx:841",
+    "src/community/pages/PullRequest.jsx:497",
+    "src/community/pages/admin/ErrorManager.jsx:206",
+    "src/community/pages/admin/UserDetailCard.jsx:66"
+  ],
+  "Welcome to MistWarp, {value1}": [
+    "src/community/components/HomeWorkspace.jsx:153"
   ],
   "Continue editing": [
-    "src/community/components/HomeWorkspace.jsx:65",
-    "src/community/components/HomeWorkspace.jsx:68",
-    "src/community/components/HomeWorkspace.jsx:99"
+    "src/community/components/HomeWorkspace.jsx:153"
   ],
   "All your projects": [
-    "src/community/components/HomeWorkspace.jsx:71"
+    "src/community/components/HomeWorkspace.jsx:160"
   ],
-  "Loading your projects…": [
-    "src/community/components/HomeWorkspace.jsx:75",
-    "src/community/components/SpaceProjectPicker.jsx:210"
+  "New project": [
+    "src/community/components/HomeWorkspace.jsx:171",
+    "src/community/pages/MyStuff.jsx:1235",
+    "src/community/pages/MyStuff.jsx:1568"
   ],
   "Could not load your projects.": [
-    "src/community/components/HomeWorkspace.jsx:77",
+    "src/community/components/HomeWorkspace.jsx:189",
     "src/community/components/SpaceProjectPicker.jsx:81",
     "src/community/pages/MyStuff.jsx:1409"
   ],
   "Your first project starts here": [
-    "src/community/components/HomeWorkspace.jsx:80"
+    "src/community/components/HomeWorkspace.jsx:194"
+  ],
+  "Start creating": [
+    "src/community/components/HomeWorkspace.jsx:199",
+    "src/community/pages/Home.jsx:343",
+    "src/community/pages/PaidPerks.jsx:230"
   ],
   "Try a starter below. Save it to MistWarp and continue here next time.": [
-    "src/community/components/HomeWorkspace.jsx:81"
-  ],
-  "Shared, saved {value1}": [
-    "src/community/components/HomeWorkspace.jsx:94"
-  ],
-  "Draft, saved {value1}": [
-    "src/community/components/HomeWorkspace.jsx:95"
-  ],
-  "Device backup available": [
-    "src/community/components/HomeWorkspace.jsx:139"
-  ],
-  "Open backup": [
-    "src/community/components/HomeWorkspace.jsx:142"
-  ],
-  "{value1}, {value2}, on this browser only": [
-    "src/community/components/HomeWorkspace.jsx:146"
+    "src/community/components/HomeWorkspace.jsx:201"
   ],
   "Starter projects": [
-    "src/community/components/HomeWorkspace.jsx:160"
+    "src/community/components/HomeWorkspace.jsx:235"
   ],
   "Run a project, change one thing, and save your own version. No sign-in needed to try.": [
-    "src/community/components/HomeWorkspace.jsx:161"
+    "src/community/components/HomeWorkspace.jsx:236"
   ],
   "Start a blank project": [
-    "src/community/components/HomeWorkspace.jsx:164"
-  ],
-  "Try this starter": [
-    "src/community/components/HomeWorkspace.jsx:182"
-  ],
-  "Theme: {value1}.": [
-    "src/community/components/HomeWorkspace.jsx:215"
-  ],
-  "Submissions close {value1}.": [
-    "src/community/components/HomeWorkspace.jsx:216"
-  ],
-  "1 creator has joined.": [
-    "src/community/components/HomeWorkspace.jsx:217"
-  ],
-  "{value1} creators have joined.": [
-    "src/community/components/HomeWorkspace.jsx:217"
-  ],
-  "View challenge and enter": [
-    "src/community/components/HomeWorkspace.jsx:227"
-  ],
-  "Challenge winner": [
-    "src/community/components/HomeWorkspace.jsx:245",
-    "src/community/pages/Challenge.jsx:209"
-  ],
-  "Winner of {value1}": [
-    "src/community/components/HomeWorkspace.jsx:255"
-  ],
-  "by {user}": [
-    "src/community/components/HomeWorkspace.jsx:256",
-    "src/community/components/MyStuffLibrary.jsx:56",
-    "src/community/components/NavBar.jsx:48",
-    "src/community/components/PlaytimeLibrary.jsx:75",
-    "src/community/components/ProjectCard.jsx:43",
-    "src/community/components/SpaceCard.jsx:49",
-    "src/community/components/SpaceProjectPicker.jsx:233",
-    "src/community/components/ThemeCard.jsx:28",
-    "src/community/pages/Challenge.jsx:435",
-    "src/community/pages/Challenge.jsx:559",
-    "src/community/pages/Challenge.jsx:574",
-    "src/community/pages/ManageSpace.jsx:775",
-    "src/community/pages/Profile.jsx:577"
-  ],
-  "Play the winner": [
-    "src/community/components/HomeWorkspace.jsx:259",
-    "src/community/pages/Challenge.jsx:230"
-  ],
-  "See the results": [
-    "src/community/components/HomeWorkspace.jsx:260"
-  ],
-  "Replay the celebration": [
-    "src/community/components/HomeWorkspace.jsx:261",
-    "src/community/pages/Challenge.jsx:231"
+    "src/community/components/HomeWorkspace.jsx:242"
   ],
   "Chat with the community on MistWarp's own chat.": [
     "src/community/components/JoinCommunityModal.jsx:27"
@@ -1259,7 +1226,7 @@
   ],
   "Not played yet": [
     "src/community/components/MyStuffLibrary.jsx:20",
-    "src/community/pages/project/ProjectStage.jsx:121"
+    "src/community/pages/project/ProjectStage.jsx:120"
   ],
   "{duration} played": [
     "src/community/components/MyStuffLibrary.jsx:21",
@@ -1274,6 +1241,20 @@
   ],
   "Could not load your library.": [
     "src/community/components/MyStuffLibrary.jsx:40"
+  ],
+  "by {user}": [
+    "src/community/components/MyStuffLibrary.jsx:56",
+    "src/community/components/NavBar.jsx:48",
+    "src/community/components/PlaytimeLibrary.jsx:75",
+    "src/community/components/ProjectCard.jsx:43",
+    "src/community/components/SpaceCard.jsx:49",
+    "src/community/components/SpaceProjectPicker.jsx:233",
+    "src/community/components/ThemeCard.jsx:28",
+    "src/community/pages/Challenge.jsx:435",
+    "src/community/pages/Challenge.jsx:559",
+    "src/community/pages/Challenge.jsx:574",
+    "src/community/pages/ManageSpace.jsx:775",
+    "src/community/pages/Profile.jsx:577"
   ],
   "Hidden": [
     "src/community/components/MyStuffLibrary.jsx:68",
@@ -1497,49 +1478,49 @@
   ],
   "nav.search": [
     "src/community/components/NavBar.jsx:535",
-    "src/community/components/NavBar.jsx:619"
+    "src/community/components/NavBar.jsx:618"
   ],
   "Notifications": [
     "src/community/components/NavBar.jsx:553",
     "src/community/components/NavBar.jsx:554",
+    "src/community/components/NavBar.jsx:635",
     "src/community/components/NavBar.jsx:636",
-    "src/community/components/NavBar.jsx:637",
-    "src/community/pages/Home.jsx:316",
+    "src/community/pages/Home.jsx:268",
     "src/community/pages/Notifications.jsx:758",
     "src/community/pages/Settings.jsx:105",
     "src/community/pages/Settings.jsx:667"
   ],
   "Notifications ({value1} unread)": [
     "src/community/components/NavBar.jsx:554",
-    "src/community/components/NavBar.jsx:636"
+    "src/community/components/NavBar.jsx:635"
   ],
   "Signing in…": [
-    "src/community/components/NavBar.jsx:588"
+    "src/community/components/NavBar.jsx:587"
   ],
   "Signing in": [
-    "src/community/components/NavBar.jsx:589",
-    "src/community/components/NavBar.jsx:649",
-    "src/community/components/NavBar.jsx:649"
+    "src/community/components/NavBar.jsx:588",
+    "src/community/components/NavBar.jsx:648",
+    "src/community/components/NavBar.jsx:648"
   ],
   "Sign in": [
-    "src/community/components/NavBar.jsx:589",
-    "src/community/components/NavBar.jsx:592",
-    "src/community/components/NavBar.jsx:649",
-    "src/community/components/NavBar.jsx:649",
-    "src/community/pages/Home.jsx:435"
+    "src/community/components/NavBar.jsx:588",
+    "src/community/components/NavBar.jsx:591",
+    "src/community/components/NavBar.jsx:648",
+    "src/community/components/NavBar.jsx:648",
+    "src/community/pages/Home.jsx:345"
   ],
   "Search": [
-    "src/community/components/NavBar.jsx:618",
+    "src/community/components/NavBar.jsx:617",
     "src/community/components/SpaceProjectPicker.jsx:187",
     "src/community/components/SpaceProjectPicker.jsx:205",
     "src/community/pages/admin/ProjectManager.jsx:126"
   ],
   "Mobile navigation": [
-    "src/community/components/NavBar.jsx:622"
+    "src/community/components/NavBar.jsx:621"
   ],
   "Home": [
-    "src/community/components/NavBar.jsx:623",
-    "src/community/components/NavBar.jsx:623"
+    "src/community/components/NavBar.jsx:622",
+    "src/community/components/NavBar.jsx:622"
   ],
   "Could not delete update.": [
     "src/community/components/NewsItem.jsx:74"
@@ -1773,14 +1754,6 @@
     "src/community/components/PostProjectCard.jsx:69",
     "src/community/components/PostProjectCard.jsx:96"
   ],
-  "{value1, plural, one {# love} other {# loves}}": [
-    "src/community/components/PostProjectCard.jsx:80",
-    "src/community/components/ProjectCard.jsx:56"
-  ],
-  "{value1, plural, one {# view} other {# views}}": [
-    "src/community/components/PostProjectCard.jsx:86",
-    "src/community/components/ProjectCard.jsx:63"
-  ],
   "Why am I seeing this post?": [
     "src/community/components/PostReasons.jsx:57"
   ],
@@ -1854,7 +1827,7 @@
   ],
   "View post": [
     "src/community/components/PostToClawModal.jsx:42",
-    "src/community/pages/Home.jsx:141"
+    "src/community/pages/Home.jsx:221"
   ],
   "Your post about {value1} is on claw.": [
     "src/community/components/PostToClawModal.jsx:51"
@@ -2111,7 +2084,6 @@
     "src/community/components/SpaceCard.jsx:37",
     "src/community/components/ThemeCard.jsx:20",
     "src/community/pages/Challenge.jsx:430",
-    "src/community/pages/Home.jsx:183",
     "src/community/pages/ManageProject.jsx:603",
     "src/community/pages/Profile.jsx:568"
   ],
@@ -2258,8 +2230,7 @@
   "Looking for feedback": [
     "src/community/components/ProjectInfoPanel.jsx:143",
     "src/community/components/ProjectInfoPanel.jsx:146",
-    "src/community/pages/Explore.jsx:29",
-    "src/community/pages/Home.jsx:350"
+    "src/community/pages/Explore.jsx:29"
   ],
   "Shared projects with this option appear in Looking for feedback. Add a specific question to Creator notes, such as \"Is the first level too difficult?\"": [
     "src/community/components/ProjectInfoPanel.jsx:144"
@@ -2606,7 +2577,6 @@
   ],
   "No shared projects yet": [
     "src/community/components/SharedProjects.jsx:98",
-    "src/community/pages/Home.jsx:568",
     "src/community/pages/Random.jsx:51"
   ],
   "Projects will appear here when someone adds you to their team.": [
@@ -2796,6 +2766,9 @@
   "Search by title, creator, or tag": [
     "src/community/components/SpaceProjectPicker.jsx:203"
   ],
+  "Loading your projects…": [
+    "src/community/components/SpaceProjectPicker.jsx:210"
+  ],
   "No results yet": [
     "src/community/components/SpaceProjectPicker.jsx:216"
   ],
@@ -2964,6 +2937,12 @@
   "Back": [
     "src/community/components/ui/PageHeader.jsx:17"
   ],
+  "See all": [
+    "src/community/components/ui/SectionHeading.jsx:21",
+    "src/community/pages/Home.jsx:90",
+    "src/community/pages/Home.jsx:188",
+    "src/community/pages/Home.jsx:269"
+  ],
   "In review": [
     "src/community/development.js:6"
   ],
@@ -3053,7 +3032,7 @@
   ],
   "{actor} loved {project}": [
     "src/community/notification-text.jsx:192",
-    "src/community/pages/Home.jsx:46"
+    "src/community/pages/Home.jsx:34"
   ],
   "{actor} loved your project": [
     "src/community/notification-text.jsx:193"
@@ -3108,7 +3087,7 @@
   ],
   "{actor} remixed {project}": [
     "src/community/notification-text.jsx:229",
-    "src/community/pages/Home.jsx:49"
+    "src/community/pages/Home.jsx:37"
   ],
   "{actor} remixed your project": [
     "src/community/notification-text.jsx:230"
@@ -3260,7 +3239,7 @@
   ],
   "{actor} rated {project} {rating} out of 5": [
     "src/community/notification-text.jsx:308",
-    "src/community/pages/Home.jsx:50"
+    "src/community/pages/Home.jsx:38"
   ],
   "{actor} rated your project {rating} out of 5": [
     "src/community/notification-text.jsx:309"
@@ -3724,6 +3703,9 @@
     "src/community/pages/Challenge.jsx:200",
     "src/community/pages/Challenge.jsx:539"
   ],
+  "Challenge winner": [
+    "src/community/pages/Challenge.jsx:209"
+  ],
   "Winning entry by {user}": [
     "src/community/pages/Challenge.jsx:219"
   ],
@@ -3732,6 +3714,12 @@
   ],
   "Scored {value1} out of 10 by the judges": [
     "src/community/pages/Challenge.jsx:228"
+  ],
+  "Play the winner": [
+    "src/community/pages/Challenge.jsx:230"
+  ],
+  "Replay the celebration": [
+    "src/community/pages/Challenge.jsx:231"
   ],
   "Could not save your rating.": [
     "src/community/pages/Challenge.jsx:271"
@@ -4150,7 +4138,6 @@
   ],
   "Trending": [
     "src/community/pages/Explore.jsx:20",
-    "src/community/pages/Home.jsx:336",
     "src/community/pages/Search.jsx:28"
   ],
   "Recent": [
@@ -4349,145 +4336,61 @@
     "src/community/pages/Groups.jsx:106"
   ],
   "{actor} favorited {project}": [
-    "src/community/pages/Home.jsx:47"
+    "src/community/pages/Home.jsx:35"
   ],
   "{actor} shared {project}": [
-    "src/community/pages/Home.jsx:48"
+    "src/community/pages/Home.jsx:36"
   ],
   "{actor} posted an update": [
-    "src/community/pages/Home.jsx:51"
+    "src/community/pages/Home.jsx:39"
   ],
-  "All updates": [
-    "src/community/pages/Home.jsx:76",
-    "src/community/pages/Home.jsx:378"
+  "Creators to follow": [
+    "src/community/pages/Home.jsx:89"
   ],
-  "Couldn't load news.": [
-    "src/community/pages/Home.jsx:78",
-    "src/community/pages/News.jsx:306"
+  "New from people you follow": [
+    "src/community/pages/Home.jsx:107"
   ],
-  "No updates yet": [
-    "src/community/pages/Home.jsx:79",
-    "src/community/pages/News.jsx:384"
-  ],
-  "News from MistWarp will show up here.": [
-    "src/community/pages/Home.jsx:79"
-  ],
-  "From people you follow": [
-    "src/community/pages/Home.jsx:119"
-  ],
-  "Sign in to see projects, reviews, and activity from people you follow.": [
-    "src/community/pages/Home.jsx:120"
+  "See new games": [
+    "src/community/pages/Home.jsx:108"
   ],
   "Couldn't load activity.": [
-    "src/community/pages/Home.jsx:122",
+    "src/community/pages/Home.jsx:118",
+    "src/community/pages/Home.jsx:195",
     "src/community/pages/Notifications.jsx:771"
   ],
-  "No recent activity yet": [
-    "src/community/pages/Home.jsx:123"
+  "Nobody you follow has shared a game lately.": [
+    "src/community/pages/Home.jsx:120"
   ],
-  "Explore projects": [
-    "src/community/pages/Home.jsx:123",
-    "src/community/pages/Home.jsx:434",
-    "src/community/pages/Wallet.jsx:306"
+  "From people you follow": [
+    "src/community/pages/Home.jsx:187"
   ],
   "Find a project you like and follow its creator.": [
-    "src/community/pages/Home.jsx:123"
+    "src/community/pages/Home.jsx:197"
   ],
   "{actor} posted: {post}": [
-    "src/community/pages/Home.jsx:141"
-  ],
-  "Suggest and vote": [
-    "src/community/pages/Home.jsx:174",
-    "src/community/pages/Home.jsx:386"
-  ],
-  "Couldn't load roadmap suggestions.": [
-    "src/community/pages/Home.jsx:176"
-  ],
-  "No suggestions yet": [
-    "src/community/pages/Home.jsx:177"
-  ],
-  "Add the first one": [
-    "src/community/pages/Home.jsx:177"
-  ],
-  "No active suggestions": [
-    "src/community/pages/Home.jsx:178"
-  ],
-  "View the roadmap": [
-    "src/community/pages/Home.jsx:178"
-  ],
-  "Bug": [
-    "src/community/pages/Home.jsx:196",
-    "src/community/pages/Roadmap.jsx:119",
-    "src/community/pages/Roadmap.jsx:205"
-  ],
-  "Recent notifications": [
-    "src/community/pages/Home.jsx:247"
-  ],
-  "Sign in to see your notifications.": [
-    "src/community/pages/Home.jsx:248",
-    "src/community/pages/Notifications.jsx:690"
+    "src/community/pages/Home.jsx:221"
   ],
   "Couldn't load notifications.": [
-    "src/community/pages/Home.jsx:250"
+    "src/community/pages/Home.jsx:276"
   ],
   "Nothing new yet": [
-    "src/community/pages/Home.jsx:251"
-  ],
-  "Change preferences": [
-    "src/community/pages/Home.jsx:253",
-    "src/community/pages/Notifications.jsx:740"
+    "src/community/pages/Home.jsx:277"
   ],
   "Your notification preferences hide all recent activity.": [
-    "src/community/pages/Home.jsx:254"
+    "src/community/pages/Home.jsx:280"
   ],
-  "Your activity": [
-    "src/community/pages/Home.jsx:306"
+  "Change preferences": [
+    "src/community/pages/Home.jsx:282",
+    "src/community/pages/Notifications.jsx:740"
   ],
-  "Freshly shared": [
-    "src/community/pages/Home.jsx:343"
+  "Make games with blocks, and play what others make": [
+    "src/community/pages/Home.jsx:330"
   ],
-  "Continue playing": [
-    "src/community/pages/Home.jsx:357",
-    "src/community/pages/Home.jsx:524"
-  ],
-  "Game library": [
-    "src/community/pages/Home.jsx:360"
-  ],
-  "Community updates": [
-    "src/community/pages/Home.jsx:371"
+  "MistWarp is a free block-based editor for making games and sharing them with everyone.": [
+    "src/community/pages/Home.jsx:331"
   ],
   "Coming from Scratch or TurboWarp? See what is different": [
-    "src/community/pages/Home.jsx:412"
-  ],
-  "Loading your workspace…": [
-    "src/community/pages/Home.jsx:426"
-  ],
-  "See what people are making on MistWarp": [
-    "src/community/pages/Home.jsx:430"
-  ],
-  "Play games, animations, and tools built with blocks, and follow the creators behind them.": [
-    "src/community/pages/Home.jsx:431"
-  ],
-  "Welcome to MistWarp, {value1}": [
-    "src/community/pages/Home.jsx:442"
-  ],
-  "Start from a working project, or follow a few creators to fill your feed.": [
-    "src/community/pages/Home.jsx:443"
-  ],
-  "Try a starter": [
-    "src/community/pages/Home.jsx:446"
-  ],
-  "Find creators": [
-    "src/community/pages/Home.jsx:449"
-  ],
-  "Nothing played yet": [
-    "src/community/pages/Home.jsx:522"
-  ],
-  "Games you save to your library show up here after you play them.": [
-    "src/community/pages/Home.jsx:523"
-  ],
-  "Couldn't load projects.": [
-    "src/community/pages/Home.jsx:567"
+    "src/community/pages/Home.jsx:394"
   ],
   "Followers": [
     "src/community/pages/Leaderboard.jsx:23",
@@ -4835,12 +4738,6 @@
   ],
   "Feedback players send from inside the project will show up here.": [
     "src/community/pages/ManageProject.jsx:829"
-  ],
-  "Open": [
-    "src/community/pages/ManageProject.jsx:841",
-    "src/community/pages/PullRequest.jsx:497",
-    "src/community/pages/admin/ErrorManager.jsx:206",
-    "src/community/pages/admin/UserDetailCard.jsx:66"
   ],
   "Working": [
     "src/community/pages/ManageProject.jsx:842"
@@ -5395,10 +5292,6 @@
   "Upload .sb3": [
     "src/community/pages/MyStuff.jsx:1233"
   ],
-  "New project": [
-    "src/community/pages/MyStuff.jsx:1235",
-    "src/community/pages/MyStuff.jsx:1568"
-  ],
   "Your storage is full: your projects use {value1} of your {value2}. You can still save a project at the same size or smaller. To add more, delete projects you no longer need and empty them from the trash.": [
     "src/community/pages/MyStuff.jsx:1247"
   ],
@@ -5556,6 +5449,9 @@
   "Publish post": [
     "src/community/pages/News.jsx:300"
   ],
+  "Couldn't load news.": [
+    "src/community/pages/News.jsx:306"
+  ],
   "Show archived posts": [
     "src/community/pages/News.jsx:317"
   ],
@@ -5568,6 +5464,9 @@
   ],
   "Actions": [
     "src/community/pages/News.jsx:325"
+  ],
+  "No updates yet": [
+    "src/community/pages/News.jsx:384"
   ],
   "Posts from MistWarp will show up here.": [
     "src/community/pages/News.jsx:385"
@@ -5621,6 +5520,9 @@
   ],
   "Open post": [
     "src/community/pages/Notifications.jsx:555"
+  ],
+  "Sign in to see your notifications.": [
+    "src/community/pages/Notifications.jsx:690"
   ],
   "Nothing here yet.": [
     "src/community/pages/Notifications.jsx:732"
@@ -5780,9 +5682,6 @@
   ],
   "Custom project branding": [
     "src/community/pages/PaidPerks.jsx:227"
-  ],
-  "Start creating": [
-    "src/community/pages/PaidPerks.jsx:230"
   ],
   "View {tier} on Rotur": [
     "src/community/pages/PaidPerks.jsx:232"
@@ -6354,6 +6253,10 @@
   "score": [
     "src/community/pages/Roadmap.jsx:114",
     "src/community/pages/Roadmap.jsx:211"
+  ],
+  "Bug": [
+    "src/community/pages/Roadmap.jsx:119",
+    "src/community/pages/Roadmap.jsx:205"
   ],
   "Idea": [
     "src/community/pages/Roadmap.jsx:119",
@@ -7492,6 +7395,9 @@
   ],
   "No purchases yet": [
     "src/community/pages/Wallet.jsx:305"
+  ],
+  "Explore projects": [
+    "src/community/pages/Wallet.jsx:306"
   ],
   "Things you buy in games on MistWarp show up here.": [
     "src/community/pages/Wallet.jsx:308"
@@ -8751,37 +8657,37 @@
     "src/community/pages/project/ProjectStage.jsx:50"
   ],
   "Back to sandbox": [
-    "src/community/pages/project/ProjectStage.jsx:79"
+    "src/community/pages/project/ProjectStage.jsx:78"
   ],
   "Run without sandbox": [
-    "src/community/pages/project/ProjectStage.jsx:81"
+    "src/community/pages/project/ProjectStage.jsx:80"
   ],
   "Running with full access to your account. Only for projects you trust.": [
-    "src/community/pages/project/ProjectStage.jsx:85"
+    "src/community/pages/project/ProjectStage.jsx:84"
   ],
   "Uses custom extensions, running in a sandbox. Saved data can persist to browser storage.": [
-    "src/community/pages/project/ProjectStage.jsx:86"
+    "src/community/pages/project/ProjectStage.jsx:85"
   ],
   "Remove from your library": [
-    "src/community/pages/project/ProjectStage.jsx:102"
+    "src/community/pages/project/ProjectStage.jsx:101"
   ],
   "Save to your library": [
-    "src/community/pages/project/ProjectStage.jsx:102"
+    "src/community/pages/project/ProjectStage.jsx:101"
   ],
   "Sign in to save to your library": [
-    "src/community/pages/project/ProjectStage.jsx:103"
+    "src/community/pages/project/ProjectStage.jsx:102"
   ],
   "Remove from library, {value1} saves": [
-    "src/community/pages/project/ProjectStage.jsx:105"
+    "src/community/pages/project/ProjectStage.jsx:104"
   ],
   "Save to library, {value1} saves": [
-    "src/community/pages/project/ProjectStage.jsx:106"
+    "src/community/pages/project/ProjectStage.jsx:105"
   ],
   "Your playtime on this project": [
-    "src/community/pages/project/ProjectStage.jsx:118"
+    "src/community/pages/project/ProjectStage.jsx:117"
   ],
   "{value1} played": [
-    "src/community/pages/project/ProjectStage.jsx:121"
+    "src/community/pages/project/ProjectStage.jsx:120"
   ],
   "{value1} closed": [
     "src/community/pages/project/PullList.jsx:59"

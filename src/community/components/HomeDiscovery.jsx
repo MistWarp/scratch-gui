@@ -17,7 +17,7 @@ import styles from './HomeDiscovery.module.css';
 
 const sameName = (a, b) => String(a).toLowerCase() === String(b).toLowerCase();
 
-export const SuggestedCreators = ({viewerName, limit}) => {
+export const SuggestedCreators = ({viewerName, limit, columns}) => {
     const {text} = useCommunityIntl();
     const [creators, setCreators] = useState(null);
     const [followed, setFollowed] = useState({});
@@ -51,7 +51,7 @@ export const SuggestedCreators = ({viewerName, limit}) => {
     if (creators === null) return <div className={styles.listSkeleton} />;
     if (!creators.length) return null;
     return (
-        <ul className={styles.list}>
+        <ul className={columns ? `${styles.list} ${styles.listColumns}` : styles.list}>
             {creators.map(creator => (
                 <li
                     key={creator.username}
@@ -88,6 +88,7 @@ export const SuggestedCreators = ({viewerName, limit}) => {
 };
 
 SuggestedCreators.propTypes = {
+    columns: PropTypes.bool,
     limit: PropTypes.number,
     viewerName: PropTypes.string
 };
