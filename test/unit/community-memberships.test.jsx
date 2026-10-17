@@ -30,8 +30,7 @@ const plans = ['Free', 'Lite', 'Plus', 'Pro'].map((tier, index) => ({
         advancedAnalytics: index >= 2,
         customProjectBranding: index >= 2,
         vanityProjectUrls: index === 3,
-        salesFeeBasisPoints: [1000, 1000, 700, 500][index],
-        maxProjectPrice: [100, 100, 250, 500][index]
+        salesFeeBasisPoints: [1000, 1000, 700, 500][index]
     },
     rotur: {dailyCreditMultiplier: [1, 1, 2, 3][index]}
 }));
@@ -66,10 +65,11 @@ test('shows actual plan entitlements and keeps checkout on Rotur without marking
         expect(wrapper.find('a[href="https://rotur.dev/premium"]')).toHaveLength(4);
         expect(wrapper.text()).not.toContain('Your membership');
         expect(wrapper.find('a[href="https://editor.mistwarp.org/"]').length).toBeGreaterThan(0);
+        expect(wrapper.text()).not.toContain('project sales fee');
         wrapper.unmount();
     });
 
-test('keeps storage allowances and sales fees accessible in the comparison', async () => {
+test('keeps storage and game allowances in the comparison without project sales', async () => {
     const wrapper = await renderPage();
     wrapper.find('button[role="tab"]').at(1)
         .simulate('click');
@@ -80,11 +80,9 @@ test('keeps storage allowances and sales fees accessible in the comparison', asy
         .simulate('click');
     expect(wrapper.find('table').text()).toContain('Game save storage');
     expect(wrapper.find('table').text()).toContain('5 MB25 MB100 MB1 GB');
-    wrapper.find('button[role="tab"]').at(3)
-        .simulate('click');
-    expect(wrapper.find('table').text()).toContain('10%10%7%5%');
-    expect(wrapper.find('table').text()).toContain('100 credits100 credits250 credits500 credits');
-    expect(wrapper.text()).toContain('A membership does not include access to every project');
+    expect(wrapper.find('button[role="tab"]')).toHaveLength(3);
+    expect(wrapper.text()).not.toContain('Project sales');
+    expect(wrapper.text()).not.toContain('Maximum project price');
     wrapper.unmount();
 });
 

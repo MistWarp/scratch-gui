@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import {BarChart3, Check, Download, Eye, Heart, Link2, RotateCcw, Sprout, Star, Users} from 'lucide-react';
+import {Bookmark, Check, Clock3, Download, Eye, Heart, Link2, RotateCcw, Sprout, Star} from 'lucide-react';
 
 import {useCommunityIntl} from '../i18n.jsx';
 import styles from './MembershipPreviews.module.css';
@@ -23,12 +23,12 @@ export const AnalyticsPreview = () => {
     const stats = [
         {icon: Eye, tone: styles.toneViews, value: '840', label: communityText('Views')},
         {icon: Heart, tone: styles.toneHearts, value: '64', label: communityText('Hearts')},
-        {icon: Users, tone: styles.toneBuyers, value: '48', label: communityText('Buyers')},
-        {icon: BarChart3, tone: styles.toneRate, value: '5.7%', label: communityText('View-to-buyer conversion')}
+        {icon: Bookmark, tone: styles.toneSaves, value: '48', label: communityText('Library saves')},
+        {icon: Clock3, tone: styles.tonePlaytime, value: '12h', label: communityText('Total playtime')}
     ];
     return (
         <Preview
-            label={communityText('Example project analytics showing views, playtime, buyer conversion, and CSV export')}
+            label={communityText('Example project analytics showing views, hearts, saves, playtime, and CSV export')}
         >
             <div className={styles.stats}>
                 {stats.map(({icon: Icon, tone, value, label}) => (

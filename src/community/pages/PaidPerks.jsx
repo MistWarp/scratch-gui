@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import React, {useEffect, useState} from 'react';
 import PropTypes from 'prop-types';
-import {BarChart3, CalendarCheck, Check, Coins, Crown, ExternalLink, FileSpreadsheet, Heart, History, Link2, Palette, Plus, RotateCcw, Server, Users, X} from 'lucide-react';
+import {BarChart3, CalendarCheck, Check, Crown, ExternalLink, FileSpreadsheet, Heart, History, Link2, Palette, Plus, RotateCcw, Server, Users, X} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import api, {editorUrl} from '../api.js';
 import {getCommunityLocale} from '../locale.js';
@@ -40,9 +40,7 @@ const MISTWARP_ROWS = [
     ['Total project assets', 'maxProjectAssetsBytes', binarySize, 'storage'],
     ['Largest project asset', 'maxProjectAssetBytes', binarySize, 'storage'],
     ['Game save storage', 'gameSaveStorageBytes', decimalSize, 'games'],
-    ['Game inventory items', 'maxGameInventoryItems', count, 'games'],
-    ['Project sales fee', 'salesFeeBasisPoints', value => `${value / 100}%`, 'sales'],
-    ['Maximum project price', 'maxProjectPrice', (value, text) => text('{count, plural, one {# credit} other {# credits}}', {count: value}), 'sales']
+    ['Game inventory items', 'maxGameInventoryItems', count, 'games']
 ];
 
 const Cell = ({value, format}) => {
@@ -114,7 +112,7 @@ const PaidPerks = () => {
         {
             icon: BarChart3,
             title: communityText('Get to know your audience'),
-            description: communityText('Explore how your projects are doing, see view-to-buyer conversion, and export your analytics to CSV. Plus and Pro include these extra insights and a longer analytics history.'),
+            description: communityText('Explore how your projects are doing: views, hearts, library saves and playtime. Plus and Pro add CSV exports and a longer analytics history.'),
             preview: <AnalyticsPreview />,
             link: '/mystuff?section=projects',
             action: communityText('Choose a project to view analytics')
@@ -228,7 +226,6 @@ const PaidPerks = () => {
                                     {plan.mistwarp.advancedAnalytics ? <li><FileSpreadsheet size={15} />{communityText('Advanced analytics and CSV exports')}</li> : null}
                                     {plan.mistwarp.customProjectBranding ? <li><Palette size={15} />{communityText('Custom project branding')}</li> : null}
                                     {plan.mistwarp.vanityProjectUrls ? <li><Link2 size={15} />{communityText('Custom project URLs')}</li> : null}
-                                    {plan.tier !== 'Free' ? <li><Coins size={15} />{communityText('{fee}% project sales fee', {fee: plan.mistwarp.salesFeeBasisPoints / 100})}</li> : null}
                                 </ul>
                                 {plan.tier === 'Free' ? <Button as="a" href={editorUrl()}><Plus size={15} />{communityText('Start creating')}</Button> : (
                                     <Button as="a" href={data.roturMembershipUrl} target="_blank" rel="noopener noreferrer" variant={isFeatured ? 'primary' : 'secondary'}>
@@ -243,9 +240,9 @@ const PaidPerks = () => {
             </section>
 
             <section className={styles.section}>
-                <SectionHeading icon={Check} title={communityText('Compare the details')} lead={communityText('Check the tools, allowances, and sales terms included with each membership.')} />
+                <SectionHeading icon={Check} title={communityText('Compare the details')} lead={communityText('Check the tools and allowances included with each membership.')} />
                 <UnderlineTabs
-                    items={[{key: 'tools', label: communityText('Creator tools')}, {key: 'storage', label: communityText('Storage')}, {key: 'games', label: communityText('Games')}, {key: 'sales', label: communityText('Project sales')}]}
+                    items={[{key: 'tools', label: communityText('Creator tools')}, {key: 'storage', label: communityText('Storage')}, {key: 'games', label: communityText('Games')}]}
                     value={comparison}
                     onChange={setComparison}
                     ariaLabel={communityText('Membership comparison')}
@@ -254,7 +251,6 @@ const PaidPerks = () => {
                 <div {...tabPanelProps('perks-compare', comparison)}>
                     <Comparison plans={plans} rows={rows} source="mistwarp" />
                     {comparison === 'storage' ? <p className={styles.detailNote}>{communityText('Storage covers every project you own, including its assets, version history and anything in the trash. Deleting a project and emptying it from the trash frees its space.')}{' '}<Link to="/mystuff?section=uploads">{communityText('View your storage')}</Link></p> : null}
-                    {comparison === 'sales' ? <p className={styles.detailNote}>{communityText('Project purchases support individual creators. A membership does not include access to every project offered for purchase.')}{' '}<Link to="/mystuff?section=projects">{communityText('Manage project pricing')}</Link></p> : null}
                 </div>
             </section>
         </main>

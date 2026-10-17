@@ -23,22 +23,22 @@ jest.mock('../../src/community/UserContext', () => ({useUser: () => ({user: null
 beforeEach(() => jest.clearAllMocks());
 
 test.each([
-    [{price: 0, seeInside: true}, true],
-    [{price: 5, bought: true, seeInside: true}, true],
-    [{price: 5, bought: false, seeInside: true}, false],
+    [{seeInside: true}, true],
+    [{price: 5, bought: false, seeInside: true}, true],
+    [{price: 5, locked: true}, true],
+    [{seeInside: false}, false],
     [{price: 5, bought: true, seeInside: false}, false],
-    [{price: 5, canSeeInside: true}, true],
-    [{price: 5, bought: true, canViewSource: false}, false],
-    [{price: 0, seeInside: false}, false],
-    [{price: 5, isOwner: true, myRole: 'maintainer'}, false],
-    [{price: 5, seeInside: false, myRole: 'owner'}, true],
+    [{canSeeInside: true}, true],
+    [{canViewSource: false}, false],
+    [{seeInside: false, isOwner: true, myRole: 'maintainer'}, false],
+    [{seeInside: false, myRole: 'owner'}, true],
     [{canViewSource: false, isOwner: true}, false],
-    [{canViewSource: true, price: 5}, true]
+    [{canViewSource: true, seeInside: false}, true]
 ])('source access for %j is %s', (project, allowed) => {
     expect(canViewProjectSource(project)).toBe(allowed);
 });
 
-test.each([{price: 5, bought: false}, {price: 5, bought: true, seeInside: false}, {price: 0, seeInside: false}])('direct commit links check project permissions before reading source: %j', async restricted => {
+test.each([{seeInside: false}, {canViewSource: false}, {price: 5, bought: true, seeInside: false}])('direct commit links check project permissions before reading source: %j', async restricted => {
     api.getProject.mockResolvedValue({project: {id: 'p1', ...restricted}});
     let wrapper;
     await act(async () => {
@@ -62,7 +62,7 @@ test.each([{price: 5, bought: false}, {price: 5, bought: true, seeInside: false}
 test('the file browser does not request a restricted snapshot', async () => {
     let wrapper;
     await act(async () => {
-        wrapper = mount(<ProjectFiles project={{id: 'p1', gitHead: 'abc', price: 5, bought: true, seeInside: false}} />);
+        wrapper = mount(<ProjectFiles project={{id: 'p1', gitHead: 'abc', seeInside: false}} />);
     });
     expect(wrapper.text()).toContain('You do not have permission to view files');
     expect(api.commitTree).not.toHaveBeenCalled();
@@ -70,11 +70,11 @@ test('the file browser does not request a restricted snapshot', async () => {
     await act(async () => wrapper.unmount());
 });
 
-test('buyers with See inside can request project files', async () => {
+test('anyone can request the files of a project that used to have a price when See inside is on', async () => {
     api.commitTree.mockResolvedValue({files: []});
     let wrapper;
     await act(async () => {
-        wrapper = mount(<ProjectFiles project={{id: 'p1', gitHead: 'abc', price: 5, bought: true, seeInside: true}} />);
+        wrapper = mount(<ProjectFiles project={{id: 'p1', gitHead: 'abc', price: 5, bought: false, seeInside: true}} />);
     });
     expect(api.commitTree).toHaveBeenCalled();
     expect(wrapper.text()).not.toContain('You do not have permission to view files');

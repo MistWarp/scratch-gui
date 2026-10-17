@@ -1130,18 +1130,6 @@
     white-space: nowrap;
 }
 
-.confirmText {
-    margin: 0 0 6px;
-    font-size: var(--fs-lg);
-    color: var(--mw-text);
-}
-
-.confirmBalance {
-    margin: 0 0 16px;
-    font-size: var(--fs-sm);
-    color: var(--text-dim);
-}
-
 .confirmActions {
     display: flex;
     justify-content: flex-end;

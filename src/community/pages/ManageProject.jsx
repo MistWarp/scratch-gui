@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import api, {projectUrl, editorUrl} from '../api';
 import {useUser} from '../UserContext.jsx';
-import Avatar from '../components/Avatar.jsx';
 import VisibilityMenu from '../components/VisibilityMenu.jsx';
 import ProjectInfoPanel from '../components/ProjectInfoPanel.jsx';
 import ProjectDonationAnalytics from '../components/ProjectDonationAnalytics.jsx';
@@ -33,13 +32,10 @@ import styles from './ManageProject.module.css';
 
 const roundCredits = value => Math.round((Number(value) || 0) * 100) / 100;
 const exportAnalyticsCsv = (project, analytics) => {
-    const days = [...new Set([
-        ...Object.keys(analytics.viewHistory || {}),
-        ...Object.keys(analytics.saleHistory || {})
-    ])].sort();
-    const rows = ['date,views,revenue', ...days.map(day => {
+    const days = Object.keys(analytics.viewHistory || {}).sort();
+    const rows = ['date,views', ...days.map(day => {
         const date = new Date(Number(day) * 86400000).toISOString().slice(0, 10);
-        return `${date},${analytics.viewHistory?.[day] || 0},${analytics.saleHistory?.[day] || 0}`;
+        return `${date},${analytics.viewHistory[day] || 0}`;
     })];
     const url = URL.createObjectURL(new Blob([rows.join('\n')], {type: 'text/csv'}));
     const link = document.createElement('a');
@@ -71,7 +67,7 @@ const SECTIONS = [
     {key: 'overview', label: 'Analytics', icon: BarChart3},
     {key: 'page', label: 'Project page', icon: SlidersHorizontal},
     {key: 'publishing', label: 'Publishing', icon: Eye},
-    {key: 'sales', label: 'Sales', icon: Coins},
+    {key: 'products', label: 'In-game products', icon: ShoppingBag},
     {key: 'collaboration', label: 'Collaboration', icon: Users},
     {key: 'activity', label: 'Activity', icon: MessageCircle},
     {key: 'ownership', label: 'Ownership', icon: UserCog}
@@ -80,14 +76,14 @@ const SECTIONS = [
 const SECTION_ALIASES = {
     settings: 'page',
     preview: 'publishing',
-    buyers: 'sales',
-    products: 'sales',
+    sales: 'products',
+    buyers: 'products',
     team: 'collaboration',
     bounties: 'collaboration',
     feedback: 'activity',
     diagnostics: 'activity'
 };
-const SUBTAB_ROUTES = new Set(['buyers', 'products', 'bounties', 'diagnostics']);
+const SUBTAB_ROUTES = new Set(['bounties', 'diagnostics']);
 const resolveSection = value => {
     const resolved = SECTION_ALIASES[value] || value;
     return SECTIONS.some(item => item.key === resolved) ? resolved : 'overview';
@@ -100,7 +96,6 @@ const normalizeProjectSectionParam = value => {
 };
 const projectNavigationState = value => ({
     section: resolveSection(value),
-    salesTab: (value === 'buyers' || value === 'products') ? value : 'pricing',
     collaborationTab: value === 'bounties' ? 'bounties' : 'team',
     activityTab: value === 'diagnostics' ? 'diagnostics' : 'feedback'
 });
@@ -136,7 +131,6 @@ const ManageProject = () => {
     const [status, setStatus] = useState(null);
     const initialNavigation = projectNavigationState(requestedSection);
     const [section, setSection] = useState(initialNavigation.section);
-    const [salesTab, setSalesTab] = useState(initialNavigation.salesTab);
     const [collaborationTab, setCollaborationTab] = useState(initialNavigation.collaborationTab);
     const [activityTab, setActivityTab] = useState(initialNavigation.activityTab);
     const [form, setForm] = useState(null);
@@ -178,7 +172,6 @@ const ManageProject = () => {
     useEffect(() => {
         const navigation = projectNavigationState(requestedSection);
         setSection(navigation.section);
-        setSalesTab(navigation.salesTab);
         setCollaborationTab(navigation.collaborationTab);
         setActivityTab(navigation.activityTab);
         setStatus(null);
@@ -248,7 +241,6 @@ const ManageProject = () => {
             vanitySlug: project.vanitySlug || project.vanityReserved || '',
             brandingAccent: project.branding?.accentColor || '#855cd6',
             brandingTagline: project.branding?.tagline || '',
-            price: project.price || 0,
             remixShare: project.remixShare || 0,
             commentsOff: Boolean(project.commentsOff),
             remixable: project.remixable !== false,
@@ -314,7 +306,6 @@ const ManageProject = () => {
                 commentsOff: form.commentsOff,
                 remixable: form.remixable,
                 seeInside: form.seeInside,
-                price: Math.max(0, Math.floor(Number(form.price) || 0)),
                 remixShare: Math.max(0, Math.min(50, Number(form.remixShare) || 0))
             });
             if (form.visibility !== (project.visibility || (project.shared ? 'public' : 'private'))) {
@@ -462,10 +453,7 @@ const ManageProject = () => {
     }
 
     const analytics = project.analytics || {};
-    const buyers = analytics.buyers || [];
-    const revenue = roundCredits(analytics.revenue || 0);
     const donations = analytics.donations || {};
-    const paywalled = project.price > 0 || revenue > 0;
     const views = (project.views || 0).toLocaleString(getCommunityLocale());
     const hearts = (project.loveCount || 0).toLocaleString(getCommunityLocale());
     const sections = SECTIONS.filter(item => {
@@ -507,10 +495,7 @@ const ManageProject = () => {
 
             <div className={styles.layout}>
                 <Sidebar
-                    sections={sections.map(item => ({
-                        ...item,
-                        badge: item.key === 'sales' && buyers.length ? buyers.length : null
-                    }))}
+                    sections={sections}
                     active={activeSection}
                     onChange={nextSection => {
                         setSection(nextSection);
@@ -555,22 +540,6 @@ const ManageProject = () => {
                                     <span className={styles.statNumber}>{(donations.uniqueDonors || 0).toLocaleString(getCommunityLocale())}</span>
                                     <span className={styles.statLabel}>{communityText('Donors')}</span>
                                 </div>
-                                {paywalled ? (
-                                    <div className={`${styles.stat} ${styles.statRevenue}`}>
-                                        <span className={styles.statIcon}><Coins size={20} /></span>
-                                        <span className={styles.statNumber}>{revenue.toLocaleString(getCommunityLocale())}</span>
-                                        <span className={styles.statLabel}>{communityText('Credits earned')}</span>
-                                    </div>
-                                ) : null}
-                                {paywalled ? (
-                                    <div className={`${styles.stat} ${styles.statBuyers}`}>
-                                        <span className={styles.statIcon}><Users size={20} /></span>
-                                        <span className={styles.statNumber}>{buyers.length.toLocaleString(getCommunityLocale())}</span>
-                                        <span className={styles.statLabel}>{communityText('Buyers')}</span>
-                                    </div>
-                                ) : null}
-                                {perks?.mistwarp?.advancedAnalytics ? <div className={styles.stat}><span className={styles.statIcon}><BarChart3 size={20} /></span><span className={styles.statNumber}>{views > 0 ? `${((buyers.length / views) * 100).toFixed(1)}%` : '0%'}</span><span className={styles.statLabel}>{communityText('View-to-buyer conversion')}</span></div> : null}
-                                {perks?.mistwarp?.advancedAnalytics && buyers.length ? <div className={styles.stat}><span className={styles.statIcon}><Coins size={20} /></span><span className={styles.statNumber}>{roundCredits(revenue / buyers.length)}</span><span className={styles.statLabel}>{communityText('Credits per buyer')}</span></div> : null}
                             </div>
                             {perks?.mistwarp?.analyticsExport ? (
                                 <Notice
@@ -581,7 +550,7 @@ const ManageProject = () => {
                                 </Notice>
                             ) : (
                                 <Notice variant="info">
-                                    {communityText('Rotur Plus includes conversion insights and downloadable analytics. Your current membership includes {value1} history.', {
+                                    {communityText('Rotur Plus includes downloadable analytics. Your current membership includes {value1} history.', {
                                         value1: analytics.historyDays === 0 ? communityText('all-time') : communityText('{value1}-day', {value1: analytics.historyDays})
                                     })}
                                 </Notice>
@@ -610,15 +579,6 @@ const ManageProject = () => {
                                     ))}
                                 </ul>
                             </div>
-                            {paywalled ? (
-                                <StatChart
-                                    title={communityText('Revenue over the last 2 weeks')}
-                                    rows={historyRows(analytics.saleHistory)}
-                                    accent="#FF8C1A"
-                                    format={value => `${roundCredits(value)} credits`}
-                                    emptyText="No sales in the last two weeks."
-                                />
-                            ) : null}
                         </div>
                     ) : null}
 
@@ -692,13 +652,13 @@ const ManageProject = () => {
                                             onChange={value => set('visibility', value)}
                                         />
                                         {project.contributionOnly ? (
-                                            <p className={styles.cardHint}>{communityText('This remix includes a project offered for purchase, so it stays private. You can support the original creator by sending your changes from the Contribute tab.')}</p>
+                                            <p className={styles.cardHint}>{communityText('Classroom projects stay private.')}</p>
                                         ) : null}
                                     </div>
                                     <div className={styles.switches}>
                                         <SwitchRow checked={form.remixable} disabled={saving} label={communityText('Allow remixes')} onChange={value => set('remixable', value)} />
                                         <SwitchRow checked={form.seeInside} disabled={saving} label={communityText('Allow people to see inside')} onChange={value => set('seeInside', value)} />
-                                        <p className={styles.cardHint}>{communityText('When enabled, See inside gives access to project files and version history. If your project has a price, only buyers have this access. Enable remixes too to let them make a private remix.')}</p>
+                                        <p className={styles.cardHint}>{communityText('When enabled, See inside gives access to project files and version history.')}</p>
                                         <SwitchRow checked={form.commentsOff} disabled={saving} label={communityText('Turn off comments')} onChange={value => set('commentsOff', value)} />
                                     </div>
                                     <div className={styles.formActions}>
@@ -719,116 +679,68 @@ const ManageProject = () => {
                         </div>
                     ) : null}
 
-                    {activeSection === 'sales' ? (
+                    {activeSection === 'products' ? (
                         <div className={styles.stack}>
-                            <PageHeading icon={Coins} title={communityText('Sales')} description={communityText('Set the price and review who has bought the project.')} />
-                            <PageTabs
-                                items={[
-                                    {key: 'pricing', label: 'Pricing'},
-                                    {key: 'products', label: 'In-game products'},
-                                    {key: 'buyers', label: buyers.length ? communityText('Buyers ({value1})', {value1: buyers.length}) : communityText('Buyers')}
-                                ]}
-                                value={salesTab}
-                                onChange={nextTab => {
-                                    setSalesTab(nextTab);
-                                    setRouteSection(nextTab === 'pricing' ? 'sales' : nextTab);
-                                }}
-                                label={communityText('Sales sections')}
-                            />
-                            {salesTab === 'pricing' ? (
-                                <div className={styles.card}>
-                                    <SectionHeading as="h3" icon={Coins} title={communityText('Pricing')} />
-                                    <div className={styles.form}>
-                                        <div className={styles.settingsGrid}>
-                                            <label className={styles.field}>
-                                                <span>{communityText('Price in credits')}</span>
-                                                <input disabled={saving} type="number" min="0" max={perks?.mistwarp?.maxProjectPrice} step="1" value={form.price} onChange={event => set('price', event.target.value)} />
-                                                <small>{communityText('Let people support your work with a one-time purchase, or set the price to 0 to share it for free.')}</small>
-                                            </label>
-                                            {project.remixParent ? (
-                                                <label className={styles.field}>
-                                                    <span>{communityText('Original creator share')}</span>
-                                                    <input disabled={saving} type="number" min="0" max="50" step="1" value={form.remixShare} onChange={event => set('remixShare', event.target.value)} />
-                                                    <small>{communityText('Percentage of each sale paid to the original project.')}</small>
-                                                </label>
-                                            ) : null}
-                                        </div>
-                                        {perks ? <p className={styles.cardHint}>{communityText('Your {value1} membership supports project prices up to {value2} credits. Each sale includes a {value3}% MistWarp fee.', {value1: perks.tier, value2: perks.mistwarp.maxProjectPrice, value3: perks.mistwarp.salesFeeBasisPoints / 100})}</p> : null}
-                                        <div className={styles.formActions}>
-                                            <span className={styles.formStatus} role="status" aria-live="polite">{status}</span>
-                                            <Button variant="primary" busy={saving} busyLabel={communityText('Saving…')} onClick={save}><Check size={16} />{communityText('Save price')}</Button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : null}
-                            {salesTab === 'products' ? (
-                                <div className={styles.card}>
-                                    <SectionHeading as="h3" icon={ShoppingBag} title={communityText('In-game products')} lead={communityText('Products defined for this project that players can purchase during gameplay using credits.')} />
-                                    {(project.gameProducts && project.gameProducts.length) ? (
-                                        <div className={styles.buyers}>
-                                            {project.gameProducts.map(prod => (
-                                                <div key={prod.id} className={styles.buyerRow}>
-                                                    <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
-                                                        {prod.icon ? (
-                                                            <img
-                                                                src={prod.icon}
-                                                                alt={prod.name}
-                                                                style={{
-                                                                    width: '32px',
-                                                                    height: '32px',
-                                                                    borderRadius: '6px',
-                                                                    objectFit: 'cover'
-                                                                }}
-                                                            />
-                                                        ) : (
-                                                            <ShoppingBag size={24} />
-                                                        )}
-                                                        <div>
-                                                            <strong>{prod.name}</strong>
-                                                            <div style={{fontSize: '12px', color: 'var(--text-dim)'}}>
-                                                                <code>{prod.id}</code>
-                                                                {prod.description ? <div>{prod.description}</div> : null}
-                                                            </div>
+                            <PageHeading icon={ShoppingBag} title={communityText('In-game products')} description={communityText('Products defined for this project that players can purchase during gameplay using credits.')} />
+                            <div className={styles.card}>
+                                {(project.gameProducts && project.gameProducts.length) ? (
+                                    <div className={styles.buyers}>
+                                        {project.gameProducts.map(prod => (
+                                            <div key={prod.id} className={styles.buyerRow}>
+                                                <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+                                                    {prod.icon ? (
+                                                        <img
+                                                            src={prod.icon}
+                                                            alt={prod.name}
+                                                            style={{
+                                                                width: '32px',
+                                                                height: '32px',
+                                                                borderRadius: '6px',
+                                                                objectFit: 'cover'
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <ShoppingBag size={24} />
+                                                    )}
+                                                    <div>
+                                                        <strong>{prod.name}</strong>
+                                                        <div style={{fontSize: '12px', color: 'var(--text-dim)'}}>
+                                                            <code>{prod.id}</code>
+                                                            {prod.description ? <div>{prod.description}</div> : null}
                                                         </div>
                                                     </div>
-                                                    <span className={styles.buyerMeta}>
-                                                        <span className={styles.buyerAmount}>
-                                                            <Coins size={13} />
-                                                            {communityText('{value1} credits', {value1: prod.price})}</span>
-                                                    </span>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <EmptyState compact icon={ShoppingBag} title={communityText('No in-game products yet')}>
-                                            {communityText('No in-game products are configured for this project yet.')}
-                                        </EmptyState>
-                                    )}
-                                    <div className={styles.formActions}>
-                                        <Button as="a" href={editorUrl({platformProject: project.id})}>{communityText('Open in editor to manage products')}</Button>
+                                                <span className={styles.buyerMeta}>
+                                                    <span className={styles.buyerAmount}>
+                                                        <Coins size={13} />
+                                                        {communityText('{value1} credits', {value1: prod.price})}</span>
+                                                </span>
+                                            </div>
+                                        ))}
                                     </div>
+                                ) : (
+                                    <EmptyState compact icon={ShoppingBag} title={communityText('No in-game products yet')}>
+                                        {communityText('No in-game products are configured for this project yet.')}
+                                    </EmptyState>
+                                )}
+                                <div className={styles.formActions}>
+                                    <Button as="a" href={editorUrl({platformProject: project.id})}>{communityText('Open in editor to manage products')}</Button>
                                 </div>
-                            ) : null}
-                            {salesTab === 'buyers' ? (
+                            </div>
+                            {project.remixParent ? (
                                 <div className={styles.card}>
-                                    <SectionHeading as="h3" icon={Users} title={communityText('Buyers')} />
-                                    {buyers.length ? (
-                                        <ul className={styles.buyers}>
-                                            {buyers.slice().reverse().map((buyer, index) => (
-                                                <li key={`${buyer.user}-${index}`} className={styles.buyerRow}>
-                                                    <Link to={`/users/${buyer.user}`} className={styles.buyer}><Avatar username={buyer.user} size={30} /><span>{buyer.user}</span></Link>
-                                                    <span className={styles.buyerMeta}>
-                                                        <span className={styles.buyerAmount}><Coins size={13} />{roundCredits(buyer.amount)}</span>
-                                                        {buyer.at ? <span className={styles.buyerDate}>{formatDate(buyer.at, 'Date unavailable')}</span> : null}
-                                                    </span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    ) : (
-                                        <EmptyState compact icon={Users} title={communityText('No buyers yet')}>
-                                            {paywalled ? communityText('Purchases will appear here when people support your project.') : communityText('This project is free to play. Set a price to let people support your work with a purchase.')}
-                                        </EmptyState>
-                                    )}
+                                    <SectionHeading as="h3" icon={Coins} title={communityText('Original creator share')} />
+                                    <div className={styles.form}>
+                                        <label className={styles.field}>
+                                            <span>{communityText('Share in percent')}</span>
+                                            <input disabled={saving} type="number" min="0" max="50" step="1" value={form.remixShare} onChange={event => set('remixShare', event.target.value)} />
+                                            <small>{communityText('Percentage of each in-game product sale paid to the original project.')}</small>
+                                        </label>
+                                        <div className={styles.formActions}>
+                                            <span className={styles.formStatus} role="status" aria-live="polite">{status}</span>
+                                            <Button variant="primary" busy={saving} busyLabel={communityText('Saving…')} onClick={save}><Check size={16} />{communityText('Save share')}</Button>
+                                        </div>
+                                    </div>
                                 </div>
                             ) : null}
                         </div>

@@ -70,7 +70,6 @@ const trashPurgeConfirmation = project => ({
 
 const visibilityLabel = project => {
     if (project.moderationHidden) return 'Hidden by a moderator';
-    if (project.contributionOnly) return 'Contribution only';
     const v = project.visibility || (project.shared ? 'public' : 'private');
     if (v === 'public') return 'Shared';
     if (v === 'unlisted') return 'Unlisted';
@@ -234,19 +233,6 @@ const Overview = ({stats, quota, username, onNavigate}) => {
                             <span className={styles.ovStatLabel}>{communityText('Credits on Rotur')}</span>
                         </div>
                     ) : null}
-                    <div className={styles.ovWalletRows}>
-                        {stats.totalRevenue > 0 ? (
-                            <div className={styles.ovWalletRow}>
-                                <span><Coins size={15} aria-hidden="true" />{communityText('Credits earned')}</span>
-                                <strong>{fmtCredits(stats.totalRevenue)}</strong>
-                            </div>
-                        ) : null}
-                        {stats.totalRevenue > 0 ? null : (
-                            <EmptyState compact icon={Coins} title={communityText('No earnings yet')}>
-                                {communityText('Offer a project for purchase so people can support your work.')}
-                            </EmptyState>
-                        )}
-                    </div>
                     <div className={styles.ovCardActions}>
                         <Button as={Link} to="/wallet"><Wallet size={14} />{communityText('Open wallet')}</Button>
                     </div>
@@ -1463,17 +1449,6 @@ const MyStuff = () => {
                                                     <Play size={13} />
                                                     {project.views || 0}
                                                 </span>
-                                                {project.price ? (
-                                                    <span className={styles.rowStat}>
-                                                        <Coins size={13} />
-                                                        {project.price}
-                                                    </span>
-                                                ) : null}
-                                                {project.revenue ? (
-                                                    <span className={styles.rowStat}>
-                                                        {communityText('{value1} earned', {value1: Math.round(project.revenue * 100) / 100})}
-                                                    </span>
-                                                ) : null}
                                                 {project.sizeBytes ? (
                                                     <span className={styles.rowStat}>
                                                         <HardDrive size={13} />
@@ -1483,12 +1458,7 @@ const MyStuff = () => {
                                             </span>
                                         </div>
                                         <div className={styles.rowActions}>
-                                            {project.contributionOnly ? (
-                                                <Button
-                                                    disabled
-                                                    title={communityText('Remixes of projects offered for purchase stay private. Contribute your changes back to the original creator.')}
-                                                >{communityText('Contribution only')}</Button>
-                                            ) : project.shared ? (
+                                            {project.shared ? (
                                                 <Button
                                                     disabled={Boolean(projectAction)}
                                                     busy={visibilityBusy}

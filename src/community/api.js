@@ -241,8 +241,6 @@ const api = {
     publish: id => request(`/projects/${id}/publish`, {method: 'POST'}),
     unpublish: id => request(`/projects/${id}/unpublish`, {method: 'POST'}),
     setVisibility: (id, visibility) => request(`/projects/${id}/visibility`, {method: 'POST', body: {visibility}}),
-    purchaseIntent: (id, returnUrl) => request(`/projects/${id}/purchase/intent`, {method: 'POST', body: {returnUrl}}),
-    purchaseConfirm: (id, key) => request(`/projects/${id}/purchase/confirm`, {method: 'POST', body: {key}}),
     gameProducts: id => request(`/projects/${id}/products`, {cache: false}),
     ownsGameProduct: (id, product) => request(`/projects/${id}/products/${encodeURIComponent(product)}/owns`, {
         cache: false
