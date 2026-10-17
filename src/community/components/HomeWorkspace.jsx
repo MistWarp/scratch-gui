@@ -7,6 +7,7 @@ import api, {editorUrl, projectUrl} from '../api';
 import {formatDate, sameUser, timeAgo} from '../format';
 import {STARTERS} from '../../lib/starter-projects';
 import {getLastEditedProject} from '../../lib/mw/recent-projects';
+import {editorMovedAway} from '../../lib/account/origins.js';
 import Confetti, {useCelebration} from './Confetti.jsx';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import UserLink from './UserLink.jsx';
@@ -31,7 +32,7 @@ export const ContinueProjects = ({username, onProjectCount}) => {
         if (!username) return () => {};
         let active = true;
         setResult({username, projects: null, failed: false});
-        const last = getLastEditedProject(username);
+        const last = editorMovedAway() ? null : getLastEditedProject(username);
         const recent = last ? api.getProject(last.id).then(data => data.project).catch(() => null) : Promise.resolve(null);
         Promise.allSettled([api.myProjectPage(username, {limit: 12}), recent]).then(([page, edited]) => {
             if (!active) return;
@@ -111,6 +112,7 @@ export const DeviceBackup = () => {
     const {text: communityText} = useCommunityText();
     const [backup, setBackup] = useState(null);
     useEffect(() => {
+        if (editorMovedAway()) return () => {};
         let active = true;
         import('../../lib/api/restore-points').then(({default: backups}) => backups.getAllRestorePoints())
             .then(({restorePoints}) => {

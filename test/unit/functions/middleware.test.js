@@ -186,7 +186,8 @@ describe('requests the middleware passes through', () => {
         '/privacy.html'
     ])('standalone page %s keeps its own tags', async path => {
         const response = htmlResponse();
-        const {result} = await run(path, {response});
+        const origin = path.startsWith('/editor') ? 'https://editor.mistwarp.org' : 'https://mistwarp.org';
+        const {result} = await run(path, {response, origin});
         expect(result).toBe(response);
         expect(global.fetch).not.toHaveBeenCalled();
     });
@@ -816,6 +817,37 @@ describe('editor host', () => {
 
     test('mistwarp.org keeps serving community pages', async () => {
         const {next} = await run('/explore');
+        expect(next).toHaveBeenCalled();
+    });
+});
+
+describe('moving the editor to the editor host', () => {
+    test.each(['/editor', '/editor/', '/editor.html'])('mistwarp.org%s goes to the editor host, keeping the query', async path => {
+        const {result, next} = await run(`${path}?restore=4&starter=clicker`);
+        expect(result.status).toBe(302);
+        expect(result.headers.get('location')).toBe('https://editor.mistwarp.org/editor?restore=4&starter=clicker');
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    test('www.mistwarp.org/editor goes to the editor host too', async () => {
+        const {result} = await run('/editor', {origin: 'https://www.mistwarp.org'});
+        expect(result.headers.get('location')).toBe('https://editor.mistwarp.org/editor');
+    });
+
+    test('the editor host serves the editor instead of redirecting to itself', async () => {
+        const {result, next} = await run('/editor', {origin: 'https://editor.mistwarp.org'});
+        expect(next).toHaveBeenCalled();
+        expect(result.status).toBe(200);
+    });
+
+    test.each(['https://develop.scratch-gui.pages.dev', 'http://localhost:8601'])('previews at %s keep their own editor',
+        async origin => {
+            const {next} = await run('/editor', {origin});
+            expect(next).toHaveBeenCalled();
+        });
+
+    test.each(['/embed', '/player', '/editor-help', '/editors'])('%s on mistwarp.org stays put', async path => {
+        const {next} = await run(path);
         expect(next).toHaveBeenCalled();
     });
 });

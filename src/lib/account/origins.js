@@ -7,9 +7,12 @@ const isSplitEditor = () => EDITOR_ORIGIN !== ACCOUNT_ORIGIN && currentOrigin() 
 
 const isEditorOrigin = origin => EDITOR_ORIGIN !== ACCOUNT_ORIGIN && origin === EDITOR_ORIGIN;
 
+const editorMovedAway = () => EDITOR_ORIGIN !== ACCOUNT_ORIGIN && currentOrigin() === ACCOUNT_ORIGIN;
+
 export {
     ACCOUNT_ORIGIN,
     EDITOR_ORIGIN,
     isSplitEditor,
-    isEditorOrigin
+    isEditorOrigin,
+    editorMovedAway
 };

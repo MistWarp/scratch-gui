@@ -25,6 +25,8 @@ const EDITOR_HOST_PAGES = new Set([
     '/credits.html'
 ]);
 const FILE_PATH = /\/[^/]+\.(?!html$)[A-Za-z0-9]+$/;
+const ACCOUNT_HOSTS = new Set(['mistwarp.org', 'www.mistwarp.org']);
+const MOVED_EDITOR_PATHS = new Set(['/editor', '/editor/', '/editor.html']);
 // Standalone HTML entries with their own tags; the community SPA is index.html.
 const SKIP_PATHS = new Set([
     '/editor',
@@ -553,6 +555,10 @@ export const onRequest = async context => {
 
     if (url.hostname === EDITOR_HOST && !servedOnEditorHost(url.pathname) && !LEGACY_EMBED_PATH.test(url.pathname)) {
         return Response.redirect(`${ACCOUNT_ORIGIN}${url.pathname}${url.search}`, 302);
+    }
+
+    if (ACCOUNT_HOSTS.has(url.hostname) && MOVED_EDITOR_PATHS.has(url.pathname)) {
+        return Response.redirect(`https://${EDITOR_HOST}/editor${url.search}`, 302);
     }
 
     const legacyEmbed = url.pathname.match(LEGACY_EMBED_PATH);
