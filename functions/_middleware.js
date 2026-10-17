@@ -8,6 +8,23 @@ const FETCH_TIMEOUT_MS = 3000;
 const STATIC_FILE_PATH = /^\/(?:assets|js|static\/assets)\//;
 const DOCS_PATH = /^\/docs(?:\/|$)/;
 const LEGACY_EMBED_PATH = /^\/(\d+|p[A-Za-z0-9]+)\/embed\/?$/;
+const EDITOR_HOST = 'editor.mistwarp.org';
+const ACCOUNT_ORIGIN = 'https://mistwarp.org';
+const EDITOR_HOST_PAGES = new Set([
+    '/editor',
+    '/editor.html',
+    '/player',
+    '/player.html',
+    '/fullscreen',
+    '/fullscreen.html',
+    '/embed',
+    '/embed.html',
+    '/addons',
+    '/addons.html',
+    '/credits',
+    '/credits.html'
+]);
+const FILE_PATH = /\/[^/]+\.(?!html$)[A-Za-z0-9]+$/;
 // Standalone HTML entries with their own tags; the community SPA is index.html.
 const SKIP_PATHS = new Set([
     '/editor',
@@ -377,6 +394,9 @@ const themeMeta = async id => {
     };
 };
 
+const servedOnEditorHost = pathname => EDITOR_HOST_PAGES.has(pathname) ||
+    STATIC_FILE_PATH.test(pathname) || FILE_PATH.test(pathname);
+
 const decodeSegment = segment => {
     try {
         return decodeURIComponent(segment);
@@ -529,6 +549,10 @@ export const onRequest = async context => {
             return new Response('Sitemap unavailable', {status: 503});
         }
         return new Response('Sitemap unavailable', {status: 503});
+    }
+
+    if (url.hostname === EDITOR_HOST && !servedOnEditorHost(url.pathname) && !LEGACY_EMBED_PATH.test(url.pathname)) {
+        return Response.redirect(`${ACCOUNT_ORIGIN}${url.pathname}${url.search}`, 302);
     }
 
     const legacyEmbed = url.pathname.match(LEGACY_EMBED_PATH);
