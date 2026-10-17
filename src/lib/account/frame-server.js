@@ -12,17 +12,48 @@ const validProjectId = id => typeof id === 'undefined' ||
 const validProject = project => project && typeof project === 'object' &&
     typeof project.name === 'string' && project.name.length <= 200 && validProjectId(project.id);
 
-const createFrameServer = ({identity, createEditorSession, callRotur, projectRotur}) => {
+const TOKEN_REUSE_MARGIN = 300000;
+const RENEW_INTERVAL = 300000;
+
+const signedInName = state => (state && state.user && state.user.username ? String(state.user.username) : '');
+
+const createFrameServer = ({
+    identity, createEditorSession, callRotur, projectRotur, confirmSignOut, now = Date.now
+}) => {
+    let session = null;
+    let minting = null;
+    let lastMint = -Infinity;
+
+    const mint = username => {
+        if (!minting) {
+            minting = Promise.resolve(createEditorSession())
+                .then(result => {
+                    lastMint = now();
+                    const next = {token: String(result.token), expiresAt: Number(result.expiresAt), username};
+                    if (signedInName(identity.getState()) === username) session = next;
+                    return next;
+                })
+                .finally(() => {
+                    minting = null;
+                });
+        }
+        return minting;
+    };
+
     const handlers = {
         identity: () => publicIdentity(identity.getState()),
-        editorSession: async () => {
-            const state = identity.getState();
-            if (!state.user) throw Object.assign(new Error('Sign in to MistWarp first'), {code: 'signed_out'});
-            const result = await createEditorSession();
-            return {token: String(result.token), expiresAt: Number(result.expiresAt)};
+        editorSession: async ({stale}) => {
+            const username = signedInName(identity.getState());
+            if (!username) throw Object.assign(new Error('Sign in to MistWarp first'), {code: 'signed_out'});
+            const reusable = session && session.username === username &&
+                session.expiresAt - TOKEN_REUSE_MARGIN > now();
+            const renew = reusable && typeof stale === 'string' && stale === session.token &&
+                now() - lastMint >= RENEW_INTERVAL;
+            const result = reusable && !renew ? session : await mint(username);
+            return {token: result.token, expiresAt: result.expiresAt};
         },
-        signOut: () => {
-            identity.logout();
+        signOut: async () => {
+            if (signedInName(identity.getState()) && await confirmSignOut() === true) identity.logout();
             return publicIdentity(identity.getState());
         },
         rotur: ({method, args}) => {
@@ -48,6 +79,10 @@ const createFrameServer = ({identity, createEditorSession, callRotur, projectRot
             throw new Error('This project cannot make that Rotur request');
         }
     };
+
+    identity.subscribe(state => {
+        if (session && session.username !== signedInName(state)) session = null;
+    });
 
     const serve = port => {
         const unsubscribe = identity.subscribe(state => {

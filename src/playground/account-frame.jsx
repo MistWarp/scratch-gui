@@ -40,24 +40,36 @@ const openReviewWindow = id => {
         `popup,width=480,height=640,left=${left},top=${top}`);
 };
 
+const fromReviewWindow = (event, reviewWindow) => Boolean(reviewWindow) && event.source === reviewWindow &&
+    event.origin === location.origin && event.data && event.data.type === REVIEW_CHANNEL;
+
 const prompt = (type, data, lifetime = PROMPT_LIFETIME) => new Promise(resolve => {
     promptOpen = true;
     broadcast({kind: 'show'});
     const reviewId = randomId();
-    const review = supportsVisibilityCheck() ? null : new BroadcastChannel(REVIEW_CHANNEL);
+    const review = !supportsVisibilityCheck();
     let reviewWindow = null;
     let timer = null;
     let settled = false;
+    let onReviewMessage = null;
     const finish = answer => {
         if (settled) return;
         settled = true;
         clearTimeout(timer);
-        if (review) review.close();
+        window.removeEventListener('message', onReviewMessage);
         if (reviewWindow && !reviewWindow.closed) reviewWindow.close();
         ReactDOM.unmountComponentAtNode(root);
         promptOpen = false;
         broadcast({kind: 'hide'});
         resolve(answer);
+    };
+    onReviewMessage = event => {
+        if (!fromReviewWindow(event, reviewWindow) || event.data.id !== reviewId) return;
+        if (event.data.kind === 'request') {
+            reviewWindow.postMessage({type: REVIEW_CHANNEL, kind: 'prompt', id: reviewId, prompt: type, data},
+                location.origin);
+        }
+        if (event.data.kind === 'answer') finish(event.data.answer);
     };
     timer = setTimeout(() => finish(false), lifetime);
     const render = reviewError => {
@@ -68,18 +80,13 @@ const prompt = (type, data, lifetime = PROMPT_LIFETIME) => new Promise(resolve =
             reviewError,
             onAnswer: finish,
             onReview: () => {
+                if (reviewWindow && !reviewWindow.closed) reviewWindow.close();
                 reviewWindow = openReviewWindow(reviewId);
                 if (!reviewWindow) render('Allow pop-ups for this site, then try again.');
             }
         }), root);
     };
-    if (review) {
-        review.onmessage = ({data: message}) => {
-            if (!message || message.id !== reviewId) return;
-            if (message.kind === 'request') review.postMessage({kind: 'prompt', id: reviewId, type, data});
-            if (message.kind === 'answer') finish(message.answer);
-        };
-    }
+    if (review) window.addEventListener('message', onReviewMessage);
     render('');
 });
 
@@ -99,7 +106,8 @@ const startFrame = () => {
             return request('/auth/editor-session', {method: 'POST', cache: false});
         },
         callRotur,
-        projectRotur: createProjectRotur({prompt, getUsername})
+        projectRotur: createProjectRotur({prompt, getUsername}),
+        confirmSignOut: () => prompt('signout', {username: getUsername()})
     });
     const restored = Promise.race([
         Promise.resolve(identity.restore()).catch(() => null),
@@ -141,24 +149,26 @@ const startSignIn = async () => {
 
 const startReview = id => {
     applyThemeVisuals(detectTheme());
-    const review = new BroadcastChannel(REVIEW_CHANNEL);
+    const opener = window.opener;
     const ended = setTimeout(() => {
         root.textContent = 'This request has ended. You can close this window.';
     }, REVIEW_WAIT);
-    review.onmessage = ({data: message}) => {
-        if (!message || message.id !== id || message.kind !== 'prompt') return;
+    window.addEventListener('message', event => {
+        const message = event.data;
+        if (event.source !== opener || event.origin !== location.origin || !message ||
+            message.type !== REVIEW_CHANNEL || message.id !== id || message.kind !== 'prompt') return;
         clearTimeout(ended);
         ReactDOM.render(React.createElement(FramePrompt, {
-            type: message.type,
+            type: message.prompt,
             data: message.data,
             mode: 'window',
             onAnswer: answer => {
-                review.postMessage({kind: 'answer', id, answer});
+                opener.postMessage({type: REVIEW_CHANNEL, kind: 'answer', id, answer}, location.origin);
                 window.close();
             }
         }), root);
-    };
-    review.postMessage({kind: 'request', id});
+    });
+    opener.postMessage({type: REVIEW_CHANNEL, kind: 'request', id}, location.origin);
 };
 
 const params = new URLSearchParams(location.search);

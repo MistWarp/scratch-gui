@@ -30,11 +30,23 @@ const createIdentity = user => {
     };
 };
 
-const setup = (user = {username: 'mist', id: 'u1', bio: 'hi', avatarUrl: 'x'}) => {
+let clock = 1000000;
+
+const setup = (user = {username: 'mist', id: 'u1', bio: 'hi', avatarUrl: 'x'}, {signOutAnswer = true} = {}) => {
     const identity = createIdentity(user);
+    let minted = 0;
     const deps = {
         identity,
-        createEditorSession: jest.fn(async () => ({token: 'editor-token', expiresAt: 123, extra: 'dropped'})),
+        now: () => clock,
+        confirmSignOut: jest.fn(async () => signOutAnswer),
+        createEditorSession: jest.fn(async () => {
+            minted += 1;
+            return {
+                token: minted === 1 ? 'editor-token' : `editor-token-${minted}`,
+                expiresAt: clock + 7200000,
+                extra: 'dropped'
+            };
+        }),
         callRotur: jest.fn(async (method, args) => ({method, args})),
         projectRotur: {
             ensureConsent: jest.fn(async () => true),
@@ -65,7 +77,51 @@ test('announces the public identity on connect and when it changes', () => {
 
 test('hands the editor only an editor session token', async () => {
     const {send} = setup();
-    await expect(send('editorSession')).resolves.toEqual({id: expect.any(Number), result: {token: 'editor-token', expiresAt: 123}});
+    await expect(send('editorSession')).resolves.toEqual({
+        id: expect.any(Number),
+        result: {token: 'editor-token', expiresAt: clock + 7200000}
+    });
+});
+
+test('repeated requests reuse one editor token instead of minting more', async () => {
+    const {send, deps} = setup();
+    const replies = [];
+    for (let i = 0; i < 20; i++) replies.push(await send('editorSession'));
+    expect(new Set(replies.map(reply => reply.result.token))).toEqual(new Set(['editor-token']));
+    expect(deps.createEditorSession).toHaveBeenCalledTimes(1);
+});
+
+test('concurrent requests share one mint', async () => {
+    const {send, deps} = setup();
+    await Promise.all([send('editorSession'), send('editorSession'), send('editorSession')]);
+    expect(deps.createEditorSession).toHaveBeenCalledTimes(1);
+});
+
+test('a token reported stale is renewed at most once every five minutes', async () => {
+    const {send, deps} = setup();
+    await send('editorSession');
+    expect((await send('editorSession', {stale: 'editor-token'})).result.token).toBe('editor-token');
+    clock += 300000;
+    expect((await send('editorSession', {stale: 'editor-token'})).result.token).toBe('editor-token-2');
+    expect((await send('editorSession', {stale: 'editor-token-2'})).result.token).toBe('editor-token-2');
+    expect((await send('editorSession', {stale: 'someone-elses'})).result.token).toBe('editor-token-2');
+    expect(deps.createEditorSession).toHaveBeenCalledTimes(2);
+});
+
+test('a token close to expiry is replaced', async () => {
+    const {send, deps} = setup();
+    await send('editorSession');
+    clock += 7200000 - 200000;
+    expect((await send('editorSession')).result.token).toBe('editor-token-2');
+    expect(deps.createEditorSession).toHaveBeenCalledTimes(2);
+});
+
+test('switching accounts in the frame drops the cached token', async () => {
+    const {send, deps, identity} = setup();
+    await send('editorSession');
+    identity.set({status: 'ready', user: {username: 'other', id: 'u2'}});
+    expect((await send('editorSession')).result.token).toBe('editor-token-2');
+    expect(deps.createEditorSession).toHaveBeenCalledTimes(2);
 });
 
 test('refuses an editor session when signed out', async () => {
@@ -105,9 +161,23 @@ test('project requests need a valid project and pass through to the project host
     expect((await send('projectRotur', {action: 'delete', project: {name: 'x'}})).error).toBeTruthy();
 });
 
-test('signing out goes through the account', async () => {
+test('signing out goes through the account once the user confirms it in the frame', async () => {
     const {send, deps} = setup();
     const reply = await send('signOut');
+    expect(deps.confirmSignOut).toHaveBeenCalled();
     expect(deps.identity.logout).toHaveBeenCalled();
     expect(reply.result.user).toBeNull();
+});
+
+test('the editor cannot sign the user out without their answer', async () => {
+    const {send, deps} = setup(undefined, {signOutAnswer: false});
+    const reply = await send('signOut');
+    expect(deps.identity.logout).not.toHaveBeenCalled();
+    expect(reply.result.user).toMatchObject({username: 'mist'});
+});
+
+test('signing out when already signed out does not prompt', async () => {
+    const {send, deps} = setup(null);
+    await send('signOut');
+    expect(deps.confirmSignOut).not.toHaveBeenCalled();
 });

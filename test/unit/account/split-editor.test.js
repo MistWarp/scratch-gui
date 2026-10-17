@@ -67,10 +67,27 @@ test('a rejected editor token is replaced through the account frame once', async
 
 test('signing out asks the account frame and clears the editor token', async () => {
     await identity.restore();
-    identity.logout();
+    await identity.logout();
     expect(mockCall).toHaveBeenCalledWith('signOut');
     expect(identity.getState().user).toBeNull();
     expect(loadSession()).toBeNull();
+});
+
+test('a sign-out the user cancels in the frame keeps the editor signed in', async () => {
+    await identity.restore();
+    const before = loadSession();
+    mockCall.mockImplementation(async method => (method === 'signOut' ? mockIdentity : null));
+    await identity.logout();
+    expect(identity.getState().user).toMatchObject({username: 'mist'});
+    expect(loadSession()).toBe(before);
+});
+
+test('a rejected token is reported to the frame as stale', async () => {
+    await identity.restore();
+    const first = loadSession();
+    window.fetch = jest.fn(() => Promise.resolve({ok: false, status: 401, json: () => Promise.resolve({})}));
+    await request('/me/quota', {cache: false}).catch(() => null);
+    expect(mockCall).toHaveBeenCalledWith('editorSession', {stale: first});
 });
 
 test('signing out elsewhere reaches the editor', async () => {
@@ -84,7 +101,7 @@ test('signing out elsewhere reaches the editor', async () => {
 
 test('the editor learns who is signed in only once it holds an editor token', async () => {
     await identity.restore();
-    identity.logout();
+    await identity.logout();
     let release;
     mockCall.mockImplementation(method => (method === 'editorSession' ?
         new Promise(resolve => {
@@ -117,14 +134,14 @@ test('switching accounts drops the old editor token', async () => {
 });
 
 test('one editor load mints one token even when the frame announces the user while connecting', async () => {
-    identity.logout();
+    await identity.logout();
     mockCall.mockClear();
     await identity.restore();
     expect(mockCall.mock.calls.filter(([method]) => method === 'editorSession')).toHaveLength(1);
 });
 
 test('a failed mint is not retried on every request', async () => {
-    identity.logout();
+    await identity.logout();
     mockCall.mockImplementation(method => (method === 'editorSession' ?
         Promise.reject(new Error('rate limited')) :
         Promise.resolve(null)));
