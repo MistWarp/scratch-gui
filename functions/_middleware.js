@@ -12,34 +12,27 @@ const STATIC_FILE_PATH = /^\/(?:assets|js|static\/assets)\//;
 const DOCS_PATH = /^\/docs(?:\/|$)/;
 const LEGACY_EMBED_PATH = /^\/(\d+|p[A-Za-z0-9]+)\/embed\/?$/;
 const EDITOR_HOST = 'editor.mistwarp.org';
+const EDITOR_ORIGIN = `https://${EDITOR_HOST}`;
 const ACCOUNT_ORIGIN = 'https://mistwarp.org';
-const EDITOR_HOST_PAGES = new Set([
-    '/editor',
-    '/editor.html',
-    '/player',
-    '/player.html',
-    '/fullscreen',
-    '/fullscreen.html',
-    '/embed',
-    '/embed.html',
-    '/addons',
-    '/addons.html',
-    '/credits',
-    '/credits.html'
-]);
+const ACCOUNT_HOSTS = new Set(['mistwarp.org', 'www.mistwarp.org']);
+const APP_PAGES = new Set(['/player', '/fullscreen', '/embed', '/addons', '/credits']);
+const MOVED_APP_PAGES = new Set(['/player', '/fullscreen', '/addons', '/credits']);
+const PROJECT_PAGE = /^\/\d+(?:\/(editor|fullscreen))?$/;
+const PROJECT_PAGE_ASSETS = {editor: '/editor', fullscreen: '/fullscreen'};
 const FILE_PATH = /\/[^/]+\.(?!html$)[A-Za-z0-9]+$/;
 // Standalone HTML entries with their own tags; the community SPA is index.html.
 const SKIP_PATHS = new Set([
     '/editor',
-    '/editor.html',
     '/player',
-    '/player.html',
     '/fullscreen',
-    '/fullscreen.html',
-    '/embed.html',
+    '/embed',
+    '/addons',
+    '/credits',
     '/account-frame',
-    '/account-frame.html',
-    '/privacy.html'
+    '/privacy',
+    '/embedtest',
+    '/embedtestbad',
+    '/sb3-postmessage-test'
 ]);
 
 const STATIC_META = {
@@ -108,6 +101,15 @@ const STATIC_META = {
     '/perks': {
         title: 'Membership perks - MistWarp',
         description: 'MistWarp membership plans and perks.'
+    },
+    '/search': {
+        title: 'Search - MistWarp',
+        description: 'Search projects, people, and spaces on MistWarp.'
+    },
+    '/random': {
+        title: 'Random project - MistWarp',
+        description: 'Play a random project from the MistWarp community.',
+        noindex: true
     },
     '/mystuff': {
         title: 'My Stuff - MistWarp',
@@ -434,12 +436,62 @@ const themeMeta = async id => {
     };
 };
 
-const isEditorHost = url => url.hostname.replace(/\.$/, '') === EDITOR_HOST;
+const hostOf = url => url.hostname.replace(/\.$/, '');
 
-const isEditorHostPage = pathname => EDITOR_HOST_PAGES.has(pathname.replace(/(.)\/+$/, '$1'));
+const isFilePath = pathname => STATIC_FILE_PATH.test(pathname) || FILE_PATH.test(pathname);
 
-const servedOnEditorHost = pathname => isEditorHostPage(pathname) ||
-    STATIC_FILE_PATH.test(pathname) || FILE_PATH.test(pathname);
+const pagePath = pathname => {
+    if (DOCS_PATH.test(pathname) || isFilePath(pathname)) return pathname;
+    const path = pathname.replace(/(.)\/+$/, '$1').replace(/\.html$/i, '');
+    return path === '/index' ? '/' : path;
+};
+
+const permanent = location => new Response(null, {
+    status: 301,
+    headers: {'Location': location, 'Cache-Control': 'public, max-age=3600'}
+});
+
+const legacyEmbedRedirect = url => {
+    const legacyEmbed = url.pathname.match(LEGACY_EMBED_PATH);
+    if (!legacyEmbed) return null;
+    const id = legacyEmbed[1];
+    return permanent(`${url.origin}/embed${url.search}#${/^\d+$/.test(id) ? id : `mw-${id}`}`);
+};
+
+const editorHostRoute = url => {
+    const path = pagePath(url.pathname);
+    if (path === '/' || path === '/editor') {
+        return url.pathname === '/' ? {asset: '/editor'} : {redirect: `${EDITOR_ORIGIN}/${url.search}`};
+    }
+    const project = path.match(PROJECT_PAGE);
+    if (APP_PAGES.has(path) || project) {
+        if (path !== url.pathname) return {redirect: `${EDITOR_ORIGIN}${path}${url.search}`};
+        return project ? {asset: PROJECT_PAGE_ASSETS[project[1]] || '/player'} : {asset: null};
+    }
+    if (isFilePath(url.pathname)) return {asset: null};
+    return {redirect: `${ACCOUNT_ORIGIN}${path}${url.search}`};
+};
+
+const accountHostRoute = url => {
+    const path = pagePath(url.pathname);
+    if (path === '/editor') return `${EDITOR_ORIGIN}/${url.search}`;
+    if (MOVED_APP_PAGES.has(path) || PROJECT_PAGE.test(path)) return `${EDITOR_ORIGIN}${path}${url.search}`;
+    return path === url.pathname ? null : `${url.origin}${path}${url.search}`;
+};
+
+const otherHostRoute = url => {
+    const path = pagePath(url.pathname);
+    return path === url.pathname ? null : `${url.origin}${path}${url.search}`;
+};
+
+const notFoundFile = () => new Response('Not found', {
+    status: 404,
+    headers: {
+        'Cache-Control': 'no-store',
+        'Content-Type': 'text/plain; charset=utf-8',
+        'X-Content-Type-Options': 'nosniff'
+    }
+});
 
 const decodeSegment = segment => {
     try {
@@ -557,6 +609,8 @@ const metaForPath = pathname => {
         return NOT_FOUND_META;
     }
 
+    if (/^\/roadmap\/(?:changes|entry\/[^/]+|[^/]+)$/.test(normalizedPath)) return STATIC_META['/roadmap'];
+
     if (normalizedPath === '/mystuff/project') return NOT_FOUND_META;
     match = normalizedPath.match(/^\/mystuff\/project\/([^/]+)$/);
     if (match) {
@@ -593,30 +647,27 @@ export const onRequest = async context => {
         return new Response('Sitemap unavailable', {status: 503});
     }
 
-    const editorHost = isEditorHost(url);
-    if (editorHost && !servedOnEditorHost(url.pathname) && !LEGACY_EMBED_PATH.test(url.pathname)) {
-        return Response.redirect(`${ACCOUNT_ORIGIN}${url.pathname}${url.search}`, 302);
+    const legacyEmbed = legacyEmbedRedirect(url);
+    if (legacyEmbed) return legacyEmbed;
+
+    const host = hostOf(url);
+    if (host === EDITOR_HOST) {
+        const route = editorHostRoute(url);
+        if (route.redirect) return permanent(route.redirect);
+        const served = route.asset ?
+            await context.env.ASSETS.fetch(new Request(new URL(route.asset, url).href, request)) :
+            await next();
+        const servedType = served.headers.get('content-type') || '';
+        if (!route.asset && isFilePath(url.pathname) && servedType.includes('text/html')) return notFoundFile();
+        return served;
     }
 
-    const legacyEmbed = url.pathname.match(LEGACY_EMBED_PATH);
-    if (legacyEmbed) {
-        const id = legacyEmbed[1];
-        return Response.redirect(`${url.origin}/embed${url.search}#${/^\d+$/.test(id) ? id : `mw-${id}`}`, 302);
-    }
+    const moved = ACCOUNT_HOSTS.has(host) ? accountHostRoute(url) : otherHostRoute(url);
+    if (moved) return permanent(moved);
 
     const response = await next();
     const contentType = response.headers.get('content-type') || '';
-    const strayPage = editorHost && !isEditorHostPage(url.pathname);
-    if ((strayPage || STATIC_FILE_PATH.test(url.pathname)) && contentType.includes('text/html')) {
-        return new Response('Not found', {
-            status: 404,
-            headers: {
-                'Cache-Control': 'no-store',
-                'Content-Type': 'text/plain; charset=utf-8',
-                'X-Content-Type-Options': 'nosniff'
-            }
-        });
-    }
+    if (STATIC_FILE_PATH.test(url.pathname) && contentType.includes('text/html')) return notFoundFile();
 
     if (!contentType.includes('text/html')) return response;
     if (SKIP_PATHS.has(url.pathname) || DOCS_PATH.test(url.pathname)) return response;
@@ -646,5 +697,7 @@ export const onRequest = async context => {
         .on('meta[property="og:image"]', new AttrSetter('content', completeMeta.image))
         .on('meta[name="twitter:card"]', new AttrSetter('content', completeMeta.card))
         .on('head', new HeadAppender(completeMeta, canonicalUrl))
-        .transform(response);
+        .transform(meta === NOT_FOUND_META ?
+            new Response(response.body, {status: 404, statusText: 'Not Found', headers: response.headers}) :
+            response);
 };
