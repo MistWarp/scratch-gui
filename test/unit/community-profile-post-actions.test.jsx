@@ -173,4 +173,19 @@ describe('profile post actions', () => {
         expect(wrapper.find('article').length).toBeLessThan(posts.length);
         wrapper.unmount();
     });
+
+    test('labels the pinned post and keeps it first', () => {
+        const wrapper = renderPosts([
+            {id: 'new', content: 'Newest', timestamp: 20},
+            {id: 'pin', content: 'Pinned post', timestamp: 10, pinned: true}
+        ]);
+
+        const articles = wrapper.find('article');
+        expect(articles.first().text()).toContain('Pinned post');
+        expect(articles.first().find('p')
+            .filterWhere(node => node.text() === 'Pinned')).toHaveLength(1);
+        expect(articles.last().find('p')
+            .filterWhere(node => node.text() === 'Pinned')).toHaveLength(0);
+        wrapper.unmount();
+    });
 });

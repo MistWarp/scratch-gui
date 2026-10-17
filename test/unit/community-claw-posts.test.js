@@ -1,5 +1,5 @@
 import {
-    canPounce, mayPromote, postStats, promotedBy, reasonLines, replyContext, withLike, withPounce
+    canPounce, mayPromote, postStats, promotedBy, reasonLines, replyContext, showsWhy, withLike, withPounce
 } from '../../src/community/claw-posts.js';
 
 const text = (message, values = {}) => message.replace(/\{(\w+)(?:, plural, one \{([^}]*)\} other \{([^}]*)\})?\}/g,
@@ -100,5 +100,19 @@ describe('replies', () => {
         expect(mayPromote({user: 'sophie', reply_to: 'p1'}, 'sophie')).toBe(false);
         expect(mayPromote({user: 'sophie', profile_only: true}, 'sophie')).toBe(false);
         expect(mayPromote({user: 'sophie', is_repost: true}, 'sophie')).toBe(false);
+    });
+
+    test('only meaningful reasons earn a why', () => {
+        expect(showsWhy(undefined)).toBe(false);
+        expect(showsWhy([])).toBe(false);
+        expect(showsWhy([{type: 'fresh'}, {type: 'recent'}, {type: 'from_earlier'}])).toBe(false);
+        expect(showsWhy([{type: 'mystery'}])).toBe(false);
+        for (const type of [
+            'pounced_by', 'followed_author', 'friend_author', 'friend_replied', 'conversation', 'popular', 'made_with',
+            'app_match', 'group_match', 'new_voice', 'promoted'
+        ]) {
+            expect(showsWhy([{type: 'fresh'}, {type}])).toBe(true);
+        }
+        expect(reasonLines([{type: 'from_earlier'}], 'alice', text)).toEqual(['From earlier on claw']);
     });
 });

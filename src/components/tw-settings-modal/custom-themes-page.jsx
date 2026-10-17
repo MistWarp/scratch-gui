@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import {
-    Blend, Check, CircleAlert, CircleCheck, Download, Palette, PenLine, Sparkles, Store, Trash2, Upload, X
+    Blend, Check, CircleAlert, CircleCheck, Download, Palette, PenLine, Save, Store, Trash2, Upload, X
 } from 'lucide-react';
 
 import {Theme} from '../../lib/themes/index.js';
@@ -332,7 +332,7 @@ class CustomThemesPage extends React.Component {
                         className={styles.primaryButton}
                         onClick={this.handleOpenCreate}
                     >
-                        <Sparkles size={16} />
+                        <Save size={16} />
                         <FormattedMessage {...messages.saveCurrent} />
                     </button>
                     <button

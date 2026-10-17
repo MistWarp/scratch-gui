@@ -1,60 +1,69 @@
 import PropTypes from 'prop-types';
 import React, {useEffect, useRef, useState} from 'react';
-import {ChevronDown, ExternalLink, Megaphone, Sparkles} from 'lucide-react';
+import {ExternalLink} from 'lucide-react';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
-import {authorName, pounceUrl, promotedBy, reasonLines} from '../claw-posts.js';
+import {authorName, pounceUrl, reasonLines, showsWhy} from '../claw-posts.js';
 import styles from './PostReasons.module.css';
 
 let nextId = 0;
 
-const PostReasons = ({post, onLayoutChange}) => {
+const PostReasons = ({post}) => {
     const {text: communityText} = useCommunityText();
     const [open, setOpen] = useState(false);
+    const wrapRef = useRef(null);
+    const buttonRef = useRef(null);
     const idRef = useRef(null);
     if (!idRef.current) {
         nextId += 1;
         idRef.current = `post-reasons-${nextId}`;
     }
-    const first = useRef(true);
+
     useEffect(() => {
-        if (first.current) {
-            first.current = false;
-            return;
-        }
-        if (onLayoutChange) onLayoutChange();
+        if (!open) return;
+        const inside = target => Boolean(wrapRef.current && wrapRef.current.contains(target));
+        const onPointer = event => {
+            if (!inside(event.target)) setOpen(false);
+        };
+        const onKey = event => {
+            if (event.key !== 'Escape') return;
+            event.stopPropagation();
+            setOpen(false);
+            if (buttonRef.current) buttonRef.current.focus();
+        };
+        const onFocus = event => {
+            if (!inside(event.target)) setOpen(false);
+        };
+        document.addEventListener('pointerdown', onPointer, true);
+        document.addEventListener('keydown', onKey, true);
+        document.addEventListener('focusin', onFocus);
+        return () => {
+            document.removeEventListener('pointerdown', onPointer, true);
+            document.removeEventListener('keydown', onKey, true);
+            document.removeEventListener('focusin', onFocus);
+        };
     }, [open]);
 
-    const promoter = promotedBy(post);
-    if (promoter !== null) {
-        return (
-            <p className={styles.promoted}>
-                <Megaphone size={13} aria-hidden="true" />
-                <span>
-                    {promoter ?
-                        communityText('Promoted by {value1}', {value1: `@${promoter}`}) :
-                        communityText('Promoted')}
-                </span>
-            </p>
-        );
-    }
+    if (!showsWhy(post.reasons)) return null;
     const lines = reasonLines(post.reasons, authorName(post), communityText);
     if (!lines.length) return null;
     return (
-        <div className={styles.reasons}>
+        <span className={styles.why} ref={wrapRef}>
             <button
+                ref={buttonRef}
                 type="button"
-                className={styles.chip}
+                className={styles.button}
                 aria-expanded={open}
-                aria-controls={idRef.current}
-                title={communityText('Why you are seeing this post')}
+                aria-controls={open ? idRef.current : null}
+                aria-label={communityText('Why am I seeing this post?')}
                 onClick={() => setOpen(value => !value)}
-            >
-                <Sparkles size={12} aria-hidden="true" />
-                <span>{lines[0]}</span>
-                <ChevronDown size={12} aria-hidden="true" className={open ? styles.flipped : null} />
-            </button>
+            >{communityText('Why?')}</button>
             {open ? (
-                <div className={styles.panel} id={idRef.current}>
+                <div
+                    className={styles.panel}
+                    id={idRef.current}
+                    role="dialog"
+                    aria-label={communityText('Why you are seeing this post')}
+                >
                     <strong>{communityText('Why you are seeing this post')}</strong>
                     <ul>{lines.map(line => <li key={line}>{line}</li>)}</ul>
                     <a href={pounceUrl('/settings/for-you')} target="_blank" rel="noopener noreferrer">
@@ -63,13 +72,12 @@ const PostReasons = ({post, onLayoutChange}) => {
                     </a>
                 </div>
             ) : null}
-        </div>
+        </span>
     );
 };
 
 PostReasons.propTypes = {
-    post: PropTypes.object.isRequired,
-    onLayoutChange: PropTypes.func
+    post: PropTypes.object.isRequired
 };
 
 export default PostReasons;

@@ -2,7 +2,7 @@
 import {isMilestoneNotification} from '../milestone-notifications.js';
 import React, {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Bell, Bug, Clock, Compass, Gamepad2, LogIn, Rocket, UserPlus, GitFork, Globe, Heart, Lightbulb, Megaphone, MessageCircle, Sparkles, Star, Trophy, Users} from 'lucide-react';
+import {Bell, Bug, Clock, Compass, Gamepad2, LogIn, Rocket, UserPlus, GitFork, Globe, Heart, Lightbulb, Megaphone, MessageCircle, Star, TrendingUp, Trophy, Users} from 'lucide-react';
 import api, {projectUrl} from '../api';
 import rotur from '../rotur';
 import {fetchFollowingFeed, fetchNotifications} from '../../lib/rotur/client.js';
@@ -333,7 +333,7 @@ const Home = () => {
                 {
                     key: 'trending',
                     title: communityText('Trending'),
-                    icon: Sparkles,
+                    icon: TrendingUp,
                     link: '/explore?sort=trending',
                     render: () => <ProjectFeedRow bare sort="trending" />
                 },

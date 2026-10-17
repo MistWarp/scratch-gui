@@ -160,7 +160,7 @@ const Posts = () => {
                     />
                 )}
             </ExploreHeader>
-            <div className={user ? styles.layout : null}>
+            <div className={styles.layout}>
                 <div className={styles.feed}>
                     {error ? (
                         <StatusMessage error onRetry={() => setAttempt(value => value + 1)}>{error}</StatusMessage>
@@ -189,7 +189,7 @@ const Posts = () => {
                         </Button>
                     ) : null}
                 </div>
-                {user ? <ClawSidebar user={user} /> : null}
+                {user || forYou ? <ClawSidebar user={user} /> : null}
             </div>
         </main>
     );

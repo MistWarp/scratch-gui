@@ -34,9 +34,14 @@
 }
 
 .externalLink {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
     color: var(--accent-strong);
     font-weight: 600;
-    overflow-wrap: anywhere;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
     text-decoration: underline;
     text-decoration-color: var(--accent-border);
     text-underline-offset: 2px;

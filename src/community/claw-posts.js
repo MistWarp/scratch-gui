@@ -96,6 +96,7 @@ const reasonText = (reason, author, communityText) => {
     case 'new_voice': return communityText('New to claw');
     case 'fresh': return communityText('Posted recently');
     case 'recent': return communityText('From this week');
+    case 'from_earlier': return communityText('From earlier on claw');
     case 'promoted': return cleanName(reason.by) ?
         communityText('Promoted by {value1}', {value1: `@${cleanName(reason.by)}`}) :
         communityText('Promoted');
@@ -111,6 +112,14 @@ const reasonLines = (reasons, author, communityText) => {
     }
     return lines;
 };
+
+const WHY_REASONS = new Set([
+    'pounced_by', 'followed_author', 'friend_author', 'friend_replied', 'conversation', 'popular', 'made_with',
+    'app_match', 'group_match', 'new_voice', 'promoted'
+]);
+
+const showsWhy = reasons => (Array.isArray(reasons) ? reasons : [])
+    .some(reason => reason && WHY_REASONS.has(reason.type));
 
 const replyContext = post => {
     if (!post || typeof post.reply_to !== 'string' || !post.reply_to) return null;
@@ -142,6 +151,7 @@ export {
     reasonLines,
     reasonText,
     replyContext,
+    showsWhy,
     withLike,
     withPounce
 };

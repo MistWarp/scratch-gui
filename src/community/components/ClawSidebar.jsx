@@ -1,15 +1,35 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import {ExternalLink, PawPrint} from 'lucide-react';
+import {ExternalLink, LogIn, PawPrint} from 'lucide-react';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import {pounceUrl} from '../claw-posts.js';
 import {usePounceQuota} from '../pounce-quota.js';
+import {useUser} from '../UserContext.jsx';
+import Button from './ui/Button.jsx';
 import SectionHeading from './ui/SectionHeading.jsx';
 import styles from './ClawSidebar.module.css';
 
+const SignedOutSidebar = () => {
+    const {text: communityText} = useCommunityText();
+    const {login} = useUser();
+    return (
+        <aside className={styles.sidebar} aria-label={communityText('Pounces')}>
+            <SectionHeading as="h2" icon={PawPrint} title={communityText('Pounces')} />
+            <p className={styles.help}>
+                {communityText('Sign in to like, reply and pounce. A pounce helps a post you like reach more people.')}
+            </p>
+            <Button variant="primary" className={styles.signIn} onClick={login}>
+                <LogIn size={16} />
+                {communityText('Sign in with Rotur')}
+            </Button>
+        </aside>
+    );
+};
+
 const ClawSidebar = ({user}) => {
     const {text: communityText} = useCommunityText();
-    const quota = usePounceQuota(user.username);
+    const quota = usePounceQuota(user ? user.username : '');
+    if (!user) return <SignedOutSidebar />;
     const links = [
         {href: pounceUrl('/settings/for-you'), label: communityText('For You settings')},
         {href: pounceUrl('/promotions'), label: communityText('Your promotions')},
@@ -48,7 +68,7 @@ const ClawSidebar = ({user}) => {
 };
 
 ClawSidebar.propTypes = {
-    user: PropTypes.shape({username: PropTypes.string.isRequired}).isRequired
+    user: PropTypes.shape({username: PropTypes.string.isRequired})
 };
 
 export default ClawSidebar;

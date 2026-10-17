@@ -247,11 +247,11 @@ const FollowingPost = ({post}) => {
                     <span>{communityText('posted')}</span>
                     <time>{timeAgo(post.timestamp)}</time>
                 </div>
-                <div className={styles.postContent}><RichText text={post.content} /></div>
+                <div className={styles.postContent}><RichText text={String(post.content || '').trim()} /></div>
                 {project ? <PostProjectCard project={project} compact /> : null}
                 <div className={styles.postMeta}>
-                    <span><Heart size={13} /> {likes}</span>
-                    <span><MessageCircle size={13} /> {replies}</span>
+                    {likes ? <span><Heart size={13} aria-hidden="true" /> {likes}</span> : null}
+                    {replies ? <span><MessageCircle size={13} aria-hidden="true" /> {replies}</span> : null}
                     <Link to={postUrl(post.id)}>{communityText('Open post')}<ExternalLink size={12} /></Link>
                 </div>
             </div>

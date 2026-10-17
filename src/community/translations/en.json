@@ -2963,5 +2963,9 @@
   "Get Lite with credits": "Get Lite with credits",
   "{count, plural, one {# credit/month} other {# credits/month}}": "{count, plural, one {# credit/month} other {# credits/month}}",
   "Free with daily credits": "Free with daily credits",
-  "{free}, or pay with credits you already have.": "{free}, or pay with credits you already have."
+  "{free}, or pay with credits you already have.": "{free}, or pay with credits you already have.",
+  "From earlier on claw": "From earlier on claw",
+  "Sign in to like, reply and pounce. A pounce helps a post you like reach more people.": "Sign in to like, reply and pounce. A pounce helps a post you like reach more people.",
+  "Why am I seeing this post?": "Why am I seeing this post?",
+  "Why?": "Why?"
 }

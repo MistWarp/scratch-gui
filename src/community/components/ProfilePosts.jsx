@@ -86,6 +86,7 @@ const ProfilePosts = ({posts, username, viewer, editable, onChange}) => {
         <SocialPost
             key={post.id}
             initialPost={post}
+            onProfile
             onChange={replacePost}
             onDelete={removePost}
             onLayoutChange={measure}

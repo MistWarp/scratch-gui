@@ -2,7 +2,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Cloud, Gamepad2, HardDrive, MousePointer2, PartyPopper, Play, Sparkles, Trophy} from 'lucide-react';
+import {Blocks, Cloud, Film, Gamepad2, HardDrive, MousePointer2, PartyPopper, Play, Trophy} from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
 import {formatDate, sameUser, timeAgo} from '../format';
 import {STARTERS} from '../../lib/starter-projects';
@@ -148,7 +148,7 @@ export const DeviceBackup = () => {
     );
 };
 
-const STARTER_ICONS = {clicker: MousePointer2, explorer: Gamepad2, animation: Sparkles};
+const STARTER_ICONS = {clicker: MousePointer2, explorer: Gamepad2, animation: Film};
 
 export const StarterGallery = ({children}) => {
     const {text: communityText} = useCommunityText();
@@ -156,7 +156,7 @@ export const StarterGallery = ({children}) => {
         <section className={styles.section} id="starters" aria-labelledby="starter-heading">
             <SectionHeading
                 id="starter-heading"
-                icon={Sparkles}
+                icon={Blocks}
                 title={communityText('Starter projects')}
                 lead={communityText('Run a project, change one thing, and save your own version. No sign-in needed to try.')}
                 actions={(

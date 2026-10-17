@@ -15,3 +15,8 @@
     margin: 0;
     font-size: var(--fs-3xl);
 }
+
+.conversation {
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+}

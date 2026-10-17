@@ -9,7 +9,7 @@ import styles from './stage-selector.css';
 import {isRtl} from '@turbowarp/scratch-l10n';
 
 import backdropIcon from '../action-menu/icon--backdrop.svg';
-import {Upload, Paintbrush, Sparkles, Search} from 'lucide-react';
+import {Upload, Paintbrush, Shuffle, Search} from 'lucide-react';
 
 const messages = defineMessages({
     addBackdropFromLibrary: {
@@ -112,7 +112,7 @@ export const StageSelector = props => {
                         fileMultiple: true
                     }, {
                         title: intl.formatMessage(messages.addBackdropFromSurprise),
-                        img: Sparkles,
+                        img: Shuffle,
                         onClick: onSurpriseBackdropClick
 
                     }, {

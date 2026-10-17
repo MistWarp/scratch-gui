@@ -13,7 +13,7 @@ import styles from './sprite-selector.css';
 
 import spriteIcon from '../action-menu/icon--sprite.svg';
 
-import {Upload, Paintbrush, Sparkles, Search} from 'lucide-react';
+import {Upload, Paintbrush, Shuffle, Search} from 'lucide-react';
 
 const messages = defineMessages({
     addSpriteFromLibrary: {
@@ -124,7 +124,7 @@ const SpriteSelectorComponent = function (props) {
                         fileMultiple: true
                     }, {
                         title: intl.formatMessage(messages.addSpriteFromSurprise),
-                        img: Sparkles,
+                        img: Shuffle,
                         onClick: onSurpriseSpriteClick // TODO need real function for this
                     }, {
                         title: intl.formatMessage(messages.addSpriteFromPaint),

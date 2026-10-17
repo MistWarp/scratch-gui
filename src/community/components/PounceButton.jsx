@@ -106,8 +106,8 @@ const PounceButton = ({post, mine, onChange, onNotice, onError}) => {
             disabled={busy}
             onClick={toggle}
         >
-            <PawPrint size={16} fill={pounced ? 'currentColor' : 'none'} aria-hidden="true" />
-            {' '}{pounceCount || 0}
+            <PawPrint size={17} fill={pounced ? 'currentColor' : 'none'} aria-hidden="true" />
+            {pounceCount ? <span>{pounceCount}</span> : null}
         </Button>
     );
 };
