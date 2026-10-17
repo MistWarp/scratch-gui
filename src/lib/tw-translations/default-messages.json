@@ -1206,6 +1206,8 @@
   "mw.settings.vc.autoCommitHelp": "Adds a version to the project history each time you save, so you never have to create one by hand.",
   "mw.settingsModal.blockedProjects": "Blocked projects",
   "mw.settingsModal.blockedProjectsHelp": "Projects listed here were blocked from asking for permissions such as extensions, websites or the camera. Their requests are denied without a prompt.",
+  "mw.settingsModal.accountPermissions": "Projects you blocked from using your Rotur account, the Rotur permissions you gave projects, and your editing presence are in your {link}.",
+  "mw.settingsModal.accountSettingsLink": "MistWarp account settings",
   "mw.settingsModal.unblockProject": "Allow prompts again",
   "mw.settingsModal.noBlockedProjects": "No projects are blocked from asking for permission.",
   "mw.settingsModal.usageData": "Usage data",

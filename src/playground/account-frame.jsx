@@ -3,9 +3,10 @@ import ReactDOM from 'react-dom';
 import * as identity from '../lib/rotur/identity.js';
 import {request, storeSession} from '../lib/community/api.js';
 import {callRotur} from '../lib/rotur/extension-bridge.js';
-import {ensureScopes, getRotur} from '../lib/rotur/client.js';
+import {clearActivity, ensureScopes, getRotur, syncActivity} from '../lib/rotur/client.js';
 import {signMessage} from '../lib/originchats/signing.js';
 import {createFrameChat} from '../lib/account/frame-chat.js';
+import {createFrameActivity} from '../lib/account/frame-activity.js';
 import {CHANNEL, PROMPT_LIFETIME} from '../lib/account/protocol.js';
 import {ACCOUNT_ORIGIN, isEditorOrigin} from '../lib/account/origins.js';
 import {
@@ -161,7 +162,8 @@ const startFrame = () => {
         projectRotur: createProjectRotur({prompt, getUsername}),
         confirmSignOut: username => prompt('signout', {username}),
         editorData: createEditorData(),
-        chat: createFrameChat({ensureScopes, getRotur, signMessage})
+        chat: createFrameChat({ensureScopes, getRotur, signMessage}),
+        activity: createFrameActivity({syncActivity, clearActivity})
     });
     const restored = Promise.race([
         Promise.resolve(identity.restore()).catch(() => null),

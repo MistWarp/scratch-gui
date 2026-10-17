@@ -24,7 +24,7 @@ jest.mock('../../../src/lib/account/bridge.js', () => ({
 
 const identity = require('../../../src/lib/rotur/identity.js');
 const {request, loadSession} = require('../../../src/lib/community/api.js');
-const {isLoggedIn, getAccessToken, accountKey} = require('../../../src/lib/rotur/client.js');
+const {isLoggedIn, getAccessToken, accountKey, syncActivity, clearActivity} = require('../../../src/lib/rotur/client.js');
 
 beforeEach(() => {
     localStorage.clear();
@@ -167,4 +167,25 @@ test('a failed mint is not retried on every request', async () => {
     await request('/me/quota', {cache: false});
     await request('/me/quota', {cache: false});
     expect(mockCall.mock.calls.filter(([method]) => method === 'editorSession')).toHaveLength(1);
+});
+
+test('editing presence goes to the account frame with only the presence fields', async () => {
+    await identity.restore();
+    mockCall.mockClear();
+    await syncActivity({projectTitle: 'Game',
+        doing: 'Editing',
+        collaborating: false,
+        url: 'https://mistwarp.org/project/p1',
+        editingSince: 5,
+        token: 'nope'});
+    expect(mockCall).toHaveBeenCalledWith('activity', {
+        action: 'set',
+        context: {projectTitle: 'Game',
+            doing: 'Editing',
+            collaborating: false,
+            url: 'https://mistwarp.org/project/p1',
+            editingSince: 5}
+    });
+    clearActivity();
+    expect(mockCall).toHaveBeenCalledWith('activity', {action: 'clear'});
 });

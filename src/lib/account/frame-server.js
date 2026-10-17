@@ -121,8 +121,11 @@ const EDITOR_DATA_ACTIONS = ['status', 'settings', 'restorePoints', 'restorePoin
 
 const CHAT_ACTIONS = ['validator', 'signingStatus', 'sign'];
 
+const ACTIVITY_ACTIONS = ['set', 'clear'];
+
 const createFrameServer = ({
-    identity, createEditorSession, mistSession, callRotur, projectRotur, chat, editorData, confirmSignOut,
+    identity, createEditorSession, mistSession, callRotur, projectRotur, confirmSignOut,
+    activity, chat, editorData,
     tokenRejected = () => Promise.resolve(false),
     store = createMemoryStore(), lock = createSerialLock(), now = Date.now
 }) => {
@@ -218,6 +221,11 @@ const createFrameServer = ({
         chat: args => {
             if (!CHAT_ACTIONS.includes(args.action) || !chat) throw new Error('Unknown chat request');
             return chat[args.action](args);
+        },
+        activity: args => {
+            if (!ACTIVITY_ACTIONS.includes(args.action) || !activity) throw new Error('Unknown activity request');
+            if (!identity.getState().user) return false;
+            return activity[args.action](args);
         },
         projectRotur: ({action, project, scopes, method, args}) => {
             if (!validProject(project)) throw new Error('This project cannot use Rotur');

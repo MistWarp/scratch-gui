@@ -301,6 +301,10 @@ const login = async (extraScopes = [], redirectFallback = true) => {
 };
 
 const clearActivity = () => {
+    if (isSplitEditor()) {
+        accountBridge.call('activity', {action: 'clear'}).catch(() => null);
+        return;
+    }
     const rotur = getClient();
     if (!rotur.loggedIn || !rotur.socket) {
         return;
@@ -537,7 +541,22 @@ const subscribeTier = listener => {
  * @param {object} [extra] - Extra activity fields.
  */
 const syncActivity = async (projectTitleOrCtx, extra = {}) => {
-    if (isSplitEditor()) return;
+    if (isSplitEditor()) {
+        const context = typeof projectTitleOrCtx === 'object' && projectTitleOrCtx !== null ?
+            projectTitleOrCtx :
+            {projectTitle: projectTitleOrCtx, ...extra};
+        await accountBridge.call('activity', {
+            action: 'set',
+            context: {
+                projectTitle: context.projectTitle,
+                doing: context.doing,
+                collaborating: context.collaborating,
+                url: context.url,
+                editingSince: context.editingSince
+            }
+        }).catch(() => null);
+        return;
+    }
     const rotur = getClient();
     if (!rotur.loggedIn) {
         return;

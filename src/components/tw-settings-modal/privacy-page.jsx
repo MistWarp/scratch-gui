@@ -7,6 +7,7 @@ import {BooleanSetting} from './setting.jsx';
 import {PageHeader} from './theme-accent-panel.jsx';
 import {analyticsEnabled, setAnalyticsEnabled} from '../../community/analytics.js';
 import {isMinorAccount, subscribeMinorAccount} from '../../lib/minor-account.js';
+import {ACCOUNT_ORIGIN, isSplitEditor} from '../../lib/account/origins.js';
 import {
     readBlockedProjectPrompts,
     unblockProjectPrompts
@@ -71,6 +72,28 @@ class PrivacyPage extends React.Component {
                         id="mw.settingsModal.blockedProjectsHelp"
                     />
                 </p>
+                {isSplitEditor() ? (
+                    <p className={styles.detail}>
+                        <FormattedMessage
+                            defaultMessage="Projects you blocked from using your Rotur account, the Rotur permissions you gave projects, and your editing presence are in your {link}."
+                            id="mw.settingsModal.accountPermissions"
+                            values={{
+                                link: (
+                                    <a
+                                        href={`${ACCOUNT_ORIGIN}/settings?section=safety`}
+                                        rel="noopener noreferrer"
+                                        target="_blank"
+                                    >
+                                        <FormattedMessage
+                                            defaultMessage="MistWarp account settings"
+                                            id="mw.settingsModal.accountSettingsLink"
+                                        />
+                                    </a>
+                                )
+                            }}
+                        />
+                    </p>
+                ) : null}
                 {blocked.length ? (
                     <div className={styles.menuBarSettings}>
                         {blocked.map(([key, value]) => (
