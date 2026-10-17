@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import React, {useEffect, useState} from 'react';
 import PropTypes from 'prop-types';
-import {BarChart3, CalendarCheck, Check, Coins, ExternalLink, FileSpreadsheet, Heart, History, Link2, Palette, Plus, RotateCcw, Server, Sparkles, Users, X} from 'lucide-react';
+import {BarChart3, CalendarCheck, Check, Coins, Crown, ExternalLink, FileSpreadsheet, Heart, History, Link2, Palette, Plus, RotateCcw, Server, Users, X} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import api, {editorUrl} from '../api.js';
 import {getCommunityLocale} from '../locale.js';
@@ -148,7 +148,7 @@ const PaidPerks = () => {
     return (
         <main className={styles.page}>
             <PageHeader
-                icon={Sparkles}
+                icon={Crown}
                 title={communityText('More tools for your next project')}
                 lead={communityText('Get more from creating on MistWarp with a Rotur membership. Your support helps cover the real costs of running the platform we share.')}
                 actions={<Button as="a" href="#memberships" variant="primary"><Heart size={16} />{communityText('Find your membership')}</Button>}
