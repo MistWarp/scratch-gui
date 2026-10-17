@@ -9,6 +9,7 @@ const KEPT_PREFIXES = ['tw:', 'mw:', 'PackagerOptions.'];
 const ACCOUNT_KEYS = new Set([
     MOVED_KEY,
     'tw:persisted_unsandboxed',
+    'tw:settings-dirty',
     'mw:rotur-token',
     'mw:rotur-oauth',
     'mw:rotur-oauth-pending',
@@ -26,7 +27,7 @@ const ACCOUNT_KEYS = new Set([
     'mw:rotur-activity-grants'
 ]);
 
-const ACCOUNT_PREFIXES = ['mw:tier:', 'mw:api-cache'];
+const ACCOUNT_PREFIXES = ['mw:tier:', 'mw:api-cache', 'mw:embed-storage:', 'mw:bounty-claim:', 'mw:signup-tracked:'];
 
 const CREDENTIAL_WORDS = /token|session|oauth|secret|password|credential/i;
 

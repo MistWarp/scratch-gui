@@ -273,3 +273,153 @@ test('an unreachable account frame does not hold up the editor', async () => {
     expect(Date.now() - started).toBeLessThan(2000);
     expect(localStorage.getItem(MOVED_KEY)).toBeNull();
 });
+
+const quiet = {reload: jest.fn(), progress: () => {}};
+
+test('project storage, community-only records and the cloud settings dirty flag stay on mistwarp.org', () => {
+    for (const key of ['mw:embed-storage:123:save', 'mw:bounty-claim:123', 'mw:signup-tracked:mist',
+        'tw:settings-dirty']) {
+        expect(movableKey(key)).toBe(false);
+    }
+});
+
+test('a full editor storage stops the move before it is marked done', async () => {
+    const {call, reload, accountStorage} = await setup();
+    const setItem = Storage.prototype.setItem;
+    const spy = jest.spyOn(Storage.prototype, 'setItem').mockImplementation((key, value) => {
+        if (key === 'tw:addons') throw new DOMException('full', 'QuotaExceededError');
+        return setItem.call(localStorage, key, value);
+    });
+    try {
+        await expect(moveEditorData({call, reload, progress: () => {}})).resolves.toBe(false);
+    } finally {
+        spy.mockRestore();
+    }
+    expect(reload).not.toHaveBeenCalled();
+    expect(localStorage.getItem(MOVED_KEY)).toBeNull();
+    expect(accountStorage.getItem(MOVED_KEY)).toBeNull();
+    expect(call.mock.calls.map(([, args]) => args.action)).not.toContain('done');
+    await expect(moveEditorData({call, reload, progress: () => {}})).resolves.toBe(true);
+    expect(localStorage.getItem('tw:addons')).toBe('{"a":1}');
+});
+
+test('restore points keep their ids, so backup links and the unsaved work record still open them', async () => {
+    const record = JSON.stringify({id: 2, title: 'Second', created: 200000, session: 'old', alive: 0});
+    const {call} = await setup([['mw:unsaved-device-backup', record]]);
+    const db = await openWith(indexedDB, 'TW_RestorePoints', 2, restoreSchema);
+    const tx = db.transaction(['meta'], 'readwrite');
+    const deleted = await request(tx.objectStore('meta').add(meta('Deleted on the editor', 50, {})));
+    tx.objectStore('meta').delete(deleted);
+    await new Promise(resolve => {
+        tx.oncomplete = resolve;
+    });
+    db.close();
+    await moveEditorData({call, ...quiet});
+    const editor = await readEditor();
+    expect(editor.metaKeys).toEqual([1, 2]);
+    expect(editor.meta[1].title).toBe('Second');
+    expect(localStorage.getItem('mw:unsaved-device-backup')).toBe(record);
+});
+
+test('the unsaved work record follows a restore point whose id was already taken', async () => {
+    const record = JSON.stringify({id: 2, title: 'Second', created: 200000, session: 'old', alive: 0});
+    const {call} = await setup([['mw:unsaved-device-backup', record]]);
+    const db = await openWith(indexedDB, 'TW_RestorePoints', 2, restoreSchema);
+    const tx = db.transaction(['meta', 'projects'], 'readwrite');
+    for (const title of ['Editor one', 'Editor two']) {
+        const id = await request(tx.objectStore('meta').add(meta(title, 300, {})));
+        tx.objectStore('projects').put(new Uint8Array([5]), id);
+    }
+    await new Promise(resolve => {
+        tx.oncomplete = resolve;
+    });
+    db.close();
+    await moveEditorData({call, ...quiet});
+    const editor = await readEditor();
+    const second = editor.metaKeys[editor.meta.findIndex(point => point.title === 'Second')];
+    expect(second).not.toBe(2);
+    expect(JSON.parse(localStorage.getItem('mw:unsaved-device-backup')).id).toBe(second);
+    expect(editor.meta.map(point => point.title)).toEqual(['Editor one', 'Editor two', 'First', 'Second']);
+});
+
+test('an unsaved work record for a restore point that did not move is dropped', async () => {
+    const record = JSON.stringify({id: 9, title: 'Gone', created: 1, session: 'old', alive: 0});
+    const {call} = await setup([['mw:unsaved-device-backup', record]]);
+    await moveEditorData({call, ...quiet});
+    expect(localStorage.getItem('mw:unsaved-device-backup')).toBeNull();
+});
+
+test('settings changed on the editor after a failed move are not overwritten later', async () => {
+    const {call, reload} = await setup();
+    await expect(moveEditorData({
+        connect: () => Promise.reject(new Error('offline')), call, reload, progress: () => {}
+    })).resolves.toBe(false);
+    localStorage.setItem('tw:theme', '{"gui":"light"}');
+    await expect(moveEditorData({call, reload, progress: () => {}})).resolves.toBe(true);
+    expect(localStorage.getItem('tw:theme')).toBe('{"gui":"light"}');
+    expect(localStorage.getItem('tw:addons')).toBe('{"a":1}');
+});
+
+test('a second editor tab does not move the data at the same time', async () => {
+    const {call} = await setup();
+    let held = false;
+    const locks = {
+        request: async (name, options, run) => {
+            expect(options.ifAvailable).toBe(true);
+            if (held) return run(null);
+            held = true;
+            try {
+                return await run({name});
+            } finally {
+                held = false;
+            }
+        }
+    };
+    const results = await Promise.all([
+        moveEditorData({call, locks, ...quiet}),
+        moveEditorData({call, locks, ...quiet})
+    ]);
+    expect(results.sort()).toEqual([false, true]);
+    const editor = await readEditor();
+    expect(editor.meta).toHaveLength(2);
+    expect(editor.backpack).toHaveLength(25);
+});
+
+test('identical items are all moved, and a resumed move still makes no copies', async () => {
+    const {call, source} = await setup();
+    const db = await openWith(source, 'TW_Backpack', 1, backpackSchema);
+    const tx = db.transaction('backpack', 'readwrite');
+    tx.objectStore('backpack').add({type: 'script',
+        name: 'Script 0',
+        mime: 'application/json',
+        bodyData: new Uint8Array([0]).buffer,
+        bodyMD5: 'md5-0',
+        thumbnailData: new Uint8Array([1]).buffer});
+    await new Promise(resolve => {
+        tx.oncomplete = resolve;
+    });
+    db.close();
+    let pages = 0;
+    const flaky = jest.fn((method, args) => {
+        if (args.action === 'backpack' && ++pages === 2) return Promise.reject(new Error('dropped'));
+        return call(method, args);
+    });
+    await moveEditorData({call: flaky, ...quiet});
+    expect((await readEditor()).backpack).toHaveLength(20);
+    await moveEditorData({call, ...quiet});
+    expect((await readEditor()).backpack.filter(item => item.name === 'Script 0')).toHaveLength(2);
+    expect((await readEditor()).backpack).toHaveLength(26);
+});
+
+test('a request the account never answers does not hold up the editor', async () => {
+    const {call} = await setup();
+    const hanging = jest.fn((method, args) => (args.action === 'restorePoint' ? new Promise(() => {}) : call(method, args)));
+    await expect(moveEditorData({call: hanging, ...quiet, callWait: 50})).resolves.toBe(false);
+    expect(localStorage.getItem(MOVED_KEY)).toBeNull();
+});
+
+test('an offline editor does not wait for the account', async () => {
+    const connect = jest.fn();
+    await expect(moveEditorData({connect, call: jest.fn(), ...quiet, online: () => false})).resolves.toBe(false);
+    expect(connect).not.toHaveBeenCalled();
+});

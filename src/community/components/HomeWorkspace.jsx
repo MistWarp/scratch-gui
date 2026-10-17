@@ -7,6 +7,7 @@ import api, {editorUrl, projectUrl} from '../api';
 import {formatDate, sameUser, timeAgo} from '../format';
 import {STARTERS} from '../../lib/starter-projects';
 import {getLastEditedProject} from '../../lib/mw/recent-projects';
+import {MOVED_KEY} from '../../lib/account/frame-editor-data.js';
 import Confetti, {useCelebration} from './Confetti.jsx';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import UserLink from './UserLink.jsx';
@@ -107,11 +108,20 @@ export const ContinueProjects = ({username, onProjectCount}) => {
     );
 };
 
+const editorDataMoved = () => {
+    try {
+        return Boolean(localStorage.getItem(MOVED_KEY));
+    } catch (e) {
+        return false;
+    }
+};
+
 export const DeviceBackup = () => {
     const {text: communityText} = useCommunityText();
     const [backup, setBackup] = useState(null);
     useEffect(() => {
         let active = true;
+        if (editorDataMoved()) return;
         import('../../lib/api/restore-points').then(({default: backups}) => backups.getAllRestorePoints())
             .then(({restorePoints}) => {
                 if (active) setBackup(restorePoints[0] || null);
