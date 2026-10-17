@@ -190,56 +190,115 @@ const listFilesRecursive = async (pfs, rootDir) => {
     return out;
 };
 
+const WORKSPACE_LOCK = 'mw:git-workspace:';
+const WORKSPACE_SESSION_KEY = 'mw:git-workspace';
+const ORPHAN_KEY = 'mw:git-orphan:';
+const ORPHAN_GRACE_MS = 60 * 1000;
+
+const hasLocks = () => typeof navigator !== 'undefined' && Boolean(navigator.locks);
+
+const claimWorkspace = name => new Promise(resolve => {
+    if (!hasLocks()) return resolve(false);
+    navigator.locks.request(`${WORKSPACE_LOCK}${name}`, {ifAvailable: true}, lock => {
+        if (lock) {
+            try {
+                localStorage.removeItem(`${ORPHAN_KEY}${name}`);
+            } catch (error) {
+                console.warn('Could not clear orphan mark for project history', error);
+            }
+        }
+        resolve(Boolean(lock));
+        return lock && new Promise(() => {});
+    }).catch(() => resolve(false));
+});
+
+const readStoredWorkspace = () => {
+    try {
+        return sessionStorage.getItem(WORKSPACE_SESSION_KEY) || FS_NAME;
+    } catch (error) {
+        return FS_NAME;
+    }
+};
+
+const storedWorkspace = readStoredWorkspace();
+const storedWorkspaceClaim = storedWorkspace === FS_NAME ? Promise.resolve(false) : claimWorkspace(storedWorkspace);
+
+const deleteDatabase = name => new Promise(resolve => {
+    const request = indexedDB.deleteDatabase(name);
+    request.onsuccess = request.onerror = request.onblocked = resolve;
+});
+
+const deleteOrphanWorkspaces = async current => {
+    if (!hasLocks() || typeof indexedDB === 'undefined' || !indexedDB.databases) return;
+    const names = new Set((await indexedDB.databases())
+        .map(({name}) => name.replace(/_lock$/, ''))
+        .filter(name => name.startsWith(`${FS_NAME}-`) && name !== current));
+    for (const name of names) {
+        await navigator.locks.request(`${WORKSPACE_LOCK}${name}`, {ifAvailable: true}, async lock => {
+            if (!lock) return;
+            const key = `${ORPHAN_KEY}${name}`;
+            const seen = Number(localStorage.getItem(key));
+            if (!seen) {
+                localStorage.setItem(key, String(Date.now()));
+            } else if (Date.now() - seen >= ORPHAN_GRACE_MS) {
+                await Promise.all([deleteDatabase(name), deleteDatabase(`${name}_lock`)]);
+                localStorage.removeItem(key);
+            }
+        });
+    }
+};
+
 const getFs = () => {
     if (!fsSingleton) {
-        // Each page owns a separate database. A duplicated tab may inherit
-        // sessionStorage, so it copies the previous workspace instead of sharing it.
-        let previousName = FS_NAME;
-        const name = `${FS_NAME}-${Date.now()}-${Math.random().toString(36)
-            .slice(2)}`;
-        try {
-            previousName = sessionStorage.getItem('mw:git-workspace') || FS_NAME;
-        } catch (error) {
-            // A private in-memory session still gets its own database name.
-        }
-        // Without defer, LightningFS starts an unawaited operation from its constructor,
-        // so storage that will not open reports an unhandled rejection. Deferred, the
-        // first real operation opens it and its caller receives the error.
-        const next = new LightningFS(name, {defer: true});
-        const raw = next.promises;
-        const source = new LightningFS(previousName, {defer: true}).promises;
+        // Each page owns a separate database, held by a Web Lock while the page is open.
+        // A reload reclaims its own database. A duplicated tab inherits sessionStorage
+        // but finds the lock taken, so it copies the workspace instead of sharing it.
+        const next = new LightningFS();
         const ready = (async () => {
-            let found = false;
-            try {
-                await source.stat(REPO_DIR);
-                found = true;
-            } catch (error) {
-                if (error.code !== 'ENOENT') throw error;
-            }
-            if (found) {
-                for (const path of await listFilesRecursive(source, REPO_DIR)) {
-                    // LightningFS returns undefined when the browser evicted a file's
-                    // contents but kept its metadata. Skip it rather than failing the copy.
-                    const data = await source.readFile(path);
-                    if (!data) continue;
-                    await ensureParentDir(raw, path);
-                    await raw.writeFile(path, data);
+            const previousName = storedWorkspace;
+            const reused = await storedWorkspaceClaim;
+            const name = reused ? previousName : `${FS_NAME}-${Date.now()}-${Math.random().toString(36)
+                .slice(2)}`;
+            if (!reused) await claimWorkspace(name);
+            // Without defer, LightningFS starts an unawaited operation from its constructor,
+            // so storage that will not open reports an unhandled rejection. Deferred, the
+            // first real operation opens it and its caller receives the error.
+            const raw = new LightningFS(name, {defer: true}).promises;
+            if (!reused) {
+                const source = new LightningFS(previousName, {defer: true}).promises;
+                let found = false;
+                try {
+                    await source.stat(REPO_DIR);
+                    found = true;
+                } catch (error) {
+                    if (error.code !== 'ENOENT') throw error;
+                }
+                if (found) {
+                    for (const path of await listFilesRecursive(source, REPO_DIR)) {
+                        // LightningFS returns undefined when the browser evicted a file's
+                        // contents but kept its metadata. Skip it rather than failing the copy.
+                        const data = await source.readFile(path);
+                        if (!data) continue;
+                        await ensureParentDir(raw, path);
+                        await raw.writeFile(path, data);
+                    }
+                }
+                try {
+                    sessionStorage.setItem(WORKSPACE_SESSION_KEY, name);
+                } catch (error) {
+                    // The current workspace remains usable without session storage.
                 }
             }
-            try {
-                sessionStorage.setItem('mw:git-workspace', name);
-            } catch (error) {
-                // The current workspace remains usable without session storage.
-            }
+            deleteOrphanWorkspaces(name).catch(() => {});
+            return raw;
         })();
         // Reads below still reject on copy failure, even if nobody has requested one yet.
         ready.catch(() => {});
-        // Git and the editor only see methods that wait for the copy to finish.
-        next.promises = new Proxy(raw, {
+        // Git and the editor only see methods that wait for the workspace to be ready.
+        next.promises = new Proxy(next.promises, {
             get: (target, property) => (typeof target[property] === 'function' ?
-                async (...args) => {
-                    await ready; return target[property](...args);
-                } : target[property])
+                async (...args) => (await ready)[property](...args) :
+                target[property])
         });
         fsSingleton = next;
     }
