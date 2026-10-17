@@ -96,7 +96,12 @@ describe('notification sentences', () => {
     test.each([
         [{type: 'space_comment', spaceTitle: 'Game Jam'}, 'alice commented on Game Jam'],
         [{type: 'love'}, 'alice loved your project'],
-        [{type: 'pounce', post_id: 'p1'}, 'alice pounced on your post'],
+        [{type: 'pounce', post_id: 'p1'}, 'alice pounced your post'],
+        [{type: 'post_milestone', post_id: 'p1', milestone: 250}, 'Your post passed 250 views'],
+        [{type: 'claw_weekly_recap', views: 1840, pounces: 1, new_followers: 0},
+            'Your week on claw: 1,840 views, 1 pounce, 0 new followers'],
+        [{type: 'claw_teen_lock', body: 'A parent or carer asked us to turn this off.'},
+            'A parent or carer asked us to turn this off.'],
         [{type: 'donation', amount: 1}, 'alice donated 1 credit to you'],
         [{type: 'donation', amount: 20}, 'alice donated 20 credits to you'],
         [{type: 'contribution_merged', projectTitle: 'Cool Game', pull: 2},

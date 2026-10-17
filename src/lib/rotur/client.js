@@ -391,10 +391,12 @@ const normalizeNotification = notification => {
 };
 
 const CLAW_TYPES = new Set(['like', 'reply', 'repost', 'mention', 'pounce']);
+const CLAW_NOTICE_TYPES = new Set(['post_milestone', 'claw_weekly_recap', 'claw_teen_lock']);
 
 const isClawNotification = notification => {
     const platform = String(notification.platform || '').toLowerCase();
     if (platform && platform !== 'rotur' && platform !== 'claw') return false;
+    if (CLAW_NOTICE_TYPES.has(String(notification.type || '').toLowerCase())) return true;
     const postId = notification.post_id || notification.original_post_id;
     return CLAW_TYPES.has(String(notification.type || '').toLowerCase()) &&
         typeof postId === 'string' && postId !== '';

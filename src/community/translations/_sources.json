@@ -685,7 +685,7 @@
   "Nothing to show": [
     "src/community/components/DiffView.jsx:647",
     "src/community/pages/Home.jsx:252",
-    "src/community/pages/Notifications.jsx:460"
+    "src/community/pages/Notifications.jsx:737"
   ],
   "Explore": [
     "src/community/components/ExploreHeader.jsx:17",
@@ -702,6 +702,7 @@
     "src/community/pages/Home.jsx:331",
     "src/community/pages/ManageSpace.jsx:28",
     "src/community/pages/ManageSpace.jsx:770",
+    "src/community/pages/Notifications.jsx:102",
     "src/community/pages/Profile.jsx:549",
     "src/community/pages/Profile.jsx:620",
     "src/community/pages/Search.jsx:224",
@@ -1163,7 +1164,7 @@
     "src/community/components/LanguagePicker.jsx:20",
     "src/community/components/RouteErrorBoundary.jsx:26",
     "src/community/components/ui/StatusMessage.jsx:26",
-    "src/community/pages/Notifications.jsx:432",
+    "src/community/pages/Notifications.jsx:777",
     "src/community/pages/Random.jsx:56",
     "src/community/pages/Settings.jsx:720",
     "src/community/pages/Settings.jsx:782"
@@ -1504,7 +1505,7 @@
     "src/community/components/NavBar.jsx:636",
     "src/community/components/NavBar.jsx:637",
     "src/community/pages/Home.jsx:315",
-    "src/community/pages/Notifications.jsx:422",
+    "src/community/pages/Notifications.jsx:758",
     "src/community/pages/Settings.jsx:105",
     "src/community/pages/Settings.jsx:667"
   ],
@@ -3006,254 +3007,365 @@
     "src/community/milestone-notifications.js:24"
   ],
   "Your report was reviewed; no action was taken.": [
-    "src/community/notification-text.jsx:139"
-  ],
-  "Your report was actioned with a warning.": [
-    "src/community/notification-text.jsx:140"
-  ],
-  "Your report was actioned with a ban.": [
-    "src/community/notification-text.jsx:141"
-  ],
-  "Your report was actioned; the project was unshared.": [
-    "src/community/notification-text.jsx:142"
-  ],
-  "Your report was actioned; the project was hidden.": [
     "src/community/notification-text.jsx:143"
   ],
-  "Your report was reviewed.": [
+  "Your report was actioned with a warning.": [
     "src/community/notification-text.jsx:144"
   ],
+  "Your report was actioned with a ban.": [
+    "src/community/notification-text.jsx:145"
+  ],
+  "Your report was actioned; the project was unshared.": [
+    "src/community/notification-text.jsx:146"
+  ],
+  "Your report was actioned; the project was hidden.": [
+    "src/community/notification-text.jsx:147"
+  ],
+  "Your report was reviewed.": [
+    "src/community/notification-text.jsx:148"
+  ],
+  "Your post passed {count, plural, one {# view} other {# views}}": [
+    "src/community/notification-text.jsx:164"
+  ],
+  "Your post is reaching more people": [
+    "src/community/notification-text.jsx:165"
+  ],
+  "{count, plural, one {# view} other {# views}}": [
+    "src/community/notification-text.jsx:170"
+  ],
+  "{count, plural, one {# pounce} other {# pounces}}": [
+    "src/community/notification-text.jsx:171"
+  ],
+  "{count, plural, one {# new follower} other {# new followers}}": [
+    "src/community/notification-text.jsx:172"
+  ],
+  "Your week on claw: {summary}": [
+    "src/community/notification-text.jsx:176"
+  ],
+  "Your claw settings changed": [
+    "src/community/notification-text.jsx:179"
+  ],
   "{actor} shared {project} with you": [
-    "src/community/notification-text.jsx:161"
+    "src/community/notification-text.jsx:189"
   ],
   "{actor} shared a project with you": [
-    "src/community/notification-text.jsx:162"
+    "src/community/notification-text.jsx:190"
   ],
   "{actor} loved {project}": [
-    "src/community/notification-text.jsx:164",
+    "src/community/notification-text.jsx:192",
     "src/community/pages/Home.jsx:46"
   ],
   "{actor} loved your project": [
-    "src/community/notification-text.jsx:165"
+    "src/community/notification-text.jsx:193"
   ],
   "{actor} commented on PR #{pull} in {project}": [
-    "src/community/notification-text.jsx:169"
+    "src/community/notification-text.jsx:197"
   ],
   "{actor} commented on PR #{pull}": [
-    "src/community/notification-text.jsx:170"
-  ],
-  "{actor} commented on {project}": [
-    "src/community/notification-text.jsx:173"
-  ],
-  "{actor} commented on your project": [
-    "src/community/notification-text.jsx:174"
-  ],
-  "{actor} commented on your profile": [
-    "src/community/notification-text.jsx:175"
-  ],
-  "{actor} replied to your post": [
-    "src/community/notification-text.jsx:177"
-  ],
-  "{actor} replied to your comment on PR #{pull} in {project}": [
-    "src/community/notification-text.jsx:180"
-  ],
-  "{actor} replied to your comment on PR #{pull}": [
-    "src/community/notification-text.jsx:181"
-  ],
-  "{actor} replied to your comment on {project}": [
-    "src/community/notification-text.jsx:184"
-  ],
-  "{actor} replied to your comment": [
-    "src/community/notification-text.jsx:185"
-  ],
-  "{actor} bought {project} for {amount, plural, one {# credit} other {# credits}}": [
-    "src/community/notification-text.jsx:189"
-  ],
-  "{actor} bought your project for {amount, plural, one {# credit} other {# credits}}": [
-    "src/community/notification-text.jsx:191"
-  ],
-  "{actor} bought {project}": [
-    "src/community/notification-text.jsx:195"
-  ],
-  "{actor} bought your project": [
-    "src/community/notification-text.jsx:196"
-  ],
-  "{actor} donated {amount, plural, one {# credit} other {# credits}} to you": [
     "src/community/notification-text.jsx:198"
   ],
+  "{actor} commented on {project}": [
+    "src/community/notification-text.jsx:201"
+  ],
+  "{actor} commented on your project": [
+    "src/community/notification-text.jsx:202"
+  ],
+  "{actor} commented on your profile": [
+    "src/community/notification-text.jsx:203"
+  ],
+  "{actor} replied to your post": [
+    "src/community/notification-text.jsx:205"
+  ],
+  "{actor} replied to your comment on PR #{pull} in {project}": [
+    "src/community/notification-text.jsx:208"
+  ],
+  "{actor} replied to your comment on PR #{pull}": [
+    "src/community/notification-text.jsx:209"
+  ],
+  "{actor} replied to your comment on {project}": [
+    "src/community/notification-text.jsx:212"
+  ],
+  "{actor} replied to your comment": [
+    "src/community/notification-text.jsx:213"
+  ],
+  "{actor} bought {project} for {amount, plural, one {# credit} other {# credits}}": [
+    "src/community/notification-text.jsx:217"
+  ],
+  "{actor} bought your project for {amount, plural, one {# credit} other {# credits}}": [
+    "src/community/notification-text.jsx:219"
+  ],
+  "{actor} bought {project}": [
+    "src/community/notification-text.jsx:223"
+  ],
+  "{actor} bought your project": [
+    "src/community/notification-text.jsx:224"
+  ],
+  "{actor} donated {amount, plural, one {# credit} other {# credits}} to you": [
+    "src/community/notification-text.jsx:226"
+  ],
   "{actor} donated credits to you": [
-    "src/community/notification-text.jsx:199"
+    "src/community/notification-text.jsx:227"
   ],
   "{actor} remixed {project}": [
-    "src/community/notification-text.jsx:201",
+    "src/community/notification-text.jsx:229",
     "src/community/pages/Home.jsx:49"
   ],
   "{actor} remixed your project": [
-    "src/community/notification-text.jsx:202"
+    "src/community/notification-text.jsx:230"
   ],
   "{actor} followed you": [
-    "src/community/notification-text.jsx:203"
+    "src/community/notification-text.jsx:231"
   ],
   "{actor} mentioned you in a post": [
-    "src/community/notification-text.jsx:205"
-  ],
-  "{actor} mentioned you on PR #{pull} in {project}": [
-    "src/community/notification-text.jsx:208"
-  ],
-  "{actor} mentioned you on PR #{pull}": [
-    "src/community/notification-text.jsx:209"
-  ],
-  "{actor} mentioned you on {project}": [
-    "src/community/notification-text.jsx:212"
-  ],
-  "{actor} mentioned you in a comment": [
-    "src/community/notification-text.jsx:213"
-  ],
-  "{actor} liked your post": [
-    "src/community/notification-text.jsx:214"
-  ],
-  "{actor} reposted your post": [
-    "src/community/notification-text.jsx:215"
-  ],
-  "{actor} pounced on your post": [
-    "src/community/notification-text.jsx:216"
-  ],
-  "{actor} invited you to join {group}": [
-    "src/community/notification-text.jsx:217"
-  ],
-  "{actor} accepted your request to join {group}": [
-    "src/community/notification-text.jsx:218"
-  ],
-  "{actor} declined your request to join {group}": [
-    "src/community/notification-text.jsx:219"
-  ],
-  "{actor} removed you from {group}": [
-    "src/community/notification-text.jsx:220"
-  ],
-  "{actor} banned you from {group}": [
-    "src/community/notification-text.jsx:221"
-  ],
-  "{actor} transferred {group} to you": [
-    "src/community/notification-text.jsx:222"
-  ],
-  "{actor} sent you {item}": [
-    "src/community/notification-text.jsx:223",
-    "src/community/notification-text.jsx:224"
-  ],
-  "{actor} bought {item} from you": [
-    "src/community/notification-text.jsx:225"
-  ],
-  "You bought {item} from {actor}": [
-    "src/community/notification-text.jsx:226"
-  ],
-  "Your account standing is now {level}: {reason}": [
-    "src/community/notification-text.jsx:228"
-  ],
-  "Your account standing is now {level}.": [
-    "src/community/notification-text.jsx:229"
-  ],
-  "A moderator hid {project}: {reason}": [
     "src/community/notification-text.jsx:233"
   ],
-  "A moderator hid {project}.": [
-    "src/community/notification-text.jsx:234"
+  "{actor} mentioned you on PR #{pull} in {project}": [
+    "src/community/notification-text.jsx:236"
   ],
-  "A moderator hid your project: {reason}": [
+  "{actor} mentioned you on PR #{pull}": [
     "src/community/notification-text.jsx:237"
   ],
-  "A moderator hid your project.": [
-    "src/community/notification-text.jsx:238"
-  ],
-  "A moderator restored {project}.": [
+  "{actor} mentioned you on {project}": [
     "src/community/notification-text.jsx:240"
   ],
-  "A moderator restored your project.": [
+  "{actor} mentioned you in a comment": [
     "src/community/notification-text.jsx:241"
   ],
-  "A moderator sent you a message.": [
+  "{actor} liked your post": [
+    "src/community/notification-text.jsx:242"
+  ],
+  "{actor} reposted your post": [
+    "src/community/notification-text.jsx:243"
+  ],
+  "{actor} pounced your post": [
     "src/community/notification-text.jsx:244"
   ],
-  "New announcement: {title}": [
+  "{actor} invited you to join {group}": [
     "src/community/notification-text.jsx:245"
   ],
-  "{actor} sent changes for {project} in PR #{pull}": [
+  "{actor} accepted your request to join {group}": [
+    "src/community/notification-text.jsx:246"
+  ],
+  "{actor} declined your request to join {group}": [
+    "src/community/notification-text.jsx:247"
+  ],
+  "{actor} removed you from {group}": [
+    "src/community/notification-text.jsx:248"
+  ],
+  "{actor} banned you from {group}": [
+    "src/community/notification-text.jsx:249"
+  ],
+  "{actor} transferred {group} to you": [
     "src/community/notification-text.jsx:250"
   ],
-  "{actor} sent changes in PR #{pull}": [
-    "src/community/notification-text.jsx:251"
+  "{actor} sent you {item}": [
+    "src/community/notification-text.jsx:251",
+    "src/community/notification-text.jsx:252"
   ],
-  "{actor} sent changes for {project}": [
+  "{actor} bought {item} from you": [
+    "src/community/notification-text.jsx:253"
+  ],
+  "You bought {item} from {actor}": [
     "src/community/notification-text.jsx:254"
   ],
-  "{actor} sent changes": [
-    "src/community/notification-text.jsx:255"
+  "Your account standing is now {level}: {reason}": [
+    "src/community/notification-text.jsx:256"
   ],
-  "{actor} merged changes for {project} in PR #{pull}": [
-    "src/community/notification-text.jsx:259"
+  "Your account standing is now {level}.": [
+    "src/community/notification-text.jsx:257"
   ],
-  "{actor} merged changes in PR #{pull}": [
-    "src/community/notification-text.jsx:260"
+  "A moderator hid {project}: {reason}": [
+    "src/community/notification-text.jsx:261"
   ],
-  "{actor} merged changes for {project}": [
-    "src/community/notification-text.jsx:263"
+  "A moderator hid {project}.": [
+    "src/community/notification-text.jsx:262"
   ],
-  "{actor} merged changes": [
-    "src/community/notification-text.jsx:264"
+  "A moderator hid your project: {reason}": [
+    "src/community/notification-text.jsx:265"
   ],
-  "{actor} added {project} to {space}": [
+  "A moderator hid your project.": [
     "src/community/notification-text.jsx:266"
   ],
-  "{actor} added a project to {space}": [
-    "src/community/notification-text.jsx:267"
-  ],
-  "{actor} commented on {space}": [
+  "A moderator restored {project}.": [
     "src/community/notification-text.jsx:268"
   ],
-  "{actor} invited you to curate {space}": [
+  "A moderator restored your project.": [
     "src/community/notification-text.jsx:269"
   ],
-  "{actor} accepted your invitation to curate {space}": [
-    "src/community/notification-text.jsx:270"
-  ],
-  "{actor} declined your invitation to curate {space}": [
-    "src/community/notification-text.jsx:271"
-  ],
-  "{actor} removed you as a curator of {space}": [
+  "A moderator sent you a message.": [
     "src/community/notification-text.jsx:272"
   ],
-  "{actor} invited you to judge {space}": [
+  "New announcement: {title}": [
     "src/community/notification-text.jsx:273"
   ],
-  "{actor} accepted your invitation to judge {space}": [
-    "src/community/notification-text.jsx:274"
-  ],
-  "{actor} joined {space}": [
-    "src/community/notification-text.jsx:275"
-  ],
-  "{actor} sent feedback for {project}": [
-    "src/community/notification-text.jsx:277"
-  ],
-  "{actor} sent feedback for your project": [
+  "{actor} sent changes for {project} in PR #{pull}": [
     "src/community/notification-text.jsx:278"
   ],
+  "{actor} sent changes in PR #{pull}": [
+    "src/community/notification-text.jsx:279"
+  ],
+  "{actor} sent changes for {project}": [
+    "src/community/notification-text.jsx:282"
+  ],
+  "{actor} sent changes": [
+    "src/community/notification-text.jsx:283"
+  ],
+  "{actor} merged changes for {project} in PR #{pull}": [
+    "src/community/notification-text.jsx:287"
+  ],
+  "{actor} merged changes in PR #{pull}": [
+    "src/community/notification-text.jsx:288"
+  ],
+  "{actor} merged changes for {project}": [
+    "src/community/notification-text.jsx:291"
+  ],
+  "{actor} merged changes": [
+    "src/community/notification-text.jsx:292"
+  ],
+  "{actor} added {project} to {space}": [
+    "src/community/notification-text.jsx:294"
+  ],
+  "{actor} added a project to {space}": [
+    "src/community/notification-text.jsx:295"
+  ],
+  "{actor} commented on {space}": [
+    "src/community/notification-text.jsx:296"
+  ],
+  "{actor} invited you to curate {space}": [
+    "src/community/notification-text.jsx:297"
+  ],
+  "{actor} accepted your invitation to curate {space}": [
+    "src/community/notification-text.jsx:298"
+  ],
+  "{actor} declined your invitation to curate {space}": [
+    "src/community/notification-text.jsx:299"
+  ],
+  "{actor} removed you as a curator of {space}": [
+    "src/community/notification-text.jsx:300"
+  ],
+  "{actor} invited you to judge {space}": [
+    "src/community/notification-text.jsx:301"
+  ],
+  "{actor} accepted your invitation to judge {space}": [
+    "src/community/notification-text.jsx:302"
+  ],
+  "{actor} joined {space}": [
+    "src/community/notification-text.jsx:303"
+  ],
+  "{actor} sent feedback for {project}": [
+    "src/community/notification-text.jsx:305"
+  ],
+  "{actor} sent feedback for your project": [
+    "src/community/notification-text.jsx:306"
+  ],
   "{actor} rated {project} {rating} out of 5": [
-    "src/community/notification-text.jsx:280",
+    "src/community/notification-text.jsx:308",
     "src/community/pages/Home.jsx:50"
   ],
   "{actor} rated your project {rating} out of 5": [
-    "src/community/notification-text.jsx:281"
+    "src/community/notification-text.jsx:309"
   ],
   "{actor} commented on {suggestion}": [
-    "src/community/notification-text.jsx:283"
+    "src/community/notification-text.jsx:311"
   ],
   "{actor} commented on your suggestion": [
-    "src/community/notification-text.jsx:284"
+    "src/community/notification-text.jsx:312"
   ],
   "{actor} {message}": [
-    "src/community/notification-text.jsx:288"
+    "src/community/notification-text.jsx:316"
   ],
   "{actor} sent you a notification": [
-    "src/community/notification-text.jsx:289"
+    "src/community/notification-text.jsx:317"
+  ],
+  "{actor} {actions} your posts and projects": [
+    "src/community/notification-text.jsx:347"
+  ],
+  "{actor} {actions} {project}": [
+    "src/community/notification-text.jsx:349"
+  ],
+  "{actor} {actions} your project": [
+    "src/community/notification-text.jsx:351"
+  ],
+  "{actor} {actions} your projects": [
+    "src/community/notification-text.jsx:352"
+  ],
+  "{actor} {actions} your post": [
+    "src/community/notification-text.jsx:355"
+  ],
+  "{actor} {actions} your posts": [
+    "src/community/notification-text.jsx:356"
+  ],
+  "{actor} and {other} liked your post": [
+    "src/community/notification-text.jsx:367"
+  ],
+  "{actor} and {count, plural, one {# other} other {# others}} liked your post": [
+    "src/community/notification-text.jsx:368"
+  ],
+  "{actor} and {other} reposted your post": [
+    "src/community/notification-text.jsx:370"
+  ],
+  "{actor} and {count, plural, one {# other} other {# others}} reposted your post": [
+    "src/community/notification-text.jsx:371"
+  ],
+  "{actor} and {other} pounced your post": [
+    "src/community/notification-text.jsx:373"
+  ],
+  "{actor} and {count, plural, one {# other} other {# others}} pounced your post": [
+    "src/community/notification-text.jsx:374"
+  ],
+  "{actor} and {other} followed you": [
+    "src/community/notification-text.jsx:376"
+  ],
+  "{actor} and {count, plural, one {# other} other {# others}} followed you": [
+    "src/community/notification-text.jsx:377"
+  ],
+  "{actor} and {other} joined {space}": [
+    "src/community/notification-text.jsx:379"
+  ],
+  "{actor} and {count, plural, one {# other} other {# others}} joined {space}": [
+    "src/community/notification-text.jsx:380"
+  ],
+  "{actor} and {other} loved {project}": [
+    "src/community/notification-text.jsx:384"
+  ],
+  "{actor} and {count, plural, one {# other} other {# others}} loved {project}": [
+    "src/community/notification-text.jsx:385"
+  ],
+  "{actor} and {other} loved your project": [
+    "src/community/notification-text.jsx:389"
+  ],
+  "{actor} and {count, plural, one {# other} other {# others}} loved your project": [
+    "src/community/notification-text.jsx:390"
+  ],
+  "Liked your post": [
+    "src/community/notification-text.jsx:398"
+  ],
+  "Pounced your post": [
+    "src/community/notification-text.jsx:399"
+  ],
+  "Reposted your post": [
+    "src/community/notification-text.jsx:400"
+  ],
+  "Replied to your post": [
+    "src/community/notification-text.jsx:401"
+  ],
+  "Loved {project}": [
+    "src/community/notification-text.jsx:402"
+  ],
+  "Loved your project": [
+    "src/community/notification-text.jsx:402"
+  ],
+  "Commented on {project}": [
+    "src/community/notification-text.jsx:403"
+  ],
+  "Commented on your project": [
+    "src/community/notification-text.jsx:403"
+  ],
+  "Remixed {project}": [
+    "src/community/notification-text.jsx:404"
+  ],
+  "Remixed your project": [
+    "src/community/notification-text.jsx:404"
   ],
   "Overview": [
     "src/community/pages/Admin.jsx:31",
@@ -4054,6 +4166,7 @@
   ],
   "All": [
     "src/community/pages/Explore.jsx:28",
+    "src/community/pages/Notifications.jsx:99",
     "src/community/pages/Search.jsx:223",
     "src/community/pages/admin/ErrorManager.jsx:208"
   ],
@@ -4280,7 +4393,7 @@
   ],
   "Couldn't load activity.": [
     "src/community/pages/Home.jsx:121",
-    "src/community/pages/Notifications.jsx:426"
+    "src/community/pages/Notifications.jsx:771"
   ],
   "No recent activity yet": [
     "src/community/pages/Home.jsx:122"
@@ -4325,7 +4438,7 @@
   ],
   "Sign in to see your notifications.": [
     "src/community/pages/Home.jsx:247",
-    "src/community/pages/Notifications.jsx:411"
+    "src/community/pages/Notifications.jsx:690"
   ],
   "Couldn't load notifications.": [
     "src/community/pages/Home.jsx:249"
@@ -4335,7 +4448,7 @@
   ],
   "Change preferences": [
     "src/community/pages/Home.jsx:252",
-    "src/community/pages/Notifications.jsx:463"
+    "src/community/pages/Notifications.jsx:740"
   ],
   "Your notification preferences hide all recent activity.": [
     "src/community/pages/Home.jsx:253"
@@ -5493,26 +5606,50 @@
   "Return to the MistWarp home page": [
     "src/community/pages/NotFound.jsx:21"
   ],
+  "Mentions": [
+    "src/community/pages/Notifications.jsx:100"
+  ],
+  "Claw": [
+    "src/community/pages/Notifications.jsx:101"
+  ],
+  "New": [
+    "src/community/pages/Notifications.jsx:300"
+  ],
   "{message} in #{channel}": [
-    "src/community/pages/Notifications.jsx:177"
+    "src/community/pages/Notifications.jsx:343"
+  ],
+  "Hide details": [
+    "src/community/pages/Notifications.jsx:454"
+  ],
+  "Show all {count}": [
+    "src/community/pages/Notifications.jsx:455"
+  ],
+  "Hide people": [
+    "src/community/pages/Notifications.jsx:518"
+  ],
+  "Show people": [
+    "src/community/pages/Notifications.jsx:518"
   ],
   "posted": [
-    "src/community/pages/Notifications.jsx:247"
+    "src/community/pages/Notifications.jsx:547"
   ],
   "Open post": [
-    "src/community/pages/Notifications.jsx:255"
+    "src/community/pages/Notifications.jsx:555"
   ],
-  "Some activity may be missing.": [
-    "src/community/pages/Notifications.jsx:434"
+  "Nothing here yet.": [
+    "src/community/pages/Notifications.jsx:732"
   ],
   "Your notification preferences hide all current activity.": [
-    "src/community/pages/Notifications.jsx:467"
+    "src/community/pages/Notifications.jsx:744"
   ],
   "Nothing yet": [
-    "src/community/pages/Notifications.jsx:470"
+    "src/community/pages/Notifications.jsx:749"
   ],
   "Notifications and posts from people you follow show up here.": [
-    "src/community/pages/Notifications.jsx:471"
+    "src/community/pages/Notifications.jsx:750"
+  ],
+  "Some activity may be missing.": [
+    "src/community/pages/Notifications.jsx:779"
   ],
   "{count} days": [
     "src/community/pages/PaidPerks.jsx:34",

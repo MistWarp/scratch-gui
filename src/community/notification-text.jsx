@@ -6,7 +6,10 @@ import {isMilestoneNotification, milestoneLink, milestoneText} from './milestone
 // Shared by the notifications page and the Home preview so both describe and
 // link notifications the same way.
 
-export const SYSTEM_TYPES = ['standing', 'moderation', 'project_hidden', 'project_restored', 'news', 'report_update'];
+export const SYSTEM_TYPES = [
+    'standing', 'moderation', 'project_hidden', 'project_restored', 'news', 'report_update',
+    'post_milestone', 'claw_weekly_recap', 'claw_teen_lock'
+];
 
 export const GROUP_TYPES = [
     'group_invite',
@@ -131,6 +134,7 @@ export const richTranslator = (translate, wrap) => {
     // Text that is already translated or written by someone (a moderator's
     // message), laid out like a translated sentence.
     t.plain = text => assemble(text, {});
+    t.text = (message, values) => String(translate(message, values));
     return t;
 };
 
@@ -148,8 +152,32 @@ const reportOutcome = (action, t) => {
 // Describes a notification as a whole translated sentence. `t` comes from
 // richTranslator; `actor` is the node rendered for {actor} (unused by
 // system notifications, which have no actor).
+const count = value => {
+    const number = Math.floor(Number(value));
+    return Number.isFinite(number) && number > 0 ? number : 0;
+};
+
 export const describeNotification = (n, t, actor) => {
     if (isMilestoneNotification(n)) return t.plain(milestoneText(n));
+    if (n.type === 'post_milestone') {
+        return count(n.milestone) ?
+            t('Your post passed {count, plural, one {# view} other {# views}}', {count: count(n.milestone)}) :
+            t('Your post is reaching more people');
+    }
+    if (n.type === 'claw_weekly_recap') {
+        const {text} = t;
+        const summary = [
+            text('{count, plural, one {# view} other {# views}}', {count: count(n.views)}),
+            text('{count, plural, one {# pounce} other {# pounces}}', {count: count(n.pounces)}),
+            text('{count, plural, one {# new follower} other {# new followers}}', {
+                count: count(n.new_followers)
+            })
+        ].join(', ');
+        return t('Your week on claw: {summary}', {summary});
+    }
+    if (n.type === 'claw_teen_lock') {
+        return typeof n.body === 'string' && n.body.trim() ? t.plain(n.body) : t('Your claw settings changed');
+    }
     const strong = value => <strong>{value}</strong>;
     const project = n.projectTitle ? strong(n.projectTitle) : null;
     const pull = n.pull ? String(n.pull) : '';
@@ -213,7 +241,7 @@ export const describeNotification = (n, t, actor) => {
             t('{actor} mentioned you in a comment', {actor});
     case 'like': return t('{actor} liked your post', {actor});
     case 'repost': return t('{actor} reposted your post', {actor});
-    case 'pounce': return t('{actor} pounced on your post', {actor});
+    case 'pounce': return t('{actor} pounced your post', {actor});
     case 'group_invite': return t('{actor} invited you to join {group}', {actor, group});
     case 'group_request_accepted': return t('{actor} accepted your request to join {group}', {actor, group});
     case 'group_request_declined': return t('{actor} declined your request to join {group}', {actor, group});
@@ -288,5 +316,92 @@ export const describeNotification = (n, t, actor) => {
             t('{actor} {message}', {actor, message: body}) :
             t('{actor} sent you a notification', {actor});
     }
+    }
+};
+
+export const groupVerbs = translate => ({
+    like: translate('liked'),
+    love: translate('loved'),
+    pounce: translate('pounced'),
+    repost: translate('reposted'),
+    remix: translate('remixed'),
+    comment: translate('commented on'),
+    reply: translate('replied to')
+});
+
+export const joinList = (parts, locale) => {
+    if (typeof Intl !== 'undefined' && typeof Intl.ListFormat === 'function') {
+        try {
+            const lang = !locale || locale === 'en' ? 'en-GB' : locale;
+            return new Intl.ListFormat(lang, {style: 'long', type: 'conjunction'}).format(parts);
+        } catch (e) {
+            return parts.join(', ');
+        }
+    }
+    return parts.join(', ');
+};
+
+export const describeGroup = (row, t, actor, actions) => {
+    const first = row.items.find(item => item.projectTitle);
+    const project = first && row.targets.length === 1 ? <strong>{first.projectTitle}</strong> : null;
+    if (row.object === 'mixed') return t('{actor} {actions} your posts and projects', {actor, actions});
+    if (row.object === 'projects') {
+        if (project) return t('{actor} {actions} {project}', {actor, actions, project});
+        return row.targets.length === 1 ?
+            t('{actor} {actions} your project', {actor, actions}) :
+            t('{actor} {actions} your projects', {actor, actions});
+    }
+    return row.targets.length === 1 ?
+        t('{actor} {actions} your post', {actor, actions}) :
+        t('{actor} {actions} your posts', {actor, actions});
+};
+
+export const describeStack = (row, t, actor, other) => {
+    const others = row.actors.length - 1;
+    const two = others === 1;
+    const first = row.items[0];
+    const project = first.projectTitle ? <strong>{first.projectTitle}</strong> : null;
+    const space = <strong>{first.spaceTitle}</strong>;
+    switch (row.type) {
+    case 'like': return two ?
+        t('{actor} and {other} liked your post', {actor, other}) :
+        t('{actor} and {count, plural, one {# other} other {# others}} liked your post', {actor, count: others});
+    case 'repost': return two ?
+        t('{actor} and {other} reposted your post', {actor, other}) :
+        t('{actor} and {count, plural, one {# other} other {# others}} reposted your post', {actor, count: others});
+    case 'pounce': return two ?
+        t('{actor} and {other} pounced your post', {actor, other}) :
+        t('{actor} and {count, plural, one {# other} other {# others}} pounced your post', {actor, count: others});
+    case 'follow': return two ?
+        t('{actor} and {other} followed you', {actor, other}) :
+        t('{actor} and {count, plural, one {# other} other {# others}} followed you', {actor, count: others});
+    case 'challenge_join': return two ?
+        t('{actor} and {other} joined {space}', {actor, other, space}) :
+        t('{actor} and {count, plural, one {# other} other {# others}} joined {space}', {actor, count: others, space});
+    default:
+        if (project) {
+            return two ?
+                t('{actor} and {other} loved {project}', {actor, other, project}) :
+                t('{actor} and {count, plural, one {# other} other {# others}} loved {project}',
+                    {actor, count: others, project});
+        }
+        return two ?
+            t('{actor} and {other} loved your project', {actor, other}) :
+            t('{actor} and {count, plural, one {# other} other {# others}} loved your project',
+                {actor, count: others});
+    }
+};
+
+export const describeAction = (n, t) => {
+    const project = n.projectTitle ? <strong>{n.projectTitle}</strong> : null;
+    switch (n.type) {
+    case 'like': return t('Liked your post');
+    case 'pounce': return t('Pounced your post');
+    case 'repost': return t('Reposted your post');
+    case 'reply': return t('Replied to your post');
+    case 'love': return project ? t('Loved {project}', {project}) : t('Loved your project');
+    case 'comment': return project ? t('Commented on {project}', {project}) : t('Commented on your project');
+    case 'remix': return project ? t('Remixed {project}', {project}) : t('Remixed your project');
+    default: return null;
     }
 };
