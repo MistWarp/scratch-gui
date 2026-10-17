@@ -2955,5 +2955,13 @@
   "For you": "For you",
   "Posts from claw, the Rotur social network, picked for you.": "Posts from claw, the Rotur social network, picked for you.",
   "Show posts": "Show posts",
-  "Show more posts": "Show more posts"
+  "Show more posts": "Show more posts",
+  "{count, plural, one {# credit} other {# credits}}": "{count, plural, one {# credit} other {# credits}}",
+  "Get Lite free by showing up": "Get Lite free by showing up",
+  "Claim your free Rotur credit once a day from your wallet. At {daily, plural, one {# credit} other {# credits}} a day, {days, plural, one {# day} other {# days}} of claims pays for a month of Lite, which gives you {lite} of project storage instead of {free}.": "Claim your free Rotur credit once a day from your wallet. At {daily, plural, one {# credit} other {# credits}} a day, {days, plural, one {# day} other {# days}} of claims pays for a month of Lite, which gives you {lite} of project storage instead of {free}.",
+  "Lite renews from your credits each month until you cancel. If you have fewer than {count, plural, one {# credit} other {# credits}} when it renews, you go back to Free and can get Lite again once you have enough.": "Lite renews from your credits each month until you cancel. If you have fewer than {count, plural, one {# credit} other {# credits}} when it renews, you go back to Free and can get Lite again once you have enough.",
+  "Get Lite with credits": "Get Lite with credits",
+  "{count, plural, one {# credit/month} other {# credits/month}}": "{count, plural, one {# credit/month} other {# credits/month}}",
+  "Free with daily credits": "Free with daily credits",
+  "{free}, or pay with credits you already have.": "{free}, or pay with credits you already have."
 }
