@@ -11,6 +11,23 @@ const FETCH_TIMEOUT_MS = 3000;
 const STATIC_FILE_PATH = /^\/(?:assets|js|static\/assets)\//;
 const DOCS_PATH = /^\/docs(?:\/|$)/;
 const LEGACY_EMBED_PATH = /^\/(\d+|p[A-Za-z0-9]+)\/embed\/?$/;
+const EDITOR_HOST = 'editor.mistwarp.org';
+const ACCOUNT_ORIGIN = 'https://mistwarp.org';
+const EDITOR_HOST_PAGES = new Set([
+    '/editor',
+    '/editor.html',
+    '/player',
+    '/player.html',
+    '/fullscreen',
+    '/fullscreen.html',
+    '/embed',
+    '/embed.html',
+    '/addons',
+    '/addons.html',
+    '/credits',
+    '/credits.html'
+]);
+const FILE_PATH = /\/[^/]+\.(?!html$)[A-Za-z0-9]+$/;
 // Standalone HTML entries with their own tags; the community SPA is index.html.
 const SKIP_PATHS = new Set([
     '/editor',
@@ -417,6 +434,13 @@ const themeMeta = async id => {
     };
 };
 
+const isEditorHost = url => url.hostname.replace(/\.$/, '') === EDITOR_HOST;
+
+const isEditorHostPage = pathname => EDITOR_HOST_PAGES.has(pathname.replace(/(.)\/+$/, '$1'));
+
+const servedOnEditorHost = pathname => isEditorHostPage(pathname) ||
+    STATIC_FILE_PATH.test(pathname) || FILE_PATH.test(pathname);
+
 const decodeSegment = segment => {
     try {
         return decodeURIComponent(segment);
@@ -569,6 +593,11 @@ export const onRequest = async context => {
         return new Response('Sitemap unavailable', {status: 503});
     }
 
+    const editorHost = isEditorHost(url);
+    if (editorHost && !servedOnEditorHost(url.pathname) && !LEGACY_EMBED_PATH.test(url.pathname)) {
+        return Response.redirect(`${ACCOUNT_ORIGIN}${url.pathname}${url.search}`, 302);
+    }
+
     const legacyEmbed = url.pathname.match(LEGACY_EMBED_PATH);
     if (legacyEmbed) {
         const id = legacyEmbed[1];
@@ -577,7 +606,8 @@ export const onRequest = async context => {
 
     const response = await next();
     const contentType = response.headers.get('content-type') || '';
-    if (STATIC_FILE_PATH.test(url.pathname) && contentType.includes('text/html')) {
+    const strayPage = editorHost && !isEditorHostPage(url.pathname);
+    if ((strayPage || STATIC_FILE_PATH.test(url.pathname)) && contentType.includes('text/html')) {
         return new Response('Not found', {
             status: 404,
             headers: {

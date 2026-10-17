@@ -116,10 +116,10 @@ const htmlResponse = (body = HTML, headers = {}) => new Response(body, {
     headers: {'content-type': 'text/html; charset=utf-8', ...headers}
 });
 
-const run = async (path, {response = htmlResponse(), method = 'GET'} = {}) => {
+const run = async (path, {response = htmlResponse(), method = 'GET', origin = 'https://mistwarp.org'} = {}) => {
     const next = jest.fn(() => Promise.resolve(response));
     const result = await onRequest({
-        request: new Request(`https://mistwarp.org${path}`, {method}),
+        request: new Request(`${origin}${path}`, {method}),
         next
     });
     return {result, next};
@@ -812,5 +812,110 @@ describe('legacy embed links', () => {
             const {next} = await run(path);
             expect(next).toHaveBeenCalledTimes(1);
         }
+    });
+});
+
+describe('editor host', () => {
+    const editor = (path, options) => run(path, {...options, origin: 'https://editor.mistwarp.org'});
+
+    test.each([
+        '/',
+        '/explore',
+        '/users/alice',
+        '/project/p123',
+        '/p/cool-game/pulls/2',
+        '/settings',
+        '/roadmap',
+        '/docs/blocks',
+        '/account-frame',
+        '/account-frame.html',
+        '/index.html'
+    ])('%s goes to the same page on mistwarp.org', async path => {
+        const {result, next} = await editor(`${path}?tab=1`);
+        expect(result.status).toBe(302);
+        expect(result.headers.get('location')).toBe(`https://mistwarp.org${path}?tab=1`);
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    test.each([
+        '/editor',
+        '/editor.html',
+        '/player',
+        '/player.html',
+        '/fullscreen',
+        '/embed',
+        '/embed.html',
+        '/addons',
+        '/credits.html'
+    ])('%s is served by the editor host', async path => {
+        const {result, next} = await editor(path);
+        expect(next).toHaveBeenCalled();
+        expect(result.status).toBe(200);
+    });
+
+    test.each([
+        '/assets/index-abc.js',
+        '/js/vendor.js',
+        '/static/assets/sound.wav',
+        '/version.json',
+        '/favicon.ico',
+        '/images/apple-touch-icon.png',
+        '/manifest.webmanifest'
+    ])('the file %s is served by the editor host', async path => {
+        const {next} = await editor(path, {response: new Response('x', {headers: {'content-type': 'text/plain'}})});
+        expect(next).toHaveBeenCalled();
+    });
+
+    test.each([
+        '/editor/',
+        '/player/',
+        '/embed/',
+        '/fullscreen/',
+        '/addons/',
+        '/credits/'
+    ])('%s stays on the editor host', async path => {
+        const {result, next} = await editor(path);
+        expect(next).toHaveBeenCalled();
+        expect(result.status).toBe(200);
+    });
+
+    test('a trailing dot on the host is still the editor host', async () => {
+        const {result, next} = await run('/settings', {origin: 'https://editor.mistwarp.org.'});
+        expect(result.status).toBe(302);
+        expect(result.headers.get('location')).toBe('https://mistwarp.org/settings');
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    test.each([
+        '/missing.png',
+        '/account-frame.HTML',
+        '/users/alice.json'
+    ])('the community fallback page for %s is not served on the editor host', async path => {
+        const {result, next} = await editor(path);
+        expect(next).toHaveBeenCalled();
+        expect(result.status).toBe(404);
+        expect(result.headers.get('content-type')).toContain('text/plain');
+    });
+
+    test('a POST to a community page is redirected without reaching the site', async () => {
+        const {result, next} = await editor('/settings', {method: 'POST'});
+        expect(result.status).toBe(302);
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    test('legacy embed links still go to the editor host embed page', async () => {
+        const {result} = await editor('/p123/embed');
+        expect(result.status).toBe(302);
+        expect(result.headers.get('location')).toBe('https://editor.mistwarp.org/embed#mw-p123');
+    });
+
+    test('mistwarp.org keeps serving community pages', async () => {
+        const {next} = await run('/explore');
+        expect(next).toHaveBeenCalled();
+    });
+
+    test('mistwarp.org keeps its single-page fallback for paths with an extension', async () => {
+        const {result} = await run('/users/alice.json');
+        expect(result.status).not.toBe(404);
     });
 });
