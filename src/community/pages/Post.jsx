@@ -8,6 +8,7 @@ import {useUser} from '../UserContext.jsx';
 import IconButton from '../components/ui/IconButton.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import SocialPost from '../components/SocialPost.jsx';
+import {Placeholder, ThreadAncestors, ThreadReplies, isPlaceholder} from '../components/PostThread.jsx';
 import styles from './Post.module.css';
 
 const Post = () => {
@@ -16,18 +17,34 @@ const Post = () => {
     const navigate = useNavigate();
     const {user} = useUser();
     const [post, setPost] = useState(null);
+    const [thread, setThread] = useState(null);
     const [error, setError] = useState('');
     const [attempt, setAttempt] = useState(0);
 
     useEffect(() => {
-        let active = true;
         setPost(null);
+        setThread(null);
+    }, [id]);
+
+    useEffect(() => {
+        let active = true;
         setError('');
-        rotur.post(id).then(data => {
+        rotur.thread(id).catch(cause => {
+            if (cause && cause.status === 404) throw cause;
+            return null;
+        }).then(data => {
+            if (!active) return null;
+            if (data) {
+                setThread(data);
+                return data.post;
+            }
+            setThread(null);
+            return rotur.post(id);
+        }).then(data => {
             if (!active) return;
             if (!data || !data.id) throw new Error(communityText('Post not found.'));
             setPost(data);
-            if (user) {
+            if (user && !isPlaceholder(data)) {
                 rotur.viewPost(id).then(result => {
                     if (active && result && Number.isFinite(result.views)) {
                         setPost(current => (current ? {...current, views: result.views} : current));
@@ -43,7 +60,7 @@ const Post = () => {
     }, [attempt, id, user && user.username]);
 
     useEffect(() => {
-        if (!post) return;
+        if (!post || isPlaceholder(post)) return;
         setPageMeta({title: communityText('Post by {value1}', {value1: post.user}), description: post.content});
     }, [communityText, post]);
 
@@ -59,7 +76,28 @@ const Post = () => {
             {error ? (
                 <StatusMessage error onRetry={() => setAttempt(value => value + 1)}>{error}</StatusMessage>
             ) : null}
-            {post ? <SocialPost initialPost={post} detail onChange={setPost} /> : null}
+            {thread ? <ThreadAncestors ancestors={thread.ancestors} /> : null}
+            {post && isPlaceholder(post) ? <Placeholder item={post} /> : null}
+            {post && !isPlaceholder(post) ? (
+                <SocialPost
+                    initialPost={post}
+                    detail
+                    hideReplies={Boolean(thread)}
+                    showReplyContext={!thread}
+                    onChange={setPost}
+                />
+            ) : null}
+            {post && thread ? (
+                <ThreadReplies
+                    key={post.id}
+                    post={post}
+                    replies={thread.replies}
+                    onReplied={() => setPost(current => ({
+                        ...current,
+                        reply_count: (Number(current.reply_count) || 0) + 1
+                    }))}
+                />
+            ) : null}
         </main>
     );
 };
