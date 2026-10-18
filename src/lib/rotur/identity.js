@@ -57,7 +57,7 @@ const subscribe = cb => {
 const TOKEN_MARGIN = 60000;
 const SIGN_IN_POPUP = 'mw-account-signin';
 const MINT_RETRY_DELAY = 30000;
-const SIGN_IN_SETTLE = 4000;
+const SIGN_IN_SETTLE = 3000;
 let editorToken = null;
 let staleToken = null;
 let editorTokenRequest = null;

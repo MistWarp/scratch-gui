@@ -5,7 +5,7 @@ const mockOrigins = {
 jest.mock('../../../src/lib/account/origins.js', () => mockOrigins);
 
 const {
-    SHARED_KEYS, STAMPS_KEY, sharedCredentials, subscribeSharedCredentials
+    SHARED_KEYS, STAMPS_KEY, sharedCredentials, subscribeSharedCredentials, withSharedLease
 } = require('../../../src/lib/account/shared-credentials.js');
 
 const KEY = 'mw:rotur-oauth';
@@ -86,11 +86,49 @@ test('an older local copy is pushed to a stale cookie', () => {
     expect(cookieValue(COOKIE)).toEqual({v: 'local', t: 10});
 });
 
-test('a value too large for a cookie clears the cookie instead of leaving an old one', () => {
+test('a value too large for a cookie leaves a marker instead of an old value', () => {
     sharedCredentials.setItem(KEY, 'small');
     sharedCredentials.setItem(KEY, 'x'.repeat(5000));
-    expect(cookieValue(COOKIE)).toBeNull();
+    const marker = cookieValue(COOKIE);
+    expect(marker).toEqual({big: true, t: expect.any(Number)});
     expect(sharedCredentials.getItem(KEY)).toBe('x'.repeat(5000));
+    localStorage.setItem(KEY, 'small');
+    localStorage.setItem(STAMPS_KEY, JSON.stringify({[KEY]: marker.t - 1}));
+    expect(sharedCredentials.getItem(KEY)).toBe('small');
+    expect(cookieValue(COOKIE)).toEqual(marker);
+});
+
+test('a cookie set twice under one name is ignored', () => {
+    sharedCredentials.setItem(KEY, 'mine');
+    const real = document.cookie;
+    const tossed = `${COOKIE}=${encodeURIComponent(JSON.stringify({v: 'tossed', t: cookieValue(COOKIE).t + 10}))}`;
+    const spy = jest.spyOn(document, 'cookie', 'get').mockReturnValue(`${real}; ${tossed}`);
+    try {
+        expect(sharedCredentials.getItem(KEY)).toBe('mine');
+    } finally {
+        spy.mockRestore();
+    }
+});
+
+test('a stamp from the far future is ignored', () => {
+    sharedCredentials.setItem(KEY, 'mine');
+    setCookieRecord(COOKIE, {v: 'forged', t: Date.now() + (2 * 24 * 60 * 60 * 1000)});
+    expect(sharedCredentials.getItem(KEY)).toBe('mine');
+});
+
+test('a lease held by another partition makes the task wait for it', async () => {
+    const lease = 'mw-lease-test';
+    document.cookie = `${lease}=${encodeURIComponent(JSON.stringify({owner: 'other', until: Date.now() + 10000}))}; Path=/`;
+    let ran = false;
+    const done = withSharedLease('test', async () => {
+        ran = true;
+        return document.cookie.includes(lease);
+    });
+    await new Promise(resolve => setTimeout(resolve, 600));
+    expect(ran).toBe(false);
+    document.cookie = `${lease}=; Path=/; Max-Age=0`;
+    await expect(done).resolves.toBe(true);
+    expect(document.cookie.includes(lease)).toBe(false);
 });
 
 test('every shared key has its own cookie', () => {

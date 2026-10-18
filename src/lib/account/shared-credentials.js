@@ -12,10 +12,15 @@ const STAMPS_KEY = 'mw:shared-stamps';
 const MAX_AGE = 400 * 24 * 60 * 60;
 const MAX_COOKIE_LENGTH = 4000;
 const CHECK_INTERVAL = 1000;
+const FUTURE_LIMIT = 24 * 60 * 60 * 1000;
+const LEASE_TIME = 20000;
+const LEASE_RETRY = 250;
+const LEASE_SETTLE = 50;
 
 const listeners = new Set();
 let parsedFrom = null;
 let parsed = new Map();
+let repeated = new Set();
 let lastChecked = null;
 let watching = false;
 
@@ -34,35 +39,48 @@ const readCookies = () => {
     if (raw === parsedFrom) return parsed;
     parsedFrom = raw;
     parsed = new Map();
+    repeated = new Set();
     for (const part of raw.split(';')) {
         const index = part.indexOf('=');
-        if (index > 0) parsed.set(part.slice(0, index).trim(), part.slice(index + 1).trim());
+        if (index <= 0) continue;
+        const name = part.slice(0, index).trim();
+        if (parsed.has(name)) repeated.add(name);
+        parsed.set(name, part.slice(index + 1).trim());
     }
     return parsed;
 };
 
-const cookieRecord = key => {
-    const value = readCookies().get(cookieName(key));
-    if (!value) return null;
+const readCookie = name => {
+    const value = readCookies().get(name);
+    if (!value || repeated.has(name)) return null;
     try {
-        const record = JSON.parse(decodeURIComponent(value));
-        if (!record || typeof record !== 'object' || !Number.isFinite(record.t)) return null;
-        if (record.v !== null && typeof record.v !== 'string') return null;
-        return record;
+        return JSON.parse(decodeURIComponent(value));
     } catch (e) {
         return null;
     }
 };
 
-const setCookie = (key, value, maxAge) => {
-    document.cookie = `${cookieName(key)}=${value}; Path=/; Max-Age=${maxAge}; SameSite=Strict${
-        secure() ? '; Secure' : ''}`;
+const cookieRecord = key => {
+    const record = readCookie(cookieName(key));
+    if (!record || typeof record !== 'object' || !Number.isFinite(record.t)) return null;
+    if (record.t > Date.now() + FUTURE_LIMIT) return null;
+    if (record.big === true) return {v: null, t: record.t, big: true};
+    if (record.v !== null && typeof record.v !== 'string') return null;
+    return {v: record.v, t: record.t};
+};
+
+const setCookie = (name, value, maxAge) => {
+    document.cookie = `${name}=${value}; Path=/; Max-Age=${maxAge}; SameSite=Strict${secure() ? '; Secure' : ''}`;
 };
 
 const writeCookie = (key, record) => {
-    const value = encodeURIComponent(JSON.stringify(record));
-    if (cookieName(key).length + value.length > MAX_COOKIE_LENGTH) setCookie(key, '', 0);
-    else setCookie(key, value, MAX_AGE);
+    const name = cookieName(key);
+    const value = encodeURIComponent(JSON.stringify({v: record.v, t: record.t}));
+    if (name.length + value.length > MAX_COOKIE_LENGTH) {
+        setCookie(name, encodeURIComponent(JSON.stringify({big: true, t: record.t})), MAX_AGE);
+    } else {
+        setCookie(name, value, MAX_AGE);
+    }
 };
 
 const readStamps = () => {
@@ -109,7 +127,8 @@ const notify = key => {
 const resolve = key => {
     const local = localRecord(key);
     const cookie = cookieRecord(key);
-    if (cookie && (cookie.t > local.t || (cookie.t === local.t && local.v === null && cookie.v !== null))) {
+    if (cookie && cookie.big && cookie.t >= local.t) return local.v;
+    if (cookie && cookie.t > local.t) {
         writeLocal(key, cookie);
         if (cookie.v !== local.v) notify(key);
         return cookie.v;
@@ -161,9 +180,42 @@ const keepAlive = () => {
     for (const key of SHARED_KEYS) {
         resolve(key);
         const cookie = cookieRecord(key);
-        if (cookie) writeCookie(key, cookie);
+        if (cookie && !cookie.big) writeCookie(key, cookie);
     }
     lastChecked = document.cookie;
+};
+
+const leaseName = name => `${secure() ? '__Host-' : ''}mw-lease-${name}`;
+
+const readLease = name => {
+    const lease = readCookie(leaseName(name));
+    return lease && typeof lease.owner === 'string' && Number.isFinite(lease.until) ? lease : null;
+};
+
+const pause = delay => new Promise(done => setTimeout(done, delay));
+
+const withSharedLease = async (name, task) => {
+    if (!enabled()) return task();
+    const owner = Math.random().toString(36)
+        .slice(2);
+    const giveUpAt = Date.now() + LEASE_TIME;
+    while (Date.now() < giveUpAt) {
+        const lease = readLease(name);
+        if (!lease || lease.until < Date.now()) {
+            setCookie(leaseName(name), encodeURIComponent(JSON.stringify({owner, until: Date.now() + LEASE_TIME})),
+                Math.ceil(LEASE_TIME / 1000));
+            await pause(LEASE_SETTLE);
+            const held = readLease(name);
+            if (held && held.owner === owner) break;
+        }
+        await pause(LEASE_RETRY);
+    }
+    try {
+        return await task();
+    } finally {
+        const lease = readLease(name);
+        if (lease && lease.owner === owner) setCookie(leaseName(name), '', 0);
+    }
 };
 
 const watch = () => {
@@ -186,6 +238,8 @@ const sharedCredentials = {getItem, setItem, removeItem};
 export {
     SHARED_KEYS,
     STAMPS_KEY,
+    enabled as sharingCredentials,
     sharedCredentials,
-    subscribeSharedCredentials
+    subscribeSharedCredentials,
+    withSharedLease
 };

@@ -12,7 +12,9 @@
 //   work once, so tabs refresh under a Web Lock and share the result over a
 //   BroadcastChannel (or the storage event where there is none).
 
-import {sharedCredentials, subscribeSharedCredentials} from '../account/shared-credentials.js';
+import {
+    sharedCredentials, sharingCredentials, subscribeSharedCredentials, withSharedLease
+} from '../account/shared-credentials.js';
 
 const config = {
     clientId: 'app_1938b6a87799f862',
@@ -33,6 +35,8 @@ const MESSAGE_TYPE = 'rotur:signin';
 const REFRESH_MARGIN = 2 * 60 * 1000;
 // After a failed refresh that may work later (offline, Rotur down), try again.
 const RETRY_DELAY = 30 * 1000;
+const ROTATION_WAIT = 5000;
+const ROTATION_CHECK = 250;
 
 const listeners = new Set();
 let channel = null;
@@ -296,8 +300,18 @@ const withLock = task => {
     return task();
 };
 
+const rotatedElsewhere = async stale => {
+    const giveUpAt = Date.now() + (sharingCredentials() ? ROTATION_WAIT : 0);
+    for (;;) {
+        const latest = readSession();
+        if (!latest || latest.refreshToken !== stale.refreshToken) return latest;
+        if (Date.now() >= giveUpAt) return null;
+        await new Promise(resolve => setTimeout(resolve, ROTATION_CHECK));
+    }
+};
+
 // Swap the refresh token, unless another tab already did.
-const refresh = stale => withLock(async () => {
+const refresh = stale => withLock(() => withSharedLease('rotur-refresh', async () => {
     const current = readSession();
     if (!current) return null;
     if (current.refreshToken !== stale.refreshToken || current.expiresAt - REFRESH_MARGIN > Date.now()) {
@@ -316,8 +330,8 @@ const refresh = stale => withLock(async () => {
     } catch (error) {
         if (error.code !== 'invalid_grant' && error.code !== 'invalid_token' && error.status !== 401) throw error;
         // Another tab without Web Locks may have won the race.
-        const latest = readSession();
-        if (latest && latest.refreshToken !== current.refreshToken) return latest;
+        const latest = await rotatedElsewhere(current);
+        if (latest) return latest;
         // Revoked, expired, banned, or the person left MistWarp on rotur.dev.
         writeSession(null);
         return null;
@@ -327,7 +341,7 @@ const refresh = stale => withLock(async () => {
     if (!latest || latest.refreshToken !== current.refreshToken) return latest;
     writeSession(next);
     return next;
-});
+}));
 
 /**
  * The current access token, refreshed first if it is about to expire.
