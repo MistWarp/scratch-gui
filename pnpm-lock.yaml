@@ -188,8 +188,8 @@ importers:
         specifier: https://codeload.github.com/MistWarp/scratch-audio/tar.gz/9577662f5e2d1eed73f5f35b576935906d831fbf
         version: https://codeload.github.com/MistWarp/scratch-audio/tar.gz/9577662f5e2d1eed73f5f35b576935906d831fbf
       scratch-blocks:
-        specifier: https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/cdd34902eb322c532ccf9a0e6654898cc5dfc31d
-        version: https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/cdd34902eb322c532ccf9a0e6654898cc5dfc31d
+        specifier: https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/3df9cb5fbdaf4bc75c737c1f63e4c371fe72e43c
+        version: https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/3df9cb5fbdaf4bc75c737c1f63e4c371fe72e43c
       scratch-paint:
         specifier: https://codeload.github.com/MistWarp/scratch-paint/tar.gz/b63fe246be48efd5c2fc542a1c3eccd7b5c61472
         version: https://codeload.github.com/MistWarp/scratch-paint/tar.gz/b63fe246be48efd5c2fc542a1c3eccd7b5c61472(react-dom@16.14.0(react@16.14.0))(react-intl-redux@0.7.0(react-intl@2.9.0(prop-types@15.8.1)(react@16.14.0))(react-redux@5.0.7(react@16.14.0)(redux@3.7.2)))(react-intl@2.9.0(prop-types@15.8.1)(react@16.14.0))(react-popover@0.5.10)(react-redux@5.0.7(react@16.14.0)(redux@3.7.2))(react-responsive@5.0.0(react@16.14.0))(react-style-proptype@3.2.2)(react-tooltip@5.30.1(react-dom@16.14.0(react@16.14.0))(react@16.14.0))(react@16.14.0)(redux@3.7.2)(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd)
@@ -5464,8 +5464,8 @@ packages:
     resolution: {tarball: https://codeload.github.com/MistWarp/scratch-audio/tar.gz/9577662f5e2d1eed73f5f35b576935906d831fbf}
     version: 0.1.0
 
-  scratch-blocks@https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/cdd34902eb322c532ccf9a0e6654898cc5dfc31d:
-    resolution: {tarball: https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/cdd34902eb322c532ccf9a0e6654898cc5dfc31d}
+  scratch-blocks@https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/3df9cb5fbdaf4bc75c737c1f63e4c371fe72e43c:
+    resolution: {tarball: https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/3df9cb5fbdaf4bc75c737c1f63e4c371fe72e43c}
     version: 0.1.0
 
   scratch-paint@https://codeload.github.com/MistWarp/scratch-paint/tar.gz/b63fe246be48efd5c2fc542a1c3eccd7b5c61472:
@@ -12564,7 +12564,7 @@ snapshots:
       '@turbowarp/nanolog': 0.2.0
       '@turbowarp/startaudiocontext': 1.0.0
 
-  scratch-blocks@https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/cdd34902eb322c532ccf9a0e6654898cc5dfc31d:
+  scratch-blocks@https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/3df9cb5fbdaf4bc75c737c1f63e4c371fe72e43c:
     dependencies:
       exports-loader: 0.7.0
       imports-loader: 0.8.0
