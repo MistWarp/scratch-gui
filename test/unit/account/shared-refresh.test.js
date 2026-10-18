@@ -73,6 +73,34 @@ test('a refresh waits while the other partition holds the refresh lease', async 
 test('a refresh token that really was revoked still signs out everywhere', async () => {
     sharedCredentials.setItem(KEY, session('rrt_old', Date.now() - 1));
     global.fetch.mockReturnValue(tokenResponse({error: 'invalid_grant'}, false, 400));
-    await expect(oauth.getAccessToken()).resolves.toBeNull();
+    jest.useFakeTimers();
+    try {
+        const result = oauth.getAccessToken();
+        await jest.advanceTimersByTimeAsync(6000);
+        await expect(result).resolves.toBeNull();
+    } finally {
+        jest.useRealTimers();
+    }
     expect(cookieValue()).toEqual({v: null, t: expect.any(Number)});
-}, 10000);
+});
+
+test('a refresh that hangs is abandoned before the lease runs out', async () => {
+    sharedCredentials.setItem(KEY, session('rrt_old', Date.now() - 1));
+    let signal = null;
+    global.fetch.mockImplementation((url, init) => new Promise((resolve, reject) => {
+        signal = init.signal;
+        signal.addEventListener('abort', () => reject(new Error('aborted')));
+    }));
+    jest.useFakeTimers();
+    try {
+        const result = oauth.getAccessToken();
+        result.catch(() => null);
+        await jest.advanceTimersByTimeAsync(16000);
+        expect(signal.aborted).toBe(true);
+        await expect(result).rejects.toThrow('aborted');
+    } finally {
+        jest.useRealTimers();
+    }
+    expect(JSON.parse(localStorage.getItem(KEY)).refreshToken).toBe('rrt_old');
+    expect(document.cookie).not.toContain('mw-lease-rotur-refresh');
+});

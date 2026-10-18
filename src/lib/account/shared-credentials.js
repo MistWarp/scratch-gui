@@ -16,12 +16,14 @@ const FUTURE_LIMIT = 24 * 60 * 60 * 1000;
 const LEASE_TIME = 20000;
 const LEASE_RETRY = 250;
 const LEASE_SETTLE = 50;
+const KEEP_ALIVE_INTERVAL = 24 * 60 * 60 * 1000;
 
 const listeners = new Set();
 let parsedFrom = null;
 let parsed = new Map();
 let repeated = new Set();
 let lastChecked = null;
+let keptAliveAt = 0;
 let watching = false;
 
 const enabled = () => typeof document !== 'undefined' && typeof location !== 'undefined' &&
@@ -133,7 +135,7 @@ const resolve = key => {
         if (cookie.v !== local.v) notify(key);
         return cookie.v;
     }
-    if (local.v !== null && !cookie) {
+    if (!cookie && (local.v !== null || local.t)) {
         const stamped = local.t ? local : {v: local.v, t: Date.now()};
         if (stamped !== local) writeLocal(key, stamped);
         writeCookie(key, stamped);
@@ -169,20 +171,22 @@ const removeItem = key => {
     if (resolve(key) !== null) write(key, null);
 };
 
-const check = () => {
-    const raw = document.cookie;
-    if (raw === lastChecked) return;
-    lastChecked = raw;
-    for (const key of SHARED_KEYS) resolve(key);
-};
-
 const keepAlive = () => {
     for (const key of SHARED_KEYS) {
         resolve(key);
         const cookie = cookieRecord(key);
         if (cookie && !cookie.big) writeCookie(key, cookie);
     }
+    keptAliveAt = Date.now();
     lastChecked = document.cookie;
+};
+
+const check = () => {
+    if (Date.now() - keptAliveAt > KEEP_ALIVE_INTERVAL) keepAlive();
+    const raw = document.cookie;
+    if (raw === lastChecked) return;
+    lastChecked = raw;
+    for (const key of SHARED_KEYS) resolve(key);
 };
 
 const leaseName = name => `${secure() ? '__Host-' : ''}mw-lease-${name}`;
@@ -206,7 +210,7 @@ const withSharedLease = async (name, task) => {
                 Math.ceil(LEASE_TIME / 1000));
             await pause(LEASE_SETTLE);
             const held = readLease(name);
-            if (held && held.owner === owner) break;
+            if (!held || held.owner === owner) break;
         }
         await pause(LEASE_RETRY);
     }

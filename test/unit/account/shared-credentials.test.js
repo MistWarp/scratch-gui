@@ -78,6 +78,15 @@ test('a value saved before the cookie existed is shared with a fresh stamp', () 
     expect(sharedCredentials.getItem(KEY)).toBe('from-before');
 });
 
+test('a sign-out is shared again after its cookie expired', () => {
+    sharedCredentials.setItem(KEY, 'session-a');
+    sharedCredentials.removeItem(KEY);
+    const tombstone = cookieValue(COOKIE);
+    document.cookie = `${COOKIE}=; Path=/; Max-Age=0`;
+    expect(sharedCredentials.getItem(KEY)).toBeNull();
+    expect(cookieValue(COOKIE)).toEqual(tombstone);
+});
+
 test('an older local copy is pushed to a stale cookie', () => {
     setCookieRecord(COOKIE, {v: 'cookie', t: 5});
     localStorage.setItem(KEY, 'local');

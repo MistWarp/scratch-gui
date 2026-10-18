@@ -37,6 +37,7 @@ const REFRESH_MARGIN = 2 * 60 * 1000;
 const RETRY_DELAY = 30 * 1000;
 const ROTATION_WAIT = 5000;
 const ROTATION_CHECK = 250;
+const REFRESH_TIMEOUT = 15000;
 
 const listeners = new Set();
 let channel = null;
@@ -79,11 +80,19 @@ const authorizeUrl = ({scopes, state, challenge, redirectUri, popup}) => `${conf
 // comes back to the site root, which is registered as a redirect URI.
 const redirectUriFor = popup => (popup ? location.origin : `${location.origin}/`);
 
-const tokenRequest = async body => {
-    const response = await fetch(`${config.api}/oauth/token`, {
-        method: 'POST',
-        body: new URLSearchParams({client_id: config.clientId, ...body})
-    });
+const tokenRequest = async (body, timeout = 0) => {
+    const controller = timeout && typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timer = controller ? setTimeout(() => controller.abort(), timeout) : null;
+    let response;
+    try {
+        response = await fetch(`${config.api}/oauth/token`, {
+            method: 'POST',
+            body: new URLSearchParams({client_id: config.clientId, ...body}),
+            ...(controller ? {signal: controller.signal} : {})
+        });
+    } finally {
+        clearTimeout(timer);
+    }
     const data = await response.json().catch(() => ({}));
     if (!response.ok || !data.access_token) {
         throw oauthError(
@@ -319,7 +328,8 @@ const refresh = stale => withLock(() => withSharedLease('rotur-refresh', async (
     }
     let next;
     try {
-        const fresh = await tokenRequest({grant_type: 'refresh_token', refresh_token: current.refreshToken});
+        const fresh = await tokenRequest({grant_type: 'refresh_token', refresh_token: current.refreshToken},
+            REFRESH_TIMEOUT);
         next = {
             ...fresh,
             refreshToken: fresh.refreshToken || current.refreshToken,
