@@ -10,6 +10,7 @@ import {createFrameActivity} from '../lib/account/frame-activity.js';
 import {ROTUR_SETTINGS_KEY} from '../lib/rotur/settings.js';
 import {MINOR_ACCOUNT_KEY} from '../lib/minor-account.js';
 import {CHANNEL, PROMPT_LIFETIME} from '../lib/account/protocol.js';
+import {subscribeSharedCredentials} from '../lib/account/shared-credentials.js';
 import {ACCOUNT_ORIGIN, isEditorOrigin} from '../lib/account/origins.js';
 import {
     createFrameServer, createSerialLock, createStorageStore, mintEditorSession
@@ -172,6 +173,9 @@ const startFrame = () => {
     const activity = createFrameActivity({syncActivity, clearActivity, lastSent: presenceSlot});
     window.addEventListener('storage', event => {
         if (PRESENCE_KEYS.includes(event.key)) activity.refresh();
+    });
+    subscribeSharedCredentials(key => {
+        if (PRESENCE_KEYS.includes(key)) activity.refresh();
     });
     let presenceOwner = '';
     identity.subscribe(state => {

@@ -1,3 +1,5 @@
+import {sharedCredentials} from './account/shared-credentials.js';
+
 const STORAGE_KEY = 'mw:minor-account';
 
 const listeners = new Set();
@@ -5,7 +7,7 @@ let fallback = false;
 
 const isMinorAccount = () => {
     try {
-        return localStorage.getItem(STORAGE_KEY) === '1';
+        return sharedCredentials.getItem(STORAGE_KEY) === '1';
     } catch (e) {
         return fallback;
     }
@@ -13,8 +15,8 @@ const isMinorAccount = () => {
 
 const writeFlag = next => {
     try {
-        if (next) localStorage.setItem(STORAGE_KEY, '1');
-        else localStorage.removeItem(STORAGE_KEY);
+        if (next) sharedCredentials.setItem(STORAGE_KEY, '1');
+        else sharedCredentials.removeItem(STORAGE_KEY);
         return true;
     } catch (e) {
         return false;

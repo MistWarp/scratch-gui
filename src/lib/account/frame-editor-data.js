@@ -24,7 +24,8 @@ const ACCOUNT_KEYS = new Set([
     'mw:minor-account',
     'mw:rotur-settings',
     'mw:rotur-grants',
-    'mw:rotur-activity-grants'
+    'mw:rotur-activity-grants',
+    'mw:shared-stamps'
 ]);
 
 const ACCOUNT_PREFIXES = ['mw:tier:', 'mw:api-cache', 'mw:embed-storage:', 'mw:bounty-claim:', 'mw:signup-tracked:'];

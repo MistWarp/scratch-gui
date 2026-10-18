@@ -3,6 +3,7 @@ import {clearContentCache} from './cached-fetch.js';
 import {isGalleryExtensionUrl} from '../trusted-extension.js';
 import {trackApiSuccess} from '../../community/analytics.js';
 import {setMinorAccount} from '../minor-account.js';
+import {sharedCredentials} from '../account/shared-credentials.js';
 import {sleep} from '../utils/async.js';
 import {
     createApiError, createNetworkError, createTimeoutError, friendlyError
@@ -41,7 +42,7 @@ const setSessionProvider = provider => {
 const loadSession = () => {
     if (sessionProvider) return sessionProvider.get() || null;
     try {
-        return localStorage.getItem(SESSION_KEY) || null;
+        return sharedCredentials.getItem(SESSION_KEY) || null;
     } catch (e) {
         return null;
     }
@@ -55,11 +56,11 @@ const storeSession = token => {
         return;
     }
     try {
-        const previous = localStorage.getItem(SESSION_KEY);
+        const previous = sharedCredentials.getItem(SESSION_KEY);
         if (token) {
-            localStorage.setItem(SESSION_KEY, token);
+            sharedCredentials.setItem(SESSION_KEY, token);
         } else {
-            localStorage.removeItem(SESSION_KEY);
+            sharedCredentials.removeItem(SESSION_KEY);
         }
         if (previous !== token) {
             cacheGeneration += 1;
