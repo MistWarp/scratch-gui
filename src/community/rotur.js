@@ -315,8 +315,8 @@ const rotur = {
         cache.clear();
         return data;
     }),
-    followers: username => cachedGet('/followers', {name: username}),
-    following: username => cachedGet('/following', {name: username}),
+    // The only follow list Rotur gives out: the signed-in account's own following.
+    myFollowing: () => cachedGet('/v2/me/following'),
     badgePreferences: () => authenticatedAction(
         ['account:view'],
         () => get('/v2/me/badges/preferences', {app: ROTUR_APP_ID})

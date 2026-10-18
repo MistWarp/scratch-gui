@@ -38,7 +38,7 @@ const useProjectTheme = (user, owner) => {
         const viewerKey = String(user.username).toLowerCase();
         const ownerKey = String(owner).toLowerCase();
         setFollowedOwner(null);
-        rotur.following(user.username)
+        rotur.myFollowing()
             .then(data => {
                 if (!active) return;
                 const list = (data.following || []).map(name => String(name).toLowerCase());

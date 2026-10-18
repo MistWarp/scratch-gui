@@ -35,6 +35,7 @@ const SIGN_IN_SCOPES = [
     'posts:manage', // Edit and pin your own posts.
     'blocked:view', // Block and unblock people from a post.
     'blocked:manage',
+    'following:view', // Who you follow, for Home and your own Following page.
     'following:follow', // Follow buttons on profiles and Home.
     'following:unfollow',
     'groups:view', // The Groups pages.

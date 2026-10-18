@@ -354,39 +354,6 @@
     font-size: var(--fs-xs);
 }
 
-.followersRow {
-    display: flex;
-    gap: 14px;
-    overflow-x: auto;
-    padding-bottom: 8px;
-    padding-top: 8px;
-}
-
-.followerChip {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    flex-shrink: 0;
-    width: 88px;
-    text-align: center;
-}
-
-.followerChip span {
-    display: block;
-    width: 100%;
-    font-size: var(--fs-xs);
-    font-weight: 600;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.followerChip:hover span {
-    color: var(--accent-strong);
-}
-
 .feed {
     max-width: 680px;
 }
@@ -537,18 +504,6 @@
 
     .section {
         margin-top: 22px;
-    }
-
-    .followersRow {
-        width: calc(100% + 14px);
-        margin-inline-end: -14px;
-        padding-inline-end: 14px;
-        scroll-padding-right: 14px;
-        scroll-snap-type: x proximity;
-    }
-
-    .followerChip {
-        scroll-snap-align: start;
     }
 
     .feed {
