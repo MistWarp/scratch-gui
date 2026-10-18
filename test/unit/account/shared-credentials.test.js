@@ -185,3 +185,21 @@ test('off the account origin nothing is shared', () => {
         mockOrigins.ACCOUNT_ORIGIN = 'http://localhost';
     }
 });
+
+test('a lease stays held while a long task runs', async () => {
+    jest.useFakeTimers();
+    try {
+        let finish = null;
+        const done = withSharedLease('long', () => new Promise(resolve => {
+            finish = resolve;
+        }));
+        await jest.advanceTimersByTimeAsync(25000);
+        const lease = cookieValue('mw-lease-long');
+        expect(lease.until).toBeGreaterThan(Date.now());
+        finish('finished');
+        await expect(done).resolves.toBe('finished');
+        expect(cookieValue('mw-lease-long')).toBeNull();
+    } finally {
+        jest.useRealTimers();
+    }
+});

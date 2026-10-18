@@ -84,18 +84,18 @@ test('a refresh token that really was revoked still signs out everywhere', async
     expect(cookieValue()).toEqual({v: null, t: expect.any(Number)});
 });
 
-test('a refresh that hangs is abandoned before the lease runs out', async () => {
+test('a refresh that hangs is abandoned without signing out', async () => {
     sharedCredentials.setItem(KEY, session('rrt_old', Date.now() - 1));
     let signal = null;
     global.fetch.mockImplementation((url, init) => new Promise((resolve, reject) => {
         signal = init.signal;
-        signal.addEventListener('abort', () => reject(new Error('aborted')));
+        signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
     }));
     jest.useFakeTimers();
     try {
         const result = oauth.getAccessToken();
         result.catch(() => null);
-        await jest.advanceTimersByTimeAsync(16000);
+        await jest.advanceTimersByTimeAsync(61000);
         expect(signal.aborted).toBe(true);
         await expect(result).rejects.toThrow('aborted');
     } finally {

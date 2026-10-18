@@ -16,6 +16,7 @@ const FUTURE_LIMIT = 24 * 60 * 60 * 1000;
 const LEASE_TIME = 20000;
 const LEASE_RETRY = 250;
 const LEASE_SETTLE = 50;
+const LEASE_RENEW = 5000;
 const KEEP_ALIVE_INTERVAL = 24 * 60 * 60 * 1000;
 
 const listeners = new Set();
@@ -182,7 +183,8 @@ const keepAlive = () => {
 };
 
 const check = () => {
-    if (Date.now() - keptAliveAt > KEEP_ALIVE_INTERVAL) keepAlive();
+    const sinceKeptAlive = Date.now() - keptAliveAt;
+    if (sinceKeptAlive < 0 || sinceKeptAlive > KEEP_ALIVE_INTERVAL) keepAlive();
     const raw = document.cookie;
     if (raw === lastChecked) return;
     lastChecked = raw;
@@ -196,6 +198,11 @@ const readLease = name => {
     return lease && typeof lease.owner === 'string' && Number.isFinite(lease.until) ? lease : null;
 };
 
+const writeLease = (name, owner) => {
+    setCookie(leaseName(name), encodeURIComponent(JSON.stringify({owner, until: Date.now() + LEASE_TIME})),
+        Math.ceil(LEASE_TIME / 1000));
+};
+
 const pause = delay => new Promise(done => setTimeout(done, delay));
 
 const withSharedLease = async (name, task) => {
@@ -206,17 +213,21 @@ const withSharedLease = async (name, task) => {
     while (Date.now() < giveUpAt) {
         const lease = readLease(name);
         if (!lease || lease.until < Date.now()) {
-            setCookie(leaseName(name), encodeURIComponent(JSON.stringify({owner, until: Date.now() + LEASE_TIME})),
-                Math.ceil(LEASE_TIME / 1000));
+            writeLease(name, owner);
             await pause(LEASE_SETTLE);
             const held = readLease(name);
             if (!held || held.owner === owner) break;
         }
         await pause(LEASE_RETRY);
     }
+    const renew = setInterval(() => {
+        const lease = readLease(name);
+        if (lease && lease.owner === owner) writeLease(name, owner);
+    }, LEASE_RENEW);
     try {
         return await task();
     } finally {
+        clearInterval(renew);
         const lease = readLease(name);
         if (lease && lease.owner === owner) setCookie(leaseName(name), '', 0);
     }
