@@ -1,7 +1,8 @@
 // Sign in with Rotur for MistWarp: OAuth 2.0 with PKCE as a public client.
 //
 // Self-contained on purpose, so it can be swapped for rotur-sdk's OAuth
-// helpers once they ship. Nothing here imports the rest of MistWarp.
+// helpers once they ship. The only MistWarp import is the credential store
+// that shares the session with the editor's account frame.
 //
 // - signIn() opens Rotur's consent screen in a popup (response_mode
 //   web_message). If the browser blocks the popup it can fall back to a
@@ -10,6 +11,8 @@
 // - With offline_access the session carries a refresh token. Refresh tokens
 //   work once, so tabs refresh under a Web Lock and share the result over a
 //   BroadcastChannel (or the storage event where there is none).
+
+import {sharedCredentials, subscribeSharedCredentials} from '../account/shared-credentials.js';
 
 const config = {
     clientId: 'app_1938b6a87799f862',
@@ -113,7 +116,7 @@ const exchangeCode = async (code, verifier, redirectUri) => {
 
 const readSession = () => {
     try {
-        const session = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+        const session = JSON.parse(sharedCredentials.getItem(STORAGE_KEY) || 'null');
         return session && typeof session.accessToken === 'string' ? session : null;
     } catch (e) {
         return null;
@@ -153,8 +156,8 @@ const writeSession = session => {
     // Signing out twice changes nothing, so it tells nobody.
     if (!session && !readSession()) return;
     try {
-        if (session) localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-        else localStorage.removeItem(STORAGE_KEY);
+        if (session) sharedCredentials.setItem(STORAGE_KEY, JSON.stringify(session));
+        else sharedCredentials.removeItem(STORAGE_KEY);
     } catch (e) {
         // Private mode: the session lasts for this page only.
     }
@@ -389,6 +392,9 @@ if (typeof window !== 'undefined') {
             }
         });
     }
+    subscribeSharedCredentials(key => {
+        if (key === STORAGE_KEY) received(readSession());
+    });
     // Timers stop while a laptop sleeps; catch up when it wakes or reconnects.
     const catchUp = () => {
         if (document.visibilityState !== 'hidden') getAccessToken().catch(() => {});

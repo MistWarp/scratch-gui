@@ -23,6 +23,7 @@ import {
 } from '../community/api.js';
 import {ACCOUNT_ORIGIN, isSplitEditor} from '../account/origins.js';
 import {FRAME_PATH} from '../account/protocol.js';
+import {subscribeSharedCredentials} from '../account/shared-credentials.js';
 import * as accountBridge from '../account/bridge.js';
 import {setMinorAccount} from '../minor-account.js';
 import {ROTUR_TOKEN_KEY} from './token-key.js';
@@ -56,6 +57,7 @@ const subscribe = cb => {
 const TOKEN_MARGIN = 60000;
 const SIGN_IN_POPUP = 'mw-account-signin';
 const MINT_RETRY_DELAY = 30000;
+const SIGN_IN_SETTLE = 4000;
 let editorToken = null;
 let staleToken = null;
 let editorTokenRequest = null;
@@ -174,8 +176,10 @@ const loginSplitEditor = () => {
     return new Promise((resolve, reject) => {
         let unsubscribe = null;
         let watch = null;
+        let settle = null;
         const finish = () => {
             clearInterval(watch);
+            clearTimeout(settle);
             if (unsubscribe) unsubscribe();
         };
         unsubscribe = accountBridge.subscribeIdentity(next => {
@@ -185,11 +189,14 @@ const loginSplitEditor = () => {
         });
         watch = setInterval(() => {
             if (!popup.closed) return;
-            finish();
-            restoreSplitEditor().then(user => {
-                if (user) resolve(user);
-                else reject(Object.assign(new Error('The Rotur sign-in window was closed'), {code: 'closed'}));
-            }, reject);
+            clearInterval(watch);
+            settle = setTimeout(() => {
+                finish();
+                restoreSplitEditor().then(user => {
+                    if (user) resolve(user);
+                    else reject(Object.assign(new Error('The Rotur sign-in window was closed'), {code: 'closed'}));
+                }, reject);
+            }, SIGN_IN_SETTLE);
         }, 500);
     });
 };
@@ -249,6 +256,9 @@ const wireSession = () => {
         if (event.key === ROTUR_TOKEN_KEY && !event.newValue && state.user && !accountKey()) {
             signedOutElsewhere();
         }
+    });
+    subscribeSharedCredentials(key => {
+        if (key === ROTUR_TOKEN_KEY && state.user && !accountKey()) signedOutElsewhere();
     });
 };
 

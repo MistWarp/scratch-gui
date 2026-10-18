@@ -8,6 +8,7 @@ import {
     formatActivityStatus
 } from './settings.js';
 import {ROTUR_TOKEN_KEY} from './token-key.js';
+import {sharedCredentials} from '../account/shared-credentials.js';
 import {isSplitEditor} from '../account/origins.js';
 import * as accountBridge from '../account/bridge.js';
 import * as oauth from './oauth.js';
@@ -67,7 +68,7 @@ const getClient = () => {
 // Sign in with Rotur so nobody is signed out without warning.
 const loadLegacyToken = () => {
     try {
-        return localStorage.getItem(ROTUR_TOKEN_KEY);
+        return sharedCredentials.getItem(ROTUR_TOKEN_KEY);
     } catch (_) {
         return null;
     }
@@ -86,7 +87,7 @@ const legacyLogin = async scopes => {
         requires: scopes.filter(scope => scope.includes(':'))
     });
     try {
-        localStorage.setItem(ROTUR_TOKEN_KEY, rotur.token);
+        sharedCredentials.setItem(ROTUR_TOKEN_KEY, rotur.token);
     } catch (_) {
         // ignore private-mode failures
     }
@@ -95,7 +96,7 @@ const legacyLogin = async scopes => {
 
 const dropLegacyToken = () => {
     try {
-        localStorage.removeItem(ROTUR_TOKEN_KEY);
+        sharedCredentials.removeItem(ROTUR_TOKEN_KEY);
     } catch (_) {
         // ignore private-mode failures
     }
