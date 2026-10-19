@@ -122,6 +122,87 @@ const editorTheme = EditorView.theme({
         backgroundColor: 'var(--ui-secondary)',
         color: 'var(--text-primary)'
     },
+    '.cm-panel.cm-search': {
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        gap: '6px',
+        padding: '8px 10px',
+        borderTop: '1px solid var(--ui-black-transparent)',
+        backgroundColor: 'var(--ui-secondary)',
+        color: 'var(--text-primary)',
+        fontFamily: 'inherit',
+        fontSize: '12px'
+    },
+    '.cm-panel.cm-search br': {
+        flexBasis: '100%',
+        height: '0',
+        margin: 0
+    },
+    '.cm-panel.cm-search .cm-textfield': {
+        flex: '1 1 12rem',
+        minWidth: '9rem',
+        height: '26px',
+        padding: '0 8px',
+        border: '1px solid var(--ui-black-transparent)',
+        borderRadius: '6px',
+        background: 'var(--ui-modal-background)',
+        color: 'var(--text-primary)',
+        fontFamily: 'inherit',
+        fontSize: '12px'
+    },
+    '.cm-panel.cm-search .cm-textfield::placeholder': {
+        color: 'color-mix(in srgb, var(--text-primary) 45%, transparent)'
+    },
+    '.cm-panel.cm-search .cm-button': {
+        height: '26px',
+        padding: '0 10px',
+        border: '1px solid var(--ui-black-transparent)',
+        borderRadius: '6px',
+        background: 'var(--ui-tertiary)',
+        backgroundImage: 'none',
+        color: 'var(--text-primary)',
+        fontFamily: 'inherit',
+        fontSize: '12px',
+        cursor: 'pointer'
+    },
+    '.cm-panel.cm-search .cm-button:hover': {
+        background: 'color-mix(in srgb, var(--text-primary) 10%, var(--ui-tertiary))'
+    },
+    '.cm-panel.cm-search label': {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px',
+        margin: '0',
+        fontSize: '11px',
+        whiteSpace: 'nowrap'
+    },
+    '.cm-panel.cm-search input[type=checkbox]': {
+        margin: '0',
+        accentColor: 'var(--looks-secondary)'
+    },
+    '.cm-panel.cm-search [name=close]': {
+        position: 'static',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '26px',
+        height: '26px',
+        margin: '0 0 0 auto',
+        padding: '0',
+        border: 'none',
+        borderRadius: '6px',
+        background: 'transparent',
+        color: 'color-mix(in srgb, var(--text-primary) 65%, transparent)',
+        fontFamily: 'inherit',
+        fontSize: '18px',
+        lineHeight: '1',
+        cursor: 'pointer'
+    },
+    '.cm-panel.cm-search [name=close]:hover': {
+        background: 'color-mix(in srgb, var(--text-primary) 10%, transparent)',
+        color: 'var(--text-primary)'
+    },
     '.cm-searchMatch': {
         backgroundColor: 'color-mix(in srgb, var(--status-warning) 35%, transparent)'
     },
