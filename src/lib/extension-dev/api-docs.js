@@ -305,7 +305,8 @@ const keyDocs = {
         key('switches', 'switches: string[]', 'Opcodes this block can be switched to from its context menu.',
             SWITCHES),
         key('compFunc', 'compFunc: string | Function',
-            'A compiler function that returns JavaScript source for this block. Unsandboxed only.', COMPILED, true),
+            'A compiler function that returns JavaScript source for this block. Loop and conditional blocks also ' +
+            'receive branch() and yieldLoop(). Unsandboxed only.', COMPILED, true),
         key('returnType', 'returnType: Scratch.ReturnType', 'The value type a compiled block produces.', COMPILED,
             true),
         key('xml', 'xml: string', 'Palette XML for XML blocks.', ASSORTED)
