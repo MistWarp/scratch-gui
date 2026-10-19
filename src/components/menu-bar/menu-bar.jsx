@@ -77,7 +77,7 @@ import MwEditorNav from './mw-editor-nav.jsx';
 import {hasRotur} from '../../lib/rotur/availability.js';
 import CollabPresence from './mw-collab-presence.jsx';
 
-import {FEEDBACK_URL} from '../../lib/constants/brand.js';
+import {FEEDBACK_URL, WEBSITE} from '../../lib/constants/brand.js';
 
 import {
     openSettingsModal,
@@ -1846,7 +1846,7 @@ class MenuBar extends React.Component {
                     )}
                 >
                     <a
-                        href="/"
+                        href={WEBSITE}
                         className={classNames(styles.menuBarItem, styles.hoverable, styles.homeLink)}
                         title={this.props.intl.formatMessage(menuLabelMessages.home)}
                         data-mw-item="__home"
