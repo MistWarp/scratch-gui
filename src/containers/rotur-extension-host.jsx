@@ -15,6 +15,8 @@ import {isLoggedIn} from '../lib/rotur/client.js';
 import {getState as getRoturIdentityState} from '../lib/rotur/identity.js';
 import ProjectActivityScope from '../lib/rotur/project-activity-scope.js';
 import {hasRotur, roturOfflineError} from '../lib/rotur/availability.js';
+import {isSplitEditor} from '../lib/account/origins.js';
+import * as accountBridge from '../lib/account/bridge.js';
 import {
     blockProjectPrompts,
     isProjectPromptBlocked
@@ -62,6 +64,7 @@ class RoturExtensionHost extends React.Component {
     componentDidUpdate () {
         const nextProjectKey = this.activityKey();
         if (nextProjectKey !== this.projectKey) {
+            if (isSplitEditor()) this.clearSplitProject();
             this.activityScope.clear();
             this.activityScope = new ProjectActivityScope(callRotur);
             this.projectKey = nextProjectKey;
@@ -69,6 +72,7 @@ class RoturExtensionHost extends React.Component {
     }
 
     componentWillUnmount () {
+        if (isSplitEditor()) this.clearSplitProject();
         this.activityScope.clear();
         if (this.props.vm.runtime.roturHost) {
             delete this.props.vm.runtime.roturHost;
@@ -205,8 +209,31 @@ class RoturExtensionHost extends React.Component {
         return {name: this.props.vm.runtime.projectName || ''};
     }
 
+    splitProject () {
+        const project = {name: this.props.vm.runtime.projectName || this.props.projectTitle || ''};
+        const id = this.getProjectId();
+        if (id) project.id = id;
+        return project;
+    }
+
+    clearSplitProject () {
+        if (!this.splitProjectUsed) return;
+        this.splitProjectUsed = false;
+        accountBridge.call('projectRotur', {action: 'clear', project: this.lastSplitProject}).catch(() => null);
+    }
+
+    splitCall (args) {
+        this.splitProjectUsed = true;
+        this.lastSplitProject = args.project;
+        return accountBridge.call('projectRotur', args);
+    }
+
     async ensureConsent (requested) {
         if (!hasRotur()) throw roturOfflineError();
+        if (isSplitEditor()) {
+            if (this.projectPromptsBlocked()) return false;
+            return this.splitCall({action: 'ensureConsent', project: this.splitProject(), scopes: requested});
+        }
         const scopes = validateProjectScopes(requested);
         if (!scopes) {
             throw new Error('Projects cannot ask for that Rotur permission');
@@ -241,6 +268,9 @@ class RoturExtensionHost extends React.Component {
 
     async call (method, args) {
         if (!hasRotur()) throw roturOfflineError();
+        if (isSplitEditor()) {
+            return this.splitCall({action: 'call', project: this.splitProject(), method, args: args || []});
+        }
         const call = authorizeProjectCall(
             method,
             args,

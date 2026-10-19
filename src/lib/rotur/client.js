@@ -8,6 +8,9 @@ import {
     formatActivityStatus
 } from './settings.js';
 import {ROTUR_TOKEN_KEY} from './token-key.js';
+import {sharedCredentials} from '../account/shared-credentials.js';
+import {isSplitEditor} from '../account/origins.js';
+import * as accountBridge from '../account/bridge.js';
 import * as oauth from './oauth.js';
 import {hasRotur, roturOfflineError} from './availability.js';
 
@@ -65,7 +68,7 @@ const getClient = () => {
 // Sign in with Rotur so nobody is signed out without warning.
 const loadLegacyToken = () => {
     try {
-        return localStorage.getItem(ROTUR_TOKEN_KEY);
+        return sharedCredentials.getItem(ROTUR_TOKEN_KEY);
     } catch (_) {
         return null;
     }
@@ -84,7 +87,7 @@ const legacyLogin = async scopes => {
         requires: scopes.filter(scope => scope.includes(':'))
     });
     try {
-        localStorage.setItem(ROTUR_TOKEN_KEY, rotur.token);
+        sharedCredentials.setItem(ROTUR_TOKEN_KEY, rotur.token);
     } catch (_) {
         // ignore private-mode failures
     }
@@ -93,7 +96,7 @@ const legacyLogin = async scopes => {
 
 const dropLegacyToken = () => {
     try {
-        localStorage.removeItem(ROTUR_TOKEN_KEY);
+        sharedCredentials.removeItem(ROTUR_TOKEN_KEY);
     } catch (_) {
         // ignore private-mode failures
     }
@@ -118,6 +121,10 @@ oauth.onSessionChange(session => {
  * @returns {string} The key, or '' when signed out.
  */
 const accountKey = () => {
+    if (isSplitEditor()) {
+        const user = accountBridge.getIdentity().user;
+        return (user && (user.id || user.username)) || '';
+    }
     const session = oauth.readSession();
     return (session && session.subject) || loadLegacyToken() || '';
 };
@@ -127,7 +134,7 @@ const accountKey = () => {
  * reconnect with Sign in with Rotur.
  * @returns {boolean} True to offer reconnecting.
  */
-const needsReconnect = () => webOrigin && !oauth.readSession() && Boolean(loadLegacyToken());
+const needsReconnect = () => !isSplitEditor() && webOrigin && !oauth.readSession() && Boolean(loadLegacyToken());
 
 /**
  * Stable avatar URL derived only from username.
@@ -151,7 +158,7 @@ const normalizeUser = data => {
     if (!username || typeof username !== 'string') {
         return null;
     }
-    const id = data['sys.id'] || data.id || data.key || data.sys_id || null;
+    const id = data['sys.id'] || data.id || data.sys_id || null;
     return {
         username,
         id: id === null ? null : String(id),
@@ -239,7 +246,7 @@ const writeRestoreCache = user => {
  * @returns {Promise<string|null>} The token, or null when signed out.
  */
 const getAccessToken = async () => {
-    if (!hasRotur()) return null;
+    if (!hasRotur() || isSplitEditor()) return null;
     return (await oauth.getAccessToken()) || loadLegacyToken();
 };
 
@@ -295,6 +302,10 @@ const login = async (extraScopes = [], redirectFallback = true) => {
 };
 
 const clearActivity = () => {
+    if (isSplitEditor()) {
+        accountBridge.call('activity', {action: 'clear'}).catch(() => null);
+        return;
+    }
     const rotur = getClient();
     if (!rotur.loggedIn || !rotur.socket) {
         return;
@@ -380,8 +391,18 @@ const normalizeNotification = notification => {
     return out;
 };
 
-// MistWarp only shows its own activity plus Rotur's account-level follow
-// notifications. Other apps share the same Rotur notification inbox.
+const CLAW_TYPES = new Set(['like', 'reply', 'repost', 'mention', 'pounce']);
+const CLAW_NOTICE_TYPES = new Set(['post_milestone', 'claw_weekly_recap', 'claw_teen_lock']);
+
+const isClawNotification = notification => {
+    const platform = String(notification.platform || '').toLowerCase();
+    if (platform && platform !== 'rotur' && platform !== 'claw') return false;
+    if (CLAW_NOTICE_TYPES.has(String(notification.type || '').toLowerCase())) return true;
+    const postId = notification.post_id || notification.original_post_id;
+    return CLAW_TYPES.has(String(notification.type || '').toLowerCase()) &&
+        typeof postId === 'string' && postId !== '';
+};
+
 const isVisibleNotification = notification => {
     const normalized = normalizeNotification(notification);
     if (!normalized || typeof normalized !== 'object') {
@@ -391,6 +412,9 @@ const isVisibleNotification = notification => {
         return false;
     }
     if (String(normalized.type || '').toLowerCase() === 'follow') {
+        return true;
+    }
+    if (isClawNotification(normalized)) {
         return true;
     }
     const platformData = normalized.platform_data && typeof normalized.platform_data === 'object' ?
@@ -470,7 +494,7 @@ const ensureNotificationSocketListener = () => {
 };
 
 const subscribeNotifications = listener => {
-    if (typeof listener !== 'function') {
+    if (typeof listener !== 'function' || isSplitEditor()) {
         return () => {};
     }
     notificationListeners.add(listener);
@@ -488,7 +512,7 @@ const subscribeNotifications = listener => {
 };
 
 const subscribeNotificationRemovals = listener => {
-    if (typeof listener !== 'function') {
+    if (typeof listener !== 'function' || isSplitEditor()) {
         return () => {};
     }
     notificationRemovalListeners.add(listener);
@@ -506,6 +530,7 @@ const subscribeNotificationRemovals = listener => {
 };
 
 const subscribeTier = listener => {
+    if (isSplitEditor()) return () => {};
     let off = null;
     let cancelled = false;
     const read = value => (value && typeof value === 'object' ? String(value.tier || 'Free') : 'Free');
@@ -530,6 +555,22 @@ const subscribeTier = listener => {
  * @param {object} [extra] - Extra activity fields.
  */
 const syncActivity = async (projectTitleOrCtx, extra = {}) => {
+    if (isSplitEditor()) {
+        const context = typeof projectTitleOrCtx === 'object' && projectTitleOrCtx !== null ?
+            projectTitleOrCtx :
+            {projectTitle: projectTitleOrCtx, ...extra};
+        await accountBridge.call('activity', {
+            action: 'set',
+            context: {
+                projectTitle: context.projectTitle,
+                doing: context.doing,
+                collaborating: context.collaborating,
+                url: context.url,
+                editingSince: context.editingSince
+            }
+        }).catch(() => null);
+        return;
+    }
     const rotur = getClient();
     if (!rotur.loggedIn) {
         return;
@@ -593,13 +634,13 @@ const syncActivity = async (projectTitleOrCtx, extra = {}) => {
     }
 };
 
-const isLoggedIn = () => getClient().loggedIn;
+const isLoggedIn = () => (isSplitEditor() ? Boolean(accountBridge.getIdentity().user) : getClient().loggedIn);
 const getRotur = () => getClient();
 
 // Read the shared inbox and MistWarp's local fallback using the current account.
 const fetchNotifications = afterDays => {
     const rotur = getClient();
-    if (!rotur.loggedIn) {
+    if (!isLoggedIn()) {
         return Promise.resolve([]);
     }
     const key = `${getClient().token || ''}:${loadSession() || ''}:${afterDays}`;
@@ -621,7 +662,9 @@ const fetchNotifications = afterDays => {
         }
         let remote = [];
         try {
-            const list = await rotur.notifications.list(afterDays);
+            const list = isSplitEditor() ?
+                await accountBridge.call('rotur', {method: 'notifications.list', args: [afterDays]}) :
+                await rotur.notifications.list(afterDays);
             remote = Array.isArray(list) ? list : [];
         } catch (error) {
             if (!localLoaded) throw error;
@@ -699,7 +742,7 @@ const hasScopes = scopes => {
 // never leaves the page. Someone can switch scopes off on Rotur's consent
 // screen, so reads just find out, and fail quietly if they can't.
 const ensureScopes = async (scopes, {prompt = false} = {}) => {
-    if (!hasRotur()) return false;
+    if (!hasRotur() || isSplitEditor()) return false;
     const wanted = Array.isArray(scopes) ? scopes.filter(Boolean) : [];
     const session = oauth.readSession();
     if (session) {

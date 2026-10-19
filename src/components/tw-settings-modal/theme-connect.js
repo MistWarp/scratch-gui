@@ -11,6 +11,9 @@ const themeDispatchToProps = dispatch => ({
     onChangeTheme: theme => {
         dispatch(setTheme(theme));
         applyTheme(theme);
+    },
+    onPreviewTheme: theme => {
+        dispatch(setTheme(theme));
     }
 });
 

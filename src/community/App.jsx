@@ -36,6 +36,7 @@ const ManageProject = lazy(() => import('./pages/ManageProject.jsx'));
 const Wallet = lazy(() => import('./pages/Wallet.jsx'));
 const Notifications = lazy(() => import('./pages/Notifications.jsx'));
 const Post = lazy(() => import('./pages/Post.jsx'));
+const Posts = lazy(() => import('./pages/Posts.jsx'));
 const News = lazy(() => import('./pages/News.jsx'));
 const NewsPost = lazy(() => import('./pages/NewsPost.jsx'));
 const Stats = lazy(() => import('./pages/Stats.jsx'));
@@ -71,6 +72,7 @@ const ROUTE_TITLES = [
     ['/wallet', 'Wallet'],
     ['/notifications', 'Notifications'],
     ['/posts/', 'Post'],
+    ['/posts', 'Posts'],
     ['/news', 'News'],
     ['/stats', 'MistWarp stats'],
     ['/leaderboard', 'Leaderboard'],
@@ -206,6 +208,7 @@ const App = () => {
                         <Route path="/wallet" element={<Wallet />} />
                         <Route path="/purchases" element={<Navigate to="/wallet?tab=purchases" replace />} />
                         <Route path="/notifications" element={<Notifications />} />
+                        <Route path="/posts" element={<Posts />} />
                         <Route path="/posts/:id" element={<Post />} />
                         <Route path="/news" element={<News />} />
                         <Route path="/news/manage" element={<News manager />} />

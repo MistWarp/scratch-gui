@@ -27,22 +27,6 @@
     overflow: hidden;
 }
 
-.priceBadge {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    z-index: 1;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 3px 7px;
-    border-radius: var(--radius-sm);
-    background: color-mix(in srgb, #1a1a1a 72%, transparent);
-    color: #ffd166;
-    font-size: var(--fs-xs);
-    font-weight: 700;
-}
-
 .trendBadge {
     position: absolute;
     right: 8px;

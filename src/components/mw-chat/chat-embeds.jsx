@@ -296,7 +296,6 @@ const YoutubeEmbed = ({embed, intl}) => {
                     src={youtubeFrame(embed.id)}
                     title="YouTube"
                     allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-                    allowFullScreen
                     referrerPolicy="strict-origin-when-cross-origin"
                 />
             </div>

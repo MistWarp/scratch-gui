@@ -3,10 +3,9 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useState, useMemo, useRef} from 'react';
 import {useParams, Link, useLocation, useNavigate} from 'react-router-dom';
-import {Blocks, CalendarDays, ShieldAlert, Trash2, Coins, SearchX} from 'lucide-react';
+import {Blocks, CalendarDays, ShieldAlert, Trash2, SearchX} from 'lucide-react';
 import api, {editorUrl, embedUrl} from '../api';
 import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
-import {buyProject} from '../purchase';
 import {listCommerceBounties} from '../credits';
 import ProjectInfoPanel from '../components/ProjectInfoPanel.jsx';
 import {canViewProjectSource} from '../project-source-access';
@@ -93,8 +92,6 @@ const Project = () => {
     const thumbInput = useRef(null);
     const stageFrame = useRef(null);
     const stageSource = useRef({key: null, url: null});
-    const [buying, setBuying] = useState(false);
-    const [confirmBuy, setConfirmBuy] = useState(false);
     const [savingLibrary, setSavingLibrary] = useState(false);
     const [savingFeatured, setSavingFeatured] = useState(false);
     const [savingComments, setSavingComments] = useState(false);
@@ -184,7 +181,6 @@ const Project = () => {
         setTab(initialActivityTab());
         setVersionControlTab(initialVersionControlTab());
         setCollectionOpen(false);
-        setConfirmBuy(false);
         setForkSetup(null);
         setForkBounty(null);
         setPreferredBountyId('');
@@ -192,7 +188,6 @@ const Project = () => {
         setDeleteConfirm(false);
         setDeletingProject(false);
         setConfirmUnsandboxed(false);
-        setBuying(false);
         setSavingTitle(false);
         setSavingLibrary(false);
         setSavingFeatured(false);
@@ -383,33 +378,6 @@ const Project = () => {
         } finally {
             releaseAction(actionKey);
             if (actionContextRef.current === context) setSavingVisibility(false);
-        }
-    };
-
-    const openBuyConfirm = () => {
-        setActionError(null);
-        setConfirmBuy(true);
-    };
-
-    const doBuy = async () => {
-        const context = actionContextRef.current;
-        const actionKey = beginAction('buy');
-        if (!actionKey) return;
-        setBuying(true);
-        setActionError(null);
-        try {
-            const fresh = await buyProject(id);
-            if (actionContextRef.current !== context) return;
-            setProject(fresh);
-            setProjectLoadContext(id);
-            setConfirmBuy(false);
-        } catch (e) {
-            if (actionContextRef.current !== context) return;
-            setConfirmBuy(false);
-            setActionError(e.cancelled ? communityText('Payment cancelled.') : (e.message || 'Could not complete the purchase.'));
-        } finally {
-            releaseAction(actionKey);
-            if (actionContextRef.current === context) setBuying(false);
         }
     };
 
@@ -654,8 +622,6 @@ const Project = () => {
     const seeInsideHref = editorUrl({platformProject: project.id});
     const sharedDate = formatDate(project.sharedAt || project.created);
     const visibility = project.visibility || (project.shared ? 'public' : 'private');
-    const price = project.price || 0;
-    const locked = Boolean(project.locked);
     const hasContent = project.hasContent !== false;
     const followThemeDecision = themeMode === 'followed' && user && owner ?
         followedOwner &&
@@ -673,7 +639,6 @@ const Project = () => {
         project.id,
         project.projectJsonUrl,
         project.assetsBase,
-        project.trustedExtensions || [],
         Boolean(unsandboxed),
         Boolean(themeAllowed)
     ]);
@@ -785,31 +750,9 @@ const Project = () => {
                 gameMarketplace={gameMarketplace}
                 setGameMarketplace={setGameMarketplace}
             />
-            {confirmBuy ? (
-                <ConfirmModal
-                    icon={Coins}
-                    title={communityText('Confirm purchase')}
-                    confirmLabel={(
-                        <React.Fragment>
-                            <Coins size={15} />
-                            {communityText('Pay {value1} credits', {value1: price})}
-                        </React.Fragment>
-                    )}
-                    busy={buying}
-                    busyLabel={communityText('Waiting for Rotur…')}
-                    onConfirm={doBuy}
-                    onCancel={() => setConfirmBuy(false)}
-                >
-                    <p className={styles.confirmText}>
-                        {communityText('Buy {value1} for a one-time payment of {value2} credits and support its creator?', {value1: project.title, value2: price})}
-                    </p>
-                    <p className={styles.confirmBalance}>{communityText('Rotur opens in a new window to take the payment.')}</p>
-                </ConfirmModal>
-            ) : null}
             <ProjectNotices
                 project={project}
                 visibility={visibility}
-                price={price}
                 actionError={actionError}
                 setActionError={setActionError}
                 copied={copied}
@@ -826,11 +769,7 @@ const Project = () => {
                     project={project}
                     user={user}
                     userLoading={userLoading}
-                    locked={locked}
                     hasContent={hasContent}
-                    price={price}
-                    buying={buying}
-                    openBuyConfirm={openBuyConfirm}
                     contentError={contentError}
                     followThemeDecision={followThemeDecision}
                     stageHeightRatio={stageHeightRatio}
@@ -881,7 +820,6 @@ const Project = () => {
                     userLoading={userLoading}
                     viewerName={viewerName}
                     ownsProject={ownsProject}
-                    locked={locked}
                     baseProjectUrl={baseProjectUrl}
                     tab={tab}
                     showActivity={showActivity}

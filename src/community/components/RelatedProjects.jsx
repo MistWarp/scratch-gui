@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
-import {SkipForward, Sparkles} from 'lucide-react';
+import {Shapes, SkipForward} from 'lucide-react';
 import api, {projectUrl} from '../api';
 import {track} from '../analytics';
 import {useCommunityIntl} from '../i18n.jsx';
@@ -77,7 +77,7 @@ const RelatedProjects = ({id}) => {
     return (
         <section className={styles.related}>
             <SectionHeading
-                icon={Sparkles}
+                icon={Shapes}
                 title={text('More like this')}
                 actions={<NextProjectButton id={id} className={styles.next} />}
             />

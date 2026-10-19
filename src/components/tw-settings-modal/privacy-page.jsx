@@ -7,6 +7,7 @@ import {BooleanSetting} from './setting.jsx';
 import {PageHeader} from './theme-accent-panel.jsx';
 import {analyticsEnabled, setAnalyticsEnabled} from '../../community/analytics.js';
 import {isMinorAccount, subscribeMinorAccount} from '../../lib/minor-account.js';
+import {ACCOUNT_ORIGIN, isSplitEditor} from '../../lib/account/origins.js';
 import {
     readBlockedProjectPrompts,
     unblockProjectPrompts
@@ -101,6 +102,50 @@ class PrivacyPage extends React.Component {
                         />
                     </p>
                 )}
+                {isSplitEditor() ? (
+                    <React.Fragment>
+                        <p className={styles.detail}>
+                            <FormattedMessage
+                                defaultMessage="Projects you blocked from using your Rotur account are listed in your account {link}."
+                                id="mw.settingsModal.accountPermissions"
+                                values={{
+                                    link: (
+                                        <a
+                                            href={`${ACCOUNT_ORIGIN}/settings?section=safety`}
+                                            rel="noopener noreferrer"
+                                            target="_blank"
+                                        >
+                                            <FormattedMessage
+                                                defaultMessage="Safety settings"
+                                                id="mw.settingsModal.accountSafetyLink"
+                                            />
+                                        </a>
+                                    )
+                                }}
+                            />
+                        </p>
+                        <p className={styles.detail}>
+                            <FormattedMessage
+                                defaultMessage="Your editing presence on Rotur, and which projects may show activity on your profile, are set in your account {link}."
+                                id="mw.settingsModal.accountPresence"
+                                values={{
+                                    link: (
+                                        <a
+                                            href={`${ACCOUNT_ORIGIN}/settings?section=presence`}
+                                            rel="noopener noreferrer"
+                                            target="_blank"
+                                        >
+                                            <FormattedMessage
+                                                defaultMessage="Presence settings"
+                                                id="mw.settingsModal.accountPresenceLink"
+                                            />
+                                        </a>
+                                    )
+                                }}
+                            />
+                        </p>
+                    </React.Fragment>
+                ) : null}
                 <PageHeader>
                     <FormattedMessage
                         defaultMessage="Usage data"

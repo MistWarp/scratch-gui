@@ -5,7 +5,7 @@ import {
     Palette, Radio, User, Bell, Eye, Shield, Database, Trash2, ExternalLink, SlidersHorizontal,
     PanelTop, Paintbrush, Brush, Lock, Ban, VolumeX, Save, Package
 } from 'lucide-react';
-import {applyTheme, detectTheme} from '../../lib/themes/themePersistance.js';
+import {applyTheme, applyThemeVisuals, detectTheme} from '../../lib/themes/themePersistance.js';
 import {ThemeAccentPanel} from '../../components/tw-settings-modal/theme-accent-panel.jsx';
 import CustomThemesPage from '../../components/tw-settings-modal/custom-themes-page.jsx';
 import Sidebar from '../components/Sidebar.jsx';
@@ -79,7 +79,7 @@ const DATA_TABS = [
     {key: 'account', label: 'Account data'},
     {key: 'games', label: 'Games'}
 ];
-const CUSTOM_THEME_ACTIONS = new Set(['create', 'import']);
+const CUSTOM_THEME_ACTIONS = new Set(['create', 'gradient']);
 const getProjectThemeMode = () => {
     try {
         const value = localStorage.getItem(PROJECT_THEME_MODE_KEY);
@@ -376,6 +376,10 @@ const Settings = () => {
         applyTheme(next);
         setTheme(detectTheme());
     };
+    const previewTheme = next => {
+        applyThemeVisuals(next);
+        setTheme(next);
+    };
 
     const changeUsername = value => {
         setUsername(value);
@@ -407,7 +411,7 @@ const Settings = () => {
         const next = {...notificationPreferences, [key]: enabled};
         setNotificationPreferencesState(next);
         setNotificationPreferences(next);
-        notifyLocalChange();
+        notifyLocalChange('notificationPreferences');
     };
     const changeAnalytics = enabled => {
         setAnalyticsEnabled(enabled);
@@ -599,6 +603,7 @@ const Settings = () => {
                                     theme={theme}
                                     onChangeTheme={applyAndPersist}
                                     onOpenThemeMarketplace={() => navigate('/themes')}
+                                    onPreviewTheme={previewTheme}
                                     onTabChange={setCustomThemeTab}
                                 />
                             </div> : null}

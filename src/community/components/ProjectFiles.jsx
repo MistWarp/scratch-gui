@@ -56,7 +56,7 @@ export const canLoadProjectSnapshot = project => Boolean(
 
 export const canCacheProjectSnapshot = project => (
     project.shared === true && (project.visibility || 'public') === 'public' &&
-    Number(project.price || 0) <= 0 && project.seeInside !== false && project.canViewSource !== false
+    project.seeInside !== false && project.canViewSource !== false
 );
 
 const rememberSnapshot = (key, request) => {
@@ -293,7 +293,7 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) =>
         return () => {
             active = false;
         };
-    }, [project.id, project.gitHead, project.workspaceUrl, project.price, project.seeInside,
+    }, [project.id, project.gitHead, project.workspaceUrl, project.seeInside,
         project.canSeeInside, project.canViewSource, project.isOwner, project.myRole, onCount]);
 
     const files = snapshot ? snapshot.files : [];
@@ -320,7 +320,7 @@ const ProjectFiles = ({project, onCount, initialPath, onSelectPath, bounded}) =>
         return () => {
             active = false;
         };
-    }, [project.id, project.canViewSource, project.canSeeInside, project.seeInside, project.price,
+    }, [project.id, project.canViewSource, project.canSeeInside, project.seeInside,
         project.isOwner, project.myRole, selectedFile, snapshot]);
     const selected = selectedContent || selectedFile;
     useEffect(() => {

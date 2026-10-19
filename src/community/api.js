@@ -11,10 +11,15 @@ import {
     friendlyError
 } from '../lib/community/api.js';
 import warpthemeApi from '../lib/warptheme-api.js';
+import {editorRoot} from '../lib/account/origins.js';
 
-const editorUrl = ({chat, clone, platformProject, projectJson, assets, starter, restore} = {}) => {
+const editorUrl = ({chat, clone, platformProject, scratchProject, projectJson, assets, starter, restore} = {}) => {
+    const root = editorRoot();
     if (platformProject) {
-        return `/editor#mw-${platformProject}`;
+        return `${root}#mw-${platformProject}`;
+    }
+    if (scratchProject) {
+        return `${root}#${scratchProject}`;
     }
     const params = new URLSearchParams();
     if (starter) params.set('starter', starter);
@@ -24,7 +29,7 @@ const editorUrl = ({chat, clone, platformProject, projectJson, assets, starter, 
     if (assets) params.set('mw_assets', assets);
     if (chat) params.set('chat', '1');
     const query = params.toString();
-    return `/editor${query ? `?${query}` : ''}`;
+    return `${root}${query ? `?${query}` : ''}`;
 };
 
 const readStored = key => {
@@ -124,9 +129,6 @@ const embedUrl = (project, {
                 // ignore
             }
         }
-    }
-    if (project.trustedExtensions && project.trustedExtensions.length) {
-        params.set('mw_te', JSON.stringify(project.trustedExtensions));
     }
     if (!applyProjectTheme) {
         params.set('apply_project_theme', '0');
@@ -239,8 +241,6 @@ const api = {
     publish: id => request(`/projects/${id}/publish`, {method: 'POST'}),
     unpublish: id => request(`/projects/${id}/unpublish`, {method: 'POST'}),
     setVisibility: (id, visibility) => request(`/projects/${id}/visibility`, {method: 'POST', body: {visibility}}),
-    purchaseIntent: (id, returnUrl) => request(`/projects/${id}/purchase/intent`, {method: 'POST', body: {returnUrl}}),
-    purchaseConfirm: (id, key) => request(`/projects/${id}/purchase/confirm`, {method: 'POST', body: {key}}),
     gameProducts: id => request(`/projects/${id}/products`, {cache: false}),
     ownsGameProduct: (id, product) => request(`/projects/${id}/products/${encodeURIComponent(product)}/owns`, {
         cache: false

@@ -1,7 +1,8 @@
 // Sign in with Rotur for MistWarp: OAuth 2.0 with PKCE as a public client.
 //
 // Self-contained on purpose, so it can be swapped for rotur-sdk's OAuth
-// helpers once they ship. Nothing here imports the rest of MistWarp.
+// helpers once they ship. The only MistWarp import is the credential store
+// that shares the session with the editor's account frame.
 //
 // - signIn() opens Rotur's consent screen in a popup (response_mode
 //   web_message). If the browser blocks the popup it can fall back to a
@@ -10,6 +11,10 @@
 // - With offline_access the session carries a refresh token. Refresh tokens
 //   work once, so tabs refresh under a Web Lock and share the result over a
 //   BroadcastChannel (or the storage event where there is none).
+
+import {
+    sharedCredentials, sharingCredentials, subscribeSharedCredentials, withSharedLease
+} from '../account/shared-credentials.js';
 
 const config = {
     clientId: 'app_1938b6a87799f862',
@@ -30,6 +35,9 @@ const MESSAGE_TYPE = 'rotur:signin';
 const REFRESH_MARGIN = 2 * 60 * 1000;
 // After a failed refresh that may work later (offline, Rotur down), try again.
 const RETRY_DELAY = 30 * 1000;
+const ROTATION_WAIT = 5000;
+const ROTATION_CHECK = 250;
+const REFRESH_TIMEOUT = 60000;
 
 const listeners = new Set();
 let channel = null;
@@ -72,12 +80,21 @@ const authorizeUrl = ({scopes, state, challenge, redirectUri, popup}) => `${conf
 // comes back to the site root, which is registered as a redirect URI.
 const redirectUriFor = popup => (popup ? location.origin : `${location.origin}/`);
 
-const tokenRequest = async body => {
-    const response = await fetch(`${config.api}/oauth/token`, {
-        method: 'POST',
-        body: new URLSearchParams({client_id: config.clientId, ...body})
-    });
-    const data = await response.json().catch(() => ({}));
+const tokenRequest = async (body, timeout = 0) => {
+    const controller = timeout && typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timer = controller ? setTimeout(() => controller.abort(), timeout) : null;
+    let response;
+    let data;
+    try {
+        response = await fetch(`${config.api}/oauth/token`, {
+            method: 'POST',
+            body: new URLSearchParams({client_id: config.clientId, ...body}),
+            ...(controller ? {signal: controller.signal} : {})
+        });
+        data = await response.json().catch(() => ({}));
+    } finally {
+        clearTimeout(timer);
+    }
     if (!response.ok || !data.access_token) {
         throw oauthError(
             data.error || (response.status === 429 ? 'rate_limited' : 'token_failed'),
@@ -113,7 +130,7 @@ const exchangeCode = async (code, verifier, redirectUri) => {
 
 const readSession = () => {
     try {
-        const session = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+        const session = JSON.parse(sharedCredentials.getItem(STORAGE_KEY) || 'null');
         return session && typeof session.accessToken === 'string' ? session : null;
     } catch (e) {
         return null;
@@ -153,8 +170,8 @@ const writeSession = session => {
     // Signing out twice changes nothing, so it tells nobody.
     if (!session && !readSession()) return;
     try {
-        if (session) localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-        else localStorage.removeItem(STORAGE_KEY);
+        if (session) sharedCredentials.setItem(STORAGE_KEY, JSON.stringify(session));
+        else sharedCredentials.removeItem(STORAGE_KEY);
     } catch (e) {
         // Private mode: the session lasts for this page only.
     }
@@ -293,8 +310,18 @@ const withLock = task => {
     return task();
 };
 
+const rotatedElsewhere = async stale => {
+    const giveUpAt = Date.now() + (sharingCredentials() ? ROTATION_WAIT : 0);
+    for (;;) {
+        const latest = readSession();
+        if (!latest || latest.refreshToken !== stale.refreshToken) return latest;
+        if (Date.now() >= giveUpAt) return null;
+        await new Promise(resolve => setTimeout(resolve, ROTATION_CHECK));
+    }
+};
+
 // Swap the refresh token, unless another tab already did.
-const refresh = stale => withLock(async () => {
+const refresh = stale => withLock(() => withSharedLease('rotur-refresh', async () => {
     const current = readSession();
     if (!current) return null;
     if (current.refreshToken !== stale.refreshToken || current.expiresAt - REFRESH_MARGIN > Date.now()) {
@@ -302,7 +329,8 @@ const refresh = stale => withLock(async () => {
     }
     let next;
     try {
-        const fresh = await tokenRequest({grant_type: 'refresh_token', refresh_token: current.refreshToken});
+        const fresh = await tokenRequest({grant_type: 'refresh_token', refresh_token: current.refreshToken},
+            REFRESH_TIMEOUT);
         next = {
             ...fresh,
             refreshToken: fresh.refreshToken || current.refreshToken,
@@ -313,8 +341,8 @@ const refresh = stale => withLock(async () => {
     } catch (error) {
         if (error.code !== 'invalid_grant' && error.code !== 'invalid_token' && error.status !== 401) throw error;
         // Another tab without Web Locks may have won the race.
-        const latest = readSession();
-        if (latest && latest.refreshToken !== current.refreshToken) return latest;
+        const latest = await rotatedElsewhere(current);
+        if (latest) return latest;
         // Revoked, expired, banned, or the person left MistWarp on rotur.dev.
         writeSession(null);
         return null;
@@ -324,7 +352,7 @@ const refresh = stale => withLock(async () => {
     if (!latest || latest.refreshToken !== current.refreshToken) return latest;
     writeSession(next);
     return next;
-});
+}));
 
 /**
  * The current access token, refreshed first if it is about to expire.
@@ -389,6 +417,9 @@ if (typeof window !== 'undefined') {
             }
         });
     }
+    subscribeSharedCredentials(key => {
+        if (key === STORAGE_KEY) received(readSession());
+    });
     // Timers stop while a laptop sleeps; catch up when it wakes or reconnects.
     const catchUp = () => {
         if (document.visibilityState !== 'hidden') getAccessToken().catch(() => {});

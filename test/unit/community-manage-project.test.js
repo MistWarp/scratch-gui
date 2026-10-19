@@ -16,7 +16,7 @@ describe('ManageProject navigation', () => {
             'overview',
             'page',
             'publishing',
-            'sales',
+            'products',
             'collaboration',
             'activity',
             'ownership'
@@ -43,27 +43,26 @@ describe('ManageProject navigation', () => {
     test('normalizes old routes and preserves subtab routes', () => {
         expect(normalizeProjectSectionParam('settings')).toBe('page');
         expect(normalizeProjectSectionParam('preview')).toBe('publishing');
-        expect(normalizeProjectSectionParam('buyers')).toBe('buyers');
+        expect(normalizeProjectSectionParam('sales')).toBe('products');
+        expect(normalizeProjectSectionParam('buyers')).toBe('products');
+        expect(normalizeProjectSectionParam('products')).toBe('products');
         expect(normalizeProjectSectionParam('bounties')).toBe('bounties');
         expect(normalizeProjectSectionParam('unknown')).toBe('');
     });
 
     test('restores sidebar and subtab state from navigation history', () => {
-        expect(projectNavigationState('buyers')).toEqual({
-            section: 'sales',
-            salesTab: 'buyers',
+        expect(projectNavigationState('sales')).toEqual({
+            section: 'products',
             collaborationTab: 'team',
             activityTab: 'feedback'
         });
         expect(projectNavigationState('bounties')).toEqual({
             section: 'collaboration',
-            salesTab: 'pricing',
             collaborationTab: 'bounties',
             activityTab: 'feedback'
         });
         expect(projectNavigationState('diagnostics')).toEqual({
             section: 'activity',
-            salesTab: 'pricing',
             collaborationTab: 'team',
             activityTab: 'diagnostics'
         });

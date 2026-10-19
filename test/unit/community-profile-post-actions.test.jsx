@@ -7,6 +7,10 @@ import {MemoryRouter} from 'react-router-dom';
 import ProfilePosts from '../../src/community/components/ProfilePosts.jsx';
 import rotur from '../../src/community/rotur.js';
 
+jest.mock('../../src/community/UserContext.jsx', () => ({
+    useUser: () => ({user: {username: 'Sophie'}, login: jest.fn()})
+}));
+
 jest.mock('../../src/community/rotur.js', () => ({
     createPost: jest.fn(),
     deletePost: jest.fn(),
@@ -23,7 +27,6 @@ const renderPosts = (posts, onChange = jest.fn()) => mount(
             viewer={{username: 'Sophie'}}
             editable
             onChange={onChange}
-            onLogin={jest.fn()}
         />
     </MemoryRouter>
 );
@@ -129,9 +132,10 @@ describe('profile post actions', () => {
         }));
         const wrapper = renderPosts([{id: 'post-1', content: 'Hello', timestamp: 1}]);
 
+        wrapper.find('button[aria-label="Post actions"]').simulate('click');
         wrapper.find('button[aria-label="Delete post"]').simulate('click');
         expect(rotur.deletePost).not.toHaveBeenCalled();
-        expect(wrapper.text()).toContain('This permanently deletes the post');
+        expect(wrapper.find('ConfirmModal').text()).toContain('This permanently deletes the post');
 
         const confirm = wrapper.find('button').filterWhere(button => button.text() === 'Delete post')
             .prop('onClick');
@@ -167,6 +171,21 @@ describe('profile post actions', () => {
 
         expect(wrapper.find('List')).toHaveLength(1);
         expect(wrapper.find('article').length).toBeLessThan(posts.length);
+        wrapper.unmount();
+    });
+
+    test('labels the pinned post and keeps it first', () => {
+        const wrapper = renderPosts([
+            {id: 'new', content: 'Newest', timestamp: 20},
+            {id: 'pin', content: 'Pinned post', timestamp: 10, pinned: true}
+        ]);
+
+        const articles = wrapper.find('article');
+        expect(articles.first().text()).toContain('Pinned post');
+        expect(articles.first().find('p')
+            .filterWhere(node => node.text() === 'Pinned')).toHaveLength(1);
+        expect(articles.last().find('p')
+            .filterWhere(node => node.text() === 'Pinned')).toHaveLength(0);
         wrapper.unmount();
     });
 });

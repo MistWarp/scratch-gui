@@ -1,0 +1,49 @@
+.sidebar {
+    display: grid;
+    align-content: start;
+    gap: 10px;
+    padding: 16px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+}
+
+.left {
+    margin: 0;
+    color: var(--mw-text);
+    font-size: var(--fs-md);
+    font-weight: 600;
+}
+
+.help {
+    margin: 0;
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+}
+
+.links {
+    display: grid;
+    gap: 6px;
+    margin: 4px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--accent-strong);
+    font-size: var(--fs-sm);
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.links a:hover {
+    text-decoration: underline;
+}
+
+.signIn {
+    justify-self: start;
+    margin-top: 4px;
+}

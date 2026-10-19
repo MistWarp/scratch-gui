@@ -4,6 +4,13 @@ const RESET_ALL_SHORTCUTS = 'scratch-gui/shortcuts/RESET_ALL_SHORTCUTS';
 const ENABLE_SHORTCUTS = 'scratch-gui/shortcuts/ENABLE_SHORTCUTS';
 const LOAD_SHORTCUTS = 'scratch-gui/shortcuts/LOAD_SHORTCUTS';
 
+// Sandboxed frames always reject storage access; that is expected and should
+// not fill the console. Other failures are still worth reporting.
+const reportStorageError = (message, error) => {
+    if (error && error.name === 'SecurityError') return;
+    console.warn(message, error);
+};
+
 const loadFromStorage = () => {
     try {
         const saved = localStorage.getItem('tw:shortcuts');
@@ -11,7 +18,7 @@ const loadFromStorage = () => {
             return JSON.parse(saved);
         }
     } catch (e) {
-        console.warn('Failed to load shortcuts from storage:', e);
+        reportStorageError('Failed to load shortcuts from storage:', e);
     }
     return null;
 };
@@ -20,7 +27,7 @@ const persistToStorage = customShortcuts => {
     try {
         localStorage.setItem('tw:shortcuts', JSON.stringify(customShortcuts));
     } catch (e) {
-        console.warn('Failed to save shortcuts:', e);
+        reportStorageError('Failed to save shortcuts:', e);
     }
 };
 
@@ -57,7 +64,7 @@ const reducer = function (state, action) {
         try {
             localStorage.removeItem('tw:shortcuts');
         } catch (e) {
-            console.warn('Failed to clear shortcuts:', e);
+            reportStorageError('Failed to clear shortcuts:', e);
         }
         
         return Object.assign({}, state, {
@@ -68,7 +75,7 @@ const reducer = function (state, action) {
         try {
             localStorage.setItem('tw:shortcuts', JSON.stringify(loadedShortcuts));
         } catch (e) {
-            console.warn('Failed to save shortcuts:', e);
+            reportStorageError('Failed to save shortcuts:', e);
         }
 
         return Object.assign({}, state, {

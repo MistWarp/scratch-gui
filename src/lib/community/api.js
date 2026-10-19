@@ -3,6 +3,7 @@ import {clearContentCache} from './cached-fetch.js';
 import {isGalleryExtensionUrl} from '../trusted-extension.js';
 import {trackApiSuccess} from '../../community/analytics.js';
 import {setMinorAccount} from '../minor-account.js';
+import {sharedCredentials} from '../account/shared-credentials.js';
 import {sleep} from '../utils/async.js';
 import {
     createApiError, createNetworkError, createTimeoutError, friendlyError
@@ -30,21 +31,36 @@ const setRoturTokenGetter = getter => {
 
 let exchangeInFlight = null;
 
+let sessionProvider = null;
+
+const setSessionProvider = provider => {
+    sessionProvider = provider;
+    cacheGeneration += 1;
+    inFlightGets.clear();
+};
+
 const loadSession = () => {
+    if (sessionProvider) return sessionProvider.get() || null;
     try {
-        return localStorage.getItem(SESSION_KEY) || null;
+        return sharedCredentials.getItem(SESSION_KEY) || null;
     } catch (e) {
         return null;
     }
 };
 
 const storeSession = token => {
+    if (sessionProvider) {
+        if (!token) sessionProvider.clear();
+        cacheGeneration += 1;
+        inFlightGets.clear();
+        return;
+    }
     try {
-        const previous = localStorage.getItem(SESSION_KEY);
+        const previous = sharedCredentials.getItem(SESSION_KEY);
         if (token) {
-            localStorage.setItem(SESSION_KEY, token);
+            sharedCredentials.setItem(SESSION_KEY, token);
         } else {
-            localStorage.removeItem(SESSION_KEY);
+            sharedCredentials.removeItem(SESSION_KEY);
         }
         if (previous !== token) {
             cacheGeneration += 1;
@@ -259,8 +275,43 @@ const runExchange = token => {
     return exchangeInFlight;
 };
 
+const SESSION_WAIT = 15000;
+
+const currentSession = async () => {
+    if (!sessionProvider) return loadSession();
+    const existing = sessionProvider.get();
+    if (existing) return existing;
+    let timer = null;
+    try {
+        return (await Promise.race([
+            sessionProvider.refresh(),
+            new Promise(resolve => {
+                timer = setTimeout(() => resolve(null), SESSION_WAIT);
+            })
+        ])) || null;
+    } catch (e) {
+        return null;
+    } finally {
+        clearTimeout(timer);
+    }
+};
+
+const refreshSession = async () => {
+    if (sessionProvider) {
+        try {
+            return await sessionProvider.refresh();
+        } catch (e) {
+            return null;
+        }
+    }
+    const roturToken = await roturTokenGetter();
+    if (!roturToken) return null;
+    return runExchange(roturToken);
+};
+
 const request = async (path, {method = 'GET', body, headers = {}, raw = false, cache = true, timeoutMs} = {}) => {
     const cacheable = method === 'GET' && !raw && cache;
+    if (cacheable && sessionProvider) await currentSession();
     const cacheKey = cacheable ? getCacheKey(path) : '';
     // Uploads and raw downloads (project history) can take far longer than a
     // JSON GET, so only those get a deadline unless the caller asks for one.
@@ -275,8 +326,7 @@ const request = async (path, {method = 'GET', body, headers = {}, raw = false, c
     }
     const generation = cacheGeneration;
     const run = async () => {
-        const fetchOnce = () => {
-            const session = loadSession();
+        const fetchWith = session => {
             const finalHeaders = {...headers};
             if (session) {
                 finalHeaders.Authorization = `Bearer ${session}`;
@@ -300,6 +350,7 @@ const request = async (path, {method = 'GET', body, headers = {}, raw = false, c
                     if (timer) clearTimeout(timer);
                 });
         };
+        const fetchOnce = () => (sessionProvider ? currentSession().then(fetchWith) : fetchWith(loadSession()));
         // A GET changes nothing, so a dropped connection or a server error
         // gets one more try. A timeout doesn't, so the wait stays bounded.
         const doFetch = async () => {
@@ -320,14 +371,10 @@ const request = async (path, {method = 'GET', body, headers = {}, raw = false, c
             !path.startsWith('/logout')
         ) {
             storeSession(null);
-            const roturToken = await roturTokenGetter();
-            if (roturToken) {
-                try {
-                    await runExchange(roturToken);
-                    response = await doFetch();
-                } catch (e) {
-                    // keep the original 401 response
-                }
+            try {
+                if (await refreshSession()) response = await doFetch();
+            } catch (e) {
+                // keep the original 401 response
             }
         }
         if (path === '/me' && response.status === 401) {
@@ -366,7 +413,7 @@ const createProject = payload => request('/projects', {method: 'POST', body: pay
 const UPLOAD_STALL_TIMEOUT = 120000;
 const UPLOAD_PROCESSING_TIMEOUT = 180000;
 
-const uploadXhr = (path, form, onUploadProgress) => new Promise((resolve, reject) => {
+const sendUploadXhr = (path, form, onUploadProgress, session) => new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     let timeoutId = null;
     let settled = false;
@@ -391,7 +438,6 @@ const uploadXhr = (path, form, onUploadProgress) => new Promise((resolve, reject
         }, delay);
     };
     xhr.open('POST', `${API_BASE}${path}`);
-    const session = loadSession();
     if (session) {
         xhr.setRequestHeader('Authorization', `Bearer ${session}`);
     }
@@ -425,6 +471,10 @@ const uploadXhr = (path, form, onUploadProgress) => new Promise((resolve, reject
     scheduleTimeout(UPLOAD_STALL_TIMEOUT, false);
     xhr.send(form);
 });
+
+const uploadXhr = (path, form, onUploadProgress) => (sessionProvider ?
+    currentSession().then(session => sendUploadXhr(path, form, onUploadProgress, session)) :
+    sendUploadXhr(path, form, onUploadProgress, loadSession()));
 
 const getCustomExtensionUrls = project => {
     const urls = {...(project.extensionURLs || {})};
@@ -533,9 +583,7 @@ const uploadProject = async (id, sb3Blob, thumbnailBlob, onUploadProgress, {
     } catch (e) {
         if (e.status !== 401) throw e;
         storeSession(null);
-        const roturToken = await roturTokenGetter();
-        if (!roturToken) throw e;
-        await runExchange(roturToken);
+        if (!(await refreshSession())) throw e;
         return uploadXhr(path, form, onUploadProgress);
     } finally {
         clearApiCache();
@@ -574,6 +622,34 @@ const getPerks = () => request('/perks');
 
 const getEditorProject = id => request(`/projects/${id}/editor`, {cache: false});
 
+const projectDataLocation = value => {
+    try {
+        const parsed = new URL(String(value || ''));
+        if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return '';
+        return `${parsed.origin}${parsed.pathname}`;
+    } catch (e) {
+        return '';
+    }
+};
+
+const getServerTrustedExtensions = async (id, projectJsonUrl) => {
+    const loading = projectDataLocation(projectJsonUrl);
+    if (!id || !loading) return [];
+    const params = new URLSearchParams();
+    const key = new URL(projectJsonUrl).searchParams.get('k');
+    if (key) params.set('k', key);
+    const query = params.toString();
+    try {
+        const path = `/projects/${encodeURIComponent(id)}/trusted-extensions${query ? `?${query}` : ''}`;
+        const result = await request(path, {cache: false, timeoutMs: 5000});
+        const served = Array.isArray(result && result.jsonUrls) ? result.jsonUrls.map(projectDataLocation) : [];
+        if (!served.includes(loading)) return [];
+        return Array.isArray(result.trustedExtensions) ? result.trustedExtensions : [];
+    } catch (e) {
+        return [];
+    }
+};
+
 const getProjectCommits = (id, projectJsonUrl = '') => {
     const params = new URLSearchParams();
     try {
@@ -591,6 +667,7 @@ const remixProject = (id, setup) => request(`/projects/${id}/remix`, {method: 'P
 const deleteProject = id => request(`/projects/${id}`, {method: 'DELETE'});
 
 export {
+    setSessionProvider,
     uploadXhr,
     loadSession,
     storeSession,
@@ -609,6 +686,7 @@ export {
     getProject,
     getPerks,
     getEditorProject,
+    getServerTrustedExtensions,
     getProjectCommits,
     getRandomProject,
     remixProject,

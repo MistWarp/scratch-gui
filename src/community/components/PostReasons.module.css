@@ -1,0 +1,72 @@
+.why {
+    position: relative;
+    flex: none;
+}
+
+.button {
+    height: 24px;
+    padding: 0 7px;
+    border: 0;
+    border-radius: var(--radius-2xs);
+    background: transparent;
+    color: var(--text-faint);
+    font: inherit;
+    font-size: var(--fs-xs);
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.button:hover,
+.button[aria-expanded="true"] {
+    background: var(--bg-field);
+    color: var(--mw-text);
+}
+
+.button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 20;
+    display: grid;
+    gap: 6px;
+    width: min(280px, calc(100vw - 32px));
+    padding: 12px 14px;
+    border-radius: var(--radius-xs);
+    background: var(--bg-raised);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+    color: var(--mw-text);
+    font-size: var(--fs-sm);
+    font-weight: 400;
+    text-align: start;
+    white-space: normal;
+}
+
+.panel strong {
+    font-weight: 600;
+}
+
+.panel ul {
+    display: grid;
+    gap: 3px;
+    margin: 0;
+    padding-inline-start: 18px;
+    color: var(--text-dim);
+}
+
+.panel a {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--accent-strong);
+    font-size: var(--fs-xs);
+    text-decoration: none;
+}
+
+.panel a:hover {
+    text-decoration: underline;
+}

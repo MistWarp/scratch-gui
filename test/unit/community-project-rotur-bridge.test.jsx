@@ -145,8 +145,8 @@ describe('community project page Rotur bridge', () => {
         });
         await pending;
         expect(mockClient.gifts.claim).not.toHaveBeenCalled();
-        expect(wrapper.text()).toContain('claim gift code REAL-CODE');
-        expect(wrapper.text()).not.toContain('free hat');
+        expect(document.body.textContent).toContain('claim gift code REAL-CODE');
+        expect(document.body.textContent).not.toContain('free hat');
         wrapper.unmount();
     });
 
@@ -160,7 +160,7 @@ describe('community project page Rotur bridge', () => {
             meta: {name: 'Other', authenticatedOnly: true}
         });
         await consent;
-        expect(wrapper.text()).toContain('Connect to Rotur');
+        expect(document.body.textContent).toContain('Connect to Rotur');
         const call = await send({kind: 'call', id: 7, method: 'posts.create', args: ['spam']});
         expect(call.ok).toBe(false);
         expect(call.error).toContain('not granted');

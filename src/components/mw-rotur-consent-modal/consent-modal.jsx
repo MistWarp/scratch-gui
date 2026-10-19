@@ -14,101 +14,17 @@ const groupScopes = scopes => {
     return groups;
 };
 
-const RoturConsentModal = props => {
+const RoturConsentBody = props => {
     const {type, data} = props;
     const groups = groupScopes(data.scopes || []);
     if (type === 'share') {
         return (
-            <Modal
-                modal
-                className={styles.modalContent}
-                onRequestClose={props.onShareNo}
-                contentLabel="Rotur"
-                id="roturconsentmodal"
-            >
-                <Box className={styles.body}>
-                    <h2>{'Show activity on your profile?'}</h2>
-                    <p>
-                        {`"${data.name || 'This project'}" wants to show that you're using it on your Rotur profile`}
-                        {data.username ? ` (@${data.username}).` : '.'}
-                    </p>
-                    <Box className={styles.buttons}>
-                        <button
-                            type="button"
-                            className={styles.blockButton}
-                            onClick={props.onBlocked}
-                        >
-                            {'Block this project'}
-                        </button>
-                        <button
-                            type="button"
-                            className={styles.denyButton}
-                            onClick={props.onShareNo}
-                        >
-                            {'Not now'}
-                        </button>
-                        <button
-                            type="button"
-                            className={styles.allowButton}
-                            onClick={props.onShareAll}
-                        >
-                            {'Allow all projects'}
-                        </button>
-                        <button
-                            type="button"
-                            className={styles.allowButton}
-                            onClick={props.onShareThis}
-                        >
-                            {'Just this project'}
-                        </button>
-                    </Box>
-                </Box>
-            </Modal>
-        );
-    }
-    return (
-        <Modal
-            modal
-            className={styles.modalContent}
-            onRequestClose={props.onDenied}
-            contentLabel="Rotur"
-            id="roturconsentmodal"
-        >
             <Box className={styles.body}>
-                {type === 'confirm' ? (
-                    <React.Fragment>
-                        <h2>{'Confirm account action'}</h2>
-                        <p>
-                            {'Allow this project to '}
-                            <b>{data.label}</b>
-                            {data.username ? ` as @${data.username}?` : '?'}
-                        </p>
-                        <p>{'This action will happen once. It does not give the project ongoing approval.'}</p>
-                    </React.Fragment>
-                ) : (
-                    <React.Fragment>
-                        <h2>{'Connect to Rotur'}</h2>
-                        <p>
-                            {`"${data.name || 'This project'}" wants to use your Rotur account`}
-                            {data.username ? ` (@${data.username})` : ''}
-                            {' to:'}
-                        </p>
-                        {Object.keys(groups).map(label => (
-                            <div key={label}>
-                                <b>{label}</b>
-                                <ul>
-                                    {groups[label].map(scope => (
-                                        <li key={scope}>{describePermission(scope)}</li>
-                                    ))}
-                                </ul>
-                            </div>
-                        ))}
-                        {(data.scopes || []).length === 0 ? (
-                            <p>{'This just lets the project read your public Rotur info.'}</p>
-                        ) : null}
-                    </React.Fragment>
-                )}
-
+                <h2>{'Show activity on your profile?'}</h2>
+                <p>
+                    {`"${data.name || 'This project'}" wants to show that you're using it on your Rotur profile`}
+                    {data.username ? ` (@${data.username}).` : '.'}
+                </p>
                 <Box className={styles.buttons}>
                     <button
                         type="button"
@@ -120,24 +36,104 @@ const RoturConsentModal = props => {
                     <button
                         type="button"
                         className={styles.denyButton}
-                        onClick={props.onDenied}
+                        onClick={props.onShareNo}
                     >
-                        {type === 'confirm' ? 'Cancel' : 'Not now'}
+                        {'Not now'}
                     </button>
                     <button
                         type="button"
                         className={styles.allowButton}
-                        onClick={props.onAllowed}
+                        onClick={props.onShareAll}
                     >
-                        {type === 'confirm' ? 'Allow once' : 'Connect'}
+                        {'Allow all projects'}
+                    </button>
+                    <button
+                        type="button"
+                        className={styles.allowButton}
+                        onClick={props.onShareThis}
+                    >
+                        {'Just this project'}
                     </button>
                 </Box>
             </Box>
-        </Modal>
+        );
+    }
+    return (
+        <Box className={styles.body}>
+            {type === 'confirm' ? (
+                <React.Fragment>
+                    <h2>{'Confirm account action'}</h2>
+                    <p>
+                        {'Allow this project to '}
+                        <b>{data.label}</b>
+                        {data.username ? ` as @${data.username}?` : '?'}
+                    </p>
+                    <p>{'This action will happen once. It does not give the project ongoing approval.'}</p>
+                </React.Fragment>
+            ) : (
+                <React.Fragment>
+                    <h2>{'Connect to Rotur'}</h2>
+                    <p>
+                        {`"${data.name || 'This project'}" wants to use your Rotur account`}
+                        {data.username ? ` (@${data.username})` : ''}
+                        {' to:'}
+                    </p>
+                    {Object.keys(groups).map(label => (
+                        <div key={label}>
+                            <b>{label}</b>
+                            <ul>
+                                {groups[label].map(scope => (
+                                    <li key={scope}>{describePermission(scope)}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    ))}
+                    {(data.scopes || []).length === 0 ? (
+                        <p>{'This just lets the project read your public Rotur info.'}</p>
+                    ) : null}
+                </React.Fragment>
+            )}
+
+            <Box className={styles.buttons}>
+                <button
+                    type="button"
+                    className={styles.blockButton}
+                    onClick={props.onBlocked}
+                >
+                    {'Block this project'}
+                </button>
+                <button
+                    type="button"
+                    className={styles.denyButton}
+                    onClick={props.onDenied}
+                >
+                    {type === 'confirm' ? 'Cancel' : 'Not now'}
+                </button>
+                <button
+                    type="button"
+                    className={styles.allowButton}
+                    onClick={props.onAllowed}
+                >
+                    {type === 'confirm' ? 'Allow once' : 'Connect'}
+                </button>
+            </Box>
+        </Box>
     );
 };
 
-RoturConsentModal.propTypes = {
+const RoturConsentModal = props => (
+    <Modal
+        modal
+        className={styles.modalContent}
+        onRequestClose={props.type === 'share' ? props.onShareNo : props.onDenied}
+        contentLabel="Rotur"
+        id="roturconsentmodal"
+    >
+        <RoturConsentBody {...props} />
+    </Modal>
+);
+
+const consentPropTypes = {
     type: PropTypes.oneOf(['consent', 'confirm', 'share']).isRequired,
     // eslint-disable-next-line react/forbid-prop-types
     data: PropTypes.object.isRequired,
@@ -149,4 +145,8 @@ RoturConsentModal.propTypes = {
     onShareNo: PropTypes.func
 };
 
+RoturConsentBody.propTypes = consentPropTypes;
+RoturConsentModal.propTypes = consentPropTypes;
+
+export {RoturConsentBody};
 export default RoturConsentModal;

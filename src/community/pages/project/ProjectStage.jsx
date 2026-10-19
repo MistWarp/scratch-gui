@@ -3,7 +3,7 @@ import {getCommunityLocale} from '../../locale.js';
 import React from 'react';
 import {useCommunityIntl as useCommunityText} from '../../i18n.jsx';
 import {
-    Play, ExternalLink, Clock3, Upload, ShieldCheck, ShieldAlert, Lock, Coins, Bookmark, BookmarkCheck
+    Play, ExternalLink, Clock3, Upload, ShieldCheck, ShieldAlert, Bookmark, BookmarkCheck
 } from 'lucide-react';
 import {editorUrl} from '../../api';
 import {formatPlaytime} from '../../format';
@@ -14,9 +14,9 @@ import StatusMessage from '../../components/ui/StatusMessage.jsx';
 import ReactionButtons from '../../components/ReactionButtons.jsx';
 import styles from '../Project.module.css';
 
-// The player frame (or the paywall or empty state in its place) with the reaction and stats bar below it.
+// The player frame (or an empty state in its place) with the reaction and stats bar below it.
 const ProjectStage = ({
-    project, user, userLoading, locked, hasContent, price, buying, openBuyConfirm, contentError,
+    project, user, userLoading, hasContent, contentError,
     followThemeDecision, stageHeightRatio, stageSourceKey, stageFrame, stageSource,
     sendThemeToStage, unsandboxed, setUnsandboxed, runUnsandboxed, customExtensions, react,
     reactionBusy, savingLibrary, saveAfterLogin, thumbInput, pickThumbnail
@@ -29,7 +29,7 @@ const ProjectStage = ({
                 style={{paddingBottom: `calc(${stageHeightRatio * 100}% + 48px)`}}
             >
                 <div className={styles.stageSizer}>
-                    {!locked && !hasContent ? (
+                    {!hasContent ? (
                         <div className={styles.paywall}>
                             <EmptyState
                                 icon={Upload}
@@ -42,20 +42,6 @@ const ProjectStage = ({
                                 {project.isOwner ?
                                     communityText('No content yet. Open it in the editor and save to upload.') :
                                     communityText('This project has not been uploaded yet.')}
-                            </EmptyState>
-                        </div>
-                    ) : locked ? (
-                        <div className={styles.paywall}>
-                            <EmptyState
-                                icon={Lock}
-                                title={communityText('Support this creator')}
-                                action={(
-                                    <Button variant="primary" onClick={openBuyConfirm} disabled={!user || buying}>
-                                        <Coins size={16} />{communityText('Buy for {value1} credits', {value1: price})}</Button>
-                                )}
-                            >
-                                {communityText('Your purchase supports the creator and gives you access to play {value1}. Pay once, with no recurring charge.', {value1: project.title})}
-                                {user ? null : ` ${communityText('Sign in to purchase and support this creator.')}`}
                             </EmptyState>
                         </div>
                     ) : contentError ? (
@@ -75,7 +61,6 @@ const ProjectStage = ({
                             title={project.title}
                             onLoad={sendThemeToStage}
                             allow="autoplay; fullscreen"
-                            allowFullScreen
                             sandbox={unsandboxed ?
                                 null :
                                 'allow-scripts allow-forms allow-pointer-lock allow-downloads ' +
@@ -106,8 +91,8 @@ const ProjectStage = ({
                     counts={{heart: project.loveCount || 0, brokenheart: project.brokenHeartCount || 0}}
                     activeReaction={project.myReaction || ''}
                     onReact={react}
-                    disabled={locked || reactionBusy}
-                    disabledTitle={locked ? communityText('Buy this project to react.') : communityText('Saving…')}
+                    disabled={reactionBusy}
+                    disabledTitle={communityText('Saving…')}
                 />
                 <button
                     type="button"

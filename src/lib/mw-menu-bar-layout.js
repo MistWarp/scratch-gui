@@ -34,14 +34,14 @@ const readJSON = (key, fallback) => {
     return fallback;
 };
 
-const writeJSON = (key, value) => {
+const writeJSON = (key, value, section) => {
     try {
         localStorage.setItem(key, JSON.stringify(value));
     } catch (err) {
         // ignore
     }
     try {
-        require('./rotur/cloud-sync.js').notifyLocalChange();
+        require('./rotur/cloud-sync.js').notifyLocalChange(section);
     } catch (_) {
         // cloud sync optional
     }
@@ -179,7 +179,7 @@ const applyMenuBarLayout = (layout, {persist = true} = {}) => {
 const setZoneOrder = (zoneId, order) => {
     const all = readJSON(ORDER_KEY, {});
     all[zoneId] = order;
-    writeJSON(ORDER_KEY, all);
+    writeJSON(ORDER_KEY, all, 'menuBar.order');
     applyLayout();
     window.dispatchEvent(new Event(CHANGE_EVENT));
 };
@@ -201,7 +201,7 @@ const setHidden = (id, hidden) => {
     } else {
         current.delete(id);
     }
-    writeJSON(HIDDEN_KEY, Array.from(current));
+    writeJSON(HIDDEN_KEY, Array.from(current), 'menuBar.hidden');
     applyLayout();
     window.dispatchEvent(new Event(CHANGE_EVENT));
 };

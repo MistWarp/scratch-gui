@@ -1,9 +1,9 @@
 /* eslint-disable max-len */
 import React, {useEffect, useState} from 'react';
 import PropTypes from 'prop-types';
-import {BarChart3, Check, Coins, ExternalLink, FileSpreadsheet, Heart, History, Link2, Palette, Plus, RotateCcw, Server, Sparkles, Users, X} from 'lucide-react';
+import {BarChart3, CalendarCheck, Check, Crown, ExternalLink, FileSpreadsheet, Heart, History, Link2, Palette, Plus, RotateCcw, Server, Users, X} from 'lucide-react';
 import {Link} from 'react-router-dom';
-import api from '../api.js';
+import api, {editorUrl} from '../api.js';
 import {getCommunityLocale} from '../locale.js';
 import {formatBytes} from '../../lib/utils/bytes.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
@@ -18,9 +18,11 @@ import {AnalyticsPreview, BrandingPreview, RecoveryPreview} from '../components/
 import styles from './PaidPerks.module.css';
 
 const TIERS = ['Free', 'Lite', 'Plus', 'Pro'];
-const PRICES = {Lite: '15 RC/month', Plus: '£1.75/month', Pro: '£5.75/month'};
+const LITE_CREDITS = 15;
+const PRICES = {Plus: '£1.75/month', Pro: '£5.75/month'};
 
 const binarySize = value => formatBytes(value);
+const unbrokenSize = value => binarySize(value).replace(' ', '\u00a0');
 const decimalSize = value => formatBytes(value, {decimal: true});
 const count = value => value.toLocaleString(getCommunityLocale());
 
@@ -38,9 +40,7 @@ const MISTWARP_ROWS = [
     ['Total project assets', 'maxProjectAssetsBytes', binarySize, 'storage'],
     ['Largest project asset', 'maxProjectAssetBytes', binarySize, 'storage'],
     ['Game save storage', 'gameSaveStorageBytes', decimalSize, 'games'],
-    ['Game inventory items', 'maxGameInventoryItems', count, 'games'],
-    ['Project sales fee', 'salesFeeBasisPoints', value => `${value / 100}%`, 'sales'],
-    ['Maximum project price', 'maxProjectPrice', value => `${value} RC`, 'sales']
+    ['Game inventory items', 'maxGameInventoryItems', count, 'games']
 ];
 
 const Cell = ({value, format}) => {
@@ -84,7 +84,7 @@ Comparison.propTypes = {
 };
 
 const PaidPerks = () => {
-    const {text: communityText} = useCommunityText();
+    const {text: communityText, rich: communityRich} = useCommunityText();
     const {user, login} = useUser();
     const [data, setData] = useState(null);
     const [error, setError] = useState('');
@@ -103,11 +103,16 @@ const PaidPerks = () => {
 
     const currentTier = data.current?.tier || 'Free';
     const plans = data.plans || [];
+    const freePlan = plans.find(plan => plan.tier === 'Free');
+    const litePlan = plans.find(plan => plan.tier === 'Lite');
+    const dailyCredits = freePlan?.rotur?.dailyCreditMultiplier;
+    const showLiteFree = dailyCredits > 0 && Boolean(litePlan?.mistwarp?.storageBytes) &&
+        TIERS.indexOf(currentTier) <= TIERS.indexOf('Lite');
     const features = [
         {
             icon: BarChart3,
             title: communityText('Get to know your audience'),
-            description: communityText('Explore how your projects are doing, see view-to-buyer conversion, and export your analytics to CSV. Plus and Pro include these extra insights and a longer analytics history.'),
+            description: communityText('Explore how your projects are doing: views, hearts, library saves and playtime. Plus and Pro add CSV exports and a longer analytics history.'),
             preview: <AnalyticsPreview />,
             link: '/mystuff?section=projects',
             action: communityText('Choose a project to view analytics')
@@ -132,23 +137,46 @@ const PaidPerks = () => {
     const rows = MISTWARP_ROWS.filter(([, , , group]) => group === comparison);
     const planDescriptions = {
         Free: communityText('Start creating and find your community.'),
-        Lite: communityText('Support MistWarp with Rotur credits.'),
+        Lite: showLiteFree ?
+            communityRich('{free}, or pay with credits you already have.', {free: <a href="#lite-free">{communityText('Free with daily credits')}</a>}) :
+            communityText('Support MistWarp with Rotur credits.'),
         Plus: communityText('Get more insight and make your projects your own.'),
         Pro: communityText('More flexibility for an established creator.')
     };
     return (
         <main className={styles.page}>
             <PageHeader
-                icon={Sparkles}
+                icon={Crown}
                 title={communityText('More tools for your next project')}
                 lead={communityText('Get more from creating on MistWarp with a Rotur membership. Your support helps cover the real costs of running the platform we share.')}
                 actions={<Button as="a" href="#memberships" variant="primary"><Heart size={16} />{communityText('Find your membership')}</Button>}
             >
                 <p className={styles.freeNote}>
                     {communityText('You can create, share, and take part with a free account. Membership is an optional way to support MistWarp and get extra tools.')}{' '}
-                    <Link to="/editor">{communityText('Start creating for free')}</Link>
+                    <a href={editorUrl()}>{communityText('Start creating for free')}</a>
                 </p>
             </PageHeader>
+
+            {showLiteFree ? (
+                <section id="lite-free" className={styles.liteFree} aria-labelledby="lite-free-title">
+                    <SectionHeading id="lite-free-title" icon={CalendarCheck} title={communityText('Get Lite free by showing up')} />
+                    <p className={styles.liteFreeCopy}>
+                        {communityText('Claim your free Rotur credit once a day from your wallet. At {daily, plural, one {# credit} other {# credits}} a day, {days, plural, one {# day} other {# days}} of claims pays for a month of Lite, which gives you {lite} of project storage instead of {free}.', {
+                            daily: dailyCredits,
+                            days: Math.ceil(LITE_CREDITS / dailyCredits),
+                            lite: unbrokenSize(litePlan.mistwarp.storageBytes),
+                            free: unbrokenSize(freePlan.mistwarp.storageBytes)
+                        })}
+                    </p>
+                    <p className={styles.liteFreeNote}>
+                        {communityText('Lite renews from your credits each month until you cancel. If you have fewer than {count, plural, one {# credit} other {# credits}} when it renews, you go back to Free and can get Lite again once you have enough.', {count: LITE_CREDITS})}
+                    </p>
+                    <div className={styles.liteFreeActions}>
+                        <Button as={Link} to="/wallet" variant="primary"><CalendarCheck size={15} />{communityText('Claim daily credits')}</Button>
+                        <Button as="a" href={data.roturMembershipUrl} target="_blank" rel="noopener noreferrer"><ExternalLink size={15} />{communityText('Get Lite with credits')}</Button>
+                    </div>
+                </section>
+            ) : null}
 
             <section className={styles.features} aria-label={communityText('Explore membership features')}>
                 {features.map(feature => (
@@ -188,7 +216,7 @@ const PaidPerks = () => {
                                     <h3>{plan.tier}</h3>
                                     {isCurrent ? <span>{communityText('Your membership')}</span> : isFeatured ? <span>{communityText('Recommended')}</span> : null}
                                 </div>
-                                <strong>{plan.tier === 'Free' ? communityText('Always free') : PRICES[plan.tier]}</strong>
+                                <strong>{plan.tier === 'Free' ? communityText('Always free') : plan.tier === 'Lite' ? communityText('{count, plural, one {# credit/month} other {# credits/month}}', {count: LITE_CREDITS}) : PRICES[plan.tier]}</strong>
                                 <p>{planDescriptions[plan.tier]}</p>
                                 <ul>
                                     {plan.tier === 'Free' ? <li><Users size={15} />{communityText('Create, share, and join the community')}</li> : null}
@@ -198,9 +226,8 @@ const PaidPerks = () => {
                                     {plan.mistwarp.advancedAnalytics ? <li><FileSpreadsheet size={15} />{communityText('Advanced analytics and CSV exports')}</li> : null}
                                     {plan.mistwarp.customProjectBranding ? <li><Palette size={15} />{communityText('Custom project branding')}</li> : null}
                                     {plan.mistwarp.vanityProjectUrls ? <li><Link2 size={15} />{communityText('Custom project URLs')}</li> : null}
-                                    {plan.tier !== 'Free' ? <li><Coins size={15} />{communityText('{fee}% project sales fee', {fee: plan.mistwarp.salesFeeBasisPoints / 100})}</li> : null}
                                 </ul>
-                                {plan.tier === 'Free' ? <Button as={Link} to="/editor"><Plus size={15} />{communityText('Start creating')}</Button> : (
+                                {plan.tier === 'Free' ? <Button as="a" href={editorUrl()}><Plus size={15} />{communityText('Start creating')}</Button> : (
                                     <Button as="a" href={data.roturMembershipUrl} target="_blank" rel="noopener noreferrer" variant={isFeatured ? 'primary' : 'secondary'}>
                                         <ExternalLink size={15} />{communityText('View {tier} on Rotur', {tier: plan.tier})}
                                     </Button>
@@ -213,9 +240,9 @@ const PaidPerks = () => {
             </section>
 
             <section className={styles.section}>
-                <SectionHeading icon={Check} title={communityText('Compare the details')} lead={communityText('Check the tools, allowances, and sales terms included with each membership.')} />
+                <SectionHeading icon={Check} title={communityText('Compare the details')} lead={communityText('Check the tools and allowances included with each membership.')} />
                 <UnderlineTabs
-                    items={[{key: 'tools', label: communityText('Creator tools')}, {key: 'storage', label: communityText('Storage')}, {key: 'games', label: communityText('Games')}, {key: 'sales', label: communityText('Project sales')}]}
+                    items={[{key: 'tools', label: communityText('Creator tools')}, {key: 'storage', label: communityText('Storage')}, {key: 'games', label: communityText('Games')}]}
                     value={comparison}
                     onChange={setComparison}
                     ariaLabel={communityText('Membership comparison')}
@@ -224,7 +251,6 @@ const PaidPerks = () => {
                 <div {...tabPanelProps('perks-compare', comparison)}>
                     <Comparison plans={plans} rows={rows} source="mistwarp" />
                     {comparison === 'storage' ? <p className={styles.detailNote}>{communityText('Storage covers every project you own, including its assets, version history and anything in the trash. Deleting a project and emptying it from the trash frees its space.')}{' '}<Link to="/mystuff?section=uploads">{communityText('View your storage')}</Link></p> : null}
-                    {comparison === 'sales' ? <p className={styles.detailNote}>{communityText('Project purchases support individual creators. A membership does not include access to every project offered for purchase.')}{' '}<Link to="/mystuff?section=projects">{communityText('Manage project pricing')}</Link></p> : null}
                 </div>
             </section>
         </main>

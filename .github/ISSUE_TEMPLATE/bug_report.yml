@@ -21,7 +21,7 @@ body:
       label: Steps to reproduce
       description: What to do to see the bug. Link or attach a project if it needs one.
       placeholder: |
-        1. Open https://mistwarp.org/editor
+        1. Open https://editor.mistwarp.org/
         2. ...
     validations:
       required: true

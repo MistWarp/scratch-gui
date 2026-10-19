@@ -5,6 +5,7 @@
  */
 
 import {isMinorAccount, subscribeMinorAccount} from '../minor-account.js';
+import {sharedCredentials} from '../account/shared-credentials.js';
 
 const STORAGE_KEY = 'mw:rotur-settings';
 const APP_NAME = 'MistWarp';
@@ -43,7 +44,7 @@ const legacyChoices = parsed => SETTING_KEYS.filter(key => (
 
 const readStored = () => {
     try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        const raw = sharedCredentials.getItem(STORAGE_KEY);
         if (!raw) return {values: {}, chosen: []};
         const parsed = JSON.parse(raw);
         if (!parsed || typeof parsed !== 'object') return {values: {}, chosen: []};
@@ -76,7 +77,7 @@ const notify = next => {
 
 const writeStored = stored => {
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({...stored.values, chosen: stored.chosen}));
+        sharedCredentials.setItem(STORAGE_KEY, JSON.stringify({...stored.values, chosen: stored.chosen}));
     } catch (_) {
         // ignore
     }
@@ -164,6 +165,7 @@ const subscribeRoturSettings = handler => {
 };
 
 export {
+    STORAGE_KEY as ROTUR_SETTINGS_KEY,
     getRoturSettings,
     getRoturSettingsSnapshot,
     applyRoturSettingsSnapshot,

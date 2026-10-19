@@ -18,4 +18,15 @@ describe('ProjectCard', () => {
         expect(wrapper.text()).toContain('340 views');
         wrapper.unmount();
     });
+
+    test('shows no price on a project that used to have one', () => {
+        const wrapper = mount(
+            <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+                <ProjectCard project={{id: 'p2', title: 'Maze', owner: 'sam', price: 5, bought: true}} />
+            </MemoryRouter>
+        );
+        expect(wrapper.text()).not.toContain('Owned');
+        expect(wrapper.text()).not.toContain('5');
+        wrapper.unmount();
+    });
 });

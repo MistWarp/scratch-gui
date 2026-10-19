@@ -174,7 +174,8 @@ const pageDefinitions = {
     'fullscreen': ['fullscreen.html', 'index', 'fullscreen.jsx'],
     'embed': ['embed.html', 'embed', 'embed.jsx'],
     'addon-settings': ['addons.html', 'simple', 'addon-settings.jsx'],
-    'credits': ['credits.html', 'simple', 'credits/credits.jsx']
+    'credits': ['credits.html', 'simple', 'credits/credits.jsx'],
+    'account-frame': ['account-frame.html', 'simple', 'account-frame.jsx']
 };
 
 const pagesAndAssets = (env, root, library, generatedInputs) => {
@@ -356,7 +357,10 @@ export default defineConfig(async ({mode, command}) => {
         MW_BUILD_ID: resolveBuildId(env),
         MW_BUILD_TIME: env.MW_BUILD_TIME || '',
         MW_STATUS_URL: env.MW_STATUS_URL || 'https://status.warp.mistium.com',
+        MW_ANALYTICS_URL: env.MW_ANALYTICS_URL || '',
         MW_API_BASE: apiBase,
+        MW_ACCOUNT_ORIGIN: env.MW_ACCOUNT_ORIGIN || 'https://mistwarp.org',
+        MW_EDITOR_ORIGIN: env.MW_EDITOR_ORIGIN || 'https://editor.mistwarp.org',
         MW_API_WS: env.MW_API_WS || `${apiBase.replace(/^http/, 'ws')}/ws`,
         MW_WARPTHEME_API: env.MW_WARPTHEME_API || 'https://warptheme.mistium.com/api',
         GOOGLE_FONTS_API_KEY: env.GOOGLE_FONTS_API_KEY || 'demo'

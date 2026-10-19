@@ -1,24 +1,33 @@
+import classNames from 'classnames';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
-import {isMilestoneNotification} from '../milestone-notifications.js';
 import PropTypes from 'prop-types';
-import React, {useEffect, useState} from 'react';
-import {Link} from 'react-router-dom';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {Link, useSearchParams} from 'react-router-dom';
 import {
-    AppWindow, AtSign, Bell, Coins, ExternalLink, Flag, Gavel, GitFork, Heart, Megaphone,
-    MessageCircle, Reply, ShieldAlert, UserPlus, Users, GitPullRequest, GitMerge, Layers3,
-    Lightbulb, Star
+    AppWindow, AtSign, Bell, ChartColumn, ChevronDown, Coins, ExternalLink, Eye, Flag, Gavel, GitFork, GitMerge,
+    GitPullRequest, Heart, Layers3, Lightbulb, Megaphone, MessageCircle, PawPrint, Repeat2, Settings, ShieldAlert,
+    Star, UserPlus, Users
 } from 'lucide-react';
 import {projectUrl} from '../api';
 import {
-    SYSTEM_TYPES, USERNAME_RE, actorFor, commentAnchor, describeNotification, richTranslator, stripSender, targetFor
+    USERNAME_RE, commentAnchor, describeAction, describeGroup, describeNotification, describeStack,
+    groupVerbs, joinList, richTranslator, stripSender, targetFor
 } from '../notification-text.jsx';
+import {
+    clawPostId, excerptOf, groupActor, groupNotifications, isSystemNotification, matchesFilter, notificationTime
+} from '../notification-groups.js';
+import rotur from '../rotur.js';
 import Avatar from '../components/Avatar.jsx';
 import Button from '../components/ui/Button.jsx';
 import EmptyState, {SignInPrompt} from '../components/ui/EmptyState.jsx';
 import Notice from '../components/ui/Notice.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
+import UnderlineTabs from '../components/UnderlineTabs.jsx';
+import {tabPanelProps} from '../components/SectionTabs.jsx';
 import RichText from '../components/RichText.jsx';
+import PostProjectCard from '../components/PostProjectCard.jsx';
+import {madeWithProject} from '../claw-links.js';
 import {useUser} from '../UserContext.jsx';
 import {
     fetchFollowingFeed,
@@ -28,59 +37,70 @@ import {
 } from '../../lib/rotur/client.js';
 import {timeAgo} from '../format';
 import {fetchCommentPreview} from '../comment-preview.js';
-import {interleaveTimeline, postUrl} from '../following-feed.js';
+import {normalizeFollowingPosts, postUrl} from '../following-feed.js';
 import styles from './Notifications.module.css';
 import {getNotificationPreferences, categoryForNotification} from '../notification-preferences';
 
-const TYPE_STYLE = {
-    project_shared: {icon: Users, color: '#38b8a5'},
-    love: {icon: Heart, color: '#e5639c'},
-    like: {icon: Heart, color: '#e5639c'},
-    like_milestone: {icon: Heart, color: '#e5639c'},
-    follower_milestone: {icon: Users, color: '#38b8a5'},
-    comment: {icon: MessageCircle, color: '#4c8dff'},
-    profile_comment: {icon: MessageCircle, color: '#4c8dff'},
-    space_comment: {icon: MessageCircle, color: '#4c8dff'},
-    roadmap_comment: {icon: Lightbulb, color: '#e0a63c'},
-    reply: {icon: Reply, color: '#3fae6a'},
-    remix: {icon: GitFork, color: '#ef8f3c'},
-    repost: {icon: GitFork, color: '#ef8f3c'},
-    follow: {icon: UserPlus, color: '#38b8a5'},
-    mention: {icon: AtSign, color: '#9a6ff0'},
-    group_invite: {icon: UserPlus, color: '#38b8a5'},
-    group_request_accepted: {icon: UserPlus, color: '#3fae6a'},
-    group_request_declined: {icon: UserPlus, color: '#e35d6a'},
-    group_kicked: {icon: ShieldAlert, color: '#e35d6a'},
-    group_banned: {icon: ShieldAlert, color: '#e35d6a'},
-    group_ownership_transferred: {icon: ShieldAlert, color: '#e0a63c'},
-    cosmetic_gift: {icon: Coins, color: '#e0a63c'},
-    item_received: {icon: Coins, color: '#e0a63c'},
-    item_sold: {icon: Coins, color: '#e0a63c'},
-    item_purchased: {icon: Coins, color: '#e0a63c'},
-    purchase: {icon: Coins, color: '#e0a63c'},
-    donation: {icon: Coins, color: '#e0a63c'},
-    standing: {icon: ShieldAlert, color: '#e35d6a'},
-    moderation: {icon: ShieldAlert, color: '#e35d6a'},
-    project_hidden: {icon: ShieldAlert, color: '#e35d6a'},
-    project_restored: {icon: ShieldAlert, color: '#3fae6a'},
-    news: {icon: Megaphone, color: '#9a6ff0'},
-    report_update: {icon: Flag, color: '#e35d6a'},
-    contribution: {icon: GitPullRequest, color: '#4c8dff'},
-    contribution_merged: {icon: GitMerge, color: '#3fae6a'},
-    space_project: {icon: Layers3, color: '#ef8f3c'},
-    space_curator_invite: {icon: UserPlus, color: '#38b8a5'},
-    space_curator_accepted: {icon: Users, color: '#3fae6a'},
-    space_curator_declined: {icon: Users, color: '#e35d6a'},
-    space_curator_removed: {icon: ShieldAlert, color: '#e35d6a'},
-    challenge_judge_invite: {icon: Gavel, color: '#e0a63c'},
-    challenge_judge_accepted: {icon: Gavel, color: '#3fae6a'},
-    challenge_join: {icon: UserPlus, color: '#38b8a5'},
-    project_feedback: {icon: Lightbulb, color: '#e0a63c'},
-    project_review: {icon: Star, color: '#e0a63c'},
-    notification: {icon: AppWindow, color: '#8a93a6'}
+const TYPE_ICON = {
+    project_shared: Users,
+    love: Heart,
+    like: Heart,
+    pounce: PawPrint,
+    like_milestone: Heart,
+    follower_milestone: Users,
+    post_milestone: Eye,
+    claw_weekly_recap: ChartColumn,
+    claw_teen_lock: Settings,
+    comment: MessageCircle,
+    profile_comment: MessageCircle,
+    space_comment: MessageCircle,
+    roadmap_comment: Lightbulb,
+    reply: MessageCircle,
+    remix: GitFork,
+    repost: Repeat2,
+    follow: UserPlus,
+    mention: AtSign,
+    group_invite: UserPlus,
+    group_request_accepted: UserPlus,
+    group_request_declined: UserPlus,
+    group_kicked: ShieldAlert,
+    group_banned: ShieldAlert,
+    group_ownership_transferred: ShieldAlert,
+    cosmetic_gift: Coins,
+    item_received: Coins,
+    item_sold: Coins,
+    item_purchased: Coins,
+    purchase: Coins,
+    donation: Coins,
+    standing: ShieldAlert,
+    moderation: ShieldAlert,
+    project_hidden: ShieldAlert,
+    project_restored: ShieldAlert,
+    news: Megaphone,
+    report_update: Flag,
+    contribution: GitPullRequest,
+    contribution_merged: GitMerge,
+    space_project: Layers3,
+    space_curator_invite: UserPlus,
+    space_curator_accepted: Users,
+    space_curator_declined: Users,
+    space_curator_removed: ShieldAlert,
+    challenge_judge_invite: Gavel,
+    challenge_judge_accepted: Gavel,
+    challenge_join: UserPlus,
+    project_feedback: Lightbulb,
+    project_review: Star,
+    notification: AppWindow
 };
 
-const typeStyle = type => TYPE_STYLE[type] || TYPE_STYLE.notification;
+const iconFor = type => TYPE_ICON[type] || AppWindow;
+
+const FILTERS = [
+    {key: 'all', label: 'All'},
+    {key: 'mentions', label: 'Mentions'},
+    {key: 'claw', label: 'Claw'},
+    {key: 'projects', label: 'Projects'}
+];
 
 const linkify = text => <RichText text={text} />;
 
@@ -100,12 +120,19 @@ const PREVIEW_TYPES = new Set([
 
 const canPreview = n => {
     if (typeof n.preview === 'string' && n.preview.trim()) return true;
+    if (n.post_id) return false;
     if (PREVIEW_TYPES.has(n.type)) return true;
     return n.type === 'like_milestone' && n.contentKind === 'comment';
 };
 
-const CommentPreview = ({n}) => {
-    const inline = typeof n.preview === 'string' && n.preview.trim() ? n.preview : null;
+const inlinePreview = n => {
+    if (typeof n.preview === 'string' && n.preview.trim()) return n.preview;
+    if (n.post_id && typeof n.content === 'string' && n.content.trim()) return n.content;
+    return null;
+};
+
+const CommentPreview = ({n, plain}) => {
+    const inline = inlinePreview(n);
     const [fetched, setFetched] = useState(null);
     useEffect(() => {
         if (inline || !canPreview(n)) return () => {};
@@ -119,15 +146,17 @@ const CommentPreview = ({n}) => {
     }, [inline, n.id]);
     const text = inline || fetched;
     if (!text) return null;
+    if (plain) return <span className={styles.detailExcerpt}>{text}</span>;
     return (
-        <div className={styles.preview}>
+        <div className={styles.excerpt}>
             <RichText text={text} />
         </div>
     );
 };
 
 CommentPreview.propTypes = {
-    n: PropTypes.object.isRequired
+    n: PropTypes.object.isRequired,
+    plain: PropTypes.bool
 };
 
 const mergeNotifications = (...lists) => {
@@ -147,103 +176,386 @@ const mergeNotifications = (...lists) => {
 
 const markItemsRead = items => (items || []).map(item => ({...item, read: true}));
 
-// Generic Rotur notifications (any app's /v2/notify/ push) arrive as
-// type "notification" with title/body/from/source. Title holds the sender
-// for MistWarp; other apps may put an app name or message summary there.
-const GenericNotification = ({n}) => {
-    const {text: communityText} = useCommunityText();
+const genericSender = n => {
     const sender = n.title || n.from || n.actor || '';
     const isUser = Boolean(sender) && USERNAME_RE.test(sender) &&
         sender.toLowerCase() !== 'mistwarp' &&
         sender.toLowerCase() !== String(n.source || '').toLowerCase();
-    const raw = n.body || n.content || '';
-    if (!isUser && !sender && !raw) {
-        return null;
-    }
-    const text = isUser ? stripSender(sender, raw) : raw;
-    const showTitle = !isUser && Boolean(sender) && sender !== text;
-    const t = richTranslator(communityText);
-    const message = body => (n.channelName ?
-        t('{message} in #{channel}', {message: linkify(body), channel: n.channelName}) :
-        linkify(body));
-    const target = n.projectId && n.pull ? `/project/${n.projectId}/pulls/${n.pull}${commentAnchor(n)}` :
-        n.projectId ? `${projectUrl(n.projectId)}${commentAnchor(n)}` : null;
-    const sourceLink = typeof n.source === 'string' && /^https?:\/\//.test(n.source);
-    const showSource = Boolean(n.source) && n.source !== 'mistwarp' && !sourceLink;
+    return {sender, isUser};
+};
 
-    let content;
-    if (showTitle) {
-        content = (
-            <>
-                <span className={styles.senderTitle}>{sender}</span>
-                {message(text)}
-            </>
-        );
-    } else {
-        content = <>{message(text || sender)}</>;
-    }
-    if (target) {
-        content = <Link to={target} className={styles.body}>{content}</Link>;
-    } else if (sourceLink) {
-        content = <a href={n.source} target="_blank" rel="noreferrer" className={styles.body}>{content}</a>;
-    } else {
-        content = <span className={styles.body}>{content}</span>;
-    }
+const genericTarget = n => {
+    if (n.projectId && n.pull) return {to: `/project/${n.projectId}/pulls/${n.pull}${commentAnchor(n)}`};
+    if (n.projectId) return {to: `${projectUrl(n.projectId)}${commentAnchor(n)}`};
+    if (typeof n.source === 'string' && /^https?:\/\//.test(n.source)) return {href: n.source};
+    return null;
+};
 
-    if (isUser) {
-        return (
-            <>
-                <span className={styles.avatarWrap}>
-                    <Link to={`/users/${sender}`}>
-                        <Avatar username={sender} size={32} />
-                    </Link>
-                </span>
-                <div className={styles.text}>
-                    <Link to={`/users/${sender}`} className={styles.actor}>{sender}</Link>
-                    {' '}
-                    {content}
-                </div>
-            </>
-        );
+const linkTo = (target, className, children) => {
+    if (target && target.href) {
+        return <a href={target.href} target="_blank" rel="noreferrer" className={className}>{children}</a>;
     }
+    if (target) return <Link to={target.to} className={className}>{children}</Link>;
+    return <span>{children}</span>;
+};
+
+const linkWrap = (target, className) => children => linkTo(target, className, children);
+
+const postSnippets = new Map();
+
+const loadSnippet = id => {
+    if (!postSnippets.has(id)) {
+        postSnippets.set(id, Promise.resolve()
+            .then(() => rotur.post(id))
+            .then(post => (post && typeof post.content === 'string' ? post.content.replace(/\s+/g, ' ').trim() : ''))
+            .catch(() => ''));
+    }
+    return postSnippets.get(id);
+};
+
+const PostSnippet = ({id}) => {
+    const [text, setText] = useState('');
+    useEffect(() => {
+        let active = true;
+        loadSnippet(id).then(value => {
+            if (active) setText(value);
+        });
+        return () => {
+            active = false;
+        };
+    }, [id]);
+    return text ? <span className={styles.detailPost}>{text}</span> : null;
+};
+
+PostSnippet.propTypes = {
+    id: PropTypes.string.isRequired
+};
+
+const ActorLink = ({name}) => (
+    <Link to={`/users/${name}`} className={classNames(styles.actor, styles.raised)}>{name}</Link>
+);
+
+ActorLink.propTypes = {
+    name: PropTypes.string.isRequired
+};
+
+const ActorAvatar = ({name}) => (
+    <Link to={`/users/${name}`} className={styles.raised} tabIndex={-1} aria-hidden="true">
+        <Avatar username={name} size={24} />
+    </Link>
+);
+
+ActorAvatar.propTypes = {
+    name: PropTypes.string.isRequired
+};
+
+const TypeIcon = ({type}) => {
+    const Icon = iconFor(type);
+    return <span className={styles.typeIcon}><Icon size={14} aria-hidden="true" /></span>;
+};
+
+TypeIcon.propTypes = {
+    type: PropTypes.string
+};
+
+const ActionIcons = ({types}) => (
+    <span className={styles.icons} aria-hidden="true">
+        {types.map(type => {
+            const Icon = iconFor(type);
+            return <Icon key={type} size={14} />;
+        })}
+    </span>
+);
+
+ActionIcons.propTypes = {
+    types: PropTypes.arrayOf(PropTypes.string).isRequired
+};
+
+const Toggle = ({open, onToggle, stretch, label}) => (
+    <button
+        type="button"
+        className={classNames(styles.toggle, stretch ? styles.stretch : styles.raised, {[styles.toggleOpen]: open})}
+        aria-expanded={open}
+        aria-label={label}
+        onClick={onToggle}
+    >
+        <ChevronDown size={16} aria-hidden="true" />
+    </button>
+);
+
+Toggle.propTypes = {
+    open: PropTypes.bool,
+    onToggle: PropTypes.func.isRequired,
+    stretch: PropTypes.bool,
+    label: PropTypes.string.isRequired
+};
+
+const Row = ({unread, visual, sentence, excerpt, icons, time, toggle, details, cover, sentenceId}) => {
+    const {text: communityText} = useCommunityText();
     return (
-        <>
-            <span className={styles.sysAvatar}><AppWindow size={16} /></span>
-            <div className={styles.text}>
-                {content}
-                {showSource ? <span className={styles.sourceTag}>{n.source}</span> : null}
+        <li className={classNames(styles.row, {[styles.unread]: unread})} data-notification-row="">
+            <div className={styles.line}>
+                {cover}
+                {unread ? (
+                    <span className={styles.dot}><span className={styles.srOnly}>{communityText('New')}</span></span>
+                ) : null}
+                <span className={styles.visual}>{visual}</span>
+                <div className={styles.main}>
+                    <p className={styles.sentence} id={sentenceId}>{sentence}</p>
+                    {excerpt}
+                </div>
+                <span className={styles.meta}>
+                    {icons}
+                    <time className={styles.time} dateTime={time ? new Date(time).toISOString() : null}>
+                        {timeAgo(time)}
+                    </time>
+                    {toggle || <span className={styles.toggleSlot} aria-hidden="true" />}
+                </span>
             </div>
-        </>
+            {details}
+        </li>
     );
 };
 
-GenericNotification.propTypes = {
-    n: PropTypes.object.isRequired
+Row.propTypes = {
+    unread: PropTypes.bool,
+    visual: PropTypes.node,
+    sentence: PropTypes.node,
+    excerpt: PropTypes.node,
+    icons: PropTypes.node,
+    time: PropTypes.number,
+    toggle: PropTypes.node,
+    details: PropTypes.node,
+    cover: PropTypes.node,
+    sentenceId: PropTypes.string
+};
+
+const GenericRow = ({n, unread}) => {
+    const {text: communityText} = useCommunityText();
+    const {sender, isUser} = genericSender(n);
+    const raw = n.body || n.content || '';
+    if (!isUser && !sender && !raw) return null;
+    const text = isUser ? stripSender(sender, raw) : raw;
+    const showTitle = !isUser && Boolean(sender) && sender !== text;
+    const t = richTranslator(communityText);
+    const body = text || sender;
+    const message = n.channelName ?
+        t('{message} in #{channel}', {message: linkify(body), channel: n.channelName}) :
+        linkify(body);
+    const showSource = Boolean(n.source) && n.source !== 'mistwarp' && !/^https?:\/\//.test(String(n.source));
+    const target = genericTarget(n);
+    const sentenceId = `notification-${n.id}`;
+    const cover = target ? linkWrap(target, styles.cover)(null) : null;
+    return (
+        <Row
+            unread={unread}
+            time={notificationTime(n)}
+            sentenceId={sentenceId}
+            cover={cover ? React.cloneElement(cover, {'aria-labelledby': sentenceId}) : null}
+            visual={isUser ? <ActorAvatar name={sender} /> : <TypeIcon type="notification" />}
+            sentence={(
+                <>
+                    {isUser ? <><ActorLink name={sender} />{' '}</> : null}
+                    {showTitle ? <><strong className={styles.strong}>{sender}</strong>{' '}</> : null}
+                    <span className={styles.message}>{message}</span>
+                    {showSource ? <span className={styles.sourceTag}>{n.source}</span> : null}
+                </>
+            )}
+        />
+    );
+};
+
+GenericRow.propTypes = {
+    n: PropTypes.object.isRequired,
+    unread: PropTypes.bool
+};
+
+const SingleRow = ({n, viewerName, unread}) => {
+    const {text: communityText} = useCommunityText();
+    if (n.type === 'notification') return <GenericRow n={n} unread={unread} />;
+    const system = isSystemNotification(n);
+    if (!system && !groupActor(n)) return null;
+    const actor = system ? null : groupActor(n);
+    const target = targetFor(n, viewerName);
+    const t = richTranslator(communityText, linkWrap(target, target ? styles.stretch : null));
+    const sentence = describeNotification(n, t, actor ? <ActorLink name={actor} /> : null);
+    return (
+        <Row
+            unread={unread}
+            time={notificationTime(n)}
+            visual={actor ? <ActorAvatar name={actor} /> : <TypeIcon type={n.type} />}
+            sentence={sentence}
+            excerpt={<CommentPreview n={n} />}
+            icons={actor ? <ActionIcons types={[n.type]} /> : null}
+        />
+    );
+};
+
+SingleRow.propTypes = {
+    n: PropTypes.object.isRequired,
+    viewerName: PropTypes.string,
+    unread: PropTypes.bool
+};
+
+const ClusterRow = ({row, viewerName, unread, open, onToggle}) => {
+    const {text: communityText, locale} = useCommunityText();
+    const single = row.targets.length === 1;
+    const target = single ? targetFor(row.items[0], viewerName) : null;
+    const t = richTranslator(communityText, target ? linkWrap(target, styles.stretch) : null);
+    const verbs = groupVerbs(communityText);
+    const actions = joinList(row.types.map(type => verbs[type]), locale);
+    const sentence = describeGroup(row, t, <ActorLink name={row.actor} />, actions);
+    const plain = richTranslator(communityText);
+    const details = open ? (
+        <ul className={styles.details}>
+            {row.items.map(item => {
+                const itemTarget = targetFor(item, viewerName);
+                const Icon = iconFor(item.type);
+                const excerpt = excerptOf(item);
+                const content = (
+                    <>
+                        <Icon size={14} aria-hidden="true" className={styles.detailIcon} />
+                        <span className={styles.detailText}>
+                            <span className={styles.detailLabel}>{describeAction(item, plain)}</span>
+                            {excerpt ? <span className={styles.detailExcerpt}>{excerpt}</span> : null}
+                            {!excerpt && clawPostId(item) ? <PostSnippet id={clawPostId(item)} /> : null}
+                            {!excerpt && item.type === 'comment' ? <CommentPreview n={item} plain /> : null}
+                        </span>
+                        <time className={styles.time}>{timeAgo(notificationTime(item))}</time>
+                    </>
+                );
+                return (
+                    <li key={item.id || notificationTime(item)}>
+                        {itemTarget ? linkWrap(itemTarget, styles.detail)(content) : (
+                            <span className={styles.detail}>{content}</span>
+                        )}
+                    </li>
+                );
+            })}
+        </ul>
+    ) : null;
+    const excerpt = row.excerpt ? (
+        <div className={styles.excerpt}><RichText text={row.excerpt} /></div>
+    ) : (row.conversation ? <CommentPreview n={row.conversation} /> : null);
+    return (
+        <Row
+            unread={unread}
+            time={row.time}
+            visual={<ActorAvatar name={row.actor} />}
+            sentence={sentence}
+            excerpt={excerpt}
+            icons={<ActionIcons types={row.types} />}
+            toggle={(
+                <Toggle
+                    open={open}
+                    onToggle={onToggle}
+                    stretch={!target}
+                    label={open ?
+                        communityText('Hide details') :
+                        communityText('Show all {count}', {count: row.items.length})}
+                />
+            )}
+            details={details}
+        />
+    );
+};
+
+ClusterRow.propTypes = {
+    row: PropTypes.object.isRequired,
+    viewerName: PropTypes.string,
+    unread: PropTypes.bool,
+    open: PropTypes.bool,
+    onToggle: PropTypes.func.isRequired
+};
+
+const StackRow = ({row, viewerName, unread, open, onToggle}) => {
+    const {text: communityText} = useCommunityText();
+    const target = targetFor(row.items[0], viewerName);
+    const t = richTranslator(communityText, linkWrap(target, target ? styles.stretch : null));
+    const other = <strong className={styles.strong}>{row.actors[1]}</strong>;
+    const sentence = describeStack(row, t, <ActorLink name={row.actors[0]} />, other);
+    const seen = new Set();
+    const people = row.items.filter(item => {
+        const name = String(groupActor(item)).toLowerCase();
+        if (seen.has(name)) return false;
+        seen.add(name);
+        return true;
+    });
+    const details = open ? (
+        <ul className={styles.details}>
+            {people.map(item => {
+                const name = groupActor(item);
+                return (
+                    <li key={item.id || name}>
+                        <Link to={`/users/${name}`} className={styles.detail}>
+                            <Avatar username={name} size={20} />
+                            <span className={styles.detailText}>
+                                <span className={styles.detailName}>{name}</span>
+                            </span>
+                            <time className={styles.time}>{timeAgo(notificationTime(item))}</time>
+                        </Link>
+                    </li>
+                );
+            })}
+        </ul>
+    ) : null;
+    return (
+        <Row
+            unread={unread}
+            time={row.time}
+            visual={(
+                <span className={styles.stack} aria-hidden="true">
+                    {row.actors.slice(0, 3).map(name => <Avatar key={name} username={name} size={24} />)}
+                </span>
+            )}
+            sentence={sentence}
+            icons={<ActionIcons types={[row.type]} />}
+            toggle={(
+                <Toggle
+                    open={open}
+                    onToggle={onToggle}
+                    stretch={!target}
+                    label={open ? communityText('Hide people') : communityText('Show people')}
+                />
+            )}
+            details={details}
+        />
+    );
+};
+
+StackRow.propTypes = {
+    row: PropTypes.object.isRequired,
+    viewerName: PropTypes.string,
+    unread: PropTypes.bool,
+    open: PropTypes.bool,
+    onToggle: PropTypes.func.isRequired
 };
 
 const FollowingPost = ({post}) => {
     const {text: communityText} = useCommunityText();
     const likes = Array.isArray(post.likes) ? post.likes.length : Number(post.likes) || 0;
     const replies = Array.isArray(post.replies) ? post.replies.length : Number(post.replies) || 0;
+    const project = madeWithProject(post);
     return (
-        <div className={styles.followingPost}>
-            <span className={styles.avatarWrap}>
+        <li className={styles.followingPost}>
+            <span className={styles.postAvatar}>
                 <Link to={`/users/${post.user}`}><Avatar username={post.user} size={32} /></Link>
             </span>
-            <div className={styles.text}>
+            <div className={styles.main}>
                 <div className={styles.postHead}>
                     <Link to={`/users/${post.user}`} className={styles.actor}>{post.user}</Link>
                     <span>{communityText('posted')}</span>
                     <time>{timeAgo(post.timestamp)}</time>
                 </div>
-                <div className={styles.postContent}><RichText text={post.content} /></div>
+                <div className={styles.postContent}><RichText text={String(post.content || '').trim()} /></div>
+                {project ? <PostProjectCard project={project} compact /> : null}
                 <div className={styles.postMeta}>
-                    <span><Heart size={13} /> {likes}</span>
-                    <span><MessageCircle size={13} /> {replies}</span>
+                    {likes ? <span><Heart size={13} aria-hidden="true" /> {likes}</span> : null}
+                    {replies ? <span><MessageCircle size={13} aria-hidden="true" /> {replies}</span> : null}
                     <Link to={postUrl(post.id)}>{communityText('Open post')}<ExternalLink size={12} /></Link>
                 </div>
             </div>
-        </div>
+        </li>
     );
 };
 
@@ -251,61 +563,7 @@ FollowingPost.propTypes = {
     post: PropTypes.object.isRequired
 };
 
-// Uniform row: avatar (or a flat tinted icon when there is no actor),
-// a metadata line, and a plain comment preview below it.
-const NotificationRow = ({n, viewerName, isNew}) => {
-    const {text: communityText} = useCommunityText();
-    const {icon: Icon, color} = typeStyle(n.type);
-    const time = timeAgo(n.created || n.timestamp);
-    const itemClass = isNew ? styles.itemUnread : styles.item;
-    const target = targetFor(n, viewerName);
-    const system = isMilestoneNotification(n) || SYSTEM_TYPES.includes(n.type);
-    if (!system && !actorFor(n)) return null;
-
-    // The sentence links to its target, apart from the actor's own link.
-    const wrap = target && target.href ?
-        children => <a href={target.href} target="_blank" rel="noreferrer" className={styles.body}>{children}</a> :
-        target ?
-            children => <Link to={target.to} className={styles.body}>{children}</Link> :
-            children => <span className={styles.body}>{children}</span>;
-    const actorLink = system ? null : (
-        <Link to={`/users/${actorFor(n)}`} className={styles.actor}>{actorFor(n)}</Link>
-    );
-    const title = describeNotification(n, richTranslator(communityText, wrap), actorLink);
-
-    const actor = system ? null : actorFor(n);
-    const visual = actor ? (
-        <span className={styles.avatarWrap}>
-            <Link to={`/users/${actor}`}>
-                <Avatar username={actor} size={32} />
-            </Link>
-        </span>
-    ) : (
-        <span
-            className={styles.typeIcon}
-            style={{color, backgroundColor: `${color}1a`}}
-        ><Icon size={16} /></span>
-    );
-
-    return (
-        <div className={itemClass}>
-            {visual}
-            <div className={styles.main}>
-                <div className={styles.headline}>
-                    <span className={styles.title}>{title}</span>
-                    <span className={styles.time}>{time}</span>
-                </div>
-                <CommentPreview n={n} />
-            </div>
-        </div>
-    );
-};
-
-NotificationRow.propTypes = {
-    n: PropTypes.object.isRequired,
-    viewerName: PropTypes.string,
-    isNew: PropTypes.bool
-};
+const filterFrom = value => (FILTERS.some(filter => filter.key === value) ? value : 'all');
 
 const Notifications = ({hideHeading}) => {
     const {text: communityText} = useCommunityText();
@@ -314,6 +572,9 @@ const Notifications = ({hideHeading}) => {
     const [items, setItems] = useState(null);
     const [followingPosts, setFollowingPosts] = useState(null);
     const [preferences, setPreferences] = useState(getNotificationPreferences());
+    const [searchParams, setSearchParams] = useSearchParams();
+    const filter = filterFrom(searchParams.get('filter'));
+    const [expanded, setExpanded] = useState(() => new Set());
 
     useEffect(() => {
         const update = () => setPreferences(getNotificationPreferences());
@@ -322,10 +583,8 @@ const Notifications = ({hideHeading}) => {
     }, []);
     const [failed, setFailed] = useState(false);
     const [attempt, setAttempt] = useState(0);
-    // Ids that were unread when they loaded. They stay highlighted for the
-    // rest of the visit even after the inbox is marked read.
     const [newIds, setNewIds] = useState(() => new Set());
-    const isNew = n => !n.read || newIds.has(n.id);
+    const isNew = useCallback(n => !n.read || newIds.has(n.id), [newIds]);
 
     useEffect(() => {
         setNewIds(new Set());
@@ -390,6 +649,38 @@ const Notifications = ({hideHeading}) => {
         };
     }, [attempt, viewerName]);
 
+    const visibleItems = useMemo(() => (items || [])
+        .filter(item => preferences[categoryForNotification(item.type)] !== false), [items, preferences]);
+
+    const timeline = useMemo(() => {
+        const rows = groupNotifications(visibleItems.filter(item => matchesFilter(item, filter)),
+            {cluster: filter !== 'mentions'});
+        const posts = filter === 'all' || filter === 'claw' ?
+            normalizeFollowingPosts(followingPosts || []).map(post => ({
+                kind: 'post', key: `post:${post.id}`, post, time: post.timestamp
+            })) : [];
+        return [...rows, ...posts]
+            .map((entry, index) => ({entry, index}))
+            .sort((a, b) => (b.entry.time - a.entry.time) || (a.index - b.index))
+            .map(({entry}) => entry);
+    }, [visibleItems, followingPosts, filter]);
+
+    const toggle = useCallback(key => setExpanded(current => {
+        const next = new Set(current);
+        if (next.has(key)) next.delete(key);
+        else next.add(key);
+        return next;
+    }), []);
+
+    const changeFilter = useCallback(key => {
+        setSearchParams(current => {
+            const next = new URLSearchParams(current);
+            if (key === 'all') next.delete('filter');
+            else next.set('filter', key);
+            return next;
+        }, {replace: true});
+    }, [setSearchParams]);
+
     if (loading) {
         return <main className={styles.page}><StatusMessage /></main>;
     }
@@ -400,14 +691,80 @@ const Notifications = ({hideHeading}) => {
             </main>
         );
     }
-    const visibleItems = (items || [])
-        .filter(item => preferences[categoryForNotification(item.type)] !== false);
-    const timeline = interleaveTimeline(visibleItems, followingPosts || []);
     const timelineLoaded = items !== null && followingPosts !== null;
+
+    const renderEntry = entry => {
+        if (entry.kind === 'post') return <FollowingPost key={entry.key} post={entry.post} />;
+        const unread = entry.items.some(isNew);
+        if (entry.kind === 'actor') {
+            return (
+                <ClusterRow
+                    key={entry.key}
+                    row={entry}
+                    viewerName={viewerName}
+                    unread={unread}
+                    open={expanded.has(entry.key)}
+                    onToggle={() => toggle(entry.key)}
+                />
+            );
+        }
+        if (entry.kind === 'stack') {
+            return (
+                <StackRow
+                    key={entry.key}
+                    row={entry}
+                    viewerName={viewerName}
+                    unread={unread}
+                    open={expanded.has(entry.key)}
+                    onToggle={() => toggle(entry.key)}
+                />
+            );
+        }
+        return <SingleRow key={entry.key} n={entry.items[0]} viewerName={viewerName} unread={unread} />;
+    };
+
+    let body;
+    if (!timelineLoaded) {
+        body = failed ? null : <StatusMessage />;
+    } else if (timeline.length) {
+        body = <ol className={styles.list}>{timeline.map(renderEntry)}</ol>;
+    } else if (filter !== 'all' && (items.length || (followingPosts || []).length)) {
+        body = <p className={styles.emptyFilter}>{communityText('Nothing here yet.')}</p>;
+    } else if (items.length) {
+        body = (
+            <EmptyState
+                icon={Bell}
+                title={communityText('Nothing to show')}
+                action={(
+                    <Button as={Link} to="/settings?section=notifications">
+                        {communityText('Change preferences')}
+                    </Button>
+                )}
+            >
+                {communityText('Your notification preferences hide all current activity.')}
+            </EmptyState>
+        );
+    } else {
+        body = (
+            <EmptyState icon={Bell} title={communityText('Nothing yet')}>
+                {communityText('Notifications and posts from people you follow show up here.')}
+            </EmptyState>
+        );
+    }
 
     return (
         <main className={styles.page}>
-            {hideHeading ? null : <PageHeader icon={Bell} title={communityText('Notifications')} />}
+            {hideHeading ? null : (
+                <PageHeader compact className={styles.header} title={communityText('Notifications')} />
+            )}
+            <UnderlineTabs
+                items={FILTERS}
+                value={filter}
+                onChange={changeFilter}
+                ariaLabel="Filter notifications"
+                idPrefix="notifications"
+                className={styles.tabs}
+            />
             {failed ? (
                 !timelineLoaded ? (
                     <StatusMessage error onRetry={() => setAttempt(a => a + 1)}>
@@ -423,42 +780,9 @@ const Notifications = ({hideHeading}) => {
                     </Notice>
                 )
             ) : null}
-            {!timelineLoaded ? (!failed ? (
-                <StatusMessage />
-            ) : null) : timeline.length ? (
-                <div className={styles.list}>
-                    {timeline.map(n => {
-                        if (n.timelineType === 'following-post') {
-                            return <FollowingPost key={`post:${n.id}`} post={n} />;
-                        }
-                        if (n.type === 'notification') {
-                            return (
-                                <div key={n.id} className={isNew(n) ? styles.itemUnread : styles.item}>
-                                    <GenericNotification n={n} />
-                                    <span className={styles.time}>{timeAgo(n.created || n.timestamp)}</span>
-                                </div>
-                            );
-                        }
-                        return <NotificationRow key={n.id} n={n} viewerName={viewerName} isNew={isNew(n)} />;
-                    })}
-                </div>
-            ) : items.length ? (
-                <EmptyState
-                    icon={Bell}
-                    title={communityText('Nothing to show')}
-                    action={(
-                        <Button as={Link} to="/settings?section=notifications">
-                            {communityText('Change preferences')}
-                        </Button>
-                    )}
-                >
-                    {communityText('Your notification preferences hide all current activity.')}
-                </EmptyState>
-            ) : (
-                <EmptyState icon={Bell} title={communityText('Nothing yet')}>
-                    {communityText('Notifications and posts from people you follow show up here.')}
-                </EmptyState>
-            )}
+            <div {...tabPanelProps('notifications', filter)} className={styles.panel}>
+                {body}
+            </div>
         </main>
     );
 };

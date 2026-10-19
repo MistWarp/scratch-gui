@@ -63,12 +63,12 @@
     color: #ff6680;
 }
 
-.toneBuyers {
-    background: color-mix(in srgb, #9966ff 18%, transparent);
-    color: #9966ff;
+.toneSaves {
+    background: color-mix(in srgb, #0fbd8c 18%, transparent);
+    color: #0fbd8c;
 }
 
-.toneRate {
+.tonePlaytime {
     background: var(--accent-soft);
     color: var(--accent-strong);
 }

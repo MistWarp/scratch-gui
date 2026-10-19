@@ -221,3 +221,110 @@ describe('project files stay in MistWarp\'s own Origin FS folder', () => {
         expect(rotur.files.getByPath).toHaveBeenCalledTimes(1);
     });
 });
+
+describe('Rotur results handed to projects', () => {
+    const token = 'tok_0123456789abcdef+/=';
+    const makeClient = overrides => ({token, ...overrides});
+
+    test('me.get on an old sign-in drops the token, account secrets and private system fields', async () => {
+        const client = makeClient({me: {get: jest.fn(async () => ({
+            'username': 'mist',
+            'sys.id': 'u1',
+            'sys.banned': false,
+            'sys.reset_token': 'reset-secret-123456',
+            'sys.email_verify_token': 'verify-secret-123456',
+            'sys.logins': [{ip: '1.2.3.4'}],
+            'sys.ip_hmacs': ['abc'],
+            'sys.billing': {stripe_customer_id: 'cus_1'},
+            'email': 'mist@example.com',
+            'key': token,
+            'refresh_token': 'refresh-secret-value',
+            'theme': 'dark',
+            'nested': {note: `Bearer ${token}`, keep: 'yes', password: 'x'},
+            'bio': 'hello'
+        }))}});
+        const result = await invokeProjectMethod(client, 'me.get', []);
+        expect(result).toEqual({
+            'username': 'mist',
+            'sys.id': 'u1',
+            'sys.banned': false,
+            'theme': 'dark',
+            'nested': {note: null, keep: 'yes'},
+            'bio': 'hello'
+        });
+        expect(JSON.stringify(result)).not.toContain('secret');
+    });
+
+    test('any method drops values that contain the token, even URL encoded, but keeps ordinary fields', async () => {
+        const client = makeClient({gifts: {get: jest.fn(async () => ({
+            id: 'p1',
+            key: 'public-key-id',
+            text: `leaked ${token}`,
+            link: `https://x/?t=${encodeURIComponent(token)}`
+        }))}});
+        const result = await invokeProjectMethod(client, 'gifts.get', ['p1']);
+        expect(result).toEqual({id: 'p1', key: 'public-key-id', text: null, link: null});
+    });
+
+    test('a token that changes during the call is still removed', async () => {
+        const client = makeClient({});
+        client.gifts = {get: jest.fn(async () => {
+            const old = client.token;
+            client.token = 'tok_new_value_9876543210';
+            return {old, fresh: client.token};
+        })};
+        await expect(invokeProjectMethod(client, 'gifts.get', ['x'])).resolves.toEqual({old: null, fresh: null});
+    });
+
+    test('gift codes and key webhooks never reach projects', async () => {
+        const client = makeClient({
+            gifts: {mine: jest.fn(async () => [{id: 'g1', code: 'GIFT-SECRET', amount: 5}])},
+            keys: {mine: jest.fn(async () => [{key: 'k1', name: 'VIP', webhook: 'https://discord.com/api/webhooks/1/x'}])}
+        });
+        await expect(invokeProjectMethod(client, 'gifts.mine', [])).resolves.toEqual([{id: 'g1', amount: 5}]);
+        await expect(invokeProjectMethod(client, 'keys.mine', [])).resolves.toEqual([{key: 'k1', name: 'VIP'}]);
+    });
+
+    test('item private data and token types are handled', async () => {
+        const client = makeClient({
+            items: {get: jest.fn(async () => ({id: 'i1', name: 'Sword', private_data: 'secret contents'}))},
+            me: {abilities: jest.fn(async () => ({token_type: 'main', permissions: ['full']}))}
+        });
+        await expect(invokeProjectMethod(client, 'items.get', ['i1'])).resolves.toEqual({id: 'i1', name: 'Sword'});
+        await expect(invokeProjectMethod(client, 'me.abilities', [])).resolves
+            .toEqual({token_type: 'main', permissions: ['full']});
+    });
+
+    test('field names holding the token are dropped and __proto__ stays an ordinary field', async () => {
+        const client = makeClient({
+            storage: {get: jest.fn(async () => JSON.parse(
+                `{"data": {"__proto__": {"inherited": "yes"}, "${token}": 1, "score": 3}}`
+            ))},
+            profiles: {get: jest.fn(async () => ({username: 'mist', discord_verified: true}))}
+        });
+        const bag = await invokeProjectMethod(client, 'storage.get', ['mistwarp']);
+        expect(Object.keys(bag.data)).toEqual(['__proto__', 'score']);
+        expect(bag.data.inherited).toBeUndefined();
+        expect(Object.getPrototypeOf(bag.data)).toBe(Object.prototype);
+        await expect(invokeProjectMethod(client, 'profiles.get', ['mist'])).resolves
+            .toEqual({username: 'mist', discord_verified: true});
+    });
+
+    test('errors reach projects as plain messages without the response or token', async () => {
+        const apiError = Object.assign(new Error('Email address not verified'), {
+            status: 403,
+            data: {token: 'main-key-should-not-leak'}
+        });
+        const client = makeClient({me: {get: jest.fn(async () => {
+            throw apiError;
+        })}});
+        const error = await invokeProjectMethod(client, 'me.get', []).catch(e => e);
+        expect(error.message).toBe('Email address not verified');
+        expect(error.status).toBe(403);
+        expect(error.data).toBeUndefined();
+        const leaky = makeClient({me: {get: jest.fn(async () => {
+            throw new Error(`bad token ${token}`);
+        })}});
+        await expect(invokeProjectMethod(leaky, 'me.get', [])).rejects.toThrow('The Rotur request failed');
+    });
+});

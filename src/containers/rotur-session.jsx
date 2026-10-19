@@ -40,6 +40,7 @@ import {setAuthorName} from '../lib/git/config.js';
 import describeActivity from '../lib/collaboration/describe-activity.js';
 import {isCodeMode} from '../lib/editor-visibility.js';
 import {setProjectAuthor} from '../lib/mw-project-metadata.js';
+import {ACCOUNT_ORIGIN, isSplitEditor} from '../lib/account/origins.js';
 
 /**
  * Headless container: restores Rotur session, exposes login/logout, and
@@ -267,7 +268,7 @@ class RoturSession extends React.Component {
         return getMistWarpProject(platformId)
             .then(data => {
                 this.platformProjectUrl = data.project && data.project.shared ?
-                    `${window.location.origin}/project/${platformId}` :
+                    `${isSplitEditor() ? ACCOUNT_ORIGIN : window.location.origin}/project/${platformId}` :
                     null;
             })
             .catch(() => {
