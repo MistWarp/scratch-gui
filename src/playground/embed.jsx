@@ -1,8 +1,11 @@
+// The storage shim must run before anything else can touch storage; sandboxed
+// embeds otherwise throw while the store is being created.
+import './embed-storage-shim';
+
 import * as bundledModule0 from '../lib/community/publish';
 import * as bundledModule1 from '../addons/entry';
 
 /* eslint-disable max-len */
-import './embed-storage-shim';
 import './import-first';
 
 import React from 'react';

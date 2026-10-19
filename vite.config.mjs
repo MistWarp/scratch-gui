@@ -357,6 +357,7 @@ export default defineConfig(async ({mode, command}) => {
         MW_BUILD_ID: resolveBuildId(env),
         MW_BUILD_TIME: env.MW_BUILD_TIME || '',
         MW_STATUS_URL: env.MW_STATUS_URL || 'https://status.warp.mistium.com',
+        MW_ANALYTICS_URL: env.MW_ANALYTICS_URL || '',
         MW_API_BASE: apiBase,
         MW_ACCOUNT_ORIGIN: env.MW_ACCOUNT_ORIGIN || 'https://mistwarp.org',
         MW_EDITOR_ORIGIN: env.MW_EDITOR_ORIGIN || 'https://editor.mistwarp.org',

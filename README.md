@@ -110,7 +110,8 @@ Set these in `.env` or in the shell.
 | `MW_BUILD_DOCS` | Clones and builds MistWarp/docs into `/docs`. A built sibling `../docs/build` is copied in instead when it exists. |
 | `MW_PINNED_FORKS` | On Cloudflare Pages, keeps the fork pins from `package.json` instead of updating them. |
 | `MW_DOCS_ORIGIN` | Docs deployment that Cloudflare Pages builds download `/docs` from. Defaults to `https://docs.warp.mistium.com`. |
-| `MW_STATUS_URL` | Status service used by the community status page and analytics. Defaults to `https://status.warp.mistium.com`. |
+| `MW_STATUS_URL` | Status service used by the community status page. Defaults to `https://status.warp.mistium.com`. |
+| `MW_ANALYTICS_URL` | Analytics endpoint. Browser analytics stays off when unset. |
 | `MW_API_BASE` | MistWarp API for the community site, project embeds and Rotur thumbnails. Defaults to `https://api.mistwarp.org/v1`. |
 | `MW_API_WS` | Realtime socket. Defaults to `MW_API_BASE` with `http` replaced by `ws`, plus `/ws`. |
 | `MW_WARPTHEME_API` | WarpTheme API for the theme gallery. Defaults to `https://warptheme.mistium.com/api`. |

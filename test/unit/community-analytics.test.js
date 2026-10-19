@@ -33,26 +33,38 @@ describe('community analytics privacy controls', () => {
         delete global.fetch;
     });
 
-    test('falls back to fetch when the browser refuses to queue a beacon', () => {
-        const originalStatusUrl = process.env.MW_STATUS_URL;
-        const originalSendBeacon = navigator.sendBeacon;
+    test('sends events with a keepalive fetch when an analytics endpoint is configured', () => {
+        const originalAnalyticsUrl = process.env.MW_ANALYTICS_URL;
         const fetchSpy = jest.fn(() => Promise.resolve());
-        process.env.MW_STATUS_URL = 'https://status.example';
+        process.env.MW_ANALYTICS_URL = 'https://analytics.example';
         jest.resetModules();
         const {track} = require('../../src/community/analytics.js');
-        navigator.sendBeacon = jest.fn(() => false);
         global.fetch = fetchSpy;
 
         track('home_view');
 
-        expect(navigator.sendBeacon).toHaveBeenCalledTimes(1);
         expect(fetchSpy).toHaveBeenCalledWith(
-            expect.stringMatching(/\/v1\/events$/),
-            expect.objectContaining({method: 'POST', keepalive: true})
+            'https://analytics.example/v1/events',
+            expect.objectContaining({method: 'POST', keepalive: true, credentials: 'omit'})
         );
-        if (typeof originalStatusUrl === 'undefined') delete process.env.MW_STATUS_URL;
-        else process.env.MW_STATUS_URL = originalStatusUrl;
-        navigator.sendBeacon = originalSendBeacon;
+        if (typeof originalAnalyticsUrl === 'undefined') delete process.env.MW_ANALYTICS_URL;
+        else process.env.MW_ANALYTICS_URL = originalAnalyticsUrl;
+        delete global.fetch;
+        jest.resetModules();
+    });
+
+    test('does not send events while no analytics endpoint is configured', () => {
+        const originalAnalyticsUrl = process.env.MW_ANALYTICS_URL;
+        const fetchSpy = jest.fn(() => Promise.resolve());
+        delete process.env.MW_ANALYTICS_URL;
+        jest.resetModules();
+        const {track} = require('../../src/community/analytics.js');
+        global.fetch = fetchSpy;
+
+        track('home_view');
+
+        expect(fetchSpy).not.toHaveBeenCalled();
+        if (typeof originalAnalyticsUrl !== 'undefined') process.env.MW_ANALYTICS_URL = originalAnalyticsUrl;
         delete global.fetch;
         jest.resetModules();
     });

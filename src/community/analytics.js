@@ -1,6 +1,8 @@
 import {isMinorAccount} from '../lib/minor-account.js';
 
-const STATUS_BASE = process.env.MW_STATUS_URL || '';
+// Analytics has its own endpoint so the status page can stay online while
+// browser analytics is disabled.
+const ANALYTICS_BASE = process.env.MW_ANALYTICS_URL || '';
 const ANALYTICS_KEY = 'mw:anonymous-analytics';
 const SESSION_KEY = 'mw:analytics-session';
 
@@ -37,7 +39,7 @@ const sessionId = () => {
 };
 
 export const track = (name, properties = {}) => {
-    if (!STATUS_BASE || !analyticsEnabled()) return;
+    if (!ANALYTICS_BASE || !analyticsEnabled()) return;
     const session = sessionId();
     if (!session) return;
     const body = JSON.stringify({name, session, properties});
@@ -45,7 +47,7 @@ export const track = (name, properties = {}) => {
     // cross-origin analytics request into a credentialed CORS request. These
     // events are anonymous, and keepalive fetch survives page unload without
     // asking the status worker to accept cookies.
-    fetch(`${STATUS_BASE}/v1/events`, {
+    fetch(`${ANALYTICS_BASE}/v1/events`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body,
