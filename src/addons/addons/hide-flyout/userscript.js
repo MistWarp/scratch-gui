@@ -1,3 +1,4 @@
+import { isBlocksEditorVisible } from "../../../lib/editor-visibility.js";
 export default async function ({ addon, console, msg }) {
   let placeHolderDiv = null;
   let lockObject = null;
@@ -112,11 +113,12 @@ export default async function ({ addon, console, msg }) {
     addon.tab.redux.addEventListener("statechanged", (e) => {
       switch (e.detail.action.type) {
         // Event casted when you switch between tabs
-        case "scratch-gui/navigation/ACTIVATE_TAB": {
+        case "scratch-gui/navigation/ACTIVATE_TAB":
+        case "scratch-gui/navigation/SHOW_BLOCKS_TAB": {
           // always 0, 1, 2
           const toggleSetting = getToggleSetting();
           if (
-            e.detail.action.activeTabIndex === 0 &&
+            isBlocksEditorVisible(addon.tab.redux.state) &&
             !addon.self.disabled &&
             (toggleSetting === "hover" || toggleSetting === "cathover")
           ) {

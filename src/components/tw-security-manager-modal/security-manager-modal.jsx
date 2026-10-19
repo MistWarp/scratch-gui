@@ -15,6 +15,7 @@ import Notify from './notify.jsx';
 import Geolocate from './geolocate.jsx';
 import Embed from './embed.jsx';
 import Download from './download.jsx';
+import UnsandboxedFromFile from './unsandboxed-from-file.jsx';
 import DelayedMountPropertyHOC from './delayed-mount-property-hoc.jsx';
 import styles from './security-manager-modal.css';
 
@@ -60,6 +61,8 @@ const SecurityManagerModalComponent = props => (
                 <Embed {...props.data} />
             ) : props.type === SecurityModals.Download ? (
                 <Download {...props.data} />
+            ) : props.type === SecurityModals.UnsandboxedFromFile ? (
+                <UnsandboxedFromFile {...props.data} />
             ) : null}
 
             <Box className={styles.projectActions}>
@@ -124,7 +127,7 @@ const SecurityManagerModalComponent = props => (
                     onClick={props.onDenied}
                     disabled={!props.enableButtons}
                 >
-                    {props.type === SecurityModals.LoadExtension ? (
+                    {[SecurityModals.LoadExtension, SecurityModals.UnsandboxedFromFile].includes(props.type) ? (
                         <FormattedMessage
                             defaultMessage="Don't run"
                             description="Button refusing to run potentially dangerous project code"
@@ -144,7 +147,13 @@ const SecurityManagerModalComponent = props => (
                     onClick={props.onAllowed}
                     disabled={!props.enableButtons}
                 >
-                    {props.type === SecurityModals.LoadExtension ? (
+                    {props.type === SecurityModals.UnsandboxedFromFile ? (
+                        <FormattedMessage
+                            defaultMessage="Run with full access"
+                            description="Button allowing project code to run outside the sandbox"
+                            id="mw.securityManager.runFullAccess"
+                        />
+                    ) : props.type === SecurityModals.LoadExtension ? (
                         props.data.unsandboxed ? (
                             <FormattedMessage
                                 defaultMessage="Run with full access"

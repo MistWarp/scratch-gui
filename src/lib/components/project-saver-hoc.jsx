@@ -10,6 +10,8 @@ import storage from '../persistence/storage';
 import dataURItoBlob from '../utils/data-uri-to-blob';
 import saveProjectToServer from '../utils/save-project-to-server';
 import {isProjectOperationActive} from '../project-operation.js';
+import {hasUnappliedCode} from '../code-mode/text-store.js';
+import {flushDraftWrites} from '../code-mode/code-drafts.js';
 import {guardSavedCallback} from '../mw/smart-save.js';
 
 import {
@@ -111,7 +113,7 @@ const ProjectSaverHOC = function (WrappedComponent) {
         }
         leavePageConfirm (e) {
             if (this.props.projectChanged || this.props.vm._mwPendingDiskOverwrite ||
-                isProjectOperationActive(this.props.vm)) {
+                isProjectOperationActive(this.props.vm) || hasUnappliedCode()) {
                 if (e && e.preventDefault) e.preventDefault();
                 // both methods of returning a value may be necessary for browser compatibility
                 (e || window.event).returnValue = true;
@@ -133,6 +135,7 @@ const ProjectSaverHOC = function (WrappedComponent) {
             }
         }
         tryToAutoSave () {
+            flushDraftWrites();
             if (this.props.projectChanged && this.props.isShowingSaveable) {
                 this.props.onAutoUpdateProject();
             }

@@ -28,7 +28,6 @@ import {
     closeConnectionModal,
     closeCustomExtensionModal,
     closeDebuggerModal,
-    closeExtensionManagerModal,
     closeFontsModal,
     closeGameItemsModal,
     closeGitModal,
@@ -62,7 +61,8 @@ import {beginLiveResize} from '../../lib/mw-live-resize.js';
 import {getFindBarApi} from '../../lib/find-bar/api';
 import {Theme} from '../../lib/themes';
 
-import {BLOCKS_TAB_INDEX, COSTUMES_TAB_INDEX, SOUNDS_TAB_INDEX} from '../../reducers/editor-tab';
+import {BLOCKS_TAB_INDEX, CODE_MODE, COSTUMES_TAB_INDEX, SOUNDS_TAB_INDEX} from '../../reducers/editor-tab';
+import ModeSwitch from '../code-mode/mode-switch.jsx';
 import CollaborationTabIndicator from '../../containers/collaboration-tab-indicator.jsx';
 import ScriptLoadIndicator from '../script-load-indicator/script-load-indicator.jsx';
 import {editorTabMessages, getEditorTabLabels} from './editor-tab-labels.js';
@@ -99,6 +99,11 @@ const messages = defineMessages({
         description: 'Accessible label for the row of workspace tabs in a narrow editor layout',
         defaultMessage: 'Editor views'
     },
+    files: {
+        id: 'mw.gui.files',
+        description: 'Workspace tab that shows the Code mode files in a narrow editor layout',
+        defaultMessage: 'Files'
+    },
     resizeStagePanel: {
         id: 'gui.gui.resizeStagePanel',
         description: 'Accessible label for the handle between the code area and the stage panel',
@@ -113,7 +118,8 @@ import {
     PackagePlus as ExtensionIcon,
     Search,
     Images as SpritesIcon,
-    Monitor as StageIcon
+    Monitor as StageIcon,
+    FolderTree as FilesIcon
 } from 'lucide-react';
 
 const getFullscreenBackgroundColor = () => {
@@ -233,11 +239,13 @@ const GUIComponent = props => {
         TWVariableManager,
         TWUnknownPlatformModal,
         TWGitModal,
-        MWExtensionManagerModal,
+        ExtensionDevListener,
         MWHelpModal,
         MWProjectThemeModal,
         MWProductsModal,
-        MWGameItemsModal
+        MWGameItemsModal,
+        RecordModal,
+        CodeWorkbench
     } = getGuiComponents();
     const handleEnableProcedureReturns = useCallback(() => {
         try {
@@ -299,6 +307,10 @@ const GUIComponent = props => {
         props.onActivateTab(SOUNDS_TAB_INDEX);
         setMobileEditorView('editor');
     }, [props.onActivateTab]);
+
+    const handleMobileFilesTab = useCallback(() => {
+        setMobileEditorView('editor');
+    }, []);
 
     const handleMobileSpritesTab = useCallback(() => {
         setMobileEditorView('sprites');
@@ -848,6 +860,7 @@ const GUIComponent = props => {
         soundLibraryVisible,
         costumesTabVisible,
         customStageSize,
+        editorMode,
         enableCommunity,
         intl,
         extensionLibraryVisible,
@@ -893,6 +906,7 @@ const GUIComponent = props => {
         showOpenFilePicker,
         showSaveFilePicker,
         soundsTabVisible,
+        soundRecorderVisible,
         stageSizeMode,
         stageSizeRequestId,
         targetIsStage,
@@ -915,6 +929,8 @@ const GUIComponent = props => {
         ...componentProps
     } = props;
     const editorTabLabels = useMemo(() => getEditorTabLabels(intl, targetIsStage), [intl, targetIsStage]);
+    const codeMode = editorMode === CODE_MODE;
+    const visibleTabIndex = codeMode ? -1 : activeTabIndex;
     if (children) {
         return <Box {...componentProps}>{children}</Box>;
     }
@@ -965,12 +981,8 @@ const GUIComponent = props => {
                 </IsolatedPanel>
             )}
             {!isPlayerOnly && (
-                <IsolatedPanel
-                    name="Extension manager"
-                    closeAction={closeExtensionManagerModal}
-                    onClosePanel={onClosePanel}
-                >
-                    <MWExtensionManagerModal />
+                <IsolatedPanel name="Extension problems">
+                    <ExtensionDevListener />
                 </IsolatedPanel>
             )}
             {!isPlayerOnly && (
@@ -1274,6 +1286,7 @@ const GUIComponent = props => {
                             onRequestClose={onRequestCloseSoundLibrary}
                         />
                     ) : null}
+                    {soundRecorderVisible ? <RecordModal /> : null}
                     <PanelErrorBoundary
                         closable={false}
                         name="Menu bar"
@@ -1320,13 +1333,13 @@ const GUIComponent = props => {
                                 ref={editorWrapperRef}
                             >
                                 <NativeFindBar
-                                    activeTabIndex={activeTabIndex}
+                                    activeTabIndex={visibleTabIndex}
                                     isPlayerOnly={isPlayerOnly}
                                     locale={locale}
                                     vm={vm}
                                 />
                                 <NativeSpotlight
-                                    activeTabIndex={activeTabIndex}
+                                    blocksEditorVisible={Boolean(blocksTabVisible)}
                                     isPlayerOnly={isPlayerOnly}
                                     locale={locale}
                                     vm={vm}
@@ -1337,72 +1350,98 @@ const GUIComponent = props => {
                                         role="tablist"
                                         aria-label={intl.formatMessage(messages.editorViews)}
                                     >
-                                        <button
-                                            type="button"
-                                            className={classNames(styles.mobileEditorNavButton, {
-                                                [styles.mobileEditorNavButtonSelected]:
+                                        <ModeSwitch
+                                            compact
+                                            onSurface
+                                            className={styles.mobileModeSwitch}
+                                        />
+                                        {codeMode ? (
+                                            <button
+                                                type="button"
+                                                className={classNames(styles.mobileEditorNavButton, {
+                                                    [styles.mobileEditorNavButtonSelected]:
+                                                        mobileEditorView === 'editor'
+                                                })}
+                                                role="tab"
+                                                aria-label={intl.formatMessage(messages.files)}
+                                                title={intl.formatMessage(messages.files)}
+                                                aria-selected={mobileEditorView === 'editor'}
+                                                onClick={handleMobileFilesTab}
+                                            >
+                                                <FilesIcon size={19} />
+                                                <span className={styles.mobileEditorNavLabel}>
+                                                    <FormattedMessage {...messages.files} />
+                                                </span>
+                                            </button>
+                                        ) : null}
+                                        {codeMode ? null : (<React.Fragment>
+                                            <button
+                                                type="button"
+                                                className={classNames(styles.mobileEditorNavButton, {
+                                                    [styles.mobileEditorNavButtonSelected]:
                                                     mobileEditorView === 'editor' &&
                                                     activeTabIndex === BLOCKS_TAB_INDEX
-                                            })}
-                                            role="tab"
-                                            aria-label={editorTabLabels.code}
-                                            title={editorTabLabels.code}
-                                            aria-selected={
-                                                mobileEditorView === 'editor' &&
+                                                })}
+                                                role="tab"
+                                                aria-label={editorTabLabels.code}
+                                                title={editorTabLabels.code}
+                                                aria-selected={
+                                                    mobileEditorView === 'editor' &&
                                                 activeTabIndex === BLOCKS_TAB_INDEX
-                                            }
-                                            onClick={handleMobileCodeTab}
-                                        >
-                                            <BlocksIcon size={19} />
-                                            <span className={styles.mobileEditorNavLabel}>
-                                                <FormattedMessage {...editorTabMessages.code} />
-                                            </span>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className={classNames(styles.mobileEditorNavButton, {
-                                                [styles.mobileEditorNavButtonSelected]:
+                                                }
+                                                onClick={handleMobileCodeTab}
+                                            >
+                                                <BlocksIcon size={19} />
+                                                <span className={styles.mobileEditorNavLabel}>
+                                                    <FormattedMessage {...editorTabMessages.code} />
+                                                </span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={classNames(styles.mobileEditorNavButton, {
+                                                    [styles.mobileEditorNavButtonSelected]:
                                                     mobileEditorView === 'editor' &&
                                                     activeTabIndex === COSTUMES_TAB_INDEX
-                                            })}
-                                            role="tab"
-                                            aria-label={editorTabLabels.costumes}
-                                            title={editorTabLabels.costumes}
-                                            aria-selected={
-                                                mobileEditorView === 'editor' &&
+                                                })}
+                                                role="tab"
+                                                aria-label={editorTabLabels.costumes}
+                                                title={editorTabLabels.costumes}
+                                                aria-selected={
+                                                    mobileEditorView === 'editor' &&
                                                 activeTabIndex === COSTUMES_TAB_INDEX
-                                            }
-                                            onClick={handleMobileCostumesTab}
-                                        >
-                                            <CostumesIcon size={19} />
-                                            <span className={styles.mobileEditorNavLabel}>
-                                                <FormattedMessage
-                                                    {...(targetIsStage ?
-                                                        editorTabMessages.backdrops : editorTabMessages.costumes)}
-                                                />
-                                            </span>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className={classNames(styles.mobileEditorNavButton, {
-                                                [styles.mobileEditorNavButtonSelected]:
+                                                }
+                                                onClick={handleMobileCostumesTab}
+                                            >
+                                                <CostumesIcon size={19} />
+                                                <span className={styles.mobileEditorNavLabel}>
+                                                    <FormattedMessage
+                                                        {...(targetIsStage ?
+                                                            editorTabMessages.backdrops : editorTabMessages.costumes)}
+                                                    />
+                                                </span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={classNames(styles.mobileEditorNavButton, {
+                                                    [styles.mobileEditorNavButtonSelected]:
                                                     mobileEditorView === 'editor' &&
                                                     activeTabIndex === SOUNDS_TAB_INDEX
-                                            })}
-                                            role="tab"
-                                            aria-label={editorTabLabels.sounds}
-                                            title={editorTabLabels.sounds}
-                                            aria-selected={
-                                                mobileEditorView === 'editor' &&
+                                                })}
+                                                role="tab"
+                                                aria-label={editorTabLabels.sounds}
+                                                title={editorTabLabels.sounds}
+                                                aria-selected={
+                                                    mobileEditorView === 'editor' &&
                                                 activeTabIndex === SOUNDS_TAB_INDEX
-                                            }
-                                            onClick={handleMobileSoundsTab}
-                                        >
-                                            <SoundsIcon size={19} />
-                                            <span className={styles.mobileEditorNavLabel}>
-                                                <FormattedMessage {...editorTabMessages.sounds} />
-                                            </span>
-                                        </button>
+                                                }
+                                                onClick={handleMobileSoundsTab}
+                                            >
+                                                <SoundsIcon size={19} />
+                                                <span className={styles.mobileEditorNavLabel}>
+                                                    <FormattedMessage {...editorTabMessages.sounds} />
+                                                </span>
+                                            </button>
+                                        </React.Fragment>)}
                                         <button
                                             type="button"
                                             className={classNames(styles.mobileEditorNavButton, {
@@ -1437,11 +1476,23 @@ const GUIComponent = props => {
                                         </button>
                                     </Box>
                                 ) : null}
+                                {codeMode ? (
+                                    <div
+                                        className={classNames(styles.codeWorkbenchSlot, {
+                                            [styles.mobileEditorContentHidden]:
+                                                isNarrowLayout && isStageHidden && mobileEditorView !== 'editor'
+                                        })}
+                                    >
+                                        <React.Suspense fallback={<LoadingSpinner />}>
+                                            <CodeWorkbench />
+                                        </React.Suspense>
+                                    </div>
+                                ) : null}
                                 <Tabs
                                     forceRenderTabPanel
                                     className={classNames(tabClassNames.tabs, {
-                                        [styles.mobileEditorContentHidden]:
-                                            isNarrowLayout && isStageHidden && mobileEditorView !== 'editor'
+                                        [styles.mobileEditorContentHidden]: codeMode ||
+                                            (isNarrowLayout && isStageHidden && mobileEditorView !== 'editor')
                                     })}
                                     selectedIndex={activeTabIndex}
                                     selectedTabClassName={tabClassNames.tabSelected}
@@ -1576,7 +1627,7 @@ const GUIComponent = props => {
                                         <MobileStageControls vm={vm} />
                                     </Box>
                                 ) : null}
-                                {backpackVisible && (
+                                {backpackVisible && !codeMode && (
                                     !isNarrowLayout || !isStageHidden || mobileEditorView === 'editor'
                                 ) && !(isNarrowLayout && isStageHidden &&
                                     activeTabIndex === COSTUMES_TAB_INDEX) && (
@@ -1748,6 +1799,8 @@ GUIComponent.propTypes = {
     onClosePanel: PropTypes.func,
     settingsModalVisible: PropTypes.bool,
     customExtensionModalVisible: PropTypes.bool,
+    editorMode: PropTypes.string,
+    soundRecorderVisible: PropTypes.bool,
     fontsModalVisible: PropTypes.bool,
     assetsModalVisible: PropTypes.bool,
     projectMetadataModalVisible: PropTypes.bool,

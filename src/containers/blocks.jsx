@@ -23,6 +23,8 @@ import {VANILLA_PALETTE_CHANGED} from '../lib/mw-vanilla-palette';
 import {CATEGORY_ORDER_CHANGED, getCategoryOrder} from '../lib/mw-category-order';
 import {LoadingState} from '../reducers/project-state';
 import installCategoryDrag from '../lib/mw-category-drag';
+import {categoryItems, installBlockMenu} from '../lib/extension-dev/workspace-menus.js';
+import {isCollaborating} from '../lib/extension-dev/session.js';
 import {CAT_BLOCKS_CHANGED} from '../lib/mw-cat-blocks';
 import {
     getResizableFlyoutWidth,
@@ -55,9 +57,15 @@ import {initDevInspector} from '../lib/dev-inspector/dev-inspector.js';
 
 import {
     activateTab,
+    CODE_MODE,
     SOUNDS_TAB_INDEX,
     BLOCKS_TAB_INDEX
 } from '../reducers/editor-tab';
+import {
+    dropWorkspaceWaiters,
+    setWorkspaceReadyCheck,
+    settleWorkspaceWaiters
+} from '../lib/code-mode/workspace-ready.js';
 import AddonHooks from '../addons/hooks.js';
 import LoadScratchBlocksHOC from '../lib/components/tw-load-scratch-blocks-hoc.jsx';
 import {offsetToPosition} from '../lib/backpack/code-payload.js';
@@ -153,6 +161,7 @@ class Blocks extends React.Component {
             'handleMonitorsUpdate',
             'handleExtensionAdded',
             'handleBlocksInfoUpdate',
+            'handleExtensionReloaded',
             'onTargetsUpdate',
             'onVisualReport',
             'onWorkspaceUpdate',
@@ -161,7 +170,8 @@ class Blocks extends React.Component {
             'setBlocks',
             'setPaletteResizer',
             'setLocale',
-            'handleEnableProcedureReturns'
+            'handleEnableProcedureReturns',
+            'isWorkspaceReady'
         ]);
         this.ScratchBlocks.prompt = this.handlePromptStart;
         this.ScratchBlocks.statusButtonCallback = this.handleConnectionModalStart;
@@ -194,6 +204,8 @@ class Blocks extends React.Component {
         this.deferredWorkspaceLoad = null;
         this.toolboxStateUpdateTimeout = null;
         this.workspaceVisibilityRaf = null;
+        this.workspaceLoadSeq = 0;
+        this.inCodeMode = false;
     }
     componentDidMount () {
         SettingsStore.addEventListener('setting-changed', this.handleAddonSettingChanged);
@@ -245,8 +257,10 @@ class Blocks extends React.Component {
             vm: this.props.vm,
             useProjectOrder: () => this.hasCurrentProject(),
             ScratchBlocks: this.ScratchBlocks,
-            getResetLabel: () => this.props.intl.formatMessage(messages.resetCategoryOrder)
+            getResetLabel: () => this.props.intl.formatMessage(messages.resetCategoryOrder),
+            getExtraItems: categoryId => categoryItems(this.getExtensionDevContext(), categoryId)
         });
+        installBlockMenu(this.ScratchBlocks, () => this.getExtensionDevContext());
         installWorkspacePaneGuards(this.workspace, this.blocks.ownerDocument);
         this.blocks.addEventListener('dragover', this.handleScriptDragOver);
         this.blocks.addEventListener('drop', this.handleScriptDrop);
@@ -314,6 +328,8 @@ class Blocks extends React.Component {
         });
 
         this.attachVM();
+        setWorkspaceReadyCheck(this.isWorkspaceReady);
+        if (this.props.editorMode === CODE_MODE) this.enterCodeMode();
         // Only update blocks/vm locale when visible to avoid sizing issues
         // If locale changes while not visible it will get handled in didUpdate
         if (this.props.isVisible) {
@@ -345,6 +361,7 @@ class Blocks extends React.Component {
             this.state.flyoutWidth !== nextState.flyoutWidth ||
             this.state.paletteResizeEnabled !== nextState.paletteResizeEnabled ||
             this.props.isVisible !== nextProps.isVisible ||
+            this.props.editorMode !== nextProps.editorMode ||
             this._renderedToolboxXML !== nextProps.toolboxXML ||
             this.props.extensionLibraryVisible !== nextProps.extensionLibraryVisible ||
             this.props.customProceduresVisible !== nextProps.customProceduresVisible ||
@@ -394,6 +411,7 @@ class Blocks extends React.Component {
                 // force workspace to redraw for the new stage size
                 window.dispatchEvent(new Event('resize'));
             }
+            this.applyEditorModeChange(prevProps);
             return;
         }
         // @todo hack to resize blockly manually in case resize happened while hidden
@@ -448,6 +466,7 @@ class Blocks extends React.Component {
                     // Hidden tab panels can leave the SVG at zero size. Resize
                     // the drawing surface as well as Blockly's internal layout.
                     this.ScratchBlocks.svgResize(this.workspace);
+                    this.settleReadyWaiters();
                 }
             });
         } else {
@@ -455,6 +474,7 @@ class Blocks extends React.Component {
             this.workspaceVisibilityRaf = null;
             this.workspace.setVisible(false);
         }
+        this.applyEditorModeChange(prevProps);
     }
     componentWillUnmount () {
         this.props.setScriptLoadProgress(null);
@@ -467,11 +487,13 @@ class Blocks extends React.Component {
         window.removeEventListener(TWO_COLUMN_CATEGORIES_CHANGED, this.handleTwoColumnCategoriesChanged);
         this.detachVM();
         this.unmounted = true;
+        setWorkspaceReadyCheck(null);
         this.blocks.removeEventListener('dragover', this.handleScriptDragOver);
         this.blocks.removeEventListener('drop', this.handleScriptDrop);
         this.cancelDeferredWorkspaceLoad();
         untrackWorkspaceUndo(this.workspace);
         if (this.uninstallCategoryDrag) this.uninstallCategoryDrag();
+        clearTimeout(this.flyoutRebuildTimeout);
         this.workspace.dispose();
         clearTimeout(this.toolboxUpdateTimeout);
         clearTimeout(this.toolboxStateUpdateTimeout);
@@ -489,6 +511,52 @@ class Blocks extends React.Component {
         collaborationService.detachFromWorkspace();
 
         AddonHooks.blocklyWorkspace = null;
+    }
+    applyEditorModeChange (prevProps) {
+        if (this.props.editorMode === prevProps.editorMode) return;
+        if (this.props.editorMode === CODE_MODE) {
+            this.enterCodeMode();
+        } else {
+            this.leaveCodeMode();
+        }
+    }
+    enterCodeMode () {
+        if (this.inCodeMode || !this.workspace) return;
+        if (this.ScratchBlocks.Events.fireNow_) this.ScratchBlocks.Events.fireNow_();
+        this.cancelDeferredWorkspaceLoad();
+        this.workspace.removeChangeListener(this.props.vm.blockListener);
+        this.ScratchBlocks.Events.disable();
+        try {
+            this.workspace.clear();
+        } finally {
+            this.ScratchBlocks.Events.enable();
+        }
+        this.workspace.clearUndo();
+        this.lastWorkspaceTargetId = null;
+        this.workspace._mwEditingTargetId = null;
+        this.inCodeMode = true;
+    }
+    leaveCodeMode () {
+        if (!this.inCodeMode || !this.workspace) return;
+        this.inCodeMode = false;
+        this.workspace.addChangeListener(this.props.vm.blockListener);
+        this.props.vm.emitWorkspaceUpdate();
+    }
+    isWorkspaceReady (targetId) {
+        return Boolean(
+            !this.inCodeMode &&
+            this.workspace &&
+            this.props.isVisible &&
+            targetId &&
+            this.lastWorkspaceTargetId === targetId &&
+            !this.deferredWorkspaceLoad &&
+            !this.workspaceVisibilityRaf
+        );
+    }
+    settleReadyWaiters () {
+        if (this.isWorkspaceReady(this.lastWorkspaceTargetId)) {
+            settleWorkspaceWaiters(this.lastWorkspaceTargetId);
+        }
     }
 
     setFlyoutWidth (flyoutWidth) {
@@ -636,6 +704,17 @@ class Blocks extends React.Component {
         window.removeEventListener('pointercancel', this.handlePaletteResizePointerUp);
         window.removeEventListener('mousemove', this.handlePaletteResizePointerMove);
         window.removeEventListener('mouseup', this.handlePaletteResizePointerUp);
+    }
+
+    getExtensionDevContext () {
+        return {
+            vm: this.props.vm,
+            intl: this.props.intl,
+            dispatch: this.props.extensionDevDispatch,
+            collaborating: this.props.isCollaborating,
+            readOnly: Boolean(this.workspace && this.workspace.options.readOnly),
+            runtimeProblems: this.props.extensionRuntimeProblems || {}
+        };
     }
 
     hasCurrentProject () {
@@ -1045,6 +1124,7 @@ class Blocks extends React.Component {
         this.props.vm.addListener('MONITORS_UPDATE', this.handleMonitorsUpdate);
         this.props.vm.addListener('EXTENSION_ADDED', this.handleExtensionAdded);
         this.props.vm.addListener('BLOCKSINFO_UPDATE', this.handleBlocksInfoUpdate);
+        this.props.vm.runtime.addListener('EXTENSION_RELOADED', this.handleExtensionReloaded);
         this.props.vm.addListener('EXTENSION_REMOVED', this.handleExtensionsChanged);
         this.props.vm.addListener('EXTENSIONS_REORDERED', this.handleExtensionsChanged);
         this.props.vm.addListener('PERIPHERAL_CONNECTED', this.handleStatusButtonUpdate);
@@ -1061,6 +1141,7 @@ class Blocks extends React.Component {
         this.props.vm.removeListener('MONITORS_UPDATE', this.handleMonitorsUpdate);
         this.props.vm.removeListener('EXTENSION_ADDED', this.handleExtensionAdded);
         this.props.vm.removeListener('BLOCKSINFO_UPDATE', this.handleBlocksInfoUpdate);
+        this.props.vm.runtime.removeListener('EXTENSION_RELOADED', this.handleExtensionReloaded);
         this.props.vm.removeListener('EXTENSION_REMOVED', this.handleExtensionsChanged);
         this.props.vm.removeListener('EXTENSIONS_REORDERED', this.handleExtensionsChanged);
         this.props.vm.removeListener('PERIPHERAL_CONNECTED', this.handleStatusButtonUpdate);
@@ -1146,6 +1227,7 @@ class Blocks extends React.Component {
         }
     }
     onWorkspaceUpdate (data) {
+        if (this.inCodeMode) return;
         const commandEditing = this.props.vm.editingCommands?.handler;
         const targetId = this.props.vm.editingTarget && this.props.vm.editingTarget.id;
         if (commandEditing && this.lastWorkspaceTargetId === targetId &&
@@ -1171,13 +1253,19 @@ class Blocks extends React.Component {
         this.cancelDeferredWorkspaceLoad();
         this.workspace.removeChangeListener(this.props.vm.blockListener);
         this.ScratchBlocks.Events.disable();
+        const loadSeq = ++this.workspaceLoadSeq;
+        let loadFinished = false;
         try {
-            this.deferredWorkspaceLoad = loadWorkspace(this.ScratchBlocks, this.workspace, data, {
+            const load = loadWorkspace(this.ScratchBlocks, this.workspace, data, {
                 onProgress: this.handleScriptLoadProgress,
                 onDone: () => {
+                    loadFinished = true;
+                    if (loadSeq !== this.workspaceLoadSeq) return;
                     this.deferredWorkspaceLoad = null;
+                    this.settleReadyWaiters();
                 }
             }, !this.props.vm.editingCommands?.handler);
+            this.deferredWorkspaceLoad = loadFinished ? null : load;
         } catch (error) {
             // The workspace is likely incomplete. What did update should be
             // functional.
@@ -1215,6 +1303,8 @@ class Blocks extends React.Component {
         }
         this.lastWorkspaceTargetId = editingTargetId;
         this.workspace._mwEditingTargetId = editingTargetId;
+        dropWorkspaceWaiters(editingTargetId);
+        if (!this.deferredWorkspaceLoad) this.settleReadyWaiters();
 
         this.workspace.toolboxRefreshEnabled_ = true;
     }
@@ -1285,6 +1375,25 @@ class Blocks extends React.Component {
         this.handleExtensionAdded(categoryInfo);
     }
 
+    handleExtensionReloaded (event) {
+        const changed = event ?
+            [].concat(event.added || [], event.changed || [], event.removed || []) :
+            [];
+        if (!changed.length) return;
+        clearTimeout(this.flyoutRebuildTimeout);
+        this.flyoutRebuildTimeout = setTimeout(() => {
+            if (this.unmounted || !this.workspace) return;
+            this._renderedToolboxXML = null;
+            if (!this.props.isVisible) return;
+            const flyout = this.workspace.getFlyout();
+            flyout.setRecyclingEnabled(false);
+            this.requestToolboxUpdate();
+            this.withToolboxUpdates(() => {
+                flyout.setRecyclingEnabled(true);
+            });
+        }, 0);
+    }
+
     handleExtensionsChanged () {
         this.requestToolboxStateUpdate();
     }
@@ -1346,6 +1455,7 @@ class Blocks extends React.Component {
         }, SCRIPT_LOAD_INDICATOR_DELAY_MS);
     }
     cancelDeferredWorkspaceLoad () {
+        this.workspaceLoadSeq++;
         clearTimeout(this.scriptLoadProgressTimer);
         this.scriptLoadProgressTimer = null;
         this.pendingScriptLoadProgress = null;
@@ -1504,6 +1614,7 @@ class Blocks extends React.Component {
             canUseCloud,
             customStageSize,
             customProceduresVisible,
+            editorMode,
             extensionLibraryVisible,
             isFullScreen,
             options,
@@ -1582,6 +1693,9 @@ class Blocks extends React.Component {
 
 Blocks.propTypes = {
     intl: intlShape,
+    extensionDevDispatch: PropTypes.func,
+    extensionRuntimeProblems: PropTypes.object,
+    isCollaborating: PropTypes.bool,
     hasFileHandle: PropTypes.bool,
     isNewDefaultProject: PropTypes.bool,
     projectLoadingState: PropTypes.string,
@@ -1592,6 +1706,7 @@ Blocks.propTypes = {
         height: PropTypes.number
     }),
     customProceduresVisible: PropTypes.bool,
+    editorMode: PropTypes.string,
     extensionLibraryVisible: PropTypes.bool,
     isRtl: PropTypes.bool,
     isVisible: PropTypes.bool,
@@ -1655,11 +1770,14 @@ Blocks.defaultProps = {
 };
 
 const mapStateToProps = state => ({
+    extensionRuntimeProblems: state.scratchGui.extensionDev.runtimeProblems,
+    isCollaborating: isCollaborating(state),
     anyModalVisible: (
         Object.keys(state.scratchGui.modals).some(key => state.scratchGui.modals[key]) ||
         state.scratchGui.mode.isFullScreen
     ),
     customStageSize: state.scratchGui.customStageSize,
+    editorMode: state.scratchGui.editorTab.editorMode,
     extensionLibraryVisible: state.scratchGui.modals.extensionLibrary,
     isFullScreen: state.scratchGui.mode.isFullScreen,
     isRtl: state.locales.isRtl,
@@ -1675,6 +1793,7 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
+    extensionDevDispatch: action => dispatch(action),
     onActivateColorPicker: callback => dispatch(activateColorPicker(callback)),
     onActivateCustomProcedures: (data, callback) => dispatch(activateCustomProcedures(data, callback)),
     onOpenConnectionModal: id => {

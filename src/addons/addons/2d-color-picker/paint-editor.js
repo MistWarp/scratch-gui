@@ -1,3 +1,4 @@
+import { isPaintEditorActive } from "../../../lib/editor-visibility.js";
 // this script was happily stolen from the color-picker addon, developed by Richie Bendall and apple502j
 
 // import required libraries
@@ -65,7 +66,7 @@ export default async ({ addon, console, msg }) => {
     // wait for color dialog box appearance
     const element = await addon.tab.waitForElement('div[class*="color-picker_swatch-row"]', {
       markAsSeen: true,
-      reduxCondition: (state) => state.scratchGui.editorTab.activeTabIndex === 1 && !state.scratchGui.mode.isPlayerOnly,
+      reduxCondition: (state) => isPaintEditorActive(state) && !state.scratchGui.mode.isPlayerOnly,
     });
     rateLimiter.abort(false);
     if (!("colorIndex" in addon.tab.redux.state.scratchPaint.fillMode)) {

@@ -38,6 +38,8 @@ import {
     openUsernameModal,
     openGitModal
 } from '../reducers/modals';
+import {isCodeMode} from '../lib/editor-visibility.js';
+import {hasUnappliedCode} from '../lib/code-mode/text-store.js';
 
 /* eslint-disable max-len */
 const messages = defineMessages({
@@ -55,6 +57,11 @@ const messages = defineMessages({
         defaultMessage: 'The host\'s project will replace the one you have open. A device backup of your current project is saved first. Your edits can be saved to this MistWarp project.',
         description: 'Message of the dialog confirming that joining a live session of a MistWarp project replaces the open project',
         id: 'mw.collaboration.joinConfirmMessageProject'
+    },
+    joinUnappliedCode: {
+        defaultMessage: 'Your unapplied code changes are kept as drafts, but they are not part of the shared project.',
+        description: 'Extra line in the join dialog when Code mode has text that was not applied',
+        id: 'mw.collaboration.joinUnappliedCode'
     },
     joinConfirmButton: {
         defaultMessage: 'Join',
@@ -374,7 +381,10 @@ class CollaborationContainer extends Component {
         const accepted = options.retry || await new Promise(resolve => this.props.openSimpleDialog({
             type: 'confirm',
             title: intl.formatMessage(messages.joinConfirmTitle),
-            message: intl.formatMessage(scope ? messages.joinConfirmMessageProject : messages.joinConfirmMessage),
+            message: [
+                intl.formatMessage(scope ? messages.joinConfirmMessageProject : messages.joinConfirmMessage),
+                hasUnappliedCode() ? intl.formatMessage(messages.joinUnappliedCode) : null
+            ].filter(Boolean).join(' '),
             choices: [{value: 'join', label: intl.formatMessage(messages.joinConfirmButton)}],
             onOk: () => resolve(true),
             onCancel: () => resolve(false)
@@ -1001,7 +1011,7 @@ CollaborationContainer.propTypes = {
     onSetUserActivity: PropTypes.func.isRequired,
     onRemoveUserActivity: PropTypes.func.isRequired,
     onOpenChangeUsername: PropTypes.func.isRequired,
-    activeTabIndex: PropTypes.number,
+    activeTabIndex: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     // eslint-disable-next-line react/forbid-prop-types
     userActivity: PropTypes.object.isRequired
 };
@@ -1017,7 +1027,8 @@ const mapStateToProps = state => ({
     pendingInvite: state.scratchGui.collaboration.pendingInvite,
     connectedUsers: state.scratchGui.collaboration.connectedUsers,
     userActivity: state.scratchGui.collaboration.activity,
-    activeTabIndex: state.scratchGui.editorTab ? state.scratchGui.editorTab.activeTabIndex : 0,
+    activeTabIndex: state.scratchGui.editorTab ?
+        (isCodeMode(state) ? 'code' : state.scratchGui.editorTab.activeTabIndex) : 0,
     connectionError: state.scratchGui.collaboration.connectionError,
     // Online identity is the Rotur handle when signed in; the custom name is only a fallback.
     currentUsername: state.scratchGui.rotur.username ?

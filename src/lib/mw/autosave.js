@@ -5,6 +5,7 @@ import {isProjectOperationActive} from '../project-operation.js';
 import communityEnabled from '../community/enabled.js';
 import {guardSavedCallback} from './smart-save.js';
 import {getSettings} from './autosave-settings.js';
+import {flushDraftWrites} from '../code-mode/code-drafts.js';
 
 const messages = defineMessages({
     autosaved: {
@@ -36,6 +37,7 @@ const runAutosave = async ({
 } = {}) => {
     const config = settings || getSettings();
     if (!config.enabled) return false;
+    flushDraftWrites();
     if (config.only_when_changed && !projectChanged) return false;
     if (!communityEnabled) return false;
     const platform = platformState || getRememberedPlatformProjectState();

@@ -87,6 +87,7 @@ class PaintEditorWrapper extends React.Component {
         const target = vm.editingTarget;
         if (!target || !target.getCostumes()[selectedCostumeIndex]) return null;
         const costume = vm.getCostume(selectedCostumeIndex);
+        if (costume === null) return null;
         return (
             <PaintEditor
                 {...componentProps}

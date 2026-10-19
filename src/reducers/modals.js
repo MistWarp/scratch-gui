@@ -1,3 +1,5 @@
+import {revealInCode} from './editor-tab.js';
+
 const OPEN_MODAL = 'scratch-gui/modals/OPEN_MODAL';
 const CLOSE_MODAL = 'scratch-gui/modals/CLOSE_MODAL';
 let nextSimpleDialogId = 0;
@@ -19,7 +21,6 @@ const MODAL_FONTS = 'fontsModal';
 const MODAL_ASSETS = 'assetsModal';
 const MODAL_UNKNOWN_PLATFORM = 'unknownPlatformModal';
 const MODAL_INVALID_PROJECT = 'invalidProjectModal';
-const MODAL_EXTENSION_MANAGER = 'extensionManagerModal';
 const MODAL_GIT = 'gitModal';
 const MODAL_SIMPLE_DIALOG = 'simpleDialog';
 const MODAL_SHORTCUT_MANAGER = 'shortcutManagerModal';
@@ -49,7 +50,6 @@ const initialState = {
     [MODAL_ASSETS]: false,
     [MODAL_UNKNOWN_PLATFORM]: false,
     [MODAL_INVALID_PROJECT]: false,
-    [MODAL_EXTENSION_MANAGER]: false,
     [MODAL_GIT]: false,
     [MODAL_SIMPLE_DIALOG]: false,
     [MODAL_SHORTCUT_MANAGER]: false,
@@ -158,7 +158,7 @@ const openInvalidProjectModal = function () {
     return openModal(MODAL_INVALID_PROJECT);
 };
 const openExtensionManagerModal = function () {
-    return openModal(MODAL_EXTENSION_MANAGER);
+    return revealInCode({kind: 'extensions'});
 };
 const openGitModal = function () {
     return openModal(MODAL_GIT);
@@ -273,9 +273,6 @@ const closeUnknownPlatformModal = function () {
 const closeInvalidProjectModal = function () {
     return closeModal(MODAL_INVALID_PROJECT);
 };
-const closeExtensionManagerModal = function () {
-    return closeModal(MODAL_EXTENSION_MANAGER);
-};
 const closeGitModal = function () {
     return closeModal(MODAL_GIT);
 };
@@ -338,7 +335,6 @@ export {
     closeAssetsModal,
     closeUnknownPlatformModal,
     closeInvalidProjectModal,
-    closeExtensionManagerModal,
     closeGitModal,
     closeShortcutManagerModal
 };

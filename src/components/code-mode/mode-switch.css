@@ -1,0 +1,68 @@
+@import "../../css/colors.css";
+
+.mode-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 7px;
+    background: color-mix(in srgb, $menu-bar-foreground 12%, transparent);
+    color: $menu-bar-foreground;
+    flex-shrink: 0;
+}
+
+.mode-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    height: 1.75rem;
+    padding: 0 0.6rem;
+    border: none;
+    border-radius: 5px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+.mode-button:hover {
+    opacity: 1;
+    background: color-mix(in srgb, $menu-bar-foreground 10%, transparent);
+}
+
+.mode-button:focus-visible {
+    outline: 2px solid $menu-bar-foreground;
+    outline-offset: 1px;
+}
+
+.mode-button-active,
+.mode-button-active:hover {
+    opacity: 1;
+    background: color-mix(in srgb, $menu-bar-foreground 28%, transparent);
+}
+
+.compact .mode-label {
+    display: none;
+}
+
+.compact .mode-button {
+    padding: 0 0.45rem;
+}
+
+.on-surface {
+    background: color-mix(in srgb, $text-primary 8%, transparent);
+    color: $text-primary;
+}
+
+.on-surface .mode-button:hover {
+    background: color-mix(in srgb, $text-primary 8%, transparent);
+}
+
+.on-surface .mode-button-active,
+.on-surface .mode-button-active:hover {
+    background: $looks-secondary;
+    color: $accent-foreground;
+}

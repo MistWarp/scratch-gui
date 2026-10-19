@@ -30,6 +30,12 @@ const manuallyTrustExtension = url => {
     extensionsTrustedByUser.add(url);
 };
 
+let unsandboxedCreationsAllowed = 0;
+
+const allowUnsandboxedExtensionCreation = () => {
+    unsandboxedCreationsAllowed++;
+};
+
 const isPlatformProjectLoad = () => {
     try {
         const params = new URLSearchParams(location.search);
@@ -144,12 +150,16 @@ const SECURITY_MANAGER_METHODS = [
     'canNotify',
     'canGeolocate',
     'canEmbed',
-    'canDownload'
+    'canDownload',
+    'canCreateUnsandboxedExtension',
+    'canRunUnsandboxedFromFile'
 ];
+
+const projectTrustedExtensionUrls = new Set();
 
 const withSecurityBypass = (method, implementation, allowAll) => (...args) => {
     if (method === 'rewriteExtensionURL') return implementation(...args);
-    return allowAll() ? (method === 'getSandboxMode' ? 'unsandboxed' : true) : implementation(...args);
+    return allowAll(args) ? (method === 'getSandboxMode' ? 'unsandboxed' : true) : implementation(...args);
 };
 
 class TWSecurityManagerComponent extends React.Component {
@@ -180,8 +190,7 @@ class TWSecurityManagerComponent extends React.Component {
             vmSecurityManager[method] = withSecurityBypass(
                 method,
                 propsSecurityManager[method] || this[method],
-                () => this.props.vm.runtime._mwProjectTrusted === true ||
-                    (typeof window !== 'undefined' && window.__mwAllowAllSecurity === true)
+                args => this.isSecurityBypassed(method, args)
             );
         }
         this.props.vm.on('LOAD_PROGRESS', this.handleProjectLoading);
@@ -253,6 +262,40 @@ class TWSecurityManagerComponent extends React.Component {
         };
     }
 
+    isSecurityBypassed (method, args) {
+        if (method === 'canCreateUnsandboxedExtension' || method === 'canRunUnsandboxedFromFile') return false;
+        if (typeof window !== 'undefined' && window.__mwAllowAllSecurity === true) return true;
+        if (this.props.vm.runtime._mwProjectTrusted !== true) return false;
+        if (method === 'canLoadExtensionFromProject') return false;
+        if (method === 'getSandboxMode') return projectTrustedExtensionUrls.has(args[0]);
+        return true;
+    }
+
+    canCreateUnsandboxedExtension () {
+        if (unsandboxedCreationsAllowed <= 0) return Promise.resolve(false);
+        unsandboxedCreationsAllowed--;
+        return Promise.resolve(true);
+    }
+
+    /**
+     * @param {string} fileName Name of the dropped extension file
+     * @param {string} source The file's source
+     * @returns {Promise<boolean>} Whether the user allowed it to run without the sandbox
+     */
+    async canRunUnsandboxedFromFile (fileName, source) {
+        if (typeof source !== 'string') return false;
+        const {showModal} = await this.acquireModalLock();
+        const allowed = await showModal(SecurityModals.UnsandboxedFromFile, {
+            fileName: String(fileName || 'extension.js'),
+            source
+        });
+        return allowed === true;
+    }
+
+    isLoadAllActive (wholeProject) {
+        return wholeProject === true && this.props.vm.runtime._mwProjectTrusted === true;
+    }
+
     handleAllowed () {
         this.state.callback(true);
     }
@@ -275,6 +318,7 @@ class TWSecurityManagerComponent extends React.Component {
         if (stage !== 'building') return;
         this.props.vm.runtime._mwProjectTrusted = false;
         extensionsTrustedByUser.clear();
+        projectTrustedExtensionUrls.clear();
         platformProjectExtensionUrls.clear();
         fetchHostsTrustedByUser.clear();
         embedHostsTrustedByUser.clear();
@@ -328,15 +372,20 @@ class TWSecurityManagerComponent extends React.Component {
 
     /**
      * @param {string} url The extension's URL
+     * @param {{wholeProject: boolean}} [options] Whether the URL is listed by a project being opened
      * @returns {Promise<boolean>} Whether the extension can be loaded
      */
-    async canLoadExtensionFromProject (url) {
+    async canLoadExtensionFromProject (url, options) {
+        const wholeProject = Boolean(options && options.wholeProject === true);
         const allowProjectExtension = () => {
             // Only extensions from a whole-project install were saved with the platform
             // project and have a pinned server copy. Sprites imported afterwards
             // (installTargets with wholeProject=false) must load from their original URL.
-            if (isPlatformProjectLoad() && this.props.vm._mwInstallingWholeProject === true) {
+            if (isPlatformProjectLoad() && wholeProject) {
                 platformProjectExtensionUrls.add(url);
+            }
+            if (this.isLoadAllActive(wholeProject)) {
+                projectTrustedExtensionUrls.add(url);
             }
             return true;
         };
@@ -352,6 +401,7 @@ class TWSecurityManagerComponent extends React.Component {
         if (url === 'builtin:patching' || dangerousJs) {
             const {showModal} = await this.acquireModalLock();
             const allowed = await showModal(SecurityModals.LoadExtension, {
+                wholeProject,
                 url,
                 dangerousBuiltin: !dangerousJs,
                 dangerousJs,
@@ -359,10 +409,11 @@ class TWSecurityManagerComponent extends React.Component {
             });
             return allowed ? allowProjectExtension() : false;
         }
-        if (this.props.vm.runtime._mwProjectTrusted === true) return allowProjectExtension();
+        if (this.isLoadAllActive(wholeProject)) return allowProjectExtension();
         const {showModal} = await this.acquireModalLock();
         let unsandboxed = getPersistedUnsandboxed();
         const allowed = await showModal(SecurityModals.LoadExtension, {
+            wholeProject,
             url,
             unsandboxed,
             onChangeUnsandboxed: e => {
@@ -372,7 +423,7 @@ class TWSecurityManagerComponent extends React.Component {
         });
         if (!allowed) return false;
 
-        if (this.props.vm.runtime._mwProjectTrusted === true) {
+        if (this.isLoadAllActive(wholeProject)) {
             return allowProjectExtension();
         }
 
@@ -512,7 +563,8 @@ class TWSecurityManagerComponent extends React.Component {
                 <SecurityManagerModal
                     type={this.state.type}
                     data={this.state.data}
-                    showLoadAll={canTrustLoadedProject(this.props.vm)}
+                    showLoadAll={Boolean(this.state.data && this.state.data.wholeProject) &&
+                        canTrustLoadedProject(this.props.vm)}
                     onAllowed={this.handleAllowed}
                     onBlocked={this.handleBlocked}
                     onDenied={this.handleDenied}
@@ -529,7 +581,6 @@ TWSecurityManagerComponent.propTypes = {
     vm: PropTypes.shape({
         on: PropTypes.func.isRequired,
         off: PropTypes.func.isRequired,
-        _mwInstallingWholeProject: PropTypes.bool,
         runtime: PropTypes.shape({
             on: PropTypes.func.isRequired,
             off: PropTypes.func.isRequired,
@@ -567,6 +618,7 @@ export {
     ConnectedSecurityManagerComponent as default,
     TWSecurityManagerComponent,
     manuallyTrustExtension,
+    allowUnsandboxedExtensionCreation,
     isTrustedExtension,
     isPlatformTrustedExtension,
     isOwnedPlatformProject,

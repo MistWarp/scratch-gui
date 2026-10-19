@@ -368,17 +368,24 @@ const installCategoryDrag = (workspace, options = {}) => {
             event.preventDefault();
             return;
         }
-        if (!event.target.closest(MENU_SELECTOR) || !canDrag()) return;
-        const {getResetLabel, ScratchBlocks} = options;
-        if (!getResetLabel || !ScratchBlocks || !ScratchBlocks.ContextMenu || !ScratchBlocks.WidgetDiv) return;
+        if (!event.target.closest(MENU_SELECTOR)) return;
+        const {getResetLabel, getExtraItems, ScratchBlocks} = options;
+        if (!ScratchBlocks || !ScratchBlocks.ContextMenu || !ScratchBlocks.WidgetDiv) return;
+        const item = event.target.closest(ITEM_SELECTOR);
+        const categoryId = item ? getCategoryId(item) : null;
+        const items = categoryId && getExtraItems ? getExtraItems(categoryId) : [];
+        if (getResetLabel && canDrag()) {
+            items.push({
+                text: getResetLabel(),
+                icon: 'reset',
+                enabled: hasCustomCategoryOrder(options.vm),
+                callback: () => resetCategoryOrder(options.vm)
+            });
+        }
+        if (!items.length) return;
         event.preventDefault();
         event.stopPropagation();
-        showContextMenu(ScratchBlocks, event, [{
-            text: getResetLabel(),
-            icon: 'reset',
-            enabled: hasCustomCategoryOrder(options.vm),
-            callback: () => resetCategoryOrder(options.vm)
-        }], workspace.RTL);
+        showContextMenu(ScratchBlocks, event, items, workspace.RTL);
     };
 
     const menuObserver = new MutationObserver(() => {

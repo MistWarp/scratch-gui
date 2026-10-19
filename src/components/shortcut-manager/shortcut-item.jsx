@@ -34,6 +34,16 @@ const messages = defineMessages({
         defaultMessage: 'Press a shortcut…',
         description: 'Prompt shown while recording a new keyboard shortcut',
         id: 'shortcut-manager.recording'
+    },
+    overrides: {
+        defaultMessage: 'Overrides {label} in text tabs',
+        description: 'Note under a Code mode shortcut that replaces another shortcut while typing in a text tab',
+        id: 'shortcut-manager.overridesInTextTabs'
+    },
+    unbound: {
+        defaultMessage: 'Not set',
+        description: 'Shown in place of keys for a shortcut that has no key assigned',
+        id: 'shortcut-manager.unbound'
     }
 });
 
@@ -162,9 +172,20 @@ class ShortcutItem extends React.Component {
 
         return (
             <div className={styles.shortcutRow}>
-                <div className={styles.shortcutLabel}>{shortcut.label}</div>
+                <div className={styles.shortcutLabel}>
+                    {shortcut.label}
+                    {shortcut.overrides ? (
+                        <div className={styles.shortcutNote}>
+                            {intl.formatMessage(messages.overrides, {label: shortcut.overrides})}
+                        </div>
+                    ) : null}
+                </div>
                 <div className={styles.shortcutControls}>
-                    <KeyCombo keyCombo={shortcut.key} />
+                    {shortcut.key ? (
+                        <KeyCombo keyCombo={shortcut.key} />
+                    ) : (
+                        <span className={styles.shortcutNote}>{intl.formatMessage(messages.unbound)}</span>
+                    )}
                     {isCustom && (
                         <button
                             type="button"
@@ -194,7 +215,8 @@ ShortcutItem.propTypes = {
         id: PropTypes.string,
         key: PropTypes.string,
         defaultKey: PropTypes.string,
-        label: PropTypes.string
+        label: PropTypes.string,
+        overrides: PropTypes.string
     }).isRequired,
     onSave: PropTypes.func.isRequired,
     onReset: PropTypes.func.isRequired,

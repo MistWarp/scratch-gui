@@ -1,7 +1,7 @@
-import * as pauseModule from '../../addons/addons/debugger/module.js';
+import * as pauseModule from './pause.js';
 
 const createEngine = vm => {
-    pauseModule.setup({tab: {traps: {vm}}});
+    pauseModule.setup(vm);
     return {
         isPaused: pauseModule.isPaused,
         setPaused: pauseModule.setPaused,

@@ -133,8 +133,8 @@ let nextOnTopZIndex = WINDOW_ON_TOP_Z_INDEX_BASE;
 let windowCount = 0;
 const activeWindows = new Map();
 
-const isEscapeHandledByTarget = target => target instanceof Element &&
-    !!target.closest('.blocklyWidgetDiv, .blocklyDropDownDiv');
+const isEscapeHandledByTarget = target => !!target && typeof target.closest === 'function' &&
+    !!target.closest('.blocklyWidgetDiv, .blocklyDropDownDiv, [data-mw-code-editor]');
 
 const IN_PAGE_WINDOW_IDS = new Set([
     'customProceduresModal',
@@ -375,13 +375,13 @@ class AddonWindow {
         this.escapeHandler = e => {
             if (e.key !== 'Escape' || !this.closable || !this.isVisible) return;
             if (e.defaultPrevented || isEscapeHandledByTarget(e.target)) return;
-            if (this.element.querySelector('[aria-expanded="true"]')) return;
+            if (this.element.querySelector('[aria-haspopup][aria-expanded="true"]')) return;
             const top = Array.from(activeWindows.values())
-                .filter(w => w.isVisible)
+                .filter(w => w.isVisible && w instanceof AddonWindow)
                 .sort((a, b) => b.zIndex - a.zIndex)[0];
             if (top === this) this.close();
         };
-        document.addEventListener('keydown', this.escapeHandler);
+        window.addEventListener('keydown', this.escapeHandler);
     }
 
     createControlButton (type, title, onClick) {
@@ -485,6 +485,8 @@ class AddonWindow {
                 x: e.clientX - currentX,
                 y: e.clientY - currentY
             };
+            this.dragOrigin = {x: currentX, y: currentY};
+            this.element.style.willChange = 'transform';
 
             try {
                 this.headerElement.setPointerCapture(e.pointerId);
@@ -516,17 +518,33 @@ class AddonWindow {
         
         this.x = Math.max(minX, Math.min(newX, maxX));
         this.y = Math.max(minY, Math.min(newY, maxY));
-        
-        this.element.style.left = `${this.x}px`;
-        this.element.style.top = `${this.y}px`;
-        
+
+        const origin = this.dragOrigin || {x: this.x, y: this.y};
+        this.element.style.transform = `translate3d(${this.x - origin.x}px, ${this.y - origin.y}px, 0)`;
+
         this.onMove(this.x, this.y);
     };
+
+    rebaseDrag () {
+        if (!this.dragOrigin) return;
+        this.dragOrigin = {x: this.x, y: this.y};
+        this.element.style.transform = '';
+    }
+
+    commitDragPosition () {
+        if (!this.dragOrigin) return;
+        this.dragOrigin = null;
+        this.element.style.transform = '';
+        this.element.style.willChange = '';
+        this.element.style.left = `${this.x}px`;
+        this.element.style.top = `${this.y}px`;
+    }
     
     handleDragEnd = e => {
         if (e && this.dragPointerId !== null && e.pointerId !== this.dragPointerId) return;
 
         this.isDragging = false;
+        this.commitDragPosition();
         if (this.dragPointerId !== null) {
             try {
                 this.headerElement.releasePointerCapture(this.dragPointerId);
@@ -715,24 +733,35 @@ class AddonWindow {
             newY = this.resizeStart.top + (this.resizeStart.height - newHeight);
         }
         
-        // Update dimensions
         this.width = newWidth;
         this.height = newHeight;
         this.x = newX;
         this.y = newY;
-        
-        this.element.style.width = `${newWidth}px`;
-        this.element.style.height = `${newHeight}px`;
-        this.element.style.left = `${newX}px`;
-        this.element.style.top = `${newY}px`;
-        
-        this.onResize(newWidth, newHeight);
+
+        if (this.resizeFrame) return;
+        this.resizeFrame = requestAnimationFrame(() => {
+            this.resizeFrame = null;
+            this.applyResizeFrame();
+        });
     };
+
+    applyResizeFrame () {
+        this.element.style.width = `${this.width}px`;
+        this.element.style.height = `${this.height}px`;
+        this.element.style.left = `${this.x}px`;
+        this.element.style.top = `${this.y}px`;
+        this.onResize(this.width, this.height);
+    }
     
     handleResizeEnd = e => {
         if (e && this.resizePointerId !== null && e.pointerId !== this.resizePointerId) return;
 
         this.isResizing = false;
+        if (this.resizeFrame) {
+            cancelAnimationFrame(this.resizeFrame);
+            this.resizeFrame = null;
+            this.applyResizeFrame();
+        }
         const handle = this.resizeHandle;
         if (handle && this.resizePointerId !== null) {
             try {
@@ -780,7 +809,7 @@ class AddonWindow {
     }
 
     fitToViewport () {
-        if (!this.element || this.isMaximized || window.innerWidth <= 900) return this;
+        if (!this.element || this.isMaximized || this.isDragging || window.innerWidth <= 900) return this;
 
         const margin = 16;
         const availableWidth = Math.max(0, window.innerWidth - (margin * 2));
@@ -881,7 +910,7 @@ class AddonWindow {
         this.hide();
         window.removeEventListener('resize', this.viewportResizeHandler);
         if (this.escapeHandler) {
-            document.removeEventListener('keydown', this.escapeHandler);
+            window.removeEventListener('keydown', this.escapeHandler);
             this.escapeHandler = null;
         }
         if (callOnClose) {
@@ -926,6 +955,7 @@ class AddonWindow {
                 this.element.style.top = `${this.y}px`;
                 this.element.style.width = `${this.width}px`;
                 this.element.style.height = `${this.height}px`;
+                this.rebaseDrag();
             }
             this.fitToViewport();
             this.updateMaximizeButton();
@@ -961,7 +991,8 @@ class AddonWindow {
         this.element.style.top = '0px';
         this.element.style.width = '100vw';
         this.element.style.height = '100vh';
-        
+        this.rebaseDrag();
+
         this.updateMaximizeButton();
         this.onMaximize();
         return this;
@@ -1004,6 +1035,7 @@ class AddonWindow {
         this.y = Math.max(0, (window.innerHeight - this.height) / 2);
         this.element.style.left = `${this.x}px`;
         this.element.style.top = `${this.y}px`;
+        this.rebaseDrag();
         return this;
     }
 
@@ -1012,6 +1044,7 @@ class AddonWindow {
         this.y = y;
         this.element.style.left = `${x}px`;
         this.element.style.top = `${y}px`;
+        this.rebaseDrag();
         return this;
     }
     
@@ -1153,10 +1186,11 @@ class NativeAddonWindow {
         doc.body.appendChild(this.element);
         ensureStyleObserver();
 
-        doc.addEventListener('keydown', e => {
-            if (e.key === 'Escape' && this.closable) {
-                this.close();
-            }
+        popup.addEventListener('keydown', e => {
+            if (e.key !== 'Escape' || !this.closable) return;
+            if (e.defaultPrevented || isEscapeHandledByTarget(e.target)) return;
+            if (this.element.querySelector('[aria-haspopup][aria-expanded="true"]')) return;
+            this.close();
         });
 
         popup.addEventListener('resize', () => {

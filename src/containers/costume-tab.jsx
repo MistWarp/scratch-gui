@@ -7,7 +7,7 @@ import VM from 'scratch-vm';
 import AssetPanel from '../components/asset-panel/asset-panel.jsx';
 import PaintEditorWrapper from './paint-editor-wrapper.jsx';
 import {connect} from 'react-redux';
-import {handleFileUpload, costumeUpload} from '../lib/file-uploader.js';
+import {uploadCostumes} from '../lib/asset-upload.js';
 import errorBoundaryHOC from '../lib/components/error-boundary-hoc.jsx';
 import DragConstants from '../lib/constants/drag-constants';
 import {emptyCostume} from '../lib/utils/empty-assets';
@@ -242,32 +242,14 @@ class CostumeTab extends React.Component {
         }
     }
     handleCostumeUpload (e) {
-        const vm = this.props.vm;
-        const targetId = this.props.vm.editingTarget.id;
-        const completedFiles = new Set();
-        const finishFile = (fileIndex, fileCount) => {
-            completedFiles.add(fileIndex);
-            if (completedFiles.size === fileCount) {
-                this.props.onCloseImporting();
-            }
-        };
-        const failFile = (error, fileIndex, fileCount) => {
-            this.props.onShowImportError(error);
-            finishFile(fileIndex, fileCount);
-        };
-        this.props.onShowImporting();
-        const fileCount = handleFileUpload(e.target, (buffer, fileType, fileName, fileIndex, totalFiles) => {
-            costumeUpload(buffer, fileType, vm, vmCostumes => {
-                vmCostumes.forEach((costume, i) => {
-                    costume.name = `${fileName}${i ? i + 1 : ''}`;
-                });
-                this.handleNewCostume(vmCostumes, false, targetId).then(() => {
-                    finishFile(fileIndex, totalFiles);
-                })
-                    .catch(error => failFile(error, fileIndex, totalFiles));
-            }, error => failFile(error, fileIndex, totalFiles));
-        }, failFile);
-        if (fileCount === 0) this.props.onCloseImporting();
+        return uploadCostumes({
+            vm: this.props.vm,
+            files: e.target,
+            targetId: this.props.vm.editingTarget.id,
+            onStart: this.props.onShowImporting,
+            onEnd: this.props.onCloseImporting,
+            onError: this.props.onShowImportError
+        });
     }
     handleFileUploadClick () {
         if (!this.fileInput) return false;

@@ -1,3 +1,4 @@
+import { isPaintEditorActive } from "../../../lib/editor-visibility.js";
 import { setSnapFrom, setSnapTo, snapOn, snapFrom, snapTo, toggle, threshold, setThreshold } from "./state.js";
 
 /** @type {import("../../addon-api/content-script/typedef").UserscriptUtilities} */
@@ -287,13 +288,14 @@ export function initUI({ addon, msg }) {
         markAsSeen: true,
         reduxEvents: [
           "scratch-gui/navigation/ACTIVATE_TAB",
+          "scratch-gui/navigation/SHOW_BLOCKS_TAB",
+          "scratch-gui/navigation/ASSET_EDITOR_ACTIVATED",
           "scratch-gui/mode/SET_PLAYER",
           "fontsLoaded/SET_FONTS_LOADED",
           "scratch-gui/locales/SELECT_LOCALE",
           "scratch-gui/targets/UPDATE_TARGET_LIST",
         ],
-        reduxCondition: (state) =>
-          state.scratchGui.editorTab.activeTabIndex === 1 && !state.scratchGui.mode.isPlayerOnly,
+        reduxCondition: (state) => isPaintEditorActive(state) && !state.scratchGui.mode.isPlayerOnly,
       });
       const zoomControlsContainer = canvasControls.querySelector("[class^='paint-editor_zoom-controls']");
       addon.tab.appendToSharedSpace({

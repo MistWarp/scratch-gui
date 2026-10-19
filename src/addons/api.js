@@ -14,6 +14,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import {isPaintEditorActive} from '../lib/editor-visibility.js';
 import IntlMessageFormat from 'intl-messageformat';
 import SettingsStore from './settings-store-singleton';
 import dataURLToBlob from '../lib/utils/data-uri-to-blob';
@@ -212,9 +213,7 @@ class Tab extends EventTargetShim {
             getWorkspace: () => AddonHooks.blocklyWorkspace,
             getPaper: async () => {
                 const modeSelector = await this.waitForElement("[class*='paint-editor_mode-selector']", {
-                    reduxCondition: state => (
-                        state.scratchGui.editorTab.activeTabIndex === 1 && !state.scratchGui.mode.isPlayerOnly
-                    )
+                    reduxCondition: state => isPaintEditorActive(state) && !state.scratchGui.mode.isPlayerOnly
                 });
                 const reactInternalKey = Object.keys(modeSelector)
                     .find(key => key.startsWith('__reactInternalInstance$'));

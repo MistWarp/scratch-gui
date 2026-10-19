@@ -409,7 +409,11 @@ const TWStateManager = function (WrappedComponent) {
             }
 
             for (const extension of urlParams.getAll('extension')) {
-                Promise.resolve(this.props.vm.extensionManager.loadExtensionURL(extension)).catch(error => {
+                const manager = this.props.vm.extensionManager;
+                const allowed = extension === 'patching' ?
+                    Promise.resolve(manager.securityManager.canLoadExtensionFromProject('builtin:patching')) :
+                    Promise.resolve(true);
+                allowed.then(ok => (ok ? manager.loadExtensionURL(extension) : null)).catch(error => {
                     log.error(`Could not load extension from URL parameter: ${extension}`, error);
                     this.props.onExtensionLoadError();
                 });

@@ -3,7 +3,7 @@ const ZONES = [
         id: 'left',
         items: [
             '__errors', 'file', 'edit', 'mode', 'tools', 'view', 'help',
-            '__divider', 'project-title', '__view-counter', 'community', 'block-count'
+            'editor-mode', '__divider', 'project-title', '__view-counter', 'community', 'block-count'
         ],
         extras: []
     },

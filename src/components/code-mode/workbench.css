@@ -1,0 +1,1440 @@
+@import "../../css/colors.css";
+@import "../../css/z-index.css";
+
+$surface: $ui-modal-background;
+$sidebar: color-mix(in srgb, $text-primary 5%, $ui-modal-background);
+$raised: color-mix(in srgb, $text-primary 9%, $ui-modal-background);
+$hover: color-mix(in srgb, $text-primary 7%, transparent);
+$selected: color-mix(in srgb, $looks-secondary 20%, transparent);
+$muted: color-mix(in srgb, $text-primary 62%, transparent);
+$accent: $looks-secondary;
+$mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+.workbench {
+    position: relative;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    background: $surface;
+    color: $text-primary;
+    font-size: 0.8125rem;
+}
+
+.workbench-body {
+    position: relative;
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+}
+
+.icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    flex-shrink: 0;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.icon-button:hover {
+    background: $hover;
+}
+
+.icon-button[aria-pressed="true"] {
+    color: $accent;
+}
+
+.icon-button:focus-visible,
+.primary-button:focus-visible,
+.secondary-button:focus-visible,
+.strip-button:focus-visible,
+.panel-tab:focus-visible,
+.editor-tab:focus-visible {
+    outline: 2px solid $accent;
+    outline-offset: -2px;
+}
+
+.primary-button,
+.secondary-button,
+.strip-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: none;
+    border-radius: 6px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.primary-button {
+    padding: 0.45rem 0.8rem;
+    background: $accent;
+    color: $accent-foreground;
+}
+
+.secondary-button {
+    padding: 0.45rem 0.8rem;
+    background: $raised;
+    color: $text-primary;
+}
+
+.primary-button:disabled,
+.secondary-button:disabled,
+.strip-button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.explorer {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    min-height: 0;
+    background: $sidebar;
+}
+
+.explorer-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    height: 2.5rem;
+    flex-shrink: 0;
+    padding: 0 0.4rem 0 0.75rem;
+}
+
+.header-icon {
+    flex-shrink: 0;
+    color: $muted;
+}
+
+.explorer-heading {
+    flex: 1;
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.tree {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding-bottom: 1rem;
+    outline: none;
+}
+
+.tree:focus-visible .row-selected {
+    box-shadow: inset 0 0 0 1px $accent;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    height: 1.625rem;
+    padding-inline-end: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.row:hover {
+    background: $hover;
+}
+
+.row-selected,
+.row-selected:hover {
+    background: $selected;
+}
+
+.row-active .row-label {
+    font-weight: 600;
+}
+
+.row-muted {
+    color: $muted;
+    cursor: default;
+    font-style: italic;
+}
+
+.drop-hover,
+.row.drop-hover {
+    background: color-mix(in srgb, $accent 28%, transparent);
+}
+
+.twisty {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: $muted;
+    cursor: pointer;
+}
+
+.twisty-space {
+    width: 1rem;
+    flex-shrink: 0;
+}
+
+.row-icon {
+    flex-shrink: 0;
+    color: $muted;
+}
+
+.thumbnail {
+    width: 1.125rem;
+    height: 1.125rem;
+    flex-shrink: 0;
+    object-fit: contain;
+    border-radius: 3px;
+    background: $raised;
+}
+
+.row-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.row-meta {
+    flex-shrink: 0;
+    color: $muted;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.rename-input {
+    flex: 1;
+    min-width: 0;
+    height: 1.35rem;
+    padding: 0 0.3rem;
+    border: none;
+    border-radius: 4px;
+    background: $surface;
+    color: $text-primary;
+    font: inherit;
+    outline: 2px solid $accent;
+}
+
+.problem-badge {
+    flex-shrink: 0;
+    min-width: 1.1rem;
+    padding: 0 0.3rem;
+    border-radius: 4px;
+    background: color-mix(in srgb, $status-warning 25%, transparent);
+    color: $text-primary;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1.1rem;
+    text-align: center;
+}
+
+.problem-badge-error {
+    background: color-mix(in srgb, $status-danger 28%, transparent);
+}
+
+.explorer-resizer {
+    width: 4px;
+    flex-shrink: 0;
+    cursor: col-resize;
+    background: transparent;
+}
+
+.explorer-resizer:hover,
+.explorer-resizer:focus-visible {
+    background: color-mix(in srgb, $accent 45%, transparent);
+    outline: none;
+}
+
+.drawer-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: flex;
+}
+
+.drawer {
+    display: flex;
+    width: min(18rem, 85%);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.24);
+}
+
+.drawer > .explorer {
+    flex: 1;
+}
+
+.drawer-scrim {
+    flex: 1;
+    padding: 0;
+    border: none;
+    background: color-mix(in srgb, black 18%, transparent);
+    cursor: default;
+}
+
+.editor-column {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+}
+
+.editor-column-stacked {
+    flex-direction: column;
+}
+
+.editor-group {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+}
+
+.group-resizer,
+.group-resizer-stacked {
+    flex-shrink: 0;
+    background: $sidebar;
+}
+
+.group-resizer {
+    width: 4px;
+    cursor: col-resize;
+}
+
+.group-resizer-stacked {
+    height: 4px;
+    cursor: row-resize;
+}
+
+.group-resizer:hover,
+.group-resizer:focus-visible,
+.group-resizer-stacked:hover,
+.group-resizer-stacked:focus-visible {
+    background: color-mix(in srgb, $accent 45%, transparent);
+    outline: none;
+}
+
+.tab-strip-unfocused .editor-tab-active {
+    color: $muted;
+}
+
+.editor-tab-drop-before::before,
+.editor-tab-drop-after::after {
+    content: "";
+    position: absolute;
+    top: 0.25rem;
+    bottom: 0;
+    width: 2px;
+    background: $accent;
+}
+
+.editor-tab-drop-before::before {
+    inset-inline-start: -2px;
+}
+
+.editor-tab-drop-after::after {
+    inset-inline-end: -2px;
+}
+
+.drop-catcher {
+    position: absolute;
+    inset: 0;
+    z-index: $z-index-drag-layer;
+}
+
+.drop-zone {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, $accent 18%, transparent);
+    pointer-events: none;
+}
+
+.drop-zone-end {
+    inset-inline-start: 50%;
+}
+
+.drop-zone-bottom {
+    top: 50%;
+}
+
+.reference-tab {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+    padding: 0.25rem 0.75rem 0.75rem;
+}
+
+.tab-strip {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    height: 2.5rem;
+    flex-shrink: 0;
+    padding: 0 0.35rem;
+    background: $sidebar;
+}
+
+.tab-list {
+    display: flex;
+    flex: 1;
+    align-self: stretch;
+    align-items: flex-end;
+    gap: 2px;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+.editor-tab {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    height: 2.125rem;
+    max-width: 14rem;
+    flex-shrink: 0;
+    padding: 0 0.3rem 0 0.65rem;
+    border-radius: 6px 6px 0 0;
+    color: $muted;
+    cursor: pointer;
+    user-select: none;
+}
+
+.editor-tab:hover {
+    background: $hover;
+}
+
+.editor-tab-active,
+.editor-tab-active:hover {
+    background: $surface;
+    color: $text-primary;
+}
+
+.editor-tab-preview .editor-tab-title {
+    font-style: italic;
+}
+
+.editor-tab-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.editor-tab-detail {
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: $muted;
+    font-size: 0.75rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dirty-dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: $text-primary;
+}
+
+.tab-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    opacity: 0;
+}
+
+.editor-tab:hover .tab-close,
+.editor-tab-active .tab-close,
+.tab-close:focus-visible {
+    opacity: 1;
+}
+
+.tab-close:hover {
+    background: $hover;
+}
+
+.editor-area {
+    position: relative;
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+}
+
+.empty-editor {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.9rem;
+    padding: 1rem;
+    color: $muted;
+    text-align: center;
+}
+
+.empty-editor p {
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+.empty-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.kbd {
+    padding: 0 0.3rem;
+    border-radius: 4px;
+    background: color-mix(in srgb, $accent-foreground 22%, transparent);
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.text-tab {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+}
+
+.header-strip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: 2.25rem;
+    flex-shrink: 0;
+    padding: 0 0.5rem 0 0.75rem;
+    background: $raised;
+}
+
+.message-slot {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+    color: $muted;
+}
+
+.message-error {
+    color: $status-danger;
+}
+
+.message-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.button-group {
+    display: flex;
+    flex-shrink: 0;
+    gap: 0.25rem;
+}
+
+.strip-button {
+    height: 1.625rem;
+    padding: 0 0.55rem;
+    background: transparent;
+    color: $text-primary;
+    font-weight: 500;
+}
+
+.strip-button:hover:not(:disabled) {
+    background: $hover;
+}
+
+.slot-action,
+.slot-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-shrink: 0;
+    height: 1.375rem;
+    padding: 0 0.45rem;
+    border: none;
+    border-radius: 5px;
+    background: $hover;
+    color: $text-primary;
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.slot-more {
+    background: transparent;
+    color: $muted;
+}
+
+.slot-action:hover,
+.slot-more:hover {
+    background: color-mix(in srgb, $text-primary 12%, transparent);
+}
+
+.slot-action:focus-visible,
+.slot-more:focus-visible,
+.lock-popup-button:focus-visible {
+    outline: 2px solid $accent;
+    outline-offset: -2px;
+}
+
+.more-popover,
+.lock-popup {
+    position: fixed;
+    z-index: $z-index-context-menu;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    max-width: 22rem;
+    padding: 0.5rem;
+    border-radius: 8px;
+    background: $raised;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.24);
+    color: $text-primary;
+    font-size: 0.8125rem;
+}
+
+.more-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 1.5rem;
+}
+
+.more-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.lock-popup-button {
+    align-self: flex-start;
+    height: 1.5rem;
+    padding: 0 0.5rem;
+    border: none;
+    border-radius: 5px;
+    background: $accent;
+    color: $accent-foreground;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.unit-gutter {
+    width: 1.25rem;
+}
+
+.run-marker,
+.lock-marker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
+    height: 1rem;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: $muted;
+    cursor: pointer;
+}
+
+.run-marker:hover {
+    background: $hover;
+    color: $status-success;
+}
+
+.run-marker-running,
+.run-marker-running:hover {
+    background: color-mix(in srgb, $status-success 22%, transparent);
+    color: $status-success;
+}
+
+.lock-marker {
+    color: $status-warning;
+    cursor: help;
+}
+
+.locked-line {
+    background: color-mix(in srgb, $status-warning 7%, transparent);
+}
+
+.breakpoint-gutter {
+    width: 0.9rem;
+    cursor: pointer;
+}
+
+.breakpoint {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 0.9rem;
+    height: 1rem;
+    color: $status-danger;
+}
+
+.paused-line {
+    background: color-mix(in srgb, $status-warning 22%, transparent);
+}
+
+.watch-tooltip {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    max-width: 28rem;
+    padding: 0.35rem 0.5rem;
+    border-radius: 6px;
+    background: $raised;
+    color: $text-primary;
+    font-size: 0.75rem;
+}
+
+.watch-tooltip-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.watch-tooltip-value {
+    flex: 1;
+    min-width: 0;
+    font-family: $mono;
+    overflow-wrap: anywhere;
+}
+
+.watch-tooltip-pin {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: $muted;
+    cursor: pointer;
+}
+
+.watch-tooltip-pin:hover {
+    background: $hover;
+    color: $text-primary;
+}
+
+.watch {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-top: 0.35rem;
+}
+
+.watch-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.watch-paused {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    background: color-mix(in srgb, $status-warning 14%, transparent);
+    color: $text-primary;
+}
+
+.watch-location {
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.watch-location:disabled {
+    cursor: default;
+}
+
+.watch-heading {
+    margin: 0.25rem 0 0;
+    padding: 0 0.5rem;
+    color: $muted;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.watch-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 1.6rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 6px;
+}
+
+.watch-row:hover {
+    background: $hover;
+}
+
+.watch-name {
+    flex-shrink: 0;
+    font-family: $mono;
+    font-weight: 600;
+}
+
+.watch-value {
+    flex: 1;
+    min-width: 0;
+    font-family: $mono;
+    overflow-wrap: anywhere;
+}
+
+.diff-view {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+}
+
+.diff-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: 2.25rem;
+    flex-shrink: 0;
+    padding: 0 0.5rem 0 0.75rem;
+}
+
+.diff-title {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.diff-legend {
+    display: flex;
+    gap: 0.75rem;
+    color: $muted;
+}
+
+.diff-legend-removed::before,
+.diff-legend-added::before {
+    display: inline-block;
+    width: 0.6rem;
+    height: 0.6rem;
+    margin-inline-end: 0.3rem;
+    border-radius: 2px;
+    content: "";
+}
+
+.diff-legend-removed::before {
+    background: color-mix(in srgb, $status-danger 45%, transparent);
+}
+
+.diff-legend-added::before {
+    background: color-mix(in srgb, $status-success 45%, transparent);
+}
+
+.diff-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-height: 0;
+    padding: 0 0.75rem 0.75rem;
+    overflow: auto;
+}
+
+.diff-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 6px;
+    background: $sidebar;
+}
+
+.diff-section-label {
+    overflow: hidden;
+    color: $muted;
+    font-family: $mono;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.diff-lines {
+    margin: 0;
+    overflow-x: auto;
+    font-family: $mono;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+}
+
+.diff-line {
+    padding: 0 0.5rem;
+    white-space: pre;
+}
+
+.diff-added {
+    background: color-mix(in srgb, $status-success 16%, transparent);
+}
+
+.diff-removed {
+    background: color-mix(in srgb, $status-danger 16%, transparent);
+}
+
+.diff-mark {
+    display: inline-block;
+    width: 1.25rem;
+    color: $muted;
+    user-select: none;
+}
+
+.diff-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.text-body {
+    position: relative;
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+
+.text-body > * {
+    flex: 1;
+    min-width: 0;
+}
+
+.asset-tab {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+}
+
+.asset-tab > * {
+    flex: 1;
+    min-width: 524px;
+}
+
+.asset-placeholder {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    color: $muted;
+    text-align: center;
+}
+
+.asset-placeholder p {
+    margin: 0;
+}
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    height: 13rem;
+    flex-shrink: 0;
+    background: $sidebar;
+}
+
+.panel-closed {
+    height: auto;
+}
+
+.panel-tabs {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    height: 2.125rem;
+    flex-shrink: 0;
+    padding: 0 0.35rem;
+}
+
+.panel-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    height: 1.75rem;
+    padding: 0 0.6rem;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: $muted;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.panel-tab:hover {
+    background: $hover;
+}
+
+.panel-tab-active,
+.panel-tab-active:hover {
+    background: $raised;
+    color: $text-primary;
+}
+
+.flex-spacer {
+    flex: 1;
+}
+
+.panel-body {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 0 0.35rem 0.5rem;
+}
+
+.panel-empty {
+    margin: 0;
+    padding: 0.75rem;
+    color: $muted;
+}
+
+.problem-group + .problem-group {
+    margin-top: 0.25rem;
+}
+
+.problem-file,
+.problem-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: 100%;
+    min-height: 1.6rem;
+    padding: 0.15rem 0.5rem;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: $text-primary;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+}
+
+.problem-file:hover,
+.problem-row:hover {
+    background: $hover;
+}
+
+.problem-file-name {
+    font-weight: 600;
+}
+
+.problem-list,
+.output-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.problem-row {
+    padding-inline-start: 1.6rem;
+}
+
+.problem-message {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.output-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.45rem;
+    width: 100%;
+    padding: 0.2rem 0.5rem;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: $text-primary;
+    font-family: $mono;
+    font-size: 0.75rem;
+    text-align: start;
+    cursor: pointer;
+}
+
+.output-row:hover:not(:disabled) {
+    background: $hover;
+}
+
+.output-row:disabled {
+    cursor: default;
+}
+
+.panel-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    height: 1.5rem;
+    padding: 0 0.5rem;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: $muted;
+    font: inherit;
+    cursor: pointer;
+}
+
+.panel-action:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.panel-action:hover:not(:disabled) {
+    background: $hover;
+    color: $text-primary;
+}
+
+.reference {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding-top: 0.35rem;
+}
+
+.reference-search {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0 0.5rem;
+    border-radius: 6px;
+    background: $raised;
+    color: $muted;
+}
+
+.reference-search input {
+    flex: 1;
+    min-width: 0;
+    height: 1.75rem;
+    border: none;
+    background: transparent;
+    color: $text-primary;
+    font: inherit;
+    outline: none;
+}
+
+.reference-kind {
+    padding: 0.25rem 0.5rem;
+    color: $muted;
+    font-weight: 600;
+}
+
+.reference-name {
+    flex: 1;
+    min-width: 0;
+    font-family: $mono;
+    font-size: 0.75rem;
+    overflow-wrap: anywhere;
+}
+
+.extension-host {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+}
+
+.output-time {
+    flex-shrink: 0;
+    color: $muted;
+}
+
+.icon-error {
+    flex-shrink: 0;
+    color: $status-danger;
+}
+
+.icon-warning {
+    flex-shrink: 0;
+    color: $status-warning;
+}
+
+.icon-info {
+    flex-shrink: 0;
+    color: $status-info;
+}
+
+.hidden-input {
+    display: none;
+}
+
+.context-menu {
+    position: fixed;
+    z-index: $z-index-context-menu;
+    min-width: 12rem;
+    max-width: 20rem;
+    padding: 0.25rem;
+    border-radius: 8px;
+    background: $raised;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.24);
+    color: $text-primary;
+    font-size: 0.8125rem;
+}
+
+.context-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    height: 1.75rem;
+    padding: 0 0.6rem;
+    border: none;
+    border-radius: 5px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+}
+
+.context-menu-item:hover:not(:disabled),
+.context-menu-item:focus-visible {
+    background: $selected;
+    outline: none;
+}
+
+.context-menu-item:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.context-menu-separated {
+    margin-top: 0.3rem;
+}
+
+.context-menu-icon-space {
+    width: 14px;
+    flex-shrink: 0;
+}
+
+.context-menu-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.context-menu-hint {
+    color: $muted;
+    font-size: 0.75rem;
+}
+
+.quick-open-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: $z-index-modal;
+    display: flex;
+    justify-content: center;
+    padding: 4rem 1rem 1rem;
+    background: color-mix(in srgb, black 20%, transparent);
+}
+
+.quick-open {
+    display: flex;
+    flex-direction: column;
+    width: min(36rem, 100%);
+    max-height: min(28rem, 80vh);
+    overflow: hidden;
+    border-radius: 10px;
+    background: $surface;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    color: $text-primary;
+    font-size: 0.8125rem;
+}
+
+.quick-open-search {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    background: $raised;
+    color: $muted;
+}
+
+.quick-open-input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    color: $text-primary;
+    font: inherit;
+    font-size: 0.875rem;
+    outline: none;
+}
+
+.quick-open-list {
+    margin: 0;
+    padding: 0.25rem;
+    overflow: auto;
+    list-style: none;
+}
+
+.quick-open-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: 1.875rem;
+    padding: 0 0.6rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.quick-open-item-active {
+    background: $selected;
+}
+
+.block-hover {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    max-width: 26rem;
+    padding: 0.4rem 0.55rem;
+    color: $text-primary;
+    font-size: 0.8125rem;
+}
+
+.block-hover-row {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-weight: 600;
+}
+
+.block-hover-swatch {
+    flex: none;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 3px;
+    background: $muted;
+}
+
+.block-hover-doc {
+    font-family: $mono;
+    white-space: pre-wrap;
+}
+
+.block-hover-opcode {
+    color: $muted;
+    font-size: 0.75rem;
+}
+
+.custom-asset {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+}
+
+.custom-asset-body {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    padding: 1rem;
+    overflow: auto;
+    background: $sidebar;
+}
+
+.custom-asset-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    background: repeating-conic-gradient($raised 0% 25%, transparent 0% 50%) 0 0 / 16px 16px;
+}
+
+.custom-asset-audio {
+    width: min(100%, 28rem);
+}
+
+.custom-asset-binary {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    color: $muted;
+}
+
+.custom-asset-binary p {
+    margin: 0;
+}
+
+.custom-asset-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    flex-shrink: 0;
+}
+
+.custom-asset-name {
+    min-width: 0;
+    overflow: hidden;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.custom-asset-meta {
+    flex: 1;
+    color: $muted;
+    white-space: nowrap;
+}

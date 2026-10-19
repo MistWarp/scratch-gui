@@ -15,7 +15,7 @@ import {setRestore} from '../reducers/restore-deletion';
 import DragConstants from '../lib/constants/drag-constants';
 import TargetPaneComponent from '../components/target-pane/target-pane.jsx';
 import {getSpriteLibrary} from '../lib/libraries/tw-async-libraries';
-import {handleFileUpload, spriteUpload} from '../lib/file-uploader.js';
+import {uploadSprites} from '../lib/asset-upload.js';
 import sharedMessages from '../lib/constants/shared-messages';
 import {emptySprite} from '../lib/utils/empty-assets';
 import {highlightTarget} from '../reducers/targets';
@@ -200,29 +200,14 @@ class TargetPane extends React.Component {
         return true;
     }
     handleSpriteUpload (e) {
-        const vm = this.props.vm;
-        const completedFiles = new Set();
-        const finishFile = (fileIndex, fileCount) => {
-            completedFiles.add(fileIndex);
-            if (completedFiles.size === fileCount) {
-                this.props.onCloseImporting();
-            }
-        };
-        const failFile = (error, fileIndex, fileCount) => {
-            this.props.onShowImportError(error);
-            finishFile(fileIndex, fileCount);
-        };
-        this.props.onShowImporting();
-        const fileCount = handleFileUpload(e.target, (buffer, fileType, fileName, fileIndex, totalFiles) => {
-            spriteUpload(buffer, fileType, fileName, vm, newSprite => {
-                this.handleNewSprite(newSprite)
-                    .then(() => {
-                        finishFile(fileIndex, totalFiles);
-                    })
-                    .catch(error => failFile(error, fileIndex, totalFiles));
-            }, error => failFile(error, fileIndex, totalFiles));
-        }, failFile);
-        if (fileCount === 0) this.props.onCloseImporting();
+        return uploadSprites({
+            vm: this.props.vm,
+            files: e.target,
+            addSprite: this.handleNewSprite,
+            onStart: this.props.onShowImporting,
+            onEnd: this.props.onCloseImporting,
+            onError: this.props.onShowImportError
+        });
     }
     setFileInput (input) {
         this.fileInput = input;

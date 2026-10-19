@@ -147,3 +147,22 @@
 :global([data-menu-fit~="save-label"]) .save-action {
     display: none;
 }
+
+.open-unapplied {
+    appearance: none;
+    height: 1.5rem;
+    margin: auto 0.25rem;
+    padding: 0 0.5rem;
+    border: 0;
+    border-radius: 5px;
+    background: color-mix(in srgb, currentColor 14%, transparent);
+    color: inherit;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.open-unapplied:hover {
+    background: color-mix(in srgb, currentColor 22%, transparent);
+}

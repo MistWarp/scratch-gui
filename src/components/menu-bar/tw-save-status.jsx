@@ -14,13 +14,25 @@ import {getShortcutKey} from '../../lib/shortcuts/registry.js';
 import {isMac} from '../../lib/utils/browser';
 
 import {Cloud, Download, Save} from 'lucide-react';
-import smartSave, {guardSavedCallback} from '../../lib/mw/smart-save.js';
+import smartSave, {EXPLICIT_SAVE_EVENT, guardSavedCallback} from '../../lib/mw/smart-save.js';
+import {subscribeTexts, unappliedFileCount} from '../../lib/code-mode/text-store.js';
+import {revealInCode} from '../../reducers/editor-tab.js';
 import {getSaveFeedback, setSaveFeedback, SAVE_FEEDBACK_EVENT} from '../../lib/mw/save-feedback.js';
 import {getSetting, onSettingsChanged} from '../../lib/mw/autosave-settings.js';
 
 import styles from './save-status.css';
 
 const messages = defineMessages({
+    savedWithUnapplied: {
+        defaultMessage: 'Saved. {count, plural, one {# file has} other {# files have}} unapplied changes',
+        description: 'Menu bar save status after an explicit save while code text tabs still have unapplied edits',
+        id: 'mw.saveStatus.savedWithUnapplied'
+    },
+    openUnapplied: {
+        defaultMessage: 'Open',
+        description: 'Button next to the save status that opens the first file with unapplied code changes',
+        id: 'mw.saveStatus.openUnapplied'
+    },
     saving: {
         defaultMessage: 'Saving…',
         description: 'Menu bar save status while the project uploads to MistWarp',
@@ -162,10 +174,25 @@ const TWSaveStatus = ({
     roturReady,
     onAlertDone,
     onCloseAlert,
+    onOpenUnapplied,
     onProjectUnchanged,
     onShowAlert,
     vm
 }) => {
+    const [unappliedNotice, setUnappliedNotice] = useState(0);
+    useEffect(() => {
+        const saved = event => {
+            if (event.detail && event.detail.vm !== vm) return;
+            setUnappliedNotice(unappliedFileCount());
+        };
+        const texts = () => setUnappliedNotice(count => (count ? unappliedFileCount() : 0));
+        window.addEventListener(EXPLICIT_SAVE_EVENT, saved);
+        const unsubscribe = subscribeTexts(texts);
+        return () => {
+            window.removeEventListener(EXPLICIT_SAVE_EVENT, saved);
+            unsubscribe();
+        };
+    }, [vm]);
     const [feedback, setFeedback] = useState(() => getSaveFeedback(vm));
     const [autosave, setAutosave] = useState(() => getSetting('enabled'));
     const [downloadError, setDownloadError] = useState(false);
@@ -198,6 +225,7 @@ const TWSaveStatus = ({
         const reset = () => {
             setSaveFeedback(vm, null);
             setDownloadError(false);
+            setUnappliedNotice(0);
         };
         setOperationActive(isProjectOperationActive(vm));
         window.addEventListener(SAVE_FEEDBACK_EVENT, update);
@@ -228,7 +256,10 @@ const TWSaveStatus = ({
                 vm,
                 initialTitle: projectTitle,
                 action: mistwarpAction,
-                onPublished: guardSavedCallback(vm, onProjectUnchanged)
+                onPublished: guardSavedCallback(vm, () => {
+                    onProjectUnchanged();
+                    setUnappliedNotice(unappliedFileCount());
+                })
             });
         } else {
             setBusy(true);
@@ -239,7 +270,10 @@ const TWSaveStatus = ({
         }
     }, [vm, projectTitle, mistwarpAction, onProjectUnchanged, unavailable]);
     const status = getSaveStatus({busy, downloadError, feedback, isOwner, projectChanged, readOnly});
-    const statusText = status ? intl.formatMessage(messages[status]) : '';
+    const showUnapplied = status === 'saved' && unappliedNotice > 0 && !projectChanged;
+    const statusText = showUnapplied ?
+        intl.formatMessage(messages.savedWithUnapplied, {count: unappliedNotice}) :
+        (status ? intl.formatMessage(messages[status]) : '');
     const label = intl.formatMessage(communityEnabled ?
         (mistwarpAction === 'remix' ? messages.remixLabel :
             mistwarpAction === 'update' ? messages.updateLabel : messages.uploadLabel) :
@@ -303,6 +337,15 @@ const TWSaveStatus = ({
                     </span>
                 ) : null}
             </button>
+            {showUnapplied ? (
+                <button
+                    type="button"
+                    className={styles.openUnapplied}
+                    onClick={onOpenUnapplied}
+                >
+                    {intl.formatMessage(messages.openUnapplied)}
+                </button>
+            ) : null}
             {filterInlineAlerts(alertsList).length > 0 ? <InlineMessages /> : null}
         </React.Fragment>
     );
@@ -317,6 +360,7 @@ TWSaveStatus.propTypes = {
     roturReady: PropTypes.bool,
     onAlertDone: PropTypes.func,
     onCloseAlert: PropTypes.func,
+    onOpenUnapplied: PropTypes.func,
     onProjectUnchanged: PropTypes.func,
     onShowAlert: PropTypes.func,
     vm: PropTypes.shape({
@@ -340,6 +384,7 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => ({
     onAlertDone: alertId => showAlertWithTimeout(dispatch, alertId),
     onCloseAlert: alertId => dispatch(closeAlertWithId(alertId)),
+    onOpenUnapplied: () => dispatch(revealInCode({kind: 'unapplied'})),
     onProjectUnchanged: () => dispatch(setProjectUnchanged()),
     onShowAlert: alertId => dispatch(showStandardAlert(alertId))
 });

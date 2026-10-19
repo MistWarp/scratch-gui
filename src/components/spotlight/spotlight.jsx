@@ -7,7 +7,9 @@ import {Search} from 'lucide-react';
 import {isRtl} from '@turbowarp/scratch-l10n';
 
 import LazyScratchBlocks from '../../lib/tw-lazy-scratch-blocks';
-import {updateCallbacks} from '../../lib/shortcuts/event-router.js';
+import {getShortcuts, updateCallbacks} from '../../lib/shortcuts/event-router.js';
+import formatShortcutDisplay from '../../lib/shortcuts/display.js';
+import {switchToBlocks, switchToCode} from '../../lib/code-mode/mode-switch.js';
 
 import WorkspaceQuerier from '../../lib/spotlight/WorkspaceQuerier.js';
 import {getBlockHeight} from '../../lib/spotlight/BlockRenderer.js';
@@ -26,7 +28,7 @@ import {
     openDebuggerModal,
     openRestorePointModal
 } from '../../reducers/modals.js';
-import {activateTab} from '../../reducers/editor-tab.js';
+import {showBlocksTab} from '../../reducers/editor-tab.js';
 import {openCollaborationModal} from '../../reducers/collaboration.js';
 import {HELP_ENTRIES} from '../../lib/help/index.js';
 import {renderMenuItem, calculateActualHeight} from '../../lib/spotlight/renderingUtils.js';
@@ -42,6 +44,12 @@ import {
 import {loadAddonMessagesForLocale, formatAddonMessage} from '../find-bar/addon-i18n';
 
 
+const withShortcut = (label, id) => {
+    const shortcut = getShortcuts().find(item => item.id === id);
+    const keys = shortcut ? formatShortcutDisplay(shortcut.key) : '';
+    return keys ? `${label} (${keys})` : label;
+};
+
 const PREVIEW_LIMIT = 32;
 const POPUP_SCALE = 48;
 const POPUP_WIDTH = 30;
@@ -52,9 +60,9 @@ const POPUP_MAX_HEIGHT = 40;
  * @param {object} props the props for the component
  * @returns {null} nothing
  */
-export default function NativeSpotlight ({vm, locale, activeTabIndex, isPlayerOnly, dispatch}) {
-    const activeTabIndexRef = useRef(activeTabIndex);
-    activeTabIndexRef.current = activeTabIndex;
+export default function NativeSpotlight ({vm, locale, blocksEditorVisible, isPlayerOnly, dispatch}) {
+    const blocksVisibleRef = useRef(blocksEditorVisible);
+    blocksVisibleRef.current = blocksEditorVisible;
 
     const isPlayerOnlyRef = useRef(isPlayerOnly);
     isPlayerOnlyRef.current = isPlayerOnly;
@@ -160,9 +168,9 @@ export default function NativeSpotlight ({vm, locale, activeTabIndex, isPlayerOn
                     run: () => dispatchAction(openExtensionLibrary())
                 },
                 {
-                    id: 'manage-extensions',
-                    label: 'Manage Extensions',
-                    keywords: ['extension', 'manager', 'remove', 'reorder'],
+                    id: 'reveal-extensions',
+                    label: 'Show Extensions in Code Mode',
+                    keywords: ['extension', 'manager', 'manage', 'remove', 'reorder', 'code'],
                     run: () => dispatchAction(openExtensionManagerModal())
                 },
                 {
@@ -215,21 +223,37 @@ export default function NativeSpotlight ({vm, locale, activeTabIndex, isPlayerOn
                 },
                 {
                     id: 'tab-code',
-                    label: 'Go to Code',
-                    keywords: ['tab', 'scripts', 'workspace', 'blocks'],
-                    run: () => dispatchAction(activateTab(0))
+                    label: 'Go to Scripts',
+                    keywords: ['tab', 'scripts', 'workspace', 'blocks', 'code'],
+                    run: () => dispatchAction(showBlocksTab(0))
                 },
                 {
                     id: 'tab-costumes',
                     label: 'Go to Costumes',
                     keywords: ['tab', 'paint', 'draw', 'images'],
-                    run: () => dispatchAction(activateTab(1))
+                    run: () => dispatchAction(showBlocksTab(1))
                 },
                 {
                     id: 'tab-sounds',
                     label: 'Go to Sounds',
                     keywords: ['tab', 'audio', 'record'],
-                    run: () => dispatchAction(activateTab(2))
+                    run: () => dispatchAction(showBlocksTab(2))
+                },
+                {
+                    id: 'mode-blocks',
+                    label: withShortcut('Switch to Blocks mode', 'toggleEditorMode'),
+                    keywords: ['mode', 'blocks', 'scratch', 'visual'],
+                    run: () => switchToBlocks({dispatch: dispatchRef.current, vm})
+                },
+                {
+                    id: 'mode-code',
+                    label: withShortcut('Switch to Code mode', 'toggleEditorMode'),
+                    keywords: ['mode', 'code', 'text', 'fractch', 'explorer', 'files'],
+                    run: () => switchToCode({
+                        dispatch: dispatchRef.current,
+                        vm,
+                        blocksVisible: blocksVisibleRef.current
+                    })
                 }
             ];
 
@@ -277,7 +301,7 @@ export default function NativeSpotlight ({vm, locale, activeTabIndex, isPlayerOn
 
             function openPopup (centered = false) {
                 if (isPlayerOnlyRef.current) return;
-                if (!centered && activeTabIndexRef.current !== 0) return;
+                if (!centered && !blocksVisibleRef.current) return;
 
                 const workspace = Blockly.getMainWorkspace();
                 if (!workspace) {
@@ -723,8 +747,8 @@ export default function NativeSpotlight ({vm, locale, activeTabIndex, isPlayerOn
 
                 if (!selectedPreview.block) return;
 
-                if (activeTabIndexRef.current !== 0) {
-                    dispatchAction(activateTab(0));
+                if (!blocksVisibleRef.current) {
+                    dispatchAction(showBlocksTab(0));
                     return;
                 }
 
@@ -940,7 +964,7 @@ NativeSpotlight.propTypes = {
         stopAll: PropTypes.func
     }).isRequired,
     locale: PropTypes.string,
-    activeTabIndex: PropTypes.number.isRequired,
+    blocksEditorVisible: PropTypes.bool.isRequired,
     isPlayerOnly: PropTypes.bool,
     dispatch: PropTypes.func.isRequired
 };

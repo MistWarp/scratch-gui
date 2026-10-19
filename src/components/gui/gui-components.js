@@ -16,11 +16,12 @@ import TelemetryModal from '../telemetry-modal/telemetry-modal.jsx';
 import TWRestorePointManager from '../../containers/tw-restore-point-manager.jsx';
 import TWDebugger from '../../containers/tw-debugger.jsx';
 import TWVariableManager from '../../containers/tw-variable-manager.jsx';
-import MWExtensionManagerModal from '../../containers/mw-extension-manager-modal.jsx';
+import ExtensionDevListener from '../../containers/extension-dev-listener.jsx';
 import MWHelpModal from '../../containers/mw-help-modal.jsx';
 import MWProjectThemeModal from '../../containers/mw-project-theme-modal.jsx';
 import MWProductsModal from '../../containers/mw-products-modal.jsx';
 import MWGameItemsModal from '../../containers/mw-game-items-modal.jsx';
+import RecordModal from '../../containers/record-modal.jsx';
 import {retryableLazy} from '../../lib/lazy-with-retry.js';
 
 // Rarely used windows that only mount while open load on demand, so they stay out of the startup bundle.
@@ -35,6 +36,7 @@ const MWProjectMetadataModal = retryableLazy(() => import('../../containers/mw-p
 const TWUnknownPlatformModal = retryableLazy(() => import('../../containers/tw-unknown-platform-modal.jsx'));
 const TWGitModal = retryableLazy(() => import('../../containers/mw-git-modal.jsx'));
 const ExtensionLibrary = retryableLazy(() => import('../../containers/extension-library.jsx'));
+const CodeWorkbench = retryableLazy(() => import('../../containers/code-workbench.jsx'));
 
 const components = {
     Blocks,
@@ -64,12 +66,14 @@ const components = {
     TWVariableManager,
     TWUnknownPlatformModal,
     TWGitModal,
-    MWExtensionManagerModal,
+    ExtensionDevListener,
     MWHelpModal,
     MWProjectThemeModal,
     MWProductsModal,
     MWGameItemsModal,
-    ExtensionLibrary
+    ExtensionLibrary,
+    RecordModal,
+    CodeWorkbench
 };
 
 const lazyComponents = [
@@ -82,7 +86,8 @@ const lazyComponents = [
     MWProjectMetadataModal,
     TWUnknownPlatformModal,
     TWGitModal,
-    ExtensionLibrary
+    ExtensionLibrary,
+    CodeWorkbench
 ];
 
 const getGuiComponents = () => components;

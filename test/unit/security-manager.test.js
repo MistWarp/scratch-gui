@@ -117,19 +117,101 @@ test('only extensions discovered in a platform project use its saved source URL'
     expect(await component.rewriteExtensionURL(pastedText)).toBe(pastedText);
 
     const storedExtension = 'https://example.com/stored.js';
-    component.props.vm._mwInstallingWholeProject = true;
-    await component.canLoadExtensionFromProject(storedExtension);
-    component.props.vm._mwInstallingWholeProject = null;
+    await component.canLoadExtensionFromProject(storedExtension, {wholeProject: true});
     expect(await component.rewriteExtensionURL(storedExtension)).toMatch(
         /^https:\/\/api\.mistwarp\.org\/v1\/projects\/project-1\/extensions\/[a-f0-9]{64}\/source\?k=secret$/
     );
 
     const spriteExtension = 'https://example.com/sprite.js';
-    component.props.vm._mwInstallingWholeProject = false;
-    await component.canLoadExtensionFromProject(spriteExtension);
-    component.props.vm._mwInstallingWholeProject = null;
+    component.acquireModalLock = async () => ({showModal: async () => true});
+    await component.canLoadExtensionFromProject(spriteExtension, {wholeProject: false});
     expect(await component.rewriteExtensionURL(spriteExtension)).toBe(spriteExtension);
 
     window.history.replaceState(null, '', '/editor');
     rememberPlatformProject(null);
+});
+
+test('trusting a project unsandboxes only its own extensions, not ones added later', async () => {
+    const vmSecurityManager = {};
+    const vm = {
+        runtime: {_mwProjectTrusted: true},
+        extensionManager: {securityManager: vmSecurityManager},
+        on: () => {}
+    };
+    const component = new TWSecurityManagerComponent({vm, securityManager: {}});
+    component.componentDidMount();
+    const projectURL = 'data:application/javascript,Scratch.extensions.register({getInfo:()=>({id:"own"})})';
+    const pastedURL = 'data:application/javascript,Scratch.extensions.register({getInfo:()=>({id:"pasted"})})';
+
+    expect(await vmSecurityManager.canLoadExtensionFromProject(projectURL, {wholeProject: true})).toBe(true);
+    expect(await vmSecurityManager.getSandboxMode(projectURL)).toBe('unsandboxed');
+    expect(await vmSecurityManager.getSandboxMode(pastedURL)).toBe('iframe');
+
+    component.handleProjectLoading({stage: 'building'});
+    vm.runtime._mwProjectTrusted = true;
+    expect(await vmSecurityManager.getSandboxMode(projectURL)).toBe('iframe');
+});
+
+test('the extension whose prompt was answered with Load all runs unsandboxed', async () => {
+    window.history.replaceState(null, '', '/editor');
+    rememberPlatformProject(null);
+    const vmSecurityManager = {};
+    const vm = {
+        runtime: {_mwProjectTrusted: false, projectName: 'Trusted project'},
+        extensionManager: {securityManager: vmSecurityManager},
+        on: () => {}
+    };
+    const component = new TWSecurityManagerComponent({vm, securityManager: {}});
+    component.componentDidMount();
+    component.acquireModalLock = async () => ({
+        showModal: async () => {
+            vm.runtime._mwProjectTrusted = true;
+            return true;
+        }
+    });
+    const url = 'https://example.com/first.js';
+    expect(await vmSecurityManager.canLoadExtensionFromProject(url, {wholeProject: true})).toBe(true);
+    expect(await vmSecurityManager.getSandboxMode(url)).toBe('unsandboxed');
+});
+
+test('after Load all, JavaScript-running extensions still prompt and manual trust still applies', async () => {
+    window.history.replaceState(null, '', '/editor');
+    rememberPlatformProject(null);
+    const vmSecurityManager = {};
+    const vm = {
+        runtime: {_mwProjectTrusted: true, projectName: 'Trusted project'},
+        extensionManager: {securityManager: vmSecurityManager},
+        on: () => {}
+    };
+    const component = new TWSecurityManagerComponent({vm, securityManager: {}});
+    component.componentDidMount();
+    const showModal = jest.fn(async () => false);
+    component.acquireModalLock = async () => ({showModal});
+
+    expect(await vmSecurityManager.canLoadExtensionFromProject('builtin:patching')).toBe(false);
+    expect(showModal).toHaveBeenCalled();
+
+    const manualURL = 'https://example.com/manual.js';
+    manuallyTrustExtension(manualURL);
+    expect(await vmSecurityManager.getSandboxMode(manualURL)).toBe('unsandboxed');
+});
+
+test('after Load all, extensions from outside the project load still prompt and stay sandboxed', async () => {
+    window.history.replaceState(null, '', '/editor');
+    rememberPlatformProject(null);
+    const vmSecurityManager = {};
+    const vm = {
+        runtime: {_mwProjectTrusted: true, projectName: 'Trusted project'},
+        extensionManager: {securityManager: vmSecurityManager},
+        on: () => {}
+    };
+    const component = new TWSecurityManagerComponent({vm, securityManager: {}});
+    component.componentDidMount();
+    const showModal = jest.fn(async () => false);
+    component.acquireModalLock = async () => ({showModal});
+
+    const peerURL = 'https://evil.example/peer.js';
+    expect(await vmSecurityManager.canLoadExtensionFromProject(peerURL)).toBe(false);
+    expect(showModal).toHaveBeenCalled();
+    expect(await vmSecurityManager.getSandboxMode(peerURL)).toBe('iframe');
 });

@@ -1,4 +1,7 @@
 import Utils from '../find-bar/Utils.js';
+import {isBlocksEditorVisible} from '../editor-visibility.js';
+import {showBlocksTab} from '../../reducers/editor-tab.js';
+import {whenWorkspaceReady} from '../code-mode/workspace-ready.js';
 import debuggerStyles from '../../components/tw-debugger/debugger.module.css';
 
 const COLOR_CLASSES = [
@@ -59,11 +62,8 @@ const createBlockHelpers = vm => {
     const activateCodeTab = () => {
         const store = window.ReduxStore;
         if (!store) return;
-        if (store.getState().scratchGui.editorTab.activeTabIndex !== 0) {
-            store.dispatch({
-                type: 'scratch-gui/navigation/ACTIVATE_TAB',
-                activeTabIndex: 0
-            });
+        if (!isBlocksEditorVisible(store.getState())) {
+            store.dispatch(showBlocksTab(0));
         }
     };
 
@@ -88,7 +88,9 @@ const createBlockHelpers = vm => {
             link.addEventListener('mousedown', () => {
                 switchToSprite(originalId);
                 activateCodeTab();
-                goToBlock(blockId);
+                whenWorkspaceReady(originalId).then(ready => {
+                    if (ready) goToBlock(blockId);
+                });
             });
         } else {
             link.classList.add(debuggerStyles['sa-debugger-log-link-unknown']);

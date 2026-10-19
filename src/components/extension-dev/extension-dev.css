@@ -1,0 +1,529 @@
+@import "../../css/colors.css";
+
+$border: color-mix(in srgb, $text-primary 12%, transparent);
+$hover: color-mix(in srgb, $text-primary 6%, transparent);
+$muted: $text-primary-transparent;
+$accent: $looks-secondary;
+$danger: $status-danger;
+$mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+.root {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    background: $ui-modal-background;
+    color: $text-primary;
+    font-size: 0.8125rem;
+}
+
+.text-button,
+.primary-button,
+.secondary-button,
+.danger-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: none;
+    border-radius: 6px;
+    font: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.text-button:hover:not(:disabled) {
+    background: $hover;
+}
+
+.text-button:disabled,
+.primary-button:disabled,
+.secondary-button:disabled,
+.danger-button:disabled,
+.icon-button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.text-button {
+    padding: 0.4rem 0.6rem;
+    background: transparent;
+    color: $text-primary;
+    font-weight: 600;
+}
+
+.primary-button {
+    padding: 0.4rem 0.8rem;
+    background: $accent;
+    color: $ui-white;
+    font-weight: 600;
+}
+
+.primary-button:hover:not(:disabled) {
+    background: color-mix(in srgb, $accent 85%, black);
+}
+
+.secondary-button {
+    padding: 0.4rem 0.8rem;
+    background: $hover;
+    color: $text-primary;
+    font-weight: 600;
+}
+
+.danger-button {
+    padding: 0.4rem 0.8rem;
+    background: $danger;
+    color: $ui-white;
+    font-weight: 600;
+}
+
+.danger-button:hover:not(:disabled) {
+    background: color-mix(in srgb, $danger 85%, black);
+}
+
+.danger {
+    color: $danger;
+}
+
+.icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: $text-primary;
+    cursor: pointer;
+}
+
+.icon-button {
+    width: 1.75rem;
+    height: 1.75rem;
+}
+
+.icon-button:hover:not(:disabled) {
+    background: $hover;
+    color: $text-primary;
+}
+
+.action-menu {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.action-menu-list {
+    position: fixed;
+    z-index: 10000;
+    display: flex;
+    min-width: 13rem;
+    flex-direction: column;
+    padding: 0.3rem;
+    border: 1px solid $border;
+    border-radius: 8px;
+    background: $ui-modal-background;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+}
+
+.action-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.4rem 0.55rem;
+    border: none;
+    border-radius: 5px;
+    background: transparent;
+    color: $text-primary;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+}
+
+.action-menu-item.danger {
+    color: $danger;
+}
+
+.action-menu-item:hover:not(:disabled) {
+    background: $hover;
+}
+
+.action-menu-item:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.editor-pane {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    flex-direction: column;
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    height: 2.75rem;
+    flex-shrink: 0;
+    padding: 0 0.75rem;
+    border-bottom: 1px solid $border;
+    overflow: hidden;
+}
+
+.toolbar-title {
+    display: flex;
+    flex: 1;
+    min-width: 6rem;
+    align-items: baseline;
+    gap: 0.5rem;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.pane-heading {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.toolbar-facts {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: $muted;
+    font-size: 0.75rem;
+}
+
+.status {
+    display: inline-flex;
+    flex: 0 1 16rem;
+    min-width: 0;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.3rem;
+    color: $muted;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.status svg {
+    flex-shrink: 0;
+}
+
+.status-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.status-error {
+    color: $danger;
+}
+
+.toggle {
+    flex-shrink: 0;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.toggle input {
+    margin: 0;
+    accent-color: $accent;
+}
+
+.banner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: color-mix(in srgb, $status-info 10%, $ui-modal-background);
+    border-bottom: 1px solid $border;
+}
+
+.banner-error {
+    background: color-mix(in srgb, $danger 10%, $ui-modal-background);
+}
+
+.banner-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.15rem;
+    line-height: 1.4;
+}
+
+.editor-host {
+    position: relative;
+    display: flex;
+    flex: 1;
+    min-height: 8rem;
+}
+
+.code-editor {
+    position: absolute;
+    inset: 0;
+    --mw-code-keyword: #8b2fc9;
+    --mw-code-string: #0a7d4f;
+    --mw-code-number: #b45309;
+    --mw-code-comment: #6b7280;
+    --mw-code-function: #1d63c7;
+    --mw-code-definition: #0f5f9e;
+    --mw-code-property: #2b4c80;
+    --mw-code-type: #a3367a;
+}
+
+.code-editor[data-dark="true"] {
+    --mw-code-keyword: #d19bff;
+    --mw-code-string: #7ee2a8;
+    --mw-code-number: #ffc074;
+    --mw-code-comment: #8f98a8;
+    --mw-code-function: #7fb6ff;
+    --mw-code-definition: #9ad1ff;
+    --mw-code-property: #b9c8ec;
+    --mw-code-type: #ff9fd5;
+}
+
+.code-editor :global(.cm-editor) {
+    height: 100%;
+}
+
+.pane-empty {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 2rem;
+    color: $muted;
+    text-align: center;
+}
+
+.tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.75rem;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: $muted;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.tab:hover {
+    color: $text-primary;
+}
+
+.tab-spacer {
+    flex: 1;
+}
+
+.remove-pane,
+.new-pane {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+}
+
+.remove-body,
+.new-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 1.25rem 1.5rem;
+}
+
+.new-body {
+    max-width: 34rem;
+}
+
+.remove-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 1rem;
+    font-size: 1.0625rem;
+    font-weight: 700;
+}
+
+.sub-heading {
+    margin: 1.25rem 0 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+.target-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.target-row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.4rem 0.5rem;
+    border-radius: 6px;
+    background: $ui-modal-inset;
+}
+
+.target-thumb {
+    display: inline-flex;
+    width: 2rem;
+    height: 2rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+.target-thumb img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.target-name {
+    font-weight: 600;
+}
+
+.target-counts {
+    color: $muted;
+}
+
+.remove-note {
+    margin: 0;
+    color: $muted;
+}
+
+.consequence-list {
+    margin: 0;
+    padding-inline-start: 1.25rem;
+    line-height: 1.55;
+}
+
+.error-text {
+    margin: 0.5rem 0 0;
+    color: $danger;
+    font-size: 0.75rem;
+}
+
+.remove-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    border-top: 1px solid $border;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin-bottom: 0.9rem;
+}
+
+.field-label {
+    font-weight: 600;
+}
+
+.field-hint {
+    color: $muted;
+    font-size: 0.75rem;
+}
+
+.input {
+    padding: 0.45rem 0.6rem;
+    border: 1px solid $border;
+    border-radius: 6px;
+    background: $input-background;
+    color: $text-primary;
+    font: inherit;
+}
+
+.input:focus {
+    border-color: $accent;
+    outline: none;
+}
+
+.input-invalid {
+    border-color: $danger;
+}
+
+.fieldset {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 0 0 0.9rem;
+    padding: 0;
+    border: none;
+}
+
+.fieldset legend {
+    margin-bottom: 0.3rem;
+    padding: 0;
+}
+
+.choice,
+.checkbox-field {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    padding: 0.55rem 0.65rem;
+    border-radius: 6px;
+    background: $ui-modal-inset;
+    cursor: pointer;
+}
+
+.choice input,
+.checkbox-field input {
+    margin: 0.15rem 0 0;
+    accent-color: $accent;
+}
+
+.choice-selected {
+    background: color-mix(in srgb, $accent 14%, $ui-modal-background);
+}
+
+.choice-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    line-height: 1.4;
+}
+
+.choice-text span {
+    color: $muted;
+    font-size: 0.75rem;
+}
+
+.spin {
+    animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+:global(.mwExtensionErrorBlock) > :global(.blocklyPath) {
+    stroke: $danger;
+    stroke-width: 3px;
+    stroke-dasharray: 6 3;
+}

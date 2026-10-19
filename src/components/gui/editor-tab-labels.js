@@ -1,7 +1,11 @@
 import {defineMessages} from 'react-intl';
 
 const editorTabMessages = defineMessages({
-    code: {defaultMessage: 'Code', description: 'Button to get to the code panel', id: 'gui.gui.codeTab'},
+    code: {
+        defaultMessage: 'Scripts',
+        description: 'Button to get to the scripts panel in Blocks mode',
+        id: 'gui.gui.scriptsTab'
+    },
     costumes: {
         defaultMessage: 'Costumes',
         description: 'Button to get to the costumes panel',

@@ -100,6 +100,7 @@ class SoundEditor extends React.Component {
     }
     handleKeyPress (event) {
         if (event.defaultPrevented) return;
+        if (!this.props.isActive()) return;
         const target = event.target;
         if (target instanceof Element && target.closest(
             'input, textarea, select, [contenteditable="true"], .ReactModal__Overlay, .addon-window'
@@ -529,6 +530,7 @@ SoundEditor.propTypes = {
     isStereo: PropTypes.bool,
     duration: PropTypes.number,
     size: PropTypes.number,
+    isActive: PropTypes.func,
     isFullScreen: PropTypes.bool,
     name: PropTypes.string.isRequired,
     onShowImportError: PropTypes.func.isRequired,
@@ -537,6 +539,10 @@ SoundEditor.propTypes = {
     soundId: PropTypes.string,
     soundIndex: PropTypes.number,
     vm: PropTypes.instanceOf(VM).isRequired
+};
+
+SoundEditor.defaultProps = {
+    isActive: () => true
 };
 
 const mapStateToProps = (state, {soundIndex}) => {

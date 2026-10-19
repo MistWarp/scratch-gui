@@ -8,12 +8,21 @@ import {readBlockMessages} from './vite-blocks.mjs';
 const require = createRequire(import.meta.url);
 const traverse = traverseModule.default || traverseModule;
 
+const literalString = node => {
+    if (node.type === 'StringLiteral') return node.value;
+    if (node.type === 'TemplateLiteral' && node.expressions.length === 0) return node.quasis[0].value.cooked;
+    if (node.type !== 'BinaryExpression' || node.operator !== '+') return null;
+    const left = literalString(node.left);
+    const right = literalString(node.right);
+    return left === null || right === null ? null : left + right;
+};
+
 const stringProperty = (node, name) => {
     const property = node.properties.find(item => (
         item.type === 'ObjectProperty' &&
         (item.key.name === name || item.key.value === name)
     ));
-    return property?.value.type === 'StringLiteral' ? property.value.value : null;
+    return property ? literalString(property.value) : null;
 };
 
 export const readEditorDefaultMessages = directory => {

@@ -6,6 +6,7 @@ import log from '../lib/utils/log';
 import CustomExtensionModalComponent from '../components/tw-custom-extension-modal/custom-extension-modal.jsx';
 import {closeCustomExtensionModal} from '../reducers/modals';
 import {manuallyTrustExtension} from './tw-security-manager.jsx';
+import {openNewExtension} from '../lib/extension-dev/actions.js';
 
 /**
  * @param {Blob} blob Blob
@@ -26,6 +27,7 @@ class CustomExtensionModal extends React.Component {
             'handleChangeFiles',
             'handleChangeURL',
             'handleClose',
+            'handleOpenInEditor',
             'handleKeyDown',
             'handleLoadExtension',
             'handleSwitchToFile',
@@ -109,6 +111,13 @@ class CustomExtensionModal extends React.Component {
             url: e.target.value,
             error: null
         });
+    }
+
+    handleOpenInEditor () {
+        if (this.loadPromise) return;
+        const text = this.state.text;
+        this.props.onClose();
+        this.props.onOpenInEditor(text);
     }
 
     handleClose () {
@@ -231,6 +240,7 @@ class CustomExtensionModal extends React.Component {
                 onChangeText={this.handleChangeText}
                 onLoadExtension={this.handleLoadExtension}
                 onClose={this.handleClose}
+                onOpenInEditor={this.handleOpenInEditor}
             />
         );
     }
@@ -238,6 +248,7 @@ class CustomExtensionModal extends React.Component {
 
 CustomExtensionModal.propTypes = {
     onClose: PropTypes.func,
+    onOpenInEditor: PropTypes.func,
     vm: PropTypes.shape({
         extensionManager: PropTypes.shape({
             loadExtensionURL: PropTypes.func
@@ -250,7 +261,8 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-    onClose: () => dispatch(closeCustomExtensionModal())
+    onClose: () => dispatch(closeCustomExtensionModal()),
+    onOpenInEditor: text => openNewExtension(dispatch, text)
 });
 
 export default connect(
