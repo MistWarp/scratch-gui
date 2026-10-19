@@ -41,20 +41,16 @@ export const track = (name, properties = {}) => {
     const session = sessionId();
     if (!session) return;
     const body = JSON.stringify({name, session, properties});
-    if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
-        try {
-            if (navigator.sendBeacon(`${STATUS_BASE}/v1/events`, new Blob([body], {type: 'application/json'}))) {
-                return;
-            }
-        } catch (e) {
-            // Fall back to fetch if the browser rejects the beacon.
-        }
-    }
+    // sendBeacon always uses credentials mode "include", which turns a
+    // cross-origin analytics request into a credentialed CORS request. These
+    // events are anonymous, and keepalive fetch survives page unload without
+    // asking the status worker to accept cookies.
     fetch(`${STATUS_BASE}/v1/events`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body,
-        keepalive: true
+        keepalive: true,
+        credentials: 'omit'
     }).catch(() => {});
 };
 

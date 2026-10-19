@@ -61,7 +61,6 @@ const ProjectStage = ({
                             title={project.title}
                             onLoad={sendThemeToStage}
                             allow="autoplay; fullscreen"
-                            allowFullScreen
                             sandbox={unsandboxed ?
                                 null :
                                 'allow-scripts allow-forms allow-pointer-lock allow-downloads ' +

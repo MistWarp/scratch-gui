@@ -26,10 +26,28 @@ let repeated = new Set();
 let lastChecked = null;
 let keptAliveAt = 0;
 let watching = false;
+let cookieAccess = null;
+
+// A sandboxed iframe without allow-same-origin keeps the account origin in
+// location.origin but throws when the cookie jar is touched. Probe it once so
+// the rest of the module can fall back to localStorage instead of crashing on
+// import.
+const canReadCookies = () => {
+    if (cookieAccess === null) {
+        try {
+            void document.cookie;
+            cookieAccess = true;
+        } catch (e) {
+            cookieAccess = false;
+        }
+    }
+    return cookieAccess;
+};
 
 const enabled = () => typeof document !== 'undefined' && typeof location !== 'undefined' &&
     ACCOUNT_ORIGIN !== EDITOR_ORIGIN && location.origin === ACCOUNT_ORIGIN &&
-    !(typeof navigator !== 'undefined' && navigator.cookieEnabled === false);
+    !(typeof navigator !== 'undefined' && navigator.cookieEnabled === false) &&
+    canReadCookies();
 
 const isShared = key => Object.prototype.hasOwnProperty.call(COOKIE_NAMES, key) && enabled();
 
@@ -37,8 +55,16 @@ const secure = () => location.protocol === 'https:';
 
 const cookieName = key => `${secure() ? '__Host-' : ''}mw-${COOKIE_NAMES[key]}`;
 
+const readCookieString = () => {
+    try {
+        return document.cookie;
+    } catch (e) {
+        return '';
+    }
+};
+
 const readCookies = () => {
-    const raw = document.cookie;
+    const raw = readCookieString();
     if (raw === parsedFrom) return parsed;
     parsedFrom = raw;
     parsed = new Map();
@@ -73,7 +99,11 @@ const cookieRecord = key => {
 };
 
 const setCookie = (name, value, maxAge) => {
-    document.cookie = `${name}=${value}; Path=/; Max-Age=${maxAge}; SameSite=Strict${secure() ? '; Secure' : ''}`;
+    try {
+        document.cookie = `${name}=${value}; Path=/; Max-Age=${maxAge}; SameSite=Strict${secure() ? '; Secure' : ''}`;
+    } catch (e) {
+        // Cookies can become unavailable after the initial probe.
+    }
 };
 
 const writeCookie = (key, record) => {
@@ -179,13 +209,13 @@ const keepAlive = () => {
         if (cookie && !cookie.big) writeCookie(key, cookie);
     }
     keptAliveAt = Date.now();
-    lastChecked = document.cookie;
+    lastChecked = readCookieString();
 };
 
 const check = () => {
     const sinceKeptAlive = Date.now() - keptAliveAt;
     if (sinceKeptAlive < 0 || sinceKeptAlive > KEEP_ALIVE_INTERVAL) keepAlive();
-    const raw = document.cookie;
+    const raw = readCookieString();
     if (raw === lastChecked) return;
     lastChecked = raw;
     for (const key of SHARED_KEYS) resolve(key);

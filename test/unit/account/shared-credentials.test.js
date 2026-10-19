@@ -186,6 +186,23 @@ test('off the account origin nothing is shared', () => {
     }
 });
 
+test('a sandboxed frame keeps working when cookies are inaccessible', () => {
+    const spy = jest.spyOn(document, 'cookie', 'get').mockImplementation(() => {
+        throw new DOMException('The document is sandboxed', 'SecurityError');
+    });
+    try {
+        jest.isolateModules(() => {
+            const fresh = require('../../../src/lib/account/shared-credentials.js');
+            expect(() => fresh.subscribeSharedCredentials(() => {})).not.toThrow();
+            expect(fresh.sharingCredentials()).toBe(false);
+            expect(() => fresh.sharedCredentials.setItem(KEY, 'local-only')).not.toThrow();
+            expect(fresh.sharedCredentials.getItem(KEY)).toBe('local-only');
+        });
+    } finally {
+        spy.mockRestore();
+    }
+});
+
 test('a lease stays held while a long task runs', async () => {
     jest.useFakeTimers();
     try {
