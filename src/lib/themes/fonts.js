@@ -68,7 +68,10 @@ const applyThemeFonts = async fonts => {
         '.xterm',
         '.xterm *',
         'code', 'code *', 'pre', 'pre *', 'kbd', 'kbd *', 'samp', 'samp *',
-        '.monospace', '.monospace *', '[class*="icon-font"]'
+        '.monospace', '.monospace *', '[class*="icon-font"]',
+        // CodeMirror sets its own fonts for the code editor, including the
+        // autocomplete tooltip. The theme font must not override them.
+        '.cm-editor', '.cm-editor *', '.cm-tooltip', '.cm-tooltip *'
     ].map(selector => `:not(${selector})`).join('');
 
     // Create style element
