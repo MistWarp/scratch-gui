@@ -350,15 +350,15 @@ export const getDefaultShortcuts = () => [
         label: 'Apply File'
     },
     {
-        id: 'applyAndSave',
+        id: 'applyFileAlt',
         key: 'Ctrl+S',
         defaultKey: 'Ctrl+S',
         context: 'textTab',
-        category: SHORTCUT_CATEGORIES.FILE,
+        category: SHORTCUT_CATEGORIES.EDIT,
         actionType: 'callback',
-        action: 'applyAndSave',
+        action: 'applyFile',
         params: [],
-        label: 'Apply and Save'
+        label: 'Apply File'
     },
     {
         id: 'closeTab',

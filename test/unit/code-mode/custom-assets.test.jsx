@@ -184,7 +184,7 @@ describe('assets in the code workbench', () => {
         wrapper.unmount();
     });
 
-    test('a text asset opens in an editor tab, edits count as unapplied, and Mod+S writes them', () => {
+    test('a text asset opens in an editor tab, edits count as unapplied, and Mod+S applies them', () => {
         const manager = makeManager([['data/level1.txt', 'one']]);
         const wrapper = render(manager);
         const instance = wrapper.find(CodeWorkbench).instance();
@@ -205,7 +205,7 @@ describe('assets in the code workbench', () => {
             .prop('tabs')
             .find(each => each.key === tab.key).dirty).toBe(true);
         expect(instance.activeTab().key).toBe(tab.key);
-        executeShortcut({actionType: 'callback', action: 'applyAndSave'});
+        executeShortcut({actionType: 'callback', action: 'applyFile'});
         expect(manager.getAsset('data/level1.txt').asset.decodeText()).toBe('one more');
         expect(getAssetDraft('data/level1.txt')).toBe(null);
         expect(hasUnappliedCode()).toBe(false);

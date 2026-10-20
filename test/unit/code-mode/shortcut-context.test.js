@@ -44,7 +44,11 @@ describe('shortcut registry contexts', () => {
         expect(byId.togglePanel.key).toBe('Ctrl+J');
         expect(byId.quickOpen.key).toBe('Ctrl+E');
         expect(byId.applyFile).toMatchObject({key: 'Ctrl+Enter', context: 'textTab'});
-        expect(byId.applyAndSave).toMatchObject({key: 'Ctrl+S', context: 'textTab'});
+        expect(byId.applyFileAlt).toMatchObject({
+            key: 'Ctrl+S',
+            context: 'textTab',
+            action: 'applyFile'
+        });
         expect([byId.closeTab.key, byId.nextTab.key, byId.previousTab.key]).toEqual(['', '', '']);
     });
 
@@ -52,7 +56,7 @@ describe('shortcut registry contexts', () => {
         expect(matchShortcut(shortcuts, 'Ctrl+Enter').id).toBe('greenFlag');
         expect(matchShortcut(shortcuts, 'Ctrl+Enter', {context: 'textTab'}).id).toBe('applyFile');
         expect(matchShortcut(shortcuts, 'Ctrl+s').id).toBe('save');
-        expect(matchShortcut(shortcuts, 'Ctrl+s', {context: 'textTab'}).id).toBe('applyAndSave');
+        expect(matchShortcut(shortcuts, 'Ctrl+s', {context: 'textTab'}).id).toBe('applyFileAlt');
         expect(matchShortcut(shortcuts, 'Ctrl+e', {context: 'textTab'}).id).toBe('quickOpen');
     });
 
@@ -67,14 +71,14 @@ describe('shortcut registry contexts', () => {
     });
 
     test('conflicts count only within the same context', () => {
-        expect(getShortcutConflict(shortcuts, 'Ctrl+S', 'applyAndSave')).toBeNull();
+        expect(getShortcutConflict(shortcuts, 'Ctrl+S', 'applyFileAlt')).toBeNull();
         expect(getShortcutConflict(shortcuts, 'Ctrl+S', 'quickOpen').id).toBe('save');
-        expect(getShortcutConflict(shortcuts, 'Ctrl+Enter', 'applyAndSave').id).toBe('applyFile');
+        expect(getShortcutConflict(shortcuts, 'Ctrl+Enter', 'applyFileAlt').id).toBe('applyFile');
     });
 
     test('a textTab entry sharing a global key is shown as an override', () => {
-        const applyAndSave = shortcuts.find(shortcut => shortcut.id === 'applyAndSave');
-        expect(getOverriddenShortcut(shortcuts, applyAndSave).id).toBe('save');
+        const applyFileAlt = shortcuts.find(shortcut => shortcut.id === 'applyFileAlt');
+        expect(getOverriddenShortcut(shortcuts, applyFileAlt).id).toBe('save');
         const save = shortcuts.find(shortcut => shortcut.id === 'save');
         expect(getOverriddenShortcut(shortcuts, save)).toBeNull();
     });
@@ -111,6 +115,17 @@ describe('shortcut router in text tabs', () => {
         expect(inside.defaultPrevented).toBe(true);
         press(document.body, 'Enter', 13, {ctrlKey: true, metaKey: true});
         expect(vm.greenFlag).toHaveBeenCalledTimes(1);
+    });
+
+    test('Mod+S in a text tab applies the file and does not save', () => {
+        const applyFile = jest.fn(() => true);
+        const saveSmart = jest.fn();
+        initialize({}, {}, {applyFile, saveSmart});
+        editor.focus();
+        const event = press(editor, 's', 83, {ctrlKey: true, metaKey: true});
+        expect(applyFile).toHaveBeenCalledTimes(1);
+        expect(saveSmart).not.toHaveBeenCalled();
+        expect(event.defaultPrevented).toBe(true);
     });
 
     test('global code mode commands run without blurring the editor', () => {

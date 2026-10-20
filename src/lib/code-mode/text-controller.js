@@ -5,7 +5,6 @@ import {mapUnits, rebase, resolveConflict, sliceUnit} from './code-rebase.js';
 import {
     REFUSAL,
     commitApply,
-    createsOrRemoves,
     isCollaborating,
     liveChangeKey,
     prepareApply
@@ -22,8 +21,7 @@ import {
 import {baseHash, classifyDraft, loadDraft, scheduleDraftWrite} from './code-drafts.js';
 import {clearCodeHistory, codeHistoryLastEvent, subscribeCodeHistory} from './code-history.js';
 
-const AUTO_APPLY_DELAY = 800;
-const TRANSIENT = new Set(['applied', 'undid', 'redid', 'restored', 'refused', 'cancelled', 'saveRefused']);
+const TRANSIENT = new Set(['applied', 'undid', 'redid', 'restored', 'refused', 'cancelled']);
 
 const locateUnits = (baseText, units, doc) => {
     const out = {};
@@ -69,7 +67,6 @@ const createTextController = ({vm, client = getFractchClient()}) => {
     let options = {};
     const pendingDrafts = [];
     const regenerations = new Map();
-    const autoTimers = new Map();
     let unitsClock = 0;
     let historyClock = null;
 
@@ -200,18 +197,6 @@ const createTextController = ({vm, client = getFractchClient()}) => {
         return Promise.resolve(state);
     };
 
-    const actions = {};
-
-    const scheduleAutoApply = targetId => {
-        clearTimeout(autoTimers.get(targetId));
-        if (!options.getAutoApply || !options.getAutoApply()) return;
-        autoTimers.set(targetId, setTimeout(() => {
-            autoTimers.delete(targetId);
-            const state = getText(targetId);
-            if (state && isDirty(state) && !state.applying) actions.apply(targetId, {auto: true});
-        }, options.autoApplyDelay || AUTO_APPLY_DELAY));
-    };
-
     const edit = (targetId, doc, changes) => {
         const state = getText(targetId);
         if (!state || state.status !== 'ready') return;
@@ -232,7 +217,6 @@ const createTextController = ({vm, client = getFractchClient()}) => {
         };
         setText(targetId, next, {silent: !clearMessage});
         persistDraft(targetId, next);
-        scheduleAutoApply(targetId);
     };
 
     const otherTexts = targetId => allTexts()
@@ -248,7 +232,7 @@ const createTextController = ({vm, client = getFractchClient()}) => {
         return setText(targetId, {...state, applying: false, pendingChanges: null, ...patch});
     };
 
-    const apply = async (targetId, {auto = false} = {}) => {
+    const apply = async targetId => {
         let state = getText(targetId);
         if (!state || state.status !== 'ready') return {status: 'unavailable'};
         if (state.applying) return {status: 'busy'};
@@ -293,13 +277,8 @@ const createTextController = ({vm, client = getFractchClient()}) => {
             finishWith(targetId, {message: {kind: 'refused', reason: plan.reason, text: plan.message}});
             return plan;
         }
-        if (auto && (plan.impact.needsConfirm || createsOrRemoves(plan.built))) {
-            finishWith(targetId, {diagnostics: mapDiagnostics(plan.diagnostics, current.pendingChanges)});
-            return {status: 'skipped', plan};
-        }
         const outcome = await commitApply(plan, {
             vm,
-            auto,
             title: options.title ? options.title() : null,
             confirmImpact: options.confirmImpact,
             confirmBackupFailure: options.confirmBackupFailure
@@ -409,8 +388,6 @@ const createTextController = ({vm, client = getFractchClient()}) => {
 
     const projectLoaded = () => {
         const sync = isCollaborating(vm);
-        for (const timer of autoTimers.values()) clearTimeout(timer);
-        autoTimers.clear();
         regenerations.clear();
         clearAssetDrafts();
         for (const [, state] of takeAllTexts()) {
@@ -439,11 +416,7 @@ const createTextController = ({vm, client = getFractchClient()}) => {
 
     const dispose = () => {
         unsubscribeHistory();
-        for (const timer of autoTimers.values()) clearTimeout(timer);
-        autoTimers.clear();
     };
-
-    actions.apply = apply;
 
     return {
         apply,

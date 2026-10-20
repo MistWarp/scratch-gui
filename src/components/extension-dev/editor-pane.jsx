@@ -30,12 +30,10 @@ import {applySource, convertEntry, reloadEntry} from '../../lib/extension-dev/ac
 import {
     clearDraft,
     downloadSource,
-    getApplyAsYouType,
     getCachedSource,
     getDraft,
     isAuthored,
     markAuthored,
-    setApplyAsYouType,
     setCachedSource,
     setDraft,
     markFirstApplyRestorePoint,
@@ -46,7 +44,6 @@ import RestorePointAPI from '../../lib/api/restore-points.js';
 import {DOCS_BASE} from '../../lib/help/index.js';
 
 const LINT_DELAY = 300;
-const AUTO_APPLY_DELAY = 800;
 const GENERATED_PATTERN = /GENERATED FILE\s*-\s*DO NOT EDIT/i;
 const DOCS_URL = `${DOCS_BASE}/building-extensions/introduction`;
 
@@ -76,14 +73,12 @@ const EditorPane = props => {
     const [status, setStatus] = useState('idle');
     const [lintDiagnostics, setLintDiagnostics] = useState([]);
     const [unlocked, setUnlocked] = useState(false);
-    const [applyAsYouType, setApplyAsYouTypeState] = useState(getApplyAsYouType());
     const [staleDraft, setStaleDraft] = useState(null);
     const [restored, setRestored] = useState(false);
     const [notice, setNotice] = useState(null);
     const [focus, setFocus] = useState(null);
     const linter = useMemo(() => createLinter(), []);
     const lintTimer = useRef(null);
-    const applyTimer = useRef(null);
     const applying = useRef(false);
     const pendingApply = useRef(null);
     const mounted = useRef(true);
@@ -91,7 +86,6 @@ const EditorPane = props => {
         source: cachedSource});
     const handledFocus = useRef(null);
     const linted = useRef({text: null, diagnostics: []});
-    const doApplyRef = useRef(null);
     const live = useRef({});
     const mirror = useRef(null);
     const onMirror = useRef(null);
@@ -114,14 +108,13 @@ const EditorPane = props => {
     else if (!unlocked && !isAuthored(entry.id) && isGenerated) readOnlyReason = 'generated';
     else if (!unlocked && !isAuthored(entry.id)) readOnlyReason = 'project';
     const readOnly = readOnlyReason !== null || Boolean(staleDraft);
-    live.current = {entry, readOnly, locked: props.locked, applyAsYouType};
+    live.current = {entry, readOnly, locked: props.locked};
 
     useEffect(() => {
         mounted.current = true;
         return () => {
             mounted.current = false;
             clearTimeout(lintTimer.current);
-            clearTimeout(applyTimer.current);
             linter.dispose();
         };
     }, [linter]);
@@ -214,17 +207,6 @@ const EditorPane = props => {
         return () => runtime.off('EXTENSION_RELOADED', onReloaded);
     }, [entry.id]);
 
-    const autoApplyIfClean = value => {
-        if (!mounted.current || !live.current.applyAsYouType || live.current.readOnly) return;
-        if (latest.current.text !== value || value === latest.current.source) return;
-        lintNow(value).then(diagnostics => {
-            if (!diagnostics || !mounted.current || latest.current.text !== value) return;
-            if (diagnostics.some(item => item.severity === 'error')) return;
-            if (diagnostics.some(item => item.code === 'patches-internals')) return;
-            doApplyRef.current(value, {auto: true});
-        });
-    };
-
     useEffect(() => {
         if (!hasSource) return;
         const manager = vm.extensionManager;
@@ -248,11 +230,11 @@ const EditorPane = props => {
             });
     }, []);
 
-    const doApply = useCallback(async (value, {auto, allowReadOnly} = {}) => {
+    const doApply = useCallback(async (value, {allowReadOnly} = {}) => {
         const current = live.current;
         if (current.locked || (current.readOnly && !allowReadOnly)) return {status: 'refused'};
         if (applying.current) {
-            pendingApply.current = {auto};
+            pendingApply.current = true;
             return {status: 'queued'};
         }
         applying.current = true;
@@ -265,7 +247,7 @@ const EditorPane = props => {
                 if (mounted.current) {
                     setStatus('failed');
                     setNotice(intl.formatMessage(messages.syntaxBlocksApply));
-                    if (!auto && props.onShowProblems) props.onShowProblems();
+                    if (props.onShowProblems) props.onShowProblems();
                 }
                 return {status: 'invalid'};
             }
@@ -285,8 +267,7 @@ const EditorPane = props => {
                 keepURL: current.entry.kind === 'url',
                 intl,
                 messages,
-                confirm: props.confirmImpact,
-                auto
+                confirm: props.confirmImpact
             });
         } finally {
             // eslint-disable-next-line require-atomic-updates
@@ -306,16 +287,12 @@ const EditorPane = props => {
         const stillDirty = latest.current.text !== latest.current.source;
         if (outcome.ok) setStatus(stillDirty ? 'dirty' : 'applied');
         else setStatus('failed');
-        if (!outcome.ok && !auto && props.onShowProblems) props.onShowProblems();
+        if (!outcome.ok && props.onShowProblems) props.onShowProblems();
         const queued = pendingApply.current;
         pendingApply.current = null;
-        if (queued && stillDirty) {
-            if (queued.auto) autoApplyIfClean(latest.current.text);
-            else doApply(latest.current.text, queued);
-        }
+        if (queued && stillDirty) doApply(latest.current.text);
         return {status: outcome.ok ? 'committed' : 'refused'};
     }, [vm, intl, props.projectTitle, entry.id, props.confirmImpact, lintNow]);
-    doApplyRef.current = doApply;
 
     const patchesInternals = lintDiagnostics.some(item => item.code === 'patches-internals');
     const lintErrors = lintDiagnostics.filter(item => item.severity === 'error').length;
@@ -359,10 +336,6 @@ const EditorPane = props => {
         }
         if (!applying.current) setStatus(value === latest.current.source ? 'idle' : 'dirty');
         runLint(value);
-        clearTimeout(applyTimer.current);
-        if (applyAsYouType && !readOnly) {
-            applyTimer.current = setTimeout(() => autoApplyIfClean(value), AUTO_APPLY_DELAY);
-        }
     };
 
     const onApplyKey = () => {
@@ -374,16 +347,10 @@ const EditorPane = props => {
             }
             return Promise.resolve({status: 'refused'});
         }
-        clearTimeout(applyTimer.current);
         if (latest.current.text === latest.current.source && loaded) return Promise.resolve({status: 'clean'});
         return doApply(latest.current.text);
     };
     if (props.applyRef) props.applyRef.current = onApplyKey;
-
-    const toggleApplyAsYouType = event => {
-        setApplyAsYouType(event.target.checked);
-        setApplyAsYouTypeState(event.target.checked);
-    };
 
     const applyFix = (value, fix) => {
         let next = value;
@@ -645,27 +612,17 @@ const EditorPane = props => {
                     {statusText ? <span className={styles.statusText}>{statusText}</span> : null}
                 </span>
                 {hasSource && !readOnlyReason ? (
-                    <React.Fragment>
-                        <label className={styles.toggle}>
-                            <input
-                                checked={applyAsYouType}
-                                type="checkbox"
-                                onChange={toggleApplyAsYouType}
-                            />
-                            <span>{intl.formatMessage(messages.applyAsYouType)}</span>
-                        </label>
-                        <button
-                            className={styles.primaryButton}
-                            disabled={status === 'applying' || typeof source !== 'string' ||
-                                (text === source && entry.status === 'loaded')}
-                            title={`${intl.formatMessage(messages.apply)}${applyHint}`}
-                            type="button"
-                            onClick={onApplyKey}
-                        >
-                            <Check size={15} />
-                            <span>{intl.formatMessage(messages.apply)}</span>
-                        </button>
-                    </React.Fragment>
+                    <button
+                        className={styles.primaryButton}
+                        disabled={status === 'applying' || typeof source !== 'string' ||
+                            (text === source && entry.status === 'loaded')}
+                        title={`${intl.formatMessage(messages.apply)}${applyHint}`}
+                        type="button"
+                        onClick={onApplyKey}
+                    >
+                        <Check size={15} />
+                        <span>{intl.formatMessage(messages.apply)}</span>
+                    </button>
                 ) : null}
                 <ActionMenu
                     items={overflowItems}

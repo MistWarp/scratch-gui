@@ -336,16 +336,6 @@ export default defineMessages({
         defaultMessage: 'Applying',
         description: 'Header message while the text of a file is being applied'
     },
-    autoApplyOn: {
-        id: 'mw.codeMode.autoApplyOn',
-        defaultMessage: 'Apply as I type',
-        description: 'Context menu item that turns on applying text automatically after typing stops'
-    },
-    autoApplyOff: {
-        id: 'mw.codeMode.autoApplyOff',
-        defaultMessage: 'Stop applying as I type',
-        description: 'Context menu item that turns off applying text automatically'
-    },
     blockVersion: {
         id: 'mw.codeMode.blockVersion',
         defaultMessage: 'Block version',
@@ -408,11 +398,6 @@ export default defineMessages({
         defaultMessage: '+{count} more',
         description: 'Button that lists the other header messages of a text tab'
     },
-    notApplied: {
-        id: 'mw.codeMode.notApplied',
-        defaultMessage: 'Not applied: fix the problems first',
-        description: 'Header message when apply and save could not apply the text'
-    },
     redidCodeChange: {
         id: 'mw.codeMode.redidCodeChange',
         defaultMessage: 'Redid code change',
@@ -442,11 +427,6 @@ export default defineMessages({
         id: 'mw.codeMode.runScript',
         defaultMessage: 'Run this script',
         description: 'Tooltip of the run icon in the gutter of a script'
-    },
-    saveWithoutApplying: {
-        id: 'mw.codeMode.saveWithoutApplying',
-        defaultMessage: 'Save without applying',
-        description: 'Button that saves the project without applying the text'
     },
     showProblems: {
         id: 'mw.codeMode.showProblems',

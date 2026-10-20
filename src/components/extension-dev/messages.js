@@ -132,11 +132,6 @@ export default defineMessages({
         description: 'Button that runs the edited extension code in the project',
         id: 'mw.extensionDev.apply'
     },
-    applyAsYouType: {
-        defaultMessage: 'Apply as I type',
-        description: 'Toggle that applies extension edits automatically while typing',
-        id: 'mw.extensionDev.applyAsYouType'
-    },
     statusApplied: {
         defaultMessage: 'Applied',
         description: 'Status: the edited code is running',

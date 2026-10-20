@@ -223,22 +223,6 @@ $mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospa
     color: $danger;
 }
 
-.toggle {
-    flex-shrink: 0;
-    white-space: nowrap;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-size: 0.75rem;
-    cursor: pointer;
-    user-select: none;
-}
-
-.toggle input {
-    margin: 0;
-    accent-color: $accent;
-}
-
 .banner {
     display: flex;
     align-items: center;

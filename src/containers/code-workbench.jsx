@@ -33,7 +33,6 @@ import {
     Redo2,
     ReplaceAll,
     Rows2,
-    Save,
     Search,
     SearchCode,
     ShieldAlert,
@@ -42,8 +41,7 @@ import {
     Undo2,
     Upload,
     Users,
-    X,
-    Zap
+    X
 } from 'lucide-react';
 
 import Explorer, {DRAG_TYPE} from '../components/code-mode/explorer.jsx';
@@ -176,7 +174,7 @@ import {
     removeExtensionsFromProject,
     runUnsandboxed
 } from '../lib/extension-dev/actions.js';
-import {updateCallbacks, executeShortcut} from '../lib/shortcuts/event-router.js';
+import {updateCallbacks} from '../lib/shortcuts/event-router.js';
 import {getShortcutKey} from '../lib/shortcuts/registry.js';
 import formatShortcutDisplay from '../lib/shortcuts/display.js';
 import getCostumeUrl from '../lib/utils/get-costume-url.js';
@@ -199,7 +197,6 @@ const MAX_EXPLORER_WIDTH = 480;
 const REGENERATE_DELAY = 500;
 const RUNNING_POLL_MS = 250;
 const MAX_REFERENCE_ITEMS = 40;
-const AUTO_APPLY_KEY = 'mw:code-mode:apply-as-you-type';
 const IMAGE_ACCEPT = '.svg, .png, .bmp, .jpg, .jpeg, .jfif, .webp, .gif';
 const SOUND_ACCEPT = '.wav, .mp3, .ogg, .oga, .flac, .m4a, .aac';
 const SPRITE_ACCEPT = '.sprite3, .sprite2, .sprite, .svg, .png, .bmp, .jpg, .jpeg, .gif';
@@ -352,7 +349,6 @@ class CodeWorkbench extends React.Component {
             tabDrag: null,
             dropZone: null,
             overlays: {},
-            autoApply: readPreference(AUTO_APPLY_KEY, false) === true,
             focus: null,
             explorerOpen: readPreference(EXPLORER_OPEN_KEY, true) !== false,
             explorerWidth: Math.min(MAX_EXPLORER_WIDTH,
@@ -461,10 +457,6 @@ class CodeWorkbench extends React.Component {
                 this.handleApply();
                 return true;
             },
-            applyAndSave: () => {
-                this.applyActive({save: true});
-                return true;
-            },
             closeTab: () => {
                 const group = this.focusedTabs();
                 if (group.activeKey) this.handleCloseTab(group.activeKey, group.id);
@@ -540,7 +532,6 @@ class CodeWorkbench extends React.Component {
             togglePanel: off,
             quickOpen: off,
             applyFile: off,
-            applyAndSave: () => executeShortcut({actionType: 'callback', action: 'saveSmart'}),
             closeTab: off,
             nextTab: off,
             previousTab: off,
@@ -586,7 +577,6 @@ class CodeWorkbench extends React.Component {
         this.controller.configure({
             confirmImpact: impact => confirmImpact(dispatch, intl, impact),
             confirmBackupFailure: error => confirmBackupFailure(dispatch, intl, error),
-            getAutoApply: () => this.state.autoApply,
             title: () => this.props.projectTitle || null
         });
     }
@@ -665,53 +655,28 @@ class CodeWorkbench extends React.Component {
         }
         this.controller.edit(tab.targetId, text, changes);
     }
-    save () {
-        return executeShortcut({actionType: 'callback', action: 'saveSmart'});
-    }
     canApplyState (state) {
         return Boolean(state) && state.status === 'ready' && !state.draft && !state.applying &&
             !this.props.collaborating && isDirty(state) && !(state.conflicts && state.conflicts.length);
     }
     handleApply () {
-        this.applyActive({save: false});
+        this.applyActive();
     }
-    applyActive ({save}) {
+    applyActive () {
         const tab = this.activeTab();
-        if (tab && tab.kind === 'customAsset') return this.assets.apply(tab, {save});
+        if (tab && tab.kind === 'customAsset') return this.assets.apply(tab);
         if (tab && tab.kind === 'extension') {
             const apply = this.extensionApply.current;
             if (!apply || this.props.collaborating || getDraft(tab.extensionId) === null) {
-                if (save) this.save();
                 return Promise.resolve(null);
             }
-            return Promise.resolve(apply()).then(result => {
-                if (save && result && result.status === 'committed') this.save();
-                return result;
-            });
+            return Promise.resolve(apply());
         }
         const state = tab && tab.kind === 'script' ? this.textState(tab.targetId) : null;
         if (!state || !isDirty(state) || state.draft || state.status !== 'ready' || this.props.collaborating) {
-            if (save) this.save();
             return Promise.resolve(null);
         }
-        const targetId = tab.targetId;
-        return this.controller.apply(targetId).then(result => {
-            if (!save) return result;
-            if (result.status === 'committed') {
-                this.save();
-                return result;
-            }
-            const current = this.textState(targetId);
-            const text = current && current.message && current.message.text ?
-                current.message.text :
-                this.props.intl.formatMessage(messages.notApplied);
-            this.controller.setMessage(targetId, {
-                kind: 'saveRefused',
-                reason: current && current.message ? current.message.reason : null,
-                text
-            });
-            return result;
-        });
+        return this.controller.apply(tab.targetId);
     }
     handleRunScript (topId) {
         const tab = this.activeTab();
@@ -734,11 +699,6 @@ class CodeWorkbench extends React.Component {
     }
     setOverlay (targetId, overlay) {
         this.setState(state => ({overlays: {...state.overlays, [targetId]: overlay}}));
-    }
-    toggleAutoApply () {
-        const autoApply = !this.state.autoApply;
-        writePreference(AUTO_APPLY_KEY, autoApply);
-        this.setState({autoApply});
     }
     startSession () {
         if (!this.firstEntry) return;
@@ -1854,12 +1814,6 @@ class CodeWorkbench extends React.Component {
                 onClick: () => this.handlePanelTab('reference')
             },
             {
-                label: intl.formatMessage(this.state.autoApply ? messages.autoApplyOff : messages.autoApplyOn),
-                icon: Zap,
-                separator: true,
-                onClick: () => this.toggleAutoApply()
-            },
-            {
                 label: intl.formatMessage(messages.discardChanges),
                 icon: Undo2,
                 disabled: !isDirty(script) || Boolean(script && script.draft),
@@ -2347,20 +2301,12 @@ class CodeWorkbench extends React.Component {
             items.push({key: 'draft', icon: History, text: m(messages.staleDraft)});
         }
         const message = state.message;
-        if (message && (message.kind === 'refused' || message.kind === 'saveRefused')) {
+        if (message && message.kind === 'refused') {
             items.push({
                 key: 'refused',
                 icon: CircleAlert,
                 error: true,
-                text: refusalText(this.props.intl, message),
-                action: message.kind === 'saveRefused' ? {
-                    label: m(messages.saveWithoutApplying),
-                    icon: Save,
-                    onClick: () => {
-                        this.controller.setMessage(targetId, null);
-                        this.save();
-                    }
-                } : null
+                text: refusalText(this.props.intl, message)
             });
         }
         const counts = severityCounts(state.diagnostics);

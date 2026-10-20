@@ -120,7 +120,7 @@ const HELP_ENTRIES = [
         keywords: ['apply', 'undo code change', 'locked', 'conflict', 'draft', 'live reload', 'fractch run'],
         short: 'Text reaches the project only when you apply it, and only if it parses, validates, and converts back to the same blocks. Scripts you did not edit keep their exact blocks, and every apply can be undone.',
         howTo: [
-            'Press Ctrl+Enter or click Apply. Ctrl+S applies and then saves.',
+            'Press Ctrl+Enter, Ctrl+S, or click Apply.',
             'Use Edit > Undo code change to undo an apply.',
             'Locked scripts show a lock icon and are kept as they are. Edit them in Blocks mode.'
         ],
@@ -525,8 +525,7 @@ const HELP_ENTRIES = [
         short: 'Create an extension with New Extension, edit its code in a Code mode tab, and apply it to the running project. The code is saved inside the project.',
         howTo: [
             'Choose Project > New Extension, give it a name, and pick a template.',
-            'Edit the code and press Ctrl+Enter or Apply. Running scripts use the new code right away.',
-            'Turn on Apply as I type to apply whenever the code has no errors.'
+            'Edit the code and press Ctrl+Enter, Ctrl+S, or Apply. Running scripts use the new code right away.'
         ],
         docsPath: '/building-extensions/in-editor'
     },

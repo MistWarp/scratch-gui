@@ -453,17 +453,15 @@ class AssetWorkbench {
         this.persist(entry.name, next);
     }
 
-    apply (tab, {save}) {
+    apply (tab) {
         const draft = getAssetDraft(tab.name);
         if (!draft || !this.manager || this.stale.has(lower(tab.name))) {
-            if (save) this.wb.save();
             return Promise.resolve(null);
         }
         writeText(this.manager, tab.name, draft.text);
         this.dropDraft(tab.name);
         this.notes.set(lower(tab.name), 'applied');
         this.refresh();
-        if (save) this.wb.save();
         return Promise.resolve({status: 'committed'});
     }
 
@@ -566,7 +564,7 @@ class AssetWorkbench {
                 readOnly={Boolean(overlay)}
                 tabKey={`${wb.state.projectKey}:${tab.key}${group.id === 'g0' ? '' : `:${group.id}`}`}
                 value={draft ? draft.text : live}
-                onApply={() => this.apply(tab, {save: false})}
+                onApply={() => this.apply(tab)}
                 onChange={text => this.edit(group.id, tab, text)}
             />
         );

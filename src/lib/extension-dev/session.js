@@ -7,8 +7,6 @@ const fileNames = new Map();
 const listeners = new Set();
 let restorePointMade = false;
 
-const APPLY_AS_YOU_TYPE_KEY = 'mw:extension-dev:apply-as-you-type';
-
 const notify = () => {
     for (const listener of listeners) {
         try {
@@ -72,25 +70,6 @@ const markFirstApplyRestorePoint = () => {
     restorePointMade = true;
 };
 
-const readStorage = (key, fallback) => {
-    try {
-        const value = localStorage.getItem(key);
-        return value === null ? fallback : JSON.parse(value);
-    } catch (e) {
-        return fallback;
-    }
-};
-
-const writeStorage = (key, value) => {
-    try {
-        localStorage.setItem(key, JSON.stringify(value));
-    } catch (e) {
-        return;
-    }
-};
-
-const getApplyAsYouType = () => readStorage(APPLY_AS_YOU_TYPE_KEY, true) !== false;
-const setApplyAsYouType = value => writeStorage(APPLY_AS_YOU_TYPE_KEY, Boolean(value));
 const rememberFileName = (id, name) => fileNames.set(id, name);
 const fileNameOf = id => fileNames.get(id) || null;
 
@@ -139,7 +118,6 @@ export {
     fileNameFor,
     forgetCachedSource,
     getCachedSource,
-    getApplyAsYouType,
     getDraft,
     getEntries,
     fileNameOf,
@@ -148,7 +126,6 @@ export {
     isCollaborating,
     markAuthored,
     resetSession,
-    setApplyAsYouType,
     setCachedSource,
     rememberFileName,
     setDraft,
