@@ -1,0 +1,423 @@
+@import "../../css/colors.css";
+
+.layout {
+    height: 100%;
+}
+
+.content {
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+
+.page {
+    display: flex;
+    min-height: 100%;
+    padding: 1.25rem 1.5rem 1.5rem;
+    box-sizing: border-box;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.page-header h1 {
+    margin: 0;
+    color: $text-primary;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.page-header p {
+    margin: 0.2rem 0 0;
+    color: color-mix(in srgb, $text-primary 62%, transparent);
+    font-size: 0.75rem;
+}
+
+.score-card {
+    display: grid;
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 1rem;
+    background: $ui-modal-inset;
+}
+
+.level-low {
+    --score-color: $looks-secondary;
+}
+
+.level-medium {
+    --score-color: $control-primary;
+}
+
+.level-high {
+    --score-color: $error-primary;
+}
+
+.score-ring {
+    position: relative;
+    display: grid;
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    place-items: center;
+    background: conic-gradient(
+        var(--score-color, $looks-secondary) var(--score),
+        color-mix(in srgb, $text-primary 12%, transparent) 0
+    );
+}
+
+.score-ring::before {
+    position: absolute;
+    border-radius: 50%;
+    background: $ui-modal-inset;
+    content: "";
+    inset: 6px;
+}
+
+.score-center {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    gap: 0.15rem;
+}
+
+.score-center strong {
+    color: $text-primary;
+    font-size: 1.25rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.score-center small {
+    color: color-mix(in srgb, $text-primary 55%, transparent);
+    font-size: 0.625rem;
+    font-weight: 600;
+}
+
+.score-text {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.score-label {
+    color: color-mix(in srgb, $text-primary 62%, transparent);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.score-level {
+    color: $text-primary;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.5rem;
+}
+
+.metric-tile {
+    display: flex;
+    min-width: 0;
+    padding: 0.75rem 0.85rem;
+    border-radius: 10px;
+    flex-direction: column;
+    gap: 0.1rem;
+    background: $ui-modal-inset;
+}
+
+.metric-icon {
+    margin-bottom: 0.1rem;
+    color: color-mix(in srgb, $text-primary 55%, transparent);
+}
+
+.metric-value {
+    color: $text-primary;
+    font-size: 1.35rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+}
+
+.metric-label {
+    overflow: hidden;
+    color: color-mix(in srgb, $text-primary 62%, transparent);
+    font-size: 0.75rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.section-heading {
+    display: flex;
+    margin: 0;
+    align-items: center;
+    gap: 0.45rem;
+    color: color-mix(in srgb, $text-primary 65%, transparent);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.bars {
+    display: flex;
+    padding: 0.9rem 1rem;
+    border-radius: 10px;
+    flex-direction: column;
+    gap: 0.55rem;
+    background: $ui-modal-inset;
+}
+
+.bar-row {
+    display: grid;
+    grid-template-columns: minmax(4.5rem, 7rem) minmax(0, 1fr) 2rem;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.bar-label {
+    overflow: hidden;
+    color: $text-primary;
+    font-size: 0.75rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bar-track {
+    display: block;
+    height: 6px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: color-mix(in srgb, $text-primary 10%, transparent);
+}
+
+.bar-fill {
+    display: block;
+    height: 100%;
+    min-width: 3px;
+    border-radius: inherit;
+    background: var(--bar-color, $looks-secondary);
+}
+
+.bar-value {
+    color: color-mix(in srgb, $text-primary 70%, transparent);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.recommendations {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.recommendation {
+    display: flex;
+    padding: 0.75rem 0.85rem;
+    border-radius: 10px;
+    align-items: flex-start;
+    gap: 0.65rem;
+    background: $ui-modal-inset;
+}
+
+.recommendation > span {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.recommendation strong {
+    color: $text-primary;
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.recommendation small {
+    color: color-mix(in srgb, $text-primary 62%, transparent);
+    font-size: 0.75rem;
+    line-height: 1.4;
+}
+
+.recommendation-icon {
+    margin-top: 1px;
+    flex-shrink: 0;
+    color: $control-primary;
+}
+
+.good-note .recommendation-icon {
+    color: $looks-secondary;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.row {
+    display: grid;
+    width: 100%;
+    padding: 0.6rem 0.7rem;
+    border: 0;
+    border-radius: 8px;
+    grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+    align-items: center;
+    gap: 0.6rem;
+    background: transparent;
+    color: $text-primary;
+    font: inherit;
+    text-align: left;
+}
+
+button.row {
+    cursor: pointer;
+}
+
+.row:hover {
+    background: $ui-tertiary;
+}
+
+.row:focus-visible {
+    outline: 2px solid $looks-secondary;
+    outline-offset: -2px;
+}
+
+.row-icon {
+    display: grid;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 6px;
+    place-items: center;
+    background: $ui-tertiary;
+    color: color-mix(in srgb, $text-primary 65%, transparent);
+}
+
+.row-main {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+}
+
+.row-main strong,
+.row-main small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.row-main strong {
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.row-main small {
+    margin-top: 0.1rem;
+    color: color-mix(in srgb, $text-primary 55%, transparent);
+    font-size: 0.6875rem;
+}
+
+.chip {
+    padding: 0.2rem 0.45rem;
+    border-radius: 999px;
+    background: $ui-tertiary;
+    color: color-mix(in srgb, $text-primary 70%, transparent);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.row-chevron {
+    color: color-mix(in srgb, $text-primary 40%, transparent);
+}
+
+.row:hover .row-chevron {
+    color: $text-primary;
+}
+
+.empty-state {
+    display: flex;
+    padding: 2.5rem 1rem;
+    border-radius: 12px;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: $ui-modal-inset;
+    text-align: center;
+}
+
+.empty-icon {
+    display: grid;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 12px;
+    place-items: center;
+    background: $ui-tertiary;
+    color: color-mix(in srgb, $text-primary 55%, transparent);
+}
+
+.empty-state strong {
+    color: $text-primary;
+    font-size: 0.9375rem;
+    font-weight: 600;
+}
+
+.empty-state p {
+    max-width: 22rem;
+    margin: 0;
+    color: color-mix(in srgb, $text-primary 62%, transparent);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+}
+
+.empty-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.4rem;
+}
+
+.empty-meta span {
+    display: inline-flex;
+    padding: 0.35rem 0.6rem;
+    border-radius: 999px;
+    align-items: center;
+    gap: 0.3rem;
+    background: $ui-tertiary;
+    color: color-mix(in srgb, $text-primary 70%, transparent);
+    font-size: 0.75rem;
+}
+
+.refresh-button {
+    display: flex;
+    width: 100%;
+    min-height: 2.15rem;
+    padding: 0.45rem 0.75rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 6px;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    background: $ui-primary;
+    color: $text-primary;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.refresh-button:hover {
+    background: $ui-tertiary;
+}
+
+@media (max-width: 720px) {
+    .page {
+        padding: 1rem;
+    }
+}

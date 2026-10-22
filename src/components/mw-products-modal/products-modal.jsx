@@ -25,7 +25,12 @@ import {
 } from 'lucide-react';
 
 import Modal from '../../containers/windowed-modal.jsx';
-import Box from '../box/box.jsx';
+import {
+    ModalSidebar,
+    ModalSidebarContent,
+    ModalSidebarItem,
+    ModalSidebarLayout
+} from '../modal-sidebar/modal-sidebar.jsx';
 import api from '../../community/api.js';
 import {payWithRotur} from '../../lib/rotur/payment-window.js';
 import styles from './products-modal.css';
@@ -35,6 +40,21 @@ const messages = defineMessages({
         defaultMessage: 'Products',
         description: 'Title for the products, analytics and entitlements window',
         id: 'mw.productsModal.title'
+    },
+    analyticsTab: {
+        defaultMessage: 'Analytics',
+        description: 'Analytics tab in project management modal',
+        id: 'mw.productsModal.analyticsTab'
+    },
+    catalogTab: {
+        defaultMessage: 'Catalog',
+        description: 'Catalog tab in products modal',
+        id: 'mw.productsModal.catalogTab'
+    },
+    entitlementsTab: {
+        defaultMessage: 'User Entitlements',
+        description: 'Entitlements tab in products modal',
+        id: 'mw.productsModal.entitlementsTab'
     },
     grantPlaceholder: {
         defaultMessage: 'Username to grant',
@@ -1232,63 +1252,42 @@ class ProductsModalComponent extends React.Component {
             <Modal
                 className={styles.modalContent}
                 contentLabel={intl.formatMessage(messages.title)}
-                height={520}
+                height={560}
                 id="productsModal"
-                width={720}
+                minHeight={420}
+                minWidth={640}
+                width={900}
                 onRequestClose={onRequestClose}
             >
-                <Box className={styles.body}>
-                    <div
-                        className={styles.tabs}
-                        role="tablist"
+                <ModalSidebarLayout className={styles.layout}>
+                    <ModalSidebar
+                        ariaLabel={intl.formatMessage(messages.title)}
+                        width="narrow"
                     >
-                        <button
-                            aria-selected={tab === 'analytics'}
-                            className={`${styles.tab} ${tab === 'analytics' ? styles.tabSelected : ''}`}
-                            role="tab"
-                            type="button"
+                        <ModalSidebarItem
+                            icon={BarChart3}
+                            label={intl.formatMessage(messages.analyticsTab)}
+                            selected={tab === 'analytics'}
                             onClick={() => this.setState({tab: 'analytics', showForm: false})}
-                        >
-                            <BarChart3 size={15} />
-                            <FormattedMessage
-                                defaultMessage="Analytics"
-                                description="Analytics tab in project management modal"
-                                id="mw.productsModal.analyticsTab"
-                            />
-                        </button>
-                        <button
-                            aria-selected={tab === 'catalog'}
-                            className={`${styles.tab} ${tab === 'catalog' ? styles.tabSelected : ''}`}
-                            role="tab"
-                            type="button"
+                        />
+                        <ModalSidebarItem
+                            icon={ShoppingBag}
+                            label={intl.formatMessage(messages.catalogTab)}
+                            selected={tab === 'catalog'}
                             onClick={() => this.setState({tab: 'catalog', showForm: false})}
-                        >
-                            <ShoppingBag size={15} />
-                            <FormattedMessage
-                                defaultMessage="Catalog"
-                                description="Catalog tab in products modal"
-                                id="mw.productsModal.catalogTab"
-                            />
-                        </button>
-                        <button
-                            aria-selected={tab === 'entitlements'}
-                            className={`${styles.tab} ${tab === 'entitlements' ? styles.tabSelected : ''}`}
-                            role="tab"
-                            type="button"
+                        />
+                        <ModalSidebarItem
+                            icon={Users}
+                            label={intl.formatMessage(messages.entitlementsTab)}
+                            selected={tab === 'entitlements'}
                             onClick={() => this.setState({tab: 'entitlements', showForm: false})}
-                        >
-                            <Users size={15} />
-                            <FormattedMessage
-                                defaultMessage="User Entitlements"
-                                description="Entitlements tab in products modal"
-                                id="mw.productsModal.entitlementsTab"
-                            />
-                        </button>
-                    </div>
-
-                    {tab === 'analytics' ? this.renderAnalyticsTab() :
-                        (tab === 'catalog' ? this.renderCatalogTab() : this.renderEntitlementsTab())}
-                </Box>
+                        />
+                    </ModalSidebar>
+                    <ModalSidebarContent className={styles.contentArea}>
+                        {tab === 'analytics' ? this.renderAnalyticsTab() :
+                            (tab === 'catalog' ? this.renderCatalogTab() : this.renderEntitlementsTab())}
+                    </ModalSidebarContent>
+                </ModalSidebarLayout>
             </Modal>
         );
     }
