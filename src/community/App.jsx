@@ -29,7 +29,7 @@ const Commit = lazy(() => import('./pages/Commit.jsx'));
 const RemixTree = lazy(() => import('./pages/RemixTree.jsx'));
 const Profile = lazy(() => import('./pages/Profile.jsx'));
 const UserLibrary = lazy(() => import('./pages/UserLibrary.jsx'));
-const Followers = lazy(() => import('./pages/Followers.jsx'));
+const Following = lazy(() => import('./pages/Following.jsx'));
 const Settings = lazy(() => import('./pages/Settings.jsx'));
 const MyStuff = lazy(() => import('./pages/MyStuff.jsx'));
 const ManageProject = lazy(() => import('./pages/ManageProject.jsx'));
@@ -200,8 +200,8 @@ const App = () => {
                         <Route path="/project/:id/commits/:sha" element={<Commit />} />
                         <Route path="/users/:name" element={<Profile />} />
                         <Route path="/users/:name/library" element={<UserLibrary />} />
-                        <Route path="/users/:name/followers" element={<Followers />} />
-                        <Route path="/users/:name/following" element={<Followers mode="following" />} />
+                        <Route path="/users/:name/followers" element={<Navigate to=".." relative="path" replace />} />
+                        <Route path="/users/:name/following" element={<Following />} />
                         <Route path="/settings" element={<Settings />} />
                         <Route path="/mystuff" element={<MyStuff />} />
                         <Route path="/mystuff/project/:id" element={<ManageProject />} />

@@ -34,7 +34,7 @@ export const milestoneLink = item => {
         return path;
     }
     if (item.type === 'follower_milestone' && item.profile) {
-        return `/users/${encodeURIComponent(item.profile)}/followers`;
+        return `/users/${encodeURIComponent(item.profile)}`;
     }
     if (item.post_id) return `/posts/${encodeURIComponent(item.post_id)}`;
     return '/notifications';

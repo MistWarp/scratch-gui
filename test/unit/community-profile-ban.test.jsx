@@ -11,7 +11,7 @@ jest.mock('../../src/community/api', () => ({
     default: {getUser: jest.fn(), userReviews: jest.fn(), themes: jest.fn()}
 }));
 jest.mock('../../src/community/rotur', () => ({
-    profile: jest.fn(), followers: jest.fn(), avatar: () => '', banner: () => ''
+    profile: jest.fn(), avatar: () => '', banner: () => ''
 }));
 jest.mock('../../src/community/UserContext.jsx', () => ({
     useUser: () => ({user: null, loading: false})
@@ -55,7 +55,6 @@ describe('MistWarp profile bans', () => {
         api.userReviews.mockResolvedValue({reviews: []});
         api.themes.mockResolvedValue({themes: []});
         rotur.profile.mockResolvedValue({username: 'alice', bio: 'Public Rotur bio', banned: false});
-        rotur.followers.mockResolvedValue({followers: []});
     });
 
     test('replaces an active Rotur profile with the site ban notice', async () => {

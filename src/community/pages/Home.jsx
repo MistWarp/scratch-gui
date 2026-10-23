@@ -96,7 +96,8 @@ const FriendsSection = ({user, login, bare = false}) => {
             return () => {};
         }
         setItems(null);
-        const projectActivity = rotur.following(viewerName).then(data => {
+        // Sessions from before following:view was asked for can't read the list.
+        const projectActivity = rotur.myFollowing().catch(() => ({following: []})).then(data => {
             const following = data.following || [];
             return following.length ? api.activity(following) : {activity: []};
         }).then(data => (data.activity || []).map(item => ({...item, timelineType: 'project-activity'})));

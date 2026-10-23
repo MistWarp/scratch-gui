@@ -25,7 +25,7 @@ jest.mock('../../src/community/api', () => ({
     editorUrl: ({platformProject, starter} = {}) => (platformProject ? `/editor#mw-${platformProject}` : `/editor${starter ? `?starter=${starter}` : ''}`),
     projectUrl: id => `/project/${id}`
 }));
-jest.mock('../../src/community/rotur', () => ({following: () => Promise.resolve({following: []})}));
+jest.mock('../../src/community/rotur', () => ({myFollowing: () => Promise.resolve({following: []})}));
 jest.mock('../../src/lib/rotur/client', () => ({fetchFollowingFeed: () => Promise.resolve([]), fetchNotifications: () => Promise.resolve([])}));
 jest.mock('../../src/lib/api/restore-points', () => ({getAllRestorePoints: () => Promise.resolve({restorePoints: []})}));
 jest.mock('../../src/lib/themes/custom-themes', () => ({customThemeManager: {themes: {clear: jest.fn()}, loadCustomThemes: jest.fn()}}));

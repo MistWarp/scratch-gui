@@ -22,7 +22,7 @@ jest.mock('../../src/lib/themes/custom-themes.js', () => ({
     customThemeManager: {themes: {clear: jest.fn()}, loadCustomThemes: jest.fn()}
 }));
 jest.mock('../../src/community/rotur.js', () => ({
-    following: jest.fn()
+    myFollowing: jest.fn()
 }));
 jest.mock('../../src/lib/community/cached-fetch.js', () => ({
     cachedFetchBuffer: jest.fn(() => Promise.resolve(new ArrayBuffer(0))),
@@ -108,7 +108,7 @@ describe('community project loading', () => {
 
     test('waits for the followed-creator theme decision before mounting the player', async () => {
         let resolveFollowing;
-        rotur.following.mockReturnValue(new Promise(resolve => {
+        rotur.myFollowing.mockReturnValue(new Promise(resolve => {
             resolveFollowing = resolve;
         }));
         jest.spyOn(api, 'getProject').mockResolvedValue({
@@ -186,7 +186,7 @@ describe('community project loading', () => {
     });
 
     test('shows save to library as a primary project action', async () => {
-        rotur.following.mockResolvedValue({following: []});
+        rotur.myFollowing.mockResolvedValue({following: []});
         jest.spyOn(api, 'getProject').mockResolvedValue({
             project: {
                 id: 'project-1',
@@ -238,7 +238,7 @@ describe('community project loading', () => {
     });
 
     test('writes the chosen activity tab to the address and follows hash changes', async () => {
-        rotur.following.mockResolvedValue({following: []});
+        rotur.myFollowing.mockResolvedValue({following: []});
         jest.spyOn(api, 'getProject').mockResolvedValue({
             project: {id: 'project-1', title: 'Project', owner: 'Creator', hasContent: true, visibility: 'public'}
         });

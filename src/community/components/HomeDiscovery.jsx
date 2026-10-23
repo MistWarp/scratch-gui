@@ -23,7 +23,7 @@ const SuggestedCreators = ({viewerName}) => {
         let active = true;
         Promise.all([
             api.leaderboard('loves'),
-            viewerName ? rotur.following(viewerName).catch(() => ({following: []})) : {following: []}
+            viewerName ? rotur.myFollowing().catch(() => ({following: []})) : {following: []}
         ]).then(([board, follows]) => {
             if (!active) return;
             const following = follows.following || [];

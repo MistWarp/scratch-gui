@@ -4,7 +4,7 @@ import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
 import {useLocation, useNavigate, useParams, Link} from 'react-router-dom';
 import {
     UserPlus, UserCheck, Calendar, MessageSquare, MessageSquareOff, Pencil, Flag, Coins, Star, Ban,
-    VolumeX, FolderKanban, Palette, Gamepad2, Users, UserX, EyeOff, ShieldCheck
+    VolumeX, FolderKanban, Palette, Gamepad2, UserX, EyeOff, ShieldCheck
 } from 'lucide-react';
 import api, {projectUrl} from '../api';
 import rotur from '../rotur';
@@ -39,7 +39,6 @@ import {formatPlaytime, safeDate, timeAgo, timeAgoText} from '../format';
 import {formatCommunityMessage} from '../locale.js';
 import styles from './Profile.module.css';
 
-const FOLLOWER_STRIP_COUNT = 16;
 const PROFILE_TABS = ['projects', 'posts', 'themes'];
 export const profileTabFromHash = hash => {
     const requested = String(hash || '').replace(/^#/, '').toLowerCase();
@@ -131,7 +130,6 @@ const Profile = () => {
     const [profileLoadContext, setProfileLoadContext] = useState('');
     const [mwUser, setMwUser] = useState(null);
     const [mwUserLoadContext, setMwUserLoadContext] = useState('');
-    const [followers, setFollowers] = useState([]);
     const [error, setError] = useState(null);
     const [errorLoadContext, setErrorLoadContext] = useState('');
     const [actionError, setActionError] = useState(null);
@@ -216,16 +214,11 @@ const Profile = () => {
             .then(fresh(data => setReviews(data && Array.isArray(data.reviews) ? data.reviews : [])))
             .catch(fresh(() => setReviews([])));
         loadThemes();
-        rotur.followers(name)
-            .then(fresh(data => setFollowers(data && Array.isArray(data.followers) ?
-                data.followers.filter(follower => typeof follower === 'string') : [])))
-            .catch(fresh(() => setFollowers([])));
     }, [loadContext, name, beginLoad, loadThemes]);
 
     useEffect(() => {
         setProfile(null);
         setMwUser(null);
-        setFollowers([]);
         setReviews(null);
         setError(null);
         setActionError(null);
@@ -327,7 +320,6 @@ const Profile = () => {
         actionLocks.current.add(actionKey);
         setFollowBusy(true);
         setActionError(null);
-        const me = user.username;
         const wasFollowed = Boolean(profile.followed);
         // Show the new state straight away and put the old one back if Rotur refuses.
         const showFollow = followed => {
@@ -336,10 +328,6 @@ const Profile = () => {
                 followed,
                 followers: followed ? (p.followers || 0) + 1 : Math.max(0, (p.followers || 1) - 1)
             }));
-            setFollowers(fs => {
-                const others = fs.filter(f => f.toLowerCase() !== me.toLowerCase());
-                return followed ? [me, ...others] : others;
-            });
         };
         showFollow(!wasFollowed);
         try {
@@ -705,36 +693,6 @@ const Profile = () => {
                                     </section>
                                 ) : null}
 
-                                <section className={styles.section}>
-                                    <SectionHeading
-                                        icon={Users}
-                                        title={communityText('Followers')}
-                                        count={profile.followers || followers.length}
-                                        link={followers.length ? `/users/${name}/followers` : null}
-                                    />
-                                    {followers.length ? (
-                                        <div className={styles.followersRow}>
-                                            {followers.slice(0, FOLLOWER_STRIP_COUNT).map(follower => (
-                                                <Link
-                                                    key={follower}
-                                                    to={`/users/${follower}`}
-                                                    className={styles.followerChip}
-                                                >
-                                                    <Avatar
-                                                        username={follower}
-                                                        size={56}
-                                                    />
-                                                    <span>{follower}</span>
-                                                </Link>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <EmptyState icon={Users} title={communityText('No followers yet')}>
-                                            {communityText('People who follow this user will appear here.')}
-                                        </EmptyState>
-                                    )}
-                                </section>
-
                                 {onMistWarp ? (
                                     <section className={styles.section} id="comments">
                                         <SectionHeading
@@ -845,8 +803,12 @@ const Profile = () => {
                                 />
                             ) : null}
                             <div className={styles.profileStats}>
-                                <Link className={styles.profileStatLink} to={`/users/${name}/followers`}><strong>{profile.followers || 0}</strong><span>{communityText('followers')}</span></Link>
-                                <Link className={styles.profileStatLink} to={`/users/${name}/following`}><strong>{profile.following || 0}</strong><span>{communityText('following')}</span></Link>
+                                <div><strong>{profile.followers || 0}</strong><span>{communityText('followers')}</span></div>
+                                {isSelf ? (
+                                    <Link className={styles.profileStatLink} to={`/users/${name}/following`}><strong>{profile.following || 0}</strong><span>{communityText('following')}</span></Link>
+                                ) : (
+                                    <div><strong>{profile.following || 0}</strong><span>{communityText('following')}</span></div>
+                                )}
                             </div>
                             <div className={styles.actions}>
                                 {user && !isSelf ? (

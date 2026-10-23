@@ -35,7 +35,7 @@ jest.mock('../../src/lib/themes/custom-themes.js', () => ({
     customThemeManager: {themes: {clear: jest.fn()}, loadCustomThemes: jest.fn()}
 }));
 jest.mock('../../src/community/rotur.js', () => ({
-    following: jest.fn()
+    myFollowing: jest.fn()
 }));
 jest.mock('../../src/lib/rotur/client.js', () => ({
     getRotur: () => mockClient,
@@ -67,7 +67,7 @@ const flush = async () => {
 };
 
 const mountProject = async () => {
-    rotur.following.mockResolvedValue({following: []});
+    rotur.myFollowing.mockResolvedValue({following: []});
     jest.spyOn(api, 'getProject').mockResolvedValue({
         project: {
             id: 'project-1',
