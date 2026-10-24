@@ -98,6 +98,10 @@ test.each([
     [`${E}/addons`, 'addons', `${E}/addons`, 0],
     [`${E}/addons/`, 'addons', `${E}/addons`, 1],
     [`${E}/credits.html`, 'credits', `${E}/credits`, 1],
+    [`${E}/editor/fullscreen`, 'fullscreen', `${E}/fullscreen`, 1],
+    [`${E}/editor/fullscreen/#123`, 'fullscreen', `${E}/fullscreen#123`, 1],
+    [`${E}/editor/player?turbo`, 'player', `${E}/player?turbo`, 1],
+    [`${E}/editor/embed`, 'embed', `${E}/embed`, 1],
     [`${E}/123`, 'player', `${E}/123`, 0],
     [`${E}/123?turbo&fps=60`, 'player', `${E}/123?turbo&fps=60`, 0],
     [`${E}/123/`, 'player', `${E}/123`, 1],
@@ -117,6 +121,9 @@ test.each([
     [`${M}/editor.html?chat=1`, 'editor', `${E}/?chat=1`, 1],
     [`${M}/fullscreen#123`, 'fullscreen', `${E}/fullscreen#123`, 1],
     [`${M}/player.html`, 'player', `${E}/player`, 1],
+    [`${M}/editor/fullscreen#123`, 'fullscreen', `${E}/fullscreen#123`, 1],
+    [`${M}/editor/addons`, 'addons', `${E}/addons`, 1],
+    [`${M}/editor/embed`, 'embed', `${M}/embed`, 1],
     [`${M}/addons`, 'addons', `${E}/addons`, 1],
     [`${M}/credits`, 'credits', `${E}/credits`, 1],
     [`${M}/123?turbo`, 'player', `${E}/123?turbo`, 1],
@@ -144,6 +151,8 @@ test.each([
 test.each([
     `${M}/nope`,
     `${M}/editor/foo`,
+    `${E}/editor/foo`,
+    `${E}/editor/privacy`,
     `${M}/123/player`,
     `${E}/nope`
 ])('the unknown page %s ends on a 404', async start => {

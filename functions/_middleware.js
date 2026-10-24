@@ -22,6 +22,8 @@ const MOVED_APP_PAGES = new Set(['/player', '/fullscreen', '/addons', '/credits'
 const PROJECT_PAGE = /^\/\d+(?:\/(editor|fullscreen))?$/;
 const PROJECT_PAGE_ASSETS = {editor: '/editor', fullscreen: '/fullscreen'};
 const FILE_PATH = /\/[^/]+\.(?!html$)[A-Za-z0-9]+$/;
+// The app pages live at the root, but people guess /editor/fullscreen and the like from the editor's URL.
+const EDITOR_PREFIXED_APP_PAGE = /^\/editor(\/[^/]+)$/;
 // Standalone HTML entries with their own tags; the community SPA is index.html.
 const SKIP_PATHS = new Set([
     '/editor',
@@ -431,7 +433,9 @@ const isFilePath = pathname => STATIC_FILE_PATH.test(pathname) || FILE_PATH.test
 const pagePath = pathname => {
     if (DOCS_PATH.test(pathname) || isFilePath(pathname)) return pathname;
     const path = pathname.replace(/(.)\/+$/, '$1').replace(/\.html$/i, '');
-    return path === '/index' ? '/' : path;
+    if (path === '/index') return '/';
+    const prefixed = path.match(EDITOR_PREFIXED_APP_PAGE);
+    return prefixed && APP_PAGES.has(prefixed[1]) ? prefixed[1] : path;
 };
 
 const permanent = location => new Response(null, {
