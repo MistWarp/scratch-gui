@@ -117,6 +117,32 @@ describe('Classroom availability', () => {
         expect(wrapper.find('#classroom')).toHaveLength(1);
     });
 
+    test('a class code the API accepts opens its sign-in page while Classroom is off', async () => {
+        mockRequest.mockImplementation(path => (path === '/classroom/join/TEST1234' ?
+            answer(200, {ok: true}) :
+            answer(404, {ok: false})));
+        const page = path => renderAt(path, (
+            <Routes>
+                <Route
+                    path="/classroom"
+                    element={<ClassroomRoute />}
+                >
+                    <Route
+                        path="join/:code"
+                        element={<p id="join">{'Join'}</p>}
+                    />
+                </Route>
+            </Routes>
+        ));
+        const open = page('/classroom/join/TEST1234');
+        await flush(open);
+        expect(open.find('#join')).toHaveLength(1);
+        const closed = page('/classroom/join/NOPE1234');
+        await flush(closed);
+        expect(closed.find('#join')).toHaveLength(0);
+        expect(closed.text()).toContain('That page does not exist.');
+    });
+
     test('the footer names Classroom only when it is available', async () => {
         mockRequest.mockReturnValue(answer(404, {ok: false}));
         const off = renderAt('/', <Footer />);
