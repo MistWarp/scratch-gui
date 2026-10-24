@@ -75,9 +75,12 @@ const bridgeUsername = () => {
 const splitSession = {
     get: () => (editorToken && editorToken.username === bridgeUsername() &&
         editorToken.expiresAt - TOKEN_MARGIN > Date.now() ? editorToken.token : null),
-    refresh: () => {
+    refresh: async () => {
+        if (!bridgeUsername() && accountBridge.getIdentity().status === 'restoring') {
+            await accountBridge.connect().catch(() => null);
+        }
         const username = bridgeUsername();
-        if (!username || Date.now() - mintFailedAt < MINT_RETRY_DELAY) return Promise.resolve(null);
+        if (!username || Date.now() - mintFailedAt < MINT_RETRY_DELAY) return null;
         if (!editorTokenRequest) {
             const generation = tokenGeneration;
             editorTokenRequest = accountBridge.call('editorSession', staleToken ? {stale: staleToken} : {})

@@ -189,3 +189,38 @@ test('editing presence goes to the account frame with only the presence fields',
     clearActivity();
     expect(mockCall).toHaveBeenCalledWith('activity', {action: 'clear'});
 });
+
+test('a request made before the account frame connects waits for it and uses an editor token', async () => {
+    jest.resetModules();
+    const signedIn = mockIdentity;
+    mockIdentity = {status: 'restoring', user: null, banMessage: null};
+    const bridge = require('../../../src/lib/account/bridge.js');
+    let finishConnecting = null;
+    const connected = new Promise(resolve => {
+        finishConnecting = () => {
+            mockIdentity = signedIn;
+            for (const listener of mockIdentityListeners) listener(mockIdentity);
+            resolve();
+        };
+    });
+    bridge.connect.mockImplementation(() => connected);
+    const fresh = require('../../../src/lib/rotur/identity.js');
+    const api = require('../../../src/lib/community/api.js');
+    const auth = [];
+    window.fetch = jest.fn((url, options) => {
+        auth.push(options.headers.Authorization);
+        return Promise.resolve({ok: true, status: 200, json: () => Promise.resolve({ok: true, project: {}})});
+    });
+    const restoring = fresh.restore();
+    const loading = api.request('/projects/p1/editor', {cache: false});
+    await Promise.resolve();
+    expect(window.fetch).not.toHaveBeenCalled();
+    finishConnecting();
+    await loading;
+    await restoring;
+    expect(auth).toEqual([expect.stringMatching(/^Bearer editor-/)]);
+    bridge.connect.mockImplementation(() => {
+        for (const listener of mockIdentityListeners) listener(mockIdentity);
+        return Promise.resolve();
+    });
+});
