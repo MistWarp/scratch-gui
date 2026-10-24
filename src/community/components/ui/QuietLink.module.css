@@ -1,0 +1,10 @@
+.link {
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+    font-weight: 500;
+}
+
+.link:hover {
+    color: var(--mw-text);
+    text-decoration: underline;
+}

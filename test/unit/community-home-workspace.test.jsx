@@ -51,21 +51,33 @@ beforeEach(() => {
     api.roadmap.mockResolvedValue({ideas: []});
 });
 
-test.each([[3, true], [4, false], [12, false]])('an account with %i projects shows starters: %s', async (total, visible) => {
-    api.myProjectPage.mockResolvedValue({projects: [], total});
-    const wrapper = render(<Home />);
-    expect(wrapper.find(StarterGallery)).toHaveLength(0);
+test.each([
+    [0, ['Start a project', 'New project', 'Cloud clicker', 'Cloud explorer', 'Cloud dance']],
+    [2, ['Continue editing', 'New project', 'First', 'Second', 'Cloud clicker']],
+    [3, ['Continue editing', 'New project', 'First', 'Second', 'Third']]
+])('an account with %i projects fills the row with starters', async (count, headings) => {
+    api.myProjectPage.mockResolvedValue({projects: ['First', 'Second', 'Third'].slice(0, count)
+        .map((title, index) => ({id: `p${index}`, owner: 'alice', title, edited: 10 - index})),
+    total: count});
+    const wrapper = render(<ContinueProjects username="alice" />);
     await flush(wrapper);
-    expect(wrapper.find(StarterGallery)).toHaveLength(visible ? 1 : 0);
+    expect(Array.from(wrapper.getDOMNode().querySelectorAll('h2, h3'), node => node.textContent)).toEqual(headings);
     await act(async () => wrapper.unmount());
 });
 
-test('does not flash starters while the account is restoring', async () => {
-    useUser.mockReturnValue({user: null, loading: true});
+test('shows the starter gallery only to signed-out visitors', async () => {
+    api.myProjectPage.mockResolvedValue({projects: [], total: 0});
     const wrapper = render(<Home />);
     await flush(wrapper);
     expect(wrapper.find(StarterGallery)).toHaveLength(0);
     await act(async () => wrapper.unmount());
+
+    useUser.mockReturnValue({user: null, login: jest.fn(), loading: false});
+    const signedOut = render(<Home />);
+    await flush(signedOut);
+    expect(signedOut.find(StarterGallery)).toHaveLength(1);
+    expect(signedOut.find('a[href="/editor?starter=clicker"]').length).toBeGreaterThan(0);
+    await act(async () => signedOut.unmount());
 });
 
 test('puts the last edited project first and removes duplicates', async () => {
@@ -78,8 +90,8 @@ test('puts the last edited project first and removes duplicates', async () => {
     total: 2});
     const wrapper = render(<ContinueProjects username="alice" />);
     await flush(wrapper);
-    expect(wrapper.find('a[href="/editor#mw-last"]')).toHaveLength(1);
-    expect(wrapper.find('h3').map(node => node.text())).toEqual(['Last edited', 'Newest saved']);
+    expect(wrapper.find('h3 a[href="/editor#mw-last"]')).toHaveLength(1);
+    expect(wrapper.find('h3').map(node => node.text())).toEqual(['New project', 'Last edited', 'Newest saved', 'Cloud clicker']);
     await act(async () => wrapper.unmount());
 });
 
@@ -98,20 +110,16 @@ test('ignores a late project response from the previous account', async () => {
     await act(async () => wrapper.unmount());
 });
 
-test('gives every recent project the same quiet action', async () => {
-    api.myProjectPage.mockResolvedValue({projects: [
-        {id: 'a', owner: 'alice', title: 'First', edited: 3},
-        {id: 'b', owner: 'alice', title: 'Second', edited: 2},
-        {id: 'c', owner: 'alice', title: 'Third', edited: 1}
-    ],
-    total: 3});
+test('offers a retry when your projects fail to load', async () => {
+    api.myProjectPage.mockRejectedValueOnce(new Error('offline'))
+        .mockResolvedValueOnce({projects: [{id: 'a', owner: 'alice', title: 'First', edited: 1}], total: 1});
     const wrapper = render(<ContinueProjects username="alice" />);
     await flush(wrapper);
-    const cards = wrapper.find('a[href^="/editor#mw-"]');
-    expect(cards).toHaveLength(3);
-    const actions = cards.map(card => card.find('span').filterWhere(node => node.text() === 'Open')
-        .first()
-        .prop('className'));
-    expect(new Set(actions).size).toBe(1);
+    expect(wrapper.text()).toContain('Could not load your projects.');
+    expect(wrapper.find('h2').text()).toBe('Your projects');
+    wrapper.find('button').filterWhere(button => button.text() === 'Try again')
+        .simulate('click');
+    await flush(wrapper);
+    expect(wrapper.find('a[href="/editor#mw-a"]').length).toBeGreaterThan(0);
     await act(async () => wrapper.unmount());
 });

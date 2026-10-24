@@ -104,6 +104,10 @@
     pointer-events: none;
 }
 
+.search:focus-within .searchIcon {
+    color: var(--text-faint);
+}
+
 .searchInput {
     width: 100%;
     height: 36px;
@@ -435,19 +439,11 @@ a.suggestionMeta:hover {
 
     .mobileSearch .searchIcon {
         left: 12px;
-        color: var(--text-faint);
     }
 
     .mobileSearch .searchInput {
         height: 40px;
         padding-inline-start: 38px;
-        border-color: var(--border-soft);
-        color: var(--mw-text);
-        background: var(--bg-raised);
-    }
-
-    .mobileSearch .searchInput::placeholder {
-        color: var(--text-faint);
     }
 
     .mobileSearch .suggestions {

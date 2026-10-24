@@ -8,6 +8,10 @@
     margin-top: var(--section-gap);
 }
 
+.section {
+    min-width: 0;
+}
+
 .intro {
     display: grid;
     justify-items: start;
@@ -44,28 +48,6 @@
     margin-top: var(--space-1);
 }
 
-.columns {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--section-gap);
-    align-items: start;
-}
-
-.panel {
-    min-width: 0;
-}
-
-.quietLink {
-    color: var(--text-dim);
-    font-size: var(--fs-sm);
-    font-weight: 500;
-}
-
-.quietLink:hover {
-    color: var(--mw-text);
-    text-decoration: underline;
-}
-
 .empty {
     margin: 0;
     color: var(--text-dim);
@@ -73,93 +55,102 @@
     line-height: 1.5;
 }
 
-.listSkeleton {
-    height: 180px;
-    border-radius: var(--radius-xs);
-    background: var(--bg-card);
+/* New games on the left, what else they did on the right. */
+.following {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-6);
+    align-items: start;
 }
 
-.list {
+.followingGames {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-5) var(--space-4);
+}
+
+.followingSingle .followingGames {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.updates {
+    display: grid;
     margin: 0;
     padding: 0;
     list-style: none;
 }
 
-.gameGrid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: var(--space-5) var(--space-4);
-}
-
-.gameSkeleton {
-    aspect-ratio: 4 / 3;
-    border-radius: var(--radius-xs);
-    background: var(--bg-card);
-}
-
-.activityItem {
+.update {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--space-3);
-    min-height: 52px;
-    padding: var(--space-2) 0;
+    padding: var(--space-3) 0;
     border-top: 1px solid var(--border-soft);
     font-size: var(--fs-md);
 }
 
-.activityItem:first-child {
+.update:first-child {
+    padding-top: 0;
     border-top: 0;
 }
 
-.activityItem > a {
+.update > a {
     display: flex;
     flex-shrink: 0;
 }
 
-.activityIcon {
-    margin-inline-end: 6px;
-    color: var(--text-faint);
-    vertical-align: -2px;
-}
-
-.activityText {
+.updateText {
+    display: -webkit-box;
     flex: 1 1 auto;
     min-width: 0;
+    margin: 0;
+    padding-top: 6px;
     overflow: hidden;
     color: var(--text-dim);
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
 }
 
-.activityText strong,
-.activityText a {
+.updateText strong,
+.updateText a {
     color: var(--mw-text);
 }
 
-.activityText a:hover {
+.updateText a:hover {
     text-decoration: underline;
 }
 
-.activityActor {
+.updateActor {
     font-weight: 600;
 }
 
-.activityTime {
+.updateTime {
     flex-shrink: 0;
+    padding-top: 7px;
     color: var(--text-faint);
     font-size: var(--fs-xs);
 }
 
-.notificationAvatar {
-    display: inline-grid;
+.updateSkeleton > span {
+    display: block;
+    border-radius: var(--radius-2xs);
+    background: var(--bg-card);
+    animation: pulse 1.4s ease-in-out infinite;
+}
+
+.updateSkeleton > span:first-child {
     width: 32px;
     height: 32px;
-    place-items: center;
+    flex-shrink: 0;
     border-radius: 50%;
-    color: var(--text-dim);
-    background: var(--bg-raised);
+}
+
+.updateSkeleton > span:last-child {
+    width: 70%;
+    height: 12px;
+    margin-top: 10px;
 }
 
 .importRow {
@@ -167,29 +158,32 @@
     justify-items: start;
     gap: var(--space-2);
     max-width: 560px;
-    margin-top: var(--space-5);
+    margin-top: var(--space-6);
 }
 
-@media (max-width: 1000px) {
-    .gameGrid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: var(--space-4) var(--space-3);
+@keyframes pulse {
+    50% {
+        opacity: .55;
     }
 }
 
-@media (max-width: 860px) {
-    .columns {
+@media (max-width: 1000px) {
+    .following {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .followingSingle .followingGames {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .followingGames {
+        gap: var(--space-4) var(--space-3);
     }
 }
 
 @media (max-width: 760px) {
     .page > * + * {
         margin-top: var(--space-6);
-    }
-
-    .columns {
-        gap: var(--space-6);
     }
 }
 
@@ -211,5 +205,15 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
         width: 100%;
     }
+}
 
+@media (prefers-reduced-motion: reduce) {
+    .updateSkeleton > span {
+        animation: none;
+    }
+}
+
+/* Errors sit where the content would, not centred under the heading. */
+.status {
+    justify-content: flex-start;
 }

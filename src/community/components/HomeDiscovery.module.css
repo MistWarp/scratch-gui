@@ -2,17 +2,6 @@
     min-width: 0;
 }
 
-.quietLink {
-    color: var(--text-dim);
-    font-size: var(--fs-sm);
-    font-weight: 500;
-}
-
-.quietLink:hover {
-    color: var(--mw-text);
-    text-decoration: underline;
-}
-
 .grid,
 .bento {
     display: grid;
@@ -33,6 +22,13 @@
     aspect-ratio: 4 / 3;
     border-radius: var(--radius-xs);
     background: var(--bg-card);
+    animation: pulse 1.4s ease-in-out infinite;
+}
+
+.empty {
+    margin: 0;
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
 }
 
 .skeleton.bentoLead {
@@ -134,22 +130,17 @@
     white-space: nowrap;
 }
 
-.caption h3 a:hover,
-.caption p a:hover {
+.caption h3 a:hover {
     text-decoration: underline;
 }
 
-.caption p {
+.captionMeta {
     display: flex;
+    align-items: center;
     gap: var(--space-2);
-    margin: 0;
+    min-width: 0;
     color: var(--text-dim);
     font-size: var(--fs-sm);
-}
-
-.captionLabel {
-    color: var(--accent-strong);
-    font-weight: 600;
 }
 
 .list {
@@ -169,10 +160,35 @@
     border-top: 0;
 }
 
-.listSkeleton {
-    height: 180px;
-    border-radius: var(--radius-xs);
+.rowSkeleton > span {
+    display: block;
+    border-radius: var(--radius-2xs);
     background: var(--bg-card);
+    animation: pulse 1.4s ease-in-out infinite;
+}
+
+.rowSkeleton > span:first-child {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+}
+
+.rowSkeleton > span:last-child {
+    width: 40%;
+    height: 12px;
+}
+
+@keyframes pulse {
+    50% {
+        opacity: .55;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .skeleton,
+    .rowSkeleton > span {
+        animation: none;
+    }
 }
 
 .row {
@@ -243,3 +259,6 @@
     }
 }
 
+.status {
+    justify-content: flex-start;
+}

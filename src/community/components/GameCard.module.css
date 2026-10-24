@@ -61,10 +61,10 @@
     font-size: var(--fs-sm);
 }
 
-.label {
-    flex-shrink: 0;
-    color: var(--accent-strong);
-    font-weight: 600;
+.meta > span:only-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .owner {
@@ -94,8 +94,76 @@
     gap: 3px;
 }
 
+/* Starters and the new project card have no thumbnail, so they draw one. */
+.tile {
+    position: relative;
+    display: grid;
+    width: 100%;
+    height: 100%;
+    place-items: center;
+    background: var(--bg-card);
+    color: var(--accent-strong);
+}
+
+.tile img {
+    width: 38%;
+    height: auto;
+    object-fit: contain;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-5) var(--space-4);
+}
+
+.skeleton {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.skeletonThumb,
+.skeletonLine {
+    display: block;
+    border-radius: var(--radius-xs);
+    background: var(--bg-card);
+    animation: pulse 1.4s ease-in-out infinite;
+}
+
+.skeletonThumb {
+    aspect-ratio: 4 / 3;
+}
+
+.skeletonLine {
+    width: 70%;
+    height: 12px;
+    border-radius: var(--radius-2xs);
+}
+
+.skeletonLine:last-child {
+    width: 40%;
+}
+
+@keyframes pulse {
+    50% {
+        opacity: .55;
+    }
+}
+
+@media (max-width: 1000px) {
+    .row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-4) var(--space-3);
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .thumb img {
         transition: none;
+    }
+
+    .skeletonThumb,
+    .skeletonLine {
+        animation: none;
     }
 }

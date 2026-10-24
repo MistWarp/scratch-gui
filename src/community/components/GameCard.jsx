@@ -8,62 +8,153 @@ import {useCommunityIntl} from '../i18n.jsx';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import styles from './GameCard.module.css';
 
-const GameCard = ({project, className, label}) => {
+// Editor links leave the community app, so they can't be router links.
+const CardLink = ({to, href, children, ...props}) => (href ?
+    <a
+        href={href}
+        {...props}
+    >{children}</a> :
+    <Link
+        to={to}
+        {...props}
+    >{children}</Link>);
+
+CardLink.propTypes = {
+    children: PropTypes.node,
+    href: PropTypes.string,
+    to: PropTypes.string
+};
+
+// One card for everything on home: games, your projects and starters.
+export const MediaCard = ({className, href, media, meta, title, to}) => (
+    <article className={classNames(styles.card, className)}>
+        <CardLink
+            className={styles.thumb}
+            to={to}
+            href={href}
+            tabIndex={-1}
+            aria-hidden="true"
+        >
+            {media}
+        </CardLink>
+        <div className={styles.body}>
+            <h3 className={styles.title}>
+                <CardLink
+                    to={to}
+                    href={href}
+                    title={typeof title === 'string' ? title : null}
+                >{title}</CardLink>
+            </h3>
+            {meta ? <div className={styles.meta}>{meta}</div> : null}
+        </div>
+    </article>
+);
+
+MediaCard.propTypes = {
+    className: PropTypes.string,
+    href: PropTypes.string,
+    media: PropTypes.node,
+    meta: PropTypes.node,
+    title: PropTypes.node.isRequired,
+    to: PropTypes.string
+};
+
+export const CardRow = ({children, className}) => (
+    <div className={classNames(styles.row, className)}>{children}</div>
+);
+
+CardRow.propTypes = {
+    children: PropTypes.node,
+    className: PropTypes.string
+};
+
+export const CardTile = ({children}) => <span className={styles.tile}>{children}</span>;
+
+CardTile.propTypes = {
+    children: PropTypes.node
+};
+
+export const CardSkeleton = () => (
+    <div
+        className={styles.skeleton}
+        aria-hidden="true"
+    >
+        <span className={styles.skeletonThumb} />
+        <span className={styles.skeletonLine} />
+        <span className={styles.skeletonLine} />
+    </div>
+);
+
+export const CardRowSkeleton = ({count}) => (
+    <CardRow>
+        {Array.from({length: count}, (_, index) => (
+            <CardSkeleton key={index} />
+        ))}
+    </CardRow>
+);
+
+CardRowSkeleton.propTypes = {
+    count: PropTypes.number
+};
+
+CardRowSkeleton.defaultProps = {
+    count: 4
+};
+
+export const GameMeta = ({project}) => {
     const {text: communityText} = useCommunityIntl();
     const loves = Number(project.loveCount) || 0;
     const plays = Number(project.views) || 0;
     return (
-        <article className={classNames(styles.card, className)}>
+        <>
             <Link
-                className={styles.thumb}
-                to={projectUrl(project)}
-                tabIndex={-1}
-                aria-hidden="true"
-            >
-                <ProjectThumbnail
-                    project={project}
-                    fallbackClassName={styles.fallback}
-                    lazy
-                />
-            </Link>
-            <div className={styles.body}>
-                <h3 className={styles.title}>
-                    <Link
-                        to={projectUrl(project)}
-                        title={project.title}
-                    >{project.title}</Link>
-                </h3>
-                <div className={styles.meta}>
-                    {label ? <span className={styles.label}>{label}</span> : null}
-                    <Link
-                        className={styles.owner}
-                        to={`/users/${project.owner}`}
-                    >{project.owner}</Link>
-                    <span className={styles.stats}>
-                        <span title={communityText('{value1, plural, one {# love} other {# loves}}', {value1: loves})}>
-                            <Heart
-                                size={12}
-                                aria-hidden="true"
-                            />
-                            {loves}
-                        </span>
-                        <span title={communityText('{value1, plural, one {# view} other {# views}}', {value1: plays})}>
-                            <Play
-                                size={12}
-                                aria-hidden="true"
-                            />
-                            {plays}
-                        </span>
-                    </span>
-                </div>
-            </div>
-        </article>
+                className={styles.owner}
+                to={`/users/${project.owner}`}
+            >{project.owner}</Link>
+            <span className={styles.stats}>
+                <span title={communityText('{value1, plural, one {# love} other {# loves}}', {value1: loves})}>
+                    <Heart
+                        size={12}
+                        aria-hidden="true"
+                    />
+                    {loves}
+                </span>
+                <span title={communityText('{value1, plural, one {# view} other {# views}}', {value1: plays})}>
+                    <Play
+                        size={12}
+                        aria-hidden="true"
+                    />
+                    {plays}
+                </span>
+            </span>
+        </>
     );
 };
 
+GameMeta.propTypes = {
+    project: PropTypes.shape({
+        loveCount: PropTypes.number,
+        owner: PropTypes.string,
+        views: PropTypes.number
+    }).isRequired
+};
+
+const GameCard = ({project, className}) => (
+    <MediaCard
+        className={className}
+        to={projectUrl(project)}
+        title={project.title}
+        media={<ProjectThumbnail
+            project={project}
+            fallbackClassName={styles.fallback}
+            lazy
+        />}
+        meta={<GameMeta project={project} />}
+    />
+);
+
 GameCard.propTypes = {
     className: PropTypes.string,
-    label: PropTypes.node,
     project: PropTypes.shape({
         id: PropTypes.string,
         loveCount: PropTypes.number,

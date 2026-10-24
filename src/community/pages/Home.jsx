@@ -1,32 +1,30 @@
 /* eslint-disable max-len */
-import {isMilestoneNotification} from '../milestone-notifications.js';
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Bell, GitFork, Globe, Heart, MessageCircle, Plus, Star} from 'lucide-react';
+import {Plus} from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
 import rotur from '../rotur';
-import {fetchFollowingFeed, fetchNotifications} from '../../lib/rotur/client.js';
+import {fetchFollowingFeed} from '../../lib/rotur/client.js';
 import {useUser} from '../UserContext.jsx';
 import {timeAgo} from '../format';
 import Avatar from '../components/Avatar.jsx';
 import Button from '../components/ui/Button.jsx';
+import QuietLink from '../components/ui/QuietLink.jsx';
 import SectionHeading from '../components/ui/SectionHeading.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
-import GameCard from '../components/GameCard.jsx';
+import GameCard, {CardSkeleton} from '../components/GameCard.jsx';
 import ScratchImport from '../components/ScratchImport.jsx';
 import {FeaturedGames, SuggestedCreators} from '../components/HomeDiscovery.jsx';
 import {ContinueProjects, DeviceBackup, StarterGallery} from '../components/HomeWorkspace.jsx';
 import loadProjectPreview from '../project-preview.js';
 import {track} from '../analytics.js';
 import {useCommunityIntl} from '../i18n.jsx';
-import {categoryForNotification, getNotificationPreferences} from '../notification-preferences';
 import {normalizeFollowingPosts, postUrl, timestampMs} from '../following-feed.js';
-import {
-    SYSTEM_TYPES, USERNAME_RE, actorFor, describeNotification, richTranslator, targetFor
-} from '../notification-text.jsx';
+import {richTranslator} from '../notification-text.jsx';
 import styles from './Home.module.css';
 
-const ACTIVITY_ICONS = {love: Heart, favorite: Star, share: Globe, remix: GitFork, review: Star};
+const GAMES = 4;
+const UPDATES = 6;
 
 const describeActivity = (item, t, actor) => {
     const project = <strong>{item.projectTitle}</strong>;
@@ -40,284 +38,173 @@ const describeActivity = (item, t, actor) => {
     }
 };
 
-const ListSkeleton = () => <div className={styles.listSkeleton} />;
+const newestFirst = (left, right) => timestampMs(right.created || right.timestamp) - timestampMs(left.created || left.timestamp);
 
-const QuietLink = ({to, children}) => (
-    <Link
-        className={styles.quietLink}
-        to={to}
-    >{children}</Link>
-);
-
-// Sessions from before following:view was asked for can't read the list.
-const loadFollowedActivity = () => rotur.myFollowing().catch(() => ({following: []})).then(data => {
+// Games people you follow shared, and everything else they did: posts on
+// claw, hearts, remixes and reviews. Sessions from before following:view was
+// asked for can't read the list, so they see creators to follow instead.
+export const loadFollowing = () => rotur.myFollowing().catch(() => ({following: []})).then(data => {
     const following = data.following || [];
-    return following.length ? api.activity(following).then(result => ({following, activity: result.activity || []})) :
-        {following, activity: []};
+    if (!following.length) return {following, games: [], updates: [], failed: false};
+    return Promise.allSettled([api.activity(following), fetchFollowingFeed(40)]).then(([activity, posts]) => {
+        const items = activity.status === 'fulfilled' ? activity.value.activity || [] : [];
+        const seen = new Set();
+        const shares = items
+            .filter(item => item.type === 'share' && item.projectId && !seen.has(item.projectId) && seen.add(item.projectId))
+            .sort(newestFirst)
+            .slice(0, GAMES);
+        const updates = [
+            ...items.filter(item => item.type !== 'share').map(item => ({...item, timelineType: 'project-activity'})),
+            ...(posts.status === 'fulfilled' ? normalizeFollowingPosts(posts.value) : [])
+        ].sort(newestFirst).slice(0, UPDATES);
+        return Promise.all(shares.map(item => loadProjectPreview({id: item.projectId}).catch(() => null)))
+            .then(games => ({
+                following,
+                games: games.filter(Boolean),
+                updates,
+                failed: activity.status === 'rejected' && posts.status === 'rejected'
+            }));
+    });
 });
 
-const FollowingGames = ({viewerName}) => {
+const UpdateRow = ({item}) => {
+    const {text: communityText} = useCommunityIntl();
+    const isPost = item.timelineType === 'following-post';
+    const name = isPost ? item.user : item.actor;
+    const actor = (<Link
+        to={`/users/${name}`}
+        className={styles.updateActor}
+    >{name}</Link>);
+    const to = isPost ? postUrl(item.id) : item.projectId ? projectUrl(item.projectId) : null;
+    const t = richTranslator(communityText, to ? children => <Link to={to}>{children}</Link> : null);
+    return (
+        <li className={styles.update}>
+            <Link
+                to={`/users/${name}`}
+                tabIndex={-1}
+                aria-hidden="true"
+            >
+                <Avatar
+                    username={name}
+                    size={32}
+                />
+            </Link>
+            <p className={styles.updateText}>
+                {isPost ?
+                    t('{actor} posted: {post}', {actor, post: item.content || communityText('View post')}) :
+                    describeActivity(item, t, actor)}
+            </p>
+            <span className={styles.updateTime}>{timeAgo(item.created || item.timestamp)}</span>
+        </li>
+    );
+};
+
+const FollowingSkeleton = () => (
+    <div
+        className={styles.following}
+        aria-hidden="true"
+    >
+        <div className={styles.followingGames}>
+            {[0, 1, 2, 3].map(index => <CardSkeleton key={index} />)}
+        </div>
+        <ul className={styles.updates}>
+            {[0, 1, 2, 3, 4].map(index => (
+                <li
+                    key={index}
+                    className={`${styles.update} ${styles.updateSkeleton}`}
+                ><span /><span /></li>
+            ))}
+        </ul>
+    </div>
+);
+
+export const FollowingSection = ({viewerName}) => {
     const {text: communityText} = useCommunityIntl();
     const [state, setState] = useState(null);
+    const [attempt, setAttempt] = useState(0);
     useEffect(() => {
         let active = true;
         setState(null);
-        loadFollowedActivity(viewerName)
-            .then(({following, activity}) => {
-                const seen = new Set();
-                const shares = activity
-                    .filter(item => item.type === 'share' && item.projectId && !seen.has(item.projectId) && seen.add(item.projectId))
-                    .sort((left, right) => timestampMs(right.created) - timestampMs(left.created))
-                    .slice(0, 4);
-                return Promise.all(shares.map(item => loadProjectPreview({id: item.projectId})))
-                    .then(projects => ({following, games: projects.filter(Boolean)}));
-            })
-            .then(result => active && setState(result))
-            .catch(() => active && setState({following: [], games: [], failed: true}));
+        loadFollowing()
+            .then(result => active && setState({...result, viewerName}))
+            .catch(() => active && setState({following: [], games: [], updates: [], failed: true, viewerName}));
         return () => {
             active = false;
         };
-    }, [viewerName]);
-    if (state && !state.failed && !state.following.length) {
+    }, [viewerName, attempt]);
+    const current = state && state.viewerName === viewerName ? state : null;
+    if (current && !current.failed && !current.following.length) {
         return (
             <section
-                className={styles.panel}
+                className={styles.section}
                 aria-labelledby="home-creators-heading"
             >
                 <SectionHeading
                     id="home-creators-heading"
                     title={communityText('Creators to follow')}
+                    lead={communityText('Their new games and posts will show up here.')}
                     actions={<QuietLink to="/leaderboard">{communityText('See all')}</QuietLink>}
                 />
                 <SuggestedCreators
                     viewerName={viewerName}
-                    limit={4}
+                    limit={6}
                     columns
                 />
             </section>
         );
     }
+    const games = current ? current.games : [];
+    const updates = current ? current.updates : [];
+    const quiet = current && !current.failed && !games.length && !updates.length;
     return (
         <section
-            className={styles.panel}
-            aria-labelledby="home-following-games-heading"
+            className={styles.section}
+            aria-labelledby="home-following-heading"
         >
             <SectionHeading
-                id="home-following-games-heading"
-                title={communityText('New from people you follow')}
-                actions={<QuietLink to="/explore?sort=recent">{communityText('See new games')}</QuietLink>}
-            />
-            {state === null ? (
-                <div className={styles.gameGrid}>
-                    {[0, 1, 2, 3].map(index => (<div
-                        key={index}
-                        className={styles.gameSkeleton}
-                    />))}
-                </div>
-            ) : null}
-            {state && state.failed ? <StatusMessage compact>{communityText("Couldn't load activity.")}</StatusMessage> : null}
-            {state && !state.failed && !state.games.length ? (
-                <p className={styles.empty}>{communityText('Nobody you follow has shared a game lately.')}</p>
-            ) : null}
-            {state && state.games.length ? (
-                <div className={styles.gameGrid}>
-                    {state.games.map(project => (
-                        <GameCard
-                            key={project.id}
-                            project={project}
-                        />
-                    ))}
-                </div>
-            ) : null}
-        </section>
-    );
-};
-
-const ActivityRow = ({avatar, icon: Icon, children, time}) => (
-    <li className={styles.activityItem}>
-        {avatar}
-        <span className={styles.activityText}>
-            {Icon ? <Icon
-                size={13}
-                aria-hidden="true"
-                className={styles.activityIcon}
-            /> : null}
-            {children}
-        </span>
-        <span className={styles.activityTime}>{time}</span>
-    </li>
-);
-
-export const FriendsSection = ({user}) => {
-    const {text: communityText} = useCommunityIntl();
-    const viewerName = (user && user.username) || '';
-    const [items, setItems] = useState(null);
-    const [failed, setFailed] = useState(false);
-    const [attempt, setAttempt] = useState(0);
-    useEffect(() => {
-        let active = true;
-        setFailed(false);
-        if (!viewerName) {
-            setItems([]);
-            return () => {};
-        }
-        setItems(null);
-        const projectActivity = loadFollowedActivity(viewerName)
-            .then(data => data.activity.filter(item => item.type !== 'share').map(item => ({...item, timelineType: 'project-activity'})));
-        Promise.allSettled([projectActivity, fetchFollowingFeed(40)]).then(results => {
-            if (!active) return;
-            const activity = results[0].status === 'fulfilled' ? results[0].value : [];
-            const posts = results[1].status === 'fulfilled' ? normalizeFollowingPosts(results[1].value) : [];
-            setFailed(results.every(result => result.status === 'rejected'));
-            setItems([...activity, ...posts].sort((left, right) => (
-                timestampMs(right.created || right.timestamp) - timestampMs(left.created || left.timestamp)
-            )));
-        });
-        return () => {
-            active = false;
-        };
-    }, [attempt, viewerName]);
-    return (
-        <section
-            className={styles.panel}
-            aria-labelledby="home-friends-heading"
-        >
-            <SectionHeading
-                id="home-friends-heading"
+                id="home-following-heading"
                 title={communityText('From people you follow')}
-                actions={<QuietLink to="/posts">{communityText('See all')}</QuietLink>}
+                actions={<QuietLink to="/posts">{communityText('See all posts')}</QuietLink>}
             />
-            {!items && !failed ? <ListSkeleton /> : null}
-            {failed ? <StatusMessage
-                compact
-                error
-                onRetry={() => setAttempt(value => value + 1)}
-            >{communityText("Couldn't load activity.")}</StatusMessage> : null}
-            {items && !items.length && !failed ? (
-                <p className={styles.empty}>{communityText('Find a project you like and follow its creator.')}</p>
+            {current ? null : <FollowingSkeleton />}
+            {current && current.failed ? (
+                <StatusMessage
+                    className={styles.status}
+                    compact
+                    error
+                    onRetry={() => setAttempt(value => value + 1)}
+                >{communityText("Couldn't load activity.")}</StatusMessage>
             ) : null}
-            {items && items.length ? (
-                <ul className={styles.list}>
-                    {items.slice(0, 5).map((item, index) => {
-                        const isPost = item.timelineType === 'following-post';
-                        const name = isPost ? item.user : item.actor;
-                        const actor = (<Link
-                            to={`/users/${name}`}
-                            className={styles.activityActor}
-                        >{name}</Link>);
-                        const to = isPost ? postUrl(item.id) : item.projectId ? projectUrl(item.projectId) : null;
-                        const t = richTranslator(communityText, to ? children => <Link to={to}>{children}</Link> : null);
-                        return (
-                            <ActivityRow
-                                key={isPost ? `post:${item.id}` : `${item.actor}-${item.created}-${index}`}
-                                avatar={<Link to={`/users/${name}`}><Avatar
-                                    username={name}
-                                    size={32}
-                                /></Link>}
-                                icon={isPost ? MessageCircle : (ACTIVITY_ICONS[item.type] || Heart)}
-                                time={timeAgo(item.created || item.timestamp)}
-                            >
-                                {isPost ?
-                                    t('{actor} posted: {post}', {actor, post: item.content || communityText('View post')}) :
-                                    describeActivity(item, t, actor)}
-                            </ActivityRow>
-                        );
-                    })}
-                </ul>
-            ) : null}
-        </section>
-    );
-};
-
-export const NotificationsSection = ({user}) => {
-    const {text: communityText} = useCommunityIntl();
-    const viewerName = (user && user.username) || '';
-    const [items, setItems] = useState(null);
-    const [failed, setFailed] = useState(false);
-    const [attempt, setAttempt] = useState(0);
-    const [preferences, setPreferences] = useState(getNotificationPreferences());
-    useEffect(() => {
-        const update = () => setPreferences(getNotificationPreferences());
-        window.addEventListener('mw:notification-preferences', update);
-        return () => window.removeEventListener('mw:notification-preferences', update);
-    }, []);
-    useEffect(() => {
-        let active = true;
-        setFailed(false);
-        if (!viewerName) {
-            setItems([]);
-            return () => {};
-        }
-        setItems(null);
-        fetchNotifications()
-            .then(data => active && setItems(data || []))
-            .catch(() => active && setFailed(true));
-        return () => {
-            active = false;
-        };
-    }, [attempt, viewerName]);
-    const visibleItems = (items || [])
-        .filter(item => preferences[categoryForNotification(item.type)] !== false);
-    return (
-        <section
-            className={styles.panel}
-            aria-labelledby="home-notifications-heading"
-        >
-            <SectionHeading
-                id="home-notifications-heading"
-                title={communityText('Notifications')}
-                actions={<QuietLink to="/notifications">{communityText('See all')}</QuietLink>}
-            />
-            {user && !items && !failed ? <ListSkeleton /> : null}
-            {failed ? <StatusMessage
-                compact
-                error
-                onRetry={() => setAttempt(value => value + 1)}
-            >{communityText("Couldn't load notifications.")}</StatusMessage> : null}
-            {items && !items.length && user ? <p className={styles.empty}>{communityText('Nothing new yet')}</p> : null}
-            {items && items.length && !visibleItems.length ? (
+            {quiet ? (
                 <p className={styles.empty}>
-                    {communityText('Your notification preferences hide all recent activity.')}
+                    {communityText('Nothing new from people you follow lately.')}
                     {' '}
-                    <QuietLink to="/settings?section=notifications">{communityText('Change preferences')}</QuietLink>
+                    <QuietLink to="/explore?sort=recent">{communityText('See new games')}</QuietLink>
                 </p>
             ) : null}
-            {visibleItems.length ? (
-                <ul className={styles.list}>
-                    {visibleItems.slice(0, 5).map((item, index) => {
-                        const system = isMilestoneNotification(item) || SYSTEM_TYPES.includes(item.type);
-                        const name = system ? null : actorFor(item);
-                        const profile = name && USERNAME_RE.test(name) ? name : null;
-                        const target = targetFor(item, viewerName) || {to: profile ? `/users/${profile}` : '/notifications'};
-                        const wrap = target.href ?
-                            children => (<a
-                                href={target.href}
-                                target="_blank"
-                                rel="noreferrer"
-                            >{children}</a>) :
-                            children => <Link to={target.to}>{children}</Link>;
-                        const actor = profile ?
-                            (<Link
-                                to={`/users/${profile}`}
-                                className={styles.activityActor}
-                            >{profile}</Link>) :
-                            <strong className={styles.activityActor}>{name || 'MistWarp'}</strong>;
-                        const avatar = profile ? (<Avatar
-                            username={profile}
-                            size={32}
-                        />) : <span className={styles.notificationAvatar}><Bell size={14} /></span>;
-                        const avatarLink = profile ? `/users/${profile}` : target.to;
-                        return (
-                            <ActivityRow
-                                key={item.id || index}
-                                avatar={avatarLink ? <Link to={avatarLink}>{avatar}</Link> : avatar}
-                                time={timeAgo(item.created || item.timestamp)}
-                            >
-                                {describeNotification(item, richTranslator(communityText, wrap), actor)}
-                            </ActivityRow>
-                        );
-                    })}
-                </ul>
+            {games.length || updates.length ? (
+                <div className={games.length && updates.length ? styles.following : styles.followingSingle}>
+                    {games.length ? (
+                        <div className={styles.followingGames}>
+                            {games.map(project => (
+                                <GameCard
+                                    key={project.id}
+                                    project={project}
+                                />
+                            ))}
+                        </div>
+                    ) : null}
+                    {updates.length ? (
+                        <ul className={styles.updates}>
+                            {updates.map((item, index) => (
+                                <UpdateRow
+                                    key={item.timelineType === 'following-post' ? `post:${item.id}` : `${item.actor}-${item.created}-${index}`}
+                                    item={item}
+                                />
+                            ))}
+                        </ul>
+                    ) : null}
+                </div>
             ) : null}
         </section>
     );
@@ -353,34 +240,23 @@ const Home = () => {
     const {text: communityText} = useCommunityIntl();
     const {user, login, loading} = useUser();
     const viewerName = (user && user.username) || '';
-    const [projectCount, setProjectCount] = useState(null);
     const signedIn = Boolean(!loading && user);
     const signedOut = !loading && !user;
-    const showStarters = Boolean(signedIn && projectCount && projectCount.username === viewerName && projectCount.total < 4);
     useEffect(() => {
         track('home_view');
     }, []);
+    // Keyed so the games stay loaded when someone signs in.
     const games = <FeaturedGames key="games" />;
     const sections = signedIn ? [
-        <ContinueProjects
-            key="continue"
-            username={viewerName}
-            onProjectCount={setProjectCount}
-            welcome={Boolean(user.isNew)}
-        />,
-        showStarters ? <StarterGallery key="starters" /> : null,
-        <FollowingGames
+        <FollowingSection
             key="following"
             viewerName={viewerName}
         />,
         games,
-        <div
-            key="activity"
-            className={styles.columns}
-        >
-            <FriendsSection user={user} />
-            <NotificationsSection user={user} />
-        </div>
+        <ContinueProjects
+            key="continue"
+            username={viewerName}
+        />
     ] : [
         signedOut ? <Intro
             key="intro"

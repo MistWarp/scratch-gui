@@ -8,9 +8,10 @@ import {track} from '../analytics';
 import {useCommunityIntl} from '../i18n.jsx';
 import useAfterLogin from '../use-after-login.js';
 import Avatar from './Avatar.jsx';
-import GameCard from './GameCard.jsx';
+import GameCard, {CardSkeleton, GameMeta} from './GameCard.jsx';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import Button from './ui/Button.jsx';
+import QuietLink from './ui/QuietLink.jsx';
 import SectionHeading from './ui/SectionHeading.jsx';
 import StatusMessage from './ui/StatusMessage.jsx';
 import styles from './HomeDiscovery.module.css';
@@ -48,7 +49,21 @@ export const SuggestedCreators = ({viewerName, limit, columns}) => {
             setFollowed(current => ({...current, [username]: false}));
         }
     }, 'follow');
-    if (creators === null) return <div className={styles.listSkeleton} />;
+    if (creators === null) {
+        return (
+            <ul
+                className={columns ? `${styles.list} ${styles.listColumns}` : styles.list}
+                aria-hidden="true"
+            >
+                {Array.from({length: limit}, (_, index) => (
+                    <li
+                        key={index}
+                        className={`${styles.row} ${styles.rowSkeleton}`}
+                    ><span /><span /></li>
+                ))}
+            </ul>
+        );
+    }
     if (!creators.length) return null;
     return (
         <ul className={columns ? `${styles.list} ${styles.listColumns}` : styles.list}>
@@ -194,10 +209,9 @@ export const FeaturedGame = ({project}) => {
                 <h3>
                     <Link to={projectUrl(shown)}>{shown.title}</Link>
                 </h3>
-                <p>
-                    <span className={styles.captionLabel}>{text('Featured today')}</span>
-                    <Link to={`/users/${shown.owner}`}>{shown.owner}</Link>
-                </p>
+                <div className={styles.captionMeta}>
+                    <GameMeta project={shown} />
+                </div>
             </div>
         </article>
     );
@@ -245,29 +259,29 @@ export const FeaturedGames = () => {
             <SectionHeading
                 id="home-featured-heading"
                 title={text('Featured games')}
-                actions={<Link
-                    className={styles.quietLink}
-                    to="/explore?sort=trending"
-                >{text('Browse all games')}</Link>}
+                actions={<QuietLink to="/explore?sort=trending">{text('Browse all games')}</QuietLink>}
             />
             {games === false ? (
                 <StatusMessage
+                    className={styles.status}
                     compact
                     error
                     onRetry={() => setAttempt(value => value + 1)}
                 >{text("Couldn't load games.")}</StatusMessage>
             ) : null}
             {games !== false && !ready ? (
-                <div className={styles.bento}>
-                    {[0, 1, 2, 3, 4].map(index => (
-                        <div
-                            key={index}
-                            className={index === 0 ? `${styles.skeleton} ${styles.bentoLead}` : styles.skeleton}
-                        />
-                    ))}
+                <div
+                    className={styles.bento}
+                    aria-hidden="true"
+                >
+                    <div className={`${styles.skeleton} ${styles.bentoLead}`} />
+                    {[0, 1, 2, 3].map(index => <CardSkeleton key={index} />)}
                 </div>
             ) : null}
-            {ready ? (
+            {ready && !featured && !others.length ? (
+                <p className={styles.empty}>{text('No games have been shared yet.')}</p>
+            ) : null}
+            {ready && (featured || others.length) ? (
                 <div className={featured ? styles.bento : styles.grid}>
                     {featured ? (
                         <div className={styles.bentoLead}>

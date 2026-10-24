@@ -2,16 +2,16 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
-import {Link} from 'react-router-dom';
 import {HardDrive, Plus} from 'lucide-react';
 import api, {editorUrl} from '../api';
 import {sameUser, timeAgo} from '../format';
 import {STARTERS} from '../../lib/starter-projects';
 import {getLastEditedProject} from '../../lib/mw/recent-projects';
 import {MOVED_KEY} from '../../lib/account/frame-editor-data.js';
+import fog from '../../lib/default-project/fog.svg';
+import {CardRow, CardRowSkeleton, CardTile, MediaCard} from './GameCard.jsx';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
-import Button from './ui/Button.jsx';
-import EmptyState from './ui/EmptyState.jsx';
+import QuietLink from './ui/QuietLink.jsx';
 import SectionHeading from './ui/SectionHeading.jsx';
 import StatusMessage from './ui/StatusMessage.jsx';
 import styles from './HomeWorkspace.module.css';
@@ -49,12 +49,7 @@ export const DeviceBackup = ({className}) => {
             <span>
                 {communityText('{value1}, {value2}, on this browser only', {value1: backup.title, value2: timeAgo(backup.created * 1000)})}
             </span>
-            <a
-                className={styles.quietLink}
-                href={editorUrl({restore: backup.id})}
-            >
-                {communityText('Open backup')}
-            </a>
+            <QuietLink href={editorUrl({restore: backup.id})}>{communityText('Open backup')}</QuietLink>
         </p>
     );
 };
@@ -63,36 +58,60 @@ DeviceBackup.propTypes = {
     className: PropTypes.string
 };
 
+const NewProjectCard = () => {
+    const {text: communityText} = useCommunityText();
+    return (
+        <MediaCard
+            href={editorUrl()}
+            title={communityText('New project')}
+            meta={<span>{communityText('Start from an empty stage')}</span>}
+            media={<CardTile><Plus
+                size={32}
+                aria-hidden="true"
+            /></CardTile>}
+        />
+    );
+};
+
+const StarterCard = ({starter}) => (
+    <MediaCard
+        href={editorUrl({starter: starter.id})}
+        title={starter.title}
+        meta={<span>{starter.kind}</span>}
+        media={<CardTile><img
+            src={fog}
+            alt=""
+            className={styles[starter.id]}
+        /></CardTile>}
+    />
+);
+
+StarterCard.propTypes = {
+    starter: PropTypes.shape({
+        id: PropTypes.string,
+        kind: PropTypes.string,
+        title: PropTypes.string
+    }).isRequired
+};
+
 const ResumeCard = ({project}) => {
     const {text: communityText} = useCommunityText();
     const saved = timeAgo(project.edited || project.created);
     return (
-        <a
-            className={styles.card}
+        <MediaCard
             href={editorUrl({platformProject: project.id})}
-        >
-            <div className={styles.cardThumb}>
-                <ProjectThumbnail
-                    project={project}
-                    fallbackClassName={styles.thumbFallback}
-                />
-            </div>
-            <div className={styles.cardText}>
-                <h3>{project.title}</h3>
-                <p>
-                    {project.shared ?
-                        communityText('Shared, saved {value1}', {value1: saved}) :
-                        communityText('Draft, saved {value1}', {value1: saved})}
-                </p>
-            </div>
-            <Button
-                as="span"
-                size="small"
-                className={styles.cardAction}
-            >
-                {communityText('Open')}
-            </Button>
-        </a>
+            title={project.title}
+            meta={<span>
+                {project.shared ?
+                    communityText('Shared, saved {value1}', {value1: saved}) :
+                    communityText('Draft, saved {value1}', {value1: saved})}
+            </span>}
+            media={<ProjectThumbnail
+                project={project}
+                fallbackClassName={styles.thumbFallback}
+                lazy
+            />}
+        />
     );
 };
 
@@ -106,7 +125,9 @@ ResumeCard.propTypes = {
     }).isRequired
 };
 
-export const ContinueProjects = ({username, onProjectCount, welcome}) => {
+// A new project, your latest three, then starters to fill the row while you
+// have fewer than three.
+export const ContinueProjects = ({username}) => {
     const {text: communityText} = useCommunityText();
     const [result, setResult] = useState({username: '', projects: null, failed: false});
     const [attempt, setAttempt] = useState(0);
@@ -130,19 +151,14 @@ export const ContinueProjects = ({username, onProjectCount, welcome}) => {
                 return true;
             }).slice(0, 3);
             setResult({username, projects: owned, failed: page.status === 'rejected'});
-            if (page.status === 'fulfilled' && onProjectCount) {
-                onProjectCount({username,
-                    total: Number.isFinite(page.value.total) ?
-                        page.value.total : (page.value.projects || []).length});
-            }
         });
         return () => {
             active = false;
         };
-    }, [username, attempt, onProjectCount]);
+    }, [username, attempt]);
     if (!username) return null;
     const current = result.username === username ? result : {projects: null, failed: false};
-    const retry = () => setAttempt(value => value + 1);
+    const projects = current.projects || [];
     return (
         <section
             className={styles.section}
@@ -150,66 +166,37 @@ export const ContinueProjects = ({username, onProjectCount, welcome}) => {
         >
             <SectionHeading
                 id="home-continue-heading"
-                title={welcome ? communityText('Welcome to MistWarp, {value1}', {value1: username}) : communityText('Continue editing')}
-                actions={(
-                    <>
-                        <Link
-                            to="/mystuff?section=projects"
-                            className={styles.quietLink}
-                        >
-                            {communityText('All your projects')}
-                        </Link>
-                        <Button
-                            as="a"
-                            size="small"
-                            href={editorUrl()}
-                        >
-                            <Plus
-                                size={15}
-                                aria-hidden="true"
-                            />
-                            {communityText('New project')}
-                        </Button>
-                    </>
-                )}
+                title={projects.length ? communityText('Continue editing') :
+                    current.projects && !current.failed ? communityText('Start a project') : communityText('Your projects')}
+                actions={projects.length ? (
+                    <QuietLink to="/mystuff?section=projects">{communityText('All your projects')}</QuietLink>
+                ) : null}
             />
-            {current.projects === null ? (
-                <div className={styles.cards}>
-                    {[0, 1, 2].map(index => (<div
-                        key={index}
-                        className={styles.cardSkeleton}
-                    />))}
-                </div>
-            ) : null}
+            {current.projects === null && !current.failed ? <CardRowSkeleton /> : null}
             {current.failed ? (
                 <StatusMessage
+                    className={styles.status}
                     compact
                     error
-                    onRetry={retry}
+                    onRetry={() => setAttempt(value => value + 1)}
                 >{communityText('Could not load your projects.')}</StatusMessage>
             ) : null}
-            {current.projects && !current.projects.length && !current.failed ? (
-                <EmptyState
-                    compact
-                    title={communityText('Your first project starts here')}
-                    action={<Button
-                        as="a"
-                        variant="primary"
-                        href={editorUrl()}
-                    >{communityText('Start creating')}</Button>}
-                >
-                    {communityText('Try a starter below. Save it to MistWarp and continue here next time.')}
-                </EmptyState>
-            ) : null}
-            {current.projects && current.projects.length ? (
-                <div className={styles.cards}>
-                    {current.projects.map(project => (
+            {current.projects && !current.failed ? (
+                <CardRow>
+                    <NewProjectCard />
+                    {projects.map(project => (
                         <ResumeCard
                             key={project.id}
                             project={project}
                         />
                     ))}
-                </div>
+                    {STARTERS.slice(0, 3 - projects.length).map(starter => (
+                        <StarterCard
+                            key={starter.id}
+                            starter={starter}
+                        />
+                    ))}
+                </CardRow>
             ) : null}
             <DeviceBackup />
         </section>
@@ -217,9 +204,7 @@ export const ContinueProjects = ({username, onProjectCount, welcome}) => {
 };
 
 ContinueProjects.propTypes = {
-    onProjectCount: PropTypes.func,
-    username: PropTypes.string,
-    welcome: PropTypes.bool
+    username: PropTypes.string
 };
 
 export const StarterGallery = ({children}) => {
@@ -233,38 +218,17 @@ export const StarterGallery = ({children}) => {
             <SectionHeading
                 id="starter-heading"
                 title={communityText('Starter projects')}
-                lead={communityText('Run a project, change one thing, and save your own version. No sign-in needed to try.')}
-                actions={(
-                    <a
-                        className={styles.quietLink}
-                        href={editorUrl()}
-                    >
-                        {communityText('Start a blank project')}
-                    </a>
-                )}
+                lead={communityText('Change one thing and save your own version. No sign-in needed.')}
             />
-            <div className={styles.cards}>
+            <CardRow>
+                <NewProjectCard />
                 {STARTERS.map(starter => (
-                    <a
+                    <StarterCard
                         key={starter.id}
-                        className={`${styles.card} ${styles.starter}`}
-                        href={editorUrl({starter: starter.id})}
-                    >
-                        <div className={styles.cardText}>
-                            <p className={styles.kind}>{starter.kind}</p>
-                            <h3>{starter.title}</h3>
-                            <p>{starter.description}</p>
-                        </div>
-                        <Button
-                            as="span"
-                            size="small"
-                            className={styles.cardAction}
-                        >
-                            {communityText('Open')}
-                        </Button>
-                    </a>
+                        starter={starter}
+                    />
                 ))}
-            </div>
+            </CardRow>
             {children}
         </section>
     );
