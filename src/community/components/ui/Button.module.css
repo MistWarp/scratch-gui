@@ -33,7 +33,7 @@
 }
 
 .button:focus-visible {
-    outline: 2px solid var(--accent, #855cd6);
+    outline: 2px solid var(--accent-strong, #855cd6);
     outline-offset: 2px;
 }
 

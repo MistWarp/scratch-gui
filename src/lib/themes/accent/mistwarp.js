@@ -1,30 +1,29 @@
-// The MistWarp logo's lilac (#d399e5) fills the menu bar, with dark text,
-// since white on it is only about 2:1. Buttons and other fills that carry
-// white text use a deeper shade of it that keeps 4.5:1.
+// Fills that carry white text use a deepened logo pink, #a734cb (5.25:1 with
+// white). Accent text and indicators on the page use the logo pink itself,
+// #d399e5, wherever it reads at 4.5:1, which means dark backgrounds.
 const guiColors = {
-    'motion-primary': '#9a5aaf',
-    'motion-primary-transparent': '#9a5aafe6',
-    'motion-tertiary': '#7d4391',
+    'motion-primary': '#a734cb',
+    'motion-primary-transparent': '#a734cbe6',
+    'motion-tertiary': '#9d31bf',
 
-    'looks-secondary': '#9a5aaf',
-    'looks-transparent': '#d399e559',
-    'looks-light-transparent': '#d399e526',
-    'looks-secondary-dark': '#7d4391',
+    'looks-secondary': '#a734cb',
+    'looks-transparent': '#a734cb59',
+    'looks-light-transparent': '#a734cb26',
+    'looks-secondary-dark': '#9d31bf',
 
-    'extensions-primary': '#b071c6',
-    'extensions-tertiary': '#7d4391',
-    'extensions-transparent': '#d399e559',
+    'extensions-primary': '#b65ad2',
+    'extensions-tertiary': '#9d31bf',
+    'extensions-transparent': '#a734cb59',
     'extensions-light': '#ecd3f4',
 
     'drop-highlight': '#d399e5',
 
-    'menu-bar-background': '#d399e5',
-    'menu-bar-foreground': '#2b1433'
+    'accent-text': '#d399e5'
 };
 
 const blockColors = {
-    checkboxActiveBackground: '#9a5aaf',
-    checkboxActiveBorder: '#7d4391'
+    checkboxActiveBackground: '#a734cb',
+    checkboxActiveBorder: '#9d31bf'
 };
 
 export {

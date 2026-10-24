@@ -7,7 +7,7 @@ import {
 } from './menu-bar-accent.js';
 import AddonHooks from '../../addons/hooks';
 import {applyThemeFonts} from '../themes/fonts';
-import {ensureColorContrast, parseColor} from './color-contrast';
+import {contrastRatio, ensureColorContrast, parseColor} from './color-contrast';
 import themeStyles from './global-styles.module.css';
 
 const BLOCK_COLOR_NAMES = [
@@ -318,11 +318,6 @@ const applyGuiColors = theme => {
         ...rawGuiColors,
         'looks-secondary': accessibleAccent
     };
-    // Where the accent is the text itself, it needs normal text contrast.
-    doc.style.setProperty('--accent-text', ensureColorContrast(accessibleAccent, accentSurface, 4.5));
-    // An accent can give the menu bar its own colour and text colour.
-    const builtInAccent = colors => (colors && colors.guiColors) || {};
-    const accentColors = theme.customAccent ? {} : builtInAccent(ACCENT_MAP[theme.accent]);
     for (const [name, defaultValue] of Object.entries(defaultGuiColors)) {
         const value = Object.prototype.hasOwnProperty.call(guiColors, name) ? guiColors[name] : defaultValue;
         doc.style.setProperty(`--${name}`, value);
@@ -345,6 +340,24 @@ const applyGuiColors = theme => {
             doc.style.setProperty(`--${name}`, value);
         }
     }
+
+    // Where the accent is the text itself, it needs 4.5:1 on the page and on
+    // cards. A built-in accent can suggest a lighter colour, used where it
+    // reaches that.
+    const accentColors = (!theme.customAccent && ACCENT_MAP[theme.accent] && ACCENT_MAP[theme.accent].guiColors) || {};
+    // Community cards are ui-secondary with 4% of the text colour mixed in.
+    const cardBase = parseColor(evaluateCSS(rawGuiColors['ui-secondary'] || accentSurface));
+    const textColor = parseColor(evaluateCSS(rawGuiColors['text-primary'] || '#575e75'));
+    const mixCard = (channel, index) => Math.round((channel * 0.96) + (textColor[index] * 0.04));
+    const card = cardBase && textColor ? `rgb(${cardBase.map(mixCard).join(', ')})` : accentSurface;
+    const textSurfaces = [accentSurface, card];
+    const readable = color => textSurfaces.every(surface => contrastRatio(color, surface) >= 4.5);
+    const hardestSurface = textSurfaces.reduce((worst, surface) => (
+        contrastRatio(accessibleAccent, surface) < contrastRatio(accessibleAccent, worst) ? surface : worst));
+    const preferredText = accentColors['accent-text'];
+    doc.style.setProperty('--accent-text', preferredText && readable(preferredText) ?
+        preferredText :
+        ensureColorContrast(accessibleAccent, hardestSurface, 4.5));
 
     const blockColors = theme.getBlockColors();
     doc.style.setProperty('--editorTheme3-blockText', blockColors.text);
@@ -382,24 +395,20 @@ const applyGuiColors = theme => {
 
     const accentMenuBar = getAccentMenuBar();
     let menuBarBackground;
-    let barAccent = {};
     if (accentMenuBar) {
-        barAccent = accentColors;
-        menuBarBackground = barAccent['menu-bar-background'] ||
-            guiColors['looks-secondary'] || guiColors['menu-bar-background'];
+        menuBarBackground = guiColors['looks-secondary'] || guiColors['menu-bar-background'];
     } else {
         const baseColors = (GUI_MAP[theme.gui] && GUI_MAP[theme.gui].guiColors) || {};
         menuBarBackground = baseColors['menu-bar-background'] || guiColors['menu-bar-background'];
         if (menuBarBackground === 'var(--looks-secondary)') {
-            barAccent = builtInAccent(ACCENT_MAP[ACCENT_DEFAULT]);
-            menuBarBackground = barAccent['menu-bar-background'] || barAccent['looks-secondary'];
+            menuBarBackground = ACCENT_MAP[ACCENT_DEFAULT].guiColors['looks-secondary'];
         }
         doc.style.setProperty('--menu-bar-background-image', 'none');
     }
     doc.style.setProperty('--menu-bar-background', menuBarBackground);
 
-    const themeMenuBarText = (theme.customAccent && theme.customAccent.guiColors &&
-        theme.customAccent.guiColors['menu-bar-foreground']) || barAccent['menu-bar-foreground'];
+    const themeMenuBarText = theme.customAccent && theme.customAccent.guiColors &&
+        theme.customAccent.guiColors['menu-bar-foreground'];
     const menuBarTextPreference = getMenuBarText();
     let menuBarForeground;
     if (menuBarTextPreference === 'light') {

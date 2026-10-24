@@ -31,7 +31,7 @@
 }
 
 .active {
-    border-bottom-color: var(--accent);
+    border-bottom-color: var(--accent-strong);
     color: var(--mw-text);
 }
 
