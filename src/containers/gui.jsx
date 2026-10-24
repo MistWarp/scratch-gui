@@ -206,6 +206,10 @@ class GUI extends React.Component {
         if (!workspace || typeof workspace.undo !== 'function') return null;
         return workspace;
     }
+    blocksWorkspace () {
+        if (this.props.editorMode === CODE_MODE || !this.props.blocksTabVisible) return null;
+        return this.getMainWorkspace();
+    }
     assetEditorOwnsKeys () {
         if (this.props.editorMode !== CODE_MODE) return !this.props.blocksTabVisible;
         return Boolean(this.props.activeAssetEditor) && isAssetEditorActive();
@@ -225,7 +229,7 @@ class GUI extends React.Component {
     }
     handleRedo () {
         if (this.assetEditorOwnsKeys()) return false;
-        const workspace = this.props.blocksTabVisible ? this.getMainWorkspace() : null;
+        const workspace = this.blocksWorkspace();
         const hasWorkspaceRedo = Boolean(workspace) && (workspace.redoStack_ ? workspace.redoStack_.length > 0 : true);
         if (hasWorkspaceRedo) {
             workspace.undo(true);
@@ -241,7 +245,7 @@ class GUI extends React.Component {
         flushBlockly(this.props.vm);
         const entry = isCodeLocked(this.props.vm) ? null : latestUndo(this.codeHistoryTarget());
         return undoLatest({
-            workspace: this.props.blocksTabVisible ? this.getMainWorkspace() : null,
+            workspace: this.blocksWorkspace(),
             deletion: this.props.restoreDeletion,
             code: entry ? {sequence: entry.sequence, undo: () => this.runCode('undo', entry)} : null,
             onRestored: this.props.onClearDeletionRestore,

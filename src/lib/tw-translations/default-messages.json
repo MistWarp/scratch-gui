@@ -531,6 +531,7 @@
   "mw.menuBar.newProject.noBackup": "A device backup of your current project could not be made, for example because this browser is in private mode or out of storage. If you start a new project now, changes you have not saved will be lost.",
   "mw.menuBar.newProject.noBackupConfirm": "Start without a backup",
   "mw.menuBar.newProject.failed": "Could not start a new project. Your current project is still open.",
+  "mw.menuBar.stageName": "Stage",
   "mw.menuBar.undoTyping": "Undo typing",
   "mw.menuBar.redoTyping": "Redo typing",
   "mw.menuBar.undoApplyFile": "Undo apply to {name}",

@@ -386,7 +386,7 @@ class CodeWorkbench extends React.Component {
         });
         this.textKeymap = [
             {key: 'Mod-z', run: view => this.handleTextHistory(view, 'undo')},
-            {key: 'Mod-y', run: view => this.handleTextHistory(view, 'redo')},
+            {key: 'Mod-y', mac: 'Mod-Shift-z', run: view => this.handleTextHistory(view, 'redo')},
             {key: 'Mod-Shift-z', run: view => this.handleTextHistory(view, 'redo')},
             {key: 'F12', run: () => this.handleGoToDefinition()},
             {key: 'Shift-F12', run: () => this.handleFindReferences()},

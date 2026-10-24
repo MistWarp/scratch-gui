@@ -262,6 +262,11 @@ const twMessages = defineMessages({
         defaultMessage: 'Could not start a new project. Your current project is still open.',
         description: 'Toast shown when File > New fails'
     },
+    stageName: {
+        id: 'mw.menuBar.stageName',
+        defaultMessage: 'Stage',
+        description: 'Name of the Stage in Edit menu Undo and Redo labels, such as Undo apply to Stage'
+    },
     undoTyping: {
         id: 'mw.menuBar.undoTyping',
         defaultMessage: 'Undo typing',
@@ -1619,13 +1624,31 @@ class MenuBar extends React.Component {
                 return {kind: 'typing', run: () => (undo ? text.undo() : text.redo())};
             }
             targetId = text ? text.targetId : null;
-        } else if (this.props.blocksTabVisible && (undo ? this.state.canUndo : this.state.canRedo)) {
-            return {kind: 'blocks', run: () => (undo ? this.undoBlocks() : this.redoBlocks())};
         }
-        if (isCodeLocked(this.props.vm)) return null;
-        const entry = undo ? latestUndo(targetId) : latestRedo(targetId);
-        if (!entry) return null;
-        return {kind: 'code', entry, run: () => this.runCodeHistory(direction, entry)};
+        const blocksVisible = !this.props.codeMode && this.props.blocksTabVisible;
+        const entry = isCodeLocked(this.props.vm) ? null : (undo ? latestUndo(targetId) : latestRedo(targetId));
+        const code = entry ? {kind: 'code', entry, run: () => this.runCodeHistory(direction, entry)} : null;
+        if (!undo) {
+            if (blocksVisible && this.state.canRedo) return {kind: 'blocks', run: () => this.redoBlocks()};
+            return code;
+        }
+        const workspace = blocksVisible && LazyScratchBlocks.isLoaded() ?
+            LazyScratchBlocks.get().getMainWorkspace() : null;
+        const source = nextUndoSource(workspace, this.props.restoreDeletion, entry);
+        if (source === 'code') return code;
+        if (source === 'deletion') {
+            return {kind: 'deletion', run: () => (blocksVisible ? this.undoBlocks() : this.restoreDeletionOnly())};
+        }
+        if (blocksVisible && this.state.canUndo) return {kind: 'blocks', run: () => this.undoBlocks()};
+        return null;
+    }
+    restoreDeletionOnly () {
+        return undoLatest({
+            workspace: null,
+            deletion: this.props.restoreDeletion,
+            onRestored: this.props.onDeletionRestored,
+            onRestoreError: this.props.onShowRestoreError
+        });
     }
     undoLabel (direction, action) {
         const {intl} = this.props;
@@ -1633,7 +1656,9 @@ class MenuBar extends React.Component {
         if (action && action.kind === 'typing') {
             return intl.formatMessage(undo ? twMessages.undoTyping : twMessages.redoTyping);
         }
-        const described = action && action.kind === 'code' ? describeCodeEntry(this.props.vm, action.entry) : null;
+        const described = action && action.kind === 'code' ? describeCodeEntry(this.props.vm, action.entry, {
+            stageName: intl.formatMessage(twMessages.stageName)
+        }) : null;
         if (described && described.kind === 'file') {
             return intl.formatMessage(undo ? twMessages.undoApplyFile : twMessages.redoApplyFile,
                 {name: described.name});

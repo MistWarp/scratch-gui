@@ -11,7 +11,25 @@ jest.mock('../../../src/lib/code-mode/code-dialogs.js', () => ({
     runCodeHistory: jest.fn(() => Promise.resolve(true))
 }));
 
+jest.mock('../../../src/lib/tw-lazy-scratch-blocks', () => ({
+    isLoaded: jest.fn(() => false),
+    get: jest.fn()
+}));
+jest.mock('../../../src/lib/extension-dev/session.js', () => ({
+    getEntries: jest.fn(() => [{id: 'myExt', name: 'My Extension'}])
+}));
+
 const {runCodeHistory} = require('../../../src/lib/code-mode/code-dialogs.js');
+const LazyScratchBlocks = require('../../../src/lib/tw-lazy-scratch-blocks');
+const {nextUndoSource} = require('../../../src/lib/undo-history');
+
+const withWorkspace = undoStack => {
+    const workspace = {undoStack_: undoStack.map(sequence => ({_mwUndoSequence: sequence}))};
+    LazyScratchBlocks.isLoaded.mockReturnValue(true);
+    LazyScratchBlocks.get.mockReturnValue({getMainWorkspace: () => workspace});
+    return workspace;
+};
+const deletionAt = sequence => ({sequence, restoreFun: jest.fn(() => Promise.resolve())});
 
 const intl = {
     formatMessage: (message, values = {}) => message.defaultMessage
@@ -42,6 +60,7 @@ afterEach(() => {
     latestUndo.mockReturnValue(null);
     latestRedo.mockReturnValue(null);
     runCodeHistory.mockClear();
+    LazyScratchBlocks.isLoaded.mockReturnValue(false);
 });
 
 describe('one Undo and Redo in the Edit menu', () => {
@@ -75,12 +94,13 @@ describe('one Undo and Redo in the Edit menu', () => {
     });
 
     test('an extension change is named by its extension', () => {
-        latestUndo.mockReturnValue({kind: 'extension', extensionId: 'myExt', targetId: null});
+        latestUndo.mockReturnValue({kind: 'extension', extensionId: 'myExt', targetId: null, sequence: 1});
         const menuBar = makeMenuBar({codeMode: true});
-        expect(menuBar.undoLabel('undo', menuBar.resolveUndo('undo'))).toBe('Undo change to myExt');
+        expect(menuBar.undoLabel('undo', menuBar.resolveUndo('undo'))).toBe('Undo change to My Extension');
     });
 
-    test('in Blocks mode block edits come first and keep the plain label', () => {
+    test('in Blocks mode a block edit newer than the last apply comes first and keeps the plain label', () => {
+        withWorkspace([2]);
         latestUndo.mockReturnValue({targetId: 's1', sequence: 1});
         const menuBar = makeMenuBar({codeMode: false, blocksTabVisible: true}, {canUndo: true, canRedo: false});
         const action = menuBar.resolveUndo('undo');
@@ -107,5 +127,72 @@ describe('one Undo and Redo in the Edit menu', () => {
         latestUndo.mockReturnValue({targetId: 's1', sequence: 1});
         const menuBar = makeMenuBar({codeMode: true, vm: {...vm, editingCommands: {handler: {}}}});
         expect(menuBar.resolveUndo('undo')).toBeNull();
+    });
+
+    test('in Blocks mode an apply newer than the last block edit comes first, like Ctrl+Z', () => {
+        const workspace = withWorkspace([1]);
+        const entry = {targetId: 's1', sequence: 2};
+        latestUndo.mockReturnValue(entry);
+        const menuBar = makeMenuBar({codeMode: false, blocksTabVisible: true}, {canUndo: true, canRedo: false});
+        const action = menuBar.resolveUndo('undo');
+        expect(action.kind).toBe('code');
+        expect(nextUndoSource(workspace, null, entry)).toBe('code');
+    });
+
+    test('a deletion older than the last apply waits behind it in both the menu and Ctrl+Z', () => {
+        const workspace = withWorkspace([]);
+        const deletion = deletionAt(1);
+        const entry = {targetId: 's1', sequence: 2};
+        latestUndo.mockReturnValue(entry);
+        const menuBar = makeMenuBar({codeMode: false, blocksTabVisible: true, restoreDeletion: deletion},
+            {canUndo: true, canRedo: false});
+        expect(menuBar.resolveUndo('undo').kind).toBe('code');
+        expect(nextUndoSource(workspace, deletion, entry)).toBe('code');
+        menuBar.handleClickUndo();
+        expect(runCodeHistory).toHaveBeenCalled();
+        expect(deletion.restoreFun).not.toHaveBeenCalled();
+    });
+
+    test('in Code mode a deletion newer than the last apply is restored first', () => {
+        release = setTextUndoProvider(() => ({targetId: 's1', canUndo: false, canRedo: false}));
+        const deletion = deletionAt(3);
+        latestUndo.mockReturnValue({targetId: 's1', sequence: 2});
+        const onDeletionRestored = jest.fn();
+        const menuBar = makeMenuBar({codeMode: true, restoreDeletion: deletion, onDeletionRestored});
+        const action = menuBar.resolveUndo('undo');
+        expect(action.kind).toBe('deletion');
+        expect(menuBar.undoLabel('undo', action)).toBe('Undo');
+        return action.run().then(() => {
+            expect(deletion.restoreFun).toHaveBeenCalled();
+            expect(onDeletionRestored).toHaveBeenCalled();
+            expect(runCodeHistory).not.toHaveBeenCalled();
+        });
+    });
+
+    test('an apply to a sprite that no longer exists keeps the plain label', () => {
+        latestUndo.mockReturnValue({targetId: 'gone', sequence: 1});
+        const menuBar = makeMenuBar({codeMode: true});
+        expect(menuBar.undoLabel('undo', menuBar.resolveUndo('undo'))).toBe('Undo');
+    });
+
+    test('an Apply all counts every file even when one was deleted since', () => {
+        latestUndo.mockReturnValue({targetId: 's1', targetIds: ['s1', 'gone'], sequence: 1});
+        const menuBar = makeMenuBar({codeMode: true});
+        expect(menuBar.undoLabel('undo', menuBar.resolveUndo('undo'))).toBe('Undo apply to 2 files');
+    });
+
+    test('the Stage is named with the translated label', () => {
+        latestUndo.mockReturnValue({targetId: 'stage', sequence: 1});
+        const translated = {formatMessage: (message, values) => (message.id === 'mw.menuBar.stageName' ?
+            'Scène' : intl.formatMessage(message, values))};
+        const menuBar = makeMenuBar({codeMode: true, intl: translated});
+        expect(menuBar.undoLabel('undo', menuBar.resolveUndo('undo'))).toBe('Undo apply to Scène');
+    });
+
+    test('the player has nothing to undo', () => {
+        latestUndo.mockReturnValue({targetId: 's1', sequence: 1});
+        const menuBar = makeMenuBar({isPlayerOnly: true, blocksTabVisible: true}, {canUndo: true, canRedo: true});
+        expect(menuBar.resolveUndo('undo')).toBeNull();
+        expect(menuBar.resolveUndo('redo')).toBeNull();
     });
 });
