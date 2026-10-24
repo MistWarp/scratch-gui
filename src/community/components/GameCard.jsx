@@ -85,8 +85,8 @@ export const CardSkeleton = () => (
     </div>
 );
 
-export const CardRowSkeleton = ({count}) => (
-    <CardRow>
+export const CardRowSkeleton = ({className, count}) => (
+    <CardRow className={className}>
         {Array.from({length: count}, (_, index) => (
             <CardSkeleton key={index} />
         ))}
@@ -94,6 +94,7 @@ export const CardRowSkeleton = ({count}) => (
 );
 
 CardRowSkeleton.propTypes = {
+    className: PropTypes.string,
     count: PropTypes.number
 };
 

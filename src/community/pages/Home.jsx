@@ -14,8 +14,9 @@ import SectionHeading from '../components/ui/SectionHeading.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import GameCard, {CardSkeleton} from '../components/GameCard.jsx';
 import ScratchImport from '../components/ScratchImport.jsx';
-import {FeaturedGames, SuggestedCreators} from '../components/HomeDiscovery.jsx';
-import {ContinueProjects, DeviceBackup, StarterGallery} from '../components/HomeWorkspace.jsx';
+import {FeaturedGames, GameShelf, SuggestedCreators} from '../components/HomeDiscovery.jsx';
+import CommunityUpdates from '../components/HomeCommunity.jsx';
+import {ContinuePlaying, ContinueProjects, DeviceBackup, StarterGallery} from '../components/HomeWorkspace.jsx';
 import loadProjectPreview from '../project-preview.js';
 import {track} from '../analytics.js';
 import {useCommunityIntl} from '../i18n.jsx';
@@ -245,8 +246,17 @@ const Home = () => {
     useEffect(() => {
         track('home_view');
     }, []);
-    // Keyed so the games stay loaded when someone signs in.
+    // Keyed so the shared sections stay loaded when someone signs in.
     const games = <FeaturedGames key="games" />;
+    const newGames = (<GameShelf
+        key="new"
+        id="home-new-heading"
+        title={communityText('New games')}
+        query={{sort: 'recent', limit: 4}}
+        link="/explore?sort=recent"
+        linkLabel={communityText('See all new games')}
+    />);
+    const updates = <CommunityUpdates key="updates" />;
     const sections = signedIn ? [
         <FollowingSection
             key="following"
@@ -256,13 +266,38 @@ const Home = () => {
         <ContinueProjects
             key="continue"
             username={viewerName}
-        />
+        />,
+        <ContinuePlaying
+            key="playing"
+            username={viewerName}
+        />,
+        newGames,
+        updates
     ] : [
         signedOut ? <Intro
             key="intro"
             login={login}
         /> : null,
         games,
+        newGames,
+        updates,
+        signedOut ? (
+            <section
+                key="creators"
+                className={styles.section}
+                aria-labelledby="home-creators-heading"
+            >
+                <SectionHeading
+                    id="home-creators-heading"
+                    title={communityText('Creators to follow')}
+                    actions={<QuietLink to="/leaderboard">{communityText('See all')}</QuietLink>}
+                />
+                <SuggestedCreators
+                    limit={6}
+                    columns
+                />
+            </section>
+        ) : null,
         signedOut ? (
             <StarterGallery key="starters">
                 <div className={styles.importRow}>

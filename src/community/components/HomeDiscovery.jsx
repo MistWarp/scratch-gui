@@ -8,7 +8,7 @@ import {track} from '../analytics';
 import {useCommunityIntl} from '../i18n.jsx';
 import useAfterLogin from '../use-after-login.js';
 import Avatar from './Avatar.jsx';
-import GameCard, {CardSkeleton, GameMeta} from './GameCard.jsx';
+import GameCard, {CardRow, CardRowSkeleton, GameMeta} from './GameCard.jsx';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import Button from './ui/Button.jsx';
 import QuietLink from './ui/QuietLink.jsx';
@@ -112,29 +112,35 @@ SuggestedCreators.defaultProps = {
     limit: 5
 };
 
+// The first line or two of what the creator wrote, without markdown or links.
+const blurb = project => String((project && (project.description || project.notes)) || '')
+    .replace(/https?:\/\/\S+/g, '')
+    .replace(/[#*_`>~=-]{2,}/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 220);
+
+// Today's pick, beside what it is. The thumbnail stays a normal size, since
+// many are small sketches that don't hold up when blown up.
 export const FeaturedGame = ({project}) => {
     const {text} = useCommunityIntl();
     const [details, setDetails] = useState(null);
-    const [requested, setRequested] = useState(false);
+    const [playing, setPlaying] = useState(false);
     const [stageRatio, setStageRatio] = useState(0.75);
     const frame = useRef(null);
 
     useEffect(() => {
-        setDetails(null);
-        setRequested(false);
-        setStageRatio(0.75);
-    }, [project.id]);
-
-    useEffect(() => {
-        if (!requested) return () => {};
         let active = true;
+        setDetails(null);
+        setPlaying(false);
+        setStageRatio(0.75);
         api.getProject(project.id)
-            .then(data => active && setDetails(data.project))
+            .then(data => active && setDetails(data.project || project))
             .catch(() => active && setDetails(project));
         return () => {
             active = false;
         };
-    }, [requested, project.id]);
+    }, [project.id]);
 
     useEffect(() => {
         const onMessage = event => {
@@ -147,14 +153,18 @@ export const FeaturedGame = ({project}) => {
         return () => window.removeEventListener('message', onMessage);
     }, []);
 
-    const shown = details || project;
+    const shown = {...project, ...(details || {})};
     const canEmbed = Boolean(details && details.hasContent !== false && !details.locked &&
         details.projectJsonUrl && details.assetsBase);
-    const failed = Boolean(details) && !canEmbed;
+    const play = () => {
+        setPlaying(true);
+        track('featured_play', {source: 'home'});
+    };
+    const about = blurb(details);
 
     return (
-        <article className={styles.featured}>
-            {canEmbed ? (
+        <article className={styles.spotlight}>
+            {playing && canEmbed ? (
                 <div
                     className={styles.stageWrap}
                     style={{paddingBottom: `calc(${stageRatio * 100}% + 52px)`}}
@@ -170,47 +180,46 @@ export const FeaturedGame = ({project}) => {
                             'allow-popups allow-popups-to-escape-sandbox'}
                     />
                 </div>
-            ) : failed ? (
+            ) : (
                 <Link
                     to={projectUrl(shown)}
                     className={styles.poster}
+                    tabIndex={-1}
+                    aria-hidden="true"
                 >
                     <ProjectThumbnail
                         project={shown}
                         fallbackClassName={styles.posterFallback}
                     />
                 </Link>
-            ) : (
-                <button
-                    type="button"
-                    className={styles.poster}
-                    aria-label={text('Play {value1}', {value1: shown.title})}
-                    disabled={requested}
-                    onClick={() => {
-                        setRequested(true);
-                        track('featured_play', {source: 'home'});
-                    }}
-                >
-                    <ProjectThumbnail
-                        project={shown}
-                        fallbackClassName={styles.posterFallback}
-                    />
-                    <span className={styles.play}>
-                        <Play
-                            size={18}
-                            fill="currentColor"
-                            aria-hidden="true"
-                        />
-                        {requested ? text('Loading…') : text('Play')}
-                    </span>
-                </button>
             )}
-            <div className={styles.caption}>
+            <div className={styles.spotlightText}>
                 <h3>
                     <Link to={projectUrl(shown)}>{shown.title}</Link>
                 </h3>
                 <div className={styles.captionMeta}>
                     <GameMeta project={shown} />
+                </div>
+                {about ? <p className={styles.blurb}>{about}</p> : null}
+                <div className={styles.spotlightActions}>
+                    {canEmbed && !playing ? (
+                        <Button
+                            variant="primary"
+                            onClick={play}
+                        >
+                            <Play
+                                size={16}
+                                fill="currentColor"
+                                aria-hidden="true"
+                            />
+                            {text('Play here')}
+                        </Button>
+                    ) : null}
+                    <Button
+                        as={Link}
+                        to={projectUrl(shown)}
+                        variant={canEmbed && !playing ? 'secondary' : 'primary'}
+                    >{text('Open game page')}</Button>
                 </div>
             </div>
         </article>
@@ -225,11 +234,27 @@ FeaturedGame.propTypes = {
     }).isRequired
 };
 
+const useGames = (query, attempt) => {
+    const [games, setGames] = useState(null);
+    const key = JSON.stringify(query);
+    useEffect(() => {
+        let active = true;
+        setGames(null);
+        api.explore(query)
+            .then(data => active && setGames(data.projects || []))
+            .catch(() => active && setGames(false));
+        return () => {
+            active = false;
+        };
+    }, [key, attempt]);
+    return games;
+};
+
 export const FeaturedGames = () => {
     const {text} = useCommunityIntl();
     const [featured, setFeatured] = useState(false);
-    const [games, setGames] = useState(null);
     const [attempt, setAttempt] = useState(0);
+    const games = useGames({sort: 'trending', limit: 9}, attempt);
     useEffect(() => {
         let active = true;
         api.featuredProject()
@@ -239,18 +264,8 @@ export const FeaturedGames = () => {
             active = false;
         };
     }, []);
-    useEffect(() => {
-        let active = true;
-        setGames(null);
-        api.explore({sort: 'trending', limit: 9})
-            .then(data => active && setGames(data.projects || []))
-            .catch(() => active && setGames(false));
-        return () => {
-            active = false;
-        };
-    }, [attempt]);
     const ready = featured !== false && Array.isArray(games);
-    const others = ready ? games.filter(game => !featured || game.id !== featured.id).slice(0, featured ? 4 : 8) : [];
+    const others = ready ? games.filter(game => !featured || game.id !== featured.id).slice(0, 4) : [];
     return (
         <section
             className={styles.section}
@@ -259,7 +274,7 @@ export const FeaturedGames = () => {
             <SectionHeading
                 id="home-featured-heading"
                 title={text('Featured games')}
-                actions={<QuietLink to="/explore?sort=trending">{text('Browse all games')}</QuietLink>}
+                actions={<QuietLink to="/explore">{text('Browse all games')}</QuietLink>}
             />
             {games === false ? (
                 <StatusMessage
@@ -270,32 +285,82 @@ export const FeaturedGames = () => {
                 >{text("Couldn't load games.")}</StatusMessage>
             ) : null}
             {games !== false && !ready ? (
-                <div
-                    className={styles.bento}
-                    aria-hidden="true"
-                >
-                    <div className={`${styles.skeleton} ${styles.bentoLead}`} />
-                    {[0, 1, 2, 3].map(index => <CardSkeleton key={index} />)}
+                <div aria-hidden="true">
+                    <div className={styles.spotlight}>
+                        <div className={styles.skeleton} />
+                        <div className={styles.spotlightText}>
+                            <span className={styles.lineSkeleton} />
+                            <span className={styles.lineSkeleton} />
+                        </div>
+                    </div>
+                    <CardRowSkeleton className={styles.trending} />
                 </div>
             ) : null}
             {ready && !featured && !others.length ? (
                 <p className={styles.empty}>{text('No games have been shared yet.')}</p>
             ) : null}
-            {ready && (featured || others.length) ? (
-                <div className={featured ? styles.bento : styles.grid}>
-                    {featured ? (
-                        <div className={styles.bentoLead}>
-                            <FeaturedGame project={featured} />
-                        </div>
-                    ) : null}
+            {ready && featured ? <FeaturedGame project={featured} /> : null}
+            {ready && others.length ? (
+                <CardRow className={featured ? styles.trending : null}>
                     {others.map(game => (
                         <GameCard
                             key={game.id}
                             project={game}
                         />
                     ))}
-                </div>
+                </CardRow>
             ) : null}
         </section>
     );
+};
+
+// A plain row of games from Explore, for New games on home.
+export const GameShelf = ({id, link, linkLabel, query, title}) => {
+    const {text} = useCommunityIntl();
+    const [attempt, setAttempt] = useState(0);
+    const games = useGames(query, attempt);
+    return (
+        <section
+            className={styles.section}
+            aria-labelledby={id}
+        >
+            <SectionHeading
+                id={id}
+                title={title}
+                actions={<QuietLink to={link}>{linkLabel}</QuietLink>}
+            />
+            {games === null ? <CardRowSkeleton /> : null}
+            {games === false ? (
+                <StatusMessage
+                    className={styles.status}
+                    compact
+                    error
+                    onRetry={() => setAttempt(value => value + 1)}
+                >{text("Couldn't load games.")}</StatusMessage>
+            ) : null}
+            {games && !games.length ? <p className={styles.empty}>{text('No games have been shared yet.')}</p> : null}
+            {games && games.length ? (
+                <CardRow>
+                    {games.slice(0, 4).map(game => (
+                        <GameCard
+                            key={game.id}
+                            project={game}
+                        />
+                    ))}
+                </CardRow>
+            ) : null}
+        </section>
+    );
+};
+
+GameShelf.propTypes = {
+    id: PropTypes.string.isRequired,
+    link: PropTypes.string.isRequired,
+    linkLabel: PropTypes.node.isRequired,
+    query: PropTypes.shape({
+        limit: PropTypes.number,
+        sort: PropTypes.string,
+        tag: PropTypes.string
+    }).isRequired,
+    title: PropTypes.node.isRequired
 };

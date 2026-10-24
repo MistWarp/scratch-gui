@@ -9,7 +9,7 @@ import {STARTERS} from '../../lib/starter-projects';
 import {getLastEditedProject} from '../../lib/mw/recent-projects';
 import {MOVED_KEY} from '../../lib/account/frame-editor-data.js';
 import fog from '../../lib/default-project/fog.svg';
-import {CardRow, CardRowSkeleton, CardTile, MediaCard} from './GameCard.jsx';
+import GameCard, {CardRow, CardRowSkeleton, CardTile, MediaCard} from './GameCard.jsx';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import QuietLink from './ui/QuietLink.jsx';
 import SectionHeading from './ui/SectionHeading.jsx';
@@ -236,4 +236,48 @@ export const StarterGallery = ({children}) => {
 
 StarterGallery.propTypes = {
     children: PropTypes.node
+};
+
+// Games you played lately, from your library. Nothing to show means no section.
+export const ContinuePlaying = ({username}) => {
+    const {text: communityText} = useCommunityText();
+    const [games, setGames] = useState(null);
+    useEffect(() => {
+        let active = true;
+        setGames(null);
+        api.getUser(username)
+            .then(data => active && setGames((data.recentActivity || [])
+                .filter(project => Number(project.lastPlayed) > 0)
+                .sort((left, right) => Number(right.lastPlayed) - Number(left.lastPlayed))
+                .slice(0, 4)))
+            .catch(() => active && setGames([]));
+        return () => {
+            active = false;
+        };
+    }, [username]);
+    if (!games || !games.length) return null;
+    return (
+        <section
+            className={styles.section}
+            aria-labelledby="home-playing-heading"
+        >
+            <SectionHeading
+                id="home-playing-heading"
+                title={communityText('Continue playing')}
+                actions={<QuietLink to={`/users/${username}/library`}>{communityText('Game library')}</QuietLink>}
+            />
+            <CardRow>
+                {games.map(project => (
+                    <GameCard
+                        key={project.id}
+                        project={project}
+                    />
+                ))}
+            </CardRow>
+        </section>
+    );
+};
+
+ContinuePlaying.propTypes = {
+    username: PropTypes.string.isRequired
 };

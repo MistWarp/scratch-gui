@@ -28,14 +28,17 @@ jest.mock('../../src/community/components/HomeDiscovery.jsx', () => {
             }, []);
             return <div data-section="games" />;
         },
+        GameShelf: () => <div data-section="new" />,
         SuggestedCreators: () => <div data-section="creators" />
     };
 });
+jest.mock('../../src/community/components/HomeCommunity.jsx', () => () => <div data-section="updates" />);
 jest.mock('../../src/community/components/HomeWorkspace.jsx', () => {
     const actual = jest.requireActual('../../src/community/components/HomeWorkspace.jsx');
     return {
         ...actual,
         ContinueProjects: () => <div data-section="continue" />,
+        ContinuePlaying: () => <div data-section="playing" />,
         DeviceBackup: () => null
     };
 });
@@ -69,7 +72,7 @@ describe('home layout', () => {
         global.featuredMounts = 0;
     });
 
-    test('tells signed-out visitors what MistWarp is, then shows games and starters without jams', () => {
+    test('tells signed-out visitors what MistWarp is, then games, news, creators and starters', () => {
         const login = jest.fn();
         useUser.mockReturnValue({user: null, login, loading: false});
         const wrapper = render();
@@ -77,7 +80,7 @@ describe('home layout', () => {
         expect(wrapper.find('h1').text()).toBe('Make games with blocks, and play what others make');
         expect(wrapper.find('a[href="/editor"]').first()
             .text()).toBe('Start creating');
-        expect(sectionOrder(wrapper)).toEqual(['games', 'starters', 'import']);
+        expect(sectionOrder(wrapper)).toEqual(['games', 'new', 'updates', 'creators', 'starters', 'import']);
         expect(wrapper.text()).not.toMatch(/membership|jam/i);
 
         wrapper.find('button')
@@ -92,16 +95,16 @@ describe('home layout', () => {
         const wrapper = render();
 
         expect(wrapper.find('h1').exists()).toBe(false);
-        expect(sectionOrder(wrapper)).toEqual(['games']);
+        expect(sectionOrder(wrapper)).toEqual(['games', 'new', 'updates']);
         wrapper.unmount();
     });
 
-    test('leads signed-in visitors with people they follow, then games, then their projects', () => {
+    test('leads signed-in visitors with people they follow, then games, their projects and news', () => {
         useUser.mockReturnValue({user: {username: 'alice'}, login: jest.fn(), loading: false});
         const wrapper = render();
 
         expect(wrapper.find('h1').exists()).toBe(false);
-        expect(sectionOrder(wrapper)).toEqual(['following', 'games', 'continue']);
+        expect(sectionOrder(wrapper)).toEqual(['following', 'games', 'continue', 'playing', 'new', 'updates']);
         expect(wrapper.text()).not.toMatch(/membership|jam|notifications/i);
         wrapper.unmount();
     });
@@ -116,7 +119,7 @@ describe('home layout', () => {
         wrapper.setProps({session: 1});
         wrapper.update();
 
-        expect(sectionOrder(wrapper)).toEqual(['following', 'games', 'continue']);
+        expect(sectionOrder(wrapper)).toEqual(['following', 'games', 'continue', 'playing', 'new', 'updates']);
         expect(global.featuredMounts).toBe(1);
         wrapper.unmount();
     });

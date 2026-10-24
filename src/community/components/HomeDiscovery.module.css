@@ -2,20 +2,17 @@
     min-width: 0;
 }
 
-.grid,
-.bento {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    align-items: start;
-    gap: var(--space-5) var(--space-4);
+.empty {
+    margin: 0;
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
 }
 
-.bentoLead {
-    display: flex;
-    grid-row: span 2;
-    grid-column: span 2;
-    align-self: stretch;
-    min-width: 0;
+.spotlight {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-6);
+    align-items: center;
 }
 
 .skeleton {
@@ -25,36 +22,24 @@
     animation: pulse 1.4s ease-in-out infinite;
 }
 
-.empty {
-    margin: 0;
-    color: var(--text-dim);
-    font-size: var(--fs-sm);
-}
-
-.skeleton.bentoLead {
-    aspect-ratio: auto;
-}
-
-.featured {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    gap: var(--space-2);
-    min-width: 0;
+.lineSkeleton {
+    display: block;
+    width: 60%;
+    height: 14px;
+    border-radius: var(--radius-2xs);
+    background: var(--bg-card);
+    animation: pulse 1.4s ease-in-out infinite;
 }
 
 .poster {
     position: relative;
     display: block;
-    flex: 1;
-    min-height: 0;
-    padding: 0;
+    aspect-ratio: 4 / 3;
     overflow: hidden;
-    border: 0;
     border-radius: var(--radius-xs);
+    outline: 1px solid var(--border);
+    outline-offset: -1px;
     background: var(--bg-card);
-    color: inherit;
-    font: inherit;
 }
 
 .poster img,
@@ -74,30 +59,6 @@
     font-weight: 600;
 }
 
-.play {
-    position: absolute;
-    bottom: var(--space-4);
-    left: var(--space-4);
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    min-height: 38px;
-    padding: 0 var(--space-4);
-    border-radius: var(--radius-xs);
-    background: var(--accent);
-    color: var(--accent-contrast);
-    font-size: var(--fs-md);
-    font-weight: 600;
-}
-
-.poster:hover .play {
-    background: color-mix(in srgb, var(--accent) 88%, #000);
-}
-
-.poster:disabled {
-    cursor: progress;
-}
-
 .stageWrap {
     position: relative;
     height: 0;
@@ -114,33 +75,58 @@
     border: 0;
 }
 
-.caption {
+.spotlightText {
     display: grid;
-    gap: 2px;
+    align-content: center;
+    gap: var(--space-2);
     min-width: 0;
 }
 
-.caption h3 {
+.spotlightText h3 {
     margin: 0;
-    overflow: hidden;
-    font-size: var(--fs-lg);
-    font-weight: 600;
-    line-height: 1.3;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    font-size: var(--fs-2xl);
+    font-weight: 700;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
 }
 
-.caption h3 a:hover {
+.spotlightText h3 a:hover {
     text-decoration: underline;
 }
 
 .captionMeta {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--space-3);
     min-width: 0;
     color: var(--text-dim);
     font-size: var(--fs-sm);
+}
+
+.captionMeta > span {
+    margin-inline-start: 0;
+}
+
+.blurb {
+    display: -webkit-box;
+    margin: var(--space-1) 0 0;
+    overflow: hidden;
+    color: var(--text-dim);
+    font-size: var(--fs-md);
+    line-height: 1.5;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+}
+
+.spotlightActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+}
+
+.trending {
+    margin-top: var(--space-6);
 }
 
 .list {
@@ -186,6 +172,7 @@
 
 @media (prefers-reduced-motion: reduce) {
     .skeleton,
+    .lineSkeleton,
     .rowSkeleton > span {
         animation: none;
     }
@@ -238,27 +225,22 @@
     }
 }
 
-@media (max-width: 1000px) {
-    .grid,
-    .bento {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: var(--space-4) var(--space-3);
-    }
-
-    .bentoLead {
-        grid-row: auto;
-    }
-
-    .poster {
-        flex: none;
-        aspect-ratio: 4 / 3;
-    }
-
-    .skeleton.bentoLead {
-        aspect-ratio: 4 / 3;
-    }
-}
 
 .status {
     justify-content: flex-start;
+}
+
+@media (max-width: 760px) {
+    .spotlight {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-3);
+    }
+
+    .spotlightText h3 {
+        font-size: var(--fs-xl);
+    }
+
+    .trending {
+        margin-top: var(--space-5);
+    }
 }
