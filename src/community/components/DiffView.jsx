@@ -451,6 +451,26 @@ const DiffView = ({diff, spriteFilter = '', onOpenFile = null, loadAsset = null,
         return {blockScripts: map, blockDiffFiles: paths};
     }, [spriteFiles, fileTexts]);
 
+    const tabFiles = spriteFiles.filter(file => classifyAssetFile(file.path) === activeTab);
+    const groups = useMemo(() => {
+        const all = groupFilesBySprite(tabFiles);
+        const names = new Set(all.map(group => group.name));
+        for (const name of Object.keys(summaries)) {
+            if (!names.has(name) && summaryForTab(summaries[name], activeTab)) {
+                all.push({name, files: []});
+                names.add(name);
+            }
+        }
+        const tabSummary = group => summaryForTab(summaries[group.name], activeTab);
+        const summaryOnly = all.filter(
+            group => tabSummary(group) && !group.files.some(file => !coveredFiles.has(file.path))
+        );
+        if (!summaryOnly.length) return all;
+        const rest = all.filter(
+            group => !(tabSummary(group) && !group.files.some(file => !coveredFiles.has(file.path)))
+        );
+        return [...summaryOnly, ...rest];
+    }, [tabFiles, summaries, coveredFiles, activeTab]);
     const categoryLabels = categoryLabelsFor(communityText);
     const statusLabels = fileStatusLabelsFor(communityText);
     if (diff === null || typeof diff === 'undefined') {
@@ -478,26 +498,7 @@ const DiffView = ({diff, spriteFilter = '', onOpenFile = null, loadAsset = null,
             counts[key] += 1;
         }
     }
-    const tabFiles = spriteFiles.filter(file => classifyAssetFile(file.path) === activeTab);
-    const groups = useMemo(() => {
-        const all = groupFilesBySprite(tabFiles);
-        const names = new Set(all.map(group => group.name));
-        for (const name of Object.keys(summaries)) {
-            if (!names.has(name) && summaryForTab(summaries[name], activeTab)) {
-                all.push({name, files: []});
-                names.add(name);
-            }
-        }
-        const tabSummary = group => summaryForTab(summaries[group.name], activeTab);
-        const summaryOnly = all.filter(
-            group => tabSummary(group) && !group.files.some(file => !coveredFiles.has(file.path))
-        );
-        if (!summaryOnly.length) return all;
-        const rest = all.filter(
-            group => !(tabSummary(group) && !group.files.some(file => !coveredFiles.has(file.path)))
-        );
-        return [...summaryOnly, ...rest];
-    }, [tabFiles, summaries, coveredFiles, activeTab]);
+
     const emptyLabel = spriteFilter ?
         communityText('No {value1} changes for {value2} found.', {
             value1: categoryLabels[activeTab].toLowerCase(), value2: spriteFilter

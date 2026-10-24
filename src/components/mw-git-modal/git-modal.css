@@ -583,3 +583,14 @@
     font-size: 0.82rem;
     word-break: break-word;
 }
+
+.contentAreaHistory {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.contentAreaHistory > :last-child {
+    flex: 1;
+    min-height: 0;
+}
