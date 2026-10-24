@@ -8,9 +8,28 @@ import {extensionOf, readProjectSidecar, toBytes, writeProjectSidecar} from './p
 // exactly like fractch does for costumes and sounds.
 const CUSTOM_ASSETS_DIR = 'assets';
 
+const hasControlCharacter = text => Array.from(text).some(character => {
+    const code = character.charCodeAt(0);
+    return code < 32 || code === 127;
+});
+
+const safeRelativePath = path => {
+    if (typeof path !== 'string' || hasControlCharacter(path)) return null;
+    const parts = path.replace(/\\/g, '/').split('/')
+        .filter(Boolean);
+    if (!parts.length || /^[A-Za-z]:$/.test(parts[0])) return null;
+    if (parts.some(part => part === '.' || part === '..' || part.startsWith('.'))) return null;
+    return parts.join('/');
+};
+
 const writeCustomAssets = async ({readSb3File, projectJson, vfs, dir}) => {
     const customAssets = Array.isArray(projectJson.customAssets) ? projectJson.customAssets : [];
-    for (const {name, md5ext} of customAssets) {
+    for (const {name: rawName, md5ext} of customAssets) {
+        const name = safeRelativePath(rawName);
+        if (!name) {
+            console.warn('[fractch-tree] skipping custom asset with an unsafe name:', rawName);
+            continue;
+        }
         const data = await readSb3File(md5ext);
         if (!data) {
             console.warn('[fractch-tree] missing custom asset in sb3:', md5ext);
@@ -52,9 +71,6 @@ const readCustomAssets = async ({vfs, pfs, dir}) => {
     return found;
 };
 
-// Mirrors fractch's internal emit.targetAssetFiles: the map of md5ext -> the
-// "assets/<name>.<ext>" path each costume/sound declaration references. Kept
-// local so we depend only on fractch's published (browser) exports.
 const targetAssetFiles = target => {
     const used = new Set();
     const map = new Map();
@@ -67,11 +83,113 @@ const targetAssetFiles = target => {
             .replace(/[^a-zA-Z0-9-_]/g, '_') || 'asset';
         let file = `${base}.${ext}`;
         let n = 2;
-        while (used.has(file)) file = `${base}_${n++}.${ext}`;
-        used.add(file);
+        while (used.has(file.toLowerCase())) file = `${base}_${n++}.${ext}`;
+        used.add(file.toLowerCase());
         map.set(md5ext, `assets/${file}`);
     }
     return map;
+};
+
+const targetDirs = targets => {
+    const used = new Set();
+    const dirs = new Map();
+    for (const target of targets) {
+        const base = String(target && target.name !== null && typeof target.name !== 'undefined' ? target.name : '')
+            .replace(/[^a-zA-Z0-9-_]/g, '_') || 'target';
+        let name = base;
+        let n = 2;
+        while (used.has(name.toLowerCase())) name = `${base}_${n++}`;
+        used.add(name.toLowerCase());
+        dirs.set(target, name);
+    }
+    return dirs;
+};
+
+const cleanFormat = value => String(value === null || typeof value === 'undefined' ? '' : value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+
+const withSafeFormats = asset => {
+    if (!asset || typeof asset !== 'object') return asset;
+    const md5ext = typeof asset.md5ext === 'string' ? asset.md5ext : '';
+    const fromMd5ext = md5ext.includes('.') ? cleanFormat(md5ext.slice(md5ext.lastIndexOf('.') + 1)) : '';
+    const dataFormat = cleanFormat(asset.dataFormat) || fromMd5ext || 'dat';
+    return dataFormat === asset.dataFormat ? asset : {...asset, dataFormat};
+};
+
+const MAP_PREFIX = '_fractch_map_';
+
+const STDLIB_MODULES = new Set(['fractch/json', 'fractch/strings']);
+
+const safeRegion = region => {
+    if (typeof region !== 'string' || hasControlCharacter(region)) return 'main';
+    const parts = region.replace(/\\/g, '/').replace(/\.fractch$/i, '')
+        .split('/')
+        .filter(Boolean);
+    if (!parts.length || /^[A-Za-z]:$/.test(parts[0])) return 'main';
+    if (parts.some(part => part === '.' || part === '..' || part.startsWith('.'))) return 'main';
+    return parts.join('/');
+};
+
+const withSafeRegions = projectJson => {
+    const targets = Array.isArray(projectJson.targets) ? projectJson.targets : [];
+    let changed = false;
+    const safeTargets = targets.map(target => {
+        const comments = target && target.comments && typeof target.comments === 'object' ? target.comments : null;
+        if (!comments) return target;
+        let safeComments = null;
+        for (const [id, comment] of Object.entries(comments)) {
+            if (!comment || typeof comment !== 'object' || comment.blockId) continue;
+            const text = String(comment.text || '') + (typeof comment.extraText === 'string' ? comment.extraText : '');
+            if (!text.startsWith(MAP_PREFIX)) continue;
+            let map;
+            try {
+                map = JSON.parse(text.slice(MAP_PREFIX.length));
+            } catch (e) {
+                continue;
+            }
+            if (!map || typeof map !== 'object') continue;
+            if (!map.scripts || typeof map.scripts !== 'object') map.scripts = {};
+            const scripts = {};
+            let unsafe = false;
+            for (const [topId, region] of Object.entries(map.scripts)) {
+                scripts[topId] = safeRegion(region);
+                if (scripts[topId] !== region) unsafe = true;
+            }
+            let modules = map.modules;
+            if (modules && typeof modules === 'object') {
+                modules = {};
+                for (const [topId, moduleId] of Object.entries(map.modules)) {
+                    if (STDLIB_MODULES.has(moduleId)) modules[topId] = moduleId;
+                    else unsafe = true;
+                }
+            }
+            if (!unsafe) continue;
+            const safeMap = {...map, scripts};
+            if (modules) safeMap.modules = modules;
+            const safeText = MAP_PREFIX + JSON.stringify(safeMap);
+            const safeComment = {...comment, text: safeText};
+            delete safeComment.extraText;
+            safeComments = {...(safeComments || comments), [id]: safeComment};
+        }
+        if (!safeComments) return target;
+        changed = true;
+        return {...target, comments: safeComments};
+    });
+    return changed ? {...projectJson, targets: safeTargets} : projectJson;
+};
+
+const withSafePaths = projectJson => {
+    const safe = withSafeRegions(projectJson);
+    const targets = Array.isArray(safe.targets) ? safe.targets : [];
+    return {
+        ...safe,
+        targets: targets.map(target => (target && typeof target === 'object' ? {
+            ...target,
+            costumes: Array.isArray(target.costumes) ? target.costumes.map(withSafeFormats) : target.costumes,
+            sounds: Array.isArray(target.sounds) ? target.sounds.map(withSafeFormats) : target.sounds
+        } : target))
+    };
 };
 
 const yieldToBrowser = () => new Promise(resolve => setTimeout(resolve, 0));
@@ -98,12 +216,12 @@ const removeRecursive = async (pfs, filePath) => {
 
     let stat;
     try {
-        stat = await pfs.stat(filePath);
+        stat = await (pfs.lstat || pfs.stat).call(pfs, filePath);
     } catch (e) {
         return;
     }
 
-    if (stat.isDirectory()) {
+    if (stat.isDirectory() && !(stat.isSymbolicLink && stat.isSymbolicLink())) {
         const entries = await pfs.readdir(filePath);
         await Promise.all(entries.map(entry => removeRecursive(pfs, `${filePath}/${entry}`)));
         try {
@@ -149,6 +267,7 @@ const clearWorkingTree = async ({pfs, dir}) => {
 const listGeneratedTree = async (pfs, dir) => {
     const files = [];
     const dirs = [];
+    const links = [];
     const walk = async (current, isRoot) => {
         let entries;
         try {
@@ -161,11 +280,13 @@ const listGeneratedTree = async (pfs, dir) => {
             const path = `${current}/${entry}`;
             let stat;
             try {
-                stat = await pfs.stat(path);
+                stat = await (pfs.lstat || pfs.stat).call(pfs, path);
             } catch (e) {
                 continue;
             }
-            if (stat.isDirectory()) {
+            if (stat.isSymbolicLink && stat.isSymbolicLink()) {
+                links.push(path);
+            } else if (stat.isDirectory()) {
                 dirs.push(path);
                 await walk(path, false);
             } else {
@@ -174,7 +295,7 @@ const listGeneratedTree = async (pfs, dir) => {
         }
     };
     await walk(dir, true);
-    return {files, dirs};
+    return {files, dirs, links};
 };
 
 const sameBytes = (a, b) => {
@@ -187,8 +308,47 @@ const sameBytes = (a, b) => {
 
 const normalizeTreePath = path => path.replace(/\/+/g, '/');
 
+const insideTree = (path, dir, {allowAncestors = false} = {}) => {
+    if (typeof path !== 'string' || hasControlCharacter(path)) return false;
+    const normalized = normalizeTreePath(path).replace(/\/$/, '');
+    const root = normalizeTreePath(`${dir}/`);
+    if (allowAncestors && (normalized === '' || root.startsWith(`${normalized}/`))) return true;
+    if (!normalized.startsWith(root)) return false;
+    const parts = normalized.slice(root.length).split('/')
+        .filter(Boolean);
+    return parts.length > 0 && !parts.some(part => part === '.' || part === '..' || part.startsWith('.'));
+};
+
+const GUARDED_METHODS = new Set(['writeFile', 'mkdir', 'unlink', 'rmdir', 'rename', 'symlink', 'appendFile']);
+
+const guardTreeFs = (pfs, dir) => new Proxy(pfs, {
+    get: (target, property) => {
+        const value = target[property];
+        if (typeof value !== 'function') return value;
+        if (!GUARDED_METHODS.has(property)) return value.bind(target);
+        return (...args) => {
+            const paths = property === 'rename' || property === 'symlink' ? args.slice(0, 2) : args.slice(0, 1);
+            const options = {allowAncestors: property === 'mkdir'};
+            if (paths.every(path => insideTree(path, dir, options))) return value.apply(target, args);
+            console.warn('[fractch-tree] refusing to touch a path outside the project folder:', paths);
+            return Promise.resolve();
+        };
+    }
+});
+
+const removeLinks = async (pfs, links) => {
+    for (const link of links) {
+        try {
+            await pfs.unlink(link);
+        } catch (e) {
+            console.warn('[fractch-tree] could not remove link:', link, e);
+        }
+    }
+};
+
 const createTreeSync = async ({pfs, dir}) => {
     const previous = await listGeneratedTree(pfs, dir);
+    await removeLinks(pfs, previous.links);
     const stale = new Set(previous.files);
     const writeFile = async (path, data, options) => {
         const normalized = normalizeTreePath(path);
@@ -243,12 +403,14 @@ const MD5EXT = /^[0-9a-f]{32}\.[a-z0-9]{1,8}$/;
 const worktreeAssetPaths = async sb3Files => {
     const projectBytes = await sb3FileReader(sb3Files)('project.json');
     if (!projectBytes) return new Map();
-    const projectJson = JSON.parse(new TextDecoder().decode(projectBytes));
+    const projectJson = withSafePaths(JSON.parse(new TextDecoder().decode(projectBytes)));
     const paths = new Map();
     const ambiguous = new Set();
-    for (const target of Array.isArray(projectJson.targets) ? projectJson.targets : []) {
+    const targets = Array.isArray(projectJson.targets) ? projectJson.targets : [];
+    const dirs = targetDirs(targets);
+    for (const target of targets) {
         for (const [md5ext, rel] of targetAssetFiles(target)) {
-            const path = `${sanitize(target.name)}/${rel}`;
+            const path = `${dirs.get(target)}/${rel}`;
             if (!MD5EXT.test(md5ext) || (paths.has(path) && paths.get(path) !== md5ext)) ambiguous.add(path);
             paths.set(path, md5ext);
         }
@@ -301,7 +463,9 @@ const writeProjectToFractchTree = async ({
         onProgress({phase: 'write', message: 'Reading project…', completed: 0, total: 1});
     }
 
-    const {readSb3File, projectJson} = await loadSb3({vm, sb3ArrayBuffer, sb3Files});
+    const loaded = await loadSb3({vm, sb3ArrayBuffer, sb3Files});
+    const readSb3File = loaded.readSb3File;
+    const projectJson = withSafePaths(loaded.projectJson);
 
     const writeTree = async treeFs => {
         if (typeof onProgress === 'function') {
@@ -319,11 +483,12 @@ const writeProjectToFractchTree = async ({
 
         const maybeYield = createYielder();
         const targets = Array.isArray(projectJson.targets) ? projectJson.targets : [];
+        const dirs = targetDirs(targets);
         let completed = 0;
         for (const target of targets) {
             const fileMap = targetAssetFiles(target);
             if (fileMap.size) {
-                const tDir = `${dir}/${sanitize(target.name)}`;
+                const tDir = `${dir}/${dirs.get(target)}`;
                 await vfs.mkdirp(`${tDir}/assets`);
                 for (const [md5ext, rel] of fileMap) {
                     const data = await readSb3File(md5ext);
@@ -348,18 +513,19 @@ const writeProjectToFractchTree = async ({
     };
 
     if (!clear) {
-        await writeTree(fs);
+        await removeLinks(fs, (await listGeneratedTree(fs, dir)).links);
+        await writeTree(guardTreeFs(fs, dir));
         return;
     }
 
     const sync = await createTreeSync({pfs: fs, dir});
     try {
-        await writeTree(sync.fs);
+        await writeTree(guardTreeFs(sync.fs, dir));
         await sync.finish();
     } catch (error) {
         console.warn('[fractch-tree] rewriting the whole tree after an incremental write failed:', error);
         await clearWorkingTree({pfs: fs, dir});
-        await writeTree(fs);
+        await writeTree(guardTreeFs(fs, dir));
     }
 };
 
