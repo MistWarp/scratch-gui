@@ -136,7 +136,7 @@ const ClassroomJoin = () => {
             const data = await api.classroom.login(pictureMode ?
                 {code, studentId, pictures} :
                 {code, studentId, password});
-            loginStudent({token: data.token, username: data.username, displayName: data.displayName});
+            await loginStudent({token: data.token, username: data.username, displayName: data.displayName});
             navigate('/classroom');
         } catch (e) {
             setError((e && e.message) || communityText('That sign-in did not match. Check with your teacher and try again.'));

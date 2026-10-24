@@ -29,6 +29,7 @@ import * as accountBridge from '../account/bridge.js';
 import {setMinorAccount} from '../minor-account.js';
 import {ROTUR_TOKEN_KEY} from './token-key.js';
 import {sleep} from '../utils/async.js';
+import {forgetProjectGrants} from './extension-bridge.js';
 import {
     STUDENT_SESSION_KEY,
     isStudentSession,
@@ -140,13 +141,13 @@ const userFromBridge = user => {
 
 const applyIdentity = async (entry, generation) => {
     const user = userFromBridge(entry.next.user);
+    if (entry.next.status !== 'restoring') setSplitStudent(Boolean(user && user.isStudent));
     if (!user || (editorToken && editorToken.username !== user.username)) storeSession(null);
     if (user && !splitSession.get()) {
         await splitSession.refresh().catch(() => null);
         if (generation !== identityGeneration) return;
     }
     const latest = entry.next;
-    if (latest.status !== 'restoring') setSplitStudent(Boolean(user && user.isStudent));
     setState({
         status: latest.status === 'restoring' ? 'restoring' : (user ? 'ready' : 'idle'),
         user,
@@ -397,14 +398,28 @@ const restore = () => {
     return restoreInFlight;
 };
 
-const loginStudent = ({token, username, displayName}) => {
+const loginStudent = async ({token, username, displayName}) => {
     if (isSplitEditor()) throw new Error('Class accounts sign in on the MistWarp website.');
     wireSession();
+    setState({status: 'logging-in', user: null, banMessage: null, reconnect: false});
+    if (loadSession()) await mistLogout().catch(() => null);
+    try {
+        onRoturLogout();
+    } catch (_) {
+        // ignore
+    }
+    try {
+        clearGitAuth();
+    } catch (_) {
+        // ignore
+    }
+    forgetProjectGrants();
     roturLogout();
+    setMinorAccount(false);
     storeSession(token);
     writeStudentFlag(true);
     const user = studentUser({username, displayName});
-    setState({status: 'ready', user, banMessage: null});
+    setState({status: 'ready', user, banMessage: null, reconnect: false});
     return user;
 };
 

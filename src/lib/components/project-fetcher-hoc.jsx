@@ -10,6 +10,7 @@ import {setProjectUnchanged} from '../../reducers/project-changed.js';
 import {setProjectTitle} from '../../reducers/project-title.js';
 import {
     LoadingStates,
+    defaultProjectId,
     abortProjectSwitch,
     getIsCreatingNew,
     getIsFetchingWithId,
@@ -113,6 +114,8 @@ const clearProjectSourceOnForeignLoads = vm => {
 
 const fetchArrayBuffer = url => cachedFetchBuffer(url);
 
+const BLANK_PROJECT_ROLES = ['owner', 'maintainer', 'editor', 'viewer'];
+
 const fillDefaultMessage = (message, values = {}) => message.defaultMessage
     .replace(/\{(\w+)\}/g, (match, name) => (Object.prototype.hasOwnProperty.call(values, name) ?
         String(values[name]) : match));
@@ -131,6 +134,9 @@ const loadEditorProject = async id => {
 const loadPlatformProject = async (id, source) => {
     const project = source || await loadEditorProject(id);
     if (!source && !project.projectJsonUrl) {
+        if (!project.isOwner && !BLANK_PROJECT_ROLES.includes(project.myRole)) {
+            throw new Error('This project has not been saved yet.');
+        }
         return {
             data: JSON.stringify(defaultProjectData(fillDefaultMessage)),
             title: project.title,
@@ -355,6 +361,8 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                     data: JSON.stringify(createStarterProject(starter.id, this.props.intl.formatMessage)),
                     title: starter.title
                 }) : Promise.reject(new Error('This starter is not available. Choose a starter from the homepage.'));
+            } else if (student && String(projectId) !== String(defaultProjectId)) {
+                assetPromise = Promise.reject(new Error('Scratch projects are not available for class accounts.'));
             } else {
                 // TW: Temporary hack for project tokens
                 assetPromise = fetchProjectToken(projectId)

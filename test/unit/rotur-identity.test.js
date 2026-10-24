@@ -32,8 +32,10 @@ jest.mock('../../src/lib/community/api.js', () => {
 jest.mock('../../src/lib/rotur/cloud-sync.js', () => ({onRoturLogout: jest.fn()}));
 jest.mock('../../src/lib/rotur/git-api.js', () => ({clearGitAuth: jest.fn()}));
 
-import {getState, login, restore} from '../../src/lib/rotur/identity.js';
-import {exchangeValidator} from '../../src/lib/community/api.js';
+import {getState, login, loginStudent, restore} from '../../src/lib/rotur/identity.js';
+import {exchangeValidator, logout as mistLogout} from '../../src/lib/community/api.js';
+import {onRoturLogout} from '../../src/lib/rotur/cloud-sync.js';
+import {clearGitAuth} from '../../src/lib/rotur/git-api.js';
 import {logout as roturLogout, restoreSession} from '../../src/lib/rotur/client.js';
 
 test('switching Rotur accounts exchanges a fresh MistWarp session', async () => {
@@ -129,4 +131,24 @@ test('signing out of the old sign-in in another tab signs this tab out', async (
     window.dispatchEvent(new StorageEvent('storage', {key: 'mw:rotur-token', newValue: null}));
     expect(getState().user).toBeNull();
     mockSession.account = 'id-1';
+});
+
+test('a class sign-in clears everything the previous account left behind', async () => {
+    localStorage.setItem('mw:mistwarp-session', 'teacher-session');
+    localStorage.setItem('mw:minor-account', '1');
+    localStorage.setItem('mw:rotur-grants', JSON.stringify({p1: ['profile:read']}));
+    mistLogout.mockImplementationOnce(async () => {
+        localStorage.removeItem('mw:mistwarp-session');
+    });
+    const user = await loginStudent({token: 'student-session', username: 'ada~k7p2q', displayName: 'Ada'});
+    expect(mistLogout).toHaveBeenCalled();
+    expect(onRoturLogout).toHaveBeenCalled();
+    expect(clearGitAuth).toHaveBeenCalled();
+    expect(roturLogout).toHaveBeenCalled();
+    expect(localStorage.getItem('mw:rotur-grants')).toBe('{}');
+    expect(localStorage.getItem('mw:minor-account')).toBeNull();
+    expect(localStorage.getItem('mw:mistwarp-session')).toBe('student-session');
+    expect(localStorage.getItem('mw:classroom-student')).toBe('1');
+    expect(user).toEqual({username: 'ada~k7p2q', displayName: 'Ada', isStudent: true});
+    expect(getState().user).toEqual(user);
 });

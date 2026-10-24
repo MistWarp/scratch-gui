@@ -5,6 +5,7 @@ import {Navigate, Routes, Route, useLocation, useNavigationType} from 'react-rou
 import {UserProvider, useUser} from './UserContext.jsx';
 import {isStudentSession} from '../lib/rotur/student-flag.js';
 import ClassroomRoute from './components/ClassroomRoute.jsx';
+import {useClassroomAvailable} from './classroom-availability.js';
 import {setRouteMeta} from './page-meta.js';
 import {initSiteErrorReporting} from '../lib/error-reporter.js';
 import NavBar from './components/NavBar.jsx';
@@ -161,13 +162,15 @@ export const RouteMeta = () => {
     locationKey.current = key;
     const metaPath = useRef(null);
     const firstRoute = useRef(true);
+    const {available: classroomAvailable} = useClassroomAvailable();
 
     useEffect(() => {
-        const match = ROUTE_TITLES.find(([prefix]) => pathname.startsWith(prefix));
+        const match = ROUTE_TITLES.find(([prefix]) => pathname.startsWith(prefix) &&
+            (classroomAvailable || !prefix.startsWith('/classroom')));
         const navigated = metaPath.current !== pathname;
         metaPath.current = pathname;
         setRouteMeta({title: match ? text(match[1]) : null}, navigated);
-    }, [pathname, text]);
+    }, [pathname, text, classroomAvailable]);
 
     useEffect(() => {
         if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';

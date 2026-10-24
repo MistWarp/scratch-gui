@@ -85,7 +85,7 @@ This agreement lasts as long as we process student data for the School. If it co
 - Assignment submissions, feedback, grades and group membership.
 - Editor settings and notifications inside MistWarp.
 - An activity log of changes teachers make to the class.
-- Error reports from the editor: browser type, page address and a technical error message.
+- Error reports when something breaks: the error message and stack traces, page address, open project ID, browser type, window size, MistWarp version and time, without the student's name or username. They are deleted after 90 days.
 - IP addresses, which our server and Cloudflare use to deliver the service and limit abuse. Our server keeps them only in memory for a short time and does not store them for signed-in users.
 
 **Special category data.** None is needed. Schools must not enter it.

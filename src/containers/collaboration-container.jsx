@@ -78,7 +78,7 @@ const messages = defineMessages({
         id: 'mw.collaboration.watchConfirmTitle'
     },
     watchConfirmMessage: {
-        defaultMessage: 'Watching replaces the editor with the presenter\'s project and follows their view. You cannot change or save anything while watching. A device backup keeps your current code first.',
+        defaultMessage: 'Watching replaces the editor with the presenter\'s project and follows their view. You cannot edit it while you watch. A device backup keeps your current code first.',
         description: 'Message of the dialog confirming that watching a Classroom presentation replaces the open project',
         id: 'mw.collaboration.watchConfirmMessage'
     },
@@ -434,14 +434,15 @@ class CollaborationContainer extends Component {
             throw cancelled;
         }
         const attempt = this.beginConnectAttempt();
-        this.lastConnect = {kind: 'join', roomId, username, scope, invite: options.invite || null, viewer};
+        const classroom = Boolean(options && options.classroom);
+        this.lastConnect = {kind: 'join', roomId, username, scope, invite: options.invite || null, viewer, classroom};
         try {
             this.endNoticeShown = false;
             this.props.onSetError(null);
 
             await this.collaborationService.connectToRoom(
                 roomId, username, false, 'private', this.props.roturHandle, scope,
-                {invite: options.invite, viewer, classroom: Boolean(options && options.classroom)}
+                {invite: options.invite, viewer, classroom}
             );
             this.throwIfAbandoned(attempt);
             if (options.invite) this.props.onSetInvite(null);
@@ -464,7 +465,7 @@ class CollaborationContainer extends Component {
         if (!roomId) throw new Error('Room ID is required to create a room');
 
         const attempt = this.beginConnectAttempt();
-        this.lastConnect = {kind: 'create', roomId, username, scope};
+        this.lastConnect = {kind: 'create', roomId, username, scope, classroom: Boolean(options && options.classroom)};
         try {
             this.endNoticeShown = false;
             this.props.onSetError(null);
@@ -522,9 +523,12 @@ class CollaborationContainer extends Component {
     handleRetry () {
         const last = this.lastConnect;
         if (!last) return Promise.reject(new Error('There is nothing to try again.'));
-        if (last.kind === 'create') return this.handleCreateRoom(last.roomId, last.username, 'private', last.scope);
+        if (last.kind === 'create') {
+            return this.handleCreateRoom(last.roomId, last.username, 'private', last.scope,
+                {classroom: last.classroom});
+        }
         return this.handleJoinRoom(last.roomId, last.username, last.scope,
-            {invite: last.invite, viewer: last.viewer, retry: true});
+            {invite: last.invite, viewer: last.viewer, classroom: last.classroom, retry: true});
     }
 
     setSessionState (next) {

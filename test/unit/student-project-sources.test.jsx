@@ -143,6 +143,30 @@ describe('project sources for class accounts', () => {
         expect(onFetchedProjectData).not.toHaveBeenCalled();
     });
 
+    test('a project token in the address does not let a student open a Scratch project', async () => {
+        localStorage.setItem(STUDENT_KEY, '1');
+        window.history.replaceState({}, '', '/editor?token=abc#123');
+        const {instance, onFetchedProjectData} = makeFetcher();
+        await instance.fetchProject('123', LoadingState.FETCHING_WITH_ID);
+        expect(global.fetch).not.toHaveBeenCalled();
+        expect(storage.load).not.toHaveBeenCalled();
+        expect(onFetchedProjectData).not.toHaveBeenCalled();
+    });
+
+    test('a project that was never saved opens blank only for its team', async () => {
+        getEditorProject.mockResolvedValueOnce({project: {id: 'p2', title: 'Empty', projectJsonUrl: '', myRole: 'tester'}});
+        window.history.replaceState({}, '', '/editor#mw-p2');
+        const stranger = makeFetcher();
+        await stranger.instance.fetchProject('0', LoadingState.FETCHING_WITH_ID);
+        expect(stranger.onFetchedProjectData).not.toHaveBeenCalled();
+        getEditorProject.mockResolvedValueOnce({project: {id: 'p2', title: 'Empty', projectJsonUrl: '', myRole: 'owner', isOwner: true}});
+        const owner = makeFetcher();
+        await owner.instance.fetchProject('0', LoadingState.FETCHING_WITH_ID);
+        expect(owner.onFetchedProjectData).toHaveBeenCalledTimes(1);
+        expect(JSON.parse(owner.onFetchedProjectData.mock.calls[0][0]).targets[1].name).toBe('Sprite1');
+        owner.vm._mwReleaseProjectLoad();
+    });
+
     test('everyone else keeps clone and project URLs', async () => {
         window.history.replaceState({}, '', '/editor?project_url=https://example.com/project.sb3');
         const first = makeFetcher();

@@ -1721,7 +1721,7 @@
   "mw.collaboration.joinUnappliedCode": "Your unapplied code changes are kept as drafts, but they are not part of the shared project.",
   "mw.collaboration.joinConfirmButton": "Join",
   "mw.collaboration.watchConfirmTitle": "Watch the presentation?",
-  "mw.collaboration.watchConfirmMessage": "Watching replaces the editor with the presenter's project and follows their view. You cannot change or save anything while watching. A device backup keeps your current code first.",
+  "mw.collaboration.watchConfirmMessage": "Watching replaces the editor with the presenter's project and follows their view. You cannot edit it while you watch. A device backup keeps your current code first.",
   "mw.collaboration.watchConfirmButton": "Back up and watch",
   "mw.collaboration.joinCancelled": "Joining was cancelled. Your project is unchanged.",
   "mw.collaboration.userLeft": "{name} left the live session.",

@@ -25,8 +25,8 @@ describe('class accounts across the account frame', () => {
         expect(identity.user).toEqual({username: 'mist', id: 'u1', bio: null});
     });
 
-    test('the split editor treats a class link as a student before the frame answers', () => {
-        window.history.replaceState(null, '', '/?classroom=student');
+    test('a class link counts as a student for this page only, and the frame has the last word', () => {
+        window.history.replaceState(null, '', '/?classroom=student&x=1');
         jest.isolateModules(() => {
             jest.doMock('../../src/lib/account/origins.js', () => ({
                 ACCOUNT_ORIGIN: 'https://mistwarp.org',
@@ -36,8 +36,28 @@ describe('class accounts across the account frame', () => {
             }));
             const flag = require('../../src/lib/rotur/student-flag.js');
             expect(flag.isStudentSession()).toBe(true);
+            expect(window.location.search).toBe('?x=1');
+            expect(localStorage.getItem('mw:classroom-student')).toBeNull();
             flag.setSplitStudent(false);
             expect(flag.isStudentSession()).toBe(false);
+        });
+        jest.dontMock('../../src/lib/account/origins.js');
+    });
+
+    test('once the frame says it is a student, clearing storage does not switch protections off', () => {
+        jest.isolateModules(() => {
+            jest.doMock('../../src/lib/account/origins.js', () => ({
+                ACCOUNT_ORIGIN: 'https://mistwarp.org',
+                EDITOR_ORIGIN: 'https://editor.mistwarp.org',
+                isSplitEditor: () => true,
+                isEditorOrigin: () => false
+            }));
+            const flag = require('../../src/lib/rotur/student-flag.js');
+            expect(flag.isStudentSession()).toBe(false);
+            flag.setSplitStudent(true);
+            expect(localStorage.getItem('mw:classroom-student')).toBe('1');
+            localStorage.removeItem('mw:classroom-student');
+            expect(flag.isStudentSession()).toBe(true);
         });
         jest.dontMock('../../src/lib/account/origins.js');
     });

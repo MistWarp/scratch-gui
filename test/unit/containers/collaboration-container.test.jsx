@@ -336,6 +336,19 @@ describe('CollaborationContainer', () => {
             expect(wrapper.find('CollaborationModal').prop('canRetry')).toBe(retry);
         });
 
+    test('trying a Classroom session again keeps its restricted connection', async () => {
+        const container = instanceOf(mountContainer());
+        container.props = {...container.props, openSimpleDialog: config => config.onOk()};
+        await container.handleJoinRoom('room-2', 'Ada', null, {classroom: true});
+        await container.handleRetry();
+        expect(mockCollaborationService.connectToRoom).toHaveBeenLastCalledWith(
+            'room-2', 'Ada', false, 'private', ROTUR_HANDLE, null, {invite: null, viewer: false, classroom: true});
+        await container.handleCreateRoom('room-3', 'Ada', 'private', null, {classroom: true});
+        await container.handleRetry();
+        expect(mockCollaborationService.connectToRoom).toHaveBeenLastCalledWith(
+            'room-3', 'Ada', true, 'private', ROTUR_HANDLE, null, {inviteRole: 'watch', classroom: true});
+    });
+
     test('a failed join explains the code, and Try again repeats it with the same invite', async () => {
         const notFound = new Error('raw');
         notFound.collabCode = 'ROOM_NOT_FOUND';

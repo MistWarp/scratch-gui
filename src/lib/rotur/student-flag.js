@@ -6,21 +6,24 @@ const STUDENT_HINT_PARAM = 'classroom';
 
 let studentFrame = false;
 let hintChecked = false;
+let hintStudent = false;
+let bridgeStudent = null;
 
-const adoptStudentHint = () => {
+const takeStudentHint = () => {
     hintChecked = true;
     if (typeof location === 'undefined' || !isSplitEditor()) return;
     try {
-        if (new URLSearchParams(location.search).get(STUDENT_HINT_PARAM) === 'student') {
-            sharedCredentials.setItem(STUDENT_SESSION_KEY, '1');
-        }
+        const url = new URL(location.href);
+        if (!url.searchParams.has(STUDENT_HINT_PARAM)) return;
+        hintStudent = url.searchParams.get(STUDENT_HINT_PARAM) === 'student';
+        url.searchParams.delete(STUDENT_HINT_PARAM);
+        history.replaceState(history.state, '', url.toString());
     } catch (_) {
         return;
     }
 };
 
 const readStudentFlag = () => {
-    if (!hintChecked) adoptStudentHint();
     try {
         return sharedCredentials.getItem(STUDENT_SESSION_KEY) === '1';
     } catch (_) {
@@ -39,14 +42,21 @@ const writeStudentFlag = active => {
 
 const setSplitStudent = active => {
     if (!isSplitEditor()) return;
-    writeStudentFlag(active);
+    bridgeStudent = Boolean(active);
+    writeStudentFlag(bridgeStudent);
 };
 
 const markStudentFrame = () => {
     studentFrame = true;
 };
 
-const isStudentSession = () => studentFrame || readStudentFlag();
+const isStudentSession = () => {
+    if (studentFrame) return true;
+    if (!isSplitEditor()) return readStudentFlag();
+    if (!hintChecked) takeStudentHint();
+    if (bridgeStudent !== null) return bridgeStudent;
+    return hintStudent || readStudentFlag();
+};
 
 const isClassroomUsername = username => typeof username === 'string' && username.includes('~');
 
