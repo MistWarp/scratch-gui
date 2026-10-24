@@ -11,6 +11,7 @@ import {
     ensureParentDir,
     getDefaultAuthor,
     getFs,
+    getRepoChanges,
     git,
     initRepo,
     readWorktreeFile,
@@ -22,10 +23,10 @@ import {
 } from './browser-git.js';
 import {buildSb3FromFractchTree, worktreeAssetPaths, writeProjectToFractchTree} from './fractch-tree.js';
 import {getMistWarpAuthor} from '../rotur/identity.js';
+import {appendUnifiedHunks} from './unified-diff.js';
 import {
     computeLineDiff,
     getChangedFilesBetweenCommits,
-    getFileContentAtCommit,
     listFilesInTree
 } from './git-diff.js';
 
@@ -610,7 +611,16 @@ const normalizedLegacyRootChanges = async head => {
     }
 };
 
-const diffForCommits = async (base, head, {root = false} = {}) => {
+const blobAtCommit = async (commitOid, filepath) => {
+    try {
+        const {blob} = await git.readBlob({fs: getFs(), dir: REPO_DIR, oid: commitOid, filepath});
+        return blob instanceof Uint8Array ? blob : new Uint8Array(blob);
+    } catch (e) {
+        return null;
+    }
+};
+
+const collectCommitChanges = async (base, head, {root = false} = {}) => {
     const fs = getFs();
     let changed = null;
     if (root) {
@@ -621,42 +631,58 @@ const diffForCommits = async (base, head, {root = false} = {}) => {
         }
     }
     try {
-        if (!changed) changed = await normalizedLegacyChanges(base, head);
+        if (!changed && base) changed = await normalizedLegacyChanges(base, head);
     } catch (error) {
         console.warn('Could not normalize the legacy project diff:', error);
+    }
+    if (!changed && !base) {
+        const treeOid = (await git.readCommit({fs, dir: REPO_DIR, oid: head})).commit.tree;
+        changed = (await listFilesInTree({fs, dir: REPO_DIR, treeOid}))
+            .map(file => ({path: file.path, type: 'added', oidA: null, oidB: file.oid}));
     }
     if (!changed) {
         changed = await getChangedFilesBetweenCommits({fs, dir: REPO_DIR, oidA: base, oidB: head});
     }
-    const sections = [];
+    const changes = [];
     for (const file of changed) {
-        if (!TEXT_FILE.test(file.path)) {
-            sections.push(`diff --mwp a/${file.path} b/${file.path}\nBinary file changed`);
+        const before = file.before || (file.oidA && base ? await blobAtCommit(base, file.path) : null);
+        const after = file.after || (file.oidB ? await blobAtCommit(head, file.path) : null);
+        changes.push({path: file.path, type: file.type, before, after});
+    }
+    return changes;
+};
+
+const isTextPath = path => TEXT_FILE.test(path);
+
+const decodeText = bytes => (bytes ? new TextDecoder().decode(bytes) : '');
+
+const diffTextFromChanges = async changes => {
+    const sections = [];
+    for (const file of changes) {
+        if (!isTextPath(file.path)) {
+            sections.push([
+                `diff --mwp a/${file.path} b/${file.path}`,
+                file.type === 'added' ? '--- /dev/null' : `--- a/${file.path}`,
+                file.type === 'removed' ? '+++ /dev/null' : `+++ b/${file.path}`,
+                'Binary file changed'
+            ].join('\n'));
             continue;
         }
-        const beforeFile = file.before ? {text: new TextDecoder().decode(file.before)} : file.oidA ?
-            await getFileContentAtCommit({fs, dir: REPO_DIR, oid: base, filepath: file.path}) : null;
-        const afterFile = file.after ? {text: new TextDecoder().decode(file.after)} : file.oidB ?
-            await getFileContentAtCommit({fs, dir: REPO_DIR, oid: head, filepath: file.path}) : null;
-        const before = beforeFile?.text || '';
-        const after = afterFile?.text || '';
-        const result = await computeLineDiff(before, after);
+        const result = await computeLineDiff(decodeText(file.before), decodeText(file.after));
         if (!(result.hunks || []).length) continue;
         const lines = [
             `diff --mwp a/${file.path} b/${file.path}`,
             file.type === 'added' ? '--- /dev/null' : `--- a/${file.path}`,
             file.type === 'removed' ? '+++ /dev/null' : `+++ b/${file.path}`
         ];
-        for (const hunk of result.hunks || []) {
-            lines.push(`@@ -${hunk.oldStart},${hunk.oldLines} +${hunk.newStart},${hunk.newLines} @@`);
-            for (const change of hunk.changes || []) {
-                lines.push(`${change.type === 'add' ? '+' : '-'}${change.content || ''}`);
-            }
-        }
+        appendUnifiedHunks(lines, result);
         sections.push(lines.join('\n'));
     }
     return sections.join('\n');
 };
+
+const diffForCommits = async (base, head, options) =>
+    diffTextFromChanges(await collectCommitChanges(base, head, options));
 
 let activeMerge = null;
 
@@ -874,6 +900,63 @@ const restoreMwpVersion = options => queueInspection(() => restoreMwpVersionInte
 const inspectMwpPull = options => queueInspection(() => inspectMwpPullInternal(options));
 const inspectMwpCommit = options => queueInspection(() => inspectMwpCommitInternal(options));
 const inspectMwpFiles = options => queueInspection(() => inspectMwpFilesInternal(options));
+
+const historyResult = async changes => {
+    const fileTexts = {};
+    const assets = {};
+    for (const file of changes) {
+        if (/\.fractch$/i.test(file.path)) {
+            fileTexts[file.path] = {before: decodeText(file.before), after: decodeText(file.after)};
+        }
+        if (!isTextPath(file.path)) {
+            assets[file.path] = {
+                old: file.before,
+                new: file.after,
+                mediaType: mediaTypeForPath(file.path)
+            };
+        }
+    }
+    return {
+        diff: await diffTextFromChanges(changes),
+        fileTexts,
+        assets,
+        files: changes.map(({path, type}) => ({path, type}))
+    };
+};
+
+const inspectHistoryCommit = ({oid, baseOid = null, isCurrent = null}) => queueInspection(async () => {
+    if (isCurrent && !isCurrent()) return null;
+    if (!oid) throw new Error('Choose a commit to inspect');
+    const entry = await git.readCommit({fs: getFs(), dir: REPO_DIR, oid});
+    const parents = entry.commit.parent || [];
+    const base = baseOid === null ? (parents[0] || '') : baseOid;
+    const changes = await collectCommitChanges(base, oid, {root: !base});
+    return {...await historyResult(changes), oid, base};
+});
+
+const inspectHistoryWorktree = ({vm, status = null, isCurrent = null}) => queueInspection(async () => {
+    if (isCurrent && !isCurrent()) return null;
+    const fs = getFs();
+    const head = await git.resolveRef({fs, dir: REPO_DIR, ref: 'HEAD'});
+    const changes = [];
+    for (const {filepath} of status || await getRepoChanges(vm)) {
+        const before = await blobAtCommit(head, filepath);
+        let after = null;
+        try {
+            after = await readWorktreeFile(filepath);
+        } catch (e) {
+            after = null;
+        }
+        if (!before && !after) continue;
+        changes.push({
+            path: filepath,
+            type: before && after ? 'modified' : (after ? 'added' : 'removed'),
+            before,
+            after
+        });
+    }
+    return {...await historyResult(changes), base: head};
+});
 const startMwpMerge = options => queueInspection(() => startMwpMergeInternal(options));
 
 export {
@@ -890,6 +973,8 @@ export {
     exportCurrentMwp,
     finishMwpMerge,
     importMwp,
+    inspectHistoryCommit,
+    inspectHistoryWorktree,
     inspectMwpCommit,
     inspectMwpFiles,
     inspectMwpPull,
