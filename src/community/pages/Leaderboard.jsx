@@ -10,7 +10,7 @@ import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import {tabPanelProps} from '../components/SectionTabs.jsx';
 import Avatar from '../components/Avatar.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
-import PageHeader from '../components/ui/PageHeader.jsx';
+import ExploreHeader from '../components/ExploreHeader.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import UserStatus from '../components/UserStatus.jsx';
 import styles from './Leaderboard.module.css';
@@ -115,7 +115,10 @@ const Leaderboard = () => {
 
     return (
         <main className={styles.page}>
-            <PageHeader icon={Trophy} title={communityText(active.title)} lead={communityText(active.lead)} />
+            <ExploreHeader
+                active="creators"
+                lead={communityText(active.lead)}
+            />
             <UnderlineTabs
                 items={BOARDS}
                 value={board}

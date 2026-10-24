@@ -1,14 +1,12 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useRef, useState} from 'react';
-import {Navigate, useSearchParams} from 'react-router-dom';
-import {Compass} from 'lucide-react';
+import {Link, Navigate, useSearchParams} from 'react-router-dom';
 import api from '../api';
 import useLatest from '../use-latest.js';
-import CardGridSkeleton from '../components/CardGridSkeleton.jsx';
-import ProjectCard from '../components/ProjectCard.jsx';
+import GameCard, {CardSkeleton} from '../components/GameCard.jsx';
 import Button from '../components/ui/Button.jsx';
-import EmptyState from '../components/ui/EmptyState.jsx';
+import QuietLink from '../components/ui/QuietLink.jsx';
 import SelectMenu from '../components/ui/SelectMenu.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import ExploreHeader from '../components/ExploreHeader.jsx';
@@ -18,16 +16,22 @@ import styles from './Explore.module.css';
 
 const SORTS = [
     {key: 'trending', label: 'Trending'},
-    {key: 'recent', label: 'Recent'},
+    {key: 'recent', label: 'New'},
     {key: 'loved', label: 'Most loved'},
-    {key: 'undiscovered', label: 'Undiscovered'}
+    {key: 'undiscovered', label: 'Hidden gems'}
 ];
 
-const CATEGORIES = ['games', 'animation', 'art', 'music', 'tools', 'tutorial', 'multiplayer', 'mobile'];
 const FILTERS = [
-    {key: '', label: 'All'},
-    {key: 'feedback', label: 'Looking for feedback'},
-    ...CATEGORIES.map(key => ({key}))
+    {key: '', label: 'Everything'},
+    {key: 'games', label: 'Games'},
+    {key: 'multiplayer', label: 'Multiplayer'},
+    {key: 'mobile', label: 'Plays on phones'},
+    {key: 'animation', label: 'Animation'},
+    {key: 'art', label: 'Art'},
+    {key: 'music', label: 'Music'},
+    {key: 'tools', label: 'Tools'},
+    {key: 'tutorial', label: 'Tutorials'},
+    {key: 'feedback', label: 'Looking for feedback'}
 ];
 const PAGE_SIZE = 24;
 const MAX_RESTORED_PAGES = 10;
@@ -128,21 +132,17 @@ const Explore = () => {
             .finally(fresh(() => setLoading(false)));
     }, [sort, q, tag, pageDepth, paramsKey, beginLoad, attempt, viewerName]);
 
-    const setSort = key => {
+    const browseLink = changes => {
         const next = new URLSearchParams(params);
-        if (key === 'trending') next.delete('sort');
-        else next.set('sort', key);
+        for (const [key, value] of Object.entries(changes)) {
+            if (value && !(key === 'sort' && value === 'trending')) next.set(key, value);
+            else next.delete(key);
+        }
         next.delete('page');
-        setParams(next);
+        const query = next.toString();
+        return `/explore${query ? `?${query}` : ''}`;
     };
-
-    const setTag = value => {
-        const next = new URLSearchParams(params);
-        if (value) next.set('tag', value);
-        else next.delete('tag');
-        next.delete('page');
-        setParams(next);
-    };
+    const go = changes => setParams(new URLSearchParams(browseLink(changes).split('?')[1] || ''));
 
     const loadMore = async () => {
         const version = loadMoreVersion.current;
@@ -178,56 +178,96 @@ const Explore = () => {
 
     if (q.trim()) return <Navigate to={searchPath(q)} replace />;
 
+    const filterList = (title, options, key, current) => (
+        <div className={styles.filterGroup}>
+            <h2 id={`explore-${key}`}>{title}</h2>
+            <ul aria-labelledby={`explore-${key}`}>
+                {options.map(option => (
+                    <li key={option.key}>
+                        <Link
+                            to={browseLink({[key]: option.key})}
+                            aria-current={current === option.key ? 'page' : null}
+                            className={current === option.key ? styles.filterActive : styles.filter}
+                        >{communityText(option.label)}</Link>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+
     return (
         <main className={styles.page}>
-            <ExploreHeader active="projects">
-                <div className={styles.categories} role="group" aria-label={communityText('Filter by category')}>
-                    {FILTERS.map(filter => (
-                        <button
-                            type="button"
-                            key={filter.key}
-                            aria-pressed={tag === filter.key}
-                            className={tag === filter.key ? styles.categoryActive : styles.category}
-                            onClick={() => setTag(filter.key)}
-                        >
-                            {filter.label ? communityText(filter.label) : `#${filter.key}`}
-                        </button>
-                    ))}
-                </div>
-                <SelectMenu
-                    align="right"
-                    ariaLabel={communityText('Sort projects')}
-                    className={styles.sort}
-                    value={sort}
-                    onChange={setSort}
-                    options={SORTS.map(option => ({value: option.key, label: communityText(option.label)}))}
-                />
-            </ExploreHeader>
-            {loading && (!loaded || !projects.length) ? (
-                <CardGridSkeleton className={styles.grid} count={8} />
-            ) : failed ? (
-                <StatusMessage error onRetry={() => setAttempt(a => a + 1)}>{communityText('Could not load projects.')}</StatusMessage>
-            ) : projects.length ? (
-                <div className={loading ? `${styles.grid} ${styles.stale}` : styles.grid} aria-busy={loading}>
-                    {projects.map(project => (
-                        <ProjectCard
-                            key={project.id}
-                            project={project}
-                            showTrend={sort === 'trending'}
+            <ExploreHeader active="projects" />
+            <div className={styles.browse}>
+                <aside className={styles.filters}>
+                    {filterList(communityText('Sort'), SORTS, 'sort', sort)}
+                    {filterList(communityText('Show'), FILTERS, 'tag', tag)}
+                </aside>
+                <div className={styles.results}>
+                    <div className={styles.compactFilters}>
+                        <SelectMenu
+                            ariaLabel={communityText('Sort projects')}
+                            value={sort}
+                            onChange={value => go({sort: value})}
+                            options={SORTS.map(option => ({value: option.key, label: communityText(option.label)}))}
                         />
-                    ))}
+                        <SelectMenu
+                            align="right"
+                            ariaLabel={communityText('Filter by category')}
+                            value={tag}
+                            onChange={value => go({tag: value})}
+                            options={FILTERS.map(option => ({value: option.key, label: communityText(option.label)}))}
+                        />
+                    </div>
+                    {loading && (!loaded || !projects.length) ? (
+                        <div
+                            className={styles.grid}
+                            aria-hidden="true"
+                        >
+                            {Array.from({length: 9}, (_, index) => <CardSkeleton key={index} />)}
+                        </div>
+                    ) : failed ? (
+                        <StatusMessage
+                            className={styles.status}
+                            compact
+                            error
+                            onRetry={() => setAttempt(a => a + 1)}
+                        >{communityText('Could not load projects.')}</StatusMessage>
+                    ) : projects.length ? (
+                        <div
+                            className={loading ? `${styles.grid} ${styles.stale}` : styles.grid}
+                            aria-busy={loading}
+                        >
+                            {projects.map(project => (
+                                <GameCard
+                                    key={project.id}
+                                    project={project}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <p className={styles.empty}>
+                            {communityText('Nothing here yet.')}
+                            {' '}
+                            {tag || sort !== 'trending' ? (
+                                <QuietLink to="/explore">{communityText('See everything')}</QuietLink>
+                            ) : null}
+                        </p>
+                    )}
+                    {!loading && !failed && projects.length < total ? (
+                        <div className={styles.more}>
+                            <Button
+                                busy={loadingMore}
+                                busyLabel={communityText('Loading…')}
+                                onClick={loadMore}
+                            >
+                                {communityText('Load more ({value1} left)', {value1: total - projects.length})}
+                            </Button>
+                            {loadMoreError ? <span role="alert">{loadMoreError}</span> : null}
+                        </div>
+                    ) : null}
                 </div>
-            ) : (
-                <EmptyState icon={Compass} title={communityText('No projects found')}>{communityText('Try another sort or category.')}</EmptyState>
-            )}
-            {!loading && !failed && projects.length < total ? (
-                <div className={styles.more}>
-                    <Button busy={loadingMore} busyLabel={communityText('Loading…')} onClick={loadMore}>
-                        {communityText('Load more ({value1} left)', {value1: total - projects.length})}
-                    </Button>
-                    {loadMoreError ? <span role="alert">{loadMoreError}</span> : null}
-                </div>
-            ) : null}
+            </div>
         </main>
     );
 };

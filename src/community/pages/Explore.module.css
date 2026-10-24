@@ -1,92 +1,130 @@
 .page {
     max-width: var(--maxw);
     margin: 0 auto;
-    padding: var(--page-pad);
+    padding: var(--space-6) var(--space-5) 80px;
 }
 
-.categories {
-    display: flex;
-    flex: 1 1 auto;
-    gap: 6px;
-    min-width: 0;
-    overflow-x: auto;
-    scrollbar-width: none;
-    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+/* itch.io-style: the ways to browse down the side, games on the right. */
+.browse {
+    display: grid;
+    grid-template-columns: 184px minmax(0, 1fr);
+    gap: var(--space-6);
+    align-items: start;
 }
 
-.categories::-webkit-scrollbar {
-    display: none;
+.filters {
+    position: sticky;
+    top: calc(var(--nav-h) + var(--space-4));
+    display: grid;
+    gap: var(--space-5);
 }
 
-.sort {
-    flex: 0 0 auto;
-    width: 168px;
-}
-
-.category,
-.categoryActive {
-    padding: 7px 10px;
-    border: 0;
-    border-radius: var(--radius-sm);
-    color: var(--text-dim);
-    background: transparent;
-    font: inherit;
+.filterGroup h2 {
+    margin: 0 0 var(--space-2);
+    color: var(--text-faint);
     font-size: var(--fs-sm);
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
+    font-weight: 500;
 }
 
-.category:hover {
+.filterGroup ul {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.filter,
+.filterActive {
+    display: block;
+    margin-inline-start: calc(-1 * var(--space-2));
+    padding: 6px var(--space-2);
+    border-radius: var(--radius-2xs);
+    color: var(--text-dim);
+    font-size: var(--fs-md);
+}
+
+.filter:hover {
     color: var(--mw-text);
     background: var(--bg-card);
 }
 
-.categoryActive {
-    color: var(--accent-strong);
-    background: var(--accent-soft);
+.filterActive {
+    color: var(--mw-text);
+    background: var(--bg-card);
+    font-weight: 600;
+}
+
+.results {
+    min-width: 0;
+}
+
+.compactFilters {
+    display: none;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-5) var(--space-4);
+}
+
+.stale {
+    opacity: .6;
+    transition: opacity .15s;
+}
+
+.status {
+    justify-content: flex-start;
+}
+
+.empty {
+    margin: 0;
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
 }
 
 .more {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    padding: 28px 0;
-}
-
-.more span {
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
     color: var(--mw-danger);
     font-size: var(--fs-sm);
 }
 
-.grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    transition: opacity 0.15s ease;
-}
+@media (max-width: 860px) {
+    .browse {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+    }
 
-.stale {
-    opacity: 0.55;
-}
+    .filters {
+        display: none;
+    }
 
-@media (max-width: 1000px) {
+    .compactFilters {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-2);
+        margin-bottom: var(--space-4);
+    }
+
     .grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-4) var(--space-3);
     }
 }
 
-@media (max-width: 680px) {
+@media (max-width: 520px) {
     .page {
-        padding: 22px 14px 80px;
+        padding: var(--space-4) var(--space-3) 56px;
     }
+}
 
-    .sort {
-        width: 136px;
-    }
-
-    .grid {
-        grid-template-columns: repeat(2, 1fr);
+@media (prefers-reduced-motion: reduce) {
+    .stale {
+        transition: none;
     }
 }

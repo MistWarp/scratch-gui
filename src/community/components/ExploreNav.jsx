@@ -2,19 +2,27 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React, {useEffect, useRef} from 'react';
 import {Link} from 'react-router-dom';
-import {Building2, Coins, Gamepad2, Layers3, Library, MessageSquare, Palette, Trophy} from 'lucide-react';
 import styles from './ExploreNav.module.css';
 
-const ITEMS = [
-    {key: 'projects', label: 'Projects', to: '/explore', icon: Gamepad2},
-    {key: 'posts', label: 'Posts', to: '/posts', icon: MessageSquare},
-    {key: 'studios', label: 'Studios', to: '/spaces?kind=studio', icon: Layers3},
-    {key: 'challenges', label: 'Challenges', to: '/spaces?kind=challenge', icon: Trophy},
-    {key: 'collections', label: 'Collections', to: '/spaces?kind=collection', icon: Library},
-    {key: 'groups', label: 'Groups', to: '/groups', icon: Building2},
-    {key: 'bounties', label: 'Bounties', to: '/bounties', icon: Coins},
-    {key: 'themes', label: 'Themes', to: '/themes', icon: Palette}
+// Games and the places that gather them first, then people, then the rest.
+const GROUPS = [
+    [
+        {key: 'projects', label: 'Games', to: '/explore'},
+        {key: 'challenges', label: 'Challenges', to: '/spaces?kind=challenge'},
+        {key: 'studios', label: 'Studios', to: '/spaces?kind=studio'},
+        {key: 'collections', label: 'Collections', to: '/spaces?kind=collection'}
+    ],
+    [
+        {key: 'creators', label: 'Creators', to: '/leaderboard?board=loves'},
+        {key: 'posts', label: 'Posts', to: '/posts'},
+        {key: 'groups', label: 'Groups', to: '/groups'}
+    ],
+    [
+        {key: 'themes', label: 'Themes', to: '/themes'},
+        {key: 'bounties', label: 'Bounties', to: '/bounties'}
+    ]
 ];
+const ITEMS = GROUPS.flat();
 
 const ExploreNav = ({active}) => {
     const {text: communityText} = useCommunityText();
@@ -25,19 +33,31 @@ const ExploreNav = ({active}) => {
         if (!current || nav.scrollWidth <= nav.clientWidth) return;
         nav.scrollLeft = current.offsetLeft - nav.offsetLeft - ((nav.clientWidth - current.offsetWidth) / 2);
     }, [active]);
-    return (<nav className={styles.nav} ref={navRef} aria-label={communityText('Explore sections')}>
-        {ITEMS.map(({icon: Icon, ...item}) => (
-            <Link
-                aria-current={active === item.key ? 'page' : null}
-                className={active === item.key ? styles.active : styles.link}
-                key={item.key}
-                to={item.to}
-            >
-                <Icon size={16} aria-hidden="true" />
-                {communityText(item.label)}
-            </Link>
-        ))}
-    </nav>);
+    return (
+        <nav
+            className={styles.nav}
+            ref={navRef}
+            aria-label={communityText('Explore sections')}
+        >
+            {GROUPS.map((group, index) => (
+                <div
+                    key={index}
+                    className={styles.group}
+                >
+                    {group.map(item => (
+                        <Link
+                            aria-current={active === item.key ? 'page' : null}
+                            className={active === item.key ? styles.active : styles.link}
+                            key={item.key}
+                            to={item.to}
+                        >
+                            {communityText(item.label)}
+                        </Link>
+                    ))}
+                </div>
+            ))}
+        </nav>
+    );
 };
 
 ExploreNav.propTypes = {active: PropTypes.oneOf(ITEMS.map(item => item.key)).isRequired};

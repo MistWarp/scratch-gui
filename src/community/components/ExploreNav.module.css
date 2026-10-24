@@ -1,8 +1,8 @@
 .nav {
     display: flex;
-    gap: 22px;
-    margin-bottom: 22px;
-    border-bottom: 1px solid var(--border);
+    gap: var(--space-5);
+    margin-bottom: var(--space-5);
+    border-bottom: 1px solid var(--border-soft);
     overflow-x: auto;
     scrollbar-width: none;
 }
@@ -11,18 +11,37 @@
     display: none;
 }
 
+/* A thin rule between groups instead of headings. */
+.group {
+    display: flex;
+    flex: 0 0 auto;
+    gap: var(--space-4);
+}
+
+.group + .group {
+    position: relative;
+    padding-inline-start: var(--space-5);
+}
+
+.group + .group::before {
+    position: absolute;
+    top: 32%;
+    bottom: 32%;
+    inset-inline-start: 0;
+    border-inline-start: 1px solid var(--border);
+    content: "";
+}
+
 .link,
 .active {
-    flex: 0 0 auto;
     display: inline-flex;
     align-items: center;
-    gap: 7px;
     margin-bottom: -1px;
-    padding: 10px 1px;
+    padding: var(--space-3) 0;
     border-bottom: 2px solid transparent;
     color: var(--text-dim);
-    font-size: var(--fs-sm);
-    font-weight: 700;
+    font-size: var(--fs-md);
+    font-weight: 500;
     white-space: nowrap;
 }
 
@@ -33,15 +52,16 @@
 .active {
     border-bottom-color: var(--accent-strong);
     color: var(--mw-text);
-}
-
-.active svg {
-    color: var(--accent-strong);
+    font-weight: 600;
 }
 
 @media (max-width: 680px) {
     .nav {
-        gap: 18px;
-        margin-bottom: 16px;
+        gap: var(--space-4);
+        margin-bottom: var(--space-4);
+    }
+
+    .group + .group {
+        padding-inline-start: var(--space-4);
     }
 }

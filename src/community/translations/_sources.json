@@ -501,7 +501,7 @@
     "src/community/components/PlaytimeLibrary.jsx:92",
     "src/community/components/SpaceProjectPicker.jsx:252",
     "src/community/components/ui/StatusMessage.jsx:24",
-    "src/community/pages/Explore.jsx:225",
+    "src/community/pages/Explore.jsx:261",
     "src/community/pages/MyStuff.jsx:1553",
     "src/community/pages/Profile.jsx:445",
     "src/community/pages/Profile.jsx:622",
@@ -686,51 +686,30 @@
     "src/community/pages/Notifications.jsx:737"
   ],
   "Explore": [
-    "src/community/components/ExploreHeader.jsx:17",
+    "src/community/components/ExploreHeader.jsx:16",
     "src/community/components/Footer.jsx:38",
     "src/community/components/NavBar.jsx:625",
     "src/community/components/NavBar.jsx:625"
   ],
-  "Projects": [
-    "src/community/components/ExploreNav.jsx:9",
-    "src/community/components/NavBar.jsx:39",
-    "src/community/pages/Admin.jsx:38",
-    "src/community/pages/Collection.jsx:38",
-    "src/community/pages/Group.jsx:175",
-    "src/community/pages/ManageSpace.jsx:28",
-    "src/community/pages/ManageSpace.jsx:770",
-    "src/community/pages/Notifications.jsx:102",
-    "src/community/pages/Profile.jsx:537",
-    "src/community/pages/Profile.jsx:608",
-    "src/community/pages/Search.jsx:224",
-    "src/community/pages/Settings.jsx:75",
-    "src/community/pages/Space.jsx:310",
-    "src/community/pages/Studio.jsx:85",
-    "src/community/pages/Studio.jsx:137",
-    "src/community/pages/admin/ProjectManager.jsx:115",
-    "src/community/pages/admin/StatsOverview.jsx:255",
-    "src/community/pages/admin/StatsOverview.jsx:395",
-    "src/community/pages/admin/StatsOverview.jsx:402",
-    "src/community/pages/admin/UserDetailCard.jsx:342",
-    "src/community/pages/admin/UserDetailCard.jsx:425"
-  ],
-  "Posts": [
+  "Games": [
     "src/community/components/ExploreNav.jsx:10",
-    "src/community/pages/Profile.jsx:538"
-  ],
-  "Studios": [
-    "src/community/components/ExploreNav.jsx:11",
-    "src/community/components/Footer.jsx:39",
-    "src/community/components/MyStuffSpaces.jsx:65",
-    "src/community/pages/Group.jsx:176",
-    "src/community/pages/Spaces.jsx:21"
+    "src/community/pages/Explore.jsx:26",
+    "src/community/pages/PaidPerks.jsx:245",
+    "src/community/pages/Settings.jsx:80"
   ],
   "Challenges": [
-    "src/community/components/ExploreNav.jsx:12",
+    "src/community/components/ExploreNav.jsx:11",
     "src/community/components/Footer.jsx:40",
     "src/community/components/MyStuffSpaces.jsx:79",
     "src/community/pages/Group.jsx:177",
     "src/community/pages/Spaces.jsx:22"
+  ],
+  "Studios": [
+    "src/community/components/ExploreNav.jsx:12",
+    "src/community/components/Footer.jsx:39",
+    "src/community/components/MyStuffSpaces.jsx:65",
+    "src/community/pages/Group.jsx:176",
+    "src/community/pages/Spaces.jsx:21"
   ],
   "Collections": [
     "src/community/components/ExploreNav.jsx:13",
@@ -739,25 +718,32 @@
     "src/community/pages/MyStuff.jsx:496",
     "src/community/pages/Spaces.jsx:23"
   ],
-  "Groups": [
-    "src/community/components/ExploreNav.jsx:14"
+  "Creators": [
+    "src/community/components/ExploreNav.jsx:16"
   ],
-  "Bounties": [
-    "src/community/components/ExploreNav.jsx:15",
-    "src/community/pages/ManageProject.jsx:858",
-    "src/community/pages/ManageProject.jsx:972",
-    "src/community/pages/project/ProjectActivity.jsx:39",
-    "src/community/pages/project/ProjectBounties.jsx:47"
+  "Posts": [
+    "src/community/components/ExploreNav.jsx:17",
+    "src/community/pages/Profile.jsx:538"
+  ],
+  "Groups": [
+    "src/community/components/ExploreNav.jsx:18"
   ],
   "Themes": [
-    "src/community/components/ExploreNav.jsx:16",
+    "src/community/components/ExploreNav.jsx:21",
     "src/community/components/Footer.jsx:41",
     "src/community/components/MyStuffThemes.jsx:218",
     "src/community/pages/MyStuff.jsx:498",
     "src/community/pages/Profile.jsx:539"
   ],
+  "Bounties": [
+    "src/community/components/ExploreNav.jsx:22",
+    "src/community/pages/ManageProject.jsx:858",
+    "src/community/pages/ManageProject.jsx:972",
+    "src/community/pages/project/ProjectActivity.jsx:39",
+    "src/community/pages/project/ProjectBounties.jsx:47"
+  ],
   "Explore sections": [
-    "src/community/components/ExploreNav.jsx:28"
+    "src/community/components/ExploreNav.jsx:40"
   ],
   "by {value1}": [
     "src/community/components/FeaturedProject.jsx:62",
@@ -1474,6 +1460,28 @@
   ],
   "Space": [
     "src/community/components/NavBar.jsx:29"
+  ],
+  "Projects": [
+    "src/community/components/NavBar.jsx:39",
+    "src/community/pages/Admin.jsx:38",
+    "src/community/pages/Collection.jsx:38",
+    "src/community/pages/Group.jsx:175",
+    "src/community/pages/ManageSpace.jsx:28",
+    "src/community/pages/ManageSpace.jsx:770",
+    "src/community/pages/Notifications.jsx:102",
+    "src/community/pages/Profile.jsx:537",
+    "src/community/pages/Profile.jsx:608",
+    "src/community/pages/Search.jsx:224",
+    "src/community/pages/Settings.jsx:75",
+    "src/community/pages/Space.jsx:310",
+    "src/community/pages/Studio.jsx:85",
+    "src/community/pages/Studio.jsx:137",
+    "src/community/pages/admin/ProjectManager.jsx:115",
+    "src/community/pages/admin/StatsOverview.jsx:255",
+    "src/community/pages/admin/StatsOverview.jsx:395",
+    "src/community/pages/admin/StatsOverview.jsx:402",
+    "src/community/pages/admin/UserDetailCard.jsx:342",
+    "src/community/pages/admin/UserDetailCard.jsx:425"
   ],
   "People": [
     "src/community/components/NavBar.jsx:55",
@@ -2280,7 +2288,7 @@
   "Looking for feedback": [
     "src/community/components/ProjectInfoPanel.jsx:143",
     "src/community/components/ProjectInfoPanel.jsx:146",
-    "src/community/pages/Explore.jsx:29"
+    "src/community/pages/Explore.jsx:34"
   ],
   "Shared projects with this option appear in Looking for feedback. Add a specific question to Creator notes, such as \"Is the first level too difficult?\"": [
     "src/community/components/ProjectInfoPanel.jsx:144"
@@ -2566,7 +2574,7 @@
     "src/community/components/RouteErrorBoundary.jsx:37"
   ],
   "Loading page…": [
-    "src/community/components/RouteLoading.jsx:55"
+    "src/community/components/RouteLoading.jsx:56"
   ],
   "Paste a Scratch project link": [
     "src/community/components/ScratchImport.jsx:35"
@@ -4183,25 +4191,43 @@
     "src/community/pages/Compare.jsx:94"
   ],
   "Trending": [
-    "src/community/pages/Explore.jsx:20",
+    "src/community/pages/Explore.jsx:18",
     "src/community/pages/Search.jsx:28"
   ],
-  "Recent": [
-    "src/community/pages/Explore.jsx:21",
-    "src/community/pages/Search.jsx:29"
+  "New": [
+    "src/community/pages/Explore.jsx:19",
+    "src/community/pages/Notifications.jsx:300"
   ],
   "Most loved": [
-    "src/community/pages/Explore.jsx:22",
+    "src/community/pages/Explore.jsx:20",
     "src/community/pages/Search.jsx:30"
   ],
-  "Undiscovered": [
-    "src/community/pages/Explore.jsx:23"
+  "Hidden gems": [
+    "src/community/pages/Explore.jsx:21"
   ],
-  "All": [
-    "src/community/pages/Explore.jsx:28",
-    "src/community/pages/Notifications.jsx:99",
-    "src/community/pages/Search.jsx:223",
-    "src/community/pages/admin/ErrorManager.jsx:208"
+  "Everything": [
+    "src/community/pages/Explore.jsx:25"
+  ],
+  "Multiplayer": [
+    "src/community/pages/Explore.jsx:27"
+  ],
+  "Plays on phones": [
+    "src/community/pages/Explore.jsx:28"
+  ],
+  "Animation": [
+    "src/community/pages/Explore.jsx:29"
+  ],
+  "Art": [
+    "src/community/pages/Explore.jsx:30"
+  ],
+  "Music": [
+    "src/community/pages/Explore.jsx:31"
+  ],
+  "Tools": [
+    "src/community/pages/Explore.jsx:32"
+  ],
+  "Tutorials": [
+    "src/community/pages/Explore.jsx:33"
   ],
   "Could not load more projects.": [
     "src/community/pages/Explore.jsx:172",
@@ -4209,25 +4235,31 @@
     "src/community/pages/Profile.jsx:628",
     "src/community/pages/Search.jsx:125"
   ],
-  "Filter by category": [
-    "src/community/pages/Explore.jsx:184"
+  "Sort": [
+    "src/community/pages/Explore.jsx:203"
+  ],
+  "Show": [
+    "src/community/pages/Explore.jsx:204"
   ],
   "Sort projects": [
-    "src/community/pages/Explore.jsx:199"
+    "src/community/pages/Explore.jsx:209"
+  ],
+  "Filter by category": [
+    "src/community/pages/Explore.jsx:216"
   ],
   "Could not load projects.": [
-    "src/community/pages/Explore.jsx:209",
+    "src/community/pages/Explore.jsx:235",
     "src/community/pages/Search.jsx:198"
   ],
-  "No projects found": [
-    "src/community/pages/Explore.jsx:221",
-    "src/community/pages/admin/ProjectManager.jsx:168"
+  "Nothing here yet.": [
+    "src/community/pages/Explore.jsx:250",
+    "src/community/pages/Notifications.jsx:732"
   ],
-  "Try another sort or category.": [
-    "src/community/pages/Explore.jsx:221"
+  "See everything": [
+    "src/community/pages/Explore.jsx:253"
   ],
   "Load more ({value1} left)": [
-    "src/community/pages/Explore.jsx:226",
+    "src/community/pages/Explore.jsx:264",
     "src/community/pages/Search.jsx:214",
     "src/community/pages/Spaces.jsx:331"
   ],
@@ -4457,20 +4489,20 @@
     "src/community/pages/Leaderboard.jsx:105"
   ],
   "No one on this leaderboard yet": [
-    "src/community/pages/Leaderboard.jsx:133"
+    "src/community/pages/Leaderboard.jsx:136"
   ],
   "Check back once the community has been active for a while.": [
-    "src/community/pages/Leaderboard.jsx:134"
+    "src/community/pages/Leaderboard.jsx:137"
   ],
   "Account #{value1}": [
-    "src/community/pages/Leaderboard.jsx:156",
+    "src/community/pages/Leaderboard.jsx:159",
     "src/community/pages/Profile.jsx:895"
   ],
   "Account number unavailable": [
-    "src/community/pages/Leaderboard.jsx:157"
+    "src/community/pages/Leaderboard.jsx:160"
   ],
   "{count, plural, one {# shared project} other {# shared projects}}": [
-    "src/community/pages/Leaderboard.jsx:162"
+    "src/community/pages/Leaderboard.jsx:165"
   ],
   "Analytics": [
     "src/community/pages/ManageProject.jsx:67",
@@ -5537,14 +5569,16 @@
   "Return to the MistWarp home page": [
     "src/community/pages/NotFound.jsx:21"
   ],
+  "All": [
+    "src/community/pages/Notifications.jsx:99",
+    "src/community/pages/Search.jsx:223",
+    "src/community/pages/admin/ErrorManager.jsx:208"
+  ],
   "Mentions": [
     "src/community/pages/Notifications.jsx:100"
   ],
   "Claw": [
     "src/community/pages/Notifications.jsx:101"
-  ],
-  "New": [
-    "src/community/pages/Notifications.jsx:300"
   ],
   "{message} in #{channel}": [
     "src/community/pages/Notifications.jsx:343"
@@ -5569,9 +5603,6 @@
   ],
   "Sign in to see your notifications.": [
     "src/community/pages/Notifications.jsx:690"
-  ],
-  "Nothing here yet.": [
-    "src/community/pages/Notifications.jsx:732"
   ],
   "Change preferences": [
     "src/community/pages/Notifications.jsx:740"
@@ -5746,10 +5777,6 @@
   ],
   "Creator tools": [
     "src/community/pages/PaidPerks.jsx:245"
-  ],
-  "Games": [
-    "src/community/pages/PaidPerks.jsx:245",
-    "src/community/pages/Settings.jsx:80"
   ],
   "Membership comparison": [
     "src/community/pages/PaidPerks.jsx:248"
@@ -6506,6 +6533,9 @@
   ],
   "Best match": [
     "src/community/pages/Search.jsx:27"
+  ],
+  "Recent": [
+    "src/community/pages/Search.jsx:29"
   ],
   "Could not load more people.": [
     "src/community/pages/Search.jsx:126"
@@ -7713,6 +7743,9 @@
     "src/community/pages/admin/UserDetailCard.jsx:665",
     "src/community/pages/project/ProjectHeader.jsx:284",
     "src/community/pages/project/ProjectNotices.jsx:58"
+  ],
+  "No projects found": [
+    "src/community/pages/admin/ProjectManager.jsx:168"
   ],
   "Try a different title, owner, or id.": [
     "src/community/pages/admin/ProjectManager.jsx:169"

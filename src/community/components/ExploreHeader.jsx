@@ -1,7 +1,7 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {Compass, Search} from 'lucide-react';
+import {Search} from 'lucide-react';
 import ExploreNav from './ExploreNav.jsx';
 import PageHeader from './ui/PageHeader.jsx';
 import styles from './ExploreHeader.module.css';
@@ -13,7 +13,6 @@ const ExploreHeader = ({active, actions, children, lead}) => {
             <PageHeader
                 compact
                 className={styles.header}
-                icon={Compass}
                 title={communityText('Explore')}
                 actions={actions}
             />

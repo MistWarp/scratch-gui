@@ -26,6 +26,7 @@ const SECTION_LEADS = {
 const getExploreSection = (pathname, search) => {
     if (pathname === '/explore') return {active: 'projects', lead: null};
     if (pathname === '/posts') return {active: 'posts', lead: 'posts'};
+    if (pathname === '/leaderboard') return {active: 'creators', lead: null};
     if (pathname === '/groups') return {active: 'groups', lead: 'groups'};
     if (pathname === '/bounties') return {active: 'bounties', lead: 'bounties'};
     if (pathname === '/themes') return {active: 'themes', lead: 'themes'};
