@@ -13,8 +13,13 @@ const extensionOf = path => {
     return dot > 0 ? base.substring(dot + 1).toLowerCase() : 'bin';
 };
 
+const hasControlCharacter = text => Array.from(text).some(character => {
+    const code = character.charCodeAt(0);
+    return code < 32 || code === 127;
+});
+
 const safeRelativePath = path => {
-    if (typeof path !== 'string') return null;
+    if (typeof path !== 'string' || hasControlCharacter(path)) return null;
     const parts = path.replace(/\\/g, '/').split('/')
         .filter(Boolean);
     if (!parts.length || /^[A-Za-z]:$/.test(parts[0])) return null;
@@ -119,8 +124,10 @@ const withSafeFormats = asset => {
 
 const MAP_PREFIX = '_fractch_map_';
 
+const STDLIB_MODULES = new Set(['fractch/json', 'fractch/strings']);
+
 const safeRegion = region => {
-    if (typeof region !== 'string') return 'main';
+    if (typeof region !== 'string' || hasControlCharacter(region)) return 'main';
     const parts = region.replace(/\\/g, '/').replace(/\.fractch$/i, '')
         .split('/')
         .filter(Boolean);
@@ -146,15 +153,26 @@ const withSafeRegions = projectJson => {
             } catch (e) {
                 continue;
             }
-            if (!map || typeof map !== 'object' || !map.scripts || typeof map.scripts !== 'object') continue;
+            if (!map || typeof map !== 'object') continue;
+            if (!map.scripts || typeof map.scripts !== 'object') map.scripts = {};
             const scripts = {};
             let unsafe = false;
             for (const [topId, region] of Object.entries(map.scripts)) {
                 scripts[topId] = safeRegion(region);
                 if (scripts[topId] !== region) unsafe = true;
             }
+            let modules = map.modules;
+            if (modules && typeof modules === 'object') {
+                modules = {};
+                for (const [topId, moduleId] of Object.entries(map.modules)) {
+                    if (STDLIB_MODULES.has(moduleId)) modules[topId] = moduleId;
+                    else unsafe = true;
+                }
+            }
             if (!unsafe) continue;
-            const safeText = MAP_PREFIX + JSON.stringify({...map, scripts});
+            const safeMap = {...map, scripts};
+            if (modules) safeMap.modules = modules;
+            const safeText = MAP_PREFIX + JSON.stringify(safeMap);
             const safeComment = {...comment, text: safeText};
             delete safeComment.extraText;
             safeComments = {...(safeComments || comments), [id]: safeComment};
@@ -203,12 +221,12 @@ const removeRecursive = async (pfs, filePath) => {
 
     let stat;
     try {
-        stat = await pfs.stat(filePath);
+        stat = await (pfs.lstat || pfs.stat).call(pfs, filePath);
     } catch (e) {
         return;
     }
 
-    if (stat.isDirectory()) {
+    if (stat.isDirectory() && !(stat.isSymbolicLink && stat.isSymbolicLink())) {
         const entries = await pfs.readdir(filePath);
         await Promise.all(entries.map(entry => removeRecursive(pfs, `${filePath}/${entry}`)));
         try {
@@ -254,6 +272,7 @@ const clearWorkingTree = async ({pfs, dir}) => {
 const listGeneratedTree = async (pfs, dir) => {
     const files = [];
     const dirs = [];
+    const links = [];
     const walk = async (current, isRoot) => {
         let entries;
         try {
@@ -266,11 +285,13 @@ const listGeneratedTree = async (pfs, dir) => {
             const path = `${current}/${entry}`;
             let stat;
             try {
-                stat = await pfs.stat(path);
+                stat = await (pfs.lstat || pfs.stat).call(pfs, path);
             } catch (e) {
                 continue;
             }
-            if (stat.isDirectory()) {
+            if (stat.isSymbolicLink && stat.isSymbolicLink()) {
+                links.push(path);
+            } else if (stat.isDirectory()) {
                 dirs.push(path);
                 await walk(path, false);
             } else {
@@ -279,7 +300,7 @@ const listGeneratedTree = async (pfs, dir) => {
         }
     };
     await walk(dir, true);
-    return {files, dirs};
+    return {files, dirs, links};
 };
 
 const toBytes = data => {
@@ -299,8 +320,47 @@ const sameBytes = (a, b) => {
 
 const normalizeTreePath = path => path.replace(/\/+/g, '/');
 
+const insideTree = (path, dir, {allowAncestors = false} = {}) => {
+    if (typeof path !== 'string' || hasControlCharacter(path)) return false;
+    const normalized = normalizeTreePath(path).replace(/\/$/, '');
+    const root = normalizeTreePath(`${dir}/`);
+    if (allowAncestors && (normalized === '' || root.startsWith(`${normalized}/`))) return true;
+    if (!normalized.startsWith(root)) return false;
+    const parts = normalized.slice(root.length).split('/')
+        .filter(Boolean);
+    return parts.length > 0 && !parts.some(part => part === '.' || part === '..' || part.startsWith('.'));
+};
+
+const GUARDED_METHODS = new Set(['writeFile', 'mkdir', 'unlink', 'rmdir', 'rename', 'symlink', 'appendFile']);
+
+const guardTreeFs = (pfs, dir) => new Proxy(pfs, {
+    get: (target, property) => {
+        const value = target[property];
+        if (typeof value !== 'function') return value;
+        if (!GUARDED_METHODS.has(property)) return value.bind(target);
+        return (...args) => {
+            const paths = property === 'rename' || property === 'symlink' ? args.slice(0, 2) : args.slice(0, 1);
+            const options = {allowAncestors: property === 'mkdir'};
+            if (paths.every(path => insideTree(path, dir, options))) return value.apply(target, args);
+            console.warn('[fractch-tree] refusing to touch a path outside the project folder:', paths);
+            return Promise.resolve();
+        };
+    }
+});
+
+const removeLinks = async (pfs, links) => {
+    for (const link of links) {
+        try {
+            await pfs.unlink(link);
+        } catch (e) {
+            console.warn('[fractch-tree] could not remove link:', link, e);
+        }
+    }
+};
+
 const createTreeSync = async ({pfs, dir}) => {
     const previous = await listGeneratedTree(pfs, dir);
+    await removeLinks(pfs, previous.links);
     const stale = new Set(previous.files);
     const writeFile = async (path, data, options) => {
         const normalized = normalizeTreePath(path);
@@ -464,18 +524,19 @@ const writeProjectToFractchTree = async ({
     };
 
     if (!clear) {
-        await writeTree(fs);
+        await removeLinks(fs, (await listGeneratedTree(fs, dir)).links);
+        await writeTree(guardTreeFs(fs, dir));
         return;
     }
 
     const sync = await createTreeSync({pfs: fs, dir});
     try {
-        await writeTree(sync.fs);
+        await writeTree(guardTreeFs(sync.fs, dir));
         await sync.finish();
     } catch (error) {
         console.warn('[fractch-tree] rewriting the whole tree after an incremental write failed:', error);
         await clearWorkingTree({pfs: fs, dir});
-        await writeTree(fs);
+        await writeTree(guardTreeFs(fs, dir));
     }
 };
 
