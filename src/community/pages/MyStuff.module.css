@@ -751,6 +751,11 @@
     color: var(--text-dim);
 }
 
+/* Links take the accent here rather than the warning notice's colour. */
+.uploads .storageLink {
+    color: var(--accent-strong);
+}
+
 .uploadBarSection {
     display: flex;
     flex-direction: column;
@@ -784,7 +789,7 @@
 .uploadBarFill {
     height: 100%;
     border-radius: var(--radius-2xs);
-    background: #4C97FF;
+    background: var(--accent);
     transition: width 0.3s;
 }
 

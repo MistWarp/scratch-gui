@@ -357,6 +357,16 @@ class ShareWindow extends React.Component {
                         {'Check project storage'}
                     </button>
                 )}
+                {this.state.errorCode === 'storage_full' && (
+                    <a
+                        className={styles.reviewStorage}
+                        href="https://rotur.dev/membership"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        {'Get more storage with a Rotur membership'}
+                    </a>
+                )}
             </div>
         );
     }

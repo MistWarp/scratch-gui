@@ -63,6 +63,22 @@ describe('MistWarp share window workflows', () => {
         wrapper.unmount();
     });
 
+    test('a full Rotur storage says where to get more', () => {
+        const wrapper = makeWindow('save');
+        wrapper.setState({
+            error: 'Your Rotur storage is full. Delete projects or backpack items you no longer need and empty the trash, or get more storage with a Rotur membership at rotur.dev/membership.',
+            errorCode: 'storage_full'
+        });
+
+        const link = wrapper.find('a[href="https://rotur.dev/membership"]');
+        expect(link).toHaveLength(1);
+        expect(link.text()).toBe('Get more storage with a Rotur membership');
+        expect(wrapper.text()).toContain('Your Rotur storage is full.');
+        wrapper.setState({errorCode: 'save_failed'});
+        expect(wrapper.find('a[href="https://rotur.dev/membership"]')).toHaveLength(0);
+        wrapper.unmount();
+    });
+
     test('payload fields lock while a publish is running', () => {
         const wrapper = makeWindow('save');
         wrapper.setState({status: 'Preparing your project'});

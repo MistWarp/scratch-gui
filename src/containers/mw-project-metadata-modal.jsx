@@ -267,8 +267,8 @@ const ProjectMetadataModal = ({initialView, onRequestClose, projectTitle, roturU
             'The saved project is within MistWarp’s storage limits.' :
             'MistWarp checks compressed project data when you upload.';
     const perkSummary = perks ?
-        `${formatBytes(limits.assets)} of assets per project, ${formatBytes(limits.asset)} per asset, ` +
-            `and ${formatBytes(perks.mistwarp.storageBytes)} of storage for all your projects.` :
+        `${formatBytes(limits.assets)} of assets per project and ${formatBytes(limits.asset)} per asset. ` +
+            'Saved projects count against your Rotur storage, which your other Rotur apps share.' :
         '';
     const groups = [
         {

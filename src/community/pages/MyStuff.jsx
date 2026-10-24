@@ -310,8 +310,10 @@ const Inventory = ({items, error, onRetry}) => {
     </section>);
 };
 
+const ROTUR_MEMBERSHIP_URL = 'https://rotur.dev/membership';
+
 const UploadUsage = ({error, onRetry, quota, perks}) => {
-    const {text: communityText} = useCommunityText();
+    const {text: communityText, rich: communityRich} = useCommunityText();
 
     if (error) {
         return <StatusMessage error onRetry={onRetry}>{communityText('Could not load storage usage.')}</StatusMessage>;
@@ -320,27 +322,50 @@ const UploadUsage = ({error, onRetry, quota, perks}) => {
         return <StatusMessage>{communityText('Loading storage usage…')}</StatusMessage>;
     }
 
+    // Rotur accounts have one storage allowance shared by every Rotur app, and
+    // their sizes are shown in the decimal units plans are sold in. Classroom
+    // students have their class's storage instead.
+    const shared = quota.shared === true;
+    const size = value => formatBytes(value, {decimal: shared});
     const pending = quota.pending || 0;
     const pct = quota.limit > 0 ? ((quota.used + pending) / quota.limit) * 100 : 0;
     const remaining = quota.remaining ?? Math.max(0, (quota.limit || 0) - (quota.used || 0) - pending);
+    const full = quota.limit > 0 && remaining <= 0;
     const largest = (quota.largest || []).filter(project => project.bytes > 0);
     const summaryStats = [
-        {value: formatBytes(quota.used), label: communityText('Used')},
-        {value: formatBytes(quota.limit), label: communityText('Limit')},
-        {value: formatBytes(remaining), label: communityText('Remaining')},
-        ...(pending > 0 ? [{value: formatBytes(pending), label: communityText('Waiting for a save')}] : [])
+        {value: size(quota.used), label: shared ? communityText('Used across Rotur') : communityText('Used')},
+        ...(shared ? [{value: size(quota.mistwarp || 0), label: communityText('Used by MistWarp')}] : []),
+        {value: size(quota.limit), label: communityText('Limit')},
+        {value: size(remaining), label: communityText('Remaining')},
+        ...(pending > 0 ? [{value: size(pending), label: communityText('Waiting for a save')}] : [])
     ];
+    const membershipLink = (<a
+        className={styles.storageLink}
+        href={quota.membershipUrl || ROTUR_MEMBERSHIP_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+    >{communityText('Rotur membership')}</a>);
 
     return (
         <section className={styles.uploads}>
-            {perks ? (
+            {shared && quota.known === false ? (
+                <Notice variant="warning">
+                    {communityText('Rotur couldn’t say how much storage you have left just now. Try again in a minute.')}
+                </Notice>
+            ) : null}
+            {shared && full ? (
+                <Notice variant="warning" title={communityText('Your Rotur storage is full')}>
+                    {communityRich('You can still save a project at the same size or smaller. To save more, delete projects or backpack items you no longer need and empty the trash, or get more storage with a {link}.', {link: membershipLink})}
+                </Notice>
+            ) : null}
+            {shared && !full ? (
                 <Notice variant="info">
-                    {communityText('Your Rotur {value1} membership includes {value2} of storage, {value3} of assets per project, and {value4} per asset.', {
+                    {communityText('Your projects, their history and your backpack count against your Rotur storage, which your other Rotur apps share.')}
+                    {perks ? ` ${communityText('Your {value1} membership allows {value2} of assets per project and {value3} per asset.', {
                         value1: perks.tier,
-                        value2: formatBytes(perks.mistwarp.storageBytes),
-                        value3: formatBytes(perks.mistwarp.maxProjectAssetsBytes),
-                        value4: formatBytes(perks.mistwarp.maxProjectAssetBytes)
-                    })}
+                        value2: formatBytes(perks.mistwarp.maxProjectAssetsBytes),
+                        value3: formatBytes(perks.mistwarp.maxProjectAssetBytes)
+                    })}` : null}
                 </Notice>
             ) : null}
             <div className={styles.uploadSummary}>
@@ -354,8 +379,8 @@ const UploadUsage = ({error, onRetry, quota, perks}) => {
 
             <div className={styles.uploadBarSection}>
                 <div className={styles.uploadBarLabel}>
-                    {communityText('{value1}% full', {value1: Math.round(pct)})}{pct >= 80 ? (
-                        <span className={styles.uploadWarn}><AlertTriangle size={14} />{pct >= 100 ? communityText('Full') : communityText('Nearly full')}</span>
+                    {communityText('{value1}% full', {value1: Math.floor(pct)})}{pct >= 80 ? (
+                        <span className={styles.uploadWarn}><AlertTriangle size={14} />{full ? communityText('Full') : communityText('Nearly full')}</span>
                     ) : null}
                 </div>
                 <div className={styles.uploadBarBg}>
@@ -369,7 +394,7 @@ const UploadUsage = ({error, onRetry, quota, perks}) => {
             <div className={styles.uploadReset}>
                 <SectionHeading as="h3" icon={HardDrive} title={communityText('Largest projects')} className={styles.cardHeading} />
                 <p className={styles.uploadResetDesc}>
-                    {communityText('Each project counts its assets, project data and version history, including projects in the trash. When your storage is full you can still save a project at the same size or smaller. To free space, delete projects you no longer need and empty them from the trash.')}
+                    {communityText('Each project counts its assets, project data and version history, including projects in the trash. An asset used in several of your projects counts once. To free space, delete projects you no longer need and empty them from the trash.')}
                 </p>
                 {largest.length ? (
                     <ul className={styles.storageList}>
@@ -382,8 +407,8 @@ const UploadUsage = ({error, onRetry, quota, perks}) => {
                                 )}
                                 <span className={styles.storageSize}>
                                     {project.trashed ?
-                                        communityText('{value1}, in the trash', {value1: formatBytes(project.bytes)}) :
-                                        formatBytes(project.bytes)}
+                                        communityText('{value1}, in the trash', {value1: size(project.bytes)}) :
+                                        size(project.bytes)}
                                 </span>
                             </li>
                         ))}
@@ -1590,6 +1615,7 @@ export {
     replaceProjectById,
     shouldRefreshProjectsAfterUploadError,
     trashPurgeConfirmation,
+    UploadUsage,
     uploadErrorTarget,
     uploadProgressLabel
 };

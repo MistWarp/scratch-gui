@@ -3030,5 +3030,16 @@
   "Link copied": "Link copied",
   "More news": "More news",
   "Previous post": "Previous post",
-  "Next post": "Next post"
+  "Next post": "Next post",
+  "{size} of Rotur storage, shared with your other Rotur apps": "{size} of Rotur storage, shared with your other Rotur apps",
+  "Used across Rotur": "Used across Rotur",
+  "Used by MistWarp": "Used by MistWarp",
+  "Rotur membership": "Rotur membership",
+  "Rotur couldn’t say how much storage you have left just now. Try again in a minute.": "Rotur couldn’t say how much storage you have left just now. Try again in a minute.",
+  "Your Rotur storage is full": "Your Rotur storage is full",
+  "You can still save a project at the same size or smaller. To save more, delete projects or backpack items you no longer need and empty the trash, or get more storage with a {link}.": "You can still save a project at the same size or smaller. To save more, delete projects or backpack items you no longer need and empty the trash, or get more storage with a {link}.",
+  "Your projects, their history and your backpack count against your Rotur storage, which your other Rotur apps share.": "Your projects, their history and your backpack count against your Rotur storage, which your other Rotur apps share.",
+  "Your {value1} membership allows {value2} of assets per project and {value3} per asset.": "Your {value1} membership allows {value2} of assets per project and {value3} per asset.",
+  "Each project counts its assets, project data and version history, including projects in the trash. An asset used in several of your projects counts once. To free space, delete projects you no longer need and empty them from the trash.": "Each project counts its assets, project data and version history, including projects in the trash. An asset used in several of your projects counts once. To free space, delete projects you no longer need and empty them from the trash.",
+  "Claim your free Rotur credit once a day from your wallet. At {daily, plural, one {# credit} other {# credits}} a day, {days, plural, one {# day} other {# days}} of claims pays for a month of Lite, which raises your Rotur storage from {free} to {lite}.": "Claim your free Rotur credit once a day from your wallet. At {daily, plural, one {# credit} other {# credits}} a day, {days, plural, one {# day} other {# days}} of claims pays for a month of Lite, which raises your Rotur storage from {free} to {lite}."
 }
