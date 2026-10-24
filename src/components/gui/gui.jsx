@@ -9,6 +9,7 @@ import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
 import tabStyles from 'react-tabs/style/react-tabs.css';
 import VM from 'scratch-vm';
 
+import FloatingStage from '../floating-stage/floating-stage.jsx';
 import StageWrapper from '../../containers/stage-wrapper.jsx';
 import Loader from '../loader/loader.jsx';
 import LoadingSpinner from '../tw-loading-spinner/spinner.jsx';
@@ -932,6 +933,7 @@ const GUIComponent = props => {
     } = props;
     const editorTabLabels = useMemo(() => getEditorTabLabels(intl, targetIsStage), [intl, targetIsStage]);
     const codeMode = editorMode === CODE_MODE;
+    const floatingStage = codeMode && !isNarrowLayout && !isFullScreen;
     const visibleTabIndex = codeMode ? -1 : activeTabIndex;
     if (children) {
         return <Box {...componentProps}>{children}</Box>;
@@ -1486,8 +1488,14 @@ const GUIComponent = props => {
                                         })}
                                     >
                                         <React.Suspense fallback={<LoadingSpinner />}>
-                                            <CodeWorkbench />
+                                            <CodeWorkbench spritePaneVisible={!floatingStage} />
                                         </React.Suspense>
+                                        {floatingStage ? (
+                                            <FloatingStage
+                                                isRendererSupported={isRendererSupported()}
+                                                vm={vm}
+                                            />
+                                        ) : null}
                                     </div>
                                 ) : null}
                                 <Tabs
@@ -1637,7 +1645,7 @@ const GUIComponent = props => {
                                 )}
                             </Box>
 
-                            {isNarrowLayout && isStageHidden ? null : (
+                            {(isNarrowLayout && isStageHidden) || floatingStage ? null : (
                                 <React.Fragment>
                                     <Box
                                         className={styles.stagePaneResizer}

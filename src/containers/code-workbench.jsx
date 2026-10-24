@@ -45,6 +45,7 @@ import {
 } from 'lucide-react';
 
 import Explorer, {DRAG_TYPE} from '../components/code-mode/explorer.jsx';
+import SpriteProperties from '../components/code-mode/sprite-properties.jsx';
 import EditorTabs, {hasTabDrag} from '../components/code-mode/editor-tabs.jsx';
 import TextTab from '../components/code-mode/text-tab.jsx';
 import AssetTab from '../components/code-mode/asset-tab.jsx';
@@ -79,6 +80,7 @@ import {
 import {setRestore} from '../reducers/restore-deletion.js';
 import {showStandardAlert, closeAlertWithId} from '../reducers/alerts.js';
 import {highlightTarget} from '../reducers/targets.js';
+import CollaborationService from '../lib/collaboration/index.js';
 
 import {itemIdFor} from '../lib/asset-identity.js';
 import {
@@ -1155,7 +1157,9 @@ class CodeWorkbench extends React.Component {
                 targetId: target.id,
                 expandable: true,
                 expanded,
-                renamable: !target.isStage
+                renamable: !target.isStage,
+                draggable: !target.isStage,
+                thumbnail: thumbnailFor(target.getCostumes()[target.currentCostume] || {})
             });
             if (!expanded) continue;
             const script = this.textState(target.id);
@@ -1261,6 +1265,11 @@ class CodeWorkbench extends React.Component {
     }
     handleExplorerSelect (row) {
         this.setState({selectedKey: row.key});
+        if (row.type !== 'target' || !this.props.vm.runtime.getTargetById(row.targetId)) return;
+        if (this.props.editingTarget === row.targetId) return;
+        this.props.vm.setEditingTarget(row.targetId);
+        const service = CollaborationService.getInstance();
+        if (service) service.onEditingTargetChange();
     }
     handleExplorerToggle (row) {
         this.setState(state => ({expanded: {...state.expanded, [row.key]: !row.expanded}}));
@@ -1515,15 +1524,17 @@ class CodeWorkbench extends React.Component {
         switch (row.type) {
         case 'target':
             items = row.isStage ? [] : [rename, duplicate, remove, exportItem];
-            items.push({
-                label: m(messages.revealInSpritePane),
-                icon: Crosshair,
-                separator: items.length > 0,
-                onClick: () => {
-                    vm.setEditingTarget(row.targetId);
-                    if (!row.isStage) dispatch(highlightTarget(row.targetId));
-                }
-            });
+            if (this.props.spritePaneVisible) {
+                items.push({
+                    label: m(messages.revealInSpritePane),
+                    icon: Crosshair,
+                    separator: items.length > 0,
+                    onClick: () => {
+                        vm.setEditingTarget(row.targetId);
+                        if (!row.isStage) dispatch(highlightTarget(row.targetId));
+                    }
+                });
+            }
             break;
         case 'script':
             items = [open, exportItem];
@@ -1621,6 +1632,7 @@ class CodeWorkbench extends React.Component {
         if (!row) return false;
         if (this.assets.owns(source)) return this.assets.canDrop(row, source);
         if (source.type === 'extension') return row.type === 'extension';
+        if (source.type === 'target') return row.type === 'target' && !row.isStage && row.targetId !== source.targetId;
         if (row.type === 'target' || row.type === 'script') return row.targetId !== source.targetId;
         if (row.type === 'folder') return row.folderKind === source.type;
         return row.type === source.type;
@@ -1654,6 +1666,13 @@ class CodeWorkbench extends React.Component {
             Promise.resolve(vm.extensionManager.setExtensionOrder(order))
                 .catch(error => log.error(error))
                 .then(this.handleRefreshEntries);
+            return;
+        }
+        if (source.type === 'target') {
+            const targets = vm.runtime.targets;
+            const from = targets.findIndex(target => target.id === source.targetId);
+            const to = targets.findIndex(target => target.id === row.targetId);
+            if (from !== -1 && to !== -1 && row.type === 'target' && !row.isStage) vm.reorderTarget(from, to);
             return;
         }
         const sourceTarget = vm.runtime.getTargetById(source.targetId);
@@ -2653,6 +2672,16 @@ class CodeWorkbench extends React.Component {
             </div>
         );
     }
+    renderSpriteProperties () {
+        const sprite = this.props.sprites && this.props.sprites[this.props.editingTarget];
+        if (!sprite) return null;
+        return (
+            <SpriteProperties
+                sprite={sprite}
+                vm={this.props.vm}
+            />
+        );
+    }
     renderGroups (explorerVisible) {
         const {intl} = this.props;
         const {layout} = this.state;
@@ -2730,6 +2759,7 @@ class CodeWorkbench extends React.Component {
                 activeKey={this.focusedTabs().activeKey}
                 canDrop={this.canDrop}
                 dropKey={this.state.dropKey}
+                footer={this.renderSpriteProperties()}
                 renamingKey={this.state.renamingKey}
                 rows={rows}
                 selectedKey={this.state.selectedKey}
@@ -2848,6 +2878,7 @@ CodeWorkbench.propTypes = {
     isRtl: PropTypes.bool,
     projectTitle: PropTypes.string,
     reveal: PropTypes.object,
+    spritePaneVisible: PropTypes.bool,
     sprites: PropTypes.object,
     stage: PropTypes.object,
     vm: PropTypes.object.isRequired
