@@ -80,6 +80,7 @@ const scheduleDraftWrite = (identity, info, value) => {
     pendingWrites.set(key, value ? {
         text: value.text,
         baseHash: value.baseHash,
+        units: value.units || null,
         targetName: info.targetName || null,
         isStage: Boolean(info.isStage),
         savedAt: Date.now()
