@@ -60,12 +60,24 @@ const projectFiles = (score, targets) => ({
 beforeEach(() => deleteRepo());
 afterAll(() => require('fs').rmSync(getFs().root, {recursive: true, force: true}));
 
-test('maps each worktree asset path to its md5ext and drops ambiguous paths', async () => {
+test('maps each worktree asset path to its md5ext, using the same folders the tree writer uses', async () => {
     const other = `${'0'.repeat(32)}.svg`;
     const paths = await worktreeAssetPaths(projectFiles(0, [
         {isStage: true, name: 'Stage', costumes: [costume('backdrop1')], sounds: []},
         {isStage: false, name: 'Cat!', costumes: [costume('cat')], sounds: []},
         {isStage: false, name: 'Cat?', costumes: [costume('cat', other)], sounds: []}
+    ]));
+    expect([...paths]).toEqual([
+        ['Stage/assets/backdrop1.svg', md5ext],
+        ['Cat_/assets/cat.svg', md5ext],
+        ['Cat__2/assets/cat.svg', other]
+    ]);
+});
+
+test('drops worktree asset paths whose md5ext is not a plain md5 name', async () => {
+    const paths = await worktreeAssetPaths(projectFiles(0, [
+        {isStage: true, name: 'Stage', costumes: [costume('backdrop1')], sounds: []},
+        {isStage: false, name: 'Cat', costumes: [costume('cat', 'not-an-md5.svg')], sounds: []}
     ]));
     expect([...paths]).toEqual([['Stage/assets/backdrop1.svg', md5ext]]);
 });

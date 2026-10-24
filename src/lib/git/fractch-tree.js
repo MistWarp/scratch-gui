@@ -8,9 +8,23 @@ import {extensionOf, readProjectSidecar, toBytes, writeProjectSidecar} from './p
 // exactly like fractch does for costumes and sounds.
 const CUSTOM_ASSETS_DIR = 'assets';
 
+const safeRelativePath = path => {
+    if (typeof path !== 'string') return null;
+    const parts = path.replace(/\\/g, '/').split('/')
+        .filter(Boolean);
+    if (!parts.length || /^[A-Za-z]:$/.test(parts[0])) return null;
+    if (parts.some(part => part === '.' || part === '..' || part.startsWith('.'))) return null;
+    return parts.join('/');
+};
+
 const writeCustomAssets = async ({readSb3File, projectJson, vfs, dir}) => {
     const customAssets = Array.isArray(projectJson.customAssets) ? projectJson.customAssets : [];
-    for (const {name, md5ext} of customAssets) {
+    for (const {name: rawName, md5ext} of customAssets) {
+        const name = safeRelativePath(rawName);
+        if (!name) {
+            console.warn('[fractch-tree] skipping custom asset with an unsafe name:', rawName);
+            continue;
+        }
         const data = await readSb3File(md5ext);
         if (!data) {
             console.warn('[fractch-tree] missing custom asset in sb3:', md5ext);
@@ -52,9 +66,6 @@ const readCustomAssets = async ({vfs, pfs, dir}) => {
     return found;
 };
 
-// Mirrors fractch's internal emit.targetAssetFiles: the map of md5ext -> the
-// "assets/<name>.<ext>" path each costume/sound declaration references. Kept
-// local so we depend only on fractch's published (browser) exports.
 const targetAssetFiles = target => {
     const used = new Set();
     const map = new Map();
@@ -67,11 +78,38 @@ const targetAssetFiles = target => {
             .replace(/[^a-zA-Z0-9-_]/g, '_') || 'asset';
         let file = `${base}.${ext}`;
         let n = 2;
-        while (used.has(file)) file = `${base}_${n++}.${ext}`;
-        used.add(file);
+        while (used.has(file.toLowerCase())) file = `${base}_${n++}.${ext}`;
+        used.add(file.toLowerCase());
         map.set(md5ext, `assets/${file}`);
     }
     return map;
+};
+
+const targetDirs = targets => {
+    const used = new Set();
+    const dirs = new Map();
+    for (const target of targets) {
+        const base = String(target && target.name !== null && typeof target.name !== 'undefined' ? target.name : '')
+            .replace(/[^a-zA-Z0-9-_]/g, '_') || 'target';
+        let name = base;
+        let n = 2;
+        while (used.has(name.toLowerCase())) name = `${base}_${n++}`;
+        used.add(name.toLowerCase());
+        dirs.set(target, name);
+    }
+    return dirs;
+};
+
+const cleanFormat = value => String(value === null || typeof value === 'undefined' ? '' : value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+
+const withSafeFormats = asset => {
+    if (!asset || typeof asset !== 'object') return asset;
+    const md5ext = typeof asset.md5ext === 'string' ? asset.md5ext : '';
+    const fromMd5ext = md5ext.includes('.') ? cleanFormat(md5ext.slice(md5ext.lastIndexOf('.') + 1)) : '';
+    const dataFormat = cleanFormat(asset.dataFormat) || fromMd5ext || 'dat';
+    return dataFormat === asset.dataFormat ? asset : {...asset, dataFormat};
 };
 
 const MAP_PREFIX = '_fractch_map_';
@@ -121,6 +159,19 @@ const withSafeRegions = projectJson => {
         return {...target, comments: safeComments};
     });
     return changed ? {...projectJson, targets: safeTargets} : projectJson;
+};
+
+const withSafePaths = projectJson => {
+    const safe = withSafeRegions(projectJson);
+    const targets = Array.isArray(safe.targets) ? safe.targets : [];
+    return {
+        ...safe,
+        targets: targets.map(target => (target && typeof target === 'object' ? {
+            ...target,
+            costumes: Array.isArray(target.costumes) ? target.costumes.map(withSafeFormats) : target.costumes,
+            sounds: Array.isArray(target.sounds) ? target.sounds.map(withSafeFormats) : target.sounds
+        } : target))
+    };
 };
 
 const yieldToBrowser = () => new Promise(resolve => setTimeout(resolve, 0));
@@ -292,12 +343,14 @@ const MD5EXT = /^[0-9a-f]{32}\.[a-z0-9]{1,8}$/;
 const worktreeAssetPaths = async sb3Files => {
     const projectBytes = await sb3FileReader(sb3Files)('project.json');
     if (!projectBytes) return new Map();
-    const projectJson = JSON.parse(new TextDecoder().decode(projectBytes));
+    const projectJson = withSafePaths(JSON.parse(new TextDecoder().decode(projectBytes)));
     const paths = new Map();
     const ambiguous = new Set();
-    for (const target of Array.isArray(projectJson.targets) ? projectJson.targets : []) {
+    const targets = Array.isArray(projectJson.targets) ? projectJson.targets : [];
+    const dirs = targetDirs(targets);
+    for (const target of targets) {
         for (const [md5ext, rel] of targetAssetFiles(target)) {
-            const path = `${sanitize(target.name)}/${rel}`;
+            const path = `${dirs.get(target)}/${rel}`;
             if (!MD5EXT.test(md5ext) || (paths.has(path) && paths.get(path) !== md5ext)) ambiguous.add(path);
             paths.set(path, md5ext);
         }
@@ -350,7 +403,9 @@ const writeProjectToFractchTree = async ({
         onProgress({phase: 'write', message: 'Reading project…', completed: 0, total: 1});
     }
 
-    const {readSb3File, projectJson} = await loadSb3({vm, sb3ArrayBuffer, sb3Files});
+    const loaded = await loadSb3({vm, sb3ArrayBuffer, sb3Files});
+    const readSb3File = loaded.readSb3File;
+    const projectJson = withSafePaths(loaded.projectJson);
 
     const writeTree = async treeFs => {
         if (typeof onProgress === 'function') {
@@ -358,7 +413,7 @@ const writeProjectToFractchTree = async ({
             await yieldToBrowser();
         }
 
-        await convertProject(withSafeRegions(projectJson), {outDir: dir, fs: treeFs});
+        await convertProject(projectJson, {outDir: dir, fs: treeFs});
         await writeExtensions(projectJson, dir, {fs: treeFs});
 
         const vfs = toPromiseFs(treeFs);
@@ -368,11 +423,12 @@ const writeProjectToFractchTree = async ({
 
         const maybeYield = createYielder();
         const targets = Array.isArray(projectJson.targets) ? projectJson.targets : [];
+        const dirs = targetDirs(targets);
         let completed = 0;
         for (const target of targets) {
             const fileMap = targetAssetFiles(target);
             if (fileMap.size) {
-                const tDir = `${dir}/${sanitize(target.name)}`;
+                const tDir = `${dir}/${dirs.get(target)}`;
                 await vfs.mkdirp(`${tDir}/assets`);
                 for (const [md5ext, rel] of fileMap) {
                     const data = await readSb3File(md5ext);
