@@ -12,6 +12,31 @@ const messages = defineMessages({
         defaultMessage: 'Apply these changes?',
         description: 'Title of the dialog that lists what applying code would remove'
     },
+    impactAllTitle: {
+        id: 'mw.codeMode.impactAllTitle',
+        defaultMessage: 'Apply changes to every file?',
+        description: 'Title of the dialog that lists what applying every file at once would remove'
+    },
+    impactApplyAll: {
+        id: 'mw.codeMode.impactApplyAll',
+        defaultMessage: 'Apply all',
+        description: 'Button that confirms applying every file at once'
+    },
+    applyAllBlocked: {
+        id: 'mw.codeMode.applyAllBlocked',
+        defaultMessage: 'Nothing was applied. Fix the problems in {files} first.',
+        description: 'Shown on each file when Apply all stopped because some files have errors'
+    },
+    applyAllFailed: {
+        id: 'mw.codeMode.applyAllFailed',
+        defaultMessage: 'Nothing was applied because {file} could not be applied.',
+        description: 'Shown on the other files when Apply all failed partway and was rolled back'
+    },
+    applyAllFailedHere: {
+        id: 'mw.codeMode.applyAllFailedHere',
+        defaultMessage: 'Nothing was applied because this file could not be applied: {reason}',
+        description: 'Shown on the file that made Apply all fail; reason is the error from the project'
+    },
     impactApply: {
         id: 'mw.codeMode.impactApply',
         defaultMessage: 'Apply',
@@ -154,7 +179,29 @@ const REFUSAL_MESSAGES = {
     blocksChanged: messages.blocksChanged,
     redoChanged: messages.blocksChangedRedo,
     extensionChanged: messages.extensionChanged,
-    extensionRedoChanged: messages.extensionRedoChanged
+    extensionRedoChanged: messages.extensionRedoChanged,
+    applyAllBlocked: messages.applyAllBlocked,
+    applyAllFailed: messages.applyAllFailed,
+    applyAllFailedHere: messages.applyAllFailedHere
+};
+
+const listText = (intl, items) => {
+    if (typeof Intl !== 'undefined' && typeof Intl.ListFormat === 'function') {
+        try {
+            return new Intl.ListFormat(intl.locale, {style: 'long', type: 'conjunction'}).format(items);
+        } catch (error) {
+            return items.join(', ');
+        }
+    }
+    return items.join(', ');
+};
+
+const formatValues = (intl, values) => {
+    const out = {};
+    for (const key of Object.keys(values || {})) {
+        out[key] = Array.isArray(values[key]) ? listText(intl, values[key]) : values[key];
+    }
+    return out;
 };
 
 const refusalText = (intl, result) => {
@@ -163,7 +210,8 @@ const refusalText = (intl, result) => {
         return intl.formatMessage(messages.extensionCollaboration);
     }
     const descriptor = REFUSAL_MESSAGES[result.reason];
-    return descriptor ? intl.formatMessage(descriptor) : (result.message || result.text || '');
+    if (!descriptor) return result.message || result.text || '';
+    return intl.formatMessage(descriptor, formatValues(intl, result.values));
 };
 
 const ask = (dispatch, config) => new Promise(resolve => {
@@ -207,6 +255,19 @@ const confirmImpact = (dispatch, intl, impact) => ask(dispatch, {
     choices: [{value: 'apply', label: intl.formatMessage(messages.impactApply)}]
 }).then(value => value === 'apply');
 
+const confirmImpactAll = (dispatch, intl, impact) => {
+    const sections = impact.files.map(file => React.createElement('span',
+        {key: file.targetId, style: {display: 'block'}},
+        React.createElement('strong', {style: {display: 'block'}}, file.name),
+        lineList(impactLines(intl, file.impact))));
+    return ask(dispatch, {
+        type: 'confirm',
+        title: intl.formatMessage(messages.impactAllTitle),
+        message: React.createElement(React.Fragment, null, sections),
+        choices: [{value: 'apply', label: intl.formatMessage(messages.impactApplyAll)}]
+    }).then(value => value === 'apply');
+};
+
 const confirmExtensionImpact = (dispatch, intl, impact) => ask(dispatch, {
     type: 'confirm',
     title: intl.formatMessage(messages.extensionImpactTitle),
@@ -238,11 +299,13 @@ const showRefusal = (dispatch, intl, result, direction) => {
             {value: 'restore', label: intl.formatMessage(messages.openRestorePoints)}
         ] : [{value: 'restore', label: intl.formatMessage(messages.openRestorePoints)}]
     }).then(choice => {
-        if (choice === 'changes' && result.entry && result.entry.targetId) {
+        const entry = result.entry;
+        const targetId = result.targetId || (entry && entry.targetId);
+        if (choice === 'changes' && entry && targetId) {
             dispatch(revealInCode({
                 kind: 'codeChanges',
-                targetId: result.entry.targetId,
-                before: result.entry.afterText || null
+                targetId,
+                before: (entry.afterTexts ? entry.afterTexts[targetId] : entry.afterText) || null
             }));
         } else if (choice === 'restore') {
             dispatch(openRestorePointModal());
@@ -272,6 +335,7 @@ export {
     confirmBackupFailure,
     confirmExtensionImpact,
     confirmImpact,
+    confirmImpactAll,
     impactLines,
     messages as codeDialogMessages,
     promptText,

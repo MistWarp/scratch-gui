@@ -94,7 +94,14 @@ import {installKeyScope} from '../lib/code-mode/key-scope.js';
 import {setCursorBlockProvider, showBlock} from '../lib/code-mode/mode-switch.js';
 import {unitId, unitKind} from '../lib/code-mode/fractch-adapter.js';
 import {getTextController} from '../lib/code-mode/text-controller.js';
-import {allTexts, dirtyTargetIds, getText, isDirty, subscribeTexts} from '../lib/code-mode/text-store.js';
+import {
+    allTexts,
+    appliableTargetIds,
+    dirtyTargetIds,
+    getText,
+    isDirty,
+    subscribeTexts
+} from '../lib/code-mode/text-store.js';
 import {latestRedo, subscribeCodeHistory} from '../lib/code-mode/code-history.js';
 import {codeUnitsExtension, setRunning, setUnits} from '../lib/code-mode/editor-units.js';
 import {createDebugBridge} from '../lib/code-mode/debug-bridge.js';
@@ -102,6 +109,7 @@ import {
     confirmBackupFailure,
     confirmExtensionImpact,
     confirmImpact,
+    confirmImpactAll,
     refusalText,
     promptText,
     runCodeHistory
@@ -329,6 +337,7 @@ class CodeWorkbench extends React.Component {
             'outputLocation',
             'pollRunning',
             'handleApply',
+            'handleApplyAll',
             'handleRunScript',
             'handleShowLockedBlock',
             'resolveAssetName',
@@ -459,6 +468,10 @@ class CodeWorkbench extends React.Component {
                 this.handleApply();
                 return true;
             },
+            applyAll: () => {
+                this.handleApplyAll();
+                return true;
+            },
             closeTab: () => {
                 const group = this.focusedTabs();
                 if (group.activeKey) this.handleCloseTab(group.activeKey, group.id);
@@ -534,6 +547,7 @@ class CodeWorkbench extends React.Component {
             togglePanel: off,
             quickOpen: off,
             applyFile: off,
+            applyAll: off,
             closeTab: off,
             nextTab: off,
             previousTab: off,
@@ -578,6 +592,7 @@ class CodeWorkbench extends React.Component {
         const {dispatch, intl} = this.props;
         this.controller.configure({
             confirmImpact: impact => confirmImpact(dispatch, intl, impact),
+            confirmImpactAll: impact => confirmImpactAll(dispatch, intl, impact),
             confirmBackupFailure: error => confirmBackupFailure(dispatch, intl, error),
             title: () => this.props.projectTitle || null
         });
@@ -663,6 +678,31 @@ class CodeWorkbench extends React.Component {
     }
     handleApply () {
         this.applyActive();
+    }
+    applyAllTargets () {
+        return appliableTargetIds().filter(id => Boolean(this.props.vm.runtime.getTargetById(id)));
+    }
+    canApplyAll () {
+        const ids = this.applyAllTargets();
+        return ids.length > 1 && !this.props.collaborating && !ids.some(id => getText(id).applying);
+    }
+    handleApplyAll () {
+        if (this.props.collaborating || !this.applyAllTargets().length) return Promise.resolve(null);
+        return this.controller.applyAll()
+            .catch(error => {
+                log.warn('Apply all failed', error);
+                return null;
+            })
+            .then(result => {
+                if (this.unmounted || !result) return result;
+                if (result.status === 'invalid' || (result.status === 'failed' && result.diagnostics)) {
+                    this.handleExtensionShowProblems();
+                }
+                if (result.status === 'conflict' && result.targetIds && result.targetIds.length) {
+                    this.openFile(scriptTab(result.targetIds[0]), {preview: false});
+                }
+                return result;
+            });
     }
     applyActive () {
         const tab = this.activeTab();
@@ -2566,6 +2606,8 @@ class CodeWorkbench extends React.Component {
             return (
                 <TextTab
                     applyDisabled={!this.canApplyState(state)}
+                    applyAllDisabled={!this.canApplyAll()}
+                    applyAllHint={formatShortcutDisplay(getShortcutKey('applyAll', this.props.customShortcuts))}
                     applyHint={formatShortcutDisplay(getShortcutKey('applyFile', this.props.customShortcuts))}
                     completion={this.completion}
                     dark={this.props.dark}
@@ -2580,6 +2622,7 @@ class CodeWorkbench extends React.Component {
                     tabKey={`${this.state.projectKey}:${tab.key}${group.id === 'g0' ? '' : `:${group.id}`}`}
                     value={ready ? state.doc : ''}
                     onApply={this.handleApply}
+                    onApplyAll={this.applyAllTargets().length > 1 ? this.handleApplyAll : null}
                     onChange={(text, changes) => this.handleTextChange(group.id, tab, text, changes)}
                     onContextMenu={this.handleTextContextMenu}
                     onReady={view => this.handleEditorReady(tab, view)}
