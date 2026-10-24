@@ -1,94 +1,125 @@
+/* eslint-disable max-len */
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {FolderHeart, Layers3, Trophy} from 'lucide-react';
+import {Link} from 'react-router-dom';
+import {FolderHeart, Layers3, Plus, Trophy} from 'lucide-react';
 import SpaceCard from './SpaceCard.jsx';
-import CardGrid from './ui/CardGrid.jsx';
+import {CardSkeleton} from './GameCard.jsx';
+import Button from './ui/Button.jsx';
 import EmptyState from './ui/EmptyState.jsx';
+import QuietLink from './ui/QuietLink.jsx';
 import SectionHeading from './ui/SectionHeading.jsx';
 import StatusMessage from './ui/StatusMessage.jsx';
 import styles from './MyStuffSpaces.module.css';
+
+const SpaceGrid = ({spaces}) => (
+    <div className={styles.grid}>
+        {spaces.map(space => (
+            <SpaceCard key={space._id} space={space} to={`/spaces/${space._id}`} />
+        ))}
+    </div>
+);
+
+SpaceGrid.propTypes = {
+    spaces: PropTypes.arrayOf(PropTypes.object).isRequired
+};
+
+const Count = ({value}) => <span className={styles.count}>{value}</span>;
+
+Count.propTypes = {
+    value: PropTypes.number.isRequired
+};
 
 const MyStuffSpaces = ({
     mode, spaces, error, onRetry
 }) => {
     const {text: communityText} = useCommunityText();
+    const collections = mode === 'collections';
+    const heading = collections ? (
+        <SectionHeading
+            title={communityText('Collections')}
+            lead={communityText('Your project collections.')}
+            actions={(
+                <React.Fragment>
+                    <QuietLink to="/spaces?kind=collection">{communityText('Browse collections')}</QuietLink>
+                    <Button size="small" as={Link} to="/spaces?create=1&kind=collection">
+                        <Plus size={14} />{communityText('New collection')}
+                    </Button>
+                </React.Fragment>
+            )}
+        />
+    ) : (
+        <SectionHeading
+            title={communityText('Spaces')}
+            lead={communityText('Studios you curate or follow, and challenges you host, join, judge, or follow.')}
+            actions={(
+                <React.Fragment>
+                    <QuietLink to="/spaces">{communityText('Browse spaces')}</QuietLink>
+                    <Button size="small" as={Link} to="/spaces?create=1&kind=studio">
+                        <Plus size={14} />{communityText('New studio')}
+                    </Button>
+                </React.Fragment>
+            )}
+        />
+    );
+    let body;
     if (error) {
-        return (
+        body = (
             <StatusMessage compact error onRetry={onRetry}>
-                {mode === 'collections' ?
+                {collections ?
                     communityText('Could not load your collections.') :
                     communityText('Could not load your spaces.')}
             </StatusMessage>
         );
-    }
-    if (!spaces) return <StatusMessage compact />;
-
-    if (mode === 'collections') {
-        const collections = spaces.filter(space => space.kind === 'collection' && space.canManage);
-        return (
-            <section>
-                <SectionHeading
-                    icon={FolderHeart}
-                    title={communityText('Collections')}
-                    lead={communityText('Your project collections.')}
-                    link="/spaces?kind=collection"
-                    linkLabel={communityText('Browse collections')}
-                />
-                {collections.length ? (
-                    <CardGrid>
-                        {collections.map(collection => (
-                            <SpaceCard key={collection._id} space={collection} to={`/spaces/${collection._id}`} />
-                        ))}
-                    </CardGrid>
-                ) : (
-                    <EmptyState compact icon={FolderHeart} title={communityText('No collections yet')}>
-                        {communityText('Collections you create show up here.')}
-                    </EmptyState>
-                )}
-            </section>
+    } else if (!spaces) {
+        body = (
+            <div className={styles.grid} role="status" aria-label={communityText('Loading…')}>
+                {[0, 1, 2].map(index => <CardSkeleton key={index} />)}
+            </div>
+        );
+    } else if (collections) {
+        const mine = spaces.filter(space => space.kind === 'collection' && space.canManage);
+        body = mine.length ? <SpaceGrid spaces={mine} /> : (
+            <EmptyState icon={FolderHeart} title={communityText('No collections yet')}>
+                {communityText('Collections you create show up here.')}
+            </EmptyState>
+        );
+    } else {
+        const studios = spaces.filter(space => space.kind === 'studio');
+        const challenges = spaces.filter(space => space.kind === 'challenge');
+        body = (
+            <React.Fragment>
+                <div className={styles.group}>
+                    <SectionHeading
+                        as="h3"
+                        title={<React.Fragment>{communityText('Studios')} <Count value={studios.length} /></React.Fragment>}
+                    />
+                    {studios.length ? <SpaceGrid spaces={studios} /> : (
+                        <EmptyState compact icon={Layers3} title={communityText('No studios yet')}>
+                            {communityText('You do not have any studios yet.')}
+                        </EmptyState>
+                    )}
+                </div>
+                <div className={styles.group}>
+                    <SectionHeading
+                        as="h3"
+                        title={<React.Fragment>{communityText('Challenges')} <Count value={challenges.length} /></React.Fragment>}
+                        actions={<QuietLink to="/spaces?kind=challenge">{communityText('Find a challenge')}</QuietLink>}
+                    />
+                    {challenges.length ? <SpaceGrid spaces={challenges} /> : (
+                        <EmptyState compact icon={Trophy} title={communityText('No challenges yet')}>
+                            {communityText('You have not joined or followed any challenges yet.')}
+                        </EmptyState>
+                    )}
+                </div>
+            </React.Fragment>
         );
     }
-
-    const studios = spaces.filter(space => space.kind === 'studio');
-    const challenges = spaces.filter(space => space.kind === 'challenge');
     return (
         <section>
-            <SectionHeading
-                icon={Layers3}
-                title={communityText('Spaces')}
-                lead={communityText('Studios you curate or follow, and challenges you host, join, judge, or follow.')}
-                link="/spaces"
-                linkLabel={communityText('Browse spaces')}
-            />
-            <div className={styles.group}>
-                <SectionHeading as="h3" icon={Layers3} title={communityText('Studios')} count={studios.length} />
-                {studios.length ? (
-                    <CardGrid>
-                        {studios.map(studio => (
-                            <SpaceCard key={studio._id} space={studio} to={`/spaces/${studio._id}`} />
-                        ))}
-                    </CardGrid>
-                ) : (
-                    <EmptyState compact icon={Layers3} title={communityText('No studios yet')}>
-                        {communityText('You do not have any studios yet.')}
-                    </EmptyState>
-                )}
-            </div>
-            <div className={styles.group}>
-                <SectionHeading as="h3" icon={Trophy} title={communityText('Challenges')} count={challenges.length} />
-                {challenges.length ? (
-                    <CardGrid>
-                        {challenges.map(challenge => (
-                            <SpaceCard key={challenge._id} space={challenge} to={`/spaces/${challenge._id}`} />
-                        ))}
-                    </CardGrid>
-                ) : (
-                    <EmptyState compact icon={Trophy} title={communityText('No challenges yet')}>
-                        {communityText('You have not joined or followed any challenges yet.')}
-                    </EmptyState>
-                )}
-            </div>
+            {heading}
+            {body}
         </section>
     );
 };

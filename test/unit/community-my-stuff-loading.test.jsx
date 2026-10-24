@@ -23,6 +23,7 @@ jest.mock('../../src/community/api.js', () => ({
         trash: jest.fn(),
         myProjectPage: jest.fn(),
         deleteProject: jest.fn(),
+        restoreProject: jest.fn(),
         mySpaces: jest.fn(),
         library: jest.fn(),
         setLibraryProjectVisibility: jest.fn()
@@ -56,6 +57,7 @@ describe('My Stuff load failures', () => {
             nextOffset: 1
         });
         api.deleteProject.mockResolvedValue({ok: true});
+        api.restoreProject.mockResolvedValue({ok: true});
         api.mySpaces.mockResolvedValue({spaces: []});
         api.library.mockResolvedValue({projects: [], total: 0, nextOffset: 0});
         api.setLibraryProjectVisibility.mockResolvedValue({ok: true, projectId: 'game-1', public: false});
@@ -74,7 +76,7 @@ describe('My Stuff load failures', () => {
         });
         wrapper.update();
 
-        expect(wrapper.text()).toContain('Could not load your overview.');
+        expect(wrapper.text()).toContain('Could not load your views.');
         await act(async () => {
             wrapper.find(Button).filterWhere(button => button.text() === 'Try again')
                 .simulate('click');
@@ -173,12 +175,12 @@ describe('My Stuff load failures', () => {
 
         expect(wrapper.text()).toContain('Your storage is full');
         expect(wrapper.text()).toContain('Big game');
-        expect(wrapper.text()).toContain('30 B, in the trash');
+        expect(wrapper.text()).toContain('Old draftIn the trash30 B');
         expect(wrapper.text()).not.toContain('Reset quota');
         wrapper.unmount();
     });
 
-    test('keeps a failed project deletion open for retry', async () => {
+    test('moves a project to Trash at once, says so, and can undo it', async () => {
         api.deleteProject.mockRejectedValueOnce(new Error('Delete failed'));
         let wrapper;
         await act(async () => {
@@ -194,27 +196,33 @@ describe('My Stuff load failures', () => {
         });
         wrapper.update();
 
-        wrapper.find('button[aria-label="Actions for Draft"]').simulate('click');
-        wrapper.find('button').filterWhere(button => button.text() === 'Delete')
-            .simulate('click');
-        await act(async () => {
-            await wrapper.find(Modal).find(Button)
-                .filterWhere(button => button.text() === 'Delete project')
-                .prop('onClick')();
-        });
-        wrapper.update();
+        const moveToTrash = async () => {
+            wrapper.find('button[aria-label="Actions for Draft"]').simulate('click');
+            await act(async () => {
+                wrapper.find('button').filterWhere(button => button.text() === 'Move to Trash')
+                    .simulate('click');
+                await Promise.resolve();
+                await Promise.resolve();
+            });
+            wrapper.update();
+        };
 
-        expect(wrapper.find(Modal)).toHaveLength(1);
-        expect(wrapper.find(Modal).text()).toContain('Delete failed');
-        await act(async () => {
-            await wrapper.find(Modal).find(Button)
-                .filterWhere(button => button.text() === 'Delete project')
-                .prop('onClick')();
-        });
-        wrapper.update();
-
-        expect(api.deleteProject).toHaveBeenCalledTimes(2);
+        await moveToTrash();
         expect(wrapper.find(Modal)).toHaveLength(0);
+        expect(wrapper.text()).toContain('Delete failed');
+        expect(wrapper.find('button[aria-label="Actions for Draft"]')).toHaveLength(1);
+
+        await moveToTrash();
+        expect(api.deleteProject).toHaveBeenCalledTimes(2);
+        expect(wrapper.find('button[aria-label="Actions for Draft"]')).toHaveLength(0);
+        expect(wrapper.text()).toContain('Moved “Draft” to Trash.');
+
+        await act(async () => {
+            wrapper.find('button').filterWhere(button => button.text() === 'Undo')
+                .simulate('click');
+            await Promise.resolve();
+        });
+        expect(api.restoreProject).toHaveBeenCalledWith('project-1');
         wrapper.unmount();
     });
 
@@ -239,8 +247,8 @@ describe('My Stuff load failures', () => {
             .toBe('?section=library');
         expect(wrapper.find(MyStuffLibrary)).toHaveLength(1);
 
-        wrapper.find('button').filterWhere(button => button.text() === 'Collections')
-            .simulate('click');
+        wrapper.find('nav a').filterWhere(link => link.text() === 'Collections')
+            .simulate('click', {button: 0});
         wrapper.update();
         expect(wrapper.find(LocationProbe).find('span')
             .prop('data-location')).toBe('?section=collections');

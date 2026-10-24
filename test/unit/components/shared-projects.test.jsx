@@ -1,7 +1,7 @@
 import React from 'react';
-import {shallow} from 'enzyme';
+import {mount} from 'enzyme';
+import {MemoryRouter} from 'react-router-dom';
 import {SharedProjectCard} from '../../../src/community/components/SharedProjects.jsx';
-import Button from '../../../src/community/components/ui/Button.jsx';
 
 jest.mock('../../../src/community/api.js', () => ({
     __esModule: true,
@@ -13,38 +13,41 @@ jest.mock('../../../src/community/api.js', () => ({
         return `/project/${project.id}`;
     }
 }));
-jest.mock('../../../src/community/components/UserLink.jsx', () => 'UserLink');
+jest.mock('../../../src/community/components/Avatar.jsx', () => () => null);
+
+const render = project => mount(
+    <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+        <SharedProjectCard project={project} />
+    </MemoryRouter>
+);
+const titleLink = card => card.find('h3 a');
 
 describe('shared project cards', () => {
     const project = {id: 'p1', title: 'Team project', owner: 'Mist', myRole: 'editor', canSaveDirectly: true};
 
-    test('keeps editing access and the primary action inside the card', () => {
-        const card = shallow(<SharedProjectCard project={project} />);
-        expect(card.type()).toBe('article');
+    test('sends people who can save straight to the editor', () => {
+        const card = render(project);
+        expect(card.find('article')).toHaveLength(1);
         expect(card.text()).toContain('Editor');
-        expect(card.find(Button).props()).toEqual(expect.objectContaining({
-            'as': 'a', 'href': '/editor#mw-p1', 'variant': 'primary', 'aria-label': 'Edit Team project'
-        }));
+        expect(card.text()).toContain('Edit project');
+        expect(titleLink(card).prop('href')).toBe('/editor#mw-p1');
         expect(card.text()).not.toContain('Your access:');
     });
 
-    test('gives read-only teammates an open action, not an edit action', () => {
-        const card = shallow(<SharedProjectCard project={{...project, myRole: 'tester', canSaveDirectly: false}} />);
+    test('sends read-only teammates to the project page', () => {
+        const card = render({...project, myRole: 'tester', canSaveDirectly: false});
         expect(card.text()).toContain('Tester');
-        expect(card.find(Button).props()).toEqual(expect.objectContaining({
-            'href': '/project/p1', 'variant': 'secondary', 'aria-label': 'Open Team project'
-        }));
+        expect(card.text()).toContain('Open project');
+        expect(titleLink(card).prop('href')).toBe('/project/p1');
     });
 
     test('prefers the vanity URL when the project has one', () => {
-        const card = shallow(
-            <SharedProjectCard project={{...project, myRole: 'tester', canSaveDirectly: false, vanitySlug: 'cool-thing'}} />
-        );
-        expect(card.find(Button).props()).toEqual(expect.objectContaining({href: '/p/cool-thing'}));
+        const card = render({...project, myRole: 'tester', canSaveDirectly: false, vanitySlug: 'cool-thing'});
+        expect(titleLink(card).prop('href')).toBe('/p/cool-thing');
     });
 
     test('uses a neutral label for an unfamiliar access level', () => {
-        const card = shallow(<SharedProjectCard project={{...project, myRole: null}} />);
+        const card = render({...project, myRole: null});
         expect(card.text()).toContain('Shared access');
     });
 });

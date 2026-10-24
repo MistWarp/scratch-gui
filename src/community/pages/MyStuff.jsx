@@ -1,42 +1,33 @@
-import {getCommunityLocale} from '../locale.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useState, useCallback, useRef} from 'react';
 import {Link, useSearchParams} from 'react-router-dom';
-import {
-    Plus, Trash2, Heart, ThumbsDown, Play, Upload, Star, MoreHorizontal, Pencil, ExternalLink, HardDrive,
-    SlidersHorizontal, Coins, Eye, TrendingUp, Wallet, HeartHandshake, FolderOpen, LayoutDashboard,
-    AlertTriangle, Library, Layers3, RotateCcw, Package, Image, Palette, Bookmark
-} from 'lucide-react';
+import {CheckCircle2, HeartHandshake, Image, Package, Plus, Trash2, Upload} from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
-import {formatBytes, formatDate} from '../format';
-import {getWallet} from '../../lib/rotur/wallet.js';
+import {formatDate} from '../format';
 import {useUser} from '../UserContext.jsx';
 import Button from '../components/ui/Button.jsx';
-import CardGrid from '../components/ui/CardGrid.jsx';
 import ConfirmModal from '../components/ui/ConfirmModal.jsx';
-import Dropdown from '../components/ui/Dropdown.jsx';
 import EmptyState, {SignInPrompt} from '../components/ui/EmptyState.jsx';
-import IconButton from '../components/ui/IconButton.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import Notice from '../components/ui/Notice.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import SectionHeading from '../components/ui/SectionHeading.jsx';
+import SelectMenu from '../components/ui/SelectMenu.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
-import ProjectThumbnail from '../components/ProjectThumbnail.jsx';
+import Toast from '../components/ui/Toast.jsx';
 import CollectionSaveModal from '../components/CollectionSaveModal.jsx';
-import MyStuffSpaces from '../components/MyStuffSpaces.jsx';
-import MyStuffThemes from '../components/MyStuffThemes.jsx';
 import MyStuffLibrary from '../components/MyStuffLibrary.jsx';
+import MyStuffOverview from '../components/MyStuffOverview.jsx';
+import MyStuffProjects, {getProjectShow, getProjectSort} from '../components/MyStuffProjects.jsx';
+import MyStuffSpaces from '../components/MyStuffSpaces.jsx';
+import MyStuffStorage, {StorageWarning, storageFull} from '../components/MyStuffStorage.jsx';
+import MyStuffThemes from '../components/MyStuffThemes.jsx';
+import MyStuffTrash from '../components/MyStuffTrash.jsx';
 import SharedProjects from '../components/SharedProjects.jsx';
-import StatChart, {historyRows} from '../components/StatChart.jsx';
 import Markdown from '../components/Markdown.jsx';
-import Sidebar from '../components/Sidebar.jsx';
 import useLatest from '../use-latest.js';
 import styles from './MyStuff.module.css';
-
-const fmt = value => (Number(value) || 0).toLocaleString(getCommunityLocale());
-const fmtCredits = value => Math.round((Number(value) || 0) * 100) / 100;
 
 const uploadErrorTarget = (agreementAccepted, error) => {
     const message = error && error.message;
@@ -68,355 +59,67 @@ const trashPurgeConfirmation = project => ({
     action: 'Delete forever'
 });
 
-const visibilityLabel = project => {
-    if (project.moderationHidden) return 'Hidden by a moderator';
-    const v = project.visibility || (project.shared ? 'public' : 'private');
-    if (v === 'public') return 'Shared';
-    if (v === 'unlisted') return 'Unlisted';
-    return 'Draft';
-};
-
-const Overview = ({stats, quota, username, onNavigate}) => {
-    const {text: communityText} = useCommunityText();
-    const [recent, setRecent] = useState(null);
-    const [recentFailed, setRecentFailed] = useState(false);
-    const [wallet, setWallet] = useState(null);
-    const rows14 = historyRows(stats.viewHistory, 14);
-    const weekViews = rows14.slice(7).reduce((sum, row) => sum + row.value, 0);
-    const prevWeekViews = rows14.slice(0, 7).reduce((sum, row) => sum + row.value, 0);
-    const trend = prevWeekViews > 0 ?
-        Math.round(((weekViews - prevWeekViews) / prevWeekViews) * 100) :
-        (weekViews > 0 ? 100 : 0);
-    const pct = quota ? (quota.used / quota.limit) * 100 : 0;
-    const go = section => {
-        if (onNavigate) onNavigate(section);
-    };
-
-    useEffect(() => {
-        setWallet(null);
-        if (!username) return () => {};
-        let stale = false;
-        getWallet()
-            .then(data => !stale && setWallet(data))
-            .catch(() => {});
-        return () => {
-            stale = true;
-        };
-    }, [username]);
-
-    useEffect(() => {
-        if (!username) {
-            setRecent(null);
-            setRecentFailed(false);
-            return;
-        }
-        let stale = false;
-        setRecent(null);
-        setRecentFailed(false);
-        api.myProjectPage(username, {limit: 4})
-            .then(data => {
-                if (!stale) setRecent(data.projects || []);
-            })
-            .catch(() => {
-                if (!stale) setRecentFailed(true);
-            });
-        return () => {
-            stale = true;
-        };
-    }, [username]);
-
-    return (
-        <section className={styles.overview}>
-            <div className={styles.ovMain}>
-                <div className={styles.ovCard}>
-                    <SectionHeading
-                        icon={TrendingUp}
-                        title={communityText('Performance')}
-                        className={styles.cardHeading}
-                        actions={weekViews > 0 || prevWeekViews > 0 ? (
-                            <span className={trend < 0 ? styles.ovTrendDown : styles.ovTrendUp}>
-                                <TrendingUp size={14} />
-                                {prevWeekViews > 0 ?
-                                    communityText('{value1}{value2}% vs prior week', {value1: trend >= 0 ? '+' : '', value2: trend}) :
-                                    communityText('New this week')}
-                            </span>
-                        ) : null}
-                    />
-                    <div className={styles.ovStats}>
-                        <div className={styles.ovStat}>
-                            <Eye size={16} aria-hidden="true" />
-                            <span className={styles.ovStatNum}>{fmt(weekViews)}</span>
-                            <span className={styles.ovStatLabel}>{communityText('Views this week')}</span>
-                        </div>
-                        <div className={styles.ovStat}>
-                            <TrendingUp size={16} aria-hidden="true" />
-                            <span className={styles.ovStatNum}>{fmt(stats.totalViews)}</span>
-                            <span className={styles.ovStatLabel}>{communityText('Total views')}</span>
-                        </div>
-                        <div className={styles.ovStat}>
-                            <Heart size={16} aria-hidden="true" />
-                            <span className={styles.ovStatNum}>{fmt(stats.totalHearts)}</span>
-                            <span className={styles.ovStatLabel}>{communityText('Hearts')}</span>
-                        </div>
-                    </div>
-                    <StatChart
-                        title=""
-                        rows={rows14}
-                        accent="#4C97FF"
-                        emptyText="No views yet. Share a project to get started."
-                    />
-                    <p className={styles.ovCaption}>{communityText('Views over the last 2 weeks')}</p>
-                </div>
-                <div className={styles.ovCard}>
-                    <SectionHeading
-                        icon={FolderOpen}
-                        title={communityText('Recent projects')}
-                        className={styles.cardHeading}
-                        actions={stats.projectCount > 0 ? (
-                            <span className={styles.ovCount}>
-                                {communityText('{value1} total, {value2} shared', {value1: fmt(stats.projectCount), value2: fmt(stats.sharedCount)})}
-                            </span>
-                        ) : null}
-                    />
-                    {recentFailed ? (
-                        <StatusMessage compact error>{communityText('Could not load recent projects.')}</StatusMessage>
-                    ) : recent === null ? (
-                        <StatusMessage compact>{communityText('Loading projects…')}</StatusMessage>
-                    ) : recent.length ? (
-                        <div className={styles.ovRecentList}>
-                            {recent.map(project => (
-                                <Link
-                                    key={project.id}
-                                    to={projectUrl(project)}
-                                    className={styles.ovRecentItem}
-                                >
-                                    <span className={styles.ovRecentThumb}>
-                                        <ProjectThumbnail project={project} lazy />
-                                    </span>
-                                    <span className={styles.ovRecentInfo}>
-                                        <strong className={styles.ovRecentTitle}>{project.title}</strong>
-                                        <span className={styles.ovRecentMeta}>
-                                            {communityText('{value1}, {value2} views, {value3} hearts', {value1: visibilityLabel(project), value2: fmt(project.views || 0), value3: fmt(project.loveCount || 0)})}
-                                        </span>
-                                    </span>
-                                </Link>
-                            ))}
-                        </div>
-                    ) : (
-                        <EmptyState
-                            compact
-                            icon={FolderOpen}
-                            title={communityText('No projects yet')}
-                            action={(
-                                <Button variant="primary" as="a" href={editorUrl()}>
-                                    <Plus size={14} />{communityText('Start a new project')}</Button>
-                            )}
-                        >
-                            {communityText('You have not created any projects yet.')}
-                        </EmptyState>
-                    )}
-                    <div className={styles.ovCardActions}>
-                        <Button onClick={() => go('projects')}>
-                            <FolderOpen size={14} />{communityText('View all projects')}</Button>
-                    </div>
-                </div>
-            </div>
-            <div className={styles.ovSide}>
-                <div className={styles.ovCard}>
-                    <SectionHeading icon={Wallet} title={communityText('Wallet')} className={styles.cardHeading} />
-                    {wallet && wallet.allowed ? (
-                        <div className={styles.ovWalletTop}>
-                            <span className={styles.ovWalletBalance}>
-                                <Coins size={18} aria-hidden="true" />
-                                {fmtCredits(wallet.balance).toLocaleString(getCommunityLocale())}
-                            </span>
-                            <span className={styles.ovStatLabel}>{communityText('Credits on Rotur')}</span>
-                        </div>
-                    ) : null}
-                    <div className={styles.ovCardActions}>
-                        <Button as={Link} to="/wallet"><Wallet size={14} />{communityText('Open wallet')}</Button>
-                    </div>
-                </div>
-                {quota ? (
-                    <div className={styles.ovCard}>
-                        <SectionHeading icon={HardDrive} title={communityText('Storage')} className={styles.cardHeading} />
-                        <div className={styles.ovStorageTop}>
-                            <span className={styles.ovStatNum}>{formatBytes(quota.used)}</span>
-                            <span className={styles.ovStatLabel}>{communityText('of {value1} used', {value1: formatBytes(quota.limit)})}</span>
-                        </div>
-                        <div className={styles.quotaBarBg}>
-                            <div
-                                className={styles.quotaBarFill}
-                                style={{width: `${Math.min(100, pct)}%`}}
-                            />
-                        </div>
-                        <span className={pct >= 80 ? styles.quotaWarn : styles.ovStatLabel}>
-                            {pct >= 80 ? <AlertTriangle size={14} /> : null}{communityText('{value1}% full', {value1: Math.round(pct)})}</span>
-                        <div className={styles.ovCardActions}>
-                            <Button onClick={() => go('uploads')}>
-                                <HardDrive size={14} />{communityText('Manage storage')}</Button>
-                        </div>
-                    </div>
-                ) : null}
-            </div>
-        </section>
-    );
-};
-
 const Inventory = ({items, error, onRetry}) => {
     const {text: communityText} = useCommunityText();
-    return (<section className={styles.inventory}>
-        <SectionHeading
-            icon={Package}
-            title={communityText('Inventory')}
-            lead={communityText('Items collected across MistWarp games.')}
-            actions={items ? (
-                <span className={styles.inventoryCount}>
-                    {items.length === 1 ? communityText('1 item type') : communityText('{value1} item types', {value1: items.length})}
-                </span>
-            ) : null}
-        />
-        {error ? (
-            <StatusMessage error onRetry={onRetry}>{communityText('Could not load your inventory.')}</StatusMessage>
-        ) : items === null ? (
-            <StatusMessage>{communityText('Loading inventory…')}</StatusMessage>
-        ) : items.length ? (
-            <CardGrid min={150}>
+    let body;
+    if (error) {
+        body = <StatusMessage compact error onRetry={onRetry}>{communityText('Could not load your inventory.')}</StatusMessage>;
+    } else if (items === null) {
+        body = (
+            <div className={styles.inventoryGrid} role="status" aria-label={communityText('Loading inventory…')}>
+                {[0, 1, 2, 3, 4].map(index => <span key={index} className={styles.inventorySkeleton} />)}
+            </div>
+        );
+    } else if (items.length) {
+        body = (
+            <ul className={styles.inventoryGrid}>
                 {items.map(item => (
-                    <Link
-                        key={item.id}
-                        to={projectUrl(item.originProjectId)}
-                        className={styles.inventoryItem}
-                        aria-label={communityText('{value1}, from {value2}, quantity {value3}', {value1: item.name, value2: item.originProjectTitle, value3: item.quantity})}
-                    >
-                        {item.visual && item.visual.url ? (
-                            <img src={item.visual.url} alt="" loading="lazy" />
-                        ) : (
-                            <Image className={styles.inventoryFallback} aria-hidden="true" />
-                        )}
-                        <span className={styles.inventoryQuantity}>×{item.quantity}</span>
-                        <span className={styles.inventoryDetails}>
-                            <strong>{item.name}</strong>
+                    <li key={item.id}>
+                        <Link
+                            to={projectUrl(item.originProjectId)}
+                            className={styles.inventoryItem}
+                            aria-label={communityText('{value1}, from {value2}, quantity {value3}', {value1: item.name, value2: item.originProjectTitle, value3: item.quantity})}
+                        >
+                            <span className={styles.inventoryArt}>
+                                {item.visual && item.visual.url ? (
+                                    <img src={item.visual.url} alt="" loading="lazy" />
+                                ) : (
+                                    <Image size={28} aria-hidden="true" />
+                                )}
+                            </span>
+                            <span className={styles.inventoryName}>
+                                <strong>{item.name}</strong>
+                                <span>×{item.quantity}</span>
+                            </span>
                             <small>{communityText('From {value1}', {value1: item.originProjectTitle})}</small>
-                        </span>
-                    </Link>
+                        </Link>
+                    </li>
                 ))}
-            </CardGrid>
-        ) : (
-            <EmptyState icon={Package} title={communityText('Your inventory is empty')}>
+            </ul>
+        );
+    } else {
+        body = (
+            <EmptyState
+                icon={Package}
+                title={communityText('Your inventory is empty')}
+                action={<Button as={Link} to="/explore?tag=games">{communityText('Find games to play')}</Button>}
+            >
                 {communityText('Items you collect in MistWarp games will appear here.')}
             </EmptyState>
-        )}
-    </section>);
-};
-
-const ROTUR_MEMBERSHIP_URL = 'https://rotur.dev/membership';
-
-const UploadUsage = ({error, onRetry, quota, perks}) => {
-    const {text: communityText, rich: communityRich} = useCommunityText();
-
-    if (error) {
-        return <StatusMessage error onRetry={onRetry}>{communityText('Could not load storage usage.')}</StatusMessage>;
+        );
     }
-    if (!quota) {
-        return <StatusMessage>{communityText('Loading storage usage…')}</StatusMessage>;
-    }
-
-    // Rotur accounts have one storage allowance shared by every Rotur app, and
-    // their sizes are shown in the decimal units plans are sold in. Classroom
-    // students have their class's storage instead.
-    const shared = quota.shared === true;
-    const size = value => formatBytes(value, {decimal: shared});
-    const pending = quota.pending || 0;
-    const pct = quota.limit > 0 ? ((quota.used + pending) / quota.limit) * 100 : 0;
-    const remaining = quota.remaining ?? Math.max(0, (quota.limit || 0) - (quota.used || 0) - pending);
-    const full = quota.limit > 0 && remaining <= 0;
-    const largest = (quota.largest || []).filter(project => project.bytes > 0);
-    const summaryStats = [
-        {value: size(quota.used), label: shared ? communityText('Used across Rotur') : communityText('Used')},
-        ...(shared ? [{value: size(quota.mistwarp || 0), label: communityText('Used by MistWarp')}] : []),
-        {value: size(quota.limit), label: communityText('Limit')},
-        {value: size(remaining), label: communityText('Remaining')},
-        ...(pending > 0 ? [{value: size(pending), label: communityText('Waiting for a save')}] : [])
-    ];
-    const membershipLink = (<a
-        className={styles.storageLink}
-        href={quota.membershipUrl || ROTUR_MEMBERSHIP_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-    >{communityText('Rotur membership')}</a>);
-
     return (
-        <section className={styles.uploads}>
-            {shared && quota.known === false ? (
-                <Notice variant="warning">
-                    {communityText('Rotur couldn’t say how much storage you have left just now. Try again in a minute.')}
-                </Notice>
-            ) : null}
-            {shared && full ? (
-                <Notice variant="warning" title={communityText('Your Rotur storage is full')}>
-                    {communityRich('You can still save a project at the same size or smaller. To save more, delete projects or backpack items you no longer need and empty the trash, or get more storage with a {link}.', {link: membershipLink})}
-                </Notice>
-            ) : null}
-            {shared && !full ? (
-                <Notice variant="info">
-                    {communityText('Your projects, their history and your backpack count against your Rotur storage, which your other Rotur apps share.')}
-                    {perks ? ` ${communityText('Your {value1} membership allows {value2} of assets per project and {value3} per asset.', {
-                        value1: perks.tier,
-                        value2: formatBytes(perks.mistwarp.maxProjectAssetsBytes),
-                        value3: formatBytes(perks.mistwarp.maxProjectAssetBytes)
-                    })}` : null}
-                </Notice>
-            ) : null}
-            <div className={styles.uploadSummary}>
-                {summaryStats.map(s => (
-                    <div key={s.label} className={styles.uploadStat}>
-                        <span className={styles.uploadStatNum}>{s.value}</span>
-                        <span className={styles.uploadStatLabel}>{s.label}</span>
-                    </div>
-                ))}
-            </div>
-
-            <div className={styles.uploadBarSection}>
-                <div className={styles.uploadBarLabel}>
-                    {communityText('{value1}% full', {value1: Math.floor(pct)})}{pct >= 80 ? (
-                        <span className={styles.uploadWarn}><AlertTriangle size={14} />{full ? communityText('Full') : communityText('Nearly full')}</span>
-                    ) : null}
-                </div>
-                <div className={styles.uploadBarBg}>
-                    <div
-                        className={styles.uploadBarFill}
-                        style={{width: `${Math.min(100, pct)}%`}}
-                    />
-                </div>
-            </div>
-
-            <div className={styles.uploadReset}>
-                <SectionHeading as="h3" icon={HardDrive} title={communityText('Largest projects')} className={styles.cardHeading} />
-                <p className={styles.uploadResetDesc}>
-                    {communityText('Each project counts its assets, project data and version history, including projects in the trash. An asset used in several of your projects counts once. To free space, delete projects you no longer need and empty them from the trash.')}
-                </p>
-                {largest.length ? (
-                    <ul className={styles.storageList}>
-                        {largest.map(project => (
-                            <li key={project.id} className={styles.storageItem}>
-                                {project.trashed ? (
-                                    <span>{project.title || communityText('Untitled')}</span>
-                                ) : (
-                                    <Link to={projectUrl(project.id)}>{project.title || communityText('Untitled')}</Link>
-                                )}
-                                <span className={styles.storageSize}>
-                                    {project.trashed ?
-                                        communityText('{value1}, in the trash', {value1: size(project.bytes)}) :
-                                        size(project.bytes)}
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p className={styles.uploadResetDesc}>{communityText('Your projects are not using any storage yet.')}</p>
-                )}
-            </div>
+        <section>
+            <SectionHeading
+                title={communityText('Inventory')}
+                lead={communityText('Items collected across MistWarp games.')}
+                actions={items && items.length ? (
+                    <span className={styles.count}>
+                        {items.length === 1 ? communityText('1 item type') : communityText('{value1} item types', {value1: items.length})}
+                    </span>
+                ) : null}
+            />
+            {body}
         </section>
     );
 };
@@ -449,11 +152,8 @@ const AgreementTab = () => {
         setBusy(true);
         setError('');
         try {
-            const data = await api.acceptAgreement();
-            setAgreement(prev => ({...prev, accepted: true}));
-            if (data.already) {
-                // already accepted, just update the local state
-            }
+            await api.acceptAgreement();
+            setAgreement(prev => ({...prev, accepted: true, acceptedNow: true}));
         } catch (e) {
             setError(e.message || 'Could not accept agreement.');
         } finally {
@@ -461,70 +161,73 @@ const AgreementTab = () => {
         }
     };
 
+    let body;
     if (loadError) {
-        return (
-            <StatusMessage error onRetry={() => setAttempt(value => value + 1)}>
+        body = (
+            <StatusMessage compact error onRetry={() => setAttempt(value => value + 1)}>
                 {communityText('Could not load the agreement.')}
             </StatusMessage>
         );
-    }
-
-    if (!agreement) {
-        return <StatusMessage>{communityText('Loading agreement…')}</StatusMessage>;
-    }
-
-    if (!agreement.text && agreement.version === 0) {
-        return (
+    } else if (!agreement) {
+        body = <StatusMessage compact>{communityText('Loading agreement…')}</StatusMessage>;
+    } else if (!agreement.text && agreement.version === 0) {
+        body = (
             <EmptyState icon={HeartHandshake} title={communityText('No agreement yet')}>
                 {communityText('No agreement has been set yet.')}
             </EmptyState>
         );
-    }
-
-    const alreadyAccepted = agreement.accepted === true;
-
-    return (
-        <section className={styles.agreementSection}>
-            <div className={styles.agreementContent}>
+    } else {
+        body = (
+            <React.Fragment>
+                <div className={styles.agreementFooter}>
+                    {agreement.accepted === true ? (
+                        <p className={styles.agreementAccepted}>
+                            <CheckCircle2 size={16} aria-hidden="true" />
+                            {communityText('You have accepted version {value1} (updated {value2}).', {value1: agreement.version, value2: formatDate(agreement.updatedAt, 'date unavailable')})}
+                        </p>
+                    ) : (
+                        <React.Fragment>
+                            <p className={styles.agreementPrompt}>{communityText('To continue using the platform, please accept this agreement.')}</p>
+                            {error ? <Notice variant="error">{error}</Notice> : null}
+                            <Button
+                                variant="primary"
+                                className={styles.agreementAcceptBtn}
+                                onClick={handleAccept}
+                                busy={busy}
+                                busyLabel={communityText('Accepting…')}
+                            >
+                                {communityText('Accept v{value1}', {value1: agreement.version})}
+                            </Button>
+                        </React.Fragment>
+                    )}
+                </div>
                 <Markdown className={styles.agreementText}>{agreement.text}</Markdown>
-            </div>
-            <div className={styles.agreementFooter}>
-                {alreadyAccepted ? (
-                    <Notice variant="success">
-                        {communityText('You have accepted version {value1} (updated {value2}).', {value1: agreement.version, value2: formatDate(agreement.updatedAt, 'date unavailable')})}
-                    </Notice>
-                ) : (
-                    <>
-                        <p className={styles.agreementPrompt}>{communityText('To continue using the platform, please accept this agreement.')}</p>
-                        {error ? <Notice variant="error">{error}</Notice> : null}
-                        <Button
-                            variant="primary"
-                            className={styles.agreementAcceptBtn}
-                            onClick={handleAccept}
-                            busy={busy}
-                            busyLabel={communityText('Accepting…')}
-                        >
-                            {communityText('Accept v{value1}', {value1: agreement.version})}
-                        </Button>
-                    </>
-                )}
-            </div>
+            </React.Fragment>
+        );
+    }
+    return (
+        <section className={styles.agreement}>
+            <SectionHeading
+                title={communityText('Upload agreement')}
+                lead={communityText('What you agree to when you upload or share a project.')}
+            />
+            {body}
         </section>
     );
 };
 
 const SECTIONS = [
-    {key: 'overview', label: 'Overview', icon: LayoutDashboard},
-    {key: 'projects', label: 'My Projects', icon: FolderOpen, group: 'Projects'},
-    {key: 'shared', label: 'Shared with you', icon: HeartHandshake, group: 'Projects'},
-    {key: 'library', label: 'Library', icon: Bookmark, group: 'Projects'},
-    {key: 'collections', label: 'Collections', icon: Library, group: 'Projects'},
-    {key: 'spaces', label: 'Spaces', icon: Layers3, group: 'Projects'},
-    {key: 'themes', label: 'Themes', icon: Palette, group: 'Assets'},
-    {key: 'inventory', label: 'Inventory', icon: Package, group: 'Assets'},
-    {key: 'uploads', label: 'Storage', icon: HardDrive, group: 'Account'},
-    {key: 'trash', label: 'Trash', icon: Trash2, group: 'Account'},
-    {key: 'agreement', label: 'Agreement', icon: HeartHandshake, group: 'Account'}
+    {key: 'overview', label: 'Overview'},
+    {key: 'projects', label: 'My projects', group: 'Projects'},
+    {key: 'shared', label: 'Shared with you', group: 'Projects'},
+    {key: 'library', label: 'Library', group: 'Projects'},
+    {key: 'collections', label: 'Collections', group: 'Projects'},
+    {key: 'spaces', label: 'Spaces', group: 'Projects'},
+    {key: 'themes', label: 'Themes', group: 'Assets'},
+    {key: 'inventory', label: 'Inventory', group: 'Assets'},
+    {key: 'uploads', label: 'Storage', group: 'Account'},
+    {key: 'trash', label: 'Trash', group: 'Account'},
+    {key: 'agreement', label: 'Agreement', group: 'Account'}
 ];
 const getMyStuffSection = value => {
     if (value === 'playtime') return 'library';
@@ -538,8 +241,54 @@ const normalizeMyStuffParams = params => {
     if (section === 'overview') next.delete('section');
     else next.set('section', section);
     if (section !== 'themes' || next.get('themeView') !== 'published') next.delete('themeView');
+    if (section !== 'projects' || getProjectShow(next.get('show')) === 'all') next.delete('show');
+    if (section !== 'projects' || getProjectSort(next.get('sort')) === 'edited') next.delete('sort');
     next.delete('collectionView');
     return next;
+};
+const sectionUrl = key => (key === 'overview' ? '/mystuff' : `/mystuff?section=${key}`);
+
+// The ways into My Stuff down the side, like Explore's filters: plain links
+// under quiet group names. Phones get one menu instead.
+const MyStuffNav = ({active, onFollow, onNavigate}) => {
+    const {text: communityText} = useCommunityText();
+    const groups = [];
+    for (const section of SECTIONS) {
+        const last = groups[groups.length - 1];
+        if (last && last.name === (section.group || '')) last.sections.push(section);
+        else groups.push({name: section.group || '', sections: [section]});
+    }
+    return (
+        <React.Fragment>
+            <nav className={styles.nav} aria-label={communityText('My stuff sections')}>
+                {groups.map(group => (
+                    <div key={group.name || 'top'} className={styles.navGroup}>
+                        {group.name ? <h2 id={`mystuff-nav-${group.name}`}>{communityText(group.name)}</h2> : null}
+                        <ul aria-labelledby={group.name ? `mystuff-nav-${group.name}` : null}>
+                            {group.sections.map(section => (
+                                <li key={section.key}>
+                                    <Link
+                                        to={sectionUrl(section.key)}
+                                        className={section.key === active ? styles.navActive : styles.navLink}
+                                        aria-current={section.key === active ? 'page' : null}
+                                        onClick={onFollow}
+                                    >{communityText(section.label)}</Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                ))}
+            </nav>
+            <div className={styles.compactNav}>
+                <SelectMenu
+                    ariaLabel={communityText('My stuff sections')}
+                    value={active}
+                    onChange={onNavigate}
+                    options={SECTIONS.map(section => ({value: section.key, label: communityText(section.label)}))}
+                />
+            </div>
+        </React.Fragment>
+    );
 };
 
 const MyStuff = () => {
@@ -547,15 +296,19 @@ const MyStuff = () => {
     const {user, loading, login} = useUser();
     const [searchParams, setSearchParams] = useSearchParams();
     const tab = getMyStuffSection(searchParams.get('section'));
+    const projectShow = getProjectShow(searchParams.get('show'));
+    const projectSort = getProjectSort(searchParams.get('sort'));
     const [projects, setProjects] = useState(null);
     const [projectTotal, setProjectTotal] = useState(0);
     const [projectOffset, setProjectOffset] = useState(0);
     const [projectsMoreBusy, setProjectsMoreBusy] = useState(false);
     const [projectsMoreFailed, setProjectsMoreFailed] = useState(false);
+    const [allProjectsLoading, setAllProjectsLoading] = useState(false);
     const [featuredProject, setFeaturedProject] = useState(user ? user.featuredProject : '');
     const [uploading, setUploading] = useState(false);
     const [uploadStatus, setUploadStatus] = useState('');
     const [actionError, setActionError] = useState('');
+    const [toast, setToast] = useState(null);
     const [failed, setFailed] = useState(false);
     const [collectionProject, setCollectionProject] = useState(null);
     const [quota, setQuota] = useState(null);
@@ -581,15 +334,16 @@ const MyStuff = () => {
     const [spacesFailed, setSpacesFailed] = useState(false);
     const [libraryFailed, setLibraryFailed] = useState(false);
     const [directoriesLoading, setDirectoriesLoading] = useState(false);
-    const [projectAction, setProjectAction] = useState('');
-    const [deleteConfirmProject, setDeleteConfirmProject] = useState(null);
-    const [deleteError, setDeleteError] = useState('');
+    const [busyProjects, setBusyProjects] = useState(() => new Set());
     const [trashedProjects, setTrashedProjects] = useState(null);
     const [trashBusy, setTrashBusy] = useState('');
     const [trashFailed, setTrashFailed] = useState(false);
     const [purgeConfirmProject, setPurgeConfirmProject] = useState(null);
     const [purgeError, setPurgeError] = useState('');
+    const [emptyTrashConfirm, setEmptyTrashConfirm] = useState(false);
+    const [emptyTrashError, setEmptyTrashError] = useState('');
     const uploadInput = useRef(null);
+    const allProjectsRequest = useRef(false);
     const beginProjectLoad = useLatest();
     const beginDirectoryLoad = useLatest();
     const beginStatsLoad = useLatest();
@@ -611,10 +365,31 @@ const MyStuff = () => {
         if (nextTab === 'overview') next.delete('section');
         else next.set('section', nextTab);
         if (nextTab !== 'themes') next.delete('themeView');
+        if (nextTab !== 'projects') {
+            next.delete('show');
+            next.delete('sort');
+        }
         next.delete('collectionView');
         if (!preserveError) setActionError('');
         setSearchParams(next);
     };
+    const setProjectParam = (key, value, fallback) => {
+        const next = new URLSearchParams(searchParams);
+        if (value === fallback) next.delete(key);
+        else next.set(key, value);
+        setSearchParams(next, {replace: true});
+    };
+    const say = useCallback((message, action) => setToast({message, ...action, id: Date.now()}), []);
+    const dismissToast = useCallback(() => setToast(null), []);
+    const markBusy = (ids, on) => setBusyProjects(current => {
+        const next = new Set(current);
+        for (const id of ids) {
+            if (on) next.add(id);
+            else next.delete(id);
+        }
+        return next;
+    });
+
     useEffect(() => {
         const normalized = normalizeMyStuffParams(searchParams);
         if (normalized.toString() !== searchParams.toString()) {
@@ -634,14 +409,13 @@ const MyStuff = () => {
         setSpacesFailed(false);
         setLibraryFailed(false);
         setDirectoriesLoading(false);
-        setProjectAction('');
-        setDeleteConfirmProject(null);
-        setDeleteError('');
+        setBusyProjects(new Set());
         setTrashedProjects(null);
         setTrashBusy('');
         setTrashFailed(false);
         setPurgeConfirmProject(null);
         setPurgeError('');
+        setEmptyTrashConfirm(false);
         setUploading(false);
         setUploadStatus('');
         setPendingUploadFile(null);
@@ -651,6 +425,7 @@ const MyStuff = () => {
         setAgreeError('');
         setCollectionProject(null);
         setActionError('');
+        setToast(null);
         setInventoryItems(null);
         setInventoryFailed(false);
     }, [beginDirectoryLoad, beginStatsLoad, beginTrashLoad, username]);
@@ -708,6 +483,8 @@ const MyStuff = () => {
 
     const load = useCallback(() => {
         const fresh = beginProjectLoad();
+        allProjectsRequest.current = false;
+        setAllProjectsLoading(false);
         if (!user || tab !== 'projects') {
             return;
         }
@@ -730,6 +507,29 @@ const MyStuff = () => {
     useEffect(() => {
         load();
     }, [load]);
+
+    // Filtering, sorting and searching cover every project, so fetch the
+    // rest of the list once instead of page by page.
+    const loadAllProjects = useCallback(() => {
+        if (!user || allProjectsRequest.current) return;
+        const context = accountContextRef.current;
+        allProjectsRequest.current = true;
+        setAllProjectsLoading(true);
+        api.myProjects(user.username)
+            .then(data => {
+                if (accountContextRef.current !== context || !allProjectsRequest.current) return;
+                const all = data.projects || [];
+                setProjects(all);
+                setProjectTotal(all.length);
+                setProjectOffset(all.length);
+            })
+            .catch(() => {
+                if (accountContextRef.current === context) setProjectsMoreFailed(true);
+            })
+            .finally(() => {
+                if (accountContextRef.current === context) setAllProjectsLoading(false);
+            });
+    }, [user]);
 
     const loadInventory = useCallback(() => {
         if (!user || tab !== 'inventory') return;
@@ -766,24 +566,56 @@ const MyStuff = () => {
         else beginTrashLoad();
     }, [beginTrashLoad, loadTrash, tab]);
 
-    const restoreTrashedProject = async id => {
+    const refreshUsage = useCallback(() => {
+        if (!user) return;
         const context = accountContextRef.current;
-        const actionKey = beginAccountAction(`trash:restore:${id}`);
+        api.quota()
+            .then(data => {
+                if (accountContextRef.current === context) {
+                    setQuota(data);
+                    setQuotaFailed(false);
+                }
+            })
+            .catch(() => {
+                if (accountContextRef.current === context) setQuotaFailed(true);
+            });
+        api.stats()
+            .then(data => {
+                if (accountContextRef.current === context) setStats(data.stats || null);
+            })
+            .catch(() => {});
+    }, [user]);
+
+    const restoreProjects = async (list, {fromTrash = false} = {}) => {
+        const context = accountContextRef.current;
+        const actionKey = beginAccountAction('restore');
         if (!actionKey) return;
-        setTrashBusy(`restore:${id}`);
+        const restored = [];
+        if (fromTrash) setTrashBusy(`restore:${list[0].id}`);
         setActionError('');
         try {
-            await api.restoreProject(id);
-            if (accountContextRef.current === context) {
-                setTrashedProjects(current => removeProjectById(current, id));
+            for (const project of list) {
+                try {
+                    await api.restoreProject(project.id);
+                    restored.push(project);
+                } catch (e) {
+                    if (accountContextRef.current === context) {
+                        setActionError(e.message || 'Could not restore this project.');
+                    }
+                }
+                if (accountContextRef.current !== context) return;
             }
-        } catch (e) {
-            if (accountContextRef.current === context) {
-                setActionError(e.message || 'Could not restore this project.');
-            }
+            if (!restored.length) return;
+            const ids = new Set(restored.map(project => project.id));
+            setTrashedProjects(current => (current ? current.filter(project => !ids.has(project.id)) : current));
+            if (tab === 'projects') load();
+            refreshUsage();
+            say(restored.length === 1 ?
+                communityText('Restored “{value1}”.', {value1: restored[0].title}) :
+                communityText('Restored {value1} projects.', {value1: restored.length}));
         } finally {
             releaseAccountAction(actionKey);
-            if (accountContextRef.current === context) setTrashBusy('');
+            if (accountContextRef.current === context && fromTrash) setTrashBusy('');
         }
     };
 
@@ -798,6 +630,8 @@ const MyStuff = () => {
             if (accountContextRef.current === context) {
                 setTrashedProjects(current => removeProjectById(current, project.id));
                 setPurgeConfirmProject(null);
+                refreshUsage();
+                say(communityText('Deleted “{value1}” forever.', {value1: project.title}));
             }
         } catch (e) {
             if (accountContextRef.current === context) {
@@ -806,6 +640,39 @@ const MyStuff = () => {
         } finally {
             releaseAccountAction(actionKey);
             if (accountContextRef.current === context) setTrashBusy('');
+        }
+    };
+
+    const emptyTrash = async () => {
+        const context = accountContextRef.current;
+        const actionKey = beginAccountAction('trash:empty');
+        if (!actionKey) return;
+        const list = trashedProjects || [];
+        setTrashBusy('empty');
+        setEmptyTrashError('');
+        let deleted = 0;
+        try {
+            for (const project of list) {
+                try {
+                    await api.purgeProject(project.id);
+                    deleted += 1;
+                    if (accountContextRef.current !== context) return;
+                    setTrashedProjects(current => removeProjectById(current, project.id));
+                } catch (e) {
+                    if (accountContextRef.current === context) {
+                        setEmptyTrashError(e.message || 'Could not permanently delete this project.');
+                    }
+                    return;
+                }
+            }
+            setEmptyTrashConfirm(false);
+            say(communityText('Deleted {value1} projects forever.', {value1: deleted}));
+        } finally {
+            releaseAccountAction(actionKey);
+            if (accountContextRef.current === context) {
+                setTrashBusy('');
+                if (deleted) refreshUsage();
+            }
         }
     };
 
@@ -916,11 +783,17 @@ const MyStuff = () => {
         try {
             const result = await api.setLibraryProjectVisibility(project.id, nextPublic);
             if (accountContextRef.current !== context) return;
+            const libraryPublic = result.public !== false;
             const updateVisibility = item => {
                 if (item.id !== project.id) return item;
-                return {...item, libraryPublic: result.public !== false};
+                return {...item, libraryPublic};
             };
             setLibraryProjects(current => (current || []).map(updateVisibility));
+            say(libraryPublic ?
+                communityText('“{value1}” shows in your public library again.', {value1: project.title}) :
+                communityText('“{value1}” is hidden from your public library.', {value1: project.title}), {
+                handleAction: () => changeLibraryProjectVisibility({...project, libraryPublic})
+            });
         } catch (e) {
             if (accountContextRef.current === context) {
                 setLibraryVisibilityError(e.message || 'Could not update this library item.');
@@ -943,6 +816,22 @@ const MyStuff = () => {
             setLibraryProjects(current => (current || []).filter(item => item.id !== project.id));
             setLibraryTotal(total => Math.max(0, total - 1));
             setLibraryOffset(offset => Math.max(0, offset - 1));
+            say(communityText('Removed “{value1}” from your library.', {value1: project.title}), {
+                handleAction: () => {
+                    setToast(null);
+                    api.saveProject(project.id)
+                        .then(() => {
+                            if (accountContextRef.current !== context) return;
+                            loadLibrary();
+                            say(communityText('Put “{value1}” back in your library.', {value1: project.title}));
+                        })
+                        .catch(e => {
+                            if (accountContextRef.current === context) {
+                                setLibraryVisibilityError(e.message || 'Could not save this game to your library.');
+                            }
+                        });
+                }
+            });
         } catch (e) {
             if (accountContextRef.current === context) {
                 setLibraryVisibilityError(e.message || 'Could not remove this game from your library.');
@@ -953,111 +842,124 @@ const MyStuff = () => {
         }
     };
 
-    const refreshUsage = useCallback(() => {
-        if (!user) return;
+    // Share or unshare, then say so with a way back.
+    const toggleShared = async project => {
+        const actionKey = beginAccountAction(`visibility:${project.id}`);
+        if (!actionKey) return;
         const context = accountContextRef.current;
-        api.quota()
-            .then(data => {
-                if (accountContextRef.current === context) {
-                    setQuota(data);
-                    setQuotaFailed(false);
+        const sharing = !project.shared;
+        markBusy([project.id], true);
+        setActionError('');
+        try {
+            const data = sharing ? await api.publish(project.id) : await api.unpublish(project.id);
+            if (accountContextRef.current !== context) return;
+            const updated = data.project || {...project, shared: sharing, visibility: sharing ? 'public' : 'private'};
+            setProjects(current => replaceProjectById(current, updated));
+            if (!sharing && featuredProject === project.id) setFeaturedProject('');
+            refreshUsage();
+            say(sharing ?
+                communityText('Shared “{value1}”. Anyone can find and play it now.', {value1: project.title}) :
+                communityText('Unshared “{value1}”. It is a draft again.', {value1: project.title}), {
+                handleAction: () => {
+                    setToast(null);
+                    toggleShared(updated);
                 }
-            })
-            .catch(() => {
-                if (accountContextRef.current === context) setQuotaFailed(true);
             });
-        api.stats()
-            .then(data => {
-                if (accountContextRef.current === context) setStats(data.stats || null);
-            })
-            .catch(() => {});
-    }, [user]);
-
-    const unpublish = async id => {
-        const actionKey = beginAccountAction('project');
-        if (!actionKey) return;
-        const context = accountContextRef.current;
-        setProjectAction(`visibility:${id}`);
-        try {
-            setActionError('');
-            const data = await api.unpublish(id);
-            if (accountContextRef.current !== context) return;
-            setProjects(current => replaceProjectById(current, data.project));
-            if (featuredProject === id) setFeaturedProject('');
-            refreshUsage();
         } catch (e) {
             if (accountContextRef.current === context) {
-                setActionError(e.message || 'Could not unshare this project.');
+                setActionError(e.message || (sharing ? 'Could not share this project.' : 'Could not unshare this project.'));
             }
         } finally {
             releaseAccountAction(actionKey);
-            if (accountContextRef.current === context) setProjectAction('');
+            if (accountContextRef.current === context) markBusy([project.id], false);
         }
     };
 
-    const publish = async id => {
-        const actionKey = beginAccountAction('project');
+    // Trash is recoverable, so this acts at once and offers the way back
+    // rather than asking first.
+    const trashProjects = async list => {
+        const actionKey = beginAccountAction('trash');
         if (!actionKey) return;
         const context = accountContextRef.current;
-        setProjectAction(`visibility:${id}`);
+        const moved = [];
+        let lastError = null;
+        markBusy(list.map(project => project.id), true);
+        setActionError('');
         try {
-            setActionError('');
-            const data = await api.publish(id);
-            if (accountContextRef.current !== context) return;
-            setProjects(current => replaceProjectById(current, data.project));
-            refreshUsage();
-        } catch (e) {
-            if (accountContextRef.current === context) {
-                setActionError(e.message || 'Could not share this project.');
+            for (const project of list) {
+                try {
+                    await api.deleteProject(project.id);
+                    if (accountContextRef.current !== context) return;
+                    moved.push(project);
+                    setProjects(current => removeProjectById(current, project.id));
+                    setProjectTotal(total => Math.max(0, total - 1));
+                    setProjectOffset(offset => Math.max(0, offset - 1));
+                    if (featuredProject === project.id) setFeaturedProject('');
+                } catch (e) {
+                    lastError = e;
+                }
             }
+            if (moved.length) refreshUsage();
+            if (lastError) {
+                setActionError(moved.length ?
+                    communityText('Moved {value1} of {value2} projects to Trash. {value3}', {
+                        value1: moved.length,
+                        value2: list.length,
+                        value3: lastError.message || ''
+                    }) :
+                    lastError.message || 'Could not move this project to Trash.');
+            }
+            if (!moved.length) return;
+            say(moved.length === 1 ?
+                communityText('Moved “{value1}” to Trash.', {value1: moved[0].title}) :
+                communityText('Moved {value1} projects to Trash.', {value1: moved.length}), {
+                handleAction: () => {
+                    setToast(null);
+                    restoreProjects(moved);
+                }
+            });
         } finally {
             releaseAccountAction(actionKey);
-            if (accountContextRef.current === context) setProjectAction('');
+            if (accountContextRef.current === context) markBusy(list.map(project => project.id), false);
         }
     };
 
-    const deleteProject = async id => {
-        const actionKey = beginAccountAction('project');
+    const toggleFeatured = async project => {
+        const id = project.id;
+        const actionKey = beginAccountAction('feature');
         if (!actionKey) return;
         const context = accountContextRef.current;
-        setProjectAction(`delete:${id}`);
-        setDeleteError('');
-        try {
-            await api.deleteProject(id);
-            if (accountContextRef.current !== context) return;
-            setProjects(current => removeProjectById(current, id));
-            setProjectTotal(total => Math.max(0, total - 1));
-            setProjectOffset(offset => Math.max(0, offset - 1));
-            if (featuredProject === id) setFeaturedProject('');
-            setDeleteConfirmProject(null);
-            refreshUsage();
-        } catch (e) {
-            if (accountContextRef.current === context) {
-                setDeleteError(e.message || 'Could not delete this project.');
-            }
-        } finally {
-            releaseAccountAction(actionKey);
-            if (accountContextRef.current === context) setProjectAction('');
-        }
-    };
-
-    const toggleFeatured = async id => {
-        const actionKey = beginAccountAction('project');
-        if (!actionKey) return;
-        const context = accountContextRef.current;
+        const previous = featuredProject;
         const next = featuredProject === id ? '' : id;
-        setProjectAction(`feature:${id}`);
+        markBusy([id], true);
         try {
             setActionError('');
             await api.updateProfile({featuredProject: next});
-            if (accountContextRef.current === context) setFeaturedProject(next);
+            if (accountContextRef.current !== context) return;
+            setFeaturedProject(next);
+            say(next ?
+                communityText('“{value1}” is featured on your profile.', {value1: project.title}) :
+                communityText('“{value1}” is no longer featured on your profile.', {value1: project.title}), {
+                handleAction: () => {
+                    setToast(null);
+                    api.updateProfile({featuredProject: previous})
+                        .then(() => {
+                            if (accountContextRef.current === context) setFeaturedProject(previous);
+                        })
+                        .catch(e => {
+                            if (accountContextRef.current === context) {
+                                setActionError(e.message || 'Could not update the featured project.');
+                            }
+                        });
+                }
+            });
         } catch (e) {
             if (accountContextRef.current === context) {
                 setActionError(e.message || 'Could not update the featured project.');
             }
         } finally {
             releaseAccountAction(actionKey);
-            if (accountContextRef.current === context) setProjectAction('');
+            if (accountContextRef.current === context) markBusy([id], false);
         }
     };
 
@@ -1081,6 +983,14 @@ const MyStuff = () => {
         }
     }, []);
 
+    const sayUploaded = (file, created) => {
+        const title = (created && created.title) || file.name.replace(/\.sb3$/i, '');
+        say(communityText('Uploaded “{value1}”. It stays a draft until you share it.', {value1: title}), created && created.id ? {
+            actionLabel: communityText('Open in editor'),
+            handleAction: () => window.location.assign(editorUrl({platformProject: created.id}))
+        } : null);
+    };
+
     const uploadSb3 = async event => {
         const file = event.target.files[0];
         const context = accountContextRef.current;
@@ -1090,8 +1000,10 @@ const MyStuff = () => {
             setActionError('Choose a Scratch .sb3 project file.');
             return;
         }
-        if (quota && quota.used + (quota.pending || 0) >= quota.limit) {
-            setActionError('Your storage is full. Delete projects you no longer need and empty them from the trash before uploading.');
+        if (storageFull(quota)) {
+            setActionError(quota.shared ?
+                'Your Rotur storage is full. Delete projects or backpack items you no longer need and empty the trash, or get more storage with a Rotur membership at rotur.dev/membership.' :
+                'Your storage is full. Delete projects you no longer need and empty them from the trash before uploading.');
             return;
         }
         const actionKey = beginAccountAction('upload');
@@ -1129,7 +1041,7 @@ const MyStuff = () => {
         }
 
         try {
-            await createFromSb3(file, (loaded, total) => {
+            const created = await createFromSb3(file, (loaded, total) => {
                 if (accountContextRef.current === context) {
                     setUploadStatus(uploadProgressLabel(loaded, total));
                 }
@@ -1137,6 +1049,7 @@ const MyStuff = () => {
             if (accountContextRef.current !== context) return;
             setTab('projects');
             load();
+            sayUploaded(file, created);
         } catch (e) {
             if (accountContextRef.current === context) {
                 setActionError(e.message || 'Could not upload that project.');
@@ -1175,7 +1088,7 @@ const MyStuff = () => {
             setUploading(true);
             setUploadStatus('Uploading…');
             if (!file) throw new Error('Choose the project file again.');
-            await createFromSb3(file, (loaded, total) => {
+            const created = await createFromSb3(file, (loaded, total) => {
                 if (accountContextRef.current === context) {
                     setUploadStatus(uploadProgressLabel(loaded, total));
                 }
@@ -1183,6 +1096,7 @@ const MyStuff = () => {
             if (accountContextRef.current !== context) return;
             setTab('projects');
             load();
+            sayUploaded(file, created);
         } catch (e) {
             if (accountContextRef.current === context) {
                 const target = uploadErrorTarget(agreementAccepted, e);
@@ -1209,13 +1123,6 @@ const MyStuff = () => {
         setAgreeData(null);
         setAgreeError('');
     }, []);
-    const deleteBusy = deleteConfirmProject && projectAction === `delete:${deleteConfirmProject.id}`;
-    const dismissDeleteConfirm = useCallback(() => {
-        if (!projectAction) {
-            setDeleteConfirmProject(null);
-            setDeleteError('');
-        }
-    }, [projectAction]);
     const purgeBusy = purgeConfirmProject && trashBusy === `purge:${purgeConfirmProject.id}`;
     const purgeDetails = purgeConfirmProject ? trashPurgeConfirmation(purgeConfirmProject) : null;
     const dismissPurgeConfirm = useCallback(() => {
@@ -1224,6 +1131,7 @@ const MyStuff = () => {
             setPurgeError('');
         }
     }, [trashBusy]);
+    const chooseUpload = () => uploadInput.current && uploadInput.current.click();
 
     if (loading) {
         return <main className={styles.page}><StatusMessage /></main>;
@@ -1236,9 +1144,121 @@ const MyStuff = () => {
         );
     }
 
+    let content;
+    if (tab === 'overview') {
+        content = (
+            <MyStuffOverview
+                stats={stats}
+                statsFailed={statsFailed}
+                quota={quota}
+                username={username}
+                onRetryStats={loadStats}
+            />
+        );
+    } else if (tab === 'shared') {
+        content = <SharedProjects key={username} />;
+    } else if (tab === 'library') {
+        content = (
+            <MyStuffLibrary
+                projects={libraryProjects || []}
+                total={libraryTotal}
+                loading={libraryProjects === null && !libraryFailed}
+                error={libraryFailed}
+                hasMore={libraryOffset < libraryTotal}
+                moreBusy={libraryBusy}
+                actionBusy={libraryVisibilityBusy}
+                actionError={libraryVisibilityError}
+                onRetry={retryLibrary}
+                onLoadMore={loadMoreLibrary}
+                onChangeVisibility={changeLibraryProjectVisibility}
+                onRemove={removeLibraryProject}
+            />
+        );
+    } else if (tab === 'uploads') {
+        content = (
+            <MyStuffStorage
+                error={quotaFailed}
+                quota={quota}
+                perks={perks}
+                onRetry={() => setUsageAttempt(value => value + 1)}
+            />
+        );
+    } else if (tab === 'agreement') {
+        content = <AgreementTab key={username} />;
+    } else if (tab === 'themes') {
+        content = <MyStuffThemes username={username} />;
+    } else if (tab === 'inventory') {
+        content = <Inventory items={inventoryItems} error={inventoryFailed} onRetry={loadInventory} />;
+    } else if (tab === 'trash') {
+        content = (
+            <MyStuffTrash
+                projects={trashedProjects}
+                failed={trashFailed}
+                busy={trashBusy}
+                onRetry={loadTrash}
+                onRestore={project => restoreProjects([project], {fromTrash: true})}
+                onPurge={project => {
+                    setPurgeError('');
+                    setPurgeConfirmProject(project);
+                }}
+                onEmpty={() => {
+                    setEmptyTrashError('');
+                    setEmptyTrashConfirm(true);
+                }}
+            />
+        );
+    } else if (tab === 'collections' || tab === 'spaces') {
+        content = (
+            <MyStuffSpaces
+                key={tab}
+                mode={tab}
+                spaces={mySpaces}
+                error={spacesFailed}
+                onRetry={retryDirectories}
+            />
+        );
+    } else {
+        content = (
+            <section>
+                <SectionHeading
+                    title={communityText('My projects')}
+                    actions={projectTotal ? (
+                        <span className={styles.count}>
+                            {projectTotal === 1 ? communityText('1 project') : communityText('{value1} projects', {value1: projectTotal})}
+                        </span>
+                    ) : null}
+                />
+                <MyStuffProjects
+                    projects={projects}
+                    failed={failed}
+                    hasMore={projectOffset < projectTotal}
+                    moreBusy={projectsMoreBusy}
+                    moreFailed={projectsMoreFailed}
+                    allLoading={allProjectsLoading}
+                    busyIds={busyProjects}
+                    featuredProject={featuredProject}
+                    show={projectShow}
+                    sort={projectSort}
+                    onShowChange={value => setProjectParam('show', value, 'all')}
+                    onSortChange={value => setProjectParam('sort', value, 'edited')}
+                    onRetry={load}
+                    onLoadMore={loadMoreProjects}
+                    onNeedAll={loadAllProjects}
+                    onShare={toggleShared}
+                    onFeature={toggleFeatured}
+                    onTrash={trashProjects}
+                    onCollection={setCollectionProject}
+                    onUpload={chooseUpload}
+                />
+            </section>
+        );
+    }
+
     return (
         <main className={styles.page}>
             <PageHeader
+                compact
+                className={styles.header}
                 title={communityText('My stuff')}
                 actions={(
                     <React.Fragment>
@@ -1250,36 +1270,19 @@ const MyStuff = () => {
                             onChange={uploadSb3}
                         />
                         <Button
-                            variant="primary"
                             busy={uploading}
                             busyLabel={uploadStatus || communityText('Uploading…')}
-                            onClick={() => uploadInput.current && uploadInput.current.click()}
+                            onClick={chooseUpload}
+                            title={communityText('Upload .sb3')}
                         >
-                            <Upload size={16} />{communityText('Upload .sb3')}</Button>
+                            <Upload size={16} aria-hidden="true" />
+                            <span className={styles.uploadLabel}>{communityText('Upload .sb3')}</span>
+                        </Button>
                         <Button as="a" variant="primary" href={editorUrl()}>
                             <Plus size={16} />{communityText('New project')}</Button>
                     </React.Fragment>
                 )}
             />
-
-            {actionError ? (
-                <Notice variant="error" className={styles.pageNotice} onDismiss={() => setActionError('')}>{actionError}</Notice>
-            ) : null}
-
-            {quota && quota.limit > 0 && (quota.used / quota.limit) * 100 >= 80 ? (
-                <Notice variant="warning" className={styles.pageNotice}>
-                    {quota.used >= quota.limit ?
-                        communityText('Your storage is full: your projects use {value1} of your {value2}. You can still save a project at the same size or smaller. To add more, delete projects you no longer need and empty them from the trash.', {
-                            value1: formatBytes(quota.used),
-                            value2: formatBytes(quota.limit)
-                        }) :
-                        communityText('Your projects use {value1} of your {value2} of storage ({value3}%).', {
-                            value1: formatBytes(quota.used),
-                            value2: formatBytes(quota.limit),
-                            value3: Math.round((quota.used / quota.limit) * 100)
-                        })}
-                </Notice>
-            ) : null}
 
             {showAgreeModal && agreeData ? (
                 <Modal
@@ -1312,21 +1315,6 @@ const MyStuff = () => {
                 </Modal>
             ) : null}
 
-            {deleteConfirmProject ? (
-                <ConfirmModal
-                    destructive
-                    title={communityText('Delete project?')}
-                    confirmLabel={communityText('Delete project')}
-                    busy={Boolean(deleteBusy)}
-                    busyLabel={communityText('Deleting…')}
-                    error={deleteError}
-                    onConfirm={() => deleteProject(deleteConfirmProject.id)}
-                    onCancel={dismissDeleteConfirm}
-                >
-                    {communityText('{value1} will move to Trash. You can restore it until its recovery period ends.', {value1: deleteConfirmProject.title})}
-                </ConfirmModal>
-            ) : null}
-
             {purgeConfirmProject ? (
                 <ConfirmModal
                     destructive
@@ -1343,259 +1331,40 @@ const MyStuff = () => {
                 </ConfirmModal>
             ) : null}
 
+            {emptyTrashConfirm ? (
+                <ConfirmModal
+                    destructive
+                    icon={Trash2}
+                    title={communityText('Empty Trash?')}
+                    confirmLabel={communityText('Delete forever')}
+                    busy={trashBusy === 'empty'}
+                    busyLabel={communityText('Deleting…')}
+                    error={emptyTrashError}
+                    onConfirm={emptyTrash}
+                    onCancel={() => {
+                        if (!trashBusy) setEmptyTrashConfirm(false);
+                    }}
+                >
+                    {communityText('Permanently delete {value1} projects in the trash? This cannot be undone.', {value1: (trashedProjects || []).length})}
+                </ConfirmModal>
+            ) : null}
+
             <div className={styles.layout}>
-                <Sidebar
-                    sections={SECTIONS}
+                <MyStuffNav
                     active={tab}
-                    onChange={setTab}
-                    ariaLabel="My stuff sections"
+                    onFollow={() => setActionError('')}
+                    onNavigate={key => {
+                        if (key !== tab) setTab(key);
+                    }}
                 />
                 <div className={styles.content}>
-                    {tab === 'overview' ? (
-                        stats ? (
-                            <Overview
-                                stats={stats}
-                                quota={quota}
-                                username={username}
-                                onNavigate={setTab}
-                            />
-                        ) : statsFailed ? (
-                            <StatusMessage error onRetry={loadStats}>{communityText('Could not load your overview.')}</StatusMessage>
-                        ) : (
-                            <StatusMessage />
-                        )
-                    ) : tab === 'shared' ? (
-                        <SharedProjects key={username} />
-                    ) : tab === 'library' ? (
-                        <MyStuffLibrary
-                            projects={libraryProjects || []}
-                            total={libraryTotal}
-                            loading={libraryProjects === null && !libraryFailed}
-                            error={libraryFailed}
-                            hasMore={libraryOffset < libraryTotal}
-                            moreBusy={libraryBusy}
-                            actionBusy={libraryVisibilityBusy}
-                            actionError={libraryVisibilityError}
-                            onRetry={retryLibrary}
-                            onLoadMore={loadMoreLibrary}
-                            onChangeVisibility={changeLibraryProjectVisibility}
-                            onRemove={removeLibraryProject}
-                        />
-                    ) : tab === 'uploads' ? (
-                        <UploadUsage
-                            error={quotaFailed}
-                            quota={quota}
-                            perks={perks}
-                            onRetry={() => setUsageAttempt(value => value + 1)}
-                        />
-                    ) : tab === 'agreement' ? (
-                        <AgreementTab key={username} />
-                    ) : tab === 'themes' ? (
-                        <MyStuffThemes username={username} />
-                    ) : tab === 'inventory' ? (
-                        <Inventory items={inventoryItems} error={inventoryFailed} onRetry={loadInventory} />
-                    ) : tab === 'trash' ? (
-                        trashFailed ? (
-                            <StatusMessage error onRetry={loadTrash}>{communityText('Could not load Trash.')}</StatusMessage>
-                        ) : trashedProjects === null ? <StatusMessage>{communityText('Loading Trash…')}</StatusMessage> :
-                            trashedProjects.length ? <div className={styles.list}>{trashedProjects.map(project => (
-                                <div className={styles.row} key={project.id}>
-                                    <div className={styles.thumb}><ProjectThumbnail project={project} lazy /></div>
-                                    <div className={styles.info}>
-                                        <strong className={styles.title}>{project.title}</strong>
-                                        <span className={styles.rowStats}>{communityText('Deletes forever {value1}', {value1: formatDate(project.purgeAt, 'date unavailable')})}</span>
-                                    </div>
-                                    <div className={styles.rowActions}>
-                                        <Button variant="primary" busy={trashBusy === `restore:${project.id}`} disabled={Boolean(trashBusy)} onClick={() => restoreTrashedProject(project.id)}><RotateCcw size={14} />{communityText('Restore')}</Button>
-                                        <Button
-                                            variant="danger"
-                                            disabled={Boolean(trashBusy)}
-                                            onClick={() => {
-                                                setPurgeError('');
-                                                setPurgeConfirmProject(project);
-                                            }}
-                                        ><Trash2 size={14} />{communityText('Delete forever')}</Button>
-                                    </div>
-                                </div>
-                            ))}</div> : (
-                                <EmptyState icon={Trash2} title={communityText('No deleted projects')}>
-                                    {communityText('Trash is empty. Projects you delete stay here until their recovery period ends.')}
-                                </EmptyState>
-                            )
-                    ) : tab === 'collections' || tab === 'spaces' ? (
-                        <MyStuffSpaces
-                            key={tab}
-                            mode={tab}
-                            spaces={mySpaces}
-                            error={spacesFailed}
-                            onRetry={retryDirectories}
-                        />
-                    ) : failed ? (
-                        <StatusMessage error onRetry={load}>{communityText('Could not load your projects.')}</StatusMessage>
-                    ) : projects === null ? (
-                        <StatusMessage />
-                    ) : projects.length ? (
-                        <div className={styles.list}>
-                            {projects.map(project => {
-                                const featured = featuredProject === project.id;
-                                const visibilityBusy = projectAction === `visibility:${project.id}`;
-                                return (
-                                    <div
-                                        key={project.id}
-                                        className={styles.row}
-                                    >
-                                        <Link
-                                            to={projectUrl(project)}
-                                            className={styles.thumb}
-                                        >
-                                            <ProjectThumbnail
-                                                project={project}
-                                                lazy
-                                            />
-                                        </Link>
-                                        <div className={styles.info}>
-                                            <Link
-                                                to={projectUrl(project)}
-                                                className={styles.title}
-                                            >{project.title}</Link>
-                                            <span className={project.shared ? styles.shared : styles.draft}>
-                                                {visibilityLabel(project)}
-                                            </span>
-                                            <span className={styles.rowStats}>
-                                                <span className={styles.rowStat}>
-                                                    <Heart size={13} />
-                                                    {project.loveCount || 0}
-                                                </span>
-                                                <span className={styles.rowStat}>
-                                                    <ThumbsDown size={13} />
-                                                    {project.brokenHeartCount || 0}
-                                                </span>
-                                                <span className={styles.rowStat}>
-                                                    <Play size={13} />
-                                                    {project.views || 0}
-                                                </span>
-                                                {project.sizeBytes ? (
-                                                    <span className={styles.rowStat}>
-                                                        <HardDrive size={13} />
-                                                        {formatBytes(project.sizeBytes)}
-                                                    </span>
-                                                ) : null}
-                                            </span>
-                                        </div>
-                                        <div className={styles.rowActions}>
-                                            {project.shared ? (
-                                                <Button
-                                                    disabled={Boolean(projectAction)}
-                                                    busy={visibilityBusy}
-                                                    busyLabel={communityText('Updating…')}
-                                                    onClick={() => unpublish(project.id)}
-                                                >{communityText('Unshare')}</Button>
-                                            ) : (
-                                                <Button
-                                                    disabled={Boolean(projectAction)}
-                                                    busy={visibilityBusy}
-                                                    busyLabel={communityText('Updating…')}
-                                                    onClick={() => publish(project.id)}
-                                                >{communityText('Share')}</Button>
-                                            )}
-                                            <Dropdown
-                                                className={styles.actionMenuWrap}
-                                                menuClassName={styles.actionMenu}
-                                                renderTrigger={({open, toggle}) => (
-                                                    <IconButton
-                                                        className={styles.moreButton}
-                                                        label={communityText('Actions for {value1}', {value1: project.title})}
-                                                        aria-expanded={open}
-                                                        aria-haspopup="menu"
-                                                        disabled={Boolean(projectAction)}
-                                                        onClick={toggle}
-                                                    >
-                                                        <MoreHorizontal size={18} />
-                                                    </IconButton>
-                                                )}
-                                            >
-                                                {({close}) => (
-                                                    <React.Fragment>
-                                                        <a
-                                                            href={editorUrl({platformProject: project.id})}
-                                                            onClick={close}
-                                                        >
-                                                            <Pencil size={14} />{communityText('Open in editor')}</a>
-                                                        <Link to={projectUrl(project)} onClick={close}>
-                                                            <ExternalLink size={14} />{communityText('Project page')}</Link>
-                                                        <div className={styles.menuSeparator} role="separator" />
-                                                        <Link to={`/mystuff/project/${project.id}`} onClick={close}>
-                                                            <SlidersHorizontal size={14} />{communityText('Manage & analytics')}</Link>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                close();
-                                                                setCollectionProject(project);
-                                                            }}
-                                                        >
-                                                            <Library size={14} />{communityText('Save to collection')}</button>
-                                                        {project.shared ? (
-                                                            <button
-                                                                type="button"
-                                                                disabled={Boolean(projectAction)}
-                                                                onClick={() => {
-                                                                    close();
-                                                                    toggleFeatured(project.id);
-                                                                }}
-                                                            >
-                                                                <Star
-                                                                    size={14}
-                                                                    fill={featured ? 'currentColor' : 'none'}
-                                                                />
-                                                                {featured ?
-                                                                    communityText('Remove profile feature') : communityText('Feature on profile')}
-                                                            </button>
-                                                        ) : null}
-                                                        <div className={styles.menuSeparator} role="separator" />
-                                                        <button
-                                                            type="button"
-                                                            className={styles.danger}
-                                                            disabled={Boolean(projectAction)}
-                                                            onClick={() => {
-                                                                close();
-                                                                setDeleteError('');
-                                                                setDeleteConfirmProject(project);
-                                                            }}
-                                                        >
-                                                            <Trash2 size={14} />{communityText('Delete')}</button>
-                                                    </React.Fragment>
-                                                )}
-                                            </Dropdown>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                            {projectOffset < projectTotal ? (
-                                <div className={styles.loadMore}>
-                                    <Button
-                                        variant="secondary"
-                                        busy={projectsMoreBusy}
-                                        busyLabel={communityText('Loading…')}
-                                        onClick={loadMoreProjects}
-                                    >{communityText('Load more projects')}</Button>
-                                </div>
-                            ) : null}
-                            {projectsMoreFailed ? (
-                                <Notice variant="error">{communityText('Could not load more projects.')}</Notice>
-                            ) : null}
-                        </div>
-                    ) : (
-                        <EmptyState
-                            icon={FolderOpen}
-                            title={communityText('No projects yet')}
-                            action={(
-                                <Button variant="primary" as="a" href={editorUrl()}>
-                                    <Plus size={16} />{communityText('New project')}</Button>
-                            )}
-                        >
-                            {communityText('You have not created any projects yet.')}
-                        </EmptyState>
-                    )}
+                    {actionError ? (
+                        <Notice variant="error" className={styles.pageNotice} onDismiss={() => setActionError('')}>{actionError}</Notice>
+                    ) : null}
+                    {tab === 'overview' || tab === 'projects' ? (
+                        <StorageWarning quota={quota} className={styles.pageNotice} />
+                    ) : null}
+                    {content}
                 </div>
             </div>
             {collectionProject ? (
@@ -1603,6 +1372,14 @@ const MyStuff = () => {
                     project={collectionProject}
                     onClose={() => setCollectionProject(null)}
                 />
+            ) : null}
+            {toast ? (
+                <Toast
+                    key={toast.id}
+                    actionLabel={toast.actionLabel}
+                    onAction={toast.handleAction}
+                    onDismiss={dismissToast}
+                >{toast.message}</Toast>
             ) : null}
         </main>
     );
@@ -1615,7 +1392,6 @@ export {
     replaceProjectById,
     shouldRefreshProjectsAfterUploadError,
     trashPurgeConfirmation,
-    UploadUsage,
     uploadErrorTarget,
     uploadProgressLabel
 };

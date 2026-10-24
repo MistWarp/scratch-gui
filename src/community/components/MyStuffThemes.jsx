@@ -1,23 +1,23 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
-import {Check, ExternalLink, Palette, Plus, Settings, Trash2, Upload} from 'lucide-react';
+import {Check, Palette, Plus, Trash2, Upload} from 'lucide-react';
 import {Link, useSearchParams} from 'react-router-dom';
 import api from '../api.js';
 import {customThemeManager} from '../../lib/themes/custom-themes.js';
 import {applyTheme, detectTheme, THEME_CHANGE_EVENT} from '../../lib/themes/themePersistance.js';
 import Button from './ui/Button.jsx';
-import CardGrid from './ui/CardGrid.jsx';
 import ConfirmModal from './ui/ConfirmModal.jsx';
 import EmptyState from './ui/EmptyState.jsx';
 import IconButton from './ui/IconButton.jsx';
+import QuietLink from './ui/QuietLink.jsx';
 import SectionHeading from './ui/SectionHeading.jsx';
 import StatusMessage from './ui/StatusMessage.jsx';
 import UnderlineTabs from './UnderlineTabs.jsx';
 import {tabPanelProps} from './SectionTabs.jsx';
 import ThemeCard from './ThemeCard.jsx';
 import ThemePreview from './ThemePreview.jsx';
-import styles from '../pages/MyStuff.module.css';
+import styles from './MyStuffThemes.module.css';
 
 const previewTheme = theme => {
     try {
@@ -127,41 +127,42 @@ const MyStuffThemes = ({username}) => {
     let body;
     if (view === 'library') {
         body = localThemes.length ? (
-            <CardGrid>
-                {localThemes.map(theme => (
-                    <article className={styles.localThemeCard} key={theme.uuid}>
-                        <ThemePreview className={styles.localThemePreview} theme={previewTheme(theme)} />
-                        <div className={styles.localThemeBody}>
-                            <div>
-                                <strong>{theme.name}</strong>
-                                <span>{theme.description || communityText('Saved on this device')}</span>
-                            </div>
-                            <div className={styles.localThemeActions}>
+            <div className={styles.grid}>
+                {localThemes.map(theme => {
+                    const active = applied === theme.uuid;
+                    return (
+                        <article className={styles.card} key={theme.uuid}>
+                            <ThemePreview className={styles.preview} theme={previewTheme(theme)} />
+                            <div className={styles.body}>
+                                <div className={styles.text}>
+                                    <strong>{theme.name}</strong>
+                                    <span>{active ? communityText('In use on this device') :
+                                        theme.description || communityText('Saved on this device')}</span>
+                                </div>
                                 <Button
-                                    disabled={applied === theme.uuid}
-                                    variant="primary"
+                                    size="small"
+                                    disabled={active}
+                                    className={active ? styles.applied : null}
                                     onClick={() => applyLocalTheme(theme)}
                                 >
-                                    {applied === theme.uuid ? <Check size={15} /> : <Palette size={15} />}
-                                    {applied === theme.uuid ? communityText('Applied') : communityText('Apply')}
+                                    {active ? <Check size={14} /> : null}
+                                    {active ? communityText('Applied') : communityText('Apply')}
                                 </Button>
                                 <IconButton
-                                    className={styles.localThemeRemove}
+                                    className={styles.remove}
                                     label={communityText('Remove {value1}', {value1: theme.name})}
-                                    variant="danger"
                                     onClick={() => {
                                         setRemoveError('');
                                         setRemoveTheme(theme);
                                     }}
                                 ><Trash2 size={15} /></IconButton>
                             </div>
-                        </div>
-                    </article>
-                ))}
-            </CardGrid>
+                        </article>
+                    );
+                })}
+            </div>
         ) : (
             <EmptyState
-                compact
                 icon={Palette}
                 title={communityText('Your library is empty')}
                 action={(
@@ -187,16 +188,15 @@ const MyStuffThemes = ({username}) => {
         body = <StatusMessage compact>{communityText('Loading published themes…')}</StatusMessage>;
     } else if (published.length) {
         body = (
-            <CardGrid>
+            <div className={styles.grid}>
                 {published.map(theme => (
                     <ThemeCard key={theme.id} returnLabel={communityText('Your themes')} theme={theme} />
                 ))}
-            </CardGrid>
+            </div>
         );
     } else {
         body = (
             <EmptyState
-                compact
                 icon={Upload}
                 title={communityText('You have not published a theme yet')}
                 action={(
@@ -212,21 +212,14 @@ const MyStuffThemes = ({username}) => {
     }
 
     return (
-        <section className={styles.themePanel}>
+        <section className={styles.panel}>
             <SectionHeading
-                icon={Palette}
                 title={communityText('Themes')}
                 lead={communityText('Your saved themes live here. Discover more on WarpTheme.')}
                 actions={(
                     <React.Fragment>
-                        <Link className={styles.themeBrowseLink} to="/settings?section=theme&tab=custom">
-                            <Settings size={14} />
-                            {communityText('Edit library')}
-                        </Link>
-                        <Link className={styles.themeBrowseLink} to="/themes">
-                            {communityText('Browse themes')}
-                            <ExternalLink size={14} />
-                        </Link>
+                        <QuietLink to="/settings?section=theme&tab=custom">{communityText('Edit library')}</QuietLink>
+                        <QuietLink to="/themes">{communityText('Browse themes')}</QuietLink>
                     </React.Fragment>
                 )}
             />
@@ -234,7 +227,7 @@ const MyStuffThemes = ({username}) => {
                 items={views}
                 value={view}
                 onChange={setView}
-                className={styles.themeTabs}
+                className={styles.tabs}
                 ariaLabel={communityText('Theme library sections')}
                 idPrefix="my-themes"
             />

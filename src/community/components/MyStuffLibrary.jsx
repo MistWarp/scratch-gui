@@ -1,14 +1,15 @@
+/* eslint-disable max-len */
 import {formatCommunityMessage, getCommunityLocale} from '../locale.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {BookmarkMinus, Clock3, Eye, EyeOff, Library, MoreHorizontal} from 'lucide-react';
+import {BookmarkMinus, Eye, EyeOff, Library} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import {formatPlaytime, timeAgoText} from '../format';
 import {projectUrl} from '../api';
-import ProjectThumbnail from './ProjectThumbnail.jsx';
+import ListSkeleton from './ListSkeleton.jsx';
+import StuffRow, {MenuLink, MenuSeparator, MetaLine, StuffList} from './StuffRow.jsx';
 import Button from './ui/Button.jsx';
-import Dropdown, {DropdownItem} from './ui/Dropdown.jsx';
 import EmptyState from './ui/EmptyState.jsx';
 import Notice from './ui/Notice.jsx';
 import SectionHeading from './ui/SectionHeading.jsx';
@@ -33,7 +34,7 @@ const MyStuffLibrary = ({
     const {text: communityText, rich: communityRich} = useCommunityText();
     let body;
     if (loading) {
-        body = <StatusMessage compact>{communityText('Loading your library…')}</StatusMessage>;
+        body = <ListSkeleton count={4} media="square" label={communityText('Loading your library…')} />;
     } else if (error) {
         body = (
             <StatusMessage compact error onRetry={onRetry}>
@@ -43,80 +44,62 @@ const MyStuffLibrary = ({
     } else if (projects.length) {
         body = (
             <React.Fragment>
-                <div className={styles.list}>
+                <StuffList>
                     {projects.map(project => (
-                        <article className={styles.row} key={project.id}>
-                            <div className={styles.project}>
-                                <Link to={projectUrl(project)}>
-                                    <ProjectThumbnail project={project} className={styles.thumb} lazy />
-                                </Link>
-                                <span className={styles.details}>
-                                    <Link to={projectUrl(project)}><strong>{project.title}</strong></Link>
-                                    <small>
-                                        {communityRich('by {user}', {
-                                            user: <UserLink username={project.owner}>{project.owner}</UserLink>
-                                        })}
-                                    </small>
-                                </span>
-                            </div>
-                            <span className={styles.playtime}>
-                                <strong><Clock3 size={15} /> {playtimeLabel(project)}</strong>
-                                {lastPlayedLabel(project) ? <small>{lastPlayedLabel(project)}</small> : null}
-                            </span>
-                            <span className={project.libraryPublic === false ? styles.hidden : styles.public}>
-                                {project.libraryPublic === false ? <EyeOff size={14} /> : <Eye size={14} />}
-                                {project.libraryPublic === false ? communityText('Hidden') : communityText('Public')}
-                            </span>
-                            <Dropdown
-                                renderTrigger={({open, toggle}) => (
-                                    <button
-                                        type="button"
-                                        className={styles.menuButton}
-                                        aria-label={communityText('Library options for {value1}', {
-                                            value1: project.title
-                                        })}
-                                        aria-expanded={open}
-                                        aria-haspopup="menu"
-                                        onClick={toggle}
-                                    ><MoreHorizontal size={19} /></button>
-                                )}
-                            >
-                                {({close}) => (
-                                    <React.Fragment>
-                                        <DropdownItem
-                                            disabled={Boolean(actionBusy)}
-                                            onClick={() => {
-                                                close(false);
-                                                onChangeVisibility(project);
-                                            }}
-                                        >
-                                            {project.libraryPublic === false ? <Eye size={15} /> : <EyeOff size={15} />}
-                                            {project.libraryPublic === false ?
-                                                communityText('Show in public library') :
-                                                communityText('Hide from public library')}
-                                        </DropdownItem>
-                                        <DropdownItem
-                                            danger
-                                            disabled={Boolean(actionBusy)}
-                                            onClick={() => {
-                                                close(false);
-                                                onRemove(project);
-                                            }}
-                                        >
-                                            <BookmarkMinus size={15} />
-                                            {communityText('Remove from library')}
-                                        </DropdownItem>
-                                    </React.Fragment>
-                                )}
-                            </Dropdown>
-                        </article>
+                        <StuffRow
+                            key={project.id}
+                            project={project}
+                            title={project.title}
+                            to={projectUrl(project)}
+                            dimmed={actionBusy === project.id}
+                            meta={<MetaLine
+                                parts={[
+                                    communityRich('by {user}', {
+                                        user: <UserLink key="owner" username={project.owner}>{project.owner}</UserLink>
+                                    }),
+                                    playtimeLabel(project),
+                                    lastPlayedLabel(project),
+                                    project.libraryPublic === false ? (
+                                        <span key="hidden" className={styles.hidden}>
+                                            <EyeOff size={13} aria-hidden="true" />{communityText('Hidden from your profile')}
+                                        </span>
+                                    ) : null
+                                ]}
+                            />}
+                            menuLabel={communityText('Library options for {value1}', {value1: project.title})}
+                            menu={({close}) => (
+                                <React.Fragment>
+                                    <MenuLink
+                                        onClick={() => {
+                                            close(false);
+                                            if (!actionBusy) onChangeVisibility(project);
+                                        }}
+                                    >
+                                        {project.libraryPublic === false ? <Eye size={15} /> : <EyeOff size={15} />}
+                                        {project.libraryPublic === false ?
+                                            communityText('Show in public library') :
+                                            communityText('Hide from public library')}
+                                    </MenuLink>
+                                    <MenuSeparator />
+                                    <MenuLink
+                                        danger
+                                        onClick={() => {
+                                            close(false);
+                                            if (!actionBusy) onRemove(project);
+                                        }}
+                                    >
+                                        <BookmarkMinus size={15} />
+                                        {communityText('Remove from library')}
+                                    </MenuLink>
+                                </React.Fragment>
+                            )}
+                        />
                     ))}
-                </div>
+                </StuffList>
                 {actionError ? <Notice variant="error" className={styles.actionError}>{actionError}</Notice> : null}
                 {hasMore ? (
                     <div className={styles.more}>
                         <Button
-                            variant="secondary"
                             busy={moreBusy}
                             busyLabel={communityText('Loading…')}
                             onClick={onLoadMore}
@@ -129,7 +112,11 @@ const MyStuffLibrary = ({
         );
     } else {
         body = (
-            <EmptyState compact icon={Library} title={communityText('Your library is empty')}>
+            <EmptyState
+                icon={Library}
+                title={communityText('Your library is empty')}
+                action={<Button as={Link} to="/explore">{communityText('Find games on Explore')}</Button>}
+            >
                 {communityText('Use "Save to library" on a project to add it here.')}
             </EmptyState>
         );
@@ -137,10 +124,9 @@ const MyStuffLibrary = ({
     return (
         <section className={styles.library}>
             <SectionHeading
-                icon={Library}
                 title={communityText('Library')}
                 lead={communityText('Games you saved, with your playtime and public profile controls.')}
-                actions={!loading && !error ? (
+                actions={!loading && !error && total ? (
                     <span className={styles.count}>
                         {total === 1 ?
                             communityText('1 game') :

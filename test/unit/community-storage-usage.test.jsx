@@ -2,7 +2,7 @@ import React from 'react';
 import {mount} from 'enzyme';
 import {MemoryRouter} from 'react-router-dom';
 
-import {UploadUsage} from '../../src/community/pages/MyStuff.jsx';
+import MyStuffStorage from '../../src/community/components/MyStuffStorage.jsx';
 
 jest.mock('../../src/community/UserContext.jsx', () => ({useUser: () => ({user: null, login: jest.fn()})}));
 jest.mock('../../src/community/components/GroupTag.jsx', () => () => null);
@@ -15,7 +15,7 @@ jest.mock('../../src/community/api.js', () => ({
 
 const perks = {tier: 'Lite', mistwarp: {maxProjectAssetsBytes: 104857600, maxProjectAssetBytes: 26214400}};
 const render = quota => mount(<MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
-    <UploadUsage
+    <MyStuffStorage
         quota={quota}
         perks={perks}
         onRetry={jest.fn()}
@@ -36,15 +36,14 @@ test('shows the one Rotur storage allowance and what MistWarp uses of it', () =>
         membershipUrl: 'https://rotur.dev/membership'
     });
     const copy = text(wrapper);
-    expect(copy).toContain('3.1 GBUsed across Rotur');
-    expect(copy).toContain('2.4 GBUsed by MistWarp');
-    expect(copy).toContain('5 GBLimit');
-    expect(copy).toContain('1.9 GBRemaining');
-    expect(copy).toContain('62% full');
+    expect(copy).toContain('3.1 GB of 5 GBUsed across Rotur');
+    expect(copy).toContain('Used by MistWarp2.4 GB');
+    expect(copy).toContain('Your other Rotur apps700 MB');
+    expect(copy).toContain('1.9 GB free');
     expect(copy).toContain('which your other Rotur apps share');
     expect(copy).toContain('Your Lite membership allows 100 MB of assets per project and 25 MB per asset.');
     expect(copy).not.toContain('Your Rotur storage is full');
-    expect(wrapper.find('a[href="https://rotur.dev/membership"]')).toHaveLength(0);
+    expect(wrapper.find('a[href="https://rotur.dev/membership"]').text()).toBe('Get more storage');
     wrapper.unmount();
 });
 
@@ -63,10 +62,9 @@ test('says plainly when the storage is full and where to get more', () => {
     const copy = text(wrapper);
     expect(copy).toContain('Your Rotur storage is full');
     expect(copy).toContain('You can still save a project at the same size or smaller.');
-    const link = wrapper.find('a[href="https://rotur.dev/membership"]');
-    expect(link).toHaveLength(1);
-    expect(link.text()).toBe('Rotur membership');
-    expect(copy).toContain('100% full');
+    const links = wrapper.find('a[href="https://rotur.dev/membership"]').map(link => link.text());
+    expect(links).toEqual(['Get more storage', 'Rotur membership']);
+    expect(copy).toContain('0 B free');
     wrapper.unmount();
 });
 
@@ -87,8 +85,8 @@ test('keeps a classroom student on their class storage', () => {
         largest: []
     });
     const copy = text(wrapper);
-    expect(copy).toContain('500 MBUsed');
-    expect(copy).toContain('1 GBLimit');
+    expect(copy).toContain('500 MB of 1 GB');
+    expect(copy).toContain('524 MB free');
     expect(copy).not.toContain('Rotur storage');
     wrapper.unmount();
 });

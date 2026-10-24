@@ -1,0 +1,145 @@
+.overview {
+    display: grid;
+    gap: var(--space-7);
+    min-width: 0;
+}
+
+/* Plain numbers beside the chart, the way the storage page leads with its
+   total. */
+.views {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    gap: var(--space-6);
+    align-items: center;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-5) var(--space-4);
+}
+
+.chart {
+    min-width: 0;
+    margin: 0;
+}
+
+.stat {
+    display: grid;
+    align-content: start;
+    gap: 2px;
+    min-width: 0;
+}
+
+.value {
+    font-size: var(--fs-2xl);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+}
+
+.label {
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+}
+
+.note {
+    color: var(--text-faint);
+    font-size: var(--fs-xs);
+}
+
+.caption {
+    margin: var(--space-2) 0 0;
+    color: var(--text-faint);
+    font-size: var(--fs-xs);
+}
+
+.statsSkeleton {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: start;
+    gap: var(--space-4);
+    height: 220px;
+}
+
+.statsSkeleton span {
+    height: 48px;
+    border-radius: var(--radius-2xs);
+    background: var(--bg-card);
+    animation: pulse 1.4s ease-in-out infinite;
+}
+
+.facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-6);
+}
+
+.fact {
+    margin: 0 0 var(--space-2);
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+}
+
+.fact strong {
+    color: var(--mw-text);
+    font-size: var(--fs-xl);
+    font-weight: 600;
+}
+
+.factNote {
+    margin: var(--space-2) 0 0;
+    color: var(--text-faint);
+    font-size: var(--fs-xs);
+}
+
+.meter {
+    display: block;
+    height: 6px;
+    overflow: hidden;
+    border-radius: var(--radius-2xs);
+    background: var(--bg-raised);
+}
+
+.meter > span {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+}
+
+.meterFull > span {
+    background: var(--mw-danger);
+}
+
+@keyframes pulse {
+    50% {
+        opacity: .55;
+    }
+}
+
+@media (max-width: 720px) {
+    .overview {
+        gap: var(--space-6);
+    }
+
+    .views {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-4);
+    }
+
+    .statsSkeleton {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        row-gap: var(--space-4);
+    }
+
+    .facts {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-5);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .statsSkeleton span {
+        animation: none;
+    }
+}

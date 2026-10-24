@@ -1,0 +1,142 @@
+/* Search on the left, how to show and sort the list on the right, like
+   Explore's compact filters. */
+.toolbar,
+.selectBar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+    margin-bottom: var(--space-3);
+}
+
+.toolbar > form,
+.toolbar > div[role='search'] {
+    flex: 1 1 220px;
+}
+
+.controls {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.selectButton {
+    min-height: 40px;
+}
+
+/* Choosing rows swaps the toolbar for what you can do with them, and stays
+   in reach while you scroll a long list. */
+.selectBar {
+    position: sticky;
+    top: var(--nav-h);
+    z-index: 3;
+    flex-wrap: wrap;
+    min-height: 40px;
+    padding: var(--space-2) 0;
+    background: var(--bg);
+}
+
+.selectCount {
+    flex: 1 1 auto;
+    color: var(--mw-text);
+    font-size: var(--fs-md);
+    font-weight: 600;
+}
+
+.hint,
+.none {
+    margin: 0 0 var(--space-2);
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+}
+
+.none {
+    margin-top: var(--space-4);
+}
+
+.hintLink {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--mw-text);
+    font: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-color: var(--border);
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.hintLink:hover {
+    text-decoration-color: currentColor;
+}
+
+.warn {
+    color: var(--mw-danger);
+}
+
+.stats {
+    display: inline-flex;
+}
+
+.stats > span {
+    margin-inline-start: 0;
+}
+
+.edit {
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    background: transparent;
+    color: var(--text-dim);
+}
+
+.edit:hover {
+    background: var(--bg-card);
+    color: var(--mw-text);
+}
+
+.more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-top: var(--space-5);
+    color: var(--mw-danger);
+    font-size: var(--fs-sm);
+}
+
+@media (max-width: 720px) {
+    .toolbar {
+        flex-wrap: wrap;
+    }
+
+    .toolbar > form,
+    .toolbar > div[role='search'] {
+        flex-basis: 100%;
+    }
+
+    .controls {
+        flex: 1 1 100%;
+    }
+
+    .controls > div {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .stats {
+        display: none;
+    }
+}
+
+@media (max-width: 760px) {
+    .edit {
+        width: 44px;
+        height: 44px;
+        min-height: 44px;
+    }
+}

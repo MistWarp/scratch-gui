@@ -1,18 +1,17 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useState} from 'react';
 import PropTypes from 'prop-types';
-import {Link} from 'react-router-dom';
 import {ArrowUpRight, Pencil, Users} from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
-import UserLink from './UserLink.jsx';
-import Button from './ui/Button.jsx';
-import CardGrid from './ui/CardGrid.jsx';
+import {CardSkeleton, MediaCard, OwnerLink} from './GameCard.jsx';
 import EmptyState from './ui/EmptyState.jsx';
 import SectionHeading from './ui/SectionHeading.jsx';
 import StatusMessage from './ui/StatusMessage.jsx';
 import styles from './SharedProjects.module.css';
 
+// The same card as a game. People who can save straight to it go to the
+// editor; everyone else goes to the project page, where their access lives.
 const SharedProjectCard = ({project}) => {
     const {text: communityText} = useCommunityText();
     const access = {
@@ -23,38 +22,25 @@ const SharedProjectCard = ({project}) => {
     };
     const [role, description] = access[project.myRole] ||
         [communityText('Shared access'), communityText('Open this project to see your access.')];
+    const edit = project.canSaveDirectly;
     return (
-        <article className={styles.card}>
-            <Link
-                className={styles.preview}
-                to={projectUrl(project)}
-                aria-label={communityText('View {value1}', {value1: project.title})}
-            >
-                <ProjectThumbnail project={project} lazy />
-            </Link>
-            <div className={styles.details}>
-                <Link className={styles.title} to={projectUrl(project)}>{project.title}</Link>
-                <div className={styles.owner}>
-                    <span>{communityText('Shared by')}</span>
-                    <UserLink username={project.owner}>{project.owner}</UserLink>
-                </div>
-                <div className={styles.footer}>
-                    <span className={styles.role} title={description}>{role}</span>
-                    <Button
-                        as="a"
-                        href={project.canSaveDirectly ?
-                            editorUrl({platformProject: project.id}) : projectUrl(project)}
-                        variant={project.canSaveDirectly ? 'primary' : 'secondary'}
-                        aria-label={project.canSaveDirectly ?
-                            communityText('Edit {value1}', {value1: project.title}) :
-                            communityText('Open {value1}', {value1: project.title})}
-                    >
-                        {project.canSaveDirectly ? <Pencil size={14} /> : <ArrowUpRight size={14} />}
-                        {project.canSaveDirectly ? communityText('Edit project') : communityText('Open project')}
-                    </Button>
-                </div>
-            </div>
-        </article>
+        <MediaCard
+            href={edit ? editorUrl({platformProject: project.id}) : null}
+            to={edit ? null : projectUrl(project)}
+            title={project.title}
+            detail={communityText('{value1}: {value2}', {value1: role, value2: description})}
+            media={<ProjectThumbnail project={project} fallbackClassName={styles.fallback} lazy />}
+            wrapMeta
+            meta={(
+                <React.Fragment>
+                    <OwnerLink username={project.owner} />
+                    <span className={styles.open}>
+                        {edit ? <Pencil size={12} aria-hidden="true" /> : <ArrowUpRight size={12} aria-hidden="true" />}
+                        {edit ? communityText('Edit project') : communityText('Open project')}
+                    </span>
+                </React.Fragment>
+            )}
+        />
     );
 };
 
@@ -84,18 +70,22 @@ const SharedProjects = () => {
     if (error) {
         body = <StatusMessage compact error onRetry={retry}>{error}</StatusMessage>;
     } else if (!projects) {
-        body = <StatusMessage compact>{communityText('Loading shared projects…')}</StatusMessage>;
+        body = (
+            <div className={styles.grid} role="status" aria-label={communityText('Loading shared projects…')}>
+                {[0, 1, 2].map(index => <CardSkeleton key={index} />)}
+            </div>
+        );
     } else if (projects.length) {
         body = (
-            <CardGrid min={260}>
+            <div className={styles.grid}>
                 {projects.map(project => (
                     <SharedProjectCard key={project.id} project={project} />
                 ))}
-            </CardGrid>
+            </div>
         );
     } else {
         body = (
-            <EmptyState compact icon={Users} title={communityText('No shared projects yet')}>
+            <EmptyState icon={Users} title={communityText('No shared projects yet')}>
                 {communityText('Projects will appear here when someone adds you to their team.')}
             </EmptyState>
         );
@@ -103,7 +93,6 @@ const SharedProjects = () => {
     return (
         <section className={styles.section}>
             <SectionHeading
-                icon={Users}
                 title={communityText('Shared with you')}
                 lead={communityText('Pick up where your team left off.')}
                 actions={projects && projects.length ? (

@@ -1,0 +1,106 @@
+.panel {
+    min-width: 0;
+}
+
+.tabs {
+    margin-bottom: var(--space-5);
+}
+
+/* Cards three across, like Explore beside its filters. */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-5) var(--space-4);
+}
+
+/* A saved theme reads like a game card: the preview, then its name, with
+   Apply and Remove beside it rather than in a box of their own. */
+.card {
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.preview {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: var(--radius-xs);
+    outline: 1px solid var(--border);
+    outline-offset: -1px;
+    object-fit: cover;
+}
+
+.body {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.text {
+    display: grid;
+    flex: 1 1 auto;
+    gap: 2px;
+    min-width: 0;
+}
+
+.text strong {
+    overflow: hidden;
+    font-size: var(--fs-md);
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.text span {
+    overflow: hidden;
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.applied:disabled {
+    background: transparent;
+    color: var(--text-dim);
+    opacity: 1;
+}
+
+.remove {
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+    background: transparent;
+    color: var(--text-dim);
+}
+
+.remove:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--mw-danger) 12%, transparent);
+    color: var(--mw-danger);
+}
+
+@media (max-width: 860px) {
+    .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-4) var(--space-3);
+    }
+}
+
+@media (max-width: 560px) {
+    .body {
+        flex-wrap: wrap;
+    }
+
+    .text {
+        flex-basis: 100%;
+    }
+}
+
+@media (max-width: 760px) {
+    .remove {
+        width: 36px;
+        height: 36px;
+        min-height: 36px;
+    }
+}

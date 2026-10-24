@@ -1,0 +1,213 @@
+.storage {
+    display: grid;
+    gap: var(--space-4);
+}
+
+.storage > * {
+    margin-bottom: 0;
+}
+
+.more {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+    font-weight: 500;
+}
+
+.more:hover {
+    color: var(--mw-text);
+    text-decoration: underline;
+}
+
+/* Links take the accent here rather than the warning notice's colour. */
+.storage .link {
+    color: var(--accent-strong);
+}
+
+.listHeading {
+    margin-top: var(--space-5);
+}
+
+.summary {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.used {
+    margin: 0;
+    color: var(--text-dim);
+    font-size: var(--fs-md);
+}
+
+.scope {
+    margin-inline-start: var(--space-2);
+    color: var(--text-faint);
+    font-size: var(--fs-sm);
+}
+
+.used strong {
+    color: var(--mw-text);
+    font-size: var(--fs-3xl);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+/* One bar for the whole allowance, split by where the space goes. */
+.meter {
+    display: flex;
+    gap: 2px;
+    height: 10px;
+    overflow: hidden;
+    border-radius: var(--radius-2xs);
+    background: var(--bg-raised);
+}
+
+.meter .part {
+    height: 100%;
+    min-width: 3px;
+}
+
+.projects,
+.mistwarp {
+    background: var(--accent);
+}
+
+.rotur {
+    background: color-mix(in srgb, var(--accent) 40%, var(--bg-raised));
+}
+
+.backpack {
+    background: color-mix(in srgb, var(--accent) 50%, var(--bg-raised));
+}
+
+.pending {
+    background: var(--text-faint);
+}
+
+.meterFull .part {
+    background: var(--mw-danger);
+}
+
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    margin: 0;
+    padding: 0;
+    color: var(--mw-text);
+    font-size: var(--fs-sm);
+    list-style: none;
+}
+
+.legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.swatch {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-2xs);
+}
+
+.free {
+    margin-inline-start: auto;
+    color: var(--text-dim);
+}
+
+.faint {
+    color: var(--text-faint);
+}
+
+.note {
+    max-width: 68ch;
+    margin: 0;
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+}
+
+.list {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 0;
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.icon {
+    display: grid;
+    flex: 0 0 auto;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-xs);
+    background: var(--bg-card);
+    color: var(--text-dim);
+    place-items: center;
+}
+
+/* Each project's name over a thin bar sized against the largest one. */
+.row .part {
+    display: grid;
+    flex: 1 1 auto;
+    gap: 6px;
+    min-width: 0;
+}
+
+.name {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    min-width: 0;
+    overflow: hidden;
+    font-size: var(--fs-md);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.name a:hover {
+    text-decoration: underline;
+}
+
+.name .faint {
+    font-size: var(--fs-xs);
+}
+
+.bar {
+    display: block;
+    max-width: 240px;
+    height: 3px;
+    border-radius: var(--radius-2xs);
+    background: var(--border-soft);
+}
+
+.bar > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+.size {
+    flex: 0 0 auto;
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 520px) {
+    .free {
+        margin-inline-start: 0;
+    }
+}
