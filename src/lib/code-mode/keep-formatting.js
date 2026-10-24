@@ -63,6 +63,24 @@ const skeleton = (text, units) => {
     return parts.join('\u0001');
 };
 
+const squash = text => text.replace(/\s+/g, ' ').trim();
+
+const placedGaps = (text, units) => {
+    const parts = [];
+    for (let i = 1; i < units.length; i++) {
+        const gap = squash(text.slice(units[i - 1].to, units[i].from));
+        if (gap) parts.push(`${units[i].key}\u0002${gap}`);
+    }
+    return parts.join('\u0001');
+};
+
+const sameGaps = (a, b) => {
+    if (!a || !b) return false;
+    const left = unitList(a.sourceMap, a.text.length);
+    const right = unitList(b.sourceMap, b.text.length);
+    return Boolean(left && right) && placedGaps(a.text, left) === placedGaps(b.text, right);
+};
+
 const indentAt = (text, pos) => {
     const lineStart = text.lastIndexOf('\n', pos - 1) + 1;
     const indent = text.slice(lineStart, pos);
@@ -163,10 +181,12 @@ const composeCanonicalOrder = context => {
         const unit = nextUnits[i];
         if (i > 0) {
             const before = nextUnits[i - 1];
+            const nextGap = next.text.slice(before.to, unit.from);
             const keepGap = previousNext.get(before.key) === unit.key &&
                 formattedNext.get(before.key) === unit.key &&
-                previous.text.slice(previousByKey.get(before.key).to, previousByKey.get(unit.key).from) ===
-                    next.text.slice(before.to, unit.from);
+                previous.text.slice(previousByKey.get(before.key).to, previousByKey.get(unit.key).from) === nextGap &&
+                squash(formatted.text.slice(formattedByKey.get(before.key).to, formattedByKey.get(unit.key).from)) ===
+                    squash(nextGap);
             if (keepGap) output.push('formatted', formattedByKey.get(before.key).to, formattedByKey.get(unit.key).from);
             else output.push('next', before.to, unit.from);
         }
@@ -195,9 +215,12 @@ const planInsertions = (context, present) => {
         const unit = order[i];
         if (present.has(unit.key)) continue;
         const region = regions.get(unit.key);
+        const declaration = fieldOf(unit.key) === 'declarations';
+        const sameKind = anchor => !declaration || fieldOf(anchor.key) === 'declarations';
         let placed = false;
         for (let j = i - 1; j >= 0 && !placed; j--) {
             const anchor = order[j];
+            if (!sameKind(anchor)) continue;
             if (regions.get(anchor.key) !== region || !(present.has(anchor.key) || rootOf.has(anchor.key))) continue;
             const root = rootOf.get(anchor.key) || anchor.key;
             add(after, root, {unit, separator: separator(anchor, unit, j === i - 1)});
@@ -206,9 +229,16 @@ const planInsertions = (context, present) => {
         }
         for (let j = i + 1; j < order.length && !placed; j++) {
             const anchor = order[j];
-            if (regions.get(anchor.key) !== region || !present.has(anchor.key)) continue;
+            if (!sameKind(anchor) || regions.get(anchor.key) !== region || !present.has(anchor.key)) continue;
             add(before, anchor.key, {unit, separator: separator(unit, anchor, j === i + 1)});
             placed = true;
+        }
+        if (!placed && declaration) {
+            const anchor = order.find(other => regions.get(other.key) === region && present.has(other.key));
+            if (anchor) {
+                add(before, anchor.key, {unit, separator: separator(unit, anchor, false)});
+                placed = true;
+            }
         }
         if (!placed) return null;
     }
@@ -225,6 +255,7 @@ const mergeGaps = (text, pieces) => {
 const composeInPlace = context => {
     const {previous, formatted, next, previousUnits, formattedUnits, nextUnits, previousByKey} = context;
     if (skeleton(previous.text, previousUnits) !== skeleton(next.text, nextUnits)) return null;
+    if (skeleton(formatted.text, formattedUnits) !== skeleton(previous.text, previousUnits)) return null;
     for (const [units, sourceMap] of [[nextUnits, next.sourceMap], [formattedUnits, formatted.sourceMap]]) {
         for (const unit of inner(units)) {
             const was = previousByKey.get(unit.key);
@@ -320,7 +351,7 @@ const mapSourceMap = (context, output) => {
 const keepFormatting = ({previous, formatted, next}) => {
     const canonical = {text: next.text, sourceMap: next.sourceMap};
     if (!previous || !formatted) return canonical;
-    if (next.text === previous.text && sameKeys(previous.sourceMap, next.sourceMap)) {
+    if (next.text === previous.text && sameKeys(previous.sourceMap, next.sourceMap) && sameGaps(formatted, next)) {
         return {text: formatted.text, sourceMap: formatted.sourceMap};
     }
     const nextUnits = unitList(next.sourceMap, next.text.length);
@@ -366,4 +397,4 @@ const remapLocked = (lockedScripts, sourceMap) => (lockedScripts || []).map(item
     return range ? {...item, from: range.from, to: range.to, line: range.line, endLine: range.endLine} : null;
 }).filter(Boolean);
 
-export {fillBlocks, keepFormatting, remapLocked};
+export {fillBlocks, keepFormatting, remapLocked, sameGaps};

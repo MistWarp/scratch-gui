@@ -39,8 +39,32 @@ const stripKeptBlocks = change => {
     return {...change, blocks};
 };
 
-const keepLivePositions = (scope, targetId, parsed, result, change) => {
-    const paired = (result.changed || []).filter(item => item.topId === item.newTopId).map(item => item.topId);
+const replacedInPlace = (parsed, result, previous) => {
+    const removed = (result.removed && result.removed.scripts) || [];
+    const created = (result.created && result.created.scripts) || [];
+    const oldRanges = (previous && previous.sourceMap && previous.sourceMap.scripts) || {};
+    if (!removed.length || !created.length) return [];
+    const oldOrder = Object.keys(oldRanges).sort((a, b) => oldRanges[a].from - oldRanges[b].from);
+    const newStarts = (parsed.scripts || []).filter(script => script.span)
+        .map(script => script.span[0]);
+    const scripts = (result.sourceMap && result.sourceMap.scripts) || {};
+    const pairs = [];
+    const used = new Set();
+    for (const newTopId of created) {
+        const range = scripts[newTopId];
+        const slot = range ? newStarts.indexOf(range.from) : -1;
+        const topId = slot === -1 ? null : oldOrder[slot];
+        if (topId && removed.includes(topId) && !used.has(topId)) {
+            used.add(topId);
+            pairs.push({topId, newTopId});
+        }
+    }
+    return pairs;
+};
+
+const keepLivePositions = (scope, targetId, parsed, result, change, previous) => {
+    const paired = (result.changed || []).filter(item => item.topId && item.newTopId)
+        .concat(replacedInPlace(parsed, result, previous));
     if (!paired.length) return change;
     const target = (scope.targets || []).find(entry => entry.id === targetId);
     const live = target && target.blocks;
@@ -49,13 +73,13 @@ const keepLivePositions = (scope, targetId, parsed, result, change) => {
         .map(script => script.span[0]));
     const scripts = (result.sourceMap && result.sourceMap.scripts) || {};
     let blocks = null;
-    for (const topId of paired) {
-        const range = scripts[topId];
-        const block = change.blocks[topId];
+    for (const {topId, newTopId} of paired) {
+        const range = scripts[newTopId];
+        const block = change.blocks[newTopId];
         const old = live[topId];
         if (!range || !unplaced.has(range.from) || !block || !old || typeof old.x !== 'number') continue;
         blocks = blocks || {...change.blocks};
-        blocks[topId] = {...block, x: old.x, y: old.y};
+        blocks[newTopId] = {...block, x: old.x, y: old.y};
     }
     return blocks ? {...change, blocks} : change;
 };
@@ -119,7 +143,8 @@ const createEngine = () => {
             verifyRoundTrip,
             parsed: {text: source, value: parsed}
         });
-        const change = keepLivePositions(scope, targetId, parsed, result, stripKeptBlocks(toReplaceChange(result)));
+        const change = keepLivePositions(scope, targetId, parsed, result, stripKeptBlocks(toReplaceChange(result)),
+            previous);
         return {
             result,
             built: {
