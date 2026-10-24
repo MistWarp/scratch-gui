@@ -28,6 +28,7 @@ import ActivityCard from '../components/ActivityCard.jsx';
 import FeaturedProject from '../components/FeaturedProject.jsx';
 import ProfileBadges from '../components/ProfileBadges.jsx';
 import ProfilePosts from '../components/ProfilePosts.jsx';
+import ProfileConnections from '../components/ProfileConnections.jsx';
 import ThemeCard from '../components/ThemeCard.jsx';
 import GroupTag from '../components/GroupTag.jsx';
 import UserLink from '../components/UserLink.jsx';
@@ -894,6 +895,12 @@ const Profile = () => {
                                 ) : null}
                                 {typeof profile.index === 'number' ? <span>{communityText('Account #{value1}', {value1: profile.index})}</span> : null}
                             </div>
+                            {Array.isArray(profile.connections) && profile.connections.some(connection => connection && connection.username) ? (
+                                <div className={styles.railSection}>
+                                    <h2>{communityText('Connections')}</h2>
+                                    <ProfileConnections connections={profile.connections} />
+                                </div>
+                            ) : null}
                             {activities.length ? (
                                 <div className={styles.railSection}>
                                     <h2>{communityText('Activity')}</h2>

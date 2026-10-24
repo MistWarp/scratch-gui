@@ -93,7 +93,7 @@
     "src/community/pages/ManageProject.jsx:72",
     "src/community/pages/ManageProject.jsx:778",
     "src/community/pages/ManageProject.jsx:813",
-    "src/community/pages/Profile.jsx:899",
+    "src/community/pages/Profile.jsx:906",
     "src/community/pages/Wallet.jsx:232",
     "src/community/pages/admin/StatsOverview.jsx:148",
     "src/community/pages/admin/UserDetailCard.jsx:345"
@@ -505,8 +505,8 @@
     "src/community/pages/Explore.jsx:261",
     "src/community/pages/Following.jsx:67",
     "src/community/pages/MyStuff.jsx:1553",
-    "src/community/pages/Profile.jsx:445",
-    "src/community/pages/Profile.jsx:622",
+    "src/community/pages/Profile.jsx:446",
+    "src/community/pages/Profile.jsx:623",
     "src/community/pages/Project.jsx:616",
     "src/community/pages/RemixTree.jsx:248",
     "src/community/pages/Search.jsx:213",
@@ -725,7 +725,7 @@
   ],
   "Posts": [
     "src/community/components/ExploreNav.jsx:17",
-    "src/community/pages/Profile.jsx:538"
+    "src/community/pages/Profile.jsx:539"
   ],
   "Groups": [
     "src/community/components/ExploreNav.jsx:18"
@@ -735,7 +735,7 @@
     "src/community/components/Footer.jsx:41",
     "src/community/components/MyStuffThemes.jsx:218",
     "src/community/pages/MyStuff.jsx:498",
-    "src/community/pages/Profile.jsx:539"
+    "src/community/pages/Profile.jsx:540"
   ],
   "Bounties": [
     "src/community/components/ExploreNav.jsx:22",
@@ -845,7 +845,8 @@
     "src/community/components/Footer.jsx:48"
   ],
   "Discord": [
-    "src/community/components/Footer.jsx:53"
+    "src/community/components/Footer.jsx:53",
+    "src/community/components/ProfileConnections.jsx:29"
   ],
   "More": [
     "src/community/components/Footer.jsx:56"
@@ -862,7 +863,8 @@
     "src/community/components/Footer.jsx:59"
   ],
   "GitHub": [
-    "src/community/components/Footer.jsx:66"
+    "src/community/components/Footer.jsx:66",
+    "src/community/components/ProfileConnections.jsx:30"
   ],
   "Rotur": [
     "src/community/components/Footer.jsx:71"
@@ -1020,7 +1022,7 @@
   ],
   "Comments": [
     "src/community/components/HomeCommunity.jsx:201",
-    "src/community/pages/Profile.jsx:700",
+    "src/community/pages/Profile.jsx:701",
     "src/community/pages/Space.jsx:323",
     "src/community/pages/Studio.jsx:86",
     "src/community/pages/Studio.jsx:152",
@@ -1054,7 +1056,7 @@
   "Following": [
     "src/community/components/HomeDiscovery.jsx:97",
     "src/community/pages/Collection.jsx:76",
-    "src/community/pages/Profile.jsx:825",
+    "src/community/pages/Profile.jsx:826",
     "src/community/pages/Space.jsx:247",
     "src/community/pages/Studio.jsx:120",
     "src/community/pages/admin/UserDetailCard.jsx:468"
@@ -1062,7 +1064,7 @@
   "Follow": [
     "src/community/components/HomeDiscovery.jsx:97",
     "src/community/pages/Collection.jsx:76",
-    "src/community/pages/Profile.jsx:825",
+    "src/community/pages/Profile.jsx:826",
     "src/community/pages/Space.jsx:247"
   ],
   "Play here": [
@@ -1271,7 +1273,7 @@
   ],
   "Last played {value1}": [
     "src/community/components/MyStuffLibrary.jsx:26",
-    "src/community/pages/Profile.jsx:116"
+    "src/community/pages/Profile.jsx:117"
   ],
   "Loading your library…": [
     "src/community/components/MyStuffLibrary.jsx:36"
@@ -1289,7 +1291,7 @@
     "src/community/pages/Challenge.jsx:559",
     "src/community/pages/Challenge.jsx:574",
     "src/community/pages/ManageSpace.jsx:775",
-    "src/community/pages/Profile.jsx:577"
+    "src/community/pages/Profile.jsx:578"
   ],
   "Hidden": [
     "src/community/components/MyStuffLibrary.jsx:68",
@@ -1387,7 +1389,7 @@
   ],
   "Apply": [
     "src/community/components/MyStuffThemes.jsx:146",
-    "src/community/pages/Profile.jsx:943",
+    "src/community/pages/Profile.jsx:950",
     "src/community/pages/admin/UserDetailCard.jsx:614"
   ],
   "Remove {value1}": [
@@ -1467,8 +1469,8 @@
     "src/community/pages/ManageSpace.jsx:28",
     "src/community/pages/ManageSpace.jsx:770",
     "src/community/pages/Notifications.jsx:103",
-    "src/community/pages/Profile.jsx:537",
-    "src/community/pages/Profile.jsx:608",
+    "src/community/pages/Profile.jsx:538",
+    "src/community/pages/Profile.jsx:609",
     "src/community/pages/Search.jsx:224",
     "src/community/pages/Settings.jsx:75",
     "src/community/pages/Space.jsx:310",
@@ -1735,7 +1737,7 @@
   ],
   "This user has chosen not to share what they play.": [
     "src/community/components/PlaytimeLibrary.jsx:36",
-    "src/community/pages/Profile.jsx:599"
+    "src/community/pages/Profile.jsx:600"
   ],
   "No library games with playtime yet": [
     "src/community/components/PlaytimeLibrary.jsx:43"
@@ -1751,7 +1753,7 @@
   ],
   "Only visible to you": [
     "src/community/components/PlaytimeLibrary.jsx:58",
-    "src/community/pages/Profile.jsx:560"
+    "src/community/pages/Profile.jsx:561"
   ],
   "Open attachment": [
     "src/community/components/PostAttachment.jsx:20"
@@ -2033,6 +2035,15 @@
   "Edit badge order and visibility": [
     "src/community/components/ProfileBadges.jsx:365"
   ],
+  "Scratch": [
+    "src/community/components/ProfileConnections.jsx:31"
+  ],
+  "YouTube": [
+    "src/community/components/ProfileConnections.jsx:32"
+  ],
+  "{value1} on {value2}": [
+    "src/community/components/ProfileConnections.jsx:64"
+  ],
   "No posts yet": [
     "src/community/components/ProfilePosts.jsx:104"
   ],
@@ -2173,7 +2184,7 @@
     "src/community/components/SharedProjects.jsx:50",
     "src/community/pages/Challenge.jsx:430",
     "src/community/pages/ManageProject.jsx:603",
-    "src/community/pages/Profile.jsx:568"
+    "src/community/pages/Profile.jsx:569"
   ],
   "Views in the last seven days": [
     "src/community/components/ProjectCard.jsx:26"
@@ -2762,7 +2773,7 @@
   "Report": [
     "src/community/components/SocialPost.jsx:398",
     "src/community/pages/Bounty.jsx:149",
-    "src/community/pages/Profile.jsx:866",
+    "src/community/pages/Profile.jsx:867",
     "src/community/pages/project/ProjectHeader.jsx:260"
   ],
   "Unblock {value1}": [
@@ -2875,7 +2886,7 @@
   "Load more projects": [
     "src/community/components/SpaceProjectPicker.jsx:252",
     "src/community/pages/MyStuff.jsx:1555",
-    "src/community/pages/Profile.jsx:624"
+    "src/community/pages/Profile.jsx:625"
   ],
   "Could not load more projects. Try again.": [
     "src/community/components/SpaceProjectPicker.jsx:255"
@@ -3535,7 +3546,7 @@
     "src/community/pages/Admin.jsx:146",
     "src/community/pages/Admin.jsx:156",
     "src/community/pages/Admin.jsx:158",
-    "src/community/pages/Profile.jsx:980",
+    "src/community/pages/Profile.jsx:987",
     "src/community/pages/admin/ReportsSection.jsx:110",
     "src/community/pages/admin/UserDetailCard.jsx:204"
   ],
@@ -4268,7 +4279,7 @@
   "Could not load more projects.": [
     "src/community/pages/Explore.jsx:172",
     "src/community/pages/MyStuff.jsx:1559",
-    "src/community/pages/Profile.jsx:628",
+    "src/community/pages/Profile.jsx:629",
     "src/community/pages/Search.jsx:125"
   ],
   "Sort": [
@@ -4533,7 +4544,7 @@
   ],
   "Account #{value1}": [
     "src/community/pages/Leaderboard.jsx:162",
-    "src/community/pages/Profile.jsx:895"
+    "src/community/pages/Profile.jsx:896"
   ],
   "Account number unavailable": [
     "src/community/pages/Leaderboard.jsx:163"
@@ -4722,7 +4733,7 @@
   ],
   "Turn off comments": [
     "src/community/pages/ManageProject.jsx:662",
-    "src/community/pages/Profile.jsx:709",
+    "src/community/pages/Profile.jsx:710",
     "src/community/pages/project/ProjectActivity.jsx:89"
   ],
   "Save publishing settings": [
@@ -5885,220 +5896,223 @@
     "src/community/pages/Posts.jsx:195"
   ],
   "Moderation action failed.": [
-    "src/community/pages/Profile.jsx:286"
+    "src/community/pages/Profile.jsx:287"
   ],
   "Banned from MistWarp by site admins.": [
-    "src/community/pages/Profile.jsx:296",
-    "src/community/pages/Profile.jsx:452"
+    "src/community/pages/Profile.jsx:297",
+    "src/community/pages/Profile.jsx:453"
   ],
   "Could not update follow.": [
-    "src/community/pages/Profile.jsx:343"
+    "src/community/pages/Profile.jsx:344"
   ],
   "Could not load this profile.": [
-    "src/community/pages/Profile.jsx:461"
+    "src/community/pages/Profile.jsx:462"
   ],
   "User not found": [
-    "src/community/pages/Profile.jsx:465"
+    "src/community/pages/Profile.jsx:466"
   ],
   "Browse projects": [
-    "src/community/pages/Profile.jsx:466",
+    "src/community/pages/Profile.jsx:467",
     "src/community/pages/Project.jsx:593",
     "src/community/pages/Project.jsx:605"
   ],
   "This user does not exist on Rotur.": [
-    "src/community/pages/Profile.jsx:467"
+    "src/community/pages/Profile.jsx:468"
   ],
   "Block {value1}?": [
-    "src/community/pages/Profile.jsx:502"
-  ],
-  "Block user": [
     "src/community/pages/Profile.jsx:503"
   ],
+  "Block user": [
+    "src/community/pages/Profile.jsx:504"
+  ],
   "Blocking…": [
-    "src/community/pages/Profile.jsx:505"
+    "src/community/pages/Profile.jsx:506"
   ],
   "You will stop receiving MistWarp comments and notifications from each other.": [
-    "src/community/pages/Profile.jsx:509"
+    "src/community/pages/Profile.jsx:510"
   ],
   "Not on MistWarp yet. This is {value1}'s Rotur profile.": [
-    "src/community/pages/Profile.jsx:526"
+    "src/community/pages/Profile.jsx:527"
   ],
   "Recent activity": [
-    "src/community/pages/Profile.jsx:557"
+    "src/community/pages/Profile.jsx:558"
   ],
   "View game library": [
-    "src/community/pages/Profile.jsx:559"
+    "src/community/pages/Profile.jsx:560"
   ],
   "Activity is private": [
-    "src/community/pages/Profile.jsx:595"
+    "src/community/pages/Profile.jsx:596"
   ],
   "No recent activity": [
-    "src/community/pages/Profile.jsx:596",
+    "src/community/pages/Profile.jsx:597",
     "src/community/pages/admin/UserDetailCard.jsx:588"
   ],
   "Games added to the library will appear here after they are played.": [
-    "src/community/pages/Profile.jsx:600"
+    "src/community/pages/Profile.jsx:601"
   ],
   "Unshared projects": [
-    "src/community/pages/Profile.jsx:637"
-  ],
-  "Only admins can see these projects.": [
     "src/community/pages/Profile.jsx:638"
   ],
+  "Only admins can see these projects.": [
+    "src/community/pages/Profile.jsx:639"
+  ],
   "Recent reviews": [
-    "src/community/pages/Profile.jsx:653"
+    "src/community/pages/Profile.jsx:654"
   ],
   "Loading reviews…": [
-    "src/community/pages/Profile.jsx:654",
+    "src/community/pages/Profile.jsx:655",
     "src/community/pages/project/ReviewPanel.jsx:192"
   ],
   "No reviews yet": [
-    "src/community/pages/Profile.jsx:656",
+    "src/community/pages/Profile.jsx:657",
     "src/community/pages/project/ReviewPanel.jsx:195"
   ],
   "Reviews this user writes on projects will appear here.": [
-    "src/community/pages/Profile.jsx:657"
+    "src/community/pages/Profile.jsx:658"
   ],
   "{value1} out of 5 stars": [
-    "src/community/pages/Profile.jsx:674",
+    "src/community/pages/Profile.jsx:675",
     "src/community/pages/project/ReviewPanel.jsx:22"
   ],
   "No written review.": [
-    "src/community/pages/Profile.jsx:687"
+    "src/community/pages/Profile.jsx:688"
   ],
   "Turning on…": [
-    "src/community/pages/Profile.jsx:706"
+    "src/community/pages/Profile.jsx:707"
   ],
   "Turning off…": [
-    "src/community/pages/Profile.jsx:706"
+    "src/community/pages/Profile.jsx:707"
   ],
   "Turn on comments": [
-    "src/community/pages/Profile.jsx:709",
+    "src/community/pages/Profile.jsx:710",
     "src/community/pages/project/ProjectActivity.jsx:89"
   ],
   "Published themes": [
-    "src/community/pages/Profile.jsx:743"
+    "src/community/pages/Profile.jsx:744"
   ],
   "Loading themes…": [
-    "src/community/pages/Profile.jsx:745",
+    "src/community/pages/Profile.jsx:746",
     "src/community/pages/Themes.jsx:203"
   ],
   "Could not load published themes.": [
-    "src/community/pages/Profile.jsx:747"
+    "src/community/pages/Profile.jsx:748"
   ],
   "No published themes yet": [
-    "src/community/pages/Profile.jsx:753"
-  ],
-  "Themes this user publishes will appear here.": [
     "src/community/pages/Profile.jsx:754"
   ],
+  "Themes this user publishes will appear here.": [
+    "src/community/pages/Profile.jsx:755"
+  ],
   "followers": [
-    "src/community/pages/Profile.jsx:806"
+    "src/community/pages/Profile.jsx:807"
   ],
   "following": [
-    "src/community/pages/Profile.jsx:808",
-    "src/community/pages/Profile.jsx:810"
+    "src/community/pages/Profile.jsx:809",
+    "src/community/pages/Profile.jsx:811"
   ],
   "Unfollowing…": [
-    "src/community/pages/Profile.jsx:821"
+    "src/community/pages/Profile.jsx:822"
   ],
   "Following…": [
-    "src/community/pages/Profile.jsx:821"
+    "src/community/pages/Profile.jsx:822"
   ],
   "Send {value1} credits on Rotur": [
-    "src/community/pages/Profile.jsx:834",
+    "src/community/pages/Profile.jsx:835",
     "src/community/pages/project/ProjectHeader.jsx:97"
   ],
   "Donate": [
-    "src/community/pages/Profile.jsx:836"
+    "src/community/pages/Profile.jsx:837"
   ],
   "Unmute": [
-    "src/community/pages/Profile.jsx:847",
+    "src/community/pages/Profile.jsx:848",
     "src/community/pages/Settings.jsx:816"
   ],
   "Mute": [
-    "src/community/pages/Profile.jsx:847"
+    "src/community/pages/Profile.jsx:848"
   ],
   "Unblock": [
-    "src/community/pages/Profile.jsx:858",
+    "src/community/pages/Profile.jsx:859",
     "src/community/pages/Settings.jsx:798",
     "src/community/pages/admin/ExtensionManager.jsx:299"
   ],
   "Block": [
-    "src/community/pages/Profile.jsx:858"
+    "src/community/pages/Profile.jsx:859"
   ],
   "Sign in to follow": [
-    "src/community/pages/Profile.jsx:871"
+    "src/community/pages/Profile.jsx:872"
   ],
   "Edit profile": [
-    "src/community/pages/Profile.jsx:882"
+    "src/community/pages/Profile.jsx:883"
   ],
   "About me": [
-    "src/community/pages/Profile.jsx:886"
+    "src/community/pages/Profile.jsx:887"
   ],
   "No bio yet.": [
-    "src/community/pages/Profile.jsx:888"
+    "src/community/pages/Profile.jsx:889"
   ],
   "Joined {value1}": [
-    "src/community/pages/Profile.jsx:893"
+    "src/community/pages/Profile.jsx:894"
+  ],
+  "Connections": [
+    "src/community/pages/Profile.jsx:900"
   ],
   "Moderate @{value1}": [
-    "src/community/pages/Profile.jsx:914"
+    "src/community/pages/Profile.jsx:921"
   ],
   "Only admins can see these tools.": [
-    "src/community/pages/Profile.jsx:915"
+    "src/community/pages/Profile.jsx:922"
   ],
   "Banned": [
-    "src/community/pages/Profile.jsx:918",
+    "src/community/pages/Profile.jsx:925",
     "src/community/pages/admin/UserDetailCard.jsx:379",
     "src/community/pages/admin/UserManager.jsx:159",
     "src/community/pages/admin/labels.js:5"
   ],
   "Good standing": [
-    "src/community/pages/Profile.jsx:918",
+    "src/community/pages/Profile.jsx:925",
     "src/community/pages/admin/labels.js:2"
   ],
   "Account standing": [
-    "src/community/pages/Profile.jsx:924",
+    "src/community/pages/Profile.jsx:931",
     "src/community/pages/admin/UserDetailCard.jsx:597"
   ],
   "Reason shown to the user": [
-    "src/community/pages/Profile.jsx:932"
+    "src/community/pages/Profile.jsx:939"
   ],
   "Standing updated.": [
-    "src/community/pages/Profile.jsx:941",
+    "src/community/pages/Profile.jsx:948",
     "src/community/pages/admin/UserDetailCard.jsx:189"
   ],
   "Private moderation message": [
-    "src/community/pages/Profile.jsx:947"
+    "src/community/pages/Profile.jsx:954"
   ],
   "Message sent.": [
-    "src/community/pages/Profile.jsx:957",
+    "src/community/pages/Profile.jsx:964",
     "src/community/pages/admin/UserDetailCard.jsx:212"
   ],
   "Send message": [
-    "src/community/pages/Profile.jsx:959"
+    "src/community/pages/Profile.jsx:966"
   ],
   "Profile comments enabled.": [
-    "src/community/pages/Profile.jsx:968"
+    "src/community/pages/Profile.jsx:975"
   ],
   "Profile comments disabled.": [
-    "src/community/pages/Profile.jsx:968"
+    "src/community/pages/Profile.jsx:975"
   ],
   "Enable comments": [
-    "src/community/pages/Profile.jsx:970"
+    "src/community/pages/Profile.jsx:977"
   ],
   "Disable comments": [
-    "src/community/pages/Profile.jsx:970"
+    "src/community/pages/Profile.jsx:977"
   ],
   "User unbanned.": [
-    "src/community/pages/Profile.jsx:978"
+    "src/community/pages/Profile.jsx:985"
   ],
   "User banned.": [
-    "src/community/pages/Profile.jsx:978"
+    "src/community/pages/Profile.jsx:985"
   ],
   "Unban user": [
-    "src/community/pages/Profile.jsx:980"
+    "src/community/pages/Profile.jsx:987"
   ],
   "Project not found": [
     "src/community/pages/Project.jsx:592",
