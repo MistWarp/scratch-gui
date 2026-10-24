@@ -221,7 +221,9 @@ describe('opt-in project collaboration', () => {
         instance.props.service.isConnected = true;
         instance.props.service.getPendingJoinRequests.mockReturnValue([{id: 'peer-ada'}]);
         api.request.mockResolvedValue({session: {
-            id: 'live', roomId: 'room', public: true,
+            id: 'live',
+            roomId: 'room',
+            public: true,
             members: [{peerId: 'peer-ada', username: 'ada~k7p2q', approved: true, viewer: true, access: 'watch'}]
         }});
         await instance.tick();
