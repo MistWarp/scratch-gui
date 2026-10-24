@@ -224,3 +224,26 @@ test('a request made before the account frame connects waits for it and uses an 
         return Promise.resolve();
     });
 });
+
+test('after the account frame fails to connect, later requests stop waiting for it', async () => {
+    jest.resetModules();
+    const signedIn = mockIdentity;
+    mockIdentity = {status: 'restoring', user: null, banMessage: null};
+    const bridge = require('../../../src/lib/account/bridge.js');
+    bridge.connect.mockImplementation(() => Promise.reject(Object.assign(new Error('unreachable'), {code: 'bridge'})));
+    const fresh = require('../../../src/lib/rotur/identity.js');
+    const api = require('../../../src/lib/community/api.js');
+    window.fetch = jest.fn(() => Promise.resolve({ok: true, status: 200, json: () => Promise.resolve({ok: true})}));
+    await fresh.restore().catch(() => null);
+    await api.request('/projects/p1', {cache: false}).catch(() => null);
+    const attempts = bridge.connect.mock.calls.length;
+    expect(attempts).toBeGreaterThan(0);
+    await api.request('/projects/p2', {cache: false}).catch(() => null);
+    expect(bridge.connect.mock.calls.length).toBe(attempts);
+    expect(window.fetch).toHaveBeenCalledTimes(2);
+    mockIdentity = signedIn;
+    bridge.connect.mockImplementation(() => {
+        for (const listener of mockIdentityListeners) listener(mockIdentity);
+        return Promise.resolve();
+    });
+});
