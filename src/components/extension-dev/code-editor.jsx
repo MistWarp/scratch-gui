@@ -387,6 +387,15 @@ const CodeEditor = props => {
         }
     }, [props.value, props.revision, props.documentKey]);
 
+    const historyKey = useRef(props.historyKey);
+    useEffect(() => {
+        const view = viewRef.current;
+        if (!view || historyKey.current === props.historyKey) return;
+        historyKey.current = props.historyKey;
+        view.dispatch({effects: historyCompartment.current.reconfigure([])});
+        view.dispatch({effects: historyCompartment.current.reconfigure(history())});
+    }, [props.historyKey]);
+
     useEffect(() => {
         const view = viewRef.current;
         if (!view) return;
@@ -467,6 +476,7 @@ CodeEditor.propTypes = {
     focus: PropTypes.object,
     // eslint-disable-next-line react/no-unused-prop-types
     hover: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
+    historyKey: PropTypes.string,
     keymap: PropTypes.arrayOf(PropTypes.object),
     // eslint-disable-next-line react/no-unused-prop-types
     language: PropTypes.oneOf(['javascript', 'fractch', 'json', 'text']),
