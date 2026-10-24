@@ -263,3 +263,49 @@ test('sprites whose names clean to the same folder keep their own costumes', asy
     expect(costumesOf('a b')).toEqual(['x']);
     expect(costumesOf('a_b')).toEqual(['y']);
 });
+
+test('names with control characters are never written', async () => {
+    const {root, dir} = freshRepo();
+    const md5ext = `${'c'.repeat(32)}.txt`;
+    await writeProjectToFractchTree({
+        sb3Files: {
+            ...projectFiles(['x\u0000y', 'fine']),
+            [md5ext]: new TextEncoder().encode('note')
+        },
+        fs: fs.promises,
+        dir
+    });
+    const files = listFiles(root);
+    expect(files.some(file => Array.from(file).some(character => character.charCodeAt(0) < 32))).toBe(false);
+    expect(files).toEqual(['repo/S/fine.fractch', 'repo/S/main.fractch']);
+});
+
+test('a link in the tree that points into .git is removed instead of followed', async () => {
+    const {dir} = freshRepo();
+    fs.writeFileSync(path.join(dir, '.git', 'HEAD'), 'ref: refs/heads/main\n');
+    fs.writeFileSync(path.join(dir, '.git', 'config'), '[core]\n');
+    fs.symlinkSync('.git', path.join(dir, 'S'));
+    await writeProjectToFractchTree({sb3Files: projectFiles(['main']), fs: fs.promises, dir});
+    expect(fs.readFileSync(path.join(dir, '.git', 'HEAD'), 'utf8')).toBe('ref: refs/heads/main\n');
+    expect(fs.readFileSync(path.join(dir, '.git', 'config'), 'utf8')).toBe('[core]\n');
+    expect(fs.readdirSync(path.join(dir, '.git')).sort()).toEqual(['HEAD', 'config']);
+    expect(fs.lstatSync(path.join(dir, 'S')).isSymbolicLink()).toBe(false);
+    expect(fs.existsSync(path.join(dir, 'S', 'main.fractch'))).toBe(true);
+});
+
+test('module names that are not standard library modules are dropped', async () => {
+    const {dir} = freshRepo();
+    const files = projectFiles(['main']);
+    const project = JSON.parse(new TextDecoder().decode(files['project.json']));
+    const comment = project.targets[1].comments.map;
+    comment.text = `_fractch_map_${JSON.stringify({version: 1, scripts: {}, modules: {hat0: 'constructor'}})}`;
+    await writeProjectToFractchTree({
+        sb3Files: {'project.json': new TextEncoder().encode(JSON.stringify(project))},
+        fs: fs.promises,
+        dir
+    });
+    const main = fs.readFileSync(path.join(dir, 'S', 'main.fractch'), 'utf8');
+    expect(main).not.toContain('constructor');
+    expect(main).toContain('when flag');
+    await expect(buildSb3FromFractchTree({fs: fs.promises, dir})).resolves.toBeTruthy();
+});
