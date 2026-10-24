@@ -315,15 +315,18 @@ const restoreWithRetry = async () => {
     }
 };
 
-const restoreStudent = async () => {
-    if (!readStudentFlag()) return {user: null};
+const restoreStudent = async (unflagged = false) => {
+    if (!unflagged && !readStudentFlag()) return {user: null};
     if (!loadSession()) {
         writeStudentFlag(false);
         return {user: null};
     }
     try {
         const me = await mistRequest('/me', {cache: false});
-        if (me && me.isStudent && me.username) return {user: studentUser(me)};
+        if (me && me.isStudent && me.username) {
+            writeStudentFlag(true);
+            return {user: studentUser(me)};
+        }
     } catch (error) {
         if (loadSession() && !(error && error.status)) return {user: null, retry: true};
     }
@@ -351,7 +354,12 @@ const doRestore = async () => {
         return null;
     }
     if (!user) {
-        storeSession(null);
+        const late = loadSession() ? await restoreStudent(true) : {user: null};
+        if (late.user) {
+            setState({status: 'ready', user: late.user, banMessage: null});
+            return late.user;
+        }
+        if (!late.retry) storeSession(null);
         setState({status: 'idle', user: null});
         return null;
     }

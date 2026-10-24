@@ -4,6 +4,7 @@ import {Link} from 'react-router-dom';
 import {Github} from 'lucide-react';
 import {editorUrl} from '../api';
 import {useUser} from '../UserContext.jsx';
+import {useClassroomAvailable} from '../classroom-availability.js';
 import {DISCORD_INVITE} from '../../lib/originchats/links.js';
 import {BUILD_ID, BUILD_TIME, shortId} from '../../lib/build-version.js';
 import logo from '../assets/mistwarp-logo.png';
@@ -15,6 +16,7 @@ const commitUrl = BUILD_ID && BUILD_ID !== 'dev' ?
 const Footer = () => {
     const {text: communityText} = useCommunityText();
     const {user} = useUser();
+    const {available: classroomAvailable} = useClassroomAvailable();
     if (user && user.isStudent) {
         return (<footer className={styles.footer}>
             <div className={styles.inner}>
@@ -85,7 +87,9 @@ const Footer = () => {
                 <div className={styles.column}>
                     <span className={styles.columnTitle}>{communityText('More')}</span>
                     <Link to="/perks">{communityText('Memberships')}</Link>
-                    <Link to="/classroom/about">{communityText('Classroom for schools')}</Link>
+                    {classroomAvailable ? (
+                        <Link to="/classroom/about">{communityText('Classroom for schools')}</Link>
+                    ) : null}
                     <a href="/docs/">{communityText('Documentation')}</a>
                     <a href="https://packager.warp.mistium.com/">{communityText('Packager')}</a>
                     <a
@@ -106,8 +110,12 @@ const Footer = () => {
                     <span className={styles.columnTitle}>{communityText('Help and safety')}</span>
                     <Link to="/support">{communityText('Support')}</Link>
                     <Link to="/trust">{communityText('Trust, privacy, and terms')}</Link>
-                    <Link to="/classroom/privacy">{communityText('Student data in Classroom')}</Link>
-                    <Link to="/classroom/terms">{communityText('Classroom terms')}</Link>
+                    {classroomAvailable ? (
+                        <>
+                            <Link to="/classroom/privacy">{communityText('Student data in Classroom')}</Link>
+                            <Link to="/classroom/terms">{communityText('Classroom terms')}</Link>
+                        </>
+                    ) : null}
                     <Link to="/status">{communityText('Service status')}</Link>
                 </div>
             </div>

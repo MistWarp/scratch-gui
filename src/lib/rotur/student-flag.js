@@ -5,8 +5,22 @@ const STUDENT_SESSION_KEY = 'mw:classroom-student';
 const STUDENT_HINT_PARAM = 'classroom';
 
 let studentFrame = false;
+let hintChecked = false;
+
+const adoptStudentHint = () => {
+    hintChecked = true;
+    if (typeof location === 'undefined' || !isSplitEditor()) return;
+    try {
+        if (new URLSearchParams(location.search).get(STUDENT_HINT_PARAM) === 'student') {
+            sharedCredentials.setItem(STUDENT_SESSION_KEY, '1');
+        }
+    } catch (_) {
+        return;
+    }
+};
 
 const readStudentFlag = () => {
+    if (!hintChecked) adoptStudentHint();
     try {
         return sharedCredentials.getItem(STUDENT_SESSION_KEY) === '1';
     } catch (_) {
@@ -27,17 +41,6 @@ const setSplitStudent = active => {
     if (!isSplitEditor()) return;
     writeStudentFlag(active);
 };
-
-const adoptStudentHint = () => {
-    if (typeof location === 'undefined' || !isSplitEditor()) return;
-    try {
-        if (new URLSearchParams(location.search).get(STUDENT_HINT_PARAM) === 'student') writeStudentFlag(true);
-    } catch (_) {
-        return;
-    }
-};
-
-adoptStudentHint();
 
 const markStudentFrame = () => {
     studentFrame = true;

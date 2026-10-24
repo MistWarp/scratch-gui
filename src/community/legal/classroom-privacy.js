@@ -50,6 +50,8 @@ Nobody outside the class can see a student's projects. Students cannot publish, 
 - **The School.** If a teacher moves a student to their own Rotur account, the student's projects go to that account and work they turned in is copied to the class owner. Rotur accounts are for people aged 13 and over, so for a younger student the projects go to a parent or guardian's account instead.
 - **Anyone the law requires**, such as a court order. We will tell the School unless the law forbids it.
 
+In a live group project or presentation, the students' browsers connect directly to each other. When a school network blocks that, MistWarp's own live collaboration server at collab_warp.mistium.com passes the session between them instead. It forwards the project changes and cursors as they happen and does not store them. It is run by MistWarp, so it is not a sub-processor.
+
 The editor also downloads extension code and library images from a few public services, which see the device's IP address but no student details. A few Scratch blocks, such as Text to Speech and Translate, send the words in the block to an outside service when a project uses them. All of these are listed on the sub-processor page.
 
 ## Where it is stored

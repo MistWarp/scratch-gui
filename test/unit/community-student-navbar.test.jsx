@@ -10,6 +10,9 @@ import AnnouncementBanner from '../../src/community/components/AnnouncementBanne
 let mockUser = null;
 let mockAccountProps = null;
 
+jest.mock('../../src/community/classroom-availability.js', () => ({
+    useClassroomAvailable: () => ({checked: true, available: true})
+}));
 jest.mock('../../src/community/UserContext.jsx', () => ({
     useUser: () => ({user: mockUser, loading: false, loginOrThrow: jest.fn(), logout: jest.fn()})
 }));

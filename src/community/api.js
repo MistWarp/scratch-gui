@@ -12,16 +12,19 @@ import {
 } from '../lib/community/api.js';
 import warpthemeApi from '../lib/warptheme-api.js';
 import {editorRoot} from '../lib/account/origins.js';
+import {STUDENT_HINT_PARAM, isStudentSession} from '../lib/rotur/student-flag.js';
 
-const editorUrl = ({chat, clone, platformProject, scratchProject, projectJson, assets, starter, restore} = {}) => {
+const editorUrl = ({
+    chat, clone, platformProject, scratchProject, projectJson, assets, starter, restore, collaborate
+} = {}) => {
     const root = editorRoot();
-    if (platformProject) {
-        return `${root}#mw-${platformProject}`;
-    }
-    if (scratchProject) {
-        return `${root}#${scratchProject}`;
-    }
     const params = new URLSearchParams();
+    if (isStudentSession()) params.set(STUDENT_HINT_PARAM, 'student');
+    if (collaborate) params.set('collaborate', '1');
+    if (platformProject || scratchProject) {
+        const query = params.toString();
+        return `${root}${query ? `?${query}` : ''}#${platformProject ? `mw-${platformProject}` : scratchProject}`;
+    }
     if (starter) params.set('starter', starter);
     if (restore) params.set('restore', String(restore));
     if (clone) params.set('clone', clone);

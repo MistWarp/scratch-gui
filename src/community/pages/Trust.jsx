@@ -5,6 +5,7 @@ import {Link} from 'react-router-dom';
 import {FileText, Gavel, GraduationCap, Lock, Mail, ShieldCheck, SlidersHorizontal, UserRound} from 'lucide-react';
 import api from '../api';
 import {LEGAL} from '../legal/config.js';
+import {useClassroomAvailable} from '../classroom-availability.js';
 import Markdown from '../components/Markdown.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import SectionHeading from '../components/ui/SectionHeading.jsx';
@@ -13,6 +14,7 @@ import styles from './InfoPage.module.css';
 
 const Trust = () => {
     const {text: communityText} = useCommunityText();
+    const {available: classroomAvailable} = useClassroomAvailable();
     const [agreement, setAgreement] = useState(null);
     const [attempt, setAttempt] = useState(0);
     useEffect(() => {
@@ -52,22 +54,26 @@ const Trust = () => {
                 <p>{communityText('Public projects, profiles, comments, and activity can be seen by other people. Unlisted content is available to anyone with its link. Do not put private information in a project or public profile.')}</p>
                 <p>{communityText('Deleting your MistWarp data deletes your MistWarp projects and does not delete your Rotur account. Public comments are anonymized where removing them would break conversations.')}</p>
             </section>
-            <section className={styles.section}>
-                <SectionHeading icon={Mail} title={communityText('Who is responsible for your data')} />
-                <p>{communityText('MistWarp is part of Rotur. Both are run by {value1}, a sole trader in the {value2}, who decides how the data described on this page is used.', {value1: LEGAL.ownerName, value2: LEGAL.country})}</p>
-                <p>{communityText('To ask for a copy of your data, to have it corrected or deleted, or with any other privacy question, email {value1}.', {value1: LEGAL.email})}</p>
-                <p>{communityText('If you are unhappy with how we handle your data, you can complain to the Information Commissioner\'s Office.')}{' '}<a href="https://ico.org.uk/make-a-complaint/" target="_blank" rel="noreferrer">{communityText('Complain to the ICO')}</a></p>
-            </section>
-            <section className={styles.section}>
-                <SectionHeading icon={GraduationCap} title={communityText('MistWarp Classroom')} />
-                <p>{communityText('Student accounts in Classroom belong to the school that created them, and MistWarp handles their data for the school.')}</p>
-                <p className={styles.linkRow}>
-                    <Link to="/classroom/privacy">{communityText('Student data notice')}</Link>
-                    <Link to="/classroom/terms">{communityText('Classroom Terms for Schools')}</Link>
-                    <Link to="/classroom/dpa">{communityText('Data Processing Agreement')}</Link>
-                    <Link to="/classroom/subprocessors">{communityText('Sub-processors')}</Link>
-                </p>
-            </section>
+            {classroomAvailable ? (
+                <>
+                    <section className={styles.section}>
+                        <SectionHeading icon={Mail} title={communityText('Who is responsible for your data')} />
+                        <p>{communityText('MistWarp is part of Rotur. Both are run by {value1}, a sole trader in the {value2}, who decides how the data described on this page is used.', {value1: LEGAL.ownerName, value2: LEGAL.country})}</p>
+                        <p>{communityText('To ask for a copy of your data, to have it corrected or deleted, or with any other privacy question, email {value1}.', {value1: LEGAL.email})}</p>
+                        <p>{communityText('If you are unhappy with how we handle your data, you can complain to the Information Commissioner\'s Office.')}{' '}<a href="https://ico.org.uk/make-a-complaint/" target="_blank" rel="noreferrer">{communityText('Complain to the ICO')}</a></p>
+                    </section>
+                    <section className={styles.section}>
+                        <SectionHeading icon={GraduationCap} title={communityText('MistWarp Classroom')} />
+                        <p>{communityText('Student accounts in Classroom belong to the school that created them, and MistWarp handles their data for the school.')}</p>
+                        <p className={styles.linkRow}>
+                            <Link to="/classroom/privacy">{communityText('Student data notice')}</Link>
+                            <Link to="/classroom/terms">{communityText('Classroom Terms for Schools')}</Link>
+                            <Link to="/classroom/dpa">{communityText('Data Processing Agreement')}</Link>
+                            <Link to="/classroom/subprocessors">{communityText('Sub-processors')}</Link>
+                        </p>
+                    </section>
+                </>
+            ) : null}
             <section className={styles.section}>
                 <SectionHeading icon={FileText} title={communityText('Community terms')} />
                 {agreement === null ? <StatusMessage compact>{communityText('Loading the current community agreement…')}</StatusMessage> : null}

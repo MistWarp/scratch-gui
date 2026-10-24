@@ -2,8 +2,9 @@ import {
     Apple, Bird, Car, Cat, Dog, Fish, Moon, Rabbit, Rocket, Sailboat, Snail, Squirrel, Star, Sun, TreePine, Turtle
 } from 'lucide-react';
 import {getCommunityLocale} from './locale';
+import {ACCOUNT_ORIGIN} from '../lib/account/origins.js';
 
-const JOIN_ORIGIN = 'https://mistwarp.org';
+const JOIN_ORIGIN = ACCOUNT_ORIGIN;
 
 const PICTURE_ICONS = {
     cat: Cat,

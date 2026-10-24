@@ -319,6 +319,7 @@ export const describeNotification = (n, t, actor) => {
         t('{actor} commented on {suggestion}', {actor, suggestion: strong(n.roadmapTitle)}) :
         t('{actor} commented on your suggestion', {actor});
     case 'classroom_retention_warning': return t(
+        // eslint-disable-next-line max-len
         '{className} will be deleted on {date} because no teacher has opened it for 11 months. Open the class to keep it.',
         {className: strong(n.className || t.text('A class')), date: formatDate(n.deleteAt, t.text('a date soon'))}
     );
