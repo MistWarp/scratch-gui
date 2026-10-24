@@ -12,7 +12,7 @@ describe('news excerpts', () => {
         expect(excerptParts('## Hi\n\n**Bold** see [docs](https://x.dev) ![a](https://img.test/a.png)\n\n- done')).toEqual([
             {text: 'Hi. Bold see '},
             {label: 'docs', route: {kind: 'external', href: 'https://x.dev'}},
-            {text: ' done'}
+            {text: ' done.'}
         ]);
     });
 

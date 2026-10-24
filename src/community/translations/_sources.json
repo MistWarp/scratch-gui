@@ -258,7 +258,7 @@
     "src/community/components/CollectionSaveModal.jsx:167",
     "src/community/components/CommentThread.jsx:224",
     "src/community/components/CommentThread.jsx:240",
-    "src/community/components/NewsItem.jsx:275",
+    "src/community/components/NewsItem.jsx:281",
     "src/community/components/ProfileBadges.jsx:204",
     "src/community/components/ProjectInfoPanel.jsx:390",
     "src/community/pages/Challenge.jsx:466",
@@ -405,7 +405,7 @@
   "Post": [
     "src/community/components/CommentThread.jsx:256",
     "src/community/components/PostComposer.jsx:308",
-    "src/community/pages/News.jsx:322",
+    "src/community/pages/News.jsx:325",
     "src/community/pages/Post.jsx:73"
   ],
   "Sign in to post": [
@@ -824,7 +824,7 @@
   ],
   "News": [
     "src/community/components/Footer.jsx:43",
-    "src/community/components/HomeCommunity.jsx:207",
+    "src/community/components/HomeCommunity.jsx:80",
     "src/community/pages/News.jsx:166"
   ],
   "Stats": [
@@ -832,7 +832,7 @@
   ],
   "Roadmap": [
     "src/community/components/Footer.jsx:45",
-    "src/community/components/HomeCommunity.jsx:421",
+    "src/community/components/HomeCommunity.jsx:292",
     "src/community/pages/Roadmap.jsx:478"
   ],
   "Compare with Scratch": [
@@ -897,12 +897,12 @@
     "src/community/components/Footer.jsx:89"
   ],
   "{value1, plural, one {# love} other {# loves}}": [
-    "src/community/components/GameCard.jsx:167",
+    "src/community/components/GameCard.jsx:168",
     "src/community/components/PostProjectCard.jsx:80",
     "src/community/components/ProjectCard.jsx:56"
   ],
   "{value1, plural, one {# view} other {# views}}": [
-    "src/community/components/GameCard.jsx:174",
+    "src/community/components/GameCard.jsx:175",
     "src/community/components/PostProjectCard.jsx:86",
     "src/community/components/ProjectCard.jsx:63"
   ],
@@ -995,33 +995,31 @@
   "Restore this version": [
     "src/community/components/GitGraph.jsx:129"
   ],
-  "the space": [
-    "src/community/components/HomeCommunity.jsx:127"
-  ],
-  "the project": [
-    "src/community/components/HomeCommunity.jsx:127"
-  ],
-  "All updates": [
-    "src/community/components/HomeCommunity.jsx:208"
+  "All news": [
+    "src/community/components/HomeCommunity.jsx:81",
+    "src/community/components/NewsFeed.jsx:123",
+    "src/community/pages/NewsPost.jsx:108"
   ],
   "Couldn't load news.": [
-    "src/community/components/HomeCommunity.jsx:217",
-    "src/community/pages/News.jsx:306"
+    "src/community/components/HomeCommunity.jsx:90",
+    "src/community/components/NewsFeed.jsx:141",
+    "src/community/pages/News.jsx:312"
   ],
   "News from MistWarp will show up here.": [
-    "src/community/components/HomeCommunity.jsx:220"
+    "src/community/components/HomeCommunity.jsx:93",
+    "src/community/components/NewsFeed.jsx:144"
   ],
   "Upvote {value1}": [
-    "src/community/components/HomeCommunity.jsx:284"
+    "src/community/components/HomeCommunity.jsx:154"
   ],
   "Remove your vote": [
-    "src/community/components/HomeCommunity.jsx:285"
+    "src/community/components/HomeCommunity.jsx:155"
   ],
   "Upvote": [
-    "src/community/components/HomeCommunity.jsx:285"
+    "src/community/components/HomeCommunity.jsx:155"
   ],
   "Comments": [
-    "src/community/components/HomeCommunity.jsx:330",
+    "src/community/components/HomeCommunity.jsx:201",
     "src/community/pages/Profile.jsx:700",
     "src/community/pages/Space.jsx:323",
     "src/community/pages/Studio.jsx:86",
@@ -1030,25 +1028,25 @@
     "src/community/pages/project/ProjectActivity.jsx:35"
   ],
   "Could not save your vote.": [
-    "src/community/components/HomeCommunity.jsx:384"
+    "src/community/components/HomeCommunity.jsx:255"
   ],
   "Suggest and vote": [
-    "src/community/components/HomeCommunity.jsx:422"
+    "src/community/components/HomeCommunity.jsx:293"
   ],
   "Couldn't load roadmap suggestions.": [
-    "src/community/components/HomeCommunity.jsx:446"
+    "src/community/components/HomeCommunity.jsx:317"
   ],
   "No active suggestions": [
-    "src/community/components/HomeCommunity.jsx:450"
+    "src/community/components/HomeCommunity.jsx:321"
   ],
   "Add the first one": [
-    "src/community/components/HomeCommunity.jsx:452"
+    "src/community/components/HomeCommunity.jsx:323"
   ],
   "Planned next": [
-    "src/community/components/HomeCommunity.jsx:455"
+    "src/community/components/HomeCommunity.jsx:326"
   ],
   "Most wanted": [
-    "src/community/components/HomeCommunity.jsx:456"
+    "src/community/components/HomeCommunity.jsx:327"
   ],
   "{value1} projects, {value2} hearts": [
     "src/community/components/HomeDiscovery.jsx:85"
@@ -1580,6 +1578,21 @@
     "src/community/components/NavBar.jsx:622",
     "src/community/components/NavBar.jsx:622"
   ],
+  "Kinds of post": [
+    "src/community/components/NewsFeed.jsx:114"
+  ],
+  "Search news": [
+    "src/community/components/NewsFeed.jsx:128"
+  ],
+  "No posts match.": [
+    "src/community/components/NewsFeed.jsx:148"
+  ],
+  "Show all news": [
+    "src/community/components/NewsFeed.jsx:150"
+  ],
+  "Show more ({value1} left)": [
+    "src/community/components/NewsFeed.jsx:201"
+  ],
   "Could not delete update.": [
     "src/community/components/NewsItem.jsx:74"
   ],
@@ -1588,15 +1601,18 @@
   ],
   "Release": [
     "src/community/components/NewsItem.jsx:109",
+    "src/community/components/NewsParts.jsx:16",
     "src/community/pages/News.jsx:233"
   ],
   "Event": [
     "src/community/components/NewsItem.jsx:110",
+    "src/community/components/NewsParts.jsx:17",
     "src/community/pages/Group.jsx:240",
     "src/community/pages/News.jsx:234"
   ],
   "Poll": [
     "src/community/components/NewsItem.jsx:111",
+    "src/community/components/NewsParts.jsx:18",
     "src/community/components/PostComposer.jsx:280",
     "src/community/pages/News.jsx:235"
   ],
@@ -1613,81 +1629,97 @@
     "src/community/components/NewsItem.jsx:137"
   ],
   "edited {value1}": [
-    "src/community/components/NewsItem.jsx:146"
+    "src/community/components/NewsItem.jsx:149"
   ],
   "Edit {value1}": [
-    "src/community/components/NewsItem.jsx:154",
+    "src/community/components/NewsItem.jsx:157",
     "src/community/components/SharedProjects.jsx:49",
-    "src/community/pages/News.jsx:353"
+    "src/community/pages/News.jsx:356"
   ],
   "Restore {value1}": [
-    "src/community/components/NewsItem.jsx:166",
-    "src/community/pages/News.jsx:360"
+    "src/community/components/NewsItem.jsx:169",
+    "src/community/pages/News.jsx:363"
   ],
   "Archive {value1}": [
-    "src/community/components/NewsItem.jsx:167",
-    "src/community/pages/News.jsx:361"
+    "src/community/components/NewsItem.jsx:170",
+    "src/community/pages/News.jsx:364"
   ],
   "Delete {value1}": [
-    "src/community/components/NewsItem.jsx:178",
+    "src/community/components/NewsItem.jsx:181",
     "src/community/components/ProjectBranches.jsx:366"
   ],
   "By": [
-    "src/community/components/NewsItem.jsx:196"
+    "src/community/components/NewsItem.jsx:199"
   ],
   "Published {value1}": [
-    "src/community/components/NewsItem.jsx:200",
+    "src/community/components/NewsItem.jsx:203",
     "src/community/pages/ManageSpace.jsx:734"
   ],
   "Updated {value1}": [
-    "src/community/components/NewsItem.jsx:202"
+    "src/community/components/NewsItem.jsx:205",
+    "src/community/pages/NewsPost.jsx:136"
   ],
   "Post analytics": [
-    "src/community/components/NewsItem.jsx:208"
+    "src/community/components/NewsItem.jsx:214"
   ],
   "{value1} views": [
-    "src/community/components/NewsItem.jsx:211",
+    "src/community/components/NewsItem.jsx:217",
     "src/community/components/SocialPost.jsx:238"
   ],
   "{value1} likes": [
-    "src/community/components/NewsItem.jsx:215",
-    "src/community/components/ThemeCard.jsx:30"
+    "src/community/components/NewsItem.jsx:221",
+    "src/community/components/ThemeCard.jsx:31"
   ],
   "{value1} dislikes": [
-    "src/community/components/NewsItem.jsx:218"
+    "src/community/components/NewsItem.jsx:224"
   ],
   "{value1} active days": [
-    "src/community/components/NewsItem.jsx:222"
+    "src/community/components/NewsItem.jsx:228"
   ],
   "1 vote ({value1}%)": [
-    "src/community/components/NewsItem.jsx:243"
+    "src/community/components/NewsItem.jsx:249"
   ],
   "{value1} votes ({value2}%)": [
-    "src/community/components/NewsItem.jsx:244"
+    "src/community/components/NewsItem.jsx:250"
   ],
   "1 vote in total": [
-    "src/community/components/NewsItem.jsx:253"
+    "src/community/components/NewsItem.jsx:259"
   ],
   "{value1} votes in total": [
-    "src/community/components/NewsItem.jsx:254"
+    "src/community/components/NewsItem.jsx:260"
   ],
   "Sign in to react": [
-    "src/community/components/NewsItem.jsx:275",
+    "src/community/components/NewsItem.jsx:281",
     "src/community/components/ReactionButtons.jsx:40"
   ],
   "Archived": [
-    "src/community/components/NewsItem.jsx:278",
-    "src/community/pages/News.jsx:335"
+    "src/community/components/NewsItem.jsx:284",
+    "src/community/pages/News.jsx:338"
   ],
   "Liked by {value1}": [
-    "src/community/components/NewsItem.jsx:292"
+    "src/community/components/NewsItem.jsx:298"
   ],
   "nobody": [
-    "src/community/components/NewsItem.jsx:292",
-    "src/community/components/NewsItem.jsx:294"
+    "src/community/components/NewsItem.jsx:298",
+    "src/community/components/NewsItem.jsx:300"
   ],
   "Disliked by {value1}": [
-    "src/community/components/NewsItem.jsx:294"
+    "src/community/components/NewsItem.jsx:300"
+  ],
+  "Update": [
+    "src/community/components/NewsParts.jsx:15",
+    "src/community/pages/News.jsx:232"
+  ],
+  "General": [
+    "src/community/components/NewsParts.jsx:19",
+    "src/community/pages/ManageSpace.jsx:26",
+    "src/community/pages/News.jsx:236"
+  ],
+  "the space": [
+    "src/community/components/NewsParts.jsx:145"
+  ],
+  "the project": [
+    "src/community/components/NewsParts.jsx:145"
   ],
   "Played {value1}": [
     "src/community/components/PlaytimeLibrary.jsx:18"
@@ -2779,22 +2811,22 @@
     "src/community/components/SocialPost.jsx:506"
   ],
   "{value1, plural, one {# submission} other {# submissions}}": [
-    "src/community/components/SpaceCard.jsx:32"
+    "src/community/components/SpaceCard.jsx:30"
   ],
   "{count, plural, one {# project} other {# projects}}": [
-    "src/community/components/SpaceCard.jsx:33",
+    "src/community/components/SpaceCard.jsx:31",
     "src/community/pages/RemixTree.jsx:246",
     "src/community/pages/Search.jsx:176"
   ],
   "{value1} joined": [
-    "src/community/components/SpaceCard.jsx:39"
+    "src/community/components/SpaceCard.jsx:36"
   ],
   "{count, plural, one {# follower} other {# followers}}": [
-    "src/community/components/SpaceCard.jsx:45",
+    "src/community/components/SpaceCard.jsx:40",
     "src/community/pages/Search.jsx:174"
   ],
   "Ends {value1}": [
-    "src/community/components/SpaceCard.jsx:60"
+    "src/community/components/SpaceCard.jsx:56"
   ],
   "Could not search projects.": [
     "src/community/components/SpaceProjectPicker.jsx:134"
@@ -2886,7 +2918,7 @@
     "src/community/components/StatChart.jsx:81"
   ],
   "{value1} downloads": [
-    "src/community/components/ThemeCard.jsx:31"
+    "src/community/components/ThemeCard.jsx:35"
   ],
   "Date unknown": [
     "src/community/components/TransactionHistory.jsx:76"
@@ -4881,10 +4913,6 @@
   "No bounties yet": [
     "src/community/pages/ManageProject.jsx:1046"
   ],
-  "General": [
-    "src/community/pages/ManageSpace.jsx:26",
-    "src/community/pages/News.jsx:236"
-  ],
   "Curators": [
     "src/community/pages/ManageSpace.jsx:27",
     "src/community/pages/ManageSpace.jsx:742",
@@ -5199,7 +5227,7 @@
   ],
   "Performance": [
     "src/community/pages/MyStuff.jsx:134",
-    "src/community/pages/News.jsx:324"
+    "src/community/pages/News.jsx:327"
   ],
   "{value1}{value2}% vs prior week": [
     "src/community/pages/MyStuff.jsx:140"
@@ -5434,7 +5462,8 @@
     "src/community/pages/MyStuff.jsx:1467"
   ],
   "Share": [
-    "src/community/pages/MyStuff.jsx:1474"
+    "src/community/pages/MyStuff.jsx:1474",
+    "src/community/pages/NewsPost.jsx:49"
   ],
   "Actions for {value1}": [
     "src/community/pages/MyStuff.jsx:1482"
@@ -5509,9 +5538,6 @@
   "Post type": [
     "src/community/pages/News.jsx:226"
   ],
-  "Update": [
-    "src/community/pages/News.jsx:232"
-  ],
   "Button label": [
     "src/community/pages/News.jsx:240"
   ],
@@ -5536,34 +5562,42 @@
     "src/community/pages/News.jsx:300"
   ],
   "Show archived posts": [
-    "src/community/pages/News.jsx:317"
+    "src/community/pages/News.jsx:322"
   ],
   "News posts": [
-    "src/community/pages/News.jsx:320",
+    "src/community/pages/News.jsx:323",
     "src/community/pages/admin/StatsOverview.jsx:305"
   ],
   "Published": [
-    "src/community/pages/News.jsx:323"
+    "src/community/pages/News.jsx:326"
   ],
   "Actions": [
-    "src/community/pages/News.jsx:325"
+    "src/community/pages/News.jsx:328"
   ],
   "No updates yet": [
-    "src/community/pages/News.jsx:384"
+    "src/community/pages/News.jsx:375"
   ],
   "Posts from MistWarp will show up here.": [
-    "src/community/pages/News.jsx:385"
+    "src/community/pages/News.jsx:376"
+  ],
+  "Copy this link": [
+    "src/community/pages/NewsPost.jsx:34"
+  ],
+  "Link copied": [
+    "src/community/pages/NewsPost.jsx:49"
   ],
   "Could not load this post.": [
-    "src/community/pages/NewsPost.jsx:23",
+    "src/community/pages/NewsPost.jsx:71",
     "src/community/pages/Post.jsx:55"
   ],
-  "All news": [
-    "src/community/pages/NewsPost.jsx:32"
+  "More news": [
+    "src/community/pages/NewsPost.jsx:160"
   ],
-  "Loading post…": [
-    "src/community/pages/NewsPost.jsx:34",
-    "src/community/pages/Post.jsx:75"
+  "Previous post": [
+    "src/community/pages/NewsPost.jsx:167"
+  ],
+  "Next post": [
+    "src/community/pages/NewsPost.jsx:176"
   ],
   "Page not found": [
     "src/community/pages/NotFound.jsx:12"
@@ -5801,6 +5835,9 @@
   "Go back": [
     "src/community/pages/Post.jsx:70"
   ],
+  "Loading post…": [
+    "src/community/pages/Post.jsx:75"
+  ],
   "Popular today": [
     "src/community/pages/Posts.jsx:21"
   ],
@@ -5839,13 +5876,13 @@
     "src/community/pages/Posts.jsx:156"
   ],
   "Loading posts…": [
-    "src/community/pages/Posts.jsx:169"
+    "src/community/pages/Posts.jsx:172"
   ],
   "No posts found": [
-    "src/community/pages/Posts.jsx:171"
+    "src/community/pages/Posts.jsx:177"
   ],
   "Show more posts": [
-    "src/community/pages/Posts.jsx:189"
+    "src/community/pages/Posts.jsx:195"
   ],
   "Moderation action failed.": [
     "src/community/pages/Profile.jsx:286"

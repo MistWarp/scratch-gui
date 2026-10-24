@@ -20,121 +20,57 @@
     justify-content: flex-start;
 }
 
-/* Covers match the game cards: same radius, outline and hover. */
-.cover {
-    position: relative;
-    display: grid;
-    overflow: hidden;
-    place-items: center;
-    border-radius: var(--radius-xs);
-    outline: 1px solid var(--border);
-    outline-offset: -1px;
-    background: var(--bg-card);
-}
-
-.cover img {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: opacity .15s;
-}
-
-.cover:hover img {
-    opacity: .88;
-}
-
-/* No picture: the accent, with the kind of post marked on it. */
-.coverMark {
-    display: grid;
-    width: 100%;
-    height: 100%;
-    place-items: center;
-    background: var(--accent);
-    color: var(--accent-contrast);
-}
-
-.coverMark svg {
-    width: 34%;
-    max-width: 56px;
-    height: auto;
-    stroke-width: 1.5;
-}
-
-.feature {
+/* The newest post leads; its picture sits beside it only when it has one. */
+.lead {
     display: grid;
     grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
     gap: var(--space-4);
     align-items: start;
 }
 
-.feature .cover {
-    aspect-ratio: 4 / 3;
+.lead:has(> :only-child) {
+    grid-template-columns: minmax(0, 1fr);
 }
 
-.featureText {
+.leadText {
     display: grid;
     gap: var(--space-2);
     min-width: 0;
 }
 
-.feature h3 {
+.leadText h3 {
     margin: 0;
     font-size: var(--fs-lg);
     font-weight: 600;
     line-height: 1.35;
 }
 
-.feature h3 a:hover,
+.leadText h3 a:hover,
 .rowText h3 a:hover,
 .ideaText h3 a:hover {
     text-decoration: underline;
 }
 
-.excerpt,
-.oneLine {
+.clamp3,
+.clamp1 {
     display: -webkit-box;
-    margin: 0;
     overflow: hidden;
-    color: var(--text-dim);
-    font-size: var(--fs-sm);
-    line-height: 1.5;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
 }
 
-.oneLine {
+.clamp1 {
     -webkit-line-clamp: 1;
 }
 
-.excerpt a,
-.oneLine a {
-    color: var(--accent-strong);
-    font-weight: 500;
-}
-
-.excerpt a:hover,
-.oneLine a:hover {
-    text-decoration: underline;
-}
-
-.byline {
+.meta {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2);
-    margin: var(--space-1) 0 0;
+    gap: var(--space-1) var(--space-3);
+    margin: 0;
     color: var(--text-faint);
-    font-size: var(--fs-sm);
-}
-
-.byline a {
-    color: var(--mw-text);
-    font-weight: 500;
-}
-
-.byline a:hover {
-    text-decoration: underline;
+    font-size: var(--fs-xs);
 }
 
 .rows {
@@ -146,15 +82,11 @@
 
 .row {
     display: grid;
-    grid-template-columns: 64px minmax(0, 1fr);
+    grid-template-columns: 72px minmax(0, 1fr);
     gap: var(--space-3);
     align-items: start;
     padding: var(--space-3) 0;
     border-top: 1px solid var(--border-soft);
-}
-
-.row .cover {
-    aspect-ratio: 1;
 }
 
 .rowText {
@@ -174,10 +106,12 @@
     white-space: nowrap;
 }
 
-.date {
-    margin: 0;
-    color: var(--text-faint);
-    font-size: var(--fs-xs);
+.thumbSkeleton {
+    display: block;
+    width: 72px;
+    aspect-ratio: 1;
+    border-radius: var(--radius-xs);
+    background: var(--bg-card);
 }
 
 .group + .group {
@@ -259,16 +193,6 @@
     min-width: 0;
 }
 
-.meta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-1) var(--space-3);
-    margin: 0;
-    color: var(--text-faint);
-    font-size: var(--fs-xs);
-}
-
 .metaItem {
     display: inline-flex;
     align-items: center;
@@ -340,21 +264,13 @@
 }
 
 @media (max-width: 520px) {
-    .feature {
+    .lead {
         grid-template-columns: minmax(0, 1fr);
-    }
-
-    .feature .cover {
-        aspect-ratio: 2 / 1;
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .pulse {
         animation: none;
-    }
-
-    .cover img {
-        transition: none;
     }
 }

@@ -29,7 +29,8 @@ const plain = text => text
     .replace(/```[\s\S]*?```/g, ' ')
     .replace(/^#{1,6}[ \t]+/gm, '')
     .replace(/^[ \t]*>[ \t]?/gm, '')
-    .replace(/^[ \t]*[-*+][ \t]+/gm, '')
+    // List items read as short sentences once the lines are joined.
+    .replace(/^[ \t]*(?:[-*+]|\d+\.)[ \t]+(.*?)([.!?:;]?)[ \t]*$/gm, (line, item, end) => `${item}${end || '.'}`)
     .replace(/[*_~`]+/g, '')
     .replace(/[=]{3,}|-{3,}/g, ' ');
 

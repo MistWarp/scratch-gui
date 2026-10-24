@@ -1,18 +1,14 @@
 import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {
-    Blocks, CalendarDays, ChevronUp, MessageCircle, Newspaper, Puzzle, Rocket, Shapes, Tag, Users, Wrench
-} from 'lucide-react';
+import {Blocks, ChevronUp, MessageCircle, Puzzle, Shapes, Tag, Users} from 'lucide-react';
 import api from '../api';
 import {timeAgo} from '../format';
 import {useCommunityIntl} from '../i18n.jsx';
-import loadProjectPreview from '../project-preview.js';
 import {roadmapStatusMatches} from '../roadmap-filters';
-import {excerptParts, imageFor, linkedPlaces} from '../news-excerpt.js';
 import useAfterLogin from '../use-after-login.js';
 import {useUser} from '../UserContext.jsx';
-import Avatar from './Avatar.jsx';
+import {AuthorLink, Excerpt, NewsCover, NewsThumb, usePlaces} from './NewsParts.jsx';
 import QuietLink from './ui/QuietLink.jsx';
 import SectionHeading from './ui/SectionHeading.jsx';
 import StatusMessage from './ui/StatusMessage.jsx';
@@ -20,7 +16,6 @@ import styles from './HomeCommunity.module.css';
 
 const NEWS = 4;
 const PER_GROUP = 3;
-const NEWS_ICONS = {update: Rocket, event: CalendarDays, fix: Wrench};
 const CATEGORY_ICONS = {community: Users, editor: Blocks, редактор: Blocks, extensions: Puzzle, other: Shapes};
 const STATUS_LABELS = {
     open: 'Suggested',
@@ -46,133 +41,11 @@ const useList = (load, key = '') => {
     return [items, setItems, () => setAttempt(value => value + 1)];
 };
 
-const PLACES = PropTypes.objectOf(PropTypes.shape({title: PropTypes.string, thumbUrl: PropTypes.string}));
-const placeKey = route => `${route.kind}:${route.id || route.slug}`;
-const placeCache = new Map();
-const loadPlace = route => {
-    const key = placeKey(route);
-    if (!placeCache.has(key)) {
-        const request = route.kind === 'space' ?
-            api.getSpace(route.id).then(data => {
-                const space = (data && data.space) || data || {};
-                return {title: space.title, thumbUrl: space.thumbnailUrl};
-            }) :
-            loadProjectPreview(route.id ? {id: route.id} : {slug: route.slug})
-                .then(project => (project ? {title: project.title, thumbUrl: project.thumbUrl} : null));
-        placeCache.set(key, request.catch(() => null));
-    }
-    return placeCache.get(key);
-};
-
-// Titles and thumbnails of the projects and spaces the posts link to.
-const usePlaces = items => {
-    const [places, setPlaces] = useState({});
-    useEffect(() => {
-        let active = true;
-        const routes = (items || []).flatMap(linkedPlaces);
-        Promise.all(routes.map(route => loadPlace(route).then(place => [placeKey(route), place])))
-            .then(entries => active && setPlaces(Object.fromEntries(entries.filter(([, place]) => place))));
-        return () => {
-            active = false;
-        };
-    }, [items]);
-    return places;
-};
-
-const coverFor = (item, places) => {
-    const image = imageFor(item);
-    if (image) return image;
-    const place = linkedPlaces(item).map(route => places[placeKey(route)])
-        .find(found => found && found.thumbUrl);
-    return place ? place.thumbUrl : null;
-};
-
-const NewsCover = ({item, places, to}) => {
-    const [failed, setFailed] = useState(false);
-    const image = coverFor(item, places);
-    const Icon = NEWS_ICONS[item.category] || Newspaper;
-    return (
-        <Link
-            className={styles.cover}
-            to={to}
-            tabIndex={-1}
-            aria-hidden="true"
-        >
-            {image && !failed ? (
-                <img
-                    src={image}
-                    alt=""
-                    loading="lazy"
-                    onError={() => setFailed(true)}
-                />
-            ) : (
-                <span className={styles.coverMark}><Icon aria-hidden="true" /></span>
-            )}
-        </Link>
-    );
-};
-
-NewsCover.propTypes = {
-    item: PropTypes.shape({category: PropTypes.string}).isRequired,
-    places: PLACES.isRequired,
-    to: PropTypes.string.isRequired
-};
-
-const linkLabel = (part, places, text) => {
-    if (part.label) return part.label;
-    const route = part.route;
-    if (route.kind === 'project' || route.kind === 'space') {
-        const place = places[placeKey(route)];
-        if (place && place.title) return place.title;
-        return route.kind === 'space' ? text('the space') : text('the project');
-    }
-    if (route.kind === 'user') return `@${route.name}`;
-    if (route.kind === 'external') {
-        try {
-            return new URL(route.href).hostname.replace(/^www\./, '');
-        } catch (e) {
-            return route.href;
-        }
-    }
-    return route.to;
-};
-
-const Excerpt = ({className, item, places}) => {
-    const {text} = useCommunityIntl();
-    return (
-        <p className={className}>
-            {excerptParts(item.body).map((part, index) => {
-                if (part.text) return <React.Fragment key={index}>{part.text}</React.Fragment>;
-                const label = linkLabel(part, places, text);
-                return part.route.kind === 'external' ? (
-                    <a
-                        key={index}
-                        href={part.route.href}
-                        target="_blank"
-                        rel="noreferrer"
-                    >{label}</a>
-                ) : (
-                    <Link
-                        key={index}
-                        to={part.route.to}
-                    >{label}</Link>
-                );
-            })}
-        </p>
-    );
-};
-
-Excerpt.propTypes = {
-    className: PropTypes.string,
-    item: PropTypes.shape({body: PropTypes.string}).isRequired,
-    places: PLACES.isRequired
-};
 
 const NewsSkeleton = () => (
     <div aria-hidden="true">
-        <div className={styles.feature}>
-            <span className={`${styles.cover} ${styles.pulse}`} />
-            <div className={styles.featureText}>
+        <div className={styles.lead}>
+            <div className={styles.leadText}>
                 <span className={`${styles.line} ${styles.pulse}`} />
                 <span className={`${styles.line} ${styles.lineShort} ${styles.pulse}`} />
             </div>
@@ -183,7 +56,7 @@ const NewsSkeleton = () => (
                     key={index}
                     className={styles.row}
                 >
-                    <span className={`${styles.cover} ${styles.pulse}`} />
+                    <span className={`${styles.thumbSkeleton} ${styles.pulse}`} />
                     <span className={`${styles.line} ${styles.pulse}`} />
                 </li>
             ))}
@@ -205,7 +78,7 @@ export const NewsList = () => {
             <SectionHeading
                 id="home-news-heading"
                 title={text('News')}
-                actions={<QuietLink to="/news">{text('All updates')}</QuietLink>}
+                actions={<QuietLink to="/news">{text('All news')}</QuietLink>}
             />
             {items === null ? <NewsSkeleton /> : null}
             {items === false ? (
@@ -220,25 +93,20 @@ export const NewsList = () => {
                 <p className={styles.empty}>{text('News from MistWarp will show up here.')}</p>
             ) : null}
             {first ? (
-                <article className={styles.feature}>
+                <article className={styles.lead}>
                     <NewsCover
                         item={first}
                         places={places}
-                        to={`/news/${first.id}`}
                     />
-                    <div className={styles.featureText}>
+                    <div className={styles.leadText}>
                         <h3><Link to={`/news/${first.id}`}>{first.title}</Link></h3>
                         <Excerpt
-                            className={styles.excerpt}
+                            className={styles.clamp3}
                             item={first}
                             places={places}
                         />
-                        <p className={styles.byline}>
-                            <Avatar
-                                username={first.author}
-                                size={20}
-                            />
-                            <Link to={`/users/${first.author}`}>{first.author}</Link>
+                        <p className={styles.meta}>
+                            <AuthorLink username={first.author} />
                             <span>{timeAgo(first.created)}</span>
                         </p>
                     </div>
@@ -251,19 +119,21 @@ export const NewsList = () => {
                             key={item.id}
                             className={styles.row}
                         >
-                            <NewsCover
+                            <NewsThumb
                                 item={item}
                                 places={places}
-                                to={`/news/${item.id}`}
                             />
                             <div className={styles.rowText}>
                                 <h3><Link to={`/news/${item.id}`}>{item.title}</Link></h3>
                                 <Excerpt
-                                    className={styles.oneLine}
+                                    className={styles.clamp1}
                                     item={item}
                                     places={places}
                                 />
-                                <p className={styles.date}>{timeAgo(item.created)}</p>
+                                <p className={styles.meta}>
+                                    <AuthorLink username={item.author} />
+                                    <span>{timeAgo(item.created)}</span>
+                                </p>
                             </div>
                         </li>
                     ))}
@@ -325,6 +195,7 @@ const IdeaRow = ({idea, onVote, showStatus}) => {
                             {idea.category}
                         </span>
                     ) : null}
+                    {idea.author ? <AuthorLink username={idea.author} /> : null}
                     <span
                         className={styles.metaItem}
                         title={text('Comments')}

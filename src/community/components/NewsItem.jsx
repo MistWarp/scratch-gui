@@ -22,7 +22,7 @@ export const safeNewsLink = link => {
     return null;
 };
 
-const NewsItem = ({compact, full = false, item, onArchive, onChanged, onEdit, showAnalytics = false}) => {
+const NewsItem = ({bare = false, compact, full = false, item, onArchive, onChanged, onEdit, showAnalytics = false}) => {
     const {text: communityText} = useCommunityText();
     const {user, login} = useUser();
     const canDelete = Boolean(user && user.isAdmin);
@@ -137,8 +137,11 @@ const NewsItem = ({compact, full = false, item, onArchive, onChanged, onEdit, sh
                 {communityText('This permanently deletes “{value1}”.', {value1: item.title})}
             </ConfirmModal>
         ) : null}
-        <article className={`${styles.item} ${compact ? styles.compact : ''} ${full ? styles.full : ''}`}>
-            <div className={styles.head}>
+        <article
+            className={[styles.item, compact ? styles.compact : '', full ? styles.full : '', bare ? styles.bare : '']
+                .filter(Boolean).join(' ')}
+        >
+            {bare ? null : <div className={styles.head}>
                 <Title>{full ? item.title : <Link to={`/news/${item.id}`}>{item.title}</Link>}</Title>
                 {!full ? (
                     <span className={styles.date}>
@@ -182,14 +185,14 @@ const NewsItem = ({compact, full = false, item, onArchive, onChanged, onEdit, sh
                         <Trash2 size={14} />
                     </IconButton>
                 ) : null}
-            </div>
-            {!full && item.author ? (
+            </div>}
+            {!bare && !full && item.author ? (
                 <UserLink className={styles.postAuthor} username={item.author}>
                     <Avatar username={item.author} size={22} />
                     <span>{item.author}</span>
                 </UserLink>
             ) : null}
-            {full ? (
+            {full && !bare ? (
                 <p className={styles.byline}>
                     {item.author ? (
                         <span className={styles.bylineAuthor}>
@@ -203,7 +206,10 @@ const NewsItem = ({compact, full = false, item, onArchive, onChanged, onEdit, sh
                     ) : null}
                 </p>
             ) : null}
-            <Markdown className={styles.body}>{item.body}</Markdown>
+            <Markdown
+                className={styles.body}
+                headingOffset={bare ? 1 : 0}
+            >{item.body}</Markdown>
             {showAnalytics ? (
                 <div className={styles.analytics} aria-label={communityText('Post analytics')}>
                     <span>
@@ -277,7 +283,7 @@ const NewsItem = ({compact, full = false, item, onArchive, onChanged, onEdit, sh
                 {item.archived ? (
                     <span className={`${styles.category} ${styles.footerCategory}`}>{communityText('Archived')}</span>
                 ) : null}
-                {category === 'update' ? null : (
+                {category === 'update' || bare ? null : (
                     <span
                         className={[
                             styles.category, styles[`category${categoryLabel}`] || '', styles.footerCategory

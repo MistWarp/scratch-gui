@@ -309,3 +309,19 @@
         font-size: var(--fs-4xl);
     }
 }
+
+/* On the post page the page owns the title and byline. */
+.full.bare .body {
+    margin-top: 0;
+    color: var(--mw-text);
+    font-size: var(--fs-lg);
+    line-height: 1.75;
+}
+
+.full.bare .body h2 {
+    font-size: var(--fs-2xl);
+}
+
+.full.bare .body h3 {
+    font-size: var(--fs-xl);
+}

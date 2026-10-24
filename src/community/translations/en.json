@@ -3020,5 +3020,15 @@
   "{value1, plural, one {# submission} other {# submissions}}": "{value1, plural, one {# submission} other {# submissions}}",
   "{value1} joined": "{value1} joined",
   "Ends {value1}": "Ends {value1}",
-  "Loading the leaderboard…": "Loading the leaderboard…"
+  "Loading the leaderboard…": "Loading the leaderboard…",
+  "Kinds of post": "Kinds of post",
+  "Search news": "Search news",
+  "No posts match.": "No posts match.",
+  "Show all news": "Show all news",
+  "Show more ({value1} left)": "Show more ({value1} left)",
+  "Copy this link": "Copy this link",
+  "Link copied": "Link copied",
+  "More news": "More news",
+  "Previous post": "Previous post",
+  "Next post": "Next post"
 }
