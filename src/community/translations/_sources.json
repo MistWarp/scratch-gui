@@ -836,7 +836,7 @@
   ],
   "News": [
     "src/community/components/Footer.jsx:43",
-    "src/community/components/HomeCommunity.jsx:76",
+    "src/community/components/HomeCommunity.jsx:207",
     "src/community/pages/News.jsx:166"
   ],
   "Stats": [
@@ -844,7 +844,7 @@
   ],
   "Roadmap": [
     "src/community/components/Footer.jsx:45",
-    "src/community/components/HomeCommunity.jsx:126",
+    "src/community/components/HomeCommunity.jsx:421",
     "src/community/pages/Roadmap.jsx:478"
   ],
   "Compare with Scratch": [
@@ -1007,30 +1007,60 @@
   "Restore this version": [
     "src/community/components/GitGraph.jsx:129"
   ],
+  "the space": [
+    "src/community/components/HomeCommunity.jsx:127"
+  ],
+  "the project": [
+    "src/community/components/HomeCommunity.jsx:127"
+  ],
   "All updates": [
-    "src/community/components/HomeCommunity.jsx:77"
+    "src/community/components/HomeCommunity.jsx:208"
   ],
   "Couldn't load news.": [
-    "src/community/components/HomeCommunity.jsx:86",
+    "src/community/components/HomeCommunity.jsx:217",
     "src/community/pages/News.jsx:306"
   ],
   "News from MistWarp will show up here.": [
-    "src/community/components/HomeCommunity.jsx:89"
+    "src/community/components/HomeCommunity.jsx:220"
+  ],
+  "Upvote {value1}": [
+    "src/community/components/HomeCommunity.jsx:284"
+  ],
+  "Remove your vote": [
+    "src/community/components/HomeCommunity.jsx:285"
+  ],
+  "Upvote": [
+    "src/community/components/HomeCommunity.jsx:285"
+  ],
+  "Comments": [
+    "src/community/components/HomeCommunity.jsx:330",
+    "src/community/pages/Profile.jsx:700",
+    "src/community/pages/Space.jsx:323",
+    "src/community/pages/Studio.jsx:86",
+    "src/community/pages/Studio.jsx:152",
+    "src/community/pages/admin/UserDetailCard.jsx:344",
+    "src/community/pages/project/ProjectActivity.jsx:35"
+  ],
+  "Could not save your vote.": [
+    "src/community/components/HomeCommunity.jsx:384"
   ],
   "Suggest and vote": [
-    "src/community/components/HomeCommunity.jsx:127"
+    "src/community/components/HomeCommunity.jsx:422"
   ],
   "Couldn't load roadmap suggestions.": [
-    "src/community/components/HomeCommunity.jsx:136"
+    "src/community/components/HomeCommunity.jsx:446"
   ],
   "No active suggestions": [
-    "src/community/components/HomeCommunity.jsx:140"
+    "src/community/components/HomeCommunity.jsx:450"
   ],
   "Add the first one": [
-    "src/community/components/HomeCommunity.jsx:142"
+    "src/community/components/HomeCommunity.jsx:452"
   ],
-  "Score": [
-    "src/community/components/HomeCommunity.jsx:154"
+  "Planned next": [
+    "src/community/components/HomeCommunity.jsx:455"
+  ],
+  "Most wanted": [
+    "src/community/components/HomeCommunity.jsx:456"
   ],
   "{value1} projects, {value2} hearts": [
     "src/community/components/HomeDiscovery.jsx:85"
@@ -5866,14 +5896,6 @@
   ],
   "No written review.": [
     "src/community/pages/Profile.jsx:687"
-  ],
-  "Comments": [
-    "src/community/pages/Profile.jsx:700",
-    "src/community/pages/Space.jsx:323",
-    "src/community/pages/Studio.jsx:86",
-    "src/community/pages/Studio.jsx:152",
-    "src/community/pages/admin/UserDetailCard.jsx:344",
-    "src/community/pages/project/ProjectActivity.jsx:35"
   ],
   "Turning on…": [
     "src/community/pages/Profile.jsx:706"
