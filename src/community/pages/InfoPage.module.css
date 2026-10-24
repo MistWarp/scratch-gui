@@ -170,3 +170,9 @@
         padding-top: 28px;
     }
 }
+
+.linkRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+}

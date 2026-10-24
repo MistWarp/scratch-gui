@@ -310,6 +310,7 @@ class CollaborationModal extends Component {
         // (kicked, host left, denied...). Keep it rather than wiping it, in
         // whatever order the connected/room/error updates arrive.
         if (prevProps.isConnected !== this.props.isConnected) {
+            // eslint-disable-next-line react/no-did-update-set-state
             this.setState({
                 connectionStep: this.props.isConnected ? 'connected' : 'join',
                 isConnecting: false,
@@ -319,6 +320,7 @@ class CollaborationModal extends Component {
 
         if (prevProps.roomId !== this.props.roomId) {
             if (this.props.roomId) {
+                // eslint-disable-next-line react/no-did-update-set-state
                 this.setState({roomId: this.props.roomId});
             } else {
                 this._autoJoinKey = null;
@@ -333,6 +335,7 @@ class CollaborationModal extends Component {
         }
 
         if (prevProps.connectionError !== this.props.connectionError && this.props.connectionError) {
+            // eslint-disable-next-line react/no-did-update-set-state
             this.setState({
                 error: this.props.connectionError,
                 isConnecting: false,
@@ -351,6 +354,7 @@ class CollaborationModal extends Component {
                         JSON.stringify(pendingRequests) !== JSON.stringify(this.state.pendingRequests);
 
                     if (hasChanged) {
+                        // eslint-disable-next-line react/no-did-update-set-state
                         this.setState({pendingRequests});
                     }
                 }
@@ -402,6 +406,7 @@ class CollaborationModal extends Component {
     }
 
     async handleJoinRoom () {
+        if (this.props.isStudent) return;
         const roomId = this.state.roomId.trim();
         if (!roomId) {
             this.setState({error: this.props.intl.formatMessage(messages.enterRoomId)});
@@ -431,6 +436,7 @@ class CollaborationModal extends Component {
     }
 
     async handleCreateRoom () {
+        if (this.props.isStudent) return;
         const roomCode = this.state.roomId.trim() || this.generateRoomCode();
         this._autoJoinKey = `${roomCode}-${this.props.currentUsername}`;
 
@@ -591,7 +597,7 @@ class CollaborationModal extends Component {
     }
 
     maybeAutoJoin () {
-        if (this.props.projectSessionActive) return;
+        if (this.props.isStudent || this.props.projectSessionActive) return;
         const {roomId, currentUsername, isConnected} = this.props;
         if (!roomId || !currentUsername || isConnected) return;
         if (CollaborationService.getInstance().roomId) return;
@@ -1487,7 +1493,7 @@ class CollaborationModal extends Component {
 
     render () {
         let content;
-        const projectMode = this.props.projectSession || this.props.projectSessionActive;
+        const projectMode = this.props.isStudent || this.props.projectSession || this.props.projectSessionActive;
         switch (projectMode ? 'project' : this.state.connectionStep) {
         case 'project':
             content = this.renderProjectSession();
@@ -1534,6 +1540,7 @@ CollaborationModal.propTypes = {
     projectSession: PropTypes.object,
     onOpenBranches: PropTypes.func,
     projectSessionActive: PropTypes.bool,
+    isStudent: PropTypes.bool,
     projectPeerIds: PropTypes.arrayOf(PropTypes.string),
     visible: PropTypes.bool,
     currentUsername: PropTypes.string,

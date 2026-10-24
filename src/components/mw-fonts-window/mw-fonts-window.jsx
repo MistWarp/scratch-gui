@@ -7,6 +7,7 @@ import classNames from 'classnames';
 import {Theme} from '../../lib/themes/index.js';
 import {setTheme} from '../../reducers/theme.js';
 import {applyTheme} from '../../lib/themes/themePersistance.js';
+import {isStudentSession} from '../../lib/rotur/student-flag.js';
 import {
     loadGoogleFont,
     searchGoogleFonts,
@@ -234,7 +235,7 @@ class MWFontsWindow extends React.Component {
 
     addGoogleFont = async fontFamily => {
         const family = fontFamily?.trim();
-        if (!family) return;
+        if (!family || isStudentSession()) return;
 
         try {
             await loadGoogleFont(family);
@@ -449,27 +450,29 @@ class MWFontsWindow extends React.Component {
                     )}
                 </FontSection>
 
-                <FontSection
-                    icon={Globe}
-                    title={(
-                        <FormattedMessage
-                            defaultMessage="Google Fonts"
-                            id="tw.fonts.googleFonts"
-                        />
-                    )}
-                >
-                    <div className={styles.fontInputContainer}>
-                        <input
-                            type="text"
-                            className={styles.fontInput}
-                            placeholder={this.props.intl.formatMessage(messages.searchGoogleFonts)}
-                            value={this.state.googleFontInput}
-                            onChange={this.handleGoogleFontInputChange}
-                            onKeyDown={this.handleGoogleInputKeyDown}
-                        />
-                    </div>
-                    {this.renderGoogleFontsList()}
-                </FontSection>
+                {isStudentSession() ? null : (
+                    <FontSection
+                        icon={Globe}
+                        title={(
+                            <FormattedMessage
+                                defaultMessage="Google Fonts"
+                                id="tw.fonts.googleFonts"
+                            />
+                        )}
+                    >
+                        <div className={styles.fontInputContainer}>
+                            <input
+                                type="text"
+                                className={styles.fontInput}
+                                placeholder={this.props.intl.formatMessage(messages.searchGoogleFonts)}
+                                value={this.state.googleFontInput}
+                                onChange={this.handleGoogleFontInputChange}
+                                onKeyDown={this.handleGoogleInputKeyDown}
+                            />
+                        </div>
+                        {this.renderGoogleFontsList()}
+                    </FontSection>
+                )}
 
                 <FontSection
                     icon={Monitor}

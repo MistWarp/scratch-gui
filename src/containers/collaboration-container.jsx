@@ -7,10 +7,12 @@ import {defineMessages, injectIntl, intlShape} from 'react-intl';
 
 import CollaborationModal from '../components/collaboration-modal/collaboration-modal.jsx';
 import ProjectSession from '../components/collaboration-modal/project-session.jsx';
+import ViewerBanner from '../components/collaboration-modal/viewer-banner.jsx';
 import CollaborationService from '../lib/collaboration/index.js';
 import NotificationSystem from '../lib/notification-manager.js';
 import {formatCollabError, isRetryableCollabError} from '../lib/collaboration/describe-error.js';
 import {setGitModalInitialView} from '../lib/git/modal-view.js';
+import {isStudentSession} from '../lib/rotur/student-flag.js';
 
 import {
     setProjectPresence,
@@ -26,8 +28,10 @@ import {
     setCollaborationHostLoadingProgress,
     setCollaborationReconnecting,
     setUserActivity,
-    removeUserActivity
+    removeUserActivity,
+    setCollaborationViewer
 } from '../reducers/collaboration';
+import {activateTab} from '../reducers/editor-tab';
 
 import {
     setUsername
@@ -67,6 +71,21 @@ const messages = defineMessages({
         defaultMessage: 'Join',
         description: 'Button confirming that the user wants to join a live collaboration session',
         id: 'mw.collaboration.joinConfirmButton'
+    },
+    watchConfirmTitle: {
+        defaultMessage: 'Watch the presentation?',
+        description: 'Title of the dialog confirming that a class member wants to watch a Classroom presentation',
+        id: 'mw.collaboration.watchConfirmTitle'
+    },
+    watchConfirmMessage: {
+        defaultMessage: 'Watching replaces the editor with the presenter\'s project and follows their view. You cannot edit it while you watch. A device backup keeps your current code first.',
+        description: 'Message of the dialog confirming that watching a Classroom presentation replaces the open project',
+        id: 'mw.collaboration.watchConfirmMessage'
+    },
+    watchConfirmButton: {
+        defaultMessage: 'Back up and watch',
+        description: 'Button confirming that the user wants to watch a Classroom presentation',
+        id: 'mw.collaboration.watchConfirmButton'
     },
     joinCancelled: {
         defaultMessage: 'Joining was cancelled. Your project is unchanged.',
@@ -262,6 +281,9 @@ class CollaborationContainer extends Component {
         this.handleReconnected = this.handleReconnected.bind(this);
         this.handleHostIdTaken = this.handleHostIdTaken.bind(this);
         this.handleRetry = this.handleRetry.bind(this);
+        this.handlePresenterActivity = this.handlePresenterActivity.bind(this);
+        this.handleFollowChanged = this.handleFollowChanged.bind(this);
+        this.handleFollowPresenter = this.handleFollowPresenter.bind(this);
     }
 
     componentDidMount () {
@@ -306,6 +328,8 @@ class CollaborationContainer extends Component {
         this.collaborationService.on('reconnecting', this.handleReconnecting);
         this.collaborationService.on('reconnected', this.handleReconnected);
         this.collaborationService.on('host-id-taken', this.handleHostIdTaken);
+        this.collaborationService.on('presenter-activity', this.handlePresenterActivity);
+        this.collaborationService.on('follow-changed', this.handleFollowChanged);
 
         this._onEditError = ({error}) => NotificationSystem.error(error, 5000);
         this.collaborationService.on('edit-error', this._onEditError);
@@ -358,6 +382,9 @@ class CollaborationContainer extends Component {
         this.collaborationService.off('reconnecting', this.handleReconnecting);
         this.collaborationService.off('reconnected', this.handleReconnected);
         this.collaborationService.off('host-id-taken', this.handleHostIdTaken);
+        this.collaborationService.off('presenter-activity', this.handlePresenterActivity);
+        this.collaborationService.off('follow-changed', this.handleFollowChanged);
+        clearTimeout(this.presenterTargetTimer);
 
         if (this.attachTimeout) {
             clearTimeout(this.attachTimeout);
@@ -375,10 +402,22 @@ class CollaborationContainer extends Component {
         }
     }
 
+    isStudent () {
+        return this.props.isStudent || isStudentSession();
+    }
+
     async handleJoinRoom (roomId, username, scope = null, options = {}) {
         // A retry repeats a join the user already agreed to.
         const {intl} = this.props;
-        const accepted = options.retry || await new Promise(resolve => this.props.openSimpleDialog({
+        const viewer = Boolean(options && options.viewer);
+        const accepted = options.retry || await new Promise(resolve => this.props.openSimpleDialog(viewer ? {
+            type: 'confirm',
+            title: intl.formatMessage(messages.watchConfirmTitle),
+            message: intl.formatMessage(messages.watchConfirmMessage),
+            choices: [{value: 'join', label: intl.formatMessage(messages.watchConfirmButton)}],
+            onOk: () => resolve(true),
+            onCancel: () => resolve(false)
+        } : {
             type: 'confirm',
             title: intl.formatMessage(messages.joinConfirmTitle),
             message: [
@@ -395,13 +434,15 @@ class CollaborationContainer extends Component {
             throw cancelled;
         }
         const attempt = this.beginConnectAttempt();
-        this.lastConnect = {kind: 'join', roomId, username, scope, invite: options.invite || null};
+        const classroom = Boolean(options && options.classroom);
+        this.lastConnect = {kind: 'join', roomId, username, scope, invite: options.invite || null, viewer, classroom};
         try {
             this.endNoticeShown = false;
             this.props.onSetError(null);
 
             await this.collaborationService.connectToRoom(
-                roomId, username, false, 'private', this.props.roturHandle, scope, {invite: options.invite}
+                roomId, username, false, 'private', this.props.roturHandle, scope,
+                {invite: options.invite, viewer, classroom}
             );
             this.throwIfAbandoned(attempt);
             if (options.invite) this.props.onSetInvite(null);
@@ -419,12 +460,12 @@ class CollaborationContainer extends Component {
         }
     }
 
-    async handleCreateRoom (roomId, username, _privacy, scope = null) {
+    async handleCreateRoom (roomId, username, _privacy, scope = null, options = {}) {
 
         if (!roomId) throw new Error('Room ID is required to create a room');
 
         const attempt = this.beginConnectAttempt();
-        this.lastConnect = {kind: 'create', roomId, username, scope};
+        this.lastConnect = {kind: 'create', roomId, username, scope, classroom: Boolean(options && options.classroom)};
         try {
             this.endNoticeShown = false;
             this.props.onSetError(null);
@@ -436,7 +477,7 @@ class CollaborationContainer extends Component {
                 'private',
                 this.props.roturHandle,
                 scope,
-                {inviteRole: 'watch'}
+                {inviteRole: 'watch', classroom: Boolean(options && options.classroom)}
             );
             this.throwIfAbandoned(attempt);
             this.setSessionState({reclaimingRoom: false});
@@ -482,8 +523,12 @@ class CollaborationContainer extends Component {
     handleRetry () {
         const last = this.lastConnect;
         if (!last) return Promise.reject(new Error('There is nothing to try again.'));
-        if (last.kind === 'create') return this.handleCreateRoom(last.roomId, last.username, 'private', last.scope);
-        return this.handleJoinRoom(last.roomId, last.username, last.scope, {invite: last.invite, retry: true});
+        if (last.kind === 'create') {
+            return this.handleCreateRoom(last.roomId, last.username, 'private', last.scope,
+                {classroom: last.classroom});
+        }
+        return this.handleJoinRoom(last.roomId, last.username, last.scope,
+            {invite: last.invite, viewer: last.viewer, classroom: last.classroom, retry: true});
     }
 
     setSessionState (next) {
@@ -577,6 +622,7 @@ class CollaborationContainer extends Component {
         this.props.onSetUsers([]);
         this.props.onSetCollabLoading(false);
         this.props.onSetReconnecting(false);
+        this.props.onSetViewer(null);
     }
 
     /**
@@ -634,9 +680,42 @@ class CollaborationContainer extends Component {
         this.announceEnd('warning', message);
     }
 
+    syncViewerState () {
+        const service = this.collaborationService;
+        this.props.onSetViewer(service.isViewer && service.isConnected ? {
+            presenter: service.hostUsername || '',
+            following: service.isFollowingPresenter()
+        } : null);
+    }
+
+    handlePresenterActivity (activity) {
+        const vm = this.props.vm;
+        if (!vm || !activity) return;
+        if (activity.targetId && vm.runtime && vm.runtime.getTargetById(activity.targetId) &&
+            (!vm.editingTarget || vm.editingTarget.id !== activity.targetId)) {
+            vm.setEditingTarget(activity.targetId);
+        }
+        if (typeof activity.tab === 'number' && activity.tab !== this.props.activeTabIndex) {
+            this.props.onActivateTab(activity.tab);
+        }
+        clearTimeout(this.presenterTargetTimer);
+        this.presenterTargetTimer = setTimeout(() => {
+            this.collaborationService.onPresenterTargetShown();
+        }, 300);
+    }
+
+    handleFollowChanged () {
+        this.syncViewerState();
+    }
+
+    handleFollowPresenter () {
+        this.collaborationService.followPresenter();
+    }
+
     handleConnectedToHost () {
         // Now we're actually connected and can show the connected UI
         this.props.onSetConnected(true);
+        this.syncViewerState();
 
         // Sync username with collaboration service (guests only; see handleUsernameChanged)
         const serviceUsername = this.collaborationService.username;
@@ -931,11 +1010,19 @@ class CollaborationContainer extends Component {
             >
                 {/* eslint-disable-next-line react/jsx-no-bind */}
                 {(projectSessionActive, projectSession) => (<React.Fragment>
+                    {this.props.viewer ? (
+                        <ViewerBanner
+                            presenter={this.props.viewer.presenter}
+                            following={this.props.viewer.following}
+                            onFollow={this.handleFollowPresenter}
+                        />
+                    ) : null}
                     <CollaborationModal
                         projectSessionActive={projectSessionActive}
                         projectSession={projectSession}
                         onOpenBranches={this.props.onOpenBranches}
                         visible={this.props.isVisible}
+                        isStudent={this.isStudent()}
                         currentUsername={this.props.currentUsername}
                         currentUserId={this.getCurrentUserId()}
                         roturHandle={this.props.roturHandle}
@@ -986,6 +1073,7 @@ CollaborationContainer.propTypes = {
     intl: intlShape.isRequired,
     isReconnecting: PropTypes.bool,
     reconnectReason: PropTypes.string,
+    isStudent: PropTypes.bool,
     roomId: PropTypes.string,
     roomPrivacy: PropTypes.string,
     connectedUsers: PropTypes.array.isRequired,
@@ -1011,6 +1099,12 @@ CollaborationContainer.propTypes = {
     onSetUserActivity: PropTypes.func.isRequired,
     onRemoveUserActivity: PropTypes.func.isRequired,
     onOpenChangeUsername: PropTypes.func.isRequired,
+    onSetViewer: PropTypes.func.isRequired,
+    onActivateTab: PropTypes.func.isRequired,
+    viewer: PropTypes.shape({
+        presenter: PropTypes.string,
+        following: PropTypes.bool
+    }),
     activeTabIndex: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     // eslint-disable-next-line react/forbid-prop-types
     userActivity: PropTypes.object.isRequired
@@ -1022,11 +1116,13 @@ const mapStateToProps = state => ({
     isConnected: state.scratchGui.collaboration.isConnected,
     isReconnecting: state.scratchGui.collaboration.isReconnecting,
     reconnectReason: state.scratchGui.collaboration.reconnectReason,
+    isStudent: Boolean(state.scratchGui.rotur && state.scratchGui.rotur.isStudent),
     roomId: state.scratchGui.collaboration.roomId,
     roomPrivacy: state.scratchGui.collaboration.roomPrivacy,
     pendingInvite: state.scratchGui.collaboration.pendingInvite,
     connectedUsers: state.scratchGui.collaboration.connectedUsers,
     userActivity: state.scratchGui.collaboration.activity,
+    viewer: state.scratchGui.collaboration.viewer,
     activeTabIndex: state.scratchGui.editorTab ?
         (isCodeMode(state) ? 'code' : state.scratchGui.editorTab.activeTabIndex) : 0,
     connectionError: state.scratchGui.collaboration.connectionError,
@@ -1061,6 +1157,8 @@ const mapDispatchToProps = dispatch => ({
     onSetUserActivity: activity => dispatch(setUserActivity(activity)),
     onRemoveUserActivity: userId => dispatch(removeUserActivity(userId)),
     onOpenChangeUsername: () => dispatch(openUsernameModal()),
+    onSetViewer: viewer => dispatch(setCollaborationViewer(viewer)),
+    onActivateTab: tab => dispatch(activateTab(tab)),
     onShowToast: (message, type) => dispatch({
         type: 'scratch-gui/SHOW_TOAST',
         message,

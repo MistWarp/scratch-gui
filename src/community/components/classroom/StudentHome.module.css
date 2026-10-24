@@ -1,0 +1,224 @@
+.page {
+    max-width: var(--maxw-mid);
+    margin: 0 auto;
+    padding: var(--page-pad);
+    color: var(--mw-text);
+}
+
+.section {
+    margin-top: 28px;
+}
+
+.assignmentList {
+    display: grid;
+    gap: 14px;
+}
+
+.assignment {
+    display: grid;
+    gap: 12px;
+    padding: 22px 24px;
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+}
+
+.assignmentTop {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+}
+
+.assignmentTitle {
+    margin: 0;
+    font-size: var(--fs-2xl);
+    font-weight: 700;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.due,
+.dueOverdue {
+    margin: 0;
+    color: var(--text-dim);
+    font-size: var(--fs-lg);
+    font-weight: 600;
+}
+
+.dueOverdue {
+    color: var(--mw-danger);
+}
+
+.instructions {
+    margin: 0;
+    font-size: var(--fs-lg);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.feedback {
+    display: grid;
+    gap: 6px;
+    padding: 14px 16px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-softer);
+}
+
+.feedback p {
+    margin: 0;
+    font-size: var(--fs-lg);
+    line-height: 1.55;
+    white-space: pre-wrap;
+}
+
+.feedbackTitle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--accent-strong);
+    font-size: var(--fs-sm);
+    font-weight: 700;
+}
+
+.grade {
+    font-weight: 700;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.bigButton {
+    min-height: 48px;
+    padding-inline: 20px;
+    font-size: var(--fs-lg);
+}
+
+.projectList {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.projectRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    padding: 14px 18px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+}
+
+.projectText {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
+
+.projectTitle {
+    font-size: var(--fs-lg);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.projectTitle:hover {
+    text-decoration: underline;
+}
+
+.projectMeta {
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+}
+
+.projectActions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 8px;
+}
+
+.storageCard {
+    padding: 20px 24px;
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    box-shadow: var(--card-shadow);
+}
+
+@media (max-width: 620px) {
+    .assignment {
+        padding: 18px;
+    }
+
+    .actions > * {
+        flex: 1 1 auto;
+    }
+
+    .projectActions {
+        width: 100%;
+    }
+
+    .projectActions > * {
+        flex: 1 1 auto;
+    }
+}
+
+.watchCard {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px 20px;
+    margin-top: 24px;
+    padding: 22px 24px;
+    border-radius: var(--radius);
+    background: var(--accent-soft);
+}
+
+.watchIcon {
+    display: grid;
+    width: 56px;
+    height: 56px;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: var(--accent-contrast);
+}
+
+.watchText {
+    display: grid;
+    flex: 1 1 260px;
+    gap: 4px;
+    min-width: 0;
+}
+
+.watchTitle {
+    margin: 0;
+    font-size: var(--fs-2xl);
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.watchLead {
+    margin: 0;
+    color: var(--text-dim);
+    font-size: var(--fs-lg);
+}
+
+.group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: var(--accent-strong);
+    font-size: var(--fs-lg);
+    font-weight: 600;
+}

@@ -10,6 +10,7 @@ import {setProjectUnchanged} from '../../reducers/project-changed.js';
 import {setProjectTitle} from '../../reducers/project-title.js';
 import {
     LoadingStates,
+    defaultProjectId,
     abortProjectSwitch,
     getIsCreatingNew,
     getIsFetchingWithId,
@@ -43,12 +44,20 @@ import {getAuth as getRoturGitAuth} from '../rotur/git-api.js';
 import {getRememberedPlatformProjectState, rememberPlatformProject} from '../community/publish.js';
 import {
     getEditorProject as getMistWarpEditorProject,
+    getProject as getMistWarpProject,
     getServerTrustedExtensions
 } from '../community/api.js';
 import {hasBridge, bridgeFetch} from '../community/embed-bridge.js';
 import {cachedFetchBuffer} from '../community/cached-fetch.js';
 import {createStarterProject, getStarter} from '../starter-projects.js';
+import defaultProjectData from '../default-project/project-data.js';
 import RestorePointAPI from '../api/restore-points';
+import {isStudentSession} from '../rotur/student-flag.js';
+import {isGalleryExtensionUrl} from '../trusted-extension.js';
+
+const isGallerySampleUrl = url => typeof url === 'string' && (
+    isGalleryExtensionUrl(url) || url.startsWith('https://extensions-mistium.pages.dev/')
+);
 
 const cloneProjectFromRepo = async url => {
     const {fs, dir} = await cloneRepo({url, onAuth: getRoturGitAuth});
@@ -105,8 +114,35 @@ const clearProjectSourceOnForeignLoads = vm => {
 
 const fetchArrayBuffer = url => cachedFetchBuffer(url);
 
+const BLANK_PROJECT_ROLES = ['owner', 'maintainer', 'editor', 'viewer'];
+
+const fillDefaultMessage = (message, values = {}) => message.defaultMessage
+    .replace(/\{(\w+)\}/g, (match, name) => (Object.prototype.hasOwnProperty.call(values, name) ?
+        String(values[name]) : match));
+
+const loadEditorProject = async id => {
+    try {
+        return (await getMistWarpEditorProject(id)).project;
+    } catch (error) {
+        if (!error || error.status !== 403) throw error;
+        const viewed = await getMistWarpProject(id).catch(() => null);
+        if (viewed && viewed.project && viewed.project.myRole === 'viewer') return viewed.project;
+        throw error;
+    }
+};
+
 const loadPlatformProject = async (id, source) => {
-    const project = source || (await getMistWarpEditorProject(id)).project;
+    const project = source || await loadEditorProject(id);
+    if (!source && !project.projectJsonUrl) {
+        if (!project.isOwner && !BLANK_PROJECT_ROLES.includes(project.myRole)) {
+            throw new Error('This project has not been saved yet.');
+        }
+        return {
+            data: JSON.stringify(defaultProjectData(fillDefaultMessage)),
+            title: project.title,
+            platformProject: {...project, trustedExtensions: project.trustedExtensions || []}
+        };
+    }
     const [data, trustedExtensions] = await Promise.all([
         hasBridge() ? bridgeFetch(project.projectJsonUrl) : fetchArrayBuffer(project.projectJsonUrl),
         source ? getServerTrustedExtensions(id, source.projectJsonUrl) : project.trustedExtensions
@@ -256,17 +292,19 @@ const ProjectFetcherHOC = function (WrappedComponent) {
             const searchParams = typeof URLSearchParams === 'undefined' ?
                 null :
                 new URLSearchParams(location.search);
-            const cloneUrl = searchParams && searchParams.get('clone');
+            const student = isStudentSession();
+            const cloneUrl = !student && searchParams && searchParams.get('clone');
             const platformProject = searchParams && searchParams.get('platform_project');
             const hashMatch = typeof location === 'undefined' ?
                 null :
                 location.hash.match(/^#mw-([\w-]+)/);
             const hashProjectId = hashMatch && hashMatch[1];
-            const mistwarpAssets = searchParams && searchParams.get('mw_assets');
+            const mistwarpAssets = !student && searchParams && searchParams.get('mw_assets');
             if (mistwarpAssets && isHttpUrl(mistwarpAssets)) {
                 storage.addMistWarpAssetStore(mistwarpAssets);
             }
             let projectUrl = searchParams && searchParams.get('project_url');
+            if (student && !isGallerySampleUrl(projectUrl)) projectUrl = null;
             let sourceProvidesHistory = false;
             if (hashProjectId || platformProject) {
                 sourceProvidesHistory = true;
@@ -323,6 +361,8 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                     data: JSON.stringify(createStarterProject(starter.id, this.props.intl.formatMessage)),
                     title: starter.title
                 }) : Promise.reject(new Error('This starter is not available. Choose a starter from the homepage.'));
+            } else if (student && String(projectId) !== String(defaultProjectId)) {
+                assetPromise = Promise.reject(new Error('Scratch projects are not available for class accounts.'));
             } else {
                 // TW: Temporary hack for project tokens
                 assetPromise = fetchProjectToken(projectId)

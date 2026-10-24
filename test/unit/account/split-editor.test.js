@@ -247,3 +247,22 @@ test('after the account frame fails to connect, later requests stop waiting for 
         return Promise.resolve();
     });
 });
+
+test('a class account gets student protections before its editor token arrives', async () => {
+    jest.resetModules();
+    const signedIn = mockIdentity;
+    mockIdentity = {status: 'ready', user: {username: 'ada~k7p2q', displayName: 'Ada', isStudent: true}, banMessage: null};
+    let finishMint = null;
+    mockCall.mockImplementation(method => (method === 'editorSession' ? new Promise(resolve => {
+        finishMint = () => resolve({token: 'editor-student', expiresAt: Date.now() + 3600000});
+    }) : Promise.resolve(null)));
+    const fresh = require('../../../src/lib/rotur/identity.js');
+    const flag = require('../../../src/lib/rotur/student-flag.js');
+    const restoring = fresh.restore();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(flag.isStudentSession()).toBe(true);
+    finishMint();
+    await restoring;
+    expect(fresh.getState().user).toMatchObject({username: 'ada~k7p2q', isStudent: true});
+    mockIdentity = signedIn;
+});

@@ -1,0 +1,43 @@
+.meter {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+}
+
+.top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.label {
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+}
+
+.value {
+    color: var(--mw-text);
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    text-align: end;
+}
+
+.track {
+    height: 8px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--bg-field);
+}
+
+.fill {
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent);
+    transition: width 200ms ease;
+}
+
+.high {
+    background: var(--status-building);
+}

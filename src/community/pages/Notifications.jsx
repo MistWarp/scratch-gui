@@ -6,7 +6,7 @@ import {Link, useSearchParams} from 'react-router-dom';
 import {
     AppWindow, AtSign, Bell, ChartColumn, ChevronDown, Coins, ExternalLink, Eye, Flag, Gavel, GitFork, GitMerge,
     GitPullRequest, Heart, Layers3, Lightbulb, Megaphone, MessageCircle, PawPrint, Repeat2, Settings, ShieldAlert,
-    Star, UserPlus, Users
+    Star, UserPlus, Users, GraduationCap
 } from 'lucide-react';
 import {projectUrl} from '../api';
 import {
@@ -91,6 +91,12 @@ const TYPE_ICON = {
     challenge_join: UserPlus,
     project_feedback: Lightbulb,
     project_review: Star,
+    classroom_retention_warning: GraduationCap,
+    classroom_turned_in: GraduationCap,
+    classroom_released: GraduationCap,
+    classroom_co_teacher: GraduationCap,
+    classroom_transferred: GraduationCap,
+    classroom_returned: GraduationCap,
     notification: AppWindow
 };
 

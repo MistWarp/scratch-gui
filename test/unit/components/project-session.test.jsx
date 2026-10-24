@@ -21,7 +21,8 @@ const makeCoordinator = (role = 'owner') => {
         off: jest.fn(),
         getPendingJoinRequests: jest.fn(() => []),
         approveJoinRequest: jest.fn(() => true),
-        kickUser: jest.fn()
+        kickUser: jest.fn(),
+        setViewerPeers: jest.fn()
     };
     const props = {
         service,
@@ -142,6 +143,19 @@ describe('opt-in project collaboration', () => {
         expect(instance.props.service.approveJoinRequest.mock.calls).toEqual([['tester-peer', 'watch']]);
     });
 
+    test('tells the host which approved peers are only watching', async () => {
+        const instance = makeCoordinator();
+        instance.lease = {id: 'live', projectId: 'p1', branch: 'main', roomId: 'room', host: true};
+        instance.props.service.isConnected = true;
+        api.request.mockResolvedValue({session: {id: 'live',
+            members: [
+                {username: 'friend', peerId: 'editor-peer', approved: true},
+                {username: 'student', peerId: 'viewer-peer', approved: true, viewer: true}
+            ]}});
+        await instance.tick();
+        expect(instance.props.service.setViewerPeers).toHaveBeenCalledWith(['viewer-peer']);
+    });
+
     test('provides explicit project controls in the room window', () => {
         const instance = makeCoordinator();
         instance.props.service.scope = {projectId: 'p1', branch: 'main'};
@@ -166,7 +180,7 @@ describe('opt-in project collaboration', () => {
         api.request.mockResolvedValue({session: {id: 'live', branch: 'main', public: true}});
         await ProjectSession.prototype.host.call(instance);
         expect(instance.props.onCreateRoom).toHaveBeenCalledWith(
-            expect.any(String), 'mist', 'private', {projectId: 'p1', branch: 'main'}
+            expect.any(String), 'mist', 'private', {projectId: 'p1', branch: 'main'}, {classroom: false}
         );
         expect(api.request).toHaveBeenCalledWith('/projects/p1/live', expect.objectContaining({
             body: expect.objectContaining({action: 'host', public: true})
@@ -187,6 +201,34 @@ describe('opt-in project collaboration', () => {
         expect(instance.state.phase).toBe('joining');
         instance.sessionReady();
         expect(instance.state.phase).toBe('live');
+    });
+
+    test('a class without a Classroom plan explains why and stops asking', async () => {
+        const instance = makeCoordinator('editor');
+        api.request.mockRejectedValue(Object.assign(new Error('nope'), {status: 403, code: 'plan_required'}));
+        await instance.tick();
+        expect(instance.state.error).toBe('Live collaboration needs your teacher to have a Classroom plan. ' +
+            'Your work still saves to your class.');
+        expect(instance.state.discoveryError).toBe('');
+        api.request.mockClear();
+        await instance.tick();
+        expect(api.request).not.toHaveBeenCalled();
+    });
+
+    test('viewers in a class presentation are admitted as watchers', async () => {
+        const instance = makeCoordinator();
+        instance.lease = {host: true, id: 'live', roomId: 'room', projectId: 'p1', branch: 'main'};
+        instance.props.service.isConnected = true;
+        instance.props.service.getPendingJoinRequests.mockReturnValue([{id: 'peer-ada'}]);
+        api.request.mockResolvedValue({session: {
+            id: 'live',
+            roomId: 'room',
+            public: true,
+            members: [{peerId: 'peer-ada', username: 'ada~k7p2q', approved: true, viewer: true, access: 'watch'}]
+        }});
+        await instance.tick();
+        expect(instance.props.service.approveJoinRequest).toHaveBeenCalledWith('peer-ada', 'watch');
+        expect(instance.props.service.setViewerPeers).toHaveBeenCalledWith(['peer-ada']);
     });
 
     test('directory failures keep discovery uncertain and do not clear action errors', async () => {

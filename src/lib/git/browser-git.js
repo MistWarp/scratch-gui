@@ -10,6 +10,7 @@ import {
 } from './fractch-tree.js';
 import RestorePointAPI from '../api/restore-points.js';
 import {ROTUR_GIT_SYNC_AVAILABLE} from '../rotur/git-api.js';
+import {isStudentSession} from '../rotur/student-flag.js';
 
 const FS_NAME = 'mistwarp-git';
 const REPO_DIR = '/repo';
@@ -628,10 +629,17 @@ const checkoutCommitAndRestore = async ({vm, oid}) => {
     return 'ok';
 };
 
+const assertRemotesAllowed = () => {
+    if (isStudentSession()) {
+        throw new Error('Remote repositories are not available for class accounts.');
+    }
+};
+
 const addRemote = async ({vm, name, url}) => {
     if (!vm) {
         throw new Error('VM is required');
     }
+    assertRemotesAllowed();
 
     const fs = getFs();
 
@@ -727,6 +735,7 @@ const push = async ({vm, remote, branch, ref, setUpstream = true, onProgress, ..
     if (!vm) {
         throw new Error('VM is required');
     }
+    assertRemotesAllowed();
 
     const fs = getFs();
 
@@ -797,6 +806,7 @@ const pull = async ({vm, remote, ref, author, onAuth, onProgress} = {}) => {
     if (!vm) {
         throw new Error('VM is required');
     }
+    assertRemotesAllowed();
     const fs = getFs();
     if (!(await repoExists())) {
         throw new Error('Repository not initialized');
@@ -1531,6 +1541,7 @@ const cloneRepo = async ({url, ref, onAuth, onProgress} = {}) => {
     if (!url || typeof url !== 'string') {
         throw new Error('Repository URL is required');
     }
+    assertRemotesAllowed();
 
     const corsProxy = corsProxyForUrl(url.trim());
     const fs = getFs();

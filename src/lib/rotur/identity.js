@@ -19,6 +19,7 @@ import {
     storeSession,
     setRoturTokenGetter,
     setSessionProvider,
+    request as mistRequest,
     logout as mistLogout
 } from '../community/api.js';
 import {ACCOUNT_ORIGIN, isSplitEditor} from '../account/origins.js';
@@ -28,6 +29,16 @@ import * as accountBridge from '../account/bridge.js';
 import {setMinorAccount} from '../minor-account.js';
 import {ROTUR_TOKEN_KEY} from './token-key.js';
 import {sleep} from '../utils/async.js';
+import {forgetProjectGrants} from './extension-bridge.js';
+import {
+    STUDENT_SESSION_KEY,
+    isStudentSession,
+    readStudentFlag,
+    writeStudentFlag,
+    setSplitStudent
+} from './student-flag.js';
+
+const MIST_SESSION_KEY = 'mw:mistwarp-session';
 
 let state = {status: 'idle', user: null, banMessage: null};
 const listeners = new Set();
@@ -111,15 +122,26 @@ const splitSession = {
     }
 };
 
-const userFromBridge = user => (user && user.username ? {
-    username: user.username,
-    id: user.id || null,
-    avatarUrl: getAvatarUrl(user.username),
-    bio: user.bio
-} : null);
+const studentUser = me => ({
+    username: me.username,
+    displayName: me.displayName || me.username,
+    isStudent: true
+});
+
+const userFromBridge = user => {
+    if (!user || !user.username) return null;
+    if (user.isStudent) return studentUser(user);
+    return {
+        username: user.username,
+        id: user.id || null,
+        avatarUrl: getAvatarUrl(user.username),
+        bio: user.bio
+    };
+};
 
 const applyIdentity = async (entry, generation) => {
     const user = userFromBridge(entry.next.user);
+    if (entry.next.status !== 'restoring') setSplitStudent(Boolean(user && user.isStudent));
     if (!user || (editorToken && editorToken.username !== user.username)) storeSession(null);
     if (user && !splitSession.get()) {
         await splitSession.refresh().catch(() => null);
@@ -236,6 +258,22 @@ const signedOutElsewhere = () => {
     setMinorAccount(false);
 };
 
+const signedInAsStudent = () => Boolean(state.user && state.user.isStudent);
+
+const studentSessionChanged = () => {
+    const student = readStudentFlag() && Boolean(loadSession());
+    if (student === signedInAsStudent()) return;
+    if (signedInAsStudent()) setState({status: 'idle', user: null, reconnect: false});
+    // eslint-disable-next-line no-use-before-define
+    restore();
+};
+
+const roturEndedElsewhere = () => {
+    if (signedInAsStudent()) return;
+    if (readStudentFlag()) studentSessionChanged();
+    else signedOutElsewhere();
+};
+
 const isSomeoneElse = session => (state.user.id ?
     String(state.user.id) !== session.subject :
     state.user.username !== session.username);
@@ -254,17 +292,19 @@ const wireSession = () => {
             // eslint-disable-next-line no-use-before-define
             restore();
         } else if (!session && state.user && !needsReconnect()) {
-            signedOutElsewhere();
+            roturEndedElsewhere();
         }
     });
     // The old sign-in has no session events: notice another tab removing it.
     window.addEventListener('storage', event => {
         if (event.key === ROTUR_TOKEN_KEY && !event.newValue && state.user && !accountKey()) {
-            signedOutElsewhere();
+            roturEndedElsewhere();
         }
+        if (event.key === MIST_SESSION_KEY || event.key === STUDENT_SESSION_KEY) studentSessionChanged();
     });
     subscribeSharedCredentials(key => {
-        if (key === ROTUR_TOKEN_KEY && state.user && !accountKey()) signedOutElsewhere();
+        if (key === ROTUR_TOKEN_KEY && state.user && !accountKey()) roturEndedElsewhere();
+        if (key === MIST_SESSION_KEY || key === STUDENT_SESSION_KEY) studentSessionChanged();
     });
 };
 
@@ -282,8 +322,37 @@ const restoreWithRetry = async () => {
     }
 };
 
+const restoreStudent = async (unflagged = false) => {
+    if (!unflagged && !readStudentFlag()) return {user: null};
+    if (!loadSession()) {
+        writeStudentFlag(false);
+        return {user: null};
+    }
+    try {
+        const me = await mistRequest('/me', {cache: false});
+        if (me && me.isStudent && me.username) {
+            writeStudentFlag(true);
+            return {user: studentUser(me)};
+        }
+    } catch (error) {
+        if (loadSession() && !(error && error.status)) return {user: null, retry: true};
+    }
+    writeStudentFlag(false);
+    storeSession(null);
+    return {user: null};
+};
+
 const doRestore = async () => {
     setState({status: 'restoring'});
+    const student = await restoreStudent();
+    if (student.user) {
+        setState({status: 'ready', user: student.user, banMessage: null});
+        return student.user;
+    }
+    if (student.retry) {
+        setState({status: 'idle', user: null});
+        return null;
+    }
     let user = null;
     try {
         user = await restoreWithRetry();
@@ -292,7 +361,12 @@ const doRestore = async () => {
         return null;
     }
     if (!user) {
-        storeSession(null);
+        const late = loadSession() ? await restoreStudent(true) : {user: null};
+        if (late.user) {
+            setState({status: 'ready', user: late.user, banMessage: null});
+            return late.user;
+        }
+        if (!late.retry) storeSession(null);
         setState({status: 'idle', user: null});
         return null;
     }
@@ -324,6 +398,31 @@ const restore = () => {
     return restoreInFlight;
 };
 
+const loginStudent = async ({token, username, displayName}) => {
+    if (isSplitEditor()) throw new Error('Class accounts sign in on the MistWarp website.');
+    wireSession();
+    setState({status: 'logging-in', user: null, banMessage: null, reconnect: false});
+    if (loadSession()) await mistLogout().catch(() => null);
+    try {
+        onRoturLogout();
+    } catch (_) {
+        // ignore
+    }
+    try {
+        clearGitAuth();
+    } catch (_) {
+        // ignore
+    }
+    forgetProjectGrants();
+    roturLogout();
+    setMinorAccount(false);
+    storeSession(token);
+    writeStudentFlag(true);
+    const user = studentUser({username, displayName});
+    setState({status: 'ready', user, banMessage: null, reconnect: false});
+    return user;
+};
+
 const login = async () => {
     if (isSplitEditor()) return loginSplitEditor();
     wireSession();
@@ -336,6 +435,7 @@ const login = async () => {
         setState({status: previousUser ? 'ready' : 'idle', user: previousUser});
         throw error;
     }
+    writeStudentFlag(false);
     storeSession(null);
     try {
         await ensureMistSession();
@@ -360,6 +460,7 @@ const logout = () => {
                 // ignore
             }
             setMinorAccount(false);
+            setSplitStudent(false);
             setState({status: 'idle', user: null, banMessage: null, reconnect: false});
         })
             .catch(() => null);
@@ -376,6 +477,7 @@ const logout = () => {
         // ignore
     }
     roturLogout();
+    writeStudentFlag(false);
     storeSession(null);
     setMinorAccount(false);
     setState({status: 'idle', user: null, banMessage: null, reconnect: false});
@@ -425,9 +527,11 @@ export {
     subscribe,
     restore,
     login,
+    loginStudent,
     logout,
     ensureMistSession,
     getMistSession,
+    isStudentSession,
     getRoturToken,
     getMistWarpAuthor
 };

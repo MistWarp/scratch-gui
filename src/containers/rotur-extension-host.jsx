@@ -13,6 +13,7 @@ import {
 import {getRoturSettings, setRoturSetting} from '../lib/rotur/settings.js';
 import {isLoggedIn} from '../lib/rotur/client.js';
 import {getState as getRoturIdentityState} from '../lib/rotur/identity.js';
+import {isStudentSession} from '../lib/rotur/student-flag.js';
 import ProjectActivityScope from '../lib/rotur/project-activity-scope.js';
 import {hasRotur, roturOfflineError} from '../lib/rotur/availability.js';
 import {isSplitEditor} from '../lib/account/origins.js';
@@ -157,6 +158,7 @@ class RoturExtensionHost extends React.Component {
     }
 
     async ensureActivitySharing () {
+        if (isStudentSession()) return false;
         const mode = getRoturSettings().activitySharing;
         const key = this.activityKey();
         const decision = activityAllowed(mode, key);
@@ -202,6 +204,7 @@ class RoturExtensionHost extends React.Component {
     }
 
     getUser () {
+        if (isStudentSession()) return null;
         return this.currentUser();
     }
 
@@ -229,6 +232,7 @@ class RoturExtensionHost extends React.Component {
     }
 
     async ensureConsent (requested) {
+        if (isStudentSession()) return false;
         if (!hasRotur()) throw roturOfflineError();
         if (isSplitEditor()) {
             if (this.projectPromptsBlocked()) return false;
@@ -267,6 +271,7 @@ class RoturExtensionHost extends React.Component {
     }
 
     async call (method, args) {
+        if (isStudentSession()) throw new Error('Rotur extensions are not available for class accounts.');
         if (!hasRotur()) throw roturOfflineError();
         if (isSplitEditor()) {
             return this.splitCall({action: 'call', project: this.splitProject(), method, args: args || []});

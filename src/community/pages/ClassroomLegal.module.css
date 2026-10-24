@@ -1,0 +1,62 @@
+.page {
+    max-width: var(--maxw-narrow);
+    margin: 0 auto;
+    padding: var(--page-pad);
+    color: var(--mw-text);
+}
+
+.language {
+    margin: 0 0 16px;
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+}
+
+.document {
+    padding: 24px 28px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    line-height: 1.65;
+}
+
+.document h2 {
+    margin: 28px 0 10px;
+    font-size: var(--fs-xl);
+    font-weight: 700;
+}
+
+.document p,
+.document li {
+    color: var(--text-dim);
+    font-size: var(--fs-md);
+}
+
+.document li + li {
+    margin-top: 6px;
+}
+
+.document a {
+    color: var(--accent-strong);
+    text-decoration: underline;
+}
+
+@media (max-width: 760px) {
+    .document {
+        padding: 18px;
+    }
+}
+
+.kids {
+    margin-bottom: 20px;
+    padding: 20px 24px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+}
+
+.kids ul {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding-left: 20px;
+    font-size: var(--fs-lg);
+    line-height: 1.5;
+}

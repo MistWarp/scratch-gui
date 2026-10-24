@@ -1,4 +1,5 @@
 import {isMinorAccount} from '../lib/minor-account.js';
+import {isStudentSession} from '../lib/rotur/student-flag.js';
 
 // Analytics has its own endpoint so the status page can stay online while
 // browser analytics is disabled.
@@ -15,7 +16,7 @@ const storage = () => {
 };
 
 export const analyticsEnabled = () => {
-    if (isMinorAccount()) return false;
+    if (isMinorAccount() || isStudentSession()) return false;
     const saved = storage()?.getItem(ANALYTICS_KEY);
     if (saved === 'off') return false;
     if (typeof navigator !== 'undefined' && navigator.doNotTrack === '1') return false;

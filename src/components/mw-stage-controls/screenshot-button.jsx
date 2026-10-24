@@ -13,6 +13,7 @@ import {
     onSettingChanged
 } from '../../lib/mw-stage-controls/settings.js';
 import styles from './stage-controls.css';
+import {canStudentSessionLoadUrl} from '../../lib/rotur/student-flag.js';
 
 const messages = defineMessages({
     takeScreenshot: {
@@ -67,7 +68,7 @@ class ScreenshotButton extends React.Component {
     }
     playSoundEffect () {
         const soundUrl = getScreenshotSoundUrl();
-        if (!soundUrl) {
+        if (!soundUrl || !canStudentSessionLoadUrl(soundUrl)) {
             return;
         }
         try {

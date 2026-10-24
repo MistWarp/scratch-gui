@@ -105,6 +105,7 @@ class HostSession extends Emitter {
         this.users = new Map();
         this.pendingJoinRequests = new Map();
         this.pendingSyncs = new Set();
+        this.viewerPeers = new Set();
         this._clientOpCounter = 0;
         this._started = false;
         this._tokens = new Map();
@@ -167,6 +168,7 @@ class HostSession extends Emitter {
         this.pendingJoinRequests.clear();
         this.pendingSyncs.clear();
         this._tokens.clear();
+        this.viewerPeers.clear();
         this.removeAllListeners();
     }
 
@@ -191,6 +193,14 @@ class HostSession extends Emitter {
 
     isClientApproved (peerId) {
         return this.users.has(peerId) && peerId !== this.id;
+    }
+
+    setViewerPeers (peerIds) {
+        this.viewerPeers = new Set(peerIds || []);
+    }
+
+    isViewer (peerId) {
+        return this.viewerPeers.has(peerId);
     }
 
     /**
@@ -629,6 +639,11 @@ class HostSession extends Emitter {
             this.transport.send(peerId, makeReject(envelope.clientOpId, 'You are not in the room yet.'));
             return;
         }
+        if (this.isViewer(peerId)) {
+            this.transport.send(peerId, makeReject(envelope.clientOpId,
+                'You are watching this project and cannot edit it.'));
+            return;
+        }
         if (envelope.payload.commit) {
             this.transport.send(peerId, makeReject(envelope.clientOpId, 'Clients must submit edit requests'));
             return;
@@ -644,7 +659,7 @@ class HostSession extends Emitter {
     }
 
     _onPresence (peerId, envelope) {
-        if (!this.isClientApproved(peerId)) return;
+        if (!this.isClientApproved(peerId) || this.isViewer(peerId)) return;
         const now = Date.now();
         const budget = this._presenceBudget.get(peerId);
         if (!budget || now - budget.start >= PRESENCE_WINDOW_MS) {

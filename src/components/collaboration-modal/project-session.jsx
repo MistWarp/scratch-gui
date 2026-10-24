@@ -7,8 +7,16 @@ import {isProjectHistoryHydrated} from '../../lib/git/project-history.js';
 import {
     getRememberedPlatformProjectState, rememberPlatformProject
 } from '../../lib/community/publish.js';
+import {isClassroomUsername, isStudentSession} from '../../lib/rotur/student-flag.js';
 
-const memberRole = member => (member.access === 'watch' ? 'watch' : 'edit');
+const usernamesOf = list => (Array.isArray(list) ? list.map(item => item && item.username) : []);
+
+const PLAN_REQUIRED_MESSAGE = 'Live collaboration needs your teacher to have a Classroom plan. ' +
+    'Your work still saves to your class.';
+
+const isPlanRequired = error => Boolean(error) && error.code === 'plan_required';
+
+const memberRole = member => (member.access === 'watch' || member.viewer ? 'watch' : 'edit');
 
 // The API authenticates requests. Peer display names never confer save access.
 class ProjectSession extends React.Component {
@@ -214,6 +222,7 @@ class ProjectSession extends React.Component {
                 this.setState({project});
             }
             if (!context || !this.state.project || !this.state.project.myRole) return;
+            if (this.planBlocked === context) return;
             const lease = this.lease;
             const body = lease ? {
                 action: lease.host ? 'host' : 'heartbeat',
@@ -235,6 +244,11 @@ class ProjectSession extends React.Component {
                 }
             }
             this.setState({session: session.id ? session : null, editors, discoveryError: '', checked: true});
+            if (lease && lease.host) {
+                this.props.service.setViewerPeers((session.members || [])
+                    .filter(member => member.viewer && member.peerId)
+                    .map(member => member.peerId));
+            }
             if (lease && lease.host) {
                 const pending = this.props.service.getPendingJoinRequests();
                 for (const member of session.members || []) {
@@ -260,9 +274,19 @@ class ProjectSession extends React.Component {
                     this.setState({error: 'Your session access ended. Your local work is still here.'});
                 }
             }
+            const role = (this.state.project && this.state.project.myRole) || myRole;
+            if (!lease && role === 'viewer' && session.id && session.public && !this.props.service.isConnected &&
+                this.autoJoinedSession !== session.id) {
+                this.autoJoinedSession = session.id;
+                this.run(() => this.join(), 'joining');
+            }
 
         } catch (error) {
-            if (!this.disposed) {
+            if (!this.disposed && isPlanRequired(error)) {
+                this.planBlocked = context;
+                this.release();
+                this.setState({discoveryError: '', error: PLAN_REQUIRED_MESSAGE, checked: true});
+            } else if (!this.disposed) {
                 if (!this.state.project) this.contextKey = '';
                 if (this.lease && ([403, 404, 409].includes(error.status) ||
                     Date.now() - this.lastVerifiedAt >= 90000)) {
@@ -283,11 +307,30 @@ class ProjectSession extends React.Component {
         try {
             await action();
         } catch (error) {
-            if (!this.disposed) this.setState({error: error.message || 'Could not update the session.', phase: ''});
+            if (isPlanRequired(error)) this.planBlocked = this.contextKey;
+            if (!this.disposed) {
+                this.setState({
+                    error: isPlanRequired(error) ? PLAN_REQUIRED_MESSAGE :
+                        error.message || 'Could not update the session.',
+                    phase: ''
+                });
+            }
         } finally {
             this.operating = false;
             if (!this.disposed) this.setState({busy: false});
         }
+    }
+
+    isClassroomSession (session) {
+        const project = this.state.project || {};
+        return isStudentSession() || [
+            this.props.username,
+            project.owner,
+            session && session.host,
+            ...usernamesOf(project.collaborators),
+            ...usernamesOf(this.state.editors),
+            ...usernamesOf(session && session.members)
+        ].some(isClassroomUsername);
     }
 
     async host () {
@@ -301,7 +344,9 @@ class ProjectSession extends React.Component {
         window.crypto.getRandomValues(bytes);
         const roomId = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
         const scope = {projectId: String(project.id), branch: this.branch};
-        await this.props.onCreateRoom(roomId, this.props.username, 'private', scope);
+        await this.props.onCreateRoom(roomId, this.props.username, 'private', scope, {
+            classroom: this.isClassroomSession(this.state.session)
+        });
         try {
             const {session} = await this.call(project.id, {action: 'host', roomId, branch: scope.branch, public: true});
             if (this.disposed || context !== this.contextKey || !this.props.service.isConnected) {
@@ -326,7 +371,11 @@ class ProjectSession extends React.Component {
         }
         const context = this.contextKey;
         const scope = {projectId: String(project.id), branch: this.branch};
-        await this.props.onJoinRoom(session.roomId, this.props.username, scope);
+        const viewer = project.myRole === 'viewer';
+        await this.props.onJoinRoom(session.roomId, this.props.username, scope, {
+            viewer,
+            classroom: this.isClassroomSession(session)
+        });
         try {
             const {session: next} = await this.call(project.id, {
                 action: 'request',

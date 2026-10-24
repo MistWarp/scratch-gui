@@ -116,6 +116,11 @@ const isActivityMethod = method => (
 // Run an allowlisted Rotur method (see project-methods.js) on the shared
 // client. The token lives inside the client and is never returned. Anything
 // outside the allowlist, such as "_http.getToken", is rejected.
+const forgetProjectGrants = () => {
+    writeGrants({});
+    writeActivityGrants({});
+};
+
 const callRotur = (method, args) => {
     const rotur = getRotur();
     if (!rotur.loggedIn) {
@@ -125,6 +130,7 @@ const callRotur = (method, args) => {
 };
 
 export {
+    forgetProjectGrants,
     grantedScopesFor,
     hasFullGrant,
     commitGrant,

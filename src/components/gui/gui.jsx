@@ -72,6 +72,7 @@ import {isRendererSupported, isBrowserSupported} from '../../lib/utils/tw-enviro
 
 import styles from './gui.css';
 import {getGuiComponents, preloadLazyGuiComponents} from './gui-components';
+import {isStudentSession} from '../../lib/rotur/student-flag.js';
 
 const messages = defineMessages({
     addExtension: {
@@ -869,6 +870,7 @@ const GUIComponent = props => {
         isFullScreen,
         isPlayerOnly,
         isRtl,
+        isStudent,
         isWindowFullScreen,
         isTelemetryEnabled,
         loading,
@@ -1052,7 +1054,7 @@ const GUIComponent = props => {
                     />
                 </IsolatedPanel>
             )}
-            {customExtensionModalVisible && (
+            {customExtensionModalVisible && !isStudentSession() && (
                 <IsolatedPanel
                     name="Custom extension"
                     closeAction={closeCustomExtensionModal}
@@ -1677,12 +1679,14 @@ const GUIComponent = props => {
                                 </React.Fragment>
                             )}
                         </Box>
-                        <IsolatedPanel
-                            name="Chat"
-                            onClose={handleCloseChat}
-                        >
-                            <ChatDock />
-                        </IsolatedPanel>
+                        {isStudent ? null : (
+                            <IsolatedPanel
+                                name="Chat"
+                                onClose={handleCloseChat}
+                            >
+                                <ChatDock />
+                            </IsolatedPanel>
+                        )}
                     </Box>
                     {extensionLibraryVisible ? (
                         <IsolatedPanel
@@ -1751,6 +1755,7 @@ GUIComponent.propTypes = {
     intl: intlShape.isRequired,
     isCreating: PropTypes.bool,
     isEmbedded: PropTypes.bool,
+    isStudent: PropTypes.bool,
     isFullScreen: PropTypes.bool,
     isPlayerOnly: PropTypes.bool,
     isRtl: PropTypes.bool,
@@ -1827,6 +1832,7 @@ GUIComponent.defaultProps = {
 };
 
 const mapStateToProps = state => ({
+    isStudent: Boolean(state.scratchGui.rotur && state.scratchGui.rotur.isStudent),
     customStageSize: state.scratchGui.customStageSize,
     isWindowFullScreen: state.scratchGui.tw.isWindowFullScreen,
     blocksId: state.scratchGui.timeTravel.year.toString(),
