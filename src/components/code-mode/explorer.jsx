@@ -199,6 +199,7 @@ const Explorer = props => {
                                 [styles.rowSelected]: selected,
                                 [styles.rowActive]: row.key === activeKey,
                                 [styles.rowMuted]: row.muted,
+                                [styles.rowTarget]: row.type === 'target',
                                 [styles.dropHover]: dropKey === row.key
                             })}
                             data-row-key={row.key}
@@ -279,12 +280,14 @@ const Explorer = props => {
                     );
                 })}
             </div>
+            {props.footer}
         </div>
     );
 };
 
 Explorer.propTypes = {
     activeKey: PropTypes.string,
+    footer: PropTypes.node,
     canDrop: PropTypes.func.isRequired,
     dropKey: PropTypes.string,
     intl: intlShape,

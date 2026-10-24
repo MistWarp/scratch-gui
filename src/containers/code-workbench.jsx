@@ -45,6 +45,7 @@ import {
 } from 'lucide-react';
 
 import Explorer, {DRAG_TYPE} from '../components/code-mode/explorer.jsx';
+import SpriteProperties from '../components/code-mode/sprite-properties.jsx';
 import EditorTabs, {hasTabDrag} from '../components/code-mode/editor-tabs.jsx';
 import TextTab from '../components/code-mode/text-tab.jsx';
 import AssetTab from '../components/code-mode/asset-tab.jsx';
@@ -1155,7 +1156,8 @@ class CodeWorkbench extends React.Component {
                 targetId: target.id,
                 expandable: true,
                 expanded,
-                renamable: !target.isStage
+                renamable: !target.isStage,
+                thumbnail: thumbnailFor(target.getCostumes()[target.currentCostume] || {})
             });
             if (!expanded) continue;
             const script = this.textState(target.id);
@@ -1515,15 +1517,17 @@ class CodeWorkbench extends React.Component {
         switch (row.type) {
         case 'target':
             items = row.isStage ? [] : [rename, duplicate, remove, exportItem];
-            items.push({
-                label: m(messages.revealInSpritePane),
-                icon: Crosshair,
-                separator: items.length > 0,
-                onClick: () => {
-                    vm.setEditingTarget(row.targetId);
-                    if (!row.isStage) dispatch(highlightTarget(row.targetId));
-                }
-            });
+            if (this.props.spritePaneVisible) {
+                items.push({
+                    label: m(messages.revealInSpritePane),
+                    icon: Crosshair,
+                    separator: items.length > 0,
+                    onClick: () => {
+                        vm.setEditingTarget(row.targetId);
+                        if (!row.isStage) dispatch(highlightTarget(row.targetId));
+                    }
+                });
+            }
             break;
         case 'script':
             items = [open, exportItem];
@@ -2653,6 +2657,16 @@ class CodeWorkbench extends React.Component {
             </div>
         );
     }
+    renderSpriteProperties () {
+        const sprite = this.props.sprites && this.props.sprites[this.props.editingTarget];
+        if (!sprite) return null;
+        return (
+            <SpriteProperties
+                sprite={sprite}
+                vm={this.props.vm}
+            />
+        );
+    }
     renderGroups (explorerVisible) {
         const {intl} = this.props;
         const {layout} = this.state;
@@ -2730,6 +2744,7 @@ class CodeWorkbench extends React.Component {
                 activeKey={this.focusedTabs().activeKey}
                 canDrop={this.canDrop}
                 dropKey={this.state.dropKey}
+                footer={this.renderSpriteProperties()}
                 renamingKey={this.state.renamingKey}
                 rows={rows}
                 selectedKey={this.state.selectedKey}
@@ -2848,6 +2863,7 @@ CodeWorkbench.propTypes = {
     isRtl: PropTypes.bool,
     projectTitle: PropTypes.string,
     reveal: PropTypes.object,
+    spritePaneVisible: PropTypes.bool,
     sprites: PropTypes.object,
     stage: PropTypes.object,
     vm: PropTypes.object.isRequired
