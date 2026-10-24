@@ -19,7 +19,7 @@ const openEditor = projectId => {
     window.location.href = editorUrl({platformProject: projectId});
 };
 
-const watchUrl = projectId => `/editor?collaborate=1#mw-${projectId}`;
+const watchUrl = projectId => editorUrl({platformProject: projectId, collaborate: true});
 
 const groupOf = assignment => (assignment.group && assignment.group.id ? assignment.group : null);
 

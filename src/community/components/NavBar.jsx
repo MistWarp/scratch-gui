@@ -16,6 +16,7 @@ import setFaviconBadge from '../faviconBadge';
 import searchPath from '../search-path.js';
 import {searchKeyAction} from '../search-keyboard.js';
 import {initialsAvatar} from '../classroom.js';
+import {useClassroomAvailable} from '../classroom-availability.js';
 import {rankSections} from '../search-rank.js';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import Button from './ui/Button.jsx';
@@ -231,7 +232,8 @@ const NavBar = () => {
         loginInFlight.current = false;
     };
     const isStudent = Boolean(user && user.isStudent);
-    const classroomItems = user ? [{
+    const {available: classroomAvailable} = useClassroomAvailable();
+    const classroomItems = user && classroomAvailable ? [{
         key: 'classroom',
         icon: isStudent ? <BookOpen /> : <GraduationCap />,
         label: isStudent ? communityText('My class') : communityText('Classroom'),

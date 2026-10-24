@@ -4,6 +4,7 @@ import {lazyWithReload as lazy} from '../lib/lazy-with-retry.js';
 import {Navigate, Routes, Route, useLocation, useNavigationType} from 'react-router-dom';
 import {UserProvider, useUser} from './UserContext.jsx';
 import {isStudentSession} from '../lib/rotur/student-flag.js';
+import ClassroomRoute from './components/ClassroomRoute.jsx';
 import {setRouteMeta} from './page-meta.js';
 import {initSiteErrorReporting} from '../lib/error-reporter.js';
 import NavBar from './components/NavBar.jsx';
@@ -223,22 +224,22 @@ const App = () => {
                             <Route path="/themes/:id" element={<Theme />} />
                             <Route path="/groups" element={<Groups />} />
                             <Route path="/groups/:tag" element={<Group />} />
-                            <Route path="/classroom" element={<Classroom />} />
-                            <Route path="/classroom/join" element={<ClassroomJoin />} />
-                            <Route path="/classroom/join/:code" element={<ClassroomJoin />} />
-                            <Route path="/classroom/claim/:code" element={<ClassroomClaim />} />
-                            <Route path="/classroom/school" element={<ClassroomSchool />} />
-                            <Route path="/classroom/about" element={<ClassroomAbout />} />
-                            <Route path="/classroom/privacy" element={<ClassroomPrivacy />} />
-                            <Route path="/classroom/terms" element={<ClassroomLegal document="terms" />} />
-                            <Route path="/classroom/dpa" element={<ClassroomLegal document="dpa" />} />
-                            <Route
-                                path="/classroom/subprocessors"
-                                element={<ClassroomLegal document="subprocessors" />}
-                            />
-                            <Route path="/classroom/:id" element={<ClassroomClass />} />
-                            <Route path="/classroom/:id/students/:sid" element={<ClassroomStudent />} />
-                            <Route path="/classroom/:id/assignments/:aid" element={<ClassroomAssignment />} />
+                            <Route path="/classroom" element={<ClassroomRoute />}>
+                                <Route index element={<Classroom />} />
+                                <Route path="join" element={<ClassroomJoin />} />
+                                <Route path="join/:code" element={<ClassroomJoin />} />
+                                <Route path="claim/:code" element={<ClassroomClaim />} />
+                                <Route path="school" element={<ClassroomSchool />} />
+                                <Route path="about" element={<ClassroomAbout />} />
+                                <Route path="privacy" element={<ClassroomPrivacy />} />
+                                <Route path="terms" element={<ClassroomLegal document="terms" />} />
+                                <Route path="dpa" element={<ClassroomLegal document="dpa" />} />
+                                <Route path="subprocessors" element={<ClassroomLegal document="subprocessors" />} />
+                                <Route path=":id" element={<ClassroomClass />} />
+                                <Route path=":id/students/:sid" element={<ClassroomStudent />} />
+                                <Route path=":id/assignments/:aid" element={<ClassroomAssignment />} />
+                                <Route path="*" element={<NotFound />} />
+                            </Route>
                             <Route path="/p/:slug" element={<Project />} />
                             <Route path="/p/:slug/remixes" element={<RemixTree />} />
                             <Route path="/p/:slug/pulls" element={<PullRequests />} />

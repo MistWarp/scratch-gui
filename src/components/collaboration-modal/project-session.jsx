@@ -11,6 +11,11 @@ import {isClassroomUsername, isStudentSession} from '../../lib/rotur/student-fla
 
 const usernamesOf = list => (Array.isArray(list) ? list.map(item => item && item.username) : []);
 
+const PLAN_REQUIRED_MESSAGE = 'Live collaboration needs your teacher to have a Classroom plan. ' +
+    'Your work still saves to your class.';
+
+const isPlanRequired = error => Boolean(error) && error.code === 'plan_required';
+
 const memberRole = member => (member.access === 'watch' || member.viewer ? 'watch' : 'edit');
 
 // The API authenticates requests. Peer display names never confer save access.
@@ -217,6 +222,7 @@ class ProjectSession extends React.Component {
                 this.setState({project});
             }
             if (!context || !this.state.project || !this.state.project.myRole) return;
+            if (this.planBlocked === context) return;
             const lease = this.lease;
             const body = lease ? {
                 action: lease.host ? 'host' : 'heartbeat',
@@ -276,7 +282,11 @@ class ProjectSession extends React.Component {
             }
 
         } catch (error) {
-            if (!this.disposed) {
+            if (!this.disposed && isPlanRequired(error)) {
+                this.planBlocked = context;
+                this.release();
+                this.setState({discoveryError: '', error: PLAN_REQUIRED_MESSAGE, checked: true});
+            } else if (!this.disposed) {
                 if (!this.state.project) this.contextKey = '';
                 if (this.lease && ([403, 404, 409].includes(error.status) ||
                     Date.now() - this.lastVerifiedAt >= 90000)) {
@@ -297,7 +307,14 @@ class ProjectSession extends React.Component {
         try {
             await action();
         } catch (error) {
-            if (!this.disposed) this.setState({error: error.message || 'Could not update the session.', phase: ''});
+            if (isPlanRequired(error)) this.planBlocked = this.contextKey;
+            if (!this.disposed) {
+                this.setState({
+                    error: isPlanRequired(error) ? PLAN_REQUIRED_MESSAGE :
+                        error.message || 'Could not update the session.',
+                    phase: ''
+                });
+            }
         } finally {
             this.operating = false;
             if (!this.disposed) this.setState({busy: false});
