@@ -43,6 +43,7 @@ import {getAuth as getRoturGitAuth} from '../rotur/git-api.js';
 import {getRememberedPlatformProjectState, rememberPlatformProject} from '../community/publish.js';
 import {
     getEditorProject as getMistWarpEditorProject,
+    getProject as getMistWarpProject,
     getServerTrustedExtensions
 } from '../community/api.js';
 import {hasBridge, bridgeFetch} from '../community/embed-bridge.js';
@@ -112,11 +113,26 @@ const clearProjectSourceOnForeignLoads = vm => {
 
 const fetchArrayBuffer = url => cachedFetchBuffer(url);
 
+const fillDefaultMessage = (message, values = {}) => message.defaultMessage
+    .replace(/\{(\w+)\}/g, (match, name) => (Object.prototype.hasOwnProperty.call(values, name) ?
+        String(values[name]) : match));
+
+const loadEditorProject = async id => {
+    try {
+        return (await getMistWarpEditorProject(id)).project;
+    } catch (error) {
+        if (!error || error.status !== 403) throw error;
+        const viewed = await getMistWarpProject(id).catch(() => null);
+        if (viewed && viewed.project && viewed.project.myRole === 'viewer') return viewed.project;
+        throw error;
+    }
+};
+
 const loadPlatformProject = async (id, source) => {
-    const project = source || (await getMistWarpEditorProject(id)).project;
+    const project = source || await loadEditorProject(id);
     if (!source && !project.projectJsonUrl) {
         return {
-            data: JSON.stringify(defaultProjectData()),
+            data: JSON.stringify(defaultProjectData(fillDefaultMessage)),
             title: project.title,
             platformProject: {...project, trustedExtensions: project.trustedExtensions || []}
         };
