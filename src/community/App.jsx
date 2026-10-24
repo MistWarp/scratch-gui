@@ -251,7 +251,14 @@ const App = () => {
                             <Route path="/project/:id/commits/:sha" element={<Commit />} />
                             <Route path="/users/:name" element={<Profile />} />
                             <Route path="/users/:name/library" element={<UserLibrary />} />
-                            <Route path="/users/:name/followers" element={<Navigate to=".." relative="path" replace />} />
+                            <Route
+                                path="/users/:name/followers"
+                                element={<Navigate
+                                    to=".."
+                                    relative="path"
+                                    replace
+                                />}
+                            />
                             <Route path="/users/:name/following" element={<Following />} />
                             <Route path="/settings" element={<Settings />} />
                             <Route path="/mystuff" element={<MyStuff />} />

@@ -1575,7 +1575,6 @@ CollaborationModal.propTypes = {
     onLeaveRoom: PropTypes.func.isRequired,
     onKickUser: PropTypes.func.isRequired,
     onCancelConnection: PropTypes.func.isRequired,
-    onOpenChangeUsername: PropTypes.func,
     onApproveJoinRequest: PropTypes.func,
     onDenyJoinRequest: PropTypes.func,
     onCancelJoinRequest: PropTypes.func,

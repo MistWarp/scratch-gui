@@ -2267,7 +2267,9 @@ class MenuBar extends React.Component {
                                         </MenuItem>
                                     )}</ChangeUsername>
                                     {this.props.isStudent ? null : (
-                                        <CloudVariablesToggler>{(toggleCloudVariables, {enabled, canUseCloudVariables}) => (
+                                        <CloudVariablesToggler>{(
+                                            toggleCloudVariables, {enabled, canUseCloudVariables}
+                                        ) => (
                                             canUseCloudVariables ? (
                                                 <MenuItem onClick={toggleCloudVariables}>
                                                     <Cloud />

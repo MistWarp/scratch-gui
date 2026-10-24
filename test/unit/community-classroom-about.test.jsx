@@ -47,10 +47,19 @@ const flush = async wrapper => {
 };
 
 const renderAt = (element, path = '/classroom') => mount(
-    <MemoryRouter initialEntries={[path]} future={ROUTER_FUTURE}>
+    <MemoryRouter
+        initialEntries={[path]}
+        future={ROUTER_FUTURE}
+    >
         <Routes>
-            <Route path="/classroom" element={element} />
-            <Route path="/classroom/about" element={element} />
+            <Route
+                path="/classroom"
+                element={element}
+            />
+            <Route
+                path="/classroom/about"
+                element={element}
+            />
         </Routes>
     </MemoryRouter>
 );
@@ -139,7 +148,11 @@ describe('Classroom trial', () => {
         const trialPlan = {tier: 'classroom', seats: 35, maxClasses: 12, storageBytes: 2048, expiresAt: Date.UTC(2026, 9, 30)};
         api.classroom.overview
             .mockResolvedValueOnce(teacherOverview(freePlan, {trialAvailable: true, trialDays: 30, trialEndsAt: 0}))
-            .mockResolvedValueOnce(teacherOverview(trialPlan, {trialAvailable: false, trialDays: 30, trialEndsAt: trialPlan.expiresAt}));
+            .mockResolvedValueOnce(teacherOverview(trialPlan, {
+                trialAvailable: false,
+                trialDays: 30,
+                trialEndsAt: trialPlan.expiresAt
+            }));
         api.classroom.startTrial.mockResolvedValue({ok: true});
         const wrapper = renderAt(<Classroom />);
         await flush(wrapper);
