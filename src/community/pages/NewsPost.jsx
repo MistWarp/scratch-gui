@@ -132,7 +132,7 @@ const NewsPost = () => {
                         <div className={styles.byline}>
                             <AuthorLink username={item.author} />
                             <span>{formatDate(item.created)}</span>
-                            {item.updated ? (
+                            {item.updated && formatDate(item.updated) !== formatDate(item.created) ? (
                                 <span>{communityText('Updated {value1}', {value1: formatDate(item.updated)})}</span>
                             ) : null}
                             <span>{communityText(NEWS_KINDS[kindOf(item)].label)}</span>
