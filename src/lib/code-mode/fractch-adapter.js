@@ -1,4 +1,4 @@
-import {buildTarget, emitTarget, findInSourceMap, toReplaceChange} from 'fractch/browser';
+import {buildTarget, emitTarget, findInSourceMap, parseFractch, toReplaceChange} from 'fractch/browser';
 import opcodeTable from 'scratch-vm/src/engine/opcodes.generated.json';
 
 const UNIT_KINDS = [['script', 'scripts'], ['decl', 'declarations'], ['comment', 'comments']];
@@ -34,11 +34,13 @@ const unitId = key => key.slice(key.indexOf(':') + 1);
 const hasErrorDiagnostics = list => (list || []).some(item => item.severity === 'error');
 
 export {
+    UNIT_KINDS,
     buildTarget,
     emitTarget,
     findInSourceMap,
     hasErrorDiagnostics,
     opcodeTable,
+    parseFractch,
     scriptAtOffset,
     scriptForTopId,
     toReplaceChange,
