@@ -131,6 +131,16 @@ const projectMethod = method => (has(PROJECT_METHODS, method) ? PROJECT_METHODS[
 
 const WHOLE_DRIVE_SCOPES = ['files:view', 'files:manage', 'files:delete'];
 
+// Status and activity blocks asked for account:profile before Rotur had status:update.
+const RENAMED_SCOPES = Object.freeze({'account:profile': 'status:update'});
+
+/**
+ * The scope a project scope is called now.
+ * @param {string} scope A scope a project asked for or was granted.
+ * @returns {string} The current name.
+ */
+const currentScope = scope => (has(RENAMED_SCOPES, scope) ? RENAMED_SCOPES[scope] : scope);
+
 // Every scope some project block can use. A project may only ask for these.
 const PROJECT_SCOPES = new Set(Object.values(PROJECT_METHODS).flatMap(spec => spec.scopes));
 
@@ -157,7 +167,9 @@ const grantsSilently = scopes => scopes.every(scope => scope.endsWith(':view') |
 const validateProjectScopes = scopes => {
     if (!Array.isArray(scopes)) return null;
     // Older projects ask for the whole drive; they get MistWarp's folder.
-    const list = [...new Set(scopes.map(scope => (WHOLE_DRIVE_SCOPES.includes(scope) ? 'files:app' : scope)))];
+    const list = [...new Set(scopes.map(scope => (
+        WHOLE_DRIVE_SCOPES.includes(scope) ? 'files:app' : currentScope(scope)
+    )))];
     return list.every(scope => typeof scope === 'string' && PROJECT_SCOPES.has(scope)) ? list : null;
 };
 
@@ -367,6 +379,7 @@ export {
     PROJECT_METHODS,
     PROJECT_SCOPES,
     projectMethod,
+    currentScope,
     grantsSilently,
     validateProjectScopes,
     authorizeProjectCall,

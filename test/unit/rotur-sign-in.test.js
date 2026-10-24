@@ -118,3 +118,27 @@ test('the cached profile only counts for the account it was saved for', async ()
     mockRotur.me = {'username': 'kit', 'sys.id': 'id-2'};
     await expect(client.restoreSession()).resolves.toMatchObject({username: 'kit', id: 'id-2'});
 });
+
+test('presence asks for status:update and still takes an older login with account:profile', async () => {
+    signInWith();
+    await client.login();
+    expect(mockOauth.signIn.mock.calls[0][0]).toEqual(expect.arrayContaining(['status:update', 'account:profile']));
+    client.getRotur().setToken('rotur_st_new');
+    for (const [permissions, supported] of [
+        [['status:update'], true],
+        [['account:profile'], true],
+        [['account:view'], false]
+    ]) {
+        mockRotur.abilities = {token_type: 'app', permissions};
+        await expect(client.presenceSupported()).resolves.toBe(supported);
+    }
+});
+
+test('a session with account:profile covers status:update without asking again', async () => {
+    mockOauth.session = {accessToken: 'rotur_st_old', scopes: ['profile', 'account:view', 'account:profile'], subject: 'id-1'};
+    await expect(client.ensureScopes(['status:update'], {prompt: true})).resolves.toBe(true);
+    expect(mockOauth.signIn).not.toHaveBeenCalled();
+    mockOauth.session = {accessToken: 'rotur_st_old', scopes: ['profile', 'account:view'], subject: 'id-1'};
+    await expect(client.ensureScopes(['status:update'])).resolves.toBe(false);
+    expect(mockOauth.signIn).not.toHaveBeenCalled();
+});

@@ -47,6 +47,8 @@ const SIGN_IN_SCOPES = [
 const PRESENCE_PERMISSION = 'status:update';
 // Rotur also lets a login that can edit the profile set the status.
 const PROFILE_PERMISSION = 'account:profile';
+const hasScope = (granted, scope) => granted.includes(scope) ||
+    (scope === PRESENCE_PERMISSION && granted.includes(PROFILE_PERMISSION));
 const ACTIVITY_ID = 'MistWarp';
 const APP_URL = 'https://mistwarp.org';
 const APP_IMAGE = 'https://raw.githubusercontent.com/MistWarp/desktop/master/art/icon.png';
@@ -213,8 +215,7 @@ const presenceSupported = async () => {
             return true;
         }
         const granted = Array.isArray(abilities.permissions) ? abilities.permissions : [];
-        return granted.includes('full') || granted.includes(PRESENCE_PERMISSION) ||
-            granted.includes(PROFILE_PERMISSION);
+        return granted.includes('full') || hasScope(granted, PRESENCE_PERMISSION);
     } catch (_) {
         return true;
     }
@@ -740,7 +741,7 @@ const markNotificationsRead = async () => {
 // Someone can untick scopes on the consent screen, so check what was granted.
 const hasScopes = scopes => {
     const session = oauth.readSession();
-    return Boolean(session) && scopes.every(scope => session.scopes.includes(scope));
+    return Boolean(session) && scopes.every(scope => hasScope(session.scopes, scope));
 };
 
 // Whether the session can use every scope in `scopes`. With prompt, and only
@@ -752,7 +753,7 @@ const ensureScopes = async (scopes, {prompt = false} = {}) => {
     const wanted = Array.isArray(scopes) ? scopes.filter(Boolean) : [];
     const session = oauth.readSession();
     if (session) {
-        if (wanted.every(scope => session.scopes.includes(scope))) return true;
+        if (wanted.every(scope => hasScope(session.scopes, scope))) return true;
         if (!prompt) return false;
         await login(session.scopes.filter(scope => scope !== 'profile').concat(wanted), false);
         return hasScopes(wanted);
@@ -763,7 +764,7 @@ const ensureScopes = async (scopes, {prompt = false} = {}) => {
         .catch(() => null);
     const granted = (abilities && abilities.permissions) || [];
     if (!abilities || abilities.token_type === 'main' || granted.includes('full') ||
-        wanted.every(scope => granted.includes(scope))) {
+        wanted.every(scope => hasScope(granted, scope))) {
         return true;
     }
     if (!prompt) return false;
