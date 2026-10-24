@@ -84,3 +84,25 @@
     border: 0;
     border-top: 1px solid var(--border);
 }
+
+.markdown a:hover {
+    text-decoration: underline;
+}
+
+.markdown img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-xs);
+    vertical-align: middle;
+}
+
+.markdown figure {
+    margin: 1.2em 0;
+}
+
+.markdown figure img {
+    display: block;
+    width: 100%;
+    outline: 1px solid var(--border);
+    outline-offset: -1px;
+}

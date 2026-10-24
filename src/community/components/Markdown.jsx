@@ -1,26 +1,61 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import {Link} from 'react-router-dom';
 import styles from './Markdown.module.css';
 
+// No raw HTML ever reaches the page: everything is built as React elements,
+// and only https:// and same-site /paths become links or images.
+const SAFE_URL = '(?:https:\\/\\/[^\\s)]+|\\/(?!\\/)[^\\s)]*)';
 const INLINE = new RegExp([
     '(`[^`\\n]+`|\\*\\*[^*\\n]+\\*\\*|__[^_\\n]+__|',
     '\\*[^*\\n]+\\*|_[^_\\n]+_|',
-    '\\[[^\\]\\n]+\\]\\((?:https:\\/\\/[^\\s)]+|\\/(?!\\/)[^\\s)]*)\\)|',
+    `!\\[[^\\]\\n]*\\]\\(${SAFE_URL}\\)|`,
+    `\\[[^\\]\\n]+\\]\\(${SAFE_URL}\\)|`,
     'https:\\/\\/[^\\s]+)'
 ].join(''), 'g');
+const IMAGE = new RegExp(`^!\\[([^\\]]*)\\]\\((${SAFE_URL})\\)$`);
+const LINK = new RegExp(`^\\[([^\\]]+)\\]\\((${SAFE_URL})\\)$`);
+
+// Links off the site open in a new tab without a handle back to this one.
+const SafeLink = ({children, href}) => (href.startsWith('/') ?
+    <Link to={href}>{children}</Link> :
+    <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+    >{children}</a>);
+
+SafeLink.propTypes = {
+    children: PropTypes.node,
+    href: PropTypes.string.isRequired
+};
 
 const inlineMarkdown = text => String(text || '').split(INLINE).filter(Boolean).map((part, index) => {
     if (/^`[^`]+`$/.test(part)) return <code key={index}>{part.slice(1, -1)}</code>;
     if (/^(?:\*\*|__)[\s\S]+(?:\*\*|__)$/.test(part)) return <strong key={index}>{part.slice(2, -2)}</strong>;
     if (/^(?:\*|_)[\s\S]+(?:\*|_)$/.test(part)) return <em key={index}>{part.slice(1, -1)}</em>;
-    const link = part.match(/^\[([^\]]+)\]\((https:\/\/[^\s)]+|\/(?!\/)[^\s)]*)\)$/);
-    if (link) return <a key={index} href={link[2]}>{link[1]}</a>;
+    const image = part.match(IMAGE);
+    if (image) {
+        return (<img
+            key={index}
+            src={image[2]}
+            alt={image[1]}
+            loading="lazy"
+        />);
+    }
+    const link = part.match(LINK);
+    if (link) {
+        return (<SafeLink
+            key={index}
+            href={link[2]}
+        >{link[1]}</SafeLink>);
+    }
     if (/^https:\/\//.test(part)) {
         const trailing = part.match(/[.,!?)]+$/);
         const href = trailing ? part.slice(0, -trailing[0].length) : part;
         return (
             <React.Fragment key={index}>
-                <a href={href}>{href.replace(/^https:\/\//, '')}</a>
+                <SafeLink href={href}>{href.replace(/^https:\/\//, '')}</SafeLink>
                 {trailing?.[0] || ''}
             </React.Fragment>
         );
@@ -91,12 +126,15 @@ export const markdownBlocks = source => {
     return blocks;
 };
 
-const Markdown = ({children, className = ''}) => (
+const Markdown = ({children, className = '', headingOffset = 0}) => (
     <div className={`${styles.markdown} ${className}`.trim()}>
         {markdownBlocks(children).map((block, index) => {
             if (block.type === 'heading') {
-                const Tag = `h${block.level}`;
+                const Tag = `h${Math.min(6, block.level + headingOffset)}`;
                 return <Tag key={index}>{inlineMarkdown(block.text)}</Tag>;
+            }
+            if (block.type === 'paragraph' && IMAGE.test(block.text.trim())) {
+                return <figure key={index}>{inlineMarkdown(block.text.trim())}</figure>;
             }
             if (block.type === 'code') {
                 return <pre key={index}><code data-language={block.language}>{block.text}</code></pre>;
@@ -131,7 +169,9 @@ const Markdown = ({children, className = ''}) => (
 
 Markdown.propTypes = {
     children: PropTypes.string,
-    className: PropTypes.string
+    className: PropTypes.string,
+    // Inside a page that already has its own h1, a post's # is an h2.
+    headingOffset: PropTypes.number
 };
 
 export default Markdown;

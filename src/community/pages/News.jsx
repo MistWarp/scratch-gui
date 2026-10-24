@@ -8,7 +8,7 @@ import api from '../api';
 import {useUser} from '../UserContext.jsx';
 import {formatDate} from '../format.js';
 import Avatar from '../components/Avatar.jsx';
-import NewsItem from '../components/NewsItem.jsx';
+import NewsFeed from '../components/NewsFeed.jsx';
 import Button from '../components/ui/Button.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import IconButton from '../components/ui/IconButton.jsx';
@@ -162,7 +162,7 @@ const News = ({manager = false}) => {
     return (
         <main className={`${styles.page} ${manager ? styles.manager : styles.blog}`}>
             <PageHeader
-                icon={Megaphone}
+                icon={manager ? Megaphone : null}
                 title={manager ? communityText('Manage news') : communityText('News')}
                 lead={manager ? communityText('Write, update, and review the performance of MistWarp posts.') :
                     communityText('Product updates, releases, and notes from MistWarp.')}
@@ -302,83 +302,74 @@ const News = ({manager = false}) => {
                 </form>
             ) : null}
 
-            {loadFailed ? (
+            {!manager ? (
+                <NewsFeed
+                    items={items}
+                    failed={loadFailed}
+                    onRetry={() => load(true)}
+                />
+            ) : loadFailed ? (
                 <StatusMessage error onRetry={() => load(true)}>{communityText("Couldn't load news.")}</StatusMessage>
             ) : items === null ? (
                 <StatusMessage />
             ) : visibleItems.length ? (
                 <>
-                    {manager ? (
-                        <label className={styles.archiveToggle}>
-                            <input
-                                type="checkbox"
-                                checked={showArchived}
-                                onChange={event => setShowArchived(event.target.checked)}
-                            />{communityText('Show archived posts')}</label>
-                    ) : null}
-                    {manager ? (
-                        <div className={styles.managerTable} role="table" aria-label={communityText('News posts')}>
-                            <div className={styles.managerTableHead} role="row">
-                                <span>{communityText('Post')}</span>
-                                <span>{communityText('Published')}</span>
-                                <span>{communityText('Performance')}</span>
-                                <span>{communityText('Actions')}</span>
-                            </div>
-                            {visibleItems.map(item => (
-                                <div className={styles.managerRow} role="row" key={item.id}>
-                                    <div className={styles.managerPost} role="cell">
-                                        <Link to={`/news/${item.id}`}>{item.title}</Link>
-                                        <UserLink username={item.author}>
-                                            <Avatar username={item.author} size={21} /> {item.author}
-                                        </UserLink>
-                                        {item.archived ? (
-                                            <span className={styles.archivedBadge}>{communityText('Archived')}</span>
-                                        ) : null}
-                                    </div>
-                                    <span className={styles.managerDate} role="cell">
-                                        {formatDate(item.created)}
-                                    </span>
-                                    <div className={styles.managerPerformance} role="cell">
-                                        <span>
-                                            <Eye size={14} />
-                                            {(item.views || 0).toLocaleString(getCommunityLocale())}
-                                        </span>
-                                        <span>
-                                            <Heart size={14} />
-                                            {(item.reactionCounts?.heart || 0).toLocaleString(getCommunityLocale())}
-                                        </span>
-                                    </div>
-                                    <div className={styles.managerActions} role="cell">
-                                        <IconButton
-                                            label={communityText('Edit {value1}', {value1: item.title})}
-                                            onClick={() => edit(item)}
-                                        >
-                                            <Pencil size={15} />
-                                        </IconButton>
-                                        <IconButton
-                                            label={item.archived ?
-                                                communityText('Restore {value1}', {value1: item.title}) :
-                                                communityText('Archive {value1}', {value1: item.title})}
-                                            onClick={() => archive(item)}
-                                        >
-                                            {item.archived ? <ArchiveRestore size={15} /> : <Archive size={15} />}
-                                        </IconButton>
-                                    </div>
+                    <label className={styles.archiveToggle}>
+                        <input
+                            type="checkbox"
+                            checked={showArchived}
+                            onChange={event => setShowArchived(event.target.checked)}
+                        />{communityText('Show archived posts')}</label>
+                    <div className={styles.managerTable} role="table" aria-label={communityText('News posts')}>
+                        <div className={styles.managerTableHead} role="row">
+                            <span>{communityText('Post')}</span>
+                            <span>{communityText('Published')}</span>
+                            <span>{communityText('Performance')}</span>
+                            <span>{communityText('Actions')}</span>
+                        </div>
+                        {visibleItems.map(item => (
+                            <div className={styles.managerRow} role="row" key={item.id}>
+                                <div className={styles.managerPost} role="cell">
+                                    <Link to={`/news/${item.id}`}>{item.title}</Link>
+                                    <UserLink username={item.author}>
+                                        <Avatar username={item.author} size={21} /> {item.author}
+                                    </UserLink>
+                                    {item.archived ? (
+                                        <span className={styles.archivedBadge}>{communityText('Archived')}</span>
+                                    ) : null}
                                 </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className={`${styles.list} ${styles.blogList}`}>
-                            {visibleItems.map(item => (
-                                <NewsItem
-                                    key={item.id}
-                                    compact
-                                    item={item}
-                                    onChanged={() => load(false)}
-                                />
-                            ))}
-                        </div>
-                    )}
+                                <span className={styles.managerDate} role="cell">
+                                    {formatDate(item.created)}
+                                </span>
+                                <div className={styles.managerPerformance} role="cell">
+                                    <span>
+                                        <Eye size={14} />
+                                        {(item.views || 0).toLocaleString(getCommunityLocale())}
+                                    </span>
+                                    <span>
+                                        <Heart size={14} />
+                                        {(item.reactionCounts?.heart || 0).toLocaleString(getCommunityLocale())}
+                                    </span>
+                                </div>
+                                <div className={styles.managerActions} role="cell">
+                                    <IconButton
+                                        label={communityText('Edit {value1}', {value1: item.title})}
+                                        onClick={() => edit(item)}
+                                    >
+                                        <Pencil size={15} />
+                                    </IconButton>
+                                    <IconButton
+                                        label={item.archived ?
+                                            communityText('Restore {value1}', {value1: item.title}) :
+                                            communityText('Archive {value1}', {value1: item.title})}
+                                        onClick={() => archive(item)}
+                                    >
+                                        {item.archived ? <ArchiveRestore size={15} /> : <Archive size={15} />}
+                                    </IconButton>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </>
             ) : (
                 <EmptyState icon={Megaphone} title={communityText('No updates yet')}>
