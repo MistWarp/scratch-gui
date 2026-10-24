@@ -1,6 +1,7 @@
 import JSZip from '@turbowarp/jszip';
 import {convertProject, buildProjectFromBuildDir, toPromiseFs, writeExtensions} from 'fractch';
 import storage from '../persistence/storage';
+import {readProjectSidecar, writeProjectSidecar} from './project-sidecar.js';
 
 // Custom assets are mirrored into the repo as a real tracked folder with real
 // filenames instead of md5 blobs. Identity is recovered by re-hashing on pack,
@@ -327,6 +328,7 @@ const writeProjectToFractchTree = async ({
         const vfs = toPromiseFs(treeFs);
 
         await writeCustomAssets({readSb3File, projectJson, vfs, dir});
+        await writeProjectSidecar({readSb3File, projectJson, vfs, dir});
 
         const maybeYield = createYielder();
         const targets = Array.isArray(projectJson.targets) ? projectJson.targets : [];
@@ -409,6 +411,8 @@ const buildSb3FromFractchTree = async ({fs, dir, onProgress} = {}) => {
     } else {
         delete manifest.customAssets;
     }
+
+    await readProjectSidecar({vfs, dir, zip, manifest});
 
     zip.file('project.json', JSON.stringify(manifest));
 
