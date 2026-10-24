@@ -66,6 +66,7 @@ let tokenGeneration = 0;
 let identityGeneration = 0;
 let applying = null;
 let splitWired = false;
+let frameUnreachable = false;
 
 const bridgeUsername = () => {
     const user = accountBridge.getIdentity().user;
@@ -75,9 +76,14 @@ const bridgeUsername = () => {
 const splitSession = {
     get: () => (editorToken && editorToken.username === bridgeUsername() &&
         editorToken.expiresAt - TOKEN_MARGIN > Date.now() ? editorToken.token : null),
-    refresh: () => {
+    refresh: async () => {
+        if (!frameUnreachable && !bridgeUsername() && accountBridge.getIdentity().status === 'restoring') {
+            await accountBridge.connect().catch(() => {
+                frameUnreachable = true;
+            });
+        }
         const username = bridgeUsername();
-        if (!username || Date.now() - mintFailedAt < MINT_RETRY_DELAY) return Promise.resolve(null);
+        if (!username || Date.now() - mintFailedAt < MINT_RETRY_DELAY) return null;
         if (!editorTokenRequest) {
             const generation = tokenGeneration;
             editorTokenRequest = accountBridge.call('editorSession', staleToken ? {stale: staleToken} : {})
