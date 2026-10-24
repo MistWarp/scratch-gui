@@ -81,12 +81,14 @@ const CommunityI18nContext = createContext({
     rich: createRichTranslator(defaultTranslate)
 });
 
-export const CommunityIntlProvider = ({children}) => {
+export const CommunityIntlProvider = ({children, embedded = false, locale: embeddedLocale = null}) => {
     const [preference, setPreferenceState] = useState(readPreference);
     const [search, setSearch] = useState(() => window.location.search);
     const query = new URLSearchParams(search);
     const urlPreference = matchLocale(query.get('locale') || query.get('lang'));
-    const requested = resolveLocale(preference, search, navigator.languages || [navigator.language]);
+    const requested = embedded ?
+        matchLocale(embeddedLocale || '') || 'en' :
+        resolveLocale(preference, search, navigator.languages || [navigator.language]);
     const [active, setActive] = useState(() => ({locale: 'en', messages: english}));
     const [loadError, setLoadError] = useState(false);
     const [attempt, setAttempt] = useState(0);
@@ -132,9 +134,10 @@ export const CommunityIntlProvider = ({children}) => {
         };
     }, []);
     useEffect(() => {
+        if (embedded) return;
         document.documentElement.lang = active.locale;
         document.documentElement.dir = locales[active.locale]?.rtl ? 'rtl' : 'ltr';
-    }, [active.locale]);
+    }, [active.locale, embedded]);
     const value = useMemo(() => {
         const translate = createTranslator(active.locale, active.messages);
         return {

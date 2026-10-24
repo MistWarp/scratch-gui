@@ -802,53 +802,53 @@
     "src/community/components/DiffView.jsx:370"
   ],
   "Loading diff…": [
-    "src/community/components/DiffView.jsx:457"
+    "src/community/components/DiffView.jsx:477"
   ],
   "No changes": [
-    "src/community/components/DiffView.jsx:461"
+    "src/community/components/DiffView.jsx:481"
   ],
   "This version did not change any files.": [
-    "src/community/components/DiffView.jsx:462"
+    "src/community/components/DiffView.jsx:482"
   ],
   "No {value1} changes for {value2} found.": [
-    "src/community/components/DiffView.jsx:502"
+    "src/community/components/DiffView.jsx:503"
   ],
   "No {value1} changes found.": [
-    "src/community/components/DiffView.jsx:505"
+    "src/community/components/DiffView.jsx:506"
   ],
   "1 file changed": [
-    "src/community/components/DiffView.jsx:512"
-  ],
-  "{value1} files changed": [
     "src/community/components/DiffView.jsx:513"
   ],
+  "{value1} files changed": [
+    "src/community/components/DiffView.jsx:514"
+  ],
   "Change categories": [
-    "src/community/components/DiffView.jsx:515"
+    "src/community/components/DiffView.jsx:516"
   ],
   "1 changed file": [
-    "src/community/components/DiffView.jsx:543"
-  ],
-  "{value1} changed files": [
     "src/community/components/DiffView.jsx:544"
   ],
+  "{value1} changed files": [
+    "src/community/components/DiffView.jsx:545"
+  ],
   "Changed scripts as blocks": [
-    "src/community/components/DiffView.jsx:557"
+    "src/community/components/DiffView.jsx:558"
   ],
   "And 1 more changed script.": [
-    "src/community/components/DiffView.jsx:568"
-  ],
-  "And {value1} more changed scripts.": [
     "src/community/components/DiffView.jsx:569"
   ],
+  "And {value1} more changed scripts.": [
+    "src/community/components/DiffView.jsx:570"
+  ],
   "Asset changed": [
-    "src/community/components/DiffView.jsx:606"
+    "src/community/components/DiffView.jsx:607"
   ],
   "No line changes to show.": [
-    "src/community/components/DiffView.jsx:638"
+    "src/community/components/DiffView.jsx:639"
   ],
   "Nothing to show": [
-    "src/community/components/DiffView.jsx:647",
-    "src/community/pages/Notifications.jsx:744"
+    "src/community/components/DiffView.jsx:648",
+    "src/community/pages/Notifications.jsx:738"
   ],
   "Explore": [
     "src/community/components/ExploreHeader.jsx:16",
@@ -1182,14 +1182,14 @@
     "src/community/components/GifPicker.jsx:87"
   ],
   "View commit {value1}": [
-    "src/community/components/GitGraph.jsx:97"
+    "src/community/components/GitGraph.jsx:70"
   ],
   "Restoring…": [
-    "src/community/components/GitGraph.jsx:128",
+    "src/community/components/GitGraph.jsx:101",
     "src/community/pages/project/HistoryList.jsx:100"
   ],
   "Restore this version": [
-    "src/community/components/GitGraph.jsx:129"
+    "src/community/components/GitGraph.jsx:102"
   ],
   "All news": [
     "src/community/components/HomeCommunity.jsx:81",

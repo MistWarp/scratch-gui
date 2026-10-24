@@ -35,8 +35,10 @@ import {
     push,
     cloneRepo,
     repoHasFractch,
-    writeReadme
+    writeReadme,
+    computeCommitGraph
 } from '../lib/git/browser-git.js';
+import {inspectHistoryCommit, inspectHistoryWorktree} from '../lib/git/mwp.js';
 import {buildSb3FromFractchTree} from '../lib/git/fractch-tree.js';
 import {
     listMyRepos as listRoturRepos,
@@ -50,8 +52,6 @@ import {
 import {getRoturSessionApi} from '../lib/rotur/session-api.js';
 import {
     getFileContentAtCommit,
-    getChangedFilesBetweenCommits,
-    getCommitParents,
     computeLineDiff
 } from '../lib/git/git-diff.js';
 import {isSplitEditor} from '../lib/account/origins.js';
@@ -110,6 +110,8 @@ export const loadClonedProject = async (vm, projectTitle) => {
         log.warn('Could not redraw the cloned project:', error);
     }
 };
+
+const HISTORY_PAGE = 50;
 
 const palette = [
     '#4db6ac', '#9575cd', '#64b5f6',
@@ -192,8 +194,9 @@ export class TWGitModal extends React.Component {
             diffFilepath: null,
             diffData: null,
             diffContext: null,
-            selectedCommitOid: null,
-            commitFiles: [],
+            historyDepth: HISTORY_PAGE,
+            historySelection: null,
+            historyDetail: null,
             // Settings
             defaultBranch: readLocal(DEFAULT_BRANCH_KEY, 'main'),
             autoCommit: readLocal(AUTO_COMMIT_KEY, 'false') === 'true',
@@ -218,6 +221,10 @@ export class TWGitModal extends React.Component {
         bindAll(this, [
             'refresh',
             'ensureLocalHistory',
+            'handleSelectHistoryCommit',
+            'handleSelectHistoryWorktree',
+            'handleChangeHistoryBase',
+            'handleLoadMoreHistory',
             'handleHistoryState',
             'pollChanges',
             'computeWorkingDiff',
@@ -246,8 +253,6 @@ export class TWGitModal extends React.Component {
             'handleSetMergeResolution',
             'handleApplyMerge',
             'handleDiffChangedFile',
-            'handleSelectCommit',
-            'handleDiffCommitFile',
             'handleClearDiff',
             'handleChangeNewRemoteName',
             'handleChangeNewRemoteUrl',
@@ -372,6 +377,10 @@ export class TWGitModal extends React.Component {
         }
     }
 
+    componentDidUpdate () {
+        this.ensureHistorySelection();
+    }
+
     componentWillUnmount () {
         this._isMounted = false;
         if (this._unsubscribeHistory) this._unsubscribeHistory();
@@ -437,6 +446,72 @@ export class TWGitModal extends React.Component {
 
     ensureLocalHistory () {
         return ensureProjectHistoryHydrated(this.props.vm);
+    }
+
+    ensureHistorySelection () {
+        if (!this.state.initialized) return;
+        const selection = this.state.historySelection;
+        const nodes = this.state.graphNodes || [];
+        const hasChanges = Array.isArray(this.state.changes) && this.state.changes.length > 0;
+        const preferred = hasChanges ? {kind: 'worktree'} :
+            (nodes.length ? {kind: 'commit', oid: nodes[0].oid, base: null} : null);
+        const stillThere = selection && (selection.kind === 'worktree' ? hasChanges :
+            nodes.some(node => node.oid === selection.oid));
+        const samePlace = (a, b) => Boolean(a && b) && a.kind === b.kind && a.oid === b.oid;
+        if (stillThere && !(selection.auto && preferred && !samePlace(selection, preferred))) return;
+        if (preferred) this.selectHistory({...preferred, auto: true});
+        else if (selection) this.setState({historySelection: null, historyDetail: null});
+    }
+
+    async selectHistory (selection) {
+        const token = {};
+        this._historyToken = token;
+        this.setStateIfMounted({historySelection: selection, historyDetail: {status: 'loading'}});
+        try {
+            await this.ensureLocalHistory();
+            const data = selection.kind === 'worktree' ?
+                await inspectHistoryWorktree({vm: this.props.vm}) :
+                await inspectHistoryCommit({oid: selection.oid, baseOid: selection.base || null});
+            if (this._historyToken !== token) return;
+            this.setStateIfMounted({historyDetail: {status: 'ready', data}});
+        } catch (err) {
+            if (this._historyToken !== token) return;
+            log.warn('Could not inspect history:', err);
+            this.setStateIfMounted({
+                historyDetail: {status: 'error', error: err && err.message ? err.message : String(err)}
+            });
+        }
+    }
+
+    handleSelectHistoryCommit (event) {
+        const oid = event && event.currentTarget ? event.currentTarget.dataset.oid : null;
+        if (oid) this.selectHistory({kind: 'commit', oid, base: null});
+    }
+
+    handleSelectHistoryWorktree () {
+        this.selectHistory({kind: 'worktree'});
+    }
+
+    handleChangeHistoryBase (event) {
+        const selection = this.state.historySelection;
+        if (!selection || selection.kind !== 'commit') return;
+        this.selectHistory({...selection, base: event.target.value || null});
+    }
+
+    async handleLoadMoreHistory () {
+        const depth = this.state.historyDepth + HISTORY_PAGE;
+        try {
+            await this.ensureLocalHistory();
+            const graph = await computeCommitGraph({depth});
+            this.setStateIfMounted({
+                historyDepth: depth,
+                graphBranches: graph.branches || [],
+                graphNodes: graph.nodes || [],
+                graphBranchLogs: graph.branchLogs || []
+            });
+        } catch (err) {
+            this.setStateIfMounted({error: err && err.message ? err.message : String(err)});
+        }
     }
 
     async runPoll () {
@@ -716,7 +791,7 @@ export class TWGitModal extends React.Component {
         try {
             await this.waitForPollIdle();
             await deleteRepo();
-            this.setStateIfMounted({diffData: null, diffFilepath: null, selectedCommitOid: null, commitFiles: []});
+            this.setStateIfMounted({diffData: null, diffFilepath: null, historySelection: null, historyDetail: null});
             await this.refresh();
         } finally {
             this.setStateIfMounted({busy: false, busyMessage: null, busyProgress: null});
@@ -782,48 +857,6 @@ export class TWGitModal extends React.Component {
             await this.ensureLocalHistory();
             const diff = await this.computeWorkingDiff(filepath);
             this._openDiffSig = diffSignature(diff);
-            this.setStateIfMounted({diffData: diff, diffLoading: false});
-        } catch (err) {
-            this.setStateIfMounted({diffLoading: false, error: err && err.message ? err.message : String(err)});
-        }
-    }
-
-    async handleSelectCommit (oid) {
-        if (!oid) return;
-        this.setStateIfMounted({selectedCommitOid: oid, diffData: null, diffFilepath: null, diffContext: 'commit'});
-        try {
-            await this.ensureLocalHistory();
-            const fs = getFs();
-            const parents = await getCommitParents({fs, dir: REPO_DIR, oid});
-            const parent = parents[0] || null;
-            let files = [];
-            if (parent) {
-                files = await getChangedFilesBetweenCommits({fs, dir: REPO_DIR, oidA: parent, oidB: oid});
-            }
-            this.setStateIfMounted({commitFiles: files});
-        } catch (err) {
-            this.setStateIfMounted({error: err && err.message ? err.message : String(err)});
-        }
-    }
-
-    async handleDiffCommitFile (filepath) {
-        const oid = this.state.selectedCommitOid;
-        if (!oid || !filepath || !isDiffable(filepath)) return;
-        if (this.state.diffContext === 'commit' && this.state.diffFilepath === filepath && !this.state.diffLoading) {
-            this.setStateIfMounted({diffData: null, diffFilepath: null});
-            return;
-        }
-        this.setStateIfMounted({diffLoading: true, diffFilepath: filepath, diffData: null, diffContext: 'commit'});
-        try {
-            await this.ensureLocalHistory();
-            const fs = getFs();
-            const parents = await getCommitParents({fs, dir: REPO_DIR, oid});
-            const parent = parents[0] || null;
-            const newRes = await getFileContentAtCommit({fs, dir: REPO_DIR, oid, filepath});
-            const oldRes = parent ?
-                await getFileContentAtCommit({fs, dir: REPO_DIR, oid: parent, filepath}) :
-                {text: ''};
-            const diff = await computeLineDiff(oldRes.text || '', newRes.text || '');
             this.setStateIfMounted({diffData: diff, diffLoading: false});
         } catch (err) {
             this.setStateIfMounted({diffLoading: false, error: err && err.message ? err.message : String(err)});
@@ -1254,7 +1287,6 @@ export class TWGitModal extends React.Component {
                 initialized={this.state.initialized}
                 currentBranch={this.state.currentBranch}
                 branches={this.state.branches}
-                commits={this.state.commits}
                 graphBranches={this.state.graphBranches}
                 graphNodes={this.state.graphNodes}
                 graphBranchLogs={this.state.graphBranchLogs}
@@ -1278,8 +1310,6 @@ export class TWGitModal extends React.Component {
                 diffFilepath={this.state.diffFilepath}
                 diffData={this.state.diffData}
                 diffContext={this.state.diffContext}
-                selectedCommitOid={this.state.selectedCommitOid}
-                commitFiles={this.state.commitFiles}
                 defaultBranch={this.state.defaultBranch}
                 autoCommit={this.state.autoCommit}
                 readmeContent={this.state.readmeContent}
@@ -1310,8 +1340,13 @@ export class TWGitModal extends React.Component {
                 onSetMergeResolution={this.handleSetMergeResolution}
                 onApplyMerge={this.handleApplyMerge}
                 onDiffChangedFile={this.handleDiffChangedFile}
-                onSelectCommit={this.handleSelectCommit}
-                onDiffCommitFile={this.handleDiffCommitFile}
+                historyDetail={this.state.historyDetail}
+                historyHasMore={(this.state.graphNodes || []).length >= this.state.historyDepth}
+                historySelection={this.state.historySelection}
+                onChangeHistoryBase={this.handleChangeHistoryBase}
+                onLoadMoreHistory={this.handleLoadMoreHistory}
+                onSelectHistoryCommit={this.handleSelectHistoryCommit}
+                onSelectHistoryWorktree={this.handleSelectHistoryWorktree}
                 onClearDiff={this.handleClearDiff}
                 onChangeNewRemoteName={this.handleChangeNewRemoteName}
                 onChangeNewRemoteUrl={this.handleChangeNewRemoteUrl}

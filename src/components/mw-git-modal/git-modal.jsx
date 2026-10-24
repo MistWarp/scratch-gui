@@ -23,6 +23,7 @@ import {
 
 import Box from '../box/box.jsx';
 import Modal from '../../containers/windowed-modal.jsx';
+import HistoryView from './history-view.jsx';
 import DiffViewer from '../mw-git-diff-viewer/diff-viewer.jsx';
 import {
     ModalSidebar,
@@ -157,12 +158,10 @@ class GitModalComponent extends React.Component {
         this.handleNavigate = this.handleNavigate.bind(this);
         this.handleNavigateClick = this.handleNavigateClick.bind(this);
         this.handleDiffChangedFile = this.handleDiffChangedFile.bind(this);
-        this.handleDiffCommitFile = this.handleDiffCommitFile.bind(this);
         this.handleSetMergeResolution = this.handleSetMergeResolution.bind(this);
         this.handleRoturPush = this.handleRoturPush.bind(this);
         this.handleRoturClone = this.handleRoturClone.bind(this);
         this.handleRoturDelete = this.handleRoturDelete.bind(this);
-        this.handleSelectCommit = this.handleSelectCommit.bind(this);
     }
 
     componentDidMount () {
@@ -195,10 +194,6 @@ class GitModalComponent extends React.Component {
         this.props.onDiffChangedFile(event.currentTarget.dataset.filepath);
     }
 
-    handleDiffCommitFile (event) {
-        this.props.onDiffCommitFile(event.currentTarget.dataset.filepath);
-    }
-
     handleSetMergeResolution (event) {
         this.props.onSetMergeResolution(
             event.currentTarget.dataset.filepath,
@@ -225,10 +220,6 @@ class GitModalComponent extends React.Component {
     handleRoturDelete (event) {
         const repo = this.findRoturRepo(event);
         if (repo) this.props.onRoturDelete(repo);
-    }
-
-    handleSelectCommit (event) {
-        this.props.onSelectCommit(event.currentTarget.dataset.oid);
     }
 
     renderNotInitialized () {
@@ -445,133 +436,27 @@ class GitModalComponent extends React.Component {
     }
 
     renderHistory () {
-        const {commits, branchColors} = this.props;
         return (
-            <Box className={styles.section}>
-                <h2 className={styles.sectionTitle}>
-                    <FormattedMessage
-                        defaultMessage="Project history"
-                        description="History section heading (pushed commits)"
-                        id="mw.git.history.heading"
-                    />
-                </h2>
-                {Array.isArray(commits) && commits.length ? (
-                    <ul className={styles.commitList}>
-                        {commits.map(entry => {
-                            const branchesForCommit = (this.props.graphNodes || [])
-                                .find(n => n.oid === entry.oid);
-                            const chips = branchesForCommit ? branchesForCommit.branches : [];
-                            const message = entry.commit && entry.commit.message ?
-                                entry.commit.message.split('\n')[0] : '';
-                            return (
-                                <li
-                                    key={entry.oid}
-                                    className={classNames(styles.commitRow, {
-                                        [styles.commitRowSelected]: this.props.selectedCommitOid === entry.oid
-                                    })}
-                                >
-                                    <button
-                                        type="button"
-                                        className={styles.commitMain}
-                                        data-oid={entry.oid}
-                                        aria-pressed={this.props.selectedCommitOid === entry.oid}
-                                        onClick={this.handleSelectCommit}
-                                    >
-                                        <span className={styles.commitMessage}>{message}</span>
-                                        <span className={styles.commitMeta}>
-                                            <span className={styles.commitHash}>{entry.oid.slice(0, 7)}</span>
-                                            {chips.map(b => (
-                                                <span
-                                                    key={b}
-                                                    className={styles.branchChip}
-                                                    style={{backgroundColor: (branchColors || {})[b] || '#888'}}
-                                                >{b}</span>
-                                            ))}
-                                        </span>
-                                    </button>
-                                    <div className={styles.commitActions}>
-                                        <button
-                                            type="button"
-                                            className={styles.iconButton}
-                                            data-oid={entry.oid}
-                                            disabled={this.props.busy}
-                                            title={this.props.intl.formatMessage({
-                                                defaultMessage: 'Restore this commit',
-                                                description: 'Restore commit tooltip',
-                                                id: 'mw.git.history.restore'
-                                            })}
-                                            onClick={this.props.onRestoreCommit}
-                                        >
-                                            <RotateCcw className={styles.buttonIcon} />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className={styles.iconButton}
-                                            data-oid={entry.oid}
-                                            disabled={this.props.busy}
-                                            title={this.props.intl.formatMessage({
-                                                defaultMessage: 'Download as .sb3',
-                                                description: 'Download commit tooltip',
-                                                id: 'mw.git.history.download'
-                                            })}
-                                            onClick={this.props.onDownloadCommit}
-                                        >
-                                            <Download className={styles.buttonIcon} />
-                                        </button>
-                                    </div>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                ) : (
-                    <p className={styles.muted}>
-                        <FormattedMessage
-                            defaultMessage="No commits yet."
-                            description="No commits message"
-                            id="mw.git.history.none"
-                        />
-                    </p>
-                )}
-                {this.props.selectedCommitOid && (
-                    <Box className={styles.subSection}>
-                        <h3 className={styles.subTitle}>
-                            <FormattedMessage
-                                defaultMessage="Files changed in this commit"
-                                description="Commit files heading"
-                                id="mw.git.history.files"
-                            />
-                        </h3>
-                        {Array.isArray(this.props.commitFiles) && this.props.commitFiles.length ? (
-                            <ul className={styles.fileList}>
-                                {this.props.commitFiles.map(file => (
-                                    <GitFileRow
-                                        key={file.path}
-                                        description={file.type}
-                                        filepath={file.path}
-                                        onClick={/\.(fractch|svg|json|txt|md)$/i.test(file.path) ?
-                                            this.handleDiffCommitFile : null}
-                                    />
-                                ))}
-                            </ul>
-                        ) : (
-                            <p className={styles.muted}>
-                                <FormattedMessage
-                                    defaultMessage="No file-level changes to show."
-                                    description="No commit file changes"
-                                    id="mw.git.history.noFiles"
-                                />
-                            </p>
-                        )}
-                        {this.props.diffFilepath && this.props.diffContext === 'commit' && (
-                            <DiffViewer
-                                diff={this.props.diffData}
-                                loading={this.props.diffLoading}
-                                filepath={this.props.diffFilepath}
-                            />
-                        )}
-                    </Box>
-                )}
-            </Box>
+            <HistoryView
+                branchColors={this.props.branchColors}
+                busy={this.props.busy}
+                changeCount={Array.isArray(this.props.changes) ? this.props.changes.length : 0}
+                currentBranch={this.props.currentBranch}
+                detail={this.props.historyDetail}
+                graph={{
+                    branches: this.props.graphBranches,
+                    branchLogs: this.props.graphBranchLogs,
+                    nodes: this.props.graphNodes
+                }}
+                hasMore={this.props.historyHasMore}
+                selection={this.props.historySelection}
+                onChangeBase={this.props.onChangeHistoryBase}
+                onDownloadCommit={this.props.onDownloadCommit}
+                onLoadMore={this.props.onLoadMoreHistory}
+                onRestoreCommit={this.props.onRestoreCommit}
+                onSelectCommit={this.props.onSelectHistoryCommit}
+                onSelectWorktree={this.props.onSelectHistoryWorktree}
+            />
         );
     }
 
@@ -1455,8 +1340,8 @@ class GitModalComponent extends React.Component {
                 onRequestClose={this.props.onClose}
                 contentLabel={intl.formatMessage(messages.title)}
                 id="gitModal"
-                width={880}
-                height={560}
+                width={Math.min(1200, Math.max(880, window.innerWidth - 64))}
+                height={Math.min(800, Math.max(560, window.innerHeight - 64))}
             >
                 <ModalSidebarLayout>
                     <ModalSidebar
@@ -1491,7 +1376,11 @@ class GitModalComponent extends React.Component {
                             />
                         ))}
                     </ModalSidebar>
-                    <ModalSidebarContent className={styles.contentArea}>
+                    <ModalSidebarContent
+                        className={classNames(styles.contentArea, {
+                            [styles.contentAreaHistory]: this.state.currentView === 'history' && this.props.initialized
+                        })}
+                    >
                         {this.props.busy && (
                             <Box className={styles.busyBar}>
                                 <span>{this.props.busyMessage || 'Working…'}</span>
@@ -1519,6 +1408,15 @@ class GitModalComponent extends React.Component {
 GitModalComponent.propTypes = {
     intl: intlShape,
     remotesDisabled: PropTypes.bool,
+    graphBranches: PropTypes.arrayOf(PropTypes.string),
+    graphBranchLogs: PropTypes.arrayOf(PropTypes.object),
+    historyDetail: PropTypes.object,
+    historyHasMore: PropTypes.bool,
+    historySelection: PropTypes.object,
+    onChangeHistoryBase: PropTypes.func,
+    onLoadMoreHistory: PropTypes.func,
+    onSelectHistoryCommit: PropTypes.func,
+    onSelectHistoryWorktree: PropTypes.func,
     busy: PropTypes.bool,
     busyMessage: PropTypes.string,
     busyProgress: PropTypes.number,
@@ -1526,7 +1424,6 @@ GitModalComponent.propTypes = {
     initialized: PropTypes.bool,
     currentBranch: PropTypes.string,
     branches: PropTypes.arrayOf(PropTypes.string),
-    commits: PropTypes.arrayOf(PropTypes.object),
     graphNodes: PropTypes.arrayOf(PropTypes.object),
     branchColors: PropTypes.object,
     commitMessage: PropTypes.string,
@@ -1543,8 +1440,6 @@ GitModalComponent.propTypes = {
     diffFilepath: PropTypes.string,
     diffData: PropTypes.object,
     diffContext: PropTypes.string,
-    selectedCommitOid: PropTypes.string,
-    commitFiles: PropTypes.arrayOf(PropTypes.object),
     readmeContent: PropTypes.string,
     readmeDirty: PropTypes.bool,
     onChangeReadme: PropTypes.func,
@@ -1571,8 +1466,6 @@ GitModalComponent.propTypes = {
     onSetMergeResolution: PropTypes.func,
     onApplyMerge: PropTypes.func,
     onDiffChangedFile: PropTypes.func,
-    onSelectCommit: PropTypes.func,
-    onDiffCommitFile: PropTypes.func,
     onClearDiff: PropTypes.func,
     onChangeNewRemoteUrl: PropTypes.func,
     onChangeRemoteToken: PropTypes.func,
