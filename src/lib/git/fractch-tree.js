@@ -1,18 +1,12 @@
 import JSZip from '@turbowarp/jszip';
 import {convertProject, buildProjectFromBuildDir, toPromiseFs, writeExtensions} from 'fractch';
 import storage from '../persistence/storage';
-import {readProjectSidecar, writeProjectSidecar} from './project-sidecar.js';
+import {extensionOf, readProjectSidecar, toBytes, writeProjectSidecar} from './project-sidecar.js';
 
 // Custom assets are mirrored into the repo as a real tracked folder with real
 // filenames instead of md5 blobs. Identity is recovered by re-hashing on pack,
 // exactly like fractch does for costumes and sounds.
 const CUSTOM_ASSETS_DIR = 'assets';
-
-const extensionOf = path => {
-    const base = path.substring(path.lastIndexOf('/') + 1);
-    const dot = base.lastIndexOf('.');
-    return dot > 0 ? base.substring(dot + 1).toLowerCase() : 'bin';
-};
 
 const writeCustomAssets = async ({readSb3File, projectJson, vfs, dir}) => {
     const customAssets = Array.isArray(projectJson.customAssets) ? projectJson.customAssets : [];
@@ -181,13 +175,6 @@ const listGeneratedTree = async (pfs, dir) => {
     };
     await walk(dir, true);
     return {files, dirs};
-};
-
-const toBytes = data => {
-    if (data instanceof Uint8Array) return data;
-    if (typeof data === 'string') return new TextEncoder().encode(data);
-    if (ArrayBuffer.isView(data)) return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
-    return new Uint8Array(data);
 };
 
 const sameBytes = (a, b) => {

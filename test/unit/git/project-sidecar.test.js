@@ -171,14 +171,39 @@ describe('fonts', () => {
         expect(project.customFonts.map(font => font.family)).toEqual(['A/B', 'A?B']);
     });
 
-    test('a font file outside the project folder is ignored', async () => {
+    test('font entries can only point at font files inside fonts/', async () => {
         const dir = makeDir();
         await write(projectJson(), dir);
+        fs.mkdirSync(path.join(dir, '.git'));
+        fs.writeFileSync(path.join(dir, '.git', 'config'), '[user]\n');
+        fs.writeFileSync(path.join(dir, 'Sprite_1', 'notes.ttf'), FONT);
         fs.writeFileSync(path.join(dir, 'mistwarp.json'), JSON.stringify({
-            fonts: [{family: 'Evil', fallback: '', file: '../outside.ttf'}]
+            fonts: [
+                {family: 'A', fallback: '', file: '../outside.ttf'},
+                {family: 'B', fallback: '', file: '.git/config'},
+                {family: 'C', fallback: '', file: 'Sprite_1/notes.ttf'},
+                {family: 'D', fallback: '', file: 'fonts/../.git/config'},
+                {family: 'E', fallback: '', file: 'fonts/.hidden.ttf'}
+            ]
         }));
         const {project} = await rebuild(dir);
         expect(project.customFonts).toBeUndefined();
+    });
+
+    test('a font that is not a font format is not written into the tree', async () => {
+        const fractchMd5ext = `${md5(FONT)}.fractch`;
+        const dir = makeDir();
+        await writeProjectToFractchTree({
+            sb3Files: {
+                ...filesFor(projectJson({
+                    customFonts: [{system: false, family: 'Sneaky', fallback: '', md5ext: fractchMd5ext}]
+                })),
+                [fractchMd5ext]: FONT
+            },
+            fs: fs.promises,
+            dir
+        });
+        expect(fs.existsSync(path.join(dir, 'fonts'))).toBe(false);
     });
 
     test('removing every font removes its files on the next write', async () => {
@@ -242,7 +267,10 @@ describe('project data fractch has no syntax for', () => {
                 })
             ]
         }));
-        expect(sidecar(dir).frames['Sprite 1'].shut.scripts).toEqual([{opcode: 'event_whenflagclicked', x: 10, y: 20}]);
+        expect(sidecar(dir).frames['Sprite 1'].shut.scripts).toEqual([
+            {opcode: 'event_whenflagclicked', x: 10, y: 20, stack: expect.stringMatching(/^[0-9a-f]+:2$/)}
+        ]);
+        expect(Object.keys(sidecar(dir).frames)).toEqual(['_stage_', 'Sprite 1']);
         expect(targetNamed(project, 'Stage').frames).toEqual({
             stageFrame: {title: 'Stage', x: 5, y: 5, width: 120, height: 80, collapsed: false}
         });
@@ -253,6 +281,51 @@ describe('project data fractch has no syntax for', () => {
         const member = blocks[frames.shut.blocks[0]];
         expect(member).toMatchObject({opcode: 'event_whenflagclicked', topLevel: true, x: 10, y: 20});
         expect(blocks[member.next].inputs.MESSAGE[1][1]).toBe('in');
+    });
+
+    test('collapsed frames whose scripts sit at the same spot keep their own scripts', async () => {
+        const blocks = {
+            ...flagScript('a', 10, 10, 'first'),
+            ...flagScript('b', 10, 10, 'second')
+        };
+        blocks.bsay.next = 'bwait';
+        blocks.bwait = {
+            opcode: 'control_wait',
+            next: null,
+            parent: 'bsay',
+            inputs: {DURATION: [1, [5, '1']]},
+            fields: {},
+            shadow: false,
+            topLevel: false
+        };
+        const {project} = await roundTrip(projectJson({
+            targets: [stage(), sprite('Sprite 1', {
+                blocks,
+                frames: {
+                    f2: {title: 'Second', x: 0, y: 0, width: 320, height: 200, collapsed: true, blocks: ['b']},
+                    f1: {title: 'First', x: 0, y: 300, width: 320, height: 200, collapsed: true, blocks: ['a']}
+                }
+            })]
+        }));
+        const target = targetNamed(project, 'Sprite 1');
+        const said = frameId => {
+            const top = target.blocks[target.frames[frameId].blocks[0]];
+            return target.blocks[top.next].inputs.MESSAGE[1][1];
+        };
+        expect(said('f1')).toBe('first');
+        expect(said('f2')).toBe('second');
+    });
+
+    test('a sprite named __proto__ keeps its frames and extension storage', async () => {
+        const {project} = await roundTrip(projectJson({
+            targets: [stage(), sprite('__proto__', {
+                frames: {f: {title: 'Odd', x: 0, y: 0, width: 320, height: 200, collapsed: false}},
+                extensionStorage: {ext: {kept: true}}
+            }), sprite('Other')]
+        }));
+        const target = targetNamed(project, '__proto__');
+        expect(target.frames.f.title).toBe('Odd');
+        expect(target.extensionStorage).toEqual({ext: {kept: true}});
     });
 
     test('the project origin survives', async () => {

@@ -2,6 +2,9 @@ import storage from '../persistence/storage';
 
 const SIDECAR_FILE = 'mistwarp.json';
 const FONTS_DIR = 'fonts';
+const FONT_FILE = /^fonts\/[^/.][^/]*\.(?:ttf|otf|woff|woff2)$/i;
+const FONT_FORMATS = new Set(['ttf', 'otf', 'woff', 'woff2']);
+const STAGE_KEY = '_stage_';
 
 const isPlainObject = value => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
@@ -22,10 +25,28 @@ const extensionOf = path => {
 
 const safeFileName = name => String(name).replace(/[^a-zA-Z0-9-_]/g, '_') || 'font';
 
-const safeRelativePath = path => typeof path === 'string' &&
-    !path.startsWith('/') &&
-    !path.includes('\\') &&
-    !path.split('/').some(part => !part || part === '.' || part === '..');
+const targetKey = target => (target.isStage ? STAGE_KEY : target.name);
+
+const hashText = text => {
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < text.length; i++) {
+        hash ^= text.charCodeAt(i);
+        hash = Math.imul(hash, 0x01000193);
+    }
+    return (hash >>> 0).toString(16);
+};
+
+const stackOf = (blocks, topId) => {
+    const opcodes = [];
+    const seen = new Set();
+    let id = topId;
+    while (id && !seen.has(id) && blocks[id] && !Array.isArray(blocks[id])) {
+        seen.add(id);
+        opcodes.push(blocks[id].opcode);
+        id = blocks[id].next;
+    }
+    return `${hashText(opcodes.join(' '))}:${opcodes.length}`;
+};
 
 const topLevelScripts = blocks => {
     const scripts = [];
@@ -33,9 +54,9 @@ const topLevelScripts = blocks => {
         if (Array.isArray(block)) {
             if (block.length < 5) continue;
             const opcode = block[0] === 12 ? 'data_variable' : 'data_listcontents';
-            scripts.push({id, opcode, x: block[3], y: block[4]});
+            scripts.push({id, opcode, x: block[3], y: block[4], stack: `${hashText(opcode)}:1`});
         } else if (block && block.topLevel && !block.shadow) {
-            scripts.push({id, opcode: block.opcode, x: block.x, y: block.y});
+            scripts.push({id, opcode: block.opcode, x: block.x, y: block.y, stack: stackOf(blocks, id)});
         }
     }
     return scripts;
@@ -64,6 +85,10 @@ const writeFonts = async ({readSb3File, projectJson, vfs, dir}) => {
             continue;
         }
         const ext = extensionOf(font.md5ext);
+        if (!FONT_FORMATS.has(ext)) {
+            console.warn('[project-sidecar] skipping font with an unknown format:', font.md5ext);
+            continue;
+        }
         const base = safeFileName(font.family);
         let file = `${base}.${ext}`;
         let n = 2;
@@ -85,7 +110,7 @@ const readFonts = async ({entries, vfs, dir, zip}) => {
             fonts.push({system: true, family: entry.family, fallback});
             continue;
         }
-        if (!safeRelativePath(entry.file)) continue;
+        if (typeof entry.file !== 'string' || !FONT_FILE.test(entry.file)) continue;
         let data;
         try {
             data = await vfs.readFile(`${dir}/${entry.file}`);
@@ -108,7 +133,7 @@ const framesOf = target => {
     const ids = Object.keys(target.frames);
     if (!ids.length) return null;
     const scripts = new Map(topLevelScripts(target.blocks).map(script => [script.id, script]));
-    const frames = {};
+    const frames = Object.create(null);
     for (const id of ids) {
         const frame = target.frames[id];
         if (!isPlainObject(frame)) continue;
@@ -124,22 +149,48 @@ const framesOf = target => {
             entry.scripts = frame.blocks
                 .map(blockId => scripts.get(blockId))
                 .filter(Boolean)
-                .map(script => ({opcode: script.opcode, x: script.x, y: script.y}));
+                .map(script => ({opcode: script.opcode, x: script.x, y: script.y, stack: script.stack}));
         }
         frames[id] = entry;
     }
     return Object.keys(frames).length ? frames : null;
 };
 
+const claimScripts = (target, wanted) => {
+    const scripts = topLevelScripts(target.blocks);
+    const claimed = new Set();
+    const result = wanted.map(() => null);
+    const pass = matches => wanted.forEach((script, index) => {
+        if (result[index] || !script) return;
+        const found = scripts.find(candidate => !claimed.has(candidate.id) && matches(candidate, script));
+        if (!found) return;
+        claimed.add(found.id);
+        result[index] = found.id;
+    });
+    pass((candidate, script) => scriptKey(candidate) === scriptKey(script) && candidate.stack === script.stack);
+    pass((candidate, script) => scriptKey(candidate) === scriptKey(script) && typeof script.stack !== 'string');
+    return result;
+};
+
 const restoreFrames = (target, frames) => {
     if (!isPlainObject(frames)) return;
-    const unclaimed = new Map();
-    for (const script of topLevelScripts(target.blocks)) {
-        const key = scriptKey(script);
-        if (!unclaimed.has(key)) unclaimed.set(key, []);
-        unclaimed.get(key).push(script.id);
+    const wanted = [];
+    for (const id of Object.keys(frames)) {
+        const frame = frames[id];
+        if (isPlainObject(frame) && frame.collapsed && Array.isArray(frame.scripts)) {
+            for (const script of frame.scripts) {
+                wanted.push({frameId: id, script: isPlainObject(script) ? script : null});
+            }
+        }
     }
-    const restored = {};
+    const claimed = claimScripts(target, wanted.map(item => item.script));
+    const members = new Map();
+    wanted.forEach((item, index) => {
+        if (!claimed[index]) return;
+        if (!members.has(item.frameId)) members.set(item.frameId, []);
+        members.get(item.frameId).push(claimed[index]);
+    });
+    const restored = Object.create(null);
     for (const [id, frame] of Object.entries(frames)) {
         if (!isPlainObject(frame)) continue;
         const entry = {
@@ -150,14 +201,7 @@ const restoreFrames = (target, frames) => {
             height: Number(frame.height) || 0,
             collapsed: Boolean(frame.collapsed)
         };
-        if (entry.collapsed && Array.isArray(frame.scripts)) {
-            const blocks = [];
-            for (const script of frame.scripts) {
-                const matches = unclaimed.get(scriptKey(script || {}));
-                if (matches && matches.length) blocks.push(matches.shift());
-            }
-            if (blocks.length) entry.blocks = blocks;
-        }
+        if (entry.collapsed && members.has(id)) entry.blocks = members.get(id);
         restored[id] = entry;
     }
     if (Object.keys(restored).length) target.frames = restored;
@@ -170,19 +214,19 @@ const writeProjectSidecar = async ({readSb3File, projectJson, vfs, dir}) => {
     const sprites = targets.filter(target => !target.isStage).map(target => target.name);
     if (sprites.length > 1) sidecar.spriteOrder = sprites;
 
-    const frames = {};
+    const frames = Object.create(null);
     for (const target of targets) {
         const targetFrames = framesOf(target);
-        if (targetFrames) frames[target.name] = targetFrames;
+        if (targetFrames) frames[targetKey(target)] = targetFrames;
     }
     if (Object.keys(frames).length) sidecar.frames = frames;
 
     const fonts = await writeFonts({readSb3File, projectJson, vfs, dir});
     if (fonts.length) sidecar.fonts = fonts;
 
-    const storageByTarget = {};
+    const storageByTarget = Object.create(null);
     for (const target of targets) {
-        if (isPlainObject(target.extensionStorage)) storageByTarget[target.name] = target.extensionStorage;
+        if (isPlainObject(target.extensionStorage)) storageByTarget[targetKey(target)] = target.extensionStorage;
     }
     const extensionStorage = {};
     if (isPlainObject(projectJson.extensionStorage)) extensionStorage.project = projectJson.extensionStorage;
@@ -231,7 +275,7 @@ const applySidecar = (manifest, sidecar, fonts) => {
 
     if (isPlainObject(sidecar.frames)) {
         for (const target of targets) {
-            if (hasOwn(sidecar.frames, target.name)) restoreFrames(target, sidecar.frames[target.name]);
+            if (hasOwn(sidecar.frames, targetKey(target))) restoreFrames(target, sidecar.frames[targetKey(target)]);
         }
     }
 
@@ -239,7 +283,8 @@ const applySidecar = (manifest, sidecar, fonts) => {
     if (isPlainObject(extensionStorage.project)) manifest.extensionStorage = extensionStorage.project;
     if (isPlainObject(extensionStorage.targets)) {
         for (const target of targets) {
-            const stored = hasOwn(extensionStorage.targets, target.name) ? extensionStorage.targets[target.name] : null;
+            const key = targetKey(target);
+            const stored = hasOwn(extensionStorage.targets, key) ? extensionStorage.targets[key] : null;
             if (isPlainObject(stored)) target.extensionStorage = stored;
         }
     }
@@ -260,6 +305,8 @@ const readProjectSidecar = async ({vfs, dir, zip, manifest}) => {
 
 export {
     SIDECAR_FILE,
+    extensionOf,
+    toBytes,
     readProjectSidecar,
     writeProjectSidecar
 };
