@@ -627,7 +627,7 @@ const Settings = () => {
                                         </Button>
                                     )}
                                 >
-                                    {communityText('Your current Rotur login is missing the account:profile permission, so your editor activity cannot be shared. Log in again to grant it.')}
+                                    {communityText('Your current Rotur login is missing the status:update permission, so your editor activity cannot be shared. Log in again to grant it.')}
                                 </Notice>
                             ) : null}
                             <div className={styles.settingRows}>

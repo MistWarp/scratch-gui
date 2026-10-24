@@ -17,9 +17,9 @@ patchedDependencies:
   '@turbowarp/scratch-svg-renderer':
     hash: 81a01d6d472570d53eec593be679e84867db1ba1410f5ef084d5c404068481b9
     path: patches/@turbowarp__scratch-svg-renderer.patch
-  rotur-sdk@2.5.2:
-    hash: ddb178093163bd8090ac3a82aacb74805a1beca08e81ac9b72de7fff3bb08692
-    path: patches/rotur-sdk@2.5.2.patch
+  rotur-sdk@3.9.1:
+    hash: e4ed9051554e8c41af184b14c19514365889ee05a2a54da7eb0ba57ab5a2dfc1
+    path: patches/rotur-sdk@3.9.1.patch
   scratch-parser:
     hash: 7f03af2d2e61fc6d5af5eecddef071142f83bbae93a9e0733cf5b9a8e8b6a3eb
     path: patches/scratch-parser.patch
@@ -215,8 +215,8 @@ importers:
         specifier: 0.1.1
         version: 0.1.1
       rotur-sdk:
-        specifier: ^2.0.0
-        version: 2.5.2(patch_hash=ddb178093163bd8090ac3a82aacb74805a1beca08e81ac9b72de7fff3bb08692)
+        specifier: ^3.9.1
+        version: 3.9.1(patch_hash=e4ed9051554e8c41af184b14c19514365889ee05a2a54da7eb0ba57ab5a2dfc1)
       scratch-audio:
         specifier: https://codeload.github.com/MistWarp/scratch-audio/tar.gz/9577662f5e2d1eed73f5f35b576935906d831fbf
         version: https://codeload.github.com/MistWarp/scratch-audio/tar.gz/9577662f5e2d1eed73f5f35b576935906d831fbf
@@ -233,8 +233,8 @@ importers:
         specifier: https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd
         version: https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd
       scratch-vm:
-        specifier: https://codeload.github.com/MistWarp/scratch-vm/tar.gz/566a734202106b808d7bdd0b25bdca9bfe3385c4
-        version: https://codeload.github.com/MistWarp/scratch-vm/tar.gz/566a734202106b808d7bdd0b25bdca9bfe3385c4(@turbowarp/scratch-svg-renderer@1.1.0(patch_hash=81a01d6d472570d53eec593be679e84867db1ba1410f5ef084d5c404068481b9)(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd))(eslint@8.55.0)(webpack@4.47.0)
+        specifier: https://codeload.github.com/MistWarp/scratch-vm/tar.gz/440ab3c37aca718a7e90dcf4447298b661fee7fa
+        version: https://codeload.github.com/MistWarp/scratch-vm/tar.gz/440ab3c37aca718a7e90dcf4447298b661fee7fa(@turbowarp/scratch-svg-renderer@1.1.0(patch_hash=81a01d6d472570d53eec593be679e84867db1ba1410f5ef084d5c404068481b9)(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd))(eslint@8.55.0)(webpack@4.47.0)
       scratchblocks:
         specifier: 3.7.1
         version: 3.7.1
@@ -5471,8 +5471,8 @@ packages:
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
     hasBin: true
 
-  rotur-sdk@2.5.2:
-    resolution: {integrity: sha512-pbTtUPu3hO0bQ0Wf693mW2vpA1XfKHQ+8f2lxvjpgmspQ+zj9Z8BQ27GC+WmSYGasRhDLgy2NloJ5QVUQhXNMw==}
+  rotur-sdk@3.9.1:
+    resolution: {integrity: sha512-OUHT1+yR95/qX8VTkOVfd3dia5+Zm36DFFRQjjOtLwzrX9HjjRJVfhqsCiPdyrLHeEcxpg95bM3Oi2/fsvLlEg==}
     peerDependencies:
       preact: ^10.0.0
       ts-morph: ^28.0.0
@@ -5584,8 +5584,8 @@ packages:
   scratch-translate-extension-languages@1.0.7:
     resolution: {integrity: sha512-6+bQU9iVYv23T8J0SjpV6MTugm0y8myh/4DPgu1BGfccysdkaWzu3MkNGQyQRUlbqAiW9wM7ctfv3USPEkzTgg==}
 
-  scratch-vm@https://codeload.github.com/MistWarp/scratch-vm/tar.gz/566a734202106b808d7bdd0b25bdca9bfe3385c4:
-    resolution: {tarball: https://codeload.github.com/MistWarp/scratch-vm/tar.gz/566a734202106b808d7bdd0b25bdca9bfe3385c4}
+  scratch-vm@https://codeload.github.com/MistWarp/scratch-vm/tar.gz/440ab3c37aca718a7e90dcf4447298b661fee7fa:
+    resolution: {tarball: https://codeload.github.com/MistWarp/scratch-vm/tar.gz/440ab3c37aca718a7e90dcf4447298b661fee7fa}
     version: 2.1.46
     peerDependencies:
       '@turbowarp/scratch-svg-renderer': ^1.1.0
@@ -12662,7 +12662,7 @@ snapshots:
       '@rollup/rollup-win32-x64-msvc': 4.63.1
       fsevents: 2.3.3
 
-  rotur-sdk@2.5.2(patch_hash=ddb178093163bd8090ac3a82aacb74805a1beca08e81ac9b72de7fff3bb08692): {}
+  rotur-sdk@3.9.1(patch_hash=e4ed9051554e8c41af184b14c19514365889ee05a2a54da7eb0ba57ab5a2dfc1): {}
 
   rst-selector-parser@2.2.3:
     dependencies:
@@ -12813,7 +12813,7 @@ snapshots:
 
   scratch-translate-extension-languages@1.0.7: {}
 
-  scratch-vm@https://codeload.github.com/MistWarp/scratch-vm/tar.gz/566a734202106b808d7bdd0b25bdca9bfe3385c4(@turbowarp/scratch-svg-renderer@1.1.0(patch_hash=81a01d6d472570d53eec593be679e84867db1ba1410f5ef084d5c404068481b9)(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd))(eslint@8.55.0)(webpack@4.47.0):
+  scratch-vm@https://codeload.github.com/MistWarp/scratch-vm/tar.gz/440ab3c37aca718a7e90dcf4447298b661fee7fa(@turbowarp/scratch-svg-renderer@1.1.0(patch_hash=81a01d6d472570d53eec593be679e84867db1ba1410f5ef084d5c404068481b9)(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd))(eslint@8.55.0)(webpack@4.47.0):
     dependencies:
       '@turbowarp/json': 0.1.2
       '@turbowarp/jszip': 3.12.0
@@ -12830,7 +12830,7 @@ snapshots:
       format-message: 6.2.1
       htmlparser2: 3.10.0
       immutable: 3.8.2
-      rotur-sdk: 2.5.2(patch_hash=ddb178093163bd8090ac3a82aacb74805a1beca08e81ac9b72de7fff3bb08692)
+      rotur-sdk: 3.9.1(patch_hash=e4ed9051554e8c41af184b14c19514365889ee05a2a54da7eb0ba57ab5a2dfc1)
       scratch-parser: https://codeload.github.com/TurboWarp/scratch-parser/tar.gz/fb65ba09d78ab6a0d19ce908d64b72d1a122312f(patch_hash=7f03af2d2e61fc6d5af5eecddef071142f83bbae93a9e0733cf5b9a8e8b6a3eb)
       scratch-sb1-converter: 0.2.7
       scratch-translate-extension-languages: 1.0.7

@@ -22,7 +22,8 @@ const SIGN_IN_SCOPES = [
     'validators:generate', // OriginChats chat and attachments, and WarpTheme. MistWarp's
     // own server takes validators keyed to its Rotur App, which need no permission.
     'account:view', // Your Rotur ID, and the badge editor on your profile.
-    'account:profile', // Reorder or hide badges, and show what you're editing.
+    'account:profile', // Reorder or hide badges.
+    'status:update', // Show what you're editing in your Rotur status.
     'signing:keys', // Register this device's public key to sign chat messages.
     'credits:view',
     'notifications:view', // Notifications, live and on the notifications page.
@@ -43,7 +44,9 @@ const SIGN_IN_SCOPES = [
     'groups:join',
     'groups:leave'
 ];
-const PRESENCE_PERMISSION = 'account:profile';
+const PRESENCE_PERMISSION = 'status:update';
+// Rotur also lets a login that can edit the profile set the status.
+const PROFILE_PERMISSION = 'account:profile';
 const ACTIVITY_ID = 'MistWarp';
 const APP_URL = 'https://mistwarp.org';
 const APP_IMAGE = 'https://raw.githubusercontent.com/MistWarp/desktop/master/art/icon.png';
@@ -84,6 +87,7 @@ const legacyLogin = async scopes => {
     const rotur = getClient();
     await rotur.login({
         system: 'mistwarp',
+        mode: 'popup',
         timeout: 120000,
         requires: scopes.filter(scope => scope.includes(':'))
     });
@@ -209,7 +213,8 @@ const presenceSupported = async () => {
             return true;
         }
         const granted = Array.isArray(abilities.permissions) ? abilities.permissions : [];
-        return granted.includes('full') || granted.includes(PRESENCE_PERMISSION);
+        return granted.includes('full') || granted.includes(PRESENCE_PERMISSION) ||
+            granted.includes(PROFILE_PERMISSION);
     } catch (_) {
         return true;
     }

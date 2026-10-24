@@ -25,6 +25,13 @@ const readJSON = async response => {
   return data;
 };
 
+const signInError = error => {
+  const code = error && error.code;
+  if (code === 'cancelled' || code === 'popup_closed') return new Error('Sign-in was cancelled. Try again when you are ready.');
+  if (code === 'popup_blocked') return new Error('Your browser blocked the Rotur window. Allow pop-ups for this page and try again.');
+  return error;
+};
+
 // A separate client belongs to this exported player. Editor credentials are never copied into exports.
 export const createAccountHost = (runtime, options = {}, Client = Rotur) => {
   const client = new Client();
@@ -86,7 +93,14 @@ export const createAccountHost = (runtime, options = {}, Client = Rotur) => {
     if (user.loggedIn && requested.every(scope => granted.includes(scope))) return true;
     return showAction(`Sign in to play ${title}`, 'This project uses your Rotur account. Rotur will show the permissions it requests.',
       'Sign in with Rotur', async () => {
-        await client.login({system: `${APP_NAME}: ${title}`.slice(0, 80), requires: requested, timeout: 120000});
+        try {
+          // The player stays on its page, so the sign-in only ever opens in a popup.
+          await client.login({
+            system: `${APP_NAME}: ${title}`.slice(0, 80), requires: requested, mode: 'popup', timeout: 120000
+          });
+        } catch (e) {
+          throw signInError(e);
+        }
         const profile = await client.me.get();
         if (!profile || !profile.username) throw new Error('Could not verify the signed-in account. Please try again.');
         user = {loggedIn: true, username: profile.username, id: String(profile.id || '')};

@@ -8525,7 +8525,7 @@
   "Log in again": [
     "src/community/pages/Settings.jsx:626"
   ],
-  "Your current Rotur login is missing the account:profile permission, so your editor activity cannot be shared. Log in again to grant it.": [
+  "Your current Rotur login is missing the status:update permission, so your editor activity cannot be shared. Log in again to grant it.": [
     "src/community/pages/Settings.jsx:630"
   ],
   "Let projects show activity on your profile": [

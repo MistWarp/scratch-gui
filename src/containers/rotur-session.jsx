@@ -312,7 +312,7 @@ class RoturSession extends React.Component {
             const message = error && error.message ? error.message : String(error);
             const code = error && error.code;
             // Soft-cancel: user closed the popup or it timed out
-            if (['aborted', 'timeout', 'closed', 'access_denied'].includes(code) ||
+            if (['aborted', 'timeout', 'closed', 'access_denied', 'cancelled', 'popup_closed'].includes(code) ||
                 /abort|timeout|closed|popup/i.test(message)) {
                 this.props.onSetStatus(this.props.loggedIn ? 'ready' : 'idle');
                 return null;
