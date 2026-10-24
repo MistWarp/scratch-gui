@@ -92,14 +92,19 @@
     padding: 0 6px 6px;
 }
 
-.stage-area[hidden] {
-    display: none;
+.stage-area-hidden {
+    position: absolute;
+    top: 44px;
+    left: 0;
+    visibility: hidden;
+    pointer-events: none;
 }
 
 .resize-grip {
     position: absolute;
-    width: 1rem;
-    height: 1rem;
+    bottom: -2px;
+    width: 0.875rem;
+    height: 0.875rem;
     border-radius: 0.25rem;
     touch-action: none;
 }
@@ -107,56 +112,28 @@
 .resize-grip::after {
     content: "";
     position: absolute;
-    inset: 0.25rem;
+    inset: 0.1875rem;
     border-color: $text-primary-transparent;
     border-style: solid;
-    border-width: 0;
+    border-width: 0 0 2px;
 }
 
 .bottom-right {
-    right: -0.25rem;
-    bottom: -0.25rem;
+    right: -2px;
     cursor: nwse-resize;
 }
 
 .bottom-right::after {
     border-right-width: 2px;
-    border-bottom-width: 2px;
     border-bottom-right-radius: 0.25rem;
 }
 
 .bottom-left {
-    left: -0.25rem;
-    bottom: -0.25rem;
+    left: -2px;
     cursor: nesw-resize;
 }
 
 .bottom-left::after {
     border-left-width: 2px;
-    border-bottom-width: 2px;
     border-bottom-left-radius: 0.25rem;
-}
-
-.top-right {
-    right: -0.25rem;
-    top: -0.25rem;
-    cursor: nesw-resize;
-}
-
-.top-right::after {
-    border-right-width: 2px;
-    border-top-width: 2px;
-    border-top-right-radius: 0.25rem;
-}
-
-.top-left {
-    left: -0.25rem;
-    top: -0.25rem;
-    cursor: nwse-resize;
-}
-
-.top-left::after {
-    border-left-width: 2px;
-    border-top-width: 2px;
-    border-top-left-radius: 0.25rem;
 }

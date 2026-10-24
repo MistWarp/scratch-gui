@@ -45,7 +45,10 @@ const EditorTabs = props => {
     const [dropAt, setDropAt] = useState(null);
     const explorerLabel = intl.formatMessage(messages.toggleExplorer);
     return (
-        <div className={classNames(styles.tabStrip, {[styles.tabStripUnfocused]: !props.focused})}>
+        <div
+            className={classNames(styles.tabStrip, {[styles.tabStripUnfocused]: !props.focused})}
+            data-floating-stage-avoid="top"
+        >
             {props.onToggleExplorer ? (
                 <button
                     aria-label={explorerLabel}

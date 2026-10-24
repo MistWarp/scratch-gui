@@ -146,7 +146,10 @@ const TextTab = props => {
             data-mw-text-tab="true"
             ref={props.containerRef}
         >
-            <div className={styles.headerStrip}>
+            <div
+                className={styles.headerStrip}
+                data-floating-stage-avoid="top"
+            >
                 <MessageSlot
                     intl={intl}
                     items={props.messages}

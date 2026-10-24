@@ -81,7 +81,10 @@ const SpriteProperties = ({intl, sprite, vm}) => {
             aria-labelledby={headingId}
             className={styles.properties}
         >
-            <div className={styles.propertiesHeader}>
+            <h2
+                className={styles.propertiesHeader}
+                id={headingId}
+            >
                 <button
                     aria-expanded={open}
                     className={styles.propertiesToggle}
@@ -89,14 +92,9 @@ const SpriteProperties = ({intl, sprite, vm}) => {
                     onClick={handleToggle}
                 >
                     {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-                    <h2
-                        className={styles.explorerHeading}
-                        id={headingId}
-                    >
-                        {intl.formatMessage(messages.heading)}
-                    </h2>
+                    <span className={styles.explorerHeading}>{intl.formatMessage(messages.heading)}</span>
                 </button>
-            </div>
+            </h2>
             {open ? (
                 <div className={styles.propertiesBody}>
                     <label className={styles.propertyWide}>

@@ -80,6 +80,7 @@ import {
 import {setRestore} from '../reducers/restore-deletion.js';
 import {showStandardAlert, closeAlertWithId} from '../reducers/alerts.js';
 import {highlightTarget} from '../reducers/targets.js';
+import CollaborationService from '../lib/collaboration/index.js';
 
 import {itemIdFor} from '../lib/asset-identity.js';
 import {
@@ -1157,6 +1158,7 @@ class CodeWorkbench extends React.Component {
                 expandable: true,
                 expanded,
                 renamable: !target.isStage,
+                draggable: !target.isStage,
                 thumbnail: thumbnailFor(target.getCostumes()[target.currentCostume] || {})
             });
             if (!expanded) continue;
@@ -1263,6 +1265,11 @@ class CodeWorkbench extends React.Component {
     }
     handleExplorerSelect (row) {
         this.setState({selectedKey: row.key});
+        if (row.type !== 'target' || !this.props.vm.runtime.getTargetById(row.targetId)) return;
+        if (this.props.editingTarget === row.targetId) return;
+        this.props.vm.setEditingTarget(row.targetId);
+        const service = CollaborationService.getInstance();
+        if (service) service.onEditingTargetChange();
     }
     handleExplorerToggle (row) {
         this.setState(state => ({expanded: {...state.expanded, [row.key]: !row.expanded}}));
@@ -1625,6 +1632,7 @@ class CodeWorkbench extends React.Component {
         if (!row) return false;
         if (this.assets.owns(source)) return this.assets.canDrop(row, source);
         if (source.type === 'extension') return row.type === 'extension';
+        if (source.type === 'target') return row.type === 'target' && !row.isStage && row.targetId !== source.targetId;
         if (row.type === 'target' || row.type === 'script') return row.targetId !== source.targetId;
         if (row.type === 'folder') return row.folderKind === source.type;
         return row.type === source.type;
@@ -1658,6 +1666,13 @@ class CodeWorkbench extends React.Component {
             Promise.resolve(vm.extensionManager.setExtensionOrder(order))
                 .catch(error => log.error(error))
                 .then(this.handleRefreshEntries);
+            return;
+        }
+        if (source.type === 'target') {
+            const targets = vm.runtime.targets;
+            const from = targets.findIndex(target => target.id === source.targetId);
+            const to = targets.findIndex(target => target.id === row.targetId);
+            if (from !== -1 && to !== -1 && row.type === 'target' && !row.isStage) vm.reorderTarget(from, to);
             return;
         }
         const sourceTarget = vm.runtime.getTargetById(source.targetId);

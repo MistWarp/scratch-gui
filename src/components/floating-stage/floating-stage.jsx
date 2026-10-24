@@ -24,7 +24,6 @@ import {
 } from '../../lib/floating-stage-layout.js';
 import {setFullScreen} from '../../reducers/mode';
 import {openVariableManagerModal} from '../../reducers/modals';
-import FullscreenAPI from '../../lib/api/fullscreen';
 
 import styles from './floating-stage.css';
 
@@ -72,16 +71,52 @@ const STAGE_BORDER = 2;
 const WINDOW_BORDER = 2;
 const RESIZE_STEP = 20;
 
+const TOP_REGION = 160;
+
 const measure = element => {
-    if (!element) return {width: 0, height: 0};
-    return {width: element.clientWidth, height: element.clientHeight};
+    if (!element) return {width: 0, height: 0, insets: null};
+    const box = element.getBoundingClientRect();
+    const insets = {top: 0, right: 0, bottom: 0, left: 0};
+    for (const strip of element.querySelectorAll('[data-floating-stage-avoid="top"]')) {
+        const rect = strip.getBoundingClientRect();
+        if (rect.height && rect.top - box.top < TOP_REGION) insets.top = Math.max(insets.top, rect.bottom - box.top);
+    }
+    const panel = element.querySelector('[data-mw-region="panel"]');
+    if (panel) {
+        const rect = panel.getBoundingClientRect();
+        if (rect.height) insets.bottom = Math.max(0, box.bottom - rect.top);
+    }
+    const explorer = element.querySelector('[data-mw-region="explorer"]');
+    if (explorer && getComputedStyle(explorer).position !== 'absolute') {
+        const rect = explorer.getBoundingClientRect();
+        const onLeft = rect.left - box.left < box.right - rect.right;
+        if (rect.width && onLeft) insets.left = Math.max(0, rect.right - box.left);
+        else if (rect.width) insets.right = Math.max(0, box.right - rect.left);
+    }
+    return {width: element.clientWidth, height: element.clientHeight, insets};
+};
+
+const sameHost = (a, b) => a.width === b.width && a.height === b.height &&
+    JSON.stringify(a.insets) === JSON.stringify(b.insets);
+
+const insideEditor = node => {
+    const element = node && node.nodeType === 1 ? node : node && node.parentElement;
+    return Boolean(element && element.closest('.cm-editor'));
 };
 
 const notifyResize = () => window.dispatchEvent(new Event('resize'));
 
-const FloatingStage = ({customStageSize, intl, isRendererSupported, onFullScreen, onOpenVariableManager, vm}) => {
-    const [layout, setLayout] = useState(readLayout);
-    const [host, setHost] = useState({width: 0, height: 0});
+const FloatingStage = ({
+    customStageSize,
+    intl,
+    isRendererSupported,
+    isRtl,
+    onFullScreen,
+    onOpenVariableManager,
+    vm
+}) => {
+    const [layout, setLayout] = useState(() => readLayout(isRtl));
+    const [host, setHost] = useState({width: 0, height: 0, insets: null});
     const [drag, setDrag] = useState(null);
     const rootRef = useRef(null);
     const layoutRef = useRef(layout);
@@ -108,19 +143,53 @@ const FloatingStage = ({customStageSize, intl, isRendererSupported, onFullScreen
     useLayoutEffect(() => {
         const parent = rootRef.current && rootRef.current.parentElement;
         if (!parent) return;
-        setHost(measure(parent));
-        if (typeof ResizeObserver === 'undefined') return;
-        const observer = new ResizeObserver(() => setHost(measure(parent)));
-        observer.observe(parent);
-        return () => observer.disconnect();
+        let frame = null;
+        let observed = [];
+        const watch = {resize: null};
+        const measureNow = () => {
+            frame = null;
+            const next = measure(parent);
+            setHost(previous => (sameHost(previous, next) ? previous : next));
+            if (!watch.resize) return;
+            const elements = [parent, ...parent.querySelectorAll(
+                '[data-floating-stage-avoid], [data-mw-region="panel"], [data-mw-region="explorer"]'
+            )];
+            for (const element of observed) {
+                if (!elements.includes(element)) watch.resize.unobserve(element);
+            }
+            for (const element of elements) {
+                if (!observed.includes(element)) watch.resize.observe(element);
+            }
+            observed = elements;
+        };
+        const schedule = () => {
+            if (frame === null) frame = requestAnimationFrame(measureNow);
+        };
+        watch.resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedule);
+        measureNow();
+        const mutationObserver = typeof MutationObserver === 'undefined' ? null : new MutationObserver(records => {
+            const own = rootRef.current;
+            if (records.some(record => !insideEditor(record.target) && !(own && own.contains(record.target)))) {
+                schedule();
+            }
+        });
+        if (mutationObserver) mutationObserver.observe(parent, {childList: true, subtree: true});
+        window.addEventListener('resize', schedule);
+        return () => {
+            if (frame !== null) cancelAnimationFrame(frame);
+            if (watch.resize) watch.resize.disconnect();
+            if (mutationObserver) mutationObserver.disconnect();
+            window.removeEventListener('resize', schedule);
+        };
     }, []);
 
+    const box = drag ? {left: drag.left, top: drag.top} : boxFor({layout, host, size});
+
     useEffect(() => {
+        if (drag) return;
         const frame = requestAnimationFrame(notifyResize);
         return () => cancelAnimationFrame(frame);
-    }, [stageWidth, layout.collapsed, layout.corner, layout.dx, layout.dy]);
-
-    const box = drag ? {left: drag.left, top: drag.top} : boxFor({layout, host, size});
+    }, [stageWidth, layout.collapsed, box.left, box.top, host.width, host.height, Boolean(drag)]);
 
     const handleMovePointerDown = useCallback(event => {
         if (event.button !== 0) return;
@@ -168,10 +237,10 @@ const FloatingStage = ({customStageSize, intl, isRendererSupported, onFullScreen
         target.setPointerCapture(event.pointerId);
         const start = {x: event.clientX, y: event.clientY, width};
         const xSign = isRight(layoutRef.current.corner) ? -1 : 1;
-        const ySign = isBottom(layoutRef.current.corner) ? -1 : 1;
+        const followsY = !isBottom(layoutRef.current.corner);
         const widthFor = moveEvent => {
             const byX = xSign * (moveEvent.clientX - start.x);
-            const byY = (ySign * (moveEvent.clientY - start.y)) / aspect;
+            const byY = followsY ? (moveEvent.clientY - start.y) / aspect : 0;
             const delta = Math.abs(byX) >= Math.abs(byY) ? byX : byY;
             return Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, start.width + delta));
         };
@@ -202,7 +271,7 @@ const FloatingStage = ({customStageSize, intl, isRendererSupported, onFullScreen
         update({collapsed: !layoutRef.current.collapsed});
     }, [update]);
 
-    const gripCorner = `${isBottom(layout.corner) ? 'top' : 'bottom'}-${isRight(layout.corner) ? 'left' : 'right'}`;
+    const gripCorner = `bottom-${isRight(layout.corner) ? 'left' : 'right'}`;
 
     return (
         <section
@@ -252,20 +321,18 @@ const FloatingStage = ({customStageSize, intl, isRendererSupported, onFullScreen
                         buttonIconClassName={styles.headerIcon}
                         vm={vm}
                     />
-                    {FullscreenAPI.available() ? (
-                        <button
-                            aria-label={intl.formatMessage(messages.fullScreen)}
-                            className={styles.headerButton}
-                            title={intl.formatMessage(messages.fullScreen)}
-                            type="button"
-                            onClick={onFullScreen}
-                        >
-                            <Maximize
-                                aria-hidden="true"
-                                size={16}
-                            />
-                        </button>
-                    ) : null}
+                    <button
+                        aria-label={intl.formatMessage(messages.fullScreen)}
+                        className={styles.headerButton}
+                        title={intl.formatMessage(messages.fullScreen)}
+                        type="button"
+                        onClick={onFullScreen}
+                    >
+                        <Maximize
+                            aria-hidden="true"
+                            size={16}
+                        />
+                    </button>
                     <button
                         aria-expanded={!layout.collapsed}
                         aria-label={intl.formatMessage(layout.collapsed ? messages.expand : messages.collapse)}
@@ -289,8 +356,8 @@ const FloatingStage = ({customStageSize, intl, isRendererSupported, onFullScreen
                 </div>
             </div>
             <div
-                className={styles.stageArea}
-                hidden={layout.collapsed}
+                aria-hidden={layout.collapsed}
+                className={classNames(styles.stageArea, {[styles.stageAreaHidden]: layout.collapsed})}
             >
                 {isRendererSupported ? (
                     <Stage
@@ -326,13 +393,15 @@ FloatingStage.propTypes = {
     }).isRequired,
     intl: intlShape.isRequired,
     isRendererSupported: PropTypes.bool.isRequired,
+    isRtl: PropTypes.bool,
     onFullScreen: PropTypes.func.isRequired,
     onOpenVariableManager: PropTypes.func.isRequired,
     vm: PropTypes.instanceOf(VM).isRequired
 };
 
 const mapStateToProps = state => ({
-    customStageSize: state.scratchGui.customStageSize
+    customStageSize: state.scratchGui.customStageSize,
+    isRtl: state.locales.isRtl
 });
 
 const mapDispatchToProps = dispatch => ({

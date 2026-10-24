@@ -4,6 +4,7 @@ import {
     MAX_WIDTH,
     MIN_WIDTH,
     boxFor,
+    defaultLayoutFor,
     fitWidth,
     nextCorner,
     normalizeLayout,
@@ -85,6 +86,27 @@ describe('floating stage layout', () => {
         });
         window.localStorage.setItem('mw:code-mode:floating-stage', '{broken');
         expect(readLayout()).toEqual(DEFAULT_LAYOUT);
+    });
+
+    test('measured insets keep the window off the explorer and an open panel', () => {
+        const measured = {...host, insets: {top: 80, right: 0, bottom: 240, left: 250}};
+        expect(boxFor({layout: {...DEFAULT_LAYOUT, corner: 'bottom-left'}, host: measured, size})).toEqual({
+            left: 250 + MARGIN,
+            top: host.height - 240 - size.height - MARGIN
+        });
+    });
+
+    test('a short editor shrinks the window below the usual minimum so it still fits', () => {
+        const short = {width: 1200, height: 450, insets: {top: 76, right: 0, bottom: 36, left: 0}};
+        const width = fitWidth({width: 360, host: short, aspect: 640 / 360, chromeHeight: 50, chromeWidth: 16});
+        expect(width).toBeLessThan(MIN_WIDTH);
+        expect(((width - 16) * (640 / 360)) + 50).toBeLessThanOrEqual(450 - 76 - 36 - (MARGIN * 2) + 1);
+    });
+
+    test('right to left layouts start in the top left corner', () => {
+        expect(defaultLayoutFor(true).corner).toBe('top-left');
+        expect(readLayout(true).corner).toBe('top-left');
+        expect(readLayout(false).corner).toBe('top-right');
     });
 
     test('a written layout reads back', () => {

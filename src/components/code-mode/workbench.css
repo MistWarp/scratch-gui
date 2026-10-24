@@ -1450,7 +1450,10 @@ $mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospa
     display: flex;
     align-items: center;
     height: 2.25rem;
+    margin: 0;
     padding: 0 0.4rem;
+    font-size: inherit;
+    font-weight: inherit;
 }
 
 .properties-toggle {

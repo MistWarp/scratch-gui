@@ -260,6 +260,7 @@
 
 .code-workbench-slot {
     position: relative;
+    isolation: isolate;
     display: flex;
     flex-grow: 1;
     min-width: 0;

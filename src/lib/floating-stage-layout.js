@@ -5,14 +5,18 @@ const MIN_WIDTH = 220;
 const MAX_WIDTH = 960;
 const DEFAULT_WIDTH = 360;
 const CORNERS = ['top-right', 'top-left', 'bottom-left', 'bottom-right'];
-const INSETS = {top: 76, right: 0, bottom: 36, left: 0};
+const MIN_FIT_WIDTH = 120;
+const DEFAULT_INSETS = {top: 76, right: 0, bottom: 36, left: 0};
 
-const areaOf = host => ({
-    x: INSETS.left,
-    y: INSETS.top,
-    width: Math.max(0, host.width - INSETS.left - INSETS.right),
-    height: Math.max(0, host.height - INSETS.top - INSETS.bottom)
-});
+const areaOf = host => {
+    const insets = {...DEFAULT_INSETS, ...(host.insets || {})};
+    return {
+        x: insets.left,
+        y: insets.top,
+        width: Math.max(0, host.width - insets.left - insets.right),
+        height: Math.max(0, host.height - insets.top - insets.bottom)
+    };
+};
 
 const DEFAULT_LAYOUT = {
     corner: 'top-right',
@@ -36,12 +40,14 @@ const normalizeLayout = value => {
     };
 };
 
-const readLayout = () => {
+const defaultLayoutFor = rtl => ({...DEFAULT_LAYOUT, corner: rtl ? 'top-left' : 'top-right'});
+
+const readLayout = (rtl = false) => {
     try {
         const raw = window.localStorage.getItem(STORAGE_KEY);
-        return normalizeLayout(raw ? JSON.parse(raw) : null);
+        return raw ? normalizeLayout(JSON.parse(raw)) : defaultLayoutFor(rtl);
     } catch (e) {
-        return {...DEFAULT_LAYOUT};
+        return defaultLayoutFor(rtl);
     }
 };
 
@@ -61,8 +67,8 @@ const fitWidth = ({width, host, aspect, chromeHeight, chromeWidth}) => {
     const area = areaOf(host);
     const maxByWidth = area.width - (MARGIN * 2);
     const maxByHeight = ((area.height - (MARGIN * 2) - chromeHeight) / aspect) + chromeWidth;
-    const limit = Math.min(MAX_WIDTH, maxByWidth, maxByHeight);
-    return Math.round(Math.max(Math.min(MIN_WIDTH, maxByWidth), Math.min(width, limit)));
+    const limit = Math.max(MIN_FIT_WIDTH, Math.min(MAX_WIDTH, maxByWidth, maxByHeight));
+    return Math.round(Math.max(Math.min(MIN_WIDTH, limit), Math.min(width, limit)));
 };
 
 const boxFor = ({layout, host, size}) => {
@@ -104,11 +110,13 @@ const nextCorner = (corner, key) => {
 };
 
 export {
+    DEFAULT_INSETS,
     DEFAULT_LAYOUT,
     MARGIN,
     MAX_WIDTH,
     MIN_WIDTH,
     boxFor,
+    defaultLayoutFor,
     fitWidth,
     isBottom,
     isRight,
