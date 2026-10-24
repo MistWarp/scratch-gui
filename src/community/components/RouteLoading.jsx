@@ -3,7 +3,8 @@ import {useLocation} from 'react-router-dom';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import CardGridSkeleton from './CardGridSkeleton.jsx';
 import ExploreHeader from './ExploreHeader.jsx';
-import StatusMessage from './ui/StatusMessage.jsx';
+import {CardRowSkeleton} from './GameCard.jsx';
+import ListSkeleton from './ListSkeleton.jsx';
 import styles from './RouteLoading.module.css';
 
 // Shown by the route-level Suspense boundary while a lazily loaded page chunk
@@ -40,6 +41,33 @@ const getExploreSection = (pathname, search) => {
     return null;
 };
 
+// Each section's placeholder is shaped like what it lists: cards for games,
+// spaces and themes, rows for people, groups, posts and bounties.
+const CARD_SECTIONS = ['studios', 'challenges', 'collections', 'themes'];
+const LIST_MEDIA = {bounties: null, groups: 'square'};
+const sectionSkeleton = (active, label) => {
+    if (active === 'projects') return <CardGridSkeleton label={label} />;
+    if (CARD_SECTIONS.includes(active)) {
+        return (
+            <div
+                role="status"
+                aria-busy="true"
+            >
+                <span className={styles.srOnly}>{label}</span>
+                <CardRowSkeleton count={8} />
+            </div>
+        );
+    }
+    return (
+        <ListSkeleton
+            count={8}
+            label={label}
+            lines={active === 'posts' || active === 'bounties' ? 3 : 2}
+            media={active in LIST_MEDIA ? LIST_MEDIA[active] : 'round'}
+        />
+    );
+};
+
 const RouteLoading = () => {
     const {text: communityText} = useCommunityText();
     const {pathname, search} = useLocation();
@@ -66,7 +94,7 @@ const RouteLoading = () => {
                 active={section.active}
                 lead={section.lead ? communityText(SECTION_LEADS[section.lead]) : null}
             />
-            {section.active === 'projects' ? <CardGridSkeleton /> : <StatusMessage />}
+            {sectionSkeleton(section.active, communityText('Loading page…'))}
         </main>
     );
 };

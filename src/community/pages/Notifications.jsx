@@ -23,6 +23,7 @@ import EmptyState, {SignInPrompt} from '../components/ui/EmptyState.jsx';
 import Notice from '../components/ui/Notice.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
+import ListSkeleton from '../components/ListSkeleton.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import {tabPanelProps} from '../components/SectionTabs.jsx';
 import RichText from '../components/RichText.jsx';
@@ -725,7 +726,7 @@ const Notifications = ({hideHeading}) => {
 
     let body;
     if (!timelineLoaded) {
-        body = failed ? null : <StatusMessage />;
+        body = failed ? null : <ListSkeleton count={8} />;
     } else if (timeline.length) {
         body = <ol className={styles.list}>{timeline.map(renderEntry)}</ol>;
     } else if (filter !== 'all' && (items.length || (followingPosts || []).length)) {

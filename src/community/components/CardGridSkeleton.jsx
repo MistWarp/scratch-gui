@@ -7,7 +7,7 @@ import CardGrid from './ui/CardGrid.jsx';
 import styles from './CardGridSkeleton.module.css';
 
 // Placeholder project cards shown while a grid's first page loads, shaped like
-// ProjectCard so the page doesn't jump when the real cards arrive. Pass the
+// the game card so the page doesn't jump when the real cards arrive. Pass the
 // page's own grid class to match its columns; without one it uses CardGrid.
 const CardGridSkeleton = ({className, count, label}) => {
     const {text: communityText} = useCommunityIntl();
@@ -17,12 +17,9 @@ const CardGridSkeleton = ({className, count, label}) => {
             className={styles.card}
             aria-hidden="true"
         >
-            <div className={styles.thumb} />
-            <div className={styles.body}>
-                <span className={styles.title} />
-                <span className={styles.owner} />
-                <span className={styles.stats} />
-            </div>
+            <span className={styles.thumb} />
+            <span className={styles.title} />
+            <span className={styles.owner} />
         </div>
     ));
     const status = <span className={styles.srOnly}>{label || communityText('Loading projects…')}</span>;

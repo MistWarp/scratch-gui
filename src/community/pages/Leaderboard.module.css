@@ -7,13 +7,12 @@
 /* Explore's nav spans the page like its other sections; the board stays narrow. */
 .tabs {
     max-width: var(--maxw-narrow);
-    margin-bottom: 20px;
+    margin-bottom: var(--space-2);
 }
 
 .list {
-    max-width: var(--maxw-narrow);
     display: grid;
-    gap: 8px;
+    max-width: var(--maxw-narrow);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -22,47 +21,42 @@
 .row {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 12px 16px;
-    border-radius: var(--radius-sm);
-    background: var(--bg-card);
-    box-shadow: var(--card-shadow);
+    gap: var(--space-3);
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--border-soft);
 }
 
-.row:hover {
-    background: var(--bg-raised);
+.row:hover strong {
+    text-decoration: underline;
 }
 
 .rank {
-    width: 30px;
+    flex-shrink: 0;
+    width: 28px;
     color: var(--text-faint);
-    font-size: var(--fs-xl);
+    font-size: var(--fs-md);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+}
+
+.podium {
+    color: var(--mw-text);
     font-weight: 700;
-    text-align: center;
-}
-
-.podium1 {
-    color: #f6c344;
-}
-
-.podium2 {
-    color: #aeb8c4;
-}
-
-.podium3 {
-    color: #c9824b;
 }
 
 .identity {
     display: flex;
     flex: 1;
     flex-direction: column;
+    gap: 2px;
     min-width: 0;
 }
 
 .identity strong {
     overflow: hidden;
-    font-size: var(--fs-lg);
+    font-size: var(--fs-md);
+    font-weight: 600;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -79,21 +73,25 @@
 
 .stat {
     display: inline-flex;
+    flex-shrink: 0;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     color: var(--text-dim);
-    font-size: var(--fs-md);
-    font-weight: 600;
+    font-size: var(--fs-sm);
+    font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 520px) {
     .page {
-        padding: 24px 14px 64px;
+        padding: var(--space-4) var(--space-3) 56px;
     }
 
     .row {
         gap: 10px;
-        padding: 10px;
+    }
+
+    .rank {
+        width: 22px;
     }
 
     .stat {

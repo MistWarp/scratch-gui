@@ -6,6 +6,7 @@ import {MemoryRouter} from 'react-router-dom';
 import Groups, {withGroupQuery} from '../../src/community/pages/Groups.jsx';
 import {normalizeGroupTabParams} from '../../src/community/pages/Group.jsx';
 import rotur from '../../src/community/rotur.js';
+import ListSkeleton from '../../src/community/components/ListSkeleton.jsx';
 
 jest.mock('../../src/community/UserContext.jsx', () => ({
     useUser: () => ({user: null})
@@ -106,6 +107,41 @@ describe('community groups search', () => {
         });
         wrapper.update();
         expect(wrapper.text()).toContain('Makers');
+        wrapper.unmount();
+    });
+
+    test('shows placeholder rows while loading, then one row per group', async () => {
+        const pending = deferred();
+        rotur.groups.search.mockReturnValueOnce(pending.promise);
+        let wrapper;
+        await act(async () => {
+            wrapper = mount(
+                <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+                    <Groups />
+                </MemoryRouter>
+            );
+            await Promise.resolve();
+        });
+        wrapper.update();
+        expect(wrapper.find(ListSkeleton).prop('media')).toBe('square');
+        expect(wrapper.find('[aria-busy="true"]').exists()).toBe(true);
+
+        await act(async () => {
+            pending.resolve([
+                {tag: 'makers', name: 'Makers', description: 'We make things', member_count: 12},
+                {tag: 'quiet', name: 'Quiet', member_count: 1}
+            ]);
+            await pending.promise;
+        });
+        wrapper.update();
+        expect(wrapper.find(ListSkeleton).exists()).toBe(false);
+        const rows = wrapper.find('li a');
+        expect(rows.length).toBe(2);
+        expect(rows.at(0).prop('href')).toBe('/groups/makers');
+        expect(rows.at(0).text()).toContain('@makers');
+        expect(rows.at(0).text()).toContain('We make things');
+        expect(rows.at(0).text()).toContain('12 members');
+        expect(rows.at(1).text()).toContain('A Rotur group on MistWarp.');
         wrapper.unmount();
     });
 });

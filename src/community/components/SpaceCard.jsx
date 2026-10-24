@@ -1,12 +1,10 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {Bookmark, Clock3, Layers3, Library, Trophy} from 'lucide-react';
-import {Link} from 'react-router-dom';
+import {Bookmark, CalendarClock, Clock3, FolderOpen, Layers3, Library, Trophy, UserCheck, Users} from 'lucide-react';
 import {formatDate, formatPlaytime, safeDate} from '../format';
+import {CardStats, CardTile, MediaCard, OwnerLink} from './GameCard.jsx';
 import styles from './SpaceCard.module.css';
-import GroupTag from './GroupTag.jsx';
-import UserLink from './UserLink.jsx';
 
 const KIND_ICONS = {studio: Layers3, challenge: Trophy, collection: Library, library: Bookmark};
 const KIND_LABELS = {studio: 'Studio', challenge: 'Challenge', collection: 'Collection', library: 'Library'};
@@ -17,73 +15,92 @@ const spaceFollowerCount = space => (
     Number.isFinite(space.followerCount) ? space.followerCount : (space.followers || []).length
 );
 
-const SpaceCard = ({space, to, onClick}) => {
-    const {text: communityText, rich: communityRich} = useCommunityText();
+// The same card as a game: a cover, the title, a line about it, then the
+// owner and a few counts. Lists that mix kinds name the kind before the line.
+const SpaceCard = ({space, to, showKind}) => {
+    const {text: communityText} = useCommunityText();
     const Icon = KIND_ICONS[space.kind] || Layers3;
     const projects = space.projects || [];
     const thumbnailUrl = space.thumbnailUrl || (projects.find(project => project.thumbUrl) || {}).thumbUrl;
     const projectCount = spaceProjectCount(space);
     const followerCount = spaceFollowerCount(space);
     const deadline = safeDate(space.endsAt);
-    const projectLabel = space.kind === 'challenge' ?
-        (projectCount === 1 ? 'submission' : 'submissions') :
-        (projectCount === 1 ? 'project' : 'projects');
-    const Component = to ? Link : 'button';
-    const componentProps = to ? {to} : {type: 'button', onClick};
+    const challenge = space.kind === 'challenge';
+    const projectLabel = challenge ?
+        communityText('{value1, plural, one {# submission} other {# submissions}}', {value1: projectCount}) :
+        communityText('{count, plural, one {# project} other {# projects}}', {count: projectCount});
+    const stats = [{icon: FolderOpen, label: projectLabel, value: projectCount}];
+    if (challenge) {
+        stats.push({
+            icon: UserCheck,
+            label: communityText('{value1} joined', {value1: space.participantCount || 0}),
+            value: space.participantCount || 0
+        });
+    } else if (space.kind !== 'library') {
+        const followers = communityText('{count, plural, one {# follower} other {# followers}}', {
+            count: followerCount
+        });
+        stats.push({icon: Users, label: followers, value: followerCount});
+    }
+    if (!challenge && Number(space.totalPlaytimeMs) > 0) {
+        stats.push({
+            icon: Clock3,
+            label: formatPlaytime(space.totalPlaytimeMs),
+            value: formatPlaytime(space.totalPlaytimeMs, false)
+        });
+    }
+    if (challenge && deadline && deadline.getTime() > Date.now()) {
+        const ends = formatDate(deadline);
+        stats.push({
+            icon: CalendarClock,
+            label: communityText('Ends {value1}', {value1: ends}),
+            value: ends
+        });
+    }
+    const kind = communityText(KIND_LABELS[space.kind] || space.kind || '');
+    const description = (space.description || '').trim();
+    let detail = description;
+    if (showKind) detail = description ? `${kind} · ${description}` : kind;
     return (
-        <article className={styles.card}>
-            <Component
-                className={styles.cardLink}
-                aria-label={communityText('Open {value1}', {value1: space.title})}
-                {...componentProps}
-            />
-            {thumbnailUrl ? <img className={styles.thumbnail} src={thumbnailUrl} alt="" loading="lazy" /> : null}
-            <div className={styles.heading}>
-                <span className={styles.icon}><Icon size={17} /></span>
-                <span className={styles.kind}>{KIND_LABELS[space.kind] || space.kind}</span>
-            </div>
-            <h3>{space.title}</h3>
-            <p>{space.description || communityText('No description yet.')}</p>
-            {space.owner ? (
-                <span className={styles.owner}>
-                    <span>{communityRich('by {user}', {
-                        user: <UserLink username={space.owner}>{space.owner}</UserLink>
-                    })}</span>
-                    <GroupTag username={space.owner} compact linked={false} />
-                </span>
-            ) : null}
-            <div className={styles.meta}>
-                <span>{projectCount} {projectLabel}</span>
-                {space.kind === 'challenge' ? (
-                    <span>{space.participantCount || 0}{communityText(' joined')}</span>
-                ) : null}
-                {space.kind !== 'library' ? (
-                    <span>
-                        {followerCount} {followerCount === 1 ? communityText('follower') : communityText('followers')}
-                    </span>
-                ) : null}
-                {space.kind !== 'challenge' && Number.isFinite(space.totalPlaytimeMs) ? (
-                    <span className={styles.playtime}>
-                        <Clock3 size={12} /> {formatPlaytime(space.totalPlaytimeMs)}
-                    </span>
-                ) : null}
-                {space.kind === 'challenge' && deadline && deadline.getTime() > Date.now() ? (
-                    <span>{communityText('Ends ')}{formatDate(deadline)}</span>
-                ) : null}
-            </div>
-        </article>
+        <MediaCard
+            to={to}
+            title={space.title}
+            media={thumbnailUrl ? (
+                <img
+                    src={thumbnailUrl}
+                    alt=""
+                    loading="lazy"
+                />
+            ) : (
+                <CardTile>
+                    <Icon
+                        className={styles.kindIcon}
+                        size={36}
+                        strokeWidth={1.5}
+                        aria-hidden="true"
+                    />
+                </CardTile>
+            )}
+            detail={detail || null}
+            wrapMeta
+            meta={(
+                <>
+                    {space.owner ? <OwnerLink username={space.owner} /> : null}
+                    <CardStats items={stats} />
+                </>
+            )}
+        />
     );
 };
 
 SpaceCard.propTypes = {
+    showKind: PropTypes.bool,
     space: PropTypes.object.isRequired,
-    to: PropTypes.string,
-    onClick: PropTypes.func
+    to: PropTypes.string.isRequired
 };
 
 SpaceCard.defaultProps = {
-    to: '',
-    onClick: null
+    showKind: false
 };
 
 export default SpaceCard;

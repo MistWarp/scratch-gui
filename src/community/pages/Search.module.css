@@ -62,8 +62,8 @@
 
 .spaceGrid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-5) var(--space-4);
 }
 
 .people {
@@ -136,7 +136,8 @@
     }
 
     .spaceGrid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-4) var(--space-3);
     }
 
     .sorts {

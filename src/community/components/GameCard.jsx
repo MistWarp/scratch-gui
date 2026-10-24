@@ -10,29 +10,32 @@ import ProjectThumbnail from './ProjectThumbnail.jsx';
 import styles from './GameCard.module.css';
 
 // Editor links leave the community app, so they can't be router links.
-const CardLink = ({to, href, children, ...props}) => (href ?
+const CardLink = ({to, href, state, children, ...props}) => (href ?
     <a
         href={href}
         {...props}
     >{children}</a> :
     <Link
         to={to}
+        state={state}
         {...props}
     >{children}</Link>);
 
 CardLink.propTypes = {
     children: PropTypes.node,
     href: PropTypes.string,
+    state: PropTypes.object,
     to: PropTypes.string
 };
 
-// One card for everything on home: games, your projects and starters.
-export const MediaCard = ({className, href, media, meta, title, to}) => (
+// One card for everything: games, your projects, starters, spaces and themes.
+export const MediaCard = ({className, detail, href, media, meta, state, title, to, wrapMeta}) => (
     <article className={classNames(styles.card, className)}>
         <CardLink
             className={styles.thumb}
             to={to}
             href={href}
+            state={state}
             tabIndex={-1}
             aria-hidden="true"
         >
@@ -43,21 +46,26 @@ export const MediaCard = ({className, href, media, meta, title, to}) => (
                 <CardLink
                     to={to}
                     href={href}
+                    state={state}
                     title={typeof title === 'string' ? title : null}
                 >{title}</CardLink>
             </h3>
-            {meta ? <div className={styles.meta}>{meta}</div> : null}
+            {detail ? <p className={styles.detail}>{detail}</p> : null}
+            {meta ? <div className={wrapMeta ? `${styles.meta} ${styles.metaWrap}` : styles.meta}>{meta}</div> : null}
         </div>
     </article>
 );
 
 MediaCard.propTypes = {
     className: PropTypes.string,
+    detail: PropTypes.node,
     href: PropTypes.string,
     media: PropTypes.node,
     meta: PropTypes.node,
+    state: PropTypes.object,
     title: PropTypes.node.isRequired,
-    to: PropTypes.string
+    to: PropTypes.string,
+    wrapMeta: PropTypes.bool
 };
 
 export const CardRow = ({children, className}) => (
@@ -103,23 +111,59 @@ CardRowSkeleton.defaultProps = {
     count: 4
 };
 
+export const OwnerLink = ({username}) => (
+    <Link
+        className={styles.owner}
+        to={`/users/${username}`}
+    >
+        <Avatar
+            className={styles.ownerAvatar}
+            username={username}
+            size={18}
+        />
+        <span className={styles.ownerName}>{username}</span>
+    </Link>
+);
+
+OwnerLink.propTypes = {
+    username: PropTypes.string.isRequired
+};
+
+// Small counts at the end of a card's meta line. Each one is an icon and a
+// value, with the full wording as its title and for screen readers.
+export const CardStats = ({items}) => (
+    <span className={styles.stats}>
+        {items.map(({icon: Icon, label, value}) => (
+            <span
+                key={label}
+                title={label}
+            >
+                <Icon
+                    size={12}
+                    aria-hidden="true"
+                />
+                <span aria-hidden="true">{value}</span>
+                <span className={styles.srOnly}>{label}</span>
+            </span>
+        ))}
+    </span>
+);
+
+CardStats.propTypes = {
+    items: PropTypes.arrayOf(PropTypes.shape({
+        icon: PropTypes.elementType.isRequired,
+        label: PropTypes.string.isRequired,
+        value: PropTypes.node
+    })).isRequired
+};
+
 export const GameMeta = ({project}) => {
     const {text: communityText} = useCommunityIntl();
     const loves = Number(project.loveCount) || 0;
     const plays = Number(project.views) || 0;
     return (
         <>
-            <Link
-                className={styles.owner}
-                to={`/users/${project.owner}`}
-            >
-                <Avatar
-                    className={styles.ownerAvatar}
-                    username={project.owner}
-                    size={18}
-                />
-                <span className={styles.ownerName}>{project.owner}</span>
-            </Link>
+            <OwnerLink username={project.owner} />
             <span className={styles.stats}>
                 <span title={communityText('{value1, plural, one {# love} other {# loves}}', {value1: loves})}>
                     <Heart

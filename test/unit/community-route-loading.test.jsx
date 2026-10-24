@@ -4,7 +4,8 @@ import {MemoryRouter} from 'react-router-dom';
 
 import RouteLoading, {getExploreSection} from '../../src/community/components/RouteLoading.jsx';
 import ExploreNav from '../../src/community/components/ExploreNav.jsx';
-import StatusMessage from '../../src/community/components/ui/StatusMessage.jsx';
+import ListSkeleton from '../../src/community/components/ListSkeleton.jsx';
+import {CardRowSkeleton} from '../../src/community/components/GameCard.jsx';
 import CardGridSkeleton from '../../src/community/components/CardGridSkeleton.jsx';
 
 const renderAt = path => mount(
@@ -44,7 +45,21 @@ describe('route loading keeps the Explore shell', () => {
         const wrapper = renderAt('/bounties');
 
         expect(wrapper.find(ExploreNav).prop('active')).toBe('bounties');
-        expect(wrapper.find(StatusMessage).exists()).toBe(true);
+        expect(wrapper.find(ListSkeleton).prop('media')).toBeNull();
+        expect(wrapper.find('[aria-busy="true"]').exists()).toBe(true);
+    });
+
+    test('shapes the placeholder like the section it stands in for', () => {
+        expect(renderAt('/spaces?kind=challenge').find(CardRowSkeleton)
+            .exists()).toBe(true);
+        expect(renderAt('/themes').find(CardRowSkeleton)
+            .exists()).toBe(true);
+        expect(renderAt('/groups').find(ListSkeleton)
+            .prop('media')).toBe('square');
+        expect(renderAt('/leaderboard').find(ListSkeleton)
+            .prop('media')).toBe('round');
+        expect(renderAt('/posts').find(ListSkeleton)
+            .prop('lines')).toBe(3);
     });
 
     test('shows placeholder project cards while Explore itself loads', () => {

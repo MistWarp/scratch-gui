@@ -12,10 +12,9 @@ import Avatar from '../components/Avatar.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import ExploreHeader from '../components/ExploreHeader.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
+import ListSkeleton from '../components/ListSkeleton.jsx';
 import UserStatus from '../components/UserStatus.jsx';
 import styles from './Leaderboard.module.css';
-
-const PODIUM_CLASSES = [styles.podium1, styles.podium2, styles.podium3];
 
 const BOARDS = [
     {
@@ -53,7 +52,7 @@ const Stat = ({board, person}) => {
     if (board === 'loves') {
         return (
             <span className={styles.stat}>
-                <Heart size={16} />
+                <Heart size={14} aria-hidden="true" />
                 {communityText('{count} loves', {count: (person.loves || 0).toLocaleString(getCommunityLocale())})}
             </span>
         );
@@ -61,14 +60,14 @@ const Stat = ({board, person}) => {
     if (board === 'views') {
         return (
             <span className={styles.stat}>
-                <Play size={16} />
+                <Play size={14} aria-hidden="true" />
                 {communityText('{count} views', {count: (person.views || 0).toLocaleString(getCommunityLocale())})}
             </span>
         );
     }
     return (
         <span className={styles.stat}>
-            <Users size={16} />
+            <Users size={14} aria-hidden="true" />
             {communityText('{count} followers', {
                 count: (person.follower_count || 0).toLocaleString(getCommunityLocale())
             })}
@@ -129,7 +128,11 @@ const Leaderboard = () => {
             />
             <div {...tabPanelProps('leaderboard', board)}>
                 {users === null ? (
-                    <StatusMessage />
+                    <ListSkeleton
+                        className={styles.list}
+                        count={10}
+                        label={communityText('Loading the leaderboard…')}
+                    />
                 ) : error ? (
                     <StatusMessage error onRetry={() => setAttempt(value => value + 1)}>{error}</StatusMessage>
                 ) : !users.length ? (
@@ -144,12 +147,12 @@ const Leaderboard = () => {
                                     to={`/users/${person.username}`}
                                     className={styles.row}
                                 >
-                                    <span className={`${styles.rank} ${PODIUM_CLASSES[position] || ''}`}>
-                                        {position < 3 ? <Trophy size={22} /> : position + 1}
+                                    <span className={position < 3 ? `${styles.rank} ${styles.podium}` : styles.rank}>
+                                        {position + 1}
                                     </span>
                                     <Avatar
                                         username={person.username}
-                                        size={52}
+                                        size={40}
                                     />
                                     <span className={styles.identity}>
                                         <strong>{person.username}</strong>

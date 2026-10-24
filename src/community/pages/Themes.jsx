@@ -6,8 +6,8 @@ import {useNavigate, useSearchParams} from 'react-router-dom';
 import api from '../api.js';
 import ExploreHeader, {ExploreSearch} from '../components/ExploreHeader.jsx';
 import ThemeCard from '../components/ThemeCard.jsx';
+import {CardRow, CardRowSkeleton} from '../components/GameCard.jsx';
 import Button from '../components/ui/Button.jsx';
-import CardGrid from '../components/ui/CardGrid.jsx';
 import EmptyState, {SignInPrompt} from '../components/ui/EmptyState.jsx';
 import Notice from '../components/ui/Notice.jsx';
 import SectionHeading from '../components/ui/SectionHeading.jsx';
@@ -195,10 +195,18 @@ const Themes = () => {
                 ) : null}
             </ExploreHeader>
             {tab === 'browse' ? (
-                loading ? <StatusMessage>{communityText('Loading themes…')}</StatusMessage> : browseError ? (
+                loading ? (
+                    <div
+                        role="status"
+                        aria-busy="true"
+                    >
+                        <span className={styles.srOnly}>{communityText('Loading themes…')}</span>
+                        <CardRowSkeleton count={8} />
+                    </div>
+                ) : browseError ? (
                     <StatusMessage error onRetry={() => setLoadAttempt(value => value + 1)}>{browseError}</StatusMessage>
                 ) : visible.length ? (
-                    <CardGrid>{visible.map(item => <ThemeCard key={item.id} returnLabel="All themes" theme={item} />)}</CardGrid>
+                    <CardRow>{visible.map(item => <ThemeCard key={item.id} returnLabel="All themes" theme={item} />)}</CardRow>
                 ) : (
                     <EmptyState icon={Search} title={communityText('No themes found')}>{communityText('Try a broader search.')}</EmptyState>
                 )

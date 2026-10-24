@@ -59,7 +59,23 @@ const Following = () => {
             {error ? (
                 <StatusMessage error onRetry={() => setAttempt(value => value + 1)}>{error}</StatusMessage>
             ) : following === null ? (
-                <StatusMessage />
+                <CardGrid
+                    min={96}
+                    role="status"
+                    aria-busy="true"
+                >
+                    <span className={styles.srOnly}>{communityText('Loading…')}</span>
+                    {Array.from({length: 12}, (_, index) => (
+                        <span
+                            key={index}
+                            className={styles.skeleton}
+                            aria-hidden="true"
+                        >
+                            <span />
+                            <span />
+                        </span>
+                    ))}
+                </CardGrid>
             ) : following.length ? (
                 <CardGrid min={96}>
                     {following.map(person => (

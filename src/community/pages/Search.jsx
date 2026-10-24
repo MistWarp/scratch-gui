@@ -183,7 +183,7 @@ const Search = () => {
 
     const spaceGrid = items => (
         <div className={styles.spaceGrid}>
-            {items.map(space => <SpaceCard key={space._id} space={space} to={`/spaces/${space._id}`} />)}
+            {items.map(space => <SpaceCard key={space._id} space={space} showKind to={`/spaces/${space._id}`} />)}
         </div>
     );
 

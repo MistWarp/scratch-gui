@@ -10,6 +10,7 @@ import EmptyState from '../components/ui/EmptyState.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import SelectMenu from '../components/ui/SelectMenu.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
+import ListSkeleton from '../components/ListSkeleton.jsx';
 import ExploreHeader, {ExploreSearch} from '../components/ExploreHeader.jsx';
 import ClawSidebar from '../components/ClawSidebar.jsx';
 import PostComposer from '../components/PostComposer.jsx';
@@ -165,7 +166,13 @@ const Posts = () => {
                     {error ? (
                         <StatusMessage error onRetry={() => setAttempt(value => value + 1)}>{error}</StatusMessage>
                     ) : null}
-                    {!posts && !error ? <StatusMessage>{communityText('Loading posts…')}</StatusMessage> : null}
+                    {!posts && !error ? (
+                        <ListSkeleton
+                            count={5}
+                            label={communityText('Loading posts…')}
+                            lines={3}
+                        />
+                    ) : null}
                     {posts && !posts.length ? (
                         <EmptyState icon={MessageSquare} title={communityText('No posts found')}>
                             {emptyText}

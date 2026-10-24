@@ -1,0 +1,77 @@
+.list {
+    position: relative;
+    display: grid;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.media,
+.lines > span {
+    display: block;
+    flex-shrink: 0;
+    background: var(--bg-card);
+    animation: pulse 1.4s ease-in-out infinite;
+}
+
+.media {
+    width: 40px;
+    height: 40px;
+}
+
+.round {
+    border-radius: 50%;
+}
+
+.square {
+    border-radius: var(--radius-xs);
+}
+
+.lines {
+    display: grid;
+    flex: 1 1 auto;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.lines > span {
+    width: 46%;
+    height: 12px;
+    border-radius: var(--radius-2xs);
+}
+
+.lines > span + span {
+    width: 72%;
+    height: 10px;
+}
+
+.lines > span:nth-child(3) {
+    width: 58%;
+}
+
+.srOnly {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+@keyframes pulse {
+    50% {
+        opacity: .55;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .media,
+    .lines > span {
+        animation: none;
+    }
+}

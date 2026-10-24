@@ -6,13 +6,13 @@ import {Gavel, Layers3, Trophy, Library, Plus, Star} from 'lucide-react';
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
 import Button from '../components/ui/Button.jsx';
-import CardGrid from '../components/ui/CardGrid.jsx';
 import EmptyState, {SignInPrompt} from '../components/ui/EmptyState.jsx';
 import Notice from '../components/ui/Notice.jsx';
 import SectionHeading from '../components/ui/SectionHeading.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import ChallengeCalendar from '../components/ChallengeCalendar.jsx';
 import SpaceCard from '../components/SpaceCard.jsx';
+import {CardRow, CardRowSkeleton} from '../components/GameCard.jsx';
 import ExploreHeader, {ExploreSearch} from '../components/ExploreHeader.jsx';
 import styles from './Spaces.module.css';
 
@@ -207,7 +207,7 @@ const Spaces = () => {
     };
 
     return (
-        <main className={styles.page}>
+        <main className={`${styles.page} ${styles.browsePage}`}>
             <ExploreHeader
                 active={kind === 'mine' ? 'studios' : `${kind}s`}
                 lead={kind === 'mine' ? communityText('Spaces you own, curate, follow, or have been invited to.') : communityText(KIND_DESCRIPTIONS[kind])}
@@ -304,7 +304,15 @@ const Spaces = () => {
             ) : null}
 
 
-            {loading ? <StatusMessage>{communityText('Loading spaces…')}</StatusMessage> : null}
+            {loading ? (
+                <div
+                    role="status"
+                    aria-busy="true"
+                >
+                    <span className={styles.srOnly}>{communityText('Loading spaces…')}</span>
+                    <CardRowSkeleton count={8} />
+                </div>
+            ) : null}
             {failed ? <StatusMessage error onRetry={() => load(requestedQuery)}>{communityText('Could not load spaces.')}</StatusMessage> : null}
             {!loading && !failed && kind === 'mine' && !user ? (
                 <SignInPrompt onSignIn={login} title={communityText('Sign in to see your spaces')}>
@@ -318,9 +326,16 @@ const Spaces = () => {
             ) : null}
             {!loading && !failed && kind === 'challenge' && spaces.length ? <ChallengeCalendar spaces={spaces} /> : null}
             {spaces.length ? (
-                <CardGrid>
-                    {spaces.map(space => <SpaceCard key={space._id} space={space} to={`/spaces/${space._id}`} />)}
-                </CardGrid>
+                <CardRow>
+                    {spaces.map(space => (
+                        <SpaceCard
+                            key={space._id}
+                            space={space}
+                            showKind={kind === 'mine'}
+                            to={`/spaces/${space._id}`}
+                        />
+                    ))}
+                </CardRow>
             ) : null}
             {!loading && !failed && kind !== 'mine' && spaces.length < total ? (
                 <div className={styles.more}>

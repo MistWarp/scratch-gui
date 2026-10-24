@@ -7,6 +7,7 @@ import rotur from '../rotur.js';
 import {useUser} from '../UserContext.jsx';
 import Button from '../components/ui/Button.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
+import ListSkeleton from '../components/ListSkeleton.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import ExploreHeader, {ExploreSearch} from '../components/ExploreHeader.jsx';
 import styles from './Groups.module.css';
@@ -94,18 +95,50 @@ const Groups = () => {
             />
         </ExploreHeader>
         {error ? <StatusMessage error onRetry={() => load(requestedQuery)}>{error}</StatusMessage> : null}
-        {loading ? <StatusMessage>{communityText('Loading groups…')}</StatusMessage> : null}
+        {loading ? (
+            <ListSkeleton
+                className={styles.list}
+                count={8}
+                label={communityText('Loading groups…')}
+                media="square"
+            />
+        ) : null}
         {!loading && !error && !cards.length ? (
             <EmptyState icon={Building2} title={communityText('No groups found')}>
                 {query.trim() ? communityText('Try a different search term.') : communityText('Public Rotur groups will show up here.')}
             </EmptyState>
         ) : null}
-        <section className={styles.grid}>
-            {cards.map(group => (<Link className={styles.card} to={`/groups/${group.tag}`} key={group.tag}>
-                <div className={styles.icon}>{group.icon_url ? <img src={group.icon_url} alt="" /> : <Building2 />}</div>
-                <div><h2>{group.name}</h2><span>@{group.tag}</span><p>{group.description || communityText('A Rotur group on MistWarp.')}</p><small><Users size={14} /> {communityText('{count} members', {count: group.member_count || 0})}{mineTags.has(group.tag) ? <span>{communityText(', joined')}</span> : null}</small></div>
-            </Link>))}
-        </section>
+        {cards.length ? (
+            <ul className={styles.list}>
+                {cards.map(group => (
+                    <li key={group.tag}>
+                        <Link
+                            className={styles.row}
+                            to={`/groups/${group.tag}`}
+                        >
+                            <span className={styles.icon}>
+                                {group.icon_url ? <img src={group.icon_url} alt="" /> : <Building2 size={20} aria-hidden="true" />}
+                            </span>
+                            <span className={styles.text}>
+                                <span className={styles.name}>
+                                    <strong>{group.name}</strong>
+                                    <span>@{group.tag}</span>
+                                </span>
+                                <span className={styles.description}>{group.description || communityText('A Rotur group on MistWarp.')}</span>
+                            </span>
+                            <span className={styles.members}>
+                                <span title={communityText('{count} members', {count: group.member_count || 0})}>
+                                    <Users size={12} aria-hidden="true" />
+                                    <span aria-hidden="true">{group.member_count || 0}</span>
+                                    <span className={styles.srOnly}>{communityText('{count} members', {count: group.member_count || 0})}</span>
+                                </span>
+                                {mineTags.has(group.tag) ? <span className={styles.joined}>{communityText('Joined')}</span> : null}
+                            </span>
+                        </Link>
+                    </li>
+                ))}
+            </ul>
+        ) : null}
     </main>);
 };
 

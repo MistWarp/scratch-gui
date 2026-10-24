@@ -2,41 +2,43 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {Download, Heart} from 'lucide-react';
-import {Link, useLocation} from 'react-router-dom';
+import {useLocation} from 'react-router-dom';
+import {CardStats, MediaCard, OwnerLink} from './GameCard.jsx';
 import ThemePreview from './ThemePreview.jsx';
 import styles from './ThemeCard.module.css';
-import UserLink from './UserLink.jsx';
 
 const ThemeCard = ({returnLabel = 'Back', theme}) => {
-    const {text: communityText, rich: communityRich} = useCommunityText();
+    const {text: communityText} = useCommunityText();
     const location = useLocation();
     const returnTo = `${location.pathname}${location.search}${location.hash}`;
+    const likes = theme.likes || 0;
+    const downloads = theme.downloads || 0;
     return (
-        <article className={styles.card}>
-            <Link
-                className={styles.mainLink}
-                state={{themeReturnLabel: returnLabel, themeReturnTo: returnTo}}
-                to={`/themes/${encodeURIComponent(theme.id)}`}
-                aria-label={communityText('Open {value1}', {value1: theme.name})}
-            />
-            <span className={styles.thumb}><ThemePreview className={styles.preview} theme={theme} /></span>
-            <span className={styles.body}>
-                <span className={styles.titleRow}>
-                    <strong>{theme.name}</strong>
-                </span>
-                <span className={styles.author}>
-                    {communityRich('by {user}', {user: <UserLink username={theme.owner}>{theme.owner}</UserLink>})}
-                </span>
-                <span className={styles.stats}>
-                    <span aria-label={communityText('{value1} likes', {value1: theme.likes || 0})}>
-                        <Heart aria-hidden="true" size={13} /> {theme.likes || 0}
-                    </span>
-                    <span aria-label={communityText('{value1} downloads', {value1: theme.downloads || 0})}>
-                        <Download aria-hidden="true" size={13} /> {theme.downloads || 0}
-                    </span>
-                </span>
-            </span>
-        </article>
+        <MediaCard
+            to={`/themes/${encodeURIComponent(theme.id)}`}
+            state={{themeReturnLabel: returnLabel, themeReturnTo: returnTo}}
+            title={theme.name}
+            media={<ThemePreview
+                className={styles.preview}
+                theme={theme}
+            />}
+            meta={(
+                <>
+                    {theme.owner ? <OwnerLink username={theme.owner} /> : null}
+                    <CardStats
+                        items={[{
+                            icon: Heart,
+                            label: communityText('{value1} likes', {value1: likes}),
+                            value: likes
+                        }, {
+                            icon: Download,
+                            label: communityText('{value1} downloads', {value1: downloads}),
+                            value: downloads
+                        }]}
+                    />
+                </>
+            )}
+        />
     );
 };
 

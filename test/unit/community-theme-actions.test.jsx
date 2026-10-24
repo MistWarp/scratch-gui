@@ -86,7 +86,7 @@ describe('theme marketplace action locks', () => {
             >
                 <ThemeCard
                     returnLabel="Your themes"
-                    theme={{id: 'theme-1', name: 'Quiet dark', owner: 'Sophie'}}
+                    theme={{id: 'theme-1', name: 'Quiet dark', owner: 'Sophie', likes: 3, downloads: 12}}
                 />
             </MemoryRouter>
         );
@@ -95,6 +95,14 @@ describe('theme marketplace action locks', () => {
             themeReturnLabel: 'Your themes',
             themeReturnTo: '/mystuff?section=themes&themeView=published'
         });
+        // The shared game card: cover and title both open the theme, keeping
+        // the way back, and the owner and counts sit underneath.
+        expect(wrapper.find('a[href="/themes/theme-1"]').length).toBe(2);
+        expect(wrapper.find('a[href="/themes/theme-1"]').last()
+            .prop('title')).toBe('Quiet dark');
+        expect(wrapper.find('a[href="/users/Sophie"]').text()).toContain('Sophie');
+        expect(wrapper.text()).toContain('3 likes');
+        expect(wrapper.text()).toContain('12 downloads');
         expect(themeReturnContext({themeReturnLabel: 'Your themes', themeReturnTo: '/mystuff?section=themes'}))
             .toEqual({label: 'Your themes', to: '/mystuff?section=themes'});
         expect(themeReturnContext({themeReturnLabel: 'Bad', themeReturnTo: '//outside.example'}))

@@ -26,6 +26,53 @@
     color: var(--accent-strong);
 }
 
+/* Placeholder faces and names while the list loads. */
+.skeleton {
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+}
+
+.skeleton > span {
+    display: block;
+    background: var(--bg-card);
+    animation: pulse 1.4s ease-in-out infinite;
+}
+
+.skeleton > span:first-child {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+}
+
+.skeleton > span:last-child {
+    width: 60%;
+    height: 12px;
+    margin-top: 4px;
+    border-radius: var(--radius-2xs);
+}
+
+.srOnly {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+@keyframes pulse {
+    50% {
+        opacity: .55;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .skeleton > span {
+        animation: none;
+    }
+}
+
 @media (max-width: 620px) {
     .page {
         padding: 18px 14px 64px;

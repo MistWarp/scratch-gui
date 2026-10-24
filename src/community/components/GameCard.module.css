@@ -77,6 +77,18 @@
     min-width: 0;
 }
 
+/* Cards with more counts than a game let them drop below the owner on a
+   narrow card, rather than squeezing the name away. */
+.metaWrap {
+    flex-wrap: wrap;
+    row-gap: 2px;
+}
+
+.metaWrap .owner {
+    flex: 1 1 auto;
+    min-width: min(100%, 7em);
+}
+
 .ownerAvatar {
     flex-shrink: 0;
 }
@@ -183,4 +195,25 @@
     .skeletonLine {
         animation: none;
     }
+}
+
+.detail {
+    display: -webkit-box;
+    margin: 0 0 2px;
+    overflow: hidden;
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.srOnly {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
 }

@@ -5,101 +5,123 @@
     padding: var(--page-pad);
 }
 
-.card,
-.card small {
+/* Groups are a list, two across on wide screens: an icon, the name and a
+   line about it, and the member count at the end. */
+.list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-6);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.row {
     display: flex;
     align-items: center;
-}
-
-.grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
-}
-
-.card {
-    align-items: flex-start;
-    gap: 13px;
+    gap: var(--space-3);
     min-width: 0;
-    padding: 17px;
-    border-radius: var(--radius-sm);
-    background: var(--bg-card);
-    box-shadow: var(--card-shadow);
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--border-soft);
     color: inherit;
-    text-decoration: none;
 }
 
-.card:hover {
-    background: var(--bg-raised);
-}
-
-.card > div:last-child {
-    min-width: 0;
-}
-
-.card h2 {
-    overflow: hidden;
-    margin: 1px 0 2px;
-    color: var(--mw-text);
-    font-size: var(--fs-lg);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.card span,
-.card p,
-.card small {
-    color: var(--text-dim);
-}
-
-.card span {
-    font-size: var(--fs-xs);
-}
-
-.card p {
-    min-height: 39px;
-    margin: 10px 0 14px;
-    font-size: var(--fs-sm);
-    line-height: 1.5;
-}
-
-.card small {
-    gap: 5px;
-    padding-top: 11px;
-    border-top: 1px solid var(--border-soft);
-    font-size: var(--fs-2xs);
+.row:hover strong {
+    text-decoration: underline;
 }
 
 .icon {
     display: grid;
     flex: 0 0 auto;
-    width: 44px;
-    height: 44px;
-    border-radius: var(--radius-sm);
-    background: var(--accent-soft);
-    color: var(--accent-strong);
+    width: 40px;
+    height: 40px;
+    overflow: hidden;
+    border-radius: var(--radius-xs);
+    outline: 1px solid var(--border);
+    outline-offset: -1px;
+    background: var(--bg-card);
+    color: var(--text-faint);
     place-items: center;
 }
 
 .icon img {
     width: 100%;
     height: 100%;
-    border-radius: inherit;
     object-fit: cover;
 }
 
-@media (max-width: 900px) {
-    .grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+.text {
+    display: grid;
+    flex: 1 1 auto;
+    gap: 2px;
+    min-width: 0;
+}
+
+.name {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.name strong {
+    overflow: hidden;
+    font-size: var(--fs-md);
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.name span {
+    flex-shrink: 0;
+    color: var(--text-faint);
+    font-size: var(--fs-xs);
+}
+
+.description {
+    overflow: hidden;
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.members {
+    display: grid;
+    flex-shrink: 0;
+    justify-items: end;
+    gap: 2px;
+    color: var(--text-faint);
+    font-size: var(--fs-xs);
+}
+
+.members > span:first-child {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.joined {
+    color: var(--text-dim);
+}
+
+.srOnly {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+@media (max-width: 860px) {
+    .list {
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
-@media (max-width: 620px) {
+@media (max-width: 520px) {
     .page {
-        padding: 22px 14px 70px;
-    }
-
-    .grid {
-        grid-template-columns: minmax(0, 1fr);
+        padding: var(--space-4) var(--space-3) 56px;
     }
 }

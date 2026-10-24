@@ -19,6 +19,13 @@
     text-align: center;
 }
 
+/* The list pages under Explore share its phone margins. */
+@media (max-width: 520px) {
+    .browsePage {
+        padding: var(--space-4) var(--space-3) 56px;
+    }
+}
+
 .more {
     display: flex;
     align-items: center;

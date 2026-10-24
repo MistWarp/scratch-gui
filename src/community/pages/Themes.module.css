@@ -5,6 +5,21 @@
     padding: var(--page-pad);
 }
 
+@media (max-width: 520px) {
+    .page {
+        padding: var(--space-4) var(--space-3) 56px;
+    }
+}
+
+.srOnly {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
 .sort {
     flex: 0 0 auto;
     width: 160px;
@@ -85,9 +100,6 @@
 }
 
 @media (max-width: 680px) {
-    .page {
-        padding: 22px 14px 80px;
-    }
 
     .sort {
         width: 132px;

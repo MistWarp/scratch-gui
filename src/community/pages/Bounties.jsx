@@ -9,6 +9,7 @@ import ExploreHeader, {ExploreSearch} from '../components/ExploreHeader.jsx';
 import Button from '../components/ui/Button.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
+import ListSkeleton from '../components/ListSkeleton.jsx';
 import UserLink from '../components/UserLink.jsx';
 import useLatest from '../use-latest.js';
 import styles from './Bounties.module.css';
@@ -97,7 +98,7 @@ const Bounties = () => {
             <ExploreHeader active="bounties" lead={communityText('Funded improvements open across public MistWarp projects.')}>
                 <ExploreSearch ariaLabel={communityText('Search bounties')} value={query} onChange={setQuery} />
             </ExploreHeader>
-            {entries === null ? <StatusMessage>{communityText('Loading bounties…')}</StatusMessage> : error ? (
+            {entries === null ? <ListSkeleton count={4} label={communityText('Loading bounties…')} lines={3} media={null} /> : error ? (
                 <StatusMessage error onRetry={load}>{error}</StatusMessage>
             ) : visible.length ? (
                 <section className={styles.grid}>
