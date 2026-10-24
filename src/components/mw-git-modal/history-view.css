@@ -1,0 +1,293 @@
+@import "../../css/colors.css";
+
+.history {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    color: $text-primary;
+    font-size: 0.85rem;
+}
+
+.list-pane {
+    display: flex;
+    flex: 0 0 clamp(16rem, 34%, 24rem);
+    flex-direction: column;
+    min-width: 0;
+    border-inline-end: 1px solid $ui-black-transparent;
+}
+
+.list-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 0.75rem 0;
+}
+
+.rows {
+    position: relative;
+}
+
+.lanes {
+    position: absolute;
+    top: 0;
+    inset-inline-start: 0;
+    pointer-events: none;
+}
+
+[dir="rtl"] .lanes {
+    transform: scaleX(-1);
+}
+
+.head-node {
+    stroke: $ui-white;
+    stroke-width: 2;
+}
+
+.row-list {
+    margin: 0;
+    padding: 0 0.5rem 0 0;
+    list-style: none;
+}
+
+.row {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.2rem;
+    width: 100%;
+    height: 100%;
+    padding: 0 0.6rem;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+}
+
+.row:hover {
+    background: $ui-tertiary;
+}
+
+.row:focus-visible {
+    outline: 2px solid $looks-secondary;
+    outline-offset: -2px;
+}
+
+.row-selected,
+.row-selected:hover {
+    background: color-mix(in srgb, $looks-secondary 16%, transparent);
+}
+
+.worktree-row .row-title {
+    font-style: italic;
+}
+
+.row-title {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 0;
+    font-weight: 600;
+}
+
+.row-message {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.row-meta {
+    overflow: hidden;
+    color: color-mix(in srgb, $text-primary 65%, transparent);
+    font-size: 0.78rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.branch-chip,
+.current-chip {
+    flex-shrink: 0;
+    padding: 0.05rem 0.4rem;
+    border-radius: 999px;
+    color: #ffffff;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.current-chip {
+    background: color-mix(in srgb, $text-primary 14%, transparent);
+    color: $text-primary;
+}
+
+.load-more {
+    display: block;
+    margin: 0.5rem auto 0;
+    padding: 0.4rem 0.85rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 6px;
+    background: $ui-white;
+    color: $text-primary;
+    font: inherit;
+    cursor: pointer;
+}
+
+.load-more:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.detail-pane {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.detail-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 1rem 1.25rem 0.75rem;
+    border-bottom: 1px solid $ui-black-transparent;
+}
+
+.detail-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.detail-icon {
+    flex-shrink: 0;
+    color: $accent-text;
+}
+
+.detail-title {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    font-size: 1rem;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.detail-actions {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.action-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.7rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 6px;
+    background: $ui-white;
+    color: $text-primary;
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.4rem;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: $text-primary;
+    cursor: pointer;
+}
+
+.icon-button:hover:not(:disabled),
+.action-button:hover:not(:disabled) {
+    background: $ui-tertiary;
+}
+
+.action-button:disabled,
+.icon-button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.detail-body {
+    margin: 0;
+    color: color-mix(in srgb, $text-primary 80%, transparent);
+    white-space: pre-wrap;
+}
+
+.detail-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.75rem;
+    color: color-mix(in srgb, $text-primary 70%, transparent);
+    font-size: 0.8rem;
+}
+
+.hash {
+    padding: 0.05rem 0.35rem;
+    border-radius: 4px;
+    background: color-mix(in srgb, $text-primary 8%, transparent);
+    font-size: 0.75rem;
+}
+
+.compare {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-inline-start: auto;
+}
+
+.compare-select {
+    max-width: 16rem;
+    padding: 0.2rem 0.4rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 6px;
+    background: $ui-white;
+    color: $text-primary;
+    font: inherit;
+}
+
+.detail-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 1rem 1.25rem 1.5rem;
+}
+
+.placeholder {
+    margin: 1rem;
+    color: color-mix(in srgb, $text-primary 65%, transparent);
+}
+
+.error-text {
+    color: $error-primary;
+}
+
+.error-detail {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.78rem;
+    opacity: 0.8;
+}
+
+.note {
+    margin: 0 0 0.75rem;
+    color: color-mix(in srgb, $text-primary 70%, transparent);
+}
+
+.diff-scope {
+    color: $text-primary;
+}
