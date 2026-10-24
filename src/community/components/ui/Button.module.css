@@ -62,7 +62,16 @@
 }
 
 .primary:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--accent, #855cd6) 88%, #000);
+    background: color-mix(in srgb, var(--accent, #855cd6) 90%, #000);
+}
+
+.primary:active:not(:disabled) {
+    background: color-mix(in srgb, var(--accent, #855cd6) 82%, #000);
+}
+
+/* Text on the accent is kept at 14px or more. */
+.primary.small {
+    font-size: var(--fs-md);
 }
 
 .danger {

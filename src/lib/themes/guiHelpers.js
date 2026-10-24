@@ -406,6 +406,13 @@ const applyGuiColors = theme => {
         doc.style.setProperty('--menu-bar-background-image', 'none');
     }
     doc.style.setProperty('--menu-bar-background', menuBarBackground);
+    // Hover and pressed shades for an accent bar, if the accent has them.
+    // Cleared otherwise, so a previous theme's shades don't linger.
+    for (const state of ['hover', 'pressed']) {
+        const shade = accentMenuBar && accentColors[`menu-bar-${state}`];
+        if (shade) doc.style.setProperty(`--menu-bar-${state}`, shade);
+        else doc.style.removeProperty(`--menu-bar-${state}`);
+    }
 
     const themeMenuBarText = theme.customAccent && theme.customAccent.guiColors &&
         theme.customAccent.guiColors['menu-bar-foreground'];

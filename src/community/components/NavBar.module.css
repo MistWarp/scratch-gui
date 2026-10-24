@@ -47,9 +47,9 @@
 }
 
 .beta {
-    color: color-mix(in srgb, var(--menu-bar-foreground, #fff) 70%, transparent);
-    font-size: var(--fs-xs);
-    font-weight: 500;
+    color: var(--menu-bar-foreground, #fff);
+    font-size: var(--fs-md);
+    font-weight: 700;
 }
 
 .links {
@@ -65,16 +65,16 @@
     padding: 0 12px;
     border-radius: var(--radius-xs);
     color: var(--menu-bar-foreground, #fff);
-    font-weight: 500;
+    font-weight: 600;
     font-size: var(--fs-md);
 }
 
 .link:hover {
-    background: color-mix(in srgb, var(--menu-bar-foreground, #fff) 12%, transparent);
+    background: var(--menu-bar-hover, color-mix(in srgb, var(--menu-bar-foreground, #fff) 12%, transparent));
 }
 
 .linkActive {
-    background: color-mix(in srgb, var(--menu-bar-foreground, #fff) 16%, transparent);
+    background: var(--menu-bar-pressed, color-mix(in srgb, var(--menu-bar-foreground, #fff) 16%, transparent));
     font-weight: 600;
 }
 
@@ -114,7 +114,7 @@
     border: 1px solid transparent;
     border-radius: var(--radius-xs);
     padding: 0 14px 0 38px;
-    background: color-mix(in srgb, var(--menu-bar-foreground, #fff) 12%, transparent);
+    background: var(--menu-bar-hover, color-mix(in srgb, var(--menu-bar-foreground, #fff) 12%, transparent));
     color: var(--menu-bar-foreground, #fff);
     font-size: var(--fs-md);
     outline: none;
@@ -132,7 +132,13 @@
 }
 
 .searchInput::placeholder {
-    color: color-mix(in srgb, var(--menu-bar-foreground, #fff) 75%, transparent);
+    color: var(--menu-bar-foreground, #fff);
+    font-weight: 600;
+}
+
+/* Text left on the bar is kept semibold, like everything else on it. */
+.searchInput:not(:focus) {
+    font-weight: 600;
 }
 
 .searchInput:focus::placeholder {
@@ -282,7 +288,7 @@ a.suggestionMeta:hover {
 }
 
 .iconLink:hover {
-    background: color-mix(in srgb, var(--menu-bar-foreground, #fff) 12%, transparent);
+    background: var(--menu-bar-hover, color-mix(in srgb, var(--menu-bar-foreground, #fff) 12%, transparent));
 }
 
 .bellLink {
@@ -317,7 +323,7 @@ a.suggestionMeta:hover {
 }
 
 .account > div:hover {
-    background: color-mix(in srgb, var(--menu-bar-foreground, #fff) 12%, transparent);
+    background: var(--menu-bar-hover, color-mix(in srgb, var(--menu-bar-foreground, #fff) 12%, transparent));
 }
 
 .account [class*="menuBarMenu"] {
@@ -336,9 +342,10 @@ a.suggestionMeta:hover {
     padding: 0 12px;
     border: 0;
     border-radius: var(--radius-xs);
-    background: color-mix(in srgb, var(--menu-bar-foreground, #fff) 14%, transparent);
+    background: var(--menu-bar-hover, color-mix(in srgb, var(--menu-bar-foreground, #fff) 14%, transparent));
     color: var(--menu-bar-foreground, #fff);
     font-size: var(--fs-md);
+    font-weight: 600;
     cursor: pointer;
 }
 
@@ -348,7 +355,7 @@ a.suggestionMeta:hover {
 }
 
 .account > .signIn:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--menu-bar-foreground, #fff) 22%, transparent);
+    background: var(--menu-bar-pressed, color-mix(in srgb, var(--menu-bar-foreground, #fff) 22%, transparent));
 }
 
 .account > .signIn:disabled {

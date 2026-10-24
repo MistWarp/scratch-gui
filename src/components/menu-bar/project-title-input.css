@@ -23,17 +23,15 @@ can set a width for example or what it should do in a flex box (eg. grow).
 .title-field {
     color: $menu-bar-foreground;
     font-weight: bold;
-    font-size: .8rem;
+    font-size: .875rem;
     min-width: 0;
     width: 100%;
 }
 
 .title-field::placeholder {
     color: $menu-bar-foreground;
-    opacity: 0.8;
-    font-weight: normal;
-    font-size: .8rem;
-    font-style: italic;
+    font-weight: bold;
+    font-size: .875rem;
 }
 
 .title-field:hover {
