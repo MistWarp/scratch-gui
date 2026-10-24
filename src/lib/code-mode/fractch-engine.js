@@ -1,4 +1,11 @@
-import {buildTarget, emitTarget, hasErrorDiagnostics, opcodeTable, toReplaceChange} from './fractch-adapter.js';
+import {
+    buildTarget,
+    emitTarget,
+    hasErrorDiagnostics,
+    opcodeTable,
+    parseFractch,
+    toReplaceChange
+} from './fractch-adapter.js';
 import {textFacts} from './text-facts.js';
 
 const now = () => (typeof performance === 'undefined' ? Date.now() : performance.now());
@@ -30,6 +37,27 @@ const stripKeptBlocks = change => {
         if (!keep.has(topOf(change.blocks, id, memo))) blocks[id] = change.blocks[id];
     }
     return {...change, blocks};
+};
+
+const keepLivePositions = (scope, targetId, parsed, result, change) => {
+    const paired = (result.changed || []).filter(item => item.topId === item.newTopId).map(item => item.topId);
+    if (!paired.length) return change;
+    const target = (scope.targets || []).find(entry => entry.id === targetId);
+    const live = target && target.blocks;
+    if (!live) return change;
+    const unplaced = new Set((parsed.scripts || []).filter(script => script.x === null && script.span)
+        .map(script => script.span[0]));
+    const scripts = (result.sourceMap && result.sourceMap.scripts) || {};
+    let blocks = null;
+    for (const topId of paired) {
+        const range = scripts[topId];
+        const block = change.blocks[topId];
+        const old = live[topId];
+        if (!range || !unplaced.has(range.from) || !block || !old || typeof old.x !== 'number') continue;
+        blocks = blocks || {...change.blocks};
+        blocks[topId] = {...block, x: old.x, y: old.y};
+    }
+    return blocks ? {...change, blocks} : change;
 };
 
 const createEngine = () => {
@@ -83,12 +111,15 @@ const createEngine = () => {
 
     const buildIn = (scope, {targetId, text, previous, lockedScripts, verifyRoundTrip = true}) => {
         const started = now();
-        const result = buildTarget(scope, targetId, text, {
+        const source = String(text === null || typeof text === 'undefined' ? '' : text);
+        const parsed = parseFractch(source);
+        const result = buildTarget(scope, targetId, source, {
             previous,
             lockedScripts,
-            verifyRoundTrip
+            verifyRoundTrip,
+            parsed: {text: source, value: parsed}
         });
-        const change = stripKeptBlocks(toReplaceChange(result));
+        const change = keepLivePositions(scope, targetId, parsed, result, stripKeptBlocks(toReplaceChange(result)));
         return {
             result,
             built: {
