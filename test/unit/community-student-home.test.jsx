@@ -159,7 +159,7 @@ describe('student assignment actions', () => {
         expect(text).toContain('You are in Year 7 Computing. Your teacher is Mist.');
         expect(text).toContain('No assignments yet');
         expect(text).toContain('Space dodger');
-        expect(text).toContain('94 KB of 25.0 GB');
+        expect(text).toContain('93.6 KB of 25 GB');
         wrapper.unmount();
     });
 });

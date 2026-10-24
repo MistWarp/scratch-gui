@@ -2,13 +2,16 @@ import React from 'react';
 import {projectUrl} from './api';
 import {postUrl} from './following-feed.js';
 import {isMilestoneNotification, milestoneLink, milestoneText} from './milestone-notifications.js';
+import {formatDate} from './format.js';
 
 // Shared by the notifications page and the Home preview so both describe and
 // link notifications the same way.
 
 export const SYSTEM_TYPES = [
     'standing', 'moderation', 'project_hidden', 'project_restored', 'news', 'report_update',
-    'post_milestone', 'claw_weekly_recap', 'claw_teen_lock'
+    'post_milestone', 'claw_weekly_recap', 'claw_teen_lock',
+    'classroom_retention_warning', 'classroom_turned_in', 'classroom_released', 'classroom_co_teacher',
+    'classroom_transferred', 'classroom_returned'
 ];
 
 export const GROUP_TYPES = [
@@ -64,6 +67,11 @@ export const targetFor = (n, viewerName) => {
         return {to: `/users/${n.profile || viewerName}${commentAnchor(n)}`};
     }
     if (n.type === 'news') return {to: n.newsId ? `/news/${encodeURIComponent(n.newsId)}` : '/news'};
+    if (typeof n.type === 'string' && n.type.startsWith('classroom_')) {
+        const classPath = n.classId ? `/classroom/${encodeURIComponent(n.classId)}` : '/classroom';
+        return {to: n.classId && n.assignmentId ?
+            `${classPath}/assignments/${encodeURIComponent(n.assignmentId)}` : classPath};
+    }
     return null;
 };
 
@@ -310,6 +318,29 @@ export const describeNotification = (n, t, actor) => {
     case 'roadmap_comment': return n.roadmapTitle ?
         t('{actor} commented on {suggestion}', {actor, suggestion: strong(n.roadmapTitle)}) :
         t('{actor} commented on your suggestion', {actor});
+    case 'classroom_retention_warning': return t(
+        '{className} will be deleted on {date} because no teacher has opened it for 11 months. Open the class to keep it.',
+        {className: strong(n.className || t.text('A class')), date: formatDate(n.deleteAt, t.text('a date soon'))}
+    );
+    case 'classroom_turned_in': return n.assignmentTitle ?
+        t('{student} turned in {assignment}', {
+            student: strong(n.studentName || t.text('A student')),
+            assignment: strong(n.assignmentTitle)
+        }) :
+        t('{student} turned in an assignment', {student: strong(n.studentName || t.text('A student'))});
+    case 'classroom_released': return t('{student} moved to their own account from {className}', {
+        student: strong(n.studentName || t.text('A student')),
+        className: strong(n.className || '')
+    });
+    case 'classroom_co_teacher': return t('You were added as a co-teacher of {className}', {
+        className: strong(n.className || '')
+    });
+    case 'classroom_transferred': return t('You are now the owner of {className}', {
+        className: strong(n.className || '')
+    });
+    case 'classroom_returned': return n.assignmentTitle ?
+        t('Your teacher returned {assignment}', {assignment: strong(n.assignmentTitle)}) :
+        t('Your teacher returned your work');
     default: {
         const body = stripSender(actorFor(n), n.body || n.content || '');
         return body ?
