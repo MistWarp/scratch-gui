@@ -86,6 +86,11 @@
     color: $accent-foreground;
 }
 
+/* White on the fill needs 14px bold, even on a small button. */
+.size-small.variant-primary {
+    font-size: 0.875rem;
+}
+
 .variant-primary:hover:not(:disabled):not([aria-disabled="true"]) {
     background: color-mix(in srgb, $looks-secondary 88%, black);
 }

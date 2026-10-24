@@ -31,7 +31,7 @@
 
 [class*="gui_tab_"][class*="react-tabs__tab--selected"] {
   height: 90% !important;
-  color: var(--looks-secondary);
+  color: var(--accent-text, var(--looks-secondary));
   background-color: var(--ui-white);
   z-index: 4;
 }

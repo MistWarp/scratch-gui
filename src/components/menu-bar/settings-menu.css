@@ -126,10 +126,11 @@
     color: white;
     border: none;
     border-radius: 0.25rem;
-    font-size: 0.75rem;
     cursor: pointer;
     transition: opacity 0.15s ease;
     white-space: nowrap;
+    font-size: 0.875rem;
+    font-weight: 600;
 }
 
 .reset-button:hover {
@@ -167,6 +168,7 @@
     font-size: 0.875rem;
     cursor: pointer;
     transition: background-color 0.2s;
+    font-weight: 600;
 }
 
 .add-button:hover:not(:disabled) {

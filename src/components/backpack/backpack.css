@@ -84,7 +84,7 @@
 }
 
 .header-icon {
-    color: $looks-secondary;
+    color: $accent-text;
     flex-shrink: 0;
 }
 

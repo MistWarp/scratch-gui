@@ -119,8 +119,8 @@
 }
 
 .is-selected .sprite-info {
-    background: $looks-secondary;
-    color: #ffffff;
+    background: $looks-light-transparent;
+    color: $text-primary;
 }
 
 .delete-button {

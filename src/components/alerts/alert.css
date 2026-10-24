@@ -74,8 +74,6 @@
     border-radius: 6px;
     background: $looks-secondary;
     color: $accent-foreground;
-    font-weight: 700;
-    font-size: 0.8125rem;
     border: none;
     cursor: pointer;
     display: flex;
@@ -83,6 +81,8 @@
     align-items: center;
     align-self: stretch;
     outline-style:none;
+    font-size: 0.875rem;
+    font-weight: 700;
 }
 
 [dir="ltr"] .alert-connection-button {

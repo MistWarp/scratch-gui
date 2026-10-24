@@ -325,7 +325,7 @@ a:active, a:focus {
     white-space: nowrap;
 }
 .tag-recommended {
-    color: $looks-secondary;
+    color: $accent-text;
     background-color: color-mix(in srgb, $looks-secondary 14%, transparent);
 }
 .tag-theme {
@@ -394,15 +394,12 @@ a:active, a:focus {
     box-shadow: 0 0 0 2px $looks-transparent;
 }
 
-.tag-button-active {
-    background: $looks-secondary;
-    color: white;
-    border-color: $looks-secondary;
-}
-
+/* Selected: a tint and accent text. White text on the fill needs 14px bold, and this is smaller. */
+.tag-button-active,
 .tag-button-active:hover {
-    background: $looks-secondary-dark;
-    border-color: $looks-secondary-dark;
+    background: $looks-light-transparent;
+    color: $accent-text;
+    border-color: $looks-secondary;
 }
 
 .clear-tags-button {
@@ -588,9 +585,11 @@ a:active, a:focus {
     border-bottom-right-radius: 4px;
     border-right-width: 1px;
 }
+/* Selected: a tint and accent text. White text on the fill needs 14px bold, and this is smaller. */
 .select-option.selected {
-    color: white;
-    background: $looks-secondary;
+    color: $accent-text;
+    background: $looks-light-transparent;
+    border-color: $looks-secondary;
 }
 .select-option:active, .select-option:focus-within {
     outline: none;

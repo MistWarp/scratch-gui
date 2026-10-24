@@ -388,9 +388,10 @@
     border-color: var(--looks-secondary);
 }
 
+/* Selected: a tint and accent text. White text on the fill needs 14px bold, and this is smaller. */
 .sa-find-toggle-active {
-    background: var(--looks-secondary);
-    color: white;
+    background: var(--looks-light-transparent);
+    color: var(--accent-text, var(--looks-secondary));
     border-color: var(--looks-secondary);
 }
 

@@ -47,7 +47,7 @@
 }
 
 .playing-text {
-    color: $looks-secondary;
+    color: $accent-text;
 }
 
 .recording-text {
@@ -96,6 +96,8 @@
     background: $looks-secondary;
     border: $looks-secondary;
     color: white;
+    font-size: 0.875rem;
+    font-weight: 700;
 }
 
 .button-row button + button {

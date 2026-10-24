@@ -43,6 +43,8 @@
     font: inherit;
     text-decoration: none;
     cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: bold;
 }
 
 .actions .secondary {

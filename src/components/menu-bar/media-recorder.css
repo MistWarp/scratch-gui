@@ -26,7 +26,7 @@
 
 .intro > svg {
     flex: 0 0 auto;
-    color: $looks-secondary;
+    color: $accent-text;
 }
 
 .intro div {
@@ -58,7 +58,7 @@
 }
 
 .section h3 svg {
-    color: $looks-secondary;
+    color: $accent-text;
 }
 
 .field-grid {
@@ -194,7 +194,7 @@
     height: 4rem;
     border-radius: 50%;
     background: $looks-light-transparent;
-    color: $looks-secondary;
+    color: $accent-text;
 }
 
 .status-icon.recording {
@@ -240,7 +240,7 @@
 
 .stats svg {
     grid-row: span 2;
-    color: $looks-secondary;
+    color: $accent-text;
 }
 
 .stats span {

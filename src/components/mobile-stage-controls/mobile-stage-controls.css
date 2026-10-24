@@ -47,7 +47,7 @@
 .mode-button.selected {
     border-color: $looks-secondary;
     background: $ui-white;
-    color: $looks-secondary;
+    color: $accent-text;
 }
 
 .mode-button:focus-visible,
@@ -115,7 +115,7 @@
     width: 3.25rem;
     height: 3.25rem;
     border-radius: 50%;
-    color: $looks-secondary;
+    color: $accent-text;
     transform: rotate(12deg);
 }
 

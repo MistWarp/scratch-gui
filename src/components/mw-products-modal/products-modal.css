@@ -47,10 +47,10 @@
     color: #ffffff;
     border: none;
     border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: 600;
     cursor: pointer;
     transition: opacity 0.15s;
+    font-size: 0.875rem;
+    font-weight: 600;
 }
 
 .button-primary:hover {

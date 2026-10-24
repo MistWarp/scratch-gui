@@ -32,7 +32,7 @@
 }
 
 .buttonOn {
-    color: var(--mw-accent);
+    color: var(--accent-strong);
 }
 
 .buttonDownOn {

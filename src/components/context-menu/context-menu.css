@@ -36,8 +36,7 @@
 
 .menu-item:hover,
 .menu-item:global(.react-contextmenu-item--selected) {
-    background: $looks-secondary;
-    color: white;
+    background: $ui-black-transparent;
 }
 
 .menu-item-bordered {
@@ -47,4 +46,5 @@
 .menu-item-danger:hover,
 .menu-item-danger:global(.react-contextmenu-item--selected) {
     background: $error-primary;
+    color: white;
 }

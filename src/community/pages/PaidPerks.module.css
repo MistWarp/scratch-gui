@@ -177,12 +177,10 @@
     font-weight: 700;
 }
 
+/* "Your membership" and "Recommended" are words in the accent, not filled tags. */
 .planTitle span {
-    padding: 3px 8px;
-    border-radius: var(--radius-2xs);
-    background: var(--accent);
-    color: var(--accent-contrast);
-    font-size: var(--fs-2xs);
+    color: var(--accent-strong);
+    font-size: var(--fs-sm);
     font-weight: 700;
 }
 

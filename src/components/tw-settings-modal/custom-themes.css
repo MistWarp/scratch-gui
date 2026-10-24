@@ -109,7 +109,7 @@
     gap: 0.375rem;
     padding: 0.25rem 0;
     background: transparent;
-    color: $looks-secondary;
+    color: $accent-text;
     font-size: 0.875rem;
     font-weight: 600;
 }
@@ -233,7 +233,7 @@
     margin-bottom: 0.25rem;
     border-radius: 50%;
     background: color-mix(in srgb, $looks-secondary 14%, transparent);
-    color: $looks-secondary;
+    color: $accent-text;
 }
 
 .empty-title {
@@ -307,11 +307,11 @@
     gap: 0.25rem;
     padding: 0.1875rem 0.5rem 0.1875rem 0.375rem;
     border-radius: 999px;
-    background: $looks-secondary;
-    color: #ffffff;
     font-size: 0.6875rem;
     font-weight: 600;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    background: $ui-modal-background;
+    color: $accent-text;
 }
 
 .tile-info {
@@ -823,7 +823,7 @@
     border: 0;
     border-radius: 0.5rem;
     background: transparent;
-    color: $looks-secondary;
+    color: $accent-text;
     font-family: inherit;
     font-size: 0.8125rem;
     font-weight: 600;

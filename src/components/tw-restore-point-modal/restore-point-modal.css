@@ -314,7 +314,7 @@
 
 .state > svg {
     width: 1.4rem;
-    color: $looks-secondary;
+    color: $accent-text;
 }
 
 .state strong {

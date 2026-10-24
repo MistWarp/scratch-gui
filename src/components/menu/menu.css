@@ -317,6 +317,6 @@
     .submenu-back {
         display: flex;
         border-bottom: 1px solid $ui-black-transparent;
-        color: $looks-secondary;
+        color: $accent-text;
     }
 }

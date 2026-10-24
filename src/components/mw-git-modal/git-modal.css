@@ -78,6 +78,8 @@
     background: $looks-secondary;
     color: white;
     border-color: transparent;
+    font-size: 0.875rem;
+    font-weight: 600;
 }
 
 .button:disabled,
@@ -354,10 +356,10 @@
     font-size: 0.68rem;
     padding: 0.05rem 0.4rem;
     border-radius: 8px;
-    background: $looks-secondary;
-    color: white;
     font-weight: 600;
     font-family: sans-serif;
+    background: transparent;
+    color: $accent-text;
 }
 
 /* Remotes */
@@ -389,7 +391,7 @@
     width: 20px;
     height: 20px;
     flex-shrink: 0;
-    color: $looks-secondary;
+    color: $accent-text;
 }
 
 .remoteInfo {
@@ -462,10 +464,11 @@
     cursor: pointer;
 }
 
+/* Selected: a tint and accent text. White text on the fill needs 14px bold, and this is smaller. */
 .chipActive {
-    background: $looks-secondary;
-    color: white;
-    border-color: transparent;
+    background: $looks-light-transparent;
+    color: $accent-text;
+    border-color: $looks-secondary;
 }
 
 .checkboxRow {

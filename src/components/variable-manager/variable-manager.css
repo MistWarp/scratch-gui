@@ -232,7 +232,7 @@
 
 .row-icon[data-kind="cloud"],
 .detail-icon[data-kind="cloud"] {
-    color: $looks-secondary;
+    color: $accent-text;
 }
 
 .row-content {
@@ -281,7 +281,7 @@
 
 .row-monitor {
     flex: 0 0 auto;
-    color: $looks-secondary;
+    color: $accent-text;
 }
 
 .detail {

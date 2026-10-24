@@ -36,6 +36,8 @@
 
     color: white;
     background: $looks-secondary;
+    font-size: 0.875rem;
+    font-weight: bold;
 }
 
 [dir="ltr"] .question-submit-button {

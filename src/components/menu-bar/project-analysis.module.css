@@ -252,7 +252,7 @@
 }
 
 .good-note .recommendation-icon {
-    color: $looks-secondary;
+    color: $accent-text;
 }
 
 .list {

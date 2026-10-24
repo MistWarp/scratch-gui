@@ -334,7 +334,7 @@
 .align-option-selected {
     border-color: $looks-secondary;
     background: $looks-light-transparent;
-    color: $looks-secondary;
+    color: $accent-text;
 }
 
 .align-option-selected:hover {

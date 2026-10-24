@@ -350,8 +350,9 @@
   }
 
   .sa-debugger-log-link:hover {
-    background: var(--looks-secondary);
-    color: white;
+    border-color: var(--looks-secondary);
+    background: var(--ui-secondary);
+    color: var(--accent-text, var(--looks-secondary));
   }
 
   .sa-debugger-log-link-unknown {
@@ -398,7 +399,7 @@
 
   .sa-debugger-thread-target-name {
     flex-shrink: 0;
-    color: var(--looks-secondary);
+    color: var(--accent-text, var(--looks-secondary));
     font-weight: 700;
     font-size: 0.75rem;
   }
@@ -465,7 +466,7 @@
     font-size: 0.8125rem;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
-    color: var(--looks-secondary);
+    color: var(--accent-text, var(--looks-secondary));
   }
 
   .sa-debugger-chart-body {
@@ -513,7 +514,7 @@
   }
 
   .sa-memory-clones .sa-memory-info-value {
-    color: var(--looks-secondary);
+    color: var(--accent-text, var(--looks-secondary));
   }
 
   .sa-memory-variables .sa-memory-info-value,
@@ -570,7 +571,7 @@
   .sa-memory-variable-name {
     flex-shrink: 0;
     font-weight: 600;
-    color: var(--looks-secondary);
+    color: var(--accent-text, var(--looks-secondary));
     max-width: 40%;
     overflow: hidden;
     text-overflow: ellipsis;

@@ -43,7 +43,7 @@
 }
 
 .dialog-card > svg {
-    color: $motion-primary;
+    color: $accent-text;
 }
 
 .dialog-card p {
@@ -97,14 +97,15 @@
     border-radius: 0.25rem;
     background: $motion-primary;
     color: $ui-white;
-    font-weight: bold;
     cursor: pointer;
     white-space: nowrap;
+    font-size: 0.875rem;
+    font-weight: bold;
 }
 
 .folder-button {
     background: none;
-    color: $motion-primary;
+    color: $accent-text;
 }
 
 .add-button:hover {

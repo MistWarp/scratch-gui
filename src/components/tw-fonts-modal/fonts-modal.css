@@ -37,7 +37,7 @@
     transition: background 0.12s ease, color 0.12s ease;
 }
 .open-button:hover {
-    color: $looks-secondary;
+    color: $accent-text;
     background: color-mix(in srgb, $looks-secondary 12%, $ui-modal-background);
 }
 .open-button-image {
@@ -102,8 +102,7 @@
     transition: .1s ease;
 }
 .font-dropdown-item:hover {
-    background-color: $looks-secondary;
-    color: #ffffff;
+    background-color: $ui-black-transparent;
 }
 
 .font-playground {
@@ -121,12 +120,13 @@
 
 .button {
     font: inherit;
-    font-weight: bold;
     padding: 0.75rem 1rem;
     border-radius: 0.25rem;
     border: 1px solid $ui-black-transparent;
     background-color: $looks-secondary;
     color: white;
+    font-size: 0.875rem;
+    font-weight: bold;
 }
 .button:disabled {
     opacity: 0.8;
@@ -163,7 +163,7 @@
     justify-content: center;
 }
 .fallback-button:hover {
-    color: $looks-secondary;
+    color: $accent-text;
 }
 .fallback-container .fallback-button-selected {
     background-color: $looks-secondary;

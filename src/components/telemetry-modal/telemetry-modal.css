@@ -22,7 +22,7 @@ $ui-gray: hsla(0, 0%, 95%, 1);
 }
 
 .privacy-policy-link {
-    color: $looks-secondary;
+    color: $accent-text;
     text-decoration: none;
 }
 

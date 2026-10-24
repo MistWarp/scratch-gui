@@ -42,11 +42,11 @@
     border-radius: 6px;
     background: $looks-secondary;
     color: $accent-foreground;
-    font-weight: 700;
-    font-size: 0.8125rem;
     border: none;
     cursor: pointer;
     white-space: nowrap;
+    font-size: 0.875rem;
+    font-weight: 700;
 }
 
 .laterButton {

@@ -203,7 +203,7 @@
 
 .tab.is-selected {
     height: 80%;
-    color: $looks-secondary;
+    color: $accent-text;
     background-color: $ui-white;
     z-index: 4; /* Make sure selected is always above */
 }
@@ -364,7 +364,7 @@
 .mobile-editor-nav-button-selected {
     border-color: $looks-secondary;
     background: $ui-white;
-    color: $looks-secondary;
+    color: $accent-text;
 }
 
 .mobile-editor-nav-button:focus-visible {

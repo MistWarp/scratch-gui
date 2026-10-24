@@ -69,12 +69,10 @@
     color: var(--accent-contrast, #ffffff);
 }
 
+/* A word in the accent, not a filled tag: text on the fill must be 14px bold. */
 .badge {
-    padding: 1px 7px;
-    border-radius: var(--radius-2xs);
-    background: var(--accent);
-    color: var(--accent-contrast, #ffffff);
-    font-size: var(--fs-2xs);
+    color: var(--accent-strong);
+    font-size: var(--fs-xs);
     font-weight: 700;
     line-height: 1.4;
 }

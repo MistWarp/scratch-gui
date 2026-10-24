@@ -183,7 +183,7 @@
 
 .statButtonActive {
     border-color: var(--mw-accent);
-    color: var(--mw-accent);
+    color: var(--accent-strong);
     background: color-mix(in srgb, var(--mw-accent) 10%, var(--mw-panel));
 }
 

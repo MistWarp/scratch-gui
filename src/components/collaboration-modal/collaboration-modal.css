@@ -524,21 +524,19 @@
 }
 
 .hostBadge {
-    background: $motion-primary;
-    color: white;
-    padding: 0.125rem 0.375rem;
-    border-radius: 0.75rem;
     font-size: 0.6875rem;
     font-weight: bold;
+    background: transparent;
+    color: $accent-text;
+    padding: 0;
 }
 
 .youBadge {
-    background: $looks-secondary;
-    color: white;
-    padding: 0.125rem 0.375rem;
-    border-radius: 0.75rem;
     font-size: 0.6875rem;
     font-weight: bold;
+    background: transparent;
+    color: $accent-text;
+    padding: 0;
 }
 
 .kickButton {
@@ -779,7 +777,7 @@
     background: transparent;
     color: $text-primary;
     font-family: inherit;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     font-weight: bold;
     cursor: pointer;
     transition: background-color 0.15s ease, color 0.15s ease;

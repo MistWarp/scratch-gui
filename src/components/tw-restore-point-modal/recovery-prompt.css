@@ -24,7 +24,7 @@
 .icon {
     flex-shrink: 0;
     margin-top: 0.1rem;
-    color: $looks-secondary;
+    color: $accent-text;
 }
 
 .text {
@@ -57,6 +57,8 @@
     border: none;
     background: $looks-secondary;
     color: $accent-foreground;
+    font-size: 0.875rem;
+    font-weight: bold;
 }
 
 .primary:disabled {

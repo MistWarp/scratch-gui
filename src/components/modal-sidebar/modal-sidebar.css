@@ -175,7 +175,7 @@
 
 .itemSelected .count {
     background: color-mix(in srgb, $looks-secondary 22%, transparent);
-    color: $looks-secondary;
+    color: $accent-text;
 }
 
 .footer {
@@ -228,7 +228,7 @@
 .accountBadge {
     margin-left: auto;
     flex-shrink: 0;
-    color: $looks-secondary;
+    color: $accent-text;
 }
 
 .content {

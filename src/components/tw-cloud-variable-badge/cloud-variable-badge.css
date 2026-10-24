@@ -51,7 +51,9 @@
     background: none;
     border-radius: 1rem;
 }
+/* Selected: a tint and accent text. White text on the fill needs 14px bold, and this is smaller. */
 .server.selected {
-    background-color: $looks-secondary;
-    color: white;
+    background-color: $looks-light-transparent;
+    border-color: $looks-secondary;
+    color: $accent-text;
 }

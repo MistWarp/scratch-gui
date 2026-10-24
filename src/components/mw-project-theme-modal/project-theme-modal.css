@@ -39,6 +39,8 @@
 .primaryButton {
     background-color: $looks-secondary;
     color: white;
+    font-size: 0.875rem;
+    font-weight: bold;
 }
 
 .secondaryButton {

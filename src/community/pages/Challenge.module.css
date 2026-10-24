@@ -883,7 +883,7 @@
     color: var(--text-dim);
     background: var(--bg-field);
     font: inherit;
-    font-size: var(--fs-sm);
+    font-size: var(--fs-md);
     font-weight: 700;
     cursor: pointer;
 }

@@ -97,7 +97,7 @@
     border-radius: var(--radius-2xs);
     background: var(--accent);
     color: var(--accent-contrast);
-    font-size: var(--fs-2xs);
+    font-size: var(--fs-md);
     font-weight: 700;
 }
 
@@ -280,7 +280,7 @@
     border-radius: var(--radius-xs);
     background: var(--accent);
     color: var(--accent-contrast);
-    font-size: var(--fs-xs);
+    font-size: var(--fs-md);
     font-weight: 700;
     white-space: nowrap;
 }

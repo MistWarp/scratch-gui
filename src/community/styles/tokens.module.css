@@ -126,6 +126,7 @@ html:where(.root),
     border-radius: var(--radius-xs);
     color: var(--accent-contrast);
     background: var(--accent);
+    font-size: var(--fs-md);
     font-weight: 700;
     transform: translateY(-160%);
 }

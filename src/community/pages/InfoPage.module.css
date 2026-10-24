@@ -30,7 +30,7 @@
 
 .section a,
 .link {
-    color: var(--mw-accent);
+    color: var(--accent-strong);
     text-decoration: underline;
 }
 

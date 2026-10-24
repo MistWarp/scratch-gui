@@ -61,7 +61,7 @@
 
 .note a,
 .card a {
-    color: var(--mw-accent);
+    color: var(--accent-strong);
     text-decoration: underline;
 }
 
