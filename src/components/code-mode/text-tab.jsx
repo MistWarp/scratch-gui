@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import React, {useEffect, useRef, useState} from 'react';
 import ReactDOM from 'react-dom';
 import {injectIntl, intlShape} from 'react-intl';
-import {Check, Play, Square} from 'lucide-react';
+import {Check, CheckCheck, Play, Square} from 'lucide-react';
 
 import CodeEditor from '../extension-dev/code-editor.jsx';
 import DiffView from './diff-view.jsx';
@@ -135,8 +135,9 @@ MessageSlot.propTypes = {
 };
 
 const TextTab = props => {
-    const {applyHint, intl, overlay} = props;
+    const {applyAllHint, applyHint, intl, overlay} = props;
     const applyLabel = intl.formatMessage(messages.apply);
+    const applyAllLabel = intl.formatMessage(messages.applyAll);
     const runAllLabel = intl.formatMessage(messages.runAll);
     const stopLabel = intl.formatMessage(messages.stop);
     return (
@@ -163,6 +164,19 @@ const TextTab = props => {
                         <Check size={14} />
                         <span>{applyLabel}</span>
                     </button>
+                    {props.onApplyAll ? (
+                        <button
+                            aria-label={applyAllLabel}
+                            className={styles.stripButton}
+                            disabled={props.applyAllDisabled}
+                            title={applyAllHint ? `${applyAllLabel} (${applyAllHint})` : applyAllLabel}
+                            type="button"
+                            onClick={props.onApplyAll}
+                        >
+                            <CheckCheck size={14} />
+                            <span>{applyAllLabel}</span>
+                        </button>
+                    ) : null}
                     {props.onRunAll ? (
                         <button
                             aria-label={runAllLabel}
@@ -220,6 +234,8 @@ const TextTab = props => {
 };
 
 TextTab.propTypes = {
+    applyAllDisabled: PropTypes.bool,
+    applyAllHint: PropTypes.string,
     applyDisabled: PropTypes.bool,
     applyHint: PropTypes.string,
     completion: PropTypes.func,
@@ -237,6 +253,7 @@ TextTab.propTypes = {
     tabKey: PropTypes.string.isRequired,
     value: PropTypes.string.isRequired,
     onApply: PropTypes.func,
+    onApplyAll: PropTypes.func,
     onChange: PropTypes.func,
     onContextMenu: PropTypes.func,
     onReady: PropTypes.func,

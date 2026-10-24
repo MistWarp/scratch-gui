@@ -241,6 +241,11 @@ export default defineMessages({
         defaultMessage: 'Apply',
         description: 'Button that applies the text of a file to the project'
     },
+    applyAll: {
+        id: 'mw.codeMode.applyAll',
+        defaultMessage: 'Apply all',
+        description: 'Button that applies the text of every file with unapplied changes in one step'
+    },
     runAll: {
         id: 'mw.codeMode.runAll',
         defaultMessage: 'Run all',

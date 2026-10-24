@@ -130,6 +130,8 @@ import {showStandardAlert, showAlertWithTimeout, closeAlertWithId} from '../../r
 import {removeRestore} from '../../reducers/restore-deletion';
 import {nextUndoSource, undoLatest} from '../../lib/undo-history';
 import {latestRedo, latestUndo, subscribeCodeHistory} from '../../lib/code-mode/code-history.js';
+import {appliableTargetIds} from '../../lib/code-mode/text-store.js';
+import {executeShortcut} from '../../lib/shortcuts/event-router.js';
 import {isCollaborating as isCodeLocked} from '../../lib/code-mode/apply-pipeline.js';
 import {runCodeHistory} from '../../lib/code-mode/code-dialogs.js';
 import collectMetadata from '../../lib/collect-metadata';
@@ -175,7 +177,7 @@ import {
     GitBranch, FileCog, Bug, Database, Undo, Redo, Undo2, Redo2, Handshake, Wrench,
     Download, AppWindow, Computer, Shield, Code, Code2,
     Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, Video,
-    ShoppingBag, Backpack, Check, Zap,
+    ShoppingBag, Backpack, Check, CheckCheck, Zap,
     Bookmark, BookmarkPlus, Trash2, FolderOpen, FilePlus2
 } from 'lucide-react';
 import {countAllProblems} from '../../reducers/extension-dev.js';
@@ -268,6 +270,11 @@ const twMessages = defineMessages({
         id: 'mw.menuBar.redoCodeChange',
         defaultMessage: 'Redo code change',
         description: 'Edit menu item that redoes the code apply that was undone'
+    },
+    applyAllCode: {
+        id: 'mw.menuBar.applyAllCode',
+        defaultMessage: 'Apply all code changes',
+        description: 'Edit menu item that applies the unapplied text of every script file in Code mode at once'
     },
     codeHistoryCollaborating: {
         id: 'mw.menuBar.codeHistoryCollaborating',
@@ -477,6 +484,7 @@ class MenuBar extends React.Component {
             'handleClickUndo',
             'handleClickUndoCode',
             'handleClickRedoCode',
+            'handleClickApplyAllCode',
             'handleClickRedo',
             'handleClickCollaboration',
             'handleClickAddonSettings',
@@ -1601,6 +1609,9 @@ class MenuBar extends React.Component {
     handleClickRedoCode () {
         this.runCodeHistory('redo');
     }
+    handleClickApplyAllCode () {
+        executeShortcut({actionType: 'callback', action: 'applyAll'});
+    }
     handleClickRedo () {
         if (!this.props.isPlayerOnly && this.props.blocksTabVisible && this.state.canRedo) {
             this.ensureScratchBlocks().then(ScratchBlocks => {
@@ -1819,6 +1830,8 @@ class MenuBar extends React.Component {
         const codeTarget = this.codeHistoryTarget();
         const canUndoCode = !this.props.isPlayerOnly && !codeLocked && Boolean(latestUndo(codeTarget));
         const canRedoCode = !this.props.isPlayerOnly && !codeLocked && Boolean(latestRedo(codeTarget));
+        const canApplyAllCode = Boolean(this.props.codeMode) && !this.props.isPlayerOnly && !codeLocked &&
+            appliableTargetIds().filter(id => Boolean(this.props.vm.runtime.getTargetById(id))).length > 1;
         const codeHistoryReason = codeLocked ?
             this.props.intl.formatMessage(twMessages.codeHistoryCollaborating) : null;
         const undoRedoUnavailableReason = this.props.isPlayerOnly || this.props.blocksTabVisible ?
@@ -2218,6 +2231,17 @@ class MenuBar extends React.Component {
                                         <Redo2 />
                                         {this.props.intl.formatMessage(twMessages.redoCodeChange)}
                                     </MenuItem>
+                                    {this.props.codeMode ? (
+                                        <MenuItem
+                                            disabled={!canApplyAllCode}
+                                            onClick={this.handleClickApplyAllCode}
+                                            shortcut={shortcutHint('applyAll', this.props.customShortcuts)}
+                                            subtitle={codeHistoryReason}
+                                        >
+                                            <CheckCheck />
+                                            {this.props.intl.formatMessage(twMessages.applyAllCode)}
+                                        </MenuItem>
+                                    ) : null}
                                 </MenuSection>
                                 <MenuSection>
                                     <TurboMode>{(toggleTurboMode, {turboMode}) => (

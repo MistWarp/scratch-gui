@@ -9,7 +9,8 @@ import {
     latestRedo,
     latestUndo,
     markUndone,
-    pushCodeApply
+    pushCodeApply,
+    pushCodeGroup
 } from '../../../src/lib/code-mode/code-history.js';
 import {nextUndoSource, recordDeletion} from '../../../src/lib/undo-history.js';
 
@@ -41,6 +42,34 @@ describe('code apply history', () => {
         pushCodeApply({targetId: 'a', previous: scriptStep(1), afterHash: 'a2'});
         expect(latestRedo('a')).toBeNull();
         expect(latestRedo('b')).toBe(b);
+    });
+
+    test('a group entry belongs to every target it changed and compares every hash', () => {
+        const group = pushCodeGroup({
+            targetIds: ['a', 'b'],
+            steps: [scriptStep(1), scriptStep(2)],
+            afterHash: {a: 'a1', b: 'b1'}
+        });
+        expect(latestUndo('a')).toBe(group);
+        expect(latestUndo('b')).toBe(group);
+        expect(latestUndo('c')).toBeNull();
+        expect(canUndoExactly(group, {a: 'a1', b: 'b1'})).toBe(true);
+        expect(canUndoExactly(group, {a: 'a1', b: 'changed'})).toBe(false);
+        markUndone(group, [scriptStep(1)], {a: 'a0', b: 'b0'});
+        expect(latestRedo('b')).toBe(group);
+        expect(canRedoExactly(group, {a: 'a0', b: 'b0'})).toBe(true);
+        pushCodeApply({targetId: 'b', previous: scriptStep(1), afterHash: 'b2'});
+        expect(latestRedo('a')).toBeNull();
+    });
+
+    test('a group apply clears redo for each target it touches', () => {
+        const a = pushCodeApply({targetId: 'a', previous: scriptStep(1), afterHash: 'a1'});
+        const c = pushCodeApply({targetId: 'c', previous: scriptStep(1), afterHash: 'c1'});
+        markUndone(a, [scriptStep(1)], 'a0');
+        markUndone(c, [scriptStep(1)], 'c0');
+        pushCodeGroup({targetIds: ['a', 'b'], steps: [scriptStep(1)], afterHash: {a: 'a2', b: 'b2'}});
+        expect(latestRedo('a')).toBeNull();
+        expect(latestRedo('c')).toBe(c);
     });
 
     test('a deletion clears code redo', () => {

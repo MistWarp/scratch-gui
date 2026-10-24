@@ -161,6 +161,23 @@ const createFractchClient = ({spawn = null} = {}) => {
         });
     };
 
+    const buildBatch = (vm, items) => {
+        const failed = syncFirst(vm);
+        if (failed) return failed;
+        return request({
+            type: 'buildBatch',
+            items: items.map(item => ({
+                targetId: item.targetId,
+                text: item.text,
+                previous: item.previous,
+                lockedScripts: item.lockedScripts,
+                verifyRoundTrip: item.verifyRoundTrip !== false
+            }))
+        });
+    };
+
+    const facts = texts => request({type: 'facts', texts});
+
     const emitProject = (vm, project) => {
         const failed = syncFirst(vm);
         if (failed) return failed;
@@ -181,7 +198,7 @@ const createFractchClient = ({spawn = null} = {}) => {
         pending.clear();
     };
 
-    return {build, dispose, emit, emitProject, postedTag, reset, sync};
+    return {build, buildBatch, dispose, emit, emitProject, facts, postedTag, reset, sync};
 };
 
 let shared = null;

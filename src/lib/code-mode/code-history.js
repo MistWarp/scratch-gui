@@ -59,10 +59,21 @@ const enforceLimits = newest => {
     }
 };
 
+const touches = (entry, targetId) => entry.targetId === targetId ||
+    (Array.isArray(entry.targetIds) && entry.targetIds.includes(targetId));
+
 const clearRedoFor = targetId => {
     const before = entries.length;
-    entries = entries.filter(entry => !entry.redo || (targetId && entry.targetId !== targetId));
+    entries = entries.filter(entry => !entry.redo || (targetId && !touches(entry, targetId)));
     return entries.length !== before;
+};
+
+const sameHash = (a, b) => {
+    if (a && b && typeof a === 'object' && typeof b === 'object') {
+        const keys = Object.keys(a);
+        return keys.length === Object.keys(b).length && keys.every(key => a[key] === b[key]);
+    }
+    return a === b;
 };
 
 const extensionStateKey = (mode, source) => `${mode || ''}\n${typeof source === 'string' ? source : ''}`;
@@ -143,22 +154,46 @@ const pushCodeApply = ({targetId, previous, afterHash, auto = false, label = nul
     return entry;
 };
 
+const pushCodeGroup = ({targetIds, steps, afterHash, label = null, now = Date.now()}) => {
+    for (const targetId of targetIds) clearRedoFor(targetId);
+    clearWorkspaceRedo();
+    const entry = {
+        kind: 'group',
+        targetId: null,
+        targetIds: targetIds.slice(),
+        sequence: nextUndoSequence(),
+        steps: steps.slice(),
+        afterHash,
+        afterTexts: {},
+        auto: false,
+        label,
+        time: now,
+        redo: null,
+        units: 0
+    };
+    entry.units = entryUnits(entry);
+    entries.push(entry);
+    enforceLimits(entry);
+    notify();
+    return entry;
+};
+
 const latestUndo = targetId => entries
-    .filter(entry => !entry.redo && (!targetId || entry.targetId === targetId))
+    .filter(entry => !entry.redo && (!targetId || touches(entry, targetId)))
     .sort((a, b) => b.sequence - a.sequence)[0] || null;
 
 const latestRedo = targetId => entries
-    .filter(entry => entry.redo && (!targetId || entry.targetId === targetId))
+    .filter(entry => entry.redo && (!targetId || touches(entry, targetId)))
     .sort((a, b) => b.redo.clock - a.redo.clock)[0] || null;
 
-const canUndoExactly = (entry, hash) => Boolean(entry) && !entry.redo && entry.afterHash === hash;
+const canUndoExactly = (entry, hash) => Boolean(entry) && !entry.redo && sameHash(entry.afterHash, hash);
 
-const canRedoExactly = (entry, hash) => Boolean(entry && entry.redo) && entry.redo.hash === hash;
+const canRedoExactly = (entry, hash) => Boolean(entry && entry.redo) && sameHash(entry.redo.hash, hash);
 
 const markUndone = (entry, redoSteps, hash) => {
     entry.redo = {steps: redoSteps, hash, clock: ++undoClock};
     entry.units = entryUnits(entry);
-    lastEvent = {kind: 'undo', targetId: entry.targetId, clock: undoClock};
+    lastEvent = {kind: 'undo', targetId: entry.targetId, targetIds: entry.targetIds || null, clock: undoClock};
     enforceLimits(entry);
     notify();
 };
@@ -169,7 +204,7 @@ const markRedone = (entry, steps, hash) => {
     entry.redo = null;
     entry.sequence = nextUndoSequence();
     entry.units = entryUnits(entry);
-    lastEvent = {kind: 'redo', targetId: entry.targetId, clock: ++undoClock};
+    lastEvent = {kind: 'redo', targetId: entry.targetId, targetIds: entry.targetIds || null, clock: ++undoClock};
     clearWorkspaceRedo();
     enforceLimits(entry);
     notify();
@@ -215,6 +250,7 @@ export {
     markRedone,
     markUndone,
     pushCodeApply,
+    pushCodeGroup,
     pushExtensionApply,
     stepUnits,
     subscribeCodeHistory
