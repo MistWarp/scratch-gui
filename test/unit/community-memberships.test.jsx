@@ -16,7 +16,6 @@ jest.mock('../../src/community/UserContext.jsx', () => ({useUser: jest.fn()}));
 const plans = ['Free', 'Lite', 'Plus', 'Pro'].map((tier, index) => ({
     tier,
     mistwarp: {
-        storageBytes: [500, 2048, 10240, 51200][index] * 1048576,
         maxProjectAssetsBytes: [50, 100, 250, 1024][index] * 1048576,
         maxProjectAssetBytes: [10, 25, 50, 100][index] * 1048576,
         maxProjects: [100, 500, 2000, 10000][index],
@@ -32,7 +31,10 @@ const plans = ['Free', 'Lite', 'Plus', 'Pro'].map((tier, index) => ({
         vanityProjectUrls: index === 3,
         salesFeeBasisPoints: [1000, 1000, 700, 500][index]
     },
-    rotur: {dailyCreditMultiplier: [1, 1, 2, 3][index]}
+    rotur: {
+        dailyCreditMultiplier: [1, 1, 2, 3][index],
+        storageBytes: [1, 5, 15, 50][index] * 1000000000
+    }
 }));
 const renderPage = async () => {
     let wrapper;
@@ -69,12 +71,13 @@ test('shows actual plan entitlements and keeps checkout on Rotur without marking
         wrapper.unmount();
     });
 
-test('keeps storage and game allowances in the comparison without project sales', async () => {
+test('shows the one Rotur storage allowance and game allowances in the comparison without project sales', async () => {
     const wrapper = await renderPage();
     wrapper.find('button[role="tab"]').at(1)
         .simulate('click');
-    expect(wrapper.find('table').text()).toContain('Storage for all your projects');
-    expect(wrapper.find('table').text()).toContain('500 MB2 GB10 GB50 GB');
+    expect(wrapper.find('table').text()).not.toContain('Storage for all your projects');
+    expect(wrapper.find('table').text()).toContain('Rotur storage, shared with your other Rotur apps');
+    expect(wrapper.find('table').text()).toContain('1 GB5 GB15 GB50 GB');
     expect(wrapper.find('a[href="/mystuff?section=uploads"]')).toHaveLength(1);
     wrapper.find('button[role="tab"]').at(2)
         .simulate('click');
@@ -92,7 +95,7 @@ test('explains how daily credits pay for Lite using the plan allowances', async 
     const copy = callout.text().replace(/\u00a0/g, ' ');
     expect(copy).toContain('Get Lite free by showing up');
     expect(copy).toContain('At 1 credit a day, 15 days of claims pays for a month of Lite');
-    expect(copy).toContain('2 GB of project storage instead of 500 MB');
+    expect(copy).toContain('raises your Rotur storage from 1 GB to 5 GB');
     expect(copy).toContain('fewer than 15 credits when it renews, you go back to Free');
     expect(callout.find('a[href="/wallet"]').text()).toBe('Claim daily credits');
     expect(callout.find('a[href="https://rotur.dev/premium"]').text()).toBe('Get Lite with credits');

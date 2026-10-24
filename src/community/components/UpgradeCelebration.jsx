@@ -33,9 +33,10 @@ const UpgradeCelebration = () => {
         setCelebration(null);
     };
     const limits = perks.mistwarp || {};
+    const roturStorage = perks.rotur?.storageBytes;
     const unlocked = [
-        limits.storageBytes && communityText('{size} of storage for your projects', {
-            size: formatBytes(limits.storageBytes)
+        roturStorage && communityText('{size} of Rotur storage, shared with your other Rotur apps', {
+            size: formatBytes(roturStorage, {decimal: true})
         }),
         limits.maxProjectAssetsBytes && communityText('{size} MB of assets per project', {
             size: megabytes(limits.maxProjectAssetsBytes)

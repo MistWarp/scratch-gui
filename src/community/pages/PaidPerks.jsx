@@ -22,8 +22,8 @@ const LITE_CREDITS = 15;
 const PRICES = {Plus: '£1.75/month', Pro: '£5.75/month'};
 
 const binarySize = value => formatBytes(value);
-const unbrokenSize = value => binarySize(value).replace(' ', '\u00a0');
 const decimalSize = value => formatBytes(value, {decimal: true});
+const unbrokenSize = value => decimalSize(value).replace(' ', '\u00a0');
 const count = value => value.toLocaleString(getCommunityLocale());
 
 const MISTWARP_ROWS = [
@@ -36,7 +36,8 @@ const MISTWARP_ROWS = [
     ['Advanced analytics and CSV exports', 'advancedAnalytics', String, 'tools'],
     ['Custom project branding', 'customProjectBranding', String, 'tools'],
     ['Custom project URLs', 'vanityProjectUrls', String, 'tools'],
-    ['Storage for all your projects', 'storageBytes', binarySize, 'storage'],
+    // Rotur's one allowance, which projects share with Rotur's other apps.
+    ['Rotur storage, shared with your other Rotur apps', 'storageBytes', decimalSize, 'storage', 'rotur'],
     ['Total project assets', 'maxProjectAssetsBytes', binarySize, 'storage'],
     ['Largest project asset', 'maxProjectAssetBytes', binarySize, 'storage'],
     ['Game save storage', 'gameSaveStorageBytes', decimalSize, 'games'],
@@ -59,12 +60,12 @@ const Comparison = ({plans, rows, source}) => {
     return (<div className={styles.tableWrap}>
         <table>
             <thead><tr><th scope="col">{communityText('Benefit')}</th>{TIERS.map(tier => <th scope="col" key={tier}>{tier}</th>)}</tr></thead>
-            <tbody>{rows.map(([label, key, format]) => (
+            <tbody>{rows.map(([label, key, format, , rowSource]) => (
                 <tr key={key}>
                     <th scope="row">{communityText(label)}</th>
                     {TIERS.map(tier => {
                         const plan = plans.find(item => item.tier === tier);
-                        return <td key={tier}><Cell format={format} value={plan?.[source]?.[key]} /></td>;
+                        return <td key={tier}><Cell format={format} value={plan?.[rowSource || source]?.[key]} /></td>;
                     })}
                 </tr>
             ))}</tbody>
@@ -106,7 +107,7 @@ const PaidPerks = () => {
     const freePlan = plans.find(plan => plan.tier === 'Free');
     const litePlan = plans.find(plan => plan.tier === 'Lite');
     const dailyCredits = freePlan?.rotur?.dailyCreditMultiplier;
-    const showLiteFree = dailyCredits > 0 && Boolean(litePlan?.mistwarp?.storageBytes) &&
+    const showLiteFree = dailyCredits > 0 && Boolean(litePlan?.rotur?.storageBytes) &&
         TIERS.indexOf(currentTier) <= TIERS.indexOf('Lite');
     const features = [
         {
@@ -161,11 +162,11 @@ const PaidPerks = () => {
                 <section id="lite-free" className={styles.liteFree} aria-labelledby="lite-free-title">
                     <SectionHeading id="lite-free-title" icon={CalendarCheck} title={communityText('Get Lite free by showing up')} />
                     <p className={styles.liteFreeCopy}>
-                        {communityText('Claim your free Rotur credit once a day from your wallet. At {daily, plural, one {# credit} other {# credits}} a day, {days, plural, one {# day} other {# days}} of claims pays for a month of Lite, which gives you {lite} of project storage instead of {free}.', {
+                        {communityText('Claim your free Rotur credit once a day from your wallet. At {daily, plural, one {# credit} other {# credits}} a day, {days, plural, one {# day} other {# days}} of claims pays for a month of Lite, which raises your Rotur storage from {free} to {lite}.', {
                             daily: dailyCredits,
                             days: Math.ceil(LITE_CREDITS / dailyCredits),
-                            lite: unbrokenSize(litePlan.mistwarp.storageBytes),
-                            free: unbrokenSize(freePlan.mistwarp.storageBytes)
+                            lite: unbrokenSize(litePlan.rotur.storageBytes),
+                            free: unbrokenSize(freePlan.rotur.storageBytes)
                         })}
                     </p>
                     <p className={styles.liteFreeNote}>
