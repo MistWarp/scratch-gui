@@ -660,7 +660,12 @@ const diffTextFromChanges = async changes => {
     const sections = [];
     for (const file of changes) {
         if (!isTextPath(file.path)) {
-            sections.push(`diff --mwp a/${file.path} b/${file.path}\nBinary file changed`);
+            sections.push([
+                `diff --mwp a/${file.path} b/${file.path}`,
+                file.type === 'added' ? '--- /dev/null' : `--- a/${file.path}`,
+                file.type === 'removed' ? '+++ /dev/null' : `+++ b/${file.path}`,
+                'Binary file changed'
+            ].join('\n'));
             continue;
         }
         const result = await computeLineDiff(decodeText(file.before), decodeText(file.after));
@@ -919,7 +924,8 @@ const historyResult = async changes => {
     };
 };
 
-const inspectHistoryCommit = ({oid, baseOid = null}) => queueInspection(async () => {
+const inspectHistoryCommit = ({oid, baseOid = null, isCurrent = null}) => queueInspection(async () => {
+    if (isCurrent && !isCurrent()) return null;
     if (!oid) throw new Error('Choose a commit to inspect');
     const entry = await git.readCommit({fs: getFs(), dir: REPO_DIR, oid});
     const parents = entry.commit.parent || [];
@@ -928,11 +934,12 @@ const inspectHistoryCommit = ({oid, baseOid = null}) => queueInspection(async ()
     return {...await historyResult(changes), oid, base};
 });
 
-const inspectHistoryWorktree = ({vm}) => queueInspection(async () => {
+const inspectHistoryWorktree = ({vm, status = null, isCurrent = null}) => queueInspection(async () => {
+    if (isCurrent && !isCurrent()) return null;
     const fs = getFs();
     const head = await git.resolveRef({fs, dir: REPO_DIR, ref: 'HEAD'});
     const changes = [];
-    for (const {filepath} of await getRepoChanges(vm)) {
+    for (const {filepath} of status || await getRepoChanges(vm)) {
         const before = await blobAtCommit(head, filepath);
         let after = null;
         try {

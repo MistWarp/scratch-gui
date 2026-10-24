@@ -136,6 +136,7 @@ const stateFromHistory = (data, currentState = {}) => {
         graphNodes: graph.nodes || [],
         graphBranchLogs: graph.branchLogs || [],
         branchColors,
+        historyDepth: HISTORY_PAGE,
         changes: status.changes || [],
         remotes,
         readmeContent: currentState.readmeDirty ? currentState.readmeContent : ((data && data.readme) || ''),
@@ -376,7 +377,12 @@ export class TWGitModal extends React.Component {
         }
     }
 
-    componentDidUpdate () {
+    componentDidUpdate (prevProps, prevState) {
+        if (prevState.busy && !this.state.busy && this._worktreePending) {
+            this._worktreePending = false;
+            this.selectHistory({...this.state.historySelection});
+            return;
+        }
         this.ensureHistorySelection();
     }
 
@@ -465,13 +471,28 @@ export class TWGitModal extends React.Component {
     async selectHistory (selection) {
         const token = {};
         this._historyToken = token;
+        const isCurrent = () => this._historyToken === token;
         this.setStateIfMounted({historySelection: selection, historyDetail: {status: 'loading'}});
         try {
             await this.ensureLocalHistory();
-            const data = selection.kind === 'worktree' ?
-                await inspectHistoryWorktree({vm: this.props.vm}) :
-                await inspectHistoryCommit({oid: selection.oid, baseOid: selection.base || null});
-            if (this._historyToken !== token) return;
+            let data;
+            if (selection.kind === 'worktree') {
+                await this.waitForPollIdle();
+                if (this.state.busy) {
+                    this._worktreePending = true;
+                    return;
+                }
+                const run = inspectHistoryWorktree({vm: this.props.vm, isCurrent});
+                const guarded = run.catch(() => null);
+                this._pollPromise = guarded;
+                guarded.then(() => {
+                    if (this._pollPromise === guarded) this._pollPromise = null;
+                });
+                data = await run;
+            } else {
+                data = await inspectHistoryCommit({oid: selection.oid, baseOid: selection.base || null, isCurrent});
+            }
+            if (!isCurrent() || !data) return;
             this.setStateIfMounted({historyDetail: {status: 'ready', data}});
         } catch (err) {
             if (this._historyToken !== token) return;
@@ -523,6 +544,20 @@ export class TWGitModal extends React.Component {
                     prev[i].description !== c.description);
             if (changed) {
                 this.setStateIfMounted({changes});
+            }
+            const selection = this.state.historySelection;
+            const detail = this.state.historyDetail;
+            if (changed && changes.length && selection && selection.kind === 'worktree' &&
+                detail && detail.status === 'ready') {
+                const token = this._historyToken;
+                const data = await inspectHistoryWorktree({
+                    vm: this.props.vm,
+                    status: changes,
+                    isCurrent: () => this._historyToken === token
+                });
+                if (data && this._historyToken === token) {
+                    this.setStateIfMounted({historyDetail: {status: 'ready', data}});
+                }
             }
             // Keep an open working-tree diff in sync with live edits, swapping the
             // content in place (no loading flash) and only when it actually changed.
