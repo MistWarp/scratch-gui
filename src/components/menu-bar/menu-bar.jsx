@@ -130,6 +130,7 @@ import {showStandardAlert, showAlertWithTimeout, closeAlertWithId} from '../../r
 import {removeRestore} from '../../reducers/restore-deletion';
 import {nextUndoSource, undoLatest} from '../../lib/undo-history';
 import {latestRedo, latestUndo, subscribeCodeHistory} from '../../lib/code-mode/code-history.js';
+import {describeCodeEntry, textUndo} from '../../lib/code-mode/undo-scope.js';
 import {appliableTargetIds} from '../../lib/code-mode/text-store.js';
 import {executeShortcut} from '../../lib/shortcuts/event-router.js';
 import {isCollaborating as isCodeLocked} from '../../lib/code-mode/apply-pipeline.js';
@@ -174,7 +175,7 @@ import {
     FilePen, PencilRuler, TriangleAlert, Info,
     FilePlusCorner, Upload, RefreshCcw, ClockPlus, Package, FileInput,
     Save, ArchiveRestore, UserPen, Cloud, PackagePlus, Puzzle,
-    GitBranch, FileCog, Bug, Database, Undo, Redo, Undo2, Redo2, Handshake, Wrench,
+    GitBranch, FileCog, Bug, Database, Undo, Redo, Handshake, Wrench,
     Download, AppWindow, Computer, Shield, Code, Code2,
     Blocks as BlocksIcon, Menu as MenuIcon, Globe, ExternalLink, Video,
     ShoppingBag, Backpack, Check, CheckCheck, Zap,
@@ -261,15 +262,45 @@ const twMessages = defineMessages({
         defaultMessage: 'Could not start a new project. Your current project is still open.',
         description: 'Toast shown when File > New fails'
     },
-    undoCodeChange: {
-        id: 'mw.menuBar.undoCodeChange',
-        defaultMessage: 'Undo code change',
-        description: 'Edit menu item that undoes the latest apply of code text'
+    undoTyping: {
+        id: 'mw.menuBar.undoTyping',
+        defaultMessage: 'Undo typing',
+        description: 'Edit menu Undo label when it undoes typing in the open Code mode script tab'
     },
-    redoCodeChange: {
-        id: 'mw.menuBar.redoCodeChange',
-        defaultMessage: 'Redo code change',
-        description: 'Edit menu item that redoes the code apply that was undone'
+    redoTyping: {
+        id: 'mw.menuBar.redoTyping',
+        defaultMessage: 'Redo typing',
+        description: 'Edit menu Redo label when it redoes typing in the open Code mode script tab'
+    },
+    undoApplyFile: {
+        id: 'mw.menuBar.undoApplyFile',
+        defaultMessage: 'Undo apply to {name}',
+        description: 'Edit menu Undo label when it undoes the latest apply of a script file. {name} is the sprite.'
+    },
+    redoApplyFile: {
+        id: 'mw.menuBar.redoApplyFile',
+        defaultMessage: 'Redo apply to {name}',
+        description: 'Edit menu Redo label when it redoes an apply of a script file. {name} is the sprite.'
+    },
+    undoApplyFiles: {
+        id: 'mw.menuBar.undoApplyFiles',
+        defaultMessage: 'Undo apply to {count} files',
+        description: 'Edit menu Undo label when it undoes an Apply all that changed several script files'
+    },
+    redoApplyFiles: {
+        id: 'mw.menuBar.redoApplyFiles',
+        defaultMessage: 'Redo apply to {count} files',
+        description: 'Edit menu Redo label when it redoes an Apply all that changed several script files'
+    },
+    undoExtensionChange: {
+        id: 'mw.menuBar.undoExtensionChange',
+        defaultMessage: 'Undo change to {name}',
+        description: 'Edit menu Undo label when it undoes an applied change to an extension. {name} is the extension.'
+    },
+    redoExtensionChange: {
+        id: 'mw.menuBar.redoExtensionChange',
+        defaultMessage: 'Redo change to {name}',
+        description: 'Edit menu Redo label when it redoes an applied change to an extension. {name} is the extension.'
     },
     applyAllCode: {
         id: 'mw.menuBar.applyAllCode',
@@ -279,7 +310,7 @@ const twMessages = defineMessages({
     codeHistoryCollaborating: {
         id: 'mw.menuBar.codeHistoryCollaborating',
         defaultMessage: 'Unavailable during collaboration',
-        description: 'Explanation under Undo code change while a collaboration session is running'
+        description: 'Explanation under Undo and Redo while a collaboration session blocks undoing code changes'
     },
     codeTabOnly: {
         id: 'mw.menuBar.scriptsTabOnly',
@@ -338,6 +369,16 @@ const bookmarkMessages = defineMessages({
 });
 
 const menuLabelMessages = defineMessages({
+    undo: {
+        defaultMessage: 'Undo',
+        description: 'Menu bar item for undoing',
+        id: 'gui.menuBar.undo'
+    },
+    redo: {
+        defaultMessage: 'Redo',
+        description: 'Menu bar item for redoing',
+        id: 'gui.menuBar.redo'
+    },
     about: {
         id: 'gui.menuBar.about',
         defaultMessage: 'About'
@@ -482,8 +523,6 @@ class MenuBar extends React.Component {
             'handleClickSeeMistWarpPage',
             'refreshMistWarpShared',
             'handleClickUndo',
-            'handleClickUndoCode',
-            'handleClickRedoCode',
             'handleClickApplyAllCode',
             'handleClickRedo',
             'handleClickCollaboration',
@@ -1570,8 +1609,54 @@ class MenuBar extends React.Component {
     handleClickSeeInside () {
         this.props.onClickSeeInside();
     }
+    resolveUndo (direction) {
+        if (this.props.isPlayerOnly) return null;
+        const undo = direction === 'undo';
+        let targetId = this.codeHistoryTarget();
+        if (this.props.codeMode) {
+            const text = textUndo();
+            if (text && (undo ? text.canUndo : text.canRedo)) {
+                return {kind: 'typing', run: () => (undo ? text.undo() : text.redo())};
+            }
+            targetId = text ? text.targetId : null;
+        } else if (this.props.blocksTabVisible && (undo ? this.state.canUndo : this.state.canRedo)) {
+            return {kind: 'blocks', run: () => (undo ? this.undoBlocks() : this.redoBlocks())};
+        }
+        if (isCodeLocked(this.props.vm)) return null;
+        const entry = undo ? latestUndo(targetId) : latestRedo(targetId);
+        if (!entry) return null;
+        return {kind: 'code', entry, run: () => this.runCodeHistory(direction, entry)};
+    }
+    undoLabel (direction, action) {
+        const {intl} = this.props;
+        const undo = direction === 'undo';
+        if (action && action.kind === 'typing') {
+            return intl.formatMessage(undo ? twMessages.undoTyping : twMessages.redoTyping);
+        }
+        const described = action && action.kind === 'code' ? describeCodeEntry(this.props.vm, action.entry) : null;
+        if (described && described.kind === 'file') {
+            return intl.formatMessage(undo ? twMessages.undoApplyFile : twMessages.redoApplyFile,
+                {name: described.name});
+        }
+        if (described && described.kind === 'files') {
+            return intl.formatMessage(undo ? twMessages.undoApplyFiles : twMessages.redoApplyFiles,
+                {count: described.count});
+        }
+        if (described && described.kind === 'extension') {
+            return intl.formatMessage(undo ? twMessages.undoExtensionChange : twMessages.redoExtensionChange,
+                {name: described.name});
+        }
+        return intl.formatMessage(undo ? menuLabelMessages.undo : menuLabelMessages.redo);
+    }
     handleClickUndo () {
-        // The costume and sound editors have their own undo; the workspace is hidden there.
+        const action = this.resolveUndo('undo');
+        if (action) action.run();
+    }
+    handleClickRedo () {
+        const action = this.resolveUndo('redo');
+        if (action) action.run();
+    }
+    undoBlocks () {
         if (this.props.isPlayerOnly || !this.props.blocksTabVisible || !this.state.canUndo) return;
         this.ensureScratchBlocks()
             .then(ScratchBlocks => {
@@ -1588,12 +1673,11 @@ class MenuBar extends React.Component {
             });
     }
     codeHistoryTarget () {
-        if (this.props.codeMode || !this.props.vm.editingTarget) return null;
-        return this.props.vm.editingTarget.id;
+        const vm = this.props.vm;
+        if (this.props.codeMode || !vm || !vm.editingTarget) return null;
+        return vm.editingTarget.id;
     }
-    runCodeHistory (direction) {
-        const target = this.codeHistoryTarget();
-        const entry = direction === 'undo' ? latestUndo(target) : latestRedo(target);
+    runCodeHistory (direction, entry) {
         if (!entry || isCodeLocked(this.props.vm)) return;
         runCodeHistory({
             vm: this.props.vm,
@@ -1603,16 +1687,10 @@ class MenuBar extends React.Component {
             entry
         });
     }
-    handleClickUndoCode () {
-        this.runCodeHistory('undo');
-    }
-    handleClickRedoCode () {
-        this.runCodeHistory('redo');
-    }
     handleClickApplyAllCode () {
         executeShortcut({actionType: 'callback', action: 'applyAll'});
     }
-    handleClickRedo () {
+    redoBlocks () {
         if (!this.props.isPlayerOnly && this.props.blocksTabVisible && this.state.canRedo) {
             this.ensureScratchBlocks().then(ScratchBlocks => {
                 if (this.unmounted) return;
@@ -1825,17 +1903,18 @@ class MenuBar extends React.Component {
         );
         // Show the About button only if we have a handler for it (like in the desktop app)
         const aboutButton = this.buildAboutMenu(this.props.onClickAbout);
-        const canUseUndoRedo = !this.props.isPlayerOnly && this.props.blocksTabVisible;
         const codeLocked = isCodeLocked(this.props.vm);
-        const codeTarget = this.codeHistoryTarget();
-        const canUndoCode = !this.props.isPlayerOnly && !codeLocked && Boolean(latestUndo(codeTarget));
-        const canRedoCode = !this.props.isPlayerOnly && !codeLocked && Boolean(latestRedo(codeTarget));
+        const undoAction = this.resolveUndo('undo');
+        const redoAction = this.resolveUndo('redo');
         const canApplyAllCode = Boolean(this.props.codeMode) && !this.props.isPlayerOnly && !codeLocked &&
             appliableTargetIds().filter(id => Boolean(this.props.vm.runtime.getTargetById(id))).length > 1;
         const codeHistoryReason = codeLocked ?
             this.props.intl.formatMessage(twMessages.codeHistoryCollaborating) : null;
-        const undoRedoUnavailableReason = this.props.isPlayerOnly || this.props.blocksTabVisible ?
-            null : this.props.intl.formatMessage(twMessages.codeTabOnly);
+        let undoUnavailableReason = null;
+        if (codeLocked) undoUnavailableReason = codeHistoryReason;
+        else if (!this.props.isPlayerOnly && !this.props.codeMode && !this.props.blocksTabVisible) {
+            undoUnavailableReason = this.props.intl.formatMessage(twMessages.codeTabOnly);
+        }
         const menuBar = (
             <Box
                 className={classNames(
@@ -2188,48 +2267,22 @@ class MenuBar extends React.Component {
                                 </MenuSection>
                                 <MenuSection>
                                     <MenuItem
-                                        disabled={!canUseUndoRedo || !this.state.canUndo}
+                                        disabled={!undoAction}
                                         onClick={this.handleClickUndo}
                                         shortcut={shortcutHint('undo', this.props.customShortcuts)}
-                                        subtitle={undoRedoUnavailableReason}
+                                        subtitle={undoAction ? null : undoUnavailableReason}
                                     >
                                         <Undo />
-
-                                        <FormattedMessage
-                                            defaultMessage="Undo"
-                                            description="Menu bar item for undoing"
-                                            id="gui.menuBar.undo"
-                                        />
+                                        {this.undoLabel('undo', undoAction)}
                                     </MenuItem>
                                     <MenuItem
-                                        disabled={!canUseUndoRedo || !this.state.canRedo}
+                                        disabled={!redoAction}
                                         onClick={this.handleClickRedo}
                                         shortcut={shortcutHint('redo', this.props.customShortcuts)}
-                                        subtitle={undoRedoUnavailableReason}
+                                        subtitle={redoAction ? null : undoUnavailableReason}
                                     >
                                         <Redo />
-
-                                        <FormattedMessage
-                                            defaultMessage="Redo"
-                                            description="Menu bar item for redoing"
-                                            id="gui.menuBar.redo"
-                                        />
-                                    </MenuItem>
-                                    <MenuItem
-                                        disabled={!canUndoCode}
-                                        onClick={this.handleClickUndoCode}
-                                        subtitle={codeHistoryReason}
-                                    >
-                                        <Undo2 />
-                                        {this.props.intl.formatMessage(twMessages.undoCodeChange)}
-                                    </MenuItem>
-                                    <MenuItem
-                                        disabled={!canRedoCode}
-                                        onClick={this.handleClickRedoCode}
-                                        subtitle={codeHistoryReason}
-                                    >
-                                        <Redo2 />
-                                        {this.props.intl.formatMessage(twMessages.redoCodeChange)}
+                                        {this.undoLabel('redo', redoAction)}
                                     </MenuItem>
                                     {this.props.codeMode ? (
                                         <MenuItem
