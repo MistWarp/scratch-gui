@@ -283,6 +283,22 @@ describe('formatted applies', () => {
         expect(getText(sprite.id).doc).toBe(text.replace('turn 15 ;', 'turn 30 ;'));
     });
 
+    test('a script typed without a position keeps its place when its hat changes', async () => {
+        await setUp();
+        const text = `${FORMATTED}when clicked {\n   turn 15 ;\n}\n`;
+        await applyFormatted(text);
+        const top = sprite.blocks.getScripts().find(id => sprite.blocks.getBlock(id).opcode === 'event_whenthisspriteclicked');
+        const {x, y} = sprite.blocks.getBlock(top);
+        type(controller, sprite.id, current => current.replace('when clicked {', 'when key a {'));
+        expect((await controller.apply(sprite.id)).status).toBe('committed');
+        const keyA = sprite.blocks.getScripts().find(id => {
+            const hat = sprite.blocks.getBlock(id);
+            return hat.opcode === 'event_whenkeypressed' && hat.fields.KEY_OPTION.value === 'a';
+        });
+        const moved = sprite.blocks.getBlock(keyA);
+        expect([moved.x, moved.y]).toEqual([x, y]);
+    });
+
     test('a draft written after a formatted apply restores with its units', async () => {
         identity = 'project:7';
         await setUp();

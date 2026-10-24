@@ -2,7 +2,7 @@ import {ChangeSet} from '@codemirror/state';
 import {getFractchClient} from './fractch-client.js';
 import {unitsOf} from './fractch-adapter.js';
 import {mapUnits, rebase, resolveConflict, sliceUnit} from './code-rebase.js';
-import {fillBlocks, keepFormatting, remapLocked} from './keep-formatting.js';
+import {fillBlocks, keepFormatting, remapLocked, sameGaps} from './keep-formatting.js';
 import {
     REFUSAL,
     commitApply,
@@ -293,13 +293,35 @@ const createTextController = ({vm, client = getFractchClient()}) => {
             now.pendingChanges);
         const kept = Boolean(emitted.tag && emitted.tag.changeKey === commitKey);
         if (kept) {
-            recordAfterText(entry, targetId, snapshot);
-            const baseline = {text: snapshot, sourceMap: fillBlocks(sourceMap, emitted.sourceMap)};
+            const mine = {text: snapshot, sourceMap: fillBlocks(sourceMap, emitted.sourceMap)};
+            const agree = sameGaps(mine, emitted);
+            const baseline = agree ? mine : keepFormatting({previous: emitted, formatted: mine, next: emitted});
+            recordAfterText(entry, targetId, baseline.text);
             const units = unitsOf(baseline.sourceMap);
+            let doc = now.doc;
+            let docUnits = now.pendingChanges ? mapUnits(units, now.pendingChanges) : units;
+            let conflicts = [];
+            if (!agree && !typed) {
+                doc = baseline.text;
+                docUnits = units;
+            } else if (!agree) {
+                const mineUnits = unitsOf(mine.sourceMap);
+                const merged = rebase({
+                    base: {text: snapshot, units: mineUnits},
+                    theirs: {text: baseline.text, units},
+                    mine: {
+                        text: now.doc,
+                        units: now.pendingChanges ? mapUnits(mineUnits, now.pendingChanges) : mineUnits
+                    }
+                });
+                doc = merged.text;
+                docUnits = merged.units;
+                conflicts = merged.conflicts;
+            }
             const finished = finishWith(targetId, {
-                doc: now.doc,
-                units: now.pendingChanges ? mapUnits(units, now.pendingChanges) : units,
-                conflicts: [],
+                doc,
+                units: docUnits,
+                conflicts,
                 diagnostics: typed ? warnings : [],
                 baseline,
                 canonicalBaseline: {text: emitted.text, sourceMap: emitted.sourceMap},
@@ -309,7 +331,7 @@ const createTextController = ({vm, client = getFractchClient()}) => {
                 message: {kind: 'applied'}
             });
             if (finished) persistDraft(targetId, finished);
-            return {kept: !typed, ms: emitted.ms};
+            return {kept: agree && !typed, ms: emitted.ms};
         }
         recordAfterText(entry, targetId, emitted.text);
         const theirs = {text: emitted.text, units: unitsOf(emitted.sourceMap)};

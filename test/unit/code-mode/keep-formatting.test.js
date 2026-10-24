@@ -1,4 +1,4 @@
-import {fillBlocks, keepFormatting, remapLocked} from '../../../src/lib/code-mode/keep-formatting.js';
+import {fillBlocks, keepFormatting, remapLocked, sameGaps} from '../../../src/lib/code-mode/keep-formatting.js';
 
 const UNIT_FIELDS = {script: 'scripts', decl: 'declarations', comment: 'comments'};
 
@@ -129,6 +129,42 @@ describe('keep formatting', () => {
         const result = keepFormatting({previous, formatted, next});
         expect(result.text).toBe(`// my game\nvar score   = 0 ;\nvar lives = 3;\n\n\n${mineA}\n\n${mineB}\n\n\n\n${mineC}\n\n`);
         expect(slice(result, 'declarations', 'var:lives')).toBe('var lives = 3;');
+    });
+
+    test('a new declaration created by a script change lands with the declarations, not between scripts', () => {
+        const before = compose([decl('v1', 'var lives = 5;'), '\n\n', script('a', canonicalA), '\n\n',
+            script('b', canonicalB)]);
+        const mine = compose([decl('v1', 'var lives   = 5 ;'), '\n\n\n', script('a', canonicalA), '\n\n\n\n',
+            script('b', canonicalB)]);
+        const next = compose([decl('v1', 'var lives = 5;'), '\n\n', script('a', canonicalA), '\n\n',
+            decl('v2', 'var extra = 0;'), '\n\n', script('b', canonicalB)]);
+        const result = keepFormatting({previous: before, formatted: mine, next});
+        expect(result.text.indexOf('var extra = 0;')).toBeLessThan(result.text.indexOf('when flag'));
+        expect(result.text).toContain('var lives   = 5 ;');
+        expectLines(result);
+    });
+
+    test('a gap whose content differs from the project is not copied from the mine text', () => {
+        const before = compose([script('a', canonicalA), '\n\nwatch var "lives" at 5,5;\n\n', script('b', canonicalB)]);
+        const mine = compose([script('a', canonicalA), '\n\n\nwatch var "lives" at 5,5;\n\n\n',
+            script('b', canonicalB)]);
+        const next = compose(['watch var "lives" at 77,88;\n\n', script('a', canonicalA), '\n\n',
+            script('b', canonicalB)]);
+        const result = keepFormatting({previous: before, formatted: mine, next});
+        expect(result.text.match(/watch var/g)).toHaveLength(1);
+        expect(result.text).toContain('at 77,88');
+        expect(result.text).not.toContain('at 5,5');
+    });
+
+    test('sameGaps compares the text between units, ignoring whitespace', () => {
+        const plain = compose([script('a', canonicalA), '\nwatch var "lives" at 5,5;\n', script('b', canonicalB)]);
+        const spaced = compose([script('a', canonicalA), '\n\n  watch  var "lives"  at 5,5;\n\n',
+            script('b', canonicalB)]);
+        const deleted = compose([script('a', canonicalA), '\n\n', script('b', canonicalB)]);
+        const moved = compose(['watch var "lives" at 5,5;\n', script('a', canonicalA), '\n\n', script('b', canonicalB)]);
+        expect(sameGaps(plain, spaced)).toBe(true);
+        expect(sameGaps(plain, deleted)).toBe(false);
+        expect(sameGaps(plain, moved)).toBe(false);
     });
 
     test('a removed script takes one of its gaps with it', () => {

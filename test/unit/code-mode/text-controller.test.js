@@ -111,6 +111,10 @@ describe('text controller', () => {
         const sayShadow = sprite.blocks.getBlock('say').inputs.MESSAGE.block;
         const second = await controller.apply(sprite.id);
         expect(second.status).toBe('committed');
+        const after = scriptIds(sprite);
+        const changed = Object.keys(after).filter(id => after[id] !== before[id]);
+        const keyTop = Object.keys(after).find(id => sprite.blocks.getBlock(id).opcode === 'event_whenkeypressed');
+        expect(changed.filter(id => id !== keyTop)).toEqual([]);
         expect(scriptIds(sprite).hat).toBe(before.hat);
         expect(sprite.blocks.getBlock('say').inputs.MESSAGE.block).toBe(sayShadow);
         const moveShadow = sprite.blocks.getBlock(sprite.blocks.getBlock('move').inputs.STEPS.block);
