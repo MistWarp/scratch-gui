@@ -3120,5 +3120,9 @@
   "None of your projects are shared yet.": "None of your projects are shared yet.",
   "None of your projects are unlisted.": "None of your projects are unlisted.",
   "No drafts. Everything you made is shared.": "No drafts. Everything you made is shared.",
-  "No untitled drafts left.": "No untitled drafts left."
+  "No untitled drafts left.": "No untitled drafts left.",
+  "Scratch": "Scratch",
+  "YouTube": "YouTube",
+  "{value1} on {value2}": "{value1} on {value2}",
+  "Connections": "Connections"
 }
