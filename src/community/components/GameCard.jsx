@@ -5,6 +5,7 @@ import {Link} from 'react-router-dom';
 import {Heart, Play} from 'lucide-react';
 import {projectUrl} from '../api';
 import {useCommunityIntl} from '../i18n.jsx';
+import Avatar from './Avatar.jsx';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import styles from './GameCard.module.css';
 
@@ -111,7 +112,14 @@ export const GameMeta = ({project}) => {
             <Link
                 className={styles.owner}
                 to={`/users/${project.owner}`}
-            >{project.owner}</Link>
+            >
+                <Avatar
+                    className={styles.ownerAvatar}
+                    username={project.owner}
+                    size={18}
+                />
+                <span className={styles.ownerName}>{project.owner}</span>
+            </Link>
             <span className={styles.stats}>
                 <span title={communityText('{value1, plural, one {# love} other {# loves}}', {value1: loves})}>
                     <Heart

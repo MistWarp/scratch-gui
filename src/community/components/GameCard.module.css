@@ -71,6 +71,17 @@
 }
 
 .owner {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.ownerAvatar {
+    flex-shrink: 0;
+}
+
+.ownerName {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -79,6 +90,9 @@
 
 .owner:hover {
     color: var(--mw-text);
+}
+
+.owner:hover .ownerName {
     text-decoration: underline;
 }
 
