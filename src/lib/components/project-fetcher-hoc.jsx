@@ -48,6 +48,7 @@ import {
 import {hasBridge, bridgeFetch} from '../community/embed-bridge.js';
 import {cachedFetchBuffer} from '../community/cached-fetch.js';
 import {createStarterProject, getStarter} from '../starter-projects.js';
+import defaultProjectData from '../default-project/project-data.js';
 import RestorePointAPI from '../api/restore-points';
 import {isStudentSession} from '../rotur/student-flag.js';
 import {isGalleryExtensionUrl} from '../trusted-extension.js';
@@ -113,6 +114,13 @@ const fetchArrayBuffer = url => cachedFetchBuffer(url);
 
 const loadPlatformProject = async (id, source) => {
     const project = source || (await getMistWarpEditorProject(id)).project;
+    if (!source && !project.projectJsonUrl) {
+        return {
+            data: JSON.stringify(defaultProjectData()),
+            title: project.title,
+            platformProject: {...project, trustedExtensions: project.trustedExtensions || []}
+        };
+    }
     const [data, trustedExtensions] = await Promise.all([
         hasBridge() ? bridgeFetch(project.projectJsonUrl) : fetchArrayBuffer(project.projectJsonUrl),
         source ? getServerTrustedExtensions(id, source.projectJsonUrl) : project.trustedExtensions
