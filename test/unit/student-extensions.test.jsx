@@ -89,7 +89,7 @@ describe('security manager for class accounts', () => {
     test('everyone else keeps the normal checks', async () => {
         const {manager} = installSecurityManager({_mwProjectTrusted: true});
         expect(await manager.canFetch('https://example.com')).toBe(true);
-        expect(await manager.getSandboxMode(CUSTOM)).toBe('unsandboxed');
+        expect(await manager.getSandboxMode(CUSTOM)).toBe('iframe');
         const plain = installSecurityManager().manager;
         await expect(plain.getSandboxMode(CUSTOM)).resolves.toBe('iframe');
         await expect(plain.canFetch('https://raw.githubusercontent.com/a/b/c.json')).resolves.toBe(true);

@@ -86,8 +86,8 @@ describe('room codes for class accounts', () => {
             isStudent
         />);
         const text = wrapper.text();
-        expect(text).not.toContain('Join an Existing Room');
-        expect(text).not.toContain('Create a New Room');
+        expect(text).not.toContain('Join a room');
+        expect(text).not.toContain('Create a room');
         expect(wrapper.find('input')).toHaveLength(0);
         expect(text).toContain('Project collaboration');
         wrapper.unmount();
@@ -108,8 +108,8 @@ describe('room codes for class accounts', () => {
 
     test('everyone else still gets the room code controls', () => {
         const wrapper = mountWithIntl(<CollaborationModal {...modalProps()} />);
-        expect(wrapper.text()).toContain('Join an Existing Room');
-        expect(wrapper.text()).toContain('Create a New Room');
+        expect(wrapper.text()).toContain('Join a room');
+        expect(wrapper.text()).toContain('Create a room');
         wrapper.unmount();
     });
 });
@@ -178,6 +178,7 @@ describe('editor URL parameters for class accounts', () => {
             onSetUsername: jest.fn(),
             onSetCloud: jest.fn(),
             onSetCollaborationRoomId: jest.fn(),
+            onSetCollaborationInvite: jest.fn(),
             onOpenCollaborationModal: jest.fn(),
             openSimpleDialog: jest.fn()
         };
@@ -200,8 +201,9 @@ describe('editor URL parameters for class accounts', () => {
         instance.componentWillUnmount();
     });
 
-    test('everyone else still honours them', () => {
+    test('everyone else still honours them', async () => {
         const instance = mountManager('?room=cool-cat-123&extension=https://example.com/tracker.js');
+        await Promise.resolve();
         expect(instance.props.vm.extensionManager.loadExtensionURL)
             .toHaveBeenCalledWith('https://example.com/tracker.js');
         expect(instance.props.onSetCollaborationRoomId).toHaveBeenCalledWith('cool-cat-123');

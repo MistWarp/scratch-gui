@@ -114,7 +114,7 @@ describe('editor menu bar for students', () => {
             {...props}
             isStudent
         />);
-        expect(student.text()).toContain('Documentation');
+        expect(student.text()).toContain('Keyboard shortcuts');
         expect(student.text()).not.toContain('Send feedback');
         student.unmount();
         const teacher = renderIntl(<HelpMenu

@@ -359,7 +359,7 @@ describe('CollaborationContainer', () => {
         await container.handleRetry();
         expect(confirms).toBe(1);
         expect(mockCollaborationService.connectToRoom).toHaveBeenLastCalledWith(
-            'room-1', 'Alice', false, 'private', ROTUR_HANDLE, null, {invite: 'key'});
+            'room-1', 'Alice', false, 'private', ROTUR_HANDLE, null, {invite: 'key', viewer: false, classroom: false});
         wrapper.update();
         expect(wrapper.find('CollaborationModal').prop('canRetry')).toBe(false);
     });

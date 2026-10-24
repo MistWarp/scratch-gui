@@ -155,7 +155,7 @@ describe('collaboration service for class accounts', () => {
         const service = makeService();
         const load = jest.fn(() => Promise.resolve());
         service.vm = {
-            extensionManager: {isExtensionLoaded: () => false},
+            extensionManager: {isExtensionLoaded: () => false, isBuiltinExtension: id => id === 'pen'},
             editingCommands: {extensions: {loadExtensionURL: load}}
         };
         await service._loadMissingExtensions([
