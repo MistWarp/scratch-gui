@@ -686,16 +686,21 @@ class CodeWorkbench extends React.Component {
     }
     handleApplyAll () {
         if (this.props.collaborating || !this.applyAllTargets().length) return Promise.resolve(null);
-        return this.controller.applyAll().then(result => {
-            if (this.unmounted || !result) return result;
-            if (result.status === 'invalid' || (result.status === 'failed' && result.diagnostics)) {
-                this.handleExtensionShowProblems();
-            }
-            if (result.status === 'conflict' && result.targetIds && result.targetIds.length) {
-                this.openFile(scriptTab(result.targetIds[0]), {preview: false});
-            }
-            return result;
-        });
+        return this.controller.applyAll()
+            .catch(error => {
+                log.warn('Apply all failed', error);
+                return null;
+            })
+            .then(result => {
+                if (this.unmounted || !result) return result;
+                if (result.status === 'invalid' || (result.status === 'failed' && result.diagnostics)) {
+                    this.handleExtensionShowProblems();
+                }
+                if (result.status === 'conflict' && result.targetIds && result.targetIds.length) {
+                    this.openFile(scriptTab(result.targetIds[0]), {preview: false});
+                }
+                return result;
+            });
     }
     applyActive () {
         const tab = this.activeTab();

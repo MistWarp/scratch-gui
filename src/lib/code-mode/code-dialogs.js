@@ -185,13 +185,33 @@ const REFUSAL_MESSAGES = {
     applyAllFailedHere: messages.applyAllFailedHere
 };
 
+const listText = (intl, items) => {
+    if (typeof Intl !== 'undefined' && typeof Intl.ListFormat === 'function') {
+        try {
+            return new Intl.ListFormat(intl.locale, {style: 'long', type: 'conjunction'}).format(items);
+        } catch (error) {
+            return items.join(', ');
+        }
+    }
+    return items.join(', ');
+};
+
+const formatValues = (intl, values) => {
+    const out = {};
+    for (const key of Object.keys(values || {})) {
+        out[key] = Array.isArray(values[key]) ? listText(intl, values[key]) : values[key];
+    }
+    return out;
+};
+
 const refusalText = (intl, result) => {
     if (!result) return '';
     if (result.reason === 'collaboration' && result.entry && result.entry.kind === 'extension') {
         return intl.formatMessage(messages.extensionCollaboration);
     }
     const descriptor = REFUSAL_MESSAGES[result.reason];
-    return descriptor ? intl.formatMessage(descriptor, result.values || {}) : (result.message || result.text || '');
+    if (!descriptor) return result.message || result.text || '';
+    return intl.formatMessage(descriptor, formatValues(intl, result.values));
 };
 
 const ask = (dispatch, config) => new Promise(resolve => {

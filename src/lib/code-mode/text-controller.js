@@ -364,40 +364,7 @@ const createTextController = ({vm, client = getFractchClient()}) => {
         for (const id of ids) finishWith(id, patchFor(id));
     };
 
-    const applyAll = async () => {
-        let ids = applyAllTargets();
-        if (!ids.length) return {status: 'clean'};
-        if (ids.some(id => getText(id).applying)) return {status: 'busy'};
-        if (isCollaborating(vm)) {
-            for (const id of ids) {
-                setMessage(id, {kind: 'refused', reason: 'collaboration', text: REFUSAL.collaboration});
-            }
-            return {status: 'refused', reason: 'collaboration'};
-        }
-        for (const id of ids) {
-            if (!isStale(id)) continue;
-            const state = await regenerate(id);
-            if (!state || state.status !== 'ready') return {status: 'unavailable', targetId: id};
-        }
-        ids = ids.filter(id => isDirty(getText(id)) && !getText(id).draft);
-        const conflicted = ids.filter(id => (getText(id).conflicts || []).length);
-        if (conflicted.length) return {status: 'conflict', targetIds: conflicted};
-        if (ids.length < 2) return ids.length ? apply(ids[0]) : {status: 'clean'};
-        const files = ids.map(id => {
-            const state = getText(id);
-            const info = targetInfo(vm, id);
-            return {
-                targetId: id,
-                name: info ? info.targetName : id,
-                text: state.doc,
-                previous: state.baseline,
-                lockedScripts: state.lockedScripts
-            };
-        });
-        for (const file of files) {
-            const state = getText(file.targetId);
-            setText(file.targetId, {...state, applying: true, pendingChanges: ChangeSet.empty(file.text.length)});
-        }
+    const applyFiles = async (ids, files) => {
         let plan;
         try {
             plan = await prepareApplyAll({vm, client, files});
@@ -418,7 +385,7 @@ const createTextController = ({vm, client = getFractchClient()}) => {
                     message: failed ? null : {
                         kind: 'refused',
                         reason: 'applyAllBlocked',
-                        values: {files: blocked.join(', ')}
+                        values: {files: blocked}
                     }
                 });
             }
@@ -428,13 +395,18 @@ const createTextController = ({vm, client = getFractchClient()}) => {
             finishAll(ids, () => ({message: {kind: 'refused', reason: plan.reason, text: plan.message}}));
             return plan;
         }
-        const outcome = await commitApplyAll(plan, {
-            vm,
-            client,
-            title: options.title ? options.title() : null,
-            confirmImpact: options.confirmImpactAll || options.confirmImpact,
-            confirmBackupFailure: options.confirmBackupFailure
-        });
+        let outcome;
+        try {
+            outcome = await commitApplyAll(plan, {
+                vm,
+                client,
+                title: options.title ? options.title() : null,
+                confirmImpact: options.confirmImpactAll || options.confirmImpact,
+                confirmBackupFailure: options.confirmBackupFailure
+            });
+        } catch (error) {
+            outcome = {status: 'refused', reason: 'error', message: (error && error.message) || String(error)};
+        }
         if (outcome.status === 'failed') {
             finishAll(ids, id => {
                 if (id !== outcome.targetId) {
@@ -476,6 +448,50 @@ const createTextController = ({vm, client = getFractchClient()}) => {
             });
         }
         return outcome;
+    };
+
+    const applyAll = async () => {
+        let ids = applyAllTargets();
+        if (!ids.length) return {status: 'clean'};
+        if (ids.some(id => getText(id).applying)) return {status: 'busy'};
+        if (isCollaborating(vm)) {
+            for (const id of ids) {
+                setMessage(id, {kind: 'refused', reason: 'collaboration', text: REFUSAL.collaboration});
+            }
+            return {status: 'refused', reason: 'collaboration'};
+        }
+        for (const id of ids) {
+            if (!isStale(id)) continue;
+            const state = await regenerate(id);
+            if (!state || state.status !== 'ready') return {status: 'unavailable', targetId: id};
+        }
+        ids = ids.filter(id => isDirty(getText(id)) && !getText(id).draft);
+        const conflicted = ids.filter(id => (getText(id).conflicts || []).length);
+        if (conflicted.length) return {status: 'conflict', targetIds: conflicted};
+        if (ids.length < 2) return ids.length ? apply(ids[0]) : {status: 'clean'};
+        const files = ids.map(id => {
+            const state = getText(id);
+            const info = targetInfo(vm, id);
+            return {
+                targetId: id,
+                name: info ? info.targetName : id,
+                text: state.doc,
+                previous: state.baseline,
+                lockedScripts: state.lockedScripts
+            };
+        });
+        for (const file of files) {
+            const state = getText(file.targetId);
+            setText(file.targetId, {...state, applying: true, pendingChanges: ChangeSet.empty(file.text.length)});
+        }
+        try {
+            return await applyFiles(ids, files);
+        } finally {
+            for (const id of ids) {
+                const state = getText(id);
+                if (state && state.applying) finishWith(id, {});
+            }
+        }
     };
 
     const resolve = (targetId, key, choice) => {

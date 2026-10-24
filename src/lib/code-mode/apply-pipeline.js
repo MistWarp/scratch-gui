@@ -20,7 +20,7 @@ import {
     pushCodeGroup
 } from './code-history.js';
 import {hasErrorDiagnostics} from './fractch-adapter.js';
-import {plainName, textFacts} from './text-facts.js';
+import {plainName, textFacts, usesAs} from './text-facts.js';
 
 const REFUSAL = {
     collaboration: 'Editing code is unavailable during collaboration',
@@ -299,12 +299,23 @@ const reportedUsers = (diagnostics, name) => {
     return item ? item.message.slice(prefix.length).split(', ') : null;
 };
 
-const otherTextReferences = (built, otherTexts) => {
+const isListEntry = (built, entry) => ((built.removed && built.removed.lists) || []).includes(entry);
+
+const otherKindDeclared = (built, name, list, declared) => {
+    if (declared) return declared.some(decl => decl.name === name && decl.list !== list);
+    const created = built.created || {};
+    return ((list ? created.variables : created.lists) || []).some(entry => plainName(entry.name) === name);
+};
+
+const otherTextReferences = (built, otherTexts, {declared = null} = {}) => {
     const diagnostics = [];
     const others = withFacts(otherTexts);
     for (const entry of removedDeclarations(built)) {
         const name = plainName(entry.name);
-        const users = others.filter(other => other.facts.references.includes(name)).map(other => other.name);
+        const list = isListEntry(built, entry);
+        const options = {otherKindDeclared: otherKindDeclared(built, name, list, declared)};
+        const users = others.filter(other => usesAs(other.facts, name, list ? 'list' : 'var', options))
+            .map(other => other.name);
         if (!users.length) continue;
         diagnostics.push({
             severity: 'error',
@@ -317,6 +328,72 @@ const otherTextReferences = (built, otherTexts) => {
             endColumn: 1
         });
     }
+    return diagnostics;
+};
+
+const cloudChanges = built => {
+    const created = (built.created && built.created.variables) || [];
+    const changes = [];
+    for (const entry of (built.removed && built.removed.variables) || []) {
+        const name = plainName(entry.name);
+        const toCloud = !entry.cloud;
+        if (created.some(item => plainName(item.name) === name && Boolean(item.cloud) === toCloud)) {
+            changes.push({removed: entry.name, name, toCloud});
+        }
+    }
+    return changes;
+};
+
+const explainCloudChanges = (diagnostics, built) => {
+    const changes = cloudChanges(built);
+    if (!changes.length) return diagnostics;
+    return diagnostics.map(item => {
+        if (item.code !== 'FR220' || typeof item.message !== 'string') return item;
+        const change = changes.find(entry => item.message.startsWith(usedByPrefix(entry.removed)));
+        if (!change) return item;
+        const users = item.message.slice(usedByPrefix(change.removed).length);
+        const declaration = change.toCloud ? `cloud ${change.name}` : `var ${change.name}`;
+        return {
+            ...item,
+            message: change.toCloud ?
+                `${change.name} is used by ${users}, so it can't become a cloud variable in the same apply.` :
+                `${change.name} is used by ${users}, so it can't stop being a cloud variable in the same apply.`,
+            hint: `Remove the uses of ${change.name} and apply without it first. ` +
+                `Then add ${declaration} and the uses back, and apply again.`
+        };
+    });
+};
+
+const creationDiagnostic = (diagnostics, name, list) => (diagnostics || []).find(item => item.code === 'FR222' &&
+    item.message === `creates ${list ? 'list' : 'variable'} ${JSON.stringify(name)}`);
+
+const movesToSprite = (stageBuilt, built) => {
+    const removed = new Set();
+    for (const entry of (stageBuilt.removed && stageBuilt.removed.variables) || []) {
+        if (!entry.cloud) removed.add(`var:${plainName(entry.name)}`);
+    }
+    for (const entry of (stageBuilt.removed && stageBuilt.removed.lists) || []) removed.add(`list:${entry.name}`);
+    const diagnostics = [];
+    const created = built.created || {};
+    const check = (entries, list) => {
+        for (const entry of entries || []) {
+            if (entry.implicit || entry.local || !removed.has(`${list ? 'list' : 'var'}:${entry.name}`)) continue;
+            const at = creationDiagnostic(built.diagnostics, entry.name, list);
+            diagnostics.push({
+                severity: 'error',
+                code: 'FR229',
+                message: `Apply all can't move ${entry.name} from the Stage to this sprite in one step.`,
+                hint: `First apply this sprite with a different name for its ${list ? 'list' : 'variable'}, ` +
+                    `then apply the Stage without ${entry.name}, then rename it back and apply again.`,
+                line: at ? at.line : 1,
+                column: at ? at.column : 1,
+                endLine: at ? at.endLine : 1,
+                endColumn: at ? at.endColumn : 1
+            });
+        }
+    };
+    check(created.variables, false);
+    check(created.lists, true);
     return diagnostics;
 };
 
@@ -371,16 +448,18 @@ const spriteOnlyConflicts = (built, stageText) => {
     return diagnostics;
 };
 
-const crossFileDiagnostics = async (vm, client, targetId, built, otherTexts) => {
+const crossFileDiagnostics = async (vm, client, targetId, built, text, otherTexts) => {
     const others = otherTexts || [];
     if (!others.length) return [];
     const target = vm.runtime.getTargetById(targetId);
     if (!target) return [];
     const relevant = target.isStage ? others : others.filter(other => other.isStage);
     if (!relevant.length) return [];
-    const facts = await factsFor(client, relevant.map(other => other.text));
+    const facts = await factsFor(client, relevant.map(other => other.text).concat(target.isStage ? [text] : []));
     const items = relevant.map((other, index) => ({...other, facts: facts[index]}));
-    if (target.isStage) return otherTextReferences(built, items);
+    if (target.isStage) {
+        return otherTextReferences(built, items, {declared: facts[relevant.length].declared});
+    }
     return spriteOnlyConflicts(built, items[0]);
 };
 
@@ -424,8 +503,11 @@ const prepareApply = async ({vm, client, targetId, text, previous, lockedScripts
     if (!built.tag || built.tag.generation !== generation) {
         return {status: 'refused', reason: 'changed', message: REFUSAL.changed, built};
     }
-    const extra = await crossFileDiagnostics(vm, client, targetId, built, otherTexts);
-    const diagnostics = mergeUsedBy(withApplyAllHints(built.diagnostics, built, otherTexts), extra, built);
+    const extra = await crossFileDiagnostics(vm, client, targetId, built, text, otherTexts);
+    const diagnostics = explainCloudChanges(
+        mergeUsedBy(withApplyAllHints(built.diagnostics, built, otherTexts), extra, built),
+        built
+    );
     if (hasErrorDiagnostics(diagnostics)) return {status: 'invalid', diagnostics, built, baseline};
     const impact = computeImpact(vm, targetId, built, {previousText: previous ? previous.text : '', text});
     return {status: 'ready', diagnostics, built, change: built.change, impact, baseline, snapshot: text};
@@ -486,13 +568,24 @@ const keepEverything = (target, variables) => ({
     variables
 });
 
+const monitorVisible = (vm, id) => {
+    const monitor = vm.runtime.getMonitorState().get(id);
+    if (!monitor) return false;
+    return Boolean(typeof monitor.get === 'function' ? monitor.get('visible') : monitor.visible);
+};
+
+const removableStageVariable = (vm, stage, id) => {
+    if (!Object.prototype.hasOwnProperty.call(stage.variables, id)) return false;
+    return !stage.variables[id].isCloud && !monitorVisible(vm, id);
+};
+
 const removeCreatedStageVariables = (vm, steps) => {
     const stage = vm.runtime.getTargetForStage();
     if (!stage) return null;
     const ids = new Set();
     for (const step of steps) {
         for (const id of (step && step.createdStageIds) || []) {
-            if (Object.prototype.hasOwnProperty.call(stage.variables, id)) ids.add(id);
+            if (removableStageVariable(vm, stage, id)) ids.add(id);
         }
     }
     if (!ids.size) return null;
@@ -590,14 +683,23 @@ const prepareApplyAll = async ({vm, client, files}) => {
     }
     const facts = await factsFor(client, ordered.map(file => file.text));
     const names = new Set(ordered.map(file => file.name));
+    const stageIndex = ordered.findIndex(file => {
+        const target = vm.runtime.getTargetById(file.targetId);
+        return Boolean(target && target.isStage);
+    });
     const results = ordered.map((file, index) => {
         const built = builds[index];
-        const target = vm.runtime.getTargetById(file.targetId);
         let diagnostics = built.diagnostics;
-        if (target && target.isStage) {
+        if (index === stageIndex) {
             const others = ordered.map((other, at) => ({name: other.name, text: other.text, facts: facts[at]}))
                 .filter((other, at) => at !== index);
-            diagnostics = mergeUsedBy(batchUsers(diagnostics, built, names), otherTextReferences(built, others), built);
+            const references = otherTextReferences(built, others, {declared: facts[index].declared});
+            diagnostics = explainCloudChanges(
+                mergeUsedBy(batchUsers(diagnostics, built, names), references, built),
+                built
+            );
+        } else if (stageIndex !== -1) {
+            diagnostics = diagnostics.concat(movesToSprite(builds[stageIndex], built));
         }
         return {
             targetId: file.targetId,
@@ -727,7 +829,16 @@ const commitApplyAll = async (plan, {vm, client, confirmImpact, confirmBackupFai
             }))
         };
     } catch (error) {
-        return refusalResult(error);
+        try {
+            return refusalResult(error);
+        } catch (unknown) {
+            log.warn('Apply all failed', unknown);
+            return {
+                status: 'refused',
+                reason: 'error',
+                message: (unknown && unknown.message) || String(unknown)
+            };
+        }
     }
 };
 
