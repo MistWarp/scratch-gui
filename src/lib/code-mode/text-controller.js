@@ -2,6 +2,7 @@ import {ChangeSet} from '@codemirror/state';
 import {getFractchClient} from './fractch-client.js';
 import {unitsOf} from './fractch-adapter.js';
 import {mapUnits, rebase, resolveConflict, sliceUnit} from './code-rebase.js';
+import {fillBlocks, keepFormatting, remapLocked} from './keep-formatting.js';
 import {
     REFUSAL,
     commitApply,
@@ -59,6 +60,19 @@ const targetInfo = (vm, targetId) => {
     return {targetName: target.isStage ? 'Stage' : target.getName(), isStage: target.isStage};
 };
 
+const draftUnits = (draft, units) => {
+    if (!draft.units || typeof draft.units !== 'object') return null;
+    const out = {};
+    for (const key of Object.keys(units)) {
+        const range = draft.units[key];
+        const valid = range && range.from >= 0 && range.to >= range.from && range.to <= draft.text.length;
+        out[key] = valid ? {from: range.from, to: range.to} : {from: draft.text.length, to: draft.text.length};
+    }
+    return out;
+};
+
+const canonicalText = state => (state.canonicalBaseline || state.baseline).text;
+
 const carryConflicts = (previous, merged, theirs) => {
     const keys = new Set(merged.conflicts.map(item => item.key));
     const carried = (previous || []).filter(item => !keys.has(item.key) && merged.units[item.key])
@@ -84,7 +98,11 @@ const createTextController = ({vm, client = getFractchClient()}) => {
         const info = targetInfo(vm, targetId);
         if (!id || !info) return;
         const dirty = state.baseline && state.doc !== state.baseline.text;
-        scheduleDraftWrite(id, info, dirty ? {text: state.doc, baseHash: baseHash(state.baseline.text)} : null);
+        scheduleDraftWrite(id, info, dirty ? {
+            text: state.doc,
+            baseHash: baseHash(canonicalText(state)),
+            units: state.units || null
+        } : null);
     };
 
     const findDraft = targetId => {
@@ -106,10 +124,11 @@ const createTextController = ({vm, client = getFractchClient()}) => {
         const state = getText(targetId);
         if (!kind || !state || state.status !== 'ready' || isDirty(state)) return;
         if (kind === 'restore') {
+            const units = unitsOf(emitted.sourceMap);
             setText(targetId, {
                 ...state,
                 doc: draft.text,
-                units: locateUnits(emitted.text, unitsOf(emitted.sourceMap), draft.text),
+                units: draftUnits(draft, units) || locateUnits(emitted.text, units, draft.text),
                 unitsVersion: ++unitsClock,
                 message: {kind: 'restored'}
             });
@@ -128,7 +147,13 @@ const createTextController = ({vm, client = getFractchClient()}) => {
             if (regenerations.get(targetId) === run) regenerations.delete(targetId);
             if (generation !== (vm._projectLoadGeneration || 0) || !vm.runtime.getTargetById(targetId)) return null;
             const state = getText(targetId) || {targetId};
-            const theirs = {text: emitted.text, units: unitsOf(emitted.sourceMap)};
+            const formatted = Boolean(state.canonicalBaseline && state.baseline);
+            const fresh = formatted ? keepFormatting({
+                previous: state.canonicalBaseline,
+                formatted: state.baseline,
+                next: emitted
+            }) : {text: emitted.text, sourceMap: emitted.sourceMap};
+            const theirs = {text: fresh.text, units: unitsOf(fresh.sourceMap)};
             const base = state.baseline ? {
                 text: state.baseline.text,
                 units: unitsOf(state.baseline.sourceMap)
@@ -137,20 +162,23 @@ const createTextController = ({vm, client = getFractchClient()}) => {
                 targetId,
                 status: 'ready',
                 error: null,
-                baseline: {text: emitted.text, sourceMap: emitted.sourceMap},
+                baseline: fresh,
+                canonicalBaseline: formatted ? {text: emitted.text, sourceMap: emitted.sourceMap} : null,
                 tag: emitted.tag,
                 info: targetInfo(vm, targetId),
-                lockedScripts: emitted.lockedScripts || [],
+                lockedScripts: formatted ?
+                    remapLocked(emitted.lockedScripts, fresh.sourceMap) :
+                    emitted.lockedScripts || [],
                 unitsVersion: ++unitsClock
             };
             if (!base || !isDirty(state) || state.draft) {
                 setText(targetId, {
                     ...state,
                     ...common,
-                    doc: emitted.text,
+                    doc: fresh.text,
                     units: theirs.units,
                     conflicts: [],
-                    diagnostics: state.doc === emitted.text ? state.diagnostics || [] : []
+                    diagnostics: state.doc === fresh.text ? state.diagnostics || [] : []
                 });
             } else {
                 const merged = rebase({base, theirs, mine: {text: state.doc, units: state.units || {}}});
@@ -245,6 +273,11 @@ const createTextController = ({vm, client = getFractchClient()}) => {
         return setText(targetId, {...state, applying: false, pendingChanges: null, ...patch});
     };
 
+    const recordAfterText = (entry, targetId, text) => {
+        if (entry && entry.afterTexts) entry.afterTexts[targetId] = text;
+        else if (entry && !entry.afterText) entry.afterText = text;
+    };
+
     const settleApplied = async (targetId, {snapshot, sourceMap, diagnostics: planDiagnostics, commitKey, entry}) => {
         const committed = getText(targetId);
         let emitted;
@@ -252,40 +285,51 @@ const createTextController = ({vm, client = getFractchClient()}) => {
             emitted = await client.emit(vm, targetId);
         } catch (error) {
             finishWith(targetId, {tag: null, message: {kind: 'applied'}});
-            return {canonical: false, ms: null};
+            return {kept: false, ms: null};
         }
-        if (entry && entry.afterTexts) entry.afterTexts[targetId] = emitted.text;
-        else if (entry && !entry.afterText) entry.afterText = emitted.text;
         const now = getText(targetId) || committed;
-        const theirs = {text: emitted.text, units: unitsOf(emitted.sourceMap)};
-        const canonical = now.doc === snapshot && emitted.tag && emitted.tag.changeKey === commitKey;
-        let doc = emitted.text;
-        let units = theirs.units;
-        let conflicts = [];
-        let diagnostics = [];
-        if (!canonical) {
-            const base = {text: snapshot, units: unitsOf(sourceMap)};
-            const mineUnits = now.pendingChanges ? mapUnits(base.units, now.pendingChanges) : base.units;
-            const merged = rebase({base, theirs, mine: {text: now.doc, units: mineUnits}});
-            doc = merged.text;
-            units = merged.units;
-            conflicts = merged.conflicts;
-            diagnostics = mapDiagnostics(planDiagnostics.filter(item => item.severity !== 'error'),
-                now.pendingChanges);
+        const typed = now.doc !== snapshot;
+        const warnings = mapDiagnostics(planDiagnostics.filter(item => item.severity !== 'error'),
+            now.pendingChanges);
+        const kept = Boolean(emitted.tag && emitted.tag.changeKey === commitKey);
+        if (kept) {
+            recordAfterText(entry, targetId, snapshot);
+            const baseline = {text: snapshot, sourceMap: fillBlocks(sourceMap, emitted.sourceMap)};
+            const units = unitsOf(baseline.sourceMap);
+            const finished = finishWith(targetId, {
+                doc: now.doc,
+                units: now.pendingChanges ? mapUnits(units, now.pendingChanges) : units,
+                conflicts: [],
+                diagnostics: typed ? warnings : [],
+                baseline,
+                canonicalBaseline: {text: emitted.text, sourceMap: emitted.sourceMap},
+                tag: emitted.tag,
+                lockedScripts: remapLocked(emitted.lockedScripts, baseline.sourceMap),
+                unitsVersion: ++unitsClock,
+                message: {kind: 'applied'}
+            });
+            if (finished) persistDraft(targetId, finished);
+            return {kept: !typed, ms: emitted.ms};
         }
+        recordAfterText(entry, targetId, emitted.text);
+        const theirs = {text: emitted.text, units: unitsOf(emitted.sourceMap)};
+        const base = {text: snapshot, units: unitsOf(sourceMap)};
+        const mineUnits = now.pendingChanges ? mapUnits(base.units, now.pendingChanges) : base.units;
+        const merged = rebase({base, theirs, mine: {text: now.doc, units: mineUnits}});
         const finished = finishWith(targetId, {
-            doc,
-            units,
-            conflicts,
-            diagnostics,
+            doc: merged.text,
+            units: merged.units,
+            conflicts: merged.conflicts,
+            diagnostics: warnings,
             baseline: {text: emitted.text, sourceMap: emitted.sourceMap},
+            canonicalBaseline: null,
             tag: emitted.tag,
             lockedScripts: emitted.lockedScripts || [],
             unitsVersion: ++unitsClock,
             message: {kind: 'applied'}
         });
         if (finished) persistDraft(targetId, finished);
-        return {canonical, ms: emitted.ms};
+        return {kept: false, ms: emitted.ms};
     };
 
     const apply = async targetId => {
@@ -352,7 +396,7 @@ const createTextController = ({vm, client = getFractchClient()}) => {
             commitKey: outcome.commitKey,
             entry: outcome.entry
         });
-        return {...outcome, canonical: settled.canonical, timings: {build: plan.built.ms, emit: settled.ms}};
+        return {...outcome, kept: settled.kept, timings: {build: plan.built.ms, emit: settled.ms}};
     };
 
     const applyAllTargets = () => appliableTargetIds().filter(id => {
@@ -558,7 +602,8 @@ const createTextController = ({vm, client = getFractchClient()}) => {
                 identity: state.identity || null,
                 sync,
                 text: state.doc,
-                baseHash: sync ? null : baseHash(state.baseline.text)
+                units: state.units || null,
+                baseHash: sync ? null : baseHash(canonicalText(state))
             });
         }
         client.reset();

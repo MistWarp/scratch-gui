@@ -79,16 +79,18 @@ describe('text controller', () => {
         vm.quit();
     });
 
-    test('a clean apply replaces the text with the canonical form', async () => {
+    test('a clean apply keeps the text as typed', async () => {
         await controller.regenerate(sprite.id);
         type(controller, sprite.id, text => text.replace('say "hi";', 'say   "hello"  ;'));
         expect(hasUnappliedCode()).toBe(true);
         expect(unappliedFileCount()).toBe(1);
         const outcome = await controller.apply(sprite.id);
         expect(outcome.status).toBe('committed');
+        expect(outcome.kept).toBe(true);
         const state = getText(sprite.id);
         expect(state.doc).toBe(state.baseline.text);
-        expect(state.doc).toContain('say "hello";');
+        expect(state.doc).toContain('say   "hello"  ;');
+        expect(state.canonicalBaseline.text).toContain('say "hello";');
         expect(state.message.kind).toBe('applied');
         expect(hasUnappliedCode()).toBe(false);
     });
@@ -100,18 +102,19 @@ describe('text controller', () => {
         type(controller, sprite.id, text => text.replace('move 10;', 'move 25;'));
         const outcome = await pending;
         expect(outcome.status).toBe('committed');
-        expect(outcome.canonical).toBe(false);
+        expect(outcome.kept).toBe(false);
         const state = getText(sprite.id);
         expect(state.doc).toContain('move 25;');
         expect(state.doc).toContain('"hello"');
         expect(state.doc).not.toBe(state.baseline.text);
         const before = scriptIds(sprite);
+        const sayShadow = sprite.blocks.getBlock('say').inputs.MESSAGE.block;
         const second = await controller.apply(sprite.id);
         expect(second.status).toBe('committed');
-        const after = scriptIds(sprite);
-        const changed = Object.keys(after).filter(id => after[id] !== before[id]);
-        const keyTop = Object.keys(after).find(id => sprite.blocks.getBlock(id).opcode === 'event_whenkeypressed');
-        expect(changed).toEqual([keyTop]);
+        expect(scriptIds(sprite).hat).toBe(before.hat);
+        expect(sprite.blocks.getBlock('say').inputs.MESSAGE.block).toBe(sayShadow);
+        const moveShadow = sprite.blocks.getBlock(sprite.blocks.getBlock('move').inputs.STEPS.block);
+        expect(String(moveShadow.fields.NUM.value)).toBe('25');
     });
 
     test('a live value change during editing is left alone by the next apply', async () => {
