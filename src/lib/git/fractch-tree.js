@@ -74,6 +74,55 @@ const targetAssetFiles = target => {
     return map;
 };
 
+const MAP_PREFIX = '_fractch_map_';
+
+const safeRegion = region => {
+    if (typeof region !== 'string') return 'main';
+    const parts = region.replace(/\\/g, '/').replace(/\.fractch$/i, '')
+        .split('/')
+        .filter(Boolean);
+    if (!parts.length || /^[A-Za-z]:$/.test(parts[0])) return 'main';
+    if (parts.some(part => part === '.' || part === '..' || part.startsWith('.'))) return 'main';
+    return parts.join('/');
+};
+
+const withSafeRegions = projectJson => {
+    const targets = Array.isArray(projectJson.targets) ? projectJson.targets : [];
+    let changed = false;
+    const safeTargets = targets.map(target => {
+        const comments = target && target.comments && typeof target.comments === 'object' ? target.comments : null;
+        if (!comments) return target;
+        let safeComments = null;
+        for (const [id, comment] of Object.entries(comments)) {
+            if (!comment || typeof comment !== 'object' || comment.blockId) continue;
+            const text = String(comment.text || '') + (typeof comment.extraText === 'string' ? comment.extraText : '');
+            if (!text.startsWith(MAP_PREFIX)) continue;
+            let map;
+            try {
+                map = JSON.parse(text.slice(MAP_PREFIX.length));
+            } catch (e) {
+                continue;
+            }
+            if (!map || typeof map !== 'object' || !map.scripts || typeof map.scripts !== 'object') continue;
+            const scripts = {};
+            let unsafe = false;
+            for (const [topId, region] of Object.entries(map.scripts)) {
+                scripts[topId] = safeRegion(region);
+                if (scripts[topId] !== region) unsafe = true;
+            }
+            if (!unsafe) continue;
+            const safeText = MAP_PREFIX + JSON.stringify({...map, scripts});
+            const safeComment = {...comment, text: safeText};
+            delete safeComment.extraText;
+            safeComments = {...(safeComments || comments), [id]: safeComment};
+        }
+        if (!safeComments) return target;
+        changed = true;
+        return {...target, comments: safeComments};
+    });
+    return changed ? {...projectJson, targets: safeTargets} : projectJson;
+};
+
 const yieldToBrowser = () => new Promise(resolve => setTimeout(resolve, 0));
 
 const YIELD_INTERVAL_MS = 30;
@@ -309,7 +358,7 @@ const writeProjectToFractchTree = async ({
             await yieldToBrowser();
         }
 
-        await convertProject(projectJson, {outDir: dir, fs: treeFs});
+        await convertProject(withSafeRegions(projectJson), {outDir: dir, fs: treeFs});
         await writeExtensions(projectJson, dir, {fs: treeFs});
 
         const vfs = toPromiseFs(treeFs);
