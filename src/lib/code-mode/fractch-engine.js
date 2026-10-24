@@ -1,4 +1,5 @@
-import {buildTarget, emitTarget, opcodeTable, toReplaceChange} from './fractch-adapter.js';
+import {buildTarget, emitTarget, hasErrorDiagnostics, opcodeTable, toReplaceChange} from './fractch-adapter.js';
+import {textFacts} from './text-facts.js';
 
 const now = () => (typeof performance === 'undefined' ? Date.now() : performance.now());
 
@@ -80,27 +81,56 @@ const createEngine = () => {
         };
     };
 
-    const build = ({targetId, text, previous, lockedScripts, verifyRoundTrip = true}) => {
+    const buildIn = (scope, {targetId, text, previous, lockedScripts, verifyRoundTrip = true}) => {
         const started = now();
-        const result = buildTarget(currentContext(), targetId, text, {
+        const result = buildTarget(scope, targetId, text, {
             previous,
             lockedScripts,
             verifyRoundTrip
         });
         const change = stripKeptBlocks(toReplaceChange(result));
         return {
-            tag: tagOf(targetId),
-            diagnostics: result.diagnostics,
-            unchangedScripts: result.unchangedScripts,
-            changed: result.changed,
-            created: result.created,
-            removed: result.removed,
-            valueSets: result.valueSets,
-            sourceMap: result.sourceMap,
-            change,
-            ms: now() - started
+            result,
+            built: {
+                tag: tagOf(targetId),
+                diagnostics: result.diagnostics,
+                unchangedScripts: result.unchangedScripts,
+                changed: result.changed,
+                created: result.created,
+                removed: result.removed,
+                valueSets: result.valueSets,
+                sourceMap: result.sourceMap,
+                change,
+                ms: now() - started
+            }
         };
     };
+
+    const build = message => buildIn(currentContext(), message).built;
+
+    const buildBatch = ({items}) => {
+        const base = currentContext();
+        let scope = base;
+        const results = [];
+        for (const item of items || []) {
+            const {result, built} = buildIn(scope, item);
+            results.push(built);
+            const target = targets.get(item.targetId);
+            const blocking = (result.diagnostics || []).filter(entry => entry.code !== 'FR220');
+            if (target && target.isStage && result.target && !hasErrorDiagnostics(blocking)) {
+                const stage = {
+                    ...target,
+                    variables: result.target.variables,
+                    lists: result.target.lists,
+                    broadcasts: result.target.broadcasts || target.broadcasts
+                };
+                scope = {...base, targets: base.targets.map(entry => (entry.id === stage.id ? stage : entry))};
+            }
+        }
+        return results;
+    };
+
+    const facts = ({texts}) => (texts || []).map(text => textFacts(text));
 
     const emitProject = ({targets: list, monitors}) => {
         const project = {
@@ -123,6 +153,8 @@ const createEngine = () => {
         if (message.type === 'emitProject') return emitProject(message);
         if (message.type === 'emit') return emit(message);
         if (message.type === 'build') return build(message);
+        if (message.type === 'buildBatch') return buildBatch(message);
+        if (message.type === 'facts') return facts(message);
         throw new Error(`Unknown request ${message.type}`);
     };
 

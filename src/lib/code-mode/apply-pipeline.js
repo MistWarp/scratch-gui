@@ -1,4 +1,5 @@
 import LazyScratchBlocks from '../tw-lazy-scratch-blocks.js';
+import log from '../utils/log.js';
 import {
     PROJECT_OPERATION_EVENT,
     isProjectOperationActive,
@@ -15,9 +16,11 @@ import {
     latestUndo,
     markRedone,
     markUndone,
-    pushCodeApply
+    pushCodeApply,
+    pushCodeGroup
 } from './code-history.js';
 import {hasErrorDiagnostics} from './fractch-adapter.js';
+import {plainName, textFacts} from './text-facts.js';
 
 const REFUSAL = {
     collaboration: 'Editing code is unavailable during collaboration',
@@ -29,10 +32,21 @@ const REFUSAL = {
 };
 
 class CodeRefusal extends Error {
-    constructor (reason, message) {
+    constructor (reason, message, targetId = null) {
         super(message || REFUSAL[reason] || reason);
         this.name = 'CodeRefusal';
         this.reason = reason;
+        this.targetId = targetId;
+    }
+}
+
+class ApplyAllFailure extends Error {
+    constructor (file, message, diagnostics = null) {
+        super(message);
+        this.name = 'ApplyAllFailure';
+        this.targetId = file.targetId;
+        this.fileName = file.name;
+        this.diagnostics = diagnostics;
     }
 }
 
@@ -121,8 +135,9 @@ const hasSessionBackup = vm => {
 };
 
 const emitWorkspaceIfAttached = (vm, targetId) => {
-    if (!blocksAttached(vm)) return false;
-    if (!vm.editingTarget || vm.editingTarget.id !== targetId) return false;
+    if (!blocksAttached(vm) || !vm.editingTarget) return false;
+    const ids = Array.isArray(targetId) ? targetId : [targetId];
+    if (!ids.includes(vm.editingTarget.id)) return false;
     vm.emitWorkspaceUpdate();
     return true;
 };
@@ -254,21 +269,48 @@ const computeImpact = (vm, targetId, built, {previousText = '', text = ''} = {})
     };
 };
 
-const IDENTIFIER = name => new RegExp(`(^|[^\\w$])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w$])`);
+const FR220_HINT = 'put the declaration back, or use Apply all to apply every file together';
+
+const factsFor = async (client, texts) => {
+    if (!texts.length) return [];
+    if (client && typeof client.facts === 'function') {
+        try {
+            return await client.facts(texts);
+        } catch (error) {
+            return texts.map(textFacts);
+        }
+    }
+    return texts.map(textFacts);
+};
+
+const withFacts = others => (others || []).map(other => (other.facts ?
+    other :
+    {...other, facts: textFacts(other.text)}));
+
+const removedDeclarations = built => ((built.removed && built.removed.variables) || [])
+    .concat((built.removed && built.removed.lists) || []);
+
+const usedByPrefix = name => `${name} is used by `;
+
+const reportedUsers = (diagnostics, name) => {
+    const prefix = usedByPrefix(name);
+    const item = (diagnostics || []).find(entry => entry.code === 'FR220' && typeof entry.message === 'string' &&
+        entry.message.startsWith(prefix));
+    return item ? item.message.slice(prefix.length).split(', ') : null;
+};
 
 const otherTextReferences = (built, otherTexts) => {
     const diagnostics = [];
-    const removed = ((built.removed && built.removed.variables) || [])
-        .concat((built.removed && built.removed.lists) || []);
-    for (const entry of removed) {
-        const pattern = IDENTIFIER(entry.name);
-        const users = (otherTexts || []).filter(other => pattern.test(other.text)).map(other => other.name);
+    const others = withFacts(otherTexts);
+    for (const entry of removedDeclarations(built)) {
+        const name = plainName(entry.name);
+        const users = others.filter(other => other.facts.references.includes(name)).map(other => other.name);
         if (!users.length) continue;
         diagnostics.push({
             severity: 'error',
             code: 'FR220',
-            message: `${entry.name} is used by ${users.join(', ')}`,
-            hint: 'put the declaration back, or apply the other file first',
+            message: `${usedByPrefix(entry.name)}${users.join(', ')}`,
+            hint: FR220_HINT,
             line: 1,
             column: 1,
             endLine: 1,
@@ -276,6 +318,89 @@ const otherTextReferences = (built, otherTexts) => {
         });
     }
     return diagnostics;
+};
+
+const withApplyAllHints = (diagnostics, built, otherTexts) => {
+    const dirty = new Set((otherTexts || []).map(other => other.name));
+    if (!dirty.size) return diagnostics;
+    const removed = removedDeclarations(built).map(entry => entry.name);
+    return diagnostics.map(item => {
+        if (item.code !== 'FR220' || typeof item.message !== 'string') return item;
+        const name = removed.find(entry => item.message.startsWith(usedByPrefix(entry)));
+        if (!name) return item;
+        const users = item.message.slice(usedByPrefix(name).length).split(', ');
+        if (!users.some(user => dirty.has(user))) return item;
+        return {...item, hint: FR220_HINT};
+    });
+};
+
+const assignmentDiagnostic = (diagnostics, name) => (diagnostics || []).find(item => item.code === 'FR213' &&
+    typeof item.message === 'string' && item.message.endsWith(`'${name}'`));
+
+const spriteOnlyConflicts = (built, stageText) => {
+    if (!stageText) return [];
+    const declared = withFacts([stageText])[0].facts.declared;
+    const diagnostics = [];
+    const created = built.created || {};
+    const check = (entries, list) => {
+        for (const entry of entries || []) {
+            if (!entry.implicit) continue;
+            const name = plainName(entry.name);
+            if (!declared.some(decl => decl.name === name && decl.list === list)) continue;
+            const at = assignmentDiagnostic(built.diagnostics, name);
+            const location = at ? {
+                line: at.line,
+                column: at.column,
+                endLine: at.endLine,
+                endColumn: at.endColumn,
+                from: at.from,
+                to: at.to
+            } : {line: 1, column: 1, endLine: 1, endColumn: 1};
+            diagnostics.push({
+                severity: 'error',
+                code: 'FR228',
+                message: `this would make ${name} a sprite-only ${list ? 'list' : 'variable'}, ` +
+                    `but the Stage code you have not applied yet declares ${name}`,
+                hint: 'apply the Stage first, or use Apply all to apply every file together',
+                ...location
+            });
+        }
+    };
+    check(created.variables, false);
+    check(created.lists, true);
+    return diagnostics;
+};
+
+const crossFileDiagnostics = async (vm, client, targetId, built, otherTexts) => {
+    const others = otherTexts || [];
+    if (!others.length) return [];
+    const target = vm.runtime.getTargetById(targetId);
+    if (!target) return [];
+    const relevant = target.isStage ? others : others.filter(other => other.isStage);
+    if (!relevant.length) return [];
+    const facts = await factsFor(client, relevant.map(other => other.text));
+    const items = relevant.map((other, index) => ({...other, facts: facts[index]}));
+    if (target.isStage) return otherTextReferences(built, items);
+    return spriteOnlyConflicts(built, items[0]);
+};
+
+const mergeUsedBy = (diagnostics, extra, built) => {
+    const out = diagnostics.slice();
+    const removed = removedDeclarations(built).map(entry => entry.name);
+    for (const item of extra) {
+        const name = item.code === 'FR220' ?
+            removed.find(entry => item.message.startsWith(usedByPrefix(entry))) :
+            null;
+        const users = name ? reportedUsers(out, name) : null;
+        if (!users) {
+            out.push(item);
+            continue;
+        }
+        const index = out.findIndex(entry => entry.code === 'FR220' && entry.message.startsWith(usedByPrefix(name)));
+        const merged = Array.from(new Set(users.concat(reportedUsers([item], name))));
+        out[index] = {...out[index], message: `${usedByPrefix(name)}${merged.join(', ')}`, hint: FR220_HINT};
+    }
+    return out;
 };
 
 const createsOrRemoves = built => {
@@ -299,14 +424,27 @@ const prepareApply = async ({vm, client, targetId, text, previous, lockedScripts
     if (!built.tag || built.tag.generation !== generation) {
         return {status: 'refused', reason: 'changed', message: REFUSAL.changed, built};
     }
-    const diagnostics = built.diagnostics.concat(otherTextReferences(built, otherTexts));
+    const extra = await crossFileDiagnostics(vm, client, targetId, built, otherTexts);
+    const diagnostics = mergeUsedBy(withApplyAllHints(built.diagnostics, built, otherTexts), extra, built);
     if (hasErrorDiagnostics(diagnostics)) return {status: 'invalid', diagnostics, built, baseline};
     const impact = computeImpact(vm, targetId, built, {previousText: previous ? previous.text : '', text});
     return {status: 'ready', diagnostics, built, change: built.change, impact, baseline, snapshot: text};
 };
 
 const refusalResult = error => {
-    if (error instanceof CodeRefusal) return {status: 'refused', reason: error.reason, message: error.message};
+    if (error instanceof ApplyAllFailure) {
+        return {
+            status: 'failed',
+            reason: 'applyAllFailed',
+            message: error.message,
+            targetId: error.targetId,
+            fileName: error.fileName,
+            diagnostics: error.diagnostics
+        };
+    }
+    if (error instanceof CodeRefusal) {
+        return {status: 'refused', reason: error.reason, message: error.message, targetId: error.targetId};
+    }
     if (error && error.name === 'CodeApplyError') {
         return {status: 'refused', reason: 'invalid', message: error.message, details: error.details || null};
     }
@@ -335,25 +473,308 @@ const commitApply = async (plan, {vm, confirmImpact, confirmBackupFailure, title
     }
 };
 
-const runRestores = (vm, targetId, steps) => {
+const targetName = (vm, targetId) => {
+    const target = vm.runtime.getTargetById(targetId);
+    if (!target) return targetId;
+    return target.isStage ? 'Stage' : target.getName();
+};
+
+const keepEverything = (target, variables) => ({
+    format: 'vm',
+    keepScripts: target.blocks._scripts.slice(),
+    blocks: {},
+    variables
+});
+
+const removeCreatedStageVariables = (vm, steps) => {
+    const stage = vm.runtime.getTargetForStage();
+    if (!stage) return null;
+    const ids = new Set();
+    for (const step of steps) {
+        for (const id of (step && step.createdStageIds) || []) {
+            if (Object.prototype.hasOwnProperty.call(stage.variables, id)) ids.add(id);
+        }
+    }
+    if (!ids.size) return null;
+    const result = vm.replaceTargetScripts(stage.id, keepEverything(stage, {
+        delete: Array.from(ids),
+        restoring: true
+    }));
+    return result.deletedVariableIds.length ? result.previous : null;
+};
+
+const restoreSteps = (vm, steps) => {
     const done = [];
     try {
-        for (const step of steps) done.push(vm.replaceTargetScripts(targetId, {restore: step}).previous);
+        for (const step of steps) done.push(vm.replaceTargetScripts(step.targetId, {restore: step}).previous);
     } catch (error) {
         for (const step of done.slice().reverse()) {
-            vm.replaceTargetScripts(targetId, {restore: step});
+            vm.replaceTargetScripts(step.targetId, {restore: step});
         }
         throw error;
     }
     return done;
 };
 
+const runRestores = (vm, targetId, steps) => restoreSteps(vm, steps.map(step => (step.targetId ?
+    step :
+    {...step, targetId})));
+
+const rollbackSteps = (vm, steps) => {
+    for (const step of steps.slice().reverse()) {
+        try {
+            vm.replaceTargetScripts(step.targetId, {restore: step});
+        } catch (error) {
+            log.warn('Apply all could not roll back a step', error);
+        }
+    }
+    try {
+        removeCreatedStageVariables(vm, steps);
+    } catch (error) {
+        log.warn('Apply all could not remove the variables it created', error);
+    }
+};
+
+const groupHashes = (vm, targetIds) => {
+    const hashes = {};
+    for (const targetId of targetIds) hashes[targetId] = vm.getCodeStateHash(targetId);
+    return hashes;
+};
+
+const changedTarget = (expected, actual) => Object.keys(expected || {})
+    .find(targetId => expected[targetId] !== actual[targetId]) || null;
+
+const orderFiles = (vm, files) => {
+    const order = new Map(vm.runtime.targets.map((target, index) => [target.id, index]));
+    const rank = file => {
+        const target = vm.runtime.getTargetById(file.targetId);
+        if (target && target.isStage) return -1;
+        return order.has(file.targetId) ? order.get(file.targetId) : Number.MAX_SAFE_INTEGER;
+    };
+    return files.slice().sort((a, b) => rank(a) - rank(b));
+};
+
+const batchUsers = (diagnostics, built, names) => {
+    const removed = removedDeclarations(built).map(entry => entry.name);
+    const out = [];
+    for (const item of diagnostics || []) {
+        const name = item.code === 'FR220' && typeof item.message === 'string' ?
+            removed.find(entry => item.message.startsWith(usedByPrefix(entry))) :
+            null;
+        if (!name) {
+            out.push(item);
+            continue;
+        }
+        const outside = item.message.slice(usedByPrefix(name).length)
+            .split(', ')
+            .filter(user => !names.has(user));
+        if (outside.length) out.push({...item, message: `${usedByPrefix(name)}${outside.join(', ')}`});
+    }
+    return out;
+};
+
+const prepareApplyAll = async ({vm, client, files}) => {
+    if (isCollaborating(vm)) return {status: 'refused', reason: 'collaboration', message: REFUSAL.collaboration};
+    const revision = projectRevision(vm);
+    const generation = vm._projectLoadGeneration || 0;
+    const ordered = orderFiles(vm, files).map(file => ({...file, name: file.name || targetName(vm, file.targetId)}));
+    const builds = await client.buildBatch(vm, ordered.map(file => ({
+        targetId: file.targetId,
+        text: file.text,
+        previous: file.previous,
+        lockedScripts: file.lockedScripts,
+        verifyRoundTrip: true
+    })));
+    if (builds.some(built => !built.tag || built.tag.generation !== generation)) {
+        return {status: 'refused', reason: 'changed', message: REFUSAL.changed};
+    }
+    const facts = await factsFor(client, ordered.map(file => file.text));
+    const names = new Set(ordered.map(file => file.name));
+    const results = ordered.map((file, index) => {
+        const built = builds[index];
+        const target = vm.runtime.getTargetById(file.targetId);
+        let diagnostics = built.diagnostics;
+        if (target && target.isStage) {
+            const others = ordered.map((other, at) => ({name: other.name, text: other.text, facts: facts[at]}))
+                .filter((other, at) => at !== index);
+            diagnostics = mergeUsedBy(batchUsers(diagnostics, built, names), otherTextReferences(built, others), built);
+        }
+        return {
+            targetId: file.targetId,
+            name: file.name,
+            snapshot: file.text,
+            previous: file.previous,
+            lockedScripts: file.lockedScripts,
+            built,
+            diagnostics,
+            baseline: {
+                targetId: file.targetId,
+                projectRevision: revision,
+                generation,
+                changeKey: built.tag.changeKey
+            }
+        };
+    });
+    if (results.some(result => hasErrorDiagnostics(result.diagnostics))) {
+        return {status: 'invalid', files: results};
+    }
+    for (const result of results) {
+        result.impact = computeImpact(vm, result.targetId, result.built, {
+            previousText: result.previous ? result.previous.text : '',
+            text: result.snapshot
+        });
+    }
+    const confirm = results.filter(result => result.impact.needsConfirm);
+    return {
+        status: 'ready',
+        files: results,
+        impact: {
+            needsConfirm: confirm.length > 0,
+            files: confirm.map(result => ({targetId: result.targetId, name: result.name, impact: result.impact}))
+        }
+    };
+};
+
+const errorMessage = diagnostics => {
+    const first = (diagnostics || []).find(item => item.severity === 'error');
+    return first ? first.message : REFUSAL.changed;
+};
+
+const runApplyAll = async (vm, client, plan) => {
+    const steps = [];
+    const held = [];
+    let stageFile = null;
+    const built = {};
+    const generation = vm._projectLoadGeneration || 0;
+    try {
+        for (const file of plan.files) {
+            const target = vm.runtime.getTargetById(file.targetId);
+            if (!target || !target.isOriginal) throw new ApplyAllFailure(file, REFUSAL.changed);
+            let current = file.built;
+            if (liveChangeKey(vm, file.targetId) !== file.baseline.changeKey) {
+                current = await client.build(vm, file.targetId, file.snapshot, {
+                    previous: file.previous,
+                    lockedScripts: file.lockedScripts,
+                    verifyRoundTrip: true
+                });
+                if (!current.tag || current.tag.generation !== generation) {
+                    throw new ApplyAllFailure(file, REFUSAL.changed);
+                }
+                if (hasErrorDiagnostics(current.diagnostics)) {
+                    throw new ApplyAllFailure(file, errorMessage(current.diagnostics), current.diagnostics);
+                }
+            }
+            if (isCollaborating(vm)) throw new CodeRefusal('collaboration');
+            if (liveChangeKey(vm, file.targetId) !== current.tag.changeKey) {
+                throw new ApplyAllFailure(file, REFUSAL.changed);
+            }
+            let change = current.change;
+            if (target.isStage) {
+                const variables = change.variables || {};
+                held.push(...(variables.delete || []));
+                change = {...change, variables: {...variables, delete: []}};
+                stageFile = file;
+            }
+            try {
+                steps.push(vm.replaceTargetScripts(file.targetId, change).previous);
+            } catch (error) {
+                throw error && error.name === 'CodeApplyError' ? new ApplyAllFailure(file, error.message) : error;
+            }
+            built[file.targetId] = current;
+        }
+        if (held.length && stageFile) {
+            const stage = vm.runtime.getTargetById(stageFile.targetId);
+            try {
+                steps.push(vm.replaceTargetScripts(stage.id, keepEverything(stage, {delete: held})).previous);
+            } catch (error) {
+                throw error && error.name === 'CodeApplyError' ? new ApplyAllFailure(stageFile, error.message) : error;
+            }
+        }
+    } catch (error) {
+        rollbackSteps(vm, steps);
+        throw error;
+    }
+    return {steps, built};
+};
+
+const commitApplyAll = async (plan, {vm, client, confirmImpact, confirmBackupFailure, title}) => {
+    if (plan.impact && plan.impact.needsConfirm) {
+        const accepted = confirmImpact ? await confirmImpact(plan.impact) : false;
+        if (!accepted) return {status: 'cancelled', reason: 'cancelled', message: REFUSAL.cancelled};
+    }
+    const targetIds = plan.files.map(file => file.targetId);
+    try {
+        const {steps, built} = await withWaitingOperation(vm, async () => {
+            flushBlockly(vm);
+            for (const file of plan.files) refuseIfStale(vm, file.baseline);
+            await ensureSessionBackup(vm, {title, confirmBackupFailure, baseline: plan.files[0].baseline});
+            flushBlockly(vm);
+            for (const file of plan.files) refuseIfStale(vm, file.baseline);
+            try {
+                return await runApplyAll(vm, client, plan);
+            } finally {
+                emitWorkspaceIfAttached(vm, targetIds);
+            }
+        });
+        const entry = pushCodeGroup({targetIds, steps, afterHash: groupHashes(vm, targetIds)});
+        return {
+            status: 'committed',
+            entry,
+            files: plan.files.map(file => ({
+                targetId: file.targetId,
+                built: built[file.targetId],
+                commitKey: liveChangeKey(vm, file.targetId)
+            }))
+        };
+    } catch (error) {
+        return refusalResult(error);
+    }
+};
+
+const undoGroup = (vm, entry) => commitChange(vm, {
+    targetId: entry.targetIds,
+    backup: false,
+    check: () => {
+        const actual = groupHashes(vm, entry.targetIds);
+        if (!canUndoExactly(entry, actual)) {
+            throw new CodeRefusal('blocksChanged', null, changedTarget(entry.afterHash, actual));
+        }
+    },
+    run: () => {
+        const redo = restoreSteps(vm, entry.steps.slice().reverse());
+        const cleanup = removeCreatedStageVariables(vm, entry.steps);
+        if (cleanup) redo.push(cleanup);
+        return redo.reverse();
+    }
+});
+
+const redoGroup = (vm, entry) => commitChange(vm, {
+    targetId: entry.targetIds,
+    backup: false,
+    check: () => {
+        const actual = groupHashes(vm, entry.targetIds);
+        if (!canRedoExactly(entry, actual)) {
+            throw new CodeRefusal('redoChanged', null, changedTarget(entry.redo.hash, actual));
+        }
+    },
+    run: () => {
+        const steps = restoreSteps(vm, entry.redo.steps);
+        const cleanup = removeCreatedStageVariables(vm, entry.redo.steps);
+        if (cleanup) steps.push(cleanup);
+        return steps;
+    }
+});
+
+const entryHash = (vm, entry) => (entry.kind === 'group' ?
+    groupHashes(vm, entry.targetIds) :
+    vm.getCodeStateHash(entry.targetId));
+
 const undoCodeApply = async ({vm, targetId = null, entry = latestUndo(targetId)}) => {
     if (!entry) return {status: 'empty'};
     if (isCollaborating(vm)) return {status: 'refused', reason: 'collaboration', message: REFUSAL.collaboration};
     flushBlockly(vm);
     try {
-        const redo = await commitChange(vm, {
+        const redo = entry.kind === 'group' ? await undoGroup(vm, entry) : await commitChange(vm, {
             targetId: entry.targetId,
             backup: false,
             check: () => {
@@ -363,7 +784,7 @@ const undoCodeApply = async ({vm, targetId = null, entry = latestUndo(targetId)}
             },
             run: () => runRestores(vm, entry.targetId, entry.steps.slice().reverse()).reverse()
         });
-        markUndone(entry, redo, vm.getCodeStateHash(entry.targetId));
+        markUndone(entry, redo, entryHash(vm, entry));
         return {status: 'committed', entry};
     } catch (error) {
         return {...refusalResult(error), entry};
@@ -375,7 +796,7 @@ const redoCodeApply = async ({vm, targetId = null, entry = latestRedo(targetId)}
     if (isCollaborating(vm)) return {status: 'refused', reason: 'collaboration', message: REFUSAL.collaboration};
     flushBlockly(vm);
     try {
-        const steps = await commitChange(vm, {
+        const steps = entry.kind === 'group' ? await redoGroup(vm, entry) : await commitChange(vm, {
             targetId: entry.targetId,
             backup: false,
             check: () => {
@@ -385,7 +806,7 @@ const redoCodeApply = async ({vm, targetId = null, entry = latestRedo(targetId)}
             },
             run: () => runRestores(vm, entry.targetId, entry.redo.steps)
         });
-        markRedone(entry, steps, vm.getCodeStateHash(entry.targetId));
+        markRedone(entry, steps, entryHash(vm, entry));
         return {status: 'committed', entry};
     } catch (error) {
         return {...refusalResult(error), entry};
@@ -397,6 +818,7 @@ export {
     REFUSAL,
     blocksAttached,
     commitApply,
+    commitApplyAll,
     commitChange,
     commitSync,
     computeImpact,
@@ -407,6 +829,7 @@ export {
     liveChangeKey,
     otherTextReferences,
     prepareApply,
+    prepareApplyAll,
     redoCodeApply,
     undoCodeApply,
     withWaitingOperation

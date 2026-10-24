@@ -60,6 +60,14 @@ describe('shortcut registry contexts', () => {
         expect(matchShortcut(shortcuts, 'Ctrl+e', {context: 'textTab'}).id).toBe('quickOpen');
     });
 
+    test('apply all takes Ctrl+Shift+Enter inside a text tab only', () => {
+        const applyAll = shortcuts.find(shortcut => shortcut.id === 'applyAll');
+        expect(applyAll).toMatchObject({key: 'Ctrl+Shift+Enter', context: 'textTab', action: 'applyAll'});
+        expect(matchShortcut(shortcuts, 'Ctrl+Shift+Enter').id).toBe('stopAll');
+        expect(matchShortcut(shortcuts, 'Ctrl+Shift+Enter', {context: 'textTab'}).id).toBe('applyAll');
+        expect(getOverriddenShortcut(shortcuts, applyAll).id).toBe('stopAll');
+    });
+
     test('unbound entries never match', () => {
         expect(matchShortcut(shortcuts, '')).toBeNull();
     });

@@ -361,6 +361,17 @@ export const getDefaultShortcuts = () => [
         label: 'Apply File'
     },
     {
+        id: 'applyAll',
+        key: 'Ctrl+Shift+Enter',
+        defaultKey: 'Ctrl+Shift+Enter',
+        context: 'textTab',
+        category: SHORTCUT_CATEGORIES.EDIT,
+        actionType: 'callback',
+        action: 'applyAll',
+        params: [],
+        label: 'Apply All Files'
+    },
+    {
         id: 'closeTab',
         key: '',
         defaultKey: '',

@@ -5,12 +5,15 @@ import {mapUnits, rebase, resolveConflict, sliceUnit} from './code-rebase.js';
 import {
     REFUSAL,
     commitApply,
+    commitApplyAll,
     isCollaborating,
     liveChangeKey,
-    prepareApply
+    prepareApply,
+    prepareApplyAll
 } from './apply-pipeline.js';
 import {
     allTexts,
+    appliableTargetIds,
     clearAssetDrafts,
     getText,
     isDirty,
@@ -223,13 +226,66 @@ const createTextController = ({vm, client = getFractchClient()}) => {
         .filter(([id, state]) => id !== targetId && isDirty(state) && typeof state.doc === 'string')
         .map(([id, state]) => {
             const info = targetInfo(vm, id);
-            return {name: info ? info.targetName : id, text: state.doc};
+            return {
+                targetId: id,
+                name: info ? info.targetName : id,
+                isStage: Boolean(info && info.isStage),
+                text: state.doc
+            };
         });
+
+    const setMessage = (targetId, message) => {
+        const state = getText(targetId);
+        if (state) setText(targetId, {...state, message});
+    };
 
     const finishWith = (targetId, patch) => {
         const state = getText(targetId);
         if (!state) return null;
         return setText(targetId, {...state, applying: false, pendingChanges: null, ...patch});
+    };
+
+    const settleApplied = async (targetId, {snapshot, sourceMap, diagnostics: planDiagnostics, commitKey, entry}) => {
+        const committed = getText(targetId);
+        let emitted;
+        try {
+            emitted = await client.emit(vm, targetId);
+        } catch (error) {
+            finishWith(targetId, {tag: null, message: {kind: 'applied'}});
+            return {canonical: false, ms: null};
+        }
+        if (entry && entry.afterTexts) entry.afterTexts[targetId] = emitted.text;
+        else if (entry && !entry.afterText) entry.afterText = emitted.text;
+        const now = getText(targetId) || committed;
+        const theirs = {text: emitted.text, units: unitsOf(emitted.sourceMap)};
+        const canonical = now.doc === snapshot && emitted.tag && emitted.tag.changeKey === commitKey;
+        let doc = emitted.text;
+        let units = theirs.units;
+        let conflicts = [];
+        let diagnostics = [];
+        if (!canonical) {
+            const base = {text: snapshot, units: unitsOf(sourceMap)};
+            const mineUnits = now.pendingChanges ? mapUnits(base.units, now.pendingChanges) : base.units;
+            const merged = rebase({base, theirs, mine: {text: now.doc, units: mineUnits}});
+            doc = merged.text;
+            units = merged.units;
+            conflicts = merged.conflicts;
+            diagnostics = mapDiagnostics(planDiagnostics.filter(item => item.severity !== 'error'),
+                now.pendingChanges);
+        }
+        const finished = finishWith(targetId, {
+            doc,
+            units,
+            conflicts,
+            diagnostics,
+            baseline: {text: emitted.text, sourceMap: emitted.sourceMap},
+            tag: emitted.tag,
+            lockedScripts: emitted.lockedScripts || [],
+            unitsVersion: ++unitsClock,
+            message: {kind: 'applied'}
+        });
+        if (finished) persistDraft(targetId, finished);
+        return {canonical, ms: emitted.ms};
     };
 
     const apply = async targetId => {
@@ -289,45 +345,137 @@ const createTextController = ({vm, client = getFractchClient()}) => {
                 text: outcome.message}});
             return outcome;
         }
-        const committed = getText(targetId);
-        let emitted;
+        const settled = await settleApplied(targetId, {
+            snapshot,
+            sourceMap: plan.built.sourceMap,
+            diagnostics: plan.diagnostics,
+            commitKey: outcome.commitKey,
+            entry: outcome.entry
+        });
+        return {...outcome, canonical: settled.canonical, timings: {build: plan.built.ms, emit: settled.ms}};
+    };
+
+    const applyAllTargets = () => appliableTargetIds().filter(id => {
+        const target = vm.runtime.getTargetById(id);
+        return Boolean(target && target.isOriginal);
+    });
+
+    const finishAll = (ids, patchFor) => {
+        for (const id of ids) finishWith(id, patchFor(id));
+    };
+
+    const applyAll = async () => {
+        let ids = applyAllTargets();
+        if (!ids.length) return {status: 'clean'};
+        if (ids.some(id => getText(id).applying)) return {status: 'busy'};
+        if (isCollaborating(vm)) {
+            for (const id of ids) {
+                setMessage(id, {kind: 'refused', reason: 'collaboration', text: REFUSAL.collaboration});
+            }
+            return {status: 'refused', reason: 'collaboration'};
+        }
+        for (const id of ids) {
+            if (!isStale(id)) continue;
+            const state = await regenerate(id);
+            if (!state || state.status !== 'ready') return {status: 'unavailable', targetId: id};
+        }
+        ids = ids.filter(id => isDirty(getText(id)) && !getText(id).draft);
+        const conflicted = ids.filter(id => (getText(id).conflicts || []).length);
+        if (conflicted.length) return {status: 'conflict', targetIds: conflicted};
+        if (ids.length < 2) return ids.length ? apply(ids[0]) : {status: 'clean'};
+        const files = ids.map(id => {
+            const state = getText(id);
+            const info = targetInfo(vm, id);
+            return {
+                targetId: id,
+                name: info ? info.targetName : id,
+                text: state.doc,
+                previous: state.baseline,
+                lockedScripts: state.lockedScripts
+            };
+        });
+        for (const file of files) {
+            const state = getText(file.targetId);
+            setText(file.targetId, {...state, applying: true, pendingChanges: ChangeSet.empty(file.text.length)});
+        }
+        let plan;
         try {
-            emitted = await client.emit(vm, targetId);
+            plan = await prepareApplyAll({vm, client, files});
         } catch (error) {
-            finishWith(targetId, {tag: null, message: {kind: 'applied'}});
+            const text = (error && error.message) || String(error);
+            finishAll(ids, () => ({message: {kind: 'refused', text}}));
+            return {status: 'refused', reason: 'error'};
+        }
+        if (plan.status === 'invalid') {
+            const blocked = plan.files.filter(file => file.diagnostics.some(item => item.severity === 'error'))
+                .map(file => file.name);
+            for (const file of plan.files) {
+                const current = getText(file.targetId);
+                const failed = blocked.includes(file.name);
+
+                finishWith(file.targetId, {
+                    diagnostics: mapDiagnostics(file.diagnostics, current.pendingChanges),
+                    message: failed ? null : {
+                        kind: 'refused',
+                        reason: 'applyAllBlocked',
+                        values: {files: blocked.join(', ')}
+                    }
+                });
+            }
+            return {status: 'invalid', files: plan.files};
+        }
+        if (plan.status === 'refused') {
+            finishAll(ids, () => ({message: {kind: 'refused', reason: plan.reason, text: plan.message}}));
+            return plan;
+        }
+        const outcome = await commitApplyAll(plan, {
+            vm,
+            client,
+            title: options.title ? options.title() : null,
+            confirmImpact: options.confirmImpactAll || options.confirmImpact,
+            confirmBackupFailure: options.confirmBackupFailure
+        });
+        if (outcome.status === 'failed') {
+            finishAll(ids, id => {
+                if (id !== outcome.targetId) {
+                    return {message: {
+                        kind: 'refused',
+                        reason: 'applyAllFailed',
+                        values: {file: outcome.fileName}
+                    }};
+                }
+                const current = getText(id);
+                const patch = {message: {
+                    kind: 'refused',
+                    reason: 'applyAllFailedHere',
+                    values: {reason: outcome.message}
+                }};
+                if (outcome.diagnostics) {
+                    patch.diagnostics = mapDiagnostics(outcome.diagnostics, current.pendingChanges);
+                }
+                return patch;
+            });
             return outcome;
         }
-        if (outcome.entry && !outcome.entry.afterText) outcome.entry.afterText = emitted.text;
-        const now = getText(targetId) || committed;
-        const theirs = {text: emitted.text, units: unitsOf(emitted.sourceMap)};
-        const canonical = now.doc === snapshot && emitted.tag && emitted.tag.changeKey === outcome.commitKey;
-        let doc = emitted.text;
-        let units = theirs.units;
-        let conflicts = [];
-        let diagnostics = [];
-        if (!canonical) {
-            const base = {text: snapshot, units: unitsOf(plan.built.sourceMap)};
-            const mineUnits = now.pendingChanges ? mapUnits(base.units, now.pendingChanges) : base.units;
-            const merged = rebase({base, theirs, mine: {text: now.doc, units: mineUnits}});
-            doc = merged.text;
-            units = merged.units;
-            conflicts = merged.conflicts;
-            diagnostics = mapDiagnostics(plan.diagnostics.filter(item => item.severity !== 'error'),
-                now.pendingChanges);
+        if (outcome.status !== 'committed') {
+            finishAll(ids, () => ({message: {
+                kind: outcome.status === 'cancelled' ? 'cancelled' : 'refused',
+                reason: outcome.reason,
+                text: outcome.message
+            }}));
+            return outcome;
         }
-        const finished = finishWith(targetId, {
-            doc,
-            units,
-            conflicts,
-            diagnostics,
-            baseline: {text: emitted.text, sourceMap: emitted.sourceMap},
-            tag: emitted.tag,
-            lockedScripts: emitted.lockedScripts || [],
-            unitsVersion: ++unitsClock,
-            message: {kind: 'applied'}
-        });
-        if (finished) persistDraft(targetId, finished);
-        return {...outcome, canonical, timings: {build: plan.built.ms, emit: emitted.ms}};
+        for (const file of outcome.files) {
+            const prepared = plan.files.find(item => item.targetId === file.targetId);
+            await settleApplied(file.targetId, {
+                snapshot: prepared.snapshot,
+                sourceMap: (file.built || prepared.built).sourceMap,
+                diagnostics: file.built ? file.built.diagnostics : prepared.diagnostics,
+                commitKey: file.commitKey,
+                entry: outcome.entry
+            });
+        }
+        return outcome;
     };
 
     const resolve = (targetId, key, choice) => {
@@ -381,11 +529,6 @@ const createTextController = ({vm, client = getFractchClient()}) => {
         persistDraft(targetId, next);
     };
 
-    const setMessage = (targetId, message) => {
-        const state = getText(targetId);
-        if (state) setText(targetId, {...state, message});
-    };
-
     const projectLoaded = () => {
         const sync = isCollaborating(vm);
         regenerations.clear();
@@ -409,7 +552,8 @@ const createTextController = ({vm, client = getFractchClient()}) => {
         const event = codeHistoryLastEvent();
         if (!event || event.clock === historyClock) return;
         historyClock = event.clock;
-        setMessage(event.targetId, {kind: event.kind === 'undo' ? 'undid' : 'redid'});
+        const message = {kind: event.kind === 'undo' ? 'undid' : 'redid'};
+        for (const id of event.targetIds || [event.targetId]) setMessage(id, message);
     };
 
     const unsubscribeHistory = subscribeCodeHistory(historyChanged);
@@ -420,6 +564,7 @@ const createTextController = ({vm, client = getFractchClient()}) => {
 
     return {
         apply,
+        applyAll,
         configure,
         discardDraft,
         dispose,

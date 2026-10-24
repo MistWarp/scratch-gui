@@ -35,6 +35,11 @@ const allTexts = () => Array.from(states.entries());
 
 const dirtyTargetIds = () => Array.from(states.keys()).filter(id => isDirty(states.get(id)));
 
+const appliableTargetIds = () => Array.from(states.keys()).filter(id => {
+    const state = states.get(id);
+    return isDirty(state) && !state.draft && state.status === 'ready';
+});
+
 const unappliedFileCount = () => dirtyTargetIds().length + unappliedIds().length + assetDrafts.size;
 
 const hasUnappliedCode = () => dirtyTargetIds().length > 0 || hasUnappliedExtensionEdits() || assetDrafts.size > 0;
@@ -74,6 +79,7 @@ const clearTexts = () => {
 
 export {
     allTexts,
+    appliableTargetIds,
     assetDraftNames,
     clearAssetDrafts,
     clearTexts,
