@@ -147,10 +147,11 @@ describe('opt-in project collaboration', () => {
         const instance = makeCoordinator();
         instance.lease = {id: 'live', projectId: 'p1', branch: 'main', roomId: 'room', host: true};
         instance.props.service.isConnected = true;
-        api.request.mockResolvedValue({session: {id: 'live', members: [
-            {username: 'friend', peerId: 'editor-peer', approved: true},
-            {username: 'student', peerId: 'viewer-peer', approved: true, viewer: true}
-        ]}});
+        api.request.mockResolvedValue({session: {id: 'live',
+            members: [
+                {username: 'friend', peerId: 'editor-peer', approved: true},
+                {username: 'student', peerId: 'viewer-peer', approved: true, viewer: true}
+            ]}});
         await instance.tick();
         expect(instance.props.service.setViewerPeers).toHaveBeenCalledWith(['viewer-peer']);
     });

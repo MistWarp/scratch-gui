@@ -57,9 +57,15 @@ const flush = async wrapper => {
 };
 
 const renderAt = element => mount(
-    <MemoryRouter initialEntries={['/page']} future={ROUTER_FUTURE}>
+    <MemoryRouter
+        initialEntries={['/page']}
+        future={ROUTER_FUTURE}
+    >
         <Routes>
-            <Route path="/page" element={element} />
+            <Route
+                path="/page"
+                element={element}
+            />
         </Routes>
     </MemoryRouter>
 );
@@ -183,7 +189,11 @@ describe('Classroom data downloads', () => {
     test('the download button saves what the API returns', async () => {
         const data = {ok: true, class: {id: 'c1'}};
         const load = jest.fn(() => Promise.resolve(data));
-        const wrapper = mount(<DownloadDataButton filename="class.json" label="Download class data" load={load} />);
+        const wrapper = mount(<DownloadDataButton
+            filename="class.json"
+            label="Download class data"
+            load={load}
+        />);
         await act(async () => {
             wrapper.find('button').simulate('click');
         });
@@ -193,7 +203,11 @@ describe('Classroom data downloads', () => {
 
     test('a failed download explains itself', async () => {
         const load = jest.fn(() => Promise.reject(new Error('class not found')));
-        const wrapper = mount(<DownloadDataButton filename="class.json" label="Download class data" load={load} />);
+        const wrapper = mount(<DownloadDataButton
+            filename="class.json"
+            label="Download class data"
+            load={load}
+        />);
         await act(async () => {
             wrapper.find('button').simulate('click');
         });
