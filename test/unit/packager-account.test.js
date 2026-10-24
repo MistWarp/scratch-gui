@@ -47,6 +47,29 @@ test('account projects wait for verified login and expose identity to both exten
     await expect(runtime.roturHost.call('constructor.constructor', [])).rejects.toThrow('Projects cannot call');
 });
 
+test('the export signs in with a popup and says so when it is closed or blocked', async () => {
+    const sdk = client();
+    sdk.login
+        .mockRejectedValueOnce(Object.assign(new Error('closed'), {code: 'popup_closed'}))
+        .mockRejectedValueOnce(Object.assign(new Error('blocked'), {code: 'popup_blocked'}));
+    const runtime = runtimeFor('mistwarpData_load');
+    const host = createAccountHost(runtime, {title: 'Example'}, clientClass(sdk));
+    const ready = host.prepare();
+    await Promise.resolve();
+    const button = document.querySelector('button');
+    await button.onclick();
+    expect(document.querySelector('[role="alert"]').textContent).toBe('Sign-in was cancelled. Try again when you are ready.');
+    expect(button.disabled).toBe(false);
+    await button.onclick();
+    expect(document.querySelector('[role="alert"]').textContent)
+        .toBe('Your browser blocked the Rotur window. Allow pop-ups for this page and try again.');
+    await button.onclick();
+    await ready;
+    expect(sdk.login).toHaveBeenCalledTimes(3);
+    expect(sdk.login.mock.calls.every(([options]) => options.mode === 'popup')).toBe(true);
+    expect(runtime.roturHost.getUser()).toEqual({loggedIn: true, username: 'player', id: '42'});
+});
+
 test('extensions in an export cannot reach the token or unlisted SDK methods', async () => {
     const sdk = client();
     sdk._http = {getToken: jest.fn(() => 'rotur_export-token')};

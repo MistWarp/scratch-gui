@@ -2175,7 +2175,6 @@
   "No projects matched that search": "No projects matched that search",
   "No people matched that search": "No people matched that search",
   "No studios or challenges matched that search": "No studios or challenges matched that search",
-  "Your current Rotur login is missing the account:profile permission, so your editor activity cannot be shared. Log in again to grant it.": "Your current Rotur login is missing the account:profile permission, so your editor activity cannot be shared. Log in again to grant it.",
   "Reset per-project choices ({value1})": "Reset per-project choices ({value1})",
   "Change username": "Change username",
   "No blocked users": "No blocked users",
@@ -3124,5 +3123,6 @@
   "Scratch": "Scratch",
   "YouTube": "YouTube",
   "{value1} on {value2}": "{value1} on {value2}",
-  "Connections": "Connections"
+  "Connections": "Connections",
+  "Your current Rotur login is missing the status:update permission, so your editor activity cannot be shared. Log in again to grant it.": "Your current Rotur login is missing the status:update permission, so your editor activity cannot be shared. Log in again to grant it."
 }

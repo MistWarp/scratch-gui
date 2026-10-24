@@ -1,0 +1,58 @@
+diff --git a/dist/index.js b/dist/index.js
+index a035eb2..f93110c 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -245,8 +245,22 @@ var RoturSocket = class {
+   }
+   /** Calls the handlers for `cmd`, then the "*" handlers, which get every message. */
+   emit(cmd, msg) {
+-    this.handlers.get(cmd)?.forEach((h) => h(msg));
+-    this.handlers.get("*")?.forEach((h) => h(msg));
++    for (const key of [cmd, "*"]) {
++      const handlers = this.handlers.get(key);
++      handlers?.forEach((h) => {
++        try {
++          h(msg);
++        } catch (error) {
++          if (/dead object/i.test(String(error && error.message))) {
++            handlers.delete(h);
++            return;
++          }
++          setTimeout(() => {
++            throw error;
++          });
++        }
++      });
++    }
+   }
+   send(packet) {
+     if (this.ws?.readyState === WebSocket.OPEN) {
+diff --git a/dist/index.mjs b/dist/index.mjs
+index b632881..ffba57f 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -141,8 +141,22 @@ var RoturSocket = class {
+   }
+   /** Calls the handlers for `cmd`, then the "*" handlers, which get every message. */
+   emit(cmd, msg) {
+-    this.handlers.get(cmd)?.forEach((h) => h(msg));
+-    this.handlers.get("*")?.forEach((h) => h(msg));
++    for (const key of [cmd, "*"]) {
++      const handlers = this.handlers.get(key);
++      handlers?.forEach((h) => {
++        try {
++          h(msg);
++        } catch (error) {
++          if (/dead object/i.test(String(error && error.message))) {
++            handlers.delete(h);
++            return;
++          }
++          setTimeout(() => {
++            throw error;
++          });
++        }
++      });
++    }
+   }
+   send(packet) {
+     if (this.ws?.readyState === WebSocket.OPEN) {
