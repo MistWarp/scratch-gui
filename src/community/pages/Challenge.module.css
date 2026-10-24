@@ -723,7 +723,7 @@
     max-width: 100%;
     padding: 0 4px;
     overflow: hidden;
-    color: var(--accent);
+    color: var(--accent-strong);
     font-size: var(--fs-2xs);
     font-weight: 700;
     text-overflow: ellipsis;

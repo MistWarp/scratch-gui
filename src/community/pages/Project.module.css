@@ -819,7 +819,7 @@
 .releaseChannel {
     padding: 4px 7px;
     border-radius: var(--radius-2xs);
-    color: var(--accent);
+    color: var(--accent-strong);
     background: color-mix(in srgb, var(--accent) 11%, transparent);
     font-size: var(--fs-xs);
 }

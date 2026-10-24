@@ -1,3 +1,4 @@
+import * as accentMistWarp from './accent/mistwarp';
 import * as accentPurple from './accent/purple';
 import * as accentBlue from './accent/blue';
 import * as accentRed from './accent/red';
@@ -30,7 +31,14 @@ import * as accentVaporwave from './accent/vaporwave';
 import * as accentMatrix from './accent/matrix';
 import * as accentHoney from './accent/honey';
 
+// The first accent is the default.
 const ACCENTS = [
+    {
+        name: 'MistWarp',
+        accent: accentMistWarp,
+        description: 'The lilac from the MistWarp logo',
+        id: 'mw.accent.mistwarp'
+    },
     {
         name: 'Red',
         accent: accentRed,
@@ -222,7 +230,7 @@ const ACCENTS = [
 const ACCENT_GROUPS = [
     {
         label: {id: 'mw.accentGroup.colors', defaultMessage: 'Colors'},
-        accents: ['red', 'orange', 'yellow', 'green', 'purple', 'blue', 'pink']
+        accents: ['mistwarp', 'red', 'orange', 'yellow', 'green', 'purple', 'blue', 'pink']
     },
     {
         label: {id: 'mw.accentGroup.pride', defaultMessage: 'Pride'},

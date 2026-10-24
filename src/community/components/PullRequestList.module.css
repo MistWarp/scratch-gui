@@ -59,7 +59,7 @@
 }
 
 .title:hover {
-    color: var(--accent);
+    color: var(--accent-strong);
 }
 
 .meta {
@@ -100,7 +100,7 @@
     padding: 2px 8px;
     border-radius: var(--radius-2xs);
     background: var(--accent-soft);
-    color: var(--accent);
+    color: var(--accent-strong);
     font-weight: 600;
 }
 

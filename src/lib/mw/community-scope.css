@@ -1,6 +1,6 @@
 .scope {
     --accent: var(--looks-secondary, hsl(260, 60%, 60%));
-    --accent-strong: var(--looks-secondary, var(--accent));
+    --accent-strong: var(--accent-text, var(--looks-secondary, var(--accent)));
     --accent-dim: var(--looks-secondary-dark, var(--accent));
     --accent-soft: var(--looks-light-transparent, rgba(133, 92, 214, 0.15));
     --accent-softer: var(--looks-light-transparent, rgba(133, 92, 214, 0.08));

@@ -13,7 +13,7 @@ exports[`IconButtonComponent matches snapshot 1`] = `
     src="imgSrc"
     theme={
       Theme {
-        "accent": "red",
+        "accent": "mistwarp",
         "appearance": {},
         "blocks": "three",
         "fonts": {

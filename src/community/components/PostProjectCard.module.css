@@ -28,7 +28,7 @@
     overflow: hidden;
     border-radius: var(--radius-xs);
     background: var(--bg-field);
-    color: var(--accent);
+    color: var(--accent-strong);
 }
 
 .thumb img {
@@ -39,7 +39,7 @@
 }
 
 .placeholder {
-    color: var(--accent);
+    color: var(--accent-strong);
     font-size: var(--fs-md);
     font-weight: 700;
     opacity: 0.6;

@@ -44,7 +44,7 @@
 
 .handle,
 .cardType {
-    color: var(--accent);
+    color: var(--accent-strong);
     font-size: var(--fs-sm);
     font-weight: 700;
     text-transform: none;
@@ -150,7 +150,7 @@
     padding: 9px 10px;
     border-radius: var(--radius-xs);
     background: var(--accent-softer);
-    color: var(--accent);
+    color: var(--accent-strong);
     font-size: var(--fs-sm);
     font-weight: 700;
 }
@@ -174,7 +174,7 @@
 
 .externalLinks a:hover,
 .dataCard a:hover {
-    color: var(--accent);
+    color: var(--accent-strong);
 }
 
 .memberGrid {

@@ -54,7 +54,7 @@
 .thumb span {
     font-size: var(--fs-3xl);
     font-weight: 700;
-    color: var(--accent);
+    color: var(--accent-strong);
     opacity: 0.5;
     text-transform: none;
 }
