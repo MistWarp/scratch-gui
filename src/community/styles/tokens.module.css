@@ -1,4 +1,4 @@
-:where(.root) {
+:root:where(.root) {
     --accent: var(--looks-secondary, hsl(260, 60%, 60%));
     --accent-strong: var(--accent-text, var(--looks-secondary, var(--accent)));
     --accent-dim: var(--looks-secondary-dark, var(--accent));

@@ -149,7 +149,12 @@ test('added costumes come with their bytes so the diff can show them', async () 
     expect(costume.old).toBeNull();
     expect(new TextDecoder().decode(costume.new)).toBe(SVG);
     expect(costume.mediaType).toBe('image/svg+xml');
-    expect(result.diff).toContain('diff --mwp a/Cat/assets/dot.svg b/Cat/assets/dot.svg\nBinary file changed');
+    expect(result.diff).toContain([
+        'diff --mwp a/Cat/assets/dot.svg b/Cat/assets/dot.svg',
+        '--- /dev/null',
+        '+++ b/Cat/assets/dot.svg',
+        'Binary file changed'
+    ].join('\n'));
 });
 
 test('uncommitted changes are compared with the last commit', async () => {

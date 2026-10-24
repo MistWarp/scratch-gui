@@ -2,7 +2,7 @@ import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React, {Suspense, useMemo} from 'react';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
-import {Download, FilePen, GitCommitHorizontal, History, RotateCcw} from 'lucide-react';
+import {Download, FilePen, GitCommitHorizontal, RotateCcw} from 'lucide-react';
 
 import {LANE_WIDTH, PADDING, layoutGraph} from '../../lib/git/graph-layout.js';
 
@@ -139,6 +139,12 @@ const absoluteTime = (locale, timestamp) => {
 
 const authorOf = commit => (commit && commit.author && commit.author.name) || '';
 const timestampOf = commit => (commit && commit.author && commit.author.timestamp) || 0;
+
+const bylineOf = (t, locale, commit) => {
+    const time = relativeTime(locale, timestampOf(commit));
+    const author = authorOf(commit);
+    return author ? t(messages.byline, {author, time}) : time;
+};
 
 const Lanes = ({layout, headOid, top}) => {
     if (!layout.rows.length) return null;
@@ -319,10 +325,7 @@ const HistoryView = props => {
                 {body ? <p className={styles.detailBody}>{body}</p> : null}
                 <div className={styles.detailMeta}>
                     <span title={absoluteTime(locale, timestampOf(commit))}>
-                        {t(messages.byline, {
-                            author: authorOf(commit),
-                            time: relativeTime(locale, timestampOf(commit))
-                        })}
+                        {bylineOf(t, locale, commit)}
                     </span>
                     <code className={styles.hash}>{selectedNode.oid.slice(0, 7)}</code>
                     {olderNodes.length ? (
@@ -354,21 +357,9 @@ const HistoryView = props => {
     return (
         <div className={styles.history}>
             <section
-                aria-labelledby="mw-history-heading"
+                aria-label={t(messages.heading)}
                 className={styles.listPane}
             >
-                <div className={styles.listHeader}>
-                    <History
-                        aria-hidden="true"
-                        size={16}
-                    />
-                    <h2
-                        className={styles.listHeading}
-                        id="mw-history-heading"
-                    >
-                        {t(messages.heading)}
-                    </h2>
-                </div>
                 {nodes.length || showWorktree ? (
                     <div className={styles.listScroll}>
                         <div
@@ -385,6 +376,7 @@ const HistoryView = props => {
                                     <li style={{height: ROW_HEIGHT}}>
                                         <button
                                             aria-pressed={selection && selection.kind === 'worktree'}
+                                            disabled={busy}
                                             className={classNames(styles.row, styles.worktreeRow, {
                                                 [styles.rowSelected]: selection && selection.kind === 'worktree'
                                             })}
@@ -440,10 +432,7 @@ const HistoryView = props => {
                                                     className={styles.rowMeta}
                                                     title={absoluteTime(locale, timestampOf(commit))}
                                                 >
-                                                    {t(messages.byline, {
-                                                        author: authorOf(commit),
-                                                        time: relativeTime(locale, timestampOf(commit))
-                                                    })}
+                                                    {bylineOf(t, locale, commit)}
                                                 </span>
                                             </button>
                                         </li>

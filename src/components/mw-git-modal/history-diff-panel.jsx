@@ -3,7 +3,7 @@ import React, {useCallback} from 'react';
 
 import DiffView from '../../community/components/DiffView.jsx';
 import {CommunityIntlProvider} from '../../community/i18n.jsx';
-import tokenStyles from '../../community/styles/tokens.module.css';
+import scopeStyles from '../../lib/mw/community-scope.css';
 
 import styles from './history-view.css';
 
@@ -14,7 +14,7 @@ const HistoryDiffPanel = ({assets, diff, fileTexts, locale}) => {
         return Promise.resolve(bytes && bytes.length ? {bytes, mediaType: asset.mediaType || ''} : null);
     }, [assets]);
     return (
-        <div className={`${tokenStyles.root} ${styles.diffScope}`}>
+        <div className={`${scopeStyles.scope} ${styles.diffScope}`}>
             <CommunityIntlProvider
                 embedded
                 locale={locale}
