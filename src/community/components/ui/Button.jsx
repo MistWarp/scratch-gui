@@ -23,8 +23,16 @@ const Button = ({as: Component, busy, busyLabel, children, className, disabled, 
         aria-busy={busy || null}
         {...props}
     >
-        {busy ? <span className={styles.busyIndicator} aria-hidden="true" /> : null}
-        {busy && busyLabel ? busyLabel : children}
+        <span
+            className={classNames(styles.busyIndicator, {[styles.idle]: !busy})}
+            aria-hidden="true"
+        />
+        {busyLabel ? (
+            <>
+                <span className={classNames(styles.content, {[styles.idle]: busy})}>{children}</span>
+                {busy ? <span className={styles.content}>{busyLabel}</span> : null}
+            </>
+        ) : children}
     </Component>
 );
 

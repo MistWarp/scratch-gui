@@ -28,7 +28,12 @@ class ProjectRealtime {
     connect () {
         if (typeof WebSocket === 'undefined' || this.socket || !this.projects.size) return;
         this.closing = false;
-        const socket = new WebSocket(SOCKET_URL);
+        let socket;
+        try {
+            socket = new WebSocket(SOCKET_URL);
+        } catch (e) {
+            return;
+        }
         this.socket = socket;
         socket.addEventListener('open', () => this.onOpen(socket));
         socket.addEventListener('message', event => this.onMessage(socket, event.data));

@@ -23,7 +23,8 @@
     font-size: var(--fs-sm);
 }
 
-.button > svg {
+.button > svg,
+.content > svg {
     flex-shrink: 0;
 }
 
@@ -44,6 +45,15 @@
     border-inline-end-color: transparent;
     border-radius: 50%;
     animation: spin 650ms linear infinite;
+}
+
+.content {
+    all: inherit !important;
+    display: contents !important;
+}
+
+.idle {
+    display: none !important;
 }
 
 .secondary {

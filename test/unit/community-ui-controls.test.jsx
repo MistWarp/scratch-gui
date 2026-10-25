@@ -5,6 +5,17 @@ import Button from '../../src/community/components/ui/Button.jsx';
 import IconButton from '../../src/community/components/ui/IconButton.jsx';
 import {Switch, SwitchRow} from '../../src/community/components/ui/Switch.jsx';
 
+const translatePage = node => {
+    const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+    const texts = [];
+    while (walker.nextNode()) texts.push(walker.currentNode);
+    texts.forEach(text => {
+        const font = document.createElement('font');
+        font.textContent = text.textContent;
+        text.parentNode.replaceChild(font, text);
+    });
+};
+
 describe('community UI controls', () => {
     test('button disables itself and shows its busy label while working', () => {
         const button = shallow(
@@ -14,10 +25,41 @@ describe('community UI controls', () => {
             >Save</Button>
         );
 
+        const visible = button.find('span').filterWhere(span => !/idle/.test(span.prop('className')));
+
         expect(button.prop('disabled')).toBe(true);
         expect(button.prop('aria-busy')).toBe(true);
-        expect(button.text()).toContain('Saving…');
-        expect(button.text()).not.toContain('Save');
+        expect(visible.map(span => span.text()).join('')).toBe('Saving…');
+    });
+
+    test('button survives a page translator replacing its label text', () => {
+        const container = document.createElement('div');
+        document.body.appendChild(container);
+        const button = mount(
+            <Button busyLabel="Loading…">Load more</Button>,
+            {attachTo: container}
+        );
+        translatePage(button.getDOMNode());
+
+        expect(() => button.setProps({busy: true})).not.toThrow();
+        expect(() => button.setProps({busy: false})).not.toThrow();
+        button.unmount();
+        container.remove();
+    });
+
+    test('button with an icon survives a page translator while it swaps to its busy label', () => {
+        const container = document.createElement('div');
+        document.body.appendChild(container);
+        const button = mount(
+            <Button busyLabel="Sending…"><svg />Send request</Button>,
+            {attachTo: container}
+        );
+        translatePage(button.getDOMNode());
+
+        expect(() => button.setProps({busy: true})).not.toThrow();
+        expect(() => button.setProps({busy: false})).not.toThrow();
+        button.unmount();
+        container.remove();
     });
 
     test('button keeps an explicit submit type', () => {
