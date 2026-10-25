@@ -7,6 +7,7 @@ import {injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
 import {EditorView} from '@codemirror/view';
 import {Transaction} from '@codemirror/state';
+import {redo as redoText, redoDepth, undo as undoText, undoDepth} from '@codemirror/commands';
 import {
     ArrowLeftRight,
     BookOpen,
@@ -102,7 +103,9 @@ import {
     isDirty,
     subscribeTexts
 } from '../lib/code-mode/text-store.js';
-import {latestRedo, subscribeCodeHistory} from '../lib/code-mode/code-history.js';
+import {latestRedo, latestUndo, subscribeCodeHistory} from '../lib/code-mode/code-history.js';
+import {setTextUndoProvider} from '../lib/code-mode/undo-scope.js';
+import {isCollaborating as isCodeLocked} from '../lib/code-mode/apply-pipeline.js';
 import {codeUnitsExtension, setRunning, setUnits} from '../lib/code-mode/editor-units.js';
 import {createDebugBridge} from '../lib/code-mode/debug-bridge.js';
 import {
@@ -382,6 +385,9 @@ class CodeWorkbench extends React.Component {
             return tab ? tab.targetId : null;
         });
         this.textKeymap = [
+            {key: 'Mod-z', run: view => this.handleTextHistory(view, 'undo')},
+            {key: 'Mod-y', mac: 'Mod-Shift-z', run: view => this.handleTextHistory(view, 'redo')},
+            {key: 'Mod-Shift-z', run: view => this.handleTextHistory(view, 'redo')},
             {key: 'F12', run: () => this.handleGoToDefinition()},
             {key: 'Shift-F12', run: () => this.handleFindReferences()},
             {key: 'F2', run: () => this.handleRenameSymbol()}
@@ -436,6 +442,7 @@ class CodeWorkbench extends React.Component {
     }
     componentDidMount () {
         const {vm} = this.props;
+        this.releaseTextUndo = setTextUndoProvider(() => this.textUndoState());
         this.uninstallKeyScope = installKeyScope(document);
         this.assets.attach();
         vm.runtime.on('PROJECT_CHANGED', this.handleProjectChanged);
@@ -526,6 +533,7 @@ class CodeWorkbench extends React.Component {
     }
     componentWillUnmount () {
         const {vm} = this.props;
+        if (this.releaseTextUndo) this.releaseTextUndo();
         clearTimeout(this.regenerateTimer);
         this.assets.detach();
         vm.runtime.off('PROJECT_CHANGED', this.handleProjectChanged);
@@ -1805,6 +1813,48 @@ class CodeWorkbench extends React.Component {
     activeEditorView () {
         return this.groupView(this.state.layout.focused);
     }
+    textUndoState () {
+        const tab = this.activeTab();
+        if (!tab || tab.kind !== 'script') return null;
+        const view = this.activeEditorView();
+        const state = this.textState(tab.targetId);
+        const editable = Boolean(view) && Boolean(state) && state.status === 'ready' && !state.draft &&
+            !this.props.collaborating;
+        return {
+            targetId: tab.targetId,
+            dirty: isDirty(state),
+            canUndo: editable && undoDepth(view.state) > 0,
+            canRedo: editable && redoDepth(view.state) > 0,
+            undo: () => {
+                undoText(view);
+                view.focus();
+            },
+            redo: () => {
+                redoText(view);
+                view.focus();
+            }
+        };
+    }
+    handleTextHistory (view, direction) {
+        const undo = direction === 'undo';
+        if ((undo ? undoDepth : redoDepth)(view.state) > 0) return undo ? undoText(view) : redoText(view);
+        const tab = this.activeTab();
+        if (!tab || tab.kind !== 'script' || isCodeLocked(this.props.vm)) return false;
+        if (isDirty(this.textState(tab.targetId))) return false;
+        const entry = undo ? latestUndo(tab.targetId) : latestRedo(tab.targetId);
+        if (!entry) return false;
+        runCodeHistory({vm: this.props.vm, dispatch: this.props.dispatch, intl: this.props.intl, direction, entry});
+        return true;
+    }
+    historyKeyFor (targetId, state) {
+        if (!this.historyKeys) this.historyKeys = new Map();
+        const kind = state && state.message && state.message.kind;
+        if (state && state.tag && (kind === 'applied' || kind === 'undid' || kind === 'redid')) {
+            const key = `${kind}:${state.tag.changeKey}`;
+            if (this.historyKeys.get(targetId) !== key) this.historyKeys.set(targetId, key);
+        }
+        return this.historyKeys.get(targetId) || null;
+    }
     getCursorBlock () {
         const tab = this.activeTab();
         if (!tab || tab.kind !== 'script') return null;
@@ -2615,6 +2665,7 @@ class CodeWorkbench extends React.Component {
                     extensions={this.extensionsFor(tab.targetId)}
                     focus={focused && focus && focus.targetId === tab.targetId ? focus : null}
                     key={tab.key}
+                    historyKey={this.historyKeyFor(tab.targetId, state)}
                     keymap={this.textKeymap}
                     messages={this.textMessages(tab.targetId, state)}
                     overlay={this.textOverlay(tab.targetId, state)}

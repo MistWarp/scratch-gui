@@ -222,6 +222,7 @@ const TextTab = props => {
                         editable={!props.readOnly}
                         extensions={props.extensions}
                         focus={props.focus}
+                        historyKey={props.historyKey}
                         keymap={props.keymap}
                         language={props.language}
                         readOnly={props.readOnly}
@@ -248,6 +249,7 @@ TextTab.propTypes = {
     extensions: PropTypes.array,
     focus: PropTypes.object,
     intl: intlShape,
+    historyKey: PropTypes.string,
     keymap: PropTypes.arrayOf(PropTypes.object),
     language: PropTypes.string,
     messages: PropTypes.arrayOf(PropTypes.object).isRequired,

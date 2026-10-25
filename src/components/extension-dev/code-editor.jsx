@@ -247,10 +247,11 @@ const isEditable = props => (typeof props.editable === 'boolean' ? props.editabl
 const savedStates = new Map();
 const MAX_SAVED_STATES = 30;
 
-const saveState = (key, view) => {
+const saveState = (key, view, historyKey) => {
     if (!key) return;
     savedStates.delete(key);
     savedStates.set(key, {
+        historyKey,
         json: view.state.toJSON({history: historyField}),
         scrollTop: view.scrollDOM.scrollTop,
         scrollLeft: view.scrollDOM.scrollLeft
@@ -300,6 +301,7 @@ const toCodeMirrorDiagnostics = (doc, diagnostics, onFix) => diagnostics.map(dia
 const CodeEditor = props => {
     const hostRef = useRef(null);
     const viewRef = useRef(null);
+    const historyKey = useRef(props.historyKey);
     const readOnlyCompartment = useRef(new Compartment());
     const syncing = useRef(false);
     const historyCompartment = useRef(new Compartment());
@@ -331,7 +333,8 @@ const CodeEditor = props => {
         let state = null;
         if (saved && saved.json.doc === props.value) {
             try {
-                state = EditorState.fromJSON(saved.json, {extensions}, {history: historyField});
+                const fields = saved.historyKey === historyKey.current ? {history: historyField} : {};
+                state = EditorState.fromJSON(saved.json, {extensions}, fields);
             } catch (e) {
                 state = null;
             }
@@ -351,7 +354,7 @@ const CodeEditor = props => {
         if (callbacks.current.onReady) callbacks.current.onReady(view);
         const key = props.stateKey;
         return () => {
-            saveState(key, view);
+            saveState(key, view, historyKey.current);
             view.destroy();
             viewRef.current = null;
         };
@@ -386,6 +389,14 @@ const CodeEditor = props => {
             syncing.current = false;
         }
     }, [props.value, props.revision, props.documentKey]);
+
+    useEffect(() => {
+        const view = viewRef.current;
+        if (!view || historyKey.current === props.historyKey) return;
+        historyKey.current = props.historyKey;
+        view.dispatch({effects: historyCompartment.current.reconfigure([])});
+        view.dispatch({effects: historyCompartment.current.reconfigure(history())});
+    }, [props.historyKey]);
 
     useEffect(() => {
         const view = viewRef.current;
@@ -467,6 +478,7 @@ CodeEditor.propTypes = {
     focus: PropTypes.object,
     // eslint-disable-next-line react/no-unused-prop-types
     hover: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
+    historyKey: PropTypes.string,
     keymap: PropTypes.arrayOf(PropTypes.object),
     // eslint-disable-next-line react/no-unused-prop-types
     language: PropTypes.oneOf(['javascript', 'fractch', 'json', 'text']),
