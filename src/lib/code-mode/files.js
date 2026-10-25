@@ -2,8 +2,10 @@ import {indexOfItem, itemIdFor} from '../asset-identity.js';
 import {getEntries} from '../extension-dev/session.js';
 import {assetTab, customAssetTab, extensionTab, scriptTab} from './tabs.js';
 import {baseName, folderOf} from './custom-assets.js';
+import {MAIN_FILE, baseName as fileBaseName, folderOfFile, regionFiles} from './file-projection.js';
+import {getText} from './text-store.js';
 
-const SCRIPT_FILE = 'scripts.fractch';
+const SCRIPT_FILE = MAIN_FILE;
 const ASSETS_ROOT = 'Assets';
 
 const customAssetDetail = name => (folderOf(name) ? `${ASSETS_ROOT}/${folderOf(name)}` : ASSETS_ROOT);
@@ -21,6 +23,22 @@ const orderedSprites = (vm, spritesState) => {
 };
 
 const extensionFileName = entry => `${entry.id}.js`;
+
+const sortFiles = names => names.slice().sort((a, b) => a.localeCompare(b, 'en', {sensitivity: 'base'}));
+
+const scriptFiles = targetId => {
+    const state = getText(targetId);
+    if (!state || typeof state.doc !== 'string' || state.status !== 'ready') return null;
+    const exclude = state.pendingRegions && state.pendingRegions.length ? new Set(state.pendingRegions) : null;
+    return sortFiles(regionFiles(state.doc, exclude));
+};
+
+const scriptFileDetail = (target, file) => {
+    const owner = target.isStage ? null : target.getName();
+    const folder = folderOfFile(file);
+    if (!folder) return owner;
+    return owner ? `${owner}/${folder}` : folder;
+};
 
 const itemsOf = (target, kind) => {
     if (!target) return [];
@@ -47,6 +65,11 @@ const resolveTab = (vm, tab, entries) => {
     const target = vm.runtime.getTargetById(tab.targetId);
     if (!target || !target.isOriginal) return {exists: false};
     if (tab.kind === 'script') {
+        if (tab.file) {
+            const files = scriptFiles(target.id);
+            if (files && !files.includes(tab.file)) return {exists: false};
+            return {exists: true, target, title: fileBaseName(tab.file), detail: scriptFileDetail(target, tab.file)};
+        }
         return {exists: true, target, title: SCRIPT_FILE, detail: target.isStage ? null : target.getName()};
     }
     const items = itemsOf(target, tab.kind);
@@ -62,6 +85,14 @@ const listFiles = (vm, spritesState, entries) => {
     for (const target of targets) {
         const owner = target.getName();
         files.push({tab: scriptTab(target.id), title: SCRIPT_FILE, detail: owner, kind: 'script'});
+        for (const file of scriptFiles(target.id) || []) {
+            files.push({
+                tab: scriptTab(target.id, file),
+                title: fileBaseName(file),
+                detail: folderOfFile(file) ? `${owner}/${folderOfFile(file)}` : owner,
+                kind: 'script'
+            });
+        }
         for (const costume of target.getCostumes()) {
             files.push({
                 tab: assetTab('costume', target.id, itemIdFor(costume)),
@@ -131,5 +162,7 @@ export {
     listFiles,
     matchFiles,
     orderedSprites,
-    resolveTab
+    resolveTab,
+    scriptFiles,
+    sortFiles
 };

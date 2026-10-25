@@ -1,4 +1,6 @@
+import {Text} from '@codemirror/state';
 import {findInSourceMap, scriptAtOffset} from './fractch-adapter.js';
+import {toBuffer, toFile} from './file-projection.js';
 import {
     codeDebugExtension,
     displayName,
@@ -44,17 +46,19 @@ const createDebugBridge = host => {
     let lastPausedThread = null;
     const signatures = new WeakMap();
 
-    const syncView = (view, targetId) => {
-        if (!view) return;
+    const syncView = (view, tab) => {
+        if (!view || !tab) return;
+        const targetId = tab.targetId;
         const map = syncedMap(host.textState(targetId));
-        if (!map) return;
+        const projection = host.tabProjection(tab);
+        if (!map || !projection) return;
         const blocks = map.blocks || {};
-        const positions = listBreakpoints().filter(id => blocks[id])
-            .map(id => blocks[id].from);
+        const place = id => (blocks[id] ? toFile(projection, blocks[id].from) : null);
+        const positions = listBreakpoints().map(place)
+            .filter(pos => pos !== null);
         const location = pausedLocation();
-        const paused = location && location.targetId === targetId && blocks[location.blockId] ?
-            blocks[location.blockId].from : null;
-        const signature = `${positions.join(',')}|${paused}`;
+        const paused = location && location.targetId === targetId ? place(location.blockId) : null;
+        const signature = `${tab.key}|${positions.join(',')}|${paused}`;
         if (signatures.get(view) === signature) return;
         signatures.set(view, signature);
         setBreakpointLines(view, positions);
@@ -63,7 +67,7 @@ const createDebugBridge = host => {
 
     const syncActive = () => {
         const tab = host.activeTab();
-        if (tab && tab.kind === 'script') syncView(host.activeEditorView(), tab.targetId);
+        if (tab && tab.kind === 'script') syncView(host.activeEditorView(), tab);
     };
 
     const jumpToPaused = () => {
@@ -107,7 +111,8 @@ const createDebugBridge = host => {
         if (!symbol) return null;
         const target = readTarget(tab.targetId);
         const map = syncedMap(host.textState(tab.targetId));
-        const script = map ? scriptAtOffset(map, pos) : null;
+        const projection = host.tabProjection(tab);
+        const script = map && projection ? scriptAtOffset(map, toBuffer(projection, pos)) : null;
         const locals = script ? scriptLocals(target, script.topId) : [];
         const items = resolveVariables(target, symbol, locals).map(variable => ({
             label: displayName(variable.name),
@@ -121,12 +126,15 @@ const createDebugBridge = host => {
     const onToggleBreakpoint = (view, lineFrom) => {
         const tab = host.activeTab();
         if (!tab || tab.kind !== 'script') return;
-        const map = syncedMap(host.textState(tab.targetId));
-        if (!map) {
+        const state = host.textState(tab.targetId);
+        const map = syncedMap(state);
+        const projection = host.tabProjection(tab);
+        if (!map || !projection) {
             host.showMessage(tab.targetId, intl.formatMessage(messages.breakpointApplyFirst));
             return;
         }
-        const blockId = blockIdAtLine(map, view.state.doc, lineFrom);
+        const doc = projection.file || projection.pieces.length > 1 ? Text.of(state.doc.split('\n')) : view.state.doc;
+        const blockId = blockIdAtLine(map, doc, toBuffer(projection, lineFrom));
         if (blockId) toggleBreakpoint(blockId);
     };
 
@@ -153,8 +161,9 @@ const createDebugBridge = host => {
         const location = pausedLocation();
         let paused = null;
         if (location) {
-            const line = host.blockLine(location.targetId, location.blockId);
-            const script = host.targetLabel(location.targetId);
+            const found = host.blockLocation(location.targetId, location.blockId);
+            const line = found ? found.line : null;
+            const script = host.targetLabel(location.targetId, found ? found.file : null);
             paused = {
                 compiled: location.compiled,
                 compilerOnly: location.compilerOnly,

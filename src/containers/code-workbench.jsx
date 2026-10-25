@@ -6,7 +6,7 @@ import React from 'react';
 import {injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
 import {EditorView} from '@codemirror/view';
-import {Transaction} from '@codemirror/state';
+import {ChangeSet, EditorState, Transaction} from '@codemirror/state';
 import {redo as redoText, redoDepth, undo as undoText, undoDepth} from '@codemirror/commands';
 import {
     ArrowLeftRight,
@@ -22,6 +22,7 @@ import {
     ExternalLink,
     FileInput,
     FilePlus2,
+    Folder,
     FolderOpen,
     GitMerge,
     History,
@@ -101,7 +102,8 @@ import {
     dirtyTargetIds,
     getText,
     isDirty,
-    subscribeTexts
+    subscribeTexts,
+    updateText
 } from '../lib/code-mode/text-store.js';
 import {latestRedo, latestUndo, subscribeCodeHistory} from '../lib/code-mode/code-history.js';
 import {setTextUndoProvider} from '../lib/code-mode/undo-scope.js';
@@ -113,6 +115,7 @@ import {
     confirmExtensionImpact,
     confirmImpact,
     confirmImpactAll,
+    ask,
     refusalText,
     promptText,
     runCodeHistory
@@ -138,8 +141,37 @@ import {
     itemsOf,
     listFiles,
     orderedSprites,
-    resolveTab
+    resolveTab,
+    scriptFiles
 } from '../lib/code-mode/files.js';
+import {
+    addFileText,
+    applyChanges,
+    applyEdit,
+    baseName as codeFileName,
+    cachedProjection,
+    diffChanges,
+    fileAt,
+    fileColumn,
+    fileHasContent,
+    fileLine,
+    fileTitle,
+    folderOfFile,
+    followLayout,
+    guardMainChanges,
+    pinLayout,
+    projectFile,
+    protectedBreaks,
+    rangeToFile,
+    regionFiles,
+    removeFileText,
+    renameFileText,
+    scanRegions,
+    toBuffer,
+    toFile,
+    unpinLayouts,
+    validateFileName
+} from '../lib/code-mode/file-projection.js';
 import {
     assetTab,
     closeOtherTabs,
@@ -152,6 +184,7 @@ import {
     pruneTabs,
     referenceTab,
     removeExtensionsTab,
+    renameTab,
     replaceTab,
     saveSession,
     scriptTab
@@ -270,6 +303,25 @@ const quietReplace = (view, next) => {
     });
 };
 
+const FILE_ERRORS = {
+    empty: messages.codeFileEmpty,
+    invalid: messages.codeFileInvalid,
+    reserved: messages.codeFileReserved,
+    taken: messages.codeFileTaken,
+    folderCase: messages.codeFileFolderCase
+};
+
+const tabFile = tab => (tab && tab.kind === 'script' && tab.file) || null;
+
+const excludeOf = state => (state && state.pendingRegions && state.pendingRegions.length ?
+    new Set(state.pendingRegions) : null);
+
+const projectionOf = (state, file) => (state && state.status === 'ready' && typeof state.doc === 'string' ?
+    cachedProjection(state.doc, file, excludeOf(state)) : null);
+
+const fileOfDiagnostic = (state, item) => (typeof item.from === 'number' ?
+    fileAt(state.doc, item.from, excludeOf(state)) : null);
+
 const severityCounts = diagnostics => {
     let errors = 0;
     let warnings = 0;
@@ -383,6 +435,10 @@ class CodeWorkbench extends React.Component {
         this.completion = fractchCompletionSource(() => this.props.vm, () => {
             const tab = this.activeTab();
             return tab ? tab.targetId : null;
+        }, () => {
+            const tab = this.activeTab();
+            const state = tab && tab.kind === 'script' ? this.textState(tab.targetId) : null;
+            return state && typeof state.doc === 'string' ? state.doc : null;
         });
         this.textKeymap = [
             {key: 'Mod-z', run: view => this.handleTextHistory(view, 'undo')},
@@ -403,14 +459,18 @@ class CodeWorkbench extends React.Component {
         this.controller = getTextController(props.vm);
         this.textExtensions = new Map();
         this.pushedUnits = new WeakMap();
+        this.diagnosticCache = new WeakMap();
+        this.deletedFiles = new Map();
+        this.focusCache = null;
         this.debug = createDebugBridge({
             vm: props.vm,
             intl: props.intl,
             activeTab: () => this.activeTab(),
             activeEditorView: () => this.activeEditorView(),
             textState: targetId => this.textState(targetId),
-            targetLabel: targetId => this.targetLabel(targetId),
-            blockLine: (targetId, blockId) => this.blockLine(targetId, blockId),
+            targetLabel: (targetId, file) => this.targetLabel(targetId, file),
+            blockLocation: (targetId, blockId) => this.blockLocation(targetId, blockId),
+            tabProjection: tab => this.tabProjection(tab),
             jumpTo: jump => this.jumpTo(jump),
             showMessage: (targetId, text) => this.showMessage(targetId, text),
             openWatch: () => {
@@ -525,9 +585,15 @@ class CodeWorkbench extends React.Component {
             saveSession(this.state.projectKey, {layout: this.state.layout, expanded: this.state.expanded});
         }
         if (activeId(this.state.layout) !== activeId(prevState.layout)) {
+            this.acceptPendingRegions();
             this.afterTabsChange({focus: true});
         }
-        if (this.state.textsVersion !== prevState.textsVersion) this.applyPendingFocus();
+        if (this.state.textsVersion !== prevState.textsVersion) {
+            this.applyPendingFocus();
+            const known = tab => this.fileTabKnown(tab);
+            this.updateLayout(layout => mapGroups(layout, group => pruneTabs(group, known)));
+        }
+        this.loadExpandedTexts();
         this.syncAssetEditor();
         this.syncActiveView();
     }
@@ -607,29 +673,229 @@ class CodeWorkbench extends React.Component {
     }
     handleTextsChanged () {
         if (this.unmounted) return;
+        const texts = allTexts();
+        unpinLayouts(new Set(texts.map(([id]) => id)));
+        for (const [id, state] of texts) {
+            if (state.status === 'ready' && typeof state.doc === 'string') followLayout(id, state.doc);
+        }
         this.setState(state => ({textsVersion: state.textsVersion + 1}));
     }
     textState (targetId) {
         return targetId ? getText(targetId) : null;
     }
-    cmUnits (state) {
+    cmUnits (state, projection) {
         const {intl} = this.props;
         const units = (state && state.units) || {};
+        const place = range => (range && projection ? rangeToFile(projection, range.from, range.to) : null);
         const lockedIds = new Set();
         const locked = [];
         for (const item of (state && state.lockedScripts) || []) {
             const range = units[`script:${item.topId}`];
             if (!range) continue;
             lockedIds.add(item.topId);
+            const placed = place(range);
+            if (!placed) continue;
             const reason = intl.formatMessage(messages.lockedReason);
-            locked.push({...range, topId: item.topId, reason: item.reason ? `${reason} (${item.reason})` : reason});
+            locked.push({...placed, topId: item.topId, reason: item.reason ? `${reason} (${item.reason})` : reason});
         }
         const runs = [];
         for (const key of Object.keys(units)) {
             if (unitKind(key) !== 'script' || lockedIds.has(unitId(key))) continue;
-            runs.push({...units[key], topId: unitId(key)});
+            const placed = place(units[key]);
+            if (placed) runs.push({...placed, topId: unitId(key)});
         }
         return {locked, runs};
+    }
+    tabProjection (tab) {
+        if (!tab || tab.kind !== 'script') return null;
+        return projectionOf(this.textState(tab.targetId), tabFile(tab));
+    }
+    fileTabAt (targetId, pos) {
+        const state = this.textState(targetId);
+        const ready = state && typeof state.doc === 'string' && typeof pos === 'number';
+        return scriptTab(targetId, ready ? fileAt(state.doc, pos, excludeOf(state)) : null);
+    }
+    focusBuffer (targetId, from, to = from) {
+        const tab = this.fileTabAt(targetId, from);
+        this.openFile(tab, {preview: false});
+        this.setState({focus: {targetId, file: tabFile(tab), from, to, at: Date.now()}});
+    }
+    fileFocus (tab, projection) {
+        const focus = this.state.focus;
+        if (!focus || !projection || focus.targetId !== tab.targetId || (focus.file || null) !== tabFile(tab)) {
+            return null;
+        }
+        const cached = this.focusCache;
+        if (cached && cached.at === focus.at && cached.key === tab.key) return cached.value;
+        const start = toFile(projection, focus.from, {clamp: true});
+        const range = rangeToFile(projection, focus.from, focus.to) || {from: start, to: start};
+        const value = {from: range.from, to: range.to, at: focus.at};
+        this.focusCache = {at: focus.at, key: tab.key, value};
+        return value;
+    }
+    fileDiagnostics (state, tab, projection) {
+        const list = (state && state.diagnostics) || EMPTY;
+        if (!list.length || !projection) return EMPTY;
+        let byTab = this.diagnosticCache.get(list);
+        if (!byTab) {
+            byTab = new Map();
+            this.diagnosticCache.set(list, byTab);
+        }
+        const hit = byTab.get(tab.key);
+        if (hit && hit.projection === projection) return hit.value;
+        const file = tabFile(tab);
+        const value = [];
+        for (const item of list) {
+            if (typeof item.from !== 'number') {
+                if (!file) value.push(item);
+                continue;
+            }
+            if (fileOfDiagnostic(state, item) !== file) continue;
+            const start = toFile(projection, item.from, {clamp: true});
+            const range = rangeToFile(projection, item.from, typeof item.to === 'number' ? item.to : item.from) ||
+                {from: start, to: start};
+            value.push({
+                ...item,
+                from: range.from,
+                to: range.to,
+                line: fileLine(projection, range.from),
+                column: fileColumn(projection, range.from)
+            });
+        }
+        byTab.set(tab.key, {projection, value});
+        return value;
+    }
+    fileDirty (tab) {
+        const state = this.textState(tab.targetId);
+        if (!isDirty(state)) return false;
+        if (state.draft || !state.baseline || typeof state.doc !== 'string') return true;
+        const file = tabFile(tab);
+        const mine = cachedProjection(state.doc, file, excludeOf(state));
+        const base = cachedProjection(state.baseline.text, file);
+        if (!mine || !base) return Boolean(mine);
+        return mine.text !== base.text;
+    }
+    fileTabKnown (tab) {
+        if (tab.kind !== 'script' || !tab.file) return true;
+        if (resolveTab(this.props.vm, tab, this.state.entries).exists) return true;
+        const state = this.textState(tab.targetId);
+        return Boolean(state && state.baseline && regionFiles(state.baseline.text).includes(tab.file));
+    }
+    pendingAfterEdit (groupId, before, nextText) {
+        const exclude = excludeOf(before);
+        const known = new Set(regionFiles(before.doc));
+        const candidates = scanRegions(nextText)
+            .filter(region => (exclude && exclude.has(region.name)) || !known.has(region.name));
+        if (!candidates.length) return [];
+        const view = this.groupView(groupId);
+        if (!view) return [];
+        if (view.state.selection.ranges.some(range => !range.empty)) return candidates.map(region => region.name);
+        const provisional = projectFile(nextText, null, new Set(candidates.map(region => region.name)));
+        const head = toBuffer(provisional, view.state.selection.main.head);
+        return candidates.filter(region => head >= region.from && head < region.to).map(region => region.name);
+    }
+    setPendingRegions (targetId, names, options) {
+        const state = this.textState(targetId);
+        const before = (state && state.pendingRegions) || EMPTY;
+        if (before.length === names.length && before.every((name, index) => name === names[index])) return false;
+        updateText(targetId, {pendingRegions: names.length ? names : null}, options);
+        return true;
+    }
+    acceptPendingRegions (targetId = null) {
+        for (const [id, state] of allTexts()) {
+            if ((targetId === null || id === targetId) && state.pendingRegions && state.pendingRegions.length) {
+                this.convertPending(id, EMPTY);
+            }
+        }
+    }
+    mainViewsOf (targetId) {
+        return this.state.layout.groups.filter(group => {
+            const tab = activeTabOf(group);
+            return tab && tab.kind === 'script' && tab.targetId === targetId && !tab.file;
+        })
+            .map(group => this.groupView(group.id))
+            .filter(Boolean);
+    }
+    convertPending (targetId, keep) {
+        const state = this.textState(targetId);
+        const before = (state && state.pendingRegions) || EMPTY;
+        const converted = before.filter(name => !keep.includes(name));
+        if (!converted.length) return;
+        const oldProjection = cachedProjection(state.doc, null, new Set(before));
+        const newProjection = cachedProjection(state.doc, null, keep.length ? new Set(keep) : null);
+        const oldText = oldProjection.text;
+        const ranges = newProjection.pieces.filter(piece => piece.gapAfter &&
+            piece.gapAfter.regions.some(region => converted.includes(region.name)))
+            .map(piece => ({
+                from: toFile(oldProjection, piece.gapAfter.hiddenFrom, {clamp: true}),
+                to: toFile(oldProjection, piece.gapAfter.hiddenTo, {clamp: true})
+            }));
+        let changes = ChangeSet.of(ranges.filter(range => range.to > range.from), oldText.length);
+        if (applyChanges(oldText, changes) !== newProjection.text) changes = diffChanges(oldText, newProjection.text);
+        this.setPendingRegions(targetId, keep, {silent: true});
+        this.converting = true;
+        try {
+            for (const view of this.mainViewsOf(targetId)) {
+                if (view.state.doc.toString() !== oldText) continue;
+                view.dispatch({changes, annotations: Transaction.addToHistory.of(false)});
+            }
+        } finally {
+            this.converting = false;
+        }
+        this.handleTextsChanged();
+    }
+    guardMainTransaction (tr, targetId) {
+        if (!tr.docChanged) return tr;
+        const projection = projectionOf(this.textState(targetId), null);
+        if (!projection || !protectedBreaks(projection).length) return tr;
+        const doc = tr.startState.doc;
+        if (doc.length !== projection.text.length || doc.toString() !== projection.text) return tr;
+        const changes = guardMainChanges(projection, tr.changes);
+        if (!changes) return tr;
+        const userEvent = tr.annotation(Transaction.userEvent);
+        return {
+            changes,
+            selection: tr.startState.selection.map(changes, 1),
+            effects: tr.effects,
+            scrollIntoView: tr.scrollIntoView,
+            annotations: userEvent ? Transaction.userEvent.of(userEvent) : []
+        };
+    }
+    handleSelectionMoved (view, targetId) {
+        const state = this.textState(targetId);
+        if (!state || !state.pendingRegions || !state.pendingRegions.length || this.converting) return;
+        if (!this.mainViewsOf(targetId).includes(view)) return;
+        if (view.state.selection.ranges.some(range => !range.empty)) return;
+        const pending = state.pendingRegions;
+        const projection = cachedProjection(state.doc, null, new Set(pending));
+        const head = toBuffer(projection, view.state.selection.main.head);
+        const keep = scanRegions(state.doc).filter(region => pending.includes(region.name) &&
+            head >= region.from && head < region.to)
+            .map(region => region.name);
+        if (keep.length === pending.length) return;
+        Promise.resolve().then(() => {
+            if (!this.unmounted) this.convertPending(targetId, keep);
+        });
+    }
+    loadExpandedTexts () {
+        const {vm} = this.props;
+        const key = `${this.state.projectKey}:${this.props.editingTarget}`;
+        if (key !== this.expandedTextsKey || this.state.expanded !== this.expandedTextsState ||
+            this.props.sprites !== this.expandedTextsSprites) {
+            const stage = vm.runtime.getTargetForStage();
+            const targets = (stage ? [stage] : []).concat(orderedSprites(vm, this.props.sprites));
+            this.expandedTextsKey = key;
+            this.expandedTextsState = this.state.expanded;
+            this.expandedTextsSprites = this.props.sprites;
+            this.expandedTargets = targets.filter(target => this.isExpanded(`target:${target.id}`,
+                target.id === this.props.editingTarget)).map(target => target.id);
+        }
+        const active = this.activeTab();
+        const ids = active && active.kind === 'script' ? this.expandedTargets.concat(active.targetId) :
+            this.expandedTargets;
+        for (const id of ids) {
+            if (!getText(id) && vm.runtime.getTargetById(id)) this.controller.refresh(id);
+        }
     }
     extensionsFor (targetId) {
         if (!this.textExtensions.has(targetId)) {
@@ -651,26 +917,30 @@ class CodeWorkbench extends React.Component {
                     showBlock: intl.formatMessage(messages.showBlock),
                     lockedReason: intl.formatMessage(messages.lockedReason)
                 }
-            }), this.debug.extension]);
+            }), this.debug.extension, EditorView.updateListener.of(update => {
+                if (update.selectionSet && !update.docChanged) this.handleSelectionMoved(update.view, targetId);
+            }), EditorState.transactionFilter.of(tr => this.guardMainTransaction(tr, targetId))]);
         }
         return this.textExtensions.get(targetId);
     }
     syncActiveView () {
         for (const group of this.state.layout.groups) {
             const tab = activeTabOf(group);
-            if (tab && tab.kind === 'script') this.pushToView(this.groupView(group.id), this.textState(tab.targetId));
+            if (tab && tab.kind === 'script') this.pushToView(this.groupView(group.id), tab);
         }
     }
-    pushToView (view, state) {
-        if (!view || !state || state.status !== 'ready') return;
-        if (view.state.doc.toString() !== state.doc) quietReplace(view, state.doc);
+    pushToView (view, tab) {
+        const state = this.textState(tab.targetId);
+        const projection = projectionOf(state, tabFile(tab));
+        if (!view || !projection) return;
+        if (view.state.doc.toString() !== projection.text) quietReplace(view, projection.text);
         if (this.pushedUnits.get(view) !== state.unitsVersion) {
             this.pushedUnits.set(view, state.unitsVersion);
-            setUnits(view, this.cmUnits(state));
+            setUnits(view, this.cmUnits(state, projection));
         }
     }
     handleEditorReady (tab, view) {
-        if (tab && tab.kind === 'script') this.pushToView(view, this.textState(tab.targetId));
+        if (tab && tab.kind === 'script') this.pushToView(view, tab);
     }
     handleTextChange (groupId, tab, text, changes) {
         if (!tab || tab.kind !== 'script') return;
@@ -678,14 +948,41 @@ class CodeWorkbench extends React.Component {
         if (group && tab.key === group.previewKey) {
             this.updateLayout(layout => setGroupTabs(layout, groupId, pinTab(groupById(layout, groupId), tab.key)));
         }
-        this.controller.edit(tab.targetId, text, changes);
+        if (this.converting) return;
+        const state = this.textState(tab.targetId);
+        if (!state || state.status !== 'ready' || typeof state.doc !== 'string') return;
+        const result = applyEdit(state.doc, tabFile(tab), text, changes, excludeOf(state));
+        if (!result) return;
+        const pending = tabFile(tab) ? (state.pendingRegions || EMPTY) :
+            this.pendingAfterEdit(groupId, state, result.text);
+        const pendingChanged = this.setPendingRegions(tab.targetId, pending, {silent: true});
+        pinLayout(tab.targetId, result.text);
+        this.controller.edit(tab.targetId, result.text, result.changes);
+        if (pendingChanged) this.handleTextsChanged();
+        const after = cachedProjection(result.text, tabFile(tab), pending.length ? new Set(pending) : null);
+        if (!after || after.text !== text) {
+            Promise.resolve().then(() => this.handleTextsChanged());
+        }
+    }
+    editText (targetId, result) {
+        if (!result) return false;
+        pinLayout(targetId, result.text);
+        this.controller.edit(targetId, result.text, result.changes);
+        this.handleTextsChanged();
+        return true;
     }
     canApplyState (state) {
         return Boolean(state) && state.status === 'ready' && !state.draft && !state.applying &&
             !this.props.collaborating && isDirty(state) && !(state.conflicts && state.conflicts.length);
     }
     handleApply () {
-        this.applyActive();
+        const tab = this.activeTab();
+        return Promise.resolve(this.applyActive()).then(result => {
+            if (tab && tab.kind === 'script' && result && result.status === 'committed') {
+                this.acceptPendingRegions(tab.targetId);
+            }
+            return result;
+        });
     }
     applyAllTargets () {
         return appliableTargetIds().filter(id => Boolean(this.props.vm.runtime.getTargetById(id)));
@@ -703,6 +1000,7 @@ class CodeWorkbench extends React.Component {
             })
             .then(result => {
                 if (this.unmounted || !result) return result;
+                if (result.status === 'committed') this.acceptPendingRegions();
                 if (result.status === 'invalid' || (result.status === 'failed' && result.diagnostics)) {
                     this.handleExtensionShowProblems();
                 }
@@ -840,6 +1138,12 @@ class CodeWorkbench extends React.Component {
             target.setCostume(index);
         }
     }
+    openForFocus (targetId, tab = null) {
+        const state = this.textState(targetId);
+        if (!state || state.status !== 'ready') this.openFile(tab || scriptTab(targetId), {preview: false});
+        else this.controller.refresh(targetId);
+        this.applyPendingFocus();
+    }
     applyPendingFocus () {
         const pending = this.pendingFocus;
         if (!pending) return;
@@ -848,19 +1152,19 @@ class CodeWorkbench extends React.Component {
         this.pendingFocus = null;
         if (script.status !== 'ready') return;
         if (typeof pending.from === 'number') {
-            this.setState({focus: {targetId: pending.targetId, from: pending.from, to: pending.to, at: Date.now()}});
+            this.focusBuffer(pending.targetId, pending.from, pending.to);
             return;
         }
         const exact = this.blockRange(pending.targetId, pending.blockId);
         if (exact) {
-            this.setState({focus: {targetId: pending.targetId, from: exact.from, to: exact.to, at: Date.now()}});
+            this.focusBuffer(pending.targetId, exact.from, exact.to);
             return;
         }
         const target = this.props.vm.runtime.getTargetById(pending.targetId);
         const topId = target && pending.blockId ? target.blocks.getTopLevelScript(pending.blockId) : null;
         const range = topId && script.units ? script.units[`script:${topId}`] : null;
         if (!range) return;
-        this.setState({focus: {targetId: pending.targetId, from: range.from, to: range.from, at: Date.now()}});
+        this.focusBuffer(pending.targetId, range.from, range.from);
     }
     syncAssetEditor () {
         let editor = null;
@@ -889,8 +1193,7 @@ class CodeWorkbench extends React.Component {
             const targetId = reveal.targetId || (editing && editing.id);
             if (!targetId) return;
             this.pendingFocus = {targetId, blockId: reveal.id};
-            this.openFile(scriptTab(targetId), {preview: false});
-            this.applyPendingFocus();
+            this.openForFocus(targetId);
             return;
         }
         case 'target':
@@ -1206,24 +1509,12 @@ class CodeWorkbench extends React.Component {
                 expandable: true,
                 expanded,
                 renamable: !target.isStage,
+                dirty: isDirty(this.textState(target.id)),
                 draggable: !target.isStage,
                 thumbnail: thumbnailFor(target.getCostumes()[target.currentCostume] || {})
             });
             if (!expanded) continue;
-            const script = this.textState(target.id);
-            const counts = this.scriptProblemCounts(target.id, script);
-            const undid = script && script.message && script.message.kind === 'undid';
-            rows.push({
-                key: `script:${target.id}`,
-                type: 'script',
-                label: SCRIPT_FILE,
-                depth: 1,
-                targetId: target.id,
-                openable: true,
-                parentKey: targetKey,
-                meta: undid ? intl.formatMessage(messages.undidCodeChange) : null,
-                problems: counts.total ? counts : null
-            });
+            rows.push(...this.scriptRows(target, targetKey));
             for (const kind of ['costume', 'sound']) {
                 const folderKey = `folder:${target.id}:${kind}`;
                 const items = itemsOf(target, kind);
@@ -1304,9 +1595,87 @@ class CodeWorkbench extends React.Component {
         rows.push(...this.assets.rows());
         return rows;
     }
+    scriptRows (target, targetKey) {
+        const {intl} = this.props;
+        const rows = [];
+        const script = this.textState(target.id);
+        const undid = script && script.message && script.message.kind === 'undid';
+        const problemsFor = file => {
+            const counts = this.scriptProblemCounts(target.id, script, file);
+            return counts.total ? counts : null;
+        };
+        rows.push({
+            key: `script:${target.id}`,
+            type: 'script',
+            label: SCRIPT_FILE,
+            depth: 1,
+            targetId: target.id,
+            file: null,
+            openable: true,
+            parentKey: targetKey,
+            meta: undid ? intl.formatMessage(messages.undidCodeChange) : null,
+            problems: problemsFor(null)
+        });
+        const tree = {folders: new Map(), files: []};
+        for (const file of scriptFiles(target.id) || []) {
+            let node = tree;
+            let path = '';
+            for (const part of file.split('/').slice(0, -1)) {
+                path = path ? `${path}/${part}` : part;
+                if (!node.folders.has(part)) node.folders.set(part, {path, folders: new Map(), files: []});
+                node = node.folders.get(part);
+            }
+            node.files.push(file);
+        }
+        const editable = this.canEditFiles(target.id);
+        const walk = (node, depth, parentKey) => {
+            const names = Array.from(node.folders.keys())
+                .sort((a, b) => a.localeCompare(b, 'en', {sensitivity: 'base'}));
+            for (const name of names) {
+                const child = node.folders.get(name);
+                const key = `scriptFolder:${target.id}:${child.path}`;
+                const expanded = this.isExpanded(key, true);
+                rows.push({
+                    key,
+                    type: 'scriptFolder',
+                    icon: Folder,
+                    label: name,
+                    depth,
+                    targetId: target.id,
+                    folderPath: child.path,
+                    expandable: true,
+                    expanded,
+                    parentKey
+                });
+                if (expanded) walk(child, depth + 1, key);
+            }
+            for (const file of node.files) {
+                rows.push({
+                    key: scriptTab(target.id, file).key,
+                    type: 'script',
+                    label: codeFileName(file),
+                    tooltip: fileTitle(file),
+                    depth,
+                    targetId: target.id,
+                    file,
+                    openable: true,
+                    renamable: editable,
+                    parentKey,
+                    problems: problemsFor(file)
+                });
+            }
+        };
+        walk(tree, 1, targetKey);
+        return rows;
+    }
+    canEditFiles (targetId) {
+        const state = this.textState(targetId);
+        return Boolean(state) && state.status === 'ready' && !state.draft && !state.applying &&
+            !this.props.collaborating;
+    }
     rowTab (row) {
         if (row.type === 'assetFile') return customAssetTab(row.assetName);
-        if (row.type === 'script') return scriptTab(row.targetId);
+        if (row.type === 'script') return scriptTab(row.targetId, row.file || null);
         if (row.type === 'costume' || row.type === 'sound') return assetTab(row.type, row.targetId, row.itemId);
         if (row.type === 'extension') return {key: row.key, kind: 'extension', extensionId: row.extensionId};
         return null;
@@ -1337,6 +1706,10 @@ class CodeWorkbench extends React.Component {
         this.setState({renamingKey: null});
         const name = String(value || '').trim();
         if (!name || name === row.label) return;
+        if (row.type === 'script' && row.file) {
+            this.renameCodeFile(row, name);
+            return;
+        }
         if (this.assets.owns(row)) {
             this.assets.rename(row, name);
             return;
@@ -1355,6 +1728,135 @@ class CodeWorkbench extends React.Component {
             log.error(error);
         }
     }
+    fileError (checked, name) {
+        return this.props.intl.formatMessage(FILE_ERRORS[checked.error] || messages.codeFileInvalid,
+            {name, folder: checked.folder || ''});
+    }
+    async ensureEditable (targetId) {
+        const {dispatch, intl} = this.props;
+        await this.controller.refresh(targetId);
+        if (this.unmounted) return null;
+        if (this.canEditFiles(targetId)) return this.textState(targetId);
+        await ask(dispatch, {
+            type: 'alert',
+            title: intl.formatMessage(messages.newCodeFile),
+            message: intl.formatMessage(messages.codeFileReadOnly)
+        });
+        return null;
+    }
+    async newCodeFile (targetId, folder = '') {
+        const {dispatch, intl} = this.props;
+        if (!await this.ensureEditable(targetId)) return;
+        let message = intl.formatMessage(messages.newCodeFileMessage);
+        let defaultValue = folder ? `${folder}/` : '';
+        for (;;) {
+            const entered = await promptText(dispatch, {
+                title: intl.formatMessage(messages.newCodeFile),
+                message,
+                defaultValue
+            });
+            if (entered === null || this.unmounted) return;
+            const state = this.textState(targetId);
+            if (!this.canEditFiles(targetId)) return;
+            const checked = validateFileName(entered, regionFiles(state.doc));
+            if (checked.name) {
+                this.editText(targetId, addFileText(state.doc, checked.name));
+                this.revealCodeFile(targetId, checked.name);
+                this.openFile(scriptTab(targetId, checked.name), {preview: false});
+                return;
+            }
+            message = this.fileError(checked, entered.trim());
+            defaultValue = entered;
+        }
+    }
+    revealCodeFile (targetId, file) {
+        const keys = {[`target:${targetId}`]: true};
+        let path = '';
+        for (const part of folderOfFile(file).split('/')
+            .filter(Boolean)) {
+            path = path ? `${path}/${part}` : part;
+            keys[`scriptFolder:${targetId}:${path}`] = true;
+        }
+        this.setState(state => ({
+            expanded: {...state.expanded, ...keys},
+            selectedKey: scriptTab(targetId, file).key
+        }));
+    }
+    async renameCodeFile (row, value) {
+        const {dispatch, intl} = this.props;
+        const state = await this.ensureEditable(row.targetId);
+        if (!state) return;
+        const folder = folderOfFile(row.file);
+        const typed = String(value).trim()
+            .replace(/^\/+/, '');
+        const checked = validateFileName(folder ? `${folder}/${typed}` : typed, regionFiles(state.doc), row.file);
+        if (!checked.name) {
+            await ask(dispatch, {
+                type: 'alert',
+                title: intl.formatMessage(messages.codeFileRenameFailed, {name: fileTitle(row.file)}),
+                message: this.fileError(checked, typed)
+            });
+            return;
+        }
+        const renamed = checked.name === row.file ? null : renameFileText(state.doc, row.file, checked.name);
+        if (!renamed) return;
+        const fromKey = scriptTab(row.targetId, row.file).key;
+        const tab = scriptTab(row.targetId, checked.name);
+        this.updateLayout(layout => mapGroups(layout, group => renameTab(group, fromKey, tab)));
+        this.editText(row.targetId, renamed);
+        this.revealCodeFile(row.targetId, checked.name);
+    }
+    lockedInFile (state, file) {
+        const region = scanRegions(state.doc).find(item => item.name === file);
+        if (!region) return false;
+        return (state.lockedScripts || []).some(item => {
+            const range = (state.units || {})[`script:${item.topId}`];
+            return range && range.from >= region.from && range.from < region.to;
+        });
+    }
+    async deleteCodeFile (row) {
+        const {dispatch, intl} = this.props;
+        const state = await this.ensureEditable(row.targetId);
+        if (!state) return;
+        if (this.lockedInFile(state, row.file)) {
+            await ask(dispatch, {
+                type: 'alert',
+                title: intl.formatMessage(messages.deleteCodeFileTitle, {name: fileTitle(row.file)}),
+                message: intl.formatMessage(messages.codeFileLocked)
+            });
+            return;
+        }
+        if (fileHasContent(state.doc, row.file)) {
+            const choice = await ask(dispatch, {
+                type: 'confirm',
+                title: intl.formatMessage(messages.deleteCodeFileTitle, {name: fileTitle(row.file)}),
+                message: intl.formatMessage(messages.deleteCodeFileMessage),
+                choices: [{value: 'delete', label: intl.formatMessage(messages.delete)}]
+            });
+            if (choice !== 'delete' || !this.canEditFiles(row.targetId)) return;
+        }
+        const current = this.textState(row.targetId);
+        const removed = removeFileText(current.doc, row.file);
+        if (!this.editText(row.targetId, removed)) return;
+        this.deletedFiles.set(row.targetId, {file: row.file, before: current.doc, after: removed.text});
+        this.controller.setMessage(row.targetId, {kind: 'fileDeleted', file: row.file});
+        const key = scriptTab(row.targetId, row.file).key;
+        this.updateLayout(layout => closeEverywhere(layout, key));
+    }
+    canUndoDelete (targetId, file) {
+        const deleted = this.deletedFiles.get(targetId);
+        const state = this.textState(targetId);
+        return Boolean(deleted && deleted.file === file && state && state.doc === deleted.after);
+    }
+    undoDeleteFile (targetId) {
+        const deleted = this.deletedFiles.get(targetId);
+        if (!deleted || !this.canUndoDelete(targetId, deleted.file)) return;
+        this.deletedFiles.delete(targetId);
+        this.editText(targetId, {text: deleted.before, changes: diffChanges(deleted.after, deleted.before)});
+        this.controller.setMessage(targetId, null);
+        this.revealCodeFile(targetId, deleted.file);
+        this.openFile(scriptTab(targetId, deleted.file), {preview: false});
+    }
     prepareAsset (row) {
         const {vm} = this.props;
         const target = vm.runtime.getTargetById(row.targetId);
@@ -1368,7 +1870,9 @@ class CodeWorkbench extends React.Component {
             this.assets.remove(row);
             return;
         }
-        if (row.type === 'target' && !row.isStage) {
+        if (row.type === 'script' && row.file) {
+            this.deleteCodeFile(row);
+        } else if (row.type === 'target' && !row.isStage) {
             try {
                 const restoreFun = vm.deleteSprite(row.targetId);
                 if (typeof restoreFun === 'function') dispatch(setRestore({restoreFun, deletedItem: 'Sprite'}));
@@ -1433,10 +1937,11 @@ class CodeWorkbench extends React.Component {
             }
         } else if (row.type === 'script') {
             const target = vm.runtime.getTargetById(row.targetId);
-            const script = this.textState(row.targetId);
-            if (!target || !script || script.status !== 'ready') return;
-            downloadBlob(`${projectFilename(target.getName(), 'Sprite', 'fractch')}`,
-                new Blob([script.doc], {type: 'text/plain'}));
+            const projection = projectionOf(this.textState(row.targetId), row.file || null);
+            if (!target || !projection) return;
+            const name = row.file ? row.file.split('/').pop() : target.getName();
+            downloadBlob(`${projectFilename(name, 'Sprite', 'fractch')}`,
+                new Blob([projection.text], {type: 'text/plain'}));
         } else if (row.type === 'extension') {
             vm.extensionManager.getExtensionSource(row.extensionId, {fetch: true})
                 .then(text => {
@@ -1568,10 +2073,16 @@ class CodeWorkbench extends React.Component {
         const duplicate = {label: m(messages.duplicate), icon: Copy, onClick: () => this.duplicateRow(row)};
         const remove = {label: m(messages.delete), icon: Trash2, onClick: () => this.handleExplorerDelete(row)};
         const exportItem = {label: m(messages.export), icon: Download, onClick: () => this.exportRow(row)};
+        const newFile = folder => ({
+            label: m(messages.newCodeFile),
+            icon: FilePlus2,
+            disabled: locked,
+            onClick: () => this.newCodeFile(row.targetId, folder)
+        });
         let items = [];
         switch (row.type) {
         case 'target':
-            items = row.isStage ? [] : [rename, duplicate, remove, exportItem];
+            items = row.isStage ? [newFile('')] : [newFile(''), rename, duplicate, remove, exportItem];
             if (this.props.spritePaneVisible) {
                 items.push({
                     label: m(messages.revealInSpritePane),
@@ -1585,7 +2096,13 @@ class CodeWorkbench extends React.Component {
             }
             break;
         case 'script':
-            items = [open, exportItem];
+            items = row.file ?
+                [open, newFile(folderOfFile(row.file)), {...rename, disabled: locked}, {...remove, disabled: locked},
+                    exportItem] :
+                [open, newFile(''), exportItem];
+            break;
+        case 'scriptFolder':
+            items = [newFile(row.folderPath)];
             break;
         case 'costume': {
             const target = vm.runtime.getTargetById(row.targetId);
@@ -1859,11 +2376,16 @@ class CodeWorkbench extends React.Component {
         const tab = this.activeTab();
         if (!tab || tab.kind !== 'script') return null;
         const view = this.activeEditorView();
-        const topId = view ? this.scriptAt(tab.targetId, view.state.selection.main.head) : null;
+        const topId = view ? this.scriptAt(tab, view.state.selection.main.head) : null;
         return topId ? {targetId: tab.targetId, blockId: topId} : null;
     }
-    scriptAt (targetId, offset) {
-        const script = this.textState(targetId);
+    bufferOffset (tab, offset) {
+        const projection = this.tabProjection(tab);
+        return projection && typeof offset === 'number' ? toBuffer(projection, offset) : null;
+    }
+    scriptAt (tab, viewOffset) {
+        const script = this.textState(tab.targetId);
+        const offset = this.bufferOffset(tab, viewOffset);
         if (!script || script.status !== 'ready' || offset === null) return null;
         for (const key of Object.keys(script.units || {})) {
             const range = script.units[key];
@@ -1878,7 +2400,7 @@ class CodeWorkbench extends React.Component {
         event.preventDefault();
         const {intl} = this.props;
         const offset = view.posAtCoords({x: event.clientX, y: event.clientY});
-        const topId = this.scriptAt(tab.targetId, offset);
+        const topId = tab.kind === 'script' ? this.scriptAt(tab, offset) : null;
         const script = this.textState(tab.targetId);
         const selection = view.state.selection.main;
         const selected = view.state.sliceDoc(selection.from, selection.to);
@@ -1952,12 +2474,13 @@ class CodeWorkbench extends React.Component {
         const {devState, intl} = this.props;
         const problems = [];
         for (const item of devState.scriptProblems[targetId] || []) {
-            const line = this.blockLine(targetId, item.topId);
+            const location = this.blockLocation(targetId, item.topId);
             problems.push({
                 key: item.key,
                 severity: 'error',
                 message: intl.formatMessage(messages.scriptRuntimeError, {message: item.message}),
-                line,
+                line: location ? location.line : null,
+                file: location ? location.file : null,
                 jump: {targetId, topId: item.topId}
             });
         }
@@ -1971,6 +2494,7 @@ class CodeWorkbench extends React.Component {
         for (const [extensionId, list] of Object.entries(devState.runtimeProblems)) {
             for (const item of list) {
                 if (item.targetId !== targetId || !item.blockId) continue;
+                const location = this.blockLocation(targetId, item.blockId);
                 problems.push({
                     key: `ext:${extensionId}:${item.key}`,
                     severity: 'error',
@@ -1980,7 +2504,8 @@ class CodeWorkbench extends React.Component {
                         file: `${extensionId}.js`,
                         line: item.line || '?'
                     }),
-                    line: this.blockLine(targetId, item.blockId),
+                    line: location ? location.line : null,
+                    file: location ? location.file : null,
                     jump: {targetId, blockId: item.blockId}
                 });
             }
@@ -2000,8 +2525,9 @@ class CodeWorkbench extends React.Component {
                 column: problem.column
             }));
         for (const problem of devState.runtimeProblems[entry.id] || []) {
-            const label = problem.targetId ? this.targetLabel(problem.targetId) : null;
-            const callLine = label ? this.blockLine(problem.targetId, problem.blockId) : null;
+            const location = problem.targetId ? this.blockLocation(problem.targetId, problem.blockId) : null;
+            const label = problem.targetId ? this.targetLabel(problem.targetId, location && location.file) : null;
+            const callLine = location ? location.line : null;
             problems.push({
                 key: problem.key,
                 severity: 'error',
@@ -2016,11 +2542,14 @@ class CodeWorkbench extends React.Component {
         }
         return problems;
     }
-    scriptProblemCounts (targetId, script) {
-        const counts = script && script.status === 'error' ?
-            {errors: 1, warnings: 0, total: 1} :
-            severityCounts(script && script.diagnostics);
-        const runtime = this.runtimeScriptProblems(targetId).length;
+    scriptProblemCounts (targetId, script, file = null) {
+        if (script && script.status === 'error') {
+            return file ? {errors: 0, warnings: 0, total: 0} : {errors: 1, warnings: 0, total: 1};
+        }
+        const diagnostics = script && typeof script.doc === 'string' ?
+            (script.diagnostics || []).filter(item => fileOfDiagnostic(script, item) === file) : [];
+        const counts = severityCounts(diagnostics);
+        const runtime = this.runtimeScriptProblems(targetId).filter(item => (item.file || null) === file).length;
         return {errors: counts.errors + runtime, warnings: counts.warnings, total: counts.total + runtime};
     }
     problemGroups () {
@@ -2030,30 +2559,47 @@ class CodeWorkbench extends React.Component {
         const targets = (stage ? [stage] : []).concat(orderedSprites(vm, this.props.sprites));
         for (const target of targets) {
             const script = this.textState(target.id);
-            let problems = [];
+            const byFile = new Map([[null, []]]);
+            const add = (file, problem) => {
+                if (!byFile.has(file)) byFile.set(file, []);
+                byFile.get(file).push(problem);
+            };
             if (script && script.status === 'error') {
-                problems = [{severity: 'error', message: script.error}];
-            } else if (script) {
-                problems = (script.diagnostics || []).map((item, index) => ({
-                    key: `${item.code || 'd'}:${index}`,
-                    severity: item.severity,
-                    message: item.hint ? `${item.message}. ${item.hint}` : item.message,
-                    line: item.line,
-                    column: item.column,
-                    from: item.from,
-                    to: item.to
-                }));
+                add(null, {severity: 'error', message: script.error});
+            } else if (script && typeof script.doc === 'string') {
+                (script.diagnostics || []).forEach((item, index) => {
+                    const file = fileOfDiagnostic(script, item);
+                    const projection = cachedProjection(script.doc, file, excludeOf(script));
+                    const at = projection && typeof item.from === 'number' ?
+                        toFile(projection, item.from, {clamp: true}) : null;
+                    add(file, {
+                        key: `${item.code || 'd'}:${index}`,
+                        severity: item.severity,
+                        message: item.hint ? `${item.message}. ${item.hint}` : item.message,
+                        line: at === null ? item.line : fileLine(projection, at),
+                        column: at === null ? item.column : fileColumn(projection, at),
+                        from: item.from,
+                        to: item.to
+                    });
+                });
             }
-            const all = problems.concat(this.runtimeScriptProblems(target.id));
-            if (!all.length) continue;
-            groups.push({
-                key: `script:${target.id}`,
-                title: SCRIPT_FILE,
-                detail: target.getName(),
-                tab: scriptTab(target.id),
-                targetId: target.id,
-                problems: all
-            });
+            for (const problem of this.runtimeScriptProblems(target.id)) add(problem.file || null, problem);
+            const files = [null].concat(Array.from(byFile.keys()).filter(Boolean)
+                .sort((a, b) => a.localeCompare(b, 'en', {sensitivity: 'base'})));
+            for (const file of files) {
+                const problems = byFile.get(file);
+                if (!problems.length) continue;
+                const tab = scriptTab(target.id, file);
+                const folder = folderOfFile(file);
+                groups.push({
+                    key: tab.key,
+                    title: codeFileName(file),
+                    detail: folder ? `${target.getName()}/${folder}` : target.getName(),
+                    tab,
+                    targetId: target.id,
+                    problems
+                });
+            }
         }
         const live = (this.props.devState.liveProblems || {}).project || [];
         if (live.length) {
@@ -2099,8 +2645,7 @@ class CodeWorkbench extends React.Component {
         }
         if (group.targetId && typeof problem.from === 'number') {
             this.pendingFocus = {targetId: group.targetId, from: problem.from, to: problem.to};
-            this.openFile(group.tab, {preview: false});
-            this.applyPendingFocus();
+            this.openForFocus(group.targetId, group.tab);
             return;
         }
         this.handlePanelOpenFile(group);
@@ -2113,11 +2658,20 @@ class CodeWorkbench extends React.Component {
         const range = map && map.blocks ? map.blocks[blockId] : null;
         return range ? {from: range.from, to: range.to, line: range.line} : null;
     }
-    blockLine (targetId, blockId) {
+    blockLocation (targetId, blockId) {
         const script = this.textState(targetId);
         const map = script && script.baseline && script.baseline.sourceMap;
         const range = map && map.blocks && blockId ? map.blocks[blockId] : null;
-        return range && range.line ? range.line : null;
+        if (!range) return null;
+        const text = script.baseline.text;
+        const file = fileAt(text, range.from);
+        const projection = cachedProjection(text, file);
+        const at = projection ? toFile(projection, range.from, {clamp: true}) : null;
+        return {file, line: at === null ? range.line || null : fileLine(projection, at)};
+    }
+    blockLine (targetId, blockId) {
+        const location = this.blockLocation(targetId, blockId);
+        return location ? location.line : null;
     }
     jumpTo (jump) {
         if (jump.extensionId) {
@@ -2130,22 +2684,21 @@ class CodeWorkbench extends React.Component {
         }
         if (!jump.targetId || !this.props.vm.runtime.getTargetById(jump.targetId)) return;
         this.pendingFocus = {targetId: jump.targetId, blockId: jump.blockId || jump.topId};
-        this.openFile(scriptTab(jump.targetId), {preview: false});
-        this.applyPendingFocus();
+        this.openForFocus(jump.targetId);
     }
-    targetLabel (targetId) {
+    targetLabel (targetId, file = null) {
         const target = this.props.vm.runtime.getTargetById(targetId);
         if (!target) return null;
-        return target.isStage ? `${this.props.intl.formatMessage(messages.stage)}/${SCRIPT_FILE}` :
-            `${target.getName()}/${SCRIPT_FILE}`;
+        const owner = target.isStage ? this.props.intl.formatMessage(messages.stage) : target.getName();
+        return `${owner}/${fileTitle(file)}`;
     }
     outputLocation (entry) {
         if (entry.extensionId && entry.line) return `${entry.extensionId}.js:${entry.line}`;
         if (entry.targetId && (entry.blockId || entry.topId)) {
-            const label = this.targetLabel(entry.targetId);
+            const location = this.blockLocation(entry.targetId, entry.blockId || entry.topId);
+            const label = this.targetLabel(entry.targetId, location && location.file);
             if (!label) return null;
-            const line = this.blockLine(entry.targetId, entry.blockId || entry.topId);
-            return line ? `${label}:${line}` : label;
+            return location && location.line ? `${label}:${location.line}` : label;
         }
         return entry.extensionId ? `${entry.extensionId}.js` : null;
     }
@@ -2222,7 +2775,7 @@ class CodeWorkbench extends React.Component {
                 if ((target || thread.target).id === tab.targetId) running.push(thread.topBlock);
             }
             setRunning(view, running);
-            this.debug.syncView(view, tab.targetId);
+            this.debug.syncView(view, tab);
         }
     }
     showMessage (targetId, text) {
@@ -2242,9 +2795,10 @@ class CodeWorkbench extends React.Component {
         const name = symbol.kind === 'extension' ? `${symbol.id}.${symbol.member}` : symbol.name;
         const notFound = () => this.showMessage(tab.targetId, intl.formatMessage(messages.noDefinition, {name}));
         if (symbol.kind === 'procedure') {
-            const range = procedureDefinition(doc, symbol.name);
+            const state = this.textState(tab.targetId);
+            const range = state && typeof state.doc === 'string' ? procedureDefinition(state.doc, symbol.name) : null;
             if (!range) return notFound();
-            this.setState({focus: {targetId: tab.targetId, from: range.from, to: range.to, at: Date.now()}});
+            this.focusBuffer(tab.targetId, range.from, range.to);
             return true;
         }
         if (symbol.kind === 'broadcast') {
@@ -2276,7 +2830,10 @@ class CodeWorkbench extends React.Component {
     }
     symbolAt (tab, view, offset) {
         if (!tab || tab.kind !== 'script' || !view) return null;
-        return editableSymbol(this.props.vm, tab.targetId, view.state.doc.toString(), offset);
+        const state = this.textState(tab.targetId);
+        const at = this.bufferOffset(tab, offset);
+        if (!state || at === null) return null;
+        return editableSymbol(this.props.vm, tab.targetId, state.doc, at);
     }
     handleFindReferences (offset = null) {
         const tab = this.activeTab();
@@ -2285,7 +2842,7 @@ class CodeWorkbench extends React.Component {
         const symbol = this.symbolAt(tab, view, at);
         if (!symbol) return false;
         const {intl, vm} = this.props;
-        const references = findReferences(vm, tab.targetId, symbol, view.state.doc.toString());
+        const references = findReferences(vm, tab.targetId, symbol, this.textState(tab.targetId).doc);
         if (!references.length) {
             this.showMessage(tab.targetId, intl.formatMessage(messages.noReferences, {name: symbol.name}));
             return true;
@@ -2299,13 +2856,20 @@ class CodeWorkbench extends React.Component {
                 this.jumpTo(reference);
                 return;
             }
-            this.setState({focus: {targetId: tab.targetId, from: reference.from, to: reference.to, at: Date.now()}});
+            this.focusBuffer(tab.targetId, reference.from, reference.to);
+        };
+        const textLocation = reference => {
+            const state = this.textState(tab.targetId);
+            const file = fileAt(state.doc, reference.from, excludeOf(state));
+            const projection = cachedProjection(state.doc, file, excludeOf(state));
+            const pos = projection ? toFile(projection, reference.from, {clamp: true}) : null;
+            return {file, line: pos === null ? null : fileLine(projection, pos)};
         };
         const location = reference => {
-            const label = this.targetLabel(reference.targetId);
-            const line = reference.blockId ? this.blockLine(reference.targetId, reference.blockId) :
-                view.state.doc.lineAt(reference.from).number;
-            return line ? `${label}:${line}` : label;
+            const found = reference.blockId ? this.blockLocation(reference.targetId, reference.blockId) :
+                textLocation(reference);
+            const label = this.targetLabel(reference.targetId, found && found.file);
+            return found && found.line ? `${label}:${found.line}` : label;
         };
         const shown = references.slice(0, MAX_REFERENCE_ITEMS);
         const items = shown.map(reference => ({
@@ -2368,19 +2932,32 @@ class CodeWorkbench extends React.Component {
             this.showMessage(tab.targetId, intl.formatMessage(messages.renameInvalid));
             return true;
         }
-        const view = this.activeEditorView();
-        if (!view) return true;
-        if (procedureDefinition(view.state.doc.toString(), name)) {
+        const state = this.textState(tab.targetId);
+        if (!state || typeof state.doc !== 'string') return true;
+        if (procedureDefinition(state.doc, name)) {
             this.showMessage(tab.targetId, intl.formatMessage(messages.renameTaken, {name}));
             return true;
         }
-        const changes = procedureRenameChanges(view.state.doc.toString(), symbol.name, name);
+        const changes = procedureRenameChanges(state.doc, symbol.name, name);
         if (!changes.length) return true;
-        view.dispatch({changes});
+        const view = this.activeEditorView();
+        const projection = this.tabProjection(tab);
+        const inView = view && projection ? changes.map(change => {
+            const from = toFile(projection, change.from);
+            const to = toFile(projection, change.to);
+            return from !== null && to !== null && to - from === change.to - change.from ?
+                {from, to, insert: change.insert} : null;
+        }) : [];
+        if (inView.length && inView.every(Boolean)) {
+            view.dispatch({changes: inView, userEvent: 'input.rename'});
+        } else {
+            const set = ChangeSet.of(changes, state.doc.length);
+            this.editText(tab.targetId, {text: applyChanges(state.doc, set), changes: set});
+        }
         this.handleApply();
         return true;
     }
-    textMessages (targetId, state) {
+    textMessages (targetId, state, tab = null) {
         const {intl} = this.props;
         const m = (descriptor, values) => intl.formatMessage(descriptor, values);
         const items = [];
@@ -2465,8 +3042,23 @@ class CodeWorkbench extends React.Component {
             items.push({key: 'redid', icon: Redo2, text: m(messages.redidCodeChange)});
         }
         if (message && message.kind === 'info') items.push({key: 'info', icon: Info, text: message.text});
+        if (message && message.kind === 'fileDeleted') {
+            items.push({
+                key: 'fileDeleted',
+                icon: Trash2,
+                text: m(messages.codeFileDeleted, {name: fileTitle(message.file)}),
+                action: this.canUndoDelete(targetId, message.file) ? {
+                    label: m(messages.undoDeleteFile),
+                    icon: Undo2,
+                    onClick: () => this.undoDeleteFile(targetId)
+                } : null
+            });
+        }
         if (message && message.kind === 'cancelled') {
             items.push({key: 'cancelled', icon: X, text: m(messages.applyCancelled)});
+        }
+        if (tab && !state.applying && !state.draft && isDirty(state) && !this.fileDirty(tab)) {
+            items.push({key: 'otherFiles', icon: Info, text: m(messages.otherFilesDirty)});
         }
         return items;
     }
@@ -2550,7 +3142,7 @@ class CodeWorkbench extends React.Component {
                 kind: tab.kind,
                 title,
                 detail: resolved.detail || null,
-                dirty: (tab.kind === 'script' && isDirty(this.textState(tab.targetId))) ||
+                dirty: (tab.kind === 'script' && this.fileDirty(tab)) ||
                     (tab.kind === 'extension' && getDraft(tab.extensionId) !== null) ||
                     (tab.kind === 'customAsset' && this.assets.isDirty(tab))
             };
@@ -2650,9 +3242,9 @@ class CodeWorkbench extends React.Component {
         const resolved = resolveTab(vm, tab, this.state.entries);
         if (!resolved.exists) return null;
         if (tab.kind === 'script') {
-            const focus = this.state.focus;
             const state = this.textState(tab.targetId);
-            const ready = Boolean(state) && state.status === 'ready';
+            const projection = projectionOf(state, tabFile(tab));
+            const ready = Boolean(projection);
             return (
                 <TextTab
                     applyDisabled={!this.canApplyState(state)}
@@ -2661,17 +3253,17 @@ class CodeWorkbench extends React.Component {
                     applyHint={formatShortcutDisplay(getShortcutKey('applyFile', this.props.customShortcuts))}
                     completion={this.completion}
                     dark={this.props.dark}
-                    diagnostics={(state && state.diagnostics) || EMPTY}
+                    diagnostics={this.fileDiagnostics(state, tab, projection)}
                     extensions={this.extensionsFor(tab.targetId)}
-                    focus={focused && focus && focus.targetId === tab.targetId ? focus : null}
+                    focus={focused ? this.fileFocus(tab, projection) : null}
                     key={tab.key}
                     historyKey={this.historyKeyFor(tab.targetId, state)}
                     keymap={this.textKeymap}
-                    messages={this.textMessages(tab.targetId, state)}
+                    messages={this.textMessages(tab.targetId, state, tab)}
                     overlay={this.textOverlay(tab.targetId, state)}
                     readOnly={!ready || this.props.collaborating || Boolean(state.draft)}
                     tabKey={`${this.state.projectKey}:${tab.key}${group.id === 'g0' ? '' : `:${group.id}`}`}
-                    value={ready ? state.doc : ''}
+                    value={ready ? projection.text : ''}
                     onApply={this.handleApply}
                     onApplyAll={this.applyAllTargets().length > 1 ? this.handleApplyAll : null}
                     onChange={(text, changes) => this.handleTextChange(group.id, tab, text, changes)}

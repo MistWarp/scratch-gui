@@ -419,10 +419,17 @@ const worktreeAssetPaths = async sb3Files => {
     return paths;
 };
 
+const treeProjectFiles = vm => vm.saveProjectSb3DontZip({allowOptimization: false});
+
+const withTreeProjectJson = (vm, files) => (vm && typeof vm.toJSON === 'function' ? {
+    ...files,
+    'project.json': new TextEncoder().encode(vm.toJSON(null, {allowOptimization: false}))
+} : files);
+
 const loadSb3 = async ({vm, sb3ArrayBuffer, sb3Files}) => {
     let files = sb3Files;
     if (!files && !sb3ArrayBuffer && vm && typeof vm.saveProjectSb3DontZip === 'function') {
-        files = vm.saveProjectSb3DontZip();
+        files = treeProjectFiles(vm);
     }
     if (files) {
         const readSb3File = sb3FileReader(files);
@@ -590,6 +597,8 @@ const buildSb3FromFractchTree = async ({fs, dir, onProgress} = {}) => {
 
 export {
     clearWorkingTree,
+    treeProjectFiles,
+    withTreeProjectJson,
     worktreeAssetPaths,
     writeProjectToFractchTree,
     buildSb3FromFractchTree,

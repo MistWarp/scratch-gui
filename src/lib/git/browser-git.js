@@ -5,6 +5,7 @@ import JSZip from '@turbowarp/jszip';
 
 
 import {
+    treeProjectFiles,
     writeProjectToFractchTree,
     buildSb3FromFractchTree
 } from './fractch-tree.js';
@@ -881,7 +882,7 @@ const commitProject = async ({vm, sb3Files, message, author, rememberAuthor = tr
 
     try {
         if (!projectFiles && typeof vm.saveProjectSb3DontZip === 'function') {
-            projectFiles = vm.saveProjectSb3DontZip();
+            projectFiles = treeProjectFiles(vm);
         } else if (!projectFiles) {
             sb3ArrayBuffer = await vm.saveProjectSb3('arraybuffer');
             if (!sb3ArrayBuffer || sb3ArrayBuffer.byteLength === 0) {

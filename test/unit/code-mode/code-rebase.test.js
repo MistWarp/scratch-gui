@@ -113,4 +113,93 @@ describe('per-unit three-way rebase', () => {
         const removed = mapUnits(base.units, whole);
         expect(removed['script:a'].to).toBe(removed['script:a'].from);
     });
+
+    describe('scripts in files', () => {
+        const REGION_A = 'when flag at 0,0 {\n    say "a";\n  }';
+        const NEW = 'when key b at 50,50 {\n  hide;\n}';
+        const withRegion = scripts => {
+            const text = `${DECL}\n\n${scripts.main.join('\n\n')}${scripts.main.length ? '\n\n' : ''}` +
+                `region "enemies" {\n  ${scripts.region.join('\n\n  ')}\n}\n`;
+            const pieces = [['decl:var:lives', DECL]];
+            scripts.mainKeys.forEach((key, i) => pieces.push([key, scripts.main[i]]));
+            scripts.regionKeys.forEach((key, i) => pieces.push([key, scripts.region[i]]));
+            return {text, units: unitsFor(text, pieces)};
+        };
+
+        test('a script added in Blocks mode stays in the main file when its neighbour is in a region', () => {
+            const base = withRegion({main: [], mainKeys: [], region: [REGION_A], regionKeys: ['script:a']});
+            const mine = withRegion({
+                main: [],
+                mainKeys: [],
+                region: [REGION_A.replace('"a"', '"mine"')],
+                regionKeys: ['script:a']
+            });
+            const theirs = withRegion({main: [NEW],
+                mainKeys: ['script:new'],
+                region: [REGION_A],
+                regionKeys: ['script:a']});
+            const merged = rebase({base, theirs, mine});
+            expect(merged.conflicts).toEqual([]);
+            const regionStart = merged.text.indexOf('region "enemies"');
+            expect(merged.text.indexOf(NEW)).toBeGreaterThan(-1);
+            expect(merged.text.indexOf(NEW)).toBeLessThan(regionStart);
+            expect(merged.text.slice(merged.units['script:new'].from, merged.units['script:new'].to)).toBe(NEW);
+            expect(merged.text).toContain('say "mine"');
+        });
+
+        test('a new main script anchors after the last main script, not inside a region', () => {
+            const base = withRegion({main: [A],
+                mainKeys: ['script:m'],
+                region: [REGION_A],
+                regionKeys: ['script:a']});
+            const mine = withRegion({main: [A.replace('"a"', '"x"')],
+                mainKeys: ['script:m'],
+                region: [REGION_A],
+                regionKeys: ['script:a']});
+            const theirs = withRegion({main: [A, NEW],
+                mainKeys: ['script:m', 'script:new'],
+                region: [REGION_A],
+                regionKeys: ['script:a']});
+            const merged = rebase({base, theirs, mine});
+            expect(merged.text.indexOf(NEW)).toBeLessThan(merged.text.indexOf('region "enemies"'));
+            expect(merged.text.indexOf(NEW)).toBeGreaterThan(merged.text.indexOf('say "x"'));
+        });
+
+        test('a new script that belongs to a region is added inside that region', () => {
+            const NEW_IN = 'when key c at 9,9 {\n    hide;\n  }';
+            const base = withRegion({main: [A],
+                mainKeys: ['script:m'],
+                region: [REGION_A],
+                regionKeys: ['script:a']});
+            const mine = withRegion({main: [A],
+                mainKeys: ['script:m'],
+                region: [REGION_A.replace('"a"', '"y"')],
+                regionKeys: ['script:a']});
+            const theirs = withRegion({main: [A],
+                mainKeys: ['script:m'],
+                region: [NEW_IN, REGION_A],
+                regionKeys: ['script:c', 'script:a']});
+            const merged = rebase({base, theirs, mine});
+            const at = merged.text.indexOf(NEW_IN);
+            expect(at).toBeGreaterThan(merged.text.indexOf('region "enemies"'));
+            expect(merged.text.slice(merged.units['script:c'].from, merged.units['script:c'].to)).toBe(NEW_IN);
+        });
+    
+        test('a new script for an empty file goes inside it with the file indentation', () => {
+            const NEW_IN = 'when key c at 9,9 {\n    hide;\n  }';
+            const mineText = `${DECL}\n\n${A}\n\nregion "empty" {\n}\n`;
+            const mine = {text: mineText, units: unitsFor(mineText, [['decl:var:lives', DECL], ['script:m', A]])};
+            const base = mine;
+            const theirsText = `${DECL}\n\n${A}\n\nregion "empty" {\n  ${NEW_IN}\n}\n`;
+            const theirs = {text: theirsText,
+                units: unitsFor(theirsText,
+                    [['decl:var:lives', DECL], ['script:m', A], ['script:c', NEW_IN]])};
+            const merged = rebase({base, theirs, mine});
+            expect(merged.text).toBe(theirsText);
+            const tabs = `${DECL}\n\nwhen flag {\n\tsay 1;\n}\n\nregion "empty" {\n}\n`;
+            const tabMine = {text: tabs, units: unitsFor(tabs, [['decl:var:lives', DECL]])};
+            const tabMerged = rebase({base: tabMine, theirs, mine: tabMine});
+            expect(tabMerged.text).toContain('region "empty" {\n\twhen key c at 9,9 {\n\t  hide;\n\t}\n}');
+        });
+    });
 });

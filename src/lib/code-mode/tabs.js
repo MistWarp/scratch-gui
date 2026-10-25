@@ -2,7 +2,9 @@ const MAX_SESSIONS = 8;
 
 const emptyTabs = () => ({tabs: [], activeKey: null, previewKey: null});
 
-const scriptTab = targetId => ({key: `script:${targetId}`, kind: 'script', targetId});
+const scriptTab = (targetId, file = null) => (file ?
+    {key: `script:${targetId}:${encodeURIComponent(file)}`, kind: 'script', targetId, file} :
+    {key: `script:${targetId}`, kind: 'script', targetId});
 
 const assetTab = (kind, targetId, itemId) => ({key: `${kind}:${targetId}:${itemId}`, kind, targetId, itemId});
 

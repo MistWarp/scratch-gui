@@ -1,4 +1,5 @@
 import {unitKind} from './fractch-adapter.js';
+import {fileAt, fileIndent, mainEnd, sameFile, scanRegions} from './file-projection.js';
 
 const DECL_HEAD = /^\s*((?:var|cloud|list|local)\s+[^=;]+?)\s*(?:=|;)/;
 
@@ -46,6 +47,32 @@ const removalEnd = (text, key, to) => {
 };
 
 const orderedKeys = units => Object.keys(units).sort((a, b) => units[a].from - units[b].from);
+
+const reindent = (text, from, to) => (from === to ? text :
+    text.split('\n').map((line, index) => (index && line.startsWith(from) ? to + line.slice(from.length) : line))
+        .join('\n'));
+
+const fileFallback = (text, file, theirsText) => {
+    if (file) {
+        const region = scanRegions(text).find(item => item.name === file);
+        if (region) {
+            const empty = !/\S/.test(text.slice(region.bodyFrom, region.close));
+            const indent = fileIndent(text, file);
+            const source = theirsText === null ? '  ' : fileIndent(theirsText, file);
+            return {
+                from: region.close,
+                to: region.close,
+                prefix: empty ? indent : `\n${indent}`,
+                suffix: '\n',
+                reindent: [source, indent]
+            };
+        }
+    }
+    const regions = scanRegions(text);
+    if (!regions.length) return null;
+    const at = mainEnd(text);
+    return at ? {from: at, to: at, prefix: '\n\n'} : {from: 0, to: 0, suffix: '\n\n'};
+};
 
 const rebase = ({base, theirs, mine}) => {
     const decisions = new Map();
@@ -99,14 +126,25 @@ const rebase = ({base, theirs, mine}) => {
         const decision = decisions.get(key);
         if (!decision || decision.action !== 'insert' || decision.text === null) continue;
         const index = theirsOrder.indexOf(key);
+        const file = fileAt(theirs.text, theirs.units[key].from);
+        const usable = other => placed(other) && sameFile(fileAt(mine.text, mine.units[other].from), file);
         let anchor = null;
         for (let i = index - 1; i >= 0 && !anchor; i--) {
-            if (placed(theirsOrder[i])) anchor = {key: theirsOrder[i], after: true};
+            if (usable(theirsOrder[i])) anchor = {key: theirsOrder[i], after: true};
         }
         for (let i = index + 1; i < theirsOrder.length && !anchor; i++) {
-            if (placed(theirsOrder[i])) anchor = {key: theirsOrder[i], after: false};
+            if (usable(theirsOrder[i])) anchor = {key: theirsOrder[i], after: false};
         }
         const separator = separatorFor(key);
+        if (!anchor && unitKind(key) !== 'decl') {
+            const fallback = fileFallback(mine.text, file, theirs.text);
+            if (fallback) {
+                const {reindent: change, ...spot} = fallback;
+                const text = change ? reindent(decision.text, change[0], change[1]) : decision.text;
+                edits.push({...spot, text, key, order: 1});
+                continue;
+            }
+        }
         if (anchor && anchor.after) {
             const at = mine.units[anchor.key].to;
             edits.push({from: at, to: at, text: decision.text, key, prefix: separator, order: 1});

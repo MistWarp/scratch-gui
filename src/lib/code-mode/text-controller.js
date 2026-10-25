@@ -24,8 +24,21 @@ import {
 } from './text-store.js';
 import {baseHash, classifyDraft, loadDraft, scheduleDraftWrite} from './code-drafts.js';
 import {clearCodeHistory, codeHistoryLastEvent, subscribeCodeHistory} from './code-history.js';
+import {scanRegions} from './file-projection.js';
 
-const TRANSIENT = new Set(['applied', 'undid', 'redid', 'restored', 'refused', 'cancelled']);
+const TRANSIENT = new Set(['applied', 'undid', 'redid', 'restored', 'refused', 'cancelled', 'fileDeleted']);
+
+const keepEmptyFiles = (before, result) => {
+    const kept = new Set(scanRegions(result.text).map(region => region.name));
+    const missing = scanRegions(before).filter(region => !kept.has(region.name));
+    if (!missing.length) return result;
+    const at = result.text.replace(/\s+$/, '').length;
+    const blocks = missing.map(region => `region ${JSON.stringify(region.name)} {\n}`).join('\n\n');
+    return {
+        ...result,
+        text: `${result.text.slice(0, at)}${at ? '\n\n' : ''}${blocks}${result.text.slice(at) || '\n'}`
+    };
+};
 
 const locateUnits = (baseText, units, doc) => {
     const out = {};
@@ -295,7 +308,8 @@ const createTextController = ({vm, client = getFractchClient()}) => {
         if (kept) {
             const mine = {text: snapshot, sourceMap: fillBlocks(sourceMap, emitted.sourceMap)};
             const agree = sameGaps(mine, emitted);
-            const baseline = agree ? mine : keepFormatting({previous: emitted, formatted: mine, next: emitted});
+            const baseline = keepEmptyFiles(snapshot, agree ? mine :
+                keepFormatting({previous: emitted, formatted: mine, next: emitted}));
             recordAfterText(entry, targetId, baseline.text);
             const units = unitsOf(baseline.sourceMap);
             let doc = now.doc;
@@ -333,8 +347,9 @@ const createTextController = ({vm, client = getFractchClient()}) => {
             if (finished) persistDraft(targetId, finished);
             return {kept: agree && !typed, ms: emitted.ms};
         }
-        recordAfterText(entry, targetId, emitted.text);
-        const theirs = {text: emitted.text, units: unitsOf(emitted.sourceMap)};
+        const withEmpty = keepEmptyFiles(snapshot, {text: emitted.text, sourceMap: emitted.sourceMap});
+        recordAfterText(entry, targetId, withEmpty.text);
+        const theirs = {text: withEmpty.text, units: unitsOf(emitted.sourceMap)};
         const base = {text: snapshot, units: unitsOf(sourceMap)};
         const mineUnits = now.pendingChanges ? mapUnits(base.units, now.pendingChanges) : base.units;
         const merged = rebase({base, theirs, mine: {text: now.doc, units: mineUnits}});
@@ -343,7 +358,7 @@ const createTextController = ({vm, client = getFractchClient()}) => {
             units: merged.units,
             conflicts: merged.conflicts,
             diagnostics: warnings,
-            baseline: {text: emitted.text, sourceMap: emitted.sourceMap},
+            baseline: withEmpty,
             canonicalBaseline: null,
             tag: emitted.tag,
             lockedScripts: emitted.lockedScripts || [],
