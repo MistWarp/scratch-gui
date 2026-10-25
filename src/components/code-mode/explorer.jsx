@@ -76,6 +76,7 @@ const Explorer = props => {
         selectedKey
     } = props;
     const listRef = useRef(null);
+    const pointerFocus = useRef(false);
 
     useEffect(() => {
         if (!selectedKey || !listRef.current) return;
@@ -182,7 +183,19 @@ const Explorer = props => {
                 onDragOver={event => dragOver(null, event)}
                 onDrop={event => drop(null, event)}
                 onFocus={event => {
+                    const fromPointer = pointerFocus.current;
+                    pointerFocus.current = false;
+                    if (fromPointer) return;
                     if (event.target === event.currentTarget && !selectedKey && rows.length) props.onSelect(rows[0]);
+                }}
+                onBlur={() => {
+                    pointerFocus.current = false;
+                }}
+                onMouseDown={() => {
+                    pointerFocus.current = true;
+                }}
+                onMouseUp={() => {
+                    pointerFocus.current = false;
                 }}
                 onKeyDown={handleKeyDown}
             >
