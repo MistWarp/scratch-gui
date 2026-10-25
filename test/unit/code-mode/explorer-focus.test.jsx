@@ -40,17 +40,34 @@ describe('Explorer focus', () => {
         wrapper.unmount();
     });
 
-    test('clicking a row selects only that row, not the first one', () => {
+    const focusTree = tree => tree.simulate('focus', {target: tree.getDOMNode(), currentTarget: tree.getDOMNode()});
+
+    test.each([
+        ['a mouse click', ['mousedown', 'focus', 'mouseup']],
+        ['a touch tap', ['pointerdown', 'pointerup', 'mousedown', 'focus', 'mouseup']]
+    ])('%s on a row selects only that row, not the first one', (name, events) => {
         const onSelect = jest.fn();
         const wrapper = mountExplorer(onSelect);
         const tree = treeOf(wrapper);
-        tree.simulate('pointerdown');
-        tree.simulate('focus', {target: tree.getDOMNode(), currentTarget: tree.getDOMNode()});
-        tree.simulate('pointerup');
+        for (const event of events) {
+            if (event === 'focus') focusTree(tree);
+            else tree.simulate(event);
+        }
         wrapper.find('[data-row-key="target:s1"]').hostNodes()
             .simulate('click');
         expect(onSelect).toHaveBeenCalledTimes(1);
         expect(onSelect).toHaveBeenCalledWith(rows[1]);
+        wrapper.unmount();
+    });
+
+    test('tabbing back in after a click and blur still selects the first row', () => {
+        const onSelect = jest.fn();
+        const wrapper = mountExplorer(onSelect);
+        const tree = treeOf(wrapper);
+        tree.simulate('mousedown');
+        tree.simulate('blur');
+        focusTree(tree);
+        expect(onSelect).toHaveBeenCalledWith(rows[0]);
         wrapper.unmount();
     });
 });

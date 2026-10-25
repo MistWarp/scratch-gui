@@ -23,6 +23,7 @@ class WindowedModal extends React.Component {
             'scheduleBlocklyWidgetReposition'
         ]);
         this.window = null;
+        this.fittedToContent = false;
         this.contentContainer = null;
         this.createdWindow = false;
         this.windowId = this.props.id || 'modal-window';

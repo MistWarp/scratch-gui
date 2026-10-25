@@ -60,7 +60,7 @@ class SimpleDialogComponent extends React.Component {
         return (
             <Modal
                 fitContent
-                width={500}
+                width={600}
                 modal
                 className={styles.modalContent}
                 onRequestClose={this.props.onCancel}

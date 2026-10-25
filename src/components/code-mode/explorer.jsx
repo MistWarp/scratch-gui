@@ -188,10 +188,13 @@ const Explorer = props => {
                     if (fromPointer) return;
                     if (event.target === event.currentTarget && !selectedKey && rows.length) props.onSelect(rows[0]);
                 }}
-                onPointerDown={() => {
+                onBlur={() => {
+                    pointerFocus.current = false;
+                }}
+                onMouseDown={() => {
                     pointerFocus.current = true;
                 }}
-                onPointerUp={() => {
+                onMouseUp={() => {
                     pointerFocus.current = false;
                 }}
                 onKeyDown={handleKeyDown}
