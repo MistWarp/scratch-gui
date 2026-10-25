@@ -30,7 +30,7 @@ const Button = ({as: Component, busy, busyLabel, children, className, disabled, 
         {busyLabel ? (
             <>
                 <span className={classNames(styles.content, {[styles.idle]: busy})}>{children}</span>
-                <span className={classNames(styles.content, {[styles.idle]: !busy})}>{busyLabel}</span>
+                {busy ? <span className={styles.content}>{busyLabel}</span> : null}
             </>
         ) : children}
     </Component>
