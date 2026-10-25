@@ -1822,6 +1822,7 @@ class CodeWorkbench extends React.Component {
             !this.props.collaborating;
         return {
             targetId: tab.targetId,
+            dirty: isDirty(state),
             canUndo: editable && undoDepth(view.state) > 0,
             canRedo: editable && redoDepth(view.state) > 0,
             undo: () => {
@@ -1839,6 +1840,7 @@ class CodeWorkbench extends React.Component {
         if ((undo ? undoDepth : redoDepth)(view.state) > 0) return undo ? undoText(view) : redoText(view);
         const tab = this.activeTab();
         if (!tab || tab.kind !== 'script' || isCodeLocked(this.props.vm)) return false;
+        if (isDirty(this.textState(tab.targetId))) return false;
         const entry = undo ? latestUndo(tab.targetId) : latestRedo(tab.targetId);
         if (!entry) return false;
         runCodeHistory({vm: this.props.vm, dispatch: this.props.dispatch, intl: this.props.intl, direction, entry});

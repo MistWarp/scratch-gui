@@ -262,6 +262,11 @@ const twMessages = defineMessages({
         defaultMessage: 'Could not start a new project. Your current project is still open.',
         description: 'Toast shown when File > New fails'
     },
+    applyBeforeUndo: {
+        id: 'mw.menuBar.applyBeforeUndo',
+        defaultMessage: 'Apply or discard your unapplied changes to undo the last apply',
+        description: 'Shown under a disabled Undo or Redo in the Edit menu when the open file has unapplied text'
+    },
     stageName: {
         id: 'mw.menuBar.stageName',
         defaultMessage: 'Stage',
@@ -1623,6 +1628,7 @@ class MenuBar extends React.Component {
             if (text && (undo ? text.canUndo : text.canRedo)) {
                 return {kind: 'typing', run: () => (undo ? text.undo() : text.redo())};
             }
+            if (text && text.dirty) return null;
             targetId = text ? text.targetId : null;
         }
         const blocksVisible = !this.props.codeMode && this.props.blocksTabVisible;
@@ -1936,8 +1942,12 @@ class MenuBar extends React.Component {
         const codeHistoryReason = codeLocked ?
             this.props.intl.formatMessage(twMessages.codeHistoryCollaborating) : null;
         let undoUnavailableReason = null;
-        if (codeLocked) undoUnavailableReason = codeHistoryReason;
-        else if (!this.props.isPlayerOnly && !this.props.codeMode && !this.props.blocksTabVisible) {
+        const unappliedText = this.props.codeMode && !this.props.isPlayerOnly ? textUndo() : null;
+        if (codeLocked) {
+            undoUnavailableReason = codeHistoryReason;
+        } else if (unappliedText && unappliedText.dirty) {
+            undoUnavailableReason = this.props.intl.formatMessage(twMessages.applyBeforeUndo);
+        } else if (!this.props.isPlayerOnly && !this.props.codeMode && !this.props.blocksTabVisible) {
             undoUnavailableReason = this.props.intl.formatMessage(twMessages.codeTabOnly);
         }
         const menuBar = (

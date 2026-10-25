@@ -195,4 +195,13 @@ describe('one Undo and Redo in the Edit menu', () => {
         expect(menuBar.resolveUndo('undo')).toBeNull();
         expect(menuBar.resolveUndo('redo')).toBeNull();
     });
+
+    test('with unapplied text and no typing left it does not undo the last apply', () => {
+        release = setTextUndoProvider(() => ({targetId: 's1', dirty: true, canUndo: false, canRedo: false}));
+        latestUndo.mockReturnValue({targetId: 's1', sequence: 3});
+        latestRedo.mockReturnValue({targetId: 's1', redo: {clock: 1}});
+        const menuBar = makeMenuBar({codeMode: true});
+        expect(menuBar.resolveUndo('undo')).toBeNull();
+        expect(menuBar.resolveUndo('redo')).toBeNull();
+    });
 });

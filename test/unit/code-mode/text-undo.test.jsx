@@ -20,10 +20,11 @@ jest.mock('../../../src/lib/code-mode/code-dialogs.js', () => ({
 const {runCodeHistory} = require('../../../src/lib/code-mode/code-dialogs.js');
 
 const vm = {editingCommands: null};
-const makeWorkbench = tab => {
+const makeWorkbench = (tab, textState = null) => {
     const workbench = Object.create(CodeWorkbench.prototype);
     workbench.props = {vm, dispatch: jest.fn(), intl: {formatMessage: m => m.defaultMessage}};
     workbench.activeTab = () => tab;
+    workbench.textState = () => textState;
     return workbench;
 };
 
@@ -70,6 +71,16 @@ describe('Ctrl+Z in a Code mode script tab', () => {
         expect(runCodeHistory).not.toHaveBeenCalled();
         view.destroy();
     });
+});
+
+test('Ctrl+Z does not undo an apply while the file has unapplied text', () => {
+    const view = new EditorView({state: EditorState.create({doc: 'say [hi]', extensions: [history()]})});
+    latestUndo.mockReturnValue({targetId: 's1', sequence: 2});
+    const workbench = makeWorkbench({kind: 'script', targetId: 's1'},
+        {status: 'ready', doc: 'say [hi]', baseline: {text: 'say [bye]'}});
+    expect(workbench.handleTextHistory(view, 'undo')).toBe(false);
+    expect(runCodeHistory).not.toHaveBeenCalled();
+    view.destroy();
 });
 
 describe('text history resets after an apply', () => {
