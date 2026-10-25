@@ -58,6 +58,9 @@ test('only official or explicitly trusted extensions run unsandboxed', () => {
     expect(isTrustedExtension('https://extensions.turbowarp.org/example.js')).toBe(true);
     expect(isTrustedExtension('https://extensions.mistium.com/featured/example.js')).toBe(true);
     expect(isTrustedExtension('https://extensions.mistium.com/unreviewed/example.js')).toBe(true);
+    expect(isTrustedExtension('https://rotur.dev/scratch/beam.js')).toBe(true);
+    expect(isTrustedExtension('https://rotur.dev/beam.js')).toBe(false);
+    expect(isTrustedExtension('https://rotur.dev/scratch/../beam.js')).toBe(false);
     expect(isTrustedExtension('https://extensions.mistium.com.example.com/extension.js')).toBe(false);
     expect(isTrustedExtension(custom)).toBe(false);
     manuallyTrustExtension(custom);
@@ -214,4 +217,40 @@ test('after Load all, extensions from outside the project load still prompt and 
     expect(await vmSecurityManager.canLoadExtensionFromProject(peerURL)).toBe(false);
     expect(showModal).toHaveBeenCalled();
     expect(await vmSecurityManager.getSandboxMode(peerURL)).toBe('iframe');
+});
+
+test('an extension from a link that failed in the sandbox can be trusted after asking', async () => {
+    window.history.replaceState(null, '', '/editor');
+    rememberPlatformProject(null);
+    const url = 'https://example.org/needs-the-page.js';
+    const component = new TWSecurityManagerComponent({
+        vm: {runtime: {projectName: 'Link project'}},
+        securityManager: {}
+    });
+    const shown = [];
+    component.acquireModalLock = async () => ({
+        showModal: async (type, data) => {
+            shown.push({type, data});
+            return true;
+        },
+        releaseLock: () => {}
+    });
+    expect(isTrustedExtension(url)).toBe(false);
+    await expect(component.canRetryUnsandboxed(url)).resolves.toBe(true);
+    expect(shown[0].data).toMatchObject({url, host: 'example.org', sandboxFailed: true, unsandboxed: true});
+    expect(isTrustedExtension(url)).toBe(true);
+    await expect(component.canRetryUnsandboxed('javascript:alert(1)')).resolves.toBe(false);
+    await expect(component.canRetryUnsandboxed('http://example.org/x.js')).resolves.toBe(false);
+    expect(shown).toHaveLength(1);
+});
+
+test('saying no to full access for a link leaves the extension sandboxed', async () => {
+    const url = 'https://example.net/declined.js';
+    const component = new TWSecurityManagerComponent({
+        vm: {runtime: {projectName: 'Link project'}},
+        securityManager: {}
+    });
+    component.acquireModalLock = async () => ({showModal: async () => false, releaseLock: () => {}});
+    await expect(component.canRetryUnsandboxed(url)).resolves.toBe(false);
+    expect(isTrustedExtension(url)).toBe(false);
 });

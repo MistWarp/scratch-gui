@@ -5,6 +5,7 @@ import {connect} from 'react-redux';
 import bindAll from 'lodash.bindall';
 import VM from 'scratch-vm';
 import log from '../utils/log';
+import {loadLinkedExtensions} from '../extension-link.js';
 import {initAppearanceSettings} from '../mw-appearance-settings';
 import {initStyleSettings} from '../mw-style-settings';
 import {initMenuBarLayout} from '../mw-menu-bar-layout';
@@ -412,16 +413,11 @@ const TWStateManager = function (WrappedComponent) {
             const student = isStudentSession();
 
             if (!student) {
-                for (const extension of urlParams.getAll('extension')) {
-                    const manager = this.props.vm.extensionManager;
-                    const allowed = extension === 'patching' ?
-                        Promise.resolve(manager.securityManager.canLoadExtensionFromProject('builtin:patching')) :
-                        Promise.resolve(true);
-                    allowed.then(ok => (ok ? manager.loadExtensionURL(extension) : null)).catch(error => {
-                        log.error(`Could not load extension from URL parameter: ${extension}`, error);
-                        this.props.onExtensionLoadError();
-                    });
-                }
+                loadLinkedExtensions(urlParams.getAll('extension'), {
+                    manager: this.props.vm.extensionManager,
+                    mayAskFullAccess: !this.props.isEmbedded && !this.props.isPlayerOnly && window.top === window,
+                    onError: () => this.props.onExtensionLoadError()
+                });
             }
 
             // Handle room codes for automatic collaboration

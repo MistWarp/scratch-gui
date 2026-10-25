@@ -1325,6 +1325,8 @@
   "mw.loadExtension.patchingWarning": "JavaScript patching runs with full access to MistWarp. It could steal your login session, take over your account, read or change projects and settings, or run other malicious code. Only continue if you trust this project's author.",
   "mw.loadExtension.jsExecution": "This project runs JavaScript with the {name} extension.",
   "mw.loadExtension.jsExecutionWarning": "It runs with full access to MistWarp. It could steal your login session, take over your account, read or change projects and settings, or run other malicious code. Only continue if you trust this project's author.",
+  "mw.loadExtension.sandboxFailed": "A link you opened wants to load this extension with full access to {APP_NAME}. It didn't work in the sandbox:",
+  "mw.loadExtension.sandboxFailedWarning": "With full access, this code can do anything you can: steal your login session, take over your account, or change your projects and settings. Only run it if you trust {host}.",
   "tw.loadExtension.embedded": "This project wants to add extra blocks (a custom extension) built into it:",
   "tw.loadExtension.url": "This project wants to add extra blocks (a custom extension) from another website:",
   "tw.loadExtension.unsandboxed": "Give it full access (advanced, not recommended)",
