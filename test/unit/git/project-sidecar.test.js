@@ -455,4 +455,41 @@ describe('free comments', () => {
         expect(edited.blockId).toBeTruthy();
         expect([edited.x, edited.y]).toEqual([null, null]);
     });
+
+    test('same text on two blocks of one script keeps each position on its block', async () => {
+        const blocks = flagScript('hat', 10, 20, 'first');
+        blocks.hatsay.next = 'second';
+        blocks.second = {...blocks.hatsay, parent: 'hatsay', next: null, inputs: {MESSAGE: [1, [10, 'second']]}};
+        blocks.hatsay.comment = 'lower';
+        blocks.second.comment = 'upper';
+        const {project} = await roundTrip(projectJson({
+            targets: [stage(), sprite('Sprite 1', {
+                blocks,
+                comments: {
+                    upper: {...note('same', 300, 300), blockId: 'second'},
+                    lower: {...note('same', 300, 100), blockId: 'hatsay'}
+                }
+            })]
+        }));
+        const rebuilt = targetNamed(project, 'Sprite 1');
+        const said = comment => rebuilt.blocks[comment.blockId].inputs.MESSAGE[1][1];
+        const pairs = Object.values(rebuilt.comments).filter(comment => comment.text === 'same')
+            .map(comment => [said(comment), comment.y])
+            .sort();
+        expect(pairs).toEqual([['first', 100], ['second', 300]]);
+    });
+
+    test('a commented block whose parent is missing does not stop the save', async () => {
+        const blocks = flagScript('hat', 10, 20, 'hi');
+        blocks.hatsay.parent = 'gone';
+        blocks.hatsay.topLevel = false;
+        blocks.hatsay.comment = 'orphan';
+        const dir = makeDir();
+        await expect(write(projectJson({
+            targets: [stage(), sprite('Sprite 1', {
+                blocks,
+                comments: {orphan: {...note('orphaned note', 50, 60), blockId: 'hatsay'}}
+            })]
+        }), dir)).resolves.not.toThrow();
+    });
 });

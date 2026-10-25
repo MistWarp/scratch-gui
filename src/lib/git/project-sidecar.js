@@ -227,15 +227,43 @@ const topOf = (blocks, id) => {
     return current;
 };
 
+const childIds = block => {
+    const ids = [];
+    const inputs = isPlainObject(block.inputs) ? block.inputs : {};
+    for (const name of Object.keys(inputs).sort()) {
+        const input = inputs[name];
+        if (Array.isArray(input) && typeof input[1] === 'string') ids.push(input[1]);
+    }
+    if (typeof block.next === 'string') ids.push(block.next);
+    return ids;
+};
+
+const ordinalIn = (blocks, top, wanted) => {
+    const seen = new Set();
+    const pending = [top];
+    let index = 0;
+    while (pending.length) {
+        const id = pending.pop();
+        if (seen.has(id) || !isPlainObject(blocks[id])) continue;
+        seen.add(id);
+        if (id === wanted) return index;
+        index++;
+        pending.push(...childIds(blocks[id]).reverse());
+    }
+    return -1;
+};
+
 const anchorOf = (target, comment) => {
     const blocks = isPlainObject(target.blocks) ? target.blocks : {};
     const block = comment.blockId ? blocks[comment.blockId] : null;
-    if (!block || Array.isArray(block)) return null;
+    if (!isPlainObject(block)) return null;
     const top = topOf(blocks, comment.blockId);
+    const head = isPlainObject(blocks[top]) ? blocks[top] : {};
     return {
         key: `${stackOf(blocks, top)}/${block.opcode}`,
-        x: Math.round(Number(blocks[top].x) || 0),
-        y: Math.round(Number(blocks[top].y) || 0)
+        x: Math.round(Number(head.x) || 0),
+        y: Math.round(Number(head.y) || 0),
+        index: ordinalIn(blocks, top, comment.blockId)
     };
 };
 
@@ -244,22 +272,22 @@ const layoutEntry = (target, comment) => {
     if (comment.blockId) {
         const anchor = anchorOf(target, comment);
         entry.on = anchor ? anchor.key : '?';
-        if (anchor) entry.order = [anchor.y, anchor.x];
+        if (anchor) entry.order = [anchor.y, anchor.x, anchor.index];
     }
     return entry;
 };
 
 const entryKey = entry => (entry.on ? `${entry.text}@${entry.on}` : entry.text);
 
-const tieBreak = entry => entry.order || [entry.y, entry.x];
+const tieBreak = entry => entry.order || [entry.y, entry.x, 0];
+
+const compareOrder = (a, b) => (a[0] - b[0]) || (a[1] - b[1]) || (a[2] - b[2]);
 
 const byKeyThenPlace = (a, b) => {
     const keyA = entryKey(a);
     const keyB = entryKey(b);
     if (keyA !== keyB) return keyA < keyB ? -1 : 1;
-    const [ay, ax] = tieBreak(a);
-    const [by, bx] = tieBreak(b);
-    return (ay - by) || (ax - bx);
+    return compareOrder(tieBreak(a), tieBreak(b));
 };
 
 const commentLayoutOf = target => {
@@ -296,11 +324,7 @@ const restoreCommentLayout = (target, layout) => {
     }
     const pending = [];
     const order = placedComments(target).map(([, comment]) => ({comment, entry: layoutEntry(target, comment)}))
-        .sort((a, b) => {
-            const [ay, ax] = a.entry.order || [0, 0];
-            const [by, bx] = b.entry.order || [0, 0];
-            return (ay - by) || (ax - bx);
-        });
+        .sort((a, b) => compareOrder(a.entry.order || [0, 0, 0], b.entry.order || [0, 0, 0]));
     for (const {comment, entry} of order) {
         const attached = Boolean(comment.blockId);
         if (attached && isPlaced(comment)) continue;
