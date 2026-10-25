@@ -410,4 +410,49 @@ describe('free comments', () => {
         const second = await roundTrip(make([['q', 'beta', 2], ['p', 'alpha', 1]]));
         expect(sidecar(first.dir).comments).toEqual(sidecar(second.dir).comments);
     });
+
+    test('copies of one script keep their own comment positions', async () => {
+        const blocks = {...flagScript('copy', 10, 0, 'same'), ...flagScript('original', 10, 400, 'same')};
+        blocks.copysay.comment = 'onCopy';
+        blocks.originalsay.comment = 'onOriginal';
+        const {project} = await roundTrip(projectJson({
+            targets: [stage(), sprite('Sprite 1', {
+                blocks,
+                comments: {
+                    onOriginal: {...note('TODO', 300, 420), blockId: 'originalsay'},
+                    onCopy: {...note('TODO', 300, 20), blockId: 'copysay'}
+                }
+            })]
+        }));
+        const rebuilt = targetNamed(project, 'Sprite 1');
+        const scriptY = comment => {
+            let id = comment.blockId;
+            while (rebuilt.blocks[id].parent) id = rebuilt.blocks[id].parent;
+            return rebuilt.blocks[id].y;
+        };
+        const pairs = Object.values(rebuilt.comments).filter(comment => comment.text === 'TODO')
+            .map(comment => [scriptY(comment), comment.y])
+            .sort((a, b) => a[0] - b[0]);
+        expect(pairs).toEqual([[0, 20], [400, 420]]);
+    });
+
+    test('an attached comment with no stored match is left for the editor to place', async () => {
+        const blocks = flagScript('hat', 10, 20, 'hi');
+        blocks.hatsay.comment = 'note';
+        const dir = makeDir();
+        await write(projectJson({
+            targets: [stage(), sprite('Sprite 1', {
+                blocks,
+                comments: {note: {...note('first text', 300, 0), blockId: 'hatsay'}}
+            })]
+        }), dir);
+        const full = fs.readdirSync(dir, {recursive: true}).map(name => path.join(dir, name))
+            .find(name => name.endsWith('.fractch') && fs.readFileSync(name, 'utf8').includes('first text'));
+        fs.writeFileSync(full, fs.readFileSync(full, 'utf8').replace('first text', 'edited text'));
+        const {project} = await rebuild(dir);
+        const edited = Object.values(targetNamed(project, 'Sprite 1').comments)
+            .find(comment => comment.text === 'edited text');
+        expect(edited.blockId).toBeTruthy();
+        expect([edited.x, edited.y]).toEqual([null, null]);
+    });
 });
