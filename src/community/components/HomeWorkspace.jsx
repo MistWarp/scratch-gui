@@ -167,7 +167,6 @@ export const ContinueProjects = ({username}) => {
             <SectionHeading
                 id="home-continue-heading"
                 icon={Pencil}
-                tone="var(--block-pen)"
                 title={projects.length ? communityText('Continue editing') :
                     current.projects && !current.failed ? communityText('Start a project') : communityText('Your projects')}
                 actions={projects.length ? (
@@ -220,7 +219,6 @@ export const StarterGallery = ({children}) => {
             <SectionHeading
                 id="starter-heading"
                 icon={Blocks}
-                tone="var(--block-control)"
                 title={communityText('Starter projects')}
                 lead={communityText('Change one thing and save your own version. No sign-in needed.')}
             />
@@ -268,7 +266,6 @@ export const ContinuePlaying = ({username}) => {
             <SectionHeading
                 id="home-playing-heading"
                 icon={Gamepad2}
-                tone="var(--block-sensing)"
                 title={communityText('Continue playing')}
                 actions={<QuietLink to={`/users/${username}/library`}>{communityText('Game library')}</QuietLink>}
             />

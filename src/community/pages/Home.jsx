@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Heart, Plus, Rocket, UsersRound} from 'lucide-react';
+import {Clock, Plus, UserPlus, Users} from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
 import rotur from '../rotur';
 import {fetchFollowingFeed} from '../../lib/rotur/client.js';
@@ -143,8 +143,7 @@ export const FollowingSection = ({viewerName}) => {
             >
                 <SectionHeading
                     id="home-creators-heading"
-                    icon={UsersRound}
-                    tone="var(--block-sound)"
+                    icon={UserPlus}
                     title={communityText('Creators to follow')}
                     lead={communityText('Their new games and posts will show up here.')}
                     actions={<QuietLink to="/leaderboard">{communityText('See all')}</QuietLink>}
@@ -167,8 +166,7 @@ export const FollowingSection = ({viewerName}) => {
         >
             <SectionHeading
                 id="home-following-heading"
-                icon={Heart}
-                tone="var(--block-custom)"
+                icon={Users}
                 title={communityText('From people you follow')}
                 actions={<QuietLink to="/posts">{communityText('See all posts')}</QuietLink>}
             />
@@ -259,8 +257,7 @@ const Home = () => {
     const newGames = (<GameShelf
         key="new"
         id="home-new-heading"
-        icon={Rocket}
-        tone="var(--block-operators)"
+        icon={Clock}
         title={communityText('New games')}
         query={{sort: 'recent', limit: 4}}
         link="/explore?sort=recent"
@@ -299,8 +296,7 @@ const Home = () => {
             >
                 <SectionHeading
                     id="home-creators-heading"
-                    icon={UsersRound}
-                    tone="var(--block-sound)"
+                    icon={UserPlus}
                     title={communityText('Creators to follow')}
                     actions={<QuietLink to="/leaderboard">{communityText('See all')}</QuietLink>}
                 />

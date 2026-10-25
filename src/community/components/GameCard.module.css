@@ -6,10 +6,6 @@
     transition: transform .3s var(--ease-bounce);
 }
 
-.card:hover {
-    transform: translateY(-4px);
-}
-
 /* The outline keeps white thumbnails from melting into a white page. */
 .thumb {
     position: relative;
@@ -24,20 +20,12 @@
     transition: box-shadow .3s;
 }
 
-.card:hover .thumb {
-    box-shadow: 0 10px 24px -10px rgba(0, 0, 0, .45);
-}
-
 .thumb img {
     display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
     transition: transform .4s var(--ease-bounce);
-}
-
-.card:hover .thumb img {
-    transform: scale(1.06);
 }
 
 .playIcon {
@@ -60,8 +48,38 @@
     margin-inline-start: 2px;
 }
 
-.card:hover .playIcon {
+.card:focus-within {
+    transform: translateY(-4px);
+}
+
+.card:focus-within .thumb {
+    box-shadow: 0 10px 24px -10px rgba(0, 0, 0, .45);
+}
+
+.game:focus-within .thumb img {
+    transform: scale(1.06);
+}
+
+.game:focus-within .playIcon {
     transform: scale(1) rotate(0deg);
+}
+
+@media (hover: hover) {
+    .card:hover {
+        transform: translateY(-4px);
+    }
+
+    .card:hover .thumb {
+        box-shadow: 0 10px 24px -10px rgba(0, 0, 0, .45);
+    }
+
+    .game:hover .thumb img {
+        transform: scale(1.06);
+    }
+
+    .game:hover .playIcon {
+        transform: scale(1) rotate(0deg);
+    }
 }
 
 .fallback {
@@ -196,6 +214,7 @@
 
 .skeletonThumb {
     aspect-ratio: 4 / 3;
+    border-radius: var(--radius-sm);
 }
 
 .skeletonLine {
@@ -224,7 +243,9 @@
 @media (prefers-reduced-motion: reduce) {
     .card,
     .card:hover,
-    .card:hover .thumb img {
+    .card:focus-within,
+    .game:hover .thumb img,
+    .game:focus-within .thumb img {
         transform: none;
     }
 

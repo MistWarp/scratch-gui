@@ -198,7 +198,7 @@ GameMeta.propTypes = {
 
 const GameCard = ({project, className, style}) => (
     <MediaCard
-        className={className}
+        className={classNames(styles.game, className)}
         style={style}
         to={projectUrl(project)}
         title={project.title}

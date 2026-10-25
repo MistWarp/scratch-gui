@@ -2,11 +2,11 @@
     display: grid;
     justify-items: center;
     gap: var(--space-3);
-    padding: 0;
-    border: 0;
-    background: none;
     color: var(--text-faint);
     font-size: var(--fs-xs);
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .scene {
@@ -27,8 +27,14 @@
     transition: transform .35s var(--ease-bounce);
 }
 
-.toy:hover .script {
-    transform: rotate(-3deg) scale(1.03);
+@media (hover: hover) {
+    .toy:hover .script {
+        transform: rotate(-3deg) scale(1.03);
+    }
+
+    .toy:hover .hint {
+        color: var(--text-dim);
+    }
 }
 
 .block > path {
@@ -66,10 +72,6 @@
 
 .hint {
     transition: color .15s;
-}
-
-.toy:hover .hint {
-    color: var(--text-dim);
 }
 
 .running .block {
@@ -124,5 +126,22 @@
     100% {
         translate: 0 0;
         rotate: 360deg;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toy {
+        cursor: default;
+    }
+
+    .script,
+    .sprite,
+    .running .block,
+    .running .sprite {
+        animation: none;
+    }
+
+    .hint {
+        display: none;
     }
 }

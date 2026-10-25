@@ -104,118 +104,117 @@ const ScriptToy = ({className}) => {
         return () => clearTimeout(timer);
     }, [run]);
     return (
-        <button
-            type="button"
+        <div
             className={`${styles.toy} ${running ? styles.running : ''} ${className || ''}`}
             onClick={() => setRun(value => value + 1)}
+            aria-hidden="true"
         >
-            <span
-                key={run}
-                className={styles.scene}
-                aria-hidden="true"
-            >
+            <span className={styles.scene}>
                 <svg
                     className={styles.script}
                     viewBox="-4 -4 228 312"
                 >
-                    <Block
-                        d={hatPath(0, 0, 176, 48)}
-                        step={0}
-                        tone="var(--block-events)"
-                    >
-                        <Label
-                            x={12}
-                            y={40}
-                            width={40}
-                        />
-                        <Flag
-                            x={60}
-                            y={34}
-                            size={20}
-                            className={styles.flag}
-                        />
-                        <Label
-                            x={90}
-                            y={40}
-                            width={44}
-                        />
-                    </Block>
-                    <Block
-                        d={stackPath(0, 68, 196, 48)}
-                        step={1}
-                        tone="var(--block-motion)"
-                    >
-                        <Label
-                            x={12}
-                            y={88}
-                            width={36}
-                        />
-                        <Input
-                            x={56}
-                            y={80}
-                        />
-                        <Label
-                            x={100}
-                            y={88}
-                            width={40}
-                        />
-                    </Block>
-                    <Block
-                        d={cPath(0, 116, 216, 96)}
-                        step={2}
-                        tone="var(--block-control)"
-                    >
-                        <Label
-                            x={12}
-                            y={136}
-                            width={44}
-                        />
-                        <Input
-                            x={64}
-                            y={128}
-                        />
-                    </Block>
-                    <Block
-                        d={stackPath(16, 164, 184, 48)}
-                        step={3}
-                        tone="var(--block-looks)"
-                    >
-                        <Label
-                            x={28}
-                            y={184}
-                            width={52}
-                        />
-                        <Input
-                            x={88}
-                            y={176}
-                        />
-                    </Block>
-                    <Block
-                        d={stackPath(16, 212, 168, 48)}
-                        step={4}
-                        tone="var(--block-sound)"
-                    >
-                        <Label
-                            x={28}
-                            y={232}
-                            width={44}
-                        />
-                        <Label
-                            x={80}
-                            y={232}
-                            width={56}
-                        />
-                    </Block>
+                    <g key={run}>
+                        <Block
+                            d={hatPath(0, 0, 176, 48)}
+                            step={0}
+                            tone="var(--block-events)"
+                        >
+                            <Label
+                                x={12}
+                                y={40}
+                                width={40}
+                            />
+                            <Flag
+                                x={60}
+                                y={34}
+                                size={20}
+                                className={styles.flag}
+                            />
+                            <Label
+                                x={90}
+                                y={40}
+                                width={44}
+                            />
+                        </Block>
+                        <Block
+                            d={stackPath(0, 68, 196, 48)}
+                            step={1}
+                            tone="var(--block-motion)"
+                        >
+                            <Label
+                                x={12}
+                                y={88}
+                                width={36}
+                            />
+                            <Input
+                                x={56}
+                                y={80}
+                            />
+                            <Label
+                                x={100}
+                                y={88}
+                                width={40}
+                            />
+                        </Block>
+                        <Block
+                            d={cPath(0, 116, 216, 96)}
+                            step={2}
+                            tone="var(--block-control)"
+                        >
+                            <Label
+                                x={12}
+                                y={136}
+                                width={44}
+                            />
+                            <Input
+                                x={64}
+                                y={128}
+                            />
+                        </Block>
+                        <Block
+                            d={stackPath(16, 164, 184, 48)}
+                            step={3}
+                            tone="var(--block-looks)"
+                        >
+                            <Label
+                                x={28}
+                                y={184}
+                                width={52}
+                            />
+                            <Input
+                                x={88}
+                                y={176}
+                            />
+                        </Block>
+                        <Block
+                            d={stackPath(16, 212, 168, 48)}
+                            step={4}
+                            tone="var(--block-sound)"
+                        >
+                            <Label
+                                x={28}
+                                y={232}
+                                width={44}
+                            />
+                            <Label
+                                x={80}
+                                y={232}
+                                width={56}
+                            />
+                        </Block>
+                    </g>
                 </svg>
                 <img
+                    key={run}
                     className={styles.sprite}
                     src={fog}
                     alt=""
                     draggable={false}
                 />
             </span>
-            <span className={styles.hint}>{text('Click the script to run it.')}</span>
-        </button>
+            <span className={styles.hint}>{text('Click or tap the script to run it.')}</span>
+        </div>
     );
 };
 

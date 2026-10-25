@@ -2,22 +2,6 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useRef, useState} from 'react';
 import {Link, Navigate, useSearchParams} from 'react-router-dom';
-import {
-    Clapperboard,
-    Flame,
-    Gamepad2,
-    Gem,
-    GraduationCap,
-    Heart,
-    LayoutGrid,
-    MessageCircleQuestion,
-    Music,
-    Palette,
-    Smartphone,
-    Sparkles,
-    Users,
-    Wrench
-} from 'lucide-react';
 import api from '../api';
 import useLatest from '../use-latest.js';
 import GameCard, {CardSkeleton} from '../components/GameCard.jsx';
@@ -31,23 +15,23 @@ import {useUser} from '../UserContext.jsx';
 import styles from './Explore.module.css';
 
 const SORTS = [
-    {key: 'trending', label: 'Trending', icon: Flame, tone: 'var(--block-control)'},
-    {key: 'recent', label: 'New', icon: Sparkles, tone: 'var(--block-events)'},
-    {key: 'loved', label: 'Most loved', icon: Heart, tone: 'var(--block-custom)'},
-    {key: 'undiscovered', label: 'Hidden gems', icon: Gem, tone: 'var(--block-sensing)'}
+    {key: 'trending', label: 'Trending'},
+    {key: 'recent', label: 'New'},
+    {key: 'loved', label: 'Most loved'},
+    {key: 'undiscovered', label: 'Hidden gems'}
 ];
 
 const FILTERS = [
-    {key: '', label: 'Everything', icon: LayoutGrid, tone: 'var(--block-looks)'},
-    {key: 'games', label: 'Games', icon: Gamepad2, tone: 'var(--block-motion)'},
-    {key: 'multiplayer', label: 'Multiplayer', icon: Users, tone: 'var(--block-operators)'},
-    {key: 'mobile', label: 'Plays on phones', icon: Smartphone, tone: 'var(--block-sensing)'},
-    {key: 'animation', label: 'Animation', icon: Clapperboard, tone: 'var(--block-looks)'},
-    {key: 'art', label: 'Art', icon: Palette, tone: 'var(--block-custom)'},
-    {key: 'music', label: 'Music', icon: Music, tone: 'var(--block-sound)'},
-    {key: 'tools', label: 'Tools', icon: Wrench, tone: 'var(--block-control)'},
-    {key: 'tutorial', label: 'Tutorials', icon: GraduationCap, tone: 'var(--block-pen)'},
-    {key: 'feedback', label: 'Looking for feedback', icon: MessageCircleQuestion, tone: 'var(--block-events)'}
+    {key: '', label: 'Everything'},
+    {key: 'games', label: 'Games'},
+    {key: 'multiplayer', label: 'Multiplayer'},
+    {key: 'mobile', label: 'Plays on phones'},
+    {key: 'animation', label: 'Animation'},
+    {key: 'art', label: 'Art'},
+    {key: 'music', label: 'Music'},
+    {key: 'tools', label: 'Tools'},
+    {key: 'tutorial', label: 'Tutorials'},
+    {key: 'feedback', label: 'Looking for feedback'}
 ];
 const PAGE_SIZE = 24;
 const MAX_RESTORED_PAGES = 10;
@@ -105,6 +89,7 @@ const Explore = () => {
     // Once a page has loaded, later sorts and filters keep it on screen
     // (dimmed) until the new one arrives, instead of blanking the grid.
     const [loaded, setLoaded] = useState(false);
+    const [shownKey, setShownKey] = useState('');
     const [failed, setFailed] = useState(false);
     const [attempt, setAttempt] = useState(0);
     const [total, setTotal] = useState(0);
@@ -142,6 +127,7 @@ const Explore = () => {
             .then(fresh(pages => {
                 setProjects(mergeProjects(pages.map(page => page.projects)));
                 setTotal(pages.length ? pages[0].total || 0 : 0);
+                setShownKey(`${sort}:${tag}:${attempt}`);
                 setLoaded(true);
             }))
             .catch(fresh(() => setFailed(true)))
@@ -198,22 +184,13 @@ const Explore = () => {
         <div className={styles.filterGroup}>
             <h2 id={`explore-${key}`}>{title}</h2>
             <ul aria-labelledby={`explore-${key}`}>
-                {options.map(({icon: Icon, ...option}) => (
+                {options.map(option => (
                     <li key={option.key}>
                         <Link
                             to={browseLink({[key]: option.key})}
                             aria-current={current === option.key ? 'page' : null}
                             className={current === option.key ? styles.filterActive : styles.filter}
-                            style={{'--tone': option.tone}}
-                        >
-                            <span className={styles.filterIcon}>
-                                <Icon
-                                    size={14}
-                                    aria-hidden="true"
-                                />
-                            </span>
-                            {communityText(option.label)}
-                        </Link>
+                        >{communityText(option.label)}</Link>
                     </li>
                 ))}
             </ul>
@@ -260,6 +237,7 @@ const Explore = () => {
                         >{communityText('Could not load projects.')}</StatusMessage>
                     ) : projects.length ? (
                         <div
+                            key={shownKey}
                             className={loading ? `${styles.grid} ${styles.stale}` : styles.grid}
                             aria-busy={loading}
                         >

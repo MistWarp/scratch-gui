@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React, {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Play, Sparkles} from 'lucide-react';
+import {Play, Star} from 'lucide-react';
 import api, {embedUrl, projectUrl} from '../api';
 import rotur from '../rotur.js';
 import {track} from '../analytics';
@@ -273,8 +273,7 @@ export const FeaturedGames = () => {
         >
             <SectionHeading
                 id="home-featured-heading"
-                icon={Sparkles}
-                tone="var(--block-events)"
+                icon={Star}
                 title={text('Featured games')}
                 actions={<QuietLink to="/explore">{text('Browse all games')}</QuietLink>}
             />
@@ -317,7 +316,7 @@ export const FeaturedGames = () => {
 };
 
 // A plain row of games from Explore, for New games on home.
-export const GameShelf = ({icon, id, link, linkLabel, query, title, tone}) => {
+export const GameShelf = ({icon, id, link, linkLabel, query, title}) => {
     const {text} = useCommunityIntl();
     const [attempt, setAttempt] = useState(0);
     const games = useGames(query, attempt);
@@ -329,7 +328,6 @@ export const GameShelf = ({icon, id, link, linkLabel, query, title, tone}) => {
             <SectionHeading
                 id={id}
                 icon={icon}
-                tone={tone}
                 title={title}
                 actions={<QuietLink to={link}>{linkLabel}</QuietLink>}
             />
@@ -367,6 +365,5 @@ GameShelf.propTypes = {
         sort: PropTypes.string,
         tag: PropTypes.string
     }).isRequired,
-    title: PropTypes.node.isRequired,
-    tone: PropTypes.string
+    title: PropTypes.node.isRequired
 };

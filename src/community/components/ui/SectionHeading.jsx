@@ -6,21 +6,13 @@ import {Link} from 'react-router-dom';
 import {useCommunityIntl} from '../../i18n.jsx';
 import styles from './SectionHeading.module.css';
 
-const SectionHeading = ({
-    actions, as: Heading, className, count, icon: Icon, id, lead, link, linkLabel, title, tone
-}) => {
+const SectionHeading = ({actions, as: Heading, className, count, icon: Icon, id, lead, link, linkLabel, title}) => {
     const {text: communityText} = useCommunityIntl();
     return (
         <div className={classNames(styles.heading, className)}>
             <div className={styles.text}>
                 <Heading id={id} className={styles.title}>
-                    {Icon && tone ? (
-                        <span
-                            className={styles.chip}
-                            style={{'--tone': tone}}
-                        ><Icon size={18} aria-hidden="true" /></span>
-                    ) : null}
-                    {Icon && !tone ? <Icon size={18} aria-hidden="true" /> : null}
+                    {Icon ? <Icon size={18} aria-hidden="true" /> : null}
                     <span>{title}</span>
                     {typeof count === 'number' ? <b className={styles.count}>{count}</b> : null}
                 </Heading>
@@ -42,8 +34,7 @@ SectionHeading.propTypes = {
     lead: PropTypes.node,
     link: PropTypes.string,
     linkLabel: PropTypes.node,
-    title: PropTypes.node.isRequired,
-    tone: PropTypes.string
+    title: PropTypes.node.isRequired
 };
 
 SectionHeading.defaultProps = {

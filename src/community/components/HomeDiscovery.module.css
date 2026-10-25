@@ -15,10 +15,7 @@
     align-items: center;
     padding: var(--space-5);
     border-radius: var(--radius);
-    background:
-        radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--block-events) 20%, transparent), transparent 45%),
-        radial-gradient(circle at 70% 100%, color-mix(in srgb, var(--block-custom) 14%, transparent), transparent 40%),
-        var(--bg-card);
+    background: var(--bg-card);
 }
 
 .skeleton {
@@ -51,8 +48,19 @@
     background: var(--bg-card);
 }
 
-.spotlight:hover .poster {
+.spotlight:focus-within .poster {
     transform: rotate(0deg) scale(1.02);
+}
+
+@media (hover: hover) {
+    .spotlight:hover .poster {
+        transform: rotate(0deg) scale(1.02);
+    }
+}
+
+.spotlight .skeleton,
+.spotlight .lineSkeleton {
+    background: var(--bg-raised);
 }
 
 .poster img,
@@ -185,7 +193,8 @@
 
 @media (prefers-reduced-motion: reduce) {
     .poster,
-    .spotlight:hover .poster {
+    .spotlight:hover .poster,
+    .spotlight:focus-within .poster {
         transform: none;
     }
 

@@ -19,11 +19,7 @@
     gap: var(--space-6);
     padding: var(--space-6) var(--space-7);
     border-radius: var(--radius);
-    background:
-        radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--block-looks) 30%, transparent), transparent 42%),
-        radial-gradient(circle at 62% 100%, color-mix(in srgb, var(--block-sound) 16%, transparent), transparent 38%),
-        radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--block-motion) 18%, transparent), transparent 46%),
-        var(--bg-card);
+    background: var(--bg-card);
 }
 
 .introText {
@@ -199,7 +195,7 @@
     }
 }
 
-@media (max-width: 860px) {
+@media (max-width: 1000px) {
     .intro {
         grid-template-columns: minmax(0, 1fr);
         padding: var(--space-5);
