@@ -22,6 +22,10 @@
     background: var(--bg-card);
 }
 
+.introPlain {
+    min-height: 0;
+}
+
 .wall {
     position: absolute;
     inset: -60px -120px;
@@ -281,8 +285,13 @@
         font-size: var(--fs-md);
     }
 
+    .wall {
+        inset: -24px -120px auto;
+        align-content: start;
+    }
+
     .wallTile {
-        width: 140px;
+        width: 160px;
     }
 
     .actions {
@@ -296,6 +305,10 @@
     .updateSkeleton > span,
     .wallRow {
         animation: none;
+    }
+
+    .wallTile:hover {
+        transform: none;
     }
 }
 

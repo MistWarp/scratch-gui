@@ -6477,9 +6477,6 @@
   "See new games": [
     "src/community/pages/Home.jsx:183"
   ],
-  "Make games with blocks, and play what others make": [
-    "src/community/pages/Home.jsx:218"
-  ],
   "MistWarp is a free block-based editor for making games and sharing them with everyone.": [
     "src/community/pages/Home.jsx:219"
   ],
@@ -10753,5 +10750,8 @@
   ],
   "MistWarp needs your permission on Rotur to do this.": [
     "src/community/rotur.js:52"
+  ],
+  "Scratch Supercharged": [
+    "src/community/pages/Home.jsx:273"
   ]
 }

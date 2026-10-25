@@ -77,7 +77,7 @@ describe('home layout', () => {
         useUser.mockReturnValue({user: null, login, loading: false});
         const wrapper = render();
 
-        expect(wrapper.find('h1').text()).toBe('Make games with blocks, and play what others make');
+        expect(wrapper.find('h1').text()).toBe('Scratch Supercharged');
         expect(wrapper.find('a[href="/editor"]').first()
             .text()).toBe('Start creating');
         expect(sectionOrder(wrapper)).toEqual(['games', 'new', 'updates', 'creators', 'starters', 'import']);

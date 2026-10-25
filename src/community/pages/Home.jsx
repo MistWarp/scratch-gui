@@ -214,12 +214,22 @@ export const FollowingSection = ({viewerName}) => {
 };
 
 const WALL_ROWS = 3;
+const WALL_ROW_MIN = 10;
+
+const wallRows = games => Array.from({length: WALL_ROWS}, (_, row) => {
+    const offset = Math.floor((games.length * row) / WALL_ROWS);
+    const rotated = [...games.slice(offset), ...games.slice(0, offset)];
+    const own = games.length >= WALL_ROWS * 7 ? rotated.filter((game, index) => index % WALL_ROWS === 0) : rotated;
+    const filled = [];
+    while (filled.length < WALL_ROW_MIN) filled.push(...own);
+    return filled;
+});
 
 const WallRow = ({games}) => (
     <div className={styles.wallRow}>
         {[...games, ...games].map((game, index) => (
             <Link
-                key={`${game.id}-${index}`}
+                key={index}
                 to={projectUrl(game)}
                 className={styles.wallTile}
                 tabIndex={-1}
@@ -227,50 +237,48 @@ const WallRow = ({games}) => (
                 <img
                     src={game.thumbUrl}
                     alt=""
-                    loading="lazy"
+                    decoding="async"
                 />
             </Link>
         ))}
     </div>
 );
 
-const Wall = () => {
+const useWallGames = () => {
     const [games, setGames] = useState(null);
     useEffect(() => {
         let active = true;
-        api.explore({sort: 'trending', limit: 30})
+        api.explore({sort: 'loved', limit: 30})
             .then(data => active && setGames((data.projects || []).filter(game => game.thumbUrl)))
             .catch(() => active && setGames([]));
         return () => {
             active = false;
         };
     }, []);
-    const rows = Array.from({length: WALL_ROWS}, (_, row) => {
-        const slice = (games || []).filter((game, index) => index % WALL_ROWS === row);
-        return slice.length >= 4 ? slice : games || [];
-    });
-    return (
-        <div
-            className={styles.wall}
-            aria-hidden="true"
-        >
-            {games && games.length ? rows.map((row, index) => (
-                <WallRow
-                    key={index}
-                    games={row}
-                />
-            )) : null}
-        </div>
-    );
+    return games;
 };
 
 const Intro = ({login}) => {
     const {text: communityText} = useCommunityIntl();
+    const games = useWallGames();
+    const empty = Array.isArray(games) && !games.length;
     return (
-        <section className={styles.intro}>
-            <Wall />
+        <section className={empty ? `${styles.intro} ${styles.introPlain}` : styles.intro}>
+            {games && games.length ? (
+                <div
+                    className={styles.wall}
+                    aria-hidden="true"
+                >
+                    {wallRows(games).map((row, index) => (
+                        <WallRow
+                            key={index}
+                            games={row}
+                        />
+                    ))}
+                </div>
+            ) : null}
             <div className={styles.introCard}>
-                <h1>{communityText('Make games with blocks, and play what others make')}</h1>
+                <h1>{communityText('Scratch Supercharged')}</h1>
                 <p>{communityText('MistWarp is a free block-based editor for making games and sharing them with everyone.')}</p>
                 <div className={styles.actions}>
                     <Button

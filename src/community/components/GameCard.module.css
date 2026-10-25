@@ -47,7 +47,7 @@
 .rank {
     position: absolute;
     top: var(--space-2);
-    left: var(--space-2);
+    inset-inline-start: var(--space-2);
     display: grid;
     min-width: 30px;
     height: 30px;

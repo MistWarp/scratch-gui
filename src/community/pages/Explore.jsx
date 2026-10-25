@@ -90,6 +90,7 @@ const Explore = () => {
     // (dimmed) until the new one arrives, instead of blanking the grid.
     const [loaded, setLoaded] = useState(false);
     const [shownKey, setShownKey] = useState('');
+    const [shownSort, setShownSort] = useState(sort);
     const [failed, setFailed] = useState(false);
     const [attempt, setAttempt] = useState(0);
     const [total, setTotal] = useState(0);
@@ -128,6 +129,7 @@ const Explore = () => {
                 setProjects(mergeProjects(pages.map(page => page.projects)));
                 setTotal(pages.length ? pages[0].total || 0 : 0);
                 setShownKey(`${sort}:${tag}:${attempt}`);
+                setShownSort(sort);
                 setLoaded(true);
             }))
             .catch(fresh(() => setFailed(true)))
@@ -244,8 +246,8 @@ const Explore = () => {
                             {projects.map((project, index) => (
                                 <GameCard
                                     key={project.id}
-                                    className={index === 0 && sort === 'trending' ? `${styles.card} ${styles.lead}` : styles.card}
-                                    rank={index < 10 && (sort === 'trending' || sort === 'loved') ? index + 1 : null}
+                                    className={index === 0 && shownSort === 'trending' ? `${styles.card} ${styles.lead}` : styles.card}
+                                    rank={index < 10 && (shownSort === 'trending' || shownSort === 'loved') ? index + 1 : null}
                                     style={{'--delay': `${(index % PAGE_SIZE) * 25}ms`}}
                                     project={project}
                                 />
