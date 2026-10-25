@@ -3577,5 +3577,6 @@
   "You are now the owner of {className}": "You are now the owner of {className}",
   "Your teacher returned {assignment}": "Your teacher returned {assignment}",
   "Your teacher returned your work": "Your teacher returned your work",
-  "Your current Rotur login is missing the status:update permission, so your editor activity cannot be shared. Log in again to grant it.": "Your current Rotur login is missing the status:update permission, so your editor activity cannot be shared. Log in again to grant it."
+  "Your current Rotur login is missing the status:update permission, so your editor activity cannot be shared. Log in again to grant it.": "Your current Rotur login is missing the status:update permission, so your editor activity cannot be shared. Log in again to grant it.",
+  "Click the script to run it.": "Click the script to run it."
 }

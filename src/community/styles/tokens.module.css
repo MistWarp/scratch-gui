@@ -37,6 +37,17 @@
     --status-planned: #a898ff;
     --status-open: #6db9f2;
 
+    --block-motion: #4c97ff;
+    --block-looks: #9966ff;
+    --block-sound: #cf63cf;
+    --block-events: #ffbf00;
+    --block-control: #ffab19;
+    --block-sensing: #5cb1d6;
+    --block-operators: #59c059;
+    --block-pen: #0fbd8c;
+    --block-custom: #ff6680;
+    --ease-bounce: cubic-bezier(.34, 1.56, .64, 1);
+
     --fs-2xs: 11px;
     --fs-xs: 12px;
     --fs-sm: 13px;

@@ -35,10 +35,12 @@
 
 .filter,
 .filterActive {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
     margin-inline-start: calc(-1 * var(--space-2));
-    padding: 6px var(--space-2);
-    border-radius: var(--radius-2xs);
+    padding: 4px var(--space-2);
+    border-radius: var(--radius-xs);
     color: var(--text-dim);
     font-size: var(--fs-md);
 }
@@ -50,8 +52,40 @@
 
 .filterActive {
     color: var(--mw-text);
-    background: var(--bg-card);
+    background: color-mix(in srgb, var(--tone) 16%, transparent);
     font-weight: 600;
+}
+
+.filterIcon {
+    display: grid;
+    flex: 0 0 auto;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    border-radius: var(--radius-2xs);
+    background: color-mix(in srgb, var(--tone) 16%, transparent);
+    color: color-mix(in srgb, var(--tone) 78%, var(--mw-text));
+    transition: transform .3s var(--ease-bounce);
+}
+
+.filter:hover .filterIcon {
+    transform: rotate(-10deg) scale(1.12);
+}
+
+.filterActive .filterIcon {
+    background: var(--tone);
+    color: #fff;
+}
+
+.card {
+    animation: pop-in .4s var(--ease-bounce) var(--delay) backwards;
+}
+
+@keyframes pop-in {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(.96);
+    }
 }
 
 .results {

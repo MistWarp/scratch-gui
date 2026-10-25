@@ -13,6 +13,12 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-6);
     align-items: center;
+    padding: var(--space-5);
+    border-radius: var(--radius);
+    background:
+        radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--block-events) 20%, transparent), transparent 45%),
+        radial-gradient(circle at 70% 100%, color-mix(in srgb, var(--block-custom) 14%, transparent), transparent 40%),
+        var(--bg-card);
 }
 
 .skeleton {
@@ -36,10 +42,17 @@
     display: block;
     aspect-ratio: 4 / 3;
     overflow: hidden;
-    border-radius: var(--radius-xs);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 12px 28px -12px rgba(0, 0, 0, .5);
+    transform: rotate(-2deg);
+    transition: transform .35s var(--ease-bounce);
     outline: 1px solid var(--border);
     outline-offset: -1px;
     background: var(--bg-card);
+}
+
+.spotlight:hover .poster {
+    transform: rotate(0deg) scale(1.02);
 }
 
 .poster img,
@@ -171,6 +184,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .poster,
+    .spotlight:hover .poster {
+        transform: none;
+    }
+
     .skeleton,
     .lineSkeleton,
     .rowSkeleton > span {
@@ -233,7 +251,8 @@
 @media (max-width: 760px) {
     .spotlight {
         grid-template-columns: minmax(0, 1fr);
-        gap: var(--space-3);
+        gap: var(--space-4);
+        padding: var(--space-4);
     }
 
     .spotlightText h3 {

@@ -14,9 +14,27 @@
 
 .intro {
     display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-6);
+    padding: var(--space-6) var(--space-7);
+    border-radius: var(--radius);
+    background:
+        radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--block-looks) 30%, transparent), transparent 42%),
+        radial-gradient(circle at 62% 100%, color-mix(in srgb, var(--block-sound) 16%, transparent), transparent 38%),
+        radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--block-motion) 18%, transparent), transparent 46%),
+        var(--bg-card);
+}
+
+.introText {
+    display: grid;
     justify-items: start;
     gap: var(--space-3);
-    padding: var(--space-4) 0 var(--space-2);
+    min-width: 0;
+}
+
+.introToy {
+    margin-inline-end: var(--space-4);
 }
 
 .intro h1 {
@@ -181,6 +199,17 @@
     }
 }
 
+@media (max-width: 860px) {
+    .intro {
+        grid-template-columns: minmax(0, 1fr);
+        padding: var(--space-5);
+    }
+
+    .introToy {
+        display: none;
+    }
+}
+
 @media (max-width: 760px) {
     .page > * + * {
         margin-top: var(--space-6);
@@ -193,7 +222,7 @@
     }
 
     .intro {
-        padding-top: var(--space-2);
+        padding: var(--space-5) var(--space-4);
     }
 
     .intro p {

@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Blocks, ChevronUp, MessageCircle, Puzzle, Shapes, Tag, Users} from 'lucide-react';
+import {Blocks, ChevronUp, Map, MessageCircle, Newspaper, Puzzle, Shapes, Tag, Users} from 'lucide-react';
 import api from '../api';
 import {timeAgo} from '../format';
 import {useCommunityIntl} from '../i18n.jsx';
@@ -77,6 +77,8 @@ export const NewsList = () => {
         >
             <SectionHeading
                 id="home-news-heading"
+                icon={Newspaper}
+                tone="var(--block-motion)"
                 title={text('News')}
                 actions={<QuietLink to="/news">{text('All news')}</QuietLink>}
             />
@@ -289,6 +291,8 @@ export const RoadmapList = () => {
         >
             <SectionHeading
                 id="home-roadmap-heading"
+                icon={Map}
+                tone="var(--block-looks)"
                 title={text('Roadmap')}
                 actions={<QuietLink to="/roadmap">{text('Suggest and vote')}</QuietLink>}
             />

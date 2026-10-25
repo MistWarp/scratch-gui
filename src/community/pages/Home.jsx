@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Plus} from 'lucide-react';
+import {Heart, Plus, Rocket, UsersRound} from 'lucide-react';
 import api, {editorUrl, projectUrl} from '../api';
 import rotur from '../rotur';
 import {fetchFollowingFeed} from '../../lib/rotur/client.js';
@@ -14,6 +14,7 @@ import SectionHeading from '../components/ui/SectionHeading.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import GameCard, {CardSkeleton} from '../components/GameCard.jsx';
 import ScratchImport from '../components/ScratchImport.jsx';
+import ScriptToy from '../components/ScriptToy.jsx';
 import {FeaturedGames, GameShelf, SuggestedCreators} from '../components/HomeDiscovery.jsx';
 import CommunityUpdates from '../components/HomeCommunity.jsx';
 import {ContinuePlaying, ContinueProjects, DeviceBackup, StarterGallery} from '../components/HomeWorkspace.jsx';
@@ -142,6 +143,8 @@ export const FollowingSection = ({viewerName}) => {
             >
                 <SectionHeading
                     id="home-creators-heading"
+                    icon={UsersRound}
+                    tone="var(--block-sound)"
                     title={communityText('Creators to follow')}
                     lead={communityText('Their new games and posts will show up here.')}
                     actions={<QuietLink to="/leaderboard">{communityText('See all')}</QuietLink>}
@@ -164,6 +167,8 @@ export const FollowingSection = ({viewerName}) => {
         >
             <SectionHeading
                 id="home-following-heading"
+                icon={Heart}
+                tone="var(--block-custom)"
                 title={communityText('From people you follow')}
                 actions={<QuietLink to="/posts">{communityText('See all posts')}</QuietLink>}
             />
@@ -215,24 +220,27 @@ const Intro = ({login}) => {
     const {text: communityText} = useCommunityIntl();
     return (
         <section className={styles.intro}>
-            <h1>{communityText('Make games with blocks, and play what others make')}</h1>
-            <p>{communityText('MistWarp is a free block-based editor for making games and sharing them with everyone.')}</p>
-            <div className={styles.actions}>
-                <Button
-                    as="a"
-                    variant="primary"
-                    href={editorUrl()}
-                    onClick={() => track('start_creating', {source: 'home'})}
-                >
-                    <Plus
-                        size={16}
-                        aria-hidden="true"
-                    />
-                    {communityText('Start creating')}
-                </Button>
-                <Button onClick={login}>{communityText('Sign in')}</Button>
+            <div className={styles.introText}>
+                <h1>{communityText('Make games with blocks, and play what others make')}</h1>
+                <p>{communityText('MistWarp is a free block-based editor for making games and sharing them with everyone.')}</p>
+                <div className={styles.actions}>
+                    <Button
+                        as="a"
+                        variant="primary"
+                        href={editorUrl()}
+                        onClick={() => track('start_creating', {source: 'home'})}
+                    >
+                        <Plus
+                            size={16}
+                            aria-hidden="true"
+                        />
+                        {communityText('Start creating')}
+                    </Button>
+                    <Button onClick={login}>{communityText('Sign in')}</Button>
+                </div>
+                <DeviceBackup className={styles.introBackup} />
             </div>
-            <DeviceBackup className={styles.introBackup} />
+            <ScriptToy className={styles.introToy} />
         </section>
     );
 };
@@ -251,6 +259,8 @@ const Home = () => {
     const newGames = (<GameShelf
         key="new"
         id="home-new-heading"
+        icon={Rocket}
+        tone="var(--block-operators)"
         title={communityText('New games')}
         query={{sort: 'recent', limit: 4}}
         link="/explore?sort=recent"
@@ -289,6 +299,8 @@ const Home = () => {
             >
                 <SectionHeading
                     id="home-creators-heading"
+                    icon={UsersRound}
+                    tone="var(--block-sound)"
                     title={communityText('Creators to follow')}
                     actions={<QuietLink to="/leaderboard">{communityText('See all')}</QuietLink>}
                 />
