@@ -20,6 +20,25 @@ describe('community UI controls', () => {
         expect(button.text()).not.toContain('Save');
     });
 
+    test('button survives a page translator replacing its label text', () => {
+        const container = document.createElement('div');
+        document.body.appendChild(container);
+        const button = mount(
+            <Button busyLabel="Loading…">Load more</Button>,
+            {attachTo: container}
+        );
+        const node = button.getDOMNode();
+        const label = Array.from(node.childNodes).find(child => child.nodeType === Node.TEXT_NODE);
+        const font = document.createElement('font');
+        font.textContent = 'Cargar más';
+        node.replaceChild(font, label);
+
+        expect(() => button.setProps({busy: true})).not.toThrow();
+        expect(() => button.setProps({busy: false})).not.toThrow();
+        button.unmount();
+        container.remove();
+    });
+
     test('button keeps an explicit submit type', () => {
         const button = shallow(<Button type="submit">Save</Button>);
 

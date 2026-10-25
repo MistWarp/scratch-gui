@@ -46,6 +46,10 @@
     animation: spin 650ms linear infinite;
 }
 
+.idle {
+    display: none !important;
+}
+
 .secondary {
     background: var(--bg-raised, #2a2a2a);
     color: var(--mw-text, #eeeeee);

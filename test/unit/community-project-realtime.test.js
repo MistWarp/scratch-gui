@@ -102,6 +102,25 @@ describe('project realtime', () => {
         unsubscribe();
     });
 
+    test('keeps the page working when the browser refuses to open the socket', () => {
+        global.WebSocket = class {
+            constructor () {
+                throw new SyntaxError('Failed to create a WebSocket: the provided URL is invalid.');
+            }
+        };
+        const client = new ProjectRealtime();
+        let unsubscribe;
+
+        expect(() => {
+            unsubscribe = client.subscribe('project-blocked', () => {});
+        }).not.toThrow();
+        expect(client.isOpen()).toBe(false);
+        expect(() => client.diagnostic('project-blocked', {level: 'error'})).not.toThrow();
+        expect(client.pendingDiagnostics).toHaveLength(1);
+        unsubscribe();
+        client.disconnect();
+    });
+
     test('keeps one project subscription until its last listener leaves', () => {
         const client = new ProjectRealtime();
         const first = client.subscribe('project-3', () => {});
