@@ -233,8 +233,8 @@ importers:
         specifier: https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd
         version: https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd
       scratch-vm:
-        specifier: https://codeload.github.com/MistWarp/scratch-vm/tar.gz/3d3ffca1a65b2fb1a81b7aa83150ed59a2adcb98
-        version: https://codeload.github.com/MistWarp/scratch-vm/tar.gz/3d3ffca1a65b2fb1a81b7aa83150ed59a2adcb98(@turbowarp/scratch-svg-renderer@1.1.0(patch_hash=81a01d6d472570d53eec593be679e84867db1ba1410f5ef084d5c404068481b9)(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd))(eslint@8.55.0)(webpack@4.47.0)
+        specifier: https://codeload.github.com/MistWarp/scratch-vm/tar.gz/e0f427b3385061815afc050e624c415977a9e6f5
+        version: https://codeload.github.com/MistWarp/scratch-vm/tar.gz/e0f427b3385061815afc050e624c415977a9e6f5(@turbowarp/scratch-svg-renderer@1.1.0(patch_hash=81a01d6d472570d53eec593be679e84867db1ba1410f5ef084d5c404068481b9)(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd))(eslint@8.55.0)(webpack@4.47.0)
       scratchblocks:
         specifier: 3.7.1
         version: 3.7.1
@@ -5584,8 +5584,8 @@ packages:
   scratch-translate-extension-languages@1.0.7:
     resolution: {integrity: sha512-6+bQU9iVYv23T8J0SjpV6MTugm0y8myh/4DPgu1BGfccysdkaWzu3MkNGQyQRUlbqAiW9wM7ctfv3USPEkzTgg==}
 
-  scratch-vm@https://codeload.github.com/MistWarp/scratch-vm/tar.gz/3d3ffca1a65b2fb1a81b7aa83150ed59a2adcb98:
-    resolution: {tarball: https://codeload.github.com/MistWarp/scratch-vm/tar.gz/3d3ffca1a65b2fb1a81b7aa83150ed59a2adcb98}
+  scratch-vm@https://codeload.github.com/MistWarp/scratch-vm/tar.gz/e0f427b3385061815afc050e624c415977a9e6f5:
+    resolution: {tarball: https://codeload.github.com/MistWarp/scratch-vm/tar.gz/e0f427b3385061815afc050e624c415977a9e6f5}
     version: 2.1.46
     peerDependencies:
       '@turbowarp/scratch-svg-renderer': ^1.1.0
@@ -12813,7 +12813,7 @@ snapshots:
 
   scratch-translate-extension-languages@1.0.7: {}
 
-  scratch-vm@https://codeload.github.com/MistWarp/scratch-vm/tar.gz/3d3ffca1a65b2fb1a81b7aa83150ed59a2adcb98(@turbowarp/scratch-svg-renderer@1.1.0(patch_hash=81a01d6d472570d53eec593be679e84867db1ba1410f5ef084d5c404068481b9)(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd))(eslint@8.55.0)(webpack@4.47.0):
+  scratch-vm@https://codeload.github.com/MistWarp/scratch-vm/tar.gz/e0f427b3385061815afc050e624c415977a9e6f5(@turbowarp/scratch-svg-renderer@1.1.0(patch_hash=81a01d6d472570d53eec593be679e84867db1ba1410f5ef084d5c404068481b9)(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd))(eslint@8.55.0)(webpack@4.47.0):
     dependencies:
       '@turbowarp/json': 0.1.2
       '@turbowarp/jszip': 3.12.0
