@@ -2,14 +2,14 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
-import {Blocks, Gamepad2, HardDrive, Pencil, Plus} from 'lucide-react';
+import {HardDrive, Plus} from 'lucide-react';
 import api, {editorUrl} from '../api';
 import {sameUser, timeAgo} from '../format';
 import {STARTERS} from '../../lib/starter-projects';
 import {getLastEditedProject} from '../../lib/mw/recent-projects';
 import {MOVED_KEY} from '../../lib/account/frame-editor-data.js';
 import fog from '../../lib/default-project/fog.svg';
-import GameCard, {CardRow, CardRowSkeleton, CardTile, MediaCard} from './GameCard.jsx';
+import {CardRow, CardRowSkeleton, CardTile, MediaCard} from './GameCard.jsx';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import QuietLink from './ui/QuietLink.jsx';
 import SectionHeading from './ui/SectionHeading.jsx';
@@ -125,10 +125,7 @@ ResumeCard.propTypes = {
     }).isRequired
 };
 
-// A new project, your latest three, then starters to fill the row while you
-// have fewer than three.
-export const ContinueProjects = ({username}) => {
-    const {text: communityText} = useCommunityText();
+export const useRecentProjects = (username, limit = 3) => {
     const [result, setResult] = useState({username: '', projects: null, failed: false});
     const [attempt, setAttempt] = useState(0);
     useEffect(() => {
@@ -149,15 +146,23 @@ export const ContinueProjects = ({username}) => {
                 if (!sameUser(project.owner, username) || seen.has(project.id) || project.hasContent === false) return false;
                 seen.add(project.id);
                 return true;
-            }).slice(0, 3);
+            }).slice(0, limit);
             setResult({username, projects: owned, failed: page.status === 'rejected'});
         });
         return () => {
             active = false;
         };
-    }, [username, attempt]);
-    if (!username) return null;
+    }, [username, attempt, limit]);
     const current = result.username === username ? result : {projects: null, failed: false};
+    return [current, () => setAttempt(value => value + 1)];
+};
+
+// A new project, your latest three, then starters to fill the row while you
+// have fewer than three.
+export const ContinueProjects = ({username}) => {
+    const {text: communityText} = useCommunityText();
+    const [current, retry] = useRecentProjects(username);
+    if (!username) return null;
     const projects = current.projects || [];
     return (
         <section
@@ -166,7 +171,6 @@ export const ContinueProjects = ({username}) => {
         >
             <SectionHeading
                 id="home-continue-heading"
-                icon={Pencil}
                 title={projects.length ? communityText('Continue editing') :
                     current.projects && !current.failed ? communityText('Start a project') : communityText('Your projects')}
                 actions={projects.length ? (
@@ -179,7 +183,7 @@ export const ContinueProjects = ({username}) => {
                     className={styles.status}
                     compact
                     error
-                    onRetry={() => setAttempt(value => value + 1)}
+                    onRetry={retry}
                 >{communityText('Could not load your projects.')}</StatusMessage>
             ) : null}
             {current.projects && !current.failed ? (
@@ -206,81 +210,4 @@ export const ContinueProjects = ({username}) => {
 
 ContinueProjects.propTypes = {
     username: PropTypes.string
-};
-
-export const StarterGallery = ({children}) => {
-    const {text: communityText} = useCommunityText();
-    return (
-        <section
-            className={styles.section}
-            id="starters"
-            aria-labelledby="starter-heading"
-        >
-            <SectionHeading
-                id="starter-heading"
-                icon={Blocks}
-                title={communityText('Starter projects')}
-                lead={communityText('Change one thing and save your own version. No sign-in needed.')}
-            />
-            <CardRow>
-                <NewProjectCard />
-                {STARTERS.map(starter => (
-                    <StarterCard
-                        key={starter.id}
-                        starter={starter}
-                    />
-                ))}
-            </CardRow>
-            {children}
-        </section>
-    );
-};
-
-StarterGallery.propTypes = {
-    children: PropTypes.node
-};
-
-// Games you played lately, from your library. Nothing to show means no section.
-export const ContinuePlaying = ({username}) => {
-    const {text: communityText} = useCommunityText();
-    const [games, setGames] = useState(null);
-    useEffect(() => {
-        let active = true;
-        setGames(null);
-        api.getUser(username)
-            .then(data => active && setGames((data.recentActivity || [])
-                .filter(project => Number(project.lastPlayed) > 0)
-                .sort((left, right) => Number(right.lastPlayed) - Number(left.lastPlayed))
-                .slice(0, 4)))
-            .catch(() => active && setGames([]));
-        return () => {
-            active = false;
-        };
-    }, [username]);
-    if (!games || !games.length) return null;
-    return (
-        <section
-            className={styles.section}
-            aria-labelledby="home-playing-heading"
-        >
-            <SectionHeading
-                id="home-playing-heading"
-                icon={Gamepad2}
-                title={communityText('Continue playing')}
-                actions={<QuietLink to={`/users/${username}/library`}>{communityText('Game library')}</QuietLink>}
-            />
-            <CardRow>
-                {games.map(project => (
-                    <GameCard
-                        key={project.id}
-                        project={project}
-                    />
-                ))}
-            </CardRow>
-        </section>
-    );
-};
-
-ContinuePlaying.propTypes = {
-    username: PropTypes.string.isRequired
 };

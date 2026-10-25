@@ -4,261 +4,38 @@
     padding: var(--space-6) var(--space-5) 80px;
 }
 
-.page > * + * {
-    margin-top: var(--section-gap);
-}
-
-.section {
-    min-width: 0;
-}
-
-.intro {
-    position: relative;
+.board {
     display: grid;
-    min-height: 460px;
-    place-items: center;
-    overflow: hidden;
-    border-radius: var(--radius);
-    background: var(--bg-card);
-}
-
-.introPlain {
-    min-height: 0;
-}
-
-.wall {
-    position: absolute;
-    inset: -60px -120px;
-    display: grid;
-    align-content: center;
-    gap: var(--space-3);
-    transform: rotate(-5deg);
-}
-
-.wallRow {
-    display: flex;
-    gap: var(--space-3);
-    width: max-content;
-    padding-inline-end: var(--space-3);
-    animation: wall-scroll 40s linear infinite;
-}
-
-.wallRow:nth-child(2) {
-    animation-duration: 52s;
-    animation-direction: reverse;
-}
-
-.wallRow:nth-child(3) {
-    animation-duration: 46s;
-}
-
-.wallTile {
-    display: block;
-    flex: 0 0 auto;
-    width: 200px;
-    aspect-ratio: 4 / 3;
-    overflow: hidden;
-    border-radius: var(--radius-xs);
-    background: var(--bg-raised);
-    transition: transform .25s var(--ease-bounce);
-}
-
-.wallTile:hover {
-    transform: scale(1.06);
-}
-
-.wallTile img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.introCard {
-    position: relative;
-    display: grid;
-    justify-items: center;
-    gap: var(--space-3);
-    max-width: 560px;
-    margin: var(--space-5);
-    padding: var(--space-6) var(--space-7);
-    border-radius: var(--radius);
-    background: var(--bg);
-    text-align: center;
-    box-shadow: 0 20px 50px -20px rgba(0, 0, 0, .6);
-}
-
-.introCard h1 {
-    margin: 0;
-    font-size: var(--fs-4xl);
-    font-weight: 700;
-    line-height: 1.1;
-    letter-spacing: -.02em;
-    text-wrap: balance;
-}
-
-.introCard p {
-    max-width: 60ch;
-    margin: 0;
-    color: var(--text-dim);
-    font-size: var(--fs-lg);
-    line-height: 1.5;
-}
-
-@keyframes wall-scroll {
-    to {
-        transform: translateX(-50%);
-    }
-}
-
-.actions {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-    margin-top: var(--space-2);
-}
-
-.introBackup {
-    margin-top: var(--space-1);
-}
-
-.empty {
-    margin: 0;
-    color: var(--text-dim);
-    font-size: var(--fs-sm);
-    line-height: 1.5;
-}
-
-/* New games on the left, what else they did on the right. */
-.following {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) 320px;
     gap: var(--space-6);
     align-items: start;
+    margin-top: var(--space-7);
 }
 
-.followingGames {
+.rail {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-5) var(--space-4);
-}
-
-.followingSingle .followingGames {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.updates {
-    display: grid;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.update {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--space-3);
-    padding: var(--space-3) 0;
-    border-top: 1px solid var(--border-soft);
-    font-size: var(--fs-md);
-}
-
-.update:first-child {
-    padding-top: 0;
-    border-top: 0;
-}
-
-.update > a {
-    display: flex;
-    flex-shrink: 0;
-}
-
-.updateText {
-    display: -webkit-box;
-    flex: 1 1 auto;
+    gap: var(--space-4);
     min-width: 0;
-    margin: 0;
-    padding-top: 6px;
-    overflow: hidden;
-    color: var(--text-dim);
-    line-height: 1.45;
-    overflow-wrap: anywhere;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-}
-
-.updateText strong,
-.updateText a {
-    color: var(--mw-text);
-}
-
-.updateText a:hover {
-    text-decoration: underline;
-}
-
-.updateActor {
-    font-weight: 600;
-}
-
-.updateTime {
-    flex-shrink: 0;
-    padding-top: 7px;
-    color: var(--text-faint);
-    font-size: var(--fs-xs);
-}
-
-.updateSkeleton > span {
-    display: block;
-    border-radius: var(--radius-2xs);
-    background: var(--bg-card);
-    animation: pulse 1.4s ease-in-out infinite;
-}
-
-.updateSkeleton > span:first-child {
-    width: 32px;
-    height: 32px;
-    flex-shrink: 0;
-    border-radius: 50%;
-}
-
-.updateSkeleton > span:last-child {
-    width: 70%;
-    height: 12px;
-    margin-top: 10px;
-}
-
-.importRow {
-    display: grid;
-    justify-items: start;
-    gap: var(--space-2);
-    max-width: 560px;
-    margin-top: var(--space-6);
-}
-
-@keyframes pulse {
-    50% {
-        opacity: .55;
-    }
 }
 
 @media (max-width: 1000px) {
-    .following {
+    .board {
         grid-template-columns: minmax(0, 1fr);
     }
 
-    .followingSingle .followingGames {
+    .rail {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .followingGames {
-        gap: var(--space-4) var(--space-3);
+        align-items: start;
     }
 }
 
-@media (max-width: 760px) {
-    .page > * + * {
+@media (max-width: 680px) {
+    .board {
         margin-top: var(--space-6);
+    }
+
+    .rail {
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
@@ -266,53 +43,4 @@
     .page {
         padding: var(--space-4) var(--space-3) 56px;
     }
-
-    .intro {
-        min-height: 520px;
-        place-items: end center;
-    }
-
-    .introCard {
-        margin: var(--space-4) var(--space-3);
-        padding: var(--space-5) var(--space-4);
-    }
-
-    .introCard h1 {
-        font-size: var(--fs-3xl);
-    }
-
-    .introCard p {
-        font-size: var(--fs-md);
-    }
-
-    .wall {
-        inset: -24px -120px auto;
-        align-content: start;
-    }
-
-    .wallTile {
-        width: 160px;
-    }
-
-    .actions {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        width: 100%;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .updateSkeleton > span,
-    .wallRow {
-        animation: none;
-    }
-
-    .wallTile:hover {
-        transform: none;
-    }
-}
-
-/* Errors sit where the content would, not centred under the heading. */
-.status {
-    justify-content: flex-start;
 }

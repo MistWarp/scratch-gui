@@ -7,7 +7,8 @@ import api from '../../src/community/api';
 import rotur from '../../src/community/rotur';
 import loadProjectPreview from '../../src/community/project-preview.js';
 import {fetchFollowingFeed} from '../../src/lib/rotur/client.js';
-import {FollowingSection} from '../../src/community/pages/Home.jsx';
+import {useFollowing} from '../../src/community/pages/Home.jsx';
+import {RailFollowing} from '../../src/community/components/HomeRail.jsx';
 
 jest.mock('../../src/lib/rotur/client.js', () => ({fetchFollowingFeed: jest.fn()}));
 jest.mock('../../src/community/rotur', () => ({__esModule: true, default: {myFollowing: jest.fn()}}));
@@ -21,6 +22,11 @@ jest.mock('../../src/community/api', () => ({
 jest.mock('../../src/community/components/HomeDiscovery.jsx', () => ({
     SuggestedCreators: () => <div data-section="creators" />
 }));
+jest.mock('../../src/community/components/HomeWorkspace.jsx', () => ({
+    DeviceBackup: () => null,
+    useRecentProjects: () => [{projects: []}, () => {}]
+}));
+jest.mock('../../src/community/components/ScratchImport.jsx', () => () => null);
 jest.mock('../../src/lib/themes/custom-themes.js', () => ({
     customThemeManager: {themes: {clear: jest.fn()}, loadCustomThemes: jest.fn()}
 }));
@@ -34,6 +40,20 @@ const flush = async wrapper => {
         });
     }
     wrapper.update();
+};
+
+const FollowingSection = ({viewerName}) => {
+    const [state, retry] = useFollowing(viewerName);
+    return (
+        <>
+            <ul>{(state ? state.games : []).map(game => <li key={game.id}><h3>{game.title}</h3></li>)}</ul>
+            <RailFollowing
+                state={state}
+                viewerName={viewerName}
+                onRetry={retry}
+            />
+        </>
+    );
 };
 
 const render = (viewerName = 'viewer') => mount(

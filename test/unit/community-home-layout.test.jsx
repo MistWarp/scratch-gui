@@ -18,42 +18,32 @@ jest.mock('../../src/community/api', () => ({
     projectUrl: id => `/project/${id}`
 }));
 jest.mock('../../src/community/analytics.js', () => ({track: jest.fn()}));
-jest.mock('../../src/community/components/ScratchImport.jsx', () => () => <form data-section="import" />);
-jest.mock('../../src/community/components/HomeDiscovery.jsx', () => {
+jest.mock('../../src/community/components/HomeGames.jsx', () => {
     const mockReact = jest.requireActual('react');
-    return {
-        FeaturedGames: () => {
-            mockReact.useEffect(() => {
-                global.featuredMounts += 1;
-            }, []);
-            return <div data-section="games" />;
-        },
-        GameShelf: () => <div data-section="new" />,
-        SuggestedCreators: () => <div data-section="creators" />
+    return () => {
+        mockReact.useEffect(() => {
+            global.gamesMounts += 1;
+        }, []);
+        return <div data-section="games" />;
     };
 });
-jest.mock('../../src/community/components/HomeCommunity.jsx', () => () => <div data-section="updates" />);
-jest.mock('../../src/community/components/HomeWorkspace.jsx', () => {
-    const actual = jest.requireActual('../../src/community/components/HomeWorkspace.jsx');
-    return {
-        ...actual,
-        ContinueProjects: () => <div data-section="continue" />,
-        ContinuePlaying: () => <div data-section="playing" />,
-        DeviceBackup: () => null
-    };
-});
+jest.mock('../../src/community/components/HomeRail.jsx', () => ({
+    RailProjects: () => <div data-section="projects" />,
+    RailPlaying: () => <div data-section="playing" />,
+    RailFollowing: () => <div data-section="following" />,
+    RailStarters: () => <div data-section="starters" />,
+    RailCreators: () => <div data-section="creators" />,
+    RailNews: () => <div data-section="news" />
+}));
+jest.mock('../../src/community/components/HomeWorkspace.jsx', () => ({
+    DeviceBackup: () => null
+}));
 jest.mock('../../src/lib/themes/custom-themes.js', () => ({
     customThemeManager: {themes: {clear: jest.fn()}, loadCustomThemes: jest.fn()}
 }));
 
-const SECTIONS = '[data-section], #starters, [aria-labelledby="home-following-heading"]';
-const NAMES = {
-    'starters': 'starters',
-    'home-following-heading': 'following'
-};
-
-const sectionOrder = wrapper => Array.from(wrapper.getDOMNode().querySelectorAll(SECTIONS))
-    .map(node => node.getAttribute('data-section') || NAMES[node.id] || NAMES[node.getAttribute('aria-labelledby')]);
+const sectionOrder = wrapper => Array.from(wrapper.getDOMNode().querySelectorAll('[data-section]'))
+    .map(node => node.getAttribute('data-section'));
 
 const Harness = ({session}) => (
     <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
@@ -69,10 +59,10 @@ const render = () => mount(<Harness session={0} />);
 describe('home layout', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        global.featuredMounts = 0;
+        global.gamesMounts = 0;
     });
 
-    test('tells signed-out visitors what MistWarp is, then games, news, creators and starters', () => {
+    test('tells signed-out visitors what MistWarp is, then games beside starters, creators and news', () => {
         const login = jest.fn();
         useUser.mockReturnValue({user: null, login, loading: false});
         const wrapper = render();
@@ -80,7 +70,7 @@ describe('home layout', () => {
         expect(wrapper.find('h1').text()).toBe('Scratch Supercharged');
         expect(wrapper.find('a[href="/editor"]').first()
             .text()).toBe('Start creating');
-        expect(sectionOrder(wrapper)).toEqual(['games', 'new', 'updates', 'creators', 'starters', 'import']);
+        expect(sectionOrder(wrapper)).toEqual(['games', 'starters', 'creators', 'news']);
         expect(wrapper.text()).not.toMatch(/membership|jam/i);
 
         wrapper.find('button')
@@ -95,16 +85,18 @@ describe('home layout', () => {
         const wrapper = render();
 
         expect(wrapper.find('h1').exists()).toBe(false);
-        expect(sectionOrder(wrapper)).toEqual(['games', 'new', 'updates']);
+        expect(sectionOrder(wrapper)).toEqual(['games', 'news']);
         wrapper.unmount();
     });
 
-    test('leads signed-in visitors with people they follow, then games, their projects and news', () => {
+    test('welcomes signed-in visitors back, then games beside their projects, play history and people they follow', () => {
         useUser.mockReturnValue({user: {username: 'alice'}, login: jest.fn(), loading: false});
         const wrapper = render();
 
-        expect(wrapper.find('h1').exists()).toBe(false);
-        expect(sectionOrder(wrapper)).toEqual(['following', 'games', 'continue', 'playing', 'new', 'updates']);
+        expect(wrapper.find('h1').text()).toBe('Welcome back, alice');
+        expect(wrapper.find('a[href="/editor"]').first()
+            .text()).toBe('New project');
+        expect(sectionOrder(wrapper)).toEqual(['games', 'projects', 'playing', 'following', 'news']);
         expect(wrapper.text()).not.toMatch(/membership|jam|notifications/i);
         wrapper.unmount();
     });
@@ -113,14 +105,14 @@ describe('home layout', () => {
         const login = jest.fn();
         useUser.mockReturnValue({user: null, login, loading: false});
         const wrapper = render();
-        expect(global.featuredMounts).toBe(1);
+        expect(global.gamesMounts).toBe(1);
 
         useUser.mockReturnValue({user: {username: 'alice'}, login, loading: false});
         wrapper.setProps({session: 1});
         wrapper.update();
 
-        expect(sectionOrder(wrapper)).toEqual(['following', 'games', 'continue', 'playing', 'new', 'updates']);
-        expect(global.featuredMounts).toBe(1);
+        expect(sectionOrder(wrapper)).toEqual(['games', 'projects', 'playing', 'following', 'news']);
+        expect(global.gamesMounts).toBe(1);
         wrapper.unmount();
     });
 });
