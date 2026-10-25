@@ -42,6 +42,27 @@ const LoadExtensionModal = props => (
                     />
                 </div>
             </React.Fragment>
+        ) : props.sandboxFailed ? (
+            <React.Fragment>
+                <FormattedMessage
+                    // eslint-disable-next-line max-len
+                    defaultMessage="A link you opened wants to load this extension with full access to {APP_NAME}. It didn't work in the sandbox:"
+                    description="Part of modal asking to load an extension from a link again with full access"
+                    id="mw.loadExtension.sandboxFailed"
+                    values={{APP_NAME}}
+                />
+                <p className={styles.host}>{props.host}</p>
+                <URL url={props.url} />
+                <div className={styles.unsandboxedWarning}>
+                    <FormattedMessage
+                        // eslint-disable-next-line max-len
+                        defaultMessage="With full access, this code can do anything you can: steal your login session, take over your account, or change your projects and settings. Only run it if you trust {host}."
+                        description="Warning before loading an extension from a link with full access"
+                        id="mw.loadExtension.sandboxFailedWarning"
+                        values={{host: props.host}}
+                    />
+                </div>
+            </React.Fragment>
         ) : props.url.startsWith('data:') ? (
             <React.Fragment>
                 <FormattedMessage
@@ -104,6 +125,8 @@ const LoadExtensionModal = props => (
 LoadExtensionModal.propTypes = {
     dangerousBuiltin: PropTypes.bool,
     dangerousJs: PropTypes.string,
+    host: PropTypes.string,
+    sandboxFailed: PropTypes.bool,
     url: PropTypes.string.isRequired,
     unsandboxed: PropTypes.bool.isRequired,
     onChangeUnsandboxed: PropTypes.func

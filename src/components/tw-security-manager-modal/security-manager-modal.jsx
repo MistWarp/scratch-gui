@@ -65,7 +65,7 @@ const SecurityManagerModalComponent = props => (
                 <UnsandboxedFromFile {...props.data} />
             ) : null}
 
-            <Box className={styles.projectActions}>
+            {props.data && props.data.sandboxFailed ? null : <Box className={styles.projectActions}>
                 <div className={styles.projectActionsTitle}>
                     <FormattedMessage
                         defaultMessage="For future requests"
@@ -118,7 +118,7 @@ const SecurityManagerModalComponent = props => (
                         </button>
                     ) : null}
                 </Box>
-            </Box>
+            </Box>}
 
             <Box className={styles.buttons}>
                 <button

@@ -7,6 +7,7 @@ import SecurityManagerModal from '../components/tw-security-manager-modal/securi
 import SecurityModals from '../lib/constants/security-manager.js';
 import {getPersistedUnsandboxed, setPersistedUnsandboxed} from '../lib/persistence/tw-unsandboxed.js';
 import isTrustedExtensionUrl, {isGalleryExtensionUrl} from '../lib/trusted-extension.js';
+import {canOfferFullAccessFor} from '../lib/extension-link.js';
 import {getRememberedPlatformProjectState} from '../lib/community/publish.js';
 import {extensionSourceUrl, hashExtensionUrl} from '../lib/community/api.js';
 import {blockProjectPrompts, isProjectPromptBlocked} from '../lib/project-prompt-blocking.js';
@@ -153,10 +154,13 @@ const SECURITY_MANAGER_METHODS = [
     'canEmbed',
     'canDownload',
     'canCreateUnsandboxedExtension',
-    'canRunUnsandboxedFromFile'
+    'canRunUnsandboxedFromFile',
+    'canRetryUnsandboxed'
 ];
 
 const projectTrustedExtensionUrls = new Set();
+// Extensions a link loaded with full access after asking; they always run from that URL.
+const linkTrustedExtensionUrls = new Set();
 
 const withSecurityBypass = (method, implementation, allowAll) => (...args) => {
     if (method === 'rewriteExtensionURL') return implementation(...args);
@@ -179,7 +183,8 @@ const STUDENT_SECURITY_POLICY = {
     canRedirect: denyForStudents,
     canEmbed: denyForStudents,
     canGeolocate: denyForStudents,
-    canNotify: denyForStudents
+    canNotify: denyForStudents,
+    canRetryUnsandboxed: denyForStudents
 };
 
 const withStudentPolicy = (method, implementation) => (...args) => (
@@ -289,7 +294,11 @@ class TWSecurityManagerComponent extends React.Component {
     }
 
     isSecurityBypassed (method, args) {
-        if (method === 'canCreateUnsandboxedExtension' || method === 'canRunUnsandboxedFromFile') return false;
+        if (
+            method === 'canCreateUnsandboxedExtension' ||
+            method === 'canRunUnsandboxedFromFile' ||
+            method === 'canRetryUnsandboxed'
+        ) return false;
         if (typeof window !== 'undefined' && window.__mwAllowAllSecurity === true) return true;
         if (this.props.vm.runtime._mwProjectTrusted !== true) return false;
         if (method === 'canLoadExtensionFromProject') return false;
@@ -378,6 +387,7 @@ class TWSecurityManagerComponent extends React.Component {
             project.id &&
             project.projectJsonUrl &&
             platformProjectExtensionUrls.has(url) &&
+            !linkTrustedExtensionUrls.has(url) &&
             !isGalleryExtensionUrl(url)
         ) {
             const rewritten = await extensionSourceUrl(project, url);
@@ -458,6 +468,28 @@ class TWSecurityManagerComponent extends React.Component {
             manuallyTrustExtension(url);
         }
         return allowProjectExtension();
+    }
+
+    /**
+     * An extension from a link failed to load in the sandbox, as extensions that need the page
+     * itself do. Asks whether to load it again with full access.
+     * @param {string} url The extension's URL
+     * @returns {Promise<boolean>} True to load it again unsandboxed
+     */
+    async canRetryUnsandboxed (url) {
+        if (!canOfferFullAccessFor(url)) return false;
+        const {showModal} = await this.acquireModalLock();
+        const allowed = await showModal(SecurityModals.LoadExtension, {
+            url,
+            host: new URL(url).host,
+            sandboxFailed: true,
+            unsandboxed: true
+        });
+        if (allowed) {
+            linkTrustedExtensionUrls.add(url);
+            manuallyTrustExtension(url);
+        }
+        return Boolean(allowed);
     }
 
     /**
