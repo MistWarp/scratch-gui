@@ -37,6 +37,8 @@
     --status-planned: #a898ff;
     --status-open: #6db9f2;
 
+    --ease-bounce: cubic-bezier(.34, 1.56, .64, 1);
+
     --fs-2xs: 11px;
     --fs-xs: 12px;
     --fs-sm: 13px;

@@ -29,8 +29,11 @@ CardLink.propTypes = {
 };
 
 // One card for everything: games, your projects, starters, spaces and themes.
-export const MediaCard = ({className, detail, href, media, meta, state, title, to, wrapMeta}) => (
-    <article className={classNames(styles.card, className)}>
+export const MediaCard = ({className, detail, href, media, meta, state, style, title, to, wrapMeta}) => (
+    <article
+        className={classNames(styles.card, className)}
+        style={style}
+    >
         <CardLink
             className={styles.thumb}
             to={to}
@@ -63,6 +66,7 @@ MediaCard.propTypes = {
     media: PropTypes.node,
     meta: PropTypes.node,
     state: PropTypes.object,
+    style: PropTypes.object,
     title: PropTypes.node.isRequired,
     to: PropTypes.string,
     wrapMeta: PropTypes.bool
@@ -192,29 +196,44 @@ GameMeta.propTypes = {
     }).isRequired
 };
 
-const GameCard = ({project, className}) => (
+const GameCard = ({project, className, rank, style}) => (
     <MediaCard
-        className={className}
+        className={classNames(styles.game, className)}
+        style={style}
         to={projectUrl(project)}
         title={project.title}
-        media={<ProjectThumbnail
-            project={project}
-            fallbackClassName={styles.fallback}
-            lazy
-        />}
+        media={<>
+            <ProjectThumbnail
+                project={project}
+                fallbackClassName={styles.fallback}
+                lazy
+            />
+            {rank ? (
+                <span className={rank === 1 ? `${styles.rank} ${styles.rankFirst}` : styles.rank}>{rank}</span>
+            ) : null}
+            <span className={styles.playIcon}>
+                <Play
+                    size={18}
+                    fill="currentColor"
+                    aria-hidden="true"
+                />
+            </span>
+        </>}
         meta={<GameMeta project={project} />}
     />
 );
 
 GameCard.propTypes = {
     className: PropTypes.string,
+    style: PropTypes.object,
     project: PropTypes.shape({
         id: PropTypes.string,
         loveCount: PropTypes.number,
         owner: PropTypes.string,
         title: PropTypes.string,
         views: PropTypes.number
-    }).isRequired
+    }).isRequired,
+    rank: PropTypes.number
 };
 
 export default GameCard;

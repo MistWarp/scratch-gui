@@ -3,7 +3,7 @@ import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
 import {MemoryRouter} from 'react-router-dom';
 import Home from '../../src/community/pages/Home';
-import {ContinueProjects, StarterGallery} from '../../src/community/components/HomeWorkspace';
+import {ContinueProjects} from '../../src/community/components/HomeWorkspace';
 import {useUser} from '../../src/community/UserContext';
 import {rememberEditedProject} from '../../src/lib/mw/recent-projects';
 import api from '../../src/community/api';
@@ -65,17 +65,17 @@ test.each([
     await act(async () => wrapper.unmount());
 });
 
-test('shows the starter gallery only to signed-out visitors', async () => {
+test('shows starter projects only to signed-out visitors', async () => {
     api.myProjectPage.mockResolvedValue({projects: [], total: 0});
     const wrapper = render(<Home />);
     await flush(wrapper);
-    expect(wrapper.find(StarterGallery)).toHaveLength(0);
+    expect(wrapper.find('#starter-heading')).toHaveLength(0);
     await act(async () => wrapper.unmount());
 
     useUser.mockReturnValue({user: null, login: jest.fn(), loading: false});
     const signedOut = render(<Home />);
     await flush(signedOut);
-    expect(signedOut.find(StarterGallery)).toHaveLength(1);
+    expect(signedOut.find('h2#starter-heading')).toHaveLength(1);
     expect(signedOut.find('a[href="/editor?starter=clicker"]').length).toBeGreaterThan(0);
     await act(async () => signedOut.unmount());
 });

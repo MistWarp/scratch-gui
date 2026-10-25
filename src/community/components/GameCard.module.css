@@ -3,18 +3,21 @@
     min-width: 0;
     flex-direction: column;
     gap: var(--space-2);
+    transition: transform .3s var(--ease-bounce);
 }
 
 /* The outline keeps white thumbnails from melting into a white page. */
 .thumb {
+    position: relative;
     display: grid;
     aspect-ratio: 4 / 3;
     place-items: center;
     overflow: hidden;
-    border-radius: var(--radius-xs);
+    border-radius: var(--radius-sm);
     outline: 1px solid var(--border);
     outline-offset: -1px;
     background: var(--bg-card);
+    transition: box-shadow .3s;
 }
 
 .thumb img {
@@ -22,11 +25,85 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: opacity .15s;
+    transition: transform .4s var(--ease-bounce);
 }
 
-.thumb:hover img {
-    opacity: .88;
+.playIcon {
+    position: absolute;
+    right: var(--space-2);
+    bottom: var(--space-2);
+    display: grid;
+    width: 40px;
+    height: 40px;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .3);
+    transform: scale(0) rotate(-90deg);
+    transition: transform .3s var(--ease-bounce);
+}
+
+.rank {
+    position: absolute;
+    top: var(--space-2);
+    inset-inline-start: var(--space-2);
+    display: grid;
+    min-width: 30px;
+    height: 30px;
+    padding: 0 var(--space-2);
+    place-items: center;
+    border-radius: var(--radius-xs);
+    background: rgba(0, 0, 0, .72);
+    color: #fff;
+    font-size: var(--fs-md);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.rankFirst {
+    background: var(--accent);
+    color: var(--accent-contrast);
+    font-size: var(--fs-md);
+    font-weight: 700;
+}
+
+.playIcon > svg {
+    margin-inline-start: 2px;
+}
+
+.card:focus-within {
+    transform: translateY(-4px);
+}
+
+.card:focus-within .thumb {
+    box-shadow: 0 10px 24px -10px rgba(0, 0, 0, .45);
+}
+
+.game:focus-within .thumb img {
+    transform: scale(1.06);
+}
+
+.game:focus-within .playIcon {
+    transform: scale(1) rotate(0deg);
+}
+
+@media (hover: hover) {
+    .card:hover {
+        transform: translateY(-4px);
+    }
+
+    .card:hover .thumb {
+        box-shadow: 0 10px 24px -10px rgba(0, 0, 0, .45);
+    }
+
+    .game:hover .thumb img {
+        transform: scale(1.06);
+    }
+
+    .game:hover .playIcon {
+        transform: scale(1) rotate(0deg);
+    }
 }
 
 .fallback {
@@ -161,6 +238,7 @@
 
 .skeletonThumb {
     aspect-ratio: 4 / 3;
+    border-radius: var(--radius-sm);
 }
 
 .skeletonLine {
@@ -187,6 +265,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .card,
+    .card:hover,
+    .card:focus-within,
+    .game:hover .thumb img,
+    .game:focus-within .thumb img {
+        transform: none;
+    }
+
     .thumb img {
         transition: none;
     }

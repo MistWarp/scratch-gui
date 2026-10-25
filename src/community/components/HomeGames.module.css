@@ -1,0 +1,83 @@
+.section {
+    min-width: 0;
+}
+
+.tabs {
+    margin-bottom: var(--space-5);
+}
+
+.bento {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-flow: dense;
+    gap: var(--space-5) var(--space-4);
+}
+
+.lead {
+    grid-column: span 2;
+    grid-row: span 2;
+    display: flex;
+    flex-direction: column;
+}
+
+.lead > a:first-child,
+.leadSkeleton > div > span:first-child {
+    flex: 1 1 auto;
+    aspect-ratio: auto;
+    min-height: 0;
+}
+
+.leadSkeleton > div {
+    flex: 1 1 auto;
+    grid-template-rows: 1fr auto auto;
+}
+
+.lead h3 {
+    font-size: var(--fs-lg);
+}
+
+.card {
+    animation: pop-in .4s var(--ease-bounce) var(--delay) backwards;
+}
+
+.status {
+    justify-content: flex-start;
+}
+
+.empty {
+    margin: 0;
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+}
+
+@keyframes pop-in {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(.96);
+    }
+}
+
+@media (max-width: 640px) {
+    .bento {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-4) var(--space-3);
+    }
+
+    .lead {
+        grid-row: auto;
+    }
+
+    .even > :last-child {
+        display: none;
+    }
+
+    .lead > a:first-child {
+        aspect-ratio: 4 / 3;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .card {
+        animation: none;
+    }
+}
