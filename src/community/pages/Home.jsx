@@ -23,12 +23,15 @@ export const loadFollowing = () => rotur.myFollowing().catch(() => ({following: 
     return Promise.allSettled([api.activity(following), fetchFollowingFeed(40)]).then(([activity, posts]) => {
         const items = activity.status === 'fulfilled' ? activity.value.activity || [] : [];
         const seen = new Set();
+        const shared = new Set();
         const shares = items
             .filter(item => item.type === 'share' && item.projectId && !seen.has(item.projectId) && seen.add(item.projectId))
             .sort(newestFirst)
             .slice(0, GAMES);
         const updates = [
-            ...items.filter(item => item.type !== 'share').map(item => ({...item, timelineType: 'project-activity'})),
+            ...items
+                .filter(item => item.type !== 'share' || (!shared.has(item.projectId) && Boolean(shared.add(item.projectId))))
+                .map(item => ({...item, timelineType: 'project-activity'})),
             ...(posts.status === 'fulfilled' ? normalizeFollowingPosts(posts.value) : [])
         ].sort(newestFirst).slice(0, UPDATES);
         return Promise.all(shares.map(item => loadProjectPreview({id: item.projectId}).catch(() => null)))

@@ -67,6 +67,10 @@
         grid-row: auto;
     }
 
+    .even > :last-child {
+        display: none;
+    }
+
     .lead > a:first-child {
         aspect-ratio: 4 / 3;
     }

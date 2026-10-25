@@ -135,6 +135,7 @@ SignedInCard.propTypes = {
 const HomeHero = ({loading, login, username}) => {
     const games = useWallGames();
     const empty = Array.isArray(games) && !games.length;
+    if (loading && !(games && games.length)) return null;
     return (
         <section className={empty ? `${styles.hero} ${styles.plain}` : styles.hero}>
             {games && games.length ? (

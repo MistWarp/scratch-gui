@@ -83,7 +83,7 @@ describe('home following section', () => {
 
         expect(loadProjectPreview).toHaveBeenCalledTimes(1);
         expect(wrapper.find('h3').map(node => node.text())).toEqual(['Game g1']);
-        expect(wrapper.find('li p').map(node => node.text())).toEqual(['bob loved Other', 'alice posted: hello there']);
+        expect(wrapper.find('li p').map(node => node.text())).toEqual(['bob loved Other', 'alice posted: hello there', 'alice shared Game g1']);
         wrapper.unmount();
     });
 

@@ -29,8 +29,16 @@ const LOADERS = {
 const LINKS = {
     featured: '/explore',
     trending: '/explore',
-    recent: '/explore?sort=recent',
-    following: '/posts'
+    recent: '/explore?sort=recent'
+};
+
+const evenGrid = games => Boolean(games && games.length >= 3 && !(games.length % 2));
+
+const fitGrid = games => {
+    if (games.length >= COUNT) return games.slice(0, COUNT);
+    if (games.length >= 6) return games.slice(0, 6);
+    if (games.length >= 3) return games.slice(0, 3);
+    return games;
 };
 
 const Bento = ({games}) => (
@@ -38,7 +46,7 @@ const Bento = ({games}) => (
         {games.map((game, index) => (
             <GameCard
                 key={game.id}
-                className={index === 0 && games.length >= 5 ? `${styles.card} ${styles.lead}` : styles.card}
+                className={index === 0 && games.length >= 3 ? `${styles.card} ${styles.lead}` : styles.card}
                 style={{'--delay': `${index * 30}ms`}}
                 project={game}
             />
@@ -58,6 +66,9 @@ const HomeGames = ({followingGames}) => {
     const hasFollowing = Boolean(followingGames && followingGames.length);
     const current = tab === 'following' && !hasFollowing ? 'featured' : tab;
     useEffect(() => {
+        if (!hasFollowing && tab === 'following') setTab('featured');
+    }, [hasFollowing, tab]);
+    useEffect(() => {
         if (current === 'following' || Array.isArray(lists[current])) return () => {};
         let active = true;
         setLists(value => ({...value, [current]: null}));
@@ -68,7 +79,8 @@ const HomeGames = ({followingGames}) => {
             active = false;
         };
     }, [current, attempt]);
-    const games = current === 'following' ? followingGames : lists[current];
+    const loaded = current === 'following' ? followingGames : lists[current];
+    const games = Array.isArray(loaded) ? fitGrid(loaded) : loaded;
     const tabs = [
         {key: 'featured', label: text('Featured')},
         {key: 'trending', label: text('Trending')},
@@ -84,7 +96,7 @@ const HomeGames = ({followingGames}) => {
                 id="home-games-heading"
                 icon={Gamepad2}
                 title={text('Games')}
-                actions={<QuietLink to={LINKS[current]}>{text('Browse all games')}</QuietLink>}
+                actions={LINKS[current] ? <QuietLink to={LINKS[current]}>{text('Browse all games')}</QuietLink> : null}
             />
             <UnderlineTabs
                 className={styles.tabs}
@@ -115,7 +127,7 @@ const HomeGames = ({followingGames}) => {
                 {games === false || (games && !games.length) ? null : (
                     <div
                         key={current}
-                        className={styles.bento}
+                        className={evenGrid(games) ? `${styles.bento} ${styles.even}` : styles.bento}
                     >
                         {games ? <Bento games={games} /> : Array.from({length: COUNT}, (_, index) => (
                             <div

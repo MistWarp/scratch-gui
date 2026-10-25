@@ -143,7 +143,7 @@ export const RailProjects = ({username}) => {
     return (
         <RailCard
             id="home-projects-heading"
-            title={text('Your projects')}
+            title={projects.length || current.failed ? text('Your projects') : text('Start a project')}
             action={projects.length ? <QuietLink to="/mystuff?section=projects">{text('All your projects')}</QuietLink> : null}
         >
             {current.projects === null && !current.failed ? <RowsSkeleton count={3} /> : null}
@@ -157,7 +157,6 @@ export const RailProjects = ({username}) => {
             ) : null}
             {current.projects && !current.failed ? (
                 <ul className={styles.rows}>
-                    <NewProjectRow />
                     {projects.map(project => {
                         const saved = timeAgo(project.edited || project.created);
                         return (
