@@ -215,12 +215,15 @@ const commentTextOf = comment => String(comment.text || '') +
 const placedComments = target => Object.entries(isPlainObject(target.comments) ? target.comments : {})
     .filter(([, comment]) => isPlainObject(comment) && !commentTextOf(comment).startsWith(MAP_PREFIX));
 
+const isPlaced = comment => Number.isFinite(comment.x) && Number.isFinite(comment.y);
+
 const commentLayoutOf = target => {
-    const layout = placedComments(target).map(([, comment]) => ({
-        text: hashText(commentTextOf(comment)),
-        x: Math.round(Number(comment.x) || 0),
-        y: Math.round(Number(comment.y) || 0)
-    }));
+    const layout = placedComments(target).filter(([, comment]) => isPlaced(comment))
+        .map(([, comment]) => ({
+            text: hashText(commentTextOf(comment)),
+            x: Math.round(comment.x),
+            y: Math.round(comment.y)
+        }));
     return layout.length ? layout : null;
 };
 

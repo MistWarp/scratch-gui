@@ -317,12 +317,12 @@ test('a free comment cannot make fractch write a file outside the repo', async (
     fs.mkdirSync(path.join(dir, '.git'), {recursive: true});
     const files = projectFiles(['main']);
     const project = JSON.parse(new TextDecoder().decode(files['project.json']));
-    const sprite = project.targets[1];
+    const owner = project.targets[1];
     const note = text => ({blockId: null, x: 0, y: 0, width: 200, height: 200, minimized: false, text});
-    sprite.comments.escape = note('escape attempt');
-    sprite.comments.hook = note('hook attempt');
-    sprite.comments.kept = note('kept note');
-    sprite.comments.map.text = `_fractch_map_${JSON.stringify({
+    owner.comments.escape = note('escape attempt');
+    owner.comments.hook = note('hook attempt');
+    owner.comments.kept = note('kept note');
+    owner.comments.map.text = `_fractch_map_${JSON.stringify({
         version: 1,
         scripts: {hat0: 'main'},
         comments: {

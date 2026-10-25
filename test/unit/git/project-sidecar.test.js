@@ -372,4 +372,3 @@ describe('free comments', () => {
         expect(restored.blockId).toBeTruthy();
     });
 });
-
