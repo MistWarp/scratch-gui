@@ -814,5 +814,88 @@ export default defineMessages({
         id: 'mw.codeMode.assetChanged',
         defaultMessage: 'The project changed this file since you started editing. Apply replaces it with your text.',
         description: 'Message in an asset text tab when blocks changed the asset while the tab had unapplied text'
+    },
+    newCodeFile: {
+        id: 'mw.codeMode.newCodeFile',
+        defaultMessage: 'New file',
+        description: 'Explorer menu item that adds another fractch file to a sprite'
+    },
+    newCodeFileMessage: {
+        id: 'mw.codeMode.newCodeFileMessage',
+        defaultMessage: 'Name the new file. Use a slash to put it in a folder, for example enemies/boss.',
+        description: 'Label of the input in the dialog that adds a fractch file to a sprite'
+    },
+    codeFileEmpty: {
+        id: 'mw.codeMode.codeFileEmpty',
+        defaultMessage: 'Enter a name for the file.',
+        description: 'Error shown when a new or renamed fractch file has no name'
+    },
+    codeFileInvalid: {
+        id: 'mw.codeMode.codeFileInvalid',
+        defaultMessage: 'File names cannot start with a dot or contain control characters or any of < > : " | ? *.',
+        description: 'Error shown when a new or renamed fractch file name is not allowed'
+    },
+    codeFileReserved: {
+        id: 'mw.codeMode.codeFileReserved',
+        // eslint-disable-next-line max-len
+        defaultMessage: 'The names main and index, and names Windows reserves such as con, nul, com1 and lpt1, cannot be used.',
+        description: 'Error shown when a new or renamed fractch file uses a reserved name'
+    },
+    codeFileTaken: {
+        id: 'mw.codeMode.codeFileTaken',
+        defaultMessage: 'This sprite already has a file called {name}.',
+        description: 'Error shown when a new or renamed fractch file name is already used in the sprite'
+    },
+    codeFileRenameFailed: {
+        id: 'mw.codeMode.codeFileRenameFailed',
+        defaultMessage: 'Could not rename {name}',
+        description: 'Title of the dialog shown when a fractch file cannot be renamed'
+    },
+    deleteCodeFileTitle: {
+        id: 'mw.codeMode.deleteCodeFileTitle',
+        defaultMessage: 'Delete {name}?',
+        description: 'Title of the dialog that confirms deleting a fractch file'
+    },
+    deleteCodeFileMessage: {
+        id: 'mw.codeMode.deleteCodeFileMessage',
+        defaultMessage: 'The scripts in this file are removed from the text. Apply to remove them from the project.',
+        description: 'Message of the dialog that confirms deleting a fractch file that has scripts'
+    },
+    codeFileReadOnly: {
+        id: 'mw.codeMode.codeFileReadOnly',
+        defaultMessage: 'Files can be changed once the sprite text has loaded and has no conflicts or stale draft.',
+        description: 'Message shown when a fractch file cannot be added, renamed or deleted right now'
+    },
+    codeFileFolderCase: {
+        id: 'mw.codeMode.codeFileFolderCase',
+        defaultMessage: 'Use the same capitalisation as the existing folder {folder}.',
+        description: 'Error shown when a fractch file name uses a folder in a different case from an existing one'
+    },
+    codeFileLocked: {
+        id: 'mw.codeMode.codeFileLocked',
+        // eslint-disable-next-line max-len
+        defaultMessage: 'This file has scripts that cannot be shown as text, so it cannot be deleted here. Delete those scripts in Blocks mode first.',
+        description: 'Message shown when a fractch file cannot be deleted because it holds locked scripts'
+    },
+    codeFileDeleted: {
+        id: 'mw.codeMode.codeFileDeleted',
+        defaultMessage: 'Deleted {name}. Apply to remove its scripts from the project.',
+        description: 'Message shown after a fractch file is deleted from the sprite text'
+    },
+    undoDeleteFile: {
+        id: 'mw.codeMode.undoDeleteFile',
+        defaultMessage: 'Undo',
+        description: 'Button that brings back a fractch file that was just deleted'
+    },
+    otherFilesDirty: {
+        id: 'mw.codeMode.otherFilesDirty',
+        // eslint-disable-next-line max-len
+        defaultMessage: 'Other files of this sprite have changes that are not applied yet. Apply applies every file of this sprite.',
+        description: 'Message in an unchanged fractch file tab when another file of the sprite has unapplied text'
+    },
+    spriteUnapplied: {
+        id: 'mw.codeMode.spriteUnapplied',
+        defaultMessage: 'This sprite has code that is not applied yet.',
+        description: 'Tooltip of the dot on a sprite in the Code mode explorer when its text has unapplied changes'
     }
 });

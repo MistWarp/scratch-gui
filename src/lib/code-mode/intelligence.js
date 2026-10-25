@@ -238,11 +238,12 @@ const memberCompletions = word => {
     }));
 };
 
-const identifierCompletions = (context, word, names) => {
+const identifierCompletions = (context, word, names, source) => {
     const line = context.state.doc.lineAt(context.pos);
     const before = line.text.slice(0, word.from - line.from);
     if (/@$/.test(before)) {
-        return procedureNames(context.state.doc.toString()).map(proc => snippetCompletion(
+        const text = typeof source === 'string' ? source : context.state.doc.toString();
+        return procedureNames(text).map(proc => snippetCompletion(
             `${proc.name}(${proc.params.map(param => `\${${param}}`).join(', ')})`,
             {label: proc.name, detail: `(${proc.params.join(', ')})`, type: 'function'}
         ));
@@ -272,7 +273,7 @@ const identifierCompletions = (context, word, names) => {
     return options;
 };
 
-const fractchCompletionSource = (getVm, getTargetId) => {
+const fractchCompletionSource = (getVm, getTargetId, getSource = null) => {
     const extensionSource = extensionCompletionSource(getVm);
     return context => {
         const vm = getVm();
@@ -282,7 +283,7 @@ const fractchCompletionSource = (getVm, getTargetId) => {
         const word = context.matchBefore(/[A-Za-z_][\w]*(?:\.[\w$]*)?/);
         if (!word || (word.from === word.to && !context.explicit)) return null;
         const options = word.text.includes('.') ? memberCompletions(word) :
-            identifierCompletions(context, word, names);
+            identifierCompletions(context, word, names, getSource ? getSource() : null);
         const extensions = extensionSource(context);
         if (extensions) options.push(...extensions.options);
         if (!options.length) return null;

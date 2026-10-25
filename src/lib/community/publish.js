@@ -6,6 +6,7 @@ import {
     remixProject, deleteProject, collectExtensionSources
 } from './api';
 import {createMwp} from '../git/mwp.js';
+import {withTreeProjectJson} from '../git/fractch-tree.js';
 import {deleteRepo} from '../git/browser-git.js';
 import {syncConfiguredRemotes} from '../git/sync-remotes.js';
 import {enableAfterCloudSave} from '../mw/autosave-settings.js';
@@ -308,6 +309,7 @@ const publishWorkspace = async ({
             Promise.resolve(thumbnailBlob || captureThumbnail(vm));
         await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
         const sb3Files = vm.saveProjectSb3DontZip();
+        const treeFiles = withTreeProjectJson(vm, sb3Files);
         onProgress({phase: 'package', message: 'Preparing pushed history and extensions'});
         const remixBaseHead = createdNow && platformProject?.remixParent ?
             platformProject.remixBaseCommit || '' : '';
@@ -329,7 +331,7 @@ const publishWorkspace = async ({
             (platformProject?.uploadFeatures || []).includes('worktreeAssets');
         const mwpOptions = {
             vm,
-            sb3Files,
+            sb3Files: treeFiles,
             projectId: platformId,
             remixParent: platformProject && platformProject.remixParent,
             baseCommit: platformProject && platformProject.remixBaseCommit,

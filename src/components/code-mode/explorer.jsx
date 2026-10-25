@@ -279,6 +279,14 @@ const Explorer = props => {
                                 <span className={styles.rowLabel}>{row.label}</span>
                             )}
                             {row.meta ? <span className={styles.rowMeta}>{row.meta}</span> : null}
+                            {row.dirty ? (
+                                <span
+                                    className={styles.dirtyDot}
+                                    role="img"
+                                    aria-label={intl.formatMessage(messages.spriteUnapplied)}
+                                    title={intl.formatMessage(messages.spriteUnapplied)}
+                                />
+                            ) : null}
                             {row.problems ? (
                                 <span
                                     className={classNames(styles.problemBadge, {
