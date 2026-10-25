@@ -244,7 +244,8 @@ const Explore = () => {
                             {projects.map((project, index) => (
                                 <GameCard
                                     key={project.id}
-                                    className={styles.card}
+                                    className={index === 0 && sort === 'trending' ? `${styles.card} ${styles.lead}` : styles.card}
+                                    rank={index < 10 && (sort === 'trending' || sort === 'loved') ? index + 1 : null}
                                     style={{'--delay': `${(index % PAGE_SIZE) * 25}ms`}}
                                     project={project}
                                 />

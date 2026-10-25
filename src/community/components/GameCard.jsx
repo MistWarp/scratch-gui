@@ -196,7 +196,7 @@ GameMeta.propTypes = {
     }).isRequired
 };
 
-const GameCard = ({project, className, style}) => (
+const GameCard = ({project, className, rank, style}) => (
     <MediaCard
         className={classNames(styles.game, className)}
         style={style}
@@ -208,6 +208,9 @@ const GameCard = ({project, className, style}) => (
                 fallbackClassName={styles.fallback}
                 lazy
             />
+            {rank ? (
+                <span className={rank === 1 ? `${styles.rank} ${styles.rankFirst}` : styles.rank}>{rank}</span>
+            ) : null}
             <span className={styles.playIcon}>
                 <Play
                     size={18}
@@ -229,7 +232,8 @@ GameCard.propTypes = {
         owner: PropTypes.string,
         title: PropTypes.string,
         views: PropTypes.number
-    }).isRequired
+    }).isRequired,
+    rank: PropTypes.number
 };
 
 export default GameCard;

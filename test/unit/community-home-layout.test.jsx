@@ -13,7 +13,7 @@ jest.mock('../../src/lib/rotur/client.js', () => ({
 jest.mock('../../src/community/rotur', () => ({myFollowing: jest.fn(() => new Promise(() => {}))}));
 jest.mock('../../src/community/api', () => ({
     __esModule: true,
-    default: {},
+    default: {explore: () => new Promise(() => {})},
     editorUrl: () => '/editor',
     projectUrl: id => `/project/${id}`
 }));

@@ -14,7 +14,6 @@ import SectionHeading from '../components/ui/SectionHeading.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import GameCard, {CardSkeleton} from '../components/GameCard.jsx';
 import ScratchImport from '../components/ScratchImport.jsx';
-import ScriptToy from '../components/ScriptToy.jsx';
 import {FeaturedGames, GameShelf, SuggestedCreators} from '../components/HomeDiscovery.jsx';
 import CommunityUpdates from '../components/HomeCommunity.jsx';
 import {ContinuePlaying, ContinueProjects, DeviceBackup, StarterGallery} from '../components/HomeWorkspace.jsx';
@@ -214,11 +213,63 @@ export const FollowingSection = ({viewerName}) => {
     );
 };
 
+const WALL_ROWS = 3;
+
+const WallRow = ({games}) => (
+    <div className={styles.wallRow}>
+        {[...games, ...games].map((game, index) => (
+            <Link
+                key={`${game.id}-${index}`}
+                to={projectUrl(game)}
+                className={styles.wallTile}
+                tabIndex={-1}
+            >
+                <img
+                    src={game.thumbUrl}
+                    alt=""
+                    loading="lazy"
+                />
+            </Link>
+        ))}
+    </div>
+);
+
+const Wall = () => {
+    const [games, setGames] = useState(null);
+    useEffect(() => {
+        let active = true;
+        api.explore({sort: 'trending', limit: 30})
+            .then(data => active && setGames((data.projects || []).filter(game => game.thumbUrl)))
+            .catch(() => active && setGames([]));
+        return () => {
+            active = false;
+        };
+    }, []);
+    const rows = Array.from({length: WALL_ROWS}, (_, row) => {
+        const slice = (games || []).filter((game, index) => index % WALL_ROWS === row);
+        return slice.length >= 4 ? slice : games || [];
+    });
+    return (
+        <div
+            className={styles.wall}
+            aria-hidden="true"
+        >
+            {games && games.length ? rows.map((row, index) => (
+                <WallRow
+                    key={index}
+                    games={row}
+                />
+            )) : null}
+        </div>
+    );
+};
+
 const Intro = ({login}) => {
     const {text: communityText} = useCommunityIntl();
     return (
         <section className={styles.intro}>
-            <div className={styles.introText}>
+            <Wall />
+            <div className={styles.introCard}>
                 <h1>{communityText('Make games with blocks, and play what others make')}</h1>
                 <p>{communityText('MistWarp is a free block-based editor for making games and sharing them with everyone.')}</p>
                 <div className={styles.actions}>
@@ -238,7 +289,6 @@ const Intro = ({login}) => {
                 </div>
                 <DeviceBackup className={styles.introBackup} />
             </div>
-            <ScriptToy className={styles.introToy} />
         </section>
     );
 };

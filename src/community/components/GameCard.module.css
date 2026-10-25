@@ -44,6 +44,30 @@
     transition: transform .3s var(--ease-bounce);
 }
 
+.rank {
+    position: absolute;
+    top: var(--space-2);
+    left: var(--space-2);
+    display: grid;
+    min-width: 30px;
+    height: 30px;
+    padding: 0 var(--space-2);
+    place-items: center;
+    border-radius: var(--radius-xs);
+    background: rgba(0, 0, 0, .72);
+    color: #fff;
+    font-size: var(--fs-md);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.rankFirst {
+    background: var(--accent);
+    color: var(--accent-contrast);
+    font-size: var(--fs-md);
+    font-weight: 700;
+}
+
 .playIcon > svg {
     margin-inline-start: 2px;
 }

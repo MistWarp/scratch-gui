@@ -13,37 +13,87 @@
 }
 
 .intro {
+    position: relative;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: var(--space-6);
-    padding: var(--space-6) var(--space-7);
+    min-height: 460px;
+    place-items: center;
+    overflow: hidden;
     border-radius: var(--radius);
     background: var(--bg-card);
 }
 
-.introText {
+.wall {
+    position: absolute;
+    inset: -60px -120px;
     display: grid;
-    justify-items: start;
+    align-content: center;
     gap: var(--space-3);
-    min-width: 0;
+    transform: rotate(-5deg);
 }
 
-.introToy {
-    margin-inline-end: var(--space-4);
+.wallRow {
+    display: flex;
+    gap: var(--space-3);
+    width: max-content;
+    padding-inline-end: var(--space-3);
+    animation: wall-scroll 40s linear infinite;
 }
 
-.intro h1 {
-    max-width: 26ch;
+.wallRow:nth-child(2) {
+    animation-duration: 52s;
+    animation-direction: reverse;
+}
+
+.wallRow:nth-child(3) {
+    animation-duration: 46s;
+}
+
+.wallTile {
+    display: block;
+    flex: 0 0 auto;
+    width: 200px;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border-radius: var(--radius-xs);
+    background: var(--bg-raised);
+    transition: transform .25s var(--ease-bounce);
+}
+
+.wallTile:hover {
+    transform: scale(1.06);
+}
+
+.wallTile img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.introCard {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: var(--space-3);
+    max-width: 560px;
+    margin: var(--space-5);
+    padding: var(--space-6) var(--space-7);
+    border-radius: var(--radius);
+    background: var(--bg);
+    text-align: center;
+    box-shadow: 0 20px 50px -20px rgba(0, 0, 0, .6);
+}
+
+.introCard h1 {
     margin: 0;
-    font-size: var(--fs-hero);
+    font-size: var(--fs-4xl);
     font-weight: 700;
-    line-height: 1.15;
+    line-height: 1.1;
     letter-spacing: -.02em;
     text-wrap: balance;
 }
 
-.intro p {
+.introCard p {
     max-width: 60ch;
     margin: 0;
     color: var(--text-dim);
@@ -51,8 +101,15 @@
     line-height: 1.5;
 }
 
+@keyframes wall-scroll {
+    to {
+        transform: translateX(-50%);
+    }
+}
+
 .actions {
     display: flex;
+    justify-content: center;
     flex-wrap: wrap;
     gap: var(--space-2);
     margin-top: var(--space-2);
@@ -195,17 +252,6 @@
     }
 }
 
-@media (max-width: 1000px) {
-    .intro {
-        grid-template-columns: minmax(0, 1fr);
-        padding: var(--space-5);
-    }
-
-    .introToy {
-        display: none;
-    }
-}
-
 @media (max-width: 760px) {
     .page > * + * {
         margin-top: var(--space-6);
@@ -218,11 +264,25 @@
     }
 
     .intro {
+        min-height: 520px;
+        place-items: end center;
+    }
+
+    .introCard {
+        margin: var(--space-4) var(--space-3);
         padding: var(--space-5) var(--space-4);
     }
 
-    .intro p {
+    .introCard h1 {
+        font-size: var(--fs-3xl);
+    }
+
+    .introCard p {
         font-size: var(--fs-md);
+    }
+
+    .wallTile {
+        width: 140px;
     }
 
     .actions {
@@ -233,7 +293,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .updateSkeleton > span {
+    .updateSkeleton > span,
+    .wallRow {
         animation: none;
     }
 }

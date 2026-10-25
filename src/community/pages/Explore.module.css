@@ -54,6 +54,21 @@
     font-weight: 600;
 }
 
+.lead {
+    grid-column: span 2;
+    grid-row: span 2;
+}
+
+.lead > a:first-child {
+    flex: 1 1 auto;
+    aspect-ratio: auto;
+    min-height: 0;
+}
+
+.lead h3 {
+    font-size: var(--fs-lg);
+}
+
 .card {
     animation: pop-in .4s var(--ease-bounce) var(--delay) backwards;
 }
@@ -125,6 +140,14 @@
     .grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: var(--space-4) var(--space-3);
+    }
+
+    .lead {
+        grid-row: auto;
+    }
+
+    .lead > a:first-child {
+        aspect-ratio: 4 / 3;
     }
 }
 
