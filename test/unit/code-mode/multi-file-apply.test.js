@@ -159,6 +159,23 @@ describe('several files in one sprite', () => {
         expect(projectFile(getText(loaded.id).doc, 'enemies/boss').text).toContain('when key space');
     });
 
+    test('a compressed save, like a cloud upload or restore point, keeps the file', async () => {
+        await moveKeyScriptIntoFile();
+        expect((await controller.apply(sprite.id)).status).toBe('committed');
+
+        const saved = await vm.saveProjectSb3('arraybuffer');
+        await vm.loadProject(saved);
+        const loaded = vm.runtime.targets.find(item => item.isOriginal && item.getName() === 'Sprite1');
+        const hat = Object.keys(loaded.blocks._blocks)
+            .find(id => loaded.blocks.getBlock(id).opcode === 'event_whenkeypressed');
+        expect(membershipOf(loaded).scripts[hat]).toBe('enemies/boss');
+
+        const fresh = createTextController({vm, client: createFractchClient()});
+        clearTexts();
+        await fresh.regenerate(loaded.id);
+        expect(regionFiles(getText(loaded.id).doc)).toEqual(['enemies/boss']);
+    });
+
     test('files without scripts stay in the text after Apply and comments move to scripts.fractch', async () => {
         await controller.regenerate(sprite.id);
         let doc = addFileText(getText(sprite.id).doc, 'empty').text;
