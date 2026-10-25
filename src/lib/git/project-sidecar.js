@@ -217,33 +217,82 @@ const placedComments = target => Object.entries(isPlainObject(target.comments) ?
 
 const isPlaced = comment => Number.isFinite(comment.x) && Number.isFinite(comment.y);
 
+const topOf = (blocks, id) => {
+    const seen = new Set();
+    let current = id;
+    while (blocks[current] && !Array.isArray(blocks[current]) && blocks[current].parent && !seen.has(current)) {
+        seen.add(current);
+        current = blocks[current].parent;
+    }
+    return current;
+};
+
+const anchorOf = (target, comment) => {
+    const blocks = isPlainObject(target.blocks) ? target.blocks : {};
+    const block = comment.blockId ? blocks[comment.blockId] : null;
+    if (!block || Array.isArray(block)) return null;
+    return `${stackOf(blocks, topOf(blocks, comment.blockId))}/${block.opcode}`;
+};
+
+const layoutEntry = (target, comment) => {
+    const entry = {text: hashText(commentTextOf(comment))};
+    if (comment.blockId) entry.on = anchorOf(target, comment) || '?';
+    return entry;
+};
+
+const entryKey = entry => (entry.on ? `${entry.text}@${entry.on}` : entry.text);
+
 const commentLayoutOf = target => {
     const layout = placedComments(target).filter(([, comment]) => isPlaced(comment))
         .map(([, comment]) => ({
-            text: hashText(commentTextOf(comment)),
+            ...layoutEntry(target, comment),
             x: Math.round(comment.x),
             y: Math.round(comment.y)
-        }));
+        }))
+        .sort((a, b) => (entryKey(a) < entryKey(b) ? -1 : entryKey(a) > entryKey(b) ? 1 : (a.y - b.y) || (a.x - b.x)));
     return layout.length ? layout : null;
 };
 
+const nextUnused = queue => (queue ? queue.find(item => !item.used) || null : null);
+
 const restoreCommentLayout = (target, layout) => {
     if (!Array.isArray(layout)) return;
-    const queues = new Map();
+    const exact = new Map();
+    const byText = new Map();
     for (const entry of layout) {
         if (!isPlainObject(entry) || typeof entry.text !== 'string') continue;
         const x = Number(entry.x);
         const y = Number(entry.y);
         if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
-        if (!queues.has(entry.text)) queues.set(entry.text, []);
-        queues.get(entry.text).push({x, y});
+        const item = {x, y, used: false};
+        const attached = typeof entry.on === 'string';
+        const key = attached ? `${entry.text}@${entry.on}` : entry.text;
+        const textKey = `${attached ? 'a' : 'f'}:${entry.text}`;
+        if (!exact.has(key)) exact.set(key, []);
+        exact.get(key).push(item);
+        if (!byText.has(textKey)) byText.set(textKey, []);
+        byText.get(textKey).push(item);
     }
+    const pending = [];
     for (const [, comment] of placedComments(target)) {
-        const queue = queues.get(hashText(commentTextOf(comment)));
-        if (!queue || !queue.length) continue;
-        const {x, y} = queue.shift();
-        comment.x = x;
-        comment.y = y;
+        const attached = Boolean(comment.blockId);
+        if (attached && isPlaced(comment)) continue;
+        const entry = layoutEntry(target, comment);
+        const item = nextUnused(exact.get(entryKey(entry)));
+        if (item) {
+            item.used = true;
+            comment.x = item.x;
+            comment.y = item.y;
+        } else {
+            pending.push({comment, textKey: `${attached ? 'a' : 'f'}:${entry.text}`});
+        }
+    }
+    for (const {comment, textKey} of pending) {
+        const item = nextUnused(byText.get(textKey));
+        if (!item) continue;
+        item.used = true;
+        comment.x = item.x;
+        comment.y = item.y;
     }
 };
 

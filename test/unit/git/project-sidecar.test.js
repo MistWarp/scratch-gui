@@ -365,10 +365,49 @@ describe('free comments', () => {
                 comments: {attached: {...note('on the hat', 412, -37), blockId: 'hat'}}
             })]
         }));
-        expect(sidecar(dir).comments['Sprite 1']).toEqual([{text: expect.any(String), x: 412, y: -37}]);
+        expect(sidecar(dir).comments['Sprite 1']).toEqual([{text: expect.any(String), on: expect.any(String), x: 412, y: -37}]);
         const restored = Object.values(targetNamed(project, 'Sprite 1').comments)
             .find(comment => comment.text === 'on the hat');
         expect([restored.x, restored.y]).toEqual([412, -37]);
         expect(restored.blockId).toBeTruthy();
+    });
+
+    test('comments with the same text go back to their own blocks', async () => {
+        const blocks = {...flagScript('one', 10, 20, 'a'), ...flagScript('two', 10, 400, 'b')};
+        blocks.onesay.comment = 'onA';
+        blocks.twosay.comment = 'onB';
+        const {dir, project} = await roundTrip(projectJson({
+            targets: [stage(), sprite('Sprite 1', {
+                blocks,
+                comments: {
+                    free: note('TODO', 700, 900),
+                    onA: {...note('TODO', 300, 0), blockId: 'onesay'},
+                    onB: {...note('TODO', 300, 400), blockId: 'twosay'}
+                }
+            })]
+        }));
+        const stored = sidecar(dir).comments['Sprite 1'];
+        expect(stored.filter(entry => entry.on)).toHaveLength(2);
+        const rebuilt = targetNamed(project, 'Sprite 1');
+        const sayText = comment => rebuilt.blocks[rebuilt.blocks[comment.blockId].inputs.MESSAGE[1]] ||
+            rebuilt.blocks[comment.blockId].inputs.MESSAGE[1][1];
+        const placed = Object.values(rebuilt.comments).filter(comment => comment.text === 'TODO');
+        const free = placed.find(comment => !comment.blockId);
+        expect([free.x, free.y]).toEqual([700, 900]);
+        const attached = placed.filter(comment => comment.blockId)
+            .map(comment => [sayText(comment), comment.x, comment.y])
+            .sort();
+        expect(attached).toEqual([['a', 300, 0], ['b', 300, 400]]);
+    });
+
+    test('the stored layout does not depend on the order comments were created in', async () => {
+        const make = order => {
+            const comments = {};
+            for (const [id, text, x] of order) comments[id] = note(text, x, 0);
+            return projectJson({targets: [stage(), sprite('Sprite 1', {comments})]});
+        };
+        const first = await roundTrip(make([['p', 'alpha', 1], ['q', 'beta', 2]]));
+        const second = await roundTrip(make([['q', 'beta', 2], ['p', 'alpha', 1]]));
+        expect(sidecar(first.dir).comments).toEqual(sidecar(second.dir).comments);
     });
 });

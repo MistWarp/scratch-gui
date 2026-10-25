@@ -113,8 +113,8 @@ importers:
         specifier: ^6.2.5
         version: 6.2.5
       fractch:
-        specifier: https://codeload.github.com/Mistium/FRACTCH/tar.gz/0609fde2dab9f4f75e297b725c3da8c2f58055f9
-        version: https://codeload.github.com/Mistium/FRACTCH/tar.gz/0609fde2dab9f4f75e297b725c3da8c2f58055f9
+        specifier: https://codeload.github.com/Mistium/FRACTCH/tar.gz/034005121e906d9520eef67f4a8559a871479e61
+        version: https://codeload.github.com/Mistium/FRACTCH/tar.gz/034005121e906d9520eef67f4a8559a871479e61
       get-user-media-promise:
         specifier: 1.1.4
         version: 1.1.4
@@ -3417,8 +3417,8 @@ packages:
   format-message@6.2.1:
     resolution: {integrity: sha512-6gBXI+MOE9pu9QNeZf95V87GKYiLCdUvhisjts75xonaPAshtBu20NTZt2l8kbYcoMtxNyH9E9af+aieIRfVmw==}
 
-  fractch@https://codeload.github.com/Mistium/FRACTCH/tar.gz/0609fde2dab9f4f75e297b725c3da8c2f58055f9:
-    resolution: {tarball: https://codeload.github.com/Mistium/FRACTCH/tar.gz/0609fde2dab9f4f75e297b725c3da8c2f58055f9}
+  fractch@https://codeload.github.com/Mistium/FRACTCH/tar.gz/034005121e906d9520eef67f4a8559a871479e61:
+    resolution: {tarball: https://codeload.github.com/Mistium/FRACTCH/tar.gz/034005121e906d9520eef67f4a8559a871479e61}
     version: 0.10.3
     engines: {node: '>=18'}
     hasBin: true
@@ -10158,7 +10158,7 @@ snapshots:
       format-message-parse: 6.2.4
       lookup-closest-locale: 6.2.0
 
-  fractch@https://codeload.github.com/Mistium/FRACTCH/tar.gz/0609fde2dab9f4f75e297b725c3da8c2f58055f9:
+  fractch@https://codeload.github.com/Mistium/FRACTCH/tar.gz/034005121e906d9520eef67f4a8559a871479e61:
     dependencies:
       adm-zip: 0.5.18
       yargs: 17.7.3
