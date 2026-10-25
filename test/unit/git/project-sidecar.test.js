@@ -333,3 +333,43 @@ describe('project data fractch has no syntax for', () => {
         expect(project.meta.origin).toBe('scratch.mit.edu');
     });
 });
+
+describe('free comments', () => {
+    const note = (text, x, y) => ({blockId: null, x, y, width: 200, height: 200, minimized: false, text});
+
+    test('free comment positions survive a write and rebuild', async () => {
+        const {dir, project} = await roundTrip(projectJson({
+            targets: [stage(), sprite('Sprite 1', {
+                blocks: flagScript('hat', 10, 20, 'hi'),
+                comments: {
+                    first: note('Remember to fix the score', 340, 75),
+                    twin: note('same text', 10, 500),
+                    twinTwo: note('same text', 600, 500)
+                }
+            })]
+        }));
+        expect(sidecar(dir).comments['Sprite 1']).toHaveLength(3);
+        const comments = Object.values(targetNamed(project, 'Sprite 1').comments)
+            .filter(comment => !String(comment.text).startsWith('_fractch_map_'));
+        const at = text => comments.filter(comment => comment.text === text).map(({x, y}) => [x, y]);
+        expect(at('Remember to fix the score')).toEqual([[340, 75]]);
+        expect(at('same text').sort((a, b) => a[0] - b[0])).toEqual([[10, 500], [600, 500]]);
+    });
+
+    test('attached comment positions survive too, and the file map is not stored', async () => {
+        const blocks = flagScript('hat', 10, 20, 'hi');
+        blocks.hat.comment = 'attached';
+        const {dir, project} = await roundTrip(projectJson({
+            targets: [stage(), sprite('Sprite 1', {
+                blocks,
+                comments: {attached: {...note('on the hat', 412, -37), blockId: 'hat'}}
+            })]
+        }));
+        expect(sidecar(dir).comments['Sprite 1']).toEqual([{text: expect.any(String), x: 412, y: -37}]);
+        const restored = Object.values(targetNamed(project, 'Sprite 1').comments)
+            .find(comment => comment.text === 'on the hat');
+        expect([restored.x, restored.y]).toEqual([412, -37]);
+        expect(restored.blockId).toBeTruthy();
+    });
+});
+

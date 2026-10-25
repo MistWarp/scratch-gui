@@ -207,6 +207,43 @@ const restoreFrames = (target, frames) => {
     if (Object.keys(restored).length) target.frames = restored;
 };
 
+const MAP_PREFIX = '_fractch_map_';
+
+const commentTextOf = comment => String(comment.text || '') +
+    (typeof comment.extraText === 'string' ? comment.extraText : '');
+
+const placedComments = target => Object.entries(isPlainObject(target.comments) ? target.comments : {})
+    .filter(([, comment]) => isPlainObject(comment) && !commentTextOf(comment).startsWith(MAP_PREFIX));
+
+const commentLayoutOf = target => {
+    const layout = placedComments(target).map(([, comment]) => ({
+        text: hashText(commentTextOf(comment)),
+        x: Math.round(Number(comment.x) || 0),
+        y: Math.round(Number(comment.y) || 0)
+    }));
+    return layout.length ? layout : null;
+};
+
+const restoreCommentLayout = (target, layout) => {
+    if (!Array.isArray(layout)) return;
+    const queues = new Map();
+    for (const entry of layout) {
+        if (!isPlainObject(entry) || typeof entry.text !== 'string') continue;
+        const x = Number(entry.x);
+        const y = Number(entry.y);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+        if (!queues.has(entry.text)) queues.set(entry.text, []);
+        queues.get(entry.text).push({x, y});
+    }
+    for (const [, comment] of placedComments(target)) {
+        const queue = queues.get(hashText(commentTextOf(comment)));
+        if (!queue || !queue.length) continue;
+        const {x, y} = queue.shift();
+        comment.x = x;
+        comment.y = y;
+    }
+};
+
 const writeProjectSidecar = async ({readSb3File, projectJson, vfs, dir}) => {
     const targets = Array.isArray(projectJson.targets) ? projectJson.targets : [];
     const sidecar = {};
@@ -220,6 +257,13 @@ const writeProjectSidecar = async ({readSb3File, projectJson, vfs, dir}) => {
         if (targetFrames) frames[targetKey(target)] = targetFrames;
     }
     if (Object.keys(frames).length) sidecar.frames = frames;
+
+    const comments = Object.create(null);
+    for (const target of targets) {
+        const layout = commentLayoutOf(target);
+        if (layout) comments[targetKey(target)] = layout;
+    }
+    if (Object.keys(comments).length) sidecar.comments = comments;
 
     const fonts = await writeFonts({readSb3File, projectJson, vfs, dir});
     if (fonts.length) sidecar.fonts = fonts;
@@ -276,6 +320,14 @@ const applySidecar = (manifest, sidecar, fonts) => {
     if (isPlainObject(sidecar.frames)) {
         for (const target of targets) {
             if (hasOwn(sidecar.frames, targetKey(target))) restoreFrames(target, sidecar.frames[targetKey(target)]);
+        }
+    }
+
+    if (isPlainObject(sidecar.comments)) {
+        for (const target of targets) {
+            if (hasOwn(sidecar.comments, targetKey(target))) {
+                restoreCommentLayout(target, sidecar.comments[targetKey(target)]);
+            }
         }
     }
 
