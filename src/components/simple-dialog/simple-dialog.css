@@ -2,6 +2,8 @@
     padding: 1.5rem;
     min-width: 300px;
     max-width: 500px;
+    max-height: calc(100vh - 8rem);
+    overflow-y: auto;
 }
 
 .message {

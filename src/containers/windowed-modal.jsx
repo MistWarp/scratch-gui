@@ -147,6 +147,12 @@ class WindowedModal extends React.Component {
 
             this.window.minHeight = desiredHeight;
             this.window.maxHeight = desiredHeight;
+
+            if (!this.fittedToContent && !this.window.isMaximized) {
+                this.fittedToContent = true;
+                this.window.y = Math.max(16, Math.round((window.innerHeight - desiredHeight) / 2));
+                this.window.element.style.top = `${this.window.y}px`;
+            }
         });
     }
     
@@ -376,6 +382,7 @@ class WindowedModal extends React.Component {
     handleWindowClose = () => {
         this.disconnectContentObserver();
         this.window = null;
+        this.fittedToContent = false;
         this.contentContainer = null;
         this.createdWindow = false;
 
@@ -387,6 +394,7 @@ class WindowedModal extends React.Component {
     handleWindowMinimize = () => {
         this.disconnectContentObserver();
         this.window = null;
+        this.fittedToContent = false;
         this.contentContainer = null;
         this.createdWindow = false;
 
