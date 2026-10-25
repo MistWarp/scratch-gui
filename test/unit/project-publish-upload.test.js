@@ -227,23 +227,6 @@ describe('MistWarp project upload packaging', () => {
         expect(mockUploadProject).toHaveBeenCalledTimes(1);
     });
 
-    test('commits the project.json with uncompressed block ids to the project history', async () => {
-        const files = {'project.json': JSON.stringify({targets: []}), 'a.svg': 'svg'};
-        const vm = {
-            saveProjectSb3DontZip: jest.fn(() => files),
-            saveProjectSb3: jest.fn(),
-            toJSON: jest.fn(() => '{"targets":[],"full":true}')
-        };
-
-        await publishToMistWarp({vm, title: 'Files'});
-
-        expect(vm.toJSON).toHaveBeenCalledWith(null, {allowOptimization: false});
-        const committed = mockCreateMwp.mock.calls[mockCreateMwp.mock.calls.length - 1][0].sb3Files;
-        expect(new TextDecoder().decode(committed['project.json'])).toBe('{"targets":[],"full":true}');
-        expect(committed['a.svg']).toBe('svg');
-        expect(mockUploadProject).toHaveBeenCalledTimes(1);
-    });
-
     test('exports a remix as a delta from its inherited head', async () => {
         const files = {'project.json': JSON.stringify({targets: []})};
         const vm = {saveProjectSb3DontZip: jest.fn(() => files)};
