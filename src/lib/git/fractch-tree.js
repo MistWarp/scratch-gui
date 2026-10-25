@@ -164,9 +164,28 @@ const withSafeRegions = projectJson => {
                     else unsafe = true;
                 }
             }
+            let notes = map.comments;
+            if (notes && typeof notes === 'object' && !Array.isArray(notes)) {
+                notes = {};
+                for (const [commentId, entry] of Object.entries(map.comments)) {
+                    if (!entry || typeof entry !== 'object' || !('region' in entry)) {
+                        notes[commentId] = entry;
+                        continue;
+                    }
+                    const region = safeRegion(entry.region);
+                    if (region === entry.region) {
+                        notes[commentId] = entry;
+                        continue;
+                    }
+                    unsafe = true;
+                    const {region: dropped, ...rest} = entry;
+                    notes[commentId] = region === 'main' ? rest : {...rest, region};
+                }
+            }
             if (!unsafe) continue;
             const safeMap = {...map, scripts};
             if (modules) safeMap.modules = modules;
+            if (notes) safeMap.comments = notes;
             const safeText = MAP_PREFIX + JSON.stringify(safeMap);
             const safeComment = {...comment, text: safeText};
             delete safeComment.extraText;

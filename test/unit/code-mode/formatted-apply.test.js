@@ -264,7 +264,7 @@ describe('formatted applies', () => {
         expect(isDirty(state)).toBe(false);
         expect(sliceOf(state.doc, state.units['script:key'])).toBe(KEY);
         expect(sliceOf(state.doc, state.units['script:hat'])).toBe('when flag at 10,20 {\n  // greet\n  say "hello";\n}');
-        expect(state.doc.indexOf('var lives   = 5 ;')).toBeLessThan(state.doc.indexOf('comment "Sprite1 setup"'));
+        expect(state.doc.indexOf('var lives   = 5 ;')).toBeLessThan(state.doc.indexOf('// Sprite1 setup'));
         expect(state.doc.indexOf('when flag')).toBeLessThan(state.doc.indexOf('when key space'));
         expectUnitsLineUp(state);
     });

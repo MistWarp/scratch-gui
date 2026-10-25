@@ -207,6 +207,145 @@ const restoreFrames = (target, frames) => {
     if (Object.keys(restored).length) target.frames = restored;
 };
 
+const MAP_PREFIX = '_fractch_map_';
+
+const commentTextOf = comment => String(comment.text || '') +
+    (typeof comment.extraText === 'string' ? comment.extraText : '');
+
+const placedComments = target => Object.entries(isPlainObject(target.comments) ? target.comments : {})
+    .filter(([, comment]) => isPlainObject(comment) && !commentTextOf(comment).startsWith(MAP_PREFIX));
+
+const isPlaced = comment => Number.isFinite(comment.x) && Number.isFinite(comment.y);
+
+const topOf = (blocks, id) => {
+    const seen = new Set();
+    let current = id;
+    while (blocks[current] && !Array.isArray(blocks[current]) && blocks[current].parent && !seen.has(current)) {
+        seen.add(current);
+        current = blocks[current].parent;
+    }
+    return current;
+};
+
+const childIds = block => {
+    const ids = [];
+    const inputs = isPlainObject(block.inputs) ? block.inputs : {};
+    for (const name of Object.keys(inputs).sort()) {
+        const input = inputs[name];
+        if (Array.isArray(input) && typeof input[1] === 'string') ids.push(input[1]);
+    }
+    if (typeof block.next === 'string') ids.push(block.next);
+    return ids;
+};
+
+const ordinalIn = (blocks, top, wanted) => {
+    const seen = new Set();
+    const pending = [top];
+    let index = 0;
+    while (pending.length) {
+        const id = pending.pop();
+        if (seen.has(id) || !isPlainObject(blocks[id])) continue;
+        seen.add(id);
+        if (id === wanted) return index;
+        index++;
+        pending.push(...childIds(blocks[id]).reverse());
+    }
+    return -1;
+};
+
+const anchorOf = (target, comment) => {
+    const blocks = isPlainObject(target.blocks) ? target.blocks : {};
+    const block = comment.blockId ? blocks[comment.blockId] : null;
+    if (!isPlainObject(block)) return null;
+    const top = topOf(blocks, comment.blockId);
+    const head = isPlainObject(blocks[top]) ? blocks[top] : {};
+    return {
+        key: `${stackOf(blocks, top)}/${block.opcode}`,
+        x: Math.round(Number(head.x) || 0),
+        y: Math.round(Number(head.y) || 0),
+        index: ordinalIn(blocks, top, comment.blockId)
+    };
+};
+
+const layoutEntry = (target, comment) => {
+    const entry = {text: hashText(commentTextOf(comment))};
+    if (comment.blockId) {
+        const anchor = anchorOf(target, comment);
+        entry.on = anchor ? anchor.key : '?';
+        if (anchor) entry.order = [anchor.y, anchor.x, anchor.index];
+    }
+    return entry;
+};
+
+const entryKey = entry => (entry.on ? `${entry.text}@${entry.on}` : entry.text);
+
+const tieBreak = entry => entry.order || [entry.y, entry.x, 0];
+
+const compareOrder = (a, b) => (a[0] - b[0]) || (a[1] - b[1]) || (a[2] - b[2]);
+
+const byKeyThenPlace = (a, b) => {
+    const keyA = entryKey(a);
+    const keyB = entryKey(b);
+    if (keyA !== keyB) return keyA < keyB ? -1 : 1;
+    return compareOrder(tieBreak(a), tieBreak(b));
+};
+
+const commentLayoutOf = target => {
+    const layout = placedComments(target).filter(([, comment]) => isPlaced(comment))
+        .map(([, comment]) => ({
+            ...layoutEntry(target, comment),
+            x: Math.round(comment.x),
+            y: Math.round(comment.y)
+        }))
+        .sort(byKeyThenPlace)
+        .map(({order, ...entry}) => entry);
+    return layout.length ? layout : null;
+};
+
+const nextUnused = queue => (queue ? queue.find(item => !item.used) || null : null);
+
+const restoreCommentLayout = (target, layout) => {
+    if (!Array.isArray(layout)) return;
+    const exact = new Map();
+    const byText = new Map();
+    for (const entry of layout) {
+        if (!isPlainObject(entry) || typeof entry.text !== 'string') continue;
+        const x = Number(entry.x);
+        const y = Number(entry.y);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+        const item = {x, y, used: false};
+        const attached = typeof entry.on === 'string';
+        const key = attached ? `${entry.text}@${entry.on}` : entry.text;
+        const textKey = `${attached ? 'a' : 'f'}:${entry.text}`;
+        if (!exact.has(key)) exact.set(key, []);
+        exact.get(key).push(item);
+        if (!byText.has(textKey)) byText.set(textKey, []);
+        byText.get(textKey).push(item);
+    }
+    const pending = [];
+    const order = placedComments(target).map(([, comment]) => ({comment, entry: layoutEntry(target, comment)}))
+        .sort((a, b) => compareOrder(a.entry.order || [0, 0, 0], b.entry.order || [0, 0, 0]));
+    for (const {comment, entry} of order) {
+        const attached = Boolean(comment.blockId);
+        if (attached && isPlaced(comment)) continue;
+        const item = nextUnused(exact.get(entryKey(entry)));
+        if (item) {
+            item.used = true;
+            comment.x = item.x;
+            comment.y = item.y;
+        } else if (!attached) {
+            pending.push({comment, textKey: `f:${entry.text}`});
+        }
+    }
+    for (const {comment, textKey} of pending) {
+        const item = nextUnused(byText.get(textKey));
+        if (!item) continue;
+        item.used = true;
+        comment.x = item.x;
+        comment.y = item.y;
+    }
+};
+
 const writeProjectSidecar = async ({readSb3File, projectJson, vfs, dir}) => {
     const targets = Array.isArray(projectJson.targets) ? projectJson.targets : [];
     const sidecar = {};
@@ -220,6 +359,13 @@ const writeProjectSidecar = async ({readSb3File, projectJson, vfs, dir}) => {
         if (targetFrames) frames[targetKey(target)] = targetFrames;
     }
     if (Object.keys(frames).length) sidecar.frames = frames;
+
+    const comments = Object.create(null);
+    for (const target of targets) {
+        const layout = commentLayoutOf(target);
+        if (layout) comments[targetKey(target)] = layout;
+    }
+    if (Object.keys(comments).length) sidecar.comments = comments;
 
     const fonts = await writeFonts({readSb3File, projectJson, vfs, dir});
     if (fonts.length) sidecar.fonts = fonts;
@@ -276,6 +422,14 @@ const applySidecar = (manifest, sidecar, fonts) => {
     if (isPlainObject(sidecar.frames)) {
         for (const target of targets) {
             if (hasOwn(sidecar.frames, targetKey(target))) restoreFrames(target, sidecar.frames[targetKey(target)]);
+        }
+    }
+
+    if (isPlainObject(sidecar.comments)) {
+        for (const target of targets) {
+            if (hasOwn(sidecar.comments, targetKey(target))) {
+                restoreCommentLayout(target, sidecar.comments[targetKey(target)]);
+            }
         }
     }
 

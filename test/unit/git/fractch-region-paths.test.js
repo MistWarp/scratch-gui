@@ -309,3 +309,37 @@ test('module names that are not standard library modules are dropped', async () 
     expect(main).toContain('when flag');
     await expect(buildSb3FromFractchTree({fs: fs.promises, dir})).resolves.toBeTruthy();
 });
+
+test('a free comment cannot make fractch write a file outside the repo', async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mistwarp-region-paths-'));
+    roots.push(root);
+    const dir = path.join(root, 'repo');
+    fs.mkdirSync(path.join(dir, '.git'), {recursive: true});
+    const files = projectFiles(['main']);
+    const project = JSON.parse(new TextDecoder().decode(files['project.json']));
+    const owner = project.targets[1];
+    const note = text => ({blockId: null, x: 0, y: 0, width: 200, height: 200, minimized: false, text});
+    owner.comments.escape = note('escape attempt');
+    owner.comments.hook = note('hook attempt');
+    owner.comments.kept = note('kept note');
+    owner.comments.map.text = `_fractch_map_${JSON.stringify({
+        version: 1,
+        scripts: {hat0: 'main'},
+        comments: {
+            escape: {region: '../../escaped'},
+            hook: {region: '../.git/hooks/pre-commit', before: 'hat0'},
+            kept: {region: 'notes/todo'}
+        }
+    })}`;
+    await writeProjectToFractchTree({
+        sb3Files: {'project.json': new TextEncoder().encode(JSON.stringify(project))},
+        fs: fs.promises,
+        dir
+    });
+    const written = listFiles(root);
+    expect(written.filter(name => name !== 'repo/mistwarp.json').every(name => name.startsWith('repo/S/'))).toBe(true);
+    const text = written.map(name => fs.readFileSync(path.join(root, name), 'utf8')).join('\n');
+    expect(text).toContain('escape attempt');
+    expect(text).toContain('hook attempt');
+    expect(text).toContain('kept note');
+});

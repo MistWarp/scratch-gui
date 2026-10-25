@@ -176,7 +176,45 @@ describe('several files in one sprite', () => {
         expect(regionFiles(getText(loaded.id).doc)).toEqual(['enemies/boss']);
     });
 
-    test('files without scripts stay in the text after Apply and comments move to scripts.fractch', async () => {
+    test('a free comment keeps its file, its place and its position through saves and the project history', async () => {
+        await moveKeyScriptIntoFile();
+        editView(controller, sprite.id, 'enemies/boss', 0, 0, '// tune the boss later\n\n');
+        expect((await controller.apply(sprite.id)).status).toBe('committed');
+
+        const live = vm.runtime.getTargetById(sprite.id);
+        const hat = Object.keys(live.blocks._blocks)
+            .find(id => live.blocks.getBlock(id).opcode === 'event_whenkeypressed');
+        const noteId = Object.keys(live.comments).find(id => live.comments[id].text === 'tune the boss later');
+        expect(live.comments[noteId].blockId).toBeNull();
+        expect(membershipOf(live).comments[noteId]).toEqual({region: 'enemies/boss', before: hat});
+        live.comments[noteId].x = 345;
+        live.comments[noteId].y = 678;
+
+        await vm.loadProject(await vm.saveProjectSb3('arraybuffer'));
+        const loaded = vm.runtime.targets.find(item => item.isOriginal && item.getName() === 'Sprite1');
+        const fresh = createTextController({vm, client: createFractchClient()});
+        clearTexts();
+        await fresh.regenerate(loaded.id);
+        const boss = projectFile(getText(loaded.id).doc, 'enemies/boss').text;
+        expect(boss.indexOf('// tune the boss later')).toBe(0);
+        expect(boss.indexOf('// tune the boss later')).toBeLessThan(boss.indexOf('when key space'));
+        expect(projectFile(getText(loaded.id).doc, null).text).not.toContain('tune the boss later');
+
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mistwarp-free-comment-'));
+        roots.push(dir);
+        await writeProjectToFractchTree({vm, fs: fs.promises, dir});
+        const bossFile = listFiles(dir).find(name => name.endsWith(path.join('enemies', 'boss.fractch')));
+        const tree = fs.readFileSync(path.join(dir, bossFile), 'utf8');
+        expect(tree).toContain('// tune the boss later');
+        expect(tree).not.toContain('comment "');
+        const rebuilt = JSON.parse(await (await JSZip.loadAsync(await buildSb3FromFractchTree({fs: fs.promises, dir})))
+            .file('project.json').async('string'));
+        const note = Object.values(rebuilt.targets.find(item => item.name === 'Sprite1').comments)
+            .find(comment => comment.text === 'tune the boss later');
+        expect([note.x, note.y]).toEqual([345, 678]);
+    });
+
+    test('files without scripts stay in the text after Apply and their comments stay in them', async () => {
         await controller.regenerate(sprite.id);
         let doc = addFileText(getText(sprite.id).doc, 'empty').text;
         doc = addFileText(doc, 'notes').text;
@@ -185,9 +223,10 @@ describe('several files in one sprite', () => {
         const outcome = await controller.apply(sprite.id);
         expect(outcome.status).toBe('committed');
         const state = getText(sprite.id);
-        expect(regionFiles(state.doc)).toEqual(['empty', 'notes']);
+        expect([...regionFiles(state.doc)].sort()).toEqual(['empty', 'notes']);
         expect(projectFile(state.doc, 'empty').text).toBe('');
-        expect(projectFile(state.doc, null).text).toContain('// just a note');
+        expect(projectFile(state.doc, 'notes').text).toContain('// just a note');
+        expect(projectFile(state.doc, null).text).not.toContain('// just a note');
         expect(isDirty(state)).toBe(false);
         expect((await controller.apply(sprite.id)).status).toBe('clean');
     });
