@@ -8,6 +8,7 @@ import {
     validateProjectScopes,
     appFilePath
 } from '../../src/lib/rotur/project-methods.js';
+import {grantedScopesFor, hasFullGrant} from '../../src/lib/rotur/extension-bridge.js';
 
 const roturExtensions = require('scratch-vm/src/extensions/rotur/index.js');
 
@@ -326,5 +327,42 @@ describe('Rotur results handed to projects', () => {
             throw new Error(`bad token ${token}`);
         })}});
         await expect(invokeProjectMethod(leaky, 'me.get', [])).rejects.toThrow('The Rotur request failed');
+    });
+});
+
+describe('scopes and methods renamed for rotur-sdk 3', () => {
+    test('the 3.x method names are allowed and the removed ones are not', () => {
+        expect(projectMethod('friends.requests').scopes).toEqual(['friends:view']);
+        expect(projectMethod('avatars.url').scopes).toEqual([]);
+        expect(projectMethod('accounts.bannedCheck').scopes).toEqual([]);
+        for (const method of ['me.requests', 'profiles.getAvatarUrl', 'check.banned']) {
+            expect(projectMethod(method)).toBeNull();
+        }
+    });
+
+    test('calls need the permission the SDK lists for them', () => {
+        expect(projectMethod('keys.cancel').scopes).toEqual(['keys:manage']);
+        expect(projectMethod('items.setPrice').scopes).toEqual(['items:manage']);
+        expect(projectMethod('me.checkAuth').scopes).toEqual(['account:view']);
+        expect(() => authorizeProjectCall('items.setPrice', ['hat', 5], ['items:sell'], 'p')).toThrow('not granted');
+        expect(authorizeProjectCall('items.setPrice', ['hat', 5], ['items:manage'], 'p').args).toEqual(['hat', 5]);
+        for (const method of ['socket.setStatus', 'socket.addActivity', 'socket.removeActivity']) {
+            expect(projectMethod(method).scopes).toEqual(['status:update']);
+        }
+        expect(() => authorizeProjectCall('socket.setStatus', ['hi'], ['account:view'], 'p')).toThrow('not granted');
+    });
+
+    test('a request for account:profile is a request for status:update', () => {
+        expect(validateProjectScopes(['account:profile'])).toEqual(['status:update']);
+        expect(validateProjectScopes(['account:profile', 'status:update', 'posts:create']))
+            .toEqual(['status:update', 'posts:create']);
+    });
+
+    test('a saved account:profile grant counts as status:update', () => {
+        localStorage.setItem('mw:rotur-grants', JSON.stringify({'id:p1': ['account:profile', 'account:view']}));
+        expect(grantedScopesFor({projectId: 'p1'})).toEqual(['status:update', 'account:view']);
+        expect(hasFullGrant({projectId: 'p1'}, ['status:update'])).toBe(true);
+        expect(hasFullGrant({projectId: 'p1'}, ['posts:create'])).toBe(false);
+        localStorage.removeItem('mw:rotur-grants');
     });
 });

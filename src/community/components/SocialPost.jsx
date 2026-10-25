@@ -154,7 +154,10 @@ const SocialPost = ({
                 setSaved((bookmarks.value || []).some(item => item.id === post.id));
             }
             if (blocks.status === 'fulfilled') {
-                setBlocked((blocks.value.blocked || []).some(name => (
+                const blockedNames = Array.isArray(blocks.value) ?
+                    blocks.value :
+                    (blocks.value && blocks.value.blocked) || [];
+                setBlocked(blockedNames.some(name => (
                     String(name).toLowerCase() === String(post.user).toLowerCase()
                 )));
             }

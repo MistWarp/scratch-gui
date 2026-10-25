@@ -14,20 +14,19 @@ const text = value => String(typeof value === 'undefined' || value === null ? ''
 
 const PROJECT_METHODS = Object.freeze({
     'me.abilities': {scopes: []},
-    'me.checkAuth': {scopes: []},
+    'me.checkAuth': {scopes: ['account:view']},
     'me.get': {scopes: ['account:view']},
     'me.badges': {scopes: ['account:view']},
     'me.subscription': {scopes: ['account:view']},
     'me.blocked': {scopes: ['blocked:view']},
     'me.block': {scopes: ['blocked:manage']},
     'me.unblock': {scopes: ['blocked:manage']},
-    'me.requests': {scopes: ['friends:view']},
 
     'profiles.get': {scopes: []},
     'profiles.exists': {scopes: []},
-    'profiles.getAvatarUrl': {scopes: []},
+    'avatars.url': {scopes: []},
     'standing.get': {scopes: []},
-    'check.banned': {scopes: []},
+    'accounts.bannedCheck': {scopes: []},
     'notifications.list': {scopes: ['notifications:view']},
 
     'gifts.get': {scopes: []},
@@ -44,7 +43,7 @@ const PROJECT_METHODS = Object.freeze({
     'keys.get': {scopes: []},
     'keys.check': {scopes: []},
     'keys.cancel': {
-        scopes: [],
+        scopes: ['keys:manage'],
         confirm: args => ({label: `cancel your subscription to key ${text(args[0])}`})
     },
     'keys.rename': {scopes: ['keys:manage']},
@@ -59,9 +58,9 @@ const PROJECT_METHODS = Object.freeze({
     'storage.delete': {scopes: ['storage:delete'], projectStorage: true},
 
     'status.get': {scopes: []},
-    'socket.setStatus': {scopes: ['account:profile'], activity: true},
-    'socket.addActivity': {scopes: ['account:profile'], activity: true},
-    'socket.removeActivity': {scopes: ['account:profile'], activity: true},
+    'socket.setStatus': {scopes: ['status:update'], activity: true},
+    'socket.addActivity': {scopes: ['status:update'], activity: true},
+    'socket.removeActivity': {scopes: ['status:update'], activity: true},
 
     'posts.create': {scopes: ['posts:create']},
     'posts.feed': {scopes: []},
@@ -81,6 +80,7 @@ const PROJECT_METHODS = Object.freeze({
     'following.followers': {scopes: []},
     'following.following': {scopes: []},
     'friends.list': {scopes: ['friends:view']},
+    'friends.requests': {scopes: ['friends:view']},
     'friends.request': {scopes: ['friends:request']},
     'friends.accept': {scopes: ['friends:accept']},
     'friends.reject': {scopes: ['friends:accept']},
@@ -91,7 +91,7 @@ const PROJECT_METHODS = Object.freeze({
     'items.list': {scopes: []},
     'items.sell': {scopes: ['items:sell']},
     'items.stopSelling': {scopes: ['items:sell']},
-    'items.setPrice': {scopes: ['items:sell']},
+    'items.setPrice': {scopes: ['items:manage']},
     'items.transfer': {
         scopes: ['items:manage'],
         confirm: args => ({label: `give item ${text(args[0])} to @${text(args[1])}`})
@@ -131,6 +131,16 @@ const projectMethod = method => (has(PROJECT_METHODS, method) ? PROJECT_METHODS[
 
 const WHOLE_DRIVE_SCOPES = ['files:view', 'files:manage', 'files:delete'];
 
+// Status and activity blocks asked for account:profile before Rotur had status:update.
+const RENAMED_SCOPES = Object.freeze({'account:profile': 'status:update'});
+
+/**
+ * The scope a project scope is called now.
+ * @param {string} scope A scope a project asked for or was granted.
+ * @returns {string} The current name.
+ */
+const currentScope = scope => (has(RENAMED_SCOPES, scope) ? RENAMED_SCOPES[scope] : scope);
+
 // Every scope some project block can use. A project may only ask for these.
 const PROJECT_SCOPES = new Set(Object.values(PROJECT_METHODS).flatMap(spec => spec.scopes));
 
@@ -157,7 +167,9 @@ const grantsSilently = scopes => scopes.every(scope => scope.endsWith(':view') |
 const validateProjectScopes = scopes => {
     if (!Array.isArray(scopes)) return null;
     // Older projects ask for the whole drive; they get MistWarp's folder.
-    const list = [...new Set(scopes.map(scope => (WHOLE_DRIVE_SCOPES.includes(scope) ? 'files:app' : scope)))];
+    const list = [...new Set(scopes.map(scope => (
+        WHOLE_DRIVE_SCOPES.includes(scope) ? 'files:app' : currentScope(scope)
+    )))];
     return list.every(scope => typeof scope === 'string' && PROJECT_SCOPES.has(scope)) ? list : null;
 };
 
@@ -367,6 +379,7 @@ export {
     PROJECT_METHODS,
     PROJECT_SCOPES,
     projectMethod,
+    currentScope,
     grantsSilently,
     validateProjectScopes,
     authorizeProjectCall,

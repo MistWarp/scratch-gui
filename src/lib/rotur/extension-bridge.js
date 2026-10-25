@@ -1,5 +1,5 @@
 import {getRotur, ensureScopes} from './client.js';
-import {invokeProjectMethod} from './project-methods.js';
+import {currentScope, invokeProjectMethod} from './project-methods.js';
 
 const GRANTS_KEY = 'mw:rotur-grants';
 
@@ -41,7 +41,7 @@ const projectKey = meta => {
 const grantedScopesFor = meta => {
     const grants = readGrants();
     const value = grants[projectKey(meta)];
-    return Array.isArray(value) ? value : [];
+    return Array.isArray(value) ? [...new Set(value.map(currentScope))] : [];
 };
 
 const saveGrant = (meta, scopes) => {

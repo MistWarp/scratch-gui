@@ -2,6 +2,7 @@ const PERMISSION_DESCRIPTIONS = {
     'account:view': 'See your account details',
     'account:profile': 'Update your presence and profile',
     'account:settings': 'Change your account settings',
+    'status:update': 'Update your status and activity',
     'credits:view': 'See your credit balance and transactions',
     'credits:transfer': 'Send your credits to other users',
     'credits:daily': 'Claim your daily credits',
