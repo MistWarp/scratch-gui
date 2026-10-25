@@ -84,7 +84,7 @@
     "computed-style-to-inline-style": "3.0.0",
     "dapjs": "2.3.0",
     "fake-indexeddb": "^6.2.5",
-    "fractch": "https://codeload.github.com/Mistium/FRACTCH/tar.gz/cf26a369b13ff822eae47c721ae96b21af6c64c9",
+    "fractch": "https://codeload.github.com/Mistium/FRACTCH/tar.gz/ae50aabe440cb53470d362702803e9576a86a694",
     "get-user-media-promise": "1.1.4",
     "immutable": "3.8.2",
     "intl-messageformat": "^2.2.0",
