@@ -10,11 +10,12 @@ let hasDynamicContextMenu = false;
 let contextMenus = [];
 
 const findDragTypeProps = (fiber) => {
+  let fallback = null;
   for (let depth = 0; fiber && depth < 8; depth++, fiber = fiber.return) {
-    const props = fiber.stateNode?.props?.dragType ? fiber.stateNode.props : fiber.memoizedProps;
-    if (props?.dragType) return props;
+    if (fiber.stateNode?.props?.dragType) return fiber.stateNode.props;
+    if (!fallback && fiber.memoizedProps?.dragType) fallback = fiber.memoizedProps;
   }
-  return null;
+  return fallback;
 };
 
 const onReactContextMenu = function (e) {

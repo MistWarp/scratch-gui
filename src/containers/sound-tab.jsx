@@ -83,7 +83,6 @@ class SoundTab extends React.Component {
         ]);
         this.state = {selectedSoundIndex: 0};
         this.unmounted = false;
-        this.deletingSounds = new Set();
     }
 
     componentDidMount () {
@@ -100,13 +99,6 @@ class SoundTab extends React.Component {
         const target = editingTarget && sprites[editingTarget] ? sprites[editingTarget] : stage;
         if (!target || !target.sounds) {
             return;
-        }
-
-        const oldTarget = this.props.editingTarget && this.props.sprites[this.props.editingTarget] ?
-            this.props.sprites[this.props.editingTarget] : this.props.stage;
-        if (this.props.editingTarget !== editingTarget ||
-            !oldTarget || !oldTarget.sounds || oldTarget.sounds.length !== target.sounds.length) {
-            this.deletingSounds.clear();
         }
 
         // If switching editing targets, reset the sound index
@@ -132,15 +124,11 @@ class SoundTab extends React.Component {
     }
 
     handleDeleteSound (soundIndex) {
-        if (!this.deletingSounds) this.deletingSounds = new Set();
-        if (this.deletingSounds.has(soundIndex)) return false;
-        this.deletingSounds.add(soundIndex);
         const soundCount = this.props.vm.editingTarget.sprite.sounds.length;
         let restoreFun;
         try {
             restoreFun = this.props.vm.deleteSound(soundIndex);
         } catch (error) {
-            this.deletingSounds.delete(soundIndex);
             this.props.onShowDeleteError(error);
             return false;
         }
