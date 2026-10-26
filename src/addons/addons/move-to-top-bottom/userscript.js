@@ -44,7 +44,11 @@ export default async ({ addon, console, msg }) => {
       order: 2,
       icon: "moveToBottom",
       label: msg("bottom"),
-      condition: (ctx) => ctx.index !== ctx.target.parentNode.parentNode.childElementCount - 1,
+      condition: (ctx) => {
+        const sprite = addon.tab.traps.vm.editingTarget.sprite;
+        const items = ctx.type === "sound" ? sprite.sounds : sprite.costumes;
+        return ctx.index !== items.length - 1;
+      },
     }
   );
 };
