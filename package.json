@@ -119,7 +119,7 @@
     "redux": "3.7.2",
     "redux-throttle": "0.1.1",
     "rotur-sdk": "3.9.1",
-    "scratch-audio": "https://codeload.github.com/MistWarp/scratch-audio/tar.gz/9577662f5e2d1eed73f5f35b576935906d831fbf",
+    "scratch-audio": "https://codeload.github.com/MistWarp/scratch-audio/tar.gz/ea64e571175aae4ef91527b4756991c18291a25a",
     "scratch-blocks": "https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/3df9cb5fbdaf4bc75c737c1f63e4c371fe72e43c",
     "scratch-paint": "https://codeload.github.com/MistWarp/scratch-paint/tar.gz/5878c284a0ba6872732397afda80f93f0b07724b",
     "scratch-render": "https://codeload.github.com/MistWarp/scratch-render/tar.gz/1e01ed65f5334bb453a5dce69329f04bdb63b20b",

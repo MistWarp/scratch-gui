@@ -218,8 +218,8 @@ importers:
         specifier: 3.9.1
         version: 3.9.1(patch_hash=e4ed9051554e8c41af184b14c19514365889ee05a2a54da7eb0ba57ab5a2dfc1)
       scratch-audio:
-        specifier: https://codeload.github.com/MistWarp/scratch-audio/tar.gz/9577662f5e2d1eed73f5f35b576935906d831fbf
-        version: https://codeload.github.com/MistWarp/scratch-audio/tar.gz/9577662f5e2d1eed73f5f35b576935906d831fbf
+        specifier: https://codeload.github.com/MistWarp/scratch-audio/tar.gz/ea64e571175aae4ef91527b4756991c18291a25a
+        version: https://codeload.github.com/MistWarp/scratch-audio/tar.gz/ea64e571175aae4ef91527b4756991c18291a25a
       scratch-blocks:
         specifier: https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/3df9cb5fbdaf4bc75c737c1f63e4c371fe72e43c
         version: https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/3df9cb5fbdaf4bc75c737c1f63e4c371fe72e43c
@@ -5539,8 +5539,8 @@ packages:
     resolution: {integrity: sha512-i27Mic4KovM/lnGsy8whRCHhc7VicJajAjTrYg11K9zfZXnYIt4k5F+kZkwjnrhKzLic/HLU4j11mjsz2G/75g==}
     engines: {node: '>= 4'}
 
-  scratch-audio@https://codeload.github.com/MistWarp/scratch-audio/tar.gz/9577662f5e2d1eed73f5f35b576935906d831fbf:
-    resolution: {tarball: https://codeload.github.com/MistWarp/scratch-audio/tar.gz/9577662f5e2d1eed73f5f35b576935906d831fbf}
+  scratch-audio@https://codeload.github.com/MistWarp/scratch-audio/tar.gz/ea64e571175aae4ef91527b4756991c18291a25a:
+    resolution: {tarball: https://codeload.github.com/MistWarp/scratch-audio/tar.gz/ea64e571175aae4ef91527b4756991c18291a25a}
     version: 0.1.0
 
   scratch-blocks@https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/3df9cb5fbdaf4bc75c737c1f63e4c371fe72e43c:
@@ -12733,7 +12733,7 @@ snapshots:
       ajv-errors: 1.0.1(ajv@6.15.0)
       ajv-keywords: 3.5.2(ajv@6.15.0)
 
-  scratch-audio@https://codeload.github.com/MistWarp/scratch-audio/tar.gz/9577662f5e2d1eed73f5f35b576935906d831fbf:
+  scratch-audio@https://codeload.github.com/MistWarp/scratch-audio/tar.gz/ea64e571175aae4ef91527b4756991c18291a25a:
     dependencies:
       '@turbowarp/nanolog': 0.2.0
       '@turbowarp/startaudiocontext': 1.0.0

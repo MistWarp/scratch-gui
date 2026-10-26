@@ -14,6 +14,7 @@ export default function ({ scaffolding }) {
 
   const setPaused = (_paused) => {
     paused = _paused;
+    vm.runtime.audioEngine.paused = paused;
 
     if (paused) {
       audioContextStateChange = audioContextStateChange.then(() => {
