@@ -103,6 +103,7 @@ export const setPaused = _paused => {
         }
     }
 
+    vm.runtime.audioEngine.paused = paused;
     if (paused) {
         audioContextStateChange = audioContextStateChange.then(() => vm.runtime.audioEngine.audioContext.suspend());
         if (!vm.runtime.ioDevices.clock._paused) {
