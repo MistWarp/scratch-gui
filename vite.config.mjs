@@ -35,7 +35,8 @@ const sharedResolve = {
     preserveSymlinks: true,
     dedupe: [
         'react', 'react-dom', 'react-intl', 'react-redux',
-        '@turbowarp/jszip', 'immutable', 'lodash.bindall', 'rotur-sdk'
+        '@turbowarp/jszip', '@turbowarp/scratch-svg-renderer',
+        'immutable', 'lodash.bindall', 'rotur-sdk'
     ],
     alias: [
         // Linked workspace packages must share the renderer's hook dispatcher.
