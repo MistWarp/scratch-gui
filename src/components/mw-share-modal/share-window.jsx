@@ -123,7 +123,8 @@ class ShareWindow extends React.Component {
             total: 0,
             error: props.initialError ? props.initialError.message : null,
             errorCode: props.initialError ? props.initialError.code : null,
-            differences: [],
+            differences: props.initialError && Array.isArray(props.initialError.differences) ?
+                props.initialError.differences : [],
             notice: null,
             done: null,
             agreement: null,
@@ -413,7 +414,7 @@ class ShareWindow extends React.Component {
                             key={index}
                             title={difference.detail || null}
                         >
-                            {`${difference.path} ${difference.message}`}
+                            {difference.target ? `${difference.target}: ${difference.message}` : difference.message}
                         </li>
                     ))}
                     {hidden > 0 && <li>{this.props.intl.formatMessage(messages.notExactMore, {count: hidden})}</li>}
