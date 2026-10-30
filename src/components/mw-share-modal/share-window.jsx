@@ -419,13 +419,15 @@ class ShareWindow extends React.Component {
                     ))}
                     {hidden > 0 && <li>{this.props.intl.formatMessage(messages.notExactMore, {count: hidden})}</li>}
                 </ul>
-                <button
-                    type="button"
-                    className={styles.reviewStorage}
-                    onClick={this.handleSaveAnyway}
-                >
-                    {this.props.intl.formatMessage(messages.saveAnyway)}
-                </button>
+                {this.pendingPublish && (
+                    <button
+                        type="button"
+                        className={styles.reviewStorage}
+                        onClick={this.handleSaveAnyway}
+                    >
+                        {this.props.intl.formatMessage(messages.saveAnyway)}
+                    </button>
+                )}
             </React.Fragment>
         );
     }

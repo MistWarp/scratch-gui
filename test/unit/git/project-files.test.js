@@ -21,6 +21,7 @@ jest.mock('../../../src/lib/rotur/identity.js', () => ({
 const crypto = require('crypto');
 const {git, getFs, REPO_DIR, deleteRepo, commitProject} = require('../../../src/lib/git/browser-git.js');
 const {createMwp, importMwp, isMwpArchive, buildSb3FromCurrentRepo} = require('../../../src/lib/git/mwp.js');
+const {writeProjectToFractchTree} = require('../../../src/lib/git/fractch-tree.js');
 
 const bytes = blob => new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -159,5 +160,72 @@ describe('.mwp files saved to the computer', () => {
         const other = new JSZip();
         other.file('notes.txt', 'hello');
         expect(await isMwpArchive(await other.generateAsync({type: 'arraybuffer'}))).toBe(false);
+    });
+});
+
+describe('writing the project folder', () => {
+    const nodeFs = require('fs');
+    const os = require('os');
+    const path = require('path');
+    // LightningFS removes a whole folder when asked to unlink it, unlike node.
+    const lightningLike = () => new Proxy(nodeFs.promises, {
+        get: (real, property) => {
+            if (property !== 'unlink') return real[property];
+            return async name => {
+                const stat = await real.lstat(name);
+                if (stat.isDirectory()) return real.rm(name, {recursive: true});
+                return real.unlink(name);
+            };
+        }
+    });
+    const withCustomAssets = assets => {
+        const files = projectFiles();
+        const project = JSON.parse(files['project.json']);
+        project.customAssets = [];
+        for (const [name, text] of assets) {
+            const id = crypto.createHash('md5').update(text)
+                .digest('hex');
+            project.customAssets.push({name, md5ext: `${id}.json`});
+            files[`${id}.json`] = text;
+        }
+        files['project.json'] = JSON.stringify(project);
+        return files;
+    };
+
+    test('a custom asset that turns from a file into a folder keeps its contents', async () => {
+        const dir = nodeFs.mkdtempSync(path.join(os.tmpdir(), 'mistwarp-type-change-'));
+        const fs = lightningLike();
+        try {
+            await writeProjectToFractchTree({sb3Files: withCustomAssets([['data', '{"a":1}']]), fs, dir});
+            expect(nodeFs.statSync(path.join(dir, 'assets', 'data')).isFile()).toBe(true);
+            const written = await writeProjectToFractchTree({
+                sb3Files: withCustomAssets([['data/level.json', '{"b":2}']]), fs, dir, verify: true
+            });
+            expect(nodeFs.readFileSync(path.join(dir, 'assets', 'data', 'level.json'), 'utf8')).toBe('{"b":2}');
+            expect(written.differences).toEqual([]);
+        } finally {
+            nodeFs.rmSync(dir, {recursive: true, force: true});
+        }
+    });
+
+    test('the check reads back what was written, not what was meant to be written', async () => {
+        const dir = nodeFs.mkdtempSync(path.join(os.tmpdir(), 'mistwarp-readback-'));
+        const fs = new Proxy(nodeFs.promises, {
+            get: (real, property) => {
+                if (property !== 'writeFile') return real[property];
+                return (name, ...args) => (name.endsWith('.json') && name.includes('/assets/') ?
+                    Promise.resolve() : real.writeFile(name, ...args));
+            }
+        });
+        try {
+            const written = await writeProjectToFractchTree({
+                sb3Files: withCustomAssets([['data.json', '{"a":1}']]), fs, dir, verify: true
+            });
+            expect(written.differences).toEqual(expect.arrayContaining([
+                expect.objectContaining({path: 'customAssets'})
+            ]));
+        } finally {
+            nodeFs.rmSync(dir, {recursive: true, force: true});
+        }
     });
 });

@@ -129,7 +129,7 @@ const sameBytes = (a, b) => {
     return true;
 };
 
-const makeParents = async (pfs, dir, path) => {
+const makeParents = async (pfs, dir, path, stale) => {
     const parts = path.slice(dir.length + 1).split('/');
     parts.pop();
     let current = dir;
@@ -137,7 +137,10 @@ const makeParents = async (pfs, dir, path) => {
         current = `${current}/${part}`;
         const stat = await lstatOf(pfs, current);
         if (stat && stat.isDirectory()) continue;
-        if (stat) await pfs.unlink(current);
+        if (stat) {
+            await pfs.unlink(current);
+            stale.delete(current);
+        }
         await pfs.mkdir(current);
     }
 };
@@ -172,7 +175,7 @@ const writeFiles = async ({pfs, dir, files, prune, onProgress}) => {
             }
             if (existing && sameBytes(toBytes(existing), bytes)) continue;
         } else {
-            await makeParents(pfs, dir, path);
+            await makeParents(pfs, dir, path, stale);
             const stat = await lstatOf(pfs, path);
             if (stat && stat.isDirectory()) await removeRecursive(pfs, path);
         }
@@ -184,7 +187,8 @@ const writeFiles = async ({pfs, dir, files, prune, onProgress}) => {
     }
     if (!prune) return;
     for (const path of stale) {
-        await pfs.unlink(path);
+        const stat = await lstatOf(pfs, path);
+        if (stat && !stat.isDirectory()) await pfs.unlink(path);
     }
     const dirs = [...previous.dirs].sort((a, b) => b.length - a.length);
     for (const path of dirs) {
@@ -258,6 +262,16 @@ const projectFilesFromSb3 = async ({vm, sb3ArrayBuffer, sb3Files}) => {
     return {readSb3File, projectJson, ...(await projectToFiles({projectJson, readAsset: readSb3File}))};
 };
 
+const readTreeFiles = async (pfs, dir) => {
+    const files = new Map();
+    const {files: paths} = await listGeneratedTree(pfs, dir);
+    const root = normalizeTreePath(`${dir}/`);
+    for (const path of paths) {
+        files.set(path.slice(root.length), toBytes(await pfs.readFile(path)));
+    }
+    return files;
+};
+
 const checkFiles = async ({files, projectJson, readSb3File}) => {
     const rebuilt = await filesToProject(files);
     return compareProjects(projectJson, rebuilt.projectJson, {
@@ -288,7 +302,8 @@ const writeProjectToFractchTree = async ({
         await clearWorkingTree({pfs: fs, dir});
         await writeFiles({pfs: fs, dir, files, prune: false, onProgress});
     }
-    const differences = verify ? await checkFiles({files, projectJson, readSb3File}) : [];
+    const differences = verify ?
+        await checkFiles({files: await readTreeFiles(fs, dir), projectJson, readSb3File}) : [];
     return {files, diagnostics, differences};
 };
 
@@ -297,16 +312,6 @@ const notExactError = differences => {
     error.code = 'project_not_exact';
     error.differences = differences;
     return error;
-};
-
-const readTreeFiles = async (pfs, dir) => {
-    const files = new Map();
-    const {files: paths} = await listGeneratedTree(pfs, dir);
-    const root = normalizeTreePath(`${dir}/`);
-    for (const path of paths) {
-        files.set(path.slice(root.length), toBytes(await pfs.readFile(path)));
-    }
-    return files;
 };
 
 const zipProject = ({projectJson, assets}) => {

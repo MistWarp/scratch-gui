@@ -49,7 +49,7 @@ const runSmartSave = async ({vm, title, onSaved}) => {
         let blob;
         try {
             ({blob} = await withProjectOperation(vm, () =>
-                createMwp({vm, message: 'Save MistWarp project', commitChanges: false})));
+                createMwp({vm, message: 'Save MistWarp project', commitChanges: false, compact: true})));
         } catch (e) {
             if (isProjectOperationActiveError(e)) {
                 // Another operation started first; nothing was attempted.

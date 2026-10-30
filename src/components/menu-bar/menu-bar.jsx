@@ -1,6 +1,6 @@
 import blockCountStyles from './block-count.module.css';
 import {withProjectReplacement} from '../../lib/project-replacement.js';
-import {isProjectOperationActive} from '../../lib/project-operation.js';
+import {isProjectOperationActive, withProjectOperation} from '../../lib/project-operation.js';
 /* eslint-disable react/no-unused-prop-types */
 /* eslint-disable no-unused-vars */
 import classNames from 'classnames';
@@ -1119,7 +1119,7 @@ class MenuBar extends React.Component {
             this.props.onShowGitStatus('savingMwp');
             const platformProject = getRememberedPlatformProjectState();
             await ensureProjectHistoryHydrated(this.props.vm);
-            const exported = await createMwp({
+            const exported = await withProjectOperation(this.props.vm, () => createMwp({
                 vm: this.props.vm,
                 projectId: platformProject && platformProject.id,
                 remixParent: platformProject && platformProject.remixParent,
@@ -1127,7 +1127,7 @@ class MenuBar extends React.Component {
                 message: 'Initial version',
                 commitChanges: false,
                 compact: true
-            });
+            }));
             if (handle) {
                 const writable = await handle.createWritable();
                 await writable.write(exported.blob);

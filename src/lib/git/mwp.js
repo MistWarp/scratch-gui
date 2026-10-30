@@ -94,6 +94,7 @@ const readArchiveHead = async zip => {
 
 const isProjectFolderArchive = paths => (
     !paths.includes('project.json') &&
+    !paths.includes(MWP_HEAD) &&
     !paths.some(path => path.startsWith('.git/')) &&
     paths.some(path => FRACTCH_SOURCE.test(path))
 );
@@ -123,7 +124,7 @@ const loadMwp = async input => {
         throw new Error('Unsafe or oversized MistWarp project');
     }
     const entry = zip.file(MWP_MANIFEST);
-    if (!entry) {
+    if (!entry || isProjectFolderArchive(paths)) {
         if (!zip.file(MWP_HEAD) && !isProjectFolderArchive(paths)) throw new Error('This file is missing mwp.json');
         return {zip, manifest: await deriveMwpManifest(zip, paths), paths, derived: true};
     }

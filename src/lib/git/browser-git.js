@@ -1352,17 +1352,6 @@ const zipCompressionFor = relPath => (
     relPath.startsWith('.git/objects/') || STORED_EXTENSIONS.test(relPath) ? 'STORE' : 'DEFLATE'
 );
 
-const worktreeBlobOids = async (pfs, files) => {
-    const oids = new Set();
-    for (const absPath of files) {
-        if (absPath.startsWith(`${REPO_DIR}/.git/`)) continue;
-        const data = await pfs.readFile(absPath);
-        const {oid} = await git.hashBlob({object: data instanceof Uint8Array ? data : new Uint8Array(data)});
-        oids.add(oid);
-    }
-    return oids;
-};
-
 const buildRepoZip = async ({
     includeGitDir = true, includeWorktree = true, includeObjectOids = null,
     worktreeAssetRefs = null, referencedAssets = null, omitWorktreeBlobs = false, report = null
@@ -1378,11 +1367,24 @@ const buildRepoZip = async ({
     const root = REPO_DIR;
 
     const files = await listFilesRecursive(pfs, root);
-    const omitted = omitWorktreeBlobs && includeWorktree && !includeObjectOids ?
-        await worktreeBlobOids(pfs, files) : null;
+    const compact = omitWorktreeBlobs && includeWorktree && !includeObjectOids;
+    const omitted = compact ? new Set() : null;
+    const zipped = new Set();
     let omittedCount = 0;
+    if (compact) {
+        for (const absPath of files) {
+            if (absPath.startsWith(`${REPO_DIR}/.git/`)) continue;
+            const relPath = absPath.replace(`${REPO_DIR}/`, '');
+            const data = await pfs.readFile(absPath);
+            const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
+            zip.file(relPath, bytes, {compression: zipCompressionFor(relPath)});
+            zipped.add(absPath);
+            omitted.add((await git.hashBlob({object: bytes})).oid);
+        }
+    }
 
     const selected = files.filter(absPath => {
+        if (zipped.has(absPath)) return false;
         if (!includeGitDir && absPath.startsWith(`${REPO_DIR}/.git/`)) {
             return false;
         }
