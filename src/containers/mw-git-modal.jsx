@@ -34,6 +34,8 @@ import {
     removeRemote,
     push,
     cloneRepo,
+    cloneRepoFromArchive,
+    cloneRepoFromHistory,
     repoHasFractch,
     writeReadme,
     computeCommitGraph
@@ -46,6 +48,7 @@ import {
     deleteRepo as deleteRoturRepoApi,
     getAuth as getRoturGitAuth,
     getRemoteUrl as getRoturRemoteUrl,
+    downloadArchive as downloadRoturArchive,
     isRoturGitUrl,
     parseRepoUrl as parseRoturRepoUrl
 } from '../lib/rotur/git-api.js';
@@ -54,7 +57,6 @@ import {
     getFileContentAtCommit,
     computeLineDiff
 } from '../lib/git/git-diff.js';
-import {isSplitEditor} from '../lib/account/origins.js';
 import {TOKEN_KEY, authForRemoteUrl} from '../lib/git/sync-remotes.js';
 import {isStudentSession} from '../lib/rotur/student-flag.js';
 import {
@@ -654,23 +656,62 @@ export class TWGitModal extends React.Component {
         const token = this.state.remoteToken;
         const username = (this.state.authorName || '').trim();
         this.setStateIfMounted({busy: true, busyMessage: 'Cloning…', busyProgress: null, error: null});
+        let cloneNotice = null;
         try {
             await this.waitForPollIdle();
-            const cloneOpts = {url, onProgress: this.handleGitProgress};
             if (isRoturGitUrl(url)) {
-                if (this.props.roturUsername && !isSplitEditor()) cloneOpts.onAuth = getRoturGitAuth;
-            } else if (token) {
-                cloneOpts.onAuth = () => (username ?
-                    {username, password: token} :
-                    {username: token, password: token});
+                cloneNotice = await this.cloneRoturRepoUrl(url);
+            } else {
+                const cloneOpts = {url, onProgress: this.handleGitProgress};
+                if (token) {
+                    cloneOpts.onAuth = () => (username ?
+                        {username, password: token} :
+                        {username: token, password: token});
+                }
+                await cloneRepo(cloneOpts);
             }
-            await cloneRepo(cloneOpts);
             await this.loadProjectFromClonedRepo();
 
             this.setStateIfMounted({cloneUrl: ''});
             await this.refresh();
+            // The notice is set after refresh, which clears the error field.
+            if (cloneNotice) {
+                this.setStateIfMounted({error: cloneNotice});
+            }
         } finally {
             this.setStateIfMounted({busy: false, busyMessage: null, busyProgress: null});
+        }
+    }
+
+    // Rotur Git blocks its Git endpoints from the browser, so its repos are
+    // rebuilt from the REST API's object database instead of a real clone.
+    // Returns a notice when the clone had to fall back, so it can be shown once
+    // the refresh has finished clearing the error field.
+    async cloneRoturRepoUrl (url) {
+        const parsed = parseRoturRepoUrl(url);
+        if (!parsed) {
+            throw new Error('Enter a repo as owner/name or a git.rotur.dev URL');
+        }
+        const remoteUrl = getRoturRemoteUrl(parsed.owner, parsed.name);
+        try {
+            await cloneRepoFromHistory({
+                url: remoteUrl,
+                owner: parsed.owner,
+                name: parsed.name,
+                onProgress: this.handleGitProgress
+            });
+            return null;
+        } catch (historyError) {
+            // Fall back to a branch snapshot so the repository still opens.
+            const {bytes, branch} = await downloadRoturArchive(parsed.owner, parsed.name);
+            await cloneRepoFromArchive({
+                url: remoteUrl,
+                bytes,
+                branch,
+                author: {name: this.state.authorName || 'User', email: this.state.authorEmail || 'user@example.com'},
+                onProgress: this.handleGitProgress
+            });
+            return `${historyError.message} Opened the latest version only.`;
         }
     }
 
@@ -1245,9 +1286,12 @@ export class TWGitModal extends React.Component {
         });
         try {
             await this.waitForPollIdle();
-            await cloneRepo({
-                url: repo.cloneUrl,
-                onAuth: getRoturGitAuth,
+            const {bytes, branch} = await downloadRoturArchive(repo.owner, repo.name);
+            await cloneRepoFromArchive({
+                url: getRoturRemoteUrl(repo.owner, repo.name),
+                bytes,
+                branch,
+                author: {name: this.state.authorName || 'User', email: this.state.authorEmail || 'user@example.com'},
                 onProgress: this.handleGitProgress
             });
             await this.loadProjectFromClonedRepo();
@@ -1270,6 +1314,8 @@ export class TWGitModal extends React.Component {
         }
         await this.handleRoturClone({
             fullName: parsed.fullName,
+            owner: parsed.owner,
+            name: parsed.name,
             cloneUrl: getRoturRemoteUrl(parsed.owner, parsed.name)
         });
     }

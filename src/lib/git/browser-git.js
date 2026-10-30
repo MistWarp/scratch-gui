@@ -9,7 +9,15 @@ import {
     buildSb3FromFractchTree
 } from './fractch-tree.js';
 import RestorePointAPI from '../api/restore-points.js';
-import {ROTUR_GIT_SYNC_AVAILABLE} from '../rotur/git-api.js';
+import {
+    ROTUR_GIT_SYNC_AVAILABLE,
+    getCommit,
+    getTree,
+    getBlob,
+    listCommits,
+    listBranches as listRemoteBranches,
+    parseRepoUrl
+} from '../rotur/git-api.js';
 import {isStudentSession} from '../rotur/student-flag.js';
 
 const FS_NAME = 'mistwarp-git';
@@ -703,8 +711,8 @@ const hostnameOf = url => {
 };
 
 // Rotur Git's password is the Rotur token, so it must never go through the
-// public proxy. Its Git endpoints do not send CORS headers yet, so there is no
-// direct route either: refuse until there is (see ROTUR_GIT_SYNC_AVAILABLE).
+// public proxy. Its Git endpoints send CORS headers, so the direct route is
+// used (see ROTUR_GIT_SYNC_AVAILABLE).
 const corsProxyForUrl = url => {
     const hostname = hostnameOf(url);
     if (hostname === ROTUR_GIT_HOSTNAME) {
@@ -1586,6 +1594,345 @@ const cloneRepo = async ({url, ref, onAuth, onProgress} = {}) => {
     return {fs, dir: REPO_DIR};
 };
 
+// Rotur Git serves no CORS headers on its Git endpoints (info/refs,
+// git-upload-pack, git-receive-pack), so a real clone cannot reach them from the
+// browser. Its REST API does serve a branch as a zip with CORS open, so cloning a
+// Rotur repo unpacks that archive into a fresh repository instead. The history is
+// new, so the imported commit has no link to the remote's commits.
+const cloneRepoFromArchive = async ({url, bytes, branch = 'main', author, onProgress} = {}) => {
+    if (!url || typeof url !== 'string') {
+        throw new Error('Repository URL is required');
+    }
+    if (!bytes) {
+        throw new Error('Repository archive is required');
+    }
+    assertRemotesAllowed();
+
+    const fs = getFs();
+    const pfs = fs.promises;
+    const tmpDir = `${REPO_DIR}-clone-${Date.now()}`;
+    const report = (message, completed, total) => {
+        if (typeof onProgress === 'function') {
+            onProgress({phase: 'clone', message, completed, total});
+        }
+    };
+
+    try {
+        await ensureDir(pfs, tmpDir);
+        const zip = await JSZip.loadAsync(bytes);
+        const entries = Object.keys(zip.files).filter(name => !zip.files[name].dir);
+        if (!entries.length) {
+            throw new Error('The repository archive is empty');
+        }
+        // Gitea wraps everything in one folder named `<repo>-<branch>`. Strip it only
+        // when it actually looks like that, so a repository whose files all live in
+        // one real folder (everything under src/, say) keeps that folder.
+        const roots = new Set(entries.map(name => name.split('/')[0]));
+        const root = roots.size === 1 && entries.every(name => name.includes('/')) ?
+            Array.from(roots)[0] : '';
+        const repoName = (parseRepoUrl(url) || {}).name;
+        const prefix = root && repoName &&
+            (root === repoName || root.startsWith(`${repoName}-`) || root.startsWith(`${repoName}_`)) ?
+            `${root}/` : '';
+        // Check the names as the archive wrote them, before the wrapper folder goes,
+        // so a traversal cannot hide behind the part that gets stripped.
+        const unsafe = name => name.startsWith('/') || /^[A-Za-z]:/.test(name) ||
+            name.split('/').some(part => part === '..' || part === '.' || part.includes('\\'));
+        const total = entries.length;
+        let completed = 0;
+        for (const name of entries) {
+            if (unsafe(name)) {
+                throw new Error('The repository archive contains an unsafe path');
+            }
+            const relative = prefix && name.startsWith(prefix) ? name.slice(prefix.length) : name;
+            if (!relative) continue;
+            const target = pathJoin(tmpDir, relative);
+            await ensureParentDir(pfs, target);
+            await pfs.writeFile(target, await zip.files[name].async('uint8array'));
+            completed += 1;
+            if (completed === total || completed % 10 === 0) {
+                report(`Unpacking… ${completed}/${total} files`, completed, total);
+            }
+        }
+
+        await git.init({fs, dir: tmpDir, defaultBranch: branch});
+        await stageAll(fs, tmpDir, {onProgress});
+        await git.commit({
+            fs,
+            dir: tmpDir,
+            message: 'Initial version',
+            author: author || getDefaultAuthor()
+        });
+    } catch (e) {
+        try {
+            await removeRecursive(pfs, tmpDir);
+        } catch (cleanupError) {
+            // ignore
+        }
+        throw new Error(`Failed to clone: ${e.message}`);
+    }
+
+    await deleteRepo();
+    await moveDir(pfs, tmpDir, REPO_DIR);
+
+    try {
+        await git.addRemote({fs, dir: REPO_DIR, remote: 'origin', url: url.trim()});
+    } catch (e) {
+        // The project still opens without origin; a later push can set it again.
+        console.warn('Cloned repository has no origin remote:', e);
+    }
+
+    return {fs, dir: REPO_DIR, branch};
+};
+
+// A repository can be rebuilt commit for commit from Rotur Git's REST API:
+// it serves every commit, its recursive tree and every blob. Object bytes are
+// stable, so writing them back through isomorphic-git reproduces the original
+// shas, and the clone keeps real history and a real origin instead of one
+// "Initial version" commit.
+const HISTORY_CLONE_LIMITS = {
+    commits: 5000,
+    blobs: 20000,
+    blobBytes: 256 * 1024 * 1024
+};
+
+// Walks parents until every reachable commit is known. The list endpoint is only
+// used to discover shas quickly; each one is then read in full, because a rebuilt
+// commit needs the author, committer and message to hash back to its own sha.
+const collectHistory = async ({owner, name, tips, onProgress}) => {
+    const discovered = new Set();
+    const report = message => {
+        if (typeof onProgress === 'function') onProgress({phase: 'history', message});
+    };
+
+    for (const tip of tips) {
+        if (!tip || discovered.has(tip)) continue;
+        for (let page = 1; page <= Math.ceil(HISTORY_CLONE_LIMITS.commits / 100); page++) {
+            const batch = await listCommits({owner, name, sha: tip, page, limit: 100});
+            if (!batch.length) break;
+            let added = 0;
+            for (const commit of batch) {
+                if (discovered.has(commit.sha)) continue;
+                discovered.add(commit.sha);
+                added += 1;
+            }
+            report(`Reading history… ${discovered.size} commits`);
+            if (discovered.size > HISTORY_CLONE_LIMITS.commits) {
+                throw new Error(`This repository has more than ${HISTORY_CLONE_LIMITS.commits} commits`);
+            }
+            // A page that adds nothing means the listing stopped short of the
+            // parents; those are found by following each commit instead.
+            if (!added) break;
+            if (batch.length < 100) break;
+        }
+    }
+
+    const known = new Map();
+    const queue = [...discovered, ...tips.filter(Boolean)];
+    for (let i = 0; i < queue.length; i++) {
+        const sha = queue[i];
+        if (known.has(sha)) continue;
+        const commit = await getCommit(owner, name, sha);
+        if (!commit.author.name && !commit.committer.name) {
+            throw new Error(`Rotur Git did not describe commit ${sha}, so its history cannot be rebuilt`);
+        }
+        known.set(sha, commit);
+        if (known.size > HISTORY_CLONE_LIMITS.commits) {
+            throw new Error(`This repository has more than ${HISTORY_CLONE_LIMITS.commits} commits`);
+        }
+        report(`Reading history… ${known.size} commits`);
+        for (const parent of commit.parents) {
+            if (!known.has(parent)) queue.push(parent);
+        }
+    }
+
+    return known;
+};
+
+// Parents before children, without recursion: a deep history would otherwise
+// be one stack frame per commit.
+const orderHistory = history => {
+    const ordered = [];
+    const done = new Set();
+    for (const start of history.keys()) {
+        if (done.has(start)) continue;
+        const stack = [{sha: start, expanded: false}];
+        while (stack.length) {
+            const frame = stack.pop();
+            if (done.has(frame.sha)) continue;
+            const commit = history.get(frame.sha);
+            if (!commit) {
+                throw new Error(`History references a missing commit (${frame.sha})`);
+            }
+            if (frame.expanded) {
+                done.add(frame.sha);
+                ordered.push(commit);
+                continue;
+            }
+            stack.push({sha: frame.sha, expanded: true});
+            for (const parent of commit.parents) {
+                if (!done.has(parent)) stack.push({sha: parent, expanded: false});
+            }
+        }
+    }
+    return ordered;
+};
+
+const cloneRepoFromHistory = async ({url, owner, name, branch, onProgress} = {}) => {
+    if (!owner || !name) {
+        throw new Error('Repository owner and name are required');
+    }
+    assertRemotesAllowed();
+
+    const report = (message, completed, total) => {
+        if (typeof onProgress === 'function') onProgress({phase: 'clone', message, completed, total});
+    };
+
+    const branches = await listRemoteBranches(owner, name);
+    if (!branches.length) {
+        throw new Error('This repository has no commits yet');
+    }
+    const wanted = branches.find(b => b.name === branch) ||
+        branches.find(b => b.name === 'main') ||
+        branches.find(b => b.name === 'master') ||
+        branches[0];
+
+    const history = await collectHistory({owner, name, tips: branches.map(b => b.sha), onProgress});
+    const ordered = orderHistory(history);
+
+    const fs = getFs();
+    const pfs = fs.promises;
+    const tmpDir = `${REPO_DIR}-clone-${Date.now()}`;
+
+    let commits = 0;
+    try {
+        await ensureDir(pfs, tmpDir);
+        await git.init({fs, dir: tmpDir, defaultBranch: wanted.name});
+
+        const writtenBlobs = new Map();
+        let blobBytes = 0;
+        const writeBlob = async sha => {
+            if (writtenBlobs.has(sha)) return writtenBlobs.get(sha);
+            if (writtenBlobs.size >= HISTORY_CLONE_LIMITS.blobs) {
+                throw new Error(`This repository has more than ${HISTORY_CLONE_LIMITS.blobs} files across its history`);
+            }
+            const blob = await getBlob(owner, name, sha);
+            blobBytes += blob.bytes.length;
+            if (blobBytes > HISTORY_CLONE_LIMITS.blobBytes) {
+                throw new Error('This repository is larger than 256 MB across its history');
+            }
+            const oid = await git.writeBlob({fs, dir: tmpDir, blob: blob.bytes});
+            if (oid !== sha) {
+                throw new Error(`Rotur Git served file ${sha} with different contents`);
+            }
+            writtenBlobs.set(sha, oid);
+            return oid;
+        };
+
+        // Directories are nested from the recursive listing; anything that is not
+        // a blob (a submodule pointer) is copied through untouched.
+        const writeCommitTree = async commitSha => {
+            const entries = await getTree(owner, name, commitSha);
+            const root = {dirs: new Map(), files: []};
+            for (const entry of entries) {
+                if (entry.type === 'tree') continue;
+                const parts = entry.path.split('/');
+                let node = root;
+                for (const part of parts.slice(0, -1)) {
+                    if (!node.dirs.has(part)) node.dirs.set(part, {dirs: new Map(), files: []});
+                    node = node.dirs.get(part);
+                }
+                const fileName = parts[parts.length - 1];
+                if (entry.type === 'blob') {
+                    node.files.push({mode: entry.mode, path: fileName, oid: await writeBlob(entry.sha), type: 'blob'});
+                } else {
+                    node.files.push({mode: entry.mode, path: fileName, oid: entry.sha, type: 'commit'});
+                }
+            }
+            const writeNode = async node => {
+                const tree = [...node.files];
+                for (const [dirName, child] of node.dirs) {
+                    tree.push({mode: '040000', path: dirName, oid: await writeNode(child), type: 'tree'});
+                }
+                return git.writeTree({fs, dir: tmpDir, tree});
+            };
+            return writeNode(root);
+        };
+
+        // A commit only hashes back to its own sha if every detail of it survived,
+        // so a mismatch means the API dropped something (a signature, say). Stop
+        // rather than invent history that a later push would rewrite.
+        const rebuilt = new Map();
+        for (const commit of ordered) {
+            const tree = await writeCommitTree(commit.sha);
+            const parents = [];
+            for (const parent of commit.parents) {
+                if (!rebuilt.has(parent)) {
+                    throw new Error(`Commit ${commit.sha} was rebuilt out of order`);
+                }
+                parents.push(rebuilt.get(parent));
+            }
+            const sha = await git.writeCommit({
+                fs,
+                dir: tmpDir,
+                commit: {
+                    tree,
+                    parent: parents,
+                    author: commit.author,
+                    committer: commit.committer,
+                    message: commit.message
+                }
+            });
+            if (sha !== commit.sha) {
+                throw new Error('Rotur Git could not serve enough of this history to rebuild it exactly');
+            }
+            rebuilt.set(commit.sha, sha);
+            commits += 1;
+            report(`Rebuilding history… ${commits}/${ordered.length} commits`, commits, ordered.length);
+        }
+
+        for (const entry of branches) {
+            const sha = rebuilt.get(entry.sha);
+            if (sha) {
+                await git.writeRef({fs, dir: tmpDir, ref: `refs/heads/${entry.name}`, value: sha, force: true});
+            }
+        }
+        await git.writeRef({
+            fs,
+            dir: tmpDir,
+            ref: 'HEAD',
+            value: `refs/heads/${wanted.name}`,
+            symbolic: true,
+            force: true
+        });
+    } catch (e) {
+        try {
+            await removeRecursive(pfs, tmpDir);
+        } catch (cleanupError) {
+            // ignore
+        }
+        throw e;
+    }
+
+    await deleteRepo();
+    await moveDir(pfs, tmpDir, REPO_DIR);
+
+    try {
+        await git.checkout({fs, dir: REPO_DIR, ref: wanted.name, force: true});
+    } catch (e) {
+        throw new Error(`Failed to clone: ${e.message}`);
+    }
+
+    try {
+        await git.addRemote({fs, dir: REPO_DIR, remote: 'origin', url: url.trim()});
+    } catch (e) {
+        // The project still opens without origin; a later push can set it again.
+        console.warn('Cloned repository has no origin remote:', e);
+    }
+
+    return {fs, dir: REPO_DIR, branch: wanted.name, commits};
+};
+
 // True if the repo working tree contains at least one .fractch source file.
 const repoHasFractch = async () => {
     const fs = getFs();
@@ -1782,6 +2129,8 @@ export {
     embedRepoIntoSb3Blob,
     importRepoFromSb3,
     cloneRepo,
+    cloneRepoFromArchive,
+    cloneRepoFromHistory,
     corsProxyForUrl,
     repoHasFractch,
     startEditorMerge,

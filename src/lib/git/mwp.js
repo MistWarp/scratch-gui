@@ -33,6 +33,7 @@ import {
 const MWP_FORMAT = 'mistwarp-project';
 const MWP_VERSION = 1;
 const MWP_MANIFEST = 'mwp.json';
+const MWP_HEAD = '.git/HEAD';
 const MAX_MWP_FILES = 20000;
 const MAX_MWP_UNCOMPRESSED_BYTES = 512 * 1024 * 1024;
 const TEXT_FILE = /\.(fractch|json|txt|md|gitignore)$/i;
@@ -77,6 +78,36 @@ const safeArchivePath = path => {
     return !path.split('/').some(part => !part || part === '.' || part === '..');
 };
 
+const readArchiveHead = async zip => {
+    const entry = zip.file(MWP_HEAD);
+    if (!entry) return {branch: '', head: ''};
+    const value = (await entry.async('text')).trim();
+    const ref = /^ref:\s*refs\/heads\/(\S+)$/.exec(value);
+    if (!ref) return {branch: '', head: value};
+    const refEntry = zip.file(`.git/refs/heads/${ref[1]}`);
+    return {branch: ref[1], head: refEntry ? (await refEntry.async('text')).trim() : ''};
+};
+
+// The repository inside the archive is the source of truth, so an archive
+// without mwp.json (hand-made, or written by another tool) still opens. Its
+// HEAD gives the branch and commit that the manifest would have carried.
+const deriveMwpManifest = async (zip, paths) => {
+    const {branch, head} = await readArchiveHead(zip);
+    return {
+        format: MWP_FORMAT,
+        version: MWP_VERSION,
+        createdWith: '',
+        projectId: null,
+        remixParent: null,
+        baseCommit: null,
+        branch,
+        head,
+        worktree: paths.some(path => path !== MWP_MANIFEST && !path.startsWith('.git/')),
+        baseHead: null,
+        delta: false
+    };
+};
+
 const loadMwp = async input => {
     const zip = await JSZip.loadAsync(input);
     const paths = Object.keys(zip.files).filter(path => !zip.files[path].dir);
@@ -84,12 +115,15 @@ const loadMwp = async input => {
         throw new Error('Unsafe or oversized MistWarp project');
     }
     const entry = zip.file(MWP_MANIFEST);
-    if (!entry) throw new Error('This file is missing mwp.json');
+    if (!entry) {
+        if (!zip.file(MWP_HEAD)) throw new Error('This file is missing mwp.json');
+        return {zip, manifest: await deriveMwpManifest(zip, paths), paths, derived: true};
+    }
     const manifest = JSON.parse(await entry.async('text'));
     if (manifest.format !== MWP_FORMAT || manifest.version !== MWP_VERSION) {
         throw new Error('Unsupported MistWarp project version');
     }
-    return {zip, manifest, paths};
+    return {zip, manifest, paths, derived: false};
 };
 
 const removeDiffDirectory = async (pfs, path) => {
@@ -119,14 +153,14 @@ const isMwpArchive = async input => {
     if (!bytes || bytes.length < 2 || bytes[0] !== 0x50 || bytes[1] !== 0x4b) return false;
     try {
         const zip = await JSZip.loadAsync(input);
-        return Boolean(zip.file(MWP_MANIFEST));
+        return Boolean(zip.file(MWP_MANIFEST) || zip.file(MWP_HEAD));
     } catch (e) {
         return false;
     }
 };
 
 const importMwp = async input => {
-    const {zip, manifest, paths} = await loadMwp(input);
+    const {zip, manifest, paths, derived} = await loadMwp(input);
     const fs = getFs();
     const pfs = fs.promises;
     const staging = `${REPO_DIR}-import-${Date.now()}-${Math.random().toString(36)
@@ -148,7 +182,12 @@ const importMwp = async input => {
             await pfs.writeFile(destination, data);
         }
         const branch = await git.currentBranch({fs, dir: staging, fullname: false});
-        if (!safeBranchName(branch) || branch !== manifest.branch) {
+        if (!safeBranchName(branch)) {
+            throw new Error(derived ?
+                'This MistWarp project has a detached HEAD and no saved branch' :
+                'MistWarp manifest branch disagrees with HEAD');
+        }
+        if (!derived && branch !== manifest.branch) {
             throw new Error('MistWarp manifest branch disagrees with HEAD');
         }
         // The API serves a layered history with the newest layer's delta

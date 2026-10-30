@@ -33,7 +33,12 @@ import {
     ModalSidebarLayout
 } from '../modal-sidebar/modal-sidebar.jsx';
 import {takeGitModalInitialView} from '../../lib/git/modal-view.js';
-import {GIT_HOST, ROTUR_GIT_SYNC_AVAILABLE, parseRepoUrl} from '../../lib/rotur/git-api.js';
+import {
+    GIT_HOST,
+    ROTUR_GIT_DOWNLOAD_AVAILABLE,
+    ROTUR_GIT_SYNC_AVAILABLE,
+    parseRepoUrl
+} from '../../lib/rotur/git-api.js';
 
 import styles from './git-modal.css';
 
@@ -930,7 +935,7 @@ class GitModalComponent extends React.Component {
                     type="button"
                     className={styles.iconButton}
                     data-repo-key={repoKey}
-                    disabled={this.props.busy || repo.isEmpty || !ROTUR_GIT_SYNC_AVAILABLE}
+                    disabled={this.props.busy || repo.isEmpty || !ROTUR_GIT_DOWNLOAD_AVAILABLE}
                     onClick={this.handleRoturClone}
                     title={this.props.intl.formatMessage({
                         defaultMessage: 'Clone this repo as your project',
@@ -1034,8 +1039,8 @@ class GitModalComponent extends React.Component {
                     <p className={styles.muted}>
                         <FormattedMessage
                             // eslint-disable-next-line max-len
-                            defaultMessage="Pushing to and cloning from Rotur Git is turned off for now. It comes back once git.rotur.dev accepts a direct connection, so your sign-in never passes through another service. You can still create, open and delete repositories."
-                            description="Rotur Git note while Git transfers are turned off"
+                            defaultMessage="Cloning rebuilds the repository from Rotur Git, so its commits come across. Pushing and pulling need a direct connection to git.rotur.dev."
+                            description="Rotur Git note while pushes are turned off"
                             id="mw.git.rotur.syncPaused"
                         />
                     </p>
@@ -1229,7 +1234,7 @@ class GitModalComponent extends React.Component {
                             type="button"
                             className={styles.button}
                             disabled={
-                                this.props.busy || !this.props.roturCloneOther.trim() || !ROTUR_GIT_SYNC_AVAILABLE
+                                this.props.busy || !this.props.roturCloneOther.trim() || !ROTUR_GIT_DOWNLOAD_AVAILABLE
                             }
                             onClick={this.props.onRoturCloneOther}
                         >

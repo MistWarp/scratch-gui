@@ -73,3 +73,34 @@ test('an .mwp fetched by URL opens as the project it was saved from', async () =
     const project = JSON.parse(await zip.file('project.json').async('text'));
     expect(Object.values(project.targets[0].variables)).toContainEqual(['score', 7]);
 });
+
+const withoutManifest = async blob => {
+    const zip = await JSZip.loadAsync(await bytes(blob));
+    zip.remove('mwp.json');
+    return zip.generateAsync({type: 'arraybuffer'});
+};
+
+test('an .mwp without mwp.json is still recognised and opens', async () => {
+    const saved = await createMwp({sb3Files: {'project.json': projectJson}});
+    const stripped = await withoutManifest(saved.blob);
+
+    expect(await isMwpArchive(stripped)).toBe(true);
+
+    await deleteRepo();
+    const manifest = await importMwp(stripped);
+    expect(manifest.branch).toBe(saved.manifest.branch);
+    expect(manifest.head).toBe(saved.manifest.head);
+    expect(manifest.worktree).toBe(false);
+
+    const sb3 = await bytes(await buildSb3FromCurrentRepo());
+    const zip = await JSZip.loadAsync(sb3);
+    const project = JSON.parse(await zip.file('project.json').async('text'));
+    expect(Object.values(project.targets[0].variables)).toContainEqual(['score', 7]);
+});
+
+test('a zip with unrelated files is not treated as a manifest-less .mwp', async () => {
+    const zip = new JSZip();
+    zip.file('project.json', projectJson);
+    zip.file('.git/config', '[core]\n');
+    expect(await isMwpArchive(await zip.generateAsync({type: 'arraybuffer'}))).toBe(false);
+});

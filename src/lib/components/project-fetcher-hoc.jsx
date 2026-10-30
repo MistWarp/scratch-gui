@@ -32,7 +32,7 @@ import storage from '../persistence/storage.js';
 
 import VM from 'scratch-vm';
 import {fetchProjectMeta} from './tw-project-meta-fetcher-hoc.jsx';
-import {cloneRepo, deleteRepo} from '../git/browser-git.js';
+import {cloneRepo, cloneRepoFromArchive, cloneRepoFromHistory, deleteRepo} from '../git/browser-git.js';
 import {
     markProjectHistoryLoading,
     preloadProjectHistory,
@@ -40,7 +40,13 @@ import {
 } from '../git/project-history.js';
 import {buildSb3FromFractchTree} from '../git/fractch-tree.js';
 import {buildSb3FromCurrentRepo, importMwp, isMwpArchive} from '../git/mwp.js';
-import {getAuth as getRoturGitAuth} from '../rotur/git-api.js';
+import {
+    getAuth as getRoturGitAuth,
+    downloadArchive,
+    getRemoteUrl,
+    isRoturGitUrl,
+    parseRepoUrl
+} from '../rotur/git-api.js';
 import {getRememberedPlatformProjectState, rememberPlatformProject} from '../community/publish.js';
 import {
     getEditorProject as getMistWarpEditorProject,
@@ -60,7 +66,27 @@ const isGallerySampleUrl = url => typeof url === 'string' && (
 );
 
 const cloneProjectFromRepo = async url => {
-    const {fs, dir} = await cloneRepo({url, onAuth: getRoturGitAuth});
+    let cloned;
+    if (isRoturGitUrl(url)) {
+        // Rotur Git refuses its Git endpoints from a browser, but its REST API
+        // serves the object database, so the history is rebuilt from that.
+        const parsed = parseRepoUrl(url);
+        if (!parsed) {
+            throw new Error('That is not a Rotur Git repository URL');
+        }
+        const remoteUrl = getRemoteUrl(parsed.owner, parsed.name);
+        try {
+            cloned = await cloneRepoFromHistory({url: remoteUrl, owner: parsed.owner, name: parsed.name});
+        } catch (e) {
+            // A repository the API cannot give back exactly still opens, just
+            // without its history.
+            const {bytes, branch} = await downloadArchive(parsed.owner, parsed.name);
+            cloned = await cloneRepoFromArchive({url: remoteUrl, bytes, branch});
+        }
+    } else {
+        cloned = await cloneRepo({url, onAuth: getRoturGitAuth});
+    }
+    const {fs, dir} = cloned;
     const sb3 = await buildSb3FromFractchTree({fs, dir});
     return {data: sb3 instanceof ArrayBuffer ? sb3 : await sb3.arrayBuffer()};
 };
