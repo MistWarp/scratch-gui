@@ -16,6 +16,7 @@ import {
     initRepo,
     readWorktreeFile,
     repoExists,
+    stageAll,
     resolveEditorMergeBinary,
     startEditorMerge,
     writeWorktreeFile,
@@ -32,6 +33,9 @@ import {
 
 const MWP_FORMAT = 'mistwarp-project';
 const MWP_VERSION = 1;
+const MWP_COMPACT_VERSION = 2;
+const MWP_VERSIONS = new Set([MWP_VERSION, MWP_COMPACT_VERSION]);
+const FRACTCH_SOURCE = /^[^/]+\/.+\.fractch$/;
 const MWP_MANIFEST = 'mwp.json';
 const MWP_HEAD = '.git/HEAD';
 const MAX_MWP_FILES = 20000;
@@ -88,12 +92,16 @@ const readArchiveHead = async zip => {
     return {branch: ref[1], head: refEntry ? (await refEntry.async('text')).trim() : ''};
 };
 
-// The repository inside the archive is the source of truth, so an archive
-// without mwp.json (hand-made, or written by another tool) still opens. Its
-// HEAD gives the branch and commit that the manifest would have carried.
+const isProjectFolderArchive = paths => (
+    !paths.includes('project.json') &&
+    !paths.some(path => path.startsWith('.git/')) &&
+    paths.some(path => FRACTCH_SOURCE.test(path))
+);
+
 const deriveMwpManifest = async (zip, paths) => {
     const {branch, head} = await readArchiveHead(zip);
     return {
+        projectFolder: !zip.file(MWP_HEAD),
         format: MWP_FORMAT,
         version: MWP_VERSION,
         createdWith: '',
@@ -116,11 +124,11 @@ const loadMwp = async input => {
     }
     const entry = zip.file(MWP_MANIFEST);
     if (!entry) {
-        if (!zip.file(MWP_HEAD)) throw new Error('This file is missing mwp.json');
+        if (!zip.file(MWP_HEAD) && !isProjectFolderArchive(paths)) throw new Error('This file is missing mwp.json');
         return {zip, manifest: await deriveMwpManifest(zip, paths), paths, derived: true};
     }
     const manifest = JSON.parse(await entry.async('text'));
-    if (manifest.format !== MWP_FORMAT || manifest.version !== MWP_VERSION) {
+    if (manifest.format !== MWP_FORMAT || !MWP_VERSIONS.has(manifest.version)) {
         throw new Error('Unsupported MistWarp project version');
     }
     return {zip, manifest, paths, derived: false};
@@ -153,7 +161,8 @@ const isMwpArchive = async input => {
     if (!bytes || bytes.length < 2 || bytes[0] !== 0x50 || bytes[1] !== 0x4b) return false;
     try {
         const zip = await JSZip.loadAsync(input);
-        return Boolean(zip.file(MWP_MANIFEST) || zip.file(MWP_HEAD));
+        if (zip.file(MWP_MANIFEST) || zip.file(MWP_HEAD)) return true;
+        return isProjectFolderArchive(Object.keys(zip.files).filter(path => !zip.files[path].dir));
     } catch (e) {
         return false;
     }
@@ -180,6 +189,16 @@ const importMwp = async input => {
             const destination = `${staging}/${path}`;
             await ensureParentDir(pfs, destination);
             await pfs.writeFile(destination, data);
+        }
+        if (manifest.projectFolder) {
+            await git.init({fs, dir: staging, defaultBranch: 'main'});
+            await stageAll(fs, staging);
+            await git.commit({fs, dir: staging, message: 'Open project files', author: getDefaultAuthor()});
+        } else if (manifest.worktreeBlobs) {
+            for (const path of paths) {
+                if (path === MWP_MANIFEST || path.startsWith('.git/')) continue;
+                await git.writeBlob({fs, dir: staging, blob: await pfs.readFile(`${staging}/${path}`)});
+            }
         }
         const branch = await git.currentBranch({fs, dir: staging, fullname: false});
         if (!safeBranchName(branch)) {
@@ -343,7 +362,7 @@ const currentRepoMeta = async ({baseHead = '', baseHistory = null} = {}) => {
 
 const exportCurrentMwp = async (metadata, {
     baseHead = '', includeWorktree = false, assumeBaseKnown = false, baseHistory = null, knownBaseHeads = [],
-    worktreeAssetRefs = null
+    worktreeAssetRefs = null, compact = false
 } = {}) => {
     const repo = await currentRepoMeta({
         baseHead: assumeBaseKnown ? baseHead : '',
@@ -375,16 +394,20 @@ const exportCurrentMwp = async (metadata, {
         }
     }
     const referencedAssets = {};
+    const report = {omittedBlobs: 0};
     const zip = await buildRepoZip({
         includeGitDir: true,
         includeWorktree,
         includeObjectOids,
         worktreeAssetRefs: delta && includeWorktree ? worktreeAssetRefs : null,
-        referencedAssets
+        referencedAssets,
+        omitWorktreeBlobs: compact && !delta,
+        report
     });
     const manifest = {
         format: MWP_FORMAT,
-        version: MWP_VERSION,
+        version: report.omittedBlobs ? MWP_COMPACT_VERSION : MWP_VERSION,
+        ...(report.omittedBlobs ? {worktreeBlobs: true} : {}),
         createdWith: 'MistWarp',
         projectId: metadata.projectId || null,
         remixParent: metadata.remixParent || null,
@@ -414,7 +437,7 @@ const preserveCurrentRepo = () => createRepoBackup();
 const createMwp = async ({
     vm, sb3Files, projectId, remixParent, baseCommit, remoteHead, branch = 'main', additionalParents = [],
     message = 'Save project', commitChanges = true, requireChanges = false, baseHistory = null,
-    referenceStoredAssets = false
+    referenceStoredAssets = false, allowLoss = true, compact = false
 } = {}) => {
     // Cloud history records the Rotur account. A save to the user's computer
     // uploads nothing, so it falls back to the local author when signed out.
@@ -437,12 +460,15 @@ const createMwp = async ({
             initialMessage: message,
             initialParent,
             initialParents,
-            author: await resolveAuthor()
+            author: await resolveAuthor(),
+            allowLoss: allowLoss || !commitChanges
         });
         shallowBase = Boolean(initialParent);
     } else if ((vm || sb3Files) && commitChanges) {
         try {
-            await commitProject({vm, sb3Files, message, author: await resolveAuthor(), rememberAuthor: false});
+            await commitProject({
+                vm, sb3Files, message, author: await resolveAuthor(), rememberAuthor: false, allowLoss
+            });
         } catch (error) {
             if (!/No changes to commit/.test(error.message || '')) throw error;
             if (requireChanges) {
@@ -465,7 +491,8 @@ const createMwp = async ({
             baseHistory,
             knownBaseHeads: additionalParents,
             worktreeAssetRefs: referenceStoredAssets && !commitChanges && remoteHead && sb3Files ?
-                await worktreeAssetPaths(sb3Files) : null
+                await worktreeAssetPaths(sb3Files) : null,
+            compact
         }
     );
 };

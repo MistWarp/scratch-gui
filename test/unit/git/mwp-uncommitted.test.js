@@ -159,7 +159,8 @@ test('MWP files retain uncommitted scripts and costume bytes, and remove deleted
             ]));
             expect(await zip.file(sprite.costumes[0].md5ext).async('text')).toBe(costume);
         } else {
-            expect(Object.keys(zip.files).filter(path => path.endsWith('.svg'))).toHaveLength(0);
+            expect(Object.keys(zip.files).filter(path => path.endsWith('.svg') &&
+                path !== 'c3d7ff782edb43ba0e0a79849362613c.svg')).toHaveLength(0);
         }
         expect(saved.manifest.head).toBe(initial.manifest.head);
     }

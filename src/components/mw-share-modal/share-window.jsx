@@ -11,6 +11,8 @@ import {login as roturLogin} from '../../lib/rotur/identity.js';
 import Button from '../button/button.jsx';
 import styles from './share-window.css';
 
+const MAX_SHOWN_DIFFERENCES = 6;
+
 const messages = defineMessages({
     cancel: {defaultMessage: 'Cancel', description: 'Cancel button in the share window', id: 'mw.shareWindow.cancel'},
     close: {defaultMessage: 'Close', description: 'Close button in the share window', id: 'mw.shareWindow.close'},
@@ -38,6 +40,21 @@ const messages = defineMessages({
         defaultMessage: 'Upload an image',
         description: 'Button that picks a thumbnail image from the computer',
         id: 'mw.shareWindow.uploadImage'
+    },
+    notExactIntro: {
+        defaultMessage: 'Saving this version in history would change these parts of the project:',
+        description: 'Shown above a list of the parts of a project that would not be kept exactly in a saved version',
+        id: 'mw.shareWindow.notExactIntro'
+    },
+    notExactMore: {
+        defaultMessage: '{count, plural, one {# more part would change too.} other {# more parts would change too.}}',
+        description: 'Last item of the list of parts that a saved version would change, when the list is cut short',
+        id: 'mw.shareWindow.notExactMore'
+    },
+    saveAnyway: {
+        defaultMessage: 'Save this version anyway',
+        description: 'Button that saves a version even though some parts of the project would change',
+        id: 'mw.shareWindow.saveAnyway'
     },
     postToClaw: {
         defaultMessage: 'Post to claw',
@@ -83,6 +100,7 @@ class ShareWindow extends React.Component {
         this.handleProgress = this.handleProgress.bind(this);
         this.handlePostToClaw = this.handlePostToClaw.bind(this);
         this.handleClawSignIn = this.handleClawSignIn.bind(this);
+        this.handleSaveAnyway = this.handleSaveAnyway.bind(this);
         this.prepareThumbnail = this.prepareThumbnail.bind(this);
         this.releaseAgreement = this.releaseAgreement.bind(this);
         this.releasePublish = this.releasePublish.bind(this);
@@ -105,6 +123,7 @@ class ShareWindow extends React.Component {
             total: 0,
             error: props.initialError ? props.initialError.message : null,
             errorCode: props.initialError ? props.initialError.code : null,
+            differences: [],
             notice: null,
             done: null,
             agreement: null,
@@ -210,7 +229,12 @@ class ShareWindow extends React.Component {
         // snapshot preserves the edits, which stay as uncommitted changes.
         return this.runPublish({commitChanges: false, changeMessage: ''});
     }
-    async runPublish ({commitChanges, changeMessage}) {
+    handleSaveAnyway () {
+        const pending = this.pendingPublish;
+        if (!pending) return Promise.resolve();
+        return this.runPublish({...pending, allowLoss: true});
+    }
+    async runPublish ({commitChanges, changeMessage, allowLoss = false}) {
         if (this.publishInFlight || this.state.status || this.state.agreeBusy) {
             return;
         }
@@ -220,7 +244,7 @@ class ShareWindow extends React.Component {
         }
         const isUpdate = this.props.action === 'update';
         this.publishInFlight = true;
-        this.pendingPublish = {commitChanges, changeMessage};
+        this.pendingPublish = {commitChanges, changeMessage, allowLoss};
         const destination = getRememberedPlatformProjectState()?.id;
         const onSaved = guardSavedCallback(this.props.vm, this.props.onPublished);
 
@@ -231,6 +255,7 @@ class ShareWindow extends React.Component {
             total: 0,
             error: null,
             errorCode: null,
+            differences: [],
             notice: null,
             agreement: null
         });
@@ -282,6 +307,7 @@ class ShareWindow extends React.Component {
                 title: isUpdate ? null : this.state.title,
                 changeMessage,
                 commitChanges,
+                allowLoss,
                 thumbnailBlob,
                 updateOnly: isUpdate,
                 onProgress: this.handleProgress
@@ -321,7 +347,8 @@ class ShareWindow extends React.Component {
                 loaded: 0,
                 total: 0,
                 error: e.message || 'Could not save',
-                errorCode: e.code || null
+                errorCode: e.code || null,
+                differences: Array.isArray(e.differences) ? e.differences : []
             });
         }
     }
@@ -357,6 +384,7 @@ class ShareWindow extends React.Component {
                         {'Check project storage'}
                     </button>
                 )}
+                {this.state.errorCode === 'project_not_exact' && this.renderDifferences()}
                 {this.state.errorCode === 'storage_full' && (
                     <a
                         className={styles.reviewStorage}
@@ -368,6 +396,36 @@ class ShareWindow extends React.Component {
                     </a>
                 )}
             </div>
+        );
+    }
+    renderDifferences () {
+        const differences = this.state.differences;
+        const shown = differences.slice(0, MAX_SHOWN_DIFFERENCES);
+        const hidden = differences.length - shown.length;
+        return (
+            <React.Fragment>
+                <div className={styles.notice}>
+                    {this.props.intl.formatMessage(messages.notExactIntro)}
+                </div>
+                <ul className={styles.differences}>
+                    {shown.map((difference, index) => (
+                        <li
+                            key={index}
+                            title={difference.detail || null}
+                        >
+                            {`${difference.path} ${difference.message}`}
+                        </li>
+                    ))}
+                    {hidden > 0 && <li>{this.props.intl.formatMessage(messages.notExactMore, {count: hidden})}</li>}
+                </ul>
+                <button
+                    type="button"
+                    className={styles.reviewStorage}
+                    onClick={this.handleSaveAnyway}
+                >
+                    {this.props.intl.formatMessage(messages.saveAnyway)}
+                </button>
+            </React.Fragment>
         );
     }
     renderStatus () {

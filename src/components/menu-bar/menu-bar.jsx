@@ -1125,7 +1125,8 @@ class MenuBar extends React.Component {
                 remixParent: platformProject && platformProject.remixParent,
                 baseCommit: platformProject && platformProject.remixBaseCommit,
                 message: 'Initial version',
-                commitChanges: false
+                commitChanges: false,
+                compact: true
             });
             if (handle) {
                 const writable = await handle.createWritable();
