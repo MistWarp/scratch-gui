@@ -136,7 +136,7 @@ const roundTrip = async json => {
     return {dir, ...await rebuild(dir)};
 };
 
-const sidecar = dir => JSON.parse(fs.readFileSync(path.join(dir, 'mistwarp.json'), 'utf8'));
+const sidecar = dir => JSON.parse(fs.readFileSync(path.join(dir, 'fractch.json'), 'utf8'));
 
 const targetNamed = (project, name) => project.targets.find(target => target.name === name);
 
@@ -214,14 +214,14 @@ describe('fonts', () => {
         expect(fs.existsSync(path.join(dir, 'fonts', 'Comic.ttf'))).toBe(true);
         await write(projectJson(), dir);
         expect(fs.existsSync(path.join(dir, 'fonts'))).toBe(false);
-        expect(fs.existsSync(path.join(dir, 'mistwarp.json'))).toBe(false);
+        expect(fs.existsSync(path.join(dir, 'fractch.json'))).toBe(false);
     });
 });
 
 describe('project data fractch has no syntax for', () => {
-    test('a plain project writes no mistwarp.json', async () => {
+    test('a plain project writes no fractch.json', async () => {
         const {dir, project} = await roundTrip(projectJson());
-        expect(fs.existsSync(path.join(dir, 'mistwarp.json'))).toBe(false);
+        expect(fs.existsSync(path.join(dir, 'fractch.json'))).toBe(false);
         expect(project.customFonts).toBeUndefined();
         expect(project.extensionStorage).toBeUndefined();
     });
@@ -246,10 +246,21 @@ describe('project data fractch has no syntax for', () => {
         expect(project.targets.map(target => target.name)).toEqual(['Stage', 'Zed', 'Alpha', 'Mid']);
     });
 
+    test('a tree saved before the rename still reads mistwarp.json', async () => {
+        const dir = makeDir();
+        await write(projectJson({targets: [stage(), sprite('Zed'), sprite('Alpha')]}), dir);
+        fs.renameSync(path.join(dir, 'fractch.json'), path.join(dir, 'mistwarp.json'));
+        const {project} = await rebuild(dir);
+        expect(project.targets.map(target => target.name)).toEqual(['Stage', 'Zed', 'Alpha']);
+        await write(projectJson({targets: [stage(), sprite('Zed'), sprite('Alpha')]}), dir);
+        expect(fs.existsSync(path.join(dir, 'mistwarp.json'))).toBe(false);
+        expect(fs.existsSync(path.join(dir, 'fractch.json'))).toBe(true);
+    });
+
     test('sprites missing from the saved order keep their place after the ordered ones', async () => {
         const dir = makeDir();
         await write(projectJson({targets: [stage(), sprite('Zed'), sprite('Alpha')]}), dir);
-        fs.writeFileSync(path.join(dir, 'mistwarp.json'), JSON.stringify({spriteOrder: ['Zed', 'Gone']}));
+        fs.writeFileSync(path.join(dir, 'fractch.json'), JSON.stringify({spriteOrder: ['Zed', 'Gone']}));
         const {project} = await rebuild(dir);
         expect(project.targets.map(target => target.name)).toEqual(['Stage', 'Zed', 'Alpha']);
     });

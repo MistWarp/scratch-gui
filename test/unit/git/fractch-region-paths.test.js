@@ -337,7 +337,7 @@ test('a free comment cannot make fractch write a file outside the repo', async (
         dir
     });
     const written = listFiles(root);
-    expect(written.filter(name => name !== 'repo/mistwarp.json').every(name => name.startsWith('repo/S/'))).toBe(true);
+    expect(written.filter(name => name !== 'repo/fractch.json').every(name => name.startsWith('repo/S/'))).toBe(true);
     const text = written.map(name => fs.readFileSync(path.join(root, name), 'utf8')).join('\n');
     expect(text).toContain('escape attempt');
     expect(text).toContain('hook attempt');

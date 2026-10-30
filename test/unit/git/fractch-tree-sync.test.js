@@ -183,16 +183,13 @@ test('an incremental write matches a clean write of the new project', async () =
     expect(fs.statSync(path.join(dir, 'Cat', 'assets', 'cat.png')).mtimeMs).toBe(untouched);
 });
 
-test('a path that changes between file and folder falls back to a clean write', async () => {
-    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+test('a path that changes from a file into a folder is written like a fresh tree', async () => {
     const dir = await writeFresh(second);
     const clean = listTree(dir);
     await clearWorkingTree({pfs: fs.promises, dir});
     fs.writeFileSync(path.join(dir, 'Cat'), 'not a folder');
     await writeProjectToFractchTree({sb3Files: second, fs: fs.promises, dir});
     expect(listTree(dir)).toEqual(clean);
-    expect(warn).toHaveBeenCalledTimes(1);
-    warn.mockRestore();
 });
 
 test('a VM project is read without zipping it', async () => {

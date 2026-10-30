@@ -108,6 +108,17 @@
     text-decoration: underline;
 }
 
+.differences {
+    margin: 0;
+    padding-inline-start: 18px;
+    color: var(--text-primary, #ccc);
+    font-size: 13px;
+    line-height: 1.45;
+    max-height: 132px;
+    overflow-y: auto;
+    overflow-wrap: anywhere;
+}
+
 .notice {
     color: var(--text-primary, #ccc);
     font-size: 13px;

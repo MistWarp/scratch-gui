@@ -229,7 +229,7 @@ const prepareThumbnailBlob = async dataUri => {
 // user has added. Sharing remains a separate action.
 const publishWorkspace = async ({
     vm, title, thumbnailBlob, changeMessage = '', commitChanges = true,
-    share = false, updateOnly = false, onProgress = () => {}
+    share = false, updateOnly = false, allowLoss = true, onProgress = () => {}
 }) => {
     const projectTitle = (title && title.trim()) || 'Untitled';
 
@@ -339,7 +339,8 @@ const publishWorkspace = async ({
             message: changeMessage.trim() || (createdNow ? 'Initial version' : 'Updated project'),
             commitChanges,
             requireChanges: commitChanges && !createdNow && !replaceHistory,
-            baseHistory
+            baseHistory,
+            allowLoss: allowLoss || createdNow
         };
         const mwpPromise = createMwp({...mwpOptions, referenceStoredAssets});
         const prepared = await Promise.allSettled([

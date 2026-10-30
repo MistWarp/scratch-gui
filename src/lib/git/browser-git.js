@@ -5,6 +5,7 @@ import JSZip from '@turbowarp/jszip';
 
 
 import {
+    notExactError,
     writeProjectToFractchTree,
     buildSb3FromFractchTree
 } from './fractch-tree.js';
@@ -335,7 +336,7 @@ const clearWorkdirExceptGit = async pfs => {
 
 const initRepo = async ({
     defaultBranch = 'main', vm = null, sb3Files = null, initialMessage = 'Initial version', initialParent = '',
-    initialParents = null, author, onProgress
+    initialParents = null, author, onProgress, allowLoss = true
 } = {}) => {
     if (!defaultBranch || typeof defaultBranch !== 'string') {
         throw new Error('Invalid default branch name');
@@ -365,7 +366,10 @@ const initRepo = async ({
                     throw new Error('VM does not support saveProjectSb3');
                 }
 
-                await writeProjectToFractchTree({vm, sb3Files, fs: pfs, dir: REPO_DIR, onProgress});
+                const written = await writeProjectToFractchTree({
+                    vm, sb3Files, fs: pfs, dir: REPO_DIR, onProgress, verify: !allowLoss
+                });
+                if (written && written.differences.length) throw notExactError(written.differences);
                 await stageAll(fs, REPO_DIR, {onProgress});
             }
 
@@ -854,7 +858,9 @@ const pull = async ({vm, remote, ref, author, onAuth, onProgress} = {}) => {
     return 'ok';
 };
 
-const commitProject = async ({vm, sb3Files, message, author, rememberAuthor = true, onProgress} = {}) => {
+const commitProject = async ({
+    vm, sb3Files, message, author, rememberAuthor = true, onProgress, allowLoss = true
+} = {}) => {
     if (!message || typeof message !== 'string' || !message.trim()) {
         throw new Error('Commit message is required');
     }
@@ -875,7 +881,8 @@ const commitProject = async ({vm, sb3Files, message, author, rememberAuthor = tr
             sb3Files,
             initialMessage: message.trim(),
             author: effectiveAuthor,
-            onProgress
+            onProgress,
+            allowLoss
         });
         return git.resolveRef({fs, dir: REPO_DIR, ref: 'HEAD'});
     }
@@ -905,9 +912,10 @@ const commitProject = async ({vm, sb3Files, message, author, rememberAuthor = tr
     }
 
     try {
-        await writeProjectToFractchTree({
-            vm, sb3ArrayBuffer, sb3Files: projectFiles, fs: pfs, dir: REPO_DIR, onProgress
+        const written = await writeProjectToFractchTree({
+            vm, sb3ArrayBuffer, sb3Files: projectFiles, fs: pfs, dir: REPO_DIR, onProgress, verify: !allowLoss
         });
+        if (written && written.differences.length) throw notExactError(written.differences);
 
         // Ensure any new files are discoverable by isomorphic-git (it uses callback fs,
         // but LightningFS mirrors state).
@@ -947,6 +955,7 @@ const commitProject = async ({vm, sb3Files, message, author, rememberAuthor = tr
         });
         return ret;
     } catch (e) {
+        if (e.code === 'project_not_exact') throw e;
         throw new Error(`Failed to commit: ${e.message}`);
     }
 };
@@ -1345,7 +1354,7 @@ const zipCompressionFor = relPath => (
 
 const buildRepoZip = async ({
     includeGitDir = true, includeWorktree = true, includeObjectOids = null,
-    worktreeAssetRefs = null, referencedAssets = null
+    worktreeAssetRefs = null, referencedAssets = null, omitWorktreeBlobs = false, report = null
 } = {}) => {
     const fs = getFs();
     const pfs = fs.promises;
@@ -1358,8 +1367,24 @@ const buildRepoZip = async ({
     const root = REPO_DIR;
 
     const files = await listFilesRecursive(pfs, root);
+    const compact = omitWorktreeBlobs && includeWorktree && !includeObjectOids;
+    const omitted = compact ? new Set() : null;
+    const zipped = new Set();
+    let omittedCount = 0;
+    if (compact) {
+        for (const absPath of files) {
+            if (absPath.startsWith(`${REPO_DIR}/.git/`)) continue;
+            const relPath = absPath.replace(`${REPO_DIR}/`, '');
+            const data = await pfs.readFile(absPath);
+            const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
+            zip.file(relPath, bytes, {compression: zipCompressionFor(relPath)});
+            zipped.add(absPath);
+            omitted.add((await git.hashBlob({object: bytes})).oid);
+        }
+    }
 
     const selected = files.filter(absPath => {
+        if (zipped.has(absPath)) return false;
         if (!includeGitDir && absPath.startsWith(`${REPO_DIR}/.git/`)) {
             return false;
         }
@@ -1375,8 +1400,16 @@ const buildRepoZip = async ({
             if (parts.length !== 4) return false;
             return includeObjectOids.has(`${parts[2]}${parts[3]}`);
         }
+        if (omitted && relPath.startsWith('.git/objects/')) {
+            const parts = relPath.split('/');
+            if (parts.length === 4 && parts[2].length === 2 && omitted.has(`${parts[2]}${parts[3]}`)) {
+                omittedCount += 1;
+                return false;
+            }
+        }
         return true;
     });
+    if (report) report.omittedBlobs = omittedCount;
 
     const batchSize = 32;
     for (let i = 0; i < selected.length; i += batchSize) {
@@ -2121,6 +2154,7 @@ export {
     push,
     pull,
     buildRepoZip,
+    stageAll,
     exportRepoToZip,
     createRepoBackup,
     downloadRepoZip,
