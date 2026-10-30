@@ -42,7 +42,7 @@ const openMistWarpShareWindow = ({vm, initialTitle, initialError, action = 'save
         title: isStudentSession() ? 'Save to my class' :
             action === 'remix' ? 'Remix to MistWarp' :
                 action === 'update' ? 'Update MistWarp project' : 'Save to MistWarp',
-        width: 460,
+        width: action === 'update' ? 540 : 460,
         height: 430,
         minWidth: 360,
         minHeight: 300,
