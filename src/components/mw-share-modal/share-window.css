@@ -18,6 +18,10 @@
     gap: 8px;
 }
 
+.body > * {
+    flex-shrink: 0;
+}
+
 .label {
     font-size: 12px;
     font-weight: 700;
@@ -77,6 +81,7 @@
 
 .footer {
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
     gap: 10px;
     padding: 12px 18px;
@@ -220,6 +225,8 @@
     border-radius: 9px;
     padding: 14px;
     max-height: 40vh;
+    min-height: 80px;
+    flex-shrink: 1;
     overflow-y: auto;
 }
 
