@@ -2,7 +2,16 @@
 <html>
   <head>
     <meta charset="UTF-8">
+    <% if (page.name === 'community') { %>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="<%= page.APP_NAME %>">
+    <link rel="apple-touch-icon" href="<%= page.root %>images/apple-touch-icon.png">
+    <link rel="manifest" href="<%= page.root %>manifest.webmanifest">
+    <% } else { %>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <% } %>
     <meta name="description" content="<%= page.APP_NAME %> is a powerful Scratch mod that enhances your Scratch experience with advanced features and optimizations." />
     <!-- OpenGraph Meta Tags for Discord/Social Embeds -->
     <meta property="og:title" content="<%= page.title %>" />

@@ -41,3 +41,13 @@
 .dismiss:hover {
     color: var(--mw-text);
 }
+
+@media (max-width: 760px) {
+    .banner {
+        justify-content: flex-start;
+        gap: 10px;
+        padding: 8px max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));
+        font-size: var(--fs-xs);
+        line-height: 1.35;
+    }
+}

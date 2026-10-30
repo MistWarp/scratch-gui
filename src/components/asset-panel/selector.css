@@ -128,51 +128,84 @@ $fade-out-distance: 100px;
 
 @media only screen and (max-width: 600px) {
     .wrapper {
-        height: 4.5rem;
+        height: 4.75rem;
         justify-content: flex-start;
     }
 
     .list-area {
-        width: auto;
-        max-width: calc(100% - 6rem);
-        flex: 0 1 auto;
+        width: 100%;
+        max-width: none;
+        flex: 1 1 auto;
+        align-items: center;
+        padding-inline-start: .125rem;
+        -webkit-mask-image: linear-gradient(to left, transparent 2.75rem, #000 6.5rem);
+        mask-image: linear-gradient(to left, transparent 2.75rem, #000 6.5rem);
+        scrollbar-width: none;
+    }
+
+    [dir="rtl"] .list-area {
+        -webkit-mask-image: linear-gradient(to right, transparent 2.75rem, #000 6.5rem);
+        mask-image: linear-gradient(to right, transparent 2.75rem, #000 6.5rem);
+    }
+
+    .list-area::-webkit-scrollbar {
+        display: none;
     }
 
     .list-area:after {
-        display: none;
+        display: block;
+        width: 5.5rem;
+        height: 1px;
+        flex: 0 0 5.5rem;
     }
 
     .list-item {
         width: 5.75rem;
         height: 4rem;
-        margin: 0.25rem;
+        margin: 0 .1875rem;
         flex-basis: 5.75rem;
     }
 
-    .new-buttons {
-        position: static;
-        width: 6rem;
-        height: 100%;
-        flex: 0 0 6rem;
-        gap: .15rem;
-        padding: .1rem .2rem;
-        border-left: 0;
+    .new-buttons,
+    [dir="rtl"] .new-buttons {
+        top: 50%;
+        right: .5rem;
+        bottom: auto;
+        left: auto;
+        width: auto;
+        height: auto;
+        padding: 0;
+        border: 0;
+        background: none;
+        transform: translateY(-50%);
+    }
+
+    [dir="rtl"] .new-buttons {
+        right: auto;
+        left: .5rem;
+    }
+
+    .new-buttons :global([class*="action-menu_main-button_"]) {
+        box-shadow: 0 4px 14px rgba(0, 0, 0, .3);
     }
 
     .new-button-label {
-        display: block;
-        max-width: 5.5rem;
-        color: $text-primary;
-        font-size: .58rem;
-        font-weight: 600;
-        line-height: 1.1;
+        display: none;
     }
 
-    .sound-wrapper .list-area {
-        max-width: calc(100% - 6rem);
-        scrollbar-color: $ui-black-transparent transparent;
-        scrollbar-width: thin;
+    .wrapper:not(.sound-wrapper) .list-item :global([class*="sprite-selector-item_sprite-details_"]) {
+        display: none;
     }
+
+    .wrapper:not(.sound-wrapper) .list-item :global([class*="sprite-selector-item_sprite-image_"]) {
+        max-width: 3.5rem;
+        max-height: 2.375rem;
+    }
+
+    .wrapper:not(.sound-wrapper) .list-item :global([class*="sprite-selector-item_sprite-info_"]) {
+        padding: .125rem .375rem .25rem;
+    }
+
 
     .sound-wrapper .list-item {
         width: 10.5rem;

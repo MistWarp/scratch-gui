@@ -90,6 +90,7 @@ html:where(.root),
     font-family: var(--sans);
     overflow-x: clip;
     -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
 }
 
 :where(.root) :global(#app) {
@@ -161,6 +162,16 @@ html:where(.root),
 :where(.root) textarea,
 :where(.root) select {
     max-width: 100%;
+}
+
+@media (hover: none) and (pointer: coarse) {
+    :where(.root) button:not(:disabled) {
+        transition: transform .12s ease;
+    }
+
+    :where(.root) button:not(:disabled):active {
+        transform: scale(.97);
+    }
 }
 
 @media (max-width: 760px) {

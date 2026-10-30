@@ -106,9 +106,18 @@
 }
 
 @media only screen and (max-width: 600px) {
+    .detail-area :global([class*="paint-editor_editor-container_"]) {
+        padding: .375rem;
+    }
+
     .detail-area :global([class*="paint-editor_editor-container-top_"]) {
+        padding-bottom: 0;
         overflow: visible;
         scrollbar-width: auto;
+    }
+
+    .detail-area :global([class*="paint-editor_top-align-row_"]) {
+        padding-top: .375rem;
     }
 
     .detail-area :global([class*="paint-editor_editor-container-top_"] > [class*="paint-editor_row_"]) {
@@ -123,14 +132,6 @@
         flex: 0 0 auto;
         flex-flow: row wrap;
         overflow: visible;
-    }
-
-    .detail-area :global([class*="paint-editor_tool-strip-panel_"] [class*="paint-editor_mode-selector_"]) {
-        width: 0;
-        min-width: 0;
-        flex: 1 1 0;
-        overflow-x: auto;
-        overflow-y: hidden;
     }
 
     .detail-area :global([class*="paint-editor_controls-container_"]) {

@@ -196,6 +196,9 @@ const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, 
 };
 
 const NAV_GAP = 18;
+const MOBILE_NAV_QUERY = '(max-width: 760px)';
+const HIDE_NAV_AFTER = 120;
+const SCROLL_SLOP = 6;
 const MIN_CENTRED_SEARCH = 280;
 
 const NavBar = () => {
@@ -215,6 +218,8 @@ const NavBar = () => {
     const [unread, setUnread] = useState(0);
     const [openReports, setOpenReports] = useState(0);
     const [openErrors, setOpenErrors] = useState(0);
+    const [scrolledAway, setScrolledAway] = useState(false);
+    const suggestionsOpenRef = useRef(false);
     const navigate = useNavigate();
     const location = useLocation();
     const exploreActive = ['/explore', '/spaces', '/themes', '/groups', '/bounties'].some(path => location.pathname.startsWith(path));
@@ -468,6 +473,45 @@ const NavBar = () => {
         setSuggestionsOpen(true);
     };
 
+    useEffect(() => {
+        if (typeof window.matchMedia !== 'function') return;
+        const phone = window.matchMedia(MOBILE_NAV_QUERY);
+        let lastY = window.scrollY;
+        let frame = null;
+        const update = () => {
+            frame = null;
+            const y = Math.max(0, window.scrollY);
+            const delta = y - lastY;
+            if (!phone.matches || y < HIDE_NAV_AFTER || suggestionsOpenRef.current) {
+                setScrolledAway(false);
+            } else if (Math.abs(delta) > SCROLL_SLOP) {
+                setScrolledAway(delta > 0);
+            } else {
+                return;
+            }
+            lastY = y;
+        };
+        const onScroll = () => {
+            if (!frame) frame = requestAnimationFrame(update);
+        };
+        window.addEventListener('scroll', onScroll, {passive: true});
+        phone.addEventListener('change', onScroll);
+        return () => {
+            window.removeEventListener('scroll', onScroll);
+            phone.removeEventListener('change', onScroll);
+            if (frame) cancelAnimationFrame(frame);
+        };
+    }, []);
+
+    useEffect(() => {
+        suggestionsOpenRef.current = suggestionsOpen;
+        if (suggestionsOpen) setScrolledAway(false);
+    }, [suggestionsOpen]);
+
+    useEffect(() => {
+        setScrolledAway(false);
+    }, [location.pathname]);
+
     const linkClass = active => `${styles.link} ${active ? styles.linkActive : ''}`;
     const randomActive = location.pathname === '/random';
 
@@ -476,7 +520,10 @@ const NavBar = () => {
     }`;
 
     return (
-        <header className={styles.bar}>
+        <header
+            className={styles.bar}
+            data-scrolled-away={scrolledAway ? 'true' : null}
+        >
             <div className={styles.inner} ref={innerRef}>
                 <Link
                     to={isStudent ? '/classroom' : '/'}
@@ -652,14 +699,17 @@ const NavBar = () => {
                 suggestionId="mw-search-suggestions-mobile"
             />}
             <nav className={styles.mobileDock} aria-label={communityText('Mobile navigation')}>
-                {isStudent ? null : <Link to="/" className={mobileItemClass('/')} aria-current={location.pathname === '/' ? 'page' : null} aria-label={communityText('Home')} title={communityText('Home')}>
-                    <House size={25} />
+                {isStudent ? null : <Link to="/" className={mobileItemClass('/')} aria-current={location.pathname === '/' ? 'page' : null} aria-label={communityText('Home')}>
+                    <House size={22} aria-hidden="true" />
+                    <span className={styles.mobileDockLabel}>{communityText('Home')}</span>
                 </Link>}
-                {isStudent ? null : <Link to="/explore" className={`${styles.mobileDockItem} ${exploreActive ? styles.mobileDockItemActive : ''}`} aria-current={exploreActive ? 'page' : null} aria-label={communityText('Explore')} title={communityText('Explore')}>
-                    <Compass size={25} />
+                {isStudent ? null : <Link to="/explore" className={`${styles.mobileDockItem} ${exploreActive ? styles.mobileDockItemActive : ''}`} aria-current={exploreActive ? 'page' : null} aria-label={communityText('Explore')}>
+                    <Compass size={22} aria-hidden="true" />
+                    <span className={styles.mobileDockLabel}>{communityText('Explore')}</span>
                 </Link>}
-                <a href={editorUrl()} className={`${styles.mobileDockItem} ${styles.mobileCreate}`} aria-label={isStudent ? communityText('New project') : communityText('Create')} title={isStudent ? communityText('New project') : communityText('Create')}>
-                    <span className={styles.mobileCreateIcon}><Plus size={28} /></span>
+                <a href={editorUrl()} className={`${styles.mobileDockItem} ${styles.mobileCreate}`} aria-label={isStudent ? communityText('New project') : communityText('Create')}>
+                    <span className={styles.mobileCreateIcon}><Plus size={22} aria-hidden="true" /></span>
+                    <span className={styles.mobileDockLabel}>{isStudent ? communityText('New project') : communityText('Create')}</span>
                 </a>
                 {isStudent ? null : (
                     <Link
@@ -667,25 +717,28 @@ const NavBar = () => {
                         className={`${mobileItemClass('/notifications')} ${styles.mobileNotification}`}
                         aria-current={location.pathname.startsWith('/notifications') ? 'page' : null}
                         aria-label={unread > 0 ? communityText('Notifications ({value1} unread)', {value1: unread}) : communityText('Notifications')}
-                        title={communityText('Notifications')}
                     >
-                        <Bell size={25} />
+                        <Bell size={22} aria-hidden="true" />
                         {unread > 0 ? (
-                            <span className={styles.mobileNotificationBadge}>{unread > 9 ? '9+' : unread}</span>
+                            <span className={styles.mobileNotificationBadge} aria-hidden="true">{unread > 9 ? '9+' : unread}</span>
                         ) : null}
+                        <span className={styles.mobileDockLabel}>{communityText('Notifications')}</span>
                     </Link>
                 )}
                 {isStudent ? (
-                    <Link to="/classroom" className={mobileItemClass('/classroom')} aria-current={location.pathname.startsWith('/classroom') ? 'page' : null} aria-label={communityText('My class')} title={communityText('My class')}>
-                        <BookOpen size={25} />
+                    <Link to="/classroom" className={mobileItemClass('/classroom')} aria-current={location.pathname.startsWith('/classroom') ? 'page' : null} aria-label={communityText('My class')}>
+                        <BookOpen size={22} aria-hidden="true" />
+                        <span className={styles.mobileDockLabel}>{communityText('My class')}</span>
                     </Link>
                 ) : user ? (
-                    <Link to="/mystuff" className={mobileItemClass('/mystuff')} aria-current={location.pathname.startsWith('/mystuff') ? 'page' : null} aria-label={communityText('My stuff')} title={communityText('My stuff')}>
-                        <FolderOpen size={25} />
+                    <Link to="/mystuff" className={mobileItemClass('/mystuff')} aria-current={location.pathname.startsWith('/mystuff') ? 'page' : null} aria-label={communityText('My stuff')}>
+                        <FolderOpen size={22} aria-hidden="true" />
+                        <span className={styles.mobileDockLabel}>{communityText('My stuff')}</span>
                     </Link>
                 ) : (
-                    <button type="button" className={styles.mobileDockItem} onClick={doLogin} disabled={signingIn} aria-label={signingIn ? communityText('Signing in') : communityText('Sign in')} title={signingIn ? communityText('Signing in') : communityText('Sign in')}>
-                        <LogIn size={25} />
+                    <button type="button" className={styles.mobileDockItem} onClick={doLogin} disabled={signingIn} aria-busy={signingIn} aria-label={signingIn ? communityText('Signing in') : communityText('Sign in')}>
+                        <LogIn size={22} aria-hidden="true" />
+                        <span className={styles.mobileDockLabel}>{communityText('Sign in')}</span>
                     </button>
                 )}
             </nav>

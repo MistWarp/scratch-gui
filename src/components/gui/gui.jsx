@@ -1211,6 +1211,7 @@ const GUIComponent = props => {
             <React.Suspense fallback={<Loader isFullScreen />}>
                 <Box
                     className={styles.pageWrapper}
+                    data-mobile-editor={isNarrowLayout && isStageHidden ? 'true' : null}
                     dir={isRtl ? 'rtl' : 'ltr'}
                     style={minDimensions}
                     {...componentProps}
