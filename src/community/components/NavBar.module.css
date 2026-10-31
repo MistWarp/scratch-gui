@@ -436,7 +436,7 @@ a.suggestionMeta:hover {
     .mobileSearch {
         position: absolute;
         top: 8px;
-        right: max(108px, calc(env(safe-area-inset-right) + 98px));
+        right: max(61px, calc(env(safe-area-inset-right) + 51px));
         left: max(58px, calc(env(safe-area-inset-left) + 48px));
         z-index: 55;
         display: flex;
@@ -606,7 +606,7 @@ a.suggestionMeta:hover {
 
 @media (max-width: 360px) {
     .mobileSearch {
-        right: max(98px, calc(env(safe-area-inset-right) + 88px));
+        right: max(61px, calc(env(safe-area-inset-right) + 51px));
         left: max(52px, calc(env(safe-area-inset-left) + 42px));
     }
 
