@@ -552,7 +552,7 @@ const alerts = [
             />
         ),
         closeButton: true,
-        level: AlertLevels.INFO,
+        level: AlertLevels.SUCCESS,
         maxDisplaySecs: 12
     },
     {
@@ -568,7 +568,7 @@ const alerts = [
             />
         ),
         closeButton: true,
-        level: AlertLevels.INFO,
+        level: AlertLevels.SUCCESS,
         maxDisplaySecs: 12
     },
     {
