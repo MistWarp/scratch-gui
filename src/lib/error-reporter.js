@@ -1,6 +1,7 @@
 /* eslint-disable max-len */
-import {request} from './community/api.js';
 import {BUILD_ID} from './build-version.js';
+
+const ERRORS_URL = `${process.env.MW_API_BASE || 'https://api.mistwarp.org/v1'}/errors`;
 
 let installed = false;
 let sending = false;
@@ -29,15 +30,7 @@ const shouldSend = signature => {
     return true;
 };
 
-const projectIdFromUrl = href => {
-    try {
-        const match = String(href || '').match(/\/project\/([A-Za-z0-9_-]{1,80})/);
-        const hashMatch = String(href || '').match(/#mw-([A-Za-z0-9_-]{1,80})/);
-        return match ? match[1] : hashMatch ? hashMatch[1] : '';
-    } catch (e) {
-        return '';
-    }
-};
+const pageAddress = href => String(href || '').split('#')[0].split('?')[0];
 
 const isBenignResizeObserverLoop = (message, stack) => {
     // Chrome fires "ResizeObserver loop completed with undelivered notifications"
@@ -157,7 +150,7 @@ const isOffSite = () => {
     }
 };
 
-export const reportSiteError = ({message, stack = '', kind = 'uncaught', url = '', projectId = '', componentStack = '', name = ''}) => {
+export const reportSiteError = ({message, stack = '', kind = 'uncaught', url = '', componentStack = '', name = ''}) => {
     try {
         const text = String(message || '').trim();
         if (!text || sending) return;
@@ -165,7 +158,7 @@ export const reportSiteError = ({message, stack = '', kind = 'uncaught', url = '
         if (isOffSite() || isUnactionable(text, stack) || isCrawler() || isRehostedCopy() || isInjectedPageScript(stack)) return;
         if (isProjectScriptError(name, stack) || BROWSER_REFUSAL.test(String(name || ''))) return;
         if (isOutsideMistWarp(text, name, stack, kind)) return;
-        const href = String(url || window.location.href || '').slice(0, 2000);
+        const href = pageAddress(url || window.location.href).slice(0, 2000);
         if (href.includes('/errors')) return;
         const signature = `${text.slice(0, 200)}|${href.slice(0, 200)}|${String(stack).slice(0, 200)}`;
         if (!shouldSend(signature)) return;
@@ -175,14 +168,22 @@ export const reportSiteError = ({message, stack = '', kind = 'uncaught', url = '
             stack: String(stack || '').slice(0, 20000),
             kind,
             url: href,
-            projectId: String(projectId || projectIdFromUrl(href) || '').slice(0, 120),
             viewport: viewport(),
             componentStack: String(componentStack || '').slice(0, 10000),
             appVersion: BUILD_ID
         };
-        request('/errors', {method: 'POST', body: payload, timeoutMs: 8000, cache: false})
+        const controller = typeof AbortController === 'function' ? new AbortController() : null;
+        const timer = controller ? setTimeout(() => controller.abort(), 8000) : null;
+        fetch(ERRORS_URL, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload),
+            credentials: 'omit',
+            ...(controller ? {signal: controller.signal} : {})
+        })
             .catch(() => {})
             .finally(() => {
+                if (timer) clearTimeout(timer);
                 sending = false;
             });
     } catch (e) {

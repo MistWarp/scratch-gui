@@ -315,7 +315,6 @@ const api = {
     acceptAgreement: () => request('/agreement/accept', {method: 'POST'}),
     report: (type, target, reason, context, targetUser, category) =>
         request('/reports', {method: 'POST', body: {type, target, reason, context, targetUser, category}}),
-    reportError: payload => request('/errors', {method: 'POST', body: payload}),
     admin: {
         reports: () => request('/admin/reports'),
         reportAction: (id, action, reason) =>
