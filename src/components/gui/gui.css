@@ -644,7 +644,9 @@ $fade-out-distance: 15px;
     }
 
     .mobile-editor-nav-button-selected {
-        flex-grow: 1.75;
+        flex: 0 1 auto;
+        max-width: 50%;
+        padding: 0 0.6rem;
     }
 
     .mobile-editor-nav-button-selected .mobile-editor-nav-label {

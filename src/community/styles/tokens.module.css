@@ -164,16 +164,6 @@ html:where(.root),
     max-width: 100%;
 }
 
-@media (hover: none) and (pointer: coarse) {
-    :where(.root) button:not(:disabled) {
-        transition: transform .12s ease;
-    }
-
-    :where(.root) button:not(:disabled):active {
-        transform: scale(.97);
-    }
-}
-
 @media (max-width: 760px) {
     .mw-app-content > main {
         width: 100%;

@@ -14,6 +14,7 @@ const WALL_ANGLE = 5 * Math.PI / 180;
 const WALL_GAP = 12;
 const WALL_SPEED = 45;
 const TILE_RATIO = 4 / 3;
+const MIN_TILE = 48;
 
 const wallLayout = (width, height) => {
     const sin = Math.sin(WALL_ANGLE);
@@ -22,7 +23,7 @@ const wallLayout = (width, height) => {
     const length = Math.ceil((width * cos) + (height * sin));
     const target = width < 520 ? 112 : 150;
     const rows = Math.max(2, Math.round(band / (target + WALL_GAP)));
-    const tile = Math.floor((band - ((rows + 1) * WALL_GAP)) / rows);
+    const tile = Math.max(MIN_TILE, Math.floor((band - ((rows + 1) * WALL_GAP)) / rows));
     return {band, length, rows, tile};
 };
 
@@ -44,7 +45,8 @@ const useWallLayout = element => {
             if (!width || !height) return;
             const next = wallLayout(width, height);
             setLayout(previous => (
-                previous && previous.band === next.band && previous.length === next.length ? previous : next
+                previous && previous.band === next.band && previous.length === next.length &&
+                    previous.rows === next.rows && previous.tile === next.tile ? previous : next
             ));
         };
         measure();

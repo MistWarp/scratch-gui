@@ -306,10 +306,10 @@
 
 @media (hover: none) and (pointer: coarse) {
     .card {
-        transition: transform .12s ease;
+        transition: transform .3s var(--ease-bounce), scale .12s ease;
     }
 
     .card:active {
-        transform: scale(.98);
+        scale: .98;
     }
 }

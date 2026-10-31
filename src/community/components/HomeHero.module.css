@@ -39,8 +39,8 @@
 .wallTile {
     display: block;
     flex: 0 0 auto;
+    width: calc(var(--wall-tile) * 4 / 3);
     height: var(--wall-tile);
-    aspect-ratio: 4 / 3;
     overflow: hidden;
     border-radius: var(--radius-xs);
     background: var(--bg-raised);
@@ -110,12 +110,10 @@
 @media (max-width: 520px) {
     .hero {
         min-height: 520px;
-        place-items: end center;
     }
 
     .plain {
         min-height: 0;
-        place-items: center;
     }
 
     .card {

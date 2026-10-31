@@ -168,16 +168,16 @@ $fade-out-distance: 100px;
 
     .new-buttons,
     [dir="rtl"] .new-buttons {
-        top: 50%;
+        top: 0;
         right: .5rem;
-        bottom: auto;
+        bottom: 0;
         left: auto;
         width: auto;
-        height: auto;
+        height: fit-content;
+        margin-block: auto;
         padding: 0;
         border: 0;
         background: none;
-        transform: translateY(-50%);
     }
 
     [dir="rtl"] .new-buttons {

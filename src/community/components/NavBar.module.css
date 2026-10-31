@@ -392,11 +392,11 @@ a.suggestionMeta:hover {
     }
 
     .bar {
-        transition: transform .22s ease;
+        transition: top .22s ease;
     }
 
     .bar[data-scrolled-away="true"] {
-        transform: translateY(-100%);
+        top: calc(-56px - env(safe-area-inset-top));
     }
 
     .inner {

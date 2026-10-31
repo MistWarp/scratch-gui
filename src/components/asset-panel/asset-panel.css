@@ -107,7 +107,7 @@
 
 @media only screen and (max-width: 600px) {
     .detail-area :global([class*="paint-editor_editor-container_"]) {
-        padding: .375rem;
+        padding: 0;
     }
 
     .detail-area :global([class*="paint-editor_editor-container-top_"]) {
@@ -117,7 +117,7 @@
     }
 
     .detail-area :global([class*="paint-editor_top-align-row_"]) {
-        padding-top: .375rem;
+        padding-top: 0;
     }
 
     .detail-area :global([class*="paint-editor_editor-container-top_"] > [class*="paint-editor_row_"]) {

@@ -220,6 +220,8 @@ const NavBar = () => {
     const [openErrors, setOpenErrors] = useState(0);
     const [scrolledAway, setScrolledAway] = useState(false);
     const suggestionsOpenRef = useRef(false);
+    const headerRef = useRef(null);
+    const dockRef = useRef(null);
     const navigate = useNavigate();
     const location = useLocation();
     const exploreActive = ['/explore', '/spaces', '/themes', '/groups', '/bounties'].some(path => location.pathname.startsWith(path));
@@ -482,7 +484,10 @@ const NavBar = () => {
             frame = null;
             const y = Math.max(0, window.scrollY);
             const delta = y - lastY;
-            if (!phone.matches || y < HIDE_NAV_AFTER || suggestionsOpenRef.current) {
+            const active = document.activeElement;
+            const focused = Boolean(headerRef.current && headerRef.current.contains(active) &&
+                !(dockRef.current && dockRef.current.contains(active)));
+            if (!phone.matches || y < HIDE_NAV_AFTER || suggestionsOpenRef.current || focused) {
                 setScrolledAway(false);
             } else if (Math.abs(delta) > SCROLL_SLOP) {
                 setScrolledAway(delta > 0);
@@ -495,10 +500,12 @@ const NavBar = () => {
             if (!frame) frame = requestAnimationFrame(update);
         };
         window.addEventListener('scroll', onScroll, {passive: true});
-        phone.addEventListener('change', onScroll);
+        if (phone.addEventListener) phone.addEventListener('change', onScroll);
+        else if (phone.addListener) phone.addListener(onScroll);
         return () => {
             window.removeEventListener('scroll', onScroll);
-            phone.removeEventListener('change', onScroll);
+            if (phone.removeEventListener) phone.removeEventListener('change', onScroll);
+            else if (phone.removeListener) phone.removeListener(onScroll);
             if (frame) cancelAnimationFrame(frame);
         };
     }, []);
@@ -523,6 +530,7 @@ const NavBar = () => {
         <header
             className={styles.bar}
             data-scrolled-away={scrolledAway ? 'true' : null}
+            ref={headerRef}
         >
             <div className={styles.inner} ref={innerRef}>
                 <Link
@@ -698,7 +706,7 @@ const NavBar = () => {
                 searchLabel={t('nav.search')}
                 suggestionId="mw-search-suggestions-mobile"
             />}
-            <nav className={styles.mobileDock} aria-label={communityText('Mobile navigation')}>
+            <nav className={styles.mobileDock} aria-label={communityText('Mobile navigation')} ref={dockRef}>
                 {isStudent ? null : <Link to="/" className={mobileItemClass('/')} aria-current={location.pathname === '/' ? 'page' : null} aria-label={communityText('Home')}>
                     <House size={22} aria-hidden="true" />
                     <span className={styles.mobileDockLabel}>{communityText('Home')}</span>
@@ -736,7 +744,7 @@ const NavBar = () => {
                         <span className={styles.mobileDockLabel}>{communityText('My stuff')}</span>
                     </Link>
                 ) : (
-                    <button type="button" className={styles.mobileDockItem} onClick={doLogin} disabled={signingIn} aria-busy={signingIn} aria-label={signingIn ? communityText('Signing in') : communityText('Sign in')}>
+                    <button type="button" className={styles.mobileDockItem} onClick={doLogin} disabled={signingIn} aria-busy={signingIn} aria-label={communityText('Sign in')}>
                         <LogIn size={22} aria-hidden="true" />
                         <span className={styles.mobileDockLabel}>{communityText('Sign in')}</span>
                     </button>
