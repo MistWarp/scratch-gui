@@ -28,11 +28,10 @@ const wallLayout = (width, height) => {
 };
 
 const wallRows = (games, rows, perRow) => Array.from({length: rows}, (_, row) => {
-    const offset = Math.floor((games.length * row) / rows);
-    const rotated = [...games.slice(offset), ...games.slice(0, offset)];
-    const own = games.length >= rows * 7 ? rotated.filter((game, index) => index % rows === 0) : rotated;
+    const own = games.filter((game, index) => index % rows === row);
+    const source = own.length ? own : games;
     const filled = [];
-    while (filled.length < perRow) filled.push(...own);
+    while (filled.length < perRow) filled.push(...source);
     return filled;
 });
 
@@ -88,12 +87,22 @@ WallRow.propTypes = {
     tile: PropTypes.number.isRequired
 };
 
+const wallGames = projects => {
+    const seen = new Set();
+    return projects.filter(game => {
+        if (!game.thumbUrl || game.projectShadowBanned || game.ownerShadowBanned || game.ownerBanned) return false;
+        if (seen.has(game.id)) return false;
+        seen.add(game.id);
+        return true;
+    });
+};
+
 const useWallGames = () => {
     const [games, setGames] = useState(null);
     useEffect(() => {
         let active = true;
-        api.explore({sort: 'loved', limit: 30})
-            .then(data => active && setGames((data.projects || []).filter(game => game.thumbUrl)))
+        api.explore({sort: 'loved', limit: 50})
+            .then(data => active && setGames(wallGames(data.projects || [])))
             .catch(() => active && setGames([]));
         return () => {
             active = false;
