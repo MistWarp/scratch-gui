@@ -217,21 +217,18 @@ class Tab extends EventTargetShim {
                 });
                 const reactInternalKey = Object.keys(modeSelector)
                     .find(key => key.startsWith('__reactInternalInstance$'));
-                const internalState = modeSelector[reactInternalKey].child;
-                // .tool or .blob.tool only exists on the selected tool
-                let toolState = internalState;
+                const pending = [modeSelector[reactInternalKey].child];
                 let tool;
-                while (toolState) {
-                    const toolInstance = toolState.child.stateNode;
-                    if (toolInstance.tool) {
-                        tool = toolInstance.tool;
-                        break;
+                while (pending.length && !tool) {
+                    const fiber = pending.pop();
+                    if (!fiber) continue;
+                    const instance = fiber.stateNode;
+                    if (instance && instance.tool) {
+                        tool = instance.tool;
+                    } else if (instance && instance.blob && instance.blob.tool) {
+                        tool = instance.blob.tool;
                     }
-                    if (toolInstance.blob && toolInstance.blob.tool) {
-                        tool = toolInstance.blob.tool;
-                        break;
-                    }
-                    toolState = toolState.sibling;
+                    pending.push(fiber.sibling, fiber.child);
                 }
                 if (tool) {
                     const paperScope = tool._scope;

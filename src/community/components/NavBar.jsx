@@ -221,7 +221,6 @@ const NavBar = () => {
     const [scrolledAway, setScrolledAway] = useState(false);
     const suggestionsOpenRef = useRef(false);
     const headerRef = useRef(null);
-    const dockRef = useRef(null);
     const navigate = useNavigate();
     const location = useLocation();
     const exploreActive = ['/explore', '/spaces', '/themes', '/groups', '/bounties'].some(path => location.pathname.startsWith(path));
@@ -485,8 +484,8 @@ const NavBar = () => {
             const y = Math.max(0, window.scrollY);
             const delta = y - lastY;
             const active = document.activeElement;
-            const focused = Boolean(headerRef.current && headerRef.current.contains(active) &&
-                !(dockRef.current && dockRef.current.contains(active)));
+            const focused = Boolean(headerRef.current && active && headerRef.current.contains(active) &&
+                active.matches('input, textarea, [contenteditable="true"]'));
             if (!phone.matches || y < HIDE_NAV_AFTER || suggestionsOpenRef.current || focused) {
                 setScrolledAway(false);
             } else if (Math.abs(delta) > SCROLL_SLOP) {
@@ -706,7 +705,7 @@ const NavBar = () => {
                 searchLabel={t('nav.search')}
                 suggestionId="mw-search-suggestions-mobile"
             />}
-            <nav className={styles.mobileDock} aria-label={communityText('Mobile navigation')} ref={dockRef}>
+            <nav className={styles.mobileDock} aria-label={communityText('Mobile navigation')}>
                 {isStudent ? null : <Link to="/" className={mobileItemClass('/')} aria-current={location.pathname === '/' ? 'page' : null} aria-label={communityText('Home')}>
                     <House size={22} aria-hidden="true" />
                     <span className={styles.mobileDockLabel}>{communityText('Home')}</span>

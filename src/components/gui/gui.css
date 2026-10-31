@@ -650,7 +650,8 @@ $fade-out-distance: 15px;
     }
 
     .mobile-editor-nav-button-selected .mobile-editor-nav-label {
-        display: inline;
+        display: block;
+        min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
     }
