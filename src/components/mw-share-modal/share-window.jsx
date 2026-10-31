@@ -3,11 +3,17 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {defineMessages, injectIntl} from 'react-intl';
 import {
-    publishToMistWarp, captureThumbnailDataUri, prepareThumbnailBlob, getRememberedPlatformProjectState
+    publishToMistWarp, captureThumbnailDataUri, prepareThumbnailBlob, getRememberedPlatformProjectState,
+    getScratchOrigin, rememberPlatformProject
 } from '../../lib/community/publish.js';
-import {request} from '../../lib/community/api.js';
+import {getProject, request} from '../../lib/community/api.js';
 import Markdown from '../../community/components/Markdown.jsx';
-import {login as roturLogin} from '../../lib/rotur/identity.js';
+import {
+    getState as getIdentityState,
+    login as roturLogin,
+    subscribe as subscribeIdentity
+} from '../../lib/rotur/identity.js';
+import {track} from '../../community/analytics.js';
 import Button from '../button/button.jsx';
 import styles from './share-window.css';
 
@@ -78,6 +84,58 @@ const messages = defineMessages({
     },
     saving: {defaultMessage: 'Saving…', description: 'Busy label while the project saves', id: 'mw.shareWindow.saving'},
     remix: {defaultMessage: 'Remix', description: 'Confirm button when remixing', id: 'mw.shareWindow.remix'},
+    shareToggle: {
+        defaultMessage: 'Share it so other people can play it',
+        description: 'Checkbox in the save window that shares the project on MistWarp after it is saved',
+        id: 'mw.shareWindow.shareToggle'
+    },
+    remixCredit: {
+        defaultMessage: 'Remix of {title} by {owner}.',
+        description: 'Line in the remix window naming the original project and its creator',
+        id: 'mw.shareWindow.remixCredit'
+    },
+    scratchSource: {
+        defaultMessage: 'Imported from Scratch project {id}.',
+        description: 'Line in the save window for a project opened from Scratch. {id} is the Scratch project number',
+        id: 'mw.shareWindow.scratchSource'
+    },
+    remixShared: {
+        defaultMessage: 'Your remix is shared. {owner} gets credit as the original creator.',
+        description: 'Message after a remix was saved and shared. {owner} is the original creator',
+        id: 'mw.shareWindow.remixShared'
+    },
+    signInRemix: {
+        // eslint-disable-next-line max-len
+        defaultMessage: 'Sign in to save your remix. Your changes stay in the editor while you sign in.',
+        description: 'Message in the remix window when the user is not signed in',
+        id: 'mw.shareWindow.signInRemix'
+    },
+    signInSave: {
+        // eslint-disable-next-line max-len
+        defaultMessage: 'Sign in to save this project to MistWarp. You get a link you can share, and your work is kept in your account.',
+        description: 'Message in the save window when the user is not signed in',
+        id: 'mw.shareWindow.signInSave'
+    },
+    signInRotur: {
+        defaultMessage: 'MistWarp accounts use Rotur. Signing in opens a Rotur window.',
+        description: 'Note under the sign-in message in the save window',
+        id: 'mw.shareWindow.signInRotur'
+    },
+    signIn: {
+        defaultMessage: 'Sign in',
+        description: 'Button in the save window that starts signing in',
+        id: 'mw.shareWindow.signIn'
+    },
+    checkingAccount: {
+        defaultMessage: 'Checking your account…',
+        description: 'Busy label on the sign-in button in the save window',
+        id: 'mw.shareWindow.checkingAccount'
+    },
+    signInFailed: {
+        defaultMessage: 'Sign-in did not finish. Try again.',
+        description: 'Error in the save window when signing in failed or was closed',
+        id: 'mw.shareWindow.signInFailed'
+    },
     update: {defaultMessage: 'Update', description: 'Confirm button when updating', id: 'mw.shareWindow.update'},
     save: {defaultMessage: 'Save', description: 'Confirm button when saving a project', id: 'mw.shareWindow.save'},
     changeMessagePlaceholder: {
@@ -87,6 +145,16 @@ const messages = defineMessages({
     }
 });
 
+const REMIX_SUFFIX = ' remix';
+
+const remixTitle = title => {
+    const base = (title || '').trim() || 'Untitled';
+    if (/ remix$/i.test(base)) return base;
+    return `${base.slice(0, 100 - REMIX_SUFFIX.length)}${REMIX_SUFFIX}`;
+};
+
+const isSignedIn = identity => Boolean(identity && identity.status === 'ready' && identity.user);
+
 class ShareWindow extends React.Component {
     constructor (props) {
         super(props);
@@ -95,6 +163,7 @@ class ShareWindow extends React.Component {
         this.handleRetake = this.handleRetake.bind(this);
         this.handleUpload = this.handleUpload.bind(this);
         this.handleTitleChange = this.handleTitleChange.bind(this);
+        this.handleShareChange = this.handleShareChange.bind(this);
         this.handleChangeMessage = this.handleChangeMessage.bind(this);
         this.handleAcceptAgreement = this.handleAcceptAgreement.bind(this);
         this.handleProgress = this.handleProgress.bind(this);
@@ -112,8 +181,11 @@ class ShareWindow extends React.Component {
         this.initialDestination = getRememberedPlatformProjectState()?.id;
         this.thumbnailPreparation = null;
         this.thumbnailPreparationSource = null;
+        this.remixSource = props.action === 'remix' ? getRememberedPlatformProjectState() : null;
+        this.scratchOrigin = props.action === 'save' ? getScratchOrigin() : null;
         this.state = {
-            title: props.initialTitle || 'Untitled',
+            title: props.action === 'remix' ? remixTitle(props.initialTitle) : (props.initialTitle || 'Untitled'),
+            share: (props.action === 'remix' || Boolean(this.scratchOrigin)) && !props.student,
             changeMessage: '',
             thumbnail: null,
             thumbnailBlob: null,
@@ -151,6 +223,9 @@ class ShareWindow extends React.Component {
     }
     handleTitleChange (event) {
         this.setState({title: event.target.value});
+    }
+    handleShareChange (event) {
+        this.setState({share: event.target.checked});
     }
     handleChangeMessage (event) {
         this.setState({changeMessage: event.target.value});
@@ -310,6 +385,7 @@ class ShareWindow extends React.Component {
                 commitChanges,
                 allowLoss,
                 thumbnailBlob,
+                share: !isUpdate && !this.props.student && this.state.share,
                 updateOnly: isUpdate,
                 onProgress: this.handleProgress
             });
@@ -476,6 +552,14 @@ class ShareWindow extends React.Component {
             </div>
         );
     }
+    doneMessage () {
+        if (this.props.student) return 'Your project is saved to your class.';
+        if (this.state.done.shared && this.remixSource && this.remixSource.owner) {
+            return this.props.intl.formatMessage(messages.remixShared, {owner: this.remixSource.owner});
+        }
+        if (this.state.done.shared) return 'Your project is saved and shared.';
+        return 'Your project is saved to MistWarp. It stays private until you share it from its project page.';
+    }
     render () {
         const {intl} = this.props;
         const actionLabel = intl.formatMessage(this.props.action === 'remix' ? messages.remix :
@@ -521,13 +605,7 @@ class ShareWindow extends React.Component {
             return (
                 <div className={styles.root}>
                     <div className={styles.body}>
-                        <p className={styles.doneMessage}>
-                            {this.props.student ? 'Your project is saved to your class.' :
-                                this.state.done.shared ?
-                                    'Your project is saved and shared.' :
-                                    'Your project is saved to MistWarp. ' +
-                                    'It stays private until you share it from its project page.'}
-                        </p>
+                        <p className={styles.doneMessage}>{this.doneMessage()}</p>
                         {this.state.notice ? <div className={styles.notice}>{this.state.notice}</div> : null}
                         {this.state.clawNeedsSignIn ? (
                             <div className={styles.notice}>
@@ -626,6 +704,19 @@ class ShareWindow extends React.Component {
         return (
             <div className={styles.root}>
                 <div className={styles.body}>
+                    {this.remixSource && this.remixSource.title && this.remixSource.owner ? (
+                        <p className={styles.notice}>
+                            {intl.formatMessage(messages.remixCredit, {
+                                title: this.remixSource.title,
+                                owner: this.remixSource.owner
+                            })}
+                        </p>
+                    ) : null}
+                    {this.scratchOrigin ? (
+                        <p className={styles.notice}>
+                            {intl.formatMessage(messages.scratchSource, {id: this.scratchOrigin})}
+                        </p>
+                    ) : null}
                     <label className={styles.label} htmlFor="mw-share-title">Title</label>
                     <input
                         id="mw-share-title"
@@ -671,6 +762,17 @@ class ShareWindow extends React.Component {
                         </div>
                     </div>
 
+                    {this.props.student ? null : (
+                        <label className={styles.shareRow}>
+                            <input
+                                type="checkbox"
+                                checked={this.state.share}
+                                disabled={!!this.state.status}
+                                onChange={this.handleShareChange}
+                            />
+                            <span>{intl.formatMessage(messages.shareToggle)}</span>
+                        </label>
+                    )}
                     {this.state.notice ? (
                         <div className={styles.notice}>{this.state.notice}</div>
                     ) : null}
@@ -719,5 +821,122 @@ ShareWindow.defaultProps = {
     action: 'save'
 };
 
-export {ShareWindow};
-export default injectIntl(ShareWindow);
+const actionAfterSignIn = async action => {
+    const remembered = getRememberedPlatformProjectState();
+    if (action === 'save' || !remembered || !remembered.id) return action;
+    try {
+        const {project} = await getProject(remembered.id);
+        const current = getRememberedPlatformProjectState();
+        if (!current || String(current.id) !== String(remembered.id)) return action;
+        rememberPlatformProject(project);
+        return project.isOwner === false && !project.canSaveDirectly ? 'remix' : 'update';
+    } catch (e) {
+        return action;
+    }
+};
+
+class ShareWindowSignIn extends React.Component {
+    constructor (props) {
+        super(props);
+        this.handleSignIn = this.handleSignIn.bind(this);
+        this.handleIdentity = this.handleIdentity.bind(this);
+        const identity = getIdentityState();
+        this.state = {
+            identity,
+            signedIn: props.student || isSignedIn(identity),
+            action: props.action,
+            refreshing: false,
+            error: null
+        };
+    }
+    componentDidMount () {
+        this.unsubscribe = subscribeIdentity(this.handleIdentity);
+        if (!this.state.signedIn) {
+            track('signin_prompt_shown', {variant: this.props.action === 'remix' ? 'remix' : 'save'});
+        }
+    }
+    componentWillUnmount () {
+        this.unmounted = true;
+        if (this.unsubscribe) this.unsubscribe();
+    }
+    handleIdentity (identity) {
+        if (this.unmounted) return;
+        this.setState({identity});
+        if (!this.state.signedIn && !this.state.refreshing && isSignedIn(identity)) {
+            this.continueSignedIn();
+        }
+    }
+    async continueSignedIn () {
+        this.setState({refreshing: true, error: null});
+        const action = await actionAfterSignIn(this.props.action);
+        if (this.unmounted) return;
+        this.setState({signedIn: true, refreshing: false, action});
+    }
+    async handleSignIn () {
+        this.setState({error: null});
+        try {
+            await roturLogin();
+        } catch (e) {
+            if (!this.unmounted && !isSignedIn(getIdentityState())) {
+                this.setState({error: this.props.intl.formatMessage(messages.signInFailed)});
+            }
+        }
+    }
+    render () {
+        const {intl} = this.props;
+        if (this.state.signedIn) {
+            return (
+                <ShareWindow
+                    {...this.props}
+                    action={this.state.action}
+                />
+            );
+        }
+        const status = this.state.identity && this.state.identity.status;
+        const busy = this.state.refreshing || status === 'restoring' || status === 'logging-in';
+        const source = this.props.action === 'remix' ? getRememberedPlatformProjectState() : null;
+        return (
+            <div className={styles.root}>
+                <div className={styles.body}>
+                    <p className={styles.doneMessage}>
+                        {intl.formatMessage(this.props.action === 'remix' ? messages.signInRemix : messages.signInSave)}
+                    </p>
+                    {source && source.title && source.owner ? (
+                        <p className={styles.notice}>
+                            {intl.formatMessage(messages.remixCredit, {title: source.title, owner: source.owner})}
+                        </p>
+                    ) : null}
+                    <p className={styles.notice}>{intl.formatMessage(messages.signInRotur)}</p>
+                    {this.state.error ? <div className={styles.error}>{this.state.error}</div> : null}
+                </div>
+                <div className={styles.footer}>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={this.props.onClose}
+                    >{intl.formatMessage(messages.cancel)}</Button>
+                    <Button
+                        type="button"
+                        variant="primary"
+                        onClick={this.handleSignIn}
+                        disabled={busy}
+                    >{intl.formatMessage(busy ? messages.checkingAccount : messages.signIn)}</Button>
+                </div>
+            </div>
+        );
+    }
+}
+
+ShareWindowSignIn.propTypes = {
+    intl: PropTypes.shape({formatMessage: PropTypes.func.isRequired}).isRequired,
+    action: PropTypes.oneOf(['save', 'remix', 'update']),
+    student: PropTypes.bool,
+    onClose: PropTypes.func.isRequired
+};
+
+ShareWindowSignIn.defaultProps = {
+    action: 'save'
+};
+
+export {ShareWindow, ShareWindowSignIn, remixTitle};
+export default injectIntl(ShareWindowSignIn);

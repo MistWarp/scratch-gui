@@ -268,7 +268,7 @@ const publishWorkspace = async ({
         if (platformId && !platformProject.isOwner && !platformProject.canSaveDirectly) {
             onProgress({phase: 'register', message: 'Creating remix'});
             const remixSource = platformProject;
-            const remix = await remixProject(platformId);
+            const remix = await remixProject(platformId, title && title.trim() ? {title: projectTitle} : {});
             platformId = remix.id;
             // The remix inherits the parent's history at its recorded base commit.
             // Keep the complete server state so createMwp can export only objects

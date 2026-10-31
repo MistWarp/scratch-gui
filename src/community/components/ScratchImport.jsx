@@ -24,7 +24,7 @@ const ScratchImport = ({source}) => {
             return;
         }
         track('scratch_import', {variant: source});
-        window.location.href = editorUrl({scratchProject: id});
+        window.location.href = editorUrl({scratchProject: id, from: 'scratch'});
     };
     return (
         <form className={styles.form} onSubmit={submit}>

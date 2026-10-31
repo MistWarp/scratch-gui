@@ -7,7 +7,11 @@ import InlineMessages from '../../containers/inline-messages.jsx';
 import {closeAlertWithId, filterInlineAlerts, showAlertWithTimeout, showStandardAlert} from '../../reducers/alerts';
 import {setProjectUnchanged} from '../../reducers/project-changed';
 import openMistWarpShareWindow from '../../lib/mw/open-mw-share-window.js';
-import {getMistWarpAction, getRememberedPlatformProjectState} from '../../lib/community/publish.js';
+import {
+    getMistWarpAction,
+    getRememberedPlatformProjectState,
+    getScratchOrigin
+} from '../../lib/community/publish.js';
 import communityEnabled from '../../lib/community/enabled.js';
 import {isProjectOperationActive, PROJECT_OPERATION_EVENT} from '../../lib/project-operation.js';
 import {getShortcutKey} from '../../lib/shortcuts/registry.js';
@@ -19,6 +23,7 @@ import {subscribeTexts, unappliedFileCount} from '../../lib/code-mode/text-store
 import {revealInCode} from '../../reducers/editor-tab.js';
 import {getSaveFeedback, setSaveFeedback, SAVE_FEEDBACK_EVENT} from '../../lib/mw/save-feedback.js';
 import {getSetting, onSettingsChanged} from '../../lib/mw/autosave-settings.js';
+import {takeEditorIntent} from '../../lib/mw/editor-intent.js';
 
 import styles from './save-status.css';
 
@@ -172,6 +177,7 @@ const TWSaveStatus = ({
     projectChanged,
     projectTitle,
     roturReady,
+    roturStatus,
     onAlertDone,
     onCloseAlert,
     onOpenUnapplied,
@@ -240,7 +246,32 @@ const TWSaveStatus = ({
             unsubscribe();
         };
     }, [vm, onAlertDone, onCloseAlert, onShowAlert]);
-    const platformState = communityEnabled && roturReady ? getRememberedPlatformProjectState() : null;
+    useEffect(() => {
+        if (!communityEnabled || !vm || !vm.on) return;
+        const intent = takeEditorIntent();
+        if (!intent) return;
+        const showHint = () => {
+            if (intent === 'scratch') {
+                if (!getScratchOrigin()) return false;
+                if (!getRememberedPlatformProjectState()) onAlertDone('mwScratchHint');
+                return true;
+            }
+            const project = getRememberedPlatformProjectState();
+            if (!project || !project.owner) return false;
+            if (project.isOwner === false && !project.canSaveDirectly && project.canRemix !== false) {
+                onAlertDone('mwRemixHint');
+            }
+            return true;
+        };
+        if (vm.runtime && vm.runtime.targets && vm.runtime.targets.length && showHint()) return;
+        const loaded = () => {
+            if (showHint()) vm.off('PROJECT_LOADED', loaded);
+        };
+        vm.on('PROJECT_LOADED', loaded);
+        return () => vm.off('PROJECT_LOADED', loaded);
+    }, [vm, onAlertDone]);
+    const signedOut = roturStatus === 'idle' || roturStatus === 'error';
+    const platformState = communityEnabled && (roturReady || signedOut) ? getRememberedPlatformProjectState() : null;
     const isOwner = platformState && (platformState.isOwner === true || platformState.canSaveDirectly === true);
     const mistwarpAction = getMistWarpAction(platformState, projectChanged) ||
         (isOwner ? 'update' : platformState ? 'remix' : 'save');
@@ -358,6 +389,7 @@ TWSaveStatus.propTypes = {
     projectChanged: PropTypes.bool,
     projectTitle: PropTypes.string,
     roturReady: PropTypes.bool,
+    roturStatus: PropTypes.string,
     onAlertDone: PropTypes.func,
     onCloseAlert: PropTypes.func,
     onOpenUnapplied: PropTypes.func,
@@ -366,6 +398,9 @@ TWSaveStatus.propTypes = {
     vm: PropTypes.shape({
         saveProjectSb3: PropTypes.func,
         renderer: PropTypes.object,
+        runtime: PropTypes.shape({
+            targets: PropTypes.array
+        }),
         on: PropTypes.func,
         off: PropTypes.func
     })
@@ -378,6 +413,7 @@ const mapStateToProps = state => ({
     projectChanged: state.scratchGui.projectChanged,
     projectTitle: state.scratchGui.projectTitle,
     roturReady: state.scratchGui.rotur && state.scratchGui.rotur.status === 'ready',
+    roturStatus: state.scratchGui.rotur && state.scratchGui.rotur.status,
     vm: state.scratchGui.vm
 });
 

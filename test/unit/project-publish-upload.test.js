@@ -254,6 +254,7 @@ describe('MistWarp project upload packaging', () => {
 
         await publishToMistWarp({vm, title: 'Fork'});
 
+        expect(mockRemixProject).toHaveBeenCalledWith('original', {title: 'Fork'});
         expect(mockDeleteRepo).toHaveBeenCalledTimes(1);
         expect(mockGetProjectCommits).toHaveBeenCalledWith('original', '/original.json');
         expect(mockCreateMwp).toHaveBeenCalledWith(expect.objectContaining({

@@ -178,7 +178,7 @@ const addLinkBack = () => {
     linkBack.href = `${origin}/project/${encodeURIComponent(projectId)}?ref=${ref}`;
     linkBack.target = '_blank';
     linkBack.rel = 'noopener';
-    linkBack.textContent = 'Made with MistWarp · Play more';
+    linkBack.textContent = 'Play and remix on MistWarp';
     Object.assign(linkBack.style, {
         position: 'fixed',
         right: '8px',

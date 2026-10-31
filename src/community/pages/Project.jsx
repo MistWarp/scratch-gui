@@ -620,6 +620,7 @@ const Project = () => {
 
     const ownsProject = Boolean(user && String(user.username).toLowerCase() === String(project.owner).toLowerCase());
     const seeInsideHref = editorUrl({platformProject: project.id});
+    const remixHref = editorUrl({platformProject: project.id, from: 'remix'});
     const sharedDate = formatDate(project.sharedAt || project.created);
     const visibility = project.visibility || (project.shared ? 'public' : 'private');
     const hasContent = project.hasContent !== false;
@@ -661,7 +662,6 @@ const Project = () => {
             <ProjectHeader
                 project={project}
                 user={user}
-                userLoading={userLoading}
                 title={title}
                 setTitle={setTitle}
                 savingTitle={savingTitle}
@@ -669,7 +669,7 @@ const Project = () => {
                 visibility={visibility}
                 changeVisibility={changeVisibility}
                 savingVisibility={savingVisibility}
-                remix={remix}
+                remixHref={remixHref}
                 toggleLibrary={toggleLibrary}
                 savingLibrary={savingLibrary}
                 seeInsideHref={seeInsideHref}

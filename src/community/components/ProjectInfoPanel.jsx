@@ -2,7 +2,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Check, GitPullRequest, Pencil, Plus, Users, X, GitFork} from 'lucide-react';
+import {Check, GitPullRequest, Import, Pencil, Plus, Users, X, GitFork} from 'lucide-react';
 import api, {projectUrl} from '../api';
 import Avatar from './Avatar.jsx';
 import RichText from './RichText.jsx';
@@ -32,6 +32,26 @@ const creditLink = credit => {
     return null;
 };
 
+const useRemixParent = parentId => {
+    const [parent, setParent] = useState(null);
+    useEffect(() => {
+        setParent(null);
+        if (!parentId) return;
+        let cancelled = false;
+        api.getProject(parentId)
+            .then(data => {
+                if (!cancelled && data && data.project) setParent(data.project);
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+    }, [parentId]);
+    return parent;
+};
+
+const scratchProjectLink = id => (/^\d+$/.test(String(id || '')) ? `https://scratch.mit.edu/projects/${id}/` : null);
+
 const ProjectInfoPanel = ({project, onSaved, embedded = false, facts = null}) => {
     const {text: communityText} = useCommunityText();
     const [tab, setTab] = useState('About');
@@ -44,6 +64,8 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false, facts = null}) =>
     const [tagsText, setTagsText] = useState((project.tags || []).join(' '));
     const [compatibility, setCompatibility] = useState(project.compatibility || {mobile: false, keyboard: false, controller: false});
     const saveLocks = useRef(new Set());
+    const remixParent = useRemixParent(project.remixParent);
+    const scratchLink = scratchProjectLink(project.scratchOrigin);
     const currentProjectId = useRef(project.id);
     currentProjectId.current = project.id;
 
@@ -369,7 +391,23 @@ const ProjectInfoPanel = ({project, onSaved, embedded = false, facts = null}) =>
                         to={projectUrl(project.remixParent)}
                         className={styles.remixOf}
                     >
-                        <GitFork size={13} />{communityText('Based on another project')}</Link>
+                        <GitFork size={13} />
+                        {remixParent && remixParent.title && remixParent.owner ?
+                            communityText('Remix of {value1} by {value2}', {
+                                value1: remixParent.title,
+                                value2: remixParent.owner
+                            }) :
+                            communityText('Based on another project')}
+                    </Link>
+                ) : null}
+                {!editing && scratchLink ? (
+                    <a
+                        href={scratchLink}
+                        className={styles.remixOf}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        <Import size={13} />{communityText('Imported from Scratch')}</a>
                 ) : null}
                 {project.isOwner ? (
                     <div className={styles.panelBodyFooter}>

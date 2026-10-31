@@ -7,13 +7,16 @@ import {beginProjectOperation} from '../../../src/lib/project-operation.js';
 import openMistWarpShareWindow from '../../../src/lib/mw/open-mw-share-window.js';
 import {
     getMistWarpAction,
-    getRememberedPlatformProjectState
+    getRememberedPlatformProjectState,
+    getScratchOrigin
 } from '../../../src/lib/community/publish.js';
+import {resetEditorIntent} from '../../../src/lib/mw/editor-intent.js';
 
 jest.mock('../../../src/lib/community/enabled.js', () => true);
 jest.mock('../../../src/lib/community/publish.js', () => ({
     getMistWarpAction: jest.fn(() => 'update'),
-    getRememberedPlatformProjectState: jest.fn(() => ({id: 'project', isOwner: true}))
+    getRememberedPlatformProjectState: jest.fn(() => ({id: 'project', isOwner: true})),
+    getScratchOrigin: jest.fn(() => null)
 }));
 jest.mock('../../../src/lib/mw/open-mw-share-window.js', () => jest.fn());
 
@@ -72,6 +75,95 @@ describe('MistWarp save status', () => {
             'Ctrl+S saves a copy to your computer instead.');
         expect(button.text()).not.toContain('Local project');
         wrapper.unmount();
+    });
+
+    test('keeps the remix label for someone else\'s project while signed out', () => {
+        getRememberedPlatformProjectState.mockReturnValue({id: 'p9', isOwner: false, canRemix: true});
+        getMistWarpAction.mockReturnValue('remix');
+        const vm = {};
+        const wrapper = mountWithIntl(
+            <TWSaveStatus
+                alertsList={[]}
+                projectChanged
+                projectTitle="Racer"
+                roturStatus="idle"
+                onProjectUnchanged={jest.fn()}
+                vm={vm}
+            />
+        );
+
+        const button = wrapper.find('button');
+        expect(button.text()).toBe('Remix to MistWarpUnsaved changes');
+        button.simulate('click');
+        expect(openMistWarpShareWindow).toHaveBeenCalledWith(expect.objectContaining({action: 'remix'}));
+        wrapper.unmount();
+        getRememberedPlatformProjectState.mockReturnValue({id: 'project', isOwner: true});
+        getMistWarpAction.mockReturnValue('update');
+    });
+
+    test('shows the remix tip once the project from a Remix button has loaded', () => {
+        window.history.replaceState(null, '', '/editor?from=remix#mw-p9');
+        resetEditorIntent();
+        getRememberedPlatformProjectState.mockReturnValue({id: 'p9', owner: 'ana', isOwner: false, canRemix: true});
+        const listeners = {};
+        const vm = {
+            runtime: {targets: []},
+            on: jest.fn((name, fn) => {
+                listeners[name] = fn;
+            }),
+            off: jest.fn()
+        };
+        const onAlertDone = jest.fn();
+        const wrapper = mountWithIntl(
+            <TWSaveStatus
+                alertsList={[]}
+                projectTitle="Racer"
+                roturReady
+                onAlertDone={onAlertDone}
+                onProjectUnchanged={jest.fn()}
+                vm={vm}
+            />
+        );
+
+        expect(window.location.search).toBe('');
+        expect(window.location.hash).toBe('#mw-p9');
+        expect(onAlertDone).not.toHaveBeenCalledWith('mwRemixHint');
+        act(() => {
+            listeners.PROJECT_LOADED();
+        });
+        expect(onAlertDone).toHaveBeenCalledWith('mwRemixHint');
+        wrapper.unmount();
+        getRememberedPlatformProjectState.mockReturnValue({id: 'project', isOwner: true});
+        window.history.replaceState(null, '', '/');
+        resetEditorIntent();
+    });
+
+    test('shows the Scratch tip for a project opened from the Scratch import box', () => {
+        window.history.replaceState(null, '', '/editor?from=scratch#123456');
+        resetEditorIntent();
+        getRememberedPlatformProjectState.mockReturnValue(null);
+        getMistWarpAction.mockReturnValue('save');
+        getScratchOrigin.mockReturnValue('123456');
+        const vm = {runtime: {targets: [{}]}, on: jest.fn(), off: jest.fn()};
+        const onAlertDone = jest.fn();
+        const wrapper = mountWithIntl(
+            <TWSaveStatus
+                alertsList={[]}
+                projectTitle="Racer"
+                roturReady
+                onAlertDone={onAlertDone}
+                onProjectUnchanged={jest.fn()}
+                vm={vm}
+            />
+        );
+
+        expect(onAlertDone).toHaveBeenCalledWith('mwScratchHint');
+        wrapper.unmount();
+        getRememberedPlatformProjectState.mockReturnValue({id: 'project', isOwner: true});
+        getMistWarpAction.mockReturnValue('update');
+        getScratchOrigin.mockReturnValue(null);
+        window.history.replaceState(null, '', '/');
+        resetEditorIntent();
     });
 
     test('shows visible progress and results for a download save', () => {
