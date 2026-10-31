@@ -125,7 +125,7 @@ const ACTIVITY_ACTIONS = ['set', 'clear'];
 
 const createFrameServer = ({
     identity, createEditorSession, mistSession, callRotur, projectRotur, confirmSignOut,
-    activity, chat, editorData,
+    activity, chat, editorData, analytics,
     tokenRejected = () => Promise.resolve(false),
     store = createMemoryStore(), lock = createSerialLock(), now = Date.now
 }) => {
@@ -221,6 +221,11 @@ const createFrameServer = ({
         chat: args => {
             if (!CHAT_ACTIONS.includes(args.action) || !chat) throw new Error('Unknown chat request');
             return chat[args.action](args);
+        },
+        analytics: ({enabled}) => {
+            if (!analytics) throw new Error('Unknown analytics request');
+            if (typeof enabled === 'boolean') analytics.set(enabled);
+            return {enabled: analytics.get() === true};
         },
         activity: args => {
             if (!ACTIVITY_ACTIONS.includes(args.action) || !activity) throw new Error('Unknown activity request');

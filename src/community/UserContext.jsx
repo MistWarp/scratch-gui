@@ -48,6 +48,7 @@ const UserProvider = ({children}) => {
     const notificationsUnsub = useRef(null);
     const removalsUnsub = useRef(null);
     const identityVersion = useRef(0);
+    const signingIn = useRef(false);
 
     const handleNotificationPush = useCallback(notification => {
         if (!notification || notification.read) return;
@@ -80,6 +81,10 @@ const UserProvider = ({children}) => {
         ]);
         if (version !== identityVersion.current) return;
         if (me) setMinorAccount(me.minor === true);
+        if (signingIn.current && me) {
+            signingIn.current = false;
+            track('signin_completed');
+        }
         if (student) {
             setUser(normalizeUser({...identityUser, ...(me || {})}));
             return;
@@ -177,9 +182,10 @@ const UserProvider = ({children}) => {
     const loginOrThrow = useCallback(async () => {
         setSignInError('');
         try {
+            signingIn.current = true;
             await identityLogin();
-            track('signin_completed');
         } catch (error) {
+            signingIn.current = false;
             if (!error || error.code !== 'banned') setSignInError(signInErrorMessage(error));
             throw error;
         }

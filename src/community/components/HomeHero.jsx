@@ -113,7 +113,7 @@ const SignedOutCard = ({login}) => {
                     as="a"
                     variant="primary"
                     href={editorUrl()}
-                    onClick={() => track('start_creating', {source: 'home'})}
+                    onClick={() => track('start_creating', {variant: 'home'})}
                 >
                     <Plus
                         size={16}
@@ -143,7 +143,7 @@ const SignedInCard = ({username}) => {
                     as="a"
                     variant="primary"
                     href={editorUrl()}
-                    onClick={() => track('start_creating', {source: 'home'})}
+                    onClick={() => track('start_creating', {variant: 'home'})}
                 >
                     <Plus
                         size={16}

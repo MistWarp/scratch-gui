@@ -1,11 +1,11 @@
 import {isMinorAccount} from '../lib/minor-account.js';
 import {isStudentSession} from '../lib/rotur/student-flag.js';
+import {isSplitEditor} from '../lib/account/origins.js';
 
-// Analytics has its own endpoint so the status page can stay online while
-// browser analytics is disabled.
-const ANALYTICS_BASE = process.env.MW_ANALYTICS_URL || '';
+const EVENTS_URL = `${process.env.MW_API_BASE || 'https://api.mistwarp.org/v1'}/events`;
 const ANALYTICS_KEY = 'mw:anonymous-analytics';
-const SESSION_KEY = 'mw:analytics-session';
+
+let editorChoiceSynced = false;
 
 const storage = () => {
     try {
@@ -15,43 +15,57 @@ const storage = () => {
     }
 };
 
+const writeChoice = enabled => {
+    try {
+        storage()?.setItem(ANALYTICS_KEY, enabled ? 'on' : 'off');
+    } catch (e) {
+        return;
+    }
+};
+
+const callAccount = args => import('../lib/account/bridge.js').then(({call}) => call('analytics', args));
+
+export const analyticsChoice = () => {
+    try {
+        return storage()?.getItem(ANALYTICS_KEY) !== 'off';
+    } catch (e) {
+        return true;
+    }
+};
+
 export const analyticsEnabled = () => {
     if (isMinorAccount() || isStudentSession()) return false;
-    const saved = storage()?.getItem(ANALYTICS_KEY);
-    if (saved === 'off') return false;
+    if (!analyticsChoice()) return false;
     if (typeof navigator !== 'undefined' && navigator.doNotTrack === '1') return false;
     return true;
 };
 
 export const setAnalyticsEnabled = enabled => {
-    storage()?.setItem(ANALYTICS_KEY, enabled ? 'on' : 'off');
+    writeChoice(enabled);
+    if (isSplitEditor()) callAccount({enabled: enabled === true}).catch(() => {});
 };
 
-const sessionId = () => {
-    const target = storage();
-    if (!target) return '';
-    let value = target.getItem(SESSION_KEY);
-    if (!value) {
-        value = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() :
-            `${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}`;
-        target.setItem(SESSION_KEY, value);
-    }
-    return value;
+export const syncAnalyticsChoice = () => {
+    if (!isSplitEditor()) return Promise.resolve();
+    return callAccount({})
+        .then(result => {
+            if (result && typeof result.enabled === 'boolean') {
+                writeChoice(result.enabled);
+                editorChoiceSynced = true;
+            }
+        })
+        .catch(() => {});
 };
 
-export const track = (name, properties = {}) => {
-    if (!ANALYTICS_BASE || !analyticsEnabled()) return;
-    const session = sessionId();
-    if (!session) return;
-    const body = JSON.stringify({name, session, properties});
-    // sendBeacon always uses credentials mode "include", which turns a
-    // cross-origin analytics request into a credentialed CORS request. These
-    // events are anonymous, and keepalive fetch survives page unload without
-    // asking the status worker to accept cookies.
-    fetch(`${ANALYTICS_BASE}/v1/events`, {
+const countedHost = () => typeof location !== 'undefined' && /(^|\.)mistwarp\.org$/.test(location.hostname);
+
+export const track = (name, {variant} = {}) => {
+    if (!countedHost() || !analyticsEnabled() || typeof fetch !== 'function') return;
+    if (isSplitEditor() && !editorChoiceSynced) return;
+    fetch(EVENTS_URL, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body,
+        body: JSON.stringify(variant ? {name, variant} : {name}),
         keepalive: true,
         credentials: 'omit'
     }).catch(() => {});
@@ -83,7 +97,7 @@ export const trackDaily = (name, properties = {}) => {
 
 export const trackApiSuccess = (path, method) => {
     if (method !== 'POST') return;
-    if (path === '/projects') track('project_created', {source: 'editor'});
+    if (path === '/projects') track('project_created');
     else if (/^\/projects\/[^/]+\/publish$/.test(path)) track('project_published');
     else if (/^\/projects\/[^/]+\/remix$/.test(path)) track('project_remixed');
     else if (/^\/projects\/[^/]+\/contribute$/.test(path)) track('contribution_sent');

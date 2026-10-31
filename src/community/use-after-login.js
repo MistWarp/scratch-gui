@@ -16,7 +16,7 @@ const useAfterLogin = (action, reason) => {
     return useCallback((...args) => {
         if (user) return actionRef.current(...args);
         pending.current = args;
-        track('signin_prompt_shown', {reason});
+        track('signin_prompt_shown', {variant: reason});
         Promise.resolve(loginOrThrow()).catch(() => {
             pending.current = null;
         });

@@ -17,6 +17,7 @@ import {
 } from '../lib/account/frame-server.js';
 import {createProjectRotur} from '../lib/account/frame-project-rotur.js';
 import {createEditorData} from '../lib/account/frame-editor-data.js';
+import {analyticsChoice, setAnalyticsEnabled} from '../community/analytics.js';
 import FramePrompt, {supportsVisibilityCheck} from '../components/account-frame/frame-prompt.jsx';
 import {applyThemeVisuals, detectTheme} from '../lib/themes/themePersistance.js';
 
@@ -199,7 +200,8 @@ const startFrame = () => {
         confirmSignOut: username => prompt('signout', {username}),
         editorData: createEditorData(),
         chat: createFrameChat({ensureScopes, getRotur, signMessage}),
-        activity
+        activity,
+        analytics: {get: analyticsChoice, set: setAnalyticsEnabled}
     });
     const restored = Promise.race([
         Promise.resolve(identity.restore()).catch(() => null),

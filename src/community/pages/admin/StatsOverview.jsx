@@ -2,7 +2,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {useCommunityIntl as useCommunityText} from '../../i18n.jsx';
 import {
-    Activity, AlertTriangle, Ban, BarChart3, Cloud, Database, Download, Eye, Flag, FolderOpen, HardDrive,
+    Activity, AlertTriangle, Ban, BarChart3, Cloud, Database, Download, Eye, Flag, FolderOpen, Funnel, HardDrive,
     Heart, MemoryStick, Newspaper, RefreshCw, TrendingUp, User
 } from 'lucide-react';
 import api from '../../api';
@@ -12,7 +12,7 @@ import SectionHeading from '../../components/ui/SectionHeading.jsx';
 import StatusMessage from '../../components/ui/StatusMessage.jsx';
 import {timeAgoText, formatBytes, formatPlaytime} from '../../format';
 import styles from '../Admin.module.css';
-import {buildSeries, num, percent, formatLoadTime} from './admin-format.js';
+import {buildSeries, eventCount, eventGroupCount, num, percent, formatLoadTime} from './admin-format.js';
 import StatTile from './StatTile.jsx';
 import StorageBreakdown from './StorageBreakdown.jsx';
 import AnalyticsChart from './AnalyticsChart.jsx';
@@ -130,6 +130,11 @@ const StatsOverview = ({view}) => {
         starts: startSeries[index].value,
         crashes: crashSeries[index].value
     }));
+    const events = stats.eventsByDay || {};
+    const projectViews = eventGroupCount(events, 'project_view');
+    const signedOutViews = eventCount(events, 'project_view:signed_out');
+    const editorOpens = eventCount(events, 'editor_open');
+    const shareOpens = eventGroupCount(events, 'share_opened');
     const deviceLoads = Object.values(stats.loadsByDevice || {})
         .reduce((total, value) => total + Number(value || 0), 0);
     const exportDailyData = () => {
@@ -309,6 +314,58 @@ const StatsOverview = ({view}) => {
             </React.Fragment> : null}
 
             {view === 'activity' ? <React.Fragment>
+                <section className={styles.overviewSection} aria-labelledby="admin-funnel-heading">
+                    <SectionHeading
+                        as="h3"
+                        id="admin-funnel-heading"
+                        icon={Funnel}
+                        title={communityText('Visitor funnel')}
+                        lead={communityText('Anonymous daily counts from mistwarp.org browsers with analytics on. Signed-in accounts under 18, students and Do Not Track browsers are not counted.')}
+                    />
+                    <div className={styles.insightGrid}>
+                        <StatTile
+                            label={communityText('Project page views')}
+                            value={num(projectViews)}
+                            detail={communityText('{value1} while signed out', {value1: num(signedOutViews)})}
+                        />
+                        <StatTile
+                            label={communityText('Plays started')}
+                            value={num(eventCount(events, 'project_play_start'))}
+                            detail={communityText('Includes restarts')}
+                        />
+                        <StatTile
+                            label={communityText('Editor opened')}
+                            value={num(editorOpens)}
+                            detail={communityText('Once per browser tab')}
+                        />
+                        <StatTile
+                            label={communityText('Share opened')}
+                            value={num(shareOpens)}
+                            detail={communityText('{value1} for a first save', {value1: num(eventCount(events, 'share_opened:save'))})}
+                        />
+                        <StatTile
+                            label={communityText('Sign-in prompts')}
+                            value={num(eventGroupCount(events, 'signin_prompt_shown'))}
+                            detail={communityText('{value1} from Remix', {value1: num(eventCount(events, 'signin_prompt_shown:remix'))})}
+                        />
+                        <StatTile
+                            label={communityText('New accounts')}
+                            value={num(eventCount(events, 'signup_completed'))}
+                            detail={communityText('{value1} sign-ins', {value1: num(eventCount(events, 'signin_completed'))})}
+                        />
+                        <StatTile
+                            label={communityText('Projects published')}
+                            value={num(eventCount(events, 'project_published'))}
+                            detail={communityText('{value1} of Share opens', {value1: percent(eventCount(events, 'project_published'), shareOpens)})}
+                        />
+                        <StatTile
+                            label={communityText('Remixes made')}
+                            value={num(eventCount(events, 'project_remixed'))}
+                            detail={communityText('{value1} starter projects opened', {value1: num(eventGroupCount(events, 'starter_opened'))})}
+                        />
+                    </div>
+                </section>
+
                 <section className={styles.overviewSection} aria-labelledby="admin-insights-heading">
                     <SectionHeading
                         as="h3"

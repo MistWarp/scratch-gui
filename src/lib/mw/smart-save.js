@@ -61,7 +61,7 @@ const runSmartSave = async ({vm, title, onSaved}) => {
         }
         downloadBlob(projectFilename(title, 'project', 'mwp'), blob);
         setSaveFeedback(vm, 'downloaded');
-        trackDaily('project_saved', {kind: 'download'});
+        trackDaily('project_saved', {variant: 'download'});
         onSavedIfCurrent();
         return true;
     }

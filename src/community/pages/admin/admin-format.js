@@ -27,3 +27,9 @@ export const num = v => Number(v || 0).toLocaleString(getCommunityLocale());
 export const percent = (part, total, digits = 1) => (total ? `${((part / total) * 100).toFixed(digits)}%` : '0%');
 export const formatCompact = value => new Intl.NumberFormat(getCommunityLocale(), {notation: 'compact', maximumFractionDigits: 1}).format(value);
 export const formatLoadTime = value => (value < 1000 ? `${Math.round(value)} ms` : `${(value / 1000).toFixed(2)} s`);
+
+export const eventCount = (eventsByDay, key) => Object.values((eventsByDay && eventsByDay[key]) || {})
+    .reduce((total, value) => total + (Number(value) || 0), 0);
+export const eventGroupCount = (eventsByDay, name) => Object.keys(eventsByDay || {})
+    .filter(key => key === name || key.startsWith(`${name}:`))
+    .reduce((total, key) => total + eventCount(eventsByDay, key), 0);

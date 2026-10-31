@@ -23,9 +23,11 @@ import {prepareLocale} from '../lib/editor-locales';
 import Interface from './render-interface.jsx';
 import render from './app-target';
 import {moveEditorData} from '../lib/account/data-move.js';
+import {syncAnalyticsChoice, trackOnce} from '../community/analytics.js';
 
 const prepare = async () => {
     if (await moveEditorData()) await new Promise(() => {});
+    syncAnalyticsChoice().then(() => trackOnce('editor_open'));
     await prepareLocale();
 };
 

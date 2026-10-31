@@ -233,7 +233,7 @@ const Project = () => {
         if (userLoading || !id) return;
         api.view(id).catch(() => {});
         rememberProject(id);
-        track('project_view', {project: id, signedIn: Boolean(user)});
+        track('project_view', {variant: user ? 'signed_in' : 'signed_out'});
     }, [id, userLoading]);
 
     // Scroll to a comment anchor after the comments section renders

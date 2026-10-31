@@ -63,6 +63,8 @@ const createSharedLock = () => {
     };
 };
 
+let analyticsChoice = true;
+
 const setup = (user = {username: 'mist', id: 'u1', bio: 'hi', avatarUrl: 'x'}, {
     signOutAnswer = true,
     identity = createIdentity(user),
@@ -90,6 +92,12 @@ const setup = (user = {username: 'mist', id: 'u1', bio: 'hi', avatarUrl: 'x'}, {
             validator: jest.fn(async () => 'validator'),
             signingStatus: jest.fn(async () => true),
             sign: jest.fn(async () => ({signature: 'sig'}))
+        },
+        analytics: {
+            get: jest.fn(() => analyticsChoice),
+            set: jest.fn(value => {
+                analyticsChoice = value;
+            })
         },
         activity: {
             set: jest.fn(async () => true),
@@ -431,4 +439,14 @@ test('activity requests reach only set and clear, and only while signed in', asy
     const signedOut = setup(null);
     expect((await signedOut.send('activity', {action: 'set', context: {}})).result).toBe(false);
     expect(signedOut.deps.activity.set).not.toHaveBeenCalled();
+});
+
+test('the editor reads and changes the analytics choice kept on the account origin', async () => {
+    analyticsChoice = true;
+    const {send, deps} = setup();
+    expect((await send('analytics', {})).result).toEqual({enabled: true});
+    expect((await send('analytics', {enabled: false})).result).toEqual({enabled: false});
+    expect(deps.analytics.set).toHaveBeenCalledWith(false);
+    expect((await send('analytics', {enabled: 'yes'})).result).toEqual({enabled: false});
+    expect(deps.analytics.set).toHaveBeenCalledTimes(1);
 });

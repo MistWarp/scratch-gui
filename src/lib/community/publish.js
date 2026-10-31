@@ -435,7 +435,7 @@ const publishWorkspace = async ({
 
     enableAfterCloudSave();
     setSaveFeedback(vm, 'cloud');
-    trackDaily('project_saved', {kind: 'cloud'});
+    trackDaily('project_saved', {variant: 'cloud'});
 
     const vanitySlug = platformProject && typeof platformProject.vanitySlug === 'string' ?
         platformProject.vanitySlug.trim() : '';

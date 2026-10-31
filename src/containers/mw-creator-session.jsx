@@ -10,7 +10,7 @@ import {getStarter} from '../lib/starter-projects';
 export const CreatorSession = ({vm, ready, changed, username}) => {
     useEffect(() => {
         if (!ready || !changed) return;
-        trackDaily('project_edited', {source: 'editor'});
+        trackDaily('project_edited');
         const platform = getRememberedPlatformProjectState();
         if (platform && platform.isOwner === true) rememberEditedProject(username, platform.id);
     }, [ready, changed, username, vm]);
@@ -18,11 +18,11 @@ export const CreatorSession = ({vm, ready, changed, username}) => {
         if (!ready) return () => {};
         const params = new URLSearchParams(window.location.search);
         const starter = getStarter(params.get('starter'));
-        if (starter) trackDaily('starter_opened', {kind: starter.id});
-        if (params.has('restore')) trackDaily('backup_restored', {source: 'home'});
+        if (starter) trackDaily('starter_opened', {variant: starter.id});
+        if (params.has('restore')) trackDaily('backup_restored');
         const platform = getRememberedPlatformProjectState();
-        if (platform && platform.isOwner === true) trackDaily('project_resumed', {source: 'editor'});
-        const run = () => trackDaily('project_run', {source: 'editor'});
+        if (platform && platform.isOwner === true) trackDaily('project_resumed');
+        const run = () => trackDaily('project_run');
         vm.on('PROJECT_RUN_START', run);
         return () => vm.off('PROJECT_RUN_START', run);
     }, [ready, vm]);
