@@ -649,6 +649,9 @@ class MenuBar extends React.Component {
         if (prevProps.restoreDeletion !== this.props.restoreDeletion) {
             this.updateUndoRedoState();
         }
+        if (this.props.roturReady && !prevProps.roturReady) {
+            this.refreshMistWarpShared();
+        }
     }
     componentWillUnmount () {
         this.unmounted = true;

@@ -938,7 +938,6 @@
   "Send credits": "Send credits",
   "Project title": "Project title",
   "for @": "for @",
-  "Sign in to remix": "Sign in to remix",
   "Remove from library": "Remove from library",
   "Save to library": "Save to library",
   "See inside": "See inside",
@@ -3582,5 +3581,8 @@
   "{value1} starter projects opened": "{value1} starter projects opened",
   "Share opened": "Share opened",
   "{value1} of Share opens": "{value1} of Share opens",
-  "Reports are anonymous and are deleted 7 days after they arrive.": "Reports are anonymous and are deleted 7 days after they arrive."
+  "Reports are anonymous and are deleted 7 days after they arrive.": "Reports are anonymous and are deleted 7 days after they arrive.",
+  "Remix of {value1} by {value2}": "Remix of {value1} by {value2}",
+  "Imported from Scratch": "Imported from Scratch",
+  "Make your own version of this project in the editor.": "Make your own version of this project in the editor."
 }

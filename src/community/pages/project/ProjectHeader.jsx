@@ -24,8 +24,8 @@ import {adminUserPath} from '../admin/admin-links.js';
 
 // Title, byline and the action buttons and menu at the top of a project page.
 const ProjectHeader = ({
-    project, user, userLoading, title, setTitle, savingTitle, saveTitle, visibility,
-    changeVisibility, savingVisibility, remix, toggleLibrary, savingLibrary, seeInsideHref,
+    project, user, title, setTitle, savingTitle, saveTitle, visibility,
+    changeVisibility, savingVisibility, remixHref, toggleLibrary, savingLibrary, seeInsideHref,
     copyLink, setCollectionOpen, thumbnailStatus, useStageThumbnail, chooseThumbnailUpload,
     menuRemix, toggleFeatured, savingFeatured, featuredProject, menuReport, setActionError,
     setDeleteConfirm, openModeration
@@ -106,10 +106,10 @@ const ProjectHeader = ({
                     />
                 ) : project.canRemix ? (
                     <Button
+                        as="a"
                         variant="secondary"
-                        onClick={remix}
-                        disabled={userLoading}
-                        title={!user && !userLoading ? communityText('Sign in to remix') : null}
+                        href={remixHref}
+                        title={communityText('Make your own version of this project in the editor.')}
                     >
                         <GitFork size={16} />{communityText('Remix')}</Button>
                 ) : null}

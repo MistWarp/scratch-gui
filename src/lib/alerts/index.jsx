@@ -540,6 +540,38 @@ const alerts = [
         maxDisplaySecs: 15
     },
     {
+        alertId: 'mwRemixHint',
+        alertType: AlertTypes.STANDARD,
+        clearList: ['mwRemixHint'],
+        content: (
+            <FormattedMessage
+                defaultMessage="Make it your own. When you are ready, press Remix to MistWarp to save your copy."
+                // eslint-disable-next-line max-len
+                description="Tip shown when the editor opens from a project's Remix button. Remix to MistWarp is the save button label."
+                id="mw.alerts.remixHint"
+            />
+        ),
+        closeButton: true,
+        level: AlertLevels.SUCCESS,
+        maxDisplaySecs: 12
+    },
+    {
+        alertId: 'mwScratchHint',
+        alertType: AlertTypes.STANDARD,
+        clearList: ['mwScratchHint'],
+        content: (
+            <FormattedMessage
+                defaultMessage="Your Scratch project is open. Press Save to MistWarp to share it here."
+                // eslint-disable-next-line max-len
+                description="Tip shown when the editor opens a Scratch project from the Scratch import box. Save to MistWarp is the save button label."
+                id="mw.alerts.scratchHint"
+            />
+        ),
+        closeButton: true,
+        level: AlertLevels.SUCCESS,
+        maxDisplaySecs: 12
+    },
+    {
         alertId: 'importingAsset',
         alertType: AlertTypes.STANDARD,
         clearList: [],

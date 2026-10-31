@@ -164,6 +164,7 @@ const resolvePublicEmbed = async () => {
         params.set('mw_assets', project.assetsBase);
         params.set('platform_project', project.id);
         if (project.shared === true && project.visibility === 'public') params.set('mw_public', '1');
+        if (project.canRemix === true) params.set('mw_remix', '1');
         if (LINK_BACK_REFS.has(urlParams.get('ref'))) params.set('ref', urlParams.get('ref'));
         if (urlParams.has('autoplay')) params.set('autoplay', '');
         location.replace(`${location.pathname}?${params.toString()}`);
@@ -178,7 +179,7 @@ const addLinkBack = () => {
     linkBack.href = `${origin}/project/${encodeURIComponent(projectId)}?ref=${ref}`;
     linkBack.target = '_blank';
     linkBack.rel = 'noopener';
-    linkBack.textContent = 'Made with MistWarp · Play more';
+    linkBack.textContent = urlParams.has('mw_remix') ? 'Play and remix on MistWarp' : 'Made with MistWarp · Play more';
     Object.assign(linkBack.style, {
         position: 'fixed',
         right: '8px',

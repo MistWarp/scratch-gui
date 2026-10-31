@@ -47,7 +47,12 @@ import {
     isRoturGitUrl,
     parseRepoUrl
 } from '../rotur/git-api.js';
-import {getRememberedPlatformProjectState, rememberPlatformProject} from '../community/publish.js';
+import {
+    getRememberedPlatformProjectState,
+    getScratchOrigin,
+    rememberPlatformProject,
+    rememberScratchOrigin
+} from '../community/publish.js';
 import {
     getEditorProject as getMistWarpEditorProject,
     getProject as getMistWarpProject,
@@ -106,7 +111,10 @@ const clearProjectSourceFromUrl = () => {
     if (typeof location === 'undefined' || typeof URLSearchParams === 'undefined') return;
     const params = new URLSearchParams(location.search);
     let changed = false;
-    for (const key of ['clone', 'project_url', 'platform_project', 'mw_assets', 'mw_te', 'starter', 'restore']) {
+    const sourceKeys = [
+        'clone', 'project_url', 'platform_project', 'mw_assets', 'mw_te', 'starter', 'restore', 'from'
+    ];
+    for (const key of sourceKeys) {
         if (params.has(key)) {
             params.delete(key);
             changed = true;
@@ -132,7 +140,10 @@ const clearProjectSourceOnForeignLoads = vm => {
         const foreign = !fetchInitiatedLoad && !(args[1] && args[1].mwPreserveProjectSource);
         fetchInitiatedLoad = false;
         return Promise.resolve(originalLoadProject(...args)).then(result => {
-            if (foreign) clearProjectSourceFromUrl();
+            if (foreign) {
+                clearProjectSourceFromUrl();
+                rememberScratchOrigin(null);
+            }
             return result;
         });
     };
@@ -285,11 +296,13 @@ const ProjectFetcherHOC = function (WrappedComponent) {
             if (this.props.vm.runtime?.targets?.length) {
                 try {
                     const project = getRememberedPlatformProjectState();
+                    const previousScratchOrigin = getScratchOrigin();
                     const restore = await prepareProjectReplacement(this.props.vm, 'Before switching projects');
                     const previousProjectId = this.previousProjectId;
                     rollback = async ({abort = true, error = null} = {}) => {
                         await restore();
                         rememberPlatformProject(project, {resetSaveBase: true});
+                        rememberScratchOrigin(previousScratchOrigin);
                         setRemoteProjectHistory(project);
                         if (!abort) return;
                         this.props.onAbortProjectSwitch(previousProjectId);
@@ -332,6 +345,7 @@ const ProjectFetcherHOC = function (WrappedComponent) {
             let projectUrl = searchParams && searchParams.get('project_url');
             if (student && !isGallerySampleUrl(projectUrl)) projectUrl = null;
             let sourceProvidesHistory = false;
+            let scratchOrigin = null;
             if (hashProjectId || platformProject) {
                 sourceProvidesHistory = true;
                 const id = hashProjectId || platformProject;
@@ -390,6 +404,9 @@ const ProjectFetcherHOC = function (WrappedComponent) {
             } else if (student && String(projectId) !== String(defaultProjectId)) {
                 assetPromise = Promise.reject(new Error('Scratch projects are not available for class accounts.'));
             } else {
+                if (/^\d+$/.test(String(projectId)) && String(projectId) !== String(defaultProjectId)) {
+                    scratchOrigin = String(projectId);
+                }
                 // TW: Temporary hack for project tokens
                 assetPromise = fetchProjectToken(projectId)
                     .then(token => {
@@ -434,6 +451,7 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                         if (projectAsset.title) {
                             this.props.onSetProjectTitle(projectAsset.title);
                         }
+                        rememberScratchOrigin(scratchOrigin);
                         handedOff = true;
                         this.hasFetchedProject = true;
                         this.props.vm._mwReleaseProjectLoad = release;

@@ -15,12 +15,13 @@ import {editorRoot} from '../lib/account/origins.js';
 import {STUDENT_HINT_PARAM, isStudentSession} from '../lib/rotur/student-flag.js';
 
 const editorUrl = ({
-    chat, clone, platformProject, scratchProject, projectJson, assets, starter, restore, collaborate
+    chat, clone, platformProject, scratchProject, projectJson, assets, starter, restore, collaborate, from
 } = {}) => {
     const root = editorRoot();
     const params = new URLSearchParams();
     if (isStudentSession()) params.set(STUDENT_HINT_PARAM, 'student');
     if (collaborate) params.set('collaborate', '1');
+    if (from && (platformProject || scratchProject)) params.set('from', from);
     if (platformProject || scratchProject) {
         const query = params.toString();
         return `${root}${query ? `?${query}` : ''}#${platformProject ? `mw-${platformProject}` : scratchProject}`;
