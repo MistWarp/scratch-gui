@@ -140,7 +140,11 @@ const ErrorManager = () => {
     if (!data) {
         return (
             <div>
-                <SectionHeading icon={AlertTriangle} title={communityText('Errors')} />
+                <SectionHeading
+                    icon={AlertTriangle}
+                    title={communityText('Errors')}
+                    lead={communityText('Reports are anonymous and are deleted 7 days after they arrive.')}
+                />
                 {error ? <StatusMessage error onRetry={() => load(show)}>{error}</StatusMessage> : <StatusMessage />}
             </div>
         );
@@ -153,9 +157,7 @@ const ErrorManager = () => {
             item.message,
             item.stack,
             item.url,
-            item.username,
-            item.userAgent,
-            item.projectId,
+            item.browser,
             item.kind,
             item.viewport,
             item.appVersion
@@ -164,7 +166,11 @@ const ErrorManager = () => {
 
     return (
         <div>
-            <SectionHeading icon={AlertTriangle} title={communityText('Errors')} />
+            <SectionHeading
+                icon={AlertTriangle}
+                title={communityText('Errors')}
+                lead={communityText('Reports are anonymous and are deleted 7 days after they arrive.')}
+            />
             <AdminActionDialog
                 dialog={confirmDeleteAll ? {
                     title: communityText('Delete all errors?'),
@@ -231,7 +237,7 @@ const ErrorManager = () => {
                                     <div className={styles.rowInfo}>
                                         <span className={styles.rowTitle}>{item.message || communityText('Unknown error')}</span>
                                         <span className={styles.rowMeta}>
-                                            {`${item.kind || 'uncaught'}${item.username ? ` · @${item.username}` : ' · anonymous'}${timeAgoText(item.created) ? ` · ${timeAgoText(item.created)}` : ''}`}
+                                            {[item.kind || 'uncaught', item.browser, timeAgoText(item.created)].filter(Boolean).join(' · ')}
                                         </span>
                                         {item.url ? (
                                             <span className={styles.extensionUrl}>{item.url}</span>
@@ -253,15 +259,11 @@ const ErrorManager = () => {
                                     <div>
                                         <span className={styles.rowMeta}>
                                             {[
-                                                item.projectId ? `Project: ${item.projectId}` : null,
                                                 item.viewport ? `Viewport: ${item.viewport}` : null,
                                                 item.appVersion ? `Version: ${item.appVersion}` : null,
                                                 item.created ? formatDateTime(item.created, 'Date unavailable') : null
                                             ].filter(Boolean).join(' · ')}
                                         </span>
-                                        {item.userAgent ? (
-                                            <span className={styles.rowMeta}>{item.userAgent}</span>
-                                        ) : null}
                                         {item.stack ? (
                                             <pre className={styles.extensionSource}>{item.stack}</pre>
                                         ) : (

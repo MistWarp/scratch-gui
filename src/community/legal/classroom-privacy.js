@@ -20,7 +20,7 @@ ${operatorSentence()} For student accounts, the School is the controller and Mis
 - Which group projects they belong to.
 - Their editor settings and notifications inside MistWarp.
 - An activity log of changes teachers make to the class.
-- Error reports when something breaks: the error message and its technical stack traces, the page address, the ID of the project that was open, the browser type, the window size, the MistWarp version and the time. They do not include the student's name or username, and we delete them after 90 days.
+- Error reports when something breaks: the error message and its technical stack traces, the kind of page it happened on, the browser name, version and operating system, the window size, the MistWarp version and the time. They are not linked to any account: we do not store a username, project ID or IP address with them, we remove email addresses and account, class and project IDs that we find in the error text, and we delete them after 7 days.
 - The device's IP address, which our server and Cloudflare use to deliver pages and limit abuse. Our server does not store it for signed-in users.
 
 We do not collect email addresses, phone numbers, home addresses, dates of birth, photos, or location. Student accounts are not Rotur accounts, and student information is not sent to Rotur.

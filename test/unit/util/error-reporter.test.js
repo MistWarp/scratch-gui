@@ -1,12 +1,11 @@
 /** @jest-environment-options {"url": "https://mistwarp.org/editor"} */
-jest.mock('../../../src/lib/community/api', () => ({request: jest.fn(() => Promise.resolve())}));
 
 const load = () => {
     let loaded;
     jest.isolateModules(() => {
         loaded = {
             reportSiteError: require('../../../src/lib/error-reporter').reportSiteError,
-            request: require('../../../src/lib/community/api').request
+            request: global.fetch
         };
     });
     return loaded;
@@ -16,17 +15,42 @@ const userAgent = jest.spyOn(window.navigator, 'userAgent', 'get');
 
 beforeEach(() => {
     jest.clearAllMocks();
+    global.fetch = jest.fn(() => Promise.resolve({}));
     userAgent.mockReturnValue('Mozilla/5.0 (X11; Linux x86_64) Chrome/153.0.0.0 Safari/537.36');
 });
 
-test('reports build identity and project IDs from editor hashes', async () => {
+test('reports the build without the project, query or account', async () => {
     const {reportSiteError, request} = load();
     const {BUILD_ID} = require('../../../src/lib/build-version');
-    reportSiteError({message: 'Test asset failure', url: 'https://mistwarp.org/editor#mw-p123'});
-    expect(request).toHaveBeenCalledWith('/errors', expect.objectContaining({body: expect.objectContaining({
-        projectId: 'p123', appVersion: BUILD_ID, message: 'Test asset failure'
-    })}));
+    reportSiteError({message: 'Test asset failure', url: 'https://mistwarp.org/editor?token=x#mw-p123'});
+    expect(request).toHaveBeenCalledWith('https://api.mistwarp.org/v1/errors', expect.objectContaining({
+        method: 'POST', credentials: 'omit'
+    }));
+    const options = request.mock.calls[0][1];
+    expect(options.headers).toEqual({'Content-Type': 'application/json'});
+    const body = JSON.parse(options.body);
+    expect(body).toEqual(expect.objectContaining({
+        appVersion: BUILD_ID, message: 'Test asset failure', url: 'https://mistwarp.org/editor'
+    }));
+    expect(body).not.toHaveProperty('projectId');
     await Promise.resolve();
+});
+
+test('a report that never answers stops blocking later reports', async () => {
+    jest.useFakeTimers();
+    const {reportSiteError, request} = load();
+    request.mockImplementation((url, options) => new Promise((resolve, reject) => {
+        options.signal.addEventListener('abort', () => reject(new Error('aborted')));
+    }));
+    reportSiteError({message: 'First hanging report'});
+    reportSiteError({message: 'Second report while busy'});
+    expect(request).toHaveBeenCalledTimes(1);
+    jest.advanceTimersByTime(8000);
+    await Promise.resolve();
+    await Promise.resolve();
+    reportSiteError({message: 'Third report after the timeout'});
+    expect(request).toHaveBeenCalledTimes(2);
+    jest.useRealTimers();
 });
 
 test('skips cross-origin script errors without details', () => {
