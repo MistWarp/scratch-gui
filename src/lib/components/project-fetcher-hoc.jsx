@@ -49,6 +49,7 @@ import {
 } from '../rotur/git-api.js';
 import {
     getRememberedPlatformProjectState,
+    getScratchOrigin,
     rememberPlatformProject,
     rememberScratchOrigin
 } from '../community/publish.js';
@@ -139,7 +140,10 @@ const clearProjectSourceOnForeignLoads = vm => {
         const foreign = !fetchInitiatedLoad && !(args[1] && args[1].mwPreserveProjectSource);
         fetchInitiatedLoad = false;
         return Promise.resolve(originalLoadProject(...args)).then(result => {
-            if (foreign) clearProjectSourceFromUrl();
+            if (foreign) {
+                clearProjectSourceFromUrl();
+                rememberScratchOrigin(null);
+            }
             return result;
         });
     };
@@ -292,11 +296,13 @@ const ProjectFetcherHOC = function (WrappedComponent) {
             if (this.props.vm.runtime?.targets?.length) {
                 try {
                     const project = getRememberedPlatformProjectState();
+                    const previousScratchOrigin = getScratchOrigin();
                     const restore = await prepareProjectReplacement(this.props.vm, 'Before switching projects');
                     const previousProjectId = this.previousProjectId;
                     rollback = async ({abort = true, error = null} = {}) => {
                         await restore();
                         rememberPlatformProject(project, {resetSaveBase: true});
+                        rememberScratchOrigin(previousScratchOrigin);
                         setRemoteProjectHistory(project);
                         if (!abort) return;
                         this.props.onAbortProjectSwitch(previousProjectId);

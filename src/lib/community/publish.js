@@ -66,6 +66,8 @@ const rememberPlatformProject = (project, {resetSaveBase = false} = {}) => {
             const value = typeof project === 'object' ? project : {id: project, isOwner: true};
             sessionStorage.setItem(PLATFORM_ID_KEY, JSON.stringify({
                 id: String(value.id),
+                title: value.title,
+                owner: value.owner,
                 isOwner: value.isOwner,
                 canSaveDirectly: value.canSaveDirectly === true,
                 shared: !!value.shared,
@@ -229,7 +231,7 @@ const prepareThumbnailBlob = async dataUri => {
 // user has added. Sharing remains a separate action.
 const publishWorkspace = async ({
     vm, title, thumbnailBlob, changeMessage = '', commitChanges = true,
-    share = false, updateOnly = false, allowLoss = true, onProgress = () => {}
+    share = false, updateOnly = false, allowLoss = true, titleForNewOnly = false, onProgress = () => {}
 }) => {
     const projectTitle = (title && title.trim()) || 'Untitled';
 
@@ -296,7 +298,8 @@ const publishWorkspace = async ({
         createdNow = true;
     }
 
-    if (!createdNow && platformProject.isOwner && !updateOnly && title && platformProject.title !== projectTitle) {
+    if (!createdNow && !titleForNewOnly && platformProject.isOwner && !updateOnly && title &&
+        platformProject.title !== projectTitle) {
         await updateProject(platformId, {title: projectTitle});
     }
 
@@ -412,11 +415,12 @@ const publishWorkspace = async ({
         throw e;
     }
 
+    if (createdNow) rememberScratchOrigin(null);
     const remoteSync = await syncConfiguredRemotes({vm, onProgress});
     const remoteWarnings = remoteSync.filter(remote => !remote.ok);
 
     let shared = Boolean(platformProject && platformProject.shared);
-    if (share && !shared && platformProject.isOwner && !isStudentSession()) {
+    if (share && createdNow && !shared && platformProject.isOwner && !isStudentSession()) {
         onProgress({phase: 'publish', message: 'Sharing'});
         await publishProject(platformId);
         shared = true;

@@ -107,11 +107,13 @@ describe('MistWarp save status', () => {
         getRememberedPlatformProjectState.mockReturnValue({id: 'p9', owner: 'ana', isOwner: false, canRemix: true});
         const listeners = {};
         const vm = {
-            runtime: {targets: []},
-            on: jest.fn((name, fn) => {
-                listeners[name] = fn;
-            }),
-            off: jest.fn()
+            runtime: {
+                targets: [],
+                on: jest.fn((name, fn) => {
+                    listeners[name] = fn;
+                }),
+                off: jest.fn()
+            }
         };
         const onAlertDone = jest.fn();
         const wrapper = mountWithIntl(
@@ -132,6 +134,7 @@ describe('MistWarp save status', () => {
             listeners.PROJECT_LOADED();
         });
         expect(onAlertDone).toHaveBeenCalledWith('mwRemixHint');
+        expect(vm.runtime.off).toHaveBeenCalledWith('PROJECT_LOADED', listeners.PROJECT_LOADED);
         wrapper.unmount();
         getRememberedPlatformProjectState.mockReturnValue({id: 'project', isOwner: true});
         window.history.replaceState(null, '', '/');
@@ -144,7 +147,7 @@ describe('MistWarp save status', () => {
         getRememberedPlatformProjectState.mockReturnValue(null);
         getMistWarpAction.mockReturnValue('save');
         getScratchOrigin.mockReturnValue('123456');
-        const vm = {runtime: {targets: [{}]}, on: jest.fn(), off: jest.fn()};
+        const vm = {runtime: {targets: [{}], on: jest.fn(), off: jest.fn()}};
         const onAlertDone = jest.fn();
         const wrapper = mountWithIntl(
             <TWSaveStatus

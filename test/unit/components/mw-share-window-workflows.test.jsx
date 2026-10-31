@@ -192,7 +192,8 @@ describe('MistWarp share window workflows', () => {
 
         expect(publishToMistWarp).toHaveBeenCalledWith(expect.objectContaining({
             title: 'Project remix',
-            share: true
+            share: true,
+            titleForNewOnly: true
         }));
         expect(wrapper.instance().doneMessage()).toBe('Your remix is shared. {owner} gets credit as the original creator.');
         wrapper.unmount();
@@ -286,9 +287,23 @@ describe('MistWarp save window sign-in', () => {
         wrapper.unmount();
     });
 
+    test('a lost project means the window saves a new project after sign-in', async () => {
+        getIdentityState.mockReturnValue({status: 'idle', user: null});
+        getRememberedPlatformProjectState.mockReturnValue(null);
+        const wrapper = makeSignIn('remix');
+
+        subscribe.mock.calls[0][0]({status: 'ready', user: {username: 'me'}});
+        await new Promise(resolve => setTimeout(resolve, 0));
+        wrapper.update();
+
+        expect(getProject).not.toHaveBeenCalled();
+        expect(wrapper.find(ShareWindow).prop('action')).toBe('save');
+        wrapper.unmount();
+    });
+
     test('a closed sign-in window shows an error and keeps the prompt', async () => {
         getIdentityState.mockReturnValue({status: 'idle', user: null});
-        login.mockRejectedValue(new Error('closed'));
+        login.mockRejectedValue(new Error(''));
         const wrapper = makeSignIn('save');
 
         await wrapper.instance().handleSignIn();

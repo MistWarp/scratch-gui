@@ -227,6 +227,45 @@ describe('MistWarp project upload packaging', () => {
         expect(mockUploadProject).toHaveBeenCalledTimes(1);
     });
 
+    test('a stale remix window never renames or shares a project the user already owns', async () => {
+        const api = require('../../src/lib/community/api.js');
+        const project = {id: 'project-1', title: 'Racer', isOwner: true, shared: false, gitHead: 'opened', edited: 10};
+        rememberPlatformProject(project);
+        mockGetProject.mockResolvedValue({project});
+        const vm = {saveProjectSb3DontZip: () => ({'project.json': '{}'})};
+
+        const result = await publishToMistWarp({vm, title: 'Racer remix', share: true, titleForNewOnly: true});
+
+        expect(mockRemixProject).not.toHaveBeenCalled();
+        expect(api.updateProject).not.toHaveBeenCalled();
+        expect(api.publishProject).not.toHaveBeenCalled();
+        expect(result.shared).toBe(false);
+    });
+
+    test('a new project is shared when asked and forgets its Scratch source afterwards', async () => {
+        const api = require('../../src/lib/community/api.js');
+        const {getScratchOrigin, rememberScratchOrigin} = require('../../src/lib/community/publish.js');
+        rememberScratchOrigin('123456');
+        const vm = {saveProjectSb3DontZip: () => ({'project.json': '{}'})};
+
+        const result = await publishToMistWarp({vm, title: 'Pong', share: true});
+
+        expect(mockCreateProject).toHaveBeenCalledWith({title: 'Pong', scratchOrigin: '123456'});
+        expect(api.publishProject).toHaveBeenCalledWith('project-1');
+        expect(result.shared).toBe(true);
+        expect(getScratchOrigin()).toBeNull();
+    });
+
+    test('remembers the open project\'s title and creator for remix credit', () => {
+        const {getRememberedPlatformProjectState} = require('../../src/lib/community/publish.js');
+        rememberPlatformProject({id: 'original', title: 'Racer', owner: 'ana', isOwner: false, canRemix: true});
+        expect(getRememberedPlatformProjectState()).toEqual(expect.objectContaining({
+            title: 'Racer',
+            owner: 'ana',
+            isOwner: false
+        }));
+    });
+
     test('exports a remix as a delta from its inherited head', async () => {
         const files = {'project.json': JSON.stringify({targets: []})};
         const vm = {saveProjectSb3DontZip: jest.fn(() => files)};

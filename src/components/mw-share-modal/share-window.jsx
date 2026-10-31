@@ -14,6 +14,7 @@ import {
     subscribe as subscribeIdentity
 } from '../../lib/rotur/identity.js';
 import {track} from '../../community/analytics.js';
+import {isStudentSession} from '../../lib/rotur/student-flag.js';
 import Button from '../button/button.jsx';
 import styles from './share-window.css';
 
@@ -386,6 +387,7 @@ class ShareWindow extends React.Component {
                 allowLoss,
                 thumbnailBlob,
                 share: !isUpdate && !this.props.student && this.state.share,
+                titleForNewOnly: this.props.action === 'remix',
                 updateOnly: isUpdate,
                 onProgress: this.handleProgress
             });
@@ -823,7 +825,7 @@ ShareWindow.defaultProps = {
 
 const actionAfterSignIn = async action => {
     const remembered = getRememberedPlatformProjectState();
-    if (action === 'save' || !remembered || !remembered.id) return action;
+    if (!remembered || !remembered.id) return 'save';
     try {
         const {project} = await getProject(remembered.id);
         const current = getRememberedPlatformProjectState();
@@ -851,7 +853,8 @@ class ShareWindowSignIn extends React.Component {
     }
     componentDidMount () {
         this.unsubscribe = subscribeIdentity(this.handleIdentity);
-        if (!this.state.signedIn) {
+        const status = this.state.identity && this.state.identity.status;
+        if (!this.state.signedIn && (status === 'idle' || status === 'error')) {
             track('signin_prompt_shown', {variant: this.props.action === 'remix' ? 'remix' : 'save'});
         }
     }
@@ -878,7 +881,7 @@ class ShareWindowSignIn extends React.Component {
             await roturLogin();
         } catch (e) {
             if (!this.unmounted && !isSignedIn(getIdentityState())) {
-                this.setState({error: this.props.intl.formatMessage(messages.signInFailed)});
+                this.setState({error: (e && e.message) || this.props.intl.formatMessage(messages.signInFailed)});
             }
         }
     }
@@ -889,6 +892,7 @@ class ShareWindowSignIn extends React.Component {
                 <ShareWindow
                     {...this.props}
                     action={this.state.action}
+                    student={this.props.student || isStudentSession()}
                 />
             );
         }

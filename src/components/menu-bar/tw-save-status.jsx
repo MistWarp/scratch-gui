@@ -247,7 +247,8 @@ const TWSaveStatus = ({
         };
     }, [vm, onAlertDone, onCloseAlert, onShowAlert]);
     useEffect(() => {
-        if (!communityEnabled || !vm || !vm.on) return;
+        const runtime = vm && vm.runtime;
+        if (!communityEnabled || !runtime || !runtime.on) return;
         const intent = takeEditorIntent();
         if (!intent) return;
         const showHint = () => {
@@ -257,18 +258,19 @@ const TWSaveStatus = ({
                 return true;
             }
             const project = getRememberedPlatformProjectState();
-            if (!project || !project.owner) return false;
+            if (!project || typeof project.isOwner !== 'boolean') return false;
             if (project.isOwner === false && !project.canSaveDirectly && project.canRemix !== false) {
                 onAlertDone('mwRemixHint');
             }
             return true;
         };
-        if (vm.runtime && vm.runtime.targets && vm.runtime.targets.length && showHint()) return;
+        if (runtime.targets && runtime.targets.length && showHint()) return;
         const loaded = () => {
-            if (showHint()) vm.off('PROJECT_LOADED', loaded);
+            runtime.off('PROJECT_LOADED', loaded);
+            showHint();
         };
-        vm.on('PROJECT_LOADED', loaded);
-        return () => vm.off('PROJECT_LOADED', loaded);
+        runtime.on('PROJECT_LOADED', loaded);
+        return () => runtime.off('PROJECT_LOADED', loaded);
     }, [vm, onAlertDone]);
     const signedOut = roturStatus === 'idle' || roturStatus === 'error';
     const platformState = communityEnabled && (roturReady || signedOut) ? getRememberedPlatformProjectState() : null;
@@ -399,7 +401,9 @@ TWSaveStatus.propTypes = {
         saveProjectSb3: PropTypes.func,
         renderer: PropTypes.object,
         runtime: PropTypes.shape({
-            targets: PropTypes.array
+            targets: PropTypes.array,
+            on: PropTypes.func,
+            off: PropTypes.func
         }),
         on: PropTypes.func,
         off: PropTypes.func
