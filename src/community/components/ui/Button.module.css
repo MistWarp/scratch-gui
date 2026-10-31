@@ -116,3 +116,13 @@
         padding: 6px 12px;
     }
 }
+
+@media (hover: none) and (pointer: coarse) {
+    .button {
+        transition: scale .12s ease;
+    }
+
+    .button:active:not(:disabled) {
+        scale: .97;
+    }
+}

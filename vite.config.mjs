@@ -195,7 +195,7 @@ const pagesAndAssets = (env, root, library, generatedInputs) => {
             page.name === 'credits' ? `${APP_NAME} Credits` :
                 page.name === 'addon-settings' ? `Addon Settings - ${APP_NAME}` : APP_NAME;
         const html = ejs.render(fs.readFileSync(absolute(`src/playground/${page.template}.ejs`), 'utf8'),
-            {page: {root, APP_NAME, title}});
+            {page: {root, APP_NAME, title, name: page.name}});
         const escape = value => String(value).replace(/&/g, '&amp;')
             .replace(/"/g, '&quot;')
             .replace(/</g, '&lt;');

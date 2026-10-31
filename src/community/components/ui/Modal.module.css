@@ -94,6 +94,14 @@
         border-bottom: 0;
         border-inline-start: 0;
         border-radius: var(--radius) var(--radius) 0 0;
+        animation: sheet-up .22s cubic-bezier(.2, .8, .2, 1);
+    }
+
+    @keyframes sheet-up {
+        from {
+            transform: translateY(24px);
+            opacity: 0;
+        }
     }
 
     .head {

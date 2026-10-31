@@ -90,6 +90,7 @@ html:where(.root),
     font-family: var(--sans);
     overflow-x: clip;
     -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
 }
 
 :where(.root) :global(#app) {

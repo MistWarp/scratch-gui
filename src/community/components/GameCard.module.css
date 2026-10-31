@@ -303,3 +303,13 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
 }
+
+@media (hover: none) and (pointer: coarse) {
+    .card {
+        transition: transform .3s var(--ease-bounce), scale .12s ease;
+    }
+
+    .card:active {
+        scale: .98;
+    }
+}

@@ -14,35 +14,33 @@
 
 .wall {
     position: absolute;
-    inset: -60px -120px;
+    top: 50%;
+    left: 50%;
     display: grid;
+    width: var(--wall-length);
+    height: var(--wall-band);
     align-content: center;
-    gap: var(--space-3);
-    transform: rotate(-5deg);
+    gap: var(--wall-gap);
+    transform: translate(-50%, -50%) rotate(-5deg);
 }
 
 .wallRow {
     display: flex;
-    gap: var(--space-3);
+    gap: var(--wall-gap);
     width: max-content;
-    padding-inline-end: var(--space-3);
+    padding-inline-end: var(--wall-gap);
     animation: wall-scroll 40s linear infinite;
 }
 
-.wallRow:nth-child(2) {
-    animation-duration: 52s;
+.wallRow:nth-child(even) {
     animation-direction: reverse;
-}
-
-.wallRow:nth-child(3) {
-    animation-duration: 46s;
 }
 
 .wallTile {
     display: block;
     flex: 0 0 auto;
-    width: 200px;
-    aspect-ratio: 4 / 3;
+    width: calc(var(--wall-tile) * 4 / 3);
+    height: var(--wall-tile);
     overflow: hidden;
     border-radius: var(--radius-xs);
     background: var(--bg-raised);
@@ -112,21 +110,10 @@
 @media (max-width: 520px) {
     .hero {
         min-height: 520px;
-        place-items: end center;
     }
 
     .plain {
         min-height: 0;
-        place-items: center;
-    }
-
-    .wall {
-        inset: -24px -120px auto;
-        align-content: start;
-    }
-
-    .wallTile {
-        width: 160px;
     }
 
     .card {

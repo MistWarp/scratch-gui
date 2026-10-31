@@ -518,3 +518,8 @@
         height: auto;
     }
 }
+
+:global([data-mobile-editor="true"]) [data-mw-item="editor-mode"],
+:global([data-mobile-editor="true"]) [data-mw-item="__divider"] {
+    display: none !important;
+}
