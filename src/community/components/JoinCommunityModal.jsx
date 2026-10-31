@@ -43,7 +43,7 @@ const JoinCommunityModal = ({onClose}) => {
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={() => {
-                            track('community_join', {destination: community.key});
+                            track('community_join', {variant: community.key});
                             onClose();
                         }}
                     >

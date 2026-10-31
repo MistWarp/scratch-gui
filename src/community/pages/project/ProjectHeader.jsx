@@ -161,7 +161,7 @@ const ProjectHeader = ({
                                     type="button"
                                     onClick={() => {
                                         close();
-                                        track('embed_code_copied', {project: project.id});
+                                        track('embed_code_copied');
                                         copyLink(`<iframe src="${window.location.origin}/embed?mw=${
                                             encodeURIComponent(project.id)
                                         }" width="482" height="412" frameborder="0" scrolling="no" ` +

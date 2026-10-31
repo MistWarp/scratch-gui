@@ -167,7 +167,7 @@ class PrivacyPage extends React.Component {
                         />
                     ) : (
                         <FormattedMessage
-                            defaultMessage="Records creation and return milestones for 31 days. MistWarp does not send usernames, project IDs, page URLs, IP addresses, or browser details."
+                            defaultMessage="Adds to anonymous daily counts, such as how often the editor opens or Share is used. The counts do not include usernames, project IDs, page URLs, IP addresses, or browser details."
                             id="mw.settingsModal.analyticsHelp"
                         />
                     )}

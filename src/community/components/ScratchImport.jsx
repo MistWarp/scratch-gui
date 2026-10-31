@@ -23,7 +23,7 @@ const ScratchImport = ({source}) => {
             setInvalid(true);
             return;
         }
-        track('scratch_import', {source});
+        track('scratch_import', {variant: source});
         window.location.href = editorUrl({scratchProject: id});
     };
     return (

@@ -39,7 +39,7 @@ export const NextProjectButton = ({id, className}) => {
             const data = await api.relatedProjects(id, {exclude: seenProjects(), limit: 1});
             const project = (data.projects || [])[0];
             if (project) {
-                track('next_project_click', {from: id, to: project.id});
+                track('next_project_click');
                 navigate(projectUrl(project));
             }
         } catch (e) {
@@ -87,7 +87,7 @@ const RelatedProjects = ({id}) => {
                         key={project.id}
                         className={styles.item}
                         to={projectUrl(project)}
-                        onClick={() => track('related_project_click', {from: id, to: project.id})}
+                        onClick={() => track('related_project_click')}
                     >
                         <ProjectThumbnail
                             project={project}

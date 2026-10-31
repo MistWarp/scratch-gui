@@ -31,7 +31,7 @@ const useStageContent = (id, project, stageFrame) => {
             if (event.data.type === 'mw:diagnostic') {
                 projectRealtime.diagnostic(id, event.data.diagnostic);
                 if (event.data.diagnostic && event.data.diagnostic.type === 'playtime_start') {
-                    track('project_play_start', {project: id});
+                    track('project_play_start');
                 }
             }
         };

@@ -8,6 +8,7 @@ import {IntlProvider} from 'react-intl';
 import WindowManager from '../../addons/window-system/window-manager';
 import {openProjectMetadataModal} from '../../reducers/modals';
 import {isStudentSession} from '../rotur/student-flag.js';
+import {track} from '../../community/analytics.js';
 
 let shareWindow = null;
 let container = null;
@@ -21,6 +22,7 @@ const openMistWarpShareWindow = ({vm, initialTitle, initialError, action = 'save
         }
         shareWindow.close();
     }
+    track('share_opened', {variant: action});
 
     container = document.createElement('div');
     container.style.cssText = 'height: 100%; display: flex; flex-direction: column; min-height: 0;';
