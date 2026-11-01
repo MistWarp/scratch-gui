@@ -12,6 +12,7 @@ import {cachedFetchBuffer} from '../../src/lib/community/cached-fetch.js';
 import {cloneRepo} from '../../src/lib/git/browser-git.js';
 import {canStudentSessionLoadUrl} from '../../src/lib/rotur/student-flag.js';
 import {takeLoadHandoff} from '../../src/modules/project-session';
+import withLoadProjectInterceptors from '../helpers/load-interceptors.js';
 
 jest.mock('../../src/lib/git/browser-git.js', () => ({
     cloneRepo: jest.fn(),
@@ -38,7 +39,7 @@ const makeStore = isEmbedded => configureStore()({
     scratchGui: {
         mode: {isEmbedded},
         projectState: {},
-        vm: {clear: () => {}, loadProject: () => {}, stop: () => {}, quit: () => {}}
+        vm: withLoadProjectInterceptors({clear: () => {}, loadProject: () => {}, stop: () => {}, quit: () => {}})
     }
 });
 
@@ -47,7 +48,7 @@ const makeFetcher = ({isEmbedded = false} = {}) => {
     const WrappedComponent = ProjectFetcherHOC(() => <div />);
     const onFetchedProjectData = jest.fn();
     const onError = jest.fn();
-    const vm = {loadProject: jest.fn(), quit: jest.fn()};
+    const vm = withLoadProjectInterceptors({loadProject: jest.fn(), quit: jest.fn()});
     const wrapper = shallowWithIntl(
         <WrappedComponent
             onError={onError}

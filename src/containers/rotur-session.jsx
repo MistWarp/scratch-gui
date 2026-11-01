@@ -39,7 +39,7 @@ import {applyLayout} from '../lib/mw-menu-bar-layout.js';
 import {setAuthorName} from '../lib/git/config.js';
 import describeActivity from '../lib/collaboration/describe-activity.js';
 import {isCodeMode} from '../lib/editor-visibility.js';
-import {setProjectAuthor} from '../lib/mw-project-metadata.js';
+import {setProjectAuthor} from '../modules/project-metadata';
 import {ACCOUNT_ORIGIN, isSplitEditor} from '../lib/account/origins.js';
 
 /**

@@ -10,7 +10,8 @@ import {getEditorProject, fetchWorkspace} from '../../../src/lib/community/api.j
 import {cachedFetchBuffer} from '../../../src/lib/community/cached-fetch.js';
 import {beginProjectOperation, isProjectOperationActive} from '../../../src/lib/project-operation.js';
 import {prepareProjectReplacement} from '../../../src/lib/project-replacement.js';
-import {takeLoadHandoff} from '../../../src/modules/project-session';
+import {projectSession, takeLoadHandoff} from '../../../src/modules/project-session';
+import withLoadProjectInterceptors from '../../helpers/load-interceptors.js';
 
 jest.mock('../../../src/lib/git/browser-git.js', () => ({
     cloneRepo: jest.fn(),
@@ -45,12 +46,12 @@ describe('ProjectFetcherHOC', () => {
                     isEmbedded: true
                 },
                 projectState: {},
-                vm: {
+                vm: withLoadProjectInterceptors({
                     clear: () => {},
                     loadProject: () => {},
                     stop: () => {},
                     quit: () => {}
-                }
+                })
             }
         });
     });
@@ -68,11 +69,11 @@ describe('ProjectFetcherHOC', () => {
         const loadPromise = new Promise(() => {});
         const originalLoad = storage.load;
         storage.load = jest.fn(() => loadPromise);
-        const vmForFetch = {
+        const vmForFetch = withLoadProjectInterceptors({
             clear: jest.fn(),
             loadProject: jest.fn(),
             quit: jest.fn()
-        };
+        });
         const wrapper = shallowWithIntl(
             <WrappedComponent
                 store={store}
@@ -98,10 +99,10 @@ describe('ProjectFetcherHOC', () => {
         const originalLoad = storage.load;
         storage.load = jest.fn(() => new Promise(resolve => pendingLoads.push(resolve)));
         const onFetchedProjectData = jest.fn();
-        const vmForFetch = {
+        const vmForFetch = withLoadProjectInterceptors({
             loadProject: jest.fn(),
             quit: jest.fn()
-        };
+        });
         const wrapper = shallowWithIntl(
             <WrappedComponent
                 onFetchedProjectData={onFetchedProjectData}
@@ -133,11 +134,11 @@ describe('ProjectFetcherHOC', () => {
         const onAbortProjectSwitch = jest.fn();
         const onShowProjectSwitchError = jest.fn();
         const onError = jest.fn();
-        const vmForFetch = {
+        const vmForFetch = withLoadProjectInterceptors({
             loadProject: jest.fn(),
             quit: jest.fn(),
             runtime: {targets: [{}]}
-        };
+        });
         const release = beginProjectOperation(vmForFetch);
         try {
             const wrapper = shallowWithIntl(
@@ -169,11 +170,11 @@ describe('ProjectFetcherHOC', () => {
         const WrappedComponent = ProjectFetcherHOC(Component);
         const onAbortProjectSwitch = jest.fn();
         const onError = jest.fn();
-        const vmForFetch = {
+        const vmForFetch = withLoadProjectInterceptors({
             loadProject: jest.fn(),
             quit: jest.fn(),
             runtime: {targets: []}
-        };
+        });
         const release = beginProjectOperation(vmForFetch);
         try {
             const wrapper = shallowWithIntl(
@@ -209,7 +210,7 @@ describe('ProjectFetcherHOC', () => {
         }));
         cachedFetchBuffer.mockImplementation(url => Promise.resolve(url));
         const onFetchedProjectData = jest.fn();
-        const vmForFetch = {loadProject: jest.fn(), quit: jest.fn()};
+        const vmForFetch = withLoadProjectInterceptors({loadProject: jest.fn(), quit: jest.fn()});
         const wrapper = shallowWithIntl(
             <WrappedComponent
                 onFetchedProjectData={onFetchedProjectData}
@@ -242,7 +243,7 @@ describe('ProjectFetcherHOC', () => {
         const Component = () => <div />;
         const WrappedComponent = ProjectFetcherHOC(Component);
         const onFetchedProjectData = jest.fn();
-        const vmForFetch = {loadProject: jest.fn(), quit: jest.fn()};
+        const vmForFetch = withLoadProjectInterceptors({loadProject: jest.fn(), quit: jest.fn()});
         const wrapper = shallowWithIntl(
             <WrappedComponent
                 onFetchedProjectData={onFetchedProjectData}
@@ -277,7 +278,7 @@ describe('ProjectFetcherHOC', () => {
         const WrappedComponent = ProjectFetcherHOC(Component);
         const onFetchedProjectData = jest.fn();
         const onError = jest.fn();
-        const vm = {loadProject: jest.fn(), quit: jest.fn()};
+        const vm = withLoadProjectInterceptors({loadProject: jest.fn(), quit: jest.fn()});
         const wrapper = shallowWithIntl(
             <WrappedComponent
                 onError={onError}
@@ -331,7 +332,7 @@ describe('ProjectFetcherHOC', () => {
         cachedFetchBuffer.mockResolvedValue('next data');
         const onAbortProjectSwitch = jest.fn();
         const onFetchedProjectData = jest.fn();
-        const vm = {loadProject: jest.fn(), quit: jest.fn(), runtime: {targets: [{}]}};
+        const vm = withLoadProjectInterceptors({loadProject: jest.fn(), quit: jest.fn(), runtime: {targets: [{}]}});
         const instance = mountFetcher({onAbortProjectSwitch, onFetchedProjectData, vm});
         instance.previousProjectId = '100';
         window.history.replaceState({}, '', '/?platform_project=next');
@@ -363,7 +364,7 @@ describe('ProjectFetcherHOC', () => {
         });
         getEditorProject.mockResolvedValue({project: {id: 'next', projectJsonUrl: 'https://projects.example/next.json'}});
         const onFetchedProjectData = jest.fn();
-        const vm = {loadProject: jest.fn(), quit: jest.fn(), runtime: {targets: [{}]}};
+        const vm = withLoadProjectInterceptors({loadProject: jest.fn(), quit: jest.fn(), runtime: {targets: [{}]}});
         const instance = mountFetcher({onFetchedProjectData, vm});
         window.history.replaceState({}, '', '/?platform_project=next');
 
@@ -385,7 +386,7 @@ describe('ProjectFetcherHOC', () => {
         const onFetchedProjectData = jest.fn(() => {
             throw new Error('Could not start loading');
         });
-        const vm = {loadProject: jest.fn(), quit: jest.fn(), runtime: {targets: [{}]}};
+        const vm = withLoadProjectInterceptors({loadProject: jest.fn(), quit: jest.fn(), runtime: {targets: [{}]}});
         const instance = mountFetcher({onError, onFetchedProjectData, vm});
         window.history.replaceState({}, '', '/?platform_project=next');
 
@@ -394,6 +395,27 @@ describe('ProjectFetcherHOC', () => {
         expect(onFetchedProjectData).toHaveBeenCalledTimes(1);
         expect(takeLoadHandoff(vm)).toEqual({});
         expect(isProjectOperationActive(vm)).toBe(false);
+    });
+
+    test('a load the fetcher did not start clears the project source and records trust', async () => {
+        const loadDirectly = jest.fn(() => Promise.resolve('loaded'));
+        const vm = withLoadProjectInterceptors({loadProject: loadDirectly, quit: jest.fn()});
+        mountFetcher({vm});
+        mountFetcher({vm});
+        expect(vm._loadProjectInterceptors).toHaveLength(1);
+
+        window.history.replaceState({}, '', '/editor?platform_project=1&keep=1#mw-abc');
+        await expect(vm.loadProject('kept', {mwPreserveProjectSource: true, mwCanTrustProject: true}))
+            .resolves.toBe('loaded');
+        expect(window.location.search).toBe('?platform_project=1&keep=1');
+        expect(window.location.hash).toBe('#mw-abc');
+        expect(projectSession(vm).canTrustProject).toBe(true);
+
+        await vm.loadProject('dropped file');
+        expect(loadDirectly).toHaveBeenLastCalledWith('dropped file', {});
+        expect(window.location.search).toBe('?keep=1');
+        expect(window.location.hash).toBe('');
+        expect(projectSession(vm).canTrustProject).toBe(false);
     });
 
     test('when there is an id, it tries to update the store with that id', () => {

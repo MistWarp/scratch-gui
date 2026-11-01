@@ -6,7 +6,6 @@ import registerDebuggerBlocks from './blocks.js';
 const MAX_LOGS = 200000;
 
 const controllers = new WeakMap();
-const afterStepCallbacksByRuntime = new WeakMap();
 
 const initDebugger = vm => {
     if (controllers.has(vm)) {
@@ -100,26 +99,7 @@ const initDebugger = vm => {
         onClearLogs: clearLogs
     });
 
-    if (!afterStepCallbacksByRuntime.has(vm.runtime)) {
-        const afterStepCallbacks = [];
-        afterStepCallbacksByRuntime.set(vm.runtime, afterStepCallbacks);
-        const originalStep = vm.runtime._step;
-        vm.runtime._step = function (...args) {
-            const ret = originalStep.call(this, ...args);
-            for (const cb of afterStepCallbacks) {
-                cb();
-            }
-            return ret;
-        };
-    }
-    const addAfterStepCallback = cb => {
-        afterStepCallbacksByRuntime.get(vm.runtime).push(cb);
-        return () => {
-            const list = afterStepCallbacksByRuntime.get(vm.runtime);
-            const index = list.indexOf(cb);
-            if (index !== -1) list.splice(index, 1);
-        };
-    };
+    const addAfterStepCallback = callback => vm.runtime.addStepListener({after: callback});
 
     const controller = {
         vm,

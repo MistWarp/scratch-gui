@@ -1,4 +1,5 @@
 import EventTarget from '../../addons/event-target.js';
+import {RUNTIME_PAUSED, RUNTIME_UNPAUSED, silenceAudioWhilePaused} from '../../modules/paused-audio';
 
 const STATUS_RUNNING = 0;
 const STATUS_PROMISE_WAIT = 1;
@@ -6,61 +7,39 @@ const STATUS_YIELD = 2;
 const STATUS_YIELD_TICK = 3;
 const STATUS_DONE = 4;
 
-let vm;
-
-let paused = false;
-let pausedThreadState = new WeakMap();
-let pauseNewThreads = false;
+let vm = null;
 
 let steppingThread = null;
 
 const eventTarget = new EventTarget();
 
-let audioContextStateChange = Promise.resolve();
+export const isPaused = () => Boolean(vm && vm.runtime.isPaused());
 
-export const isPaused = () => paused;
+const pausedState = thread => vm.runtime.getPausedThreadState(thread);
 
-const pauseThread = thread => {
-    if (thread.updateMonitor || pausedThreadState.has(thread)) {
-        return;
-    }
-
-    const pauseState = {
-        time: vm.runtime.currentMSecs,
-        status: thread.status
-    };
-    pausedThreadState.set(thread, pauseState);
-
-    thread.status = STATUS_PROMISE_WAIT;
-};
-
-const ensurePausedThreadIsStillPaused = thread => {
-    if (thread.status === STATUS_DONE) {
-        return;
-    }
-    const pauseState = pausedThreadState.get(thread);
-    if (pauseState) {
-        if (thread.status !== STATUS_PROMISE_WAIT) {
-            pauseState.status = thread.status;
-            thread.status = STATUS_PROMISE_WAIT;
+const holdThreadsStartedBy = run => {
+    const runtime = vm.runtime;
+    const existing = new Set(runtime.threads);
+    try {
+        return run();
+    } finally {
+        for (const thread of runtime.threads) {
+            if (!existing.has(thread)) runtime.pauseThread(thread);
         }
     }
 };
 
-const setSteppingThread = thread => {
-    steppingThread = thread;
-};
-
 const compensateForTimePassedWhilePaused = (thread, pauseState) => {
+    const elapsed = vm.runtime.currentMSecs - pauseState.time;
     if (thread.timer) {
-        thread.timer.startTime += vm.runtime.currentMSecs - pauseState.time;
+        thread.timer.startTime += elapsed;
     }
     if (thread.compatibilityStackFrame && thread.compatibilityStackFrame.timer) {
-        thread.compatibilityStackFrame.timer.startTime += vm.runtime.currentMSecs - pauseState.time;
+        thread.compatibilityStackFrame.timer.startTime += elapsed;
     }
     const stackFrame = thread.peekStackFrame();
     if (stackFrame && stackFrame.executionContext && stackFrame.executionContext.timer) {
-        stackFrame.executionContext.timer.startTime += vm.runtime.currentMSecs - pauseState.time;
+        stackFrame.executionContext.timer.startTime += elapsed;
     }
 };
 
@@ -90,59 +69,54 @@ const stepUnsteppedThreads = lastSteppedThread => {
     }
 };
 
-export const setPaused = _paused => {
-    const didChange = paused !== _paused;
-    if (didChange) {
-        paused = _paused;
-        eventTarget.dispatchEvent(new CustomEvent('change'));
-
-        if (paused) {
-            vm.runtime.emit('RUNTIME_PAUSED');
-        } else {
-            vm.runtime.emit('RUNTIME_UNPAUSED');
-        }
-    }
-
-    vm.runtime.audioEngine.paused = paused;
-    if (paused) {
-        audioContextStateChange = audioContextStateChange.then(() => vm.runtime.audioEngine.audioContext.suspend());
-        if (!vm.runtime.ioDevices.clock._paused) {
-            vm.runtime.ioDevices.clock.pause();
-        }
-        vm.runtime.threads.forEach(pauseThread);
-
-        const activeThread = vm.runtime.sequencer.activeThread;
-        if (activeThread) {
-            setSteppingThread(activeThread);
-            eventTarget.dispatchEvent(new CustomEvent('step'));
-        }
-    }
-
-    if (!paused && didChange) {
-        audioContextStateChange = audioContextStateChange.then(() => vm.runtime.audioEngine.audioContext.resume());
-        vm.runtime.ioDevices.clock.resume();
-        for (const thread of vm.runtime.threads) {
-            const pauseState = pausedThreadState.get(thread);
-            if (pauseState) {
-                compensateForTimePassedWhilePaused(thread, pauseState);
-                thread.status = pauseState.status;
-                thread.breakpointBlock = thread.isCompiled ? thread.topBlock : thread.peekStack();
-            }
-        }
-        pausedThreadState = new WeakMap();
-
-        const lastSteppedThread = steppingThread;
-        stepUnsteppedThreads(lastSteppedThread);
-        steppingThread = null;
+const followActiveThread = () => {
+    const activeThread = vm.runtime.sequencer.activeThread;
+    if (activeThread) {
+        steppingThread = activeThread;
+        eventTarget.dispatchEvent(new CustomEvent('step'));
     }
 };
 
+const handleRuntimePaused = () => {
+    eventTarget.dispatchEvent(new CustomEvent('change'));
+    followActiveThread();
+};
+
+const handleRuntimeUnpaused = () => {
+    steppingThread = null;
+    eventTarget.dispatchEvent(new CustomEvent('change'));
+};
+
+export const setPaused = paused => {
+    if (!vm) return;
+    const runtime = vm.runtime;
+    if (paused) {
+        if (!runtime.isPaused()) {
+            runtime.setPaused(true);
+            return;
+        }
+        for (const thread of runtime.threads) runtime.pauseThread(thread);
+        followActiveThread();
+        return;
+    }
+    if (!runtime.isPaused()) return;
+    for (const thread of runtime.threads) {
+        if (pausedState(thread)) thread.breakpointBlock = thread.isCompiled ? thread.topBlock : thread.peekStack();
+    }
+    const lastSteppedThread = steppingThread;
+    runtime.setPaused(false);
+    stepUnsteppedThreads(lastSteppedThread);
+};
+
 export const onPauseChanged = listener => {
-    eventTarget.addEventListener('change', () => listener(paused));
+    const handleChange = () => listener(isPaused());
+    eventTarget.addEventListener('change', handleChange);
+    return () => eventTarget.removeEventListener('change', handleChange);
 };
 
 export const onSingleStep = listener => {
     eventTarget.addEventListener('step', listener);
+    return () => eventTarget.removeEventListener('step', listener);
 };
 
 export const getRunningThread = () => steppingThread;
@@ -165,7 +139,6 @@ const singleStepThread = thread => {
         }
     }
 
-    pauseNewThreads = true;
     vm.runtime.sequencer.activeThread = thread;
 
     const specialError = ['special error used by Scratch Addons for implementing single-stepping'];
@@ -183,7 +156,7 @@ const singleStepThread = thread => {
         }
 
         try {
-            vm.runtime.sequencer.stepThread(thread);
+            holdThreadsStartedBy(() => vm.runtime.sequencer.stepThread(thread));
         } catch (err) {
             if (err !== specialError) throw err;
         }
@@ -221,7 +194,6 @@ const singleStepThread = thread => {
 
         return true;
     } finally {
-        pauseNewThreads = false;
         vm.runtime.sequencer.activeThread = null;
         Object.defineProperty(thread, 'blockGlowInFrame', {
             value: currentBlockId,
@@ -237,7 +209,7 @@ const singleStepThread = thread => {
 };
 
 const getRealStatus = thread => {
-    const pauseState = pausedThreadState.get(thread);
+    const pauseState = pausedState(thread);
     if (pauseState) {
         return pauseState.status;
     }
@@ -256,19 +228,54 @@ const findNewSteppingThread = startingIndex => {
         }
         const status = getRealStatus(possibleNewThread);
         if (status === STATUS_RUNNING || status === STATUS_YIELD || status === STATUS_YIELD_TICK) {
-            pauseThread(possibleNewThread);
+            vm.runtime.pauseThread(possibleNewThread);
             return possibleNewThread;
         }
     }
     return null;
 };
 
-export const singleStep = () => {
-    if (steppingThread) {
-        const pauseState = pausedThreadState.get(steppingThread);
+const advanceOneFrame = () => {
+    const runtime = vm.runtime;
+    runtime.ioDevices.clock._pausedTime += runtime.currentStepTime;
+    const audioContext = runtime.audioEngine && runtime.audioEngine.audioContext;
+    for (const target of runtime.targets) {
+        const soundBank = target.sprite.soundBank;
+        if (!audioContext || !soundBank) continue;
+        for (const soundId of Object.keys(soundBank.soundPlayers)) {
+            const soundPlayer = soundBank.soundPlayers[soundId];
+            if (soundPlayer.outputNode) {
+                soundPlayer.outputNode.stop(audioContext.currentTime);
+                soundPlayer._createSource();
+                soundPlayer.outputNode.start(
+                    audioContext.currentTime,
+                    audioContext.currentTime - soundPlayer.startingUntil + (runtime.currentStepTime / 1000)
+                );
+                soundPlayer.startingUntil -= runtime.currentStepTime / 1000;
+            }
+        }
+    }
+    for (const thread of runtime.threads) {
+        const pauseState = pausedState(thread);
+        if (pauseState) pauseState.time += runtime.currentStepTime;
+    }
+    holdThreadsStartedBy(() => {
+        const hats = runtime._hats;
+        for (const hatType in hats) {
+            if (!Object.prototype.hasOwnProperty.call(hats, hatType)) continue;
+            if (hats[hatType].edgeActivated) runtime.startHats(hatType);
+        }
+    });
+};
 
-        compensateForTimePassedWhilePaused(steppingThread, pauseState);
-        pauseState.time = vm.runtime.currentMSecs;
+export const singleStep = () => {
+    if (!isPaused()) return;
+    if (steppingThread) {
+        const pauseState = pausedState(steppingThread);
+        if (pauseState) {
+            compensateForTimePassedWhilePaused(steppingThread, pauseState);
+            pauseState.time = vm.runtime.currentMSecs;
+        }
 
         const continueExecuting = singleStepThread(steppingThread);
 
@@ -278,42 +285,8 @@ export const singleStep = () => {
     }
 
     if (!steppingThread) {
-        setSteppingThread(findNewSteppingThread(0));
-
-        vm.runtime.ioDevices.clock._pausedTime += vm.runtime.currentStepTime;
-        const audioContext = vm.runtime.audioEngine.audioContext;
-        for (const target of vm.runtime.targets) {
-            for (const soundId of Object.keys(target.sprite.soundBank.soundPlayers)) {
-                const soundPlayer = target.sprite.soundBank.soundPlayers[soundId];
-                if (soundPlayer.outputNode) {
-                    soundPlayer.outputNode.stop(audioContext.currentTime);
-                    soundPlayer._createSource();
-                    soundPlayer.outputNode.start(
-                        audioContext.currentTime,
-                        audioContext.currentTime - soundPlayer.startingUntil + (vm.runtime.currentStepTime / 1000)
-                    );
-                    soundPlayer.startingUntil -= vm.runtime.currentStepTime / 1000;
-                }
-            }
-        }
-        for (const thread of vm.runtime.threads) {
-            if (pausedThreadState.has(thread)) {
-                pausedThreadState.get(thread).time += vm.runtime.currentStepTime;
-            }
-        }
-
-        pauseNewThreads = true;
-
-        const hats = vm.runtime._hats;
-        for (const hatType in hats) {
-            if (!Object.prototype.hasOwnProperty.call(hats, hatType)) continue;
-            const hat = hats[hatType];
-            if (hat.edgeActivated) {
-                vm.runtime.startHats(hatType);
-            }
-        }
-
-        pauseNewThreads = false;
+        steppingThread = findNewSteppingThread(0);
+        advanceOneFrame();
     }
 
     eventTarget.dispatchEvent(new CustomEvent('step'));
@@ -325,59 +298,7 @@ export const setup = _vm => {
     }
 
     vm = _vm;
-
-    const originalStepThreads = vm.runtime.sequencer.stepThreads;
-    vm.runtime.sequencer.stepThreads = function () {
-        if (isPaused()) {
-            for (const thread of this.runtime.threads) {
-                ensurePausedThreadIsStillPaused(thread);
-            }
-        }
-        return originalStepThreads.call(this);
-    };
-
-    const originalGreenFlag = vm.runtime.greenFlag;
-    vm.runtime.greenFlag = function () {
-        setPaused(false);
-        return originalGreenFlag.call(this);
-    };
-
-    const originalStopAll = vm.runtime.stopAll;
-    vm.runtime.stopAll = function () {
-        const result = originalStopAll.call(this);
-        setPaused(false);
-        return result;
-    };
-
-    const originalStartHats = vm.runtime.startHats;
-    vm.runtime.startHats = function (...args) {
-        const hat = args[0];
-        const isUserInitiated = hat === 'event_whenbroadcastreceived' || hat === 'control_start_as_clone';
-        if (pauseNewThreads) {
-            if (!isUserInitiated && !this.getIsEdgeActivatedHat(hat)) {
-                return [];
-            }
-            const newThreads = originalStartHats.apply(this, args);
-            for (const thread of newThreads) {
-                pauseThread(thread);
-            }
-            return newThreads;
-        } else if (paused && !isUserInitiated) {
-            return [];
-        }
-        return originalStartHats.apply(this, args);
-    };
-
-    const originalGetMonitorThreadCount = vm.runtime._getMonitorThreadCount;
-    vm.runtime._getMonitorThreadCount = function (threads) {
-        let count = originalGetMonitorThreadCount.call(this, threads);
-        if (paused) {
-            for (const thread of threads) {
-                if (pausedThreadState.has(thread)) {
-                    count++;
-                }
-            }
-        }
-        return count;
-    };
+    vm.runtime.on(RUNTIME_PAUSED, handleRuntimePaused);
+    vm.runtime.on(RUNTIME_UNPAUSED, handleRuntimeUnpaused);
+    silenceAudioWhilePaused(vm.runtime);
 };

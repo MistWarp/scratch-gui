@@ -15,6 +15,7 @@ import * as browserGit from '../../../src/lib/git/browser-git.js';
 
 import SBFileUploaderHOC from '../../../src/lib/components/sb-file-uploader-hoc.jsx';
 import {projectSession} from '../../../src/modules/project-session';
+import withLoadProjectInterceptors from '../../helpers/load-interceptors.js';
 
 describe('SBFileUploaderHOC', () => {
     const mockStore = configureStore();
@@ -85,7 +86,11 @@ describe('SBFileUploaderHOC', () => {
         const preloadSpy = jest.spyOn(history, 'preloadProjectHistory').mockResolvedValue(null);
         rememberPlatformProject({id: 'saved', isOwner: true});
         window.history.replaceState(null, '', '#mw-saved');
-        const loadedVm = {loadProject: jest.fn().mockResolvedValue(), quit: jest.fn(), renderer: {draw: jest.fn()}};
+        const loadedVm = withLoadProjectInterceptors({
+            loadProject: jest.fn().mockResolvedValue(),
+            quit: jest.fn(),
+            renderer: {draw: jest.fn()}
+        });
         const instance = unwrappedInstance({
             vm: loadedVm, projectChanged: false, onSetProjectTitle: jest.fn()
         });
@@ -93,7 +98,7 @@ describe('SBFileUploaderHOC', () => {
         instance.fileToUpload = {name: 'imported.mwp'};
         instance.uploadDestination = destination;
         await instance.onload();
-        expect(loadedVm.loadProject).toHaveBeenCalled();
+        expect(loadedVm._loadProjectDirectly).toHaveBeenCalled();
         if (destination === 'new') {
             expect(getRememberedPlatformProjectState()).toBeNull();
             expect(window.location.hash).toBe('');

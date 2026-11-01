@@ -212,9 +212,9 @@ const createThreadsTab = controller => {
     const handlePauseChanged = () => {
         updateContent();
     };
-    engine.onPauseChanged(handlePauseChanged);
+    const removePauseListener = engine.onPauseChanged(handlePauseChanged);
 
-    engine.onSingleStep(() => {
+    const removeStepListener = engine.onSingleStep(() => {
         updateContent();
         queueMicrotask(() => {
             const runningIndex = logView.rows.findIndex(i => i.running);
@@ -250,7 +250,9 @@ const createThreadsTab = controller => {
             logView.hide();
         },
         destroy: () => {
-            if (removeAfterStep) removeAfterStep();
+            removeAfterStep();
+            removePauseListener();
+            removeStepListener();
             glow([]);
         }
     };

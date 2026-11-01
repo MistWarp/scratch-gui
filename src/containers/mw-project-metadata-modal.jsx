@@ -21,7 +21,7 @@ import {
     ModalSidebarLayout
 } from '../components/modal-sidebar/modal-sidebar.jsx';
 import {closeProjectMetadataModal} from '../reducers/modals';
-import {getLoadedProjectMeta} from '../lib/mw-project-metadata';
+import {getLoadedProjectMeta} from '../modules/project-metadata';
 import {getPerks, getProject} from '../lib/community/api';
 import {getRememberedPlatformProject} from '../lib/community/publish';
 import {formatBytes} from '../lib/utils/bytes.js';

@@ -120,16 +120,14 @@ const registerDebuggerBlocks = (vm, handlers) => {
 
     patchBlockly();
 
-    const ogGreenFlag = vm.runtime.greenFlag;
-    vm.runtime.greenFlag = function (...args) {
+    vm.runtime.on('PROJECT_START', () => {
         if (getSetting('log_clear_greenflag')) {
             onClearLogs();
         }
         if (getSetting('log_greenflag')) {
             onLog('Green flag clicked', null, 'internal');
         }
-        return ogGreenFlag.call(this, ...args);
-    };
+    });
 
     const ogStartHats = vm.runtime.startHats;
     vm.runtime.startHats = function (hat, optMatchFields, ...args) {

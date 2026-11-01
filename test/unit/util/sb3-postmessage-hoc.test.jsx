@@ -5,6 +5,7 @@ import {shallow} from 'enzyme';
 import SB3PostMessageHOC from '../../../src/lib/components/sb3-postmessage-hoc.jsx';
 import RestorePointAPI from '../../../src/lib/api/restore-points';
 import {getRememberedPlatformProjectState, rememberPlatformProject} from '../../../src/lib/community/publish.js';
+import withLoadProjectInterceptors from '../../helpers/load-interceptors.js';
 
 jest.mock('../../../src/lib/api/restore-points', () => ({
     createSafetyRestorePoint: jest.fn(() => Promise.resolve()),
@@ -42,13 +43,13 @@ describe('SB3PostMessageHOC', () => {
     });
 
     beforeEach(() => {
-        vm = {
+        vm = withLoadProjectInterceptors({
             loadProject: jest.fn(() => Promise.resolve()),
             quit: jest.fn(),
             renderer: {
                 draw: jest.fn()
             }
-        };
+        });
         store = mockStore({
             scratchGui: {
                 projectState: {},
@@ -72,7 +73,7 @@ describe('SB3PostMessageHOC', () => {
         instance.componentWillUnmount();
         finishBackup(42);
         await load;
-        expect(vm.loadProject).not.toHaveBeenCalled();
+        expect(vm._loadProjectDirectly).not.toHaveBeenCalled();
     });
 
     test('restore point storage failure prevents an external page replacing code', async () => {
@@ -83,7 +84,7 @@ describe('SB3PostMessageHOC', () => {
         await instance.handleMessage(createEvent(new Uint8Array([3]), source));
 
         expect(vm.quit).not.toHaveBeenCalled();
-        expect(vm.loadProject).not.toHaveBeenCalled();
+        expect(vm._loadProjectDirectly).not.toHaveBeenCalled();
         expect(source.postMessage).toHaveBeenCalledWith(
             expect.objectContaining({status: 'error'}),
             window.location.origin
@@ -93,7 +94,7 @@ describe('SB3PostMessageHOC', () => {
     test('a project sent by another page does not keep the previous project\'s trust', async () => {
         rememberPlatformProject({id: 'project-1', isOwner: true, trustedExtensions: ['hash-1']});
         let stateDuringLoad = 'not loaded';
-        vm.loadProject = jest.fn(() => {
+        vm._loadProjectDirectly = jest.fn(() => {
             stateDuringLoad = getRememberedPlatformProjectState();
             return Promise.resolve();
         });
@@ -101,7 +102,7 @@ describe('SB3PostMessageHOC', () => {
 
         await instance.handleMessage(createEvent(new Uint8Array([4])));
 
-        expect(vm.loadProject).toHaveBeenCalled();
+        expect(vm._loadProjectDirectly).toHaveBeenCalled();
         expect(stateDuringLoad).toBeNull();
     });
 
@@ -113,12 +114,12 @@ describe('SB3PostMessageHOC', () => {
             stateDuringRollback = getRememberedPlatformProjectState();
             return Promise.resolve();
         });
-        vm.loadProject = jest.fn(() => Promise.reject(new Error('corrupt project')));
+        vm._loadProjectDirectly = jest.fn(() => Promise.reject(new Error('corrupt project')));
         const instance = createInstance();
 
         await instance.handleMessage(createEvent(new Uint8Array([5])));
 
-        expect(vm.loadProject).toHaveBeenCalled();
+        expect(vm._loadProjectDirectly).toHaveBeenCalled();
         expect(RestorePointAPI.loadRestorePoint).toHaveBeenCalled();
         expect(stateDuringRollback).toEqual(before);
         expect(getRememberedPlatformProjectState()).toEqual(before);
@@ -127,7 +128,7 @@ describe('SB3PostMessageHOC', () => {
     test('a failed external load whose rollback also fails leaves no MistWarp link', async () => {
         rememberPlatformProject({id: 'project-1', isOwner: true, gitHead: 'abc', edited: 5});
         RestorePointAPI.loadRestorePoint.mockRejectedValue(new Error('backup unreadable'));
-        vm.loadProject = jest.fn(() => Promise.reject(new Error('corrupt project')));
+        vm._loadProjectDirectly = jest.fn(() => Promise.reject(new Error('corrupt project')));
         const instance = createInstance();
 
         await instance.handleMessage(createEvent(new Uint8Array([6])));
@@ -146,6 +147,6 @@ describe('SB3PostMessageHOC', () => {
             expect.objectContaining({status: 'error'}),
             window.location.origin
         );
-        expect(vm.loadProject).not.toHaveBeenCalled();
+        expect(vm._loadProjectDirectly).not.toHaveBeenCalled();
     });
 });

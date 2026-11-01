@@ -10,6 +10,7 @@ import {ScratchPaintReducer} from '../tw-scratch-paint.js';
 import localesReducer, {initLocale, localesInitialState, localeMiddleware} from '../../reducers/locales.js';
 
 import {setPlayer, setFullScreen} from '../../reducers/mode.js';
+import {syncProjectNameToVm} from '../../reducers/project-title.js';
 
 import locales from '@turbowarp/scratch-l10n';
 import {detectLocale} from '../utils/detect-locale';
@@ -93,6 +94,7 @@ const AppStateHOC = function (WrappedComponent, localesOnly) {
                 initialState,
                 enhancer
             );
+            if (!localesOnly) syncProjectNameToVm(this.store);
             window.ReduxStore = this.store;
             AddonHooks.appStateStore = this.store;
             for (const callback of AddonHooks.appStateStoreCallbacks.splice(0)) {

@@ -253,7 +253,7 @@ const createMemoryTab = controller => {
     let lastMemoryTime = now() + 3000;
     let isVisible = false;
 
-    controller.addAfterStepCallback(() => {
+    const removeAfterStep = controller.addAfterStepCallback(() => {
         if (engine.isPaused() || !isVisible) {
             return;
         }
@@ -286,7 +286,7 @@ const createMemoryTab = controller => {
     });
 
     let pauseTime = 0;
-    engine.onPauseChanged(paused => {
+    const removePauseListener = engine.onPauseChanged(paused => {
         if (paused) {
             pauseTime = now();
         } else {
@@ -322,6 +322,8 @@ const createMemoryTab = controller => {
             isVisible = false;
         },
         destroy: () => {
+            removeAfterStep();
+            removePauseListener();
             variableDataChart.destroy();
             listItemsChart.destroy();
         }

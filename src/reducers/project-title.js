@@ -18,8 +18,23 @@ const setProjectTitle = title => ({
     title: title
 });
 
+const syncProjectNameToVm = store => {
+    let namedVm = null;
+    let name = null;
+    const sync = () => {
+        const {vm, projectTitle} = store.getState().scratchGui;
+        if (!vm || (vm === namedVm && projectTitle === name)) return;
+        namedVm = vm;
+        name = projectTitle;
+        vm.setProjectName(projectTitle);
+    };
+    sync();
+    return store.subscribe(sync);
+};
+
 export {
     reducer as default,
     initialState as projectTitleInitialState,
-    setProjectTitle
+    setProjectTitle,
+    syncProjectNameToVm
 };
