@@ -192,6 +192,7 @@ class MistWarpGameHost extends React.Component {
                     name: item.name,
                     description: item.description,
                     price: item.price,
+                    icon: item.icon || '',
                     grantsItem: item.grantsItem ? item.grantsItem.split(':').pop() : ''
                 }));
                 next.push(product);
