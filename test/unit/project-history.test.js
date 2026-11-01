@@ -34,6 +34,7 @@ const {
     setRemoteProjectHistory,
     subscribeProjectHistory
 } = require('../../src/lib/git/project-history.js');
+const {projectSession} = require('../../src/modules/project-session');
 
 describe('project history preload', () => {
     beforeEach(() => {
@@ -49,7 +50,7 @@ describe('project history preload', () => {
         adoptImportedProjectHistory(vm, manifest, project);
         await expect(ensureProjectHistoryHydrated(vm)).resolves.toBe(manifest);
         expect(mockFetchWorkspace).not.toHaveBeenCalled();
-        expect(vm._mwHistoryHydration.replaceHistory).toBe(true);
+        expect(projectSession(vm).historyHydration.replaceHistory).toBe(true);
     });
 
     test('detaches remote history for a new workspace', async () => {
@@ -59,7 +60,7 @@ describe('project history preload', () => {
         adoptImportedProjectHistory(vm, null, null);
         await expect(ensureProjectHistoryHydrated(vm)).resolves.toBeNull();
         expect(mockFetchWorkspace).not.toHaveBeenCalled();
-        expect(vm._mwHistoryHydration).toBeNull();
+        expect(projectSession(vm).historyHydration).toBeNull();
     });
 
     test('loads the graph and connections before a history surface opens', async () => {
@@ -182,6 +183,6 @@ describe('project history preload', () => {
         await expect(ensureProjectHistoryHydrated(vm)).resolves.toEqual({head, branch: 'main'});
         expect(mockImportMwp).toHaveBeenCalledTimes(1);
         expect(mockCheckoutMwpBranch).toHaveBeenCalledWith('main');
-        expect(vm._mwHistoryHydration).toMatchObject({ready: true, manifest: {head, branch: 'main'}});
+        expect(projectSession(vm).historyHydration).toMatchObject({ready: true, manifest: {head, branch: 'main'}});
     });
 });

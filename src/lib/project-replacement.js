@@ -1,6 +1,7 @@
 import RestorePointAPI from './api/restore-points.js';
 import {createRepoBackup} from './git/browser-git.js';
 import {withProjectOperation, projectRevision} from './project-operation.js';
+import {projectSession} from '../modules/project-session';
 
 // Consent belongs to the caller. This protects both code and history if the
 // approved operation fails after it has started changing the workspace.
@@ -18,7 +19,7 @@ const backupCurrentCode = async (vm, title) => {
 };
 
 const prepareProjectReplacement = async (vm, title) => {
-    const hydration = vm._mwHistoryHydration;
+    const hydration = projectSession(vm).historyHydration;
     if (hydration && hydration.promise) await hydration.promise;
     const revision = projectRevision(vm);
     const restoreCode = await backupCurrentCode(vm, title);
@@ -28,7 +29,7 @@ const prepareProjectReplacement = async (vm, title) => {
     }
     return async ({restoreCode: shouldRestoreCode = true} = {}) => {
         await restoreRepo();
-        vm._mwHistoryHydration = hydration;
+        projectSession(vm).historyHydration = hydration;
         if (shouldRestoreCode) await restoreCode();
     };
 };

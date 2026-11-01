@@ -171,7 +171,6 @@ class Blocks extends React.Component {
             'setBlocks',
             'setPaletteResizer',
             'setLocale',
-            'handleEnableProcedureReturns',
             'isWorkspaceReady'
         ]);
         this.ScratchBlocks.prompt = this.handlePromptStart;
@@ -421,24 +420,6 @@ class Blocks extends React.Component {
             // Set workspace visibility with performance optimization
             if (this.workspace) {
                 this.workspace.setVisible(true);
-
-                // Check for pending procedure returns request
-                if (this.props.vm && this.props.vm._pendingProcedureReturns) {
-                    this.props.vm._pendingProcedureReturns = false;
-
-                    // Enable procedure returns after workspace is ready
-                    setTimeout(() => {
-                        this.handleEnableProcedureReturns();
-
-                        // Also handle pending category selection
-                        if (this.props.vm._pendingCategorySelection) {
-                            const categoryId = this.props.vm._pendingCategorySelection;
-                            this.props.vm._pendingCategorySelection = null;
-                            this.handleCategorySelected(categoryId);
-                        }
-                    }, 100);
-                }
-                
             }
             const localeChanged = prevProps.locale !== this.props.locale ||
                 this.props.locale !== this.props.vm.getLocale();
@@ -1584,29 +1565,6 @@ class Blocks extends React.Component {
             return;
         }
         await this.placeCode(payload, point, targetId);
-    }
-    handleEnableProcedureReturns () {
-        this.workspace.enableProcedureReturns();
-        this.requestToolboxUpdate();
-        
-        // Force immediate toolbox refresh to show return blocks
-        setTimeout(() => {
-            if (this.workspace.getFlyout) {
-                const flyout = this.workspace.getFlyout();
-                if (flyout && flyout.getWorkspace) {
-                    flyout.getWorkspace().refreshToolboxSelection_();
-                }
-            }
-            this.workspace.refreshToolboxSelection_();
-            
-            // Also trigger a specific refresh of the procedures category
-            if (this.workspace.getToolbox && this.workspace.getToolbox()) {
-                const toolbox = this.workspace.getToolbox();
-                if (toolbox.refreshSelection) {
-                    toolbox.refreshSelection();
-                }
-            }
-        }, 100);
     }
     render () {
         /* eslint-disable no-unused-vars */

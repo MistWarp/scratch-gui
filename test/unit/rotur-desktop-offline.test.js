@@ -32,7 +32,8 @@ const load = () => ({
     availability: require('../../src/lib/rotur/availability.js'),
     client: require('../../src/lib/rotur/client.js'),
     identity: require('../../src/lib/rotur/identity.js'),
-    host: require('../../src/containers/rotur-extension-host.jsx')
+    host: require('../../src/containers/rotur-extension-host.jsx'),
+    session: require('../../src/modules/project-session')
 });
 
 test('desktop has no Rotur', () => {
@@ -57,8 +58,10 @@ test('signing in and asking for permissions fail with a clear error', async () =
 });
 
 test('projects get "not available offline" from the Rotur bridge', async () => {
-    const {RoturExtensionHost} = load().host;
-    const host = new RoturExtensionHost({vm: {runtime: {_mwProjectTrusted: true}}, projectTitle: 'Game'});
+    const {host: {RoturExtensionHost}, session: {projectSession}} = load();
+    const vm = {runtime: {}};
+    projectSession(vm).projectTrusted = true;
+    const host = new RoturExtensionHost({vm, projectTitle: 'Game'});
     host.acquireModalLock = jest.fn();
     await expect(host.call('profiles.get', ['sam'])).rejects.toThrow('desktop app');
     await expect(host.ensureConsent(['posts:create'])).rejects.toThrow('desktop app');

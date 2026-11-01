@@ -6,6 +6,7 @@ import communityEnabled from '../community/enabled.js';
 import {guardSavedCallback} from './smart-save.js';
 import {getSettings} from './autosave-settings.js';
 import {flushDraftWrites} from '../code-mode/code-drafts.js';
+import {projectSession} from '../../modules/project-session';
 
 const messages = defineMessages({
     autosaved: {
@@ -43,8 +44,9 @@ const runAutosave = async ({
     const platform = platformState || getRememberedPlatformProjectState();
     if (!platform || !platform.id) return false;
     if (platform.isOwner === false && !platform.canSaveDirectly) return false;
-    if (!vm || isProjectOperationActive(vm) || vm._mwHistoryHydration?.replaceHistory ||
-        vm._mwPendingDiskOverwrite) return false;
+    if (!vm || isProjectOperationActive(vm)) return false;
+    const session = projectSession(vm);
+    if (session.historyHydration?.replaceHistory || session.pendingDiskOverwrite) return false;
     if (inFlight) return false;
     // Module-level re-entry guard; intentionally not atomic with the await below.
     // eslint-disable-next-line require-atomic-updates

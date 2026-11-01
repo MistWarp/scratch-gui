@@ -34,6 +34,7 @@ import {
     getIsUpdating,
     projectError
 } from '../../reducers/project-state';
+import {projectSession} from '../../modules/project-session';
 
 /**
  * Higher Order Component to provide behavior for saving projects.
@@ -112,7 +113,7 @@ const ProjectSaverHOC = function (WrappedComponent) {
             this.props.onSetProjectSaver(null);
         }
         leavePageConfirm (e) {
-            if (this.props.projectChanged || this.props.vm._mwPendingDiskOverwrite ||
+            if (this.props.projectChanged || projectSession(this.props.vm).pendingDiskOverwrite ||
                 isProjectOperationActive(this.props.vm) || hasUnappliedCode()) {
                 if (e && e.preventDefault) e.preventDefault();
                 // both methods of returning a value may be necessary for browser compatibility

@@ -4,6 +4,7 @@ import {TWSecurityManagerComponent} from '../../src/containers/tw-security-manag
 import {ExtensionLibrary} from '../../src/containers/extension-library.jsx';
 import {rememberPlatformProject} from '../../src/lib/community/publish.js';
 import {clearBlockedProjectPrompts} from '../../src/lib/project-prompt-blocking.js';
+import {projectSession} from '../../src/modules/project-session';
 
 Object.defineProperty(global, 'crypto', {value: webcrypto, configurable: true});
 Object.defineProperty(global, 'TextEncoder', {value: TextEncoder, configurable: true});
@@ -13,13 +14,14 @@ const GALLERY = 'https://extensions.turbowarp.org/Lily/Skins.js';
 const MISTIUM = 'https://extensions.mistium.com/featured/Example.js';
 const CUSTOM = 'https://example.com/tracker.js';
 
-const installSecurityManager = (runtime = {}) => {
+const installSecurityManager = ({projectTrusted = false} = {}) => {
     const vm = {
         on: jest.fn(),
         off: jest.fn(),
-        runtime: Object.assign({projectName: 'Class project', on: jest.fn(), off: jest.fn()}, runtime),
+        runtime: {projectName: 'Class project', on: jest.fn(), off: jest.fn()},
         extensionManager: {securityManager: {}}
     };
+    projectSession(vm).projectTrusted = projectTrusted;
     const component = new TWSecurityManagerComponent({vm, securityManager: {}});
     component.setState = jest.fn();
     component.componentDidMount();
@@ -80,14 +82,14 @@ describe('security manager for class accounts', () => {
     test('the load all and allow all bypasses do not apply to students', async () => {
         localStorage.setItem(STUDENT_KEY, '1');
         window.__mwAllowAllSecurity = true;
-        const {manager} = installSecurityManager({_mwProjectTrusted: true});
+        const {manager} = installSecurityManager({projectTrusted: true});
         await expect(manager.canFetch('https://example.com')).resolves.toBe(false);
         await expect(manager.getSandboxMode(CUSTOM)).rejects.toThrow('class accounts');
         await expect(manager.canLoadExtensionFromProject(CUSTOM)).resolves.toBe(false);
     });
 
     test('everyone else keeps the normal checks', async () => {
-        const {manager} = installSecurityManager({_mwProjectTrusted: true});
+        const {manager} = installSecurityManager({projectTrusted: true});
         expect(await manager.canFetch('https://example.com')).toBe(true);
         expect(await manager.getSandboxMode(CUSTOM)).toBe('iframe');
         const plain = installSecurityManager().manager;

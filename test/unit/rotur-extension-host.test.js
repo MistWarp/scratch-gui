@@ -22,6 +22,12 @@ import {
     isProjectPromptBlocked
 } from '../../src/lib/project-prompt-blocking.js';
 import {RoturExtensionHost} from '../../src/containers/rotur-extension-host.jsx';
+import {projectSession} from '../../src/modules/project-session';
+
+const trustedVm = vm => {
+    projectSession(vm).projectTrusted = true;
+    return vm;
+};
 
 beforeEach(() => {
     localStorage.removeItem(BLOCKED_PROJECT_PROMPTS_KEY);
@@ -30,7 +36,7 @@ beforeEach(() => {
 
 test('trusted projects skip Rotur permission prompts', async () => {
     const host = new RoturExtensionHost({
-        vm: {runtime: {_mwProjectTrusted: true}},
+        vm: trustedVm({runtime: {}}),
         projectTitle: 'Project'
     });
     host.acquireModalLock = jest.fn();
@@ -44,7 +50,7 @@ test('trusted projects skip Rotur permission prompts', async () => {
 
 test('trusted projects still confirm sensitive Rotur actions', async () => {
     const host = new RoturExtensionHost({
-        vm: {runtime: {_mwProjectTrusted: true}}
+        vm: trustedVm({runtime: {}})
     });
     const showModal = jest.fn(() => Promise.resolve(true));
     host.acquireModalLock = jest.fn(() => Promise.resolve({showModal}));

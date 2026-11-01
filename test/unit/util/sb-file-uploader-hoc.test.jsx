@@ -14,6 +14,7 @@ import RestorePointAPI from '../../../src/lib/api/restore-points.js';
 import * as browserGit from '../../../src/lib/git/browser-git.js';
 
 import SBFileUploaderHOC from '../../../src/lib/components/sb-file-uploader-hoc.jsx';
+import {projectSession} from '../../../src/modules/project-session';
 
 describe('SBFileUploaderHOC', () => {
     const mockStore = configureStore();
@@ -96,10 +97,10 @@ describe('SBFileUploaderHOC', () => {
         if (destination === 'new') {
             expect(getRememberedPlatformProjectState()).toBeNull();
             expect(window.location.hash).toBe('');
-            expect(loadedVm._mwHistoryHydration).toBeNull();
+            expect(projectSession(loadedVm).historyHydration).toBeNull();
         } else {
             expect(getRememberedPlatformProjectState().id).toBe('saved');
-            expect(loadedVm._mwHistoryHydration).toEqual(expect.objectContaining({
+            expect(projectSession(loadedVm).historyHydration).toEqual(expect.objectContaining({
                 manifest, ready: true, replaceHistory: true, projectId: 'saved'
             }));
         }

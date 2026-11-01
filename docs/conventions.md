@@ -32,6 +32,9 @@ Current modules:
 | --- | --- |
 | `platform-api` | The MistWarp API transport: `createPlatformApi` gives `request`, `requestRaw`, `upload` and `logout`, plus the session (stored token, session providers, the Rotur validator exchange) and the GET response cache. Error construction, analytics and sign-in side effects are passed in. `src/lib/community/api.js` composes it for the app. |
 | `storage` | `local` and `session` stores that never throw: `readString`, `readJSON` (typed only when given a type guard, `unknown` otherwise), `readBoolean`, the matching writes, and `remove`. Also reads the legacy `tw:addons` settings blob. |
+| `project-session` | Editor state that belongs to the open project, kept beside the VM rather than on it. `projectSession(vm)` returns its record (unsaved imported changes, which git remotes may be pushed, history hydration, whether the last load may be trusted, and whether the user trusted the project with Load all). `detachProjectSession(vm)` detaches the workspace. `setLoadHandoff` and `takeLoadHandoff` pass the release, rollback and history callbacks from the project fetcher to the VM manager. |
+
+Never add fields to the VM object. Lint rejects `_mw*` and `__mw*` fields on the VM and its runtime, apart from the ones scratch-vm defines itself; put project state in `project-session`, and install guards in a `WeakSet` or `WeakMap` in the file that installs them.
 
 Code outside `src/modules/storage` must not touch `localStorage` or `sessionStorage` directly. Files that still do are listed in `scripts/eslint-legacy-storage-files.cjs`. When you move one of them to the storage module, delete it from that list, and never add a file to it.
 

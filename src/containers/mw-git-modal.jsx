@@ -67,6 +67,7 @@ import {
     subscribeProjectHistory
 } from '../lib/git/project-history.js';
 import {local} from '../modules/storage';
+import {projectSession} from '../modules/project-session';
 
 const DEFAULT_BRANCH_KEY = 'mw:git-default-branch';
 const AUTO_COMMIT_KEY = 'mw:git-autocommit';
@@ -339,7 +340,7 @@ export class TWGitModal extends React.Component {
                     await withProjectReplacement(this.props.vm, this.props.projectTitle || 'Before history change',
                         () => perform(...args));
                     if (method === 'handleClone' || method === 'handleRoturClone') detachWorkspace(this.props.vm);
-                    else this.props.vm._mwPendingDiskOverwrite = true;
+                    else projectSession(this.props.vm).pendingDiskOverwrite = true;
                     return true;
                 } catch (error) {
                     this.setStateIfMounted({error: error.message});
@@ -401,8 +402,7 @@ export class TWGitModal extends React.Component {
                 busy: false,
                 busyMessage: null,
                 busyProgress: null,
-                error: this.props.vm._mwHistoryBootstrapError ?
-                    `Project history could not be initialized: ${this.props.vm._mwHistoryBootstrapError.message}` : null
+                error: null
             }));
         } else if (historyState.phase === 'error') {
             this.setStateIfMounted({
