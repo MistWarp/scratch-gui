@@ -3,24 +3,15 @@ import {APP_NAME} from '../../lib/constants/brand';
 import {isScratchDesktop} from '../../lib/utils/isScratchDesktop';
 import CloseButton from '../close-button/close-button.jsx';
 import styles from './tw-news.css';
+import {local} from '../../modules/storage';
 
 const LOCAL_STORAGE_KEY = 'tw:closedNews';
 const NEWS_ID = 'vanilla-compatible-extendables';
 
-const getIsClosedInLocalStorage = () => {
-    try {
-        return localStorage.getItem(LOCAL_STORAGE_KEY) === NEWS_ID;
-    } catch (e) {
-        return false;
-    }
-};
+const getIsClosedInLocalStorage = () => local.readString(LOCAL_STORAGE_KEY) === NEWS_ID;
 
 const markAsClosedInLocalStorage = () => {
-    try {
-        localStorage.setItem(LOCAL_STORAGE_KEY, NEWS_ID);
-    } catch (e) {
-        // ignore
-    }
+    local.writeString(LOCAL_STORAGE_KEY, NEWS_ID);
 };
 
 class TWNews extends React.Component {

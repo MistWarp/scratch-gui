@@ -3,6 +3,7 @@ import BlockItem from '../../lib/find-bar/BlockItem';
 import {getCodeSearch, setFindBarApi} from '../../lib/find-bar/api';
 
 import Dropdown from './Dropdown';
+import {local} from '../../modules/storage';
 
 const isEditingText = element => !!element && (
     element.tagName === 'INPUT' ||
@@ -38,10 +39,7 @@ export default class FindBarController {
         this.currentResultIndex = -1;
 
         this.isRegexMode = false;
-        this.isCaseSensitive = false;
-        try {
-            this.isCaseSensitive = localStorage.getItem('sa-find-case-sensitive') === '1';
-        } catch (e) { /* Storage can be unavailable in embedded editors. */ }
+        this.isCaseSensitive = local.readString('sa-find-case-sensitive') === '1';
 
         this.findBarOuter = null;
         this.findWrapper = null;
@@ -564,9 +562,7 @@ export default class FindBarController {
 
     toggleCaseSensitive () {
         this.isCaseSensitive = !this.isCaseSensitive;
-        try {
-            localStorage.setItem('sa-find-case-sensitive', this.isCaseSensitive ? '1' : '0');
-        } catch (e) { /* Keep the preference for this session. */ }
+        local.writeString('sa-find-case-sensitive', this.isCaseSensitive ? '1' : '0');
         this.caseToggle.classList.toggle(findBarStyles['sa-find-toggle-active'], this.isCaseSensitive);
         this.prevValue = null;
         this.inputChange();

@@ -1,25 +1,3 @@
 module.exports = [
-    'addons/settings-store.js',
-    'components/code-mode/sprite-properties.jsx',
-    'components/find-bar/FindBarController.js',
-    'components/library/library.jsx',
-    'components/menu-bar/menu-bar.jsx',
-    'components/menu-bar/tw-news.jsx',
-    'components/mw-chat/chat-composer.jsx',
-    'components/mw-chat/chat-dock.jsx',
-    'components/mw-help-modal/help-modal.jsx',
-    'containers/mw-project-theme-modal.jsx',
-    'containers/packager.jsx',
-    'containers/rotur-extension-host.jsx',
-    'containers/tw-settings-modal.jsx',
-    'lib/account/data-move.js',
-    'lib/account/frame-editor-data.js',
-    'lib/account/shared-credentials.js',
-    'lib/community/api.js',
-    'lib/rotur/client.js',
-    'lib/rotur/oauth.js',
-    'playground/account-frame.jsx',
-    'playground/embed-storage-shim.js',
-    'reducers/locales.js',
-    'reducers/shortcuts.js'
+    'lib/community/api.js'
 ];

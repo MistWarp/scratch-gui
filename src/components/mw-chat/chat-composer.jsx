@@ -21,6 +21,7 @@ import {formatBytes} from './chat-actions.js';
 import {isMine} from './chat-messages.jsx';
 import {RichText, UserPicture, richContext} from './chat-rich-text.jsx';
 import styles from './chat-pane.css';
+import {local} from '../../modules/storage';
 
 const SIGNING_DISMISSED_KEY = 'mw:chat-signing-dismissed';
 
@@ -200,13 +201,7 @@ const messages = defineMessages({
 
 let uploadKey = 0;
 
-const readDismissed = () => {
-    try {
-        return localStorage.getItem(SIGNING_DISMISSED_KEY) === '1';
-    } catch (e) {
-        return false;
-    }
-};
+const readDismissed = () => local.readString(SIGNING_DISMISSED_KEY) === '1';
 
 const uploadError = (intl, error, item, connection) => {
     if (error.code === 'too_large') {
@@ -586,11 +581,7 @@ const Composer = ({apiRef, connection, intl, onClearReply, onEditLast, onJump, o
                             className={styles.textButton}
                             onClick={() => {
                                 setDismissed(true);
-                                try {
-                                    localStorage.setItem(SIGNING_DISMISSED_KEY, '1');
-                                } catch (e) {
-                                    return null;
-                                }
+                                local.writeString(SIGNING_DISMISSED_KEY, '1');
                             }}
                         >{intl.formatMessage(messages.signingDismiss)}</button>
                     </div>
