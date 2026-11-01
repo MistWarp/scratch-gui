@@ -17,6 +17,16 @@ const uiLayerImport = {
     ]),
     message: 'Modules sit below the UI. Pass what you need in instead of importing app code.'
 };
+const vmFieldMessage = 'Keep editor state off the VM and its runtime. Use src/modules/project-session, ' +
+    'or a WeakMap or WeakSet in the file that owns the state.';
+const guiFieldName = '/^__?mw(?!(InstallToken|InstallingWholeProject)$)/';
+const vmObject = ':matches([name=/^(vm|runtime)$/], [property.name=/^(vm|runtime)$/])';
+const vmFieldSelectors = [
+    `MemberExpression:matches([property.name=${guiFieldName}], [property.value=${guiFieldName}])` +
+        `:has(> .object${vmObject})`,
+    `VariableDeclarator:has(> .init${vmObject}) > ObjectPattern > Property[key.name=${guiFieldName}]`,
+    `AssignmentExpression:has(> .right${vmObject}) > ObjectPattern > Property[key.name=${guiFieldName}]`
+].map(selector => ({selector, message: vmFieldMessage}));
 const siblingModuleDeepImport = {
     group: ['../*/*', '!../*/index', '!../*/index.ts', '!../../**'],
     message: 'Import another module through its index only.'
@@ -52,6 +62,7 @@ module.exports = {
             {name: 'sessionStorage', message: storageMessage}
         ],
         'no-restricted-properties': ['error', ...storageProperties],
+        'no-restricted-syntax': ['error', ...vmFieldSelectors],
         'no-restricted-imports': ['error', {patterns: [moduleDeepImport]}],
         'import/no-nodejs-modules': 'error',
         'react/jsx-no-literals': 'error',

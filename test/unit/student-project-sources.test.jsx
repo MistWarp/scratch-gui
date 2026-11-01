@@ -11,6 +11,7 @@ import {getEditorProject} from '../../src/lib/community/api.js';
 import {cachedFetchBuffer} from '../../src/lib/community/cached-fetch.js';
 import {cloneRepo} from '../../src/lib/git/browser-git.js';
 import {canStudentSessionLoadUrl} from '../../src/lib/rotur/student-flag.js';
+import {takeLoadHandoff} from '../../src/modules/project-session';
 
 jest.mock('../../src/lib/git/browser-git.js', () => ({
     cloneRepo: jest.fn(),
@@ -92,7 +93,7 @@ describe('project sources for class accounts', () => {
         await instance.fetchProject('0', LoadingState.FETCHING_WITH_ID);
         expect(cloneRepo).not.toHaveBeenCalled();
         expect(onFetchedProjectData).toHaveBeenCalledWith('default project', LoadingState.FETCHING_WITH_ID);
-        vm._mwReleaseProjectLoad();
+        takeLoadHandoff(vm).release();
     });
 
     test('a student ignores a project URL on another host', async () => {
@@ -102,7 +103,7 @@ describe('project sources for class accounts', () => {
         await instance.fetchProject('0', LoadingState.FETCHING_WITH_ID);
         expect(cachedFetchBuffer).not.toHaveBeenCalled();
         expect(onFetchedProjectData).toHaveBeenCalledWith('default project', LoadingState.FETCHING_WITH_ID);
-        vm._mwReleaseProjectLoad();
+        takeLoadHandoff(vm).release();
     });
 
     test('a student can still open extension gallery samples', async () => {
@@ -112,7 +113,7 @@ describe('project sources for class accounts', () => {
         await instance.fetchProject('0', LoadingState.FETCHING_WITH_ID);
         expect(cachedFetchBuffer).toHaveBeenCalledWith(SAMPLE);
         expect(onFetchedProjectData).toHaveBeenCalledWith(`buffer:${SAMPLE}`, LoadingState.FETCHING_WITH_ID);
-        vm._mwReleaseProjectLoad();
+        takeLoadHandoff(vm).release();
     });
 
     test('a student embed loads project data and assets from MistWarp, not the URL', async () => {
@@ -130,7 +131,7 @@ describe('project sources for class accounts', () => {
         expect(cachedFetchBuffer).not.toHaveBeenCalledWith('https://tracker.example/p1.json');
         expect(storage.addMistWarpAssetStore).not.toHaveBeenCalledWith('https://tracker.example/assets/');
         expect(onFetchedProjectData).toHaveBeenCalledTimes(1);
-        vm._mwReleaseProjectLoad();
+        takeLoadHandoff(vm).release();
     });
 
     test('a student cannot open Scratch projects by number', async () => {
@@ -164,7 +165,7 @@ describe('project sources for class accounts', () => {
         await owner.instance.fetchProject('0', LoadingState.FETCHING_WITH_ID);
         expect(owner.onFetchedProjectData).toHaveBeenCalledTimes(1);
         expect(JSON.parse(owner.onFetchedProjectData.mock.calls[0][0]).targets[1].name).toBe('Sprite1');
-        owner.vm._mwReleaseProjectLoad();
+        takeLoadHandoff(owner.vm).release();
     });
 
     test('everyone else keeps clone and project URLs', async () => {
@@ -172,7 +173,7 @@ describe('project sources for class accounts', () => {
         const first = makeFetcher();
         await first.instance.fetchProject('0', LoadingState.FETCHING_WITH_ID);
         expect(cachedFetchBuffer).toHaveBeenCalledWith('https://example.com/project.sb3');
-        first.vm._mwReleaseProjectLoad();
+        takeLoadHandoff(first.vm).release();
         window.history.replaceState({}, '', '/editor?clone=https://github.com/user/repo.git');
         const second = makeFetcher();
         await second.instance.fetchProject('0', LoadingState.FETCHING_WITH_ID);

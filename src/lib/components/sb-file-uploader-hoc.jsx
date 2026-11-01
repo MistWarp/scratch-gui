@@ -34,6 +34,7 @@ import {
 import {
     closeFileMenu
 } from '../../reducers/menus';
+import {projectSession, detachProjectSession} from '../../modules/project-session';
 
 // Checked when a file is requested rather than at load time, so tests and embedders can turn the picker off.
 const getSystemFilePicker = () => (
@@ -299,12 +300,11 @@ const SBFileUploaderHOC = function (WrappedComponent) {
                 if (!platform) {
                     detachWorkspace(this.props.vm);
                 } else if (isMwp) {
-                    this.props.vm._mwRequireExplicitPush = true;
-                    this.props.vm._mwApprovedRemotes = new Set();
+                    detachProjectSession(this.props.vm);
                     adoptImportedProjectHistory(this.props.vm, importedManifest, platform);
                 }
                 // Only an explicit save may publish the imported code/history.
-                this.props.vm._mwPendingDiskOverwrite = Boolean(platform);
+                projectSession(this.props.vm).pendingDiskOverwrite = Boolean(platform);
                 this.props.onSetFileHandle(this.pendingFileHandle || null);
                 if (filename) this.props.onSetProjectTitle(this.getProjectTitleFromFilename(filename));
                 loadingSuccess = true;
@@ -395,9 +395,6 @@ const SBFileUploaderHOC = function (WrappedComponent) {
         showOpenFilePicker: PropTypes.func,
         userOwnsProject: PropTypes.bool,
         vm: PropTypes.shape({
-            _mwPendingDiskOverwrite: PropTypes.bool,
-            _mwRequireExplicitPush: PropTypes.bool,
-            _mwApprovedRemotes: PropTypes.object,
             loadProject: PropTypes.func,
             quit: PropTypes.func,
             renderer: PropTypes.shape({
