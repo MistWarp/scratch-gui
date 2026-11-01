@@ -1,5 +1,5 @@
 import {useEffect, useState} from 'react';
-import api from './api.js';
+import api from './api';
 
 const tierRank = tier => ({lite: 1, plus: 2, drive: 3, pro: 3, max: 4}[String(tier || '').toLowerCase()] || 0);
 

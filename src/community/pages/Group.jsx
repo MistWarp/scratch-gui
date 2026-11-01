@@ -18,7 +18,7 @@ import {
     Users
 } from 'lucide-react';
 import {Link, useParams, useSearchParams} from 'react-router-dom';
-import api from '../api.js';
+import api from '../api';
 import rotur from '../rotur.js';
 import useLatest from '../use-latest.js';
 import setPageMeta from '../page-meta.js';

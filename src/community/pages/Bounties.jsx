@@ -3,7 +3,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {Coins} from 'lucide-react';
 import {Link} from 'react-router-dom';
-import api, {friendlyError, projectUrl} from '../api.js';
+import api, {friendlyError, projectUrl} from '../api';
 import {listCommerceBounties} from '../credits.js';
 import ExploreHeader, {ExploreSearch} from '../components/ExploreHeader.jsx';
 import Button from '../components/ui/Button.jsx';

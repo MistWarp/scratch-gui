@@ -4,9 +4,9 @@ import {mount} from 'enzyme';
 import {MemoryRouter} from 'react-router-dom';
 
 import Search from '../../src/community/pages/Search.jsx';
-import api from '../../src/community/api.js';
+import api from '../../src/community/api';
 
-jest.mock('../../src/community/api.js', () => ({
+jest.mock('../../src/community/api', () => ({
     __esModule: true,
     default: {
         explore: jest.fn(() => Promise.resolve({projects: [], total: 0})),

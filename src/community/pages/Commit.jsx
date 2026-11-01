@@ -3,7 +3,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {GitCommitHorizontal, Plus, Settings2, X} from 'lucide-react';
 import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
-import api from '../api.js';
+import api from '../api';
 import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
 import Avatar from '../components/Avatar.jsx';
 import DiffView, {parseDiff} from '../components/DiffView.jsx';

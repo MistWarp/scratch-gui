@@ -1,10 +1,10 @@
 import ProjectSession from '../../../src/components/collaboration-modal/project-session.jsx';
-import api from '../../../src/community/api.js';
+import api from '../../../src/community/api';
 import {getRememberedPlatformProjectState} from '../../../src/lib/community/publish.js';
 import {getCurrentProjectBranch} from '../../../src/lib/git/browser-git.js';
 import {isProjectHistoryHydrated} from '../../../src/lib/git/project-history.js';
 
-jest.mock('../../../src/community/api.js', () => ({
+jest.mock('../../../src/community/api', () => ({
     request: jest.fn(), getProject: jest.fn(), updateProject: jest.fn()
 }));
 jest.mock('../../../src/lib/community/publish.js', () => ({

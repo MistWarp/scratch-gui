@@ -1,4 +1,4 @@
-import api from './api.js';
+import api from './api';
 
 const MAX_ENTRIES = 200;
 const TTL = 5 * 60 * 1000;

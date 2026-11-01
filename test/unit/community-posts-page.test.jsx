@@ -6,7 +6,7 @@ import {useUser} from '../../src/community/UserContext.jsx';
 import rotur from '../../src/community/rotur.js';
 import Posts from '../../src/community/pages/Posts.jsx';
 
-jest.mock('../../src/community/api.js', () => ({
+jest.mock('../../src/community/api', () => ({
     __esModule: true,
     projectUrl: project => `/project/${project}`,
     default: {

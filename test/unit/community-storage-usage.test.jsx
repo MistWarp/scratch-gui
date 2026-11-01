@@ -6,7 +6,7 @@ import MyStuffStorage from '../../src/community/components/MyStuffStorage.jsx';
 
 jest.mock('../../src/community/UserContext.jsx', () => ({useUser: () => ({user: null, login: jest.fn()})}));
 jest.mock('../../src/community/components/GroupTag.jsx', () => () => null);
-jest.mock('../../src/community/api.js', () => ({
+jest.mock('../../src/community/api', () => ({
     __esModule: true,
     default: {},
     editorUrl: jest.fn(() => '/editor'),

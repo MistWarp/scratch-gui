@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {Link, useParams} from 'react-router-dom';
 import {ArrowLeft, Check, Share2} from 'lucide-react';
-import api from '../api.js';
+import api from '../api';
 import {formatDate} from '../format.js';
 import {imageFor} from '../news-excerpt.js';
 import NewsItem from '../components/NewsItem.jsx';

@@ -3,10 +3,10 @@ import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
 
 import GameMarketplaceModal from '../../src/community/components/GameMarketplaceModal.jsx';
-import api from '../../src/community/api.js';
+import api from '../../src/community/api';
 import {buyGameProduct} from '../../src/community/purchase.js';
 
-jest.mock('../../src/community/api.js', () => ({
+jest.mock('../../src/community/api', () => ({
     __esModule: true,
     default: {gameProducts: jest.fn()}
 }));

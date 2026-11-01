@@ -4,7 +4,7 @@ import CollaborationModal from '../../../src/components/collaboration-modal/coll
 import ProjectSession from '../../../src/components/collaboration-modal/project-session.jsx';
 import TWStateManager from '../../../src/lib/components/tw-state-manager-hoc.jsx';
 
-jest.mock('../../../src/community/api.js', () => ({
+jest.mock('../../../src/community/api', () => ({
     request: jest.fn(), getProject: jest.fn(), updateProject: jest.fn()
 }));
 jest.mock('../../../src/lib/community/publish.js', () => ({
@@ -13,7 +13,7 @@ jest.mock('../../../src/lib/community/publish.js', () => ({
 jest.mock('../../../src/lib/git/browser-git.js', () => ({getCurrentProjectBranch: jest.fn()}));
 jest.mock('../../../src/lib/git/project-history.js', () => ({isProjectHistoryHydrated: jest.fn()}));
 
-const api = require('../../../src/community/api.js');
+const api = require('../../../src/community/api');
 
 const STUDENT_KEY = 'mw:classroom-student';
 

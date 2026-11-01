@@ -2,7 +2,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useMemo, useState} from 'react';
 import {ChevronRight, GitBranch, GitCommitHorizontal, GitFork} from 'lucide-react';
 import {Link, useParams} from 'react-router-dom';
-import api, {projectUrl} from '../api.js';
+import api, {projectUrl} from '../api';
 import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
 import Avatar from '../components/Avatar.jsx';
 import GitGraph from '../components/GitGraph.jsx';

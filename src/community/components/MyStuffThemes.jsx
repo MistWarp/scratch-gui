@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
 import {Check, Palette, Plus, Trash2, Upload} from 'lucide-react';
 import {Link, useSearchParams} from 'react-router-dom';
-import api from '../api.js';
+import api from '../api';
 import {customThemeManager} from '../../lib/themes/custom-themes.js';
 import {applyTheme, detectTheme, THEME_CHANGE_EVENT} from '../../lib/themes/themePersistance.js';
 import Button from './ui/Button.jsx';

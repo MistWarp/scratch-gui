@@ -5,7 +5,7 @@ import {MemoryRouter} from 'react-router-dom';
 
 import NavBar from '../../src/community/components/NavBar.jsx';
 import Button from '../../src/community/components/ui/Button.jsx';
-import api from '../../src/community/api.js';
+import api from '../../src/community/api';
 import rotur from '../../src/community/rotur.js';
 import {loginOrThrow} from '../../src/community/UserContext.jsx';
 
@@ -21,7 +21,7 @@ jest.mock('../../src/community/UserContext.jsx', () => {
 jest.mock('../../src/components/menu-bar/mw-rotur-account.jsx', () => ({
     RoturAccount: () => <div>Account</div>
 }));
-jest.mock('../../src/community/api.js', () => ({
+jest.mock('../../src/community/api', () => ({
     __esModule: true,
     default: {
         explore: jest.fn(() => Promise.resolve({projects: []})),

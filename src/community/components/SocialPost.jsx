@@ -6,7 +6,7 @@ import {
     Bookmark, Check, Copy, CornerDownRight, Edit3, Flag, Heart, Megaphone, MessageCircle,
     MoreHorizontal, PawPrint, Pin, Repeat2, ShieldOff, Trash2
 } from 'lucide-react';
-import api from '../api.js';
+import api from '../api';
 import rotur from '../rotur.js';
 import {formatDateTime, timeAgo} from '../format.js';
 import copyText from '../copy-text.js';

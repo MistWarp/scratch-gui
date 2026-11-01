@@ -2,7 +2,7 @@ import React from 'react';
 import {act} from 'react-dom/test-utils';
 import {mount, shallow} from 'enzyme';
 import ConfirmModal from '../../src/community/components/ui/ConfirmModal.jsx';
-import api from '../../src/community/api.js';
+import api from '../../src/community/api';
 import {
     AdminActionDialog, AnalyticsChart, buildSeries, UserManager
 } from '../../src/community/pages/Admin.jsx';

@@ -2,7 +2,7 @@ import React from 'react';
 import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
 
-import api from '../../src/community/api.js';
+import api from '../../src/community/api';
 import ReportModal from '../../src/community/components/ReportModal.jsx';
 
 const submit = async wrapper => {
