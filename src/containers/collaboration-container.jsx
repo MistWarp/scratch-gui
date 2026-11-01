@@ -44,7 +44,7 @@ import {
 } from '../reducers/modals';
 import {isCodeMode} from '../lib/editor-visibility.js';
 import {hasUnappliedCode} from '../lib/code-mode/text-store.js';
-import {getActiveWorkspace} from '../modules/blocks-registry';
+import {getActiveWorkspace, onActiveWorkspace} from '../modules/blocks-registry';
 
 /* eslint-disable max-len */
 const messages = defineMessages({
@@ -211,7 +211,6 @@ const messages = defineMessages({
 });
 /* eslint-enable max-len */
 
-const MAX_ATTACH_ATTEMPTS = 20;
 const BROKER_OFFLINE_NOTICE_DELAY_MS = 5000;
 // After a failed project download the snapshot service retries on its own;
 // if nothing more is heard by then, stop covering the editor.
@@ -262,6 +261,7 @@ class CollaborationContainer extends Component {
         this.handleJoinDenied = this.handleJoinDenied.bind(this);
         this.handleRoomPrivacyChanged = this.handleRoomPrivacyChanged.bind(this);
         this.handleWorkspaceReattach = this.handleWorkspaceReattach.bind(this);
+        this.handleActiveWorkspace = this.handleActiveWorkspace.bind(this);
         this.handleProjectSyncDownloadStart = this.handleProjectSyncDownloadStart.bind(this);
         this.handleProjectSyncDownloadProgress = this.handleProjectSyncDownloadProgress.bind(this);
         this.handleProjectSyncDownloadComplete = this.handleProjectSyncDownloadComplete.bind(this);
@@ -387,10 +387,7 @@ class CollaborationContainer extends Component {
         this.collaborationService.off('follow-changed', this.handleFollowChanged);
         clearTimeout(this.presenterTargetTimer);
 
-        if (this.attachTimeout) {
-            clearTimeout(this.attachTimeout);
-            this.attachTimeout = null;
-        }
+        this.stopWatchingWorkspace();
         clearTimeout(this.brokerOfflineTimer);
         clearTimeout(this.syncRetryTimer);
         this.dismissJoinRequestNotices();
@@ -554,20 +551,19 @@ class CollaborationContainer extends Component {
         throw cancelled;
     }
 
-    tryAttachToWorkspace (attempt = 0) {
-        if (this.attachTimeout) {
-            clearTimeout(this.attachTimeout);
-            this.attachTimeout = null;
-        }
-        const workspace = getActiveWorkspace();
-        if (workspace) {
-            this.collaborationService.attachToWorkspace(workspace);
-        } else if (this.collaborationService.isConnected && attempt < MAX_ATTACH_ATTEMPTS) {
-            this.attachTimeout = setTimeout(() => {
-                this.attachTimeout = null;
-                this.tryAttachToWorkspace(attempt + 1);
-            }, 500);
-        }
+    tryAttachToWorkspace () {
+        this.handleActiveWorkspace(getActiveWorkspace());
+        if (!this.unwatchWorkspace) this.unwatchWorkspace = onActiveWorkspace(this.handleActiveWorkspace);
+    }
+
+    stopWatchingWorkspace () {
+        if (!this.unwatchWorkspace) return;
+        this.unwatchWorkspace();
+        this.unwatchWorkspace = null;
+    }
+
+    handleActiveWorkspace (workspace) {
+        if (workspace) this.collaborationService.attachToWorkspace(workspace);
     }
 
     handleWorkspaceReattach () {
@@ -612,6 +608,7 @@ class CollaborationContainer extends Component {
     }
 
     resetSessionState () {
+        this.stopWatchingWorkspace();
         clearTimeout(this.syncRetryTimer);
         this.dismissJoinRequestNotices();
         this.props.onSetConnected(false);

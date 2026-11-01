@@ -134,8 +134,6 @@ class Blocks extends React.Component {
         window.ScratchBlocks = this.ScratchBlocks;
         setScratchBlocks(this.ScratchBlocks);
         AddonHooks.blockly = this.ScratchBlocks;
-        AddonHooks.blocklyCallbacks.forEach(i => i());
-        AddonHooks.blocklyCallbacks.length = 0;
 
         installSystemClipboardForBlocks(this.ScratchBlocks, props.vm, props.onShowImportError);
         initDevInspector(props.vm, this.ScratchBlocks);
@@ -479,6 +477,8 @@ class Blocks extends React.Component {
         untrackWorkspaceUndo(this.workspace);
         if (this.uninstallCategoryDrag) this.uninstallCategoryDrag();
         clearTimeout(this.flyoutRebuildTimeout);
+        if (AddonHooks.blocklyWorkspace === this.workspace) AddonHooks.blocklyWorkspace = null;
+        if (getActiveWorkspace() === this.workspace) setActiveWorkspace(null);
         this.workspace.dispose();
         clearTimeout(this.toolboxUpdateTimeout);
         clearTimeout(this.toolboxStateUpdateTimeout);
@@ -494,9 +494,6 @@ class Blocks extends React.Component {
         // Detach collaboration service from workspace
         const collaborationService = CollaborationService.getInstance();
         collaborationService.detachFromWorkspace();
-
-        AddonHooks.blocklyWorkspace = null;
-        if (getActiveWorkspace() === this.workspace) setActiveWorkspace(null);
     }
     applyEditorModeChange (prevProps) {
         if (this.props.editorMode === prevProps.editorMode) return;

@@ -1,4 +1,6 @@
 /* eslint-disable */
+import { getActiveWorkspace } from "../../modules/blocks-registry";
+
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 const containerSvg = document.createElementNS(SVG_NS, "svg");
@@ -105,7 +107,7 @@ class Highlighter {
 
   setGlowingThreads(threads) {
     const elementsToHighlight = new Set();
-    const workspace = Blockly.getMainWorkspace();
+    const workspace = getActiveWorkspace();
 
     if (workspace) {
       for (const thread of threads) {
