@@ -5,6 +5,16 @@ const storageMessage = 'Use local or session from src/modules/storage instead of
 const storageProperties = ['window', 'globalThis', 'self'].flatMap(object => (
     ['localStorage', 'sessionStorage'].map(property => ({object, property, message: storageMessage}))
 ));
+const blocksGlobalMessage = 'Read ScratchBlocks and the workspace from src/modules/blocks-registry. ' +
+    'Only containers/blocks.jsx sets these globals, for addons and userscripts.';
+const blocksGlobalProperties = [
+    ...['window', 'globalThis', 'self'].flatMap(object => (
+        ['ScratchBlocks', 'Blockly'].map(property => ({object, property, message: blocksGlobalMessage}))
+    )),
+    ...['blockly', 'blocklyWorkspace', 'blocklyCallbacks'].map(property => (
+        {object: 'AddonHooks', property, message: blocksGlobalMessage}
+    ))
+];
 const moduleDeepImport = {
     group: ['**/modules/*/*', '!**/modules/*/index', '!**/modules/*/index.ts'],
     message: 'Import a module through its index, as in ../modules/storage.'
@@ -60,7 +70,7 @@ module.exports = {
             {name: 'localStorage', message: storageMessage},
             {name: 'sessionStorage', message: storageMessage}
         ],
-        'no-restricted-properties': ['error', ...storageProperties],
+        'no-restricted-properties': ['error', ...storageProperties, ...blocksGlobalProperties],
         'no-restricted-syntax': ['error', ...vmFieldSelectors],
         'no-restricted-imports': ['error', {patterns: [moduleDeepImport]}],
         'import/no-nodejs-modules': 'error',
@@ -97,7 +107,13 @@ module.exports = {
             files: ['modules/storage/**/*'],
             rules: {
                 'no-restricted-globals': 'off',
-                'no-restricted-properties': 'off'
+                'no-restricted-properties': ['error', ...blocksGlobalProperties]
+            }
+        },
+        {
+            files: ['containers/blocks.jsx'],
+            rules: {
+                'no-restricted-properties': ['error', ...storageProperties]
             }
         },
         {

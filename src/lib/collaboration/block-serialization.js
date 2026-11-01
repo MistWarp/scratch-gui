@@ -1,9 +1,10 @@
-import {getScratchBlocks} from '../../modules/blocks-registry';
 /**
  * (De)serialization of Blockly workspace events for the wire.
  * Ported from the old event-serialization.js; takes vm/workspace
  * explicitly instead of reaching into a service object.
  */
+
+import {getScratchBlocks} from '../../modules/blocks-registry';
 
 const serializeEvent = (vm, event) => {
     const json = event.toJson();

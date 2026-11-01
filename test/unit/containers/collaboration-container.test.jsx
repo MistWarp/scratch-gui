@@ -5,7 +5,7 @@ import {createStore, combineReducers} from 'redux';
 import {mountWithIntl} from '../../helpers/intl-helpers.jsx';
 import CollaborationContainer from '../../../src/containers/collaboration-container.jsx';
 import collaborationReducer from '../../../src/reducers/collaboration';
-import {setActiveWorkspace} from '../../../src/modules/blocks-registry';
+import {resetBlocksRegistryForTests, setActiveWorkspace} from '../../../src/modules/blocks-registry';
 
 jest.mock('../../../src/lib/collaboration/index.js');
 jest.mock('../../../src/lib/notification-manager.js');
@@ -86,6 +86,10 @@ describe('CollaborationContainer', () => {
         }));
     });
 
+    afterEach(() => {
+        resetBlocksRegistryForTests();
+    });
+
     test('re-attaches the active workspace when the service asks after a project load', () => {
         mountContainer();
         const workspace = {id: 'workspace'};
@@ -94,7 +98,54 @@ describe('CollaborationContainer', () => {
             .find(([event]) => event === 'request-workspace-reattach');
         reattach();
         expect(mockCollaborationService.attachToWorkspace).toHaveBeenCalledWith(workspace);
-        setActiveWorkspace(null);
+    });
+
+    describe('attaching to the blocks workspace', () => {
+        const startSession = async () => {
+            const wrapper = mountContainer();
+            await instanceOf(wrapper).handleCreateRoom('test-room', 'Alice', 'private');
+            return wrapper;
+        };
+
+        test('attaches a workspace that is already there when the session starts', async () => {
+            const workspace = {id: 'present'};
+            setActiveWorkspace(workspace);
+            await startSession();
+            expect(mockCollaborationService.attachToWorkspace).toHaveBeenCalledTimes(1);
+            expect(mockCollaborationService.attachToWorkspace).toHaveBeenCalledWith(workspace);
+        });
+
+        test('attaches a workspace that only appears after the session starts', async () => {
+            await startSession();
+            expect(mockCollaborationService.attachToWorkspace).not.toHaveBeenCalled();
+            const workspace = {id: 'later'};
+            setActiveWorkspace(workspace);
+            expect(mockCollaborationService.attachToWorkspace).toHaveBeenCalledWith(workspace);
+        });
+
+        test('follows the workspace when the blocks pane is remounted', async () => {
+            const first = {id: 'first'};
+            const second = {id: 'second'};
+            setActiveWorkspace(first);
+            await startSession();
+            setActiveWorkspace(null);
+            setActiveWorkspace(second);
+            expect(mockCollaborationService.attachToWorkspace.mock.calls).toEqual([[first], [second]]);
+        });
+
+        test('stops listening for workspaces on unmount', async () => {
+            const wrapper = await startSession();
+            wrapper.unmount();
+            setActiveWorkspace({id: 'after-unmount'});
+            expect(mockCollaborationService.attachToWorkspace).not.toHaveBeenCalled();
+        });
+
+        test('stops listening for workspaces when the session ends', async () => {
+            const wrapper = await startSession();
+            instanceOf(wrapper).handleLeaveRoom();
+            setActiveWorkspace({id: 'after-leave'});
+            expect(mockCollaborationService.attachToWorkspace).not.toHaveBeenCalled();
+        });
     });
 
     test('initializes the collaboration service with the vm on mount', () => {

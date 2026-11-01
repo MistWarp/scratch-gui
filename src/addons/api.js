@@ -20,6 +20,7 @@ import SettingsStore from './settings-store-singleton';
 import dataURLToBlob from '../lib/utils/data-uri-to-blob';
 import EventTargetShim from './event-target';
 import AddonHooks from './hooks';
+import {getActiveWorkspace, whenScratchBlocks} from '../modules/blocks-registry';
 import addons from './generated/addon-manifests';
 import addonMessages from './addons-l10n/en.json';
 import l10nEntries from './generated/l10n-entries';
@@ -202,15 +203,8 @@ class Tab extends EventTargetShim {
             get vm () {
                 return reduxInstance.state.scratchGui.vm;
             },
-            getBlockly: () => {
-                if (AddonHooks.blockly) {
-                    return Promise.resolve(AddonHooks.blockly);
-                }
-                return new Promise(resolve => {
-                    AddonHooks.blocklyCallbacks.push(() => resolve(AddonHooks.blockly));
-                });
-            },
-            getWorkspace: () => AddonHooks.blocklyWorkspace,
+            getBlockly: () => whenScratchBlocks(),
+            getWorkspace: () => getActiveWorkspace(),
             getPaper: async () => {
                 const modeSelector = await this.waitForElement("[class*='paint-editor_mode-selector']", {
                     reduxCondition: state => isPaintEditorActive(state) && !state.scratchGui.mode.isPlayerOnly

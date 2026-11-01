@@ -18,7 +18,7 @@ import {
     hoveredOpcodes,
     procedureRenameChanges
 } from '../../../src/lib/code-mode/intelligence.js';
-import {setScratchBlocks} from '../../../src/modules/blocks-registry';
+import {resetBlocksRegistryForTests, setScratchBlocks} from '../../../src/modules/blocks-registry';
 
 jest.mock('../../../src/lib/extension-dev/lint-client.js', () => ({
     createLinter: () => ({lint: () => Promise.resolve([]), dispose: () => {}})
@@ -120,6 +120,10 @@ describe('fractch completion', () => {
 });
 
 describe('fractch hover', () => {
+    afterEach(() => {
+        resetBlocksRegistryForTests();
+    });
+
     test('names the block under the cursor, raw or aliased', () => {
         expect(hoveredOpcodes(null, 'motion.changexby(DX: 1);', 3).opcodes).toEqual(['motion_changexby']);
         const alias = hoveredOpcodes(null, '  setX 5;', 3);
