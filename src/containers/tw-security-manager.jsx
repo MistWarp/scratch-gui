@@ -12,6 +12,7 @@ import {getRememberedPlatformProjectState} from '../lib/community/publish.js';
 import {extensionSourceUrl, hashExtensionUrl} from '../lib/community/api.js';
 import {blockProjectPrompts, isProjectPromptBlocked} from '../lib/project-prompt-blocking.js';
 import {isStudentSession} from '../lib/rotur/student-flag.js';
+import {projectSession} from '../modules/project-session';
 
 /* eslint-disable require-atomic-updates */
 
@@ -88,7 +89,7 @@ const canTrustLoadedProject = vm => {
     const projectUrl = typeof location === 'undefined' ?
         null :
         new URLSearchParams(location.search).get('project_url');
-    return isOwnedPlatformProject() || Boolean(vm._mwCanTrustProject) || isLocalProjectUrl(projectUrl);
+    return isOwnedPlatformProject() || projectSession(vm).canTrustProject || isLocalProjectUrl(projectUrl);
 };
 
 const fetchHostsTrustedByUser = new Set();

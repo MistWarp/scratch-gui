@@ -1,5 +1,6 @@
 import {runAutosave} from '../../../src/lib/mw/autosave.js';
 import {getRememberedPlatformProjectState, publishToMistWarp} from '../../../src/lib/community/publish.js';
+import {projectSession} from '../../../src/modules/project-session';
 
 jest.mock('../../../src/lib/community/publish.js', () => ({
     getRememberedPlatformProjectState: jest.fn(),
@@ -114,9 +115,11 @@ test('notifies on unexpected failures', async () => {
 
 
 test.each([
-    {_mwPendingDiskOverwrite: true},
-    {_mwHistoryHydration: {replaceHistory: true}}
-])('does not publish an imported replacement before a manual save', async vm => {
+    {pendingDiskOverwrite: true},
+    {historyHydration: {replaceHistory: true}}
+])('does not publish an imported replacement before a manual save', async session => {
+    const vm = {};
+    Object.assign(projectSession(vm), session);
     await expect(runAutosave({vm, projectChanged: true, settings})).resolves.toBe(false);
     expect(publishToMistWarp).not.toHaveBeenCalled();
 });

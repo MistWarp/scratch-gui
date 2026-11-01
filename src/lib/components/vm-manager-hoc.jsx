@@ -15,6 +15,7 @@ import {
 } from '../../reducers/project-state';
 import log from '../utils/log';
 import {withProjectOperation} from '../project-operation.js';
+import {takeLoadHandoff} from '../../modules/project-session';
 
 /**
  * List of fonts that could be used by security prompts.
@@ -97,21 +98,16 @@ const vmManagerHOC = function (WrappedComponent) {
             } = this.props;
             // tw: stop when loading new project
             vm.quit();
-            const prepareProjectHistory = vm._mwPrepareProjectHistory;
-            vm._mwPrepareProjectHistory = null;
-            const rollback = vm._mwRollbackProjectLoad;
-            vm._mwRollbackProjectLoad = null;
-            const release = vm._mwReleaseProjectLoad;
-            vm._mwReleaseProjectLoad = null;
+            const {prepareHistory, release, rollback} = takeLoadHandoff(vm);
             const load = () => vm.loadProject(projectData, {skipGitImport: true});
             return (release ? Promise.resolve().then(load) : withProjectOperation(vm, load))
                 .then(() => {
                     if (!this._isMounted || loadGeneration !== this.loadGeneration) return false;
-                    if (prepareProjectHistory) {
+                    if (prepareHistory) {
                         // History has its own loading state and is not needed to
                         // render or edit. Do not hold the whole editor behind it.
                         Promise.resolve()
-                            .then(() => prepareProjectHistory())
+                            .then(() => prepareHistory())
                             .catch(error => {
                                 log.error('Could not preload MistWarp version history:', error);
                             });

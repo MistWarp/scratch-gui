@@ -9,6 +9,7 @@ import {LoadingState} from '../../../src/reducers/project-state';
 import {getEditorProject, fetchWorkspace} from '../../../src/lib/community/api.js';
 import {cachedFetchBuffer} from '../../../src/lib/community/cached-fetch.js';
 import {beginProjectOperation, isProjectOperationActive} from '../../../src/lib/project-operation.js';
+import {takeLoadHandoff} from '../../../src/modules/project-session';
 
 jest.mock('../../../src/lib/git/browser-git.js', () => ({
     cloneRepo: jest.fn(),
@@ -302,7 +303,7 @@ describe('ProjectFetcherHOC', () => {
         expect(onFetchedProjectData).toHaveBeenCalledWith('project data', LoadingState.FETCHING_NEW_DEFAULT);
         expect(getEditorProject).toHaveBeenLastCalledWith(project.id);
         expect(window.location.href).toBe(originalUrl);
-        vm._mwReleaseProjectLoad();
+        takeLoadHandoff(vm).release();
     });
 
     test('when there is an id, it tries to update the store with that id', () => {
