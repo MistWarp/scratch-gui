@@ -67,6 +67,7 @@ import {
     subscribeProjectHistory
 } from '../lib/git/project-history.js';
 import {local} from '../modules/storage';
+import {projectSession} from '../modules/project-session';
 
 const DEFAULT_BRANCH_KEY = 'mw:git-default-branch';
 const AUTO_COMMIT_KEY = 'mw:git-autocommit';
@@ -339,7 +340,7 @@ export class TWGitModal extends React.Component {
                     await withProjectReplacement(this.props.vm, this.props.projectTitle || 'Before history change',
                         () => perform(...args));
                     if (method === 'handleClone' || method === 'handleRoturClone') detachWorkspace(this.props.vm);
-                    else this.props.vm._mwPendingDiskOverwrite = true;
+                    else projectSession(this.props.vm).pendingDiskOverwrite = true;
                     return true;
                 } catch (error) {
                     this.setStateIfMounted({error: error.message});
@@ -396,14 +397,16 @@ export class TWGitModal extends React.Component {
         if (historyState.phase === 'loading') {
             this.setStateIfMounted({busy: true, busyMessage: 'Loading project history…', error: null});
         } else if (historyState.phase === 'ready') {
-            this.setStateIfMounted(current => ({
-                ...stateFromHistory(historyState.data, current),
-                busy: false,
-                busyMessage: null,
-                busyProgress: null,
-                error: this.props.vm._mwHistoryBootstrapError ?
-                    `Project history could not be initialized: ${this.props.vm._mwHistoryBootstrapError.message}` : null
-            }));
+            this.setStateIfMounted(current => {
+                const bootstrapError = projectSession(this.props.vm).historyBootstrapError;
+                return {
+                    ...stateFromHistory(historyState.data, current),
+                    busy: false,
+                    busyMessage: null,
+                    busyProgress: null,
+                    error: bootstrapError ? `Project history could not be initialized: ${bootstrapError.message}` : null
+                };
+            });
         } else if (historyState.phase === 'error') {
             this.setStateIfMounted({
                 busy: false,

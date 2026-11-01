@@ -1,5 +1,6 @@
 import {getRemotes, push} from '../../../src/lib/git/browser-git';
 import {syncConfiguredRemotes} from '../../../src/lib/git/sync-remotes';
+import {projectSession, resetProjectSession} from '../../../src/modules/project-session';
 
 jest.mock('../../../src/lib/git/browser-git', () => ({
     getDefaultAuthor: () => ({name: 'User'}),
@@ -10,6 +11,13 @@ jest.mock('../../../src/lib/rotur/git-api', () => ({
     getAuth: jest.fn(), isRoturGitUrl: () => false
 }));
 
+const importedWorkspaceVm = (approvedUrls = []) => {
+    const vm = {};
+    resetProjectSession(vm);
+    for (const url of approvedUrls) projectSession(vm).approvedRemotes.add(url);
+    return vm;
+};
+
 beforeEach(() => {
     jest.clearAllMocks();
     getRemotes.mockResolvedValue([{name: 'origin', url: 'https://example.com/imported.git'}]);
@@ -17,7 +25,7 @@ beforeEach(() => {
 });
 
 test('saving an imported workspace does not push inherited connections', async () => {
-    const vm = {_mwRequireExplicitPush: true, _mwApprovedRemotes: new Set()};
+    const vm = importedWorkspaceVm();
     expect(await syncConfiguredRemotes({vm})).toEqual([]);
     expect(push).not.toHaveBeenCalled();
 });
@@ -27,7 +35,7 @@ test('only explicitly approved imported connections sync on save', async () => {
         {name: 'origin', url: 'https://example.com/imported.git'},
         {name: 'mine', url: 'https://example.com/mine.git'}
     ]);
-    const vm = {_mwRequireExplicitPush: true, _mwApprovedRemotes: new Set(['https://example.com/mine.git'])};
+    const vm = importedWorkspaceVm(['https://example.com/mine.git']);
     expect(await syncConfiguredRemotes({vm})).toEqual([{name: 'mine', ok: true}]);
     expect(push).toHaveBeenCalledTimes(1);
     expect(push).toHaveBeenCalledWith(expect.objectContaining({remote: 'mine'}));

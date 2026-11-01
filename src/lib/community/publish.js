@@ -17,6 +17,7 @@ import {
     preloadProjectHistory,
     setRemoteProjectHistory
 } from '../git/project-history.js';
+import {projectSession} from '../../modules/project-session';
 
 const ZIP_COMPRESSABLE = ['.json', '.svg', '.wav', '.ttf', '.otf'];
 
@@ -241,7 +242,7 @@ const publishWorkspace = async ({
     const wasLiveContributor = platformProject && !platformProject.isOwner && platformProject.canSaveDirectly;
     let platformId = platformProject && platformProject.id;
     const saveBase = platformProject && platformProject.saveBase;
-    const importedHistory = vm && vm._mwHistoryHydration;
+    const importedHistory = vm && projectSession(vm).historyHydration;
     const replaceHistory = Boolean(importedHistory && importedHistory.replaceHistory &&
         importedHistory.projectId === String(platformId));
     if (platformId) {
@@ -389,9 +390,7 @@ const publishWorkspace = async ({
             gitBranch: uploaded?.project?.gitBranch || mwp.manifest.branch
         };
         rememberPlatformProject(platformProject, {resetSaveBase: true});
-        // The operation lock keeps this workspace stable through the upload.
-        // eslint-disable-next-line require-atomic-updates
-        vm._mwPendingDiskOverwrite = false;
+        projectSession(vm).pendingDiskOverwrite = false;
         if (replaceHistory) {
             platformProject = {...platformProject, gitHead: mwp.manifest.head, gitBranch: mwp.manifest.branch};
             adoptImportedProjectHistory(vm, mwp.manifest, platformProject, false);

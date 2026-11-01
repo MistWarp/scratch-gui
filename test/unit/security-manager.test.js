@@ -10,6 +10,7 @@ import {
     manuallyTrustExtension
 } from '../../src/containers/tw-security-manager.jsx';
 import {rememberPlatformProject} from '../../src/lib/community/publish.js';
+import {projectSession} from '../../src/modules/project-session';
 import {
     clearBlockedProjectPrompts,
     unblockProjectPrompts,
@@ -78,7 +79,9 @@ test('only the verified owner gets the bypass option', () => {
 });
 
 test('file and loopback project loads can offer the bypass option', () => {
-    expect(canTrustLoadedProject({_mwCanTrustProject: true})).toBe(true);
+    const fileLoadedVm = {};
+    projectSession(fileLoadedVm).canTrustProject = true;
+    expect(canTrustLoadedProject(fileLoadedVm)).toBe(true);
     expect(isLocalProjectUrl('http://localhost:8000/project.sb3')).toBe(true);
     expect(isLocalProjectUrl('http://127.0.0.1/project.sb3')).toBe(true);
     expect(isLocalProjectUrl('http://localhost.example.com/project.sb3')).toBe(false);

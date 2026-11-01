@@ -15,6 +15,7 @@ import {
 } from '../../lib/rotur/identity.js';
 import {track} from '../../community/analytics.js';
 import {isStudentSession} from '../../lib/rotur/student-flag.js';
+import {projectSession} from '../../modules/project-session';
 import Button from '../button/button.jsx';
 import styles from './share-window.css';
 
@@ -654,7 +655,7 @@ class ShareWindow extends React.Component {
                 <div className={styles.root}>
                     <div className={styles.body}>
                         <p className={styles.doneMessage}>
-                            {this.props.vm._mwHistoryHydration?.replaceHistory ?
+                            {projectSession(this.props.vm).historyHydration?.replaceHistory ?
                                 'Saving replaces the saved project and all its commits and branches ' +
                                 'with the imported history.' :
                                 'Saving replaces the saved project code. Existing commits stay in history.'}

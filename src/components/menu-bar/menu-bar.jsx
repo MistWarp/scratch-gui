@@ -188,6 +188,7 @@ import extensionDevMessages from '../extension-dev/messages.js';
 import sharedMessages from '../../lib/constants/shared-messages';
 
 import SeeInsideButton from './tw-see-inside.jsx';
+import {projectSession} from '../../modules/project-session';
 
 const twMessages = defineMessages({
     compileError: {
@@ -1045,7 +1046,7 @@ class MenuBar extends React.Component {
                 this.props.vm.quit();
                 await this.props.vm.loadProject(buffer, {skipGitImport: true, mwPreserveProjectSource: true});
             });
-            this.props.vm._mwPendingDiskOverwrite = true;
+            projectSession(this.props.vm).pendingDiskOverwrite = true;
             this.props.vm.renderer.draw();
             this.props.onGitStatusDone('gitPullSuccess');
             return true;

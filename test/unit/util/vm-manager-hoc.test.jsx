@@ -11,6 +11,7 @@ import VM from 'scratch-vm';
 import {LoadingState} from '../../../src/reducers/project-state';
 
 import vmManagerHOC from '../../../src/lib/components/vm-manager-hoc.jsx';
+import {setLoadHandoff} from '../../../src/modules/project-session';
 
 describe('VMManagerHOC', () => {
     const mockStore = configureStore();
@@ -220,7 +221,7 @@ describe('VMManagerHOC', () => {
         const prepareProjectHistory = jest.fn(() => new Promise(resolve => {
             finishHistory = resolve;
         }));
-        vm._mwPrepareProjectHistory = prepareProjectHistory;
+        setLoadHandoff(vm, {prepareHistory: prepareProjectHistory});
         const onLoadedProject = jest.fn();
         const Component = () => <div />;
         const WrappedComponent = vmManagerHOC(Component);

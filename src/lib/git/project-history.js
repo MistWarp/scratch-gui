@@ -7,6 +7,7 @@ import {
 } from './browser-git.js';
 import {checkoutMwpBranch, importMwp} from './mwp.js';
 import {fetchWorkspace, getProjectCommits} from '../community/api.js';
+import {projectSession} from '../../modules/project-session';
 
 let generation = 0;
 let currentPromise = null;
@@ -118,7 +119,7 @@ const preloadRemoteProjectHistory = project => {
 // An imported workspace owns the local repository until it is saved or another project opens.
 const adoptImportedProjectHistory = (vm, manifest, project, replaceHistory = true) => {
     setRemoteProjectHistory(project);
-    vm._mwHistoryHydration = project ? {
+    projectSession(vm).historyHydration = project ? {
         key: remoteProjectKey(project),
         projectId: String(project.id),
         ready: true,
@@ -130,8 +131,9 @@ const adoptImportedProjectHistory = (vm, manifest, project, replaceHistory = tru
 
 const isProjectHistoryHydrated = vm => {
     const expected = remoteProjectKey(remoteProject);
-    return !expected || Boolean(vm && vm._mwHistoryHydration &&
-        vm._mwHistoryHydration.key === expected && vm._mwHistoryHydration.ready);
+    if (!expected) return true;
+    const hydration = vm && projectSession(vm).historyHydration;
+    return Boolean(hydration && hydration.key === expected && hydration.ready);
 };
 
 const ensureProjectHistoryHydrated = vm => {
@@ -139,7 +141,8 @@ const ensureProjectHistoryHydrated = vm => {
     const key = remoteProjectKey(project);
     if (!key || !project.workspaceUrl) return Promise.resolve(null);
     if (!vm) return Promise.reject(new Error('The editor is unavailable.'));
-    const existing = vm._mwHistoryHydration;
+    const session = projectSession(vm);
+    const existing = session.historyHydration;
     if (existing && existing.key === key) {
         if (existing.ready) return Promise.resolve(existing.manifest);
         if (existing.promise) return existing.promise;
@@ -163,10 +166,10 @@ const ensureProjectHistoryHydrated = vm => {
         })
         .catch(async error => {
             if (restoreRepo) await restoreRepo();
-            if (vm._mwHistoryHydration === hydration) vm._mwHistoryHydration = null;
+            if (session.historyHydration === hydration) session.historyHydration = null;
             throw error;
         });
-    vm._mwHistoryHydration = hydration;
+    session.historyHydration = hydration;
     return hydration.promise;
 };
 
