@@ -1,5 +1,5 @@
 // Selection and navigation utilities
-import {activateTab, requestSound, showBlocksTab, SOUNDS_TAB_INDEX} from '../../reducers/editor-tab.js';
+import {requestSound, showBlocksTab} from '../../reducers/editor-tab.js';
 import {whenWorkspaceReady} from '../code-mode/workspace-ready.js';
 
 /**
@@ -152,7 +152,6 @@ const handleSoundSelection = (soundData, vm, redux) => {
     const editingTarget = vm.editingTarget;
     if (editingTarget) {
         redux.dispatch(requestSound(editingTarget.id, soundData.index));
-        redux.dispatch(activateTab(SOUNDS_TAB_INDEX));
     }
 };
 

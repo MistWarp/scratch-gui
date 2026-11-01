@@ -2,6 +2,8 @@ import {describe, expect, jest, test} from '@jest/globals';
 import editorTabReducer, {
     consumeSoundRequest,
     requestSound,
+    revealInCode,
+    showBlocksTab,
     SOUNDS_TAB_INDEX
 } from '../../../src/reducers/editor-tab.js';
 import {handleSoundSelection} from '../../../src/lib/spotlight/selectionUtils.js';
@@ -11,7 +13,7 @@ const soundTab = props => {
     const tab = Object.create(SoundTab.prototype);
     tab.props = {
         onConsumeSoundRequest: jest.fn(),
-        vm: {editingTarget: {id: 'sprite'}},
+        vm: {editingTarget: {id: 'sprite', getSounds: () => [{}, {}, {}]}},
         ...props
     };
     tab.handleSelectSound = jest.fn();
@@ -19,13 +21,18 @@ const soundTab = props => {
 };
 
 describe('selecting a sound from Spotlight', () => {
-    test('requests the sound for the editing target and opens the sounds tab', () => {
+    test('requests the sound for the editing target in one action', () => {
         const dispatch = jest.fn();
         handleSoundSelection({index: 3}, {editingTarget: {id: 'sprite'}}, {dispatch});
         expect(dispatch.mock.calls.map(([action]) => action)).toEqual([
-            expect.objectContaining({targetId: 'sprite', index: 3}),
-            expect.objectContaining({activeTabIndex: SOUNDS_TAB_INDEX})
+            expect.objectContaining({targetId: 'sprite', index: 3})
         ]);
+    });
+
+    test('in blocks mode the request opens the sounds tab', () => {
+        const requested = editorTabReducer(undefined, requestSound('sprite', 2));
+        expect(requested.activeTabIndex).toBe(SOUNDS_TAB_INDEX);
+        expect(requested.reveal).toBeNull();
     });
 
     test('does nothing without an editing target', () => {
@@ -54,5 +61,25 @@ describe('selecting a sound from Spotlight', () => {
         tab.applyRequestedSound();
         expect(tab.props.onConsumeSoundRequest).toHaveBeenCalledWith(8);
         expect(tab.handleSelectSound).not.toHaveBeenCalled();
+    });
+
+    test('the sound tab ignores a request past the last sound', () => {
+        const tab = soundTab({requestedSound: {targetId: 'sprite', index: 5, nonce: 9}});
+        tab.applyRequestedSound();
+        expect(tab.props.onConsumeSoundRequest).toHaveBeenCalledWith(9);
+        expect(tab.handleSelectSound).not.toHaveBeenCalled();
+    });
+
+    test('in code mode the request reveals that sound instead of waiting for the sound tab', () => {
+        const codeMode = editorTabReducer(undefined, revealInCode());
+        const requested = editorTabReducer(codeMode, requestSound('sprite', 1));
+        expect(requested.requestedSound).toBeNull();
+        expect(requested.reveal).toEqual(expect.objectContaining({kind: 'sound', targetId: 'sprite', index: 1}));
+    });
+
+    test('switching editor mode drops a pending request', () => {
+        const requested = editorTabReducer(undefined, requestSound('sprite', 1));
+        expect(editorTabReducer(requested, revealInCode()).requestedSound).toBeNull();
+        expect(editorTabReducer(requested, showBlocksTab(SOUNDS_TAB_INDEX)).requestedSound).toBeNull();
     });
 });

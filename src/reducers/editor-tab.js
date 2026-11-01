@@ -56,12 +56,14 @@ const reducer = function (state, action) {
         return Object.assign({}, state, {
             editorMode: BLOCKS_MODE,
             activeTabIndex: typeof action.activeTabIndex === 'number' ? action.activeTabIndex : state.activeTabIndex,
-            reveal: null
+            reveal: null,
+            requestedSound: null
         });
     case REVEAL_IN_CODE:
         return Object.assign({}, state, {
             editorMode: CODE_MODE,
-            reveal: Object.assign({}, action.request, {nonce: ++nonce})
+            reveal: Object.assign({}, action.request, {nonce: ++nonce}),
+            requestedSound: null
         });
     case CONSUME_REVEAL:
         if (!state.reveal || state.reveal.nonce !== action.nonce) return state;
@@ -69,7 +71,13 @@ const reducer = function (state, action) {
     case ASSET_EDITOR_ACTIVATED:
         return Object.assign({}, state, {activeAssetEditor: action.editor || null});
     case REQUEST_SOUND:
+        if (state.editorMode === CODE_MODE) {
+            return Object.assign({}, state, {
+                reveal: {kind: 'sound', targetId: action.targetId, index: action.index, nonce: ++nonce}
+            });
+        }
         return Object.assign({}, state, {
+            activeTabIndex: SOUNDS_TAB_INDEX,
             requestedSound: {targetId: action.targetId, index: action.index, nonce: ++nonce}
         });
     case CONSUME_SOUND_REQUEST:

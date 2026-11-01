@@ -128,7 +128,9 @@ class SoundTab extends React.Component {
         const {requestedSound} = this.props;
         if (!requestedSound) return;
         this.props.onConsumeSoundRequest(requestedSound.nonce);
-        if (requestedSound.targetId !== this.props.vm.editingTarget?.id) return;
+        const target = this.props.vm.editingTarget;
+        if (!target || requestedSound.targetId !== target.id) return;
+        if (requestedSound.index >= target.getSounds().length) return;
         this.handleSelectSound(requestedSound.index);
     }
 

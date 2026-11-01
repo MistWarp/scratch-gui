@@ -1195,6 +1195,12 @@ class CodeWorkbench extends React.Component {
             if (costume) this.openFile(assetTab('costume', editing.id, itemIdFor(costume)), {preview: false});
             return;
         }
+        case 'sound': {
+            const target = vm.runtime.getTargetById(reveal.targetId);
+            const sound = target && target.getSounds()[reveal.index];
+            if (sound) this.openFile(assetTab('sound', target.id, itemIdFor(sound)), {preview: false});
+            return;
+        }
         case 'currentSound': {
             if (!editing) return;
             const sounds = editing.getSounds();
