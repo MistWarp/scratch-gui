@@ -1,3 +1,4 @@
+import {getScratchBlocks} from '../../modules/blocks-registry';
 /**
  * (De)serialization of Blockly workspace events for the wire.
  * Ported from the old event-serialization.js; takes vm/workspace
@@ -33,7 +34,7 @@ const serializeEvent = (vm, event) => {
         if (typeof event.height !== 'undefined') json.height = event.height;
         if (typeof event.minimized !== 'undefined') json.minimized = event.minimized;
         if (event.xml) {
-            const ScratchBlocks = window.ScratchBlocks;
+            const ScratchBlocks = getScratchBlocks();
             if (ScratchBlocks && ScratchBlocks.Xml && ScratchBlocks.Xml.domToText) {
                 json.xml = ScratchBlocks.Xml.domToText(event.xml);
             } else if (event.xml.outerHTML) {

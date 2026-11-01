@@ -1,4 +1,5 @@
 import {getSetting} from './settings.js';
+import {getScratchBlocks} from '../../modules/blocks-registry';
 
 const parseArguments = code => code
     .split(/(?=[^\\]%[nbs])/g)
@@ -40,7 +41,7 @@ const addBlock = (vm, procedureCode, {args, displayName, callback}) => {
 
 const patchBlockly = () => {
     if (window.__mwDebuggerBlocklyPatched) return;
-    const ScratchBlocks = window.ScratchBlocks;
+    const ScratchBlocks = getScratchBlocks();
     if (!ScratchBlocks) {
         setTimeout(patchBlockly, 500);
         return;

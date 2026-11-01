@@ -44,6 +44,7 @@ import {
 } from '../reducers/modals';
 import {isCodeMode} from '../lib/editor-visibility.js';
 import {hasUnappliedCode} from '../lib/code-mode/text-store.js';
+import {getActiveWorkspace} from '../modules/blocks-registry';
 
 /* eslint-disable max-len */
 const messages = defineMessages({
@@ -558,12 +559,8 @@ class CollaborationContainer extends Component {
             clearTimeout(this.attachTimeout);
             this.attachTimeout = null;
         }
-        // Try to find the Blockly workspace via AddonHooks
-        if (window.AddonHooks && window.AddonHooks.blocklyWorkspace) {
-            this.collaborationService.attachToWorkspace(window.AddonHooks.blocklyWorkspace);
-        } else if (window.Blockly && window.Blockly.getMainWorkspace && window.Blockly.getMainWorkspace()) {
-            // Fallback to global Blockly workspace
-            const workspace = window.Blockly.getMainWorkspace();
+        const workspace = getActiveWorkspace();
+        if (workspace) {
             this.collaborationService.attachToWorkspace(workspace);
         } else if (this.collaborationService.isConnected && attempt < MAX_ATTACH_ATTEMPTS) {
             this.attachTimeout = setTimeout(() => {

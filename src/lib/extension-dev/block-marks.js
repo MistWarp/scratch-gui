@@ -1,4 +1,4 @@
-import AddonHooks from '../../addons/hooks.js';
+import {getActiveWorkspace, getScratchBlocks} from '../../modules/blocks-registry';
 
 const MARK_CLASS = 'mwExtensionErrorBlock';
 
@@ -7,7 +7,7 @@ let wantedIds = new Set();
 let tooltipText = '';
 let installed = false;
 
-const getWorkspace = () => AddonHooks.blocklyWorkspace;
+const getWorkspace = () => getActiveWorkspace();
 
 const setMark = (block, on) => {
     const group = block && block.svgGroup_;
@@ -40,7 +40,7 @@ const applyMarks = () => {
 
 const install = () => {
     if (installed) return;
-    const ScratchBlocks = AddonHooks.blockly;
+    const ScratchBlocks = getScratchBlocks();
     const proto = ScratchBlocks && ScratchBlocks.WorkspaceSvg && ScratchBlocks.WorkspaceSvg.prototype;
     if (!proto || typeof proto.restoreGlows !== 'function') return;
     installed = true;

@@ -45,7 +45,6 @@ import {
 import {closeProjectThemePrompt} from '../../reducers/mw-project-theme';
 import {closeCollaborationModal} from '../../reducers/collaboration';
 import SimpleDialog from '../../containers/simple-dialog.jsx';
-import AddonHooks from '../../addons/hooks.js';
 import NativeFindBar from '../find-bar/find-bar.jsx';
 import StarterGuide from './starter-guide.jsx';
 import EditorWelcome from '../editor-welcome/editor-welcome.jsx';
@@ -123,6 +122,7 @@ import {
     Monitor as StageIcon,
     FolderTree as FilesIcon
 } from 'lucide-react';
+import {getActiveWorkspace} from '../../modules/blocks-registry';
 
 const getFullscreenBackgroundColor = () => {
     const params = new URLSearchParams(location.search);
@@ -251,7 +251,7 @@ const GUIComponent = props => {
     } = getGuiComponents();
     const handleEnableProcedureReturns = useCallback(() => {
         try {
-            const workspace = AddonHooks.blocklyWorkspace;
+            const workspace = getActiveWorkspace();
             
             if (workspace && workspace.enableProcedureReturns) {
                 workspace.enableProcedureReturns();

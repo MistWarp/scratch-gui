@@ -5,6 +5,7 @@ import {createStore, combineReducers} from 'redux';
 import {mountWithIntl} from '../../helpers/intl-helpers.jsx';
 import CollaborationContainer from '../../../src/containers/collaboration-container.jsx';
 import collaborationReducer from '../../../src/reducers/collaboration';
+import {setActiveWorkspace} from '../../../src/modules/blocks-registry';
 
 jest.mock('../../../src/lib/collaboration/index.js');
 jest.mock('../../../src/lib/notification-manager.js');
@@ -79,6 +80,17 @@ describe('CollaborationContainer', () => {
                 vm: (state = mockVM) => state
             })
         }));
+    });
+
+    test('re-attaches the active workspace when the service asks after a project load', () => {
+        mountContainer();
+        const workspace = {id: 'workspace'};
+        setActiveWorkspace(workspace);
+        const [, reattach] = mockCollaborationService.on.mock.calls
+            .find(([event]) => event === 'request-workspace-reattach');
+        reattach();
+        expect(mockCollaborationService.attachToWorkspace).toHaveBeenCalledWith(workspace);
+        setActiveWorkspace(null);
     });
 
     test('initializes the collaboration service with the vm on mount', () => {
