@@ -2,7 +2,7 @@ import {getCommunityLocale} from '../locale.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useState} from 'react';
 import {BarChart3, Eye, FolderOpen, Heart, Play, Users} from 'lucide-react';
-import api from '../api.js';
+import api from '../api';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import {AnalyticsChart, buildSeries} from './Admin.jsx';

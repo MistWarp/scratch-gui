@@ -7,11 +7,11 @@ import {MemoryRouter, Route, Routes} from 'react-router-dom';
 import Classroom from '../../src/community/pages/Classroom.jsx';
 import ClassroomAbout from '../../src/community/pages/ClassroomAbout.jsx';
 import ShareWithTeacher from '../../src/community/components/classroom/ShareWithTeacher.jsx';
-import api from '../../src/community/api.js';
+import api from '../../src/community/api';
 import copyText from '../../src/community/copy-text.js';
 import {useUser} from '../../src/community/UserContext.jsx';
 
-jest.mock('../../src/community/api.js', () => ({
+jest.mock('../../src/community/api', () => ({
     __esModule: true,
     default: {
         classroom: {

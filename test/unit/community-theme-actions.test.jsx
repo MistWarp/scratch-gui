@@ -3,7 +3,7 @@ import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
 import {Link, MemoryRouter, Route, Routes, useLocation} from 'react-router-dom';
 
-import api from '../../src/community/api.js';
+import api from '../../src/community/api';
 import ThemeCard from '../../src/community/components/ThemeCard.jsx';
 import Button from '../../src/community/components/ui/Button.jsx';
 import Modal from '../../src/community/components/ui/Modal.jsx';
@@ -14,7 +14,7 @@ import {customThemeManager} from '../../src/lib/themes/custom-themes.js';
 jest.mock('../../src/community/UserContext.jsx', () => ({
     useUser: () => ({user: {username: 'Sophie'}, login: jest.fn()})
 }));
-jest.mock('../../src/community/api.js', () => ({
+jest.mock('../../src/community/api', () => ({
     __esModule: true,
     default: {
         createTheme: jest.fn(),

@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
 import {Link, useInRouterContext} from 'react-router-dom';
 import {Gamepad2, Heart, Play} from 'lucide-react';
-import {projectUrl} from '../api.js';
+import {projectUrl} from '../api';
 import {isPublicProject} from '../claw-links.js';
 import loadProjectPreview from '../project-preview.js';
 import ProjectThumbnail from './ProjectThumbnail.jsx';

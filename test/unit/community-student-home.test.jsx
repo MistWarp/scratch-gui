@@ -5,9 +5,9 @@ import {mount} from 'enzyme';
 import {MemoryRouter} from 'react-router-dom';
 
 import StudentHome, {AssignmentCard} from '../../src/community/components/classroom/StudentHome.jsx';
-import api from '../../src/community/api.js';
+import api from '../../src/community/api';
 
-jest.mock('../../src/community/api.js', () => ({
+jest.mock('../../src/community/api', () => ({
     __esModule: true,
     default: {
         classroom: {

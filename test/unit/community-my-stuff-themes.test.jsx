@@ -3,7 +3,7 @@ import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
 import {MemoryRouter, useLocation} from 'react-router-dom';
 
-import api from '../../src/community/api.js';
+import api from '../../src/community/api';
 import MyStuffThemes from '../../src/community/components/MyStuffThemes.jsx';
 import Modal from '../../src/community/components/ui/Modal.jsx';
 import {customThemeManager} from '../../src/lib/themes/custom-themes.js';
@@ -16,7 +16,7 @@ const localTheme = {
     export: () => ({name: 'Quiet dark', gui: 'dark', blocks: 'three'})
 };
 
-jest.mock('../../src/community/api.js', () => ({
+jest.mock('../../src/community/api', () => ({
     __esModule: true,
     default: {themes: jest.fn()}
 }));

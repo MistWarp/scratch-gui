@@ -15,7 +15,7 @@ import {
     rememberPlatformProject
 } from '../../src/lib/community/publish.js';
 import rotur from '../../src/community/rotur.js';
-import api from '../../src/community/api.js';
+import api from '../../src/community/api';
 import {isMinorAccount, setMinorAccount} from '../../src/lib/minor-account.js';
 
 test('a rejected /me request clears the saved session', async () => {

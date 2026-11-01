@@ -3,13 +3,13 @@ import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
 import {MemoryRouter} from 'react-router-dom';
 
-import api from '../../src/community/api.js';
+import api from '../../src/community/api';
 import News from '../../src/community/pages/News.jsx';
 
 jest.mock('../../src/community/UserContext.jsx', () => ({
     useUser: () => ({user: {username: 'Sophie', isAdmin: true}})
 }));
-jest.mock('../../src/community/api.js', () => ({
+jest.mock('../../src/community/api', () => ({
     __esModule: true,
     default: {
         news: jest.fn(() => Promise.resolve({news: []})),

@@ -18,7 +18,7 @@ const withOrigins = ({account, editor}, load) => {
     return loaded;
 };
 
-const loadEditorUrl = origins => withOrigins(origins, () => require('../../src/community/api.js').editorUrl);
+const loadEditorUrl = origins => withOrigins(origins, () => require('../../src/community/api').editorUrl);
 
 afterEach(() => {
     for (const key of ENV_KEYS) {

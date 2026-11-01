@@ -9,7 +9,7 @@ import ClassroomLegal from '../../src/community/pages/ClassroomLegal.jsx';
 import ClassroomPrivacy from '../../src/community/pages/ClassroomPrivacy.jsx';
 import DownloadDataButton from '../../src/community/components/classroom/DownloadDataButton.jsx';
 import Avatar from '../../src/components/mw-avatar/avatar.jsx';
-import api from '../../src/community/api.js';
+import api from '../../src/community/api';
 import downloadJson from '../../src/community/download-json.js';
 import {analyticsEnabled} from '../../src/community/analytics.js';
 import {LEGAL} from '../../src/community/legal/config.js';
@@ -19,7 +19,7 @@ import classroomSubprocessors from '../../src/community/legal/classroom-subproce
 import classroomTerms from '../../src/community/legal/classroom-terms.js';
 import {useUser} from '../../src/community/UserContext.jsx';
 
-jest.mock('../../src/community/api.js', () => ({
+jest.mock('../../src/community/api', () => ({
     __esModule: true,
     default: {
         classroom: {

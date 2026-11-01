@@ -4,14 +4,14 @@ import {mount} from 'enzyme';
 import {MemoryRouter, Route, Routes} from 'react-router-dom';
 
 import ClassroomJoin from '../../src/community/pages/ClassroomJoin.jsx';
-import api from '../../src/community/api.js';
+import api from '../../src/community/api';
 
 const mockLoginStudent = jest.fn();
 
 jest.mock('../../src/community/UserContext.jsx', () => ({
     useUser: () => ({user: null, loading: false, loginStudent: mockLoginStudent})
 }));
-jest.mock('../../src/community/api.js', () => ({
+jest.mock('../../src/community/api', () => ({
     __esModule: true,
     default: {
         classroom: {

@@ -3,7 +3,7 @@ import {mount} from 'enzyme';
 import {MemoryRouter} from 'react-router-dom';
 import {SharedProjectCard} from '../../../src/community/components/SharedProjects.jsx';
 
-jest.mock('../../../src/community/api.js', () => ({
+jest.mock('../../../src/community/api', () => ({
     __esModule: true,
     default: {request: jest.fn()},
     editorUrl: ({platformProject}) => `/editor#mw-${platformProject}`,

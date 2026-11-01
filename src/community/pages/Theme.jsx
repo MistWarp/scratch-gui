@@ -3,7 +3,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {BookmarkPlus, Check, Download, Heart, Palette, Pencil, Trash2} from 'lucide-react';
 import {Link, useLocation, useNavigate, useParams} from 'react-router-dom';
-import api from '../api.js';
+import api from '../api';
 import ExploreNav from '../components/ExploreNav.jsx';
 import Avatar from '../components/Avatar.jsx';
 import Button from '../components/ui/Button.jsx';

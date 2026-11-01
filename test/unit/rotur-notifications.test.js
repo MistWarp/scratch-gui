@@ -1,7 +1,7 @@
 jest.mock('../../src/lib/community/api.js', () => ({loadSession: jest.fn(() => null)}));
-jest.mock('../../src/community/api.js', () => ({
+jest.mock('../../src/community/api/account.js', () => ({
     __esModule: true,
-    default: {loadSession: jest.fn(() => null), notifications: jest.fn(), readNotifications: jest.fn()}
+    default: {notifications: jest.fn(), readNotifications: jest.fn()}
 }));
 
 jest.mock('rotur-sdk', () => {
@@ -18,13 +18,13 @@ jest.mock('rotur-sdk', () => {
 
 import {notificationsList} from 'rotur-sdk';
 import {loadSession} from '../../src/lib/community/api.js';
-import communityApi from '../../src/community/api.js';
+import accountApi from '../../src/community/api/account.js';
 import {fetchNotifications, isVisibleNotification} from '../../src/lib/rotur/client.js';
 
 beforeEach(() => {
     notificationsList.mockReset();
     loadSession.mockReturnValue(null);
-    communityApi.notifications.mockReset();
+    accountApi.notifications.mockReset();
 });
 
 describe('Rotur notification visibility', () => {
@@ -110,7 +110,7 @@ describe('Rotur notification loading', () => {
 
 test('includes locally stored milestone notifications when the shared inbox is unavailable', async () => {
     loadSession.mockReturnValue('alice-session');
-    communityApi.notifications.mockResolvedValue({notifications: [{
+    accountApi.notifications.mockResolvedValue({notifications: [{
         id: 'local',
         type: 'like_milestone',
         platform: 'mistwarp',

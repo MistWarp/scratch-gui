@@ -2,7 +2,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {Check, GitBranch, GitMerge, Pencil, Plus, Trash2, X} from 'lucide-react';
-import api from '../api.js';
+import api from '../api';
 import {formatDate} from '../format.js';
 import {buildProjectArtifactsFromFileEntries} from '../../lib/git/mwp.js';
 import Button from './ui/Button.jsx';

@@ -3,7 +3,7 @@ import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
 import {MemoryRouter, useLocation} from 'react-router-dom';
 
-import api from '../../src/community/api.js';
+import api from '../../src/community/api';
 import MyStuffLibrary from '../../src/community/components/MyStuffLibrary.jsx';
 import Button from '../../src/community/components/ui/Button.jsx';
 import Modal from '../../src/community/components/ui/Modal.jsx';
@@ -14,7 +14,7 @@ jest.mock('../../src/community/UserContext.jsx', () => {
     return {useUser: () => ({user, loading: false, login: jest.fn()})};
 });
 jest.mock('../../src/community/components/GroupTag.jsx', () => () => null);
-jest.mock('../../src/community/api.js', () => ({
+jest.mock('../../src/community/api', () => ({
     __esModule: true,
     default: {
         perks: jest.fn(() => Promise.resolve({current: null})),

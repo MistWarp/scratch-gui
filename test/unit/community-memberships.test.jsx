@@ -2,11 +2,11 @@ import React from 'react';
 import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
 import {MemoryRouter} from 'react-router-dom';
-import api from '../../src/community/api.js';
+import api from '../../src/community/api';
 import {useUser} from '../../src/community/UserContext.jsx';
 import PaidPerks from '../../src/community/pages/PaidPerks.jsx';
 
-jest.mock('../../src/community/api.js', () => ({
+jest.mock('../../src/community/api', () => ({
     __esModule: true,
     default: {perks: jest.fn()},
     editorUrl: () => 'https://editor.mistwarp.org/'

@@ -2,7 +2,7 @@ import React from 'react';
 import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
 
-jest.mock('../../src/community/api.js', () => ({
+jest.mock('../../src/community/api', () => ({
     __esModule: true,
     default: {
         branches: jest.fn(),
@@ -13,7 +13,7 @@ jest.mock('../../src/community/api.js', () => ({
 }));
 
 import ProjectBranches from '../../src/community/components/ProjectBranches.jsx';
-import api from '../../src/community/api.js';
+import api from '../../src/community/api';
 
 const branchResponse = {
     ok: true,

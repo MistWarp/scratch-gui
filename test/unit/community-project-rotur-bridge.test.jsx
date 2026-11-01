@@ -3,7 +3,7 @@ import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
 import {MemoryRouter, Route, Routes} from 'react-router-dom';
 
-import api from '../../src/community/api.js';
+import api from '../../src/community/api';
 import Project from '../../src/community/pages/Project.jsx';
 import {setMockUserContext} from '../../src/community/UserContext.jsx';
 import rotur from '../../src/community/rotur.js';

@@ -1,7 +1,7 @@
 /* eslint-disable react/jsx-no-bind */
 import React from 'react';
 import PropTypes from 'prop-types';
-import api from '../../community/api.js';
+import api from '../../community/api';
 import {getCurrentProjectBranch} from '../../lib/git/browser-git.js';
 import {isProjectHistoryHydrated} from '../../lib/git/project-history.js';
 import {
