@@ -4,7 +4,6 @@ const AddonHooks = {
     appStateStoreCallbacks: [],
     blockly: null,
     blocklyWorkspace: null,
-    blocklyCallbacks: [],
     recolorCallbacks: []
 };
 

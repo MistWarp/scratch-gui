@@ -4,6 +4,8 @@
  * explicitly instead of reaching into a service object.
  */
 
+import {getScratchBlocks} from '../../modules/blocks-registry';
+
 const serializeEvent = (vm, event) => {
     const json = event.toJson();
 
@@ -33,7 +35,7 @@ const serializeEvent = (vm, event) => {
         if (typeof event.height !== 'undefined') json.height = event.height;
         if (typeof event.minimized !== 'undefined') json.minimized = event.minimized;
         if (event.xml) {
-            const ScratchBlocks = window.ScratchBlocks;
+            const ScratchBlocks = getScratchBlocks();
             if (ScratchBlocks && ScratchBlocks.Xml && ScratchBlocks.Xml.domToText) {
                 json.xml = ScratchBlocks.Xml.domToText(event.xml);
             } else if (event.xml.outerHTML) {

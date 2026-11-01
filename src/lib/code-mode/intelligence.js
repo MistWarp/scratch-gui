@@ -6,6 +6,7 @@ import opcodeTable from 'scratch-vm/src/engine/opcodes.generated.json';
 import {extensionBlocks, extensionCompletionSource} from './extension-completion.js';
 import {symbolAt} from './definition.js';
 import {allFolders} from './custom-assets.js';
+import {getScratchBlocks} from '../../modules/blocks-registry';
 
 const IDENT = /^[A-Za-z_][\w]*$/;
 const SKIPPED_NAMESPACES = new Set(['argument', 'procedures']);
@@ -46,7 +47,7 @@ const reference = () => {
 const namespaceOf = opcode => opcode.slice(0, opcode.indexOf('_'));
 const rawLabel = opcode => opcode.replace('_', '.');
 
-const scratchBlocks = () => (typeof window === 'undefined' ? null : window.ScratchBlocks || null);
+const scratchBlocks = () => getScratchBlocks();
 
 const recordDefinition = opcode => {
     const blocks = scratchBlocks();

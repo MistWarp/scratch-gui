@@ -18,6 +18,7 @@ import {
     hoveredOpcodes,
     procedureRenameChanges
 } from '../../../src/lib/code-mode/intelligence.js';
+import {resetBlocksRegistryForTests, setScratchBlocks} from '../../../src/modules/blocks-registry';
 
 jest.mock('../../../src/lib/extension-dev/lint-client.js', () => ({
     createLinter: () => ({lint: () => Promise.resolve([]), dispose: () => {}})
@@ -120,7 +121,7 @@ describe('fractch completion', () => {
 
 describe('fractch hover', () => {
     afterEach(() => {
-        delete window.ScratchBlocks;
+        resetBlocksRegistryForTests();
     });
 
     test('names the block under the cursor, raw or aliased', () => {
@@ -132,7 +133,7 @@ describe('fractch hover', () => {
     });
 
     test('reads the block text and category color from scratch-blocks', () => {
-        window.ScratchBlocks = {
+        setScratchBlocks({
             Colours: {motion: {primary: '#4C97FF'}},
             Blocks: {motion_changexby: {init () {
                 this.jsonInit({
@@ -141,7 +142,7 @@ describe('fractch hover', () => {
                     extensions: ['colours_motion', 'shape_statement']
                 });
             }}}
-        };
+        });
         expect(blockInfo('motion_changexby')).toEqual({
             text: 'change x by (DX)',
             color: '#4C97FF',

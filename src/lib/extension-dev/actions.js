@@ -10,8 +10,8 @@ import {applyExtensionSource, extensionConfirm} from '../code-mode/extension-app
 import {clearExtensionHistory} from '../code-mode/code-history.js';
 import {prepareProjectReplacement} from '../project-replacement.js';
 import {allowUnsandboxedExtensionCreation} from '../../containers/tw-security-manager.jsx';
-import AddonHooks from '../../addons/hooks.js';
 import {clearDraft, getEntries, markAuthored} from './session.js';
+import {getActiveWorkspace} from '../../modules/blocks-registry';
 
 let outputCounter = 0;
 
@@ -161,7 +161,7 @@ const removeExtensionsFromProject = async ({vm, dispatch, intl, messages, ids, p
     }
     dispatch(addExtensionOutput(names.map((name, index) => outputEntry(ids[index], 'info',
         intl.formatMessage(messages.outputRemoved, {name})))));
-    const workspace = AddonHooks.blocklyWorkspace;
+    const workspace = getActiveWorkspace();
     setTimeout(() => {
         if (workspace && typeof workspace.clearUndo === 'function') workspace.clearUndo();
     });

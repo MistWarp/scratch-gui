@@ -23,12 +23,6 @@ const setupThreadGlow = controller => {
             }
             return;
         }
-        if (!window.Blockly) {
-            if (!window.ScratchBlocks) {
-                return;
-            }
-            window.Blockly = window.ScratchBlocks;
-        }
         wasEnabled = true;
         const runningThread = engine.getRunningThread();
         const threads = vm.runtime.threads.filter(
