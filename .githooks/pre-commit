@@ -9,8 +9,8 @@ cd "$root"
 staged=$(git diff --cached --name-only --diff-filter=ACMR)
 [ -n "$staged" ] || exit 0
 
-# ESLint on the staged JavaScript files. .eslintignore still applies.
-scripts=$(printf '%s\n' "$staged" | grep -E '\.(js|jsx|mjs|cjs)$' || true)
+# ESLint on the staged JavaScript and TypeScript files. .eslintignore still applies.
+scripts=$(printf '%s\n' "$staged" | grep -E '\.(js|jsx|mjs|cjs|ts|tsx)$' || true)
 if [ -n "$scripts" ]; then
     echo "pre-commit: eslint"
     # File names come from git, one per line; IFS keeps names with spaces whole.

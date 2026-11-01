@@ -1,3 +1,4 @@
+import {local} from '../modules/storage';
 const ACTIVATE_TAB = 'scratch-gui/navigation/ACTIVATE_TAB';
 const SHOW_BLOCKS_TAB = 'scratch-gui/navigation/SHOW_BLOCKS_TAB';
 const REVEAL_IN_CODE = 'scratch-gui/navigation/REVEAL_IN_CODE';
@@ -14,20 +15,10 @@ const BLOCKS_MODE = 'blocks';
 const CODE_MODE = 'code';
 const EDITOR_MODE_KEY = 'mw:editor-mode';
 
-const readStoredMode = () => {
-    try {
-        return localStorage.getItem(EDITOR_MODE_KEY) === CODE_MODE ? CODE_MODE : BLOCKS_MODE;
-    } catch (e) {
-        return BLOCKS_MODE;
-    }
-};
+const readStoredMode = () => (local.readString(EDITOR_MODE_KEY) === CODE_MODE ? CODE_MODE : BLOCKS_MODE);
 
 const storeEditorMode = mode => {
-    try {
-        localStorage.setItem(EDITOR_MODE_KEY, mode === CODE_MODE ? CODE_MODE : BLOCKS_MODE);
-    } catch (e) {
-        return;
-    }
+    local.writeString(EDITOR_MODE_KEY, mode === CODE_MODE ? CODE_MODE : BLOCKS_MODE);
 };
 
 let nonce = 0;

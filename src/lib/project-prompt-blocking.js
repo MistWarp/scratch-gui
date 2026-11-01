@@ -1,3 +1,5 @@
+import {local} from '../modules/storage';
+
 const BLOCKED_PROJECT_PROMPTS_KEY = 'mw:blocked-project-prompts';
 const PLATFORM_PROJECT_KEY = 'mw:mistwarp-current-project';
 const volatileBlockedProjectPrompts = new Set();
@@ -29,22 +31,11 @@ const projectPromptKey = project => {
     return name ? `name:${name}` : '';
 };
 
-const readBlockedProjectPrompts = () => {
-    try {
-        const stored = JSON.parse(localStorage.getItem(BLOCKED_PROJECT_PROMPTS_KEY) || '{}');
-        return stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {};
-    } catch (e) {
-        return {};
-    }
-};
+const isPlainObject = value => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
-const writeBlockedProjectPrompts = blocked => {
-    try {
-        localStorage.setItem(BLOCKED_PROJECT_PROMPTS_KEY, JSON.stringify(blocked));
-    } catch (e) {
-        // The in-memory set still blocks prompts until the page closes.
-    }
-};
+const readBlockedProjectPrompts = () => local.readJSON(BLOCKED_PROJECT_PROMPTS_KEY, {}, isPlainObject);
+
+const writeBlockedProjectPrompts = blocked => local.writeJSON(BLOCKED_PROJECT_PROMPTS_KEY, blocked);
 
 const isProjectPromptBlocked = project => {
     const key = projectPromptKey(project);
@@ -74,11 +65,7 @@ const unblockProjectPrompts = key => {
 
 const clearBlockedProjectPrompts = () => {
     volatileBlockedProjectPrompts.clear();
-    try {
-        localStorage.removeItem(BLOCKED_PROJECT_PROMPTS_KEY);
-    } catch (e) {
-        // The in-memory blocks have still been cleared.
-    }
+    local.remove(BLOCKED_PROJECT_PROMPTS_KEY);
 };
 
 export {

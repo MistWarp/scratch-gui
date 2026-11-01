@@ -7,7 +7,8 @@ module.exports = api => {
         presets: [
             // Tests run in the installed Node.js, so only transform what it lacks.
             ['@babel/preset-env', jest ? {targets: {node: 'current'}} : {}],
-            '@babel/preset-react'
+            '@babel/preset-react',
+            '@babel/preset-typescript'
         ],
         plugins: [
             '@babel/plugin-syntax-dynamic-import',

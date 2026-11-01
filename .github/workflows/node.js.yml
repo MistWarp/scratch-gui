@@ -36,6 +36,7 @@ jobs:
     # Nothing here runs dependency build scripts.
     - run: pnpm install --frozen-lockfile --ignore-scripts
     - run: pnpm run lint
+    - run: pnpm run typecheck
     - run: pnpm run i18n:editor:check
     - run: pnpm run i18n:community:check
     - run: pnpm run check:community-css

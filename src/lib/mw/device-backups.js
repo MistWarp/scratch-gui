@@ -1,3 +1,5 @@
+import {local} from '../../modules/storage';
+
 // Timing and recovery helpers for automatic device backups (restore points).
 // See containers/tw-restore-point-manager.jsx.
 
@@ -75,22 +77,13 @@ const ALIVE_TIMEOUT = 3 * 60 * 1000;
 const SESSION_ID = `${Date.now().toString(36)}-${Math.random().toString(36)
     .slice(2)}`;
 
-const readRecord = () => {
-    try {
-        const record = JSON.parse(localStorage.getItem(UNSAVED_BACKUP_KEY));
-        return record && typeof record === 'object' && typeof record.created === 'number' ? record : null;
-    } catch (e) {
-        return null;
-    }
-};
+const isBackupRecord = value => Boolean(value) && typeof value === 'object' && typeof value.created === 'number';
+
+const readRecord = () => local.readJSON(UNSAVED_BACKUP_KEY, null, isBackupRecord);
 
 const writeRecord = record => {
-    try {
-        if (record) localStorage.setItem(UNSAVED_BACKUP_KEY, JSON.stringify(record));
-        else localStorage.removeItem(UNSAVED_BACKUP_KEY);
-    } catch (e) {
-        // Storage may be unavailable (private mode); recovery is best effort.
-    }
+    if (record) local.writeJSON(UNSAVED_BACKUP_KEY, record);
+    else local.remove(UNSAVED_BACKUP_KEY);
 };
 
 /**

@@ -1,5 +1,6 @@
 import {base64ToArrayBuffer} from '../utils/base64';
 import JSZip from '@turbowarp/jszip';
+import {isLegacyAddonEnabled, local} from '../../modules/storage';
 
 const TYPE_AUTOMATIC = 0;
 const TYPE_MANUAL = 1;
@@ -775,36 +776,21 @@ const DEFAULT_INTERVAL = 1000 * 60 * 5;
 const INTERVAL_STORAGE_KEY = 'tw:restore-point-interval';
 
 const readInterval = () => {
-    try {
-        const stored = localStorage.getItem(INTERVAL_STORAGE_KEY);
-        if (stored) {
-            const number = +stored;
-            if (Number.isFinite(number)) {
-                return number;
-            }
+    const stored = local.readString(INTERVAL_STORAGE_KEY);
+    if (stored) {
+        const number = +stored;
+        if (Number.isFinite(number)) {
+            return number;
         }
-
-        // TODO: this is temporary, remove it after enough has passed for people that care to have migrated
-        const addonSettings = localStorage.getItem('tw:addons');
-        if (addonSettings) {
-            const parsedAddonSettings = JSON.parse(addonSettings);
-            const addonObject = parsedAddonSettings['tw-disable-restore-points'];
-            if (addonObject && addonObject.enabled) {
-                return -1;
-            }
-        }
-    } catch (e) {
-        // ignore
+    }
+    if (isLegacyAddonEnabled('tw-disable-restore-points')) {
+        return -1;
     }
     return DEFAULT_INTERVAL;
 };
 
 const setInterval = interval => {
-    try {
-        localStorage.setItem(INTERVAL_STORAGE_KEY, interval);
-    } catch (err) {
-        // ignore
-    }
+    local.writeString(INTERVAL_STORAGE_KEY, String(interval));
 };
 
 export default {

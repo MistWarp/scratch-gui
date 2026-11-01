@@ -1,24 +1,11 @@
 import {getDefaultAuthor, setDefaultAuthor} from './browser-git';
+import {local} from '../../modules/storage';
 
 const DEFAULT_BRANCH_KEY = 'mw:git-default-branch';
 const AUTO_COMMIT_KEY = 'mw:git-autocommit';
 
-const readLocal = (key, fallback) => {
-    try {
-        const value = localStorage.getItem(key);
-        return value === null ? fallback : value;
-    } catch (e) {
-        return fallback;
-    }
-};
-
-const writeLocal = (key, value) => {
-    try {
-        localStorage.setItem(key, value);
-    } catch (e) {
-        // ignore
-    }
-};
+const readLocal = (key, fallback) => local.readString(key) ?? fallback;
+const writeLocal = (key, value) => local.writeString(key, value);
 
 const getAuthorName = () => getDefaultAuthor().name;
 const getAuthorEmail = () => getDefaultAuthor().email;

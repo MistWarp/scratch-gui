@@ -1,4 +1,8 @@
 const path = require('path');
+const typescript = require('../scripts/eslint-typescript.cjs');
+const legacyStorageFiles = require('../scripts/eslint-legacy-storage-files.cjs');
+
+const storageMessage = 'Use local or session from src/modules/storage instead of touching web storage directly.';
 module.exports = {
     root: true,
     extends: ['scratch', 'scratch/es6', 'scratch/react', 'plugin:import/errors'],
@@ -24,6 +28,14 @@ module.exports = {
         'import/no-mutable-exports': 'error',
         'import/no-commonjs': 'error',
         'import/no-amd': 'error',
+        'no-restricted-globals': ['error',
+            {name: 'localStorage', message: storageMessage},
+            {name: 'sessionStorage', message: storageMessage}
+        ],
+        'no-restricted-properties': ['error',
+            {object: 'window', property: 'localStorage', message: storageMessage},
+            {object: 'window', property: 'sessionStorage', message: storageMessage}
+        ],
         'import/no-nodejs-modules': 'error',
         'react/jsx-no-literals': 'error',
         'no-confusing-arrow': ['error', {
@@ -51,6 +63,34 @@ module.exports = {
                 'no-negated-condition': 'off',
                 'no-alert': 'off',
                 'newline-per-chained-call': 'off'
+            }
+        },
+        typescript,
+        {
+            files: ['modules/storage/**/*', ...legacyStorageFiles],
+            rules: {
+                'no-restricted-globals': 'off',
+                'no-restricted-properties': 'off'
+            }
+        },
+        {
+            files: ['modules/**/*'],
+            rules: {
+                'no-restricted-imports': ['error', {
+                    patterns: [
+                        {
+                            group: [
+                                '**/components/**', '**/containers/**', '**/community/**',
+                                '**/playground/**', '**/reducers/**', '**/addons/**'
+                            ],
+                            message: 'Modules sit below the UI. Pass what you need in instead of importing app code.'
+                        },
+                        {
+                            group: ['../*/*', '!../*/index', '!../../**'],
+                            message: 'Import another module through its index only.'
+                        }
+                    ]
+                }]
             }
         }
     ],

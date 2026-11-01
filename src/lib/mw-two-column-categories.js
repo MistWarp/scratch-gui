@@ -1,5 +1,6 @@
+import {isLegacyAddonEnabled, local} from '../modules/storage';
+
 const STORAGE_KEY = 'mw:two-column-categories';
-const LEGACY_ADDON_SETTINGS_KEY = 'tw:addons';
 const LEGACY_ADDON_ID = 'columns';
 const TWO_COLUMN_CATEGORIES_CHANGED = 'mw:two-column-categories-changed';
 
@@ -29,43 +30,24 @@ const BUILT_IN_CATEGORIES = new Set([
     'myBlocks'
 ]);
 
-const readLegacyAddonEnabled = () => {
-    try {
-        const raw = localStorage.getItem(LEGACY_ADDON_SETTINGS_KEY);
-        if (!raw) return false;
-        const parsed = JSON.parse(raw);
-        const entry = parsed && parsed[LEGACY_ADDON_ID];
-        return !!(entry && entry.enabled);
-    } catch (err) {
-        return false;
-    }
-};
 
 let cached = null;
 
 const getTwoColumnCategories = () => {
     if (cached !== null) return cached;
-    try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored === null) {
-            cached = readLegacyAddonEnabled();
-            if (cached) localStorage.setItem(STORAGE_KEY, 'true');
-        } else {
-            cached = stored === 'true';
-        }
-    } catch (err) {
-        cached = false;
+    const stored = local.readString(STORAGE_KEY);
+    if (stored === null) {
+        cached = isLegacyAddonEnabled(LEGACY_ADDON_ID);
+        if (cached) local.writeBoolean(STORAGE_KEY, true);
+    } else {
+        cached = stored === 'true';
     }
     return cached;
 };
 
 const setTwoColumnCategories = enabled => {
     cached = !!enabled;
-    try {
-        localStorage.setItem(STORAGE_KEY, String(cached));
-    } catch (err) {
-        // ignore
-    }
+    local.writeBoolean(STORAGE_KEY, cached);
     if (!cached) document.body.classList.remove(BODY_CLASS);
     window.dispatchEvent(new CustomEvent(TWO_COLUMN_CATEGORIES_CHANGED));
 };

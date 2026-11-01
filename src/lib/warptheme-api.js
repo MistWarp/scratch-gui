@@ -1,6 +1,7 @@
 import {accountKey, ensureScopes, getAccessToken} from './rotur/client.js';
 import {requestValidator} from './community/api.js';
 import {responseMessage} from '../community/api-errors.js';
+import {local} from '../modules/storage';
 
 // Set MW_WARPTHEME_API in .env to point local development at another WarpTheme server.
 const WARPTHEME_API_BASE = process.env.MW_WARPTHEME_API || 'https://warptheme.mistium.com/api';
@@ -9,23 +10,11 @@ const likedThemes = new Set();
 
 const clearSession = () => {
     likedThemes.clear();
-    try {
-        localStorage.removeItem(WARPTHEME_SESSION_KEY);
-    } catch (error) {
-        // Ignore unavailable storage.
-    }
-};
-
-const readStorage = key => {
-    try {
-        return localStorage.getItem(key) || '';
-    } catch (error) {
-        return '';
-    }
+    local.remove(WARPTHEME_SESSION_KEY);
 };
 
 const readSession = () => {
-    const stored = readStorage(WARPTHEME_SESSION_KEY);
+    const stored = local.readString(WARPTHEME_SESSION_KEY) || '';
     const owner = accountKey();
     if (!stored) {
         likedThemes.clear();
@@ -46,15 +35,10 @@ const readSession = () => {
 };
 
 const storeSession = token => {
-    try {
-        if (token) {
-            localStorage.setItem(WARPTHEME_SESSION_KEY, JSON.stringify({
-                token,
-                owner: accountKey()
-            }));
-        } else clearSession();
-    } catch (error) {
-        // Storage can be unavailable in private browsing. The current request can still continue.
+    if (token) {
+        local.writeJSON(WARPTHEME_SESSION_KEY, {token, owner: accountKey()});
+    } else {
+        clearSession();
     }
 };
 

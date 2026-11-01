@@ -232,6 +232,7 @@ import randomizeSpritePosition from '../lib/utils/randomize-sprite-position.js';
 import {getSpriteLibrary} from '../lib/libraries/tw-async-libraries.js';
 import SharedAudioContext from '../lib/audio/shared-audio-context.js';
 import log from '../lib/utils/log.js';
+import {local} from '../modules/storage';
 
 const EXPLORER_OPEN_KEY = 'mw:code-mode:explorer-open';
 const PANEL_OPEN_KEY = 'mw:code-mode:panel-open';
@@ -255,21 +256,10 @@ const activeId = layout => {
     return `${group.id}:${group.activeKey}`;
 };
 
-const readPreference = (key, fallback) => {
-    try {
-        const value = localStorage.getItem(key);
-        return value === null ? fallback : JSON.parse(value);
-    } catch (e) {
-        return fallback;
-    }
-};
+const readPreference = (key, fallback) => local.readJSON(key, fallback);
 
 const writePreference = (key, value) => {
-    try {
-        localStorage.setItem(key, JSON.stringify(value));
-    } catch (e) {
-        return;
-    }
+    local.writeJSON(key, value);
 };
 
 const projectKeyOf = vm => {

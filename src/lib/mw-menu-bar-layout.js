@@ -1,3 +1,4 @@
+import {local} from '../modules/storage';
 const ZONES = [
     {
         id: 'left',
@@ -24,22 +25,10 @@ const HIDDEN_KEY = 'mw:menu-bar-hidden';
 const CHANGE_EVENT = 'mw-menu-bar-layout-changed';
 const STYLE_ID = 'mw-menu-bar-layout';
 
-const readJSON = (key, fallback) => {
-    try {
-        const raw = localStorage.getItem(key);
-        if (raw) return JSON.parse(raw);
-    } catch (err) {
-        // ignore
-    }
-    return fallback;
-};
+const readJSON = (key, fallback) => local.readJSON(key, fallback);
 
 const writeJSON = (key, value, section) => {
-    try {
-        localStorage.setItem(key, JSON.stringify(value));
-    } catch (err) {
-        // ignore
-    }
+    local.writeJSON(key, value);
     try {
         require('./rotur/cloud-sync.js').notifyLocalChange(section);
     } catch (_) {
@@ -161,16 +150,12 @@ const applyMenuBarLayout = (layout, {persist = true} = {}) => {
         renderLayout(normalized);
         return;
     }
-    try {
-        if (normalized) {
-            localStorage.setItem(ORDER_KEY, JSON.stringify(normalized.orders));
-            localStorage.setItem(HIDDEN_KEY, JSON.stringify(normalized.hidden));
-        } else {
-            localStorage.removeItem(ORDER_KEY);
-            localStorage.removeItem(HIDDEN_KEY);
-        }
-    } catch (err) {
-        // ignore
+    if (normalized) {
+        local.writeJSON(ORDER_KEY, normalized.orders);
+        local.writeJSON(HIDDEN_KEY, normalized.hidden);
+    } else {
+        local.remove(ORDER_KEY);
+        local.remove(HIDDEN_KEY);
     }
     applyLayout();
     window.dispatchEvent(new Event(CHANGE_EVENT));

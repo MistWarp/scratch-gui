@@ -15,7 +15,7 @@ module.exports = {
             return {found: true, path: path.resolve(__dirname, '../src/lib/tw-scratch-render-fonts/index.js')};
         }
         const resolve = createRequire(importer).resolve;
-        for (const extension of ['', '.js', '.jsx', '.mjs', '.json']) {
+        for (const extension of ['', '.js', '.jsx', '.mjs', '.json', '.ts', '.tsx', '/index.ts', '/index.tsx']) {
             try {
                 return {found: true, path: resolve(source + extension)};
             } catch (error) {
