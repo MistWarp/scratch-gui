@@ -31,6 +31,7 @@ Current modules:
 | Module | What it owns |
 | --- | --- |
 | `storage` | `local` and `session` stores that never throw: `readString`, `readJSON` (typed only when given a type guard, `unknown` otherwise), `readBoolean`, the matching writes, and `remove`. Also reads the legacy `tw:addons` settings blob. |
+| `project-session` | Editor state that belongs to the open project, kept beside the VM rather than on it. `projectSession(vm)` returns its record (unsaved imported changes, which git remotes may be pushed, history hydration, whether the last load may be trusted). `resetProjectSession(vm)` detaches the workspace. `setLoadHandoff` and `takeLoadHandoff` pass the release, rollback and history callbacks from the project fetcher to the VM manager. |
 
 Code outside `src/modules/storage` must not touch `localStorage` or `sessionStorage` directly. Files that still do are listed in `scripts/eslint-legacy-storage-files.cjs`. When you move one of them to the storage module, delete it from that list, and never add a file to it.
 
