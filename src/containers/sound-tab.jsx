@@ -35,6 +35,7 @@ import {
 
 import {
     activateTab,
+    consumeSoundRequest,
     COSTUMES_TAB_INDEX
 } from '../reducers/editor-tab';
 
@@ -87,6 +88,7 @@ class SoundTab extends React.Component {
 
     componentDidMount () {
         window.addEventListener(SOUND_RECORDED_EVENT, this.handleSoundRecorded);
+        this.applyRequestedSound();
     }
 
     UNSAFE_componentWillReceiveProps (nextProps) {
@@ -109,6 +111,10 @@ class SoundTab extends React.Component {
         }
     }
 
+    componentDidUpdate (prevProps) {
+        if (prevProps.requestedSound !== this.props.requestedSound) this.applyRequestedSound();
+    }
+
     componentWillUnmount () {
         this.unmounted = true;
         window.removeEventListener(SOUND_RECORDED_EVENT, this.handleSoundRecorded);
@@ -116,6 +122,14 @@ class SoundTab extends React.Component {
 
     handleSoundRecorded (event) {
         this.handleNewSound(event.detail && event.detail.targetId);
+    }
+
+    applyRequestedSound () {
+        const {requestedSound} = this.props;
+        if (!requestedSound) return;
+        this.props.onConsumeSoundRequest(requestedSound.nonce);
+        if (requestedSound.targetId !== this.props.vm.editingTarget?.id) return;
+        this.handleSelectSound(requestedSound.index);
     }
 
     handleSelectSound (soundIndex) {
@@ -348,6 +362,12 @@ SoundTab.propTypes = {
     onNewSoundFromRecordingClick: PropTypes.func.isRequired,
     onRequestCloseSoundLibrary: PropTypes.func.isRequired,
     onShowImporting: PropTypes.func.isRequired,
+    onConsumeSoundRequest: PropTypes.func.isRequired,
+    requestedSound: PropTypes.shape({
+        targetId: PropTypes.string,
+        index: PropTypes.number,
+        nonce: PropTypes.number
+    }),
     soundLibraryVisible: PropTypes.bool,
     sprites: PropTypes.shape({
         id: PropTypes.shape({
@@ -369,11 +389,13 @@ const mapStateToProps = state => ({
     isRtl: state.locales.isRtl,
     sprites: state.scratchGui.targets.sprites,
     stage: state.scratchGui.targets.stage,
-    soundLibraryVisible: state.scratchGui.modals.soundLibrary
+    soundLibraryVisible: state.scratchGui.modals.soundLibrary,
+    requestedSound: state.scratchGui.editorTab.requestedSound
 });
 
 const mapDispatchToProps = dispatch => ({
     onActivateCostumesTab: () => dispatch(activateTab(COSTUMES_TAB_INDEX)),
+    onConsumeSoundRequest: nonce => dispatch(consumeSoundRequest(nonce)),
     onNewSoundFromLibraryClick: e => {
         e.preventDefault();
         dispatch(openSoundLibrary());

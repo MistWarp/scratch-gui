@@ -1,5 +1,5 @@
 // Selection and navigation utilities
-import {showBlocksTab} from '../../reducers/editor-tab.js';
+import {activateTab, requestSound, showBlocksTab, SOUNDS_TAB_INDEX} from '../../reducers/editor-tab.js';
 import {whenWorkspaceReady} from '../code-mode/workspace-ready.js';
 
 /**
@@ -151,12 +151,8 @@ const handleBlockSelection = (block, Blockly, mousePosition) => {
 const handleSoundSelection = (soundData, vm, redux) => {
     const editingTarget = vm.editingTarget;
     if (editingTarget) {
-        editingTarget.setSound(soundData.index);
-
-        redux.dispatch({
-            type: 'scratch-gui/navigation/ACTIVATE_TAB',
-            activeTabIndex: 2
-        });
+        redux.dispatch(requestSound(editingTarget.id, soundData.index));
+        redux.dispatch(activateTab(SOUNDS_TAB_INDEX));
     }
 };
 

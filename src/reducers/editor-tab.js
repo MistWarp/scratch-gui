@@ -5,6 +5,8 @@ const SHOW_BLOCKS_TAB = 'scratch-gui/navigation/SHOW_BLOCKS_TAB';
 const REVEAL_IN_CODE = 'scratch-gui/navigation/REVEAL_IN_CODE';
 const CONSUME_REVEAL = 'scratch-gui/navigation/CONSUME_REVEAL';
 const ASSET_EDITOR_ACTIVATED = 'scratch-gui/navigation/ASSET_EDITOR_ACTIVATED';
+const REQUEST_SOUND = 'scratch-gui/navigation/REQUEST_SOUND';
+const CONSUME_SOUND_REQUEST = 'scratch-gui/navigation/CONSUME_SOUND_REQUEST';
 
 // Constants use numbers to make it easier to work with react-tabs
 const BLOCKS_TAB_INDEX = 0;
@@ -28,6 +30,7 @@ const initialState = {
     activeTabIndex: BLOCKS_TAB_INDEX,
     editorMode: readStoredMode(),
     reveal: null,
+    requestedSound: null,
     activeAssetEditor: null
 };
 
@@ -65,6 +68,13 @@ const reducer = function (state, action) {
         return Object.assign({}, state, {reveal: null});
     case ASSET_EDITOR_ACTIVATED:
         return Object.assign({}, state, {activeAssetEditor: action.editor || null});
+    case REQUEST_SOUND:
+        return Object.assign({}, state, {
+            requestedSound: {targetId: action.targetId, index: action.index, nonce: ++nonce}
+        });
+    case CONSUME_SOUND_REQUEST:
+        if (!state.requestedSound || state.requestedSound.nonce !== action.nonce) return state;
+        return Object.assign({}, state, {requestedSound: null});
     default:
         return state;
     }
@@ -92,6 +102,17 @@ const consumeReveal = id => ({
     nonce: id
 });
 
+const requestSound = (targetId, index) => ({
+    type: REQUEST_SOUND,
+    targetId,
+    index
+});
+
+const consumeSoundRequest = id => ({
+    type: CONSUME_SOUND_REQUEST,
+    nonce: id
+});
+
 const assetEditorActivated = editor => ({
     type: ASSET_EDITOR_ACTIVATED,
     editor: editor || null
@@ -104,6 +125,8 @@ export {
     showBlocksTab,
     revealInCode,
     consumeReveal,
+    requestSound,
+    consumeSoundRequest,
     assetEditorActivated,
     storeEditorMode,
     ACTIVATE_TAB,
