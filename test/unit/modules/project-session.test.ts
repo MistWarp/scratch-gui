@@ -13,7 +13,8 @@ describe('projectSession', () => {
             requireExplicitPush: false,
             approvedRemotes: new Set(),
             historyHydration: null,
-            canTrustProject: false
+            canTrustProject: false,
+            projectTrusted: false
         });
     });
 
@@ -43,7 +44,8 @@ describe('detachProjectSession', () => {
         Object.assign(session, {
             pendingDiskOverwrite: true,
             historyHydration: {key: 'p1', ready: true, manifest: null, promise: null},
-            canTrustProject: true
+            canTrustProject: true,
+            projectTrusted: true
         });
         remotes.add('https://example.com/imported.git');
 
@@ -53,7 +55,8 @@ describe('detachProjectSession', () => {
             requireExplicitPush: true,
             approvedRemotes: new Set(),
             historyHydration: null,
-            canTrustProject: true
+            canTrustProject: true,
+            projectTrusted: true
         });
         expect(session.approvedRemotes).not.toBe(remotes);
     });

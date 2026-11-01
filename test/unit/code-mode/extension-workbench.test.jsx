@@ -6,6 +6,7 @@ import {EditorView} from '@codemirror/view';
 import {CompletionContext} from '@codemirror/autocomplete';
 import {mountWithIntl} from '../../helpers/intl-helpers.jsx';
 import {CodeWorkbench} from '../../../src/containers/code-workbench.jsx';
+import {projectSession} from '../../../src/modules/project-session';
 import {ExtensionDevListener} from '../../../src/containers/extension-dev-listener.jsx';
 import modalsReducer, {openExtensionManagerModal} from '../../../src/reducers/modals.js';
 import {REVEAL_IN_CODE} from '../../../src/reducers/editor-tab.js';
@@ -198,10 +199,9 @@ describe('unsandboxedFromFile prompt', () => {
     });
 
     test('is never bypassed by trusted projects or the allow-all switch', () => {
-        const component = new TWSecurityManagerComponent({
-            vm: {runtime: {projectName: 'p', _mwProjectTrusted: true}},
-            securityManager: {}
-        });
+        const vm = {runtime: {projectName: 'p'}};
+        projectSession(vm).projectTrusted = true;
+        const component = new TWSecurityManagerComponent({vm, securityManager: {}});
         window.__mwAllowAllSecurity = true;
         try {
             expect(component.isSecurityBypassed('canRunUnsandboxedFromFile', [])).toBe(false);

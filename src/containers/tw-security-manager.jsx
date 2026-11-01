@@ -301,7 +301,7 @@ class TWSecurityManagerComponent extends React.Component {
             method === 'canRetryUnsandboxed'
         ) return false;
         if (typeof window !== 'undefined' && window.__mwAllowAllSecurity === true) return true;
-        if (this.props.vm.runtime._mwProjectTrusted !== true) return false;
+        if (!projectSession(this.props.vm).projectTrusted) return false;
         if (method === 'canLoadExtensionFromProject') return false;
         if (method === 'getSandboxMode') return projectTrustedExtensionUrls.has(args[0]);
         return true;
@@ -329,7 +329,7 @@ class TWSecurityManagerComponent extends React.Component {
     }
 
     isLoadAllActive (wholeProject) {
-        return wholeProject === true && this.props.vm.runtime._mwProjectTrusted === true;
+        return wholeProject === true && projectSession(this.props.vm).projectTrusted;
     }
 
     handleAllowed () {
@@ -346,13 +346,13 @@ class TWSecurityManagerComponent extends React.Component {
     }
 
     handleLoadAll () {
-        this.props.vm.runtime._mwProjectTrusted = true;
+        projectSession(this.props.vm).projectTrusted = true;
         this.state.callback(true);
     }
 
     handleProjectLoading ({stage}) {
         if (stage !== 'building') return;
-        this.props.vm.runtime._mwProjectTrusted = false;
+        projectSession(this.props.vm).projectTrusted = false;
         extensionsTrustedByUser.clear();
         projectTrustedExtensionUrls.clear();
         platformProjectExtensionUrls.clear();
@@ -643,7 +643,6 @@ TWSecurityManagerComponent.propTypes = {
         runtime: PropTypes.shape({
             on: PropTypes.func.isRequired,
             off: PropTypes.func.isRequired,
-            _mwProjectTrusted: PropTypes.bool,
             projectName: PropTypes.string
         }).isRequired,
         extensionManager: PropTypes.shape({
