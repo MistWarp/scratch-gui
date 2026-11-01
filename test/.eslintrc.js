@@ -1,3 +1,5 @@
+const typescript = require('../scripts/eslint-typescript.cjs');
+
 module.exports = {
     extends: ['scratch/react', 'scratch/es6', 'plugin:jest/recommended'],
     env: {
@@ -6,6 +8,7 @@ module.exports = {
     },
     plugins: ['jest'],
     rules: {
+        'require-jsdoc': 'off',
         'react/prop-types': 0,
         // Re-rendering cost does not matter in tests, and small test components need no names.
         'react/jsx-no-bind': 'off',
@@ -32,6 +35,7 @@ module.exports = {
             ignoreRegExpLiterals: true
         }]
     },
+    overrides: [typescript],
     settings: {
         react: {
             version: '16.2' // Matches src/.eslintrc.js

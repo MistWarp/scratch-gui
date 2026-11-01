@@ -1,4 +1,5 @@
 const path = require('path');
+const typescript = require('./scripts/eslint-typescript.cjs');
 
 module.exports = {
     root: true,
@@ -13,7 +14,8 @@ module.exports = {
         }
     },
     rules: {
-        'import/namespace': 'off'
+        'import/namespace': 'off',
+        'require-jsdoc': 'off'
     },
     overrides: [
         {
@@ -29,6 +31,7 @@ module.exports = {
             parserOptions: {
                 sourceType: 'script'
             }
-        }
+        },
+        typescript
     ]
 };

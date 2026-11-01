@@ -17,6 +17,23 @@ The repository holds two React apps that grew up separately: the editor (inherit
 - The community ESLint override turns off `jsx-no-literals`, `jsx-no-bind` and `prop-types`, so those are not required here.
 - API calls go through `src/community/api.js`, which wraps `src/lib/community/api.js`.
 
+## Modules and TypeScript (`src/modules`)
+
+New shared code goes in `src/modules/<name>/`, written in TypeScript. A module is a folder with an `index.ts` that is its only public entry point. Everything else in the folder is private to it.
+
+- **Import a module through its index.** Write `import {local} from '../modules/storage'`, never `'../modules/storage/store'`. Lint rejects deep imports between modules.
+- **Modules sit below both apps.** A module may not import from `components`, `containers`, `community`, `playground`, `reducers` or `addons`. If it needs something from the UI, take it as an argument.
+- **TypeScript is strict.** `pnpm run typecheck` runs `tsc` over the repository. JavaScript files are not type checked, but TypeScript files get `strict`, `noUncheckedIndexedAccess`, and the typescript-eslint strict and stylistic rule sets. Export types alongside the functions that use them.
+- **Tests for a module** go in `test/unit/modules/<name>.test.ts` and import from `@jest/globals`.
+
+Current modules:
+
+| Module | What it owns |
+| --- | --- |
+| `storage` | `local` and `session` stores that never throw: `readString`, `readJSON` (typed only when given a type guard, `unknown` otherwise), `readBoolean`, the matching writes, and `remove`. Also reads the legacy `tw:addons` settings blob. |
+
+Code outside `src/modules/storage` must not touch `localStorage` or `sessionStorage` directly. Files that still do are listed in `scripts/eslint-legacy-storage-files.cjs`. When you move one of them to the storage module, delete it from that list, and never add a file to it.
+
 ## Shared code
 
 - `src/lib` holds code used by both apps or by the editor alone: `src/lib/community` (API client, cached fetch, whether the community build is on), `src/lib/rotur` (Rotur accounts), `src/lib/utils` (small pure helpers), `src/lib/themes`, `src/lib/settings`.

@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable", "WebWorker.ImportScripts"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react",
+    "allowJs": true,
+    "checkJs": false,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "types": [],
+    "paths": {
+      "scratch-blocks": ["./src/generated/scratch-blocks.js"],
+      "scratch-render-fonts": ["./src/lib/tw-scratch-render-fonts/index.js"],
+      "fractch/browser": ["./node_modules/fractch/src/browser.js"],
+      "text-encoding": ["./src/lib/native-text-encoding.js"]
+    }
+  },
+  "include": ["src", "test", "scripts", "functions", "*.mjs", "*.cjs"],
+  "exclude": ["node_modules", "build", "dist", "src/generated/editor-locales", "src/addons/ScratchAddons"]
+}

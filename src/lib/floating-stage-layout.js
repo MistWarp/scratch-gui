@@ -1,3 +1,5 @@
+import {local} from '../modules/storage';
+
 const STORAGE_KEY = 'mw:code-mode:floating-stage';
 const MARGIN = 12;
 const SNAP_DISTANCE = 32;
@@ -43,22 +45,11 @@ const normalizeLayout = value => {
 const defaultLayoutFor = rtl => ({...DEFAULT_LAYOUT, corner: rtl ? 'top-left' : 'top-right'});
 
 const readLayout = (rtl = false) => {
-    try {
-        const raw = window.localStorage.getItem(STORAGE_KEY);
-        return raw ? normalizeLayout(JSON.parse(raw)) : defaultLayoutFor(rtl);
-    } catch (e) {
-        return defaultLayoutFor(rtl);
-    }
+    const stored = local.readJSON(STORAGE_KEY, null);
+    return stored ? normalizeLayout(stored) : defaultLayoutFor(rtl);
 };
 
-const writeLayout = layout => {
-    try {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizeLayout(layout)));
-    } catch (e) {
-        return false;
-    }
-    return true;
-};
+const writeLayout = layout => local.writeJSON(STORAGE_KEY, normalizeLayout(layout));
 
 const isRight = corner => corner.endsWith('right');
 const isBottom = corner => corner.startsWith('bottom');

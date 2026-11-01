@@ -1,3 +1,5 @@
+import {local, readLegacyAddonSettings} from '../../modules/storage';
+
 const STORAGE_PREFIX = 'mw:autosave:';
 const CHANGE_EVENT = 'mw-autosave-settings-changed';
 
@@ -40,27 +42,12 @@ const MENU_BAR_IDS = {
     only_when_changed: 'autosave_only_when_changed'
 };
 
-const readLegacyMenuBar = id => {
-    try {
-        const stored = localStorage.getItem(`mw:menu-bar:${MENU_BAR_IDS[id]}`);
-        return stored === null ? null : stored;
-    } catch (_) {
-        return null;
-    }
-};
-
-const readLegacyAddon = () => {
-    try {
-        return JSON.parse(localStorage.getItem('tw:addons')) || {};
-    } catch (_) {
-        return {};
-    }
-};
+const readLegacyMenuBar = id => local.readString(`mw:menu-bar:${MENU_BAR_IDS[id]}`);
 
 const legacyValue = id => {
     const fromMenuBar = readLegacyMenuBar(id);
     if (fromMenuBar !== null) return fromMenuBar;
-    const autosave = readLegacyAddon().autosave;
+    const autosave = readLegacyAddonSettings().autosave;
     if (!autosave) return null;
     switch (id) {
     case 'enabled':
@@ -89,12 +76,7 @@ const normalize = (definition, value) => {
 const getSetting = id => {
     const definition = byId[id];
     if (!definition) return null;
-    let stored = null;
-    try {
-        stored = localStorage.getItem(`${STORAGE_PREFIX}${id}`);
-    } catch (_) {
-        return definition.default;
-    }
+    const stored = local.readString(`${STORAGE_PREFIX}${id}`);
     if (stored !== null) return normalize(definition, stored);
     const legacy = legacyValue(id);
     return legacy === null || typeof legacy === 'undefined' ?
@@ -107,11 +89,7 @@ const setSetting = (id, value) => {
     const definition = byId[id];
     if (!definition) return;
     const normalized = normalize(definition, value);
-    try {
-        localStorage.setItem(`${STORAGE_PREFIX}${id}`, String(normalized));
-    } catch (_) {
-        // ignore
-    }
+    local.writeString(`${STORAGE_PREFIX}${id}`, String(normalized));
     window.dispatchEvent(new CustomEvent(CHANGE_EVENT, {detail: {id, value: normalized}}));
 };
 
