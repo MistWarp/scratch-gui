@@ -112,6 +112,7 @@
 }
 
 .tab-list {
+    composes: react-tabs__tab-list from "react-tabs/style/react-tabs.css";
     position: relative;
     height: $stage-menu-height;
     display: flex;
@@ -142,6 +143,7 @@
 }
 
 .tab {
+    composes: react-tabs__tab from "react-tabs/style/react-tabs.css";
     flex: 0 0 auto;
     padding: 0 0.6rem;
     height: 80%;
@@ -273,6 +275,7 @@
 }
 
 .tab-panel {
+    composes: react-tabs__tab-panel from "react-tabs/style/react-tabs.css";
     position: relative;
     flex-grow: 1;
     display: none;
@@ -280,6 +283,16 @@
 
 .tab-panel.is-selected {
     display: flex;
+}
+
+.tab-selected {
+    composes: react-tabs__tab--selected from "react-tabs/style/react-tabs.css";
+    composes: is-selected;
+}
+
+.tab-panel-selected {
+    composes: react-tabs__tab-panel--selected from "react-tabs/style/react-tabs.css";
+    composes: is-selected;
 }
 
 .blocks-wrapper {

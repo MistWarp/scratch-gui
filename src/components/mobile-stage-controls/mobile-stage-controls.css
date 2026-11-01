@@ -2,7 +2,7 @@
 @import "../../css/units.css";
 
 .wrapper {
-    width: min(100%, 36rem);
+    width: 100%;
     margin-top: 0.5rem;
     color: $text-primary;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;

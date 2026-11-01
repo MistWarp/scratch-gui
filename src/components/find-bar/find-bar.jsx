@@ -9,8 +9,6 @@ import {loadAddonMessagesForLocale, formatAddonMessage} from './addon-i18n';
 import {waitForElement} from './dom-utils';
 import FindBarController from './FindBarController';
 
-import inputStyles from '../forms/input.css';
-
 
 /**
  * The find bar component
@@ -59,7 +57,6 @@ export default function NativeFindBar ({vm, locale, activeTabIndex, isPlayerOnly
                 vm,
                 msg,
                 msgAny,
-                inputClassName: inputStyles.inputForm,
                 activeTabIndexRef,
                 isPlayerOnlyRef
             });

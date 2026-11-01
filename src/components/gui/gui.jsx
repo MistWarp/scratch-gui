@@ -1,841 +1,92 @@
-import classNames from 'classnames';
 import PropTypes from 'prop-types';
-import React, {useCallback, useEffect, useRef, useState, useMemo} from 'react';
-import ReactDOM from 'react-dom';
-import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
+import React, {useMemo} from 'react';
+import {injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
 import MediaQuery from 'react-responsive';
-import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
-import tabStyles from 'react-tabs/style/react-tabs.css';
 import VM from 'scratch-vm';
 
-import FloatingStage from '../floating-stage/floating-stage.jsx';
-import StageWrapper from '../../containers/stage-wrapper.jsx';
 import Loader from '../loader/loader.jsx';
-import LoadingSpinner from '../tw-loading-spinner/spinner.jsx';
 import Box from '../box/box.jsx';
-import Alerts from '../../containers/alerts.jsx';
-import UpdateToast from '../update-toast/update-toast.jsx';
-import NotificationsProvider from '../../lib/notifications-provider.jsx';
-import TWSecurityManager from '../../containers/tw-security-manager.jsx';
-import TWInvalidProjectModal from '../../containers/tw-invalid-project-modal.jsx';
-import RoturSession from '../../containers/rotur-session.jsx';
-import {hasRotur} from '../../lib/rotur/availability.js';
-import RoturExtensionHost from '../../containers/rotur-extension-host.jsx';
-import MistWarpGameHost from '../../containers/mistwarp-game-host.jsx';
-import RoturLoginModal from '../mw-rotur-login-modal/rotur-login-modal.jsx';
-import {
-    closeAssetsModal,
-    closeConnectionModal,
-    closeCustomExtensionModal,
-    closeDebuggerModal,
-    closeFontsModal,
-    closeGameItemsModal,
-    closeGitModal,
-    closeHelpModal,
-    closeProductsModal,
-    closeProjectMetadataModal,
-    closeRestorePointModal,
-    closeRoturLoginModal,
-    closeSettingsModal,
-    closeUnknownPlatformModal,
-    closeUsernameModal,
-    closeVariableManagerModal
-} from '../../reducers/modals.js';
-import {closeProjectThemePrompt} from '../../reducers/mw-project-theme';
-import {closeCollaborationModal} from '../../reducers/collaboration';
-import SimpleDialog from '../../containers/simple-dialog.jsx';
-import NativeFindBar from '../find-bar/find-bar.jsx';
-import StarterGuide from './starter-guide.jsx';
-import EditorWelcome from '../editor-welcome/editor-welcome.jsx';
-import NativeSpotlight from '../../containers/spotlight.jsx';
-import MobileStageControls from '../mobile-stage-controls/mobile-stage-controls.jsx';
+import {getActiveWorkspace} from '../../modules/blocks-registry';
 import ChatDock from '../mw-chat/chat-dock.jsx';
 import PanelErrorBoundary from '../panel-error-boundary/panel-error-boundary.jsx';
 import {closeChat} from '../../lib/originchats/chat-ui.js';
-
-import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../../lib/constants/layout-constants';
+import {closeRoturLoginModal} from '../../reducers/modals.js';
+import {STAGE_SIZE_MODES} from '../../lib/constants/layout-constants';
 import {resolveStageSize} from '../../lib/utils/screen';
-import listenForStagePanelDrag from '../../lib/utils/stage-panel-drag.js';
-import {beginLiveResize} from '../../lib/mw-live-resize.js';
-import {getFindBarApi} from '../../lib/find-bar/api';
 import {Theme} from '../../lib/themes';
-
-import {BLOCKS_TAB_INDEX, CODE_MODE, COSTUMES_TAB_INDEX, SOUNDS_TAB_INDEX} from '../../reducers/editor-tab';
-import ModeSwitch from '../code-mode/mode-switch.jsx';
-import CollaborationTabIndicator from '../../containers/collaboration-tab-indicator.jsx';
-import ScriptLoadIndicator from '../script-load-indicator/script-load-indicator.jsx';
-import {editorTabMessages, getEditorTabLabels} from './editor-tab-labels.js';
+import {CODE_MODE} from '../../reducers/editor-tab';
 import {setStageSize} from '../../reducers/stage-size';
+import {getPageMinDimensions, getStagePanelStyle, getUnconstrainedEditorWidth} from '../../modules/editor-layout';
 
-import {isRendererSupported, isBrowserSupported} from '../../lib/utils/tw-environment-support-prober.js';
-
+import StarterGuide from './starter-guide.jsx';
+import EditorPane from './editor-pane.jsx';
+import IsolatedPanel from './isolated-panel.jsx';
+import GuiWindows from './gui-windows.jsx';
+import PlayerPage from './player-page.jsx';
+import EditorOverlays from './editor-overlays.jsx';
+import AssetLibraryWindows from './asset-library-windows.jsx';
+import BlocksWorkspace from './blocks-workspace.jsx';
+import StagePanelResizer from './stage-panel-resizer.jsx';
+import StagePanel from './stage-panel.jsx';
+import useStagePanelLayout from './use-stage-panel-layout.js';
+import useMobileEditorView from './use-mobile-editor-view.js';
+import useEditorViewportHeight from './use-editor-viewport-height.js';
+import usePlayerStageWidth from './use-player-stage-width.js';
+import usePreloadEditorWindowsWhenIdle from './use-preload-editor-windows.js';
+import useShortcutCallbacks from './use-shortcut-callbacks.js';
 import styles from './gui.css';
-import {getGuiComponents, preloadLazyGuiComponents} from './gui-components';
-import {isStudentSession} from '../../lib/rotur/student-flag.js';
+import {getGuiComponents} from './gui-components';
 
-const messages = defineMessages({
-    addExtension: {
-        id: 'gui.gui.addExtension',
-        description: 'Button to add an extension in the target pane',
-        defaultMessage: 'Add Extension'
-    },
-    findBlocks: {
-        id: 'gui.gui.findBlocks',
-        description: 'Button in the block palette that opens block search',
-        defaultMessage: 'Find Blocks'
-    },
-    sprites: {
-        id: 'gui.gui.sprites',
-        description: 'Sprite workspace tab in a narrow editor layout',
-        defaultMessage: 'Sprites'
-    },
-    stage: {
-        id: 'gui.gui.stage',
-        description: 'Stage workspace tab in a narrow editor layout',
-        defaultMessage: 'Stage'
-    },
-    editorViews: {
-        id: 'gui.gui.editorViews',
-        description: 'Accessible label for the row of workspace tabs in a narrow editor layout',
-        defaultMessage: 'Editor views'
-    },
-    files: {
-        id: 'mw.gui.files',
-        description: 'Workspace tab that shows the Code mode files in a narrow editor layout',
-        defaultMessage: 'Files'
-    },
-    resizeStagePanel: {
-        id: 'gui.gui.resizeStagePanel',
-        description: 'Accessible label for the handle between the code area and the stage panel',
-        defaultMessage: 'Resize stage panel. Use left and right arrow keys.'
-    }
-});
+const handleEnableProcedureReturns = () => {
+    try {
+        const workspace = getActiveWorkspace();
 
-import {
-    Blocks as BlocksIcon,
-    PaintbrushVertical as CostumesIcon,
-    Volume2 as SoundsIcon,
-    PackagePlus as ExtensionIcon,
-    Search,
-    Images as SpritesIcon,
-    Monitor as StageIcon,
-    FolderTree as FilesIcon
-} from 'lucide-react';
-import {getActiveWorkspace} from '../../modules/blocks-registry';
+        if (workspace && workspace.enableProcedureReturns) {
+            workspace.enableProcedureReturns();
 
-const getFullscreenBackgroundColor = () => {
-    const params = new URLSearchParams(location.search);
-    if (params.has('fullscreen-background')) {
-        return params.get('fullscreen-background');
-    }
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        return '#111';
-    }
-    return 'white';
-};
-
-const fullscreenBackgroundColor = getFullscreenBackgroundColor();
-
-const AUTO_SMALL_STAGE_INNER_WIDTH = Math.round(FIXED_WIDTH);
-const MIN_EDITOR_PANE_WIDTH = 598;
-const MIN_EDITOR_PANE_WIDTH_WITH_CHAT = 460;
-const MIN_TARGET_PANE_HEIGHT = 180;
-const HIDE_STAGE_DRAG_SLOP = 80;
-const NARROW_LAYOUT_WIDTH = 900;
-// The editor asks for this much height, but never more than the window has, down to the smallest usable height.
-// This keeps short laptop and tablet screens from scrolling the whole page.
-const PREFERRED_MIN_EDITOR_HEIGHT = 640;
-const MIN_EDITOR_HEIGHT = 480;
-const STAGE_RESIZER_WIDTH = 6;
-const MIN_STAGE_PANEL_WIDTH = (FIXED_WIDTH * 0.5) + 18;
-
-const cachedStyleValues = new WeakMap();
-
-const getMinEditorHeight = viewportHeight => Math.max(
-    MIN_EDITOR_HEIGHT,
-    Math.min(PREFERRED_MIN_EDITOR_HEIGHT, viewportHeight || PREFERRED_MIN_EDITOR_HEIGHT)
-);
-
-// Optional windows get their own error boundary, so a crash in one of them leaves the editor running.
-// Some of them load on demand, so each one also gets its own Suspense boundary.
-// Close uses onClose when given, otherwise it dispatches closeAction to hide the window.
-const IsolatedPanel = ({children, closeAction, name, onClose, onClosePanel}) => {
-    const handleClose = useCallback(() => {
-        if (onClose) {
-            onClose();
-        } else if (closeAction && onClosePanel) {
-            onClosePanel(closeAction);
+            if (workspace.refreshToolboxSelection_) {
+                workspace.refreshToolboxSelection_();
+            }
         }
-    }, [closeAction, onClose, onClosePanel]);
-    return (
-        <PanelErrorBoundary
-            name={name}
-            onClose={handleClose}
-        >
-            <React.Suspense fallback={null}>
-                {children}
-            </React.Suspense>
-        </PanelErrorBoundary>
-    );
-};
-
-IsolatedPanel.propTypes = {
-    children: PropTypes.node,
-    closeAction: PropTypes.func,
-    name: PropTypes.string.isRequired,
-    onClose: PropTypes.func,
-    onClosePanel: PropTypes.func
+    } catch (error) {
+        console.error('Error enabling procedure returns:', error);
+    }
 };
 
 const handleCloseChat = () => closeChat();
 
-const minEditorWidth = containerEl => {
-    const next = containerEl && containerEl.nextElementSibling;
-    return next && next.hasAttribute('data-chat-dock') ? MIN_EDITOR_PANE_WIDTH_WITH_CHAT : MIN_EDITOR_PANE_WIDTH;
-};
-
-const getCachedBorderWidth = element => {
-    if (!element) return 2;
-    
-    const cached = cachedStyleValues.get(element);
-    if (typeof cached !== 'undefined') return cached;
-    
-    const computedStyle = window.getComputedStyle(element);
-    const borderLeft = Number.parseFloat(computedStyle.borderLeftWidth) || 0;
-    const borderRight = Number.parseFloat(computedStyle.borderRightWidth) || 0;
-    const total = borderLeft + borderRight;
-    const result = (!Number.isFinite(total) || total < 0) ? 2 : total;
-    
-    cachedStyleValues.set(element, result);
-    return result;
-};
-
 const GUIComponent = props => {
     const {
-        Blocks,
-        CostumeTab,
-        SoundTab,
-        ExtensionLibrary,
-        TargetPane,
         MenuBar,
-        CostumeLibrary,
-        SoundLibrary,
-        BackdropLibrary,
-        Watermark,
-        Backpack,
-        BrowserModal,
         DragLayer,
-        ConnectionModal,
-        CollaborationContainer,
-        CollabLoader,
-        TelemetryModal,
-        TWUsernameModal,
-        TWSettingsModal,
-        TWCustomExtensionModal,
-        TWRestorePointManager,
-        TWFontsModal,
-        MWAssetsModal,
-        MWProjectMetadataModal,
-        TWDebugger,
-        TWVariableManager,
-        TWUnknownPlatformModal,
-        TWGitModal,
-        ExtensionDevListener,
-        MWHelpModal,
-        MWProjectThemeModal,
-        MWProductsModal,
-        MWGameItemsModal,
-        RecordModal,
-        CodeWorkbench
+        ExtensionLibrary
     } = getGuiComponents();
-    const handleEnableProcedureReturns = useCallback(() => {
-        try {
-            const workspace = getActiveWorkspace();
-            
-            if (workspace && workspace.enableProcedureReturns) {
-                workspace.enableProcedureReturns();
-                
-                if (workspace.refreshToolboxSelection_) {
-                    workspace.refreshToolboxSelection_();
-                }
-            }
-        } catch (error) {
-            console.error('Error enabling procedure returns:', error);
-        }
-    }, []);
-
-    const editorWrapperRef = useRef(null);
-    const mobileStagePaneRef = useRef(null);
-    const stageAndTargetWrapperRef = useRef(null);
-    const stageResizeRafRef = useRef(null);
-    const measureRafRef = useRef(null);
-    const stagePanelResizeCleanupRef = useRef(null);
-    const syncingModeRef = useRef(false);
-    const prevStageSizeModeRef = useRef(null);
-    const prevCustomStageSizeRef = useRef(props.customStageSize);
-    const lastSyncedWidthRef = useRef(null);
-    const [stagePanelWidth, setStagePanelWidth] = useState(null);
-    const [stageContainerWidth, setStageContainerWidth] = useState(null);
-    const [isNarrowLayout, setIsNarrowLayout] = useState(false);
-    const [mobileEditorView, setMobileEditorView] = useState('editor');
-    const [mobileStageContainerWidth, setMobileStageContainerWidth] = useState(null);
-    const [playerStageWidth, setPlayerStageWidth] = useState(null);
-    const [viewportHeight, setViewportHeight] = useState(
-        typeof window === 'undefined' ? PREFERRED_MIN_EDITOR_HEIGHT : window.innerHeight
-    );
-
-    const isStageHidden = props.stageSizeMode === STAGE_SIZE_MODES.hidden && !props.isFullScreen;
-    const preferredPanelWidthRef = useRef(null);
-    const isStageHiddenRef = useRef(isStageHidden);
-    isStageHiddenRef.current = isStageHidden;
-
-    const handleOpenSearch = useCallback(() => {
-        const findBar = getFindBarApi();
-        if (findBar) findBar.expand();
-    }, []);
-
-    const handleMobileCodeTab = useCallback(() => {
-        props.onActivateTab(BLOCKS_TAB_INDEX);
-        setMobileEditorView('editor');
-    }, [props.onActivateTab]);
-
-    const handleMobileCostumesTab = useCallback(() => {
-        props.onActivateTab(COSTUMES_TAB_INDEX);
-        setMobileEditorView('editor');
-    }, [props.onActivateTab]);
-
-    const handleMobileSoundsTab = useCallback(() => {
-        props.onActivateTab(SOUNDS_TAB_INDEX);
-        setMobileEditorView('editor');
-    }, [props.onActivateTab]);
-
-    const handleMobileFilesTab = useCallback(() => {
-        setMobileEditorView('editor');
-    }, []);
-
-    const handleMobileSpritesTab = useCallback(() => {
-        setMobileEditorView('sprites');
-    }, []);
-
-    const handleMobileStageTab = useCallback(() => {
-        setMobileEditorView('stage');
-    }, []);
-
-    useEffect(() => {
-        if (!isNarrowLayout || !isStageHidden) {
-            setMobileEditorView('editor');
-        }
-    }, [isNarrowLayout, isStageHidden]);
-
-    useEffect(() => {
-        if (mobileEditorView !== 'stage') {
-            setMobileStageContainerWidth(null);
-            return;
-        }
-        const element = mobileStagePaneRef.current;
-        if (!element) return;
-        let fitRaf = null;
-        const fitStage = () => {
-            if (fitRaf) return;
-            fitRaf = requestAnimationFrame(() => {
-                fitRaf = null;
-                const style = window.getComputedStyle(element);
-                const horizontalPadding = (Number.parseFloat(style.paddingLeft) || 0) +
-                    (Number.parseFloat(style.paddingRight) || 0);
-                const availableWidth = Math.max(0, element.clientWidth - horizontalPadding);
-                const nextWidth = Math.min(FIXED_WIDTH + 2, availableWidth);
-                setMobileStageContainerWidth(prev => (
-                    typeof prev === 'number' && Math.abs(prev - nextWidth) < 1 ? prev : nextWidth
-                ));
-            });
-        };
-        fitStage();
-        if (typeof ResizeObserver === 'undefined') {
-            window.addEventListener('resize', fitStage);
-            return () => {
-                window.removeEventListener('resize', fitStage);
-                if (fitRaf) cancelAnimationFrame(fitRaf);
-            };
-        }
-        const observer = new ResizeObserver(fitStage);
-        observer.observe(element);
-        return () => {
-            observer.disconnect();
-            if (fitRaf) cancelAnimationFrame(fitRaf);
-        };
-    }, [mobileEditorView]);
-
-    const handleStagePanelResizeDoubleClick = useCallback(() => {
-        preferredPanelWidthRef.current = null;
-        setStagePanelWidth(null);
-        setStageContainerWidth(null);
-        if (isStageHiddenRef.current && typeof props.onSetStageSize === 'function') {
-            props.onSetStageSize(STAGE_SIZE_MODES.full);
-        }
-    }, [props.onSetStageSize]);
-
-    const handleStagePanelResizeKeyDown = useCallback(event => {
-        const step = event.shiftKey ? 80 : 24;
-        if (event.key === 'Home') {
-            event.preventDefault();
-            handleStagePanelResizeDoubleClick();
-            return;
-        }
-        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-        event.preventDefault();
-        const direction = event.key === 'ArrowLeft' ? -1 : 1;
-        const currentWidth = stagePanelWidth || preferredPanelWidthRef.current || MIN_STAGE_PANEL_WIDTH;
-        const nextWidth = Math.max(MIN_STAGE_PANEL_WIDTH, currentWidth + (direction * step));
-        preferredPanelWidthRef.current = nextWidth;
-        setStagePanelWidth(nextWidth);
-        setStageContainerWidth(Math.max(0, nextWidth - 18));
-        if (isStageHiddenRef.current && typeof props.onSetStageSize === 'function') {
-            props.onSetStageSize(STAGE_SIZE_MODES.small);
-        }
-    }, [handleStagePanelResizeDoubleClick, props.onSetStageSize, stagePanelWidth]);
-
-    const getStageBorderExtraWidth = useCallback(containerEl => {
-        if (!containerEl || typeof window === 'undefined') return 0;
-        
-        const stageEl = containerEl.querySelector('[class*="stage_stage"]');
-        if (!stageEl) return 2;
-        
-        return getCachedBorderWidth(stageEl);
-    }, []);
-
-    const measureStageContainerWidth = useCallback(() => {
-        if (measureRafRef.current) return;
-        
-        measureRafRef.current = requestAnimationFrame(() => {
-            measureRafRef.current = null;
-            
-            const el = stageAndTargetWrapperRef.current;
-            if (!el) return;
-
-            const rect = el.getBoundingClientRect();
-            if (!Number.isFinite(rect.width)) return;
-
-            const computedStyle = window.getComputedStyle(el);
-            const paddingLeft = Number.parseFloat(computedStyle.paddingLeft) || 0;
-            const paddingRight = Number.parseFloat(computedStyle.paddingRight) || 0;
-            const borderExtra = getStageBorderExtraWidth(el);
-
-            const innerWidth = Math.max(
-                0,
-                rect.width - paddingLeft - paddingRight - borderExtra
-            );
-
-            setStageContainerWidth(prev => {
-                if (typeof prev === 'number' && Math.abs(prev - innerWidth) < 2) {
-                    return prev;
-                }
-                return innerWidth;
-            });
-        });
-    }, [getStageBorderExtraWidth]);
-
-    const lastResizeWidthRef = useRef(null);
-    useEffect(() => {
-        if (typeof stageContainerWidth !== 'number') return;
-
-        const rounded = Math.round(stageContainerWidth);
-        if (lastResizeWidthRef.current === rounded) return;
-
-        lastResizeWidthRef.current = rounded;
-
-        if (stageResizeRafRef.current) return;
-        stageResizeRafRef.current = requestAnimationFrame(() => {
-            stageResizeRafRef.current = null;
-            window.dispatchEvent(new Event('resize'));
-        });
-        return () => {
-            if (stageResizeRafRef.current) {
-                cancelAnimationFrame(stageResizeRafRef.current);
-                stageResizeRafRef.current = null;
-            }
-        };
-    }, [stageContainerWidth]);
-
-    useEffect(() => () => {
-        if (stagePanelResizeCleanupRef.current) stagePanelResizeCleanupRef.current();
-    }, []);
-
-    const setStageWidth = useCallback(contentWidth => {
-        if (contentWidth === null) {
-            setStagePanelWidth(null);
-            setStageContainerWidth(null);
-            return;
-        }
-
-        const el = stageAndTargetWrapperRef.current;
-        let paddingLeft = 8;
-        let paddingRight = 8;
-        let borderExtra = 2;
-        if (el) {
-            const computedStyle = window.getComputedStyle(el);
-            paddingLeft = Number.parseFloat(computedStyle.paddingLeft) || 0;
-            paddingRight = Number.parseFloat(computedStyle.paddingRight) || 0;
-            borderExtra = getStageBorderExtraWidth(el);
-        }
-
-        let outerWidth = contentWidth + 2 + paddingLeft + paddingRight + borderExtra;
-
-        const editorEl = editorWrapperRef.current;
-        const containerEl = editorEl ? editorEl.parentElement : null;
-        const containerWidth = containerEl ?
-            containerEl.getBoundingClientRect().width :
-            window.innerWidth;
-        const maxOuterWidth = containerWidth - minEditorWidth(containerEl) - 6;
-        if (Number.isFinite(maxOuterWidth) && maxOuterWidth > 0) {
-            outerWidth = Math.min(outerWidth, maxOuterWidth);
-        }
-
-        setStagePanelWidth(outerWidth);
-        setStageContainerWidth(contentWidth + 2);
-    }, [getStageBorderExtraWidth]);
-
-    useEffect(() => {
-        if (prevStageSizeModeRef.current === null) {
-            prevStageSizeModeRef.current = props.stageSizeRequestId;
-            return;
-        }
-        if (prevStageSizeModeRef.current === props.stageSizeRequestId) return;
-        prevStageSizeModeRef.current = props.stageSizeRequestId;
-
-        if (props.isFullScreen) return;
-        if (syncingModeRef.current) {
-            syncingModeRef.current = false;
-            return;
-        }
-
-        if (props.stageSizeMode === STAGE_SIZE_MODES.hidden) {
-            return;
-        }
-        if (props.stageSizeMode === STAGE_SIZE_MODES.small) {
-            setStageWidth(FIXED_WIDTH * 0.5);
-        } else if (props.stageSizeMode === STAGE_SIZE_MODES.large) {
-            setStageWidth(FIXED_WIDTH);
-        } else {
-            setStageWidth(null);
-        }
-    }, [props.stageSizeMode, props.stageSizeRequestId, props.isFullScreen, setStageWidth]);
-
-    useEffect(() => {
-        const previousSize = prevCustomStageSizeRef.current;
-        prevCustomStageSizeRef.current = props.customStageSize;
-
-        if (previousSize.width === props.customStageSize.width &&
-            previousSize.height === props.customStageSize.height) return;
-        if (props.isFullScreen || props.stageSizeMode !== STAGE_SIZE_MODES.full) return;
-        if (preferredPanelWidthRef.current !== null) return;
-
-        // The project can replace the default stage dimensions after the editor has already measured its panel.
-        // Clear that stale measurement so full-size mode is laid out using the loaded project's dimensions.
-        setStageWidth(null);
-    }, [
-        props.customStageSize,
-        props.isFullScreen,
-        props.stageSizeMode,
-        setStageWidth
-    ]);
-
-    useEffect(() => {
-        if (stageContainerWidth === lastSyncedWidthRef.current) return;
-        lastSyncedWidthRef.current = stageContainerWidth;
-
-        if (props.isFullScreen) return;
-        if (props.stageSizeMode === STAGE_SIZE_MODES.hidden) return;
-        if (typeof stageContainerWidth !== 'number') return;
-        if (typeof props.onSetStageSize !== 'function') return;
-
-        const smallThreshold = Math.min(
-            AUTO_SMALL_STAGE_INNER_WIDTH,
-            (props.customStageSize && props.customStageSize.width) || FIXED_WIDTH
-        );
-        const isSmall = stageContainerWidth < smallThreshold;
-
-        if (isSmall && props.stageSizeMode !== STAGE_SIZE_MODES.small) {
-            syncingModeRef.current = true;
-            props.onSetStageSize(STAGE_SIZE_MODES.small);
-        } else if (!isSmall && props.stageSizeMode === STAGE_SIZE_MODES.small) {
-            syncingModeRef.current = true;
-            props.onSetStageSize(STAGE_SIZE_MODES.full);
-        }
-    }, [
+    const {
+        editorWrapperRef,
+        handleStagePanelResizeDoubleClick,
+        handleStagePanelResizeKeyDown,
+        handleStagePanelResizePointerDown,
+        isNarrowLayout,
+        isStageHidden,
+        stageAndTargetWrapperRef,
         stageContainerWidth,
-        props.isFullScreen,
-        props.onSetStageSize,
-        props.stageSizeMode,
-        props.customStageSize
-    ]);
-
-    useEffect(() => {
-        if (!props.isPlayerOnly || typeof window === 'undefined') return;
-        const fitPlayer = () => {
-            const naturalWidth = (props.customStageSize && props.customStageSize.width) || FIXED_WIDTH;
-            setPlayerStageWidth(Math.min(window.innerWidth, naturalWidth + 2));
-        };
-        fitPlayer();
-        window.addEventListener('resize', fitPlayer);
-        return () => window.removeEventListener('resize', fitPlayer);
-    }, [props.isPlayerOnly, props.customStageSize]);
-
-    useEffect(() => {
-        if (props.isPlayerOnly || typeof window === 'undefined') return;
-        const handleResize = () => setViewportHeight(window.innerHeight);
-        handleResize();
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, [props.isPlayerOnly]);
-
-    useEffect(() => {
-        if (props.isPlayerOnly || typeof window === 'undefined') return;
-        // Fetch the on-demand windows once the editor is idle so opening them later is instant.
-        const preload = () => preloadLazyGuiComponents();
-        if (typeof window.requestIdleCallback === 'function') {
-            const handle = window.requestIdleCallback(preload, {timeout: 10000});
-            return () => window.cancelIdleCallback(handle);
-        }
-        const timeout = setTimeout(preload, 5000);
-        return () => clearTimeout(timeout);
-    }, [props.isPlayerOnly]);
-
-    const autoHiddenRef = useRef(false);
-    useEffect(() => {
-        const editorEl = editorWrapperRef.current;
-        const containerEl = editorEl ? editorEl.parentElement : null;
-        if (!containerEl || typeof ResizeObserver === 'undefined') return;
-
-        const fit = () => {
-            if (props.isFullScreen || typeof props.onSetStageSize !== 'function') return;
-
-            const measuredWidth = containerEl.getBoundingClientRect().width;
-            if (!Number.isFinite(measuredWidth) || measuredWidth <= 0) return;
-
-            const containerWidth = Math.min(measuredWidth, window.innerWidth);
-            setIsNarrowLayout(containerWidth < NARROW_LAYOUT_WIDTH);
-            const available = containerWidth - minEditorWidth(containerEl) - STAGE_RESIZER_WIDTH;
-
-            if (available < MIN_STAGE_PANEL_WIDTH) {
-                if (!isStageHiddenRef.current) {
-                    autoHiddenRef.current = true;
-                    isStageHiddenRef.current = true;
-                    syncingModeRef.current = true;
-                    props.onSetStageSize(STAGE_SIZE_MODES.hidden);
-                }
-                return;
-            }
-
-            if (isStageHiddenRef.current) {
-                if (!autoHiddenRef.current) return;
-                autoHiddenRef.current = false;
-                isStageHiddenRef.current = false;
-                props.onSetStageSize(STAGE_SIZE_MODES.small);
-                return;
-            }
-
-            const stageEl = stageAndTargetWrapperRef.current;
-            if (!stageEl) return;
-
-            const outerWidth = stageEl.getBoundingClientRect().width;
-            if (!Number.isFinite(outerWidth) || outerWidth <= 0) return;
-
-            const preferred = preferredPanelWidthRef.current;
-            const target = Math.min(
-                typeof preferred === 'number' ? preferred : outerWidth,
-                available
-            );
-            if (Math.abs(outerWidth - target) <= 1) return;
-
-            const computedStyle = window.getComputedStyle(stageEl);
-            const paddingLeft = Number.parseFloat(computedStyle.paddingLeft) || 0;
-            const paddingRight = Number.parseFloat(computedStyle.paddingRight) || 0;
-            const borderExtra = getStageBorderExtraWidth(stageEl);
-
-            setStageWidth(Math.max(0, target - paddingLeft - paddingRight - borderExtra - 2));
-        };
-
-        fit();
-        const observer = new ResizeObserver(fit);
-        observer.observe(containerEl);
-        window.addEventListener('resize', fit);
-        return () => {
-            observer.disconnect();
-            window.removeEventListener('resize', fit);
-        };
-    }, [props.isFullScreen, props.onSetStageSize, setStageWidth, getStageBorderExtraWidth]);
-
-    useEffect(() => {
-        measureStageContainerWidth();
-        const el = stageAndTargetWrapperRef.current;
-        if (!el || typeof ResizeObserver === 'undefined') return;
-        const observer = new ResizeObserver(() => {
-            measureStageContainerWidth();
-        });
-        observer.observe(el);
-        return () => {
-            observer.disconnect();
-            if (measureRafRef.current) {
-                cancelAnimationFrame(measureRafRef.current);
-                measureRafRef.current = null;
-            }
-        };
-    }, [measureStageContainerWidth]);
-
-    const handleStagePanelResizePointerDown = useCallback(e => {
-        if (typeof e.button !== 'undefined' && e.button !== 0) return;
-        e.preventDefault();
-
-        if (stagePanelResizeCleanupRef.current) stagePanelResizeCleanupRef.current();
-
-        const el = stageAndTargetWrapperRef.current;
-        if (!el) return;
-        const editorEl = editorWrapperRef.current;
-        const startRect = el.getBoundingClientRect();
-        const computedStyle = window.getComputedStyle(el);
-        const paddingLeft = Number.parseFloat(computedStyle.paddingLeft) || 0;
-        const paddingRight = Number.parseFloat(computedStyle.paddingRight) || 0;
-        const borderExtra = getStageBorderExtraWidth(el);
-        const editorRect = editorEl ? editorEl.getBoundingClientRect() : null;
-        const startX = (typeof e.clientX === 'number') ? e.clientX : 0;
-        const startWidth = startRect.width;
-        const startInnerWidth = Math.max(0, startWidth - paddingLeft - paddingRight - borderExtra);
-
-        setStageContainerWidth(Math.round(startInnerWidth));
-
-        if (e.currentTarget &&
-            typeof e.currentTarget.setPointerCapture === 'function' &&
-            typeof e.pointerId === 'number') {
-            try {
-                e.currentTarget.setPointerCapture(e.pointerId);
-            } catch (err) {
-                // ignore
-            }
-        }
-
-        const minWidth = Math.max(0, (FIXED_WIDTH * 0.5) + paddingLeft + paddingRight + borderExtra);
-
-        const containerEl = editorEl ? editorEl.parentElement : null;
-        const containerRect = containerEl ? containerEl.getBoundingClientRect() : null;
-        const containerWidth = (containerRect && Number.isFinite(containerRect.width)) ?
-            containerRect.width :
-            window.innerWidth;
-        const resizerRect = (e.currentTarget && typeof e.currentTarget.getBoundingClientRect === 'function') ?
-            e.currentTarget.getBoundingClientRect() : null;
-        const resizerWidth = (resizerRect && Number.isFinite(resizerRect.width)) ? resizerRect.width : 6;
-
-        const maxWidthByEditor = Math.max(minWidth, containerWidth - minEditorWidth(containerEl) - resizerWidth);
-
-        let stageWrapperEl = el.querySelector('[class*="stage-wrapper_stage-wrapper"]');
-        if (!stageWrapperEl) {
-            const candidates = Array.from(el.querySelectorAll('[class*="stage-wrapper"]'));
-            stageWrapperEl = candidates.find(candidate => candidate.querySelector('[class*="stage-header"]'));
-        }
-        const stageCanvasEl = stageWrapperEl ? stageWrapperEl.querySelector('[class*="stage_stage"]') : null;
-
-        const stageWrapperRect = stageWrapperEl ? stageWrapperEl.getBoundingClientRect() : null;
-        const stageCanvasRect = stageCanvasEl ? stageCanvasEl.getBoundingClientRect() : null;
-        const stageOverheadHeight = (stageWrapperRect && stageCanvasRect && stageCanvasRect.height > 0) ?
-            Math.max(0, stageWrapperRect.height - stageCanvasRect.height) :
-            88;
-
-        const panelHeight = startRect.height > 0 ?
-            startRect.height :
-            ((editorRect && editorRect.height > 0) ? editorRect.height : window.innerHeight);
-
-        const maxStageCanvasHeight = Math.max(
-            0,
-            panelHeight - MIN_TARGET_PANE_HEIGHT - stageOverheadHeight
-        );
-
-        const customSize = props.customStageSize;
-        const widthPerHeight = (customSize && customSize.height > 0) ?
-            (customSize.width / customSize.height) :
-            (4 / 3);
-        const maxInnerWidthByHeight = (maxStageCanvasHeight * widthPerHeight) + 2;
-        const maxWidthByHeight = Math.max(
-            minWidth,
-            maxInnerWidthByHeight + paddingLeft + paddingRight + borderExtra
-        );
-
-        const maxWidth = Math.min(maxWidthByEditor, maxWidthByHeight);
-
-        const stageIsLeft = editorRect ? (startRect.left < editorRect.left) : false;
-        const directionFactor = stageIsLeft ? 1 : -1;
-
-        let moveRaf = null;
-        let latestX = startX;
-        const applyMove = () => {
-            const dx = latestX - startX;
-            const rawWidth = startWidth + (dx * directionFactor);
-
-            if (typeof props.onSetStageSize === 'function') {
-                if (rawWidth < minWidth - HIDE_STAGE_DRAG_SLOP) {
-                    if (!isStageHiddenRef.current) {
-                        isStageHiddenRef.current = true;
-                        syncingModeRef.current = true;
-                        props.onSetStageSize(STAGE_SIZE_MODES.hidden);
-                    }
-                    return;
-                }
-                if (isStageHiddenRef.current) {
-                    isStageHiddenRef.current = false;
-                    autoHiddenRef.current = false;
-                    syncingModeRef.current = true;
-                    props.onSetStageSize(STAGE_SIZE_MODES.small);
-                }
-            }
-
-            const nextWidth = Math.min(maxWidth, Math.max(minWidth, rawWidth));
-            const nextInnerWidth = Math.max(0, nextWidth - paddingLeft - paddingRight - borderExtra);
-            preferredPanelWidthRef.current = nextWidth;
-
-            ReactDOM.unstable_batchedUpdates(() => {
-                setStagePanelWidth(nextWidth);
-                setStageContainerWidth(prev => {
-                    if (typeof prev === 'number' && Math.abs(prev - nextInnerWidth) < 0.5) {
-                        return prev;
-                    }
-                    return nextInnerWidth;
-                });
-            });
-        };
-        const onMove = ev => {
-            if (typeof ev.clientX === 'number') latestX = ev.clientX;
-            if (moveRaf) return;
-            moveRaf = requestAnimationFrame(() => {
-                moveRaf = null;
-                applyMove();
-            });
-        };
-
-        const endLiveResize = beginLiveResize();
-        const flushPendingMove = () => {
-            if (!moveRaf) return;
-            cancelAnimationFrame(moveRaf);
-            moveRaf = null;
-            applyMove();
-        };
-        const finishResize = () => {
-            flushPendingMove();
-            endLiveResize();
-            stagePanelResizeCleanupRef.current = null;
-        };
-        const removeListeners = listenForStagePanelDrag(onMove, finishResize);
-        stagePanelResizeCleanupRef.current = () => {
-            if (moveRaf) {
-                cancelAnimationFrame(moveRaf);
-                moveRaf = null;
-            }
-            endLiveResize();
-            removeListeners();
-            stagePanelResizeCleanupRef.current = null;
-        };
-    }, [
-        getStageBorderExtraWidth,
-        props.customStageSize
-    ]);
+        stagePanelWidth
+    } = useStagePanelLayout({
+        customStageSize: props.customStageSize,
+        isFullScreen: props.isFullScreen,
+        onSetStageSize: props.onSetStageSize,
+        stageSizeMode: props.stageSizeMode,
+        stageSizeRequestId: props.stageSizeRequestId
+    });
+    const isMobileEditor = isNarrowLayout && isStageHidden;
+    const {handleSelectMobileTab, handleSelectMobileView, mobileEditorView} = useMobileEditorView({
+        isMobileEditor,
+        onActivateTab: props.onActivateTab
+    });
+    const playerStageWidth = usePlayerStageWidth(props.isPlayerOnly, props.customStageSize);
+    const viewportHeight = useEditorViewportHeight(props.isPlayerOnly);
+    usePreloadEditorWindowsWhenIdle(props.isPlayerOnly);
 
     const {
         accountNavOpen,
@@ -931,247 +182,49 @@ const GUIComponent = props => {
         dispatch,
         ...componentProps
     } = props;
-    const editorTabLabels = useMemo(() => getEditorTabLabels(intl, targetIsStage), [intl, targetIsStage]);
     const codeMode = editorMode === CODE_MODE;
     const floatingStage = codeMode && !isNarrowLayout && !isFullScreen;
-    const visibleTabIndex = codeMode ? -1 : activeTabIndex;
+    useShortcutCallbacks(
+        children ? null : onStartSelectingFileUpload,
+        children ? null : onClickPackager
+    );
+    const unconstrainedWidth = useMemo(
+        () => getUnconstrainedEditorWidth(customStageSize.width),
+        [customStageSize.width]
+    );
+    const minDimensions = useMemo(
+        () => getPageMinDimensions({isNarrowLayout, isStageHidden, viewportHeight}),
+        [isStageHidden, isNarrowLayout, viewportHeight]
+    );
+    const stagePanelStyle = useMemo(
+        () => getStagePanelStyle(stagePanelWidth, isStageHidden),
+        [stagePanelWidth, isStageHidden]
+    );
     if (children) {
         return <Box {...componentProps}>{children}</Box>;
     }
 
-    useEffect(() => {
-        if (onStartSelectingFileUpload || onClickPackager) {
-            const {updateCallbacks: updateShortcutsCallbacks} = require('../../lib/shortcuts/event-router.js');
-            const newCallbacks = {};
-            if (onStartSelectingFileUpload) {
-                newCallbacks.loadFromComputer = onStartSelectingFileUpload;
-            }
-            if (onClickPackager) {
-                newCallbacks.openPackager = onClickPackager;
-            }
-            updateShortcutsCallbacks(newCallbacks);
-        }
-    }, [onStartSelectingFileUpload, onClickPackager]);
-
-    const tabClassNames = useMemo(() => ({
-        tabs: styles.tabs,
-        tab: classNames(tabStyles.reactTabsTab, styles.tab),
-        tabList: classNames(tabStyles.reactTabsTabList, styles.tabList),
-        tabPanel: classNames(tabStyles.reactTabsTabPanel, styles.tabPanel),
-        tabPanelSelected: classNames(tabStyles.reactTabsTabPanelSelected, styles.isSelected),
-        tabSelected: classNames(tabStyles.reactTabsTabSelected, styles.isSelected)
-    }), []);
-
-    const unconstrainedWidth = useMemo(() => (
-        UNCONSTRAINED_NON_STAGE_WIDTH +
-        FIXED_WIDTH +
-        Math.max(0, customStageSize.width - FIXED_WIDTH)
-    ), [customStageSize.width]);
-
-    const alwaysEnabledModals = useMemo(() => (
-        <React.Fragment>
-            <RoturSession />
-            {!isEmbedded && <RoturExtensionHost />}
-            <MistWarpGameHost />
-            <NotificationsProvider />
-            <TWSecurityManager securityManager={securityManager} />
-            {!isPlayerOnly && (
-                <IsolatedPanel
-                    name="Restore points"
-                    closeAction={closeRestorePointModal}
-                    onClosePanel={onClosePanel}
-                >
-                    <TWRestorePointManager />
-                </IsolatedPanel>
-            )}
-            {!isPlayerOnly && (
-                <IsolatedPanel name="Extension problems">
-                    <ExtensionDevListener />
-                </IsolatedPanel>
-            )}
-            {!isPlayerOnly && (
-                <IsolatedPanel
-                    name="Variable manager"
-                    closeAction={closeVariableManagerModal}
-                    onClosePanel={onClosePanel}
-                >
-                    <TWVariableManager />
-                </IsolatedPanel>
-            )}
-            {!isPlayerOnly && hasRotur() && (
-                <IsolatedPanel
-                    name="Products"
-                    closeAction={closeProductsModal}
-                    onClosePanel={onClosePanel}
-                >
-                    <MWProductsModal />
-                </IsolatedPanel>
-            )}
-            {!isPlayerOnly && hasRotur() && (
-                <IsolatedPanel
-                    name="Game items"
-                    closeAction={closeGameItemsModal}
-                    onClosePanel={onClosePanel}
-                >
-                    <MWGameItemsModal />
-                </IsolatedPanel>
-            )}
-            {!isPlayerOnly && (
-                <IsolatedPanel
-                    name="Help"
-                    closeAction={closeHelpModal}
-                    onClosePanel={onClosePanel}
-                >
-                    <MWHelpModal />
-                </IsolatedPanel>
-            )}
-            {!isPlayerOnly && (
-                <IsolatedPanel
-                    name="Project theme"
-                    closeAction={closeProjectThemePrompt}
-                    onClosePanel={onClosePanel}
-                >
-                    <MWProjectThemeModal />
-                </IsolatedPanel>
-            )}
-            {usernameModalVisible && (
-                <IsolatedPanel
-                    name="Username"
-                    closeAction={closeUsernameModal}
-                    onClosePanel={onClosePanel}
-                >
-                    <TWUsernameModal visible={usernameModalVisible} />
-                </IsolatedPanel>
-            )}
-            {settingsModalVisible && (
-                <IsolatedPanel
-                    name="Settings"
-                    closeAction={closeSettingsModal}
-                    onClosePanel={onClosePanel}
-                >
-                    <TWSettingsModal
-                        isRtl={isRtl}
-                        visible={settingsModalVisible}
-                        onClickAddonSettings={onClickAddonSettings}
-                    />
-                </IsolatedPanel>
-            )}
-            {customExtensionModalVisible && !isStudentSession() && (
-                <IsolatedPanel
-                    name="Custom extension"
-                    closeAction={closeCustomExtensionModal}
-                    onClosePanel={onClosePanel}
-                >
-                    <TWCustomExtensionModal />
-                </IsolatedPanel>
-            )}
-            {fontsModalVisible && (
-                <IsolatedPanel
-                    name="Fonts"
-                    closeAction={closeFontsModal}
-                    onClosePanel={onClosePanel}
-                >
-                    <TWFontsModal />
-                </IsolatedPanel>
-            )}
-            {assetsModalVisible && (
-                <IsolatedPanel
-                    name="Assets"
-                    closeAction={closeAssetsModal}
-                    onClosePanel={onClosePanel}
-                >
-                    <MWAssetsModal />
-                </IsolatedPanel>
-            )}
-            {projectMetadataModalVisible && (
-                <IsolatedPanel
-                    name="Project details"
-                    closeAction={closeProjectMetadataModal}
-                    onClosePanel={onClosePanel}
-                >
-                    <MWProjectMetadataModal />
-                </IsolatedPanel>
-            )}
-            {unknownPlatformModalVisible && (
-                <IsolatedPanel
-                    name="Unknown platform"
-                    closeAction={closeUnknownPlatformModal}
-                    onClosePanel={onClosePanel}
-                >
-                    <TWUnknownPlatformModal />
-                </IsolatedPanel>
-            )}
-            {gitModalVisible && (
-                <IsolatedPanel
-                    name="Version control"
-                    closeAction={closeGitModal}
-                    onClosePanel={onClosePanel}
-                >
-                    <TWGitModal />
-                </IsolatedPanel>
-            )}
-            {invalidProjectModalVisible && <TWInvalidProjectModal />}
-            {roturLoginModalVisible && hasRotur() && (
-                <RoturLoginModal onRequestClose={onRequestCloseRoturLogin} />
-            )}
-            <SimpleDialog />
-        </React.Fragment>
-    ), [
-        securityManager,
-        onClosePanel,
-        onClickAddonSettings,
-        usernameModalVisible,
-        settingsModalVisible,
-        isRtl,
-        customExtensionModalVisible,
-        fontsModalVisible,
-        assetsModalVisible,
-        projectMetadataModalVisible,
-        unknownPlatformModalVisible,
-        invalidProjectModalVisible,
-        gitModalVisible,
-        roturLoginModalVisible,
-        onRequestCloseRoturLogin,
-        isEmbedded,
-        isPlayerOnly
-    ]);
-
-    const minDimensions = useMemo(() => {
-        if (isNarrowLayout) {
-            return {
-                minWidth: 0,
-                minHeight: 0
-            };
-        }
-        const minHeight = getMinEditorHeight(viewportHeight);
-        if (isStageHidden) {
-            return {
-                minWidth: MIN_EDITOR_PANE_WIDTH + 16,
-                minHeight
-            };
-        }
-        return {
-            minWidth: MIN_EDITOR_PANE_WIDTH + MIN_STAGE_PANEL_WIDTH + STAGE_RESIZER_WIDTH + 16,
-            minHeight
-        };
-    }, [isStageHidden, isNarrowLayout, viewportHeight]);
-
-    const stagePanelStyle = useMemo(() => {
-        if (isStageHidden) {
-            return {
-                width: 'auto',
-                flexBasis: 'auto',
-                flexGrow: 0,
-                flexShrink: 0
-            };
-        }
-        if (!stagePanelWidth) return null;
-        return {
-            width: `${stagePanelWidth}px`,
-            flexBasis: `${stagePanelWidth}px`,
-            flexShrink: 0
-        };
-    }, [stagePanelWidth, isStageHidden]);
+    const windows = (
+        <GuiWindows
+            assetsModalVisible={assetsModalVisible}
+            customExtensionModalVisible={customExtensionModalVisible}
+            fontsModalVisible={fontsModalVisible}
+            gitModalVisible={gitModalVisible}
+            invalidProjectModalVisible={invalidProjectModalVisible}
+            isEmbedded={isEmbedded}
+            isPlayerOnly={isPlayerOnly}
+            isRtl={isRtl}
+            projectMetadataModalVisible={projectMetadataModalVisible}
+            roturLoginModalVisible={roturLoginModalVisible}
+            securityManager={securityManager}
+            settingsModalVisible={settingsModalVisible}
+            unknownPlatformModalVisible={unknownPlatformModalVisible}
+            usernameModalVisible={usernameModalVisible}
+            onClickAddonSettings={onClickAddonSettings}
+            onClosePanel={onClosePanel}
+            onRequestCloseRoturLogin={onRequestCloseRoturLogin}
+        />
+    );
 
     return (<MediaQuery minWidth={unconstrainedWidth}>{isUnconstrained => {
         const stageSize = resolveStageSize(
@@ -1180,118 +233,55 @@ const GUIComponent = props => {
         );
 
         return isPlayerOnly ? (
-            <React.Fragment>
-                {isWindowFullScreen ? (
-                    <div
-                        className={styles.fullscreenBackground}
-                        style={{
-                            backgroundColor: fullscreenBackgroundColor
-                        }}
-                    />
-                ) : null}
-                <StageWrapper
-                    isFullScreen={isFullScreen}
-                    isEmbedded={isEmbedded}
-                    isRendererSupported={isRendererSupported()}
-                    isRtl={isRtl}
-                    loading={loading}
-                    stageContainerWidth={
-                        typeof playerStageWidth === 'number' ? playerStageWidth : null
-                    }
-                    stageSize={STAGE_SIZE_MODES.full}
-                    vm={vm}
-                >
-                    {alertsVisible ? (
-                        <Alerts className={styles.alertsContainer} />
-                    ) : null}
-                </StageWrapper>
-                {alwaysEnabledModals}
-            </React.Fragment>
+            <PlayerPage
+                alertsVisible={alertsVisible}
+                isEmbedded={isEmbedded}
+                isFullScreen={isFullScreen}
+                isRtl={isRtl}
+                isWindowFullScreen={isWindowFullScreen}
+                loading={loading}
+                stageContainerWidth={playerStageWidth}
+                vm={vm}
+            >
+                {windows}
+            </PlayerPage>
         ) : (
             <React.Suspense fallback={<Loader isFullScreen />}>
                 <Box
                     className={styles.pageWrapper}
-                    data-mobile-editor={isNarrowLayout && isStageHidden ? 'true' : null}
+                    data-mobile-editor={isMobileEditor ? 'true' : null}
                     dir={isRtl ? 'rtl' : 'ltr'}
                     style={minDimensions}
                     {...componentProps}
                 >
-                    {alwaysEnabledModals}
-                    <IsolatedPanel
-                        name="Debugger"
-                        closeAction={closeDebuggerModal}
+                    {windows}
+                    <EditorOverlays
+                        alertsVisible={alertsVisible}
+                        connectionModalVisible={connectionModalVisible}
+                        isCreating={isCreating}
+                        isRtl={isRtl}
+                        isTelemetryEnabled={isTelemetryEnabled}
+                        loading={loading}
+                        telemetryModalVisible={telemetryModalVisible}
+                        vm={vm}
+                        onClickDesktopSettings={onClickDesktopSettings}
                         onClosePanel={onClosePanel}
-                    >
-                        <TWDebugger />
-                    </IsolatedPanel>
-                    {telemetryModalVisible ? (
-                        <TelemetryModal
-                            isRtl={isRtl}
-                            isTelemetryEnabled={isTelemetryEnabled}
-                            onCancel={onTelemetryModalCancel}
-                            onOptIn={onTelemetryModalOptIn}
-                            onOptOut={onTelemetryModalOptOut}
-                            onRequestClose={onRequestCloseTelemetryModal}
-                            onShowPrivacyPolicy={onShowPrivacyPolicy}
-                        />
-                    ) : null}
-                    {loading ? (
-                        <Loader isFullScreen />
-                    ) : null}
-                    {isCreating ? (
-                        <Loader
-                            isFullScreen
-                            messageId="gui.loader.creating"
-                        />
-                    ) : null}
-                    <CollabLoader />
-                    {isBrowserSupported() ? null : (
-                        <BrowserModal
-                            isRtl={isRtl}
-                            onClickDesktopSettings={onClickDesktopSettings}
-                        />
-                    )}
-                    {alertsVisible ? (
-                        <Alerts className={styles.alertsContainer} />
-                    ) : null}
-                    <UpdateToast />
-                    {connectionModalVisible ? (
-                        <IsolatedPanel
-                            name="Connection"
-                            closeAction={closeConnectionModal}
-                            onClosePanel={onClosePanel}
-                        >
-                            <ConnectionModal
-                                vm={vm}
-                            />
-                        </IsolatedPanel>
-                    ) : null}
-                    <IsolatedPanel
-                        name="Collaboration"
-                        closeAction={closeCollaborationModal}
-                        onClosePanel={onClosePanel}
-                    >
-                        <CollaborationContainer />
-                    </IsolatedPanel>
-                    {costumeLibraryVisible ? (
-                        <CostumeLibrary
-                            vm={vm}
-                            onRequestClose={onRequestCloseCostumeLibrary}
-                        />
-                    ) : null}
-                    {backdropLibraryVisible ? (
-                        <BackdropLibrary
-                            vm={vm}
-                            onRequestClose={onRequestCloseBackdropLibrary}
-                        />
-                    ) : null}
-                    {soundLibraryVisible && !soundsTabVisible ? (
-                        <SoundLibrary
-                            vm={vm}
-                            onRequestClose={onRequestCloseSoundLibrary}
-                        />
-                    ) : null}
-                    {soundRecorderVisible ? <RecordModal /> : null}
+                        onRequestCloseTelemetryModal={onRequestCloseTelemetryModal}
+                        onShowPrivacyPolicy={onShowPrivacyPolicy}
+                        onTelemetryModalCancel={onTelemetryModalCancel}
+                        onTelemetryModalOptIn={onTelemetryModalOptIn}
+                        onTelemetryModalOptOut={onTelemetryModalOptOut}
+                    />
+                    <AssetLibraryWindows
+                        backdropLibraryVisible={backdropLibraryVisible}
+                        costumeLibraryVisible={costumeLibraryVisible}
+                        soundLibraryVisible={soundLibraryVisible && !soundsTabVisible}
+                        soundRecorderVisible={soundRecorderVisible}
+                        vm={vm}
+                        onRequestCloseBackdropLibrary={onRequestCloseBackdropLibrary}
+                        onRequestCloseCostumeLibrary={onRequestCloseCostumeLibrary}
+                        onRequestCloseSoundLibrary={onRequestCloseSoundLibrary}
+                    />
                     <PanelErrorBoundary
                         closable={false}
                         name="Menu bar"
@@ -1333,358 +323,60 @@ const GUIComponent = props => {
                     />
                     <Box className={styles.bodyWrapper}>
                         <Box className={styles.flexWrapper}>
-                            <Box
-                                className={styles.editorWrapper}
-                                ref={editorWrapperRef}
-                            >
-                                <NativeFindBar
-                                    activeTabIndex={visibleTabIndex}
-                                    isPlayerOnly={isPlayerOnly}
-                                    locale={locale}
-                                    vm={vm}
-                                />
-                                <NativeSpotlight
-                                    blocksEditorVisible={Boolean(blocksTabVisible)}
-                                    isPlayerOnly={isPlayerOnly}
-                                    locale={locale}
-                                    vm={vm}
-                                />
-                                {isNarrowLayout && isStageHidden ? (
-                                    <Box
-                                        className={styles.mobileEditorNav}
-                                        role="tablist"
-                                        aria-label={intl.formatMessage(messages.editorViews)}
-                                    >
-                                        <ModeSwitch
-                                            compact
-                                            onSurface
-                                            className={styles.mobileModeSwitch}
-                                        />
-                                        {codeMode ? (
-                                            <button
-                                                type="button"
-                                                className={classNames(styles.mobileEditorNavButton, {
-                                                    [styles.mobileEditorNavButtonSelected]:
-                                                        mobileEditorView === 'editor'
-                                                })}
-                                                role="tab"
-                                                aria-label={intl.formatMessage(messages.files)}
-                                                title={intl.formatMessage(messages.files)}
-                                                aria-selected={mobileEditorView === 'editor'}
-                                                onClick={handleMobileFilesTab}
-                                            >
-                                                <FilesIcon size={19} />
-                                                <span className={styles.mobileEditorNavLabel}>
-                                                    <FormattedMessage {...messages.files} />
-                                                </span>
-                                            </button>
-                                        ) : null}
-                                        {codeMode ? null : (<React.Fragment>
-                                            <button
-                                                type="button"
-                                                className={classNames(styles.mobileEditorNavButton, {
-                                                    [styles.mobileEditorNavButtonSelected]:
-                                                    mobileEditorView === 'editor' &&
-                                                    activeTabIndex === BLOCKS_TAB_INDEX
-                                                })}
-                                                role="tab"
-                                                aria-label={editorTabLabels.code}
-                                                title={editorTabLabels.code}
-                                                aria-selected={
-                                                    mobileEditorView === 'editor' &&
-                                                activeTabIndex === BLOCKS_TAB_INDEX
-                                                }
-                                                onClick={handleMobileCodeTab}
-                                            >
-                                                <BlocksIcon size={19} />
-                                                <span className={styles.mobileEditorNavLabel}>
-                                                    <FormattedMessage {...editorTabMessages.code} />
-                                                </span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className={classNames(styles.mobileEditorNavButton, {
-                                                    [styles.mobileEditorNavButtonSelected]:
-                                                    mobileEditorView === 'editor' &&
-                                                    activeTabIndex === COSTUMES_TAB_INDEX
-                                                })}
-                                                role="tab"
-                                                aria-label={editorTabLabels.costumes}
-                                                title={editorTabLabels.costumes}
-                                                aria-selected={
-                                                    mobileEditorView === 'editor' &&
-                                                activeTabIndex === COSTUMES_TAB_INDEX
-                                                }
-                                                onClick={handleMobileCostumesTab}
-                                            >
-                                                <CostumesIcon size={19} />
-                                                <span className={styles.mobileEditorNavLabel}>
-                                                    <FormattedMessage
-                                                        {...(targetIsStage ?
-                                                            editorTabMessages.backdrops : editorTabMessages.costumes)}
-                                                    />
-                                                </span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className={classNames(styles.mobileEditorNavButton, {
-                                                    [styles.mobileEditorNavButtonSelected]:
-                                                    mobileEditorView === 'editor' &&
-                                                    activeTabIndex === SOUNDS_TAB_INDEX
-                                                })}
-                                                role="tab"
-                                                aria-label={editorTabLabels.sounds}
-                                                title={editorTabLabels.sounds}
-                                                aria-selected={
-                                                    mobileEditorView === 'editor' &&
-                                                activeTabIndex === SOUNDS_TAB_INDEX
-                                                }
-                                                onClick={handleMobileSoundsTab}
-                                            >
-                                                <SoundsIcon size={19} />
-                                                <span className={styles.mobileEditorNavLabel}>
-                                                    <FormattedMessage {...editorTabMessages.sounds} />
-                                                </span>
-                                            </button>
-                                        </React.Fragment>)}
-                                        <button
-                                            type="button"
-                                            className={classNames(styles.mobileEditorNavButton, {
-                                                [styles.mobileEditorNavButtonSelected]: mobileEditorView === 'sprites'
-                                            })}
-                                            role="tab"
-                                            aria-label={intl.formatMessage(messages.sprites)}
-                                            title={intl.formatMessage(messages.sprites)}
-                                            aria-selected={mobileEditorView === 'sprites'}
-                                            onClick={handleMobileSpritesTab}
-                                        >
-                                            <SpritesIcon size={19} />
-                                            <span className={styles.mobileEditorNavLabel}>
-                                                <FormattedMessage {...messages.sprites} />
-                                            </span>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className={classNames(styles.mobileEditorNavButton, {
-                                                [styles.mobileEditorNavButtonSelected]: mobileEditorView === 'stage'
-                                            })}
-                                            role="tab"
-                                            aria-label={intl.formatMessage(messages.stage)}
-                                            title={intl.formatMessage(messages.stage)}
-                                            aria-selected={mobileEditorView === 'stage'}
-                                            onClick={handleMobileStageTab}
-                                        >
-                                            <StageIcon size={19} />
-                                            <span className={styles.mobileEditorNavLabel}>
-                                                <FormattedMessage {...messages.stage} />
-                                            </span>
-                                        </button>
-                                    </Box>
-                                ) : null}
-                                {codeMode ? (
-                                    <div
-                                        className={classNames(styles.codeWorkbenchSlot, {
-                                            [styles.mobileEditorContentHidden]:
-                                                isNarrowLayout && isStageHidden && mobileEditorView !== 'editor'
-                                        })}
-                                    >
-                                        <React.Suspense fallback={<LoadingSpinner />}>
-                                            <CodeWorkbench spritePaneVisible={!floatingStage} />
-                                        </React.Suspense>
-                                        {floatingStage ? (
-                                            <FloatingStage
-                                                isRendererSupported={isRendererSupported()}
-                                                vm={vm}
-                                            />
-                                        ) : null}
-                                    </div>
-                                ) : null}
-                                <Tabs
-                                    forceRenderTabPanel
-                                    className={classNames(tabClassNames.tabs, {
-                                        [styles.mobileEditorContentHidden]: codeMode ||
-                                            (isNarrowLayout && isStageHidden && mobileEditorView !== 'editor')
-                                    })}
-                                    selectedIndex={activeTabIndex}
-                                    selectedTabClassName={tabClassNames.tabSelected}
-                                    selectedTabPanelClassName={tabClassNames.tabPanelSelected}
-                                    onSelect={onActivateTab}
-                                >
-                                    <TabList
-                                        className={classNames(tabClassNames.tabList, {
-                                            [styles.mobileEditorDesktopTabsHidden]: isNarrowLayout && isStageHidden
-                                        })}
-                                    >
-                                        <Tab
-                                            aria-label={editorTabLabels.code}
-                                            className={tabClassNames.tab}
-                                        >
-                                            <BlocksIcon size={20} />
-                                            <FormattedMessage {...editorTabMessages.code} />
-                                            <CollaborationTabIndicator tab={BLOCKS_TAB_INDEX} />
-                                        </Tab>
-                                        <Tab
-                                            aria-label={editorTabLabels.costumes}
-                                            className={tabClassNames.tab}
-                                        >
-                                            <CostumesIcon size={20} />
-                                            <FormattedMessage
-                                                {...(targetIsStage ?
-                                                    editorTabMessages.backdrops : editorTabMessages.costumes)}
-                                            />
-                                            <CollaborationTabIndicator tab={COSTUMES_TAB_INDEX} />
-                                        </Tab>
-                                        <Tab
-                                            aria-label={editorTabLabels.sounds}
-                                            className={tabClassNames.tab}
-                                        >
-                                            <SoundsIcon size={20} />
-                                            <FormattedMessage {...editorTabMessages.sounds} />
-                                            <CollaborationTabIndicator tab={SOUNDS_TAB_INDEX} />
-                                        </Tab>
-                                        <ScriptLoadIndicator />
-                                    </TabList>
-                                    <TabPanel className={tabClassNames.tabPanel}>
-                                        <React.Fragment>
-                                            <Box className={styles.blocksWrapper}>
-                                                <Blocks
-                                                    key={`${blocksId}/${theme.getBlocksThemeId()}`}
-                                                    canUseCloud={canUseCloud}
-                                                    grow={1}
-                                                    isVisible={blocksTabVisible}
-                                                    options={{
-                                                        media: `${basePath}static/${theme.getBlocksMediaFolder()}/`
-                                                    }}
-                                                    stageSize={stageSize}
-                                                    onOpenCustomExtensionModal={onOpenCustomExtensionModal}
-                                                    theme={theme}
-                                                    vm={vm}
-                                                />
-                                            </Box>
-                                            <Box className={styles.paletteFooter}>
-                                                <button
-                                                    type="button"
-                                                    className={classNames(
-                                                        styles.paletteButton,
-                                                        styles.paletteSearchButton
-                                                    )}
-                                                    title={intl.formatMessage(messages.findBlocks)}
-                                                    onClick={handleOpenSearch}
-                                                >
-                                                    <Search
-                                                        className={styles.paletteButtonIcon}
-                                                        size={22}
-                                                    />
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className={styles.paletteButton}
-                                                    title={intl.formatMessage(messages.addExtension)}
-                                                    onClick={onExtensionButtonClick}
-                                                >
-                                                    <ExtensionIcon
-                                                        className={styles.extensionButtonIcon}
-                                                        draggable={false}
-                                                    />
-                                                    <span className={styles.paletteButtonLabel}>
-                                                        {intl.formatMessage(messages.addExtension)}
-                                                    </span>
-                                                </button>
-                                            </Box>
-                                            <Box className={styles.watermark}>
-                                                <Watermark />
-                                            </Box>
-                                            <EditorWelcome onOpenFile={onStartSelectingFileUpload} />
-                                        </React.Fragment>
-                                    </TabPanel>
-                                    <TabPanel className={tabClassNames.tabPanel}>
-                                        <React.Suspense fallback={<LoadingSpinner />}>
-                                            {costumesTabVisible ? <CostumeTab
-                                                vm={vm}
-                                            /> : null}
-                                        </React.Suspense>
-                                    </TabPanel>
-                                    <TabPanel className={tabClassNames.tabPanel}>
-                                        <React.Suspense fallback={<LoadingSpinner />}>
-                                            {soundsTabVisible ? <SoundTab vm={vm} /> : null}
-                                        </React.Suspense>
-                                    </TabPanel>
-                                </Tabs>
-                                {isNarrowLayout && isStageHidden && mobileEditorView === 'sprites' ? (
-                                    <Box className={styles.mobileEditorPane}>
-                                        <TargetPane
-                                            stageSize={stageSize}
-                                            vm={vm}
-                                        />
-                                    </Box>
-                                ) : null}
-                                {isNarrowLayout && isStageHidden && mobileEditorView === 'stage' ? (
-                                    <Box
-                                        className={classNames(styles.mobileEditorPane, styles.mobileStagePane)}
-                                        ref={mobileStagePaneRef}
-                                    >
-                                        <Box className={styles.mobileStageDisplay}>
-                                            <StageWrapper
-                                                hideFullscreenButton
-                                                isFullScreen={isFullScreen}
-                                                isRendererSupported={isRendererSupported()}
-                                                isRtl={isRtl}
-                                                isStageHidden={false}
-                                                stageSize={STAGE_SIZE_MODES.full}
-                                                stageContainerWidth={mobileStageContainerWidth}
-                                                vm={vm}
-                                            />
-                                        </Box>
-                                        <MobileStageControls vm={vm} />
-                                    </Box>
-                                ) : null}
-                                {backpackVisible && !codeMode && (
-                                    !isNarrowLayout || !isStageHidden || mobileEditorView === 'editor'
-                                ) && !(isNarrowLayout && isStageHidden &&
-                                    activeTabIndex === COSTUMES_TAB_INDEX) && (
-                                    <Backpack host={backpackHost} />
-                                )}
-                            </Box>
-
-                            {(isNarrowLayout && isStageHidden) || floatingStage ? null : (
+                            <EditorPane
+                                activeTabIndex={activeTabIndex}
+                                backpackHost={backpackHost}
+                                backpackVisible={backpackVisible}
+                                blocksPanel={
+                                    <BlocksWorkspace
+                                        basePath={basePath}
+                                        blocksId={blocksId}
+                                        canUseCloud={canUseCloud}
+                                        isVisible={blocksTabVisible}
+                                        stageSize={stageSize}
+                                        theme={theme}
+                                        vm={vm}
+                                        onExtensionButtonClick={onExtensionButtonClick}
+                                        onOpenCustomExtensionModal={onOpenCustomExtensionModal}
+                                        onOpenFile={onStartSelectingFileUpload}
+                                    />
+                                }
+                                blocksTabVisible={blocksTabVisible}
+                                codeMode={codeMode}
+                                costumesTabVisible={costumesTabVisible}
+                                floatingStage={floatingStage}
+                                isFullScreen={isFullScreen}
+                                isMobileEditor={isMobileEditor}
+                                isPlayerOnly={isPlayerOnly}
+                                isRtl={isRtl}
+                                locale={locale}
+                                mobileEditorView={mobileEditorView}
+                                paneRef={editorWrapperRef}
+                                soundsTabVisible={soundsTabVisible}
+                                stageSize={stageSize}
+                                targetIsStage={targetIsStage}
+                                vm={vm}
+                                onActivateTab={onActivateTab}
+                                onSelectMobileTab={handleSelectMobileTab}
+                                onSelectMobileView={handleSelectMobileView}
+                            />
+                            {isMobileEditor || floatingStage ? null : (
                                 <React.Fragment>
-                                    <Box
-                                        className={styles.stagePaneResizer}
-                                        onPointerDown={handleStagePanelResizePointerDown}
+                                    <StagePanelResizer
                                         onDoubleClick={handleStagePanelResizeDoubleClick}
                                         onKeyDown={handleStagePanelResizeKeyDown}
-                                        role="separator"
-                                        aria-orientation="vertical"
-                                        aria-label={intl.formatMessage(messages.resizeStagePanel)}
-                                        tabIndex={0}
+                                        onPointerDown={handleStagePanelResizePointerDown}
                                     />
-                                    <Box
-                                        className={classNames(styles.stageAndTargetWrapper, styles[stageSize], {
-                                            [styles.stageHidden]: isStageHidden
-                                        })}
-                                        ref={stageAndTargetWrapperRef}
-                                        style={stagePanelStyle}
-                                    >
-                                        <StageWrapper
-                                            isFullScreen={isFullScreen}
-                                            isRendererSupported={isRendererSupported()}
-                                            isRtl={isRtl}
-                                            isStageHidden={isStageHidden}
-                                            stageSize={stageSize}
-                                            stageContainerWidth={
-                                                typeof stageContainerWidth === 'number' ? stageContainerWidth : null
-                                            }
-                                            vm={vm}
-                                        />
-                                        {isStageHidden ? null : (
-                                            <Box className={styles.targetWrapper}>
-                                                <TargetPane
-                                                    stageSize={stageSize}
-                                                    vm={vm}
-                                                />
-                                            </Box>
-                                        )}
-                                    </Box>
+                                    <StagePanel
+                                        isFullScreen={isFullScreen}
+                                        isRtl={isRtl}
+                                        isStageHidden={isStageHidden}
+                                        panelRef={stageAndTargetWrapperRef}
+                                        panelStyle={stagePanelStyle}
+                                        stageContainerWidth={stageContainerWidth}
+                                        stageSize={stageSize}
+                                        vm={vm}
+                                    />
                                 </React.Fragment>
                             )}
                         </Box>

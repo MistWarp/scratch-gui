@@ -19,6 +19,11 @@ const SKIPPED_PATHS = [
 const DIRECTIVE = /^(\/\/|\/\*)\s*(eslint[\s-]|global\s|@ts-|istanbul\s|prettier-ignore|\/\s*<reference)/;
 
 const options = process.argv.slice(2);
+const unknownOptions = options.filter(option => option !== '--staged' && !option.startsWith('--base='));
+if (unknownOptions.length) {
+    console.error(`Unknown argument: ${unknownOptions.join(' ')}. Use --staged or --base=<ref>.`);
+    process.exit(2);
+}
 const staged = options.includes('--staged');
 const base = (options.find(option => option.startsWith('--base=')) || '--base=origin/develop').slice('--base='.length);
 
