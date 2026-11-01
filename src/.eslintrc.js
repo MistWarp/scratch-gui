@@ -17,12 +17,16 @@ const uiLayerImport = {
     ]),
     message: 'Modules sit below the UI. Pass what you need in instead of importing app code.'
 };
-const vmFieldMessage = 'Keep editor state off the VM. Use src/modules/project-session, ' +
+const vmFieldMessage = 'Keep editor state off the VM and its runtime. Use src/modules/project-session, ' +
     'or a WeakMap or WeakSet in the file that owns the state.';
-const vmFieldSelectors = ["[object.name='vm']", "[object.property.name='vm']"].map(object => ({
-    selector: `MemberExpression${object}[property.name=/^__?mw/]`,
-    message: vmFieldMessage
-}));
+const guiFieldName = '/^__?mw(?!(InstallToken|InstallingWholeProject)$)/';
+const vmObject = ':matches([name=/^(vm|runtime)$/], [property.name=/^(vm|runtime)$/])';
+const vmFieldSelectors = [
+    `MemberExpression:matches([property.name=${guiFieldName}], [property.value=${guiFieldName}])` +
+        `:has(> .object${vmObject})`,
+    `VariableDeclarator:has(> .init${vmObject}) > ObjectPattern > Property[key.name=${guiFieldName}]`,
+    `AssignmentExpression:has(> .right${vmObject}) > ObjectPattern > Property[key.name=${guiFieldName}]`
+].map(selector => ({selector, message: vmFieldMessage}));
 const siblingModuleDeepImport = {
     group: ['../*/*', '!../*/index', '!../*/index.ts', '!../../**'],
     message: 'Import another module through its index only.'

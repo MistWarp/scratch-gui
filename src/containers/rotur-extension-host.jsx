@@ -18,6 +18,7 @@ import ProjectActivityScope from '../lib/rotur/project-activity-scope.js';
 import {hasRotur, roturOfflineError} from '../lib/rotur/availability.js';
 import {isSplitEditor} from '../lib/account/origins.js';
 import * as accountBridge from '../lib/account/bridge.js';
+import {projectSession} from '../modules/project-session';
 import {
     blockProjectPrompts,
     isProjectPromptBlocked
@@ -165,7 +166,7 @@ class RoturExtensionHost extends React.Component {
         if (decision !== null) {
             return decision;
         }
-        if (this.props.vm.runtime._mwProjectTrusted === true) {
+        if (projectSession(this.props.vm).projectTrusted) {
             return true;
         }
         const {showModal} = await this.acquireModalLock();
@@ -253,7 +254,7 @@ class RoturExtensionHost extends React.Component {
             await commitGrant(meta, scopes);
             return true;
         }
-        if (this.props.vm.runtime._mwProjectTrusted === true) {
+        if (projectSession(this.props.vm).projectTrusted) {
             await commitGrant(meta, scopes);
             return true;
         }

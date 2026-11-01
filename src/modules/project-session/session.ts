@@ -16,6 +16,7 @@ interface WorkspaceState {
 
 export interface ProjectSession extends WorkspaceState {
     canTrustProject: boolean;
+    projectTrusted: boolean;
 }
 
 const newSession = (): ProjectSession => ({
@@ -23,7 +24,8 @@ const newSession = (): ProjectSession => ({
     requireExplicitPush: false,
     approvedRemotes: new Set(),
     historyHydration: null,
-    canTrustProject: false
+    canTrustProject: false,
+    projectTrusted: false
 });
 
 const detachedWorkspace = (): WorkspaceState => ({
