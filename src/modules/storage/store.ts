@@ -1,4 +1,6 @@
 export interface KeyValueArea {
+    readonly length: number;
+    key(index: number): string | null;
     getItem(key: string): string | null;
     setItem(key: string, value: string): void;
     removeItem(key: string): void;
@@ -13,6 +15,7 @@ export interface Store {
     writeJSON(key: string, value: unknown): boolean;
     writeBoolean(key: string, value: boolean): boolean;
     remove(key: string): boolean;
+    keys(): string[];
 }
 
 const resolve = (getArea: () => KeyValueArea | null | undefined): KeyValueArea | null => {
@@ -88,5 +91,20 @@ export const createStore = (getArea: () => KeyValueArea | null | undefined): Sto
         }
     };
 
-    return {readString, readJSON, readBoolean, writeString, writeJSON, writeBoolean, remove};
+    const keys = (): string[] => {
+        const area = resolve(getArea);
+        if (!area) return [];
+        try {
+            const found: string[] = [];
+            for (let index = 0; index < area.length; index++) {
+                const key = area.key(index);
+                if (key !== null) found.push(key);
+            }
+            return found;
+        } catch {
+            return [];
+        }
+    };
+
+    return {readString, readJSON, readBoolean, writeString, writeJSON, writeBoolean, remove, keys};
 };

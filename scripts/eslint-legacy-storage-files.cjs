@@ -35,7 +35,6 @@ module.exports = [
     'lib/account/frame-editor-data.js',
     'lib/account/shared-credentials.js',
     'lib/backpack/preferences.js',
-    'lib/community/api.js',
     'lib/community/publish.js',
     'lib/components/tw-state-manager-hoc.jsx',
     'lib/components/vm-listener-hoc.jsx',

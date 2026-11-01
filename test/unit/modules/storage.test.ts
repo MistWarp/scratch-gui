@@ -5,6 +5,10 @@ const memoryArea = (): KeyValueArea & {entries: Map<string, string>} => {
     const entries = new Map<string, string>();
     return {
         entries,
+        get length () {
+            return entries.size;
+        },
+        key: index => [...entries.keys()][index] ?? null,
         getItem: key => entries.get(key) ?? null,
         setItem: (key, value) => {
             entries.set(key, value);
@@ -16,6 +20,12 @@ const memoryArea = (): KeyValueArea & {entries: Map<string, string>} => {
 };
 
 const throwingArea: KeyValueArea = {
+    get length (): number {
+        throw new Error('SecurityError');
+    },
+    key: () => {
+        throw new Error('SecurityError');
+    },
     getItem: () => {
         throw new Error('SecurityError');
     },
@@ -81,6 +91,7 @@ describe('createStore', () => {
         expect(store.writeString('a', 'b')).toBe(false);
         expect(store.writeJSON('a', 1)).toBe(false);
         expect(store.remove('a')).toBe(false);
+        expect(store.keys()).toEqual([]);
     });
 
     test('reports failure when the storage area itself is unavailable', () => {
@@ -98,6 +109,13 @@ describe('createStore', () => {
         cyclic.self = cyclic;
         expect(createStore(() => area).writeJSON('cyclic', cyclic)).toBe(false);
         expect(area.entries.has('cyclic')).toBe(false);
+    });
+
+    test('lists keys', () => {
+        const area = memoryArea();
+        area.entries.set('a', '1');
+        area.entries.set('b', '2');
+        expect(createStore(() => area).keys()).toEqual(['a', 'b']);
     });
 
     test('removes keys', () => {
