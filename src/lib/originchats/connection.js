@@ -11,6 +11,7 @@ import {
     DMS_SOCKET,
     DMS_URL
 } from './links.js';
+import {local} from '../../modules/storage';
 const CLIENT_NAME = 'mistwarp';
 const HISTORY_PAGE = 50;
 const MAX_MESSAGES = 400;
@@ -519,20 +520,12 @@ const onlineUsers = state => Object.values(state.users)
 
 const readStoredChannel = key => {
     if (!key) return null;
-    try {
-        return localStorage.getItem(key);
-    } catch (e) {
-        return null;
-    }
+    return local.readString(key);
 };
 
 const storeChannel = (key, name) => {
     if (!key) return null;
-    try {
-        localStorage.setItem(key, name);
-    } catch (e) {
-        return null;
-    }
+    local.writeString(key, String(name));
 };
 
 const requestValidator = async key => {

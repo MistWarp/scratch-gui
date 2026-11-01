@@ -1,3 +1,4 @@
+import {local} from '../modules/storage';
 const APPEARANCE_SETTINGS = [
     {
         id: 'square-stage-corners',
@@ -35,12 +36,8 @@ const defaultValue = id => {
 };
 
 const getAppearanceSetting = id => {
-    try {
-        const stored = localStorage.getItem(storageKey(id));
-        return stored === null ? defaultValue(id) : stored === 'true';
-    } catch (err) {
-        return defaultValue(id);
-    }
+    const stored = local.readString(storageKey(id));
+    return stored === null ? defaultValue(id) : stored === 'true';
 };
 
 const elementId = id => `mw-appearance-${id}`;
@@ -61,11 +58,7 @@ const applyAppearanceSetting = (id, enabled) => {
 };
 
 const setAppearanceSetting = (id, enabled) => {
-    try {
-        localStorage.setItem(storageKey(id), enabled);
-    } catch (err) {
-        // ignore
-    }
+    local.writeString(storageKey(id), String(enabled));
     applyAppearanceSetting(id, enabled);
 };
 

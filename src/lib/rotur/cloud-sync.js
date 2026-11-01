@@ -22,6 +22,7 @@ import {
     applyRoturSettingsSnapshot,
     subscribeRoturSettings
 } from './settings.js';
+import {local as localStore} from '../../modules/storage';
 
 let suppressPush = false;
 let pushTimer = null;
@@ -55,12 +56,7 @@ const signedInAs = () => {
 const isObject = value => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
 const readDirty = () => {
-    let raw = null;
-    try {
-        raw = localStorage.getItem(DIRTY_KEY);
-    } catch (_) {
-        return {};
-    }
+    const raw = localStore.readString(DIRTY_KEY);
     if (raw === null) return {};
     let parsed = null;
     try {
@@ -77,12 +73,8 @@ const readDirty = () => {
 };
 
 const writeDirty = dirty => {
-    try {
-        if (Object.keys(dirty).length) localStorage.setItem(DIRTY_KEY, JSON.stringify(dirty));
-        else localStorage.removeItem(DIRTY_KEY);
-    } catch (_) {
-        // ignore
-    }
+    if (Object.keys(dirty).length) localStore.writeJSON(DIRTY_KEY, dirty);
+    else localStore.remove(DIRTY_KEY);
 };
 
 const dirtySections = dirty => (Object.prototype.hasOwnProperty.call(dirty, ALL) ? ALL : Object.keys(dirty));
@@ -104,33 +96,15 @@ const clearPushed = pushed => {
 
 const isDirty = () => Object.keys(readDirty()).length > 0;
 
-const getUsernameOverride = () => {
-    try {
-        return localStorage.getItem(USERNAME_OVERRIDE_KEY) || null;
-    } catch (_) {
-        return null;
-    }
-};
+const getUsernameOverride = () => localStore.readString(USERNAME_OVERRIDE_KEY) || null;
 
-const readLocalJson = (key, fallback) => {
-    try {
-        const raw = localStorage.getItem(key);
-        if (raw === null || typeof raw === 'undefined') return fallback;
-        return JSON.parse(raw);
-    } catch (_) {
-        return fallback;
-    }
-};
+const readLocalJson = (key, fallback) => localStore.readJSON(key, fallback);
 
 const writeLocalJson = (key, value) => {
-    try {
-        if (value === null || typeof value === 'undefined') {
-            localStorage.removeItem(key);
-        } else {
-            localStorage.setItem(key, JSON.stringify(value));
-        }
-    } catch (_) {
-        // ignore
+    if (value === null || typeof value === 'undefined') {
+        localStore.remove(key);
+    } else {
+        localStore.writeJSON(key, value);
     }
 };
 
@@ -181,14 +155,10 @@ const applySnapshotLocally = snapshot => {
             if (snapshot.settings.rotur) {
                 applyRoturSettingsSnapshot(snapshot.settings.rotur);
             }
-            try {
-                if (typeof snapshot.settings.username === 'string' && snapshot.settings.username) {
-                    localStorage.setItem(USERNAME_OVERRIDE_KEY, snapshot.settings.username);
-                } else {
-                    localStorage.removeItem(USERNAME_OVERRIDE_KEY);
-                }
-            } catch (_) {
-                // ignore
+            if (typeof snapshot.settings.username === 'string' && snapshot.settings.username) {
+                localStore.writeString(USERNAME_OVERRIDE_KEY, snapshot.settings.username);
+            } else {
+                localStore.remove(USERNAME_OVERRIDE_KEY);
             }
             if (snapshot.settings.menuBar) {
                 if (snapshot.settings.menuBar.order) {
@@ -198,36 +168,21 @@ const applySnapshotLocally = snapshot => {
                     writeLocalJson(MENU_BAR_HIDDEN_KEY, snapshot.settings.menuBar.hidden);
                 }
                 if (typeof snapshot.settings.menuBar.accent === 'boolean') {
-                    try {
-                        localStorage.setItem(
-                            ACCENT_MENU_BAR_KEY,
-                            snapshot.settings.menuBar.accent ? 'true' : 'false'
-                        );
-                    } catch (_) {
-                        // ignore
-                    }
+                    localStore.writeBoolean(ACCENT_MENU_BAR_KEY, snapshot.settings.menuBar.accent);
                 }
                 if (typeof snapshot.settings.menuBar.compactSave === 'boolean') {
                     setCompactSave(snapshot.settings.menuBar.compactSave);
                 }
                 if (MENU_BAR_TEXT_OPTIONS.includes(snapshot.settings.menuBar.text)) {
-                    try {
-                        localStorage.setItem(MENU_BAR_TEXT_KEY, snapshot.settings.menuBar.text);
-                    } catch (_) {
-                        // ignore
-                    }
+                    localStore.writeString(MENU_BAR_TEXT_KEY, snapshot.settings.menuBar.text);
                 }
                 if (snapshot.settings.menuBar.features) {
                     for (const {id} of MENU_BAR_SETTINGS) {
                         if (typeof snapshot.settings.menuBar.features[id] === 'undefined') continue;
-                        try {
-                            localStorage.setItem(
-                                `${MENU_BAR_SETTINGS_PREFIX}${id}`,
-                                String(snapshot.settings.menuBar.features[id])
-                            );
-                        } catch (_) {
-                            // ignore
-                        }
+                        localStore.writeString(
+                            `${MENU_BAR_SETTINGS_PREFIX}${id}`,
+                            String(snapshot.settings.menuBar.features[id])
+                        );
                     }
                     window.dispatchEvent(new CustomEvent(MENU_BAR_SETTINGS_CHANGE_EVENT, {
                         detail: {id: 'cloud-sync'}
@@ -364,14 +319,10 @@ const notifyLocalChange = (sectionOrDelay, delayMs = 800) => {
 };
 
 const setUsernameOverride = value => {
-    try {
-        if (value) {
-            localStorage.setItem(USERNAME_OVERRIDE_KEY, value);
-        } else {
-            localStorage.removeItem(USERNAME_OVERRIDE_KEY);
-        }
-    } catch (_) {
-        // ignore
+    if (value) {
+        localStore.writeString(USERNAME_OVERRIDE_KEY, String(value));
+    } else {
+        localStore.remove(USERNAME_OVERRIDE_KEY);
     }
     notifyLocalChange('username');
 };
@@ -392,11 +343,7 @@ const onRoturLogout = () => {
         pushTimer = null;
     }
     writeDirty({});
-    try {
-        localStorage.removeItem(USERNAME_OVERRIDE_KEY);
-    } catch (_) {
-        // ignore
-    }
+    localStore.remove(USERNAME_OVERRIDE_KEY);
 };
 
 export {

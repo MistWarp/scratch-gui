@@ -1,5 +1,6 @@
 import {customThemeManager} from './custom-themes';
 import {applyThemeVisuals, detectTheme, THEME_CHANGE_EVENT} from './themePersistance';
+import {local} from '../../modules/storage';
 
 // Keep the storage wire format used by community embeds, while also accepting
 // structured-cloned objects from hosts that do not serialize their settings.
@@ -28,18 +29,16 @@ const applyEmbedThemeMessage = event => {
         // Validate both fields before changing storage.
         const customThemes = hasCustomThemes ? serializeCustomThemes(event.data.customThemes) : null;
         if (hasCustomThemes) {
-            if (customThemes === null) {
-                localStorage.removeItem('tw:custom-themes');
-            } else {
-                localStorage.setItem('tw:custom-themes', customThemes);
-            }
+            const stored = customThemes === null ?
+                local.remove('tw:custom-themes') :
+                local.writeString('tw:custom-themes', customThemes);
+            if (!stored) return;
             customThemeManager.loadCustomThemes(true);
         }
-        if (theme === null) {
-            localStorage.removeItem('tw:theme');
-        } else {
-            localStorage.setItem('tw:theme', theme);
-        }
+        const themeStored = theme === null ?
+            local.remove('tw:theme') :
+            local.writeString('tw:theme', theme);
+        if (!themeStored) return;
         applyThemeVisuals(detectTheme());
         // Storage writes in this window do not emit a storage event. Notify the
         // mounted theme manager so Redux consumers receive the same theme.

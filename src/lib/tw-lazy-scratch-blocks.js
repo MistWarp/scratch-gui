@@ -5,6 +5,7 @@ import {installTwoColumnCategories} from './mw-two-column-categories';
 import {installSteadySvgResize} from './mw-svg-resize';
 import {installBlocklyContextMenuIcons} from './context-menu-icons';
 import BundledScratchBlocks from 'scratch-blocks';
+import {local} from '../modules/storage';
 
 let _ScratchBlocks = null;
 
@@ -27,7 +28,7 @@ const set = ScratchBlocks => {
     try {
         const operatorUtils = _ScratchBlocks.ScratchBlocks && _ScratchBlocks.ScratchBlocks.OperatorUtils;
         if (operatorUtils) {
-            operatorUtils.arrowsHidden = localStorage.getItem('mw:hide-operator-arrows') === 'true';
+            operatorUtils.arrowsHidden = local.readString('mw:hide-operator-arrows') === 'true';
         }
     } catch (e) {
         // ignore

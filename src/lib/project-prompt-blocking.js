@@ -1,21 +1,17 @@
-import {local} from '../modules/storage';
+import {local, session} from '../modules/storage';
 
 const BLOCKED_PROJECT_PROMPTS_KEY = 'mw:blocked-project-prompts';
 const PLATFORM_PROJECT_KEY = 'mw:mistwarp-current-project';
 const volatileBlockedProjectPrompts = new Set();
 
 const storedPlatformProjectId = () => {
+    const stored = session.readString(PLATFORM_PROJECT_KEY);
+    if (!stored) return '';
     try {
-        const stored = sessionStorage.getItem(PLATFORM_PROJECT_KEY);
-        if (!stored) return '';
-        try {
-            const project = JSON.parse(stored);
-            return project && typeof project === 'object' ? String(project.id || '') : String(project || '');
-        } catch (e) {
-            return stored;
-        }
+        const project = JSON.parse(stored);
+        return project && typeof project === 'object' ? String(project.id || '') : String(project || '');
     } catch (e) {
-        return '';
+        return stored;
     }
 };
 

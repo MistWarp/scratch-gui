@@ -5,6 +5,7 @@
 
 import {Theme, GUI_MAP} from './index.js';
 import {mergeStoredAppearance} from './appearance.js';
+import {local} from '../../modules/storage';
 
 const CUSTOM_THEMES_STORAGE_KEY = 'tw:custom-themes';
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
@@ -21,6 +22,13 @@ const gradientPrimaryColor = accent => {
     return first && first.color ? first.color : '#ff6b6b';
 };
 const MAX_CUSTOM_THEMES = 50; // Reasonable limit to prevent storage issues
+
+const storageWriteError = () => {
+    const available = local.isAvailable();
+    return Object.assign(new Error(available ? 'Storage quota exceeded' : 'Storage is unavailable'), {
+        name: available ? 'QuotaExceededError' : 'SecurityError'
+    });
+};
 
 /**
  * Utility functions for custom gradients and accent creation
@@ -806,8 +814,9 @@ class CustomThemeManager {
      * @param {boolean} replace discard definitions absent from the new collection
      */
     loadCustomThemes (replace = false) {
+        if (!local.isAvailable()) return;
         try {
-            const stored = localStorage.getItem(CUSTOM_THEMES_STORAGE_KEY);
+            const stored = local.readString(CUSTOM_THEMES_STORAGE_KEY);
             if (!stored && !replace) {
                 return;
             }
@@ -842,7 +851,7 @@ class CustomThemeManager {
             const themesData = Array.from(this.themes.values()).map(theme => theme.export());
 
             if (themesData.length === 0) {
-                localStorage.removeItem(CUSTOM_THEMES_STORAGE_KEY);
+                if (!local.remove(CUSTOM_THEMES_STORAGE_KEY)) throw storageWriteError();
                 try {
                     require('../rotur/cloud-sync.js').notifyLocalChange('customThemes');
                 } catch (_) {
@@ -858,7 +867,7 @@ class CustomThemeManager {
                 console.warn('Theme data is very large (over 5MB), may cause storage issues');
             }
 
-            localStorage.setItem(CUSTOM_THEMES_STORAGE_KEY, jsonString);
+            if (!local.writeString(CUSTOM_THEMES_STORAGE_KEY, jsonString)) throw storageWriteError();
 
             try {
                 require('../rotur/cloud-sync.js').notifyLocalChange('customThemes');
@@ -871,9 +880,9 @@ class CustomThemeManager {
             console.error('Failed to save custom themes to storage:', e);
 
             if (e.name === 'QuotaExceededError') {
-                const currentData = localStorage.getItem(CUSTOM_THEMES_STORAGE_KEY);
+                const currentData = local.readString(CUSTOM_THEMES_STORAGE_KEY);
                 if (currentData) {
-                    localStorage.setItem(`${CUSTOM_THEMES_STORAGE_KEY}_backup`, currentData);
+                    local.writeString(`${CUSTOM_THEMES_STORAGE_KEY}_backup`, currentData);
                 }
                 throw new Error('Storage quota exceeded - try deleting some themes');
             }
@@ -1294,10 +1303,8 @@ class CustomThemeManager {
      */
     clearAllThemes () {
         this.themes.clear();
-        try {
-            localStorage.removeItem(CUSTOM_THEMES_STORAGE_KEY);
-        } catch (e) {
-            console.warn('Failed to clear custom themes storage:', e);
+        if (!local.remove(CUSTOM_THEMES_STORAGE_KEY)) {
+            console.warn('Failed to clear custom themes storage');
         }
     }
 
@@ -1442,7 +1449,7 @@ class CustomThemeManager {
      */
     getStorageInfo () {
         try {
-            const stored = localStorage.getItem(CUSTOM_THEMES_STORAGE_KEY);
+            const stored = local.readString(CUSTOM_THEMES_STORAGE_KEY);
             const size = stored ? new Blob([stored]).size : 0;
             const parsed = stored ? JSON.parse(stored) : [];
 
@@ -1461,7 +1468,7 @@ class CustomThemeManager {
         } catch (e) {
             return {
                 error: e.message,
-                hasData: !!localStorage.getItem(CUSTOM_THEMES_STORAGE_KEY)
+                hasData: Boolean(local.readString(CUSTOM_THEMES_STORAGE_KEY))
             };
         }
     }
