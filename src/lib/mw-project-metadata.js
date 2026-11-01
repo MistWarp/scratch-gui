@@ -82,12 +82,12 @@ const installProjectMetadata = vm => {
     // deserializeProject is the one place the VM hands us the parsed project
     // json, so it is the only cheap way to see the meta a file arrived with.
     const originalDeserialize = vm.deserializeProject.bind(vm);
-    vm.deserializeProject = (projectJSON, zip) => {
+    vm.deserializeProject = (projectJSON, zip, ...rest) => {
         loadedMeta = (projectJSON && projectJSON.meta) || null;
         // Opening a project adopts its birthday; opening one without a
         // recorded birthday means the next save mints one.
         created = (loadedMeta && (loadedMeta.created || loadedMeta.createdAt)) || null;
-        return originalDeserialize(projectJSON, zip);
+        return originalDeserialize(projectJSON, zip, ...rest);
     };
 };
 
