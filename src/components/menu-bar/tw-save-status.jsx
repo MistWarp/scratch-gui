@@ -236,13 +236,13 @@ const TWSaveStatus = ({
         setOperationActive(isProjectOperationActive(vm));
         window.addEventListener(SAVE_FEEDBACK_EVENT, update);
         window.addEventListener(PROJECT_OPERATION_EVENT, operation);
-        if (vm.on) vm.on('PROJECT_LOADED', reset);
+        if (vm.runtime) vm.runtime.on('PROJECT_LOADED', reset);
         const unsubscribe = onSettingsChanged(() => setAutosave(getSetting('enabled')));
         return () => {
             window.removeEventListener('mw:platform-project-changed', refresh);
             window.removeEventListener(SAVE_FEEDBACK_EVENT, update);
             window.removeEventListener(PROJECT_OPERATION_EVENT, operation);
-            if (vm.off) vm.off('PROJECT_LOADED', reset);
+            if (vm.runtime) vm.runtime.off('PROJECT_LOADED', reset);
             unsubscribe();
         };
     }, [vm, onAlertDone, onCloseAlert, onShowAlert]);

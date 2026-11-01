@@ -8,13 +8,11 @@ const getProjectChangeState = vm => {
     if (!state) {
         state = {sequence: 0};
         projectChangeStates.set(vm, state);
-        if (typeof vm.on === 'function') {
-            const changed = () => {
-                state.sequence++;
-            };
-            vm.on('PROJECT_CHANGED', changed);
-            vm.on('PROJECT_LOADED', changed);
-        }
+        const changed = () => {
+            state.sequence++;
+        };
+        if (typeof vm.on === 'function') vm.on('PROJECT_CHANGED', changed);
+        if (vm.runtime && typeof vm.runtime.on === 'function') vm.runtime.on('PROJECT_LOADED', changed);
     }
     return state;
 };
