@@ -18,6 +18,7 @@ import {tabPanelProps} from './SectionTabs.jsx';
 import ThemeCard from './ThemeCard.jsx';
 import ThemePreview from './ThemePreview.jsx';
 import styles from './MyStuffThemes.module.css';
+import {local} from '../../modules/storage';
 
 const previewTheme = theme => {
     try {
@@ -38,7 +39,7 @@ const activeLocalThemeId = themes => {
 
 const storedCustomThemeId = () => {
     try {
-        const stored = JSON.parse(localStorage.getItem('tw:theme') || '{}');
+        const stored = JSON.parse(local.readString('tw:theme') || '{}');
         return stored.isCustom ? stored.customThemeUuid || '' : '';
     } catch (error) {
         return '';

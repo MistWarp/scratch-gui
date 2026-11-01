@@ -15,6 +15,7 @@ import {
     logout as identityLogout
 } from '../lib/rotur/identity.js';
 import {takeRedirectError} from '../lib/rotur/oauth.js';
+import {local} from '../modules/storage';
 
 const UserContext = createContext({user: null, login: () => {}, loginOrThrow: () => {}, logout: () => {}});
 
@@ -29,13 +30,9 @@ const optionalRequest = request => Promise.resolve().then(request).catch(() => n
 const NEW_ACCOUNT_WINDOW = 30 * 60 * 1000;
 const isNewAccount = me => Boolean(me && me.created > 0 && Date.now() - me.created < NEW_ACCOUNT_WINDOW);
 const trackSignupOnce = username => {
-    try {
-        const key = `mw:signup-tracked:${username.toLowerCase()}`;
-        if (localStorage.getItem(key)) return;
-        localStorage.setItem(key, '1');
-    } catch (e) {
-        return;
-    }
+    if (typeof username !== 'string') return;
+    const key = `mw:signup-tracked:${username.toLowerCase()}`;
+    if (local.readString(key) || !local.writeString(key, '1')) return;
     track('signup_completed');
 };
 

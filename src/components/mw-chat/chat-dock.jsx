@@ -27,6 +27,7 @@ import {openRoturLoginModal} from '../../reducers/modals.js';
 import {ChatActions} from './chat-actions.js';
 import ChatPane from './chat-pane.jsx';
 import styles from './chat-pane.css';
+import {local} from '../../modules/storage';
 
 const WINDOW_ID = 'mw-chat-window';
 const DOCK_MIN_VIEWPORT = 1000;
@@ -198,20 +199,10 @@ DockedChat.propTypes = {
 const DMS_USED_KEY = 'mw:chat-dms';
 const HOME_SERVER = cleanHost(CHAT_URL);
 
-const readDmsUsed = () => {
-    try {
-        return localStorage.getItem(DMS_USED_KEY) === '1';
-    } catch (e) {
-        return false;
-    }
-};
+const readDmsUsed = () => local.readString(DMS_USED_KEY) === '1';
 
 const rememberDms = () => {
-    try {
-        localStorage.setItem(DMS_USED_KEY, '1');
-    } catch (e) {
-        return null;
-    }
+    local.writeString(DMS_USED_KEY, '1');
 };
 
 const readInviteParam = () => {

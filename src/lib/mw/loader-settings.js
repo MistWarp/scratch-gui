@@ -1,3 +1,5 @@
+import {local} from '../../modules/storage';
+
 const STORAGE_KEY = 'mw:loader-settings';
 
 const DEFAULTS = {
@@ -16,7 +18,7 @@ let cached = null;
 
 const read = () => {
     try {
-        const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        const stored = local.readJSON(STORAGE_KEY, null);
         if (!stored || typeof stored !== 'object') return {...DEFAULTS};
         return {
             ...DEFAULTS,
@@ -35,11 +37,7 @@ const getLoaderSettings = () => {
 
 const setLoaderSettings = changes => {
     cached = {...getLoaderSettings(), ...changes};
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(cached));
-    } catch (e) {
-        // A full or blocked localStorage should not break the setting for this session.
-    }
+    local.writeJSON(STORAGE_KEY, cached);
     for (const listener of listeners) listener(cached);
     return cached;
 };

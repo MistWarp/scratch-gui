@@ -4,6 +4,7 @@ import iconOnlyCss from './mw-styles/icon-only-tabs.css?inline';
 import textOnlyCss from './mw-styles/text-only-tabs.css?inline';
 import macosCss from './mw-styles/macos-windows.css?inline';
 import windows10Css from './mw-styles/windows10-windows.css?inline';
+import {local} from '../modules/storage';
 
 const STYLE_GROUPS = [
     {
@@ -44,13 +45,9 @@ const isValidValue = (group, value) => group.options.some(option => option.value
 const getStyleSetting = id => {
     const group = findGroup(id);
     if (!group) return null;
-    try {
-        const stored = localStorage.getItem(storageKey(id));
-        if (stored && isValidValue(group, stored)) {
-            return stored;
-        }
-    } catch (err) {
-        // ignore
+    const stored = local.readString(storageKey(id));
+    if (stored && isValidValue(group, stored)) {
+        return stored;
     }
     return group.defaultValue;
 };
@@ -74,11 +71,7 @@ const applyStyleSetting = (id, value) => {
 const setStyleSetting = (id, value) => {
     const group = findGroup(id);
     if (!group || !isValidValue(group, value)) return;
-    try {
-        localStorage.setItem(storageKey(id), value);
-    } catch (err) {
-        // ignore
-    }
+    local.writeString(storageKey(id), value);
     applyStyleSetting(id, value);
 };
 
@@ -87,11 +80,7 @@ const getStyleSettings = () => Object.fromEntries(
 );
 
 const getStoredStyleSettings = () => {
-    try {
-        if (!STYLE_GROUPS.some(group => localStorage.getItem(storageKey(group.id)) !== null)) return null;
-    } catch (err) {
-        return null;
-    }
+    if (!STYLE_GROUPS.some(group => local.readString(storageKey(group.id)) !== null)) return null;
     return getStyleSettings();
 };
 
@@ -100,12 +89,8 @@ const applyStyleSettings = (settings, {persist = true} = {}) => {
         const value = settings && isValidValue(group, settings[group.id]) ?
             settings[group.id] : group.defaultValue;
         if (persist) {
-            try {
-                if (settings) localStorage.setItem(storageKey(group.id), value);
-                else localStorage.removeItem(storageKey(group.id));
-            } catch (err) {
-                // ignore
-            }
+            if (settings) local.writeString(storageKey(group.id), value);
+            else local.remove(storageKey(group.id));
         }
         applyStyleSetting(group.id, value);
     }

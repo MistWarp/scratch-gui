@@ -16,6 +16,7 @@ export interface Store {
     writeBoolean(key: string, value: boolean): boolean;
     remove(key: string): boolean;
     keys(): string[];
+    isAvailable(): boolean;
 }
 
 const resolve = (getArea: () => KeyValueArea | null | undefined): KeyValueArea | null => {
@@ -106,5 +107,16 @@ export const createStore = (getArea: () => KeyValueArea | null | undefined): Sto
         }
     };
 
-    return {readString, readJSON, readBoolean, writeString, writeJSON, writeBoolean, remove, keys};
+    const isAvailable = (): boolean => {
+        const area = resolve(getArea);
+        if (!area) return false;
+        try {
+            area.getItem('');
+            return true;
+        } catch {
+            return false;
+        }
+    };
+
+    return {readString, readJSON, readBoolean, writeString, writeJSON, writeBoolean, remove, keys, isAvailable};
 };

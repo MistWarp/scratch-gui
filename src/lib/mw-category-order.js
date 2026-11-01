@@ -1,3 +1,4 @@
+import {local} from '../modules/storage';
 const STORAGE_KEY = 'mw:category-order';
 const CATEGORY_ORDER_CHANGED = 'mw:category-order-changed';
 
@@ -11,23 +12,13 @@ const supportsProjectOrder = vm => Boolean(
 
 const getProjectOrder = vm => (supportsProjectOrder(vm) ? cleanOrder(vm.runtime.getCategoryOrder()) : []);
 
-const getLocalOrder = () => {
-    try {
-        return cleanOrder(JSON.parse(localStorage.getItem(STORAGE_KEY)));
-    } catch (err) {
-        return [];
-    }
-};
+const getLocalOrder = () => cleanOrder(local.readJSON(STORAGE_KEY, null));
 
 const setLocalOrder = ids => {
-    try {
-        if (ids.length) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
-        } else {
-            localStorage.removeItem(STORAGE_KEY);
-        }
-    } catch (err) {
-        // ignore
+    if (ids.length) {
+        local.writeJSON(STORAGE_KEY, ids);
+    } else {
+        local.remove(STORAGE_KEY);
     }
 };
 

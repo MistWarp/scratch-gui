@@ -7,6 +7,7 @@ import Modal from '../../containers/windowed-modal.jsx';
 import {DOCS_BASE, getHelpEntry} from '../../lib/help/index.js';
 
 import styles from './help-modal.css';
+import {local} from '../../modules/storage';
 
 const messages = defineMessages({
     title: {
@@ -63,11 +64,7 @@ class HelpModal extends React.Component {
     componentDidMount () {
         // Set before the iframe's docs bundle initializes so it boots in the
         // right color mode (Docusaurus reads this key once at load).
-        try {
-            localStorage.setItem('theme', editorIsDark() ? 'dark' : 'light');
-        } catch (e) {
-            // storage may be unavailable; the onLoad sync still handles colors
-        }
+        local.writeString('theme', editorIsDark() ? 'dark' : 'light');
         // Re-sync when the user changes theme while Help is open. The editor
         // applies themes by mutating inline styles/classes on <html>.
         this.observer = new MutationObserver(() => applyEditorTheme(this.frame));

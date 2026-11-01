@@ -13,6 +13,7 @@ import {isSplitEditor} from '../account/origins.js';
 import * as accountBridge from '../account/bridge.js';
 import * as oauth from './oauth.js';
 import {hasRotur, roturOfflineError} from './availability.js';
+import {session as sessionStore} from '../../modules/storage';
 
 // What MistWarp asks for when someone signs in with Rotur. Nothing here can
 // spend credits, change account settings or read secrets: payments go through
@@ -228,7 +229,7 @@ const RESTORE_CACHE_TTL = 5 * 60 * 1000;
 // again. It holds no token, and only counts for the account it was saved for.
 const readRestoreCache = () => {
     try {
-        const {user, at, account} = JSON.parse(sessionStorage.getItem(RESTORE_CACHE_KEY) || '{}');
+        const {user, at, account} = JSON.parse(sessionStore.readString(RESTORE_CACHE_KEY) || '{}');
         return user && at && account === accountKey() && Date.now() - at <= RESTORE_CACHE_TTL ? user : null;
     } catch (_) {
         return null;
@@ -236,14 +237,10 @@ const readRestoreCache = () => {
 };
 
 const writeRestoreCache = user => {
-    try {
-        if (user) {
-            sessionStorage.setItem(RESTORE_CACHE_KEY, JSON.stringify({user, at: Date.now(), account: accountKey()}));
-        } else {
-            sessionStorage.removeItem(RESTORE_CACHE_KEY);
-        }
-    } catch (_) {
-        // ignore
+    if (user) {
+        sessionStore.writeJSON(RESTORE_CACHE_KEY, {user, at: Date.now(), account: accountKey()});
+    } else {
+        sessionStore.remove(RESTORE_CACHE_KEY);
     }
 };
 

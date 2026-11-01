@@ -1,4 +1,5 @@
 import EventTarget from '../../addons/event-target.js';
+import {local} from '../../modules/storage';
 
 const STORAGE_PREFIX = 'mw:varmanager:';
 
@@ -89,12 +90,7 @@ const coerce = (definition, raw) => {
 const getSetting = id => {
     const definition = definitionsById[id];
     if (!definition) return null;
-    let stored = null;
-    try {
-        stored = localStorage.getItem(STORAGE_PREFIX + id);
-    } catch (e) {
-        stored = null;
-    }
+    const stored = local.readString(STORAGE_PREFIX + id);
     if (stored === null) return definition.default;
     return coerce(definition, stored);
 };
@@ -102,11 +98,7 @@ const getSetting = id => {
 const setSetting = (id, value) => {
     const definition = definitionsById[id];
     if (!definition) return;
-    try {
-        localStorage.setItem(STORAGE_PREFIX + id, String(value));
-    } catch (e) {
-        // ignore
-    }
+    local.writeString(STORAGE_PREFIX + id, String(value));
     const event = new CustomEvent('change');
     event.settingId = id;
     event.value = getSetting(id);

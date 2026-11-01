@@ -1,6 +1,7 @@
 import {isMac} from '../utils/browser';
 import {getDefaultShortcuts, applyCustomShortcuts, matchShortcut, TEXT_TAB_CONTEXT} from './registry.js';
 import WindowManager from '../../addons/window-system/window-manager.js';
+import {local} from '../../modules/storage';
 
 let dispatch = null;
 let vm = null;
@@ -93,7 +94,7 @@ const keyCodeToKey = {
 
 const loadCustomShortcuts = () => {
     try {
-        const saved = localStorage.getItem('tw:shortcuts');
+        const saved = local.readString('tw:shortcuts');
         if (saved) {
             const customShortcuts = JSON.parse(saved);
             shortcuts = applyCustomShortcuts(getDefaultShortcuts(), customShortcuts);
@@ -465,10 +466,8 @@ const handleKeyDown = event => {
 const updateShortcuts = customShortcuts => {
     shortcuts = applyCustomShortcuts(getDefaultShortcuts(), customShortcuts);
     
-    try {
-        localStorage.setItem('tw:shortcuts', JSON.stringify(customShortcuts));
-    } catch (e) {
-        console.warn('Failed to save custom shortcuts:', e);
+    if (!local.writeJSON('tw:shortcuts', customShortcuts)) {
+        console.warn('Failed to save custom shortcuts');
     }
 };
 

@@ -4,6 +4,7 @@ import {localeData, isRtl} from '@turbowarp/scratch-l10n';
 import {messages as editorMessages, loadLocale, isLocaleLoaded} from '../lib/editor-locales';
 
 import {LANGUAGE_KEY} from '../lib/utils/detect-locale.js';
+import {local} from '../modules/storage';
 
 addLocaleData(localeData);
 
@@ -59,10 +60,7 @@ const reducer = function (state, action) {
 };
 
 const selectLocale = function (locale) {
-    // tw: store language in localStorage
-    try {
-        localStorage.setItem(LANGUAGE_KEY, locale);
-    } catch (e) { /* ignore */ }
+    local.writeString(LANGUAGE_KEY, String(locale));
     return {
         type: SELECT_LOCALE,
         locale: locale

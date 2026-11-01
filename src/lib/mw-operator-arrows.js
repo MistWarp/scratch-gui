@@ -1,14 +1,9 @@
 import VMScratchBlocks from './tw-lazy-scratch-blocks';
+import {local} from '../modules/storage';
 
 const STORAGE_KEY = 'mw:hide-operator-arrows';
 
-const getHideOperatorArrows = () => {
-    try {
-        return localStorage.getItem(STORAGE_KEY) === 'true';
-    } catch (err) {
-        return false;
-    }
-};
+const getHideOperatorArrows = () => local.readString(STORAGE_KEY) === 'true';
 
 const getOperatorUtils = () => {
     if (!VMScratchBlocks.isLoaded()) {
@@ -31,11 +26,7 @@ const applyHideOperatorArrows = hidden => {
 };
 
 const setHideOperatorArrows = hidden => {
-    try {
-        localStorage.setItem(STORAGE_KEY, hidden);
-    } catch (err) {
-        // ignore
-    }
+    local.writeString(STORAGE_KEY, String(hidden));
     applyHideOperatorArrows(hidden);
 };
 

@@ -1,5 +1,6 @@
 import React, {lazy} from 'react';
 import {BUILD_ID} from './build-version';
+import {createStore} from '../modules/storage';
 
 export const isChunkLoadError = error => Boolean(error && (
     error.name === 'ChunkLoadError' ||
@@ -30,16 +31,16 @@ const RELOAD_COOLDOWN = 60 * 1000;
 
 export const reloadStalePage = (error, browser = window) => {
     if (!isChunkLoadError(error)) return false;
+    const reloads = createStore(() => browser.sessionStorage);
+    const key = `mw:chunk-reload:${BUILD_ID}`;
+    const now = Date.now();
+    const last = Number(reloads.readString(key));
+    if (last && now - last < RELOAD_COOLDOWN) return false;
+    if (!reloads.writeString(key, String(now))) return false;
     try {
-        const key = `mw:chunk-reload:${BUILD_ID}`;
-        const now = Date.now();
-        const last = Number(browser.sessionStorage.getItem(key));
-        if (last && now - last < RELOAD_COOLDOWN) return false;
-        browser.sessionStorage.setItem(key, String(now));
         browser.location.reload();
         return true;
     } catch (e) {
-        // Storage can be blocked in embedded pages. Keep the manual reload UI.
         return false;
     }
 };

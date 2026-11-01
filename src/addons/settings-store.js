@@ -17,6 +17,7 @@
 import addons from './generated/addon-manifests';
 import upstreamMeta from './generated/upstream-meta.json';
 import EventTargetShim from './event-target';
+import {local, readLegacyAddonSettings} from '../modules/storage';
 
 const NARROW_SCREEN_WIDTH = 900;
 
@@ -118,9 +119,9 @@ class SettingsStore extends EventTargetShim {
     readLocalStorage () {
         const base = this.store;
         try {
-            const local = localStorage.getItem(SETTINGS_KEY);
-            if (local) {
-                let result = JSON.parse(local);
+            const stored = local.readString(SETTINGS_KEY);
+            if (stored) {
+                let result = JSON.parse(stored);
                 if (result && typeof result === 'object') {
                     result = migrateSettings(result);
                     for (const key of Object.keys(result)) {
@@ -145,16 +146,11 @@ class SettingsStore extends EventTargetShim {
      */
     readRetiredAddonSettings () {
         const retired = Object.create(null);
-        try {
-            const local = JSON.parse(localStorage.getItem(SETTINGS_KEY));
-            if (!local || typeof local !== 'object') return retired;
-            for (const key of Object.keys(local)) {
-                if (key === '_' || Object.prototype.hasOwnProperty.call(addons, key)) continue;
-                const value = local[key];
-                if (value && typeof value === 'object') retired[key] = value;
-            }
-        } catch (e) {
-            // ignore
+        const stored = readLegacyAddonSettings();
+        for (const key of Object.keys(stored)) {
+            if (key === '_' || Object.prototype.hasOwnProperty.call(addons, key)) continue;
+            const value = stored[key];
+            if (value && typeof value === 'object') retired[key] = value;
         }
         return retired;
     }
@@ -182,7 +178,7 @@ class SettingsStore extends EventTargetShim {
                     result[addonId] = data;
                 }
             }
-            localStorage.setItem(SETTINGS_KEY, JSON.stringify(result));
+            local.writeJSON(SETTINGS_KEY, result);
         } catch (e) {
             // ignore
         }

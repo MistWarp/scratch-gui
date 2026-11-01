@@ -5,16 +5,11 @@ import {track} from '../analytics.js';
 import JoinCommunityModal from './JoinCommunityModal.jsx';
 import {useUser} from '../UserContext.jsx';
 import styles from './AnnouncementBanner.module.css';
+import {local} from '../../modules/storage';
 
 const DISMISS_KEY = 'mw:community-server-banner-dismissed';
 
-const wasDismissed = () => {
-    try {
-        return localStorage.getItem(DISMISS_KEY) === 'true';
-    } catch (e) {
-        return false;
-    }
-};
+const wasDismissed = () => local.readString(DISMISS_KEY) === 'true';
 
 const AnnouncementBanner = () => {
     const {text: communityText} = useCommunityText();
@@ -23,11 +18,7 @@ const AnnouncementBanner = () => {
     const [joinOpen, setJoinOpen] = useState(false);
     const dismiss = () => {
         setDismissed(true);
-        try {
-            localStorage.setItem(DISMISS_KEY, 'true');
-        } catch (e) {
-            return;
-        }
+        local.writeBoolean(DISMISS_KEY, true);
     };
     const openJoin = () => {
         track('community_join_open');

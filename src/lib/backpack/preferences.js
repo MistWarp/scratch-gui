@@ -1,25 +1,15 @@
+import {local} from '../../modules/storage';
 const HEIGHT_KEY = 'mw:backpackHeight';
 
 const FILTERS = ['all', 'script', 'sprite', 'costume', 'sound'];
 
 const getBackpackHeight = minimum => {
-    try {
-        const parsed = Number(localStorage.getItem(HEIGHT_KEY));
-        if (Number.isFinite(parsed) && parsed >= minimum) return parsed;
-    } catch (e) {
-        return null;
-    }
+    const parsed = Number(local.readString(HEIGHT_KEY));
+    if (Number.isFinite(parsed) && parsed >= minimum) return parsed;
     return null;
 };
 
-const setBackpackHeight = height => {
-    try {
-        localStorage.setItem(HEIGHT_KEY, String(height));
-        return true;
-    } catch (e) {
-        return false;
-    }
-};
+const setBackpackHeight = height => local.writeString(HEIGHT_KEY, String(height));
 
 export {
     FILTERS,

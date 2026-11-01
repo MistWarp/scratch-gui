@@ -46,6 +46,7 @@ import {
     readBlockedProjectPrompts,
     unblockProjectPrompts
 } from '../../lib/project-prompt-blocking.js';
+import {getProjectThemeMode as storedProjectThemeMode, storeProjectThemeMode} from './project/embed-helpers.js';
 
 const PRESENCE_LABELS = {
     presenceEnabled: 'Share editor presence',
@@ -63,7 +64,6 @@ const NOTIFICATION_SETTINGS = [
     ['system', 'Moderation, reports, and announcements']
 ];
 
-const PROJECT_THEME_MODE_KEY = 'mw:project-theme-mode';
 const PROJECT_THEME_MODES = [
     {value: 'all', label: 'All projects'},
     {value: 'followed', label: 'Only creators I follow'},
@@ -81,12 +81,8 @@ const DATA_TABS = [
 ];
 const CUSTOM_THEME_ACTIONS = new Set(['create', 'gradient']);
 const getProjectThemeMode = () => {
-    try {
-        const value = localStorage.getItem(PROJECT_THEME_MODE_KEY);
-        return PROJECT_THEME_MODES.some(mode => mode.value === value) ? value : 'all';
-    } catch (e) {
-        return 'all';
-    }
+    const value = storedProjectThemeMode();
+    return PROJECT_THEME_MODES.some(mode => mode.value === value) ? value : 'all';
 };
 const matchesDeleteConfirmation = (value, username) => (
     String(value).trim().toLowerCase() === String(username).toLowerCase()
@@ -354,11 +350,7 @@ const Settings = () => {
 
     const changeProjectThemeMode = value => {
         setProjectThemeMode(value);
-        try {
-            localStorage.setItem(PROJECT_THEME_MODE_KEY, value);
-        } catch (e) {
-            // ignore
-        }
+        storeProjectThemeMode(value);
     };
 
     useEffect(() => {

@@ -1,5 +1,6 @@
 import {isSplitEditor} from './origins.js';
 import * as accountBridge from './bridge.js';
+import {local} from '../../modules/storage';
 
 const MOVED_KEY = 'mw:editor-data-moved';
 const TRIED_KEY = 'mw:editor-data-move-tried';
@@ -66,29 +67,25 @@ const createCounter = () => {
     };
 };
 
-const readLocal = key => {
-    try {
-        return localStorage.getItem(key);
-    } catch (e) {
-        return null;
-    }
+const readLocal = key => local.readString(key);
+
+const writeLocal = (key, value) => {
+    if (!local.writeString(key, value)) throw new Error(`Could not save ${key}`);
 };
 
-const isMoved = () => {
-    try {
-        return Boolean(localStorage.getItem(MOVED_KEY));
-    } catch (e) {
-        return true;
-    }
+const removeLocal = key => {
+    if (!local.remove(key)) throw new Error(`Could not remove ${key}`);
 };
+
+const isMoved = () => !local.isAvailable() || Boolean(local.readString(MOVED_KEY));
 
 const moveSettings = (entries, keepExisting) => {
     let changed = 0;
     for (const entry of Array.isArray(entries) ? entries : []) {
         if (!Array.isArray(entry) || typeof entry[0] !== 'string' || typeof entry[1] !== 'string') continue;
-        const current = localStorage.getItem(entry[0]);
+        const current = readLocal(entry[0]);
         if (current === entry[1] || (keepExisting && current !== null)) continue;
-        localStorage.setItem(entry[0], entry[1]);
+        writeLocal(entry[0], entry[1]);
         changed += 1;
     }
     return changed;
@@ -161,9 +158,9 @@ const remapUnsavedBackup = (settings, ids) => {
         record = null;
     }
     if (record && typeof record === 'object' && ids.has(record.id)) {
-        localStorage.setItem(UNSAVED_BACKUP_KEY, JSON.stringify({...record, id: ids.get(record.id)}));
+        writeLocal(UNSAVED_BACKUP_KEY, JSON.stringify({...record, id: ids.get(record.id)}));
     } else {
-        localStorage.removeItem(UNSAVED_BACKUP_KEY);
+        removeLocal(UNSAVED_BACKUP_KEY);
     }
 };
 
@@ -234,11 +231,11 @@ const exclusively = (locks, run) => {
 const runMove = async ({call, connect, progress, statusWait, callWait}) => {
     if (isMoved()) return true;
     const keepExisting = readLocal(TRIED_KEY) !== null;
-    localStorage.setItem(TRIED_KEY, String(Date.now()));
+    writeLocal(TRIED_KEY, String(Date.now()));
     const status = await withinTime(connect().then(() => call('editorData', {action: 'status'})), statusWait);
     if (status && status.moved) {
-        localStorage.setItem(MOVED_KEY, String(Date.now()));
-        localStorage.removeItem(TRIED_KEY);
+        writeLocal(MOVED_KEY, String(Date.now()));
+        removeLocal(TRIED_KEY);
         return false;
     }
     progress('Moving your editor data from mistwarp.org…');
@@ -251,8 +248,8 @@ const runMove = async ({call, connect, progress, statusWait, callWait}) => {
     remapUnsavedBackup(settingEntries, points.ids);
     const backpack = await moveBackpack(ask);
     await ask('done');
-    localStorage.setItem(MOVED_KEY, String(Date.now()));
-    localStorage.removeItem(TRIED_KEY);
+    writeLocal(MOVED_KEY, String(Date.now()));
+    removeLocal(TRIED_KEY);
     return settings + points.moved + backpack > 0;
 };
 

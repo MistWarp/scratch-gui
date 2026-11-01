@@ -1,6 +1,5 @@
 const path = require('path');
 const typescript = require('../scripts/eslint-typescript.cjs');
-const legacyStorageFiles = require('../scripts/eslint-legacy-storage-files.cjs');
 
 const storageMessage = 'Use local or session from src/modules/storage instead of touching web storage directly.';
 const storageProperties = ['window', 'globalThis', 'self'].flatMap(object => (
@@ -105,7 +104,7 @@ module.exports = {
         },
         typescript,
         {
-            files: ['modules/storage/**/*', ...legacyStorageFiles],
+            files: ['modules/storage/**/*'],
             rules: {
                 'no-restricted-globals': 'off',
                 'no-restricted-properties': ['error', ...blocksGlobalProperties]

@@ -18,6 +18,7 @@ import {
     setRemoteProjectHistory
 } from '../git/project-history.js';
 import {projectSession} from '../../modules/project-session';
+import {session} from '../../modules/storage';
 
 const ZIP_COMPRESSABLE = ['.json', '.svg', '.wav', '.ttf', '.otf'];
 
@@ -45,27 +46,23 @@ const PLATFORM_ID_KEY = 'mw:mistwarp-current-project';
 const SCRATCH_ORIGIN_KEY = 'mw:mistwarp-scratch-origin';
 
 const getRememberedPlatformProjectState = () => {
+    const stored = session.readString(PLATFORM_ID_KEY);
+    if (!stored) return null;
     try {
-        const stored = sessionStorage.getItem(PLATFORM_ID_KEY);
-        if (!stored) return null;
-        try {
-            const project = JSON.parse(stored);
-            return project && typeof project === 'object' ? project : {id: String(project)};
-        } catch (e) {
-            return {id: stored};
-        }
+        const project = JSON.parse(stored);
+        return project && typeof project === 'object' ? project : {id: String(project)};
     } catch (e) {
-        return null;
+        return {id: stored};
     }
 };
 
 const rememberPlatformProject = (project, {resetSaveBase = false} = {}) => {
     try {
-        const previous = sessionStorage.getItem(PLATFORM_ID_KEY);
+        const previous = session.readString(PLATFORM_ID_KEY);
         const previousProject = getRememberedPlatformProjectState();
         if (project) {
             const value = typeof project === 'object' ? project : {id: project, isOwner: true};
-            sessionStorage.setItem(PLATFORM_ID_KEY, JSON.stringify({
+            const saved = session.writeJSON(PLATFORM_ID_KEY, {
                 id: String(value.id),
                 title: value.title,
                 owner: value.owner,
@@ -85,11 +82,12 @@ const rememberPlatformProject = (project, {resetSaveBase = false} = {}) => {
                 gitBranch: value.gitBranch,
                 remixParent: value.remixParent,
                 remixBaseCommit: value.remixBaseCommit
-            }));
-        } else {
-            sessionStorage.removeItem(PLATFORM_ID_KEY);
+            });
+            if (!saved) return;
+        } else if (!session.remove(PLATFORM_ID_KEY)) {
+            return;
         }
-        if (previous !== sessionStorage.getItem(PLATFORM_ID_KEY)) {
+        if (previous !== session.readString(PLATFORM_ID_KEY)) {
             window.dispatchEvent(new Event('mw:platform-project-changed'));
         }
     } catch (e) {
@@ -98,25 +96,13 @@ const rememberPlatformProject = (project, {resetSaveBase = false} = {}) => {
 };
 
 
-const snapshotPlatformProject = () => {
-    try {
-        return sessionStorage.getItem(PLATFORM_ID_KEY);
-    } catch (e) {
-        return null;
-    }
-};
+const snapshotPlatformProject = () => session.readString(PLATFORM_ID_KEY);
 
 const restorePlatformProject = snapshot => {
-    try {
-        if (snapshot === null) {
-            sessionStorage.removeItem(PLATFORM_ID_KEY);
-        } else {
-            sessionStorage.setItem(PLATFORM_ID_KEY, snapshot);
-        }
-        window.dispatchEvent(new Event('mw:platform-project-changed'));
-    } catch (e) {
-        // ignore
-    }
+    const restored = snapshot === null ?
+        session.remove(PLATFORM_ID_KEY) :
+        session.writeString(PLATFORM_ID_KEY, snapshot);
+    if (restored) window.dispatchEvent(new Event('mw:platform-project-changed'));
 };
 
 const getRememberedPlatformProject = () => {
@@ -133,24 +119,14 @@ const getMistWarpAction = (project, changed) => {
 };
 
 const rememberScratchOrigin = scratchId => {
-    try {
-        if (scratchId) {
-            sessionStorage.setItem(SCRATCH_ORIGIN_KEY, String(scratchId));
-        } else {
-            sessionStorage.removeItem(SCRATCH_ORIGIN_KEY);
-        }
-    } catch (e) {
-        // ignore
+    if (scratchId) {
+        session.writeString(SCRATCH_ORIGIN_KEY, String(scratchId));
+    } else {
+        session.remove(SCRATCH_ORIGIN_KEY);
     }
 };
 
-const getScratchOrigin = () => {
-    try {
-        return sessionStorage.getItem(SCRATCH_ORIGIN_KEY) || null;
-    } catch (e) {
-        return null;
-    }
-};
+const getScratchOrigin = () => session.readString(SCRATCH_ORIGIN_KEY) || null;
 
 const captureThumbnailDataUri = vm => new Promise(resolve => {
     try {
