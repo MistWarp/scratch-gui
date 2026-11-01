@@ -30,7 +30,7 @@ Current modules:
 
 | Module | What it owns |
 | --- | --- |
-| `storage` | `local` and `session` stores that never throw: `readString`, `readJSON` (typed only when given a type guard, `unknown` otherwise), `readBoolean`, the matching writes, and `remove`. Also reads the legacy `tw:addons` settings blob. |
+| `storage` | `local` and `session` stores that never throw: `readString`, `readJSON` (typed only when given a type guard, `unknown` otherwise), `readBoolean`, the matching writes, `remove`, `keys`, and `isAvailable` for code that must tell blocked storage from a missing key. `createStore` wraps any other Storage, such as one passed in by a caller. Also reads the legacy `tw:addons` settings blob. |
 
 Code outside `src/modules/storage` must not touch `localStorage` or `sessionStorage` directly. Files that still do are listed in `scripts/eslint-legacy-storage-files.cjs`. When you move one of them to the storage module, delete it from that list, and never add a file to it.
 
