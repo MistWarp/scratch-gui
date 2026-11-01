@@ -1,3 +1,5 @@
+import {createStore, local} from '../../modules/storage';
+
 const MOVED_KEY = 'mw:editor-data-moved';
 
 const KEPT_KEYS = new Set([
@@ -77,14 +79,9 @@ const read = (db, store, run) => new Promise((resolve, reject) => {
 const validId = id => typeof id === 'number' && Number.isInteger(id) && id >= 0;
 const validAssetId = id => typeof id === 'string' && /^[0-9a-f]{32}\.[a-z0-9]{1,8}$/i.test(id);
 
-const createEditorData = ({storage = () => localStorage, open = name => openExisting(name)} = {}) => {
-    const moved = () => {
-        try {
-            return Boolean(storage().getItem(MOVED_KEY));
-        } catch (e) {
-            return false;
-        }
-    };
+const createEditorData = ({storage = null, open = name => openExisting(name)} = {}) => {
+    const editorStorage = storage ? createStore(storage) : local;
+    const moved = () => Boolean(editorStorage.readString(MOVED_KEY));
 
     const refuseAfterMove = () => {
         if (moved()) throw Object.assign(new Error('Your editor data has already moved'), {code: 'moved'});
@@ -109,13 +106,9 @@ const createEditorData = ({storage = () => localStorage, open = name => openExis
         status: () => ({moved: moved()}),
         settings: () => {
             refuseAfterMove();
-            const local = storage();
-            const entries = [];
-            for (let i = 0; i < local.length; i++) {
-                const key = local.key(i);
-                if (movableKey(key)) entries.push([key, local.getItem(key)]);
-            }
-            return entries;
+            if (!editorStorage.isAvailable()) throw new Error('Editor storage is unavailable');
+            return editorStorage.keys().filter(movableKey)
+                .map(key => [key, editorStorage.readString(key)]);
         },
         restorePoints: () => {
             refuseAfterMove();
@@ -153,14 +146,7 @@ const createEditorData = ({storage = () => localStorage, open = name => openExis
                 return {items: items.slice(0, BACKPACK_BATCH), done: items.length <= BACKPACK_BATCH};
             });
         },
-        done: () => {
-            try {
-                storage().setItem(MOVED_KEY, String(Date.now()));
-            } catch (e) {
-                return false;
-            }
-            return true;
-        }
+        done: () => editorStorage.writeString(MOVED_KEY, String(Date.now()))
     };
 };
 

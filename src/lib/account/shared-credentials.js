@@ -1,4 +1,5 @@
 import {ACCOUNT_ORIGIN, EDITOR_ORIGIN} from './origins.js';
+import {local} from '../../modules/storage';
 
 const COOKIE_NAMES = {
     'mw:rotur-oauth': 'rotur-oauth',
@@ -119,32 +120,21 @@ const writeCookie = (key, record) => {
 
 const readStamps = () => {
     try {
-        const stamps = JSON.parse(localStorage.getItem(STAMPS_KEY) || '{}');
+        const stamps = JSON.parse(local.readString(STAMPS_KEY) || '{}');
         return stamps && typeof stamps === 'object' ? stamps : {};
     } catch (e) {
         return {};
     }
 };
 
-const localRecord = key => {
-    let value = null;
-    try {
-        value = localStorage.getItem(key);
-    } catch (e) {
-        value = null;
-    }
-    return {v: value, t: Number(readStamps()[key]) || 0};
-};
+const localRecord = key => ({v: local.readString(key), t: Number(readStamps()[key]) || 0});
 
 const writeLocal = (key, record) => {
-    try {
-        if (record.v === null) localStorage.removeItem(key);
-        else localStorage.setItem(key, record.v);
-        localStorage.setItem(STAMPS_KEY, JSON.stringify({...readStamps(), [key]: record.t}));
-    } catch (e) {
-        return;
-    }
+    const stored = record.v === null ? local.remove(key) : local.writeString(key, record.v);
+    if (stored) local.writeJSON(STAMPS_KEY, {...readStamps(), [key]: record.t});
 };
+
+const storageFailure = key => new Error(`Could not update ${key} in localStorage`);
 
 const notify = key => {
     setTimeout(() => {
@@ -159,22 +149,22 @@ const notify = key => {
 };
 
 const resolve = key => {
-    const local = localRecord(key);
+    const stored = localRecord(key);
     const cookie = cookieRecord(key);
-    if (cookie && cookie.big && cookie.t >= local.t) return local.v;
-    if (cookie && cookie.t > local.t) {
+    if (cookie && cookie.big && cookie.t >= stored.t) return stored.v;
+    if (cookie && cookie.t > stored.t) {
         writeLocal(key, cookie);
-        if (cookie.v !== local.v) notify(key);
+        if (cookie.v !== stored.v) notify(key);
         return cookie.v;
     }
-    if (!cookie && (local.v !== null || local.t)) {
-        const stamped = local.t ? local : {v: local.v, t: Date.now()};
-        if (stamped !== local) writeLocal(key, stamped);
+    if (!cookie && (stored.v !== null || stored.t)) {
+        const stamped = stored.t ? stored : {v: stored.v, t: Date.now()};
+        if (stamped !== stored) writeLocal(key, stamped);
         writeCookie(key, stamped);
-    } else if (cookie && local.t > cookie.t) {
-        writeCookie(key, local);
+    } else if (cookie && stored.t > cookie.t) {
+        writeCookie(key, stored);
     }
-    return local.v;
+    return stored.v;
 };
 
 const write = (key, value) => {
@@ -185,11 +175,11 @@ const write = (key, value) => {
     writeCookie(key, record);
 };
 
-const getItem = key => (isShared(key) ? resolve(key) : localStorage.getItem(key));
+const getItem = key => (isShared(key) ? resolve(key) : local.readString(key));
 
 const setItem = (key, value) => {
     if (!isShared(key)) {
-        localStorage.setItem(key, value);
+        if (!local.writeString(key, String(value))) throw storageFailure(key);
         return;
     }
     write(key, String(value));
@@ -197,7 +187,7 @@ const setItem = (key, value) => {
 
 const removeItem = key => {
     if (!isShared(key)) {
-        localStorage.removeItem(key);
+        if (!local.remove(key)) throw storageFailure(key);
         return;
     }
     if (resolve(key) !== null) write(key, null);
