@@ -2,7 +2,7 @@ import React from 'react';
 import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
 import {useParams} from 'react-router-dom';
-import api, {projectUrl} from '../../src/community/api.js';
+import api, {projectUrl} from '../../src/community/api';
 import {useResolvedProjectId, projectBaseUrl} from '../../src/community/use-resolved-project-id.js';
 
 jest.mock('react-router-dom', () => {
@@ -13,7 +13,7 @@ jest.mock('react-router-dom', () => {
     };
 });
 
-jest.mock('../../src/community/api.js', () => {
+jest.mock('../../src/community/api', () => {
     const normalizeVanitySlug = slug => {
         if (typeof slug !== 'string') return '';
         const trimmed = slug.trim();

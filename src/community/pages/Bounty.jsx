@@ -3,7 +3,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useCallback, useEffect, useState} from 'react';
 import {Coins, Flag, Hammer, MessageSquare, Trash2, Trophy, Users, Wrench} from 'lucide-react';
 import {Link, useParams} from 'react-router-dom';
-import api, {projectUrl} from '../api.js';
+import api, {projectUrl} from '../api';
 import {listCommerceBounties} from '../credits.js';
 import Avatar from '../components/Avatar.jsx';
 import RichText from '../components/RichText.jsx';

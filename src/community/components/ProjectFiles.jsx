@@ -2,7 +2,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import PropTypes from 'prop-types';
 import {Code2, Eye, FileCode2, FileQuestion, Lock} from 'lucide-react';
-import api from '../api.js';
+import api from '../api';
 import {formatBytes} from '../../lib/utils/bytes.js';
 import {canViewProjectSource} from '../project-source-access';
 import FileBrowserTree from './FileBrowserTree.jsx';

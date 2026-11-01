@@ -1,6 +1,6 @@
 import {useEffect, useState} from 'react';
 import {useParams} from 'react-router-dom';
-import api, {projectUrl} from './api.js';
+import api, {projectUrl} from './api';
 
 /**
  * Resolve the project route params to a concrete project id.

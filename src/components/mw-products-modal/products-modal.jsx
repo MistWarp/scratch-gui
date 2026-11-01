@@ -31,7 +31,7 @@ import {
     ModalSidebarItem,
     ModalSidebarLayout
 } from '../modal-sidebar/modal-sidebar.jsx';
-import api from '../../community/api.js';
+import api from '../../community/api';
 import {payWithRotur} from '../../lib/rotur/payment-window.js';
 import styles from './products-modal.css';
 

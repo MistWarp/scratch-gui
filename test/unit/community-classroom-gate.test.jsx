@@ -17,7 +17,7 @@ jest.mock('../../src/lib/community/api.js', () => ({
 jest.mock('../../src/community/UserContext.jsx', () => ({
     useUser: () => ({user: mockUser, loading: false})
 }));
-jest.mock('../../src/community/api.js', () => ({
+jest.mock('../../src/community/api', () => ({
     __esModule: true,
     default: {},
     editorUrl: () => '/editor'

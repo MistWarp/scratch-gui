@@ -15,7 +15,7 @@ import {
 
 import Modal from '../../containers/windowed-modal.jsx';
 import Box from '../box/box.jsx';
-import api from '../../community/api.js';
+import api from '../../community/api';
 import styles from './game-items-modal.css';
 
 const messages = defineMessages({
