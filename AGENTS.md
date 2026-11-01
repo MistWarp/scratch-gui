@@ -23,7 +23,7 @@ Never edit `src/generated/`, `src/addons/addons/`, `src/addons/generated/` or `s
 - **Module boundaries:** modules may not import components, containers, community, playground, reducers or addons. Every module is imported through its index.
 - **No code comments and no em dashes** in anything you add: `pnpm run check:conventions`. Only tool directives (`eslint-disable`, `@ts-expect-error`) are allowed. Name things so the code explains itself.
 - **Web storage:** use `local` and `session` from `src/modules/storage`. Files still on raw `localStorage` are listed in `scripts/eslint-legacy-storage-files.cjs`. Remove a file from that list when you migrate it, and never add one.
-- **Strings:** editor text goes through react-intl, community text through `communityText()`. Run `pnpm run i18n:editor:extract` or `pnpm run i18n:community:extract` and commit the result.
+- **Strings:** editor text goes through react-intl, community text through `text()` from `useCommunityIntl()`. Run `pnpm run i18n:editor:extract` or `pnpm run i18n:community:extract` and commit the result.
 - **Community CSS:** `pnpm run check:community-css`.
 
 ## Rules that are not automated yet

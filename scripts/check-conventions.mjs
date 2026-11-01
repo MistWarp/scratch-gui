@@ -80,12 +80,12 @@ const commentRanges = (path, text) => {
         for (const range of ranges || []) seen.set(range.pos, range);
     };
     const visit = node => {
+        if (node.kind === ts.SyntaxKind.JsxText || node.kind === ts.SyntaxKind.JsxTextAllWhiteSpaces) return;
         if (node.kind >= ts.SyntaxKind.FirstToken && node.kind <= ts.SyntaxKind.LastToken) {
             collect(ts.getLeadingCommentRanges(text, node.pos));
             collect(ts.getTrailingCommentRanges(text, node.end));
             return;
         }
-        if (node.kind === ts.SyntaxKind.JsxText) return;
         collect(ts.getLeadingCommentRanges(text, node.pos));
         node.getChildren(source).forEach(visit);
     };
@@ -95,12 +95,17 @@ const commentRanges = (path, text) => {
 };
 
 const problems = [];
-const {files, removed} = parseDiff(git(...diffArgs, '--unified=0', '--no-color', '--diff-filter=ACMR'));
+const {files, removed: removedLines} = parseDiff(git(...diffArgs, '--unified=0', '--no-color', '--diff-filter=ACMRD'));
+
+const removedText = [...removedLines].join('\n');
+const wasRemoved = text => text.length > 0 && removedText.includes(text);
 
 for (const [path, added] of files) {
     if (SKIPPED_PATHS.some(pattern => pattern.test(path)) || !TEXT_FILE.test(path)) continue;
     for (const [line, content] of added) {
-        if (content.includes(EM_DASH)) problems.push(`${path}:${line}  em dash: use a comma, parentheses or "to"`);
+        if (content.includes(EM_DASH) && !removedLines.has(content.trim())) {
+            problems.push(`${path}:${line}  em dash: use a comma, parentheses or "to"`);
+        }
     }
     if (!SOURCE_FILE.test(path)) continue;
     const text = staged ? git('show', `:${path}`) : fs.readFileSync(path, 'utf8');
@@ -111,8 +116,11 @@ for (const [path, added] of files) {
         const first = lineOf(starts, range.pos);
         const last = lineOf(starts, range.end - 1);
         for (let line = first; line <= last; line++) {
-            const content = added.get(line);
-            if (typeof content !== 'string' || removed.has(content.trim())) continue;
+            if (typeof added.get(line) !== 'string') continue;
+            const lineStart = starts[line - 1];
+            const lineEnd = line < starts.length ? starts[line] - 1 : text.length;
+            const portion = text.slice(Math.max(range.pos, lineStart), Math.min(range.end, lineEnd)).trim();
+            if (!/[A-Za-z0-9]/.test(portion) || wasRemoved(portion)) continue;
             problems.push(`${path}:${line}  code comment: name things so the code explains itself`);
             break;
         }

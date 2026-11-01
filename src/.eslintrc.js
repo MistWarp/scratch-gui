@@ -12,7 +12,8 @@ const moduleDeepImport = {
 };
 const uiLayerImport = {
     group: ['components', 'containers', 'community', 'playground', 'reducers', 'addons'].flatMap(layer => [
-        `../../${layer}`, `../../${layer}/**`, `../../../${layer}`, `../../../${layer}/**`
+        `../../${layer}`, `../../${layer}/**`, `../../../${layer}`, `../../../${layer}/**`,
+        `../../../../${layer}`, `../../../../${layer}/**`
     ]),
     message: 'Modules sit below the UI. Pass what you need in instead of importing app code.'
 };
