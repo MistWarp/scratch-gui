@@ -13,7 +13,6 @@ export default {
         `/projects/${id}/related?limit=${limit}&exclude=${encodeURIComponent(exclude.join(','))}`
     ),
     featuredProject: () => request('/projects/featured'),
-    leaderboard: by => request(`/leaderboard?by=${by}`),
     getProject: id => request(`/projects/${id}${projectAccessQuery()}`, {cache: false}),
     createProject,
     uploadProject,
@@ -51,5 +50,6 @@ export default {
     createRelease: (id, release) => request(`/projects/${id}/releases`, {method: 'POST', body: release}),
     contribute: (id, contribution) => request(`/projects/${id}/contribute`, {method: 'POST', body: contribution}),
     diagnostics: id => request(`/projects/${id}/diagnostics`),
-    recordDiagnostic: (id, diagnostic) => request(`/projects/${id}/diagnostics`, {method: 'POST', body: diagnostic})
+    recordDiagnostic: (id, diagnostic) => request(`/projects/${id}/diagnostics`, {method: 'POST', body: diagnostic}),
+    resolveVanity: slug => request(`/vanity/${encodeURIComponent(slug)}`)
 };

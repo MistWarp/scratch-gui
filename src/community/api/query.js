@@ -16,6 +16,4 @@ export const projectAccessQuery = () => {
     return key ? `?k=${encodeURIComponent(key)}` : '';
 };
 
-// GETs the server builds on demand (exports, diffs, git trees) can take longer
-// than the usual deadline.
 export const SLOW_GET_TIMEOUT = 60000;

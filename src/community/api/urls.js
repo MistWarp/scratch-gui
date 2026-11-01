@@ -54,6 +54,17 @@ const storageForProject = projectId => {
     return Object.keys(seed).length ? seed : null;
 };
 
+const activeCustomThemes = (theme, library) => {
+    try {
+        const uuid = JSON.parse(theme).customThemeUuid;
+        const parsed = JSON.parse(library);
+        const active = Array.isArray(parsed) ? parsed.filter(entry => entry.uuid === uuid) : [];
+        return active.length ? JSON.stringify(active) : '';
+    } catch {
+        return '';
+    }
+};
+
 let themeCustomCacheKey;
 let themeCustomCacheValue = '';
 export const themeCustomFor = theme => {
@@ -61,15 +72,7 @@ export const themeCustomFor = theme => {
     const cacheKey = `${theme}\n${library}`;
     if (cacheKey !== themeCustomCacheKey) {
         themeCustomCacheKey = cacheKey;
-        themeCustomCacheValue = '';
-        try {
-            const uuid = JSON.parse(theme).customThemeUuid;
-            const parsed = JSON.parse(library);
-            const active = Array.isArray(parsed) ? parsed.filter(entry => entry.uuid === uuid) : [];
-            if (active.length) themeCustomCacheValue = JSON.stringify(active);
-        } catch (e) {
-            // leave theme_custom out rather than shipping the whole library
-        }
+        themeCustomCacheValue = activeCustomThemes(theme, library);
     }
     return themeCustomCacheValue;
 };
@@ -90,13 +93,7 @@ export const embedUrl = (project, {
     if (persistStorage && project.id) {
         params.set('mw_storage', '1');
         const seed = storageForProject(project.id);
-        if (seed) {
-            try {
-                params.set('mw_storage_seed', JSON.stringify(seed));
-            } catch (e) {
-                // ignore
-            }
-        }
+        if (seed) params.set('mw_storage_seed', JSON.stringify(seed));
     }
     if (!applyProjectTheme) {
         params.set('apply_project_theme', '0');
