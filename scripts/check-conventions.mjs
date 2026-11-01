@@ -2,7 +2,7 @@ import {execFileSync} from 'node:child_process';
 import fs from 'node:fs';
 import ts from 'typescript';
 
-const EM_DASH = '—';
+const EM_DASH = '\u2014';
 const SOURCE_FILE = /\.(js|jsx|mjs|cjs|ts|tsx)$/;
 const TEXT_FILE = /\.(js|jsx|mjs|cjs|ts|tsx|json|md|css|html|yml|yaml|txt)$/;
 const SKIPPED_PATHS = [
