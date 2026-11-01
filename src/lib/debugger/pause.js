@@ -17,18 +17,6 @@ export const isPaused = () => Boolean(vm && vm.runtime.isPaused());
 
 const pausedState = thread => vm.runtime.getPausedThreadState(thread);
 
-const holdThreadsStartedBy = run => {
-    const runtime = vm.runtime;
-    const existing = new Set(runtime.threads);
-    try {
-        return run();
-    } finally {
-        for (const thread of runtime.threads) {
-            if (!existing.has(thread)) runtime.pauseThread(thread);
-        }
-    }
-};
-
 const compensateForTimePassedWhilePaused = (thread, pauseState) => {
     const elapsed = vm.runtime.currentMSecs - pauseState.time;
     if (thread.timer) {
@@ -156,7 +144,7 @@ const singleStepThread = thread => {
         }
 
         try {
-            holdThreadsStartedBy(() => vm.runtime.sequencer.stepThread(thread));
+            vm.runtime.sequencer.stepThread(thread);
         } catch (err) {
             if (err !== specialError) throw err;
         }
@@ -259,13 +247,11 @@ const advanceOneFrame = () => {
         const pauseState = pausedState(thread);
         if (pauseState) pauseState.time += runtime.currentStepTime;
     }
-    holdThreadsStartedBy(() => {
-        const hats = runtime._hats;
-        for (const hatType in hats) {
-            if (!Object.prototype.hasOwnProperty.call(hats, hatType)) continue;
-            if (hats[hatType].edgeActivated) runtime.startHats(hatType);
-        }
-    });
+    const hats = runtime._hats;
+    for (const hatType in hats) {
+        if (!Object.prototype.hasOwnProperty.call(hats, hatType)) continue;
+        if (hats[hatType].edgeActivated) runtime.startHats(hatType);
+    }
 };
 
 export const singleStep = () => {

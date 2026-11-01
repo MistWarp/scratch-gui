@@ -1,4 +1,5 @@
 import VM from 'scratch-vm';
+import {block, projectJson} from '../helpers/code-mode-fixture.js';
 import pause from '../../src/packager/addons/pause.js';
 import pointerlock from '../../src/packager/addons/pointerlock.js';
 
@@ -46,6 +47,44 @@ describe('packager addons', () => {
         vm.stopAll();
         expect(vm.isPaused()).toBe(false);
         expect(reports).toEqual([true, false, true, false]);
+    });
+
+    test('a broadcast received while paused waits for the project to resume', async () => {
+        const {vm} = scaffolding;
+        pause({scaffolding});
+        const project = projectJson({spriteBlocks: {
+            hat: block('event_whenbroadcastreceived', {
+                next: 'loop', topLevel: true, x: 0, y: 0, fields: {BROADCAST_OPTION: ['go', 'go-id']}
+            }),
+            loop: block('control_forever', {parent: 'hat', inputs: {SUBSTACK: [2, 'inc']}}),
+            inc: block('data_changevariableby', {
+                parent: 'loop', inputs: {VALUE: [1, [4, '1']]}, fields: {VARIABLE: ['score', 'v1']}
+            })
+        }});
+        project.targets[0].broadcasts = {'go-id': 'go'};
+        const audioEngine = vm.runtime.audioEngine;
+        vm.runtime.audioEngine = null;
+        vm.runtime.storage = null;
+        await vm.loadProject(project);
+        vm.runtime.audioEngine = audioEngine;
+        const score = () => Number(vm.runtime.getTargetForStage().variables.v1.value);
+        const broadcast = () => vm.runtime.startHats('event_whenbroadcastreceived', {BROADCAST_OPTION: 'go'});
+
+        vm.setPaused(true);
+        broadcast();
+        for (let i = 0; i < 3; i++) vm.runtime._step();
+        expect(score()).toBe(3);
+
+        vm.setPaused(false);
+        vm.runtime._step();
+        const running = score();
+        expect(running).toBeGreaterThan(3);
+
+        vm.setPaused(true);
+        broadcast();
+        for (let i = 0; i < 3; i++) vm.runtime._step();
+        expect(score()).toBe(running);
+        expect(vm.isPaused()).toBe(true);
     });
 
     test('pointer lock recentres the mouse after every step without replacing the step', () => {

@@ -48,7 +48,7 @@ describe('project metadata on a real VM', () => {
         }));
         expect(firstSave.meta.created).toEqual(expect.any(String));
         expect(firstSave.meta.edited).toEqual(expect.any(String));
-        expect({...getLoadedProjectMeta()}).toEqual(firstSave.meta);
+        expect({...getLoadedProjectMeta(vm)}).toEqual(firstSave.meta);
 
         await vm.loadProject(firstSave);
         expect(JSON.parse(vm.toJSON()).meta.created).toBe(firstSave.meta.created);
@@ -68,7 +68,7 @@ describe('project metadata on a real VM', () => {
             otherEditor: {theme: 'dark', revision: 7},
             flag: false
         }));
-        expect(getLoadedProjectMeta().platform.name).toBe('PenguinMod');
+        expect(getLoadedProjectMeta(vm).platform.name).toBe('PenguinMod');
 
         const meta = JSON.parse(vm.toJSON()).meta;
         expect(meta.otherEditor).toEqual({theme: 'dark', revision: 7});

@@ -14,34 +14,33 @@ export interface ProjectMetadataVM {
     registerProjectMetadata: (key: string, handler: ProjectMetadataHandler) => () => void;
 }
 
-const VM_KEYS = new Set(['semver', 'vm', 'origin', 'platform', 'agent']);
-const OWN_KEYS = new Set(['created', 'edited', 'author']);
+interface ProjectMetadataState {
+    loadedMeta: ProjectMeta | null;
+    savedMeta: ProjectMeta | null;
+    carried: ProjectMeta;
+    created: string | null;
+}
+
+const OWN_KEYS = new Set(['created', 'edited', 'agent', 'author']);
 const RETIRED_KEYS = new Set(['createdAt', 'savedAt']);
 
 let author: ProjectAuthor | null = null;
-let loadedMeta: ProjectMeta | null = null;
-let savedMeta: ProjectMeta | null = null;
-let carried: ProjectMeta = {};
-let created: string | null = null;
 
-const carriedKeysByVm = new WeakMap<ProjectMetadataVM, Set<string>>();
+const states = new WeakMap<ProjectMetadataVM, ProjectMetadataState>();
 
 export const setProjectAuthor = (user: {username?: string | null; id?: string | null} | null): void => {
     author = user?.username ? {username: user.username, id: user.id || null} : null;
 };
 
-export const getLoadedProjectMeta = (): ProjectMeta | null => savedMeta ?? loadedMeta;
+export const getLoadedProjectMeta = (vm: ProjectMetadataVM): ProjectMeta | null => {
+    const state = states.get(vm);
+    return state ? state.savedMeta ?? state.loadedMeta : null;
+};
 
-const isCarriedKey = (key: string): boolean =>
-    key !== '' && !VM_KEYS.has(key) && !OWN_KEYS.has(key) && !RETIRED_KEYS.has(key);
-
-const carriedValue = (key: string) => (): unknown => carried[key];
-
-const carryLoadedKeys = (vm: ProjectMetadataVM, registered: Set<string>): void => {
-    for (const key of Object.keys(carried)) {
-        if (registered.has(key) || !isCarriedKey(key)) continue;
-        registered.add(key);
-        vm.registerProjectMetadata(key, {serialize: carriedValue(key)});
+const carryUnwrittenKeys = (state: ProjectMetadataState, meta: ProjectMeta): void => {
+    for (const [key, value] of Object.entries(state.carried)) {
+        if (key in meta || OWN_KEYS.has(key) || RETIRED_KEYS.has(key)) continue;
+        meta[key] = value;
     }
 };
 
@@ -51,22 +50,22 @@ const recordedCreated = (value: unknown, meta: ProjectMeta): string | null => {
 };
 
 export const installProjectMetadata = (vm: ProjectMetadataVM): void => {
-    if (carriedKeysByVm.has(vm)) return;
-    const registered = new Set<string>();
-    carriedKeysByVm.set(vm, registered);
+    if (states.has(vm)) return;
+    const state: ProjectMetadataState = {loadedMeta: null, savedMeta: null, carried: {}, created: null};
+    states.set(vm, state);
 
     vm.registerProjectMetadata('created', {
         serialize: (_value, meta) => {
-            savedMeta = meta;
-            created ??= new Date().toISOString();
-            return created;
+            carryUnwrittenKeys(state, meta);
+            state.savedMeta = meta;
+            state.created ??= new Date().toISOString();
+            return state.created;
         },
         deserialize: (value, meta) => {
-            loadedMeta = Object.keys(meta).length === 0 ? null : {...meta};
-            savedMeta = null;
-            carried = {...meta};
-            created = recordedCreated(value, meta);
-            carryLoadedKeys(vm, registered);
+            state.loadedMeta = Object.keys(meta).length === 0 ? null : {...meta};
+            state.savedMeta = null;
+            state.carried = {...meta};
+            state.created = recordedCreated(value, meta);
         }
     });
     vm.registerProjectMetadata('edited', {
@@ -77,8 +76,8 @@ export const installProjectMetadata = (vm: ProjectMetadataVM): void => {
     });
     vm.registerProjectMetadata('author', {
         serialize: () => {
-            if (author) carried.author = {...author};
-            return carried.author;
+            if (author) state.carried.author = {...author};
+            return state.carried.author;
         }
     });
 };

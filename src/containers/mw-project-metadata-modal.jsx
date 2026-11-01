@@ -224,7 +224,7 @@ const ProjectMetadataModal = ({initialView, onRequestClose, projectTitle, roturU
         assets: perks?.mistwarp?.maxProjectAssetsBytes || LIMITS.assets
     }), [perks]);
     const report = React.useMemo(() => buildSizeReport(vm, limits), [vm, refresh, limits]);
-    const meta = getLoadedProjectMeta() || {};
+    const meta = getLoadedProjectMeta(vm) || {};
     const author = meta.author;
     const platform = meta.platform;
     const projectId = getRememberedPlatformProject();

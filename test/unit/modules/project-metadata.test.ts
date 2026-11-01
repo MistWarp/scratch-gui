@@ -42,31 +42,64 @@ describe('project metadata', () => {
         setProjectAuthor(null);
     });
 
-    test('registers its own keys and one handler per carried key, whatever the load order', () => {
+    test('carries loaded keys the VM did not write without registering a handler for each', () => {
         const vm = fakeVm();
         installProjectMetadata(vm);
         expect(Array.from(vm.handlers.keys())).toEqual(['created', 'edited', 'agent', 'author']);
 
-        const first: ProjectMeta = {semver: '3.0.0', platform: {}, origin: 'x', extra: 1, createdAt: 'old'};
+        const first: ProjectMeta = {semver: '1.0.0', platform: {name: 'Old'}, extra: 1, createdAt: 'old', savedAt: 'old'};
         first[''] = 1;
         vm.load(first);
-        vm.load({extra: 2, other: 3});
-        expect(Array.from(vm.handlers.keys())).toEqual(['created', 'edited', 'agent', 'author', 'extra', 'other']);
-        expect(vm.save()).toMatchObject({extra: 2, other: 3});
+        vm.load({extra: 2, other: 3, vm: 'stale'});
+        expect(Array.from(vm.handlers.keys())).toEqual(['created', 'edited', 'agent', 'author']);
+        expect(() => vm.registerProjectMetadata('other', {serialize: () => 'owned'})).not.toThrow();
+
+        const meta = vm.save();
+        expect(meta).toMatchObject({extra: 2, other: 'owned', vm: '0.2.0', semver: '3.0.0'});
 
         vm.load({});
+        const next = vm.save();
+        expect(next).not.toHaveProperty('extra');
+        expect(next.other).toBe('owned');
+    });
+
+    test('retired and VM keys from the loaded project are not carried', () => {
+        const vm = fakeVm();
+        installProjectMetadata(vm);
+        const loaded: ProjectMeta = {semver: '1.0.0', platform: {name: 'Old'}, createdAt: 'old', savedAt: 'old'};
+        loaded[''] = 1;
+        vm.load(loaded);
         const meta = vm.save();
-        expect(meta).not.toHaveProperty('extra');
-        expect(meta).not.toHaveProperty('other');
+        expect(meta.semver).toBe('3.0.0');
+        expect(meta.platform).toEqual({name: 'MistWarp'});
+        expect(meta.created).toBe('old');
+        expect(meta).not.toHaveProperty('createdAt');
+        expect(meta).not.toHaveProperty('savedAt');
+        expect(meta['']).toBe(1);
     });
 
     test('a project without meta reads as never saved until it is saved', () => {
         const vm = fakeVm();
         installProjectMetadata(vm);
         vm.load({});
-        expect(getLoadedProjectMeta()).toBeNull();
+        expect(getLoadedProjectMeta(vm)).toBeNull();
         const meta = vm.save();
-        expect(getLoadedProjectMeta()).toBe(meta);
+        expect(getLoadedProjectMeta(vm)).toBe(meta);
+    });
+
+    test('each VM keeps its own project metadata', () => {
+        const first = fakeVm();
+        const second = fakeVm();
+        installProjectMetadata(first);
+        installProjectMetadata(second);
+        expect(getLoadedProjectMeta(fakeVm())).toBeNull();
+        first.load({created: 'first', extra: 'one'});
+        second.load({created: 'second'});
+        expect(first.save()).toMatchObject({created: 'first', extra: 'one'});
+        const other = second.save();
+        expect(other.created).toBe('second');
+        expect(other).not.toHaveProperty('extra');
+        expect(getLoadedProjectMeta(first)?.created).toBe('first');
     });
 
     test('the author is the signed-in account, or the one already on the project', () => {

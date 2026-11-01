@@ -1924,7 +1924,6 @@
   "mw.collaboration.error.hostGone": "The host ended the live session. Your copy of the project is still here.",
   "mw.collaboration.error.generic": "The live session connection failed. Check your internet connection and try again.",
   "gui.projectLoader.replaceProjectTitle": "Replace this project?",
-  "tw.gui.defaultProjectTitle": "Project",
   "gui.opcodeLabels.direction": "direction",
   "gui.opcodeLabels.xposition": "x position",
   "gui.opcodeLabels.yposition": "y position",
@@ -2058,5 +2057,6 @@
   "tw.unshared.2": "For more information, visit: {link}",
   "tw.unshared.cache": "If the project was shared recently, this message may appear incorrectly for a few minutes.",
   "tw.unshared.bug": "If this project is actually shared, please report a bug.",
-  "tw.home.description": "{APP_NAME} is a Scratch mod that compiles projects to JavaScript to make them run really fast. Try it out by inputting a project ID or URL above or choosing a featured project below."
+  "tw.home.description": "{APP_NAME} is a Scratch mod that compiles projects to JavaScript to make them run really fast. Try it out by inputting a project ID or URL above or choosing a featured project below.",
+  "tw.gui.defaultProjectTitle": "Project"
 }

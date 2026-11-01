@@ -36,7 +36,7 @@ Current modules:
 | `blocks-registry` | The loaded scratch-blocks library and the editor's active workspace. `setScratchBlocks`, `getScratchBlocks` and `whenScratchBlocks` (a promise for code that runs before the library loads), and `setActiveWorkspace`, `getActiveWorkspace` and `onActiveWorkspace` (called with the new workspace, or `null` when the blocks pane unmounts). `containers/blocks.jsx` is the only writer. |
 | `editor-layout` | The editor shell's size rules: minimum editor pane and page sizes, the narrow layout breakpoint, and the stage panel clamps for resizing, dragging, keyboard steps, phone and player stages. Callers measure the DOM and pass numbers in. |
 | `paused-audio` | Silencing a runtime's audio while it is paused: `silenceAudioWhilePaused(runtime)` follows `RUNTIME_PAUSED` and `RUNTIME_UNPAUSED`, sets `audioEngine.paused` and suspends or resumes the audio context. The debugger and the packager pause button use it beside the VM's own pause. |
-| `project-metadata` | The MistWarp keys in a saved project's `meta`: `installProjectMetadata(vm)` registers `created`, `edited`, `agent` and `author` with `vm.registerProjectMetadata`, and carries any other keys a loaded project had into its next save. `setProjectAuthor` sets the byline and `getLoadedProjectMeta` returns the open project's meta. |
+| `project-metadata` | The MistWarp keys in a saved project's `meta`: `installProjectMetadata(vm)` registers `created`, `edited`, `agent` and `author` with `vm.registerProjectMetadata`, and writes the other keys a loaded project had into its next save when the VM does not write them itself. State is kept per VM. `setProjectAuthor` sets the byline and `getLoadedProjectMeta(vm)` returns the open project's meta. |
 
 Never add fields to the VM object. Lint rejects `_mw*` and `__mw*` fields on the VM and its runtime, apart from the ones scratch-vm defines itself; put project state in `project-session`, and install guards in a `WeakSet` or `WeakMap` in the file that installs them.
 
@@ -52,7 +52,8 @@ Code outside `src/modules/storage` must not touch `localStorage` or `sessionStor
 - Reuse the shared helpers in `src/lib/utils` instead of writing local copies: `bytes.js` (`formatBytes`, binary units such as "1.5 MB"; pass `{decimal: true}` for limits sold in decimal units), `async.js` (`sleep`), `copy-text.js` (clipboard copy with a fallback for when the Clipboard API is missing or refused; pass `{document}` for content shown in another window) and `safe-url.js` (`safeUrl`, which keeps only absolute http(s) links). `src/community/format.js` and `src/community/copy-text.js` re-export them for community code.
 - Code under `src/community` may import from `src/lib`. Some editor code imports community modules (`src/community/api`, `Markdown.jsx`, `ui/SelectMenu.jsx`); for new code that both apps need, prefer a module in `src/lib`.
 - Configuration that differs between environments comes from `process.env.*` values that `vite.config.mjs` defines (see `.env.example`). Always give a fallback, as in `process.env.MW_API_BASE || 'https://api.mistwarp.org/v1'`, because Jest does not run the Vite `define` step.
-- `src/addons/addons`, `src/packager` and `src/generated` are vendored or generated. ESLint skips them; keep changes to them minimal.
+- `src/addons/addons` and `src/generated` are vendored or generated. ESLint skips them; keep changes to them minimal.
+- `src/packager` is the imported TurboWarp Packager and owns packaging behaviour, so change it there (see `src/packager/README.md`); `scripts/vite-packager.mjs` rebuilds the player scripts. ESLint skips it and it keeps its upstream style, so lint does not check those changes; cover them with unit tests instead.
 
 ## Components and state
 

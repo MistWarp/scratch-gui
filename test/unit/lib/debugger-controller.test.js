@@ -1,4 +1,5 @@
 import {loadVm} from '../../helpers/code-mode-fixture.js';
+import RenderedTarget from 'scratch-vm/src/sprites/rendered-target';
 import initDebugger from '../../../src/lib/debugger/controller.js';
 
 jest.mock('../../../src/lib/debugger/blocks.js', () => jest.fn());
@@ -39,22 +40,54 @@ describe('debugger controller', () => {
 });
 
 describe('debugger blocks', () => {
-    test('green flag logging follows PROJECT_START instead of replacing greenFlag', async () => {
+    let vm;
+    let handlers;
+    let makeClone;
+
+    beforeEach(async () => {
+        makeClone = RenderedTarget.prototype.makeClone;
         const settings = jest.requireActual('../../../src/lib/debugger/settings.js');
-        jest.spyOn(settings, 'getSetting').mockImplementation(name =>
-            name === 'log_clear_greenflag' || name === 'log_greenflag');
+        jest.spyOn(settings, 'getSetting').mockReturnValue(true);
         const registerDebuggerBlocks = jest.requireActual('../../../src/lib/debugger/blocks.js').default;
         window.__mwDebuggerBlocklyPatched = true;
-        const {vm} = await loadVm();
-        const handlers = {onLog: jest.fn(), onBreakpoint: jest.fn(), onClearLogs: jest.fn()};
+        ({vm} = await loadVm());
+        handlers = {onLog: jest.fn(), onBreakpoint: jest.fn(), onClearLogs: jest.fn()};
         registerDebuggerBlocks(vm, handlers);
-        expect(Object.prototype.hasOwnProperty.call(vm.runtime, 'greenFlag')).toBe(false);
+    });
 
-        vm.greenFlag();
-
-        expect(handlers.onClearLogs).toHaveBeenCalledTimes(1);
-        expect(handlers.onLog).toHaveBeenCalledWith('Green flag clicked', null, 'internal');
+    afterEach(() => {
         vm.quit();
         delete window.__mwDebuggerBlocklyPatched;
+        jest.restoreAllMocks();
+    });
+
+    const logged = () => handlers.onLog.mock.calls.map(call => [call[0], call[2]]);
+
+    test('logs through runtime events without replacing runtime or target methods', () => {
+        const sprite = vm.runtime.targets.find(target => !target.isStage);
+        for (const name of ['greenFlag', 'startHats']) {
+            expect(Object.prototype.hasOwnProperty.call(vm.runtime, name)).toBe(false);
+        }
+        expect(Object.getPrototypeOf(sprite)).toBe(RenderedTarget.prototype);
+        expect(RenderedTarget.prototype.makeClone).toBe(makeClone);
+    });
+
+    test('logs the green flag and clears the log first', () => {
+        vm.greenFlag();
+        expect(handlers.onClearLogs).toHaveBeenCalledTimes(1);
+        expect(logged()).toContainEqual(['Green flag clicked', 'internal']);
+    });
+
+    test('logs broadcasts, created clones and clones refused by the limit', () => {
+        vm.runtime.startHats('event_whenbroadcastreceived', {BROADCAST_OPTION: 'hello'});
+        const sprite = vm.runtime.targets.find(target => !target.isStage && target.getName() === 'Sprite1');
+        expect(sprite.makeClone()).not.toBeNull();
+        vm.runtime.clonesAvailable = () => false;
+        expect(sprite.makeClone()).toBeNull();
+        expect(logged()).toEqual([
+            ['Broadcasted "hello"', 'internal'],
+            ['Created clone of "Sprite1"', 'internal'],
+            ['Failed to create clone of "Sprite1" because there are too many clones', 'internal-warn']
+        ]);
     });
 });
