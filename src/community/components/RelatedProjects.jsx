@@ -8,12 +8,13 @@ import {useCommunityIntl} from '../i18n.jsx';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import SectionHeading from './ui/SectionHeading.jsx';
 import styles from './RelatedProjects.module.css';
+import {session} from '../../modules/storage';
 
 const SEEN_KEY = 'mw:session-projects';
 
 const seenProjects = () => {
     try {
-        return JSON.parse(sessionStorage.getItem(SEEN_KEY)) || [];
+        return session.readJSON(SEEN_KEY, null) || [];
     } catch (e) {
         return [];
     }
@@ -23,7 +24,7 @@ export const rememberProject = id => {
     try {
         const seen = seenProjects().filter(item => item !== id);
         seen.push(id);
-        sessionStorage.setItem(SEEN_KEY, JSON.stringify(seen.slice(-40)));
+        session.writeJSON(SEEN_KEY, seen.slice(-40));
     } catch (e) {
         return;
     }

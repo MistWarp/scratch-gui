@@ -15,14 +15,9 @@ import QuietLink from './ui/QuietLink.jsx';
 import SectionHeading from './ui/SectionHeading.jsx';
 import StatusMessage from './ui/StatusMessage.jsx';
 import styles from './HomeWorkspace.module.css';
+import {local} from '../../modules/storage';
 
-const editorDataMoved = () => {
-    try {
-        return Boolean(localStorage.getItem(MOVED_KEY));
-    } catch (e) {
-        return false;
-    }
-};
+const editorDataMoved = () => Boolean(local.readString(MOVED_KEY));
 
 export const DeviceBackup = ({className}) => {
     const {text: communityText} = useCommunityText();

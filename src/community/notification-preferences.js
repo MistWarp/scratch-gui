@@ -1,3 +1,5 @@
+import {local} from '../modules/storage';
+
 /* eslint-disable max-len */
 const KEY = 'mw:notification-preferences';
 
@@ -5,19 +7,15 @@ const DEFAULTS = {social: true, projects: true, economy: true, system: true};
 
 const getNotificationPreferences = () => {
     try {
-        return {...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || '{}')};
+        return {...DEFAULTS, ...JSON.parse(local.readString(KEY) || '{}')};
     } catch (e) {
         return {...DEFAULTS};
     }
 };
 
 const setNotificationPreferences = preferences => {
-    try {
-        localStorage.setItem(KEY, JSON.stringify({...DEFAULTS, ...preferences}));
-        window.dispatchEvent(new Event('mw:notification-preferences'));
-    } catch (e) {
-        return false;
-    }
+    if (!local.writeJSON(KEY, {...DEFAULTS, ...preferences})) return false;
+    window.dispatchEvent(new Event('mw:notification-preferences'));
     return true;
 };
 

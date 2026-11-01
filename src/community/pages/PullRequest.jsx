@@ -29,6 +29,7 @@ import {buildCommitDiffFromInspection, loadCommitFileTexts, withFileCache} from 
 import {base64ToBytes, mediaTypeForAssetPath} from '../asset-media.js';
 import {buildProjectArtifactsFromFileEntries} from '../../lib/git/mwp.js';
 import styles from './PullRequest.module.css';
+import {session as sessionStore} from '../../modules/storage';
 
 const decodeBase64 = value => {
     const binary = atob(value || '');
@@ -69,47 +70,38 @@ const pullDiffCacheKey = pull => {
     return `${PULL_DIFF_CACHE_PREFIX}${session}:${pull.targetProjectId}:${pull.baseCommit}:${pull.headCommit}`;
 };
 export const readPullDiffCache = pull => {
+    const raw = sessionStore.readString(pullDiffCacheKey(pull));
+    if (raw === null) return null;
     try {
-        const raw = sessionStorage.getItem(pullDiffCacheKey(pull));
-        if (raw === null) return null;
-        try {
-            const cached = JSON.parse(raw);
-            return typeof cached.diff === 'string' ? cached.diff : raw;
-        } catch (error) {
-            return raw;
-        }
+        const cached = JSON.parse(raw);
+        return typeof cached.diff === 'string' ? cached.diff : raw;
     } catch (error) {
-        return null;
+        return raw;
     }
 };
 export const writePullDiffCache = (pull, diff) => {
     if (diff.length * 2 > PULL_DIFF_ENTRY_MAX_BYTES) return;
-    try {
-        sessionStorage.setItem(pullDiffCacheKey(pull), JSON.stringify({at: Date.now(), diff}));
-        const entries = [];
-        for (let index = 0; index < sessionStorage.length; index++) {
-            const key = sessionStorage.key(index);
-            if (!key || !key.startsWith(PULL_DIFF_CACHE_PREFIX)) continue;
-            const value = sessionStorage.getItem(key) || '';
-            let at = 0;
-            try {
-                at = Number(JSON.parse(value).at) || 0;
-            } catch (error) {
-                // Old cache entries have no timestamp and get removed first.
-            }
-            entries.push({key, at, bytes: value.length * 2});
+    if (!sessionStore.writeJSON(pullDiffCacheKey(pull), {at: Date.now(), diff})) return;
+    const entries = [];
+    for (const key of sessionStore.keys()) {
+        if (!key.startsWith(PULL_DIFF_CACHE_PREFIX)) continue;
+        const value = sessionStore.readString(key) || '';
+        let at = 0;
+        try {
+            at = Number(JSON.parse(value).at) || 0;
+        } catch (error) {
+            // Old cache entries have no timestamp and get removed first.
         }
-        entries.sort((a, b) => b.at - a.at);
-        let bytes = 0;
-        entries.forEach((entry, index) => {
-            bytes += entry.bytes;
-            if (index >= PULL_DIFF_CACHE_MAX_ENTRIES || bytes > PULL_DIFF_CACHE_MAX_BYTES) {
-                sessionStorage.removeItem(entry.key);
-            }
-        });
-    } catch (error) {
-        // Large diffs can exceed the session quota. The page still works without this cache.
+        entries.push({key, at, bytes: value.length * 2});
     }
+    entries.sort((a, b) => b.at - a.at);
+    let bytes = 0;
+    entries.forEach((entry, index) => {
+        bytes += entry.bytes;
+        if (index >= PULL_DIFF_CACHE_MAX_ENTRIES || bytes > PULL_DIFF_CACHE_MAX_BYTES) {
+            sessionStore.remove(entry.key);
+        }
+    });
 };
 
 export const shouldLoadPullDiff = ({tab, pull, diff, diffError}) => (
