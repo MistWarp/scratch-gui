@@ -1,5 +1,6 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import styles from './Confetti.module.css';
+import {local} from '../../modules/storage';
 
 const COLORS = ['#f3c952', '#855cd6', '#4aa8f0', '#2faa72', '#ef5d7a', '#ff9f43'];
 const STORAGE_PREFIX = 'mw-celebrated:';
@@ -24,12 +25,8 @@ const prefersReducedMotion = () => {
 };
 
 const alreadyCelebrated = key => {
-    try {
-        if (window.localStorage.getItem(STORAGE_PREFIX + key)) return true;
-        window.localStorage.setItem(STORAGE_PREFIX + key, '1');
-    } catch (e) {
-        // Storage can be blocked; celebrating again is harmless.
-    }
+    if (local.readString(STORAGE_PREFIX + key)) return true;
+    local.writeString(STORAGE_PREFIX + key, '1');
     return false;
 };
 

@@ -1,37 +1,20 @@
 import {isMinorAccount} from '../lib/minor-account.js';
 import {isStudentSession} from '../lib/rotur/student-flag.js';
 import {isSplitEditor} from '../lib/account/origins.js';
+import {local, session} from '../modules/storage';
 
 const EVENTS_URL = `${process.env.MW_API_BASE || 'https://api.mistwarp.org/v1'}/events`;
 const ANALYTICS_KEY = 'mw:anonymous-analytics';
 
 let editorChoiceSynced = false;
 
-const storage = () => {
-    try {
-        return localStorage;
-    } catch (e) {
-        return null;
-    }
-};
-
 const writeChoice = enabled => {
-    try {
-        storage()?.setItem(ANALYTICS_KEY, enabled ? 'on' : 'off');
-    } catch (e) {
-        return;
-    }
+    local.writeString(ANALYTICS_KEY, enabled ? 'on' : 'off');
 };
 
 const callAccount = args => import('../lib/account/bridge.js').then(({call}) => call('analytics', args));
 
-export const analyticsChoice = () => {
-    try {
-        return storage()?.getItem(ANALYTICS_KEY) !== 'off';
-    } catch (e) {
-        return true;
-    }
-};
+export const analyticsChoice = () => local.readString(ANALYTICS_KEY) !== 'off';
 
 export const analyticsEnabled = () => {
     if (isMinorAccount() || isStudentSession()) return false;
@@ -72,26 +55,18 @@ export const track = (name, {variant} = {}) => {
 };
 
 export const trackOnce = (name, properties = {}) => {
-    try {
-        const key = `mw:analytics-once:${name}`;
-        if (sessionStorage.getItem(key)) return;
-        sessionStorage.setItem(key, '1');
-    } catch (e) {
-        // send the event when session storage is unavailable
-    }
+    const key = `mw:analytics-once:${name}`;
+    if (session.readString(key)) return;
+    session.writeString(key, '1');
     track(name, properties);
 };
 
 export const trackDaily = (name, properties = {}) => {
     if (!analyticsEnabled()) return;
-    try {
-        const day = new Date().toISOString().slice(0, 10);
-        const key = `mw:analytics-day:${name}`;
-        if (sessionStorage.getItem(key) === day) return;
-        sessionStorage.setItem(key, day);
-    } catch (e) {
-        // Storage restrictions must not break editing.
-    }
+    const day = new Date().toISOString().slice(0, 10);
+    const key = `mw:analytics-day:${name}`;
+    if (session.readString(key) === day) return;
+    session.writeString(key, day);
     track(name, properties);
 };
 

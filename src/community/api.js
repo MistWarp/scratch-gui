@@ -13,6 +13,7 @@ import {
 import warpthemeApi from '../lib/warptheme-api.js';
 import {editorRoot} from '../lib/account/origins.js';
 import {STUDENT_HINT_PARAM, isStudentSession} from '../lib/rotur/student-flag.js';
+import {local} from '../modules/storage';
 
 const editorUrl = ({
     chat, clone, platformProject, scratchProject, projectJson, assets, starter, restore, collaborate, from
@@ -36,13 +37,7 @@ const editorUrl = ({
     return `${root}${query ? `?${query}` : ''}`;
 };
 
-const readStored = key => {
-    try {
-        return localStorage.getItem(key);
-    } catch (e) {
-        return null;
-    }
-};
+const readStored = key => local.readString(key);
 
 const EMBED_STORAGE_PREFIX = 'mw:embed-storage:';
 const EMBED_STORAGE_SEED_LIMIT = 32000;
@@ -57,22 +52,17 @@ const storageForProject = projectId => {
         'tw:'
     ];
     const isBlockedStorageKey = key => blockedPrefixes.some(prefix => key.startsWith(prefix));
-    try {
-        const prefix = `${EMBED_STORAGE_PREFIX}${id}:`;
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (!key || !key.startsWith(prefix)) continue;
-            const name = key.slice(prefix.length);
-            if (isBlockedStorageKey(name)) continue;
-            const value = readStored(key);
-            if (value === null) continue;
-            const nextSize = size + name.length + value.length + 6;
-            if (nextSize > EMBED_STORAGE_SEED_LIMIT) return null;
-            seed[name] = value;
-            size = nextSize;
-        }
-    } catch (e) {
-        return null;
+    const prefix = `${EMBED_STORAGE_PREFIX}${id}:`;
+    for (const key of local.keys()) {
+        if (!key.startsWith(prefix)) continue;
+        const name = key.slice(prefix.length);
+        if (isBlockedStorageKey(name)) continue;
+        const value = readStored(key);
+        if (value === null) continue;
+        const nextSize = size + name.length + value.length + 6;
+        if (nextSize > EMBED_STORAGE_SEED_LIMIT) return null;
+        seed[name] = value;
+        size = nextSize;
     }
     return Object.keys(seed).length ? seed : null;
 };

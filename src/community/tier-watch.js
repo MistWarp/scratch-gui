@@ -1,22 +1,13 @@
 import api from './api';
 import {subscribeTier} from '../lib/rotur/client.js';
+import {local} from '../modules/storage';
 
 const storageKey = username => `mw:tier:${String(username).toLowerCase()}`;
 
-const readStored = key => {
-    try {
-        return localStorage.getItem(key);
-    } catch (_) {
-        return null;
-    }
-};
+const readStored = key => local.readString(key);
 
 const writeStored = (key, value) => {
-    try {
-        localStorage.setItem(key, value);
-    } catch (_) {
-        return;
-    }
+    local.writeString(key, String(value));
 };
 
 const watchTier = (username, onChange) => {

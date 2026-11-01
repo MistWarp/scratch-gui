@@ -1,6 +1,7 @@
 import {useEffect} from 'react';
 import {cachedFetchBuffer, preloadContent} from '../../../lib/community/cached-fetch.js';
 import {clearProjectStorage, EMBED_STORAGE_PREFIX, isBlockedProjectStorageKey} from './embed-helpers.js';
+import {local} from '../../../modules/storage';
 
 // Serves the project file and its assets to the player frame from this page's cache.
 export const useEmbedFetchBridge = (project, stageFrame) => {
@@ -69,16 +70,12 @@ export const useEmbedStorageBridge = (project, stageFrame) => {
             if (!key) return;
             if (isBlockedProjectStorageKey(key)) return;
             const storageKey = `${EMBED_STORAGE_PREFIX}${projectId}:${key}`;
-            try {
-                if (data.type === 'mw:storage-set') {
-                    if (!Object.prototype.hasOwnProperty.call(data, 'value')) return;
-                    localStorage.setItem(storageKey, String(data.value));
-                    return;
-                }
-                localStorage.removeItem(storageKey);
-            } catch (e) {
-                // ignore
+            if (data.type === 'mw:storage-set') {
+                if (!Object.prototype.hasOwnProperty.call(data, 'value')) return;
+                local.writeString(storageKey, String(data.value));
+                return;
             }
+            local.remove(storageKey);
         };
         window.addEventListener('message', onMessage);
         return () => window.removeEventListener('message', onMessage);

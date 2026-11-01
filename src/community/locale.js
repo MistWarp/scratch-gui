@@ -1,5 +1,6 @@
 import locales from '../generated/community-locales/locales.json';
 import matchSupportedLocale from '../lib/utils/match-locale';
+import {local} from '../modules/storage';
 
 export const LANGUAGE_KEY = 'tw:language';
 export const LEGACY_LANGUAGE_KEY = 'mw:community-locale';
@@ -7,14 +8,10 @@ export {locales};
 export const matchLocale = value => matchSupportedLocale(value, Object.keys(locales));
 
 export const readPreference = () => {
-    try {
-        const shared = localStorage.getItem(LANGUAGE_KEY);
-        if (shared === 'auto') return 'auto';
-        if (matchLocale(shared)) return matchLocale(shared);
-        return matchLocale(localStorage.getItem(LEGACY_LANGUAGE_KEY)) || 'auto';
-    } catch (e) {
-        return 'auto';
-    }
+    const shared = local.readString(LANGUAGE_KEY);
+    if (shared === 'auto') return 'auto';
+    if (matchLocale(shared)) return matchLocale(shared);
+    return matchLocale(local.readString(LEGACY_LANGUAGE_KEY)) || 'auto';
 };
 
 export const resolveLocale = (preference, search = '', browserLanguages = ['en']) => {
