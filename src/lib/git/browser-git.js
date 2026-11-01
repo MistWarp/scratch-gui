@@ -646,8 +646,8 @@ const addRemote = async ({vm, name, url}) => {
     }
 
     await git.addRemote({fs, dir: REPO_DIR, remote: name, url});
-    const session = projectSession(vm);
-    if (session.requireExplicitPush) session.approvedRemotes.add(url);
+    const openProject = projectSession(vm);
+    if (openProject.requireExplicitPush) openProject.approvedRemotes.add(url);
 };
 
 const removeRemote = async ({vm, name}) => {
