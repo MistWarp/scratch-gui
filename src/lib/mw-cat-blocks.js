@@ -1,4 +1,5 @@
 import LazyScratchBlocks from './tw-lazy-scratch-blocks';
+import {local, readLegacyAddonSettings} from '../modules/storage';
 
 const ENABLED_KEY = 'mw:cat-blocks';
 const WATCH_KEY = 'mw:cat-blocks-watch';
@@ -19,20 +20,12 @@ let migrationChecked = false;
 const migrateFromAddon = () => {
     if (migrationChecked) return;
     migrationChecked = true;
-    try {
-        if (localStorage.getItem(ENABLED_KEY) !== null) return;
-        const raw = localStorage.getItem('tw:addons');
-        if (!raw) return;
-        const parsed = JSON.parse(raw);
-        const catBlocks = parsed && parsed['cat-blocks'];
-        if (catBlocks && catBlocks.enabled) {
-            localStorage.setItem(ENABLED_KEY, 'true');
-            if (typeof catBlocks.watch !== 'undefined') {
-                localStorage.setItem(WATCH_KEY, String(!!catBlocks.watch));
-            }
+    if (local.readString(ENABLED_KEY) !== null) return;
+    const catBlocks = readLegacyAddonSettings()['cat-blocks'];
+    if (catBlocks && catBlocks.enabled) {
+        if (local.writeBoolean(ENABLED_KEY, true) && typeof catBlocks.watch !== 'undefined') {
+            local.writeBoolean(WATCH_KEY, Boolean(catBlocks.watch));
         }
-    } catch (err) {
-        // ignore
     }
 };
 
@@ -41,12 +34,7 @@ const flagCache = new Map();
 const readFlag = key => {
     if (flagCache.has(key)) return flagCache.get(key);
     migrateFromAddon();
-    let value = false;
-    try {
-        value = localStorage.getItem(key) === 'true';
-    } catch (err) {
-        value = false;
-    }
+    const value = local.readString(key) === 'true';
     flagCache.set(key, value);
     return value;
 };
@@ -376,11 +364,7 @@ const applyCatBlocksToLoadedBlockly = () => {
 
 const setCatBlocks = enabled => {
     migrateFromAddon();
-    try {
-        localStorage.setItem(ENABLED_KEY, String(!!enabled));
-    } catch (err) {
-        // ignore
-    }
+    local.writeBoolean(ENABLED_KEY, Boolean(enabled));
     flagCache.set(ENABLED_KEY, !!enabled);
     applyCatBlocksToLoadedBlockly();
     notifyChanged();
@@ -388,11 +372,7 @@ const setCatBlocks = enabled => {
 
 const setCatBlocksWatch = enabled => {
     migrateFromAddon();
-    try {
-        localStorage.setItem(WATCH_KEY, String(!!enabled));
-    } catch (err) {
-        // ignore
-    }
+    local.writeBoolean(WATCH_KEY, Boolean(enabled));
     flagCache.set(WATCH_KEY, !!enabled);
     notifyChanged();
 };

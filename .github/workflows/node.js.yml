@@ -27,6 +27,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     - uses: pnpm/action-setup@v4
     - name: Install Node.js
       uses: actions/setup-node@v4
@@ -36,6 +38,9 @@ jobs:
     # Nothing here runs dependency build scripts.
     - run: pnpm install --frozen-lockfile --ignore-scripts
     - run: pnpm run lint
+    - run: pnpm run typecheck
+    - run: node scripts/check-conventions.mjs --base=origin/${{ github.base_ref }}
+      if: github.event_name == 'pull_request'
     - run: pnpm run i18n:editor:check
     - run: pnpm run i18n:community:check
     - run: pnpm run check:community-css

@@ -46,7 +46,7 @@ module.exports = {
     ],
     transform: {
         // babel.config.cjs is shared with ESLint. Ignore any .babelrc in linked fork checkouts.
-        '^.+\\.(js|jsx|mjs|cjs)$': ['babel-jest', {
+        '^.+\\.(js|jsx|mjs|cjs|ts|tsx)$': ['babel-jest', {
             configFile: path.join(__dirname, 'babel.config.cjs'),
             babelrc: false
         }]
