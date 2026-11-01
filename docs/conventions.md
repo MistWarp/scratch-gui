@@ -30,6 +30,7 @@ Current modules:
 
 | Module | What it owns |
 | --- | --- |
+| `platform-api` | The MistWarp API transport: `createPlatformApi` gives `request`, `requestRaw`, `upload` and `logout`, plus the session (stored token, session providers, the Rotur validator exchange) and the GET response cache. Error construction, analytics and sign-in side effects are passed in. `src/lib/community/api.js` composes it for the app. |
 | `storage` | `local` and `session` stores that never throw: `readString`, `readJSON` (typed only when given a type guard, `unknown` otherwise), `readBoolean`, the matching writes, and `remove`. Also reads the legacy `tw:addons` settings blob. |
 
 Code outside `src/modules/storage` must not touch `localStorage` or `sessionStorage` directly. Files that still do are listed in `scripts/eslint-legacy-storage-files.cjs`. When you move one of them to the storage module, delete it from that list, and never add a file to it.
