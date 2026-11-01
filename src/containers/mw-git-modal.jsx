@@ -397,16 +397,13 @@ export class TWGitModal extends React.Component {
         if (historyState.phase === 'loading') {
             this.setStateIfMounted({busy: true, busyMessage: 'Loading project history…', error: null});
         } else if (historyState.phase === 'ready') {
-            this.setStateIfMounted(current => {
-                const bootstrapError = projectSession(this.props.vm).historyBootstrapError;
-                return {
-                    ...stateFromHistory(historyState.data, current),
-                    busy: false,
-                    busyMessage: null,
-                    busyProgress: null,
-                    error: bootstrapError ? `Project history could not be initialized: ${bootstrapError.message}` : null
-                };
-            });
+            this.setStateIfMounted(current => ({
+                ...stateFromHistory(historyState.data, current),
+                busy: false,
+                busyMessage: null,
+                busyProgress: null,
+                error: null
+            }));
         } else if (historyState.phase === 'error') {
             this.setStateIfMounted({
                 busy: false,

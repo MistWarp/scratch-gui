@@ -16,7 +16,6 @@ interface WorkspaceState {
 
 export interface ProjectSession extends WorkspaceState {
     canTrustProject: boolean;
-    historyBootstrapError: Error | null;
 }
 
 const newSession = (): ProjectSession => ({
@@ -24,8 +23,7 @@ const newSession = (): ProjectSession => ({
     requireExplicitPush: false,
     approvedRemotes: new Set(),
     historyHydration: null,
-    canTrustProject: false,
-    historyBootstrapError: null
+    canTrustProject: false
 });
 
 const detachedWorkspace = (): WorkspaceState => ({
@@ -46,5 +44,5 @@ export const projectSession = (vm: object): ProjectSession => {
     return session;
 };
 
-export const resetProjectSession = (vm: object): ProjectSession =>
+export const detachProjectSession = (vm: object): ProjectSession =>
     Object.assign(projectSession(vm), detachedWorkspace());

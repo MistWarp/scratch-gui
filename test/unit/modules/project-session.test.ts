@@ -1,7 +1,7 @@
 import {describe, expect, jest, test} from '@jest/globals';
 import {
     projectSession,
-    resetProjectSession,
+    detachProjectSession,
     setLoadHandoff,
     takeLoadHandoff
 } from '../../../src/modules/project-session';
@@ -13,8 +13,7 @@ describe('projectSession', () => {
             requireExplicitPush: false,
             approvedRemotes: new Set(),
             historyHydration: null,
-            canTrustProject: false,
-            historyBootstrapError: null
+            canTrustProject: false
         });
     });
 
@@ -36,28 +35,25 @@ describe('projectSession', () => {
     });
 });
 
-describe('resetProjectSession', () => {
+describe('detachProjectSession', () => {
     test('detaches the workspace and keeps what the last load decided', () => {
         const vm = {};
         const session = projectSession(vm);
         const remotes = session.approvedRemotes;
-        const bootstrapError = new Error('No history');
         Object.assign(session, {
             pendingDiskOverwrite: true,
             historyHydration: {key: 'p1', ready: true, manifest: null, promise: null},
-            canTrustProject: true,
-            historyBootstrapError: bootstrapError
+            canTrustProject: true
         });
         remotes.add('https://example.com/imported.git');
 
-        expect(resetProjectSession(vm)).toBe(session);
+        expect(detachProjectSession(vm)).toBe(session);
         expect(session).toEqual({
             pendingDiskOverwrite: false,
             requireExplicitPush: true,
             approvedRemotes: new Set(),
             historyHydration: null,
-            canTrustProject: true,
-            historyBootstrapError: bootstrapError
+            canTrustProject: true
         });
         expect(session.approvedRemotes).not.toBe(remotes);
     });
@@ -65,7 +61,7 @@ describe('resetProjectSession', () => {
     test('only touches the VM it is given', () => {
         const other = {};
         projectSession(other).pendingDiskOverwrite = true;
-        resetProjectSession({});
+        detachProjectSession({});
         expect(projectSession(other).pendingDiskOverwrite).toBe(true);
         expect(projectSession(other).requireExplicitPush).toBe(false);
     });

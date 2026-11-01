@@ -34,7 +34,7 @@ import {
 import {
     closeFileMenu
 } from '../../reducers/menus';
-import {projectSession, resetProjectSession} from '../../modules/project-session';
+import {projectSession, detachProjectSession} from '../../modules/project-session';
 
 // Checked when a file is requested rather than at load time, so tests and embedders can turn the picker off.
 const getSystemFilePicker = () => (
@@ -300,7 +300,7 @@ const SBFileUploaderHOC = function (WrappedComponent) {
                 if (!platform) {
                     detachWorkspace(this.props.vm);
                 } else if (isMwp) {
-                    resetProjectSession(this.props.vm);
+                    detachProjectSession(this.props.vm);
                     adoptImportedProjectHistory(this.props.vm, importedManifest, platform);
                 }
                 // Only an explicit save may publish the imported code/history.

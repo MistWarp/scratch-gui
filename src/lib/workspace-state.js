@@ -1,12 +1,12 @@
 import {rememberPlatformProject, rememberScratchOrigin} from './community/publish.js';
 import {adoptImportedProjectHistory} from './git/project-history.js';
-import {resetProjectSession} from '../modules/project-session';
+import {detachProjectSession} from '../modules/project-session';
 
 const detachWorkspace = vm => {
     rememberPlatformProject(null);
     rememberScratchOrigin(null);
     adoptImportedProjectHistory(vm, null, null);
-    resetProjectSession(vm);
+    detachProjectSession(vm);
     const url = new URL(window.location.href);
     url.hash = '';
     for (const key of ['clone', 'project_url', 'platform_project', 'mw_assets', 'mw_te', 'starter', 'restore']) {
