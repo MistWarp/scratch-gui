@@ -8,14 +8,7 @@ import {closeProjectThemePrompt, setProjectThemeDontAskAgain} from '../reducers/
 import {setTheme} from '../reducers/theme';
 import {Theme} from '../lib/themes';
 import {CustomTheme} from '../lib/themes/custom-themes.js';
-import {readProjectThemeIgnoreMap} from '../lib/components/vm-listener-hoc.jsx';
-import {local} from '../modules/storage';
-
-const IGNORE_STORAGE_KEY = 'mw:ignore-project-theme-prompts';
-
-const saveIgnoreMap = map => {
-    local.writeJSON(IGNORE_STORAGE_KEY, map);
-};
+import {ignoreProjectThemePrompt} from '../lib/project-theme-prompts.js';
 
 class MWProjectThemeModal extends React.Component {
     constructor (props) {
@@ -28,9 +21,7 @@ class MWProjectThemeModal extends React.Component {
 
     persistDontAskAgainIfNeeded () {
         if (!this.props.dontAskAgain || !this.props.promptKey) return;
-        const map = readProjectThemeIgnoreMap();
-        map[this.props.promptKey] = true;
-        saveIgnoreMap(map);
+        ignoreProjectThemePrompt(this.props.promptKey);
     }
 
     handleCancel () {
