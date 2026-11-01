@@ -1,4 +1,5 @@
 import {PROMPT_LIFETIME, publicIdentity, toError, fromError} from './protocol.js';
+import {createStore} from '../../modules/storage';
 
 const EDITOR_ROTUR_METHODS = new Set([
     'notifications.list'
@@ -43,23 +44,21 @@ const createMemoryStore = () => {
     };
 };
 
-const createStorageStore = (getStorage, key) => {
+const createStorageStore = (storage, key) => {
     const memory = createMemoryStore();
+    const store = typeof storage === 'function' ? createStore(storage) : storage;
     return {
         read: () => {
+            if (!store.isAvailable()) return memory.read();
             try {
-                return JSON.parse(getStorage().getItem(key) || 'null');
+                return JSON.parse(store.readString(key) || 'null');
             } catch (e) {
                 return memory.read();
             }
         },
         write: next => {
             memory.write(next);
-            try {
-                getStorage().setItem(key, JSON.stringify(next));
-            } catch (e) {
-                // ignore
-            }
+            store.writeJSON(key, next);
         }
     };
 };

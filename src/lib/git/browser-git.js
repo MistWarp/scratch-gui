@@ -21,6 +21,7 @@ import {
 } from '../rotur/git-api.js';
 import {isStudentSession} from '../rotur/student-flag.js';
 import {projectSession} from '../../modules/project-session';
+import {local, session} from '../../modules/storage';
 
 const FS_NAME = 'mistwarp-git';
 const REPO_DIR = '/repo';
@@ -164,7 +165,7 @@ const stageAll = async (fs, dir, {onProgress} = {}) => {
 
 const getDefaultAuthor = () => {
     try {
-        const saved = JSON.parse(localStorage.getItem('mw:git-author') || 'null');
+        const saved = JSON.parse(local.readString('mw:git-author') || 'null');
         if (saved && typeof saved.name === 'string' && typeof saved.email === 'string') {
             return saved;
         }
@@ -175,11 +176,7 @@ const getDefaultAuthor = () => {
 };
 
 const setDefaultAuthor = author => {
-    try {
-        localStorage.setItem('mw:git-author', JSON.stringify(author));
-    } catch (e) {
-        // ignore
-    }
+    local.writeJSON('mw:git-author', author);
 };
 
 
@@ -212,10 +209,8 @@ const claimWorkspace = name => new Promise(resolve => {
     if (!hasLocks()) return resolve(false);
     navigator.locks.request(`${WORKSPACE_LOCK}${name}`, {ifAvailable: true}, lock => {
         if (lock) {
-            try {
-                localStorage.removeItem(`${ORPHAN_KEY}${name}`);
-            } catch (error) {
-                console.warn('Could not clear orphan mark for project history', error);
+            if (!local.remove(`${ORPHAN_KEY}${name}`)) {
+                console.warn('Could not clear orphan mark for project history');
             }
         }
         resolve(Boolean(lock));
@@ -223,13 +218,7 @@ const claimWorkspace = name => new Promise(resolve => {
     }).catch(() => resolve(false));
 });
 
-const readStoredWorkspace = () => {
-    try {
-        return sessionStorage.getItem(WORKSPACE_SESSION_KEY) || FS_NAME;
-    } catch (error) {
-        return FS_NAME;
-    }
-};
+const readStoredWorkspace = () => session.readString(WORKSPACE_SESSION_KEY) || FS_NAME;
 
 const storedWorkspace = readStoredWorkspace();
 const storedWorkspaceClaim = storedWorkspace === FS_NAME ? Promise.resolve(false) : claimWorkspace(storedWorkspace);
@@ -248,12 +237,12 @@ const deleteOrphanWorkspaces = async current => {
         await navigator.locks.request(`${WORKSPACE_LOCK}${name}`, {ifAvailable: true}, async lock => {
             if (!lock) return;
             const key = `${ORPHAN_KEY}${name}`;
-            const seen = Number(localStorage.getItem(key));
+            const seen = Number(local.readString(key));
             if (!seen) {
-                localStorage.setItem(key, String(Date.now()));
+                local.writeString(key, String(Date.now()));
             } else if (Date.now() - seen >= ORPHAN_GRACE_MS) {
                 await Promise.all([deleteDatabase(name), deleteDatabase(`${name}_lock`)]);
-                localStorage.removeItem(key);
+                local.remove(key);
             }
         });
     }
@@ -294,11 +283,7 @@ const getFs = () => {
                         await raw.writeFile(path, data);
                     }
                 }
-                try {
-                    sessionStorage.setItem(WORKSPACE_SESSION_KEY, name);
-                } catch (error) {
-                    // The current workspace remains usable without session storage.
-                }
+                session.writeString(WORKSPACE_SESSION_KEY, name);
             }
             deleteOrphanWorkspaces(name).catch(() => {});
             return raw;

@@ -1,4 +1,5 @@
 import EventTarget from '../../addons/event-target.js';
+import {local} from '../../modules/storage';
 
 const STORAGE_PREFIX = 'mw:debugger:';
 
@@ -73,12 +74,7 @@ const events = new EventTarget();
 const cache = new Map();
 
 const readSetting = id => {
-    let stored = null;
-    try {
-        stored = localStorage.getItem(STORAGE_PREFIX + id);
-    } catch (e) {
-        void e;
-    }
+    const stored = local.readString(STORAGE_PREFIX + id);
     if (stored === 'true') return true;
     if (stored === 'false') return false;
     return defaults[id] || false;
@@ -103,11 +99,7 @@ if (typeof window !== 'undefined') {
 
 const setSetting = (id, value) => {
     cache.set(id, !!value);
-    try {
-        localStorage.setItem(STORAGE_PREFIX + id, value ? 'true' : 'false');
-    } catch (e) {
-        void e;
-    }
+    local.writeBoolean(STORAGE_PREFIX + id, !!value);
     const event = new CustomEvent('change');
     event.settingId = id;
     event.value = value;

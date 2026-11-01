@@ -1,5 +1,6 @@
 import {getRotur, ensureScopes} from './client.js';
 import {currentScope, invokeProjectMethod} from './project-methods.js';
+import {local, session} from '../../modules/storage';
 
 const GRANTS_KEY = 'mw:rotur-grants';
 
@@ -9,31 +10,23 @@ const GRANTS_KEY = 'mw:rotur-grants';
 // the project cannot pick which grant it reads.
 const readGrants = () => {
     try {
-        return JSON.parse(localStorage.getItem(GRANTS_KEY) || '{}') || {};
+        return JSON.parse(local.readString(GRANTS_KEY) || '{}') || {};
     } catch (_) {
         return {};
     }
 };
 
 const writeGrants = grants => {
-    try {
-        localStorage.setItem(GRANTS_KEY, JSON.stringify(grants));
-    } catch (_) {
-        // ignore private-mode / quota failures
-    }
+    local.writeJSON(GRANTS_KEY, grants);
 };
 
 const projectKey = meta => {
     if (meta && meta.projectId) {
         return `id:${meta.projectId}`;
     }
-    try {
-        const stored = sessionStorage.getItem('mw:mistwarp-current-project');
-        if (stored) {
-            return `id:${stored}`;
-        }
-    } catch (_) {
-        // ignore
+    const stored = session.readString('mw:mistwarp-current-project');
+    if (stored) {
+        return `id:${stored}`;
     }
     return `name:${(meta && meta.name) || 'untitled'}`;
 };
@@ -72,18 +65,14 @@ const ACTIVITY_GRANTS_KEY = 'mw:rotur-activity-grants';
 
 const readActivityGrants = () => {
     try {
-        return JSON.parse(localStorage.getItem(ACTIVITY_GRANTS_KEY) || '{}') || {};
+        return JSON.parse(local.readString(ACTIVITY_GRANTS_KEY) || '{}') || {};
     } catch (_) {
         return {};
     }
 };
 
 const writeActivityGrants = grants => {
-    try {
-        localStorage.setItem(ACTIVITY_GRANTS_KEY, JSON.stringify(grants));
-    } catch (_) {
-        // ignore
-    }
+    local.writeJSON(ACTIVITY_GRANTS_KEY, grants);
 };
 
 // Whether an activity method (socket presence) may run right now, given the

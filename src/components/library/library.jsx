@@ -15,6 +15,7 @@ import RemovedTrademarks from '../tw-removed-trademarks/removed-trademarks.jsx';
 import {APP_NAME} from '../../lib/constants/brand.js';
 
 import styles from './library.css';
+import {local} from '../../modules/storage';
 
 const messages = defineMessages({
     filterPlaceholder: {
@@ -83,11 +84,7 @@ class LibraryComponent extends React.Component {
         }
 
         if (this.state.favorites !== prevState.favorites) {
-            try {
-                localStorage.setItem(this.getFavoriteStorageKey(), JSON.stringify(this.state.favorites));
-            } catch (error) {
-                // ignore
-            }
+            local.writeJSON(this.getFavoriteStorageKey(), this.state.favorites);
         }
     }
     componentWillUnmount () {
@@ -98,12 +95,7 @@ class LibraryComponent extends React.Component {
         this.props.onItemSelected(this.getFilteredData()[id]);
     }
     readFavoritesFromStorage () {
-        let data;
-        try {
-            data = JSON.parse(localStorage.getItem(this.getFavoriteStorageKey()));
-        } catch (error) {
-            // ignore
-        }
+        let data = local.readJSON(this.getFavoriteStorageKey(), null);
         if (!Array.isArray(data)) {
             data = [];
         }

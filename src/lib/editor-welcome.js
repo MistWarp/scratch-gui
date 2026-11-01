@@ -1,4 +1,5 @@
 import {request} from './community/api.js';
+import {local} from '../modules/storage';
 
 const STORAGE_KEY = 'mw:editor-welcome';
 const DISMISSED = 'dismissed';
@@ -46,21 +47,11 @@ const hasNoOwnProjects = async () => {
 };
 
 const isEditorWelcomeDismissed = () => {
-    try {
-        return localStorage.getItem(STORAGE_KEY) === DISMISSED;
-    } catch (e) {
-        return true;
-    }
+    if (!local.isAvailable()) return true;
+    return local.readString(STORAGE_KEY) === DISMISSED;
 };
 
-const dismissEditorWelcome = () => {
-    try {
-        localStorage.setItem(STORAGE_KEY, DISMISSED);
-    } catch (e) {
-        return false;
-    }
-    return true;
-};
+const dismissEditorWelcome = () => local.writeString(STORAGE_KEY, DISMISSED);
 
 export {
     STORAGE_KEY,

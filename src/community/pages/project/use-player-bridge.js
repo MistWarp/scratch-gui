@@ -4,6 +4,7 @@ import {getUsernameOverride} from '../../../lib/rotur/cloud-sync.js';
 import {useEmbedFetchBridge, useEmbedStorageBridge} from './use-embed-bridges.js';
 import useGamesBridge from './use-games-bridge.js';
 import useRoturBridge from './use-rotur-bridge.js';
+import {local} from '../../../modules/storage';
 
 // Everything the sandboxed player frame can ask this page for: project files, MistWarp
 // Games saves and purchases, Rotur calls, storage, and who is signed in.
@@ -40,7 +41,7 @@ const usePlayerBridge = ({id, project, user, userLoading, stageFrame}) => {
         try {
             const frame = stageFrame.current;
             if (!frame || !frame.contentWindow) return;
-            const theme = localStorage.getItem('tw:theme');
+            const theme = local.readString('tw:theme');
             frame.contentWindow.postMessage({
                 type: 'mw:apply-theme',
                 theme,

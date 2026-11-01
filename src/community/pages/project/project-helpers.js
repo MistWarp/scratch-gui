@@ -1,5 +1,6 @@
 import api from '../../api';
 import {sameUser} from '../../format';
+import {local} from '../../../modules/storage';
 
 // The MistWarp session a request is sent with; it changes when the viewer signs in, out, or switches account.
 export const currentSession = () => (typeof api.loadSession === 'function' ? api.loadSession() : null);
@@ -24,20 +25,10 @@ export const openPullForRemix = (pulls, targetId, remixProjectId) => (pulls || [
 ));
 const BOUNTY_CLAIM_KEY = 'mw:bounty-claim:';
 export const rememberBountyClaim = (projectId, bountyId) => {
-    try {
-        if (bountyId) localStorage.setItem(`${BOUNTY_CLAIM_KEY}${projectId}`, bountyId);
-        else localStorage.removeItem(`${BOUNTY_CLAIM_KEY}${projectId}`);
-    } catch (e) {
-        // Bounty selection is a convenience. The contribution form still works without storage.
-    }
+    if (bountyId) local.writeString(`${BOUNTY_CLAIM_KEY}${projectId}`, String(bountyId));
+    else local.remove(`${BOUNTY_CLAIM_KEY}${projectId}`);
 };
-export const recalledBountyClaim = projectId => {
-    try {
-        return localStorage.getItem(`${BOUNTY_CLAIM_KEY}${projectId}`) || '';
-    } catch (e) {
-        return '';
-    }
-};
+export const recalledBountyClaim = projectId => local.readString(`${BOUNTY_CLAIM_KEY}${projectId}`) || '';
 export const applyReactionResult = (project, result) => ({
     ...project,
     loveCount: result.hearts,

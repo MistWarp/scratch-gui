@@ -36,6 +36,7 @@ import {defaultStageSize} from '../../reducers/custom-stage-size';
 import {openSimpleDialog} from '../../reducers/modals';
 import {isSplitEditor} from '../account/origins.js';
 import {showStandardAlert} from '../../reducers/alerts';
+import {local} from '../../modules/storage';
 
 const USERNAME_KEY = 'tw:username';
 
@@ -70,23 +71,6 @@ const restoreRouterURL = (router, routerState) => {
 /**
  * The State Manager is responsible for managing persistent state and the URL.
  */
-
-const setLocalStorage = (key, value) => {
-    try {
-        localStorage.setItem(key, value);
-    } catch (e) {
-        // ignore
-    }
-};
-
-const getLocalStorage = key => {
-    try {
-        return localStorage.getItem(key);
-    } catch (e) {
-        // ignore
-    }
-    return null;
-};
 
 const readHashProjectId = () => {
     const match = location.hash.match(/#(\d+)/);
@@ -349,7 +333,7 @@ const TWStateManager = function (WrappedComponent) {
                 this.doNotPersistUsername = username;
                 this.props.onSetUsername(username);
             } else {
-                const persistentUsername = this.props.isEmbedded ? null : getLocalStorage(USERNAME_KEY);
+                const persistentUsername = this.props.isEmbedded ? null : local.readString(USERNAME_KEY);
                 if (persistentUsername === null) {
                     const randomUsername = generateRandomUsername();
                     this.props.onSetUsername(randomUsername);
@@ -459,7 +443,7 @@ const TWStateManager = function (WrappedComponent) {
             }
             if (this.props.username !== prevProps.username && this.props.username !== this.doNotPersistUsername) {
                 // TODO: this always restores the current username once at startup, which is unnecessary
-                setLocalStorage(USERNAME_KEY, this.props.username);
+                local.writeString(USERNAME_KEY, String(this.props.username));
 
                 // Check if we have a pending room code to handle now that username is available
                 if (this.pendingRoomCode && this.props.username && !prevProps.username) {
@@ -682,7 +666,7 @@ const TWStateManager = function (WrappedComponent) {
                 this.props.onSetUsername(name);
                 return;
             }
-            const nickname = getLocalStorage(USERNAME_KEY);
+            const nickname = local.readString(USERNAME_KEY);
             this.props.onSetUsername(nickname === null ? generateRandomUsername() : nickname);
         }
         handleRoomCode (roomCode) {

@@ -8,6 +8,7 @@ import {
     LANGUAGE_KEY, LEGACY_LANGUAGE_KEY, locales, matchLocale, readPreference, resolveLocale,
     setCommunityLocale, setCommunityFormatter
 } from './locale';
+import {local} from '../modules/storage';
 
 addLocaleData(localeData);
 export const LOCALES = [
@@ -109,10 +110,7 @@ export const CommunityIntlProvider = ({children, embedded = false, locale: embed
     }, [requested, attempt]);
     const setPreference = useCallback(value => {
         const next = value === 'auto' ? 'auto' : matchLocale(value) || 'auto';
-        try {
-            localStorage.setItem(LANGUAGE_KEY, next);
-            localStorage.removeItem(LEGACY_LANGUAGE_KEY);
-        } catch (e) { /* Keep the in-memory choice when storage is unavailable. */ }
+        if (local.writeString(LANGUAGE_KEY, next)) local.remove(LEGACY_LANGUAGE_KEY);
         // An explicit choice replaces an earlier link's language override.
         const url = new URL(window.location.href);
         url.searchParams.delete('locale');

@@ -1,3 +1,5 @@
+import {local} from '../modules/storage';
+
 const SET_SHORTCUT = 'scratch-gui/shortcuts/SET_SHORTCUT';
 const RESET_SHORTCUT = 'scratch-gui/shortcuts/RESET_SHORTCUT';
 const RESET_ALL_SHORTCUTS = 'scratch-gui/shortcuts/RESET_ALL_SHORTCUTS';
@@ -11,12 +13,15 @@ const reportStorageError = (message, error) => {
     console.warn(message, error);
 };
 
+const reportStorageFailure = message => {
+    if (local.isAvailable()) console.warn(message);
+};
+
 const loadFromStorage = () => {
+    const saved = local.readString('tw:shortcuts');
+    if (!saved) return null;
     try {
-        const saved = localStorage.getItem('tw:shortcuts');
-        if (saved) {
-            return JSON.parse(saved);
-        }
+        return JSON.parse(saved);
     } catch (e) {
         reportStorageError('Failed to load shortcuts from storage:', e);
     }
@@ -24,11 +29,7 @@ const loadFromStorage = () => {
 };
 
 const persistToStorage = customShortcuts => {
-    try {
-        localStorage.setItem('tw:shortcuts', JSON.stringify(customShortcuts));
-    } catch (e) {
-        reportStorageError('Failed to save shortcuts:', e);
-    }
+    if (!local.writeJSON('tw:shortcuts', customShortcuts)) reportStorageFailure('Failed to save shortcuts');
 };
 
 const initialState = {
@@ -61,22 +62,14 @@ const reducer = function (state, action) {
         });
     }
     case RESET_ALL_SHORTCUTS:
-        try {
-            localStorage.removeItem('tw:shortcuts');
-        } catch (e) {
-            reportStorageError('Failed to clear shortcuts:', e);
-        }
+        if (!local.remove('tw:shortcuts')) reportStorageFailure('Failed to clear shortcuts');
         
         return Object.assign({}, state, {
             customShortcuts: {}
         });
     case LOAD_SHORTCUTS: {
         const loadedShortcuts = action.customShortcuts || {};
-        try {
-            localStorage.setItem('tw:shortcuts', JSON.stringify(loadedShortcuts));
-        } catch (e) {
-            reportStorageError('Failed to save shortcuts:', e);
-        }
+        persistToStorage(loadedShortcuts);
 
         return Object.assign({}, state, {
             customShortcuts: loadedShortcuts

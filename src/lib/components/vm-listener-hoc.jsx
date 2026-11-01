@@ -30,6 +30,7 @@ import {Theme} from '../themes';
 import {CustomTheme} from '../themes/custom-themes.js';
 import implementGuiAPI from '../api/extension-gui';
 import {isBlocksEditorVisible} from '../editor-visibility.js';
+import {local} from '../../modules/storage';
 
 const projectThemeSuppressed = () => {
     try {
@@ -54,9 +55,9 @@ let compileErrorCounter = 0;
 
 const PROJECT_THEME_IGNORE_STORAGE_KEY = 'mw:ignore-project-theme-prompts';
 
-const readIgnoreMap = () => {
+export const readProjectThemeIgnoreMap = () => {
     try {
-        const raw = localStorage.getItem(PROJECT_THEME_IGNORE_STORAGE_KEY);
+        const raw = local.readString(PROJECT_THEME_IGNORE_STORAGE_KEY);
         if (!raw) return {};
         const parsed = JSON.parse(raw);
         return parsed && typeof parsed === 'object' ? parsed : {};
@@ -219,7 +220,7 @@ const vmListenerHOC = function (WrappedComponent) {
             const promptKey = computePromptKey(stored.mistwarpTheme);
             if (!promptKey) return;
 
-            const ignored = readIgnoreMap();
+            const ignored = readProjectThemeIgnoreMap();
             if (ignored[promptKey]) return;
 
             this.props.onOpenProjectThemePrompt(stored.mistwarpTheme, promptKey);

@@ -20,6 +20,7 @@ import {createEditorData} from '../lib/account/frame-editor-data.js';
 import {analyticsChoice, setAnalyticsEnabled} from '../community/analytics.js';
 import FramePrompt, {supportsVisibilityCheck} from '../components/account-frame/frame-prompt.jsx';
 import {applyThemeVisuals, detectTheme} from '../lib/themes/themePersistance.js';
+import {local} from '../modules/storage';
 
 const REVIEW_CHANNEL = 'mw:account-review';
 const RESTORE_WAIT = 10000;
@@ -151,19 +152,9 @@ const PRESENCE_KEYS = [null, ROTUR_SETTINGS_KEY, MINOR_ACCOUNT_KEY];
 const PRESENCE_SENT_KEY = 'mw:presence-sent-at';
 
 const presenceSlot = {
-    get: () => {
-        try {
-            return Number(localStorage.getItem(PRESENCE_SENT_KEY));
-        } catch (e) {
-            return 0;
-        }
-    },
+    get: () => Number(local.readString(PRESENCE_SENT_KEY)),
     set: value => {
-        try {
-            localStorage.setItem(PRESENCE_SENT_KEY, String(value));
-        } catch (e) {
-            return;
-        }
+        local.writeString(PRESENCE_SENT_KEY, String(value));
     }
 };
 
@@ -193,7 +184,7 @@ const startFrame = () => {
         }),
         mistSession: identity.getMistSession,
         tokenRejected: editorTokenRejected,
-        store: createStorageStore(() => localStorage, EDITOR_SESSION_KEY),
+        store: createStorageStore(local, EDITOR_SESSION_KEY),
         lock: lockEditorSession,
         callRotur,
         projectRotur: createProjectRotur({prompt, getUsername}),

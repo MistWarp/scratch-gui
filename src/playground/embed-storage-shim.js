@@ -1,5 +1,6 @@
 import '../lib/utils/tw-polyfill';
 import * as fakeIndexedDB from 'fake-indexeddb';
+import {local, session} from '../modules/storage';
 
 const originOf = url => {
     try {
@@ -155,14 +156,7 @@ const createBridgeStorage = (projectId, seed) => {
     });
 };
 
-const storageIsBlocked = name => {
-    try {
-        window[name].getItem('__mw_probe__');
-        return false;
-    } catch (e) {
-        return true;
-    }
-};
+const storageIsBlocked = name => !(name === 'localStorage' ? local : session).isAvailable();
 
 const createMemoryStorage = () => {
     const map = new Map();
@@ -335,8 +329,8 @@ if (blockedStorage.length) {
         const themeParams = new URLSearchParams(window.location.search);
         const theme = themeParams.get('theme');
         const themeCustom = themeParams.get('theme_custom');
-        if (theme) window.localStorage.setItem('tw:theme', theme);
-        if (themeCustom) window.localStorage.setItem('tw:custom-themes', themeCustom);
+        const themeStored = !theme || local.writeString('tw:theme', theme);
+        if (themeStored && themeCustom) local.writeString('tw:custom-themes', themeCustom);
     } catch (e) {
         // ignore
     }

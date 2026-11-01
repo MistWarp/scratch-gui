@@ -118,6 +118,12 @@ describe('createStore', () => {
         expect(createStore(() => area).keys()).toEqual(['a', 'b']);
     });
 
+    test('reports whether the area can be read', () => {
+        expect(createStore(memoryArea).isAvailable()).toBe(true);
+        expect(createStore(() => throwingArea).isAvailable()).toBe(false);
+        expect(createStore(() => null).isAvailable()).toBe(false);
+    });
+
     test('removes keys', () => {
         const area = memoryArea();
         area.entries.set('a', '1');

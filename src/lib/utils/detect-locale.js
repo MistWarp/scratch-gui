@@ -1,4 +1,5 @@
 import matchLocale from './match-locale';
+import {local} from '../../modules/storage';
 
 export const LANGUAGE_KEY = 'tw:language';
 
@@ -8,10 +9,8 @@ const detectLocale = supportedLocales => {
         const match = matchLocale(value, supportedLocales);
         if (match) return match;
     }
-    try {
-        const match = matchLocale(localStorage.getItem(LANGUAGE_KEY), supportedLocales);
-        if (match) return match;
-    } catch (e) { /* Browser language still works when storage is unavailable. */ }
+    const storedMatch = matchLocale(local.readString(LANGUAGE_KEY), supportedLocales);
+    if (storedMatch) return storedMatch;
     const browser = window.navigator;
     // navigator.language is the primary choice. The remaining preferences provide fallbacks.
     for (const language of [browser.userLanguage || browser.language, ...(browser.languages || [])]) {

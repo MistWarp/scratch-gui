@@ -19,6 +19,7 @@ import {
 } from '../lib/mw-editor-defaults';
 import {setCloud} from '../reducers/tw';
 import {normalizeCustomFramerate} from '../lib/utils/framerate';
+import {local} from '../modules/storage';
 
 
 class UsernameModal extends React.Component {
@@ -26,7 +27,7 @@ class UsernameModal extends React.Component {
         super(props);
 
         this.state = {
-            storeThemeInProject: localStorage.getItem('mw:store-theme-in-project') === 'true',
+            storeThemeInProject: local.readString('mw:store-theme-in-project') === 'true',
             hideOperatorArrows: getHideOperatorArrows(),
             vanillaPalette: getVanillaPalette(),
             disableCompiler: getDisableCompiler(),
@@ -189,11 +190,7 @@ class UsernameModal extends React.Component {
 
     handleStoreThemeInProjectChange (e) {
         this.setState({storeThemeInProject: e.target.checked});
-        try {
-            localStorage.setItem('mw:store-theme-in-project', e.target.checked);
-        } catch (err) {
-            // ignore
-        }
+        local.writeString('mw:store-theme-in-project', String(e.target.checked));
     }
 
     handleHideOperatorArrowsChange (e) {

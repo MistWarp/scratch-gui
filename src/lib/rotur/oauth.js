@@ -15,6 +15,7 @@
 import {
     sharedCredentials, sharingCredentials, subscribeSharedCredentials, withSharedLease
 } from '../account/shared-credentials.js';
+import {session as sessionStore} from '../../modules/storage';
 
 const config = {
     clientId: 'app_1938b6a87799f862',
@@ -234,9 +235,10 @@ const signIn = async (scopes, {redirectFallback = true} = {}) => {
     const state = randomString();
     if (!popup) {
         if (!redirectFallback) throw oauthError('popup_blocked', 'Allow pop-ups for this site to sign in with Rotur');
-        sessionStorage.setItem(PENDING_KEY, JSON.stringify({
+        const saved = sessionStore.writeJSON(PENDING_KEY, {
             state, verifier, returnTo: `${location.pathname}${location.search}${location.hash}`
-        }));
+        });
+        if (!saved) throw oauthError('storage_unavailable', 'Allow site storage to sign in with Rotur');
         config.navigate(authorizeUrl({scopes, state, challenge, redirectUri: redirectUriFor(false), popup: false}));
         return new Promise(() => {});
     }
@@ -272,13 +274,8 @@ const completeRedirect = async () => {
         window.close();
         return null;
     }
-    let pending = null;
-    try {
-        pending = JSON.parse(sessionStorage.getItem(PENDING_KEY) || 'null');
-        sessionStorage.removeItem(PENDING_KEY);
-    } catch (e) {
-        pending = null;
-    }
+    let pending = sessionStore.readJSON(PENDING_KEY, null);
+    if (!sessionStore.remove(PENDING_KEY)) pending = null;
     // Only a sign-in this tab started counts. Anything else is ignored, so a
     // link can't sign someone in.
     if (!pending || pending.state !== params.get('state')) return null;
@@ -291,9 +288,7 @@ const completeRedirect = async () => {
             throw oauthError(params.get('error'), params.get('error_description') || 'Rotur sign-in failed');
         }
     } catch (error) {
-        try {
-            sessionStorage.setItem(REDIRECT_ERROR_KEY, error.message || 'Rotur sign-in failed');
-        } catch (e) {
+        if (!sessionStore.writeString(REDIRECT_ERROR_KEY, error.message || 'Rotur sign-in failed')) {
             session = null;
         }
     } finally {
@@ -431,13 +426,9 @@ if (typeof window !== 'undefined') {
 }
 
 const takeRedirectError = () => {
-    try {
-        const message = sessionStorage.getItem(REDIRECT_ERROR_KEY);
-        sessionStorage.removeItem(REDIRECT_ERROR_KEY);
-        return message || '';
-    } catch (e) {
-        return '';
-    }
+    const message = sessionStore.readString(REDIRECT_ERROR_KEY);
+    if (!sessionStore.remove(REDIRECT_ERROR_KEY)) return '';
+    return message || '';
 };
 
 export {

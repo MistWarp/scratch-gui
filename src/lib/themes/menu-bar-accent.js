@@ -1,3 +1,5 @@
+import {local} from '../../modules/storage';
+
 const ACCENT_MENU_BAR_KEY = 'mw:accent-menu-bar';
 const COMPACT_SAVE_KEY = 'mw:compact-save';
 const MENU_BAR_TEXT_KEY = 'mw:menu-bar-text';
@@ -16,49 +18,25 @@ const notifyCloudSync = part => {
     }
 };
 
-const getAccentMenuBar = () => {
-    try {
-        return localStorage.getItem(ACCENT_MENU_BAR_KEY) !== 'false';
-    } catch (_) {
-        return true;
-    }
-};
+const getAccentMenuBar = () => local.readString(ACCENT_MENU_BAR_KEY) !== 'false';
 
 const setAccentMenuBar = enabled => {
-    try {
-        localStorage.setItem(ACCENT_MENU_BAR_KEY, enabled ? 'true' : 'false');
-    } catch (_) {
-        // ignore
-    }
+    local.writeBoolean(ACCENT_MENU_BAR_KEY, Boolean(enabled));
     notifyCloudSync('accent');
 };
 
 const getMenuBarText = () => {
-    try {
-        const stored = localStorage.getItem(MENU_BAR_TEXT_KEY);
-        return MENU_BAR_TEXT_OPTIONS.includes(stored) ? stored : MENU_BAR_TEXT_DEFAULT;
-    } catch (_) {
-        return MENU_BAR_TEXT_DEFAULT;
-    }
+    const stored = local.readString(MENU_BAR_TEXT_KEY);
+    return MENU_BAR_TEXT_OPTIONS.includes(stored) ? stored : MENU_BAR_TEXT_DEFAULT;
 };
 
 const setMenuBarText = value => {
     const next = MENU_BAR_TEXT_OPTIONS.includes(value) ? value : MENU_BAR_TEXT_DEFAULT;
-    try {
-        localStorage.setItem(MENU_BAR_TEXT_KEY, next);
-    } catch (_) {
-        // ignore
-    }
+    local.writeString(MENU_BAR_TEXT_KEY, next);
     notifyCloudSync('text');
 };
 
-const getCompactSave = () => {
-    try {
-        return localStorage.getItem(COMPACT_SAVE_KEY) === 'true';
-    } catch (_) {
-        return false;
-    }
-};
+const getCompactSave = () => local.readString(COMPACT_SAVE_KEY) === 'true';
 
 const applyCompactSave = () => {
     if (typeof document === 'undefined') return;
@@ -66,11 +44,7 @@ const applyCompactSave = () => {
 };
 
 const setCompactSave = enabled => {
-    try {
-        localStorage.setItem(COMPACT_SAVE_KEY, enabled ? 'true' : 'false');
-    } catch (_) {
-        // ignore
-    }
+    local.writeBoolean(COMPACT_SAVE_KEY, Boolean(enabled));
     applyCompactSave();
     notifyCloudSync('compactSave');
 };

@@ -1,4 +1,5 @@
 import {isStudentSession} from '../rotur/student-flag.js';
+import {local, session} from '../../modules/storage';
 
 const LAYOUT_KEY = 'mw:chat-layout';
 const OPEN_KEY = 'mw:chat-open';
@@ -10,7 +11,7 @@ const clampWidth = width => Math.round(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, N
 
 const readLayout = () => {
     try {
-        const stored = JSON.parse(localStorage.getItem(LAYOUT_KEY) || '{}');
+        const stored = JSON.parse(local.readString(LAYOUT_KEY) || '{}');
         return {
             mode: stored.mode === 'floating' ? 'floating' : 'docked',
             space: stored.space === 'dms' ? 'dms' : 'server',
@@ -35,24 +36,15 @@ const requestedByUrl = () => {
 const readOpen = () => {
     if (isStudentSession()) return false;
     if (requestedByUrl()) return true;
-    try {
-        return sessionStorage.getItem(OPEN_KEY) === '1';
-    } catch (e) {
-        return false;
-    }
+    return session.readString(OPEN_KEY) === '1';
 };
 
 let state = {...readLayout(), open: readOpen()};
 const listeners = new Set();
 
 const persist = () => {
-    try {
-        const layout = {mode: state.mode, space: state.space, width: state.width, floating: state.floating};
-        localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
-        sessionStorage.setItem(OPEN_KEY, state.open ? '1' : '0');
-    } catch (e) {
-        return null;
-    }
+    const layout = {mode: state.mode, space: state.space, width: state.width, floating: state.floating};
+    if (local.writeJSON(LAYOUT_KEY, layout)) session.writeString(OPEN_KEY, state.open ? '1' : '0');
 };
 
 const update = patch => {

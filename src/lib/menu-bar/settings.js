@@ -1,3 +1,4 @@
+import {local, readLegacyAddonSettings} from '../../modules/storage';
 const STORAGE_PREFIX = 'mw:menu-bar:';
 const CHANGE_EVENT = 'mw-menu-bar-settings-changed';
 
@@ -41,16 +42,8 @@ const DEFINITIONS = [
 
 const byId = Object.fromEntries(DEFINITIONS.map(definition => [definition.id, definition]));
 
-const readLegacy = () => {
-    try {
-        return JSON.parse(localStorage.getItem('tw:addons')) || {};
-    } catch (_) {
-        return {};
-    }
-};
-
 const legacyValue = id => {
-    const addons = readLegacy();
+    const addons = readLegacyAddonSettings();
     const blockCount = addons['block-count'] || addons['tw-project-info'];
 
     switch (id) {
@@ -80,12 +73,7 @@ const normalize = (definition, value) => {
 const getSetting = id => {
     const definition = byId[id];
     if (!definition) return null;
-    let stored = null;
-    try {
-        stored = localStorage.getItem(`${STORAGE_PREFIX}${id}`);
-    } catch (_) {
-        return definition.default;
-    }
+    const stored = local.readString(`${STORAGE_PREFIX}${id}`);
     if (stored !== null) return normalize(definition, stored);
     const legacy = legacyValue(id);
     return legacy === null || typeof legacy === 'undefined' ?
@@ -98,11 +86,12 @@ const setSetting = (id, value) => {
     const definition = byId[id];
     if (!definition) return;
     const normalized = normalize(definition, value);
-    try {
-        localStorage.setItem(`${STORAGE_PREFIX}${id}`, String(normalized));
-        require('../rotur/cloud-sync.js').notifyLocalChange('menuBar.features');
-    } catch (_) {
-        // ignore
+    if (local.writeString(`${STORAGE_PREFIX}${id}`, String(normalized))) {
+        try {
+            require('../rotur/cloud-sync.js').notifyLocalChange('menuBar.features');
+        } catch (_) {
+            // ignore
+        }
     }
     window.dispatchEvent(new CustomEvent(CHANGE_EVENT, {detail: {id, value: normalized}}));
 };
