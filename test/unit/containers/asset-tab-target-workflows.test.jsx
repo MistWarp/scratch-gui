@@ -60,28 +60,45 @@ describe('asset tab target changes', () => {
         expect(tab.setState).not.toHaveBeenCalled();
     });
 
-    test.each([
-        ['costume', CostumeTab, 'handleDeleteCostume', 'deleteCostume'],
-        ['sound', SoundTab, 'handleDeleteSound', 'deleteSound']
-    ])('ignores a repeated %s delete before the asset list updates', (
-        _name, Component, handler, vmMethod
-    ) => {
-        const tab = Object.create(Component.prototype);
+    test('ignores a repeated costume delete before the asset list updates', () => {
+        const tab = Object.create(CostumeTab.prototype);
+        tab.setState = jest.fn();
+        tab.props = {
+            dispatchUpdateRestore: jest.fn(),
+            onShowDeleteError: jest.fn(),
+            vm: {
+                editingTarget: {sprite: {sounds: [{}, {}]}},
+                deleteCostume: jest.fn(() => jest.fn())
+            }
+        };
+
+        expect(tab.handleDeleteCostume(0)).toBe(true);
+        expect(tab.handleDeleteCostume(0)).toBe(false);
+        expect(tab.props.vm.deleteCostume).toHaveBeenCalledTimes(1);
+        expect(tab.props.dispatchUpdateRestore).toHaveBeenCalledTimes(1);
+    });
+
+    test('deletes the next sound that moves into a deleted slot', () => {
+        const sounds = [{}, {}];
+        const tab = Object.create(SoundTab.prototype);
         tab.setState = jest.fn();
         tab.state = {selectedSoundIndex: 0};
         tab.props = {
             dispatchUpdateRestore: jest.fn(),
             onShowDeleteError: jest.fn(),
             vm: {
-                editingTarget: {sprite: {sounds: [{}, {}]}},
-                [vmMethod]: jest.fn(() => jest.fn())
+                editingTarget: {sprite: {sounds}},
+                deleteSound: jest.fn(() => {
+                    sounds.shift();
+                    return jest.fn();
+                })
             }
         };
 
-        expect(tab[handler](0)).toBe(true);
-        expect(tab[handler](0)).toBe(false);
-        expect(tab.props.vm[vmMethod]).toHaveBeenCalledTimes(1);
-        expect(tab.props.dispatchUpdateRestore).toHaveBeenCalledTimes(1);
+        expect(tab.handleDeleteSound(0)).toBe(true);
+        expect(tab.handleDeleteSound(0)).toBe(true);
+        expect(tab.props.vm.deleteSound).toHaveBeenCalledTimes(2);
+        expect(tab.props.dispatchUpdateRestore).toHaveBeenCalledTimes(2);
     });
 
     test('a delayed sound duplicate does not change selection in the newly selected sprite', async () => {
