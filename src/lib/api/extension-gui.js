@@ -1,8 +1,8 @@
 import LazyScratchBlocks from '../tw-lazy-scratch-blocks';
-import AddonHooks from '../../addons/hooks';
 
 import WindowManager from '../../addons/window-system/window-manager';
 import * as BrowserGit from '../git/browser-git';
+import {whenScratchBlocks} from '../../modules/blocks-registry';
 
 /**
  * Implements Scratch.gui API for unsandboxed extensions.
@@ -19,14 +19,7 @@ const implementGuiAPI = Scratch => {
          *
          * @returns {Promise<any>} Promise that may eventually resolve to ScratchBlocks
          */
-        getBlockly: () => {
-            if (AddonHooks.blockly) {
-                return Promise.resolve(AddonHooks.blockly);
-            }
-            return new Promise(resolve => {
-                AddonHooks.blocklyCallbacks.push(() => resolve(AddonHooks.blockly));
-            });
-        },
+        getBlockly: () => whenScratchBlocks(),
 
         /**
          * Get the internal ScratchBlocks object as soon as possible. This lets you access it even

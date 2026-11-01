@@ -75,6 +75,7 @@ import {isStudentSession} from '../lib/rotur/student-flag.js';
 import {gentlyRequestPersistentStorage} from '../lib/utils/storage-request.js';
 import CollaborationService from '../lib/collaboration/index.js';
 import {trackWorkspaceUndo, untrackWorkspaceUndo} from '../lib/undo-history.js';
+import {getActiveWorkspace, setActiveWorkspace, setScratchBlocks} from '../modules/blocks-registry';
 
 // TW: Strings we add to scratch-blocks are localized here
 const messages = defineMessages({
@@ -131,9 +132,10 @@ class Blocks extends React.Component {
         this.ScratchBlocks = VMScratchBlocks(props.vm, false);
 
         window.ScratchBlocks = this.ScratchBlocks;
+        setScratchBlocks(this.ScratchBlocks);
         AddonHooks.blockly = this.ScratchBlocks;
         AddonHooks.blocklyCallbacks.forEach(i => i());
-        AddonHooks.blocklyCallbacks.length = [];
+        AddonHooks.blocklyCallbacks.length = 0;
 
         installSystemClipboardForBlocks(this.ScratchBlocks, props.vm, props.onShowImportError);
         initDevInspector(props.vm, this.ScratchBlocks);
@@ -265,6 +267,7 @@ class Blocks extends React.Component {
         this.blocks.addEventListener('dragover', this.handleScriptDragOver);
         this.blocks.addEventListener('drop', this.handleScriptDrop);
         AddonHooks.blocklyWorkspace = this.workspace;
+        setActiveWorkspace(this.workspace);
         trackWorkspaceUndo(this.workspace);
 
         // Register buttons under new callback keys for creating variables,
@@ -493,6 +496,7 @@ class Blocks extends React.Component {
         collaborationService.detachFromWorkspace();
 
         AddonHooks.blocklyWorkspace = null;
+        if (getActiveWorkspace() === this.workspace) setActiveWorkspace(null);
     }
     applyEditorModeChange (prevProps) {
         if (this.props.editorMode === prevProps.editorMode) return;

@@ -3,6 +3,7 @@ import {isBlocksEditorVisible} from '../editor-visibility.js';
 import {showBlocksTab} from '../../reducers/editor-tab.js';
 import {whenWorkspaceReady} from '../code-mode/workspace-ready.js';
 import debuggerStyles from '../../components/tw-debugger/debugger.module.css';
+import {getScratchBlocks} from '../../modules/blocks-registry';
 
 const COLOR_CLASSES = [
     'motion',
@@ -22,8 +23,6 @@ const COLOR_CLASSES = [
 ];
 
 const createBlockHelpers = vm => {
-    const getScratchBlocks = () => window.ScratchBlocks;
-
     const getBlock = (target, id) =>
         target.blocks.getBlock(id) || vm.runtime.flyoutBlocks.getBlock(id);
 

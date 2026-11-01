@@ -3,9 +3,9 @@ import * as bundledModule1 from 'jsoneditor/dist/jsoneditor.css?global';
 import * as bundledModule2 from './dev-inspector.module.css';
 
 import WindowManager from '../../addons/window-system/window-manager.js';
-import AddonHooks from '../../addons/hooks.js';
 import {createModalSidebar} from '../../components/modal-sidebar/modal-sidebar-vanilla.js';
 import copyText from '../utils/copy-text.js';
+import {getActiveWorkspace} from '../../modules/blocks-registry';
 
 let inspectorStyles;
 let jsonEditorLoader;
@@ -216,7 +216,7 @@ export const initDevInspector = (vm, Blockly) => {
     const findBlockById = blockId => {
         if (!blockId) return null;
         try {
-            const workspace = AddonHooks.blocklyWorkspace;
+            const workspace = getActiveWorkspace();
             if (workspace && workspace.getBlockById) {
                 const b = workspace.getBlockById(blockId);
                 if (b) return b;
