@@ -31,10 +31,10 @@ const StarterGuide = ({intl, vm, onImport}) => {
         const saved = event => {
             if (event.detail.vm === vm) setStarter(readStarter());
         };
-        vm.on('PROJECT_LOADED', update);
+        vm.runtime.on('PROJECT_LOADED', update);
         window.addEventListener(SAVE_FEEDBACK_EVENT, saved);
         return () => {
-            vm.off('PROJECT_LOADED', update);
+            vm.runtime.off('PROJECT_LOADED', update);
             window.removeEventListener(SAVE_FEEDBACK_EVENT, saved);
         };
     }, [vm]);

@@ -72,7 +72,7 @@ class ProjectSession extends React.Component {
         this.props.service.on('reconnected', this.sessionReady);
         this.props.service.on('connection-failed', this.connectionFailed);
         this.props.service.on('join-denied', this.connectionFailed);
-        this.props.vm.on('PROJECT_LOADED', this.tick);
+        this.props.vm.runtime.on('PROJECT_LOADED', this.tick);
         window.addEventListener('mw:branch-changing', this.branchChanging);
         window.addEventListener('mw:branch-changed', this.branchChanged);
         window.addEventListener('mw:platform-project-changed', this.platformChanged);
@@ -112,7 +112,7 @@ class ProjectSession extends React.Component {
         this.props.service.off('reconnected', this.sessionReady);
         this.props.service.off('connection-failed', this.connectionFailed);
         this.props.service.off('join-denied', this.connectionFailed);
-        if (this.props.vm.off) this.props.vm.off('PROJECT_LOADED', this.tick);
+        if (this.props.vm.runtime) this.props.vm.runtime.off('PROJECT_LOADED', this.tick);
         window.removeEventListener('mw:branch-changing', this.branchChanging);
         window.removeEventListener('mw:branch-changed', this.branchChanged);
         window.removeEventListener('mw:platform-project-changed', this.platformChanged);
