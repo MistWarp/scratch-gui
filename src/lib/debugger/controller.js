@@ -5,9 +5,12 @@ import registerDebuggerBlocks from './blocks.js';
 
 const MAX_LOGS = 200000;
 
+const controllers = new WeakMap();
+const afterStepCallbacksByRuntime = new WeakMap();
+
 const initDebugger = vm => {
-    if (vm.__mwDebuggerController) {
-        return vm.__mwDebuggerController;
+    if (controllers.has(vm)) {
+        return controllers.get(vm);
     }
 
     const events = new EventTarget();
@@ -97,22 +100,22 @@ const initDebugger = vm => {
         onClearLogs: clearLogs
     });
 
-    const afterStepCallbacks = [];
-    if (!vm.runtime.__mwDebuggerAfterStep) {
-        vm.runtime.__mwDebuggerAfterStep = afterStepCallbacks;
+    if (!afterStepCallbacksByRuntime.has(vm.runtime)) {
+        const afterStepCallbacks = [];
+        afterStepCallbacksByRuntime.set(vm.runtime, afterStepCallbacks);
         const originalStep = vm.runtime._step;
         vm.runtime._step = function (...args) {
             const ret = originalStep.call(this, ...args);
-            for (const cb of vm.runtime.__mwDebuggerAfterStep) {
+            for (const cb of afterStepCallbacks) {
                 cb();
             }
             return ret;
         };
     }
     const addAfterStepCallback = cb => {
-        vm.runtime.__mwDebuggerAfterStep.push(cb);
+        afterStepCallbacksByRuntime.get(vm.runtime).push(cb);
         return () => {
-            const list = vm.runtime.__mwDebuggerAfterStep;
+            const list = afterStepCallbacksByRuntime.get(vm.runtime);
             const index = list.indexOf(cb);
             if (index !== -1) list.splice(index, 1);
         };
@@ -141,7 +144,7 @@ const initDebugger = vm => {
         createBlockPreview: helpers.createBlockPreview
     };
 
-    vm.__mwDebuggerController = controller;
+    controllers.set(vm, controller);
     return controller;
 };
 
