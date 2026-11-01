@@ -23,13 +23,12 @@ const getColours = blockJson => Object.fromEntries(
 );
 
 export default class FindBarController {
-    constructor ({ScratchBlocks, utils, vm, msg, msgAny, inputClassName, activeTabIndexRef, isPlayerOnlyRef}) {
+    constructor ({ScratchBlocks, utils, vm, msg, msgAny, activeTabIndexRef, isPlayerOnlyRef}) {
         this.ScratchBlocks = ScratchBlocks;
         this.utils = utils;
         this.vm = vm;
         this.msg = msg;
         this.msgAny = msgAny;
-        this.inputClassName = inputClassName;
         this.activeTabIndexRef = activeTabIndexRef;
         this.isPlayerOnlyRef = isPlayerOnlyRef;
 
@@ -129,7 +128,7 @@ export default class FindBarController {
         inputWrap.className = 'sa-find-input-wrap';
 
         this.findInput = inputWrap.appendChild(document.createElement('input'));
-        this.findInput.className = `${this.inputClassName} ${findBarStyles['sa-find-input']}`;
+        this.findInput.className = findBarStyles['sa-find-input'];
         this.findInput.id = 'sa-find-input';
         this.findInput.type = 'search';
         this.findInput.placeholder = this.msg('find-placeholder');
