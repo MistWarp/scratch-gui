@@ -20,6 +20,7 @@ import {
     parseRepoUrl
 } from '../rotur/git-api.js';
 import {isStudentSession} from '../rotur/student-flag.js';
+import {projectSession} from '../../modules/project-session';
 import {local, session} from '../../modules/storage';
 
 const FS_NAME = 'mistwarp-git';
@@ -645,10 +646,8 @@ const addRemote = async ({vm, name, url}) => {
     }
 
     await git.addRemote({fs, dir: REPO_DIR, remote: name, url});
-    if (vm._mwRequireExplicitPush) {
-        if (!vm._mwApprovedRemotes) vm._mwApprovedRemotes = new Set();
-        vm._mwApprovedRemotes.add(url);
-    }
+    const openProject = projectSession(vm);
+    if (openProject.requireExplicitPush) openProject.approvedRemotes.add(url);
 };
 
 const removeRemote = async ({vm, name}) => {

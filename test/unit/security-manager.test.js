@@ -10,6 +10,7 @@ import {
     manuallyTrustExtension
 } from '../../src/containers/tw-security-manager.jsx';
 import {rememberPlatformProject} from '../../src/lib/community/publish.js';
+import {projectSession} from '../../src/modules/project-session';
 import {
     clearBlockedProjectPrompts,
     unblockProjectPrompts,
@@ -22,6 +23,11 @@ Object.defineProperty(global, 'TextEncoder', {value: TextEncoder, configurable: 
 beforeEach(() => {
     clearBlockedProjectPrompts();
 });
+
+const trustedVm = vm => {
+    projectSession(vm).projectTrusted = true;
+    return vm;
+};
 
 test('blocked projects cannot reopen extension security prompts', async () => {
     window.history.replaceState(null, '', '/editor');
@@ -78,7 +84,9 @@ test('only the verified owner gets the bypass option', () => {
 });
 
 test('file and loopback project loads can offer the bypass option', () => {
-    expect(canTrustLoadedProject({_mwCanTrustProject: true})).toBe(true);
+    const fileLoadedVm = {};
+    projectSession(fileLoadedVm).canTrustProject = true;
+    expect(canTrustLoadedProject(fileLoadedVm)).toBe(true);
     expect(isLocalProjectUrl('http://localhost:8000/project.sb3')).toBe(true);
     expect(isLocalProjectUrl('http://127.0.0.1/project.sb3')).toBe(true);
     expect(isLocalProjectUrl('http://localhost.example.com/project.sb3')).toBe(false);
@@ -110,11 +118,11 @@ test('only extensions discovered in a platform project use its saved source URL'
         projectJsonUrl: 'https://storage.example/project.json?k=secret'
     });
     const component = new TWSecurityManagerComponent({
-        vm: {runtime: {_mwProjectTrusted: true}},
+        vm: trustedVm({runtime: {}}),
         securityManager: {}
     });
     component.handleProjectLoading({stage: 'building'});
-    component.props.vm.runtime._mwProjectTrusted = true;
+    projectSession(component.props.vm).projectTrusted = true;
 
     const pastedText = 'data:application/javascript,extension%20source';
     expect(await component.rewriteExtensionURL(pastedText)).toBe(pastedText);
@@ -136,11 +144,11 @@ test('only extensions discovered in a platform project use its saved source URL'
 
 test('trusting a project unsandboxes only its own extensions, not ones added later', async () => {
     const vmSecurityManager = {};
-    const vm = {
-        runtime: {_mwProjectTrusted: true},
+    const vm = trustedVm({
+        runtime: {},
         extensionManager: {securityManager: vmSecurityManager},
         on: () => {}
-    };
+    });
     const component = new TWSecurityManagerComponent({vm, securityManager: {}});
     component.componentDidMount();
     const projectURL = 'data:application/javascript,Scratch.extensions.register({getInfo:()=>({id:"own"})})';
@@ -151,7 +159,7 @@ test('trusting a project unsandboxes only its own extensions, not ones added lat
     expect(await vmSecurityManager.getSandboxMode(pastedURL)).toBe('iframe');
 
     component.handleProjectLoading({stage: 'building'});
-    vm.runtime._mwProjectTrusted = true;
+    projectSession(vm).projectTrusted = true;
     expect(await vmSecurityManager.getSandboxMode(projectURL)).toBe('iframe');
 });
 
@@ -160,7 +168,7 @@ test('the extension whose prompt was answered with Load all runs unsandboxed', a
     rememberPlatformProject(null);
     const vmSecurityManager = {};
     const vm = {
-        runtime: {_mwProjectTrusted: false, projectName: 'Trusted project'},
+        runtime: {projectName: 'Trusted project'},
         extensionManager: {securityManager: vmSecurityManager},
         on: () => {}
     };
@@ -168,7 +176,7 @@ test('the extension whose prompt was answered with Load all runs unsandboxed', a
     component.componentDidMount();
     component.acquireModalLock = async () => ({
         showModal: async () => {
-            vm.runtime._mwProjectTrusted = true;
+            projectSession(vm).projectTrusted = true;
             return true;
         }
     });
@@ -181,11 +189,11 @@ test('after Load all, JavaScript-running extensions still prompt and manual trus
     window.history.replaceState(null, '', '/editor');
     rememberPlatformProject(null);
     const vmSecurityManager = {};
-    const vm = {
-        runtime: {_mwProjectTrusted: true, projectName: 'Trusted project'},
+    const vm = trustedVm({
+        runtime: {projectName: 'Trusted project'},
         extensionManager: {securityManager: vmSecurityManager},
         on: () => {}
-    };
+    });
     const component = new TWSecurityManagerComponent({vm, securityManager: {}});
     component.componentDidMount();
     const showModal = jest.fn(async () => false);
@@ -203,11 +211,11 @@ test('after Load all, extensions from outside the project load still prompt and 
     window.history.replaceState(null, '', '/editor');
     rememberPlatformProject(null);
     const vmSecurityManager = {};
-    const vm = {
-        runtime: {_mwProjectTrusted: true, projectName: 'Trusted project'},
+    const vm = trustedVm({
+        runtime: {projectName: 'Trusted project'},
         extensionManager: {securityManager: vmSecurityManager},
         on: () => {}
-    };
+    });
     const component = new TWSecurityManagerComponent({vm, securityManager: {}});
     component.componentDidMount();
     const showModal = jest.fn(async () => false);

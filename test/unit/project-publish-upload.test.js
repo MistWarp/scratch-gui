@@ -37,6 +37,7 @@ jest.mock('../../src/lib/git/project-history.js', () => ({
 }));
 
 const {publishToMistWarp, rememberPlatformProject} = require('../../src/lib/community/publish.js');
+const {projectSession} = require('../../src/modules/project-session');
 
 describe('MistWarp project upload packaging', () => {
     beforeEach(() => {
@@ -80,10 +81,8 @@ describe('MistWarp project upload packaging', () => {
         const project = {id: 'project-1', isOwner: true, workspaceUrl: '/old.mwp', gitHead: 'old'};
         rememberPlatformProject(project);
         mockGetProject.mockResolvedValue({project});
-        const vm = {
-            saveProjectSb3DontZip: () => ({'project.json': '{"targets":[]}'}),
-            _mwHistoryHydration: {projectId: project.id, replaceHistory: true, ready: true}
-        };
+        const vm = {saveProjectSb3DontZip: () => ({'project.json': '{"targets":[]}'})};
+        projectSession(vm).historyHydration = {projectId: project.id, replaceHistory: true, ready: true};
         await publishToMistWarp({vm, title: 'Imported'});
         expect(mockDeleteRepo).not.toHaveBeenCalled();
         expect(mockGetProjectCommits).not.toHaveBeenCalled();
@@ -98,13 +97,11 @@ describe('MistWarp project upload packaging', () => {
 
     test('keeps history replacement pending when an upload fails', async () => {
         rememberPlatformProject({id: 'project-1', isOwner: true});
-        const vm = {
-            saveProjectSb3DontZip: () => ({'project.json': '{"targets":[]}'}),
-            _mwHistoryHydration: {projectId: 'project-1', replaceHistory: true}
-        };
+        const vm = {saveProjectSb3DontZip: () => ({'project.json': '{"targets":[]}'})};
+        projectSession(vm).historyHydration = {projectId: 'project-1', replaceHistory: true};
         mockUploadProject.mockRejectedValueOnce(Object.assign(new Error('Retry later'), {code: 'debounced'}));
         await expect(publishToMistWarp({vm})).rejects.toThrow('Retry later');
-        expect(vm._mwHistoryHydration.replaceHistory).toBe(true);
+        expect(projectSession(vm).historyHydration.replaceHistory).toBe(true);
         const {adoptImportedProjectHistory} = require('../../src/lib/git/project-history.js');
         expect(adoptImportedProjectHistory).not.toHaveBeenCalled();
     });

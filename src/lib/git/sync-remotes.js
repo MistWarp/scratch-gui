@@ -1,6 +1,7 @@
 import {getDefaultAuthor, getRemotes, push} from './browser-git.js';
 import {getAuth as getRoturGitAuth, isRoturGitUrl} from '../rotur/git-api.js';
 import {isStudentSession} from '../rotur/student-flag.js';
+import {projectSession} from '../../modules/project-session';
 import {local} from '../../modules/storage';
 
 const TOKEN_KEY = 'mw:git-token';
@@ -20,8 +21,9 @@ const syncConfiguredRemotes = async ({vm, onProgress} = {}) => {
     if (isStudentSession()) return [];
     const remotes = await getRemotes(vm);
     // An imported connection is not permission to write to that repository.
-    const approved = vm && vm._mwRequireExplicitPush ?
-        remotes.filter(remote => vm._mwApprovedRemotes?.has(remote.url)) : remotes;
+    const session = vm && projectSession(vm);
+    const approved = session && session.requireExplicitPush ?
+        remotes.filter(remote => session.approvedRemotes.has(remote.url)) : remotes;
     return Promise.all(approved.map(async remote => {
         try {
             await push({

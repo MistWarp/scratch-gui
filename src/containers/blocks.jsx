@@ -75,6 +75,7 @@ import {isStudentSession} from '../lib/rotur/student-flag.js';
 import {gentlyRequestPersistentStorage} from '../lib/utils/storage-request.js';
 import CollaborationService from '../lib/collaboration/index.js';
 import {trackWorkspaceUndo, untrackWorkspaceUndo} from '../lib/undo-history.js';
+import {getActiveWorkspace, setActiveWorkspace, setScratchBlocks} from '../modules/blocks-registry';
 
 // TW: Strings we add to scratch-blocks are localized here
 const messages = defineMessages({
@@ -131,9 +132,8 @@ class Blocks extends React.Component {
         this.ScratchBlocks = VMScratchBlocks(props.vm, false);
 
         window.ScratchBlocks = this.ScratchBlocks;
+        setScratchBlocks(this.ScratchBlocks);
         AddonHooks.blockly = this.ScratchBlocks;
-        AddonHooks.blocklyCallbacks.forEach(i => i());
-        AddonHooks.blocklyCallbacks.length = [];
 
         installSystemClipboardForBlocks(this.ScratchBlocks, props.vm, props.onShowImportError);
         initDevInspector(props.vm, this.ScratchBlocks);
@@ -171,7 +171,6 @@ class Blocks extends React.Component {
             'setBlocks',
             'setPaletteResizer',
             'setLocale',
-            'handleEnableProcedureReturns',
             'isWorkspaceReady'
         ]);
         this.ScratchBlocks.prompt = this.handlePromptStart;
@@ -266,6 +265,7 @@ class Blocks extends React.Component {
         this.blocks.addEventListener('dragover', this.handleScriptDragOver);
         this.blocks.addEventListener('drop', this.handleScriptDrop);
         AddonHooks.blocklyWorkspace = this.workspace;
+        setActiveWorkspace(this.workspace);
         trackWorkspaceUndo(this.workspace);
 
         // Register buttons under new callback keys for creating variables,
@@ -421,24 +421,6 @@ class Blocks extends React.Component {
             // Set workspace visibility with performance optimization
             if (this.workspace) {
                 this.workspace.setVisible(true);
-
-                // Check for pending procedure returns request
-                if (this.props.vm && this.props.vm._pendingProcedureReturns) {
-                    this.props.vm._pendingProcedureReturns = false;
-
-                    // Enable procedure returns after workspace is ready
-                    setTimeout(() => {
-                        this.handleEnableProcedureReturns();
-
-                        // Also handle pending category selection
-                        if (this.props.vm._pendingCategorySelection) {
-                            const categoryId = this.props.vm._pendingCategorySelection;
-                            this.props.vm._pendingCategorySelection = null;
-                            this.handleCategorySelected(categoryId);
-                        }
-                    }, 100);
-                }
-                
             }
             const localeChanged = prevProps.locale !== this.props.locale ||
                 this.props.locale !== this.props.vm.getLocale();
@@ -495,6 +477,8 @@ class Blocks extends React.Component {
         untrackWorkspaceUndo(this.workspace);
         if (this.uninstallCategoryDrag) this.uninstallCategoryDrag();
         clearTimeout(this.flyoutRebuildTimeout);
+        if (AddonHooks.blocklyWorkspace === this.workspace) AddonHooks.blocklyWorkspace = null;
+        if (getActiveWorkspace() === this.workspace) setActiveWorkspace(null);
         this.workspace.dispose();
         clearTimeout(this.toolboxUpdateTimeout);
         clearTimeout(this.toolboxStateUpdateTimeout);
@@ -510,8 +494,6 @@ class Blocks extends React.Component {
         // Detach collaboration service from workspace
         const collaborationService = CollaborationService.getInstance();
         collaborationService.detachFromWorkspace();
-
-        AddonHooks.blocklyWorkspace = null;
     }
     applyEditorModeChange (prevProps) {
         if (this.props.editorMode === prevProps.editorMode) return;
@@ -1584,29 +1566,6 @@ class Blocks extends React.Component {
             return;
         }
         await this.placeCode(payload, point, targetId);
-    }
-    handleEnableProcedureReturns () {
-        this.workspace.enableProcedureReturns();
-        this.requestToolboxUpdate();
-        
-        // Force immediate toolbox refresh to show return blocks
-        setTimeout(() => {
-            if (this.workspace.getFlyout) {
-                const flyout = this.workspace.getFlyout();
-                if (flyout && flyout.getWorkspace) {
-                    flyout.getWorkspace().refreshToolboxSelection_();
-                }
-            }
-            this.workspace.refreshToolboxSelection_();
-            
-            // Also trigger a specific refresh of the procedures category
-            if (this.workspace.getToolbox && this.workspace.getToolbox()) {
-                const toolbox = this.workspace.getToolbox();
-                if (toolbox.refreshSelection) {
-                    toolbox.refreshSelection();
-                }
-            }
-        }, 100);
     }
     render () {
         /* eslint-disable no-unused-vars */

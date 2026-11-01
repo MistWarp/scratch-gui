@@ -13,10 +13,6 @@ const createThreadsTab = controller => {
     const vm = controller.vm;
     const engine = controller.engine;
 
-    if (!window.Blockly && window.ScratchBlocks) {
-        window.Blockly = window.ScratchBlocks;
-    }
-
     const logView = new LogView();
     logView.canAutoScrollToEnd = false;
     logView.outerElement.classList.add(debuggerStyles['sa-debugger-threads']);

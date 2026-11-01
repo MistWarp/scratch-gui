@@ -1,15 +1,13 @@
-import AddonHooks from '../../addons/hooks.js';
 import Utils from '../find-bar/Utils.js';
 import {revealInCode, showBlocksTab, BLOCKS_TAB_INDEX} from '../../reducers/editor-tab.js';
 import {whenWorkspaceReady} from './workspace-ready.js';
+import {getScratchBlocks} from '../../modules/blocks-registry';
 
 let cursorBlockProvider = null;
 
 const setCursorBlockProvider = provider => {
     cursorBlockProvider = typeof provider === 'function' ? provider : null;
 };
-
-const getScratchBlocks = () => AddonHooks.blockly || (typeof window === 'undefined' ? null : window.ScratchBlocks);
 
 const selectedBlockId = () => {
     const ScratchBlocks = getScratchBlocks();

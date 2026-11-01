@@ -1,6 +1,7 @@
 import {serializeEvent, shouldSyncEvent} from './block-serialization';
 import {encodeCommand} from './command-codec';
 import {OP} from './protocol';
+import {getScratchBlocks} from '../../modules/blocks-registry';
 
 const READ_ONLY_MESSAGE = 'You are watching this project and cannot edit it.';
 
@@ -76,7 +77,8 @@ class VMAdapter {
     attach (workspace) {
         this.workspace = workspace;
         workspace._mwEditingTargetId = this.vm.editingTarget && this.vm.editingTarget.id;
-        const events = window.ScratchBlocks && window.ScratchBlocks.Events;
+        const scratchBlocks = getScratchBlocks();
+        const events = scratchBlocks && scratchBlocks.Events;
         if (events && !this._originalFire) {
             this._events = events;
             this._originalFire = events.fire;
@@ -97,7 +99,7 @@ class VMAdapter {
     syncProcedureBlocks () {
         if (!this.workspace || this._suppressed) return;
         const target = this.vm.editingTarget;
-        const blocks = window.ScratchBlocks;
+        const blocks = getScratchBlocks();
         this.workspace.getAllBlocks(false).forEach(block => {
             if (block.type !== 'procedures_definition' || target.blocks.getBlock(block.id)) return;
             const xml = blocks.Xml.domToText(blocks.Xml.blockToDom(block));

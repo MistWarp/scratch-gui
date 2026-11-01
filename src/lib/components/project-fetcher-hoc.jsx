@@ -65,6 +65,7 @@ import defaultProjectData from '../default-project/project-data.js';
 import RestorePointAPI from '../api/restore-points';
 import {isStudentSession} from '../rotur/student-flag.js';
 import {isGalleryExtensionUrl} from '../trusted-extension.js';
+import {projectSession, setLoadHandoff, takeLoadHandoff} from '../../modules/project-session';
 
 const isGallerySampleUrl = url => typeof url === 'string' && (
     isGalleryExtensionUrl(url) || url.startsWith('https://extensions-mistium.pages.dev/')
@@ -131,12 +132,14 @@ const clearProjectSourceFromUrl = () => {
     }
 };
 
+const vmsClearingProjectSource = new WeakSet();
+
 const clearProjectSourceOnForeignLoads = vm => {
-    if (!vm || vm._mwClearsProjectSourceUrl) return;
-    vm._mwClearsProjectSourceUrl = true;
+    if (!vm || vmsClearingProjectSource.has(vm)) return;
+    vmsClearingProjectSource.add(vm);
     const originalLoadProject = vm.loadProject.bind(vm);
     vm.loadProject = (...args) => {
-        vm._mwCanTrustProject = Boolean(args[1] && args[1].mwCanTrustProject);
+        projectSession(vm).canTrustProject = Boolean(args[1] && args[1].mwCanTrustProject);
         const foreign = !fetchInitiatedLoad && !(args[1] && args[1].mwPreserveProjectSource);
         fetchInitiatedLoad = false;
         return Promise.resolve(originalLoadProject(...args)).then(result => {
@@ -308,7 +311,6 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                         this.props.onAbortProjectSwitch(previousProjectId);
                         if (error) this.props.onShowProjectSwitchError(error);
                     };
-                    this.props.vm._mwRollbackProjectLoad = rollback;
                 } catch (error) {
                     release();
                     this.abandonProjectSwitch(error);
@@ -319,8 +321,6 @@ const ProjectFetcherHOC = function (WrappedComponent) {
             // Stop scripts while fetching, but keep the current project intact until replacement data exists.
             this.props.vm.quit();
             markProjectHistoryLoading();
-            this.props.vm._mwPrepareProjectHistory = null;
-            this.props.vm._mwHistoryBootstrapError = null;
 
             const isInitialFetch = !this.hasFetchedProject;
             if (!isInitialFetch && getIsFetchingWithoutId(loadingState)) {
@@ -434,7 +434,7 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                                     }
                                     rememberPlatformProject(project, {resetSaveBase: true});
                                     await deleteRepo();
-                                    this.props.vm._mwHistoryHydration = null;
+                                    projectSession(this.props.vm).historyHydration = null;
                                     setRemoteProjectHistory(project);
                                 } else if (!sourceProvidesHistory) {
                                     rememberPlatformProject(null);
@@ -446,15 +446,17 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                             if (!historyReady || fetchGeneration !== this.fetchGeneration) return;
                         }
                         fetchInitiatedLoad = true;
-                        this.props.vm._mwPrepareProjectHistory = () =>
-                            preloadProjectHistory(this.props.vm, {force: true});
                         if (projectAsset.title) {
                             this.props.onSetProjectTitle(projectAsset.title);
                         }
                         rememberScratchOrigin(scratchOrigin);
                         handedOff = true;
                         this.hasFetchedProject = true;
-                        this.props.vm._mwReleaseProjectLoad = release;
+                        setLoadHandoff(this.props.vm, {
+                            prepareHistory: () => preloadProjectHistory(this.props.vm, {force: true}),
+                            release,
+                            rollback
+                        });
                         this.props.onFetchedProjectData(projectAsset.data, loadingState);
                     } else {
                         // Treat failure to load as an error
@@ -464,7 +466,7 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 })
                 .catch(async err => {
                     log.error(err);
-                    this.props.vm._mwRollbackProjectLoad = null;
+                    if (takeLoadHandoff(this.props.vm).release) handedOff = false;
                     // Download failures keep the retry screen; anything else
                     // goes back to the previous project once it is restored.
                     let restored = false;
@@ -476,7 +478,6 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                             });
                     }
                     if (fetchGeneration !== this.fetchGeneration) return;
-                    this.props.vm._mwPrepareProjectHistory = null;
                     if (downloadFailed) {
                         this.handleRetryProjectFetch = () => this.fetchProject(projectId, loadingState);
                         this.setState({projectFetchError: err});

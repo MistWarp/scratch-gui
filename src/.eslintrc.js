@@ -1,11 +1,20 @@
 const path = require('path');
 const typescript = require('../scripts/eslint-typescript.cjs');
-const legacyStorageFiles = require('../scripts/eslint-legacy-storage-files.cjs');
 
 const storageMessage = 'Use local or session from src/modules/storage instead of touching web storage directly.';
 const storageProperties = ['window', 'globalThis', 'self'].flatMap(object => (
     ['localStorage', 'sessionStorage'].map(property => ({object, property, message: storageMessage}))
 ));
+const blocksGlobalMessage = 'Read ScratchBlocks and the workspace from src/modules/blocks-registry. ' +
+    'Only containers/blocks.jsx sets these globals, for addons and userscripts.';
+const blocksGlobalProperties = [
+    ...['window', 'globalThis', 'self'].flatMap(object => (
+        ['ScratchBlocks', 'Blockly'].map(property => ({object, property, message: blocksGlobalMessage}))
+    )),
+    ...['blockly', 'blocklyWorkspace', 'blocklyCallbacks'].map(property => (
+        {object: 'AddonHooks', property, message: blocksGlobalMessage}
+    ))
+];
 const moduleDeepImport = {
     group: ['**/modules/*/*', '!**/modules/*/index', '!**/modules/*/index.ts'],
     message: 'Import a module through its index, as in ../modules/storage.'
@@ -17,6 +26,16 @@ const uiLayerImport = {
     ]),
     message: 'Modules sit below the UI. Pass what you need in instead of importing app code.'
 };
+const vmFieldMessage = 'Keep editor state off the VM and its runtime. Use src/modules/project-session, ' +
+    'or a WeakMap or WeakSet in the file that owns the state.';
+const guiFieldName = '/^__?mw(?!(InstallToken|InstallingWholeProject)$)/';
+const vmObject = ':matches([name=/^(vm|runtime)$/], [property.name=/^(vm|runtime)$/])';
+const vmFieldSelectors = [
+    `MemberExpression:matches([property.name=${guiFieldName}], [property.value=${guiFieldName}])` +
+        `:has(> .object${vmObject})`,
+    `VariableDeclarator:has(> .init${vmObject}) > ObjectPattern > Property[key.name=${guiFieldName}]`,
+    `AssignmentExpression:has(> .right${vmObject}) > ObjectPattern > Property[key.name=${guiFieldName}]`
+].map(selector => ({selector, message: vmFieldMessage}));
 const siblingModuleDeepImport = {
     group: ['../*/*', '!../*/index', '!../*/index.ts', '!../../**'],
     message: 'Import another module through its index only.'
@@ -51,7 +70,8 @@ module.exports = {
             {name: 'localStorage', message: storageMessage},
             {name: 'sessionStorage', message: storageMessage}
         ],
-        'no-restricted-properties': ['error', ...storageProperties],
+        'no-restricted-properties': ['error', ...storageProperties, ...blocksGlobalProperties],
+        'no-restricted-syntax': ['error', ...vmFieldSelectors],
         'no-restricted-imports': ['error', {patterns: [moduleDeepImport]}],
         'import/no-nodejs-modules': 'error',
         'react/jsx-no-literals': 'error',
@@ -84,10 +104,16 @@ module.exports = {
         },
         typescript,
         {
-            files: ['modules/storage/**/*', ...legacyStorageFiles],
+            files: ['modules/storage/**/*'],
             rules: {
                 'no-restricted-globals': 'off',
-                'no-restricted-properties': 'off'
+                'no-restricted-properties': ['error', ...blocksGlobalProperties]
+            }
+        },
+        {
+            files: ['containers/blocks.jsx'],
+            rules: {
+                'no-restricted-properties': ['error', ...storageProperties]
             }
         },
         {

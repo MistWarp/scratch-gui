@@ -8,6 +8,7 @@ import {FormattedMessage, IntlProvider} from 'react-intl';
 
 import WindowManager from '../addons/window-system/window-manager';
 import Box from '../components/box/box.jsx';
+import {getScratchBlocks} from '../modules/blocks-registry';
 
 class WindowedModal extends React.Component {
     constructor (props) {
@@ -92,7 +93,7 @@ class WindowedModal extends React.Component {
 
         this.blocklyWidgetRepositionRaf_ = window.requestAnimationFrame(() => {
             this.blocklyWidgetRepositionRaf_ = null;
-            const ScratchBlocks = window.ScratchBlocks;
+            const ScratchBlocks = getScratchBlocks();
             if (!ScratchBlocks || !ScratchBlocks.WidgetDiv) return;
             if (typeof ScratchBlocks.WidgetDiv.isVisible === 'function' && !ScratchBlocks.WidgetDiv.isVisible()) return;
 

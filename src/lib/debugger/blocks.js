@@ -1,4 +1,5 @@
 import {getSetting} from './settings.js';
+import {getScratchBlocks} from '../../modules/blocks-registry';
 
 const parseArguments = code => code
     .split(/(?=[^\\]%[nbs])/g)
@@ -40,7 +41,7 @@ const addBlock = (vm, procedureCode, {args, displayName, callback}) => {
 
 const patchBlockly = () => {
     if (window.__mwDebuggerBlocklyPatched) return;
-    const ScratchBlocks = window.ScratchBlocks;
+    const ScratchBlocks = getScratchBlocks();
     if (!ScratchBlocks) {
         setTimeout(patchBlockly, 500);
         return;
@@ -87,9 +88,12 @@ const patchBlockly = () => {
     }
 };
 
+const vmsWithDebuggerBlocks = new WeakSet();
+const vmsWithCloneHook = new WeakSet();
+
 const registerDebuggerBlocks = (vm, handlers) => {
-    if (vm.__mwDebuggerBlocksInstalled) return;
-    vm.__mwDebuggerBlocksInstalled = true;
+    if (vmsWithDebuggerBlocks.has(vm)) return;
+    vmsWithDebuggerBlocks.add(vm);
 
     const {onLog, onBreakpoint, onClearLogs} = handlers;
 
@@ -140,10 +144,10 @@ const registerDebuggerBlocks = (vm, handlers) => {
     };
 
     const installCloneHook = () => {
-        if (vm.__mwDebuggerCloneHookInstalled) return;
+        if (vmsWithCloneHook.has(vm)) return;
         const firstTarget = vm.runtime.targets[0];
         if (!firstTarget) return;
-        vm.__mwDebuggerCloneHookInstalled = true;
+        vmsWithCloneHook.add(vm);
 
         const proto = firstTarget.constructor.prototype;
         const ogMakeClone = proto.makeClone;
