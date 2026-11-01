@@ -5,6 +5,17 @@ import {
 } from '../../../src/lib/mw-project-metadata';
 
 describe('project metadata', () => {
+    test('passes every deserialize argument through, including the load cancellation check', async () => {
+        const original = jest.fn(() => Promise.resolve());
+        const vm = {toJSON: () => '{}', deserializeProject: original};
+        const active = () => false;
+
+        installProjectMetadata(vm);
+        await vm.deserializeProject({meta: {}}, 'zip', active);
+
+        expect(original).toHaveBeenCalledWith({meta: {}}, 'zip', active);
+    });
+
     test('keeps Scratch metadata and carries MistWarp metadata across saves', async () => {
         let source = {
             meta: {
