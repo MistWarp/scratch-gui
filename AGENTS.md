@@ -13,7 +13,7 @@ scratch-gui is the MistWarp editor and community site: one Vite build with React
 | `src/reducers/`, `src/playground/` | Editor state, and the page entry points. |
 | `src/addons/` | The addon runtime. `src/addons/addons` is vendored from Scratch Addons. |
 
-Never edit `src/generated/`, `src/addons/addons/`, `src/addons/generated/` or `src/packager/` by hand.
+Never edit `src/generated/`, `src/addons/addons/` or `src/addons/generated/` by hand. `src/packager/` is the imported TurboWarp Packager and is where packaging changes go: edit it directly, and `scripts/vite-packager.mjs` rebuilds its player scripts. It keeps its upstream style and ESLint skips it, so lint does not check changes there.
 
 ## Rules the tooling enforces
 

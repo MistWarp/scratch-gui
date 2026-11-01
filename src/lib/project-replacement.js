@@ -37,21 +37,20 @@ const prepareProjectReplacement = async (vm, title) => {
 const withProjectReplacement = (vm, title, operation) => withProjectOperation(vm, async () => {
     const rollback = await prepareProjectReplacement(vm, title);
     const revision = projectRevision(vm);
-    const loadProject = vm.loadProject;
     let replacedCode = false;
-    vm.loadProject = (...args) => {
+    const removeInterceptor = vm.addLoadProjectInterceptor((input, options, next) => {
         if (!replacedCode && projectRevision(vm) !== revision) {
             throw new Error('You edited the project while this operation was running. ' +
                 'Nothing was replaced. Try again.');
         }
         replacedCode = true;
-        return loadProject.apply(vm, args);
-    };
+        return next();
+    });
     try {
         return await operation();
     } catch (error) {
         try {
-            vm.loadProject = loadProject;
+            removeInterceptor();
             await rollback({restoreCode: replacedCode});
         } catch (restoreError) {
             throw new Error(`${error.message} Automatic recovery failed. ` +
@@ -59,9 +58,7 @@ const withProjectReplacement = (vm, title, operation) => withProjectOperation(vm
         }
         throw error;
     } finally {
-        // The operation lock guarantees this is still the same workspace.
-        // eslint-disable-next-line require-atomic-updates
-        vm.loadProject = loadProject;
+        removeInterceptor();
     }
 });
 

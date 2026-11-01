@@ -55,7 +55,7 @@ class RoturExtensionHost extends React.Component {
             ensureConsent: this.ensureConsent,
             call: this.call,
             projectId: this.getProjectId,
-            projectName: () => this.props.projectTitle || '',
+            projectName: () => this.props.vm.runtime.projectName || '',
             projectImage: () => {
                 const id = this.getProjectId();
                 return id ? `${MISTWARP_API_ORIGIN}/thumbnails/${encodeURIComponent(id)}.png` : '';
@@ -151,7 +151,7 @@ class RoturExtensionHost extends React.Component {
     projectPromptDetails () {
         return {
             id: this.getProjectId(),
-            name: this.props.projectTitle || this.props.vm.runtime.projectName || ''
+            name: this.props.vm.runtime.projectName || ''
         };
     }
 
@@ -173,7 +173,7 @@ class RoturExtensionHost extends React.Component {
         const {showModal} = await this.acquireModalLock();
         const choice = await showModal('share', {
             username: this.currentUser().username,
-            name: this.props.projectTitle
+            name: this.props.vm.runtime.projectName || ''
         });
         if (choice === 'all') {
             setRoturSetting('activitySharing', 'all');
@@ -215,7 +215,7 @@ class RoturExtensionHost extends React.Component {
     }
 
     splitProject () {
-        const project = {name: this.props.vm.runtime.projectName || this.props.projectTitle || ''};
+        const project = {name: this.props.vm.runtime.projectName || ''};
         const id = this.getProjectId();
         if (id) project.id = id;
         return project;

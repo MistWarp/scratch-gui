@@ -137,19 +137,18 @@ const vmsClearingProjectSource = new WeakSet();
 const clearProjectSourceOnForeignLoads = vm => {
     if (!vm || vmsClearingProjectSource.has(vm)) return;
     vmsClearingProjectSource.add(vm);
-    const originalLoadProject = vm.loadProject.bind(vm);
-    vm.loadProject = (...args) => {
-        projectSession(vm).canTrustProject = Boolean(args[1] && args[1].mwCanTrustProject);
-        const foreign = !fetchInitiatedLoad && !(args[1] && args[1].mwPreserveProjectSource);
+    vm.addLoadProjectInterceptor((input, options, next) => {
+        projectSession(vm).canTrustProject = Boolean(options && options.mwCanTrustProject);
+        const foreign = !fetchInitiatedLoad && !(options && options.mwPreserveProjectSource);
         fetchInitiatedLoad = false;
-        return Promise.resolve(originalLoadProject(...args)).then(result => {
+        return Promise.resolve(next()).then(result => {
             if (foreign) {
                 clearProjectSourceFromUrl();
                 rememberScratchOrigin(null);
             }
             return result;
         });
-    };
+    });
 };
 
 const fetchArrayBuffer = url => cachedFetchBuffer(url);

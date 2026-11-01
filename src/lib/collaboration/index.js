@@ -56,7 +56,7 @@ class CollabService extends Emitter {
         this._activity = {targetId: null, tab: 0, assetIndex: 0};
         this._ownLoads = 0;
         this._backedUp = false;
-        this._originalLoadProject = null;
+        this._stopWatchingProjectLoads = null;
         this._onPageHide = () => {
             if (this.isHost && this._session) this._session.announceClose();
         };
@@ -560,40 +560,30 @@ class CollabService extends Emitter {
     }
 
     _watchProjectLoads () {
-        const vm = this.vm;
-        if (this._originalLoadProject) return;
-        const original = vm.loadProject;
-        this._originalLoadProject = original;
-        this._ownedLoadProject = Object.prototype.hasOwnProperty.call(vm, 'loadProject');
-        this._loadProjectWrapper = (...args) => {
-            if (this._ownLoads > 0 || !this.isConnected) return original.apply(vm, args);
-            return this._onOtherProjectLoad(original, args);
-        };
-        vm.loadProject = this._loadProjectWrapper;
+        if (this._stopWatchingProjectLoads) return;
+        this._stopWatchingProjectLoads = this.vm.addLoadProjectInterceptor((input, options, next) => {
+            if (this._ownLoads > 0 || !this.isConnected) return next();
+            return this._onOtherProjectLoad(next);
+        });
     }
 
     _unwatchProjectLoads () {
-        if (!this._originalLoadProject) return;
-        if (this.vm.loadProject === this._loadProjectWrapper) {
-            if (this._ownedLoadProject) this.vm.loadProject = this._originalLoadProject;
-            else delete this.vm.loadProject;
-        }
-        this._originalLoadProject = null;
-        this._loadProjectWrapper = null;
+        if (!this._stopWatchingProjectLoads) return;
+        this._stopWatchingProjectLoads();
+        this._stopWatchingProjectLoads = null;
     }
 
-    async _onOtherProjectLoad (original, args) {
-        const vm = this.vm;
+    async _onOtherProjectLoad (load) {
         if (!this.isHost) {
             this.disconnect();
             this.emit('left-for-other-project');
-            return original.apply(vm, args);
+            return load();
         }
         const session = this._session;
         const adapter = this._adapter;
         adapter.setSuppressed(true);
         try {
-            const result = await session.queue.run(() => original.apply(vm, args));
+            const result = await session.queue.run(() => load());
             if (this._session === session) session.restartHistory();
             return result;
         } finally {

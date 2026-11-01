@@ -159,13 +159,18 @@ test('a host who opens another project sends it to everyone', async () => {
     }
 });
 
-test('ending the session restores the original loadProject', async () => {
+test('collaboration follows loads through an interceptor it removes when the session ends', async () => {
     const {host, client, hostVM, clientVM} = await joinPair();
-    const wrapped = hostVM.loadProject;
-    host.disconnect();
-    expect(hostVM.loadProject).not.toBe(wrapped);
     expect(Object.prototype.hasOwnProperty.call(hostVM, 'loadProject')).toBe(false);
-    client.disconnect(); hostVM.quit(); clientVM.quit();
+    expect(hostVM._loadProjectInterceptors).toHaveLength(1);
+    host.disconnect();
+    host.disconnect();
+    expect(hostVM._loadProjectInterceptors).toHaveLength(0);
+    client.disconnect();
+    expect(clientVM._loadProjectInterceptors).toHaveLength(0);
+    const project = await hostVM.saveProjectSb3('arraybuffer');
+    await clientVM.loadProject(project);
+    hostVM.quit(); clientVM.quit();
 });
 
 test('a guest who joins through the invite link watches until the host lets them edit', async () => {

@@ -3,6 +3,7 @@ import {withProjectReplacement} from '../../src/lib/project-replacement.js';
 import {withProjectOperation, isProjectOperationActive} from '../../src/lib/project-operation.js';
 import RestorePointAPI from '../../src/lib/api/restore-points.js';
 import {createRepoBackup} from '../../src/lib/git/browser-git.js';
+import withLoadProjectInterceptors from '../helpers/load-interceptors.js';
 
 jest.mock('../../src/lib/api/restore-points.js', () => ({
     createSafetyRestorePoint: jest.fn(),
@@ -20,6 +21,7 @@ beforeEach(() => {
     vm.loadProject = jest.fn(async code => {
         vm.code = code;
     });
+    withLoadProjectInterceptors(vm);
     restoreRepo = jest.fn();
     createRepoBackup.mockResolvedValue(restoreRepo);
     RestorePointAPI.createSafetyRestorePoint.mockResolvedValue(42);
@@ -82,7 +84,7 @@ test('without device backup storage the previous code is kept in memory for the 
     unavailable.name = 'StorageUnavailableError';
     RestorePointAPI.createSafetyRestorePoint.mockRejectedValue(unavailable);
     vm.saveProjectSb3 = jest.fn(async () => `sb3:${vm.code}`);
-    vm.loadProject = jest.fn(async code => {
+    vm._loadProjectDirectly = jest.fn(async code => {
         vm.code = code.startsWith('sb3:') ? code.slice(4) : code;
     });
 
@@ -104,4 +106,37 @@ test('other backup failures still stop the replacement', async () => {
     await expect(withProjectReplacement(vm, 'Before import', replace)).rejects.toThrow('quota exceeded');
     expect(vm.saveProjectSb3).not.toHaveBeenCalled();
     expect(replace).not.toHaveBeenCalled();
+});
+
+test('the edit check only applies while the operation runs', async () => {
+    await withProjectReplacement(vm, 'Before import', async () => {
+        expect(vm._loadProjectInterceptors).toHaveLength(1);
+        await vm.loadProject('imported');
+    });
+    expect(vm._loadProjectInterceptors).toHaveLength(0);
+    vm.emit('PROJECT_CHANGED');
+    await vm.loadProject('later');
+    expect(vm.code).toBe('later');
+
+    await expect(withProjectReplacement(vm, 'Before import', async () => {
+        throw new Error('nothing loaded');
+    })).rejects.toThrow('nothing loaded');
+    expect(vm._loadProjectInterceptors).toHaveLength(0);
+    expect(RestorePointAPI.loadRestorePoint).not.toHaveBeenCalled();
+});
+
+test('a load refused for edits leaves the other interceptors in place', async () => {
+    const seen = [];
+    vm.addLoadProjectInterceptor((input, options, next) => {
+        seen.push(input);
+        return next();
+    });
+    await expect(withProjectReplacement(vm, 'Before clone', async () => {
+        vm.emit('PROJECT_CHANGED');
+        await vm.loadProject('remote');
+    })).rejects.toThrow('You edited the project');
+    expect(seen).toEqual([]);
+    await vm.loadProject('after');
+    expect(seen).toEqual(['after']);
+    expect(vm._loadProjectInterceptors).toHaveLength(1);
 });

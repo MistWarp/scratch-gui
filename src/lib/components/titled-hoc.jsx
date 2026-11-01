@@ -1,21 +1,13 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
-import {defineMessages, injectIntl, intlShape} from 'react-intl';
+import {injectIntl, intlShape} from 'react-intl';
 
 import {
     getIsAnyCreatingNewState,
     getIsShowingWithoutId
 } from '../../reducers/project-state';
-import {setProjectTitle} from '../../reducers/project-title';
-
-const messages = defineMessages({
-    defaultProjectTitle: {
-        id: 'tw.gui.defaultProjectTitle',
-        description: 'Default title for project',
-        defaultMessage: 'Project'
-    }
-});
+import {defaultProjectTitleMessage, setProjectTitle} from '../../reducers/project-title';
 
 /* Higher Order Component to get and set the project title
  * @param {React.Component} WrappedComponent component to receive project title related props
@@ -37,7 +29,7 @@ const TitledHOC = function (WrappedComponent) {
             }
             // if project is a new default project, and has loaded,
             if (this.props.isShowingWithoutId && prevProps.isAnyCreatingNewState) {
-                const defaultProjectTitle = this.props.intl.formatMessage(messages.defaultProjectTitle);
+                const defaultProjectTitle = this.props.intl.formatMessage(defaultProjectTitleMessage);
                 // #mw- platform loads still go through the default-project id path
                 // (hash parser only understands numeric scratch ids), but the fetcher
                 // already set the real title from the API. Don't clobber that.
@@ -53,7 +45,7 @@ const TitledHOC = function (WrappedComponent) {
             // HAS changed, we need to report that change to the projectTitle's owner
             if (this.props.reduxProjectTitle !== prevProps.reduxProjectTitle &&
                 this.props.reduxProjectTitle !== this.props.projectTitle) {
-                const defaultProjectTitle = this.props.intl.formatMessage(messages.defaultProjectTitle);
+                const defaultProjectTitle = this.props.intl.formatMessage(defaultProjectTitleMessage);
                 this.props.onUpdateProjectTitle(
                     this.props.reduxProjectTitle,
                     this.props.reduxProjectTitle === defaultProjectTitle
@@ -64,7 +56,7 @@ const TitledHOC = function (WrappedComponent) {
             let newTitle = requestedTitle;
             let isDefault = false;
             if (newTitle === null || typeof newTitle === 'undefined') {
-                newTitle = this.props.intl.formatMessage(messages.defaultProjectTitle);
+                newTitle = this.props.intl.formatMessage(defaultProjectTitleMessage);
                 isDefault = true;
             }
             this.props.onChangedProjectTitle(newTitle, isDefault);

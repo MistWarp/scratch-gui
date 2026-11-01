@@ -67,16 +67,15 @@ const run = ({ scaffolding }) => {
     });
   };
 
-  const oldStep = vm.runtime._step;
-  vm.runtime._step = function (...args) {
-    const ret = oldStep.call(this, ...args);
-    const {width, height} = scaffolding.layersRect;
-    mouse._clientX = width / 2;
-    mouse._clientY = height / 2;
-    mouse._scratchX = 0;
-    mouse._scratchY = 0;
-    return ret;
-  };
+  vm.runtime.addStepListener({
+    after: () => {
+      const {width, height} = scaffolding.layersRect;
+      mouse._clientX = width / 2;
+      mouse._clientY = height / 2;
+      mouse._scratchX = 0;
+      mouse._scratchY = 0;
+    }
+  });
 };
 
 export default run;

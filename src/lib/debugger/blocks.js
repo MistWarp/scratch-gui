@@ -89,7 +89,6 @@ const patchBlockly = () => {
 };
 
 const vmsWithDebuggerBlocks = new WeakSet();
-const vmsWithCloneHook = new WeakSet();
 
 const registerDebuggerBlocks = (vm, handlers) => {
     if (vmsWithDebuggerBlocks.has(vm)) return;
@@ -120,58 +119,44 @@ const registerDebuggerBlocks = (vm, handlers) => {
 
     patchBlockly();
 
-    const ogGreenFlag = vm.runtime.greenFlag;
-    vm.runtime.greenFlag = function (...args) {
+    vm.runtime.on('PROJECT_START', () => {
         if (getSetting('log_clear_greenflag')) {
             onClearLogs();
         }
         if (getSetting('log_greenflag')) {
             onLog('Green flag clicked', null, 'internal');
         }
-        return ogGreenFlag.call(this, ...args);
-    };
+    });
 
-    const ogStartHats = vm.runtime.startHats;
-    vm.runtime.startHats = function (hat, optMatchFields, ...args) {
+    vm.runtime.on('HATS_STARTED', (hat, matchFields) => {
         if (hat === 'event_whenbroadcastreceived' && getSetting('log_broadcasts')) {
             onLog(
-                `Broadcasted "${optMatchFields.BROADCAST_OPTION}"`,
+                `Broadcasted "${matchFields.BROADCAST_OPTION}"`,
                 vm.runtime.sequencer.activeThread,
                 'internal'
             );
         }
-        return ogStartHats.call(this, hat, optMatchFields, ...args);
-    };
+    });
 
-    const installCloneHook = () => {
-        if (vmsWithCloneHook.has(vm)) return;
-        const firstTarget = vm.runtime.targets[0];
-        if (!firstTarget) return;
-        vmsWithCloneHook.add(vm);
+    vm.runtime.on('CLONE_LIMIT_REACHED', target => {
+        if (getSetting('log_failed_clone_creation')) {
+            onLog(
+                `Failed to create clone of "${target.getName()}" because there are too many clones`,
+                vm.runtime.sequencer.activeThread,
+                'internal-warn'
+            );
+        }
+    });
 
-        const proto = firstTarget.constructor.prototype;
-        const ogMakeClone = proto.makeClone;
-        proto.makeClone = function (...args) {
-            if (getSetting('log_failed_clone_creation') && !vm.runtime.clonesAvailable()) {
-                onLog(
-                    `Failed to create clone of "${this.getName()}" because there are too many clones`,
-                    vm.runtime.sequencer.activeThread,
-                    'internal-warn'
-                );
-            }
-            const clone = ogMakeClone.call(this, ...args);
-            if (getSetting('log_clone_create') && clone) {
-                onLog(
-                    `Created clone of "${this.getName()}"`,
-                    vm.runtime.sequencer.activeThread,
-                    'internal'
-                );
-            }
-            return clone;
-        };
-    };
-    installCloneHook();
-    vm.runtime.on('PROJECT_LOADED', installCloneHook);
+    vm.runtime.on('targetWasCreated', (target, original) => {
+        if (original && !target.isOriginal && getSetting('log_clone_create')) {
+            onLog(
+                `Created clone of "${original.getName()}"`,
+                vm.runtime.sequencer.activeThread,
+                'internal'
+            );
+        }
+    });
 };
 
 export default registerDebuggerBlocks;

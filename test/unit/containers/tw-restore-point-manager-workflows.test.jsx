@@ -7,6 +7,7 @@ import {setFileHandle} from '../../../src/reducers/tw';
 import {showStandardAlert} from '../../../src/reducers/alerts';
 import {FIRST_BACKUP_DELAY} from '../../../src/lib/mw/device-backups.js';
 import {mountWithIntl} from '../../helpers/intl-helpers.jsx';
+import withLoadProjectInterceptors from '../../helpers/load-interceptors.js';
 
 jest.mock('../../../src/lib/api/restore-points', () => ({
     TYPE_AUTOMATIC: 0,
@@ -48,13 +49,13 @@ const makeManager = overrides => {
         isShowingProject: true,
         isModalVisible: false,
         hasEverEnteredEditor: true,
-        vm: {
+        vm: withLoadProjectInterceptors({
             on: jest.fn(),
             off: jest.fn(),
             loadProject: jest.fn(),
             stop: jest.fn(),
             renderer: {draw: jest.fn()}
-        },
+        }),
         ...overrides
     };
     const manager = new TWRestorePointManager(props);
