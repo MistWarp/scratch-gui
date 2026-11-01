@@ -7,7 +7,6 @@ import Modal from '../../containers/windowed-modal.jsx';
 import {DOCS_BASE, getHelpEntry} from '../../lib/help/index.js';
 
 import styles from './help-modal.css';
-import {local} from '../../modules/storage';
 
 const messages = defineMessages({
     title: {
@@ -20,9 +19,9 @@ const messages = defineMessages({
 // The docs are built for full-width viewing; zoom out so more fits in the window.
 const HELP_ZOOM = '0.9';
 
-const helpUrl = selectedId => {
+const helpUrl = (selectedId, dark) => {
     const entry = getHelpEntry(selectedId);
-    return `${DOCS_BASE}${(entry && entry.docsPath) || ''}/`;
+    return `${DOCS_BASE}${(entry && entry.docsPath) || ''}/?docusaurus-theme=${dark ? 'dark' : 'light'}`;
 };
 
 const editorIsDark = () => {
@@ -60,11 +59,9 @@ class HelpModal extends React.Component {
         bindAll(this, ['handleLoad']);
         this.frame = null;
         this.observer = null;
+        this.openedDark = editorIsDark();
     }
     componentDidMount () {
-        // Set before the iframe's docs bundle initializes so it boots in the
-        // right color mode (Docusaurus reads this key once at load).
-        local.writeString('theme', editorIsDark() ? 'dark' : 'light');
         // Re-sync when the user changes theme while Help is open. The editor
         // applies themes by mutating inline styles/classes on <html>.
         this.observer = new MutationObserver(() => applyEditorTheme(this.frame));
@@ -81,7 +78,7 @@ class HelpModal extends React.Component {
         applyEditorTheme(this.frame);
     }
     render () {
-        const src = helpUrl(this.props.selectedId);
+        const src = helpUrl(this.props.selectedId, this.openedDark);
         return (
             <Modal
                 className={styles.modalContent}
