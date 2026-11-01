@@ -1,6 +1,6 @@
 import {getRemotes, push} from '../../../src/lib/git/browser-git';
 import {syncConfiguredRemotes} from '../../../src/lib/git/sync-remotes';
-import {projectSession, resetProjectSession} from '../../../src/modules/project-session';
+import {projectSession, detachProjectSession} from '../../../src/modules/project-session';
 
 jest.mock('../../../src/lib/git/browser-git', () => ({
     getDefaultAuthor: () => ({name: 'User'}),
@@ -13,7 +13,7 @@ jest.mock('../../../src/lib/rotur/git-api', () => ({
 
 const importedWorkspaceVm = (approvedUrls = []) => {
     const vm = {};
-    resetProjectSession(vm);
+    detachProjectSession(vm);
     for (const url of approvedUrls) projectSession(vm).approvedRemotes.add(url);
     return vm;
 };

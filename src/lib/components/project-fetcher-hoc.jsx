@@ -321,7 +321,6 @@ const ProjectFetcherHOC = function (WrappedComponent) {
             // Stop scripts while fetching, but keep the current project intact until replacement data exists.
             this.props.vm.quit();
             markProjectHistoryLoading();
-            projectSession(this.props.vm).historyBootstrapError = null;
 
             const isInitialFetch = !this.hasFetchedProject;
             if (!isInitialFetch && getIsFetchingWithoutId(loadingState)) {
