@@ -183,18 +183,6 @@ const updateWallpaperObserverState = (hasWallpaper, opacity = 0.3) => {
     
     if (hasWallpaper) {
         createBlocksWorkspaceObserver();
-        
-        // Also add a listener for workspace creation events if available
-        if (window.AddonHooks && window.AddonHooks.workspaceCreated) {
-            window.AddonHooks.workspaceCreated(() => {
-                if (currentWallpaperState.hasWallpaper) {
-                    // Small delay to ensure workspace is fully initialized
-                    setTimeout(() => {
-                        applyBlocksWorkspaceTransparency(true, currentWallpaperState.opacity);
-                    }, 50);
-                }
-            });
-        }
     } else if (window.blocksWorkspaceObserver) {
         // Clean up observer when no wallpaper is active
         window.blocksWorkspaceObserver.disconnect();

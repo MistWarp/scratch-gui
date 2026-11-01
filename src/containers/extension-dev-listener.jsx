@@ -16,9 +16,9 @@ import {
 import {outputEntry} from '../lib/extension-dev/actions.js';
 import {setMarkedBlocks} from '../lib/extension-dev/block-marks.js';
 import {resetSession} from '../lib/extension-dev/session.js';
-import AddonHooks from '../addons/hooks.js';
 import messages from '../components/extension-dev/messages.js';
 import '../components/extension-dev/extension-dev.css';
+import {getActiveWorkspace} from '../modules/blocks-registry';
 
 const FLUSH_MS = 250;
 
@@ -162,7 +162,7 @@ const ExtensionDevListener = props => {
             if (!event || !event.id) return;
             buffer.current = buffer.current.filter(item => item.extensionId !== event.id);
             props.onClearRuntimeProblems(event.id);
-            const workspace = AddonHooks.blocklyWorkspace;
+            const workspace = getActiveWorkspace();
             const changed = [].concat(event.added || [], event.changed || [], event.removed || []);
             if (!changed.length) return;
             const target = vm.editingTarget;
