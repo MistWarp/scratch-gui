@@ -15,7 +15,7 @@ The repository holds two React apps that grew up separately: the editor (inherit
 - **Styles use explicit `.module.css` files.** Shared design tokens are in `src/community/styles/`. `pnpm run check:community-css` enforces the community CSS rules.
 - **Text goes through the community catalog**: `const {text} = useCommunityIntl()` from `src/community/i18n.jsx`, then `text('English text')`. The English text is the key. Run `pnpm run i18n:community:extract` after adding strings. Catalogs are in `src/community/translations/`.
 - The community ESLint override turns off `jsx-no-literals`, `jsx-no-bind` and `prop-types`, so those are not required here.
-- API calls go through `src/community/api.js`, which wraps `src/lib/community/api.js`.
+- API calls go through `src/community/api` (one file per resource, composed in `index.js`), which wraps `src/lib/community/api.js`.
 
 ## Modules and TypeScript (`src/modules`)
 
@@ -38,7 +38,7 @@ Code outside `src/modules/storage` must not touch `localStorage` or `sessionStor
 
 - `src/lib` holds code used by both apps or by the editor alone: `src/lib/community` (API client, cached fetch, whether the community build is on), `src/lib/rotur` (Rotur accounts), `src/lib/utils` (small pure helpers), `src/lib/themes`, `src/lib/settings`.
 - Reuse the shared helpers in `src/lib/utils` instead of writing local copies: `bytes.js` (`formatBytes`, binary units such as "1.5 MB"; pass `{decimal: true}` for limits sold in decimal units), `async.js` (`sleep`), `copy-text.js` (clipboard copy with a fallback for when the Clipboard API is missing or refused; pass `{document}` for content shown in another window) and `safe-url.js` (`safeUrl`, which keeps only absolute http(s) links). `src/community/format.js` and `src/community/copy-text.js` re-export them for community code.
-- Code under `src/community` may import from `src/lib`. Some editor code imports community modules (`src/community/api.js`, `Markdown.jsx`, `ui/SelectMenu.jsx`); for new code that both apps need, prefer a module in `src/lib`.
+- Code under `src/community` may import from `src/lib`. Some editor code imports community modules (`src/community/api`, `Markdown.jsx`, `ui/SelectMenu.jsx`); for new code that both apps need, prefer a module in `src/lib`.
 - Configuration that differs between environments comes from `process.env.*` values that `vite.config.mjs` defines (see `.env.example`). Always give a fallback, as in `process.env.MW_API_BASE || 'https://api.mistwarp.org/v1'`, because Jest does not run the Vite `define` step.
 - `src/addons/addons`, `src/packager` and `src/generated` are vendored or generated. ESLint skips them; keep changes to them minimal.
 

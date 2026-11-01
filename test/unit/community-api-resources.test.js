@@ -10,11 +10,26 @@ import news from '../../src/community/api/news.js';
 import projects from '../../src/community/api/projects.js';
 import roadmap from '../../src/community/api/roadmap.js';
 import spaces from '../../src/community/api/spaces.js';
+import stats from '../../src/community/api/stats.js';
+import support from '../../src/community/api/support.js';
 import users from '../../src/community/api/users.js';
 import api from '../../src/community/api';
 
 const spreadGroups = {
-    account, bounties, comments, feedback, games, git, news, projects, roadmap, spaces, users, warpthemeApi
+    account,
+    bounties,
+    comments,
+    feedback,
+    games,
+    git,
+    news,
+    projects,
+    roadmap,
+    spaces,
+    stats,
+    support,
+    users,
+    warpthemeApi
 };
 
 describe('community api resources', () => {

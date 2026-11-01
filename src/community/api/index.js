@@ -12,11 +12,15 @@ import news from './news.js';
 import projects from './projects.js';
 import roadmap from './roadmap.js';
 import spaces from './spaces.js';
+import stats from './stats.js';
+import support from './support.js';
 import users from './users.js';
 import {editorUrl, embedUrl, projectUrl, themeCustomFor} from './urls.js';
 
 const api = {
     ...account,
+    ...support,
+    ...stats,
     ...projects,
     ...games,
     ...warpthemeApi,
