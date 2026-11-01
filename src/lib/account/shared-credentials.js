@@ -135,6 +135,7 @@ const writeLocal = (key, record) => {
 };
 
 const storageFailure = key => new Error(`Could not update ${key} in localStorage`);
+const storageReadFailure = key => new Error(`Could not read ${key} from localStorage`);
 
 const notify = key => {
     setTimeout(() => {
@@ -175,7 +176,11 @@ const write = (key, value) => {
     writeCookie(key, record);
 };
 
-const getItem = key => (isShared(key) ? resolve(key) : local.readString(key));
+const getItem = key => {
+    if (isShared(key)) return resolve(key);
+    if (!local.isAvailable()) throw storageReadFailure(key);
+    return local.readString(key);
+};
 
 const setItem = (key, value) => {
     if (!isShared(key)) {

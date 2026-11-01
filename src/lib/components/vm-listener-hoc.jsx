@@ -30,7 +30,7 @@ import {Theme} from '../themes';
 import {CustomTheme} from '../themes/custom-themes.js';
 import implementGuiAPI from '../api/extension-gui';
 import {isBlocksEditorVisible} from '../editor-visibility.js';
-import {local} from '../../modules/storage';
+import {readProjectThemeIgnoreMap} from '../project-theme-prompts.js';
 
 const projectThemeSuppressed = () => {
     try {
@@ -52,19 +52,6 @@ const buildProjectTheme = payload => {
 };
 
 let compileErrorCounter = 0;
-
-const PROJECT_THEME_IGNORE_STORAGE_KEY = 'mw:ignore-project-theme-prompts';
-
-export const readProjectThemeIgnoreMap = () => {
-    try {
-        const raw = local.readString(PROJECT_THEME_IGNORE_STORAGE_KEY);
-        if (!raw) return {};
-        const parsed = JSON.parse(raw);
-        return parsed && typeof parsed === 'object' ? parsed : {};
-    } catch (e) {
-        return {};
-    }
-};
 
 const hashString = str => {
     // djb2
