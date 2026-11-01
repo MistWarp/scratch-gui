@@ -40,7 +40,11 @@ const mockCollaborationService = {
 CollaborationService.getInstance.mockReturnValue(mockCollaborationService);
 
 const mockVM = {
-    on: jest.fn()
+    on: jest.fn(),
+    runtime: {
+        on: jest.fn(),
+        off: jest.fn()
+    }
 };
 
 const ROTUR_HANDLE = 'TestHandle';
