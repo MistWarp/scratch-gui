@@ -65,7 +65,7 @@ import defaultProjectData from '../default-project/project-data.js';
 import RestorePointAPI from '../api/restore-points';
 import {isStudentSession} from '../rotur/student-flag.js';
 import {isGalleryExtensionUrl} from '../trusted-extension.js';
-import {projectSession, setLoadHandoff} from '../../modules/project-session';
+import {projectSession, setLoadHandoff, takeLoadHandoff} from '../../modules/project-session';
 
 const isGallerySampleUrl = url => typeof url === 'string' && (
     isGalleryExtensionUrl(url) || url.startsWith('https://extensions-mistium.pages.dev/')
@@ -466,6 +466,7 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 })
                 .catch(async err => {
                     log.error(err);
+                    if (takeLoadHandoff(this.props.vm).release) handedOff = false;
                     // Download failures keep the retry screen; anything else
                     // goes back to the previous project once it is restored.
                     let restored = false;

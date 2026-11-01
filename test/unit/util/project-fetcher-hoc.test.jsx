@@ -9,6 +9,7 @@ import {LoadingState} from '../../../src/reducers/project-state';
 import {getEditorProject, fetchWorkspace} from '../../../src/lib/community/api.js';
 import {cachedFetchBuffer} from '../../../src/lib/community/cached-fetch.js';
 import {beginProjectOperation, isProjectOperationActive} from '../../../src/lib/project-operation.js';
+import {prepareProjectReplacement} from '../../../src/lib/project-replacement.js';
 import {takeLoadHandoff} from '../../../src/modules/project-session';
 
 jest.mock('../../../src/lib/git/browser-git.js', () => ({
@@ -25,6 +26,9 @@ jest.mock('../../../src/lib/community/api.js', () => ({
 }));
 jest.mock('../../../src/lib/community/cached-fetch.js', () => ({
     cachedFetchBuffer: jest.fn()
+}));
+jest.mock('../../../src/lib/project-replacement.js', () => ({
+    prepareProjectReplacement: jest.fn(() => Promise.resolve(() => Promise.resolve()))
 }));
 
 
@@ -304,6 +308,92 @@ describe('ProjectFetcherHOC', () => {
         expect(getEditorProject).toHaveBeenLastCalledWith(project.id);
         expect(window.location.href).toBe(originalUrl);
         takeLoadHandoff(vm).release();
+    });
+
+    const mountFetcher = props => {
+        const Component = () => <div />;
+        const WrappedComponent = ProjectFetcherHOC(Component);
+        const wrapper = shallowWithIntl(
+            <WrappedComponent
+                store={store}
+                {...props}
+            />,
+            {context: {store}}
+        );
+        return wrapper.dive().dive()
+            .instance();
+    };
+
+    test('hands the rollback for the previous project to the VM manager', async () => {
+        const restore = jest.fn(() => Promise.resolve());
+        prepareProjectReplacement.mockResolvedValueOnce(restore);
+        getEditorProject.mockResolvedValue({project: {id: 'next', projectJsonUrl: 'https://projects.example/next.json'}});
+        cachedFetchBuffer.mockResolvedValue('next data');
+        const onAbortProjectSwitch = jest.fn();
+        const onFetchedProjectData = jest.fn();
+        const vm = {loadProject: jest.fn(), quit: jest.fn(), runtime: {targets: [{}]}};
+        const instance = mountFetcher({onAbortProjectSwitch, onFetchedProjectData, vm});
+        instance.previousProjectId = '100';
+        window.history.replaceState({}, '', '/?platform_project=next');
+
+        await instance.fetchProject('0', LoadingState.FETCHING_WITH_ID);
+
+        expect(onFetchedProjectData).toHaveBeenCalledWith('next data', LoadingState.FETCHING_WITH_ID);
+        const {prepareHistory, release, rollback} = takeLoadHandoff(vm);
+        expect(typeof prepareHistory).toBe('function');
+        await rollback({error: new Error('Broken project')});
+        expect(restore).toHaveBeenCalledTimes(1);
+        expect(onAbortProjectSwitch).toHaveBeenCalledWith('100');
+        expect(isProjectOperationActive(vm)).toBe(true);
+        release();
+        expect(isProjectOperationActive(vm)).toBe(false);
+        expect(takeLoadHandoff(vm)).toEqual({});
+    });
+
+    test('unmounting during a fetch leaves no handoff on the VM', async () => {
+        let finishDownload;
+        const download = new Promise(resolve => {
+            finishDownload = resolve;
+        });
+        const downloadStarted = new Promise(resolve => {
+            cachedFetchBuffer.mockImplementation(() => {
+                resolve();
+                return download;
+            });
+        });
+        getEditorProject.mockResolvedValue({project: {id: 'next', projectJsonUrl: 'https://projects.example/next.json'}});
+        const onFetchedProjectData = jest.fn();
+        const vm = {loadProject: jest.fn(), quit: jest.fn(), runtime: {targets: [{}]}};
+        const instance = mountFetcher({onFetchedProjectData, vm});
+        window.history.replaceState({}, '', '/?platform_project=next');
+
+        const fetching = instance.fetchProject('0', LoadingState.FETCHING_WITH_ID);
+        await downloadStarted;
+        instance.componentWillUnmount();
+        finishDownload('next data');
+        await fetching;
+
+        expect(onFetchedProjectData).not.toHaveBeenCalled();
+        expect(takeLoadHandoff(vm)).toEqual({});
+        expect(isProjectOperationActive(vm)).toBe(false);
+    });
+
+    test('clears an untaken handoff and releases the operation when handing off fails', async () => {
+        getEditorProject.mockResolvedValue({project: {id: 'next', projectJsonUrl: 'https://projects.example/next.json'}});
+        cachedFetchBuffer.mockResolvedValue('next data');
+        const onError = jest.fn();
+        const onFetchedProjectData = jest.fn(() => {
+            throw new Error('Could not start loading');
+        });
+        const vm = {loadProject: jest.fn(), quit: jest.fn(), runtime: {targets: [{}]}};
+        const instance = mountFetcher({onError, onFetchedProjectData, vm});
+        window.history.replaceState({}, '', '/?platform_project=next');
+
+        await instance.fetchProject('0', LoadingState.FETCHING_WITH_ID);
+
+        expect(onFetchedProjectData).toHaveBeenCalledTimes(1);
+        expect(takeLoadHandoff(vm)).toEqual({});
+        expect(isProjectOperationActive(vm)).toBe(false);
     });
 
     test('when there is an id, it tries to update the store with that id', () => {
