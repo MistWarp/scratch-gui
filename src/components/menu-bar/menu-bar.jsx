@@ -55,6 +55,7 @@ import {
     REPO_DIR as GIT_REPO_DIR,
     getFs as getGitFs
 } from '../../lib/git/browser-git';
+import {readRemoteToken} from '../../lib/git/sync-remotes.js';
 import {buildSb3FromFractchTree} from '../../lib/git/fractch-tree';
 import {createMwp} from '../../lib/git/mwp.js';
 import {
@@ -975,12 +976,7 @@ class MenuBar extends React.Component {
     }
 
     gitAuth () {
-        let token = '';
-        try {
-            token = localStorage.getItem('mw:git-token') || '';
-        } catch (e) {
-            token = '';
-        }
+        const token = readRemoteToken();
         const username = (getDefaultAuthor().name || '').trim();
         if (!token) return null;
         return () => (username ? {username, password: token} : {username: token, password: token});

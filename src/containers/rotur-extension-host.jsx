@@ -22,6 +22,7 @@ import {
     blockProjectPrompts,
     isProjectPromptBlocked
 } from '../lib/project-prompt-blocking.js';
+import {session} from '../modules/storage';
 
 // Project thumbnails are served from the MistWarp API origin, outside the /v1 prefix.
 const MISTWARP_API_ORIGIN = (process.env.MW_API_BASE || 'https://api.mistwarp.org/v1').replace(/\/v1\/?$/, '');
@@ -187,7 +188,7 @@ class RoturExtensionHost extends React.Component {
 
     getProjectId () {
         try {
-            return JSON.parse(sessionStorage.getItem('mw:mistwarp-current-project')).id || '';
+            return JSON.parse(session.readString('mw:mistwarp-current-project')).id || '';
         } catch (e) {
             return '';
         }

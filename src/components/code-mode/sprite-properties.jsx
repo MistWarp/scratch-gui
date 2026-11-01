@@ -8,6 +8,7 @@ import Input from '../forms/input.jsx';
 import DirectionPicker from '../../containers/direction-picker.jsx';
 
 import styles from './workbench.css';
+import {local} from '../../modules/storage';
 
 const messages = defineMessages({
     heading: {
@@ -39,13 +40,7 @@ const messages = defineMessages({
 
 const OPEN_KEY = 'mw:code-mode:properties-open';
 
-const readOpen = () => {
-    try {
-        return window.localStorage.getItem(OPEN_KEY) !== 'false';
-    } catch (e) {
-        return true;
-    }
-};
+const readOpen = () => local.readString(OPEN_KEY) !== 'false';
 
 const BufferedInput = BufferedInputHOC(Input);
 
@@ -54,11 +49,7 @@ const SpriteProperties = ({intl, sprite, vm}) => {
 
     const handleToggle = useCallback(() => {
         setOpen(previous => {
-            try {
-                window.localStorage.setItem(OPEN_KEY, String(!previous));
-            } catch (e) {
-                return !previous;
-            }
+            local.writeBoolean(OPEN_KEY, !previous);
             return !previous;
         });
     }, []);

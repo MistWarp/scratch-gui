@@ -15,6 +15,7 @@ import serialize from '../packager/settings/serialize';
 import {recursivelySerializeBlobs, recursivelyDeserializeBlobs} from '../packager/settings/blob-serializer';
 import downloadURL from '../packager/settings/download-url';
 import {APP_NAME} from '../lib/constants/brand';
+import {local} from '../modules/storage';
 
 const sessionOptions = new Map();
 const tabs = ['Export', 'Runtime', 'Appearance', 'Advanced'];
@@ -34,7 +35,7 @@ class PackagerWindow extends React.Component {
         this.settingsKey = `PackagerOptions.${this.projectData.uniqueId}`;
         let options = deepClone(this.defaults);
         try {
-            const saved = sessionOptions.get(this.settingsKey) || JSON.parse(localStorage.getItem(this.settingsKey));
+            const saved = sessionOptions.get(this.settingsKey) || JSON.parse(local.readString(this.settingsKey));
             if (saved) options = merge(deepClone(saved), options);
         } catch (e) { /* Unavailable or invalid storage should not prevent exporting. */ }
         options.extensions = options.extensions.map(item => (typeof item === 'string' ? item : item.url || ''));
@@ -68,7 +69,7 @@ class PackagerWindow extends React.Component {
         if (previous.result) URL.revokeObjectURL(previous.result.url);
         sessionOptions.set(this.settingsKey, options);
         try {
-            localStorage.setItem(this.settingsKey, JSON.stringify(serialize(options, this.defaults)));
+            local.writeJSON(this.settingsKey, serialize(options, this.defaults));
         } catch (e) { /* Keep the settings in memory if persistent storage is full. */ }
         this.setState({options, result: null, error: null});
     };
