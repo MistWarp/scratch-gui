@@ -8,6 +8,7 @@ module.exports = {
     },
     plugins: ['jest'],
     rules: {
+        'require-jsdoc': 'off',
         'react/prop-types': 0,
         // Re-rendering cost does not matter in tests, and small test components need no names.
         'react/jsx-no-bind': 'off',

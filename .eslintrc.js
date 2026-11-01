@@ -14,7 +14,8 @@ module.exports = {
         }
     },
     rules: {
-        'import/namespace': 'off'
+        'import/namespace': 'off',
+        'require-jsdoc': 'off'
     },
     overrides: [
         {
