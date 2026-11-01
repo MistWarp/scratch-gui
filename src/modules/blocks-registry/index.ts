@@ -1,5 +1,41 @@
-export type ScratchBlocksLibrary = object;
-export type BlocksWorkspace = object;
+export interface BlocksEvent {
+    readonly type: string;
+    readonly workspaceId?: string;
+    readonly blockId?: string;
+}
+
+export type BlocksEventListener = (event: BlocksEvent) => void;
+
+export interface BlocksBlock {
+    readonly id: string;
+    readonly type: string;
+    getSvgRoot: () => SVGGElement | null;
+}
+
+export interface BlocksWorkspace {
+    readonly id: string;
+    getBlockById: (id: string) => BlocksBlock | null;
+    getAllBlocks: (ordered: boolean) => BlocksBlock[];
+    getTopBlocks: (ordered: boolean) => BlocksBlock[];
+    addChangeListener: (listener: BlocksEventListener) => BlocksEventListener;
+    removeChangeListener: (listener: BlocksEventListener) => void;
+    getParentSvg: () => SVGSVGElement | null;
+}
+
+export interface ScratchBlocksLibrary {
+    getMainWorkspace: () => BlocksWorkspace | null;
+    Events: {
+        fire: (event: BlocksEvent) => void;
+        disable: () => void;
+        enable: () => void;
+        isEnabled: () => boolean;
+    };
+    Xml: {
+        domToText: (dom: Node) => string;
+        textToDom: (text: string) => Element;
+        blockToDom: (block: BlocksBlock) => Element;
+    };
+}
 
 type WorkspaceListener = (workspace: BlocksWorkspace | null) => void;
 
@@ -34,4 +70,11 @@ export const onActiveWorkspace = (listener: WorkspaceListener): (() => void) => 
     return () => {
         workspaceListeners.delete(listener);
     };
+};
+
+export const resetBlocksRegistryForTests = (): void => {
+    library = null;
+    workspace = null;
+    libraryWaiters.length = 0;
+    workspaceListeners.clear();
 };
