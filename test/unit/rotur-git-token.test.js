@@ -13,7 +13,7 @@ jest.mock('../../src/lib/rotur/client.js', () => ({
 
 const http = require('isomorphic-git/http/web');
 const {getAuth, isRoturGitUrl} = require('../../src/lib/rotur/git-api.js');
-const {cloneRepo, corsProxyForUrl, git} = require('../../src/lib/git/browser-git.js');
+const {corsProxyForUrl, git} = require('../../src/lib/git/browser-git.js');
 
 const originalFetch = global.fetch;
 
@@ -76,14 +76,18 @@ test('Rotur Git never goes through the CORS proxy', () => {
         'http://git.rotur.dev/sophie/game.git',
         'https://GIT.ROTUR.DEV/sophie/game.git'
     ]) {
-        expect(() => corsProxyForUrl(url)).toThrow('turned off');
+        expect(corsProxyForUrl(url)).toBeNull();
     }
     expect(corsProxyForUrl('https://github.com/MistWarp/scratch-gui.git')).toBe('https://cors.isomorphic-git.org');
 });
 
-test('cloning a Rotur Git repo stops before any request', async () => {
+test('Rotur Git is asked directly, so its token never reaches the proxy', async () => {
     const requests = recordRequests();
-    await expect(cloneRepo({url: 'https://git.rotur.dev/sophie/game.git', onAuth: getAuth}))
-        .rejects.toThrow('turned off');
-    expect(requests).toEqual([]);
+    const url = 'https://git.rotur.dev/sophie/game.git';
+    await expect(git.getRemoteInfo({http, corsProxy: corsProxyForUrl(url), url, onAuth: getAuth}))
+        .rejects.toThrow();
+    expect(requests.length).toBeGreaterThan(0);
+    for (const request of requests) {
+        expect(request.url.startsWith('https://git.rotur.dev/sophie/game.git/')).toBe(true);
+    }
 });
