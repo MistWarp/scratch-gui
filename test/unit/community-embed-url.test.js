@@ -1,4 +1,4 @@
-import {embedUrl} from '../../src/community/api.js';
+import {embedUrl} from '../../src/community/api';
 
 test('project embeds use the shared cached platform loader', () => {
     const url = new URL(embedUrl({

@@ -3,7 +3,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {ArrowLeft, FileJson, Palette, Plus, Search, Upload} from 'lucide-react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
-import api from '../api.js';
+import api from '../api';
 import ExploreHeader, {ExploreSearch} from '../components/ExploreHeader.jsx';
 import ThemeCard from '../components/ThemeCard.jsx';
 import {CardRow, CardRowSkeleton} from '../components/GameCard.jsx';

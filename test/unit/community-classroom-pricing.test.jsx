@@ -6,10 +6,10 @@ import {MemoryRouter} from 'react-router-dom';
 
 import {UpgradeModal, billingIntervals, seatPacksFor} from '../../src/community/pages/Classroom.jsx';
 import ClassroomAbout from '../../src/community/pages/ClassroomAbout.jsx';
-import api from '../../src/community/api.js';
+import api from '../../src/community/api';
 import {useUser} from '../../src/community/UserContext.jsx';
 
-jest.mock('../../src/community/api.js', () => ({
+jest.mock('../../src/community/api', () => ({
     __esModule: true,
     default: {classroom: {billingCheckout: jest.fn()}}
 }));

@@ -2,7 +2,7 @@ import React from 'react';
 import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
 import {AdminActionDialog, ErrorManager} from '../../src/community/pages/Admin.jsx';
-import api from '../../src/community/api.js';
+import api from '../../src/community/api';
 import copyText from '../../src/community/copy-text.js';
 
 jest.mock('../../src/lib/themes/custom-themes.js', () => ({

@@ -1,30 +1,41 @@
 jest.mock('../../src/lib/community/api.js', () => ({loadSession: jest.fn(() => null)}));
-jest.mock('../../src/community/api.js', () => ({
-    __esModule: true,
-    default: {loadSession: jest.fn(() => null), notifications: jest.fn(), readNotifications: jest.fn()}
+jest.mock('../../src/lib/community/notifications.js', () => ({
+    fetchCommunityNotifications: jest.fn(),
+    markCommunityNotificationsRead: jest.fn()
 }));
 
 jest.mock('rotur-sdk', () => {
     const notificationsList = jest.fn();
+    const notificationsMarkRead = jest.fn();
     return {
         Rotur: jest.fn(() => ({
             loggedIn: true,
-            notifications: {list: notificationsList}
+            notifications: {list: notificationsList, markRead: notificationsMarkRead}
         })),
         resolvePermissions: jest.fn(() => []),
-        notificationsList
+        notificationsList,
+        notificationsMarkRead
     };
 });
 
-import {notificationsList} from 'rotur-sdk';
+import {notificationsList, notificationsMarkRead} from 'rotur-sdk';
 import {loadSession} from '../../src/lib/community/api.js';
-import communityApi from '../../src/community/api.js';
-import {fetchNotifications, isVisibleNotification} from '../../src/lib/rotur/client.js';
+import {
+    fetchCommunityNotifications,
+    markCommunityNotificationsRead
+} from '../../src/lib/community/notifications.js';
+import {
+    fetchNotifications,
+    isVisibleNotification,
+    markNotificationsRead
+} from '../../src/lib/rotur/client.js';
 
 beforeEach(() => {
     notificationsList.mockReset();
     loadSession.mockReturnValue(null);
-    communityApi.notifications.mockReset();
+    fetchCommunityNotifications.mockReset();
+    markCommunityNotificationsRead.mockReset();
+    notificationsMarkRead.mockReset();
 });
 
 describe('Rotur notification visibility', () => {
@@ -110,7 +121,7 @@ describe('Rotur notification loading', () => {
 
 test('includes locally stored milestone notifications when the shared inbox is unavailable', async () => {
     loadSession.mockReturnValue('alice-session');
-    communityApi.notifications.mockResolvedValue({notifications: [{
+    fetchCommunityNotifications.mockResolvedValue({notifications: [{
         id: 'local',
         type: 'like_milestone',
         platform: 'mistwarp',
@@ -126,4 +137,28 @@ test('includes locally stored milestone notifications when the shared inbox is u
 test('does not show milestone notifications belonging to another app', () => {
     expect(isVisibleNotification({type: 'like_milestone', platform: 'other-app'})).toBe(false);
     expect(isVisibleNotification({type: 'follower_milestone', platform: 'mistwarp'})).toBe(true);
+});
+
+describe('marking notifications read', () => {
+    test('marks both inboxes read when signed in to MistWarp', async () => {
+        loadSession.mockReturnValue('alice-session');
+        notificationsMarkRead.mockResolvedValue();
+        markCommunityNotificationsRead.mockResolvedValue();
+        await expect(markNotificationsRead()).resolves.toBe(true);
+        expect(notificationsMarkRead).toHaveBeenCalledTimes(1);
+        expect(markCommunityNotificationsRead).toHaveBeenCalledTimes(1);
+    });
+
+    test('only marks the Rotur inbox without a MistWarp session', async () => {
+        notificationsMarkRead.mockResolvedValue();
+        await expect(markNotificationsRead()).resolves.toBe(true);
+        expect(markCommunityNotificationsRead).not.toHaveBeenCalled();
+    });
+
+    test('reports failure when the MistWarp inbox cannot be marked', async () => {
+        loadSession.mockReturnValue('alice-session');
+        notificationsMarkRead.mockResolvedValue();
+        markCommunityNotificationsRead.mockRejectedValue(new Error('offline'));
+        await expect(markNotificationsRead()).resolves.toBe(false);
+    });
 });

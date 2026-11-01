@@ -1,7 +1,6 @@
-import * as bundledModule0 from '../../community/api.js';
-
 import {Rotur} from 'rotur-sdk';
 import {loadSession} from '../community/api.js';
+import {fetchCommunityNotifications, markCommunityNotificationsRead} from '../community/notifications.js';
 import {
     getRoturSettings,
     formatActivityTitle,
@@ -656,8 +655,7 @@ const fetchNotifications = afterDays => {
         let localLoaded = false;
         if (loadSession()) {
             try {
-                const {default: communityApi} = await Promise.resolve(bundledModule0);
-                const data = await communityApi.notifications();
+                const data = await fetchCommunityNotifications();
                 local = data.notifications || [];
                 localLoaded = true;
             } catch (_) {
@@ -724,10 +722,9 @@ const markNotificationsRead = async () => {
         return false;
     }
     try {
-        const {default: communityApi} = await Promise.resolve(bundledModule0);
         const results = await Promise.allSettled([
             rotur.notifications.markRead(),
-            communityApi.loadSession() ? communityApi.readNotifications() : Promise.resolve()
+            loadSession() ? markCommunityNotificationsRead() : Promise.resolve()
         ]);
         return results.every(result => result.status === 'fulfilled');
     } catch (_) {

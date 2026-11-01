@@ -2,10 +2,10 @@ import React from 'react';
 import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
 
-import api from '../../src/community/api.js';
+import api from '../../src/community/api';
 import {ReleaseList} from '../../src/community/pages/Project.jsx';
 
-jest.mock('../../src/community/api.js', () => ({
+jest.mock('../../src/community/api', () => ({
     __esModule: true,
     default: {
         createRelease: jest.fn(),

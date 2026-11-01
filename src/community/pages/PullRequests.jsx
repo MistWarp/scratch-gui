@@ -3,7 +3,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {GitPullRequest, MessageSquare, Plus, Search} from 'lucide-react';
 import {Link, useParams} from 'react-router-dom';
-import api from '../api.js';
+import api from '../api';
 import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
 import Avatar from '../components/Avatar.jsx';
 import UserLink from '../components/UserLink.jsx';

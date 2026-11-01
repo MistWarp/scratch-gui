@@ -3,7 +3,7 @@ import React, {useEffect, useState} from 'react';
 import PropTypes from 'prop-types';
 import {BarChart3, CalendarCheck, Check, Crown, ExternalLink, FileSpreadsheet, Heart, History, Link2, Palette, Plus, RotateCcw, Server, Users, X} from 'lucide-react';
 import {Link} from 'react-router-dom';
-import api, {editorUrl} from '../api.js';
+import api, {editorUrl} from '../api';
 import {getCommunityLocale} from '../locale.js';
 import {formatBytes} from '../../lib/utils/bytes.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';

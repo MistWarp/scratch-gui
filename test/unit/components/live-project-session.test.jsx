@@ -2,9 +2,9 @@ import React from 'react';
 import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
 import LiveProjectSession from '../../../src/community/components/LiveProjectSession.jsx';
-import api from '../../../src/community/api.js';
+import api from '../../../src/community/api';
 
-jest.mock('../../../src/community/api.js', () => ({
+jest.mock('../../../src/community/api', () => ({
     __esModule: true,
     default: {request: jest.fn()},
     editorUrl: ({platformProject}) => `/editor#mw-${platformProject}`

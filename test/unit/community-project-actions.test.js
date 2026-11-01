@@ -17,7 +17,7 @@ import {
 } from '../../src/community/pages/Project.jsx';
 import GitGraph from '../../src/community/components/GitGraph.jsx';
 import ConfirmModal from '../../src/community/components/ui/ConfirmModal.jsx';
-import api from '../../src/community/api.js';
+import api from '../../src/community/api';
 
 jest.mock('../../src/lib/themes/custom-themes.js', () => ({
     CustomTheme: {},

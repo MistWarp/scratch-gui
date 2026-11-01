@@ -1,4 +1,4 @@
-import {projectUrl} from './api.js';
+import {projectUrl} from './api';
 
 const SITE = 'https://mistwarp.org';
 const MISTWARP_HOSTS = ['mistwarp.org', 'www.mistwarp.org', 'warp.mistium.com'];

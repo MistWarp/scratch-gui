@@ -22,7 +22,7 @@ jest.mock('../../src/components/menu-bar/mw-rotur-account.jsx', () => ({
         return <div id="account">{props.username}</div>;
     }
 }));
-jest.mock('../../src/community/api.js', () => ({
+jest.mock('../../src/community/api', () => ({
     __esModule: true,
     default: {
         explore: jest.fn(() => Promise.resolve({projects: []})),

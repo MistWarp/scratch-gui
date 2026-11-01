@@ -2,12 +2,12 @@ import React from 'react';
 import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
 import PostToClawModal from '../../src/community/components/PostToClawModal.jsx';
-import api from '../../src/community/api.js';
+import api from '../../src/community/api';
 
 jest.mock('../../src/community/rotur.js', () => ({createPost: jest.fn()}));
 jest.mock('../../src/community/components/GifPicker.jsx', () => () => null);
-jest.mock('../../src/community/api.js', () => {
-    const actual = jest.requireActual('../../src/community/api.js');
+jest.mock('../../src/community/api', () => {
+    const actual = jest.requireActual('../../src/community/api');
     return {
         ...actual,
         __esModule: true,
