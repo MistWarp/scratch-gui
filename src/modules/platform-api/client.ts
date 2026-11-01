@@ -1,5 +1,6 @@
+import {parseResponse} from './response';
 import {isCacheNeutral, staleCacheTest, type ResponseCache} from './response-cache';
-import {parseResponse, type SessionManager} from './session';
+import type {SessionManager} from './session';
 import type {ApiError, ErrorFactory, Fetch} from './types';
 
 const GET_TIMEOUT = 15000;
@@ -7,11 +8,11 @@ const GET_RETRY_DELAY = 400;
 const UPLOAD_STALL_TIMEOUT = 120000;
 const UPLOAD_PROCESSING_TIMEOUT = 180000;
 
-export type JsonBody = FormData | Record<string, unknown> | unknown[] | string | number | boolean | null;
+export type RequestBody = FormData | Record<string, unknown> | unknown[] | string | number | boolean | null;
 
 export interface RequestOptions {
     method?: string;
-    body?: JsonBody;
+    body?: RequestBody;
     headers?: Record<string, string>;
     cache?: boolean;
     timeoutMs?: number;
@@ -44,12 +45,16 @@ const isAuthPath = (path: string): boolean => path.startsWith('/auth') || path.s
 export const createClient = (
     {baseUrl, session, cache, errors, fetch, onSuccess}: ClientOptions
 ): PlatformClient => {
+    const withToken = <R>(use: (token: string | null) => R | Promise<R>): R | Promise<R> => (
+        session.hasProvider() ? session.current().then(use) : use(session.load())
+    );
+
     const send = async (path: string, raw: boolean, options: RequestOptions): Promise<unknown> => {
-        const {method = 'GET', body, headers = {}, timeoutMs} = options;
-        const cacheable = method === 'GET' && !raw && options.cache !== false;
+        const {method = 'GET', body, headers = {}, cache: useCache = true, timeoutMs} = options;
+        const cacheable = method === 'GET' && !raw && useCache;
         if (cacheable && session.hasProvider()) await session.current();
         const cacheKey = cacheable ? cache.keyFor(path, session.load()) : '';
-        const timeout = timeoutMs ?? (method === 'GET' && !raw ? GET_TIMEOUT : 0);
+        const timeout = typeof timeoutMs === 'number' ? timeoutMs : (method === 'GET' && !raw ? GET_TIMEOUT : 0);
         if (cacheable) {
             const hit = cache.read(cacheKey);
             if (hit) return hit;
@@ -85,8 +90,7 @@ export const createClient = (
                 });
         };
 
-        const fetchOnce = async (): Promise<Response> =>
-            fetchWith(session.hasProvider() ? await session.current() : session.load());
+        const fetchOnce = (): Promise<Response> => Promise.resolve(withToken(fetchWith));
 
         const fetchWithRetry = async (): Promise<Response> => {
             if (method !== 'GET') return fetchOnce();
@@ -156,7 +160,7 @@ export const createClient = (
                 if (settled) return;
                 const done = event.lengthComputable && event.loaded >= event.total;
                 scheduleTimeout(done ? UPLOAD_PROCESSING_TIMEOUT : UPLOAD_STALL_TIMEOUT, done);
-                if (event.lengthComputable && onProgress) onProgress(event.loaded, event.total);
+                if (event.lengthComputable && typeof onProgress === 'function') onProgress(event.loaded, event.total);
             };
             xhr.onerror = () => {
                 finishReject(errors.network());
@@ -187,10 +191,8 @@ export const createClient = (
             xhr.send(form);
         });
 
-    const upload = async <T>(path: string, form: FormData, onProgress?: UploadProgress): Promise<T> => {
-        const token = session.hasProvider() ? await session.current() : session.load();
-        return sendUpload(path, form, onProgress, token) as Promise<T>;
-    };
+    const upload = <T>(path: string, form: FormData, onProgress?: UploadProgress): Promise<T> =>
+        Promise.resolve(withToken(token => sendUpload(path, form, onProgress, token))) as Promise<T>;
 
     const request = <T>(path: string, options: RequestOptions = {}): Promise<T> =>
         send(path, false, options) as Promise<T>;

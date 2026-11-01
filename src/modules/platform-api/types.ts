@@ -33,7 +33,7 @@ export interface SessionProvider {
 }
 
 export interface AuthResult {
-    token: string;
+    token?: string;
     minor?: boolean;
     [key: string]: unknown;
 }

@@ -1,57 +1,26 @@
 import type {ResponseCache} from './response-cache';
+import {isRecord, isRestricted, parseResponse, readJSON, ROTUR_ACCOUNT_URL, stringField} from './response';
 import type {ApiError, AuthResult, CredentialStore, ErrorFactory, Fetch, SessionProvider} from './types';
 
 const SESSION_KEY = 'mw:mistwarp-session';
 const SESSION_WAIT = 15000;
 const VALIDATOR_URL = 'https://api.rotur.dev/v2/validators';
 const VALIDATOR_KEYS = ['app_1938b6a87799f862', 'mistwarp'];
-const ROTUR_ACCOUNT_URL = 'https://rotur.dev/me';
-
-export const RESTRICTED_CODES = ['banned', 'account_blocked', 'app_banned'];
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-    typeof value === 'object' && value !== null;
-
-const stringField = (data: unknown, key: string): string | undefined => {
-    const value = isRecord(data) ? data[key] : undefined;
-    return typeof value === 'string' ? value : undefined;
-};
-
-const readJSON = async (response: Response): Promise<unknown> => {
-    try {
-        return await response.json();
-    } catch {
-        return {};
-    }
-};
-
-export const isRestricted = (code: unknown): boolean => typeof code === 'string' && RESTRICTED_CODES.includes(code);
 
 export const banMessage = ({message, data}: {message: string; data?: unknown}): string => {
     const reason = stringField(data, 'reason');
     const until = isRecord(data) ? data.until : undefined;
-    const ends = until ?
-        `${message.replace(/\.$/, '')} until ${new Date(until as string | number).toLocaleDateString()}.` :
+    const ends = typeof until === 'string' || typeof until === 'number' ?
+        `${message.replace(/\.$/, '')} until ${new Date(until).toLocaleDateString()}.` :
         message;
     return reason ? `${ends} Reason: ${reason}` : ends;
 };
 
-export const parseResponse = async (response: Response, errors: ErrorFactory): Promise<Record<string, unknown>> => {
-    const parsed = await readJSON(response);
-    const data = isRecord(parsed) ? parsed : {};
-    if (!response.ok || data.ok === false || data.error) {
-        const error = errors.response({
-            status: response.status,
-            code: stringField(data, 'code'),
-            serverMessage: stringField(data, 'error'),
-            data
-        });
-        error.redirectUrl = stringField(data, 'redirectUrl') ?? stringField(data, 'redirect_url') ??
-            (isRestricted(data.code) ? ROTUR_ACCOUNT_URL : null);
-        throw error;
-    }
-    return data;
-};
+const toAuthResult = (data: Record<string, unknown>): AuthResult => ({
+    ...data,
+    token: typeof data.token === 'string' ? data.token : undefined,
+    minor: typeof data.minor === 'boolean' ? data.minor : undefined
+});
 
 export interface SessionEvents {
     onSignedIn?: (auth: AuthResult) => void;
@@ -69,9 +38,9 @@ export interface SessionManagerOptions {
 
 export interface SessionManager {
     load(): string | null;
-    store(token: string | null): void;
+    store(token: string | null | undefined): void;
     current(): Promise<string | null>;
-    refresh(): Promise<unknown>;
+    refresh(): Promise<string | AuthResult | null | undefined>;
     hasProvider(): boolean;
     setProvider(provider: SessionProvider | null): void;
     setRoturTokenGetter(getter: () => Promise<string | null>): void;
@@ -89,23 +58,19 @@ export const createSessionManager = (
     let events: SessionEvents = {};
     let exchangeInFlight: Promise<AuthResult> | null = null;
 
-    const forgetRequests = (): void => {
-        cache.resetRequests();
-    };
-
     const load = (): string | null => {
-        if (provider) return provider.get() ?? null;
+        if (provider) return provider.get() || null;
         try {
-            return credentials.getItem(SESSION_KEY) ?? null;
+            return credentials.getItem(SESSION_KEY) || null;
         } catch {
             return null;
         }
     };
 
-    const store = (token: string | null): void => {
+    const store = (token: string | null | undefined): void => {
         if (provider) {
             if (!token) provider.clear();
-            forgetRequests();
+            cache.resetRequests();
             return;
         }
         try {
@@ -115,7 +80,7 @@ export const createSessionManager = (
             } else {
                 credentials.removeItem(SESSION_KEY);
             }
-            if (previous !== token) forgetRequests();
+            if (previous !== token) cache.resetRequests();
         } catch {
             return;
         }
@@ -132,13 +97,13 @@ export const createSessionManager = (
         if (validator) return validator;
         const serverError = stringField(data, 'error');
         const code = stringField(data, 'code');
-        const error: ApiError = new Error(serverError ?? 'Could not validate Rotur login');
+        const error: ApiError = new Error(serverError || 'Could not validate Rotur login');
         error.status = response.status;
-        const permissionError = /lacks permission|OAuth access tokens/i.test(serverError ?? '');
-        if (response.status === 403 && !permissionError) error.code = code ?? 'account_blocked';
-        else if (response.status === 429 || response.status >= 500) error.code = code ?? 'VALIDATOR_UNAVAILABLE';
-        else error.code = code ?? 'VALIDATOR_GENERATION_FAILED';
-        error.redirectUrl = stringField(data, 'redirect_url') ?? ROTUR_ACCOUNT_URL;
+        const permissionError = /lacks permission|OAuth access tokens/i.test(serverError || '');
+        if (response.status === 403 && !permissionError) error.code = code || 'account_blocked';
+        else if (response.status === 429 || response.status >= 500) error.code = code || 'VALIDATOR_UNAVAILABLE';
+        else error.code = code || 'VALIDATOR_GENERATION_FAILED';
+        error.redirectUrl = stringField(data, 'redirect_url') || ROTUR_ACCOUNT_URL;
         error.data = data;
         throw error;
     };
@@ -166,7 +131,7 @@ export const createSessionManager = (
             if (!(await isRefused(authResponse))) break;
         }
         if (!authResponse) throw new Error('Could not validate Rotur login');
-        const auth = await parseResponse(authResponse, errors) as AuthResult;
+        const auth = toAuthResult(await parseResponse(authResponse, errors));
         store(auth.token);
         events.onSignedIn?.(auth);
         return auth;
@@ -178,7 +143,7 @@ export const createSessionManager = (
                 const failure = error as ApiError;
                 if (failure.code === 'VALIDATOR_GENERATION_FAILED') events.onAuthInvalid?.();
                 if (isRestricted(failure.code)) {
-                    events.onBanned?.(banMessage(failure), failure.redirectUrl ?? ROTUR_ACCOUNT_URL);
+                    events.onBanned?.(banMessage(failure), failure.redirectUrl || ROTUR_ACCOUNT_URL);
                 }
                 throw failure;
             })
@@ -202,7 +167,7 @@ export const createSessionManager = (
                     }, SESSION_WAIT);
                 })
             ]);
-            return waited ?? null;
+            return waited || null;
         } catch {
             return null;
         } finally {
@@ -210,7 +175,7 @@ export const createSessionManager = (
         }
     };
 
-    const refresh = async (): Promise<unknown> => {
+    const refresh = async (): Promise<string | AuthResult | null | undefined> => {
         if (provider) {
             try {
                 return await provider.refresh();
@@ -231,7 +196,7 @@ export const createSessionManager = (
         hasProvider: () => provider !== null,
         setProvider: next => {
             provider = next;
-            forgetRequests();
+            cache.resetRequests();
         },
         setRoturTokenGetter: getter => {
             roturTokenGetter = getter;
