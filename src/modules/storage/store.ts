@@ -6,7 +6,8 @@ export interface KeyValueArea {
 
 export interface Store {
     readString(key: string): string | null;
-    readJSON<T>(key: string, fallback: T, isValid?: (value: unknown) => value is T): T;
+    readJSON<T>(key: string, fallback: T, isValid: (value: unknown) => value is T): T;
+    readJSON(key: string, fallback?: unknown): unknown;
     readBoolean(key: string, fallback?: boolean): boolean;
     writeString(key: string, value: string): boolean;
     writeJSON(key: string, value: unknown): boolean;
@@ -44,17 +45,18 @@ export const createStore = (getArea: () => KeyValueArea | null | undefined): Sto
         }
     };
 
-    const readJSON = <T>(key: string, fallback: T, isValid?: (value: unknown) => value is T): T => {
+    function readJSON<T> (key: string, fallback: T, isValid: (value: unknown) => value is T): T;
+    function readJSON (key: string, fallback?: unknown): unknown;
+    function readJSON (key: string, fallback?: unknown, isValid?: (value: unknown) => boolean): unknown {
         const raw = readString(key);
         if (raw === null) return fallback;
         try {
             const parsed: unknown = JSON.parse(raw);
-            if (isValid) return isValid(parsed) ? parsed : fallback;
-            return parsed as T;
+            return !isValid || isValid(parsed) ? parsed : fallback;
         } catch {
             return fallback;
         }
-    };
+    }
 
     const writeJSON = (key: string, value: unknown): boolean => {
         let serialized: string;

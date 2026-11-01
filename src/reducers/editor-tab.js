@@ -1,4 +1,5 @@
 import {local} from '../modules/storage';
+
 const ACTIVATE_TAB = 'scratch-gui/navigation/ACTIVATE_TAB';
 const SHOW_BLOCKS_TAB = 'scratch-gui/navigation/SHOW_BLOCKS_TAB';
 const REVEAL_IN_CODE = 'scratch-gui/navigation/REVEAL_IN_CODE';

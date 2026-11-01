@@ -22,6 +22,9 @@ if [ -n "$scripts" ]; then
     IFS=$old_ifs
 fi
 
+echo "pre-commit: conventions"
+node scripts/check-conventions.mjs --staged
+
 # Message extraction checks when source changed. They read files, not the network.
 if printf '%s\n' "$staged" | grep -q '^src/'; then
     echo "pre-commit: i18n checks"

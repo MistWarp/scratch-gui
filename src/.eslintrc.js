@@ -3,6 +3,23 @@ const typescript = require('../scripts/eslint-typescript.cjs');
 const legacyStorageFiles = require('../scripts/eslint-legacy-storage-files.cjs');
 
 const storageMessage = 'Use local or session from src/modules/storage instead of touching web storage directly.';
+const storageProperties = ['window', 'globalThis', 'self'].flatMap(object => (
+    ['localStorage', 'sessionStorage'].map(property => ({object, property, message: storageMessage}))
+));
+const moduleDeepImport = {
+    group: ['**/modules/*/*', '!**/modules/*/index', '!**/modules/*/index.ts'],
+    message: 'Import a module through its index, as in ../modules/storage.'
+};
+const uiLayerImport = {
+    group: ['components', 'containers', 'community', 'playground', 'reducers', 'addons'].flatMap(layer => [
+        `../../${layer}`, `../../${layer}/**`, `../../../${layer}`, `../../../${layer}/**`
+    ]),
+    message: 'Modules sit below the UI. Pass what you need in instead of importing app code.'
+};
+const siblingModuleDeepImport = {
+    group: ['../*/*', '!../*/index', '!../*/index.ts', '!../../**'],
+    message: 'Import another module through its index only.'
+};
 module.exports = {
     root: true,
     extends: ['scratch', 'scratch/es6', 'scratch/react', 'plugin:import/errors'],
@@ -32,10 +49,8 @@ module.exports = {
             {name: 'localStorage', message: storageMessage},
             {name: 'sessionStorage', message: storageMessage}
         ],
-        'no-restricted-properties': ['error',
-            {object: 'window', property: 'localStorage', message: storageMessage},
-            {object: 'window', property: 'sessionStorage', message: storageMessage}
-        ],
+        'no-restricted-properties': ['error', ...storageProperties],
+        'no-restricted-imports': ['error', {patterns: [moduleDeepImport]}],
         'import/no-nodejs-modules': 'error',
         'react/jsx-no-literals': 'error',
         'no-confusing-arrow': ['error', {
@@ -77,19 +92,7 @@ module.exports = {
             files: ['modules/**/*'],
             rules: {
                 'no-restricted-imports': ['error', {
-                    patterns: [
-                        {
-                            group: [
-                                '**/components/**', '**/containers/**', '**/community/**',
-                                '**/playground/**', '**/reducers/**', '**/addons/**'
-                            ],
-                            message: 'Modules sit below the UI. Pass what you need in instead of importing app code.'
-                        },
-                        {
-                            group: ['../*/*', '!../*/index', '!../../**'],
-                            message: 'Import another module through its index only.'
-                        }
-                    ]
+                    patterns: [uiLayerImport, siblingModuleDeepImport, moduleDeepImport]
                 }]
             }
         }

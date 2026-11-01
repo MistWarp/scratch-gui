@@ -27,11 +27,14 @@ module.exports = {
         'no-shadow': 'off',
         'no-redeclare': 'off',
         'no-dupe-class-members': 'off',
+        'no-undefined': 'off',
+        'func-style': 'off',
         'react/jsx-filename-extension': ['error', {extensions: ['.jsx', '.tsx']}],
         '@typescript-eslint/no-unused-vars': ['error', {args: 'after-used', varsIgnorePattern: '^_'}],
         '@typescript-eslint/no-shadow': 'error',
         '@typescript-eslint/consistent-type-imports': 'error',
         '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
-        '@typescript-eslint/explicit-module-boundary-types': 'error'
+        '@typescript-eslint/explicit-module-boundary-types': 'error',
+        '@typescript-eslint/prefer-nullish-coalescing': ['error', {ignorePrimitives: {string: true}}]
     }
 };

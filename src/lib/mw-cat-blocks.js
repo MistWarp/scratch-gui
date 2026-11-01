@@ -23,8 +23,7 @@ const migrateFromAddon = () => {
     if (local.readString(ENABLED_KEY) !== null) return;
     const catBlocks = readLegacyAddonSettings()['cat-blocks'];
     if (catBlocks && catBlocks.enabled) {
-        local.writeBoolean(ENABLED_KEY, true);
-        if (typeof catBlocks.watch !== 'undefined') {
+        if (local.writeBoolean(ENABLED_KEY, true) && typeof catBlocks.watch !== 'undefined') {
             local.writeBoolean(WATCH_KEY, Boolean(catBlocks.watch));
         }
     }

@@ -1,4 +1,5 @@
 import {local} from '../modules/storage';
+
 const ZONES = [
     {
         id: 'left',
@@ -151,10 +152,8 @@ const applyMenuBarLayout = (layout, {persist = true} = {}) => {
         return;
     }
     if (normalized) {
-        local.writeJSON(ORDER_KEY, normalized.orders);
-        local.writeJSON(HIDDEN_KEY, normalized.hidden);
-    } else {
-        local.remove(ORDER_KEY);
+        if (local.writeJSON(ORDER_KEY, normalized.orders)) local.writeJSON(HIDDEN_KEY, normalized.hidden);
+    } else if (local.remove(ORDER_KEY)) {
         local.remove(HIDDEN_KEY);
     }
     applyLayout();

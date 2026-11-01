@@ -30,7 +30,6 @@ const BUILT_IN_CATEGORIES = new Set([
     'myBlocks'
 ]);
 
-
 let cached = null;
 
 const getTwoColumnCategories = () => {
