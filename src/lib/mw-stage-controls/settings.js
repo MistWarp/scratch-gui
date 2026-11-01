@@ -1,4 +1,5 @@
 import EventTarget from '../../addons/event-target.js';
+import {local, readLegacyAddonSettings} from '../../modules/storage';
 
 const STORAGE_PREFIX = 'mw:stage-controls:';
 
@@ -50,23 +51,14 @@ for (const definition of DEFINITIONS) {
 const events = new EventTarget();
 
 const getSetting = id => {
-    let stored;
-    try {
-        stored = localStorage.getItem(STORAGE_PREFIX + id);
-    } catch (e) {
-        return defaults[id] || false;
-    }
+    const stored = local.readString(STORAGE_PREFIX + id);
     if (stored === 'true') return true;
     if (stored === 'false') return false;
     return defaults[id] || false;
 };
 
 const setSetting = (id, value) => {
-    try {
-        localStorage.setItem(STORAGE_PREFIX + id, value ? 'true' : 'false');
-    } catch (e) {
-        void e;
-    }
+    local.writeBoolean(STORAGE_PREFIX + id, !!value);
     const event = new CustomEvent('change');
     event.settingId = id;
     event.value = value;
@@ -78,20 +70,12 @@ const onSettingChanged = listener => {
     return () => events.removeEventListener('change', listener);
 };
 
-const SOUND_URL_KEY = `${STORAGE_PREFIX}screenshot_sound_url`; const getScreenshotSoundUrl = () => {
-    try {
-        return localStorage.getItem(SOUND_URL_KEY) || '';
-    } catch (e) {
-        return '';
-    }
-};
+const SOUND_URL_KEY = `${STORAGE_PREFIX}screenshot_sound_url`;
+
+const getScreenshotSoundUrl = () => local.readString(SOUND_URL_KEY) || '';
 
 const setScreenshotSoundUrl = value => {
-    try {
-        localStorage.setItem(SOUND_URL_KEY, value);
-    } catch (e) {
-        void e;
-    }
+    local.writeString(SOUND_URL_KEY, String(value));
     const event = new CustomEvent('change');
     event.settingId = 'screenshot_sound_url';
     event.value = value;
@@ -118,33 +102,30 @@ const ADDON_TO_SETTING = {
     'canvas-screenshot': 'screenshot'
 };
 
-try {
-    const raw = localStorage.getItem('tw:addons');
-    const oldStore = raw ? JSON.parse(raw) : null;
-    if (oldStore && typeof oldStore === 'object') {
-        for (const [addonId, settingId] of Object.entries(ADDON_TO_SETTING)) {
-            const entry = oldStore[addonId];
-            if (!entry || typeof entry !== 'object' || typeof entry.enabled !== 'boolean') {
-                continue;
+const migrateRetiredAddons = () => {
+    const oldStore = readLegacyAddonSettings();
+    for (const [addonId, settingId] of Object.entries(ADDON_TO_SETTING)) {
+        const entry = oldStore[addonId];
+        if (!entry || typeof entry !== 'object' || typeof entry.enabled !== 'boolean') {
+            continue;
+        }
+        if (local.readString(STORAGE_PREFIX + settingId) === null &&
+            !local.writeBoolean(STORAGE_PREFIX + settingId, entry.enabled)) {
+            return;
+        }
+        if (addonId === 'canvas-screenshot') {
+            if (typeof entry.show_notifications === 'boolean' &&
+                local.readString(`${STORAGE_PREFIX}screenshot_notifications`) === null &&
+                !local.writeBoolean(`${STORAGE_PREFIX}screenshot_notifications`, entry.show_notifications)) {
+                return;
             }
-            if (localStorage.getItem(STORAGE_PREFIX + settingId) === null) {
-                localStorage.setItem(STORAGE_PREFIX + settingId, entry.enabled ? 'true' : 'false');
-            }
-            if (addonId === 'canvas-screenshot') {
-                if (typeof entry.show_notifications === 'boolean' &&
-                    localStorage.getItem(`${STORAGE_PREFIX}screenshot_notifications`) === null) {
-                    localStorage.setItem(
-                        `${STORAGE_PREFIX}screenshot_notifications`,
-                        entry.show_notifications ? 'true' : 'false'
-                    );
-                }
-                if (typeof entry.sound_url === 'string' && entry.sound_url &&
-                    !localStorage.getItem(SOUND_URL_KEY)) {
-                    localStorage.setItem(SOUND_URL_KEY, entry.sound_url);
-                }
+            if (typeof entry.sound_url === 'string' && entry.sound_url &&
+                !local.readString(SOUND_URL_KEY) &&
+                !local.writeString(SOUND_URL_KEY, entry.sound_url)) {
+                return;
             }
         }
     }
-} catch (e) {
-    // ignore migration failures; defaults apply
-}
+};
+
+migrateRetiredAddons();

@@ -1,16 +1,11 @@
 import {getDefaultAuthor, getRemotes, push} from './browser-git.js';
 import {getAuth as getRoturGitAuth, isRoturGitUrl} from '../rotur/git-api.js';
 import {isStudentSession} from '../rotur/student-flag.js';
+import {local} from '../../modules/storage';
 
 const TOKEN_KEY = 'mw:git-token';
 
-const readRemoteToken = () => {
-    try {
-        return localStorage.getItem(TOKEN_KEY) || '';
-    } catch (e) {
-        return '';
-    }
-};
+const readRemoteToken = () => local.readString(TOKEN_KEY) || '';
 
 const authForRemoteUrl = url => {
     if (isRoturGitUrl(url)) return getRoturGitAuth;
