@@ -102,25 +102,24 @@ export default async function ({ addon, msg, console }) {
           });
         }
         const isLocal = !vm.runtime.getTargetForStage().variables[id];
-        // MonitorRecord is a plain mutable class, not an immutable.js Map,
-        // so build a plain delta object instead of calling .set().
-        const delta = { id };
+        const newMonitorState = { ...oldMonitorState };
         if (isLocal) {
           const target = vm.editingTarget;
-          delta.targetId = target.id;
-          delta.spriteName = target.getName();
+          newMonitorState.targetId = target.id;
+          newMonitorState.spriteName = target.getName();
         } else {
-          delta.targetId = null;
-          delta.spriteName = null;
+          newMonitorState.targetId = null;
+          newMonitorState.spriteName = null;
         }
         if (newVmVariable.name !== oldVmVariable.name) {
           const monitorBlocks = vm.runtime.monitorBlocks;
           const block = monitorBlocks.getBlock(id);
           if (block) {
-            delta.params = monitorBlocks._getBlockParams(block);
+            newMonitorState.params = monitorBlocks._getBlockParams(block);
           }
         }
-        vm.runtime.requestAddMonitor(delta);
+        vm.runtime.requestRemoveMonitor(id);
+        vm.runtime.requestAddMonitor(newMonitorState);
       }
 
       if (newVmVariable.name !== oldVmVariable.name) {
