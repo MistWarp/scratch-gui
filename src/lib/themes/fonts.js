@@ -14,6 +14,8 @@ const DEFAULT_FALLBACK_STACK = [
     'sans-serif'
 ];
 
+const PAPER_TEXT_MEASUREMENT = ['body > span', 'body > span *'];
+
 const setCurrentFontStyleEl = element => {
     currentFontStyleElement = element;
 };
@@ -74,7 +76,8 @@ const applyThemeFonts = async fonts => {
         '.monospace', '.monospace *', '[class*="icon-font"]',
         // CodeMirror sets its own fonts for the code editor, including the
         // autocomplete tooltip. The theme font must not override them.
-        '.cm-editor', '.cm-editor *', '.cm-tooltip', '.cm-tooltip *'
+        '.cm-editor', '.cm-editor *', '.cm-tooltip', '.cm-tooltip *',
+        ...PAPER_TEXT_MEASUREMENT
     ].map(selector => `:not(${selector})`).join('');
 
     // Create style element
