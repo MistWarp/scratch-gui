@@ -108,11 +108,12 @@ ChatNavItem.propTypes = {
     intl: intlShape.isRequired
 };
 
-const MwEditorNav = ({intl, isStudent, username, projectId, onOpenAnalytics}) => {
+const MwEditorNav = ({intl, isPlatformProject, isPlayerOnly, isStudent, username, onOpenAnalytics}) => {
     if (!username || isStudent) {
         return null;
     }
-    const hasSavedProject = Boolean(projectId && projectId !== '0' && projectId !== 0);
+    // Analytics are for a MistWarp project being edited, not one played or loaded from Scratch.
+    const hasSavedProject = !isPlayerOnly && isPlatformProject;
     return (
         <React.Fragment>
             {hasSavedProject && (
@@ -135,9 +136,10 @@ const MwEditorNav = ({intl, isStudent, username, projectId, onOpenAnalytics}) =>
 
 MwEditorNav.propTypes = {
     intl: intlShape.isRequired,
+    isPlatformProject: PropTypes.bool,
+    isPlayerOnly: PropTypes.bool,
     isStudent: PropTypes.bool,
     onOpenAnalytics: PropTypes.func.isRequired,
-    projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     username: PropTypes.string
 };
 
@@ -145,8 +147,8 @@ export {MwEditorNav};
 export default injectIntl(connect(
     state => ({
         username: state.scratchGui.rotur.username,
-        isStudent: Boolean(state.scratchGui.rotur.isStudent),
-        projectId: state.scratchGui.projectState.projectId
+        isPlayerOnly: state.scratchGui.mode.isPlayerOnly,
+        isStudent: Boolean(state.scratchGui.rotur.isStudent)
     }),
     dispatch => ({
         onOpenAnalytics: () => dispatch(openProductsModal())

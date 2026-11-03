@@ -13,6 +13,7 @@ import styles from './stage-wrapper.css';
 
 const StageWrapperComponent = function (props) {
     const {
+        centered,
         isEmbedded,
         isFullScreen,
         hideFullscreenButton,
@@ -30,6 +31,7 @@ const StageWrapperComponent = function (props) {
             className={classNames(
                 styles.stageWrapper,
                 {
+                    [styles.centered]: centered,
                     [styles.embedded]: isEmbedded,
                     [styles.fullScreen]: isFullScreen,
                     [styles.loading]: loading,
@@ -67,6 +69,7 @@ const StageWrapperComponent = function (props) {
 };
 
 StageWrapperComponent.propTypes = {
+    centered: PropTypes.bool,
     hideFullscreenButton: PropTypes.bool,
     isEmbedded: PropTypes.bool,
     isFullScreen: PropTypes.bool,

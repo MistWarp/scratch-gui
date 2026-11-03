@@ -46,8 +46,33 @@ import {APP_NAME, FEEDBACK_URL, GITHUB_URL} from '../lib/constants/brand.js';
 
 import windowManager from '../addons/window-system/window-manager';
 import {isStudentSession} from '../lib/rotur/student-flag.js';
+import usePlayerStageWidth from '../components/gui/use-player-stage-width.js';
+import {FIXED_WIDTH} from '../lib/constants/layout-constants';
 
 import styles from './interface.css';
+
+// The player's page column: as wide as the stage (see usePlayerStageWidth), and never narrower than the usual stage, so
+// the text below it stays readable.
+const PlayerColumn = ({className, customStageSize, children}) => {
+    const stageWidth = usePlayerStageWidth(true, customStageSize);
+    return (
+        <div
+            className={className}
+            style={{width: `${Math.max(FIXED_WIDTH + 2, stageWidth || 0)}px`}}
+        >
+            {children}
+        </div>
+    );
+};
+
+PlayerColumn.propTypes = {
+    children: PropTypes.node,
+    className: PropTypes.string,
+    customStageSize: PropTypes.shape({
+        width: PropTypes.number,
+        height: PropTypes.number
+    })
+};
 
 const messages = defineMessages({
     defaultTitle: {
@@ -331,6 +356,8 @@ class Interface extends React.Component {
         } = this.props;
         const isHomepage = isPlayerOnly && !isFullScreen;
         const isEditor = !isPlayerOnly;
+        const Column = isPlayerOnly ? PlayerColumn : 'div';
+        const columnProps = isPlayerOnly ? {customStageSize: props.customStageSize} : {};
         return (
             <div
                 className={classNames(styles.container, {
@@ -350,12 +377,9 @@ class Interface extends React.Component {
                         />
                     </div>
                 ) : null}
-                <div
+                <Column
                     className={styles.center}
-                    style={isPlayerOnly ? ({
-                        // + 2 accounts for 1px border on each side of the stage
-                        width: `${Math.max(480, props.customStageSize.width) + 2}px`
-                    }) : null}
+                    {...columnProps}
                 >
                     <GUI
                         onClickAddonSettings={handleClickAddonSettings}
@@ -454,7 +478,7 @@ class Interface extends React.Component {
                             )}
                         </React.Fragment>
                     ) : null}
-                </div>
+                </Column>
                 {isHomepage && <Footer />}
             </div>
         );

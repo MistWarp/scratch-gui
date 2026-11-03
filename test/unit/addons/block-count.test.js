@@ -74,3 +74,86 @@ test('analyzes original targets, nested substacks, and cyclic references once', 
     expect(result.complexityScore).toBeGreaterThanOrEqual(0);
     expect(result.complexityScore).toBeLessThanOrEqual(100);
 });
+
+// A sprite with `scripts` scripts, each a hat block then `length` blocks, nested `depth` repeats deep when depth > 0.
+const makeSprite = (name, {scripts, length, depth = 0}) => {
+    const blocks = {};
+    const roots = [];
+    for (let s = 0; s < scripts; s++) {
+        const hat = `${name}-${s}-hat`;
+        roots.push(hat);
+        blocks[hat] = block(hat, 'event_whenflagclicked');
+        let parent = hat;
+        let attach = id => {
+            blocks[hat].next = id;
+        };
+        for (let d = 0; d < depth; d++) {
+            const loop = `${name}-${s}-loop${d}`;
+            blocks[loop] = block(loop, 'control_repeat', {parent});
+            attach(loop);
+            parent = loop;
+            attach = id => {
+                blocks[loop].inputs.SUBSTACK = {block: id};
+            };
+        }
+        for (let i = 0; i < length - depth; i++) {
+            const id = `${name}-${s}-${i}`;
+            blocks[id] = block(id, 'motion_movesteps', {parent});
+            attach(id);
+            const previous = id;
+            parent = id;
+            attach = next => {
+                blocks[previous].next = next;
+            };
+        }
+    }
+    return {
+        id: name,
+        isOriginal: true,
+        isStage: false,
+        getName: () => name,
+        sprite: {costumes: [], sounds: []},
+        variables: {},
+        blocks: {_blocks: blocks, getScripts: () => roots}
+    };
+};
+
+const score = sprites => analyzeProject({targets: sprites});
+
+test('bigger projects keep scoring higher instead of reaching 100', () => {
+    const sprites = (count, scripts) => Array.from({length: count}, (_, i) => makeSprite(`S${i}`, {scripts, length: 20}));
+    const small = score(sprites(1, 25));
+    const medium = score(sprites(5, 20));
+    const large = score(sprites(50, 20));
+    expect(small.blockCount).toBe(525);
+    expect(large.blockCount).toBe(21000);
+    expect(small.complexityScore).toBeLessThan(medium.complexityScore);
+    expect(medium.complexityScore).toBeLessThan(large.complexityScore);
+    expect(large.complexityScore).toBeLessThan(100);
+});
+
+test('deeper nesting raises the score of a project of the same size', () => {
+    const flat = score([makeSprite('Cat', {scripts: 20, length: 30})]);
+    const nested = score([makeSprite('Cat', {scripts: 20, length: 30, depth: 6})]);
+    expect(nested.blockCount).toBe(flat.blockCount);
+    expect(nested.complexityScore).toBeGreaterThan(flat.complexityScore);
+});
+
+test('a big but tidy project gets no recommendations', () => {
+    const tidy = score(Array.from({length: 50}, (_, i) => makeSprite(`S${i}`, {scripts: 20, length: 20})));
+    expect(tidy.blockCount).toBe(21000);
+    expect(tidy.recommendations.map(r => r.id)).toEqual(['custom-blocks']);
+});
+
+test('recommendations name the sprite to look at', () => {
+    const result = score([
+        makeSprite('Tidy', {scripts: 5, length: 10}),
+        makeSprite('Deep', {scripts: 2, length: 20, depth: 6}),
+        makeSprite('Long', {scripts: 1, length: 90}),
+        makeSprite('Busy', {scripts: 45, length: 5})
+    ]);
+    const byId = Object.fromEntries(result.recommendations.map(r => [r.id, r]));
+    expect(byId.nesting).toEqual({id: 'nesting', count: 2, sprite: 'Deep'});
+    expect(byId.length).toEqual({id: 'length', count: 1, sprite: 'Long'});
+    expect(byId.scripts).toEqual({id: 'scripts', count: 45, sprite: 'Busy'});
+});

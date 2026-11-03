@@ -42,6 +42,7 @@ const PlayerPage = ({
             />
         ) : null}
         <StageWrapper
+            centered={!isFullScreen && !isEmbedded}
             isFullScreen={isFullScreen}
             isEmbedded={isEmbedded}
             isRendererSupported={isRendererSupported()}

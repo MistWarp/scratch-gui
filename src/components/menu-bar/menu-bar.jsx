@@ -1926,6 +1926,10 @@ class MenuBar extends React.Component {
         const mistwarpAction = communityEnabled ?
             getMistWarpAction(this.state.mistwarpProject, this.props.projectChanged) :
             null;
+        // A project loaded from Scratch, not one on MistWarp: products, game items and collaboration need a MistWarp
+        // project.
+        const isScratchProject = !this.state.mistwarpProject &&
+            /^\d+$/.test(String(this.props.projectId || '')) && this.props.projectId !== '0';
         const newProjectMessage = (
             <FormattedMessage
                 defaultMessage="New"
@@ -2242,27 +2246,30 @@ class MenuBar extends React.Component {
                                             )}
                                         </SB3Downloader>
                                     </MenuSection>
-                                    <MenuSection>
-                                        <MenuItem
-                                            onClick={this.handleClickRestorePoints}
-                                            shortcut={shortcutHint('restorePoints', this.props.customShortcuts)}
-                                        >
-                                            <RefreshCcw />
-                                            <FormattedMessage
-                                                defaultMessage="Device backups"
-                                                description="Menu bar item to manage local device backups"
-                                                id="tw.menuBar.restorePoints"
-                                            />
-                                        </MenuItem>
-                                        <MenuItem onClick={this.handleClickAddRestorePoint}>
-                                            <ClockPlus />
-                                            <FormattedMessage
-                                                defaultMessage="Create device backup"
-                                                description="Menu bar item to create a manual local backup immediately"
-                                                id="tw.menuBar.createRestorePoint"
-                                            />
-                                        </MenuItem>
-                                    </MenuSection>
+                                    {this.props.isPlayerOnly ? null : (
+                                        <MenuSection>
+                                            <MenuItem
+                                                onClick={this.handleClickRestorePoints}
+                                                shortcut={shortcutHint('restorePoints', this.props.customShortcuts)}
+                                            >
+                                                <RefreshCcw />
+                                                <FormattedMessage
+                                                    defaultMessage="Device backups"
+                                                    description="Menu bar item to manage local device backups"
+                                                    id="tw.menuBar.restorePoints"
+                                                />
+                                            </MenuItem>
+                                            <MenuItem onClick={this.handleClickAddRestorePoint}>
+                                                <ClockPlus />
+                                                <FormattedMessage
+                                                    defaultMessage="Create device backup"
+                                                    // eslint-disable-next-line max-len
+                                                    description="Menu bar item to create a manual local backup immediately"
+                                                    id="tw.menuBar.createRestorePoint"
+                                                />
+                                            </MenuItem>
+                                        </MenuSection>
+                                    )}
                                 </MenuBarMenu>
                             </MenuLabel>
                         )}
@@ -2303,37 +2310,39 @@ class MenuBar extends React.Component {
                                         )}</DeletionRestorer>
                                     )}
                                 </MenuSection>
-                                <MenuSection>
-                                    <MenuItem
-                                        disabled={!undoAction}
-                                        onClick={this.handleClickUndo}
-                                        shortcut={shortcutHint('undo', this.props.customShortcuts)}
-                                        subtitle={undoAction ? null : undoUnavailableReason}
-                                    >
-                                        <Undo />
-                                        {this.undoLabel('undo', undoAction)}
-                                    </MenuItem>
-                                    <MenuItem
-                                        disabled={!redoAction}
-                                        onClick={this.handleClickRedo}
-                                        shortcut={shortcutHint('redo', this.props.customShortcuts)}
-                                        subtitle={redoAction ? null : undoUnavailableReason}
-                                    >
-                                        <Redo />
-                                        {this.undoLabel('redo', redoAction)}
-                                    </MenuItem>
-                                    {this.props.codeMode ? (
+                                {this.props.isPlayerOnly ? null : (
+                                    <MenuSection>
                                         <MenuItem
-                                            disabled={!canApplyAllCode}
-                                            onClick={this.handleClickApplyAllCode}
-                                            shortcut={shortcutHint('applyAll', this.props.customShortcuts)}
-                                            subtitle={codeHistoryReason}
+                                            disabled={!undoAction}
+                                            onClick={this.handleClickUndo}
+                                            shortcut={shortcutHint('undo', this.props.customShortcuts)}
+                                            subtitle={undoAction ? null : undoUnavailableReason}
                                         >
-                                            <CheckCheck />
-                                            {this.props.intl.formatMessage(twMessages.applyAllCode)}
+                                            <Undo />
+                                            {this.undoLabel('undo', undoAction)}
                                         </MenuItem>
-                                    ) : null}
-                                </MenuSection>
+                                        <MenuItem
+                                            disabled={!redoAction}
+                                            onClick={this.handleClickRedo}
+                                            shortcut={shortcutHint('redo', this.props.customShortcuts)}
+                                            subtitle={redoAction ? null : undoUnavailableReason}
+                                        >
+                                            <Redo />
+                                            {this.undoLabel('redo', redoAction)}
+                                        </MenuItem>
+                                        {this.props.codeMode ? (
+                                            <MenuItem
+                                                disabled={!canApplyAllCode}
+                                                onClick={this.handleClickApplyAllCode}
+                                                shortcut={shortcutHint('applyAll', this.props.customShortcuts)}
+                                                subtitle={codeHistoryReason}
+                                            >
+                                                <CheckCheck />
+                                                {this.props.intl.formatMessage(twMessages.applyAllCode)}
+                                            </MenuItem>
+                                        ) : null}
+                                    </MenuSection>
+                                )}
                                 <MenuSection>
                                     <TurboMode>{(toggleTurboMode, {turboMode}) => (
                                         <MenuItem onClick={toggleTurboMode}>
@@ -2411,7 +2420,7 @@ class MenuBar extends React.Component {
                                         )}</CloudVariablesToggler>
                                     )}
                                 </MenuSection>
-                                {hasRotur() && <MenuSection>
+                                {hasRotur() && !this.props.isPlayerOnly && !isScratchProject && <MenuSection>
                                     <MenuItem onClick={this.handleClickProducts}>
                                         <ShoppingBag size={20} />
                                         <FormattedMessage
@@ -2431,142 +2440,144 @@ class MenuBar extends React.Component {
                                 </MenuSection>}
                             </MenuBarMenu>
                         </MenuLabel>
-                        <MenuLabel
-                            ariaLabel={this.props.intl.formatMessage(menuLabelMessages.tools)}
-                            dataItem="tools"
-                            open={this.props.toolsMenuOpen}
-                            onOpen={this.props.onClickTools}
-                            onClose={this.props.onRequestCloseTools}
-                        >
-                            <Wrench size={20} />
-                            <span className={styles.collapsibleLabel}>
-                                <FormattedMessage
-                                    defaultMessage="Project"
-                                    description="Text for project management dropdown menu"
-                                    id="gui.menuBar.tools"
-                                />
-                            </span>
-                            <ChevronDown size={8} />
-                            <MenuBarMenu
-                                className={classNames(styles.menuBarMenu)}
-                                mobileBack
-                                mobileTitle={this.props.intl.formatMessage(menuLabelMessages.tools)}
-                                onMobileClose={this.props.onRequestCloseTools}
+                        {this.props.isPlayerOnly ? null : (
+                            <MenuLabel
+                                ariaLabel={this.props.intl.formatMessage(menuLabelMessages.tools)}
+                                dataItem="tools"
                                 open={this.props.toolsMenuOpen}
-                                place={this.props.isRtl ? 'left' : 'right'}
+                                onOpen={this.props.onClickTools}
+                                onClose={this.props.onRequestCloseTools}
                             >
-                                <MenuSection>
-                                    {hasRotur() && <MenuItem
-                                        onClick={this.handleClickGitModal}
-                                    >
-                                        <GitBranch />
-                                        <FormattedMessage
-                                            defaultMessage="Project history"
-                                            description="Menu bar item to open pushed project history"
-                                            id="mw.menuBar.git"
-                                        />
-                                    </MenuItem>}
-                                    {hasRotur() && <MenuItem
-                                        onClick={this.handleClickCollaboration}
-                                    >
-                                        <Handshake size={20} />
-                                        <FormattedMessage
-                                            defaultMessage="Live Collaboration"
-                                            description="Menu bar item for live collaboration"
-                                            id="tw.menuBar.collaboration"
-                                        />
-                                    </MenuItem>}
-                                    <MenuItem onClick={this.handleClickProjectMetadata}>
-                                        <Info />
-                                        <FormattedMessage
-                                            defaultMessage="Project metadata"
-                                            // eslint-disable-next-line max-len
-                                            description="Menu bar item to view the open project's metadata (author, dates, contents)"
-                                            id="mw.menuBar.projectMetadata"
-                                        />
-                                    </MenuItem>
-                                    {!this.props.isPlayerOnly && mediaRecorderSupported && (
-                                        <MenuItem onClick={this.handleClickMediaRecorder}>
-                                            <Video />
+                                <Wrench size={20} />
+                                <span className={styles.collapsibleLabel}>
+                                    <FormattedMessage
+                                        defaultMessage="Project"
+                                        description="Text for project management dropdown menu"
+                                        id="gui.menuBar.tools"
+                                    />
+                                </span>
+                                <ChevronDown size={8} />
+                                <MenuBarMenu
+                                    className={classNames(styles.menuBarMenu)}
+                                    mobileBack
+                                    mobileTitle={this.props.intl.formatMessage(menuLabelMessages.tools)}
+                                    onMobileClose={this.props.onRequestCloseTools}
+                                    open={this.props.toolsMenuOpen}
+                                    place={this.props.isRtl ? 'left' : 'right'}
+                                >
+                                    <MenuSection>
+                                        {hasRotur() && <MenuItem
+                                            onClick={this.handleClickGitModal}
+                                        >
+                                            <GitBranch />
                                             <FormattedMessage
-                                                defaultMessage="Record project video"
-                                                description="Menu bar item to open the project video recorder"
-                                                id="mw.menuBar.recordProjectVideo"
+                                                defaultMessage="Project history"
+                                                description="Menu bar item to open pushed project history"
+                                                id="mw.menuBar.git"
+                                            />
+                                        </MenuItem>}
+                                        {hasRotur() && !isScratchProject && <MenuItem
+                                            onClick={this.handleClickCollaboration}
+                                        >
+                                            <Handshake size={20} />
+                                            <FormattedMessage
+                                                defaultMessage="Live Collaboration"
+                                                description="Menu bar item for live collaboration"
+                                                id="tw.menuBar.collaboration"
+                                            />
+                                        </MenuItem>}
+                                        <MenuItem onClick={this.handleClickProjectMetadata}>
+                                            <Info />
+                                            <FormattedMessage
+                                                defaultMessage="Project metadata"
+                                                // eslint-disable-next-line max-len
+                                                description="Menu bar item to view the open project's metadata (author, dates, contents)"
+                                                id="mw.menuBar.projectMetadata"
                                             />
                                         </MenuItem>
-                                    )}
-                                </MenuSection>
-                                {window.__mistwarpDebuggerToggle || this.props.onClickVariableManager ? (
-                                    <MenuSection>
-                                        {window.__mistwarpDebuggerToggle && (
-                                            <MenuItem
-                                                onClick={this.handleClickDebugger}
-                                            >
-                                                <Bug />
+                                        {!this.props.isPlayerOnly && mediaRecorderSupported && (
+                                            <MenuItem onClick={this.handleClickMediaRecorder}>
+                                                <Video />
                                                 <FormattedMessage
-                                                    defaultMessage="Debugger"
-                                                    description="Menu bar item to toggle the debugger"
-                                                    id="tw.menuBar.debugger"
-                                                />
-                                            </MenuItem>
-                                        )}
-                                        {this.props.onClickVariableManager && (
-                                            <MenuItem
-                                                onClick={this.handleClickVariableManager}
-                                            >
-                                                <Database />
-                                                <FormattedMessage
-                                                    defaultMessage="Variable Manager"
-                                                    description="Menu bar item to toggle the variable manager"
-                                                    id="tw.menuBar.variableManager"
+                                                    defaultMessage="Record project video"
+                                                    description="Menu bar item to open the project video recorder"
+                                                    id="mw.menuBar.recordProjectVideo"
                                                 />
                                             </MenuItem>
                                         )}
                                     </MenuSection>
-                                ) : null}
-                                <MenuSection>
-                                    <MenuItem
-                                        onClick={this.handleOpenExtensionLibrary}
-                                        shortcut={shortcutHint('extensionLibrary', this.props.customShortcuts)}
-                                    >
-                                        <PackagePlus />
-                                        <FormattedMessage
-                                            defaultMessage="Add Extension"
-                                            description="Menu bar item for adding or importing extensions"
-                                            id="tw.menuBar.extensions.addImport"
-                                        />
-                                    </MenuItem>
-                                    <MenuItem
-                                        onClick={this.handleNewExtension}
-                                    >
-                                        <FilePlus2 />
-                                        {this.props.intl.formatMessage(extensionDevMessages.newExtensionMenu)}
-                                    </MenuItem>
-                                    <MenuItem
-                                        onClick={this.handleOpenExtensionManager}
-                                        shortcut={shortcutHint('extensionManager', this.props.customShortcuts)}
-                                    >
-                                        <FileCog />
-                                        <FormattedMessage
-                                            defaultMessage="Show Extensions in Code Mode"
-                                            // eslint-disable-next-line max-len
-                                            description="Menu bar item that switches to Code mode and shows the project's extensions"
-                                            id="mw.menuBar.extensions.reveal"
-                                        />
-                                    </MenuItem>
-                                    {this.props.extensionProblemCount > 0 ? (
-                                        <MenuItem
-                                            onClick={this.handleOpenExtensionProblems}
-                                        >
-                                            <TriangleAlert />
-                                            {this.props.intl.formatMessage(extensionDevMessages.problemsMenu, {
-                                                count: this.props.extensionProblemCount
-                                            })}
-                                        </MenuItem>
+                                    {window.__mistwarpDebuggerToggle || this.props.onClickVariableManager ? (
+                                        <MenuSection>
+                                            {window.__mistwarpDebuggerToggle && (
+                                                <MenuItem
+                                                    onClick={this.handleClickDebugger}
+                                                >
+                                                    <Bug />
+                                                    <FormattedMessage
+                                                        defaultMessage="Debugger"
+                                                        description="Menu bar item to toggle the debugger"
+                                                        id="tw.menuBar.debugger"
+                                                    />
+                                                </MenuItem>
+                                            )}
+                                            {this.props.onClickVariableManager && (
+                                                <MenuItem
+                                                    onClick={this.handleClickVariableManager}
+                                                >
+                                                    <Database />
+                                                    <FormattedMessage
+                                                        defaultMessage="Variable Manager"
+                                                        description="Menu bar item to toggle the variable manager"
+                                                        id="tw.menuBar.variableManager"
+                                                    />
+                                                </MenuItem>
+                                            )}
+                                        </MenuSection>
                                     ) : null}
-                                </MenuSection>
-                            </MenuBarMenu>
-                        </MenuLabel>
+                                    <MenuSection>
+                                        <MenuItem
+                                            onClick={this.handleOpenExtensionLibrary}
+                                            shortcut={shortcutHint('extensionLibrary', this.props.customShortcuts)}
+                                        >
+                                            <PackagePlus />
+                                            <FormattedMessage
+                                                defaultMessage="Add Extension"
+                                                description="Menu bar item for adding or importing extensions"
+                                                id="tw.menuBar.extensions.addImport"
+                                            />
+                                        </MenuItem>
+                                        <MenuItem
+                                            onClick={this.handleNewExtension}
+                                        >
+                                            <FilePlus2 />
+                                            {this.props.intl.formatMessage(extensionDevMessages.newExtensionMenu)}
+                                        </MenuItem>
+                                        <MenuItem
+                                            onClick={this.handleOpenExtensionManager}
+                                            shortcut={shortcutHint('extensionManager', this.props.customShortcuts)}
+                                        >
+                                            <FileCog />
+                                            <FormattedMessage
+                                                defaultMessage="Show Extensions in Code Mode"
+                                                // eslint-disable-next-line max-len
+                                                description="Menu bar item that switches to Code mode and shows the project's extensions"
+                                                id="mw.menuBar.extensions.reveal"
+                                            />
+                                        </MenuItem>
+                                        {this.props.extensionProblemCount > 0 ? (
+                                            <MenuItem
+                                                onClick={this.handleOpenExtensionProblems}
+                                            >
+                                                <TriangleAlert />
+                                                {this.props.intl.formatMessage(extensionDevMessages.problemsMenu, {
+                                                    count: this.props.extensionProblemCount
+                                                })}
+                                            </MenuItem>
+                                        ) : null}
+                                    </MenuSection>
+                                </MenuBarMenu>
+                            </MenuLabel>
+                        )}
                         {(this.props.canChangeTheme || this.props.canChangeLanguage) && <SettingsMenu />}
                         <HelpMenu />
                     </div>
@@ -2651,14 +2662,16 @@ class MenuBar extends React.Component {
                     className={styles.accountInfoGroup}
                     ref={this.accountGroupRef}
                 >
-                    <div
-                        data-mw-item="save-status"
-                        className={styles.menuBarLayoutItem}
-                    >
-                        <TWSaveStatus
-                            showSaveFilePicker={this.props.showSaveFilePicker}
-                        />
-                    </div>
+                    {this.props.isPlayerOnly ? null : (
+                        <div
+                            data-mw-item="save-status"
+                            className={styles.menuBarLayoutItem}
+                        >
+                            <TWSaveStatus
+                                showSaveFilePicker={this.props.showSaveFilePicker}
+                            />
+                        </div>
+                    )}
                     {aboutButton && (
                         <div
                             data-mw-item="about"
@@ -2677,7 +2690,7 @@ class MenuBar extends React.Component {
                         data-mw-item="mw-editor-nav"
                         className={classNames(styles.menuBarLayoutItem, styles.editorNavSlot)}
                     >
-                        <MwEditorNav />
+                        <MwEditorNav isPlatformProject={Boolean(this.state.mistwarpProject)} />
                     </div>
                     <div
                         data-mw-item="rotur-account"

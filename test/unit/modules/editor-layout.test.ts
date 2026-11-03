@@ -115,10 +115,27 @@ describe('stage panel sizing', () => {
         expect(getStagePanelStyle(400, false)).toEqual({width: '400px', flexBasis: '400px', flexShrink: 0});
     });
 
-    test('player and phone stages fit the available width', () => {
-        expect(getPlayerStageWidth(1280, 480)).toBe(482);
-        expect(getPlayerStageWidth(300, 480)).toBe(300);
-        expect(getPlayerStageWidth(1280, 0)).toBe(482);
+    test('the player stage fits the screen whatever the stage size', () => {
+        const reserved = 124;
+        // The usual stage, and no stage size yet, show at 480 wide.
+        expect(getPlayerStageWidth(1280, 800, {width: 480, height: 360}, reserved)).toBe(482);
+        expect(getPlayerStageWidth(1280, 800, {width: 0, height: 0}, reserved)).toBe(482);
+        // A small stage is scaled up to the usual width rather than shown tiny.
+        expect(getPlayerStageWidth(1280, 800, {width: 248, height: 192}, reserved)).toBe(482);
+        // A large stage keeps its own width when it fits...
+        expect(getPlayerStageWidth(1920, 1080, {width: 960, height: 720}, reserved)).toBe(962);
+        // ...and shrinks so all of it fits below the menu bar and stage controls.
+        const fitted = (windowHeight: number, width: number, height: number) => (
+            Math.floor((windowHeight - reserved - 2) * width / height) + 2
+        );
+        expect(getPlayerStageWidth(1280, 800, {width: 960, height: 720}, reserved)).toBe(fitted(800, 960, 720));
+        expect(getPlayerStageWidth(1280, 400, {width: 248, height: 192}, reserved)).toBe(fitted(400, 248, 192));
+        // A tall stage is limited by the height, a narrow window by its width.
+        expect(getPlayerStageWidth(1280, 800, {width: 360, height: 640}, reserved)).toBe(fitted(800, 360, 640));
+        expect(getPlayerStageWidth(300, 800, {width: 480, height: 360}, reserved)).toBe(300);
+    });
+
+    test('phone stages fit the available width', () => {
         expect(getMobileStageWidth(1000)).toBe(482);
         expect(getMobileStageWidth(300)).toBe(300);
     });

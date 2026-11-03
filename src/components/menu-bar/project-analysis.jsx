@@ -396,7 +396,8 @@ const ProjectAnalysis = ({msg, onShowScript, vm}) => {
                                                 <strong>{msg(`recommend-${recommendation.id}-title`)}</strong>
                                                 <small>
                                                     {msg(`recommend-${recommendation.id}-detail`, {
-                                                        count: recommendation.count || 0
+                                                        count: recommendation.count || 0,
+                                                        sprite: recommendation.sprite || ''
                                                     })}
                                                 </small>
                                             </span>

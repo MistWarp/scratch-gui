@@ -37,6 +37,12 @@
     align-items: center;
 }
 
+/* The player's page column is at least as wide as the usual stage; a narrower stage sits in the middle of it. */
+.stage-wrapper.centered {
+    width: fit-content;
+    margin: 0 auto;
+}
+
 .stage-wrapper.embedded {
     background-color: transparent;
 }

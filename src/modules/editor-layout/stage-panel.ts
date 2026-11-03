@@ -145,9 +145,22 @@ export const getStagePanelStyle = (panelWidth: number | null, isStageHidden: boo
     };
 };
 
-export const getPlayerStageWidth = (windowWidth: number, projectStageWidth: number): number => (
-    Math.min(windowWidth, widthOrNative(projectStageWidth) + STAGE_CANVAS_BORDER)
-);
+/**
+ * Width of the player's stage, border included. Small stages are scaled up to the usual 480 pixels and larger ones
+ * keep their own width, as long as the whole stage fits below the menu bar and stage controls and inside the window.
+ */
+export const getPlayerStageWidth = (
+    windowWidth: number,
+    windowHeight: number,
+    projectStageSize: ProjectStageSize,
+    reservedHeight: number
+): number => {
+    const nativeWidth = widthOrNative(projectStageSize.width);
+    const widthPerHeight = projectStageSize.height ? nativeWidth / projectStageSize.height : DEFAULT_ASPECT_RATIO;
+    const widthByHeight = Math.max(0, windowHeight - reservedHeight - STAGE_CANVAS_BORDER) * widthPerHeight;
+    const contentWidth = Math.min(Math.max(FIXED_WIDTH, nativeWidth), widthByHeight, windowWidth - STAGE_CANVAS_BORDER);
+    return Math.max(0, Math.floor(contentWidth)) + STAGE_CANVAS_BORDER;
+};
 
 export const getMobileStageWidth = (availableWidth: number): number => (
     Math.min(FIXED_WIDTH + STAGE_CANVAS_BORDER, availableWidth)

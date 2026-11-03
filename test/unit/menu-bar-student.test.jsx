@@ -49,7 +49,7 @@ describe('editor menu bar for students', () => {
             intl={intl}
             isStudent
             username="adaokafor~yumrk"
-            projectId="p1"
+            isPlatformProject
             onOpenAnalytics={() => {}}
         />);
         expect(student.find('button')).toHaveLength(0);
@@ -63,7 +63,7 @@ describe('editor menu bar for students', () => {
             intl={intl}
             isStudent={false}
             username="Mist"
-            projectId="p1"
+            isPlatformProject
             onOpenAnalytics={() => {}}
         />);
         expect(teacher.find('[title="Chat"]').hostNodes()).toHaveLength(1);
@@ -71,6 +71,23 @@ describe('editor menu bar for students', () => {
         expect(teacher.find('#notifications')).toHaveLength(1);
         expect(teacher.find('[title="Project analytics"]').hostNodes()).toHaveLength(1);
         teacher.unmount();
+    });
+
+    test('analytics only show for a MistWarp project in the editor', () => {
+        const render = props => renderIntl(<MwEditorNav
+            intl={intl}
+            isStudent={false}
+            username="Mist"
+            onOpenAnalytics={() => {}}
+            {...props}
+        />);
+        const scratchProject = render({isPlatformProject: false});
+        expect(scratchProject.find('[title="Project analytics"]').hostNodes()).toHaveLength(0);
+        expect(scratchProject.find('a[href="/mystuff"]')).toHaveLength(1);
+        scratchProject.unmount();
+        const player = render({isPlatformProject: true, isPlayerOnly: true});
+        expect(player.find('[title="Project analytics"]').hostNodes()).toHaveLength(0);
+        player.unmount();
     });
 
     test('the account menu offers a student only Sign out', () => {
