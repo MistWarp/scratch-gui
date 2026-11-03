@@ -185,6 +185,64 @@ test('the extension whose prompt was answered with Load all runs unsandboxed', a
     expect(await vmSecurityManager.getSandboxMode(url)).toBe('unsandboxed');
 });
 
+const withSyncState = component => {
+    component.setState = update => {
+        const next = typeof update === 'function' ? update(component.state) : update;
+        component.state = {...component.state, ...next};
+    };
+    return component;
+};
+
+const flushPromises = () => new Promise(resolve => setTimeout(resolve, 0));
+
+test('trusting the project answers the prompts already waiting behind it', async () => {
+    window.history.replaceState(null, '', '/editor');
+    rememberPlatformProject(null);
+    const vmSecurityManager = {};
+    const vm = {
+        runtime: {projectName: 'Project with two extensions'},
+        extensionManager: {securityManager: vmSecurityManager},
+        on: () => {}
+    };
+    const component = withSyncState(new TWSecurityManagerComponent({vm, securityManager: {}}));
+    component.componentDidMount();
+
+    const first = vmSecurityManager.canLoadExtensionFromProject('https://example.com/first.js', {wholeProject: true});
+    const second = vmSecurityManager.canLoadExtensionFromProject('https://example.com/second.js', {wholeProject: true});
+    const fetch = vmSecurityManager.canFetch('https://api.example.com/data');
+    await flushPromises();
+    expect(component.state.modalCount).toBe(1);
+
+    component.handleLoadAll();
+
+    await expect(Promise.all([first, second, fetch])).resolves.toEqual([true, true, true]);
+    expect(component.state.modalCount).toBe(1);
+    expect(await vmSecurityManager.getSandboxMode('https://example.com/second.js')).toBe('unsandboxed');
+});
+
+test('allowing one extension still asks about the next', async () => {
+    window.history.replaceState(null, '', '/editor');
+    rememberPlatformProject(null);
+    const vmSecurityManager = {};
+    const vm = {
+        runtime: {projectName: 'Project with two extensions'},
+        extensionManager: {securityManager: vmSecurityManager},
+        on: () => {}
+    };
+    const component = withSyncState(new TWSecurityManagerComponent({vm, securityManager: {}}));
+    component.componentDidMount();
+
+    const first = vmSecurityManager.canLoadExtensionFromProject('https://example.com/first.js', {wholeProject: true});
+    const second = vmSecurityManager.canLoadExtensionFromProject('https://example.com/second.js', {wholeProject: true});
+    await flushPromises();
+    component.handleAllowed();
+    await expect(first).resolves.toBe(true);
+    await flushPromises();
+    expect(component.state.modalCount).toBe(2);
+    component.handleDenied();
+    await expect(second).resolves.toBe(false);
+});
+
 test('after Load all, JavaScript-running extensions still prompt and manual trust still applies', async () => {
     window.history.replaceState(null, '', '/editor');
     rememberPlatformProject(null);
