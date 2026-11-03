@@ -237,7 +237,7 @@ class TWSecurityManagerComponent extends React.Component {
      * @returns {Promise<() => Promise<boolean>>} Resolves with a function that you can call to show the modal.
      * The resolved function returns a promise that resolves with true if the request was approved.
      */
-    async acquireModalLock () {
+    async acquireModalLock (skipPrompt = () => false) {
         // We need a two-step process for showing a modal so that we don't overwrite or overlap modals,
         // and so that multiple attempts to fetch resources from the same origin will all be allowed
         // with just one click. This means that some places have to wait until previous modals are
@@ -276,6 +276,10 @@ class TWSecurityManagerComponent extends React.Component {
                 releaseLock();
                 return false;
             }
+            if (skipPrompt()) {
+                releaseLock();
+                return true;
+            }
             const result = await new Promise(resolve => {
                 this.setState(oldState => ({
                     type,
@@ -292,6 +296,10 @@ class TWSecurityManagerComponent extends React.Component {
             showModal,
             releaseLock
         };
+    }
+
+    skipsPromptOnceTrusted (method, ...args) {
+        return () => !isStudentSession() && this.isSecurityBypassed(method, args);
     }
 
     isSecurityBypassed (method, args) {
@@ -447,7 +455,7 @@ class TWSecurityManagerComponent extends React.Component {
             return allowed ? allowProjectExtension() : false;
         }
         if (this.isLoadAllActive(wholeProject)) return allowProjectExtension();
-        const {showModal} = await this.acquireModalLock();
+        const {showModal} = await this.acquireModalLock(() => this.isLoadAllActive(wholeProject));
         let unsandboxed = getPersistedUnsandboxed();
         const allowed = await showModal(SecurityModals.LoadExtension, {
             wholeProject,
@@ -501,7 +509,7 @@ class TWSecurityManagerComponent extends React.Component {
         const parsed = parseURL(url, FETCHABLE_PROTOCOLS);
         if (!parsed) return false;
         if (isAlwaysTrustedForFetching(parsed)) return !isUntrustedPath(parsed);
-        const {showModal, releaseLock} = await this.acquireModalLock();
+        const {showModal, releaseLock} = await this.acquireModalLock(this.skipsPromptOnceTrusted('canFetch', url));
         const host = ['http:', 'https:', 'ws:', 'wss:'].includes(parsed.protocol) ? parsed.host : null;
         if (host && fetchHostsTrustedByUser.has(host)) {
             releaseLock();
@@ -518,7 +526,7 @@ class TWSecurityManagerComponent extends React.Component {
      */
     async canOpenWindow (url) {
         if (!parseURL(url, VISITABLE_PROTOCOLS)) return false;
-        const {showModal} = await this.acquireModalLock();
+        const {showModal} = await this.acquireModalLock(this.skipsPromptOnceTrusted('canOpenWindow', url));
         return showModal(SecurityModals.OpenWindow, {url});
     }
 
@@ -528,7 +536,7 @@ class TWSecurityManagerComponent extends React.Component {
      */
     async canRedirect (url) {
         if (!parseURL(url, VISITABLE_PROTOCOLS)) return false;
-        const {showModal} = await this.acquireModalLock();
+        const {showModal} = await this.acquireModalLock(this.skipsPromptOnceTrusted('canRedirect', url));
         return showModal(SecurityModals.Redirect, {url});
     }
 
@@ -537,7 +545,7 @@ class TWSecurityManagerComponent extends React.Component {
      */
     async canRecordAudio () {
         if (!allowedAudio) {
-            const {showModal} = await this.acquireModalLock();
+            const {showModal} = await this.acquireModalLock(this.skipsPromptOnceTrusted('canRecordAudio'));
             allowedAudio = await showModal(SecurityModals.RecordAudio);
         }
         return allowedAudio;
@@ -548,7 +556,7 @@ class TWSecurityManagerComponent extends React.Component {
      */
     async canRecordVideo () {
         if (!allowedVideo) {
-            const {showModal} = await this.acquireModalLock();
+            const {showModal} = await this.acquireModalLock(this.skipsPromptOnceTrusted('canRecordVideo'));
             allowedVideo = await showModal(SecurityModals.RecordVideo);
         }
         return allowedVideo;
@@ -559,7 +567,7 @@ class TWSecurityManagerComponent extends React.Component {
      */
     async canReadClipboard () {
         if (!allowedReadClipboard) {
-            const {showModal} = await this.acquireModalLock();
+            const {showModal} = await this.acquireModalLock(this.skipsPromptOnceTrusted('canReadClipboard'));
             allowedReadClipboard = await showModal(SecurityModals.ReadClipboard);
         }
         return allowedReadClipboard;
@@ -570,7 +578,7 @@ class TWSecurityManagerComponent extends React.Component {
      */
     async canNotify () {
         if (!allowedNotify) {
-            const {showModal} = await this.acquireModalLock();
+            const {showModal} = await this.acquireModalLock(this.skipsPromptOnceTrusted('canNotify'));
             allowedNotify = await showModal(SecurityModals.Notify);
         }
         return allowedNotify;
@@ -581,7 +589,7 @@ class TWSecurityManagerComponent extends React.Component {
      */
     async canGeolocate () {
         if (!allowedGeolocation) {
-            const {showModal} = await this.acquireModalLock();
+            const {showModal} = await this.acquireModalLock(this.skipsPromptOnceTrusted('canGeolocate'));
             allowedGeolocation = await showModal(SecurityModals.Geolocate);
         }
         return allowedGeolocation;
@@ -595,7 +603,7 @@ class TWSecurityManagerComponent extends React.Component {
         const parsed = parseURL(url, FETCHABLE_PROTOCOLS);
         if (!parsed) return false;
         const host = ['http:', 'https:'].includes(parsed.protocol) ? parsed.host : null;
-        const {showModal, releaseLock} = await this.acquireModalLock();
+        const {showModal, releaseLock} = await this.acquireModalLock(this.skipsPromptOnceTrusted('canEmbed', url));
         if (host && embedHostsTrustedByUser.has(host)) {
             releaseLock();
             return true;
@@ -612,7 +620,7 @@ class TWSecurityManagerComponent extends React.Component {
      */
     async canDownload (url, name) {
         if (!parseURL(url, FETCHABLE_PROTOCOLS)) return false;
-        const {showModal} = await this.acquireModalLock();
+        const {showModal} = await this.acquireModalLock(this.skipsPromptOnceTrusted('canDownload', url, name));
         return showModal(SecurityModals.Download, {url, name});
     }
 
