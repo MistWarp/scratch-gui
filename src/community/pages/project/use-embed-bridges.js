@@ -42,7 +42,10 @@ export const useEmbedFetchBridge = (project, stageFrame) => {
                 }
             };
             cachedFetchBuffer(data.url)
-                .then(buffer => reply({type: 'mw:fetch-result', id: data.id, buffer}, [buffer]))
+                .then(buffer => {
+                    const copy = buffer.slice(0);
+                    reply({type: 'mw:fetch-result', id: data.id, buffer: copy}, [copy]);
+                })
                 .catch(() => reply({type: 'mw:fetch-result', id: data.id}));
         };
         window.addEventListener('message', onMessage);

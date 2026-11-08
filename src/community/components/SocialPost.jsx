@@ -34,20 +34,13 @@ import RichText from './RichText.jsx';
 import UserLink from './UserLink.jsx';
 import styles from './SocialPost.module.css';
 
-const Poll = ({postId, poll, onChange}) => {
+const Poll = ({poll, busy, onVote}) => {
     const {text: communityText} = useCommunityText();
-    const [busy, setBusy] = useState(false);
     const voted = Number.isInteger(poll.voted) ? poll.voted : null;
     const total = Number(poll.total) || 0;
-    const vote = async option => {
+    const vote = option => {
         if (busy || voted !== null) return;
-        setBusy(true);
-        try {
-            const result = await rotur.votePost(postId, option);
-            if (result && result.poll) onChange(result.poll);
-        } finally {
-            setBusy(false);
-        }
+        onVote(option);
     };
     return (
         <div className={styles.poll}>
@@ -71,9 +64,9 @@ const Poll = ({postId, poll, onChange}) => {
 };
 
 Poll.propTypes = {
-    postId: PropTypes.string.isRequired,
     poll: PropTypes.object.isRequired,
-    onChange: PropTypes.func.isRequired
+    busy: PropTypes.bool.isRequired,
+    onVote: PropTypes.func.isRequired
 };
 
 const SocialPost = ({
@@ -465,7 +458,14 @@ const SocialPost = ({
                     </div>
                 ) : null}
                 {post.poll ? (
-                    <Poll postId={post.id} poll={post.poll} onChange={poll => update({...post, poll})} />
+                    <Poll
+                        poll={post.poll}
+                        busy={busy === 'vote'}
+                        onVote={option => run('vote', async () => {
+                            const result = await rotur.votePost(post.id, option);
+                            if (result && result.poll) update({...post, poll: result.poll});
+                        })}
+                    />
                 ) : null}
                 {project ? <PostProjectCard project={project} onLayoutChange={onLayoutChange} /> : null}
                 {post.is_repost && post.original_post ? (

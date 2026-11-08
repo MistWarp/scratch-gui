@@ -32,8 +32,11 @@ const SIGN_IN_SCOPES = [
     'posts:reply',
     'posts:repost',
     'posts:like',
+    'posts:vote',
+    'posts:bookmark',
     'posts:delete',
     'posts:manage', // Edit and pin your own posts.
+    'reports:create',
     'blocked:view', // Block and unblock people from a post.
     'blocked:manage',
     'following:view', // Who you follow, for Home and your own Following page.

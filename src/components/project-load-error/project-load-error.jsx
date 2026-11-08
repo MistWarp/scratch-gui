@@ -16,7 +16,8 @@ export const unknownExtensionId = error => {
     return match ? match[1] : null;
 };
 
-const UNREADABLE_PROJECT = /^(?:Failed to unzip and extract|SyntaxError: |\{"validationError")/;
+const UNREADABLE_PROJECT =
+    /^(?:Failed to unzip and extract|SyntaxError: |\{"validationError"|The project file is empty\.)/;
 
 export const isUnreadableProject = error => (
     UNREADABLE_PROJECT.test(String((error && error.message) || error || ''))

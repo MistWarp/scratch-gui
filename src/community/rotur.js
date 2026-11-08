@@ -151,6 +151,14 @@ const authenticatedAction = async (scopes, action) => {
     return result;
 };
 
+const clickAction = async (scopes, action) => {
+    if (!roturToken()) throw new Error(formatCommunityMessage('Sign in to continue'));
+    if (!(await ensureScopes(scopes, {prompt: true}))) {
+        throw new Error(formatCommunityMessage('MistWarp needs your permission on Rotur to do this.'));
+    }
+    return authenticatedAction([], action);
+};
+
 const scopedGet = async (scopes, path, params = {}) => {
     await ensureScopes(scopes);
     return get(path, params);
@@ -362,17 +370,17 @@ const rotur = {
     ),
     pinPost: id => authenticatedAction(['posts:manage'], client => client.posts.pin(id)),
     unpinPost: id => authenticatedAction(['posts:manage'], client => client.posts.unpin(id)),
-    bookmarkPost: id => authenticatedAction([], client => client.posts.bookmark(id)),
-    unbookmarkPost: id => authenticatedAction([], client => client.posts.unbookmark(id)),
+    bookmarkPost: id => clickAction(['posts:bookmark'], client => client.posts.bookmark(id)),
+    unbookmarkPost: id => clickAction(['posts:bookmark'], client => client.posts.unbookmark(id)),
     bookmarks: () => authenticatedAction([], client => client.posts.bookmarks()),
     scheduledPosts: () => authenticatedAction([], client => client.posts.scheduled()),
     topPosts: (limit = 50, hours = 24) => get('/v2/posts/top', {limit, time_period: hours}, {
         optionalAuth: true
     }).then(asList),
     searchPosts: (query, limit = 20) => get('/v2/posts/search', {q: query, limit}, {optionalAuth: true}).then(asList),
-    votePost: (id, option) => authenticatedAction([], client => client.posts.vote(id, option)),
-    reportPost: (type, id, reason) => authenticatedAction(
-        [],
+    votePost: (id, option) => clickAction(['posts:vote'], client => client.posts.vote(id, option)),
+    reportPost: (type, id, reason) => clickAction(
+        ['reports:create'],
         client => client.reports.submit(type, id, reason)
     ),
     blockedUsers: () => authenticatedAction(['blocked:view'], client => client.me.blocked()),
