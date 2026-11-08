@@ -33,6 +33,9 @@ const isHtml = buffer => {
 
 const readProjectResponse = async response => {
     const buffer = await response.arrayBuffer();
+    if (buffer.byteLength === 0) {
+        throw new Error('The project server returned an empty file. Please try loading the project again.');
+    }
     if (isHtml(buffer)) {
         throw new Error('The project server returned a web page. Please try loading the project again.');
     }
@@ -50,7 +53,7 @@ const fetchAndStore = async url => {
             const hit = await cache.match(url);
             if (hit) {
                 const buffer = await hit.arrayBuffer();
-                if (isHtml(buffer)) {
+                if (buffer.byteLength === 0 || isHtml(buffer)) {
                     await cache.delete(url);
                     throw new Error('Discarding cached HTML project response');
                 }

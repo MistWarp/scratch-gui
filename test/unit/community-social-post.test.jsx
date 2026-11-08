@@ -62,9 +62,12 @@ describe('social post list actions', () => {
     test('records a poll vote and shows why a vote failed', async () => {
         const poll = {total: 0, options: [{text: 'Cats', count: 0}, {text: 'Dogs', count: 0}]};
         rotur.votePost.mockRejectedValueOnce(new Error('MistWarp needs your permission on Rotur to do this.'));
-        rotur.votePost.mockResolvedValueOnce({poll: {...poll, total: 1, voted: 1, options: [
-            {text: 'Cats', count: 0}, {text: 'Dogs', count: 1}
-        ]}});
+        rotur.votePost.mockResolvedValueOnce({poll: {...poll,
+            total: 1,
+            voted: 1,
+            options: [
+                {text: 'Cats', count: 0}, {text: 'Dogs', count: 1}
+            ]}});
         const wrapper = mount(
             <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
                 <SocialPost initialPost={{id: 'post-5', user: 'alice', content: 'Pick one', likes: [], poll}} />

@@ -34,13 +34,19 @@ import RichText from './RichText.jsx';
 import UserLink from './UserLink.jsx';
 import styles from './SocialPost.module.css';
 
-const Poll = ({poll, busy, onVote}) => {
+const Poll = ({poll, onVote}) => {
     const {text: communityText} = useCommunityText();
+    const [busy, setBusy] = useState(false);
     const voted = Number.isInteger(poll.voted) ? poll.voted : null;
     const total = Number(poll.total) || 0;
-    const vote = option => {
+    const vote = async option => {
         if (busy || voted !== null) return;
-        onVote(option);
+        setBusy(true);
+        try {
+            await onVote(option);
+        } finally {
+            setBusy(false);
+        }
     };
     return (
         <div className={styles.poll}>
@@ -65,7 +71,6 @@ const Poll = ({poll, busy, onVote}) => {
 
 Poll.propTypes = {
     poll: PropTypes.object.isRequired,
-    busy: PropTypes.bool.isRequired,
     onVote: PropTypes.func.isRequired
 };
 
@@ -460,7 +465,6 @@ const SocialPost = ({
                 {post.poll ? (
                     <Poll
                         poll={post.poll}
-                        busy={busy === 'vote'}
                         onVote={option => run('vote', async () => {
                             const result = await rotur.votePost(post.id, option);
                             if (result && result.poll) update({...post, poll: result.poll});
