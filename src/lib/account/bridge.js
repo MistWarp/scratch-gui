@@ -1,4 +1,5 @@
 import {ACCOUNT_ORIGIN} from './origins.js';
+import {isConsoleEmbed} from '../console-embed.js';
 import {CHANNEL, FRAME_PATH, CALL_TIMEOUT, CONNECT_TIMEOUT, fromError} from './protocol.js';
 
 const HIDDEN_STYLE = 'position:fixed;width:0;height:0;border:0;opacity:0;pointer-events:none;left:0;top:0;';
@@ -60,6 +61,10 @@ const handleMessage = ({data}) => {
 
 const connect = () => {
     if (connection) return connection;
+    if (isConsoleEmbed()) {
+        const error = new Error('Your MistWarp account is not available in this player.');
+        return Promise.reject(Object.assign(error, {code: 'bridge'}));
+    }
     connection = new Promise((resolve, reject) => {
         frame = document.createElement('iframe');
         frame.src = `${ACCOUNT_ORIGIN}${FRAME_PATH}`;

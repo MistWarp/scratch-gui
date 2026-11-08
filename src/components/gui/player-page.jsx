@@ -6,9 +6,13 @@ import StageWrapper from '../../containers/stage-wrapper.jsx';
 import Alerts from '../../containers/alerts.jsx';
 import {STAGE_SIZE_MODES} from '../../lib/constants/layout-constants';
 import {isRendererSupported} from '../../lib/utils/tw-environment-support-prober.js';
+import {isConsoleEmbed} from '../../lib/console-embed.js';
 import styles from './gui.css';
 
+const consoleEmbed = isConsoleEmbed();
+
 const getFullscreenBackgroundColor = () => {
+    if (consoleEmbed) return '#000000';
     const params = new URLSearchParams(location.search);
     if (params.has('fullscreen-background')) {
         return params.get('fullscreen-background');
@@ -33,7 +37,7 @@ const PlayerPage = ({
     vm
 }) => (
     <React.Fragment>
-        {isWindowFullScreen ? (
+        {isWindowFullScreen || consoleEmbed ? (
             <div
                 className={styles.fullscreenBackground}
                 style={{

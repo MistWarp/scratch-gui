@@ -4,10 +4,12 @@ import {
     STAGE_DISPLAY_SIZES,
     FIXED_WIDTH
 } from '../constants/layout-constants';
+import {isConsoleEmbed} from '../console-embed.js';
 
 const maxScaleParam = typeof URLSearchParams !== 'undefined' && new URLSearchParams(location.search).get('scale');
 const isProfilePreview = typeof URLSearchParams !== 'undefined' &&
     new URLSearchParams(location.search).get('mw_profile_preview') === '1';
+const consoleEmbed = typeof window !== 'undefined' && isConsoleEmbed();
 
 /**
  * @typedef {object} StageDimensions
@@ -62,10 +64,12 @@ const getStageDimensions = (stageSize, customStageSize, isFullScreen, stageConta
 
     if (isFullScreen) {
         const menuBarHeight = isProfilePreview ? 0 : getMenuBarHeight();
-        stageDimensions.height = window.innerHeight -
+        stageDimensions.height = consoleEmbed ? window.innerHeight : (
+            window.innerHeight -
             STAGE_DIMENSION_DEFAULTS.menuHeightAdjustment -
             menuBarHeight -
-            STAGE_DIMENSION_DEFAULTS.fullScreenSpacingBorderAdjustment;
+            STAGE_DIMENSION_DEFAULTS.fullScreenSpacingBorderAdjustment
+        );
 
         stageDimensions.width = stageDimensions.height * (customStageSize.width / customStageSize.height);
 

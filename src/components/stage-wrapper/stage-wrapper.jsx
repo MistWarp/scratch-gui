@@ -9,7 +9,10 @@ import StageHeader from '../../containers/stage-header.jsx';
 import Stage from '../../containers/stage.jsx';
 import Loader from '../loader/loader.jsx';
 
+import {isConsoleEmbed} from '../../lib/console-embed.js';
 import styles from './stage-wrapper.css';
+
+const consoleEmbed = isConsoleEmbed();
 
 const StageWrapperComponent = function (props) {
     const {
@@ -34,20 +37,23 @@ const StageWrapperComponent = function (props) {
                     [styles.centered]: centered,
                     [styles.embedded]: isEmbedded,
                     [styles.fullScreen]: isFullScreen,
+                    [styles.console]: consoleEmbed,
                     [styles.loading]: loading,
                     [styles.offsetControls]: !(isEmbedded || isFullScreen)
                 }
             )}
             dir={isRtl ? 'rtl' : 'ltr'}
         >
-            <Box className={styles.stageMenuWrapper}>
-                <StageHeader
-                    hideFullscreenButton={hideFullscreenButton}
-                    stageContainerWidth={stageContainerWidth}
-                    stageSize={stageSize}
-                    vm={vm}
-                />
-            </Box>
+            {consoleEmbed ? null : (
+                <Box className={styles.stageMenuWrapper}>
+                    <StageHeader
+                        hideFullscreenButton={hideFullscreenButton}
+                        stageContainerWidth={stageContainerWidth}
+                        stageSize={stageSize}
+                        vm={vm}
+                    />
+                </Box>
+            )}
             {isStageHidden ? null : (
                 <Box className={styles.stageCanvasWrapper}>
                     {

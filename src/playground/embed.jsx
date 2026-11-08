@@ -18,6 +18,7 @@ import {applyEmbedThemeMessage} from '../lib/themes/embed-theme';
 import {request} from '../lib/community/api.js';
 import {ACCOUNT_ORIGIN, isSplitEditor} from '../lib/account/origins.js';
 import initDebugger from '../lib/debugger/controller.js';
+import {isConsoleEmbed, startConsoleEmbed} from '../lib/console-embed.js';
 
 import GUI from './render-gui.jsx';
 import render from './app-target';
@@ -94,6 +95,10 @@ const finishPlaytime = () => {
 
 const onVmInit = _vm => {
     vm = _vm;
+    if (isConsoleEmbed()) {
+        const {engine} = initDebugger(vm);
+        startConsoleEmbed({setPaused: engine.setPaused});
+    }
     vm.on('PROJECT_RUN_START', () => {
         projectRunning = true;
         updateLinkBack();

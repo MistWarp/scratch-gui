@@ -6,6 +6,9 @@ import {connect} from 'react-redux';
 import {setFullScreen} from '../../reducers/mode';
 import {setIsWindowFullScreen} from '../../reducers/tw';
 import FullscreenAPI from '../api/fullscreen';
+import {isConsoleEmbed} from '../console-embed.js';
+
+const consoleEmbed = isConsoleEmbed();
 
 const TWFullScreenHOC = function (WrappedComponent) {
     class FullScreenComponent extends React.Component {
@@ -17,11 +20,15 @@ const TWFullScreenHOC = function (WrappedComponent) {
         }
         componentDidMount () {
             this.mounted = true;
+            if (consoleEmbed) {
+                this.props.onSetIsFullScreen(true);
+                return;
+            }
             document.addEventListener('fullscreenchange', this.handleFullScreenChange);
             document.addEventListener('webkitfullscreenchange', this.handleFullScreenChange);
         }
         componentDidUpdate (previousProps) {
-            if (this.props.isFullScreen === previousProps.isFullScreen) return;
+            if (consoleEmbed || this.props.isFullScreen === previousProps.isFullScreen) return;
             if (FullscreenAPI.available()) {
                 let operation;
                 if (this.props.isFullScreen) {
