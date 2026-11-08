@@ -1,14 +1,16 @@
 jest.mock('../../src/lib/rotur/identity.js', () => ({getRoturToken: () => 'token'}));
 jest.mock('../../src/lib/rotur/client.js', () => {
     const create = jest.fn(() => Promise.resolve({id: 'sdk'}));
+    const vote = jest.fn(() => Promise.resolve({poll: {total: 1}}));
     return {
         ensureScopes: jest.fn(() => Promise.resolve(true)),
-        getRotur: () => ({loggedIn: true, posts: {create}}),
-        create
+        getRotur: () => ({loggedIn: true, posts: {create, vote}}),
+        create,
+        vote
     };
 });
 
-import {create} from '../../src/lib/rotur/client.js';
+import {create, ensureScopes, vote} from '../../src/lib/rotur/client.js';
 import rotur from '../../src/community/rotur.js';
 
 const realFetch = global.fetch;
@@ -38,6 +40,22 @@ describe('creating claw posts', () => {
         expect(JSON.parse(init.body)).toEqual({
             content: 'look', os: 'MistWarp', made_with: madeWith, attachments: 'a,b', poll: ['x', 'y']
         });
+    });
+});
+
+describe('voting in claw polls', () => {
+    test('asks Rotur for the vote permission before voting', async () => {
+        await expect(rotur.votePost('p1', 2)).resolves.toEqual({poll: {total: 1}});
+        expect(ensureScopes).toHaveBeenCalledWith(['posts:vote'], {prompt: true});
+        expect(vote).toHaveBeenCalledWith('p1', 2);
+    });
+
+    test('does not vote when the permission is refused', async () => {
+        ensureScopes.mockClear();
+        vote.mockClear();
+        ensureScopes.mockResolvedValueOnce(false);
+        await expect(rotur.votePost('p1', 0)).rejects.toThrow('MistWarp needs your permission on Rotur to do this.');
+        expect(vote).not.toHaveBeenCalled();
     });
 });
 

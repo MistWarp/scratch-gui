@@ -25,6 +25,7 @@ jest.mock('../../src/community/rotur.js', () => ({
     unpounce: jest.fn(),
     pounceAllowance: jest.fn(),
     reportImpressions: jest.fn(),
+    votePost: jest.fn(),
     bookmarks: jest.fn(() => Promise.resolve([])),
     blockedUsers: jest.fn(() => Promise.resolve({blocked: []}))
 }));
@@ -55,6 +56,39 @@ describe('social post list actions', () => {
 
         expect(rotur.likePost).toHaveBeenCalledWith('post-1');
         expect(wrapper.find('button[aria-label="Unlike post"]').text()).toContain('1');
+        wrapper.unmount();
+    });
+
+    test('records a poll vote and shows why a vote failed', async () => {
+        const poll = {total: 0, options: [{text: 'Cats', count: 0}, {text: 'Dogs', count: 0}]};
+        rotur.votePost.mockRejectedValueOnce(new Error('MistWarp needs your permission on Rotur to do this.'));
+        rotur.votePost.mockResolvedValueOnce({poll: {...poll,
+            total: 1,
+            voted: 1,
+            options: [
+                {text: 'Cats', count: 0}, {text: 'Dogs', count: 1}
+            ]}});
+        const wrapper = mount(
+            <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+                <SocialPost initialPost={{id: 'post-5', user: 'alice', content: 'Pick one', likes: [], poll}} />
+            </MemoryRouter>
+        );
+        const choose = async text => {
+            await act(async () => {
+                wrapper.find('button').filterWhere(button => button.text() === text)
+                    .simulate('click');
+                await Promise.resolve();
+            });
+            wrapper.update();
+        };
+
+        await choose('Dogs');
+        expect(rotur.votePost).toHaveBeenCalledWith('post-5', 1);
+        expect(wrapper.text()).toContain('MistWarp needs your permission on Rotur to do this.');
+
+        await choose('Dogs');
+        expect(wrapper.text()).toContain('100%');
+        expect(wrapper.text()).not.toContain('MistWarp needs your permission');
         wrapper.unmount();
     });
 

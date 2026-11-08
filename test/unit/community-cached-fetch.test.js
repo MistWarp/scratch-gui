@@ -41,6 +41,20 @@ describe('community project content cache', () => {
         expect(global.fetch).toHaveBeenCalledTimes(2);
     });
 
+    test('refetches an empty project download and never caches it', async () => {
+        const project = new Uint8Array([80, 75, 3, 4]).buffer;
+        global.fetch.mockResolvedValueOnce({ok: true, arrayBuffer: async () => new ArrayBuffer(0)})
+            .mockResolvedValueOnce({ok: true, arrayBuffer: async () => project});
+        await expect(cachedFetchBuffer(url)).resolves.toBe(project);
+        expect(global.fetch).toHaveBeenLastCalledWith(url, {cache: 'reload'});
+
+        clearContentCache();
+        global.fetch.mockReset();
+        global.fetch.mockResolvedValue({ok: true, arrayBuffer: async () => new ArrayBuffer(0)});
+        await expect(cachedFetchBuffer(url)).rejects.toThrow('project server returned an empty file');
+        expect(global.Response).not.toHaveBeenCalledWith(expect.any(ArrayBuffer), expect.anything());
+    });
+
     test('hands a preloaded project to the loader without copying it', async () => {
         const buffer = new Uint8Array([1, 2, 3]).buffer;
         global.fetch.mockResolvedValue({
