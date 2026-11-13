@@ -21,6 +21,7 @@ import classNames from 'classnames';
 import Search from './search';
 import importedAddons from '../generated/addon-manifests';
 import messagesByLocale from '../generated/l10n-settings-entries';
+import loadAddonTranslations from '../translations';
 import settingsTranslationsEnglish from './en.json';
 import settingsTranslationsOther from './translations.json';
 import upstreamMeta from '../generated/upstream-meta.json';
@@ -49,10 +50,9 @@ document.documentElement.classList.add(normalizeStyles.root);
 document.documentElement.lang = locale;
 
 let addonTranslations = {};
-const addonTranslationsPromise = messagesByLocale[locale] ?
-    messagesByLocale[locale]().then(module => {
-        addonTranslations = module.default;
-    }) : Promise.resolve();
+const addonTranslationsPromise = loadAddonTranslations(messagesByLocale, locale).then(messages => {
+    addonTranslations = messages;
+});
 
 const settingsTranslations = settingsTranslationsEnglish;
 if (locale !== 'en') {
@@ -1020,10 +1020,7 @@ class AddonSettingsComponent extends React.Component {
     componentDidMount () {
         SettingsStore.addEventListener('setting-changed', this.handleSettingStoreChanged);
         document.body.addEventListener('keydown', this.handleKeyDown);
-        addonTranslationsPromise.then(
-            () => this.setState({translationsLoaded: true}),
-            error => console.error('Unable to load add-on translations', error)
-        );
+        addonTranslationsPromise.then(() => this.setState({translationsLoaded: true}));
     }
     componentDidUpdate (prevProps, prevState) {
         if (this.state.search !== prevState.search) {

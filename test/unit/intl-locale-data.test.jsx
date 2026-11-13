@@ -3,19 +3,47 @@ import path from 'path';
 import React from 'react';
 import {mount} from 'enzyme';
 
-const dataPath = name => `@turbowarp/scratch-l10n/src/locale-data/${name}.js`;
-
-const scratchL10nLanguages = () => {
-    const source = fs.readFileSync(path.join(
-        path.dirname(require.resolve('@turbowarp/scratch-l10n/package.json')), 'src/locale-data.js'
-    ), 'utf8');
-    return [...source.matchAll(/^import \w+ from '\.\/locale-data\/([\w-]+)';$/gm)].map(match => match[1]);
-};
-
 let registered;
+let entries;
 let downloads;
 let watched;
 let loadIntlLocaleData;
+
+const dataPath = name => `@turbowarp/scratch-l10n/src/locale-data/${name}.js`;
+
+const scratchL10n = file => fs.readFileSync(path.join(
+    path.dirname(require.resolve('@turbowarp/scratch-l10n/package.json')), file
+), 'utf8');
+
+const scratchL10nLanguages = () => {
+    const source = scratchL10n('src/locale-data.js');
+    return [...source.matchAll(/^import \w+ from '\.\/locale-data\/([\w-]+)';$/gm)].map(match => match[1]);
+};
+
+const editorLocaleCodes = () => {
+    const source = scratchL10n('locales/editor-msgs.js');
+    return Object.keys(JSON.parse(source.slice(source.indexOf('{')).replace(/;?\s*$/, '')));
+};
+
+const communityLocaleCodes = () => Object.keys(JSON.parse(fs.readFileSync(
+    path.join(__dirname, '../../src/generated/community-locales/locales.json'), 'utf8'
+)));
+
+const findEntry = code => {
+    const parts = code.toLowerCase().split('-');
+    for (; parts.length; parts.pop()) {
+        const entry = entries.get(parts.join('-'));
+        if (entry) return entry;
+    }
+    return null;
+};
+
+const hasPluralRules = (code, seen = new Set()) => {
+    const entry = findEntry(code);
+    if (!entry || seen.has(entry)) return false;
+    seen.add(entry);
+    return Boolean(entry.pluralRuleFunction) || Boolean(entry.parentLocale && hasPluralRules(entry.parentLocale, seen));
+};
 
 const watchDownloads = (name, {failFirst = false} = {}) => {
     const actual = jest.requireActual(dataPath(name));
@@ -30,6 +58,7 @@ const watchDownloads = (name, {failFirst = false} = {}) => {
 beforeEach(() => {
     jest.resetModules();
     registered = [];
+    entries = new Map();
     downloads = [];
     watched = [];
     jest.doMock('react-intl', () => {
@@ -37,7 +66,10 @@ beforeEach(() => {
         return {
             ...actual,
             addLocaleData: data => {
-                registered.push(...data.map(entry => entry.locale));
+                for (const entry of data) {
+                    registered.push(entry.locale);
+                    entries.set(entry.locale.toLowerCase(), entry);
+                }
                 actual.addLocaleData(data);
             }
         };
@@ -108,4 +140,27 @@ test('every language scratch-l10n registers can still be downloaded', async () =
     expect(languages.length).toBeGreaterThan(60);
     await Promise.all(languages.map(language => loadIntlLocaleData(language)));
     expect(registered).toEqual(expect.arrayContaining(languages));
+});
+
+const loadAlone = async code => {
+    entries = new Map();
+    let load;
+    jest.isolateModules(() => {
+        ({loadIntlLocaleData: load} = require('../../src/lib/intl-locale-data'));
+    });
+    const before = hasPluralRules(code);
+    await load(code);
+    return {before, after: hasPluralRules(code)};
+};
+
+test.each([
+    ['editor', editorLocaleCodes],
+    ['community', communityLocaleCodes]
+])('every %s language can format plurals once it has loaded on its own', async (site, codes) => {
+    const languages = codes();
+    expect(languages.length).toBeGreaterThan(20);
+    const results = [];
+    for (const code of languages) results.push({code, ...await loadAlone(code)});
+    expect(results.filter(result => result.code !== 'en' && result.before).map(result => result.code)).toEqual([]);
+    expect(results.filter(result => !result.after).map(result => result.code)).toEqual([]);
 });

@@ -82,9 +82,10 @@ const requests = new Map();
 
 const loadData = name => {
     if (!requests.has(name)) {
-        const request = loaders[name]().then(module => addLocaleData(module.default));
-        request.catch(() => requests.delete(name));
-        requests.set(name, request);
+        requests.set(name, loaders[name]().then(module => addLocaleData(module.default), error => {
+            requests.delete(name);
+            throw error;
+        }));
     }
     return requests.get(name);
 };
@@ -96,4 +97,4 @@ const dataNamesFor = locale => {
     return [...new Set(names)].filter(name => Object.prototype.hasOwnProperty.call(loaders, name));
 };
 
-export const loadIntlLocaleData = locale => Promise.all(dataNamesFor(locale).map(loadData)).then(() => {});
+export const loadIntlLocaleData = locale => Promise.all(dataNamesFor(locale).map(loadData));

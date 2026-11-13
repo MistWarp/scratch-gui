@@ -1,17 +1,11 @@
 import addonL10nEntries from '../../addons/generated/l10n-entries';
 import addonMessagesEn from '../../addons/addons-l10n/en.json';
+import loadAddonTranslations from '../../addons/translations';
 
-export const loadAddonMessagesForLocale = async locale => {
-    if (!locale) return addonMessagesEn;
-    const loader = addonL10nEntries[locale];
-    if (!loader) return addonMessagesEn;
-    try {
-        const mod = await loader();
-        return mod.default || mod;
-    } catch (e) {
-        return addonMessagesEn;
-    }
-};
+export const loadAddonMessagesForLocale = async locale => ({
+    ...addonMessagesEn,
+    ...await loadAddonTranslations(addonL10nEntries, locale)
+});
 
 export const formatAddonMessage = (messages, key, args) => {
     const raw = messages[key] || addonMessagesEn[key] || '';
