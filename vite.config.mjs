@@ -21,6 +21,7 @@ import {writeCommunityLocales} from './scripts/community-translations.mjs';
 import {writeScratchBlocks} from './scripts/vite-blocks.mjs';
 import {ensureMicrobitHex} from './scripts/microbit-hex.mjs';
 import {resolveBuildId} from './scripts/build-id.mjs';
+import {offlineWorker} from './scripts/vite-offline.mjs';
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
@@ -168,6 +169,8 @@ const scratchCompatibility = ({inlineWorkers = false} = {}) => ({
     }
 });
 
+const BLOCKS_MEDIA = ['node_modules/scratch-blocks/media', 'static/blocks-media/default'];
+
 const pageDefinitions = {
     'editor': ['editor.html', 'index', 'editor.jsx'],
     'community': ['index.html', 'simple', 'community.jsx'],
@@ -206,11 +209,10 @@ const pagesAndAssets = (env, root, library, generatedInputs) => {
             `<script type="module" src="/src/playground/${page.entry}"></script></body>`);
     };
     const copies = [
-        ['node_modules/scratch-blocks/media', 'static/blocks-media/default'],
+        BLOCKS_MEDIA,
         ['node_modules/scratch-blocks/media', 'static/blocks-media/high-contrast'],
         ['src/lib/themes/blocks/high-contrast-media/blocks-media', 'static/blocks-media/high-contrast'],
-        ['src/examples/extensions', 'static/extensions'],
-        ['src/playground/service-worker.js', 'sw.js']
+        ['src/examples/extensions', 'static/extensions']
     ];
     const routing = server => {
         server.middlewares.use(async (req, res, next) => {
@@ -352,7 +354,7 @@ export default defineConfig(async ({mode, command}) => {
     const apiBase = (env.MW_API_BASE || 'https://api.mistwarp.org/v1').replace(/\/$/, '');
     const values = {
         DEBUG: Boolean(env.DEBUG),
-        ENABLE_SERVICE_WORKER: env.ENABLE_SERVICE_WORKER || '',
+        ENABLE_SERVICE_WORKER: command === 'build' && !library && env.ENABLE_SERVICE_WORKER !== 'false' ? 'true' : '',
         ROOT: root,
         ROUTING_STYLE: env.ROUTING_STYLE || 'wildcard',
         MW_COMMUNITY: env.MW_COMMUNITY === 'true' ? 'true' : '',
@@ -394,7 +396,15 @@ export default defineConfig(async ({mode, command}) => {
             viteCommonjs({exclude: ['/node_modules/.vite/', '/peerjs/dist/', '/generated/scratch-blocks.js',
                 '/src/packager/packager/packager.js']}),
             nodePolyfills(),
-            pagesAndAssets(env, root, library, generatedInputs)
+            pagesAndAssets(env, root, library, generatedInputs),
+            values.ENABLE_SERVICE_WORKER && offlineWorker({
+                directory,
+                source: absolute('src/playground/service-worker.js'),
+                pages: ['editor.html', 'addons.html', 'fullscreen.html', 'player.html',
+                    ...(env.MW_COMMUNITY === 'true' ? [] : ['index.html'])],
+                folders: [BLOCKS_MEDIA],
+                version: values.MW_PACKAGER_BUILD_ID
+            })
         ],
         css: {
             modules: {

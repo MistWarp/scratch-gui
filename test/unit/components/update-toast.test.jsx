@@ -1,7 +1,15 @@
 import React from 'react';
 import configureStore from 'redux-mock-store';
 import {mountWithIntl} from '../../helpers/intl-helpers.jsx';
-import {finishUpdate, UpdateToast} from '../../../src/components/update-toast/update-toast.jsx';
+import {UpdateToast} from '../../../src/components/update-toast/update-toast.jsx';
+import {prepareUpdate, switchToUpdate} from '../../../src/lib/offline-worker.js';
+
+jest.mock('../../../src/lib/offline-worker.js', () => ({
+    prepareUpdate: jest.fn(),
+    switchToUpdate: jest.fn()
+}));
+
+const settle = () => new Promise(resolve => setTimeout(resolve, 0));
 
 const mountToast = projectChanged => {
     const store = configureStore()({
@@ -31,49 +39,48 @@ describe('update toast', () => {
         expect(wrapper.text()).toContain('You have unsaved changes, so save your project before reloading.');
     });
 
-    test('reloading leaves caches alone until the new page has loaded', () => {
+    test('reloading switches to the new version before the page reloads', async () => {
         const originalLocation = window.location;
-        const replace = jest.fn();
-        const keys = jest.fn(() => Promise.resolve([]));
-        window.caches = {keys, delete: jest.fn()};
-        Object.defineProperty(window, 'location', {
-            configurable: true,
-            value: {href: 'https://example.com/editor#1', replace}
-        });
+        const reload = jest.fn();
+        let finishSwitch;
+        switchToUpdate.mockReturnValue(new Promise(resolve => {
+            finishSwitch = resolve;
+        }));
+        Object.defineProperty(window, 'location', {configurable: true, value: {reload}});
         try {
             const wrapper = mountToast(true);
             wrapper.find('button').filterWhere(node => node.text() === 'Reload')
                 .simulate('click');
-            expect(replace).toHaveBeenCalledWith('https://example.com/editor?mw-update=abcdef0123456#1');
-            expect(keys).not.toHaveBeenCalled();
+            await settle();
+            expect(switchToUpdate).toHaveBeenCalled();
+            expect(reload).not.toHaveBeenCalled();
+            finishSwitch();
+            await settle();
+            expect(reload).toHaveBeenCalled();
         } finally {
             Object.defineProperty(window, 'location', {configurable: true, value: originalLocation});
-            delete window.caches;
         }
     });
 
-    test('the next page load clears old caches and tidies the URL', async () => {
-        window.history.replaceState(null, '', '/editor?mw-update=abc&x=1#5');
-        const deleted = [];
-        window.caches = {
-            keys: () => Promise.resolve(['mistwarp-cache-v2', 'other', 'mistwarp-runtime-v2']),
-            delete: name => {
-                deleted.push(name);
-                return Promise.resolve(true);
-            }
-        };
+    test('the notice appears once the new version is ready to use', async () => {
+        const originalFetch = global.fetch;
+        global.fetch = jest.fn(() => Promise.resolve({ok: true, json: () => Promise.resolve({id: 'abcdef0123456'})}));
+        let finishPreparing;
+        prepareUpdate.mockReturnValue(new Promise(resolve => {
+            finishPreparing = resolve;
+        }));
         try {
-            await finishUpdate();
-            expect(deleted).toEqual(['mistwarp-cache-v2', 'mistwarp-runtime-v2']);
-            expect(window.location.search).toBe('?x=1');
-            expect(window.location.hash).toBe('#5');
-
-            deleted.length = 0;
-            await finishUpdate();
-            expect(deleted).toEqual([]);
+            const wrapper = mountToast(false);
+            wrapper.setState({deployedId: null});
+            const checking = wrapper.instance().checkForUpdate();
+            await settle();
+            expect(prepareUpdate).toHaveBeenCalled();
+            expect(wrapper.state('deployedId')).toBeNull();
+            finishPreparing();
+            await checking;
+            expect(wrapper.state('deployedId')).toBe('abcdef0123456');
         } finally {
-            delete window.caches;
-            window.history.replaceState(null, '', '/');
+            global.fetch = originalFetch;
         }
     });
 });

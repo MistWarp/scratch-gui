@@ -8,10 +8,10 @@ import {
     isUpdateAvailable,
     shortId
 } from '../../lib/build-version.js';
+import {prepareUpdate, switchToUpdate} from '../../lib/offline-worker.js';
 import styles from './update-toast.css';
 
 const CHECK_INTERVAL_MS = 5 * 60 * 1000;
-const UPDATE_PARAM = 'mw-update';
 
 const messages = defineMessages({
     versions: {
@@ -20,40 +20,6 @@ const messages = defineMessages({
         id: 'mw.updateToast.versions'
     }
 });
-
-// Runs on the page load that follows "Reload": the old page has already gone,
-// so clearing caches here can't strand a tab whose leave prompt was cancelled.
-const finishUpdate = async () => {
-    let url;
-    try {
-        url = new URL(window.location.href);
-    } catch (e) {
-        return;
-    }
-    if (!url.searchParams.has(UPDATE_PARAM)) return;
-    url.searchParams.delete(UPDATE_PARAM);
-    try {
-        window.history.replaceState(window.history.state, '', url.toString());
-    } catch (e) {
-        // ignore
-    }
-    const root = process.env.ROOT || '/';
-    try {
-        if ('caches' in window) {
-            const cacheNames = await window.caches.keys();
-            await Promise.all(cacheNames
-                .filter(name => name.startsWith('mistwarp-cache-') || name.startsWith('mistwarp-runtime'))
-                .map(name => window.caches.delete(name)));
-        }
-        if ('serviceWorker' in navigator) {
-            // Fetch the new worker rather than unregistering the one this page now uses.
-            const registration = await navigator.serviceWorker.getRegistration(root);
-            if (registration) await registration.update();
-        }
-    } catch (e) {
-        // A cache cleanup failure should not affect the updated page.
-    }
-};
 
 class UpdateToast extends React.Component {
     constructor (props, context) {
@@ -69,7 +35,6 @@ class UpdateToast extends React.Component {
         this.handleStoreChange = this.handleStoreChange.bind(this);
     }
     componentDidMount () {
-        finishUpdate();
         // Local dev builds have no deploy to compare against.
         if (!BUILD_ID || BUILD_ID === 'dev') return;
         this.checkForUpdate();
@@ -101,6 +66,7 @@ class UpdateToast extends React.Component {
         try {
             const deployed = await fetchDeployedVersion();
             if (isUpdateAvailable(deployed)) {
+                await prepareUpdate();
                 this.setState({deployedId: deployed.id});
                 clearInterval(this.interval);
             }
@@ -111,13 +77,9 @@ class UpdateToast extends React.Component {
     handleDismiss () {
         this.setState({dismissed: true});
     }
-    handleReload () {
-        // If the project has unsaved changes, the browser asks before leaving;
-        // cancelling must leave this page working, so caches are cleared by
-        // the next page load (finishUpdate) rather than here.
-        const url = new URL(window.location.href);
-        url.searchParams.set(UPDATE_PARAM, this.state.deployedId);
-        window.location.replace(url.toString());
+    async handleReload () {
+        await switchToUpdate();
+        window.location.reload();
     }
     render () {
         if (!this.state.deployedId || this.state.dismissed) return null;
@@ -186,5 +148,5 @@ UpdateToast.contextTypes = {
     store: PropTypes.object
 };
 
-export {UpdateToast, finishUpdate};
+export {UpdateToast};
 export default injectIntl(UpdateToast);

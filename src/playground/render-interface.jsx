@@ -40,7 +40,7 @@ import CloudVariableBadge from '../containers/tw-cloud-variable-badge.jsx';
 import {DOCS_BASE} from '../lib/help/index.js';
 import {isBrowserSupported} from '../lib/utils/tw-environment-support-prober';
 import AddonChannels from '../addons/channels';
-import {loadServiceWorker} from './load-service-worker';
+import {registerOfflineWorker} from '../lib/offline-worker';
 import runAddons from '../addons/entry';
 import {APP_NAME, FEEDBACK_URL, GITHUB_URL} from '../lib/constants/brand.js';
 
@@ -323,8 +323,8 @@ class Interface extends React.Component {
         this.updateAddonSettingsTitle();
     }
     componentDidUpdate (prevProps) {
-        if (prevProps.isLoading && !this.props.isLoading) {
-            loadServiceWorker();
+        if (prevProps.isLoading && !this.props.isLoading && !this.props.isPlayerOnly) {
+            registerOfflineWorker();
         }
         if (prevProps.intl !== this.props.intl) {
             this.updateAddonSettingsTitle();
