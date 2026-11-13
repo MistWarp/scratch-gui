@@ -1,12 +1,8 @@
-import {addLocaleData} from 'react-intl';
-
-import {localeData, isRtl} from '@turbowarp/scratch-l10n';
+import {isRtl} from '@turbowarp/scratch-l10n/src/supported-locales.js';
 import {messages as editorMessages, loadLocale, isLocaleLoaded} from '../lib/editor-locales';
 
 import {LANGUAGE_KEY} from '../lib/utils/detect-locale.js';
 import {local} from '../modules/storage';
-
-addLocaleData(localeData);
 
 const UPDATE_LOCALES = 'scratch-gui/locales/UPDATE_LOCALES';
 const SELECT_LOCALE = 'scratch-gui/locales/SELECT_LOCALE';

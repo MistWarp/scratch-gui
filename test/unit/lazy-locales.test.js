@@ -60,3 +60,23 @@ test('a slow selection does not overwrite a newer language choice', async () => 
     expect(document.documentElement.lang).toBe('en');
     expect(document.documentElement.dir).toBe('ltr');
 });
+
+test.each([
+    ['formatting data', '../../src/lib/intl-locale-data', 'loadIntlLocaleData'],
+    ['packager translations', '../../src/packager/locales', 'loadPackagerLocale']
+])('a language counts as loaded only once its %s have loaded too', async (part, path, name) => {
+    jest.resetModules();
+    const load = jest.fn()
+        .mockRejectedValueOnce(new Error('offline'))
+        .mockResolvedValue();
+    jest.doMock(path, () => ({...jest.requireActual(path), [name]: load}));
+    jest.doMock('../../src/generated/editor-locales/index.js', () => ({messages: dictionaries, loaders, blockMessages: {en: {}, fr: {}, de: {}}}));
+    const editorLocales = require('../../src/lib/editor-locales');
+    await expect(editorLocales.loadLocale('fr')).rejects.toThrow('offline');
+    expect(editorLocales.isLocaleLoaded('fr')).toBe(false);
+    await editorLocales.loadLocale('fr');
+    expect(editorLocales.isLocaleLoaded('fr')).toBe(true);
+    expect(load).toHaveBeenCalledWith('fr');
+    expect(dictionaries.fr.hello).toBe('Bonjour');
+    jest.dontMock(path);
+});

@@ -24,6 +24,7 @@ import {getActiveWorkspace, whenScratchBlocks} from '../modules/blocks-registry'
 import addons from './generated/addon-manifests';
 import addonMessages from './addons-l10n/en.json';
 import l10nEntries from './generated/l10n-entries';
+import loadAddonTranslations from './translations';
 import addonEntries from './generated/addon-entries';
 import {addContextMenu} from './contextmenu';
 import * as modal from './modal';
@@ -131,10 +132,7 @@ const getLocale = () => {
 let language;
 const getTranslations = async () => {
     language = getLocale();
-    if (Object.prototype.hasOwnProperty.call(l10nEntries, language)) {
-        const localeMessages = await l10nEntries[language]();
-        Object.assign(addonMessages, localeMessages.default || localeMessages);
-    }
+    Object.assign(addonMessages, await loadAddonTranslations(l10nEntries, language));
 };
 let addonMessagesPromise;
 

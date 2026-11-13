@@ -1,27 +1,38 @@
-import locale0 from './ca.json';
-import locale1 from './cs.json';
-import locale2 from './de.json';
-import locale3 from './en.json';
-import locale4 from './es.json';
-import locale5 from './fi.json';
-import locale6 from './fr.json';
-import locale7 from './hu.json';
-import locale8 from './it.json';
-import locale9 from './ja.json';
-import locale10 from './ko.json';
-import locale11 from './lt.json';
-import locale12 from './nb.json';
-import locale13 from './nl.json';
-import locale14 from './pl.json';
-import locale15 from './pt-br.json';
-import locale16 from './pt.json';
-import locale17 from './ru.json';
-import locale18 from './sl.json';
-import locale19 from './sv.json';
-import locale20 from './tr.json';
-import locale21 from './uk.json';
-import locale22 from './zh-cn.json';
-import locale23 from './zh-tw.json';
-const messages = {"ca": locale0,"cs": locale1,"de": locale2,"en": locale3,"es": locale4,"fi": locale5,"fr": locale6,"hu": locale7,"it": locale8,"ja": locale9,"ko": locale10,"lt": locale11,"nb": locale12,"nl": locale13,"pl": locale14,"pt-br": locale15,"pt": locale16,"ru": locale17,"sl": locale18,"sv": locale19,"tr": locale20,"uk": locale21,"zh-cn": locale22,"zh-tw": locale23};
-const lookup = (messages, id) => id.split('.').reduce((value, key) => value && value[key], messages);
+import english from './en.json';
+
+const loaders = {
+    ca: () => import('./ca.json'),
+    cs: () => import('./cs.json'),
+    de: () => import('./de.json'),
+    es: () => import('./es.json'),
+    fi: () => import('./fi.json'),
+    fr: () => import('./fr.json'),
+    hu: () => import('./hu.json'),
+    it: () => import('./it.json'),
+    ja: () => import('./ja.json'),
+    ko: () => import('./ko.json'),
+    lt: () => import('./lt.json'),
+    nb: () => import('./nb.json'),
+    nl: () => import('./nl.json'),
+    pl: () => import('./pl.json'),
+    'pt-br': () => import('./pt-br.json'),
+    pt: () => import('./pt.json'),
+    ru: () => import('./ru.json'),
+    sl: () => import('./sl.json'),
+    sv: () => import('./sv.json'),
+    tr: () => import('./tr.json'),
+    uk: () => import('./uk.json'),
+    'zh-cn': () => import('./zh-cn.json'),
+    'zh-tw': () => import('./zh-tw.json')
+};
+const messages = {en: english};
+const lookup = (dictionary, id) => id.split('.').reduce((value, key) => value && value[key], dictionary);
+
+export const loadPackagerLocale = locale => {
+    const key = String(locale || '').toLowerCase();
+    if (messages[key] || !Object.prototype.hasOwnProperty.call(loaders, key)) return Promise.resolve();
+    return loaders[key]().then(module => {
+        messages[key] = module.default;
+    });
+};
 export const getTranslator = locale => id => lookup(messages[locale.toLowerCase()], id) || lookup(messages.en, id) || id;
