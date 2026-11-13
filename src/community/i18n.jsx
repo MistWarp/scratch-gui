@@ -1,6 +1,5 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
-import {addLocaleData, IntlProvider} from 'react-intl';
-import {localeData} from '@turbowarp/scratch-l10n';
+import {IntlProvider} from 'react-intl';
 import IntlMessageFormat from 'intl-messageformat';
 import english from '../generated/community-locales/fallbacks.json';
 import {loaders} from '../generated/community-locales';
@@ -9,8 +8,7 @@ import {
     setCommunityLocale, setCommunityFormatter
 } from './locale';
 import {local} from '../modules/storage';
-
-addLocaleData(localeData);
+import {loadIntlLocaleData} from '../lib/intl-locale-data';
 export const LOCALES = [
     {value: 'auto', label: 'Use browser language'},
     ...Object.entries(locales).map(([value, info]) => ({value, label: info.name}))
@@ -20,12 +18,12 @@ const loaded = new Map([['en', english]]);
 const pending = new Map();
 export const loadCommunityLocale = locale => {
     if (loaded.has(locale)) return Promise.resolve(loaded.get(locale));
-    if (!loaders[locale]) return Promise.resolve(english);
     if (!pending.has(locale)) {
-        pending.set(locale, loaders[locale]().then(module => {
-            loaded.set(locale, module.default);
+        const messages = loaders[locale] ? loaders[locale]().then(module => module.default) : english;
+        pending.set(locale, Promise.all([messages, loadIntlLocaleData(locale)]).then(([value]) => {
+            loaded.set(locale, value);
             pending.delete(locale);
-            return module.default;
+            return value;
         }).catch(error => {
             pending.delete(locale);
             throw error;

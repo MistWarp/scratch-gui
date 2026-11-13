@@ -36,6 +36,11 @@ const vmFieldSelectors = [
     `VariableDeclarator:has(> .init${vmObject}) > ObjectPattern > Property[key.name=${guiFieldName}]`,
     `AssignmentExpression:has(> .right${vmObject}) > ObjectPattern > Property[key.name=${guiFieldName}]`
 ].map(selector => ({selector, message: vmFieldMessage}));
+const localeDataImport = {
+    name: '@turbowarp/scratch-l10n',
+    message: 'The package index bundles formatting data for every language. Import the locale list from ' +
+        '@turbowarp/scratch-l10n/src/supported-locales.js and load locale data through src/lib/intl-locale-data.'
+};
 const siblingModuleDeepImport = {
     group: ['../*/*', '!../*/index', '!../*/index.ts', '!../../**'],
     message: 'Import another module through its index only.'
@@ -72,7 +77,7 @@ module.exports = {
         ],
         'no-restricted-properties': ['error', ...storageProperties, ...blocksGlobalProperties],
         'no-restricted-syntax': ['error', ...vmFieldSelectors],
-        'no-restricted-imports': ['error', {patterns: [moduleDeepImport]}],
+        'no-restricted-imports': ['error', {paths: [localeDataImport], patterns: [moduleDeepImport]}],
         'import/no-nodejs-modules': 'error',
         'react/jsx-no-literals': 'error',
         'no-confusing-arrow': ['error', {
@@ -120,6 +125,7 @@ module.exports = {
             files: ['modules/**/*'],
             rules: {
                 'no-restricted-imports': ['error', {
+                    paths: [localeDataImport],
                     patterns: [uiLayerImport, siblingModuleDeepImport, moduleDeepImport]
                 }]
             }

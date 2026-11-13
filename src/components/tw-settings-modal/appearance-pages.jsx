@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {FormattedMessage} from 'react-intl';
 import {connect} from 'react-redux';
-import locales from '@turbowarp/scratch-l10n';
+import locales from '@turbowarp/scratch-l10n/src/supported-locales.js';
 
 import Box from '../box/box.jsx';
 import {BooleanSetting} from './setting.jsx';

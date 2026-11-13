@@ -4,7 +4,7 @@ import React, {useEffect, useMemo, useRef} from 'react';
 import PropTypes from 'prop-types';
 import ReactDOM from 'react-dom';
 import {Search} from 'lucide-react';
-import {isRtl} from '@turbowarp/scratch-l10n';
+import {isRtl} from '@turbowarp/scratch-l10n/src/supported-locales.js';
 
 import LazyScratchBlocks from '../../lib/tw-lazy-scratch-blocks';
 import {getShortcuts, updateCallbacks} from '../../lib/shortcuts/event-router.js';

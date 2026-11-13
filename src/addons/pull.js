@@ -397,9 +397,11 @@ const generateEntries = (items, callback) => {
     const importSection = new GeneratedImports();
     for (const i of items) {
         const {src, type} = callback(i);
-        if (type === 'lazy-import') {
+        if (type === 'bundled-import') {
             const importName = importSection.add(src, i, true);
             exportSection += `  ${JSON.stringify(i)}: () => Promise.resolve(${importName}),\n`;
+        } else if (type === 'dynamic-import') {
+            exportSection += `  ${JSON.stringify(i)}: () => import(${JSON.stringify(src)}),\n`;
         } else if (type === 'lazy-require') {
             exportSection += `  ${JSON.stringify(i)}: () => require(${JSON.stringify(src)}),\n`;
         } else if (type === 'eager-import') {
@@ -419,18 +421,16 @@ const generateEntries = (items, callback) => {
 const generateL10nEntries = locales => generateEntries(
     locales.filter(i => i !== 'en'),
     locale => ({
-        name: `addon-l10n-${locale}`,
         src: `../addons-l10n/${locale}.json`,
-        type: 'lazy-import'
+        type: 'dynamic-import'
     })
 );
 
 const generateL10nSettingsEntries = locales => generateEntries(
     locales.filter(i => i !== 'en'),
     locale => ({
-        name: `addon-l10n-settings-${locale}`,
         src: `../addons-l10n-settings/${locale}.json`,
-        type: 'lazy-import'
+        type: 'dynamic-import'
     })
 );
 
@@ -443,7 +443,7 @@ const generateRuntimeEntries = () => generateEntries(
             // Include default addons in a single bundle
             name: manifest.enabledByDefault ? 'addon-default-entry' : `addon-entry-${id}`,
             // Include default addons useful outside of the editor in the original bundle, no request required
-            type: (manifest.enabledByDefault && !manifest.editorOnly) ? 'lazy-require' : 'lazy-import'
+            type: (manifest.enabledByDefault && !manifest.editorOnly) ? 'lazy-require' : 'bundled-import'
         };
     }
 );

@@ -24,11 +24,14 @@ test('locale generation extracts MistWarp defaults and addon translations', () =
         const generated = name => JSON.parse(fs.readFileSync(
             root + '/src/generated/editor-locales/' + name + '.json'
         )).messages;
-        console.log(JSON.stringify({defaults, en: generated('en'), fr: generated('fr')}));
+        const index = fs.readFileSync(root + '/src/generated/editor-locales/index.js', 'utf8');
+        console.log(JSON.stringify({defaults, en: generated('en'), fr: generated('fr'), index}));
     `], {cwd: path.resolve(__dirname, '../..'), encoding: 'utf8'});
-    const {defaults, en, fr} = JSON.parse(output);
+    const {defaults, en, fr, index} = JSON.parse(output);
     expect(defaults['gui.menuBar.tools']).toBe('Project');
     expect(defaults['gui.gui.findBlocks']).toBe('Find Blocks');
     expect(en['gui.menuBar.tools']).toBe('Project');
     expect(fr['block-count/blocks']).toBeTruthy();
+    expect(index).toContain('"fr": () => import(\'./fr.json\')');
+    expect(index.match(/^import .* from /gm)).toEqual(['import english from ']);
 });

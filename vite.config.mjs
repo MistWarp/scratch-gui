@@ -308,7 +308,8 @@ const pagesAndAssets = (env, root, library, generatedInputs) => {
                         ...(item.type === 'chunk' ? {
                             imports: item.imports,
                             dynamicImports: item.dynamicImports,
-                            modules: Object.keys(item.modules)
+                            modules: Object.fromEntries(Object.entries(item.modules)
+                                .map(([id, module]) => [path.relative(directory, id), module.renderedLength]))
                         } : {})
                     })), null, 2)});
             }
@@ -451,7 +452,7 @@ export default defineConfig(async ({mode, command}) => {
                 // not in an arbitrarily named UI component such as "checkbox".
                 rollupOptions: {output: {manualChunks: id => (
                     // eslint-disable-next-line no-undefined -- Rollup's default chunking
-                    id.includes('/generated/editor-locales/') ? 'editor-locales' : undefined
+                    /\/generated\/editor-locales\/(?:index\.js|en\.json)$/.test(id) ? 'editor-locales' : undefined
                 )}}
             }),
             ...(library ? {lib: {entry: absolute('src/index.js'),

@@ -60,3 +60,20 @@ test('a slow selection does not overwrite a newer language choice', async () => 
     expect(document.documentElement.lang).toBe('en');
     expect(document.documentElement.dir).toBe('ltr');
 });
+
+test('a language counts as loaded only once its formatting data has loaded too', async () => {
+    jest.resetModules();
+    const loadIntlLocaleData = jest.fn()
+        .mockRejectedValueOnce(new Error('offline'))
+        .mockResolvedValue();
+    jest.doMock('../../src/lib/intl-locale-data', () => ({loadIntlLocaleData}));
+    jest.doMock('../../src/generated/editor-locales/index.js', () => ({messages: dictionaries, loaders, blockMessages: {en: {}, fr: {}, de: {}}}));
+    const editorLocales = require('../../src/lib/editor-locales');
+    await expect(editorLocales.loadLocale('fr')).rejects.toThrow('offline');
+    expect(editorLocales.isLocaleLoaded('fr')).toBe(false);
+    await editorLocales.loadLocale('fr');
+    expect(editorLocales.isLocaleLoaded('fr')).toBe(true);
+    expect(loadIntlLocaleData).toHaveBeenCalledWith('fr');
+    expect(dictionaries.fr.hello).toBe('Bonjour');
+    jest.dontMock('../../src/lib/intl-locale-data');
+});

@@ -12,7 +12,7 @@ import localesReducer, {initLocale, localesInitialState, localeMiddleware} from 
 import {setPlayer, setFullScreen} from '../../reducers/mode.js';
 import {syncProjectNameToVm} from '../../reducers/project-title.js';
 
-import locales from '@turbowarp/scratch-l10n';
+import locales from '@turbowarp/scratch-l10n/src/supported-locales.js';
 import {detectLocale} from '../utils/detect-locale';
 
 const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;

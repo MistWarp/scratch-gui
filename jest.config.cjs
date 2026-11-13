@@ -42,6 +42,7 @@ module.exports = {
     },
     transformIgnorePatterns: [
         '/node_modules/(?!(scratch-audio|scratch-paint|fractch|scratchblocks|pify|isomorphic-git|rotur-sdk|' +
+            '@turbowarp/scratch-l10n|' +
             '@vernier/godirect|@chenglou/pretext)/)'
     ],
     transform: {
