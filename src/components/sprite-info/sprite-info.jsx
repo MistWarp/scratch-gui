@@ -147,17 +147,75 @@ class SpriteInfo extends React.Component {
             </div>
         );
 
+        const visibilityToggle = (
+            <ToggleButtons
+                buttons={[
+                    {
+                        handleClick: this.props.onClickVisible,
+                        icon: Eye,
+                        isSelected: this.props.visible && !this.props.disabled,
+                        title: this.props.intl.formatMessage(messages.showSpriteAction)
+                    },
+                    {
+                        handleClick: this.props.onClickNotVisible,
+                        icon: EyeClosed,
+                        isSelected: !this.props.visible && !this.props.disabled,
+                        title: this.props.intl.formatMessage(messages.hideSpriteAction)
+                    }
+                ]}
+                disabled={this.props.disabled}
+            />
+        );
+
+        const sizeInput = (
+            <BufferedInput
+                small
+                disabled={this.props.disabled}
+                label={sizeLabel}
+                tabIndex="0"
+                type="number"
+                value={this.props.disabled ? '' : Math.round(this.props.size)}
+                onSubmit={this.props.onChangeSize}
+            />
+        );
+
+        const direction = Math.round(this.props.direction);
+        const directionPicker = above => (
+            <DirectionPicker
+                direction={Number.isFinite(direction) ? direction : 90}
+                disabled={this.props.disabled}
+                labelAbove={above}
+                rotationStyle={this.props.rotationStyle}
+                onChangeDirection={this.props.onChangeDirection}
+                onChangeRotationStyle={this.props.onChangeRotationStyle}
+            />
+        );
+
         if (stageSize === STAGE_DISPLAY_SIZES.small) {
             return (
-                <Box className={styles.spriteInfo}>
-                    <div className={classNames(styles.row, styles.rowPrimary)}>
+                <Box className={classNames(styles.spriteInfo, styles.compact)}>
+                    <div className={classNames(styles.row, styles.rowPrimary, styles.compactName)}>
                         <div className={styles.group}>
                             {spriteNameInput}
                         </div>
+                        <div className={styles.wideOnly}>
+                            {visibilityToggle}
+                        </div>
                     </div>
-                    <div className={classNames(styles.row, styles.rowSecondary)}>
+                    <div className={classNames(styles.row, styles.rowSecondary, styles.compactFields)}>
                         {xPosition}
                         {yPosition}
+                        <div className={classNames(styles.group, styles.wideOnly)}>
+                            <Label
+                                secondary
+                                text={sizeLabel}
+                            >
+                                {sizeInput}
+                            </Label>
+                        </div>
+                        <div className={classNames(styles.group, styles.wideOnly)}>
+                            {directionPicker(false)}
+                        </div>
                     </div>
                 </Box>
             );
@@ -187,23 +245,7 @@ class SpriteInfo extends React.Component {
                                 /> :
                                 null
                         }
-                        <ToggleButtons
-                            buttons={[
-                                {
-                                    handleClick: this.props.onClickVisible,
-                                    icon: Eye,
-                                    isSelected: this.props.visible && !this.props.disabled,
-                                    title: this.props.intl.formatMessage(messages.showSpriteAction)
-                                },
-                                {
-                                    handleClick: this.props.onClickNotVisible,
-                                    icon: EyeClosed,
-                                    isSelected: !this.props.visible && !this.props.disabled,
-                                    title: this.props.intl.formatMessage(messages.hideSpriteAction)
-                                }
-                            ]}
-                            disabled={this.props.disabled}
-                        />
+                        {visibilityToggle}
                     </div>
                     <div className={classNames(styles.group, styles.largerInput)}>
                         <Label
@@ -211,26 +253,11 @@ class SpriteInfo extends React.Component {
                             above={labelAbove}
                             text={sizeLabel}
                         >
-                            <BufferedInput
-                                small
-                                disabled={this.props.disabled}
-                                label={sizeLabel}
-                                tabIndex="0"
-                                type="number"
-                                value={this.props.disabled ? '' : Math.round(this.props.size)}
-                                onSubmit={this.props.onChangeSize}
-                            />
+                            {sizeInput}
                         </Label>
                     </div>
                     <div className={classNames(styles.group, styles.largerInput)}>
-                        <DirectionPicker
-                            direction={Math.round(this.props.direction)}
-                            disabled={this.props.disabled}
-                            labelAbove={labelAbove}
-                            rotationStyle={this.props.rotationStyle}
-                            onChangeDirection={this.props.onChangeDirection}
-                            onChangeRotationStyle={this.props.onChangeRotationStyle}
-                        />
+                        {directionPicker(labelAbove)}
                     </div>
                 </div>
             </Box>

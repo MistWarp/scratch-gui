@@ -58,6 +58,7 @@ const TargetPane = ({
             hoveredTarget={hoveredTarget}
             raised={raiseSprites}
             selectedId={editingTarget}
+            showEmptyState={Boolean(stage.id)}
             spriteFileInput={fileInputRef}
             sprites={sprites}
             stageSize={stageSize}
