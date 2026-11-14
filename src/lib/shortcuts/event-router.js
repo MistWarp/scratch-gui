@@ -454,12 +454,11 @@ const handleKeyDown = event => {
         }
         return;
     }
-    if (matchingShortcut.actionType !== null) {
-        // The router owns this key. scratch-blocks listens on the same
-        // document, so stop it from running its own copy of the action.
-        event.preventDefault();
-        event.stopImmediatePropagation();
-    }
+    if (matchingShortcut.actionType === null) return;
+    // The router owns this key. scratch-blocks listens on the same
+    // document, so stop it from running its own copy of the action.
+    event.preventDefault();
+    event.stopImmediatePropagation();
     executeShortcut(matchingShortcut);
 };
 

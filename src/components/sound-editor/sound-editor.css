@@ -1,506 +1,489 @@
 @import "../../css/colors.css";
 @import "../../css/units.css";
 
-.editor-container {
+.editor {
     display: flex;
     width: 100%;
     min-width: 0;
     min-height: 0;
     flex-direction: column;
     flex-grow: 1;
-    padding: calc(2 * $space);
+    gap: 0.625rem;
+    padding: 0.75rem;
+    box-sizing: border-box;
+    color: $text-primary;
+    font-size: 0.8125rem;
+    overflow: auto;
 }
 
-.row {
+.header,
+.transport {
     display: flex;
-    flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
+    gap: 0.5rem 0.75rem;
 }
 
-[dir="rtl"] .row-reverse {
-    flex-direction: row-reverse;
-}
-
-.row + .row {
-    margin-top: calc(2 * $space);
-}
-
-.input-group {
+.name-field {
     display: flex;
-    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 10rem;
+    flex: 0 1 14rem;
 }
 
-[dir="ltr"] .input-group + .input-group {
-    margin-left: calc(2 * $space);
-}
-
-[dir="rtl"] .input-group + .input-group {
-    margin-right: calc(2 * $space);
-}
-
-[dir="ltr"] .input-group {
-    padding-right: calc(2 * $space);
-    border-right: 1px dashed $ui-black-transparent;
-}
-
-[dir="rtl"] .input-group {
-    padding-left: calc(2 * $space);
-    border-left: 1px dashed $ui-black-transparent;
-}
-
-[dir="rtl"] .row-reverse > .input-group {
-    padding-left: 0;
-    padding-right: calc(2 * $space);
-    border-left: none;
-    border-right: 1px dashed $ui-black-transparent;
+.field-label {
+    color: $text-primary-transparent;
+    font-size: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
 }
 
 .name-input {
     width: 100%;
+    min-width: 0;
 }
 
-.waveform-container {
+.action-group {
     display: flex;
-    justify-content: space-around;
     align-items: center;
-    width: 100%;
-
-    position: relative;
-
-    background: hsla(300, 53%, 60%, 0.15);
-    border: 1px solid $ui-black-transparent;
-    border-radius: 5px;
-
-    margin-top: 20px;
-    margin-bottom: 20px;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 0.625rem;
+    background: $ui-secondary;
 }
 
-.waveform-row {
-    min-height: 0;
-}
-
-$border-radius: 0.25rem;
-
-.button {
+.icon-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
     height: 2rem;
-    padding: 0.35rem;
-    outline: none;
-    background: $ui-white;
-    border-radius: $border-radius;
-    border: 1px solid $ui-black-transparent;
+    padding: 0;
+    border: 0;
+    border-radius: 0.5rem;
+    background: transparent;
+    color: $text-primary;
     cursor: pointer;
-    font-size: 0.85rem;
-    user-select: none;
-    margin: 0px;
-    position: relative;
 }
 
-.button:active {
+.icon-action:hover:not(:disabled) {
+    background: $looks-transparent;
+    color: $accent-text;
+}
+
+.icon-action:focus-visible,
+.play-button:focus-visible,
+.group-tab:focus-visible,
+.rack-tool:focus-visible,
+.segment:focus-visible,
+.primary-button:focus-visible,
+.secondary-button:focus-visible {
+    outline: 2px solid $looks-secondary;
+    outline-offset: 1px;
+}
+
+.icon-action:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+.icon-action-active {
+    background: $looks-secondary;
+    color: $accent-foreground;
+}
+
+.icon-action-active:hover:not(:disabled) {
+    background: $looks-secondary;
+    color: $accent-foreground;
+}
+
+[dir="rtl"] .flip-in-rtl svg {
+    transform: scaleX(-1);
+}
+
+.info {
+    margin-inline-start: auto;
+    color: $text-primary-transparent;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.transport-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.play-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: $looks-secondary;
+    color: $accent-foreground;
+    box-shadow: 0 0 0 4px $looks-transparent;
+    cursor: pointer;
+    transition: transform 0.1s ease-out;
+}
+
+.play-button:active {
+    transform: scale(0.94);
+}
+
+.clock {
+    min-width: 5.5rem;
+    font-size: 1.125rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.selection-fields {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.time-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.time-input {
+    width: 5.25rem;
+    height: 1.75rem;
+    padding: 0 0.4rem;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    box-sizing: border-box;
+}
+
+.time-value {
+    display: flex;
+    align-items: center;
+    height: 1.75rem;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.meter {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 7rem;
+    flex: 1 1 7rem;
+    max-width: 12rem;
+}
+
+.meter-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.meter-static .meter-fill {
+    background: $text-primary-transparent;
+    opacity: 0.5;
+}
+
+.meter-track {
+    height: 6px;
+    overflow: hidden;
+    border-radius: 3px;
+    background: $ui-secondary;
+}
+
+.meter-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: $status-success;
+    transition: width 0.06s linear;
+}
+
+.meter-hot {
+    background: $status-danger;
+}
+
+.meter-text {
+    color: $text-primary-transparent;
+    font-size: 0.6875rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.meter-text-hot {
+    color: $status-danger;
+    font-weight: 700;
+}
+
+.rack {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 auto;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    background: $ui-secondary;
+}
+
+.group-tabs {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.375rem 0.375rem 0;
+}
+
+.group-tab {
+    padding: 0.4rem 0.875rem;
+    border: 0;
+    border-radius: 0.5rem 0.5rem 0 0;
+    background: transparent;
+    color: $text-primary-transparent;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.group-tab:hover {
+    color: $text-primary;
+}
+
+.group-tab-active {
+    background: $ui-white;
+    color: $accent-text;
+}
+
+.rack-body {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    min-height: 8.5rem;
+    padding: 0.75rem;
+    background: $ui-white;
+}
+
+.tool-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 0.375rem;
+    flex: 0 1 14.5rem;
+}
+
+.rack-tool {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    width: 4.25rem;
+    height: 3.75rem;
+    padding: 0.25rem;
+    border: 0;
+    border-radius: 0.625rem;
+    background: $ui-secondary;
+    color: $text-primary;
+    font: inherit;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1.1;
+    text-align: center;
+    cursor: pointer;
+}
+
+.rack-tool:hover {
     background: $looks-transparent;
 }
 
-.button:focus::before {
-    content: "";
-    position: absolute;
-    top: -1px;
-    right: -1px;
-    bottom: -1px;
-    left: -1px;
-    border: 1px solid $looks-secondary;
-    z-index: 1;
-}
-
-.button > img {
-    flex-grow: 1;
-    max-width: 100%;
-    max-height: 100%;
-    min-width: 1.25rem;
-}
-
-.round-button-outer {
-    display: flex;
-    align-items: center;
-    height: 100%;
-}
-
-.round-button {
-    height: 3rem;
-    width: 3rem;
-    outline: none;
+.rack-tool-active,
+.rack-tool-active:hover {
     background: $looks-secondary;
-    border-radius: 100%;
-    border: none;
-    cursor: pointer;
-    padding: 0.75rem;
-    user-select: none;
+    color: $accent-foreground;
 }
 
-.round-button > img {
-    flex-grow: 1;
-    max-width: 100%;
-    max-height: 100%;
-    /*min-width: 1.5rem;*/
-}
-
-[dir="rtl"] .undo-icon, [dir="rtl"] .redo-icon {
-    transform: scaleX(-1);
-}
-
-.trim-button {
+.tool-panel {
     display: flex;
+    flex: 1 1 20rem;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.625rem;
+    min-width: min(100%, 20rem);
+}
+
+.params {
+    display: grid;
+    grid-template-columns: auto minmax(5rem, 1fr) auto;
     align-items: center;
+    gap: 0.5rem 0.625rem;
+}
+
+.param {
+    display: contents;
+}
+
+.params > p {
+    grid-column: 1 / -1;
+}
+
+.param-label {
+    font-weight: 600;
+}
+
+.param-value {
+    min-width: 3.5rem;
+    white-space: nowrap;
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+    color: $text-primary-transparent;
+}
+
+.slider {
+    width: 100%;
+    margin: 0;
+    accent-color: $looks-secondary;
+}
+
+.select {
+    grid-column: span 2;
+    height: 1.875rem;
+    padding: 0 0.5rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: 0.5rem;
+    background: $input-background;
     color: $text-primary;
-    font-size: 0.625rem;
-    user-select: none;
-
+    font: inherit;
 }
 
-[dir="ltr"] .trim-button {
-    margin-left: 1rem;
+.segmented {
+    display: inline-flex;
+    grid-column: span 2;
+    justify-self: start;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 0.5rem;
+    background: $ui-secondary;
 }
 
-[dir="rtl"] .trim-button {
-    margin-right: 1rem;
+.segment {
+    padding: 0.3rem 0.75rem;
+    border: 0;
+    border-radius: 0.375rem;
+    background: transparent;
+    color: $text-primary;
+    font: inherit;
+    cursor: pointer;
 }
 
-.trim-button > img {
-    width: 1.25rem;
+.segment-active {
+    background: $ui-white;
+    color: $accent-text;
+    font-weight: 700;
+    box-shadow: 0 1px 2px $ui-black-transparent;
 }
 
-.effects {
+p.description,
+p.hint {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+}
+
+p.hint {
+    color: $text-primary-transparent;
+    font-size: 0.75rem;
+}
+
+.tool-footer {
     display: flex;
     flex-wrap: wrap;
-    width: 100%;
-}
-
-.effect-button {
-    flex-basis: 60px;
-    color: $text-primary;
-    font-size: 0.625rem;
-    user-select: none;
-    padding: 0.25rem 0;
-}
-
-.effect-button + .effect-button {
-    margin: 0;
-}
-
-.effect-button img {
-    width: 1.25rem;
-    height: 1.25rem;
-    margin-bottom: -0.375rem;
-}
-
-.tool-button {
-    flex-basis: 60px;
-    color: $text-primary;
-    font-size: 0.625rem;
-    user-select: none;
-    padding: 0.25rem 0;
-}
-
-.tool-button + .tool-button {
-    margin: 0;
-}
-
-.tool-button img {
-    width: 4rem;
-    height: 1.5rem;
-    margin-bottom: -0.375rem;
-}
-
-[dir="rtl"] .flip-in-rtl img {
-    transform: scaleX(-1);
-}
-
-[dir="ltr"] .button-group {
-    margin-left: 1rem;
-}
-
-[dir="rtl"] .button-group {
-    margin-right: 1rem;
-}
-
-.button-group {
-    display: flex;
-}
-
-.button-group .button {
-    border-radius: 0;
-}
-
-.button:not(:last-child) {
-    border-right: none;
-}
-
-[dir="rtl"] .button:not(:last-child) {
-    border-left: none;
-    border-right: 1px solid $ui-black-transparent;
-}
-
-.button-group .button:first-child,
-[dir="rtl"] .button-group .button:last-child,
-.button-group .button:first-child:focus::before,
-[dir="rtl"] .button-group .button:last-child:focus::before {
-    border-radius: $form-radius 0 0 $form-radius;
-}
-
-.button-group .button:last-child,
-[dir="rtl"] .button-group .button:first-child,
-.button-group .button:last-child:focus::before,
-[dir="rtl"] .button-group .button:first-child:focus::before {
-    border-radius: 0 $form-radius $form-radius 0;
-}
-
-.button:disabled > img {
-    opacity: 0.55;
-}
-
-.info-row {
-    display: flex;
+    align-items: center;
     justify-content: space-between;
-    margin-top: calc(2 * $space);
+    gap: 0.5rem;
 }
-.duration {
-    font-weight: bold;
+
+.tool-actions {
+    display: flex;
+    gap: 0.375rem;
+    margin-inline-start: auto;
 }
-.advanced-info {
-    text-align: end;
+
+.primary-button,
+.secondary-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    height: 2rem;
+    padding: 0 0.875rem;
+    border: 0;
+    border-radius: 0.5rem;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.primary-button {
+    background: $looks-secondary;
+    color: $accent-foreground;
+}
+
+.secondary-button {
+    background: $looks-transparent;
+    color: $text-primary;
+}
+
+.button-active {
+    background: $looks-secondary;
+    color: $accent-foreground;
+}
+
+.primary-button:disabled,
+.secondary-button:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 .alert {
-    margin-top: calc(2 * $space);
-    border-radius: 5px;
-    padding: $space;
-    display: flex;
-    align-items: center;
-    border-width: 1px;
-    border-style: solid;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    background: $error-transparent;
+    color: $text-primary;
+    font-size: 0.8125rem;
 }
 
-.stereo {
-    background-color: rgba(145, 145, 255, 0.3);
-    border-color: rgb(145, 145, 255)
-}
-
-.too-large {
-    background-color: rgba(255, 119, 0, 0.3);
-    border-color: rgb(255, 119, 0);
+@media only screen and (max-width: 900px) {
+    .info {
+        margin-inline-start: 0;
+        width: 100%;
+    }
 }
 
 @media only screen and (max-width: 600px) {
-    .editor-container {
-        height: 100%;
-        padding: $space;
-        overflow: hidden;
+    .editor {
+        padding: 0.5rem;
     }
 
-    .row {
-        width: 100%;
-        min-width: 0;
-    }
-
-    .editor-container > .row:first-child {
-        align-items: flex-end;
-        flex-wrap: wrap;
-        gap: $space;
-    }
-
-    .row + .row {
-        margin-top: $space;
-    }
-
-    .input-group,
-    [dir="ltr"] .input-group,
-    [dir="rtl"] .input-group {
-        min-width: 0;
-        gap: calc($space / 2);
-        padding: 0;
-        border: 0;
-    }
-
-    [dir="ltr"] .input-group + .input-group,
-    [dir="rtl"] .input-group + .input-group {
-        margin: 0;
-    }
-
-    .editor-container > .row:first-child > .input-group:first-child {
+    .selection-fields {
+        order: 5;
         width: 100%;
     }
 
-    .editor-container > .row:first-child > .input-group:first-child > label {
-        min-width: 0;
-        flex: 1 1 auto;
-    }
-
-    .name-input {
-        width: auto;
-        height: 2.75rem;
-        min-width: 0;
-        flex: 1 1 auto;
-        border-radius: 6px;
-        font-size: .75rem;
-    }
-
-    .button-group {
-        flex: 0 0 auto;
-        margin: 0 !important;
-    }
-
-    .editor-container > .row:first-child > .input-group:nth-child(2) {
-        flex: 1 1 auto;
-    }
-
-    .button {
-        width: 2.75rem;
-        height: 2.75rem;
-        padding: .65rem;
-    }
-
-    .button:disabled {
-        color: $text-primary;
-        opacity: .62;
-    }
-
-    .tool-button {
-        min-width: 4rem;
-        min-height: 3.25rem;
-        flex-basis: 4rem;
-        justify-content: center;
-        padding: .25rem;
-        border: 1px solid transparent;
-        border-radius: 6px;
-    }
-
-    .tool-button img {
-        width: 1.5rem;
-        height: 1.5rem;
-        margin: 0;
-    }
-
-    .tool-button :global([class*="icon-button_title_"]) {
-        margin-top: .2rem;
-        line-height: 1.1;
-    }
-
-    .delete-tool-button {
-        margin-inline-start: auto;
-        border-color: rgba(255, 93, 93, .45);
-        color: $red-primary;
-    }
-
-    .waveform-row {
-        min-height: 10rem;
-        flex: 1 1 auto;
-        overflow: hidden;
-    }
-
-    .waveform-container {
-        height: 100%;
-        min-height: 10rem;
-        margin: 0;
-        border-color: $ui-black-transparent;
-        border-radius: 8px;
-        background: $ui-white;
-        overflow: hidden;
-    }
-
-    .waveform-container > svg {
-        width: 100%;
-        height: 100%;
-    }
-
-    .row-reverse {
-        display: grid;
-        grid-template-columns: 3.25rem minmax(0, 1fr);
-        gap: $space;
-        align-items: stretch;
-    }
-
-    [dir="rtl"] .row-reverse {
-        direction: rtl;
-    }
-
-    .round-button-outer,
-    [dir="rtl"] .row-reverse > .input-group {
-        width: 3.25rem;
-        padding: 0;
-        border: 0;
-    }
-
-    .round-button {
-        width: 3.25rem;
-        height: 3.25rem;
-        padding: .85rem;
-        box-shadow: 0 0 0 3px $looks-transparent;
-    }
-
-    .effects {
-        display: flex;
-        width: 100%;
-        min-width: 0;
-        flex-wrap: nowrap;
-        gap: calc($space / 2);
-        padding: 0 0 .4rem;
-        overflow-x: auto;
-        overflow-y: hidden;
-        overscroll-behavior-x: contain;
-        scrollbar-color: $ui-black-transparent transparent;
-        scrollbar-width: thin;
-        touch-action: pan-x;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .effect-button {
-        min-width: 3.75rem;
-        min-height: 3.25rem;
-        flex: 0 0 3.75rem;
-        justify-content: center;
-        padding: .25rem;
-        border-radius: 6px;
-    }
-
-    .effect-button img {
-        width: 1.35rem;
-        height: 1.35rem;
-        margin: 0;
-    }
-
-    .effect-button :global([class*="icon-button_title_"]) {
-        margin-top: .2rem;
-        line-height: 1.1;
-    }
-
-    .substantial-effect {
-        border: 1px solid $ui-black-transparent;
-        background: $ui-tertiary;
-    }
-
-    .info-row {
-        min-width: 0;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: .2rem $space;
-        margin-top: calc($space / 2);
-        padding: .35rem .5rem;
-        border-radius: 6px;
-        background: $ui-tertiary;
-        font-size: .7rem;
-    }
-
-    .duration,
-    .advanced-info {
-        min-width: 0;
-        white-space: nowrap;
-    }
-
-    .advanced-info {
-        margin-inline-start: auto;
-    }
-
-    .alert {
-        margin-top: calc($space / 2);
-        padding: .4rem .5rem;
-        font-size: .7rem;
+    .rack-tool {
+        width: 3.75rem;
     }
 }
