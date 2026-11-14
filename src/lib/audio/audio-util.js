@@ -105,8 +105,81 @@ const dropEveryOtherSample = buffer => {
     };
 };
 
+const resampleClip = (clip, newRate) => new Promise((resolve, reject) => {
+    const length = clip.channels[0].length;
+    const newLength = Math.max(1, Math.round(length * newRate / clip.sampleRate));
+    const Context = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    let context;
+    try {
+        context = new Context(clip.channels.length, newLength, newRate);
+    } catch (error) {
+        if (newRate === clip.sampleRate / 2) {
+            resolve({
+                channels: clip.channels.map(channel => dropEveryOtherSample({samples: channel}).samples),
+                sampleRate: newRate
+            });
+            return;
+        }
+        reject(error);
+        return;
+    }
+    const buffer = context.createBuffer(clip.channels.length, Math.max(1, length), clip.sampleRate);
+    clip.channels.forEach((channel, c) => buffer.getChannelData(c).set(channel));
+    const source = context.createBufferSource();
+    source.buffer = buffer;
+    source.connect(context.destination);
+    source.start();
+    context.oncomplete = ({renderedBuffer}) => {
+        const channels = [];
+        for (let c = 0; c < clip.channels.length; c++) {
+            channels.push(new Float32Array(renderedBuffer.getChannelData(c)));
+        }
+        resolve({channels, sampleRate: newRate});
+    };
+    const rendering = context.startRendering();
+    if (rendering && typeof rendering.catch === 'function') rendering.catch(reject);
+});
+
+const downsampleClipIfNeeded = (clip, resampler = resampleClip) => {
+    const encodedByteLength = clip.channels[0].length * clip.channels.length * 2;
+    if (encodedByteLength < SOUND_BYTE_LIMIT || clip.sampleRate <= 22050) {
+        return Promise.resolve(clip);
+    }
+    return resampler(clip, 22050);
+};
+
+const encodeClip = clip => WavEncoder.encode({
+    sampleRate: clip.sampleRate,
+    channelData: clip.channels
+}).then(wavBuffer => new Uint8Array(wavBuffer));
+
+const encodeAndAddClipToVM = (vm, clip, name, targetId) => encodeClip(clip).then(wavData => {
+    const storage = vm.runtime.storage;
+    const vmSound = {
+        format: '',
+        dataFormat: 'wav',
+        rate: clip.sampleRate,
+        sampleCount: clip.channels[0].length
+    };
+    vmSound.asset = storage.createAsset(
+        storage.AssetType.Sound,
+        storage.DataFormat.WAV,
+        wavData,
+        null,
+        true
+    );
+    vmSound.assetId = vmSound.asset.assetId;
+    vmSound.md5 = `${vmSound.assetId}.${vmSound.dataFormat}`;
+    vmSound.name = name;
+    return vm.addSound(vmSound, targetId).then(() => vmSound);
+});
+
 export {
     computeRMS,
+    downsampleClipIfNeeded,
+    encodeAndAddClipToVM,
+    encodeClip,
+    resampleClip,
     computeChunkedRMS,
     encodeAndAddSoundToVM,
     downsampleIfNeeded,

@@ -9,7 +9,17 @@ export default class MockAudioBufferPlayer {
         this.play = jest.fn((trimStart, trimEnd, onUpdate) => {
             this.onUpdate = onUpdate;
         });
+        this.playRange = jest.fn(options => {
+            this.options = options;
+            this.onUpdate = options.onUpdate;
+            this.onEnded = options.onEnded;
+        });
+        this.position = null;
+        this.currentSample = jest.fn(() => this.position);
         this.stop = jest.fn();
         MockAudioBufferPlayer.instance = this;
+        MockAudioBufferPlayer.instances.push(this);
     }
 }
+
+MockAudioBufferPlayer.instances = [];
