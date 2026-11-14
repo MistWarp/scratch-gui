@@ -373,8 +373,6 @@ class Tab extends EventTargetShim {
           
                           wrapper.style.display = 'flex';
                           wrapper.style.flexDirection = 'row-reverse';
-                          wrapper.style.alignItems = 'center';
-                          wrapper.style.gap = '.5rem';
                           wrapper.style.height = 'calc(1.95rem + 2px)';
           
                           const zoomControls = q("[class^='paint-editor_zoom-controls']");

@@ -3,6 +3,7 @@
 
 .wrapper {
     display: flex;
+    min-height: 0;
     flex-grow: 1;
     border: 1px solid $ui-black-transparent;
     background: $assets-background;
@@ -22,9 +23,16 @@
 
 .detail-area {
     display: flex;
+    min-width: 0;
+    min-height: 0;
     flex-grow: 1;
     flex-shrink: 1;
     overflow: visible;
+}
+
+.detail-area :global([class*="paint-editor_desktop-layout_"] .sa-paintEditorZoomControls-wrapper) {
+    align-items: center;
+    gap: .5rem;
 }
 
 @media only screen and (max-width: 900px) {

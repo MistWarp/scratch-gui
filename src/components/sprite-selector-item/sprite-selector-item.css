@@ -200,6 +200,16 @@
     box-shadow: none;
 }
 
+.card:global([class*="sa-folders-color-"]):hover,
+.row:global([class*="sa-folders-color-"]):hover {
+    box-shadow: inset 0 0 0 2px $ui-black-transparent;
+}
+
+.card.is-selected:global([class*="sa-folders-color-"]),
+.row.is-selected:global([class*="sa-folders-color-"]) {
+    box-shadow: inset 0 0 0 2px $looks-secondary;
+}
+
 .card .sprite-image,
 .row .sprite-image,
 .card:hover .sprite-image,
@@ -271,6 +281,7 @@
 
 [dir="rtl"] .card .number {
     right: .5rem;
+    left: auto;
 }
 
 .card .delete-button {
@@ -395,22 +406,40 @@
 
     .card .delete-button {
         top: .125rem;
-        transform: scale(.8);
     }
 
     [dir="ltr"] .card .delete-button {
         right: .125rem;
-        transform-origin: top right;
     }
 
     [dir="rtl"] .card .delete-button {
         left: .125rem;
-        transform-origin: top left;
     }
 
     .row .selection-button {
         height: 100%;
         min-height: 0;
+    }
+
+    .row .delete-button {
+        width: 2.75rem;
+        height: 2.75rem;
+    }
+
+    [dir="ltr"] .row .delete-button {
+        right: 0;
+    }
+
+    [dir="rtl"] .row .delete-button {
+        left: 0;
+    }
+
+    [dir="ltr"] .row.is-selected .selection-button {
+        padding-right: 2.5rem;
+    }
+
+    [dir="rtl"] .row.is-selected .selection-button {
+        padding-left: 2.5rem;
     }
 }
 
