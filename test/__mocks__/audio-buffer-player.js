@@ -6,9 +6,6 @@ export default class MockAudioBufferPlayer {
             getChannelData: jest.fn(() => samples),
             sampleRate: sampleRate
         };
-        this.play = jest.fn((trimStart, trimEnd, onUpdate) => {
-            this.onUpdate = onUpdate;
-        });
         this.playRange = jest.fn(options => {
             this.options = options;
             this.onUpdate = options.onUpdate;

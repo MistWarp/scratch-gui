@@ -240,6 +240,40 @@ const computePeaks = (channel, start, end, columns, level = null) => {
     return {min, max};
 };
 
+const nearestZeroCrossing = (clip, sample, radius) => {
+    const length = clipLength(clip);
+    if (sample <= 0 || sample >= length) return sample;
+    const valueAt = index => {
+        let sum = 0;
+        for (const channel of clip.channels) sum += channel[index];
+        return sum;
+    };
+    const crosses = index => {
+        if (index <= 0 || index >= length) return false;
+        const before = valueAt(index - 1);
+        const after = valueAt(index);
+        return before === 0 || after === 0 || (before < 0) !== (after < 0);
+    };
+    for (let distance = 0; distance <= radius; distance++) {
+        if (crosses(sample - distance)) return sample - distance;
+        if (crosses(sample + distance)) return sample + distance;
+    }
+    return sample;
+};
+
+const fitLength = (clip, length) => {
+    const current = clipLength(clip);
+    if (current === length) return clip;
+    return {
+        channels: clip.channels.map(channel => {
+            const out = new Float32Array(length);
+            out.set(channel.subarray(0, Math.min(current, length)));
+            return out;
+        }),
+        sampleRate: clip.sampleRate
+    };
+};
+
 const encodedByteLength = clip => clipLength(clip) * clip.channels.length * 2;
 
 const isSameClip = (a, b) => {
@@ -263,6 +297,7 @@ export {
     dbToGain,
     encodedByteLength,
     fadeRange,
+    fitLength,
     fromAudioBuffer,
     fromSamples,
     gainToDb,
@@ -273,6 +308,7 @@ export {
     mapRange,
     matchChannels,
     mixInto,
+    nearestZeroCrossing,
     normalizeToPeak,
     peakOf,
     removeRange,

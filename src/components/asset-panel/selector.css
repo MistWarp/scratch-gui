@@ -71,6 +71,10 @@ $fade-out-distance: 100px;
     margin: 0.5rem auto;
 }
 
+.sound-wrapper .list-item :global([class*="sprite-selector-item_sprite-image_"]) {
+    max-width: 3.25rem;
+}
+
 @media only screen and (max-width: $full-size-paint) {
     .wrapper {
         width: 80px;
@@ -210,6 +214,10 @@ $fade-out-distance: 100px;
     .sound-wrapper .list-item {
         width: 10.5rem;
         flex-basis: 10.5rem;
+    }
+
+    .sound-wrapper .list-item :global([class*="sprite-selector-item_sprite-image_"]) {
+        max-width: 2.75rem;
     }
 
     .sound-wrapper :global([class*="sprite-selector-item_selection-button_"]) {

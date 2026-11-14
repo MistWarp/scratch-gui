@@ -8,6 +8,7 @@ import {
     dbToGain,
     encodedByteLength,
     fadeRange,
+    fitLength,
     fromAudioBuffer,
     fromSamples,
     gainToDb,
@@ -16,6 +17,7 @@ import {
     isSameClip,
     matchChannels,
     mixInto,
+    nearestZeroCrossing,
     normalizeToPeak,
     peakOf,
     removeRange,
@@ -133,6 +135,23 @@ describe('sound data', () => {
         const slow = computePeaks(clip.channels[1], 7, 4990, 37);
         expect(Array.from(fast.min)).toEqual(Array.from(slow.min));
         expect(Array.from(fast.max)).toEqual(Array.from(slow.max));
+    });
+
+    test('finds the nearest zero crossing within a radius', () => {
+        const clip = mono([1, 1, 1, -1, -1, -1, 1, 1]);
+        expect(nearestZeroCrossing(clip, 2, 5)).toBe(3);
+        expect(nearestZeroCrossing(clip, 5, 5)).toBe(6);
+        expect(nearestZeroCrossing(clip, 1, 1)).toBe(1);
+        expect(nearestZeroCrossing(clip, 0, 5)).toBe(0);
+        expect(nearestZeroCrossing(clip, 8, 5)).toBe(8);
+        expect(nearestZeroCrossing(mono([0, 0, 0, 0]), 2, 5)).toBe(2);
+    });
+
+    test('pads or cuts a clip to a length', () => {
+        expect(values(fitLength(mono([1, 2, 3]), 2))).toEqual([1, 2]);
+        expect(values(fitLength(mono([1, 2]), 4))).toEqual([1, 2, 0, 0]);
+        const same = mono([1]);
+        expect(fitLength(same, 1)).toBe(same);
     });
 
     test('estimates the encoded size and compares clips', () => {
