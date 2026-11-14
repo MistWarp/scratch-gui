@@ -285,6 +285,11 @@
     display: flex;
 }
 
+.tabs:has(> .tab-panel.is-selected [class*="sound-editor_editor_"]),
+.tab-panel:has([class*="sound-editor_editor_"]) {
+    min-height: 0;
+}
+
 .tab-selected {
     composes: react-tabs__tab--selected from "react-tabs/style/react-tabs.css";
     composes: is-selected;

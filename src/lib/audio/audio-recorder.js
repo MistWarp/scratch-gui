@@ -24,11 +24,13 @@ class AudioRecorder {
         try {
             getUserMedia({audio: true})
                 .then(userMediaStream => {
-                    if (!this.disposed) {
-                        this.started = true;
-                        onStarted();
-                        this.attachUserMediaStream(userMediaStream, onUpdate);
+                    if (this.disposed) {
+                        userMediaStream.getTracks().forEach(track => track.stop());
+                        return;
                     }
+                    this.started = true;
+                    onStarted();
+                    this.attachUserMediaStream(userMediaStream, onUpdate);
                 })
                 .catch(e => {
                     if (!this.disposed) {

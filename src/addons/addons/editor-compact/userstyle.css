@@ -340,22 +340,13 @@ body:not(.mw-two-column-categories) [class*="gui_tab-panel"] [class*="gui_extens
   font-size: 10px;
 }
 [class*="asset-panel_detail-area"] [class*="labeled-icon-button_edit-field-icon"],
-[class*="mode-tools_mode-tools-icon_"],
-[class*="sound-editor_button_"] img {
+[class*="mode-tools_mode-tools-icon_"] {
   width: 20px;
   height: 20px;
 }
-[class*="sound-editor_tool-button"] img {
-  height: 20px;
-}
 [class*="fixed-tools_button-group-button_"],
-[class*="paint-editor_button-group-button_"],
-[class*="sound-editor_button_"] {
+[class*="paint-editor_button-group-button_"] {
   padding: calc(0.125rem - 1px);
-}
-[class*="sound-editor_button_"] {
-  width: 24px;
-  height: 24px;
 }
 [class*="paint-editor_editor-container-top"] {
   padding-bottom: 0;
@@ -387,20 +378,6 @@ body:not(.mw-two-column-categories) [class*="gui_tab-panel"] [class*="gui_extens
   [class*="asset-panel_detail-area"] > div {
     padding: 0.25rem;
   }
-}
-
-[class*="sound-editor_row_"] + [class*="sound-editor_row_"] {
-  margin-top: 0.5rem;
-}
-[class*="sound-editor_waveform-container_"] {
-  margin: 0;
-}
-
-[class*="sound-editor_row-reverse_"] {
-  gap: 2px;
-}
-[class*="sound-editor_row-reverse_"] > [class*="sound-editor_input-group_"] {
-  margin-right: 0.5rem;
 }
 
 [class*="paint-editor_canvas-controls"] {
