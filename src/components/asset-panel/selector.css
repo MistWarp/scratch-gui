@@ -53,10 +53,6 @@
     filter: opacity(15%) brightness(0%);
 }
 
-.sound-wrapper .list-item :global([class*="sprite-selector-item_sprite-image_"]) {
-    max-width: 3.25rem;
-}
-
 @media only screen and (min-width: 901px) and (max-width: $full-size-paint) {
     .wrapper {
         width: 7rem;
@@ -112,54 +108,5 @@
     .new-buttons {
         justify-content: center;
         padding: 0 .5rem;
-
-    .sound-wrapper .list-item {
-        width: 10.5rem;
-        flex-basis: 10.5rem;
-    }
-
-    .sound-wrapper .list-item :global([class*="sprite-selector-item_sprite-image_"]) {
-        max-width: 2.75rem;
-    }
-
-    .sound-wrapper :global([class*="sprite-selector-item_selection-button_"]) {
-        display: grid;
-        box-sizing: border-box;
-        grid-template-columns: 3rem minmax(0, 1fr);
-        align-items: center;
-        padding-right: 3rem;
-    }
-
-    .sound-wrapper :global([class*="sprite-selector-item_sprite-image-outer_"]) {
-        height: 100%;
-        grid-column: 1;
-        grid-row: 1;
-    }
-
-    .sound-wrapper :global([class*="sprite-selector-item_sprite-info_"]) {
-        min-width: 0;
-        grid-column: 2;
-        grid-row: 1;
-        padding: .25rem;
-        text-align: left;
-    }
-
-    .sound-wrapper :global([class*="sprite-selector-item_delete-button_"]) {
-        width: 2.75rem;
-        height: 2.75rem;
-        top: 50%;
-        right: .25rem;
-        bottom: auto;
-        transform: translateY(-50%);
-    }
-
-    [dir="rtl"] .sound-wrapper :global([class*="sprite-selector-item_selection-button_"]) {
-        padding-right: 0;
-        padding-left: 3rem;
-    }
-
-    [dir="rtl"] .sound-wrapper :global([class*="sprite-selector-item_delete-button_"]) {
-        right: auto;
-        left: .25rem;
     }
 }
