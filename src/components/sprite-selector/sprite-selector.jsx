@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import {defineMessages, injectIntl, intlShape} from 'react-intl';
+import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
 
 import Box from '../box/box.jsx';
 import SpriteInfo from '../../containers/sprite-info.jsx';
@@ -100,6 +100,28 @@ const SpriteSelectorComponent = function (props) {
 
             <SpriteList
                 editingTarget={editingTarget}
+                emptyState={
+                    <div className={styles.empty}>
+                        <p className={styles.emptyText}>
+                            <FormattedMessage
+                                defaultMessage="This project has no sprites yet."
+                                description="Shown in the sprite pane when the project has no sprites"
+                                id="mw.spriteSelector.empty"
+                            />
+                        </p>
+                        <button
+                            className={styles.emptyButton}
+                            type="button"
+                            onClick={onNewSpriteClick}
+                        >
+                            <Search
+                                aria-hidden="true"
+                                size={16}
+                            />
+                            {intl.formatMessage(messages.addSpriteFromLibrary)}
+                        </button>
+                    </div>
+                }
                 hoveredTarget={hoveredTarget}
                 items={Object.keys(sprites).map(id => sprites[id])}
                 raised={raised}

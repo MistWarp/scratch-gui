@@ -1306,6 +1306,7 @@
   "gui.spriteSelector.addSpriteFromPaint": "Paint",
   "gui.spriteSelector.addSpriteFromSurprise": "Surprise",
   "gui.spriteSelector.addSpriteFromFile": "Upload Sprite",
+  "mw.spriteSelector.empty": "This project has no sprites yet.",
   "gui.spriteSelectorItem.contextMenuDuplicate": "duplicate",
   "gui.spriteSelectorItem.contextMenuExport": "export",
   "mw.spriteSelectorItem.contextMenuAddToBackpack": "add to backpack",

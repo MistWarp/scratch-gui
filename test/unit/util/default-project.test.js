@@ -24,4 +24,12 @@ describe('defaultProject', () => {
             });
         });
     });
+
+    test('the default costume is drawn at the size it reports', () => {
+        const fog = readFileSync(path.resolve(__dirname, '../../../src/lib/default-project/fog.svg'), 'utf8');
+        const attribute = name => fog.match(new RegExp(`<svg[^>]* ${name}="([^"]+)"`))[1];
+        const viewBox = attribute('viewBox').split(/[ ,]+/)
+            .map(Number);
+        expect(viewBox).toEqual([0, 0, Number(attribute('width')), Number(attribute('height'))]);
+    });
 });

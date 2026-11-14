@@ -20,6 +20,7 @@ const SpriteList = function (props) {
         editingTarget,
         draggingIndex,
         draggingType,
+        emptyState,
         hoveredTarget,
         onDeleteSprite,
         onDuplicateSprite,
@@ -42,6 +43,7 @@ const SpriteList = function (props) {
             })}
             componentRef={containerRef}
         >
+            {items.length === 0 ? emptyState : null}
             <Box
                 className={styles.itemsWrapper}
             >
@@ -108,6 +110,7 @@ SpriteList.propTypes = {
     draggingIndex: PropTypes.number,
     draggingType: PropTypes.oneOf(Object.keys(DragConstants)),
     editingTarget: PropTypes.string,
+    emptyState: PropTypes.node,
     hoveredTarget: PropTypes.shape({
         hoveredSprite: PropTypes.string,
         receivedBlocks: PropTypes.bool,

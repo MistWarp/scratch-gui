@@ -3,7 +3,10 @@
 @import "../../css/z-index.css";
 
 .sprite-selector {
+    display: flex;
+    flex-direction: column;
     flex-grow: 1;
+    min-width: 0;
     position: relative;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     margin-right: calc($space / 2);
@@ -43,16 +46,47 @@
 
 
 .scroll-wrapper {
-    /*
-       Sets the sprite-selector items as a scrollable pane
-
-        @todo: Safari: pane doesn't stretch to fill height;
-        @todo: Adding `position: relative` still doesn't fix Safari scrolling pane, and
-              also introduces a new bug in Chrome when vertically resizing window down,
-              then back up, introduces white space in the outside the page container.
-    */
-    height: calc(100% - $sprite-info-height);
+    flex: 1 1 0;
+    min-height: 0;
     overflow-y: auto;
+}
+
+.empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem 0.75rem 0;
+    text-align: center;
+    color: $text-primary;
+}
+
+p.empty-text {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: $text-primary-transparent;
+}
+
+.empty-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 2.25rem;
+    padding: 0 1rem;
+    border: 0;
+    border-radius: 0.5rem;
+    background: $looks-secondary;
+    color: $accent-foreground;
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.empty-button:focus-visible {
+    outline: 2px solid $looks-secondary;
+    outline-offset: 2px;
 }
 
 .scroll-wrapper-dragging {
