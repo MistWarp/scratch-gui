@@ -38,6 +38,11 @@
     position: relative;
 }
 
+.timeline-container {
+    display: flex;
+    height: 180px;
+}
+
 .help-text {
     margin: 10px auto 0;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
