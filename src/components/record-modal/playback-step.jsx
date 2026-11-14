@@ -51,7 +51,7 @@ const PlaybackStep = props => (
     <Box>
         <Box className={styles.timelineContainer}>
             <SoundTimeline
-                compact
+                hideOverview
                 clip={props.clip}
                 cursor={props.selection.start}
                 label={props.intl.formatMessage(messages.waveform)}

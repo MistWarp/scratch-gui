@@ -164,6 +164,20 @@ describe('sound tools', () => {
         expect(result.splice).toEqual({at: 1, removed: 2, inserted: 3});
     });
 
+    test('stretch and pitch leave an empty sound alone', async () => {
+        stretchClip.mockClear();
+        for (const id of ['stretch', 'pitch']) {
+            const result = await applyTool(id, mono([]), {
+                selection: null,
+                cursor: 0,
+                params: {percent: 150, semitones: 12}
+            });
+            expect(clipLength(result.clip)).toBe(0);
+        }
+        expect(stretchClip).not.toHaveBeenCalled();
+        expect(renderEffect).not.toHaveBeenCalled();
+    });
+
     test('pitch keeps the length of the selection', async () => {
         stretchClip.mockResolvedValue(mono([5, 5, 5, 5]));
         renderEffect.mockResolvedValue({clip: mono([9, 9, 9]), bodyLength: 3});

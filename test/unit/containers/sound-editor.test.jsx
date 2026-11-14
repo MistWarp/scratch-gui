@@ -65,6 +65,14 @@ describe('Sound Editor Container', () => {
         return wrapper.find(SoundEditorComponent).props();
     };
     const samples = wrapper => Array.from(props(wrapper).clip.channels[0]);
+    const close = wrapper => {
+        mounted = mounted.filter(item => item !== wrapper);
+        wrapper.unmount();
+    };
+    const saved = (call = 0) => Array.from(vm.updateSoundBuffer.mock.calls[call][1].getChannelData().channels[0]);
+    const press = (key, extra = {}) => document.dispatchEvent(
+        new KeyboardEvent('keydown', {key, bubbles: true, cancelable: true, ...extra})
+    );
 
     afterEach(() => {
         mounted.forEach(wrapper => wrapper.unmount());
@@ -110,7 +118,7 @@ describe('Sound Editor Container', () => {
         expect(componentProps.selection).toBeNull();
         expect(componentProps.playhead).toBeNull();
         expect(componentProps.canUndo).toBe(false);
-        expect(componentProps.mixSources).toEqual([{index: '1', name: 'second'}]);
+        expect(componentProps.mixSources).toEqual([{id: 'b', index: 1, name: 'second'}]);
         expect(samples(wrapper)).toEqual([0.1, 0.2, 0.3, 0.4].map(Math.fround));
     });
 
@@ -328,6 +336,26 @@ describe('Sound Editor Container', () => {
         expect(props(wrapper).clip.channels.length).toBe(1);
     });
 
+    test('the sound chosen to mix in stays chosen when the list is reordered', async () => {
+        vm.editingTarget.sprite.sounds.push({name: 'third', soundId: 'c'});
+        buffers[2] = makeBuffer([new Float32Array([1])]);
+        const wrapper = mount();
+        props(wrapper).onSelectGroup({currentTarget: {getAttribute: () => 'mix'}});
+        expect(props(wrapper).mixSource).toBe('b');
+        props(wrapper).onChangeMixSource({target: {value: 'c'}});
+        expect(props(wrapper).mixSource).toBe('c');
+        const sounds = vm.editingTarget.sprite.sounds;
+        [sounds[1], sounds[2]] = [sounds[2], sounds[1]];
+        [buffers[1], buffers[2]] = [buffers[2], buffers[1]];
+        wrapper.setProps({isFullScreen: true});
+        expect(props(wrapper).mixSources.map(source => source.id)).toEqual(['c', 'b']);
+        expect(props(wrapper).mixSource).toBe('c');
+        vm.getSoundBuffer.mockClear();
+        await props(wrapper).onApply();
+        expect(vm.getSoundBuffer).toHaveBeenCalledWith(1);
+        expect(samples(wrapper)[0]).toBeCloseTo(0.1 + 1, 5);
+    });
+
     test('previews a tool without changing the sound', async () => {
         const wrapper = mount();
         await props(wrapper).onPreview();
@@ -365,9 +393,6 @@ describe('Sound Editor Container', () => {
 
     test('keyboard shortcuts select, delete and undo', async () => {
         const wrapper = mount();
-        const press = (key, extra = {}) => document.dispatchEvent(
-            new KeyboardEvent('keydown', {key, bubbles: true, cancelable: true, ...extra})
-        );
         press('a', {ctrlKey: true});
         expect(props(wrapper).selection).toEqual({start: 0, end: 4});
         props(wrapper).onSelect(0, 1);
@@ -381,11 +406,11 @@ describe('Sound Editor Container', () => {
         expect(props(wrapper).selection).toBeNull();
     });
 
-    test('an edit still running when the sound changes is not saved into the new sound', async () => {
+    test('an edit still running when the sound changes is saved into the sound it was made on', async () => {
         const audioUtil = require('../../../src/lib/audio/audio-util.js');
         let finish;
         audioUtil.resampleClip.mockImplementationOnce(clip => new Promise(resolve => {
-            finish = () => resolve({channels: clip.channels, sampleRate: 100});
+            finish = () => resolve({channels: clip.channels, sampleRate: 50});
         }));
         const wrapper = mount();
         props(wrapper).onSelect(0, 2);
@@ -396,9 +421,73 @@ describe('Sound Editor Container', () => {
         await flush();
         wrapper.setProps({soundIndex: 0});
         finish();
+        expect(await pending).toBe(true);
+        expect(vm.updateSoundBuffer).toHaveBeenCalledTimes(1);
+        expect(vm.updateSoundBuffer.mock.calls[0][0]).toBe(1);
+        expect(saved()).toEqual([0.1, 0.2, 1, 1].map(Math.fround));
+        expect(samples(wrapper)).toEqual([0.1, 0.2, 0.3, 0.4].map(Math.fround));
+        expect(props(wrapper).canUndo).toBe(false);
+        expect(props(wrapper).busy).toBe(false);
+    });
+
+    test('an edit still running when the editor closes is saved into its sound', async () => {
+        const wrapper = mount();
+        props(wrapper).onSeek(3);
+        props(wrapper).onToggleMarker();
+        props(wrapper).onSelect(1, 3);
+        const pending = props(wrapper).onDelete();
+        close(wrapper);
+        expect(await pending).toBe(true);
+        expect(vm.updateSoundBuffer).toHaveBeenCalledTimes(1);
+        expect(vm.updateSoundBuffer.mock.calls[0][0]).toBe(0);
+        expect(saved()).toEqual([0.1, 0.4].map(Math.fround));
+
+        buffers[0] = makeBuffer([new Float32Array([0.1, 0.4])]);
+        const reopened = mount();
+        expect(props(reopened).markers).toEqual([1]);
+        props(reopened).onSeek(1);
+        props(reopened).onToggleMarker();
+    });
+
+    test('an edit that finishes after the editor closes follows its sound when the list is reordered', async () => {
+        const wrapper = mount();
+        props(wrapper).onSelect(1, 3);
+        const pending = props(wrapper).onDelete();
+        close(wrapper);
+        vm.editingTarget.sprite.sounds.reverse();
+        expect(await pending).toBe(true);
+        expect(vm.updateSoundBuffer.mock.calls[0][0]).toBe(1);
+    });
+
+    test('an edit that finishes after the editor closes is dropped when its sound is gone', async () => {
+        const wrapper = mount();
+        props(wrapper).onSelect(1, 3);
+        const pending = props(wrapper).onDelete();
+        close(wrapper);
+        vm.editingTarget.sprite.sounds.shift();
         expect(await pending).toBe(false);
         expect(vm.updateSoundBuffer).not.toHaveBeenCalled();
-        expect(props(wrapper).busy).toBe(false);
+    });
+
+    test('an edit that finishes after the editor closes is dropped when another sprite is open', async () => {
+        const wrapper = mount();
+        props(wrapper).onSelect(1, 3);
+        const pending = props(wrapper).onDelete();
+        close(wrapper);
+        vm.editingTarget = {id: 'other', sprite: {sounds: [{name: 'copy', soundId: 'a'}]}};
+        expect(await pending).toBe(false);
+        expect(vm.updateSoundBuffer).not.toHaveBeenCalled();
+    });
+
+    test('an edit that finishes after the editor closes is dropped when the sound is open again', async () => {
+        const wrapper = mount();
+        props(wrapper).onSelect(1, 3);
+        const pending = props(wrapper).onDelete();
+        close(wrapper);
+        const reopened = mount();
+        expect(await pending).toBe(false);
+        expect(vm.updateSoundBuffer).not.toHaveBeenCalled();
+        expect(samples(reopened).length).toBe(4);
     });
 
     test('undo is ignored while an edit is running and history survives repeats', async () => {
@@ -443,9 +532,6 @@ describe('Sound Editor Container', () => {
     test('Shift and the arrow keys extend the selection both ways', () => {
         buffers[0] = makeBuffer([new Float32Array(1000)]);
         const wrapper = mount();
-        const press = (key, extra = {}) => document.dispatchEvent(
-            new KeyboardEvent('keydown', {key, bubbles: true, cancelable: true, ...extra})
-        );
         props(wrapper).onSeek(500);
         press('ArrowLeft', {shiftKey: true});
         expect(props(wrapper).selection).toEqual({start: 480, end: 500});
@@ -453,6 +539,18 @@ describe('Sound Editor Container', () => {
         expect(props(wrapper).selection).toEqual({start: 460, end: 500});
         press('ArrowRight', {shiftKey: true});
         expect(props(wrapper).selection).toEqual({start: 480, end: 500});
+    });
+
+    test('pressing play while a preview is still being worked out plays the sound, not the preview', async () => {
+        const wrapper = mount();
+        const pending = props(wrapper).onPreview();
+        props(wrapper).onPlay();
+        const player = mockAudioBufferPlayer.instance;
+        expect(await pending).toBe(false);
+        expect(mockAudioBufferPlayer.instance).toBe(player);
+        expect(props(wrapper).previewing).toBe(false);
+        expect(props(wrapper).playing).toBe(true);
+        expect(props(wrapper).busy).toBe(false);
     });
 
     test('clicking the waveform during a preview ends it', async () => {
@@ -491,6 +589,82 @@ describe('Sound Editor Container', () => {
         expect(samples(wrapper)).toEqual([0.1, 0.2, 0.9, 0.8, 0.3, 0.4].map(Math.fround));
         expect(props(wrapper).selection).toEqual({start: 2, end: 4});
         expect(props(wrapper).monitor.recordingSeconds).toBeNull();
+    });
+
+    test('a recording replaces the selection', async () => {
+        const MockAudioRecorder = require('../../../src/lib/audio/audio-recorder.js');
+        const wrapper = mount();
+        props(wrapper).onSelect(1, 3);
+        props(wrapper).onRecord();
+        const recorder = MockAudioRecorder.instance;
+        recorder.onStarted();
+        recorder.result = {samples: new Float32Array([0.9, 0.8, 0.7]), sampleRate: 100, trimStart: 0, trimEnd: 1};
+        props(wrapper).onStop();
+        await flush();
+        expect(samples(wrapper)).toEqual([0.1, 0.9, 0.8, 0.7, 0.4].map(Math.fround));
+        expect(props(wrapper).selection).toEqual({start: 1, end: 4});
+    });
+
+    test('a recording lands where the cursor was when it stopped', async () => {
+        const MockAudioRecorder = require('../../../src/lib/audio/audio-recorder.js');
+        const audioUtil = require('../../../src/lib/audio/audio-util.js');
+        let finish;
+        audioUtil.resampleClip.mockImplementationOnce(clip => new Promise(resolve => {
+            finish = () => resolve({channels: clip.channels, sampleRate: 100});
+        }));
+        const wrapper = mount();
+        props(wrapper).onSeek(2);
+        props(wrapper).onRecord();
+        const recorder = MockAudioRecorder.instance;
+        recorder.onStarted();
+        recorder.result = {samples: new Float32Array([0.9, 0.8]), sampleRate: 50, trimStart: 0, trimEnd: 1};
+        props(wrapper).onStop();
+        await flush();
+        props(wrapper).onSeek(0);
+        finish();
+        await flush();
+        expect(samples(wrapper)).toEqual([0.1, 0.2, 0.9, 0.8, 0.3, 0.4].map(Math.fround));
+    });
+
+    test('Escape throws a recording away instead of inserting it', async () => {
+        const MockAudioRecorder = require('../../../src/lib/audio/audio-recorder.js');
+        const wrapper = mount();
+        props(wrapper).onSelect(1, 3);
+        props(wrapper).onRecord();
+        const recorder = MockAudioRecorder.instance;
+        recorder.onStarted();
+        recorder.result = {samples: new Float32Array([0.9, 0.8]), sampleRate: 100, trimStart: 0, trimEnd: 1};
+        press('Escape');
+        await flush();
+        expect(recorder.dispose).toHaveBeenCalled();
+        expect(props(wrapper).recording).toBe('idle');
+        expect(props(wrapper).busy).toBe(false);
+        expect(props(wrapper).selection).toEqual({start: 1, end: 3});
+        expect(samples(wrapper).length).toBe(4);
+        expect(vm.updateSoundBuffer).not.toHaveBeenCalled();
+    });
+
+    test('a recording can be cancelled while the microphone is still opening', async () => {
+        const MockAudioRecorder = require('../../../src/lib/audio/audio-recorder.js');
+        const wrapper = mount();
+        props(wrapper).onRecord();
+        expect(props(wrapper).recording).toBe('starting');
+        const recorder = MockAudioRecorder.instance;
+        press('Escape');
+        expect(recorder.dispose).toHaveBeenCalled();
+        expect(props(wrapper).recording).toBe('idle');
+        expect(props(wrapper).busy).toBe(false);
+        recorder.onStarted();
+        expect(recorder.startRecording).not.toHaveBeenCalled();
+        expect(props(wrapper).recording).toBe('idle');
+
+        props(wrapper).onRecord();
+        const second = MockAudioRecorder.instance;
+        props(wrapper).onStop();
+        await flush();
+        expect(second.dispose).toHaveBeenCalled();
+        expect(props(wrapper).recording).toBe('idle');
+        expect(vm.updateSoundBuffer).not.toHaveBeenCalled();
     });
 
     test('a microphone error ends the recording and shows an alert', () => {

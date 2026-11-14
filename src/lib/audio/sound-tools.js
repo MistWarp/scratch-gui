@@ -200,12 +200,20 @@ const replaceWith = (clip, start, end, processed, selection) => ({
     splice: {at: start, removed: end - start, inserted: clipLength(processed)}
 });
 
-const stretchRange = (clip, start, end, factor, selection) =>
-    stretchClip(sliceClip(clip, start, end), factor)
+const unchanged = (clip, start, end, selection) => Promise.resolve({
+    clip,
+    selection: keepSelection(selection, start, end - start),
+    splice: {at: start, removed: 0, inserted: 0}
+});
+
+const stretchRange = (clip, start, end, factor, selection) => {
+    if (end <= start) return unchanged(clip, start, end, selection);
+    return stretchClip(sliceClip(clip, start, end), factor)
         .then(processed => replaceWith(clip, start, end, processed, selection));
+};
 
 const pitchRange = (clip, start, end, semitones, selection) => {
-    if (semitones === 0) return Promise.resolve(replaceWith(clip, start, end, sliceClip(clip, start, end), selection));
+    if (semitones === 0 || end <= start) return unchanged(clip, start, end, selection);
     const ratio = Math.pow(2, semitones / 12);
     return stretchClip(sliceClip(clip, start, end), ratio)
         .then(stretched => renderEffect(stretched, 'speed', {rate: ratio}))

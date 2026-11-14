@@ -860,8 +860,8 @@ const SoundEditor = props => {
                                             >
                                                 {props.mixSources.map(source => (
                                                     <option
-                                                        key={source.index}
-                                                        value={source.index}
+                                                        key={source.id}
+                                                        value={source.id}
                                                     >
                                                         {source.name}
                                                     </option>
@@ -1001,7 +1001,8 @@ SoundEditor.propTypes = {
     markers: PropTypes.arrayOf(PropTypes.number),
     mixSource: PropTypes.string,
     mixSources: PropTypes.arrayOf(PropTypes.shape({
-        index: PropTypes.string,
+        id: PropTypes.string,
+        index: PropTypes.number,
         name: PropTypes.string
     })),
     monitor: PropTypes.instanceOf(PlaybackMonitor).isRequired,

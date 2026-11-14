@@ -304,8 +304,9 @@ describe('Sound Editor Component', () => {
         );
         expect(wrapper.find('select').exists()).toBe(false);
         expect(labelled(wrapper, 'Apply').prop('disabled')).toBe(true);
-        wrapper.setProps({mixSources: [{index: '1', name: 'other'}], mixSource: '1'});
-        expect(wrapper.find('select').prop('value')).toBe('1');
+        wrapper.setProps({mixSources: [{id: 'b', index: 1, name: 'other'}], mixSource: 'b'});
+        expect(wrapper.find('select').prop('value')).toBe('b');
+        expect(wrapper.find('option').prop('value')).toBe('b');
     });
 
     test('the clock and meter follow playback without new props', () => {
