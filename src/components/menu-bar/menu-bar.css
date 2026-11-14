@@ -286,6 +286,10 @@
     height: 100%;
 }
 
+.save-status-slot {
+    position: relative;
+}
+
 .editor-nav-slot {
     gap: 0.25rem;
     padding: 0 0.25rem;

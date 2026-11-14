@@ -13,13 +13,28 @@
     overflow-y: auto;
 
     & > div {
-        height: 100%;
-
-        & > iframe {
-            height: 100%;
-            width: 100%;
-        }
+        flex: 1 0 auto;
     }
+}
+
+.dependent-settings {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.dependent-settings:disabled {
+    opacity: 0.5;
+}
+
+.version-footer {
+    flex: none;
+    margin: 0;
+    padding: 0.5rem 2rem 0.75rem;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: color-mix(in srgb, $text-primary 60%, transparent);
 }
 
 .modalContent {
@@ -682,6 +697,10 @@
     .body,
     .page-content {
         padding: 1rem;
+    }
+
+    .version-footer {
+        padding: 0.5rem 1rem 0.75rem;
     }
 
     .text-input,

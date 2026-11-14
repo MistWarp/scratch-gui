@@ -379,7 +379,7 @@ const TWSaveStatus = ({
                     {intl.formatMessage(messages.openUnapplied)}
                 </button>
             ) : null}
-            {filterInlineAlerts(alertsList).length > 0 ? <InlineMessages /> : null}
+            {filterInlineAlerts(alertsList).length > 0 ? <InlineMessages className={styles.floatingMessage} /> : null}
         </React.Fragment>
     );
 };
