@@ -796,7 +796,7 @@ export default async ({addon, console, msg}) => {
     };
     
     // Also listen for project loaded events
-    vm.on('PROJECT_LOADED', () => {
+    vm.runtime.on('PROJECT_LOADED', () => {
         setTimeout(() => {
             renderFileList();
             if (vm.editingTarget) {

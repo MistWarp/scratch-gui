@@ -43,7 +43,6 @@ import TWViewCounter from './tw-view-counter.jsx';
 import ChangeUsername from '../../containers/tw-change-username.jsx';
 import CloudVariablesToggler from '../../containers/tw-cloud-toggler.jsx';
 import TWSaveStatus from './tw-save-status.jsx';
-import TWNews from './tw-news.jsx';
 import CollaborationContainer from '../../containers/collaboration-container.jsx';
 import {
     commitProject,
@@ -2665,7 +2664,7 @@ class MenuBar extends React.Component {
                     {this.props.isPlayerOnly ? null : (
                         <div
                             data-mw-item="save-status"
-                            className={styles.menuBarLayoutItem}
+                            className={classNames(styles.menuBarLayoutItem, styles.saveStatusSlot)}
                         >
                             <TWSaveStatus
                                 showSaveFilePicker={this.props.showSaveFilePicker}
@@ -2712,7 +2711,6 @@ class MenuBar extends React.Component {
                         vm={this.props.vm}
                     />
                 )}
-                <TWNews />
             </React.Fragment>
         );
     }

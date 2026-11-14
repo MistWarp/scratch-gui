@@ -148,6 +148,27 @@
     display: none;
 }
 
+:global([data-mw-item="save-status"]) .floating-message {
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    right: 0;
+    z-index: 1;
+    max-width: min(20rem, calc(100vw - 1rem));
+    padding: 0.4rem 0.7rem;
+    border-radius: 0.5rem;
+    background-color: $menu-bar-background;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+}
+
+:global([dir="rtl"]) :global([data-mw-item="save-status"]) .floating-message {
+    right: auto;
+    left: 0;
+}
+
 .open-unapplied {
     appearance: none;
     height: 1.5rem;

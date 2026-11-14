@@ -625,9 +625,9 @@ const CustomFPS = ({framerate, onChange, onCustomizeFramerate}) => (
                         onChange={onChange}
                     />
                     <FormattedMessage
-                        defaultMessage="60 FPS"
-                        description="FPS setting"
-                        id="tw.settingsModal.fps"
+                        defaultMessage="Custom framerate"
+                        description="Checkbox that switches between the default 30 FPS and a custom framerate"
+                        id="mw.settingsModal.customFramerate"
                     />
                 </label>
                 <BufferedInput

@@ -14,7 +14,8 @@ const FilterComponent = props => {
         onClear,
         placeholderText,
         filterQuery,
-        inputClassName
+        inputClassName,
+        inputRef
     } = props;
     return (
         <div
@@ -28,6 +29,7 @@ const FilterComponent = props => {
             />
             <input
                 className={classNames(styles.filterInput, inputClassName)}
+                ref={inputRef}
                 placeholder={placeholderText}
                 type="text"
                 value={filterQuery}
@@ -53,6 +55,7 @@ FilterComponent.propTypes = {
     className: PropTypes.string,
     filterQuery: PropTypes.string,
     inputClassName: PropTypes.string,
+    inputRef: PropTypes.func,
     onChange: PropTypes.func,
     onClear: PropTypes.func,
     placeholderText: PropTypes.string

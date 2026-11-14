@@ -87,52 +87,57 @@ class UnwrappedAutosavePage extends React.Component {
                         id="mw.settings.autosave.enabledHelp"
                     />}
                 />
-                <div className={styles.setting}>
-                    <div className={styles.textSettingLabel}>
-                        <FormattedMessage
-                            defaultMessage="Autosave interval (minutes)"
-                            id="mw.settings.autosave.interval"
+                <fieldset
+                    className={styles.dependentSettings}
+                    disabled={!this.state.enabled}
+                >
+                    <div className={styles.setting}>
+                        <div className={styles.textSettingLabel}>
+                            <FormattedMessage
+                                defaultMessage="Autosave interval (minutes)"
+                                id="mw.settings.autosave.interval"
+                            />
+                        </div>
+                        <BufferedInput
+                            className={styles.textInput}
+                            type="number"
+                            min="1"
+                            max="60"
+                            value={this.state.interval}
+                            onSubmit={this.handleIntervalSubmit}
                         />
+                        <p className={styles.detail}>
+                            <FormattedMessage
+                                defaultMessage="How often autosave runs, from 1 to 60 minutes."
+                                id="mw.settings.autosave.intervalHelp"
+                            />
+                        </p>
                     </div>
-                    <BufferedInput
-                        className={styles.textInput}
-                        type="number"
-                        min="1"
-                        max="60"
-                        value={this.state.interval}
-                        onSubmit={this.handleIntervalSubmit}
+                    <BooleanSetting
+                        value={this.state.notifications}
+                        onChange={this.handleNotificationsChange}
+                        label={<FormattedMessage
+                            defaultMessage="Show autosave notifications"
+                            id="mw.settings.autosave.notifications"
+                        />}
+                        help={<FormattedMessage
+                            defaultMessage="Show a notification when autosave saves your changes or fails."
+                            id="mw.settings.autosave.notificationsHelp"
+                        />}
                     />
-                    <p className={styles.detail}>
-                        <FormattedMessage
-                            defaultMessage="How often autosave runs, from 1 to 60 minutes."
-                            id="mw.settings.autosave.intervalHelp"
-                        />
-                    </p>
-                </div>
-                <BooleanSetting
-                    value={this.state.notifications}
-                    onChange={this.handleNotificationsChange}
-                    label={<FormattedMessage
-                        defaultMessage="Show autosave notifications"
-                        id="mw.settings.autosave.notifications"
-                    />}
-                    help={<FormattedMessage
-                        defaultMessage="Show a notification when autosave saves your changes or fails."
-                        id="mw.settings.autosave.notificationsHelp"
-                    />}
-                />
-                <BooleanSetting
-                    value={this.state.onlyWhenChanged}
-                    onChange={this.handleOnlyWhenChangedChange}
-                    label={<FormattedMessage
-                        defaultMessage="Only autosave changed projects"
-                        id="mw.settings.autosave.onlyWhenChanged"
-                    />}
-                    help={<FormattedMessage
-                        defaultMessage="Skip autosave when nothing has changed since the last save."
-                        id="mw.settings.autosave.onlyWhenChangedHelp"
-                    />}
-                />
+                    <BooleanSetting
+                        value={this.state.onlyWhenChanged}
+                        onChange={this.handleOnlyWhenChangedChange}
+                        label={<FormattedMessage
+                            defaultMessage="Only autosave changed projects"
+                            id="mw.settings.autosave.onlyWhenChanged"
+                        />}
+                        help={<FormattedMessage
+                            defaultMessage="Skip autosave when nothing has changed since the last save."
+                            id="mw.settings.autosave.onlyWhenChangedHelp"
+                        />}
+                    />
+                </fieldset>
             </Box>
         );
     }
