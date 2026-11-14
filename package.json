@@ -1,6 +1,6 @@
 {
   "name": "scratch-gui",
-  "version": "3.3.0",
+  "version": "3.6.0",
   "private": true,
   "description": "MistWarp editor, player, and community site",
   "author": "MistWarp contributors",
@@ -123,7 +123,7 @@
     "rotur-sdk": "3.9.1",
     "scratch-audio": "https://codeload.github.com/MistWarp/scratch-audio/tar.gz/ea64e571175aae4ef91527b4756991c18291a25a",
     "scratch-blocks": "https://codeload.github.com/MistWarp/scratch-blocks/tar.gz/3df9cb5fbdaf4bc75c737c1f63e4c371fe72e43c",
-    "scratch-paint": "https://codeload.github.com/MistWarp/scratch-paint/tar.gz/a79ca6eda109e6666cb9f028051707bdca6cc013",
+    "scratch-paint": "https://codeload.github.com/MistWarp/scratch-paint/tar.gz/55403050bcdf2990c72aa2643649f85bede2af4a",
     "scratch-render": "https://codeload.github.com/MistWarp/scratch-render/tar.gz/1e01ed65f5334bb453a5dce69329f04bdb63b20b",
     "scratch-render-fonts": "https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/4dda62c707f64505266aa62f7a6cc84f0e5812fd",
     "scratch-vm": "https://codeload.github.com/MistWarp/scratch-vm/tar.gz/70dda1922f7111d39a7ca84a8960a81039c1e9b3",
