@@ -7,6 +7,7 @@ import {
     Download,
     Flag,
     Mic,
+    Octagon,
     Settings2,
     Square,
     Timer,
@@ -368,7 +369,7 @@ class MediaRecorderButton extends React.Component {
                     {this.renderToggle('projectAudio', Volume2, 'Include project audio')}
                     {this.renderToggle('microphone', Mic, 'Include microphone audio')}
                     {this.renderToggle('startOnFlag', Flag, 'Wait for the green flag')}
-                    {this.renderToggle('stopOnStop', Square, 'Stop when the project stops')}
+                    {this.renderToggle('stopOnStop', Octagon, 'Stop when the project stops')}
                 </section>
                 {this.state.error && (
                     <div className={styles.notice}>

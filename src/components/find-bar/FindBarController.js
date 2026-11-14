@@ -245,6 +245,7 @@ export default class FindBarController {
         if (!visible) {
             this._invalidateCache();
             this.dropdown.empty();
+            if (this.noResultsRow) this.noResultsRow.remove();
         }
     }
 
@@ -403,6 +404,14 @@ export default class FindBarController {
     renderResults (results, focusID, instanceBlock) {
         this.dropdown.empty();
         if (this.moreResultsRow) this.moreResultsRow.remove();
+        if (this.noResultsRow) this.noResultsRow.remove();
+        if (!results.length) {
+            this.noResultsRow = document.createElement('li');
+            this.noResultsRow.className = findBarStyles['sa-find-no-results'];
+            this.noResultsRow.textContent = this.msg(this.findInput.value ? 'no-results' : 'no-blocks');
+            this.dropdown.el.appendChild(this.noResultsRow);
+            return;
+        }
         let offset = 0;
         const appendPage = () => {
             const fragment = document.createDocumentFragment();
@@ -448,6 +457,7 @@ export default class FindBarController {
 
     showCodeResults (results) {
         if (this.moreResultsRow) this.moreResultsRow.remove();
+        if (this.noResultsRow) this.noResultsRow.remove();
         this.dropdown.empty();
         this.codeResults = results;
         this.codeIndex = 0;

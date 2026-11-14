@@ -14,6 +14,7 @@ import surpriseIcon from '../components/action-menu/icon--surprise.svg';
 
 import SoundEditor from './sound-editor.jsx';
 import SoundLibrary from './sound-library.jsx';
+import SoundEmptyState from '../components/sound-empty-state/sound-empty-state.jsx';
 import SoundEditorNotSupported from '../components/tw-sound-editor-not-supported/sound-editor-not-supported.jsx';
 
 import {getSoundLibrary} from '../lib/libraries/tw-async-libraries';
@@ -337,7 +338,17 @@ class SoundTab extends React.Component {
                     ) : (
                         <SoundEditorNotSupported />
                     )
-                ) : null}
+                ) : (
+                    isSupported ? (
+                        <SoundEmptyState
+                            isStage={Boolean(vm.editingTarget && vm.editingTarget.isStage)}
+                            onChooseSound={onNewSoundFromLibraryClick}
+                            onRecordSound={onNewSoundFromRecordingClick}
+                        />
+                    ) : (
+                        <SoundEditorNotSupported />
+                    )
+                )}
                 {this.props.soundLibraryVisible ? (
                     <SoundLibrary
                         vm={this.props.vm}

@@ -40,6 +40,8 @@
     "find-bar/var-local": "var {name}",
     "find-bar/case-sensitive": "Case sensitive (Aa)",
     "find-bar/regex-mode": "Regular expression mode (.*)",
+    "find-bar/no-results": "No blocks match your search.",
+    "find-bar/no-blocks": "There are no blocks to find yet.",
     "find-bar/search-all-sprites": "Search all sprites",
     "find-bar/previous-result": "Previous result (Shift+F3)",
     "find-bar/next-result": "Next result (F3)",

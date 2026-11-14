@@ -8,6 +8,7 @@ const defaultVM = new VM();
 defaultVM.setCompatibilityMode(true);
 defaultVM.runtime.cloudOptions.limit = MAXIMUM_CLOUD_VARIABLES;
 defaultVM.attachStorage(storage);
+defaultVM.runtime.setMaxListeners(40);
 installProjectMetadata(defaultVM);
 const initialState = defaultVM;
 

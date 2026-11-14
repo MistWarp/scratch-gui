@@ -2665,7 +2665,7 @@ class MenuBar extends React.Component {
                     {this.props.isPlayerOnly ? null : (
                         <div
                             data-mw-item="save-status"
-                            className={styles.menuBarLayoutItem}
+                            className={classNames(styles.menuBarLayoutItem, styles.saveStatusSlot)}
                         >
                             <TWSaveStatus
                                 showSaveFilePicker={this.props.showSaveFilePicker}
