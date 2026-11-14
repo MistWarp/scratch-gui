@@ -61,6 +61,19 @@ describe('time stretch', () => {
         expect(stretched.sampleRate).toBe(RATE);
     });
 
+    test('an empty sound stays empty and silent', async () => {
+        const empty = {channels: [new Float32Array(0), new Float32Array(0)], sampleRate: RATE};
+        const stretched = await stretchClip(empty, 2);
+        expect(stretched.channels.map(channel => channel.length)).toEqual([0, 0]);
+        expect(stretched.sampleRate).toBe(RATE);
+        expect(resampleLinear(empty, 4).channels.map(channel => channel.length)).toEqual([0, 0]);
+    });
+
+    test('a single sample is repeated, never left undefined', async () => {
+        const stretched = await stretchClip({channels: [new Float32Array([0.5])], sampleRate: RATE}, 3);
+        expect(Array.from(stretched.channels[0])).toEqual([0.5, 0.5, 0.5]);
+    });
+
     test('linear resampling keeps the first and last samples', () => {
         const out = resampleLinear({channels: [new Float32Array([0, 1, 2])], sampleRate: RATE}, 5).channels[0];
         expect(Array.from(out)).toEqual([0, 0.5, 1, 1.5, 2]);

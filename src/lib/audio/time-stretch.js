@@ -61,6 +61,7 @@ const bestOffset = (samples, natural, target, radius, length, step, stride) => {
 
 const resampleLinear = (clip, newLength) => {
     const length = clipLength(clip);
+    if (length === 0) return {channels: clip.channels.map(() => new Float32Array(0)), sampleRate: clip.sampleRate};
     const scale = newLength > 1 ? (length - 1) / (newLength - 1) : 0;
     return {
         channels: clip.channels.map(channel => {

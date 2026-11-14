@@ -62,6 +62,7 @@ const COMPACT_WIDTH = 500;
 let clipboard = null;
 let snapEnabled = false;
 const markerStore = new Map();
+let shownEditor = null;
 
 const emptyClip = sampleRate => ({channels: [new Float32Array(0)], sampleRate: sampleRate || 48000});
 
@@ -148,6 +149,7 @@ class SoundEditor extends React.Component {
         this._isMounted = false;
         this.ref = null;
         this.groupChosen = false;
+        this.previewRequest = 0;
         this.sizeObserver = null;
         this.state = {
             activeGroup: 'volume',
@@ -174,6 +176,7 @@ class SoundEditor extends React.Component {
     }
     componentDidMount () {
         this._isMounted = true;
+        shownEditor = this;
         this.player = new AudioBufferPlayer(this.clip);
         document.addEventListener('keydown', this.handleKeyPress);
         this.measure();
@@ -190,6 +193,7 @@ class SoundEditor extends React.Component {
     componentWillUnmount () {
         this.cancelRecording();
         this._isMounted = false;
+        if (shownEditor === this) shownEditor = null;
         this.editGeneration++;
         this.soundGeneration++;
         this.stopAll();
@@ -249,6 +253,7 @@ class SoundEditor extends React.Component {
         if (this.player) this.player.stop();
     }
     stopPreview () {
+        this.previewRequest++;
         if (this.previewPlayer) {
             this.previewPlayer.stop();
             this.previewPlayer = null;
@@ -262,9 +267,9 @@ class SoundEditor extends React.Component {
             this.setState({playing: false, previewing: false, playhead: null});
         }
     }
-    storeMarkers (markers) {
-        if (markers.length) markerStore.set(this.props.soundId, markers);
-        else markerStore.delete(this.props.soundId);
+    storeMarkers (markers, soundId = this.props.soundId) {
+        if (markers.length) markerStore.set(soundId, markers);
+        else markerStore.delete(soundId);
     }
     pushUndo (item) {
         this.undoStack.push(item);
@@ -333,14 +338,40 @@ class SoundEditor extends React.Component {
         this.busy = busy;
         if (this._isMounted) this.setState({busy});
     }
+    saveDetached (edit, result) {
+        if (isSameClip(result.clip, edit.clip)) return false;
+        const vm = this.props.vm;
+        return downsampleClipIfNeeded(result.clip, resampleClip)
+            .then(prepared => encodeClip(prepared).then(wav => {
+                const target = vm.editingTarget;
+                if (!target || target.id !== edit.targetId) return false;
+                if (shownEditor && shownEditor.props.soundId === edit.soundId) return false;
+                const index = target.sprite.sounds.findIndex(sound => sound.soundId === edit.soundId);
+                if (index < 0) return false;
+                vm.updateSoundBuffer(index, new AudioBufferPlayer(prepared).buffer, wav);
+                const markers = result.markers ||
+                    (result.splice ? spliceMarkers(edit.markers, result.splice) : edit.markers);
+                const ratio = prepared.sampleRate / result.clip.sampleRate;
+                this.storeMarkers(clampMarkers(scaleMarkers(markers, ratio), clipLength(prepared)), edit.soundId);
+                return true;
+            }));
+    }
     runEdit (makeClip) {
         if (this.busy) return Promise.resolve(false);
         const soundGeneration = this.soundGeneration;
+        const target = this.props.vm.editingTarget;
+        const edit = {
+            clip: this.clip,
+            markers: this.state.markers,
+            soundId: this.props.soundId,
+            targetId: target ? target.id : null
+        };
         this.setBusy(true);
         return Promise.resolve()
-            .then(makeClip)
+            .then(() => makeClip(edit.clip))
             .then(result => {
-                if (!result || soundGeneration !== this.soundGeneration) return false;
+                if (!result) return false;
+                if (soundGeneration !== this.soundGeneration) return this.saveDetached(edit, result);
                 if (isSameClip(result.clip, this.clip)) return false;
                 let markers = result.markers || null;
                 if (!markers && result.splice) markers = spliceMarkers(this.state.markers, result.splice);
@@ -531,8 +562,8 @@ class SoundEditor extends React.Component {
     handleDelete () {
         if (!this.canRemoveSelection()) return Promise.resolve(false);
         const {start, end} = this.state.selection;
-        return this.runEdit(() => ({
-            clip: removeRange(this.clip, start, end),
+        return this.runEdit(clip => ({
+            clip: removeRange(clip, start, end),
             selection: null,
             cursor: start,
             splice: {at: start, removed: end - start, inserted: 0}
@@ -541,40 +572,48 @@ class SoundEditor extends React.Component {
     handleTrim () {
         if (!this.canRemoveSelection()) return Promise.resolve(false);
         const {start, end} = this.state.selection;
-        return this.runEdit(() => ({
-            clip: sliceClip(this.clip, start, end),
+        const markers = this.state.markers
+            .filter(marker => marker >= start && marker <= end)
+            .map(marker => marker - start);
+        return this.runEdit(clip => ({
+            clip: sliceClip(clip, start, end),
             selection: null,
             cursor: 0,
-            markers: this.state.markers
-                .filter(marker => marker >= start && marker <= end)
-                .map(marker => marker - start)
+            markers
         }));
     }
-    insertAtCursor (prepared) {
+    insertTarget () {
+        return {selection: this.hasSelection() ? this.state.selection : null, cursor: this.state.cursor};
+    }
+    insertInto (clip, target, prepared) {
         const length = clipLength(prepared);
-        if (this.hasSelection()) {
-            const {start, end} = this.state.selection;
+        if (target.selection) {
+            const {start, end} = target.selection;
             return {
-                clip: replaceRange(this.clip, start, end, prepared),
+                clip: replaceRange(clip, start, end, prepared),
                 selection: {start, end: start + length},
                 splice: {at: start, removed: end - start, inserted: length}
             };
         }
-        const at = this.state.cursor;
+        const at = target.cursor;
         return {
-            clip: insertClip(this.clip, at, prepared),
+            clip: insertClip(clip, at, prepared),
             selection: {start: at, end: at + length},
             splice: {at, removed: 0, inserted: length}
         };
     }
-    matchRate (source) {
-        if (source.sampleRate === this.clip.sampleRate) return Promise.resolve(source);
-        return resampleClip(source, this.clip.sampleRate);
+    matchRate (source, clip) {
+        if (source.sampleRate === clip.sampleRate) return Promise.resolve(source);
+        return resampleClip(source, clip.sampleRate);
+    }
+    insertSource (source) {
+        const target = this.insertTarget();
+        return this.runEdit(clip => this.matchRate(source, clip)
+            .then(prepared => this.insertInto(clip, target, prepared)));
     }
     handlePaste () {
         if (!clipboard) return Promise.resolve(false);
-        const source = clipboard;
-        return this.runEdit(() => this.matchRate(source).then(prepared => this.insertAtCursor(prepared)));
+        return this.insertSource(clipboard);
     }
     handleCopyToNew () {
         const targetId = this.props.vm.editingTarget && this.props.vm.editingTarget.id;
@@ -645,34 +684,33 @@ class SoundEditor extends React.Component {
         this.setState({mixSource: event.target.value});
     }
     mixSources () {
+        const ids = this.props.soundIds || [];
         return (this.props.soundNames || [])
-            .map((name, index) => ({index: String(index), name}))
-            .filter(source => Number(source.index) !== this.props.soundIndex);
+            .map((name, index) => ({id: ids[index] || String(index), index, name}))
+            .filter(source => source.index !== this.props.soundIndex);
     }
-    loadSoundClip (index) {
+    loadSoundClip (index, clip) {
         const buffer = this.props.vm.getSoundBuffer(index);
         if (!buffer) return Promise.reject(new Error('That sound has not loaded'));
-        return this.matchRate(fromAudioBuffer(buffer));
+        return this.matchRate(fromAudioBuffer(buffer), clip);
     }
-    loadMixSource () {
+    loadMixSource (clip) {
         const sources = this.mixSources();
         if (!sources.length) return Promise.reject(new Error('No sound to mix in'));
-        const chosen = sources.find(source => source.index === this.state.mixSource) || sources[0];
-        return this.loadSoundClip(Number(chosen.index));
+        const chosen = sources.find(source => source.id === this.state.mixSource) || sources[0];
+        return this.loadSoundClip(chosen.index, clip);
     }
-    computeTool () {
+    computeTool (clip) {
         const id = this.state.activeTool;
         const tool = getTool(id);
         if (!tool) return Promise.reject(new Error('No tool selected'));
         const selection = this.hasSelection() ? this.state.selection : null;
         const cursor = this.state.cursor;
-        const loadSource = tool.needsSource ? this.loadMixSource() : Promise.resolve(null);
-        return loadSource.then(source => applyTool(id, this.clip, {
-            selection,
-            cursor,
-            params: this.state.params[id],
-            source
-        }).then(result => ({result, selection, cursor})));
+        const params = this.state.params[id];
+        const loadSource = tool.needsSource ? this.loadMixSource(clip) : Promise.resolve(null);
+        return loadSource
+            .then(source => applyTool(id, clip, {selection, cursor, params, source}))
+            .then(result => ({result, selection, cursor}));
     }
     handlePreview () {
         if (this.busy) return Promise.resolve(false);
@@ -680,10 +718,14 @@ class SoundEditor extends React.Component {
         this.setBusy(true);
         const generation = this.editGeneration;
         const soundGeneration = this.soundGeneration;
-        return this.computeTool()
+        const request = this.previewRequest;
+        const tool = this.state.activeTool;
+        const clip = this.clip;
+        return this.computeTool(clip)
             .then(({result, selection, cursor}) => {
                 if (!this._isMounted || generation !== this.editGeneration) return false;
-                const [start, end] = affectedRange(this.state.activeTool, this.clip, selection, cursor, result);
+                if (request !== this.previewRequest) return false;
+                const [start, end] = affectedRange(tool, clip, selection, cursor, result);
                 this.previewPlayer = new AudioBufferPlayer(result.clip);
                 this.previewPlayer.playRange({
                     start,
@@ -709,7 +751,7 @@ class SoundEditor extends React.Component {
         if (this._isMounted) this.setState({previewing: false, playhead: null});
     }
     handleApply () {
-        return this.runEdit(() => this.computeTool().then(({result}) => result));
+        return this.runEdit(clip => this.computeTool(clip).then(({result}) => result));
     }
     handleRecord () {
         if (this.busy || this.state.recording !== 'idle') return;
@@ -756,8 +798,7 @@ class SoundEditor extends React.Component {
         if (!recorded || !recorded.samples.length) return Promise.resolve(false);
         const from = Math.floor(recorded.trimStart * recorded.samples.length);
         const to = Math.ceil(recorded.trimEnd * recorded.samples.length);
-        const source = fromSamples(recorded.samples.subarray(from, to), recorded.sampleRate);
-        return this.runEdit(() => this.matchRate(source).then(prepared => this.insertAtCursor(prepared)));
+        return this.insertSource(fromSamples(recorded.samples.subarray(from, to), recorded.sampleRate));
     }
     setMarkers (markers) {
         this.storeMarkers(markers);
@@ -811,7 +852,7 @@ class SoundEditor extends React.Component {
     handleDropSound (index, sample) {
         this.setState({dropSample: null});
         if (index === this.props.soundIndex) return Promise.resolve(false);
-        return this.runEdit(() => this.loadSoundClip(index).then(source => applyTool('mix', this.clip, {
+        return this.runEdit(clip => this.loadSoundClip(index, clip).then(source => applyTool('mix', clip, {
             selection: null,
             cursor: sample,
             params: {db: 0},
@@ -875,8 +916,12 @@ class SoundEditor extends React.Component {
             else this.handleDelete();
         } else if (key === 'Escape') {
             event.preventDefault();
-            this.handleStop();
-            this.setState({selection: null});
+            if (this.state.recording === 'idle') {
+                this.handleStop();
+                this.setState({selection: null});
+            } else {
+                this.cancelRecording();
+            }
         } else if (key === 'Home') {
             event.preventDefault();
             this.handleToStart();
@@ -958,8 +1003,8 @@ class SoundEditor extends React.Component {
     render () {
         const total = this.length();
         const sources = this.mixSources();
-        const mixSource = sources.some(source => source.index === this.state.mixSource) ?
-            this.state.mixSource : (sources[0] ? sources[0].index : '');
+        const mixSource = sources.some(source => source.id === this.state.mixSource) ?
+            this.state.mixSource : (sources[0] ? sources[0].id : '');
         const markerPosition = this.hasSelection() ? this.state.selection.start : this.state.cursor;
         return (<React.Fragment>
             <SoundDropWatcher
@@ -1066,6 +1111,7 @@ SoundEditor.propTypes = {
     sampleRate: PropTypes.number,
     size: PropTypes.number,
     soundId: PropTypes.string,
+    soundIds: PropTypes.arrayOf(PropTypes.string),
     soundIndex: PropTypes.number,
     soundNames: PropTypes.arrayOf(PropTypes.string),
     theme: PropTypes.object, // eslint-disable-line react/forbid-prop-types
@@ -1087,6 +1133,7 @@ const mapStateToProps = (state, {soundIndex}) => {
         size: sound && sound.asset && sound.asset.data ? sound.asset.data.byteLength : 0,
         soundId: sound ? sound.soundId : null,
         soundIndex: index,
+        soundIds: sprite.sounds.map(item => item.soundId),
         soundNames: sprite.sounds.map(item => item.name),
         sampleRate: audioBuffer ? audioBuffer.sampleRate : (sound && sound.rate ? sound.rate : 48000),
         isFullScreen: state.scratchGui.mode.isFullScreen,

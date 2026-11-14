@@ -445,7 +445,7 @@ class SoundTimeline extends React.Component {
                 className={classNames(styles.timeline, {[styles.withLabels]: clip.channels.length > 1})}
                 ref={this.setRoot}
             >
-                {this.props.compact ? null : (
+                {this.props.hideOverview ? null : (
                     <div className={styles.overviewRow}>
                         <div
                             className={styles.overview}
@@ -527,7 +527,7 @@ SoundTimeline.propTypes = {
         sampleRate: PropTypes.number
     }).isRequired,
     clipVersion: PropTypes.number,
-    compact: PropTypes.bool,
+    hideOverview: PropTypes.bool,
     cursor: PropTypes.number,
     onSeek: PropTypes.func.isRequired,
     onSelect: PropTypes.func.isRequired,
