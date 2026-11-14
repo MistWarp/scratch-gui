@@ -347,7 +347,7 @@ class SoundEditor extends React.Component {
                 if (!target || target.id !== edit.targetId) return false;
                 if (shownEditor && shownEditor.props.soundId === edit.soundId) return false;
                 const index = target.sprite.sounds.findIndex(sound => sound.soundId === edit.soundId);
-                if (index < 0) return false;
+                if (index < 0 || target.sprite.sounds[index].assetId !== edit.assetId) return false;
                 vm.updateSoundBuffer(index, new AudioBufferPlayer(prepared).buffer, wav);
                 const markers = result.markers ||
                     (result.splice ? spliceMarkers(edit.markers, result.splice) : edit.markers);
@@ -360,15 +360,16 @@ class SoundEditor extends React.Component {
         if (this.busy) return Promise.resolve(false);
         const soundGeneration = this.soundGeneration;
         const target = this.props.vm.editingTarget;
+        const sound = target ? target.sprite.sounds[this.props.soundIndex] : null;
         const edit = {
+            assetId: sound ? sound.assetId : null,
             clip: this.clip,
             markers: this.state.markers,
             soundId: this.props.soundId,
             targetId: target ? target.id : null
         };
         this.setBusy(true);
-        return Promise.resolve()
-            .then(() => makeClip(edit.clip))
+        return new Promise(resolve => resolve(makeClip(edit.clip)))
             .then(result => {
                 if (!result) return false;
                 if (soundGeneration !== this.soundGeneration) return this.saveDetached(edit, result);
