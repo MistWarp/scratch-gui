@@ -24,7 +24,9 @@ const SpriteSelectorItem = props => {
     return (
         <div
             className={classNames(props.className, styles.spriteSelectorItem, {
-                [styles.isSelected]: props.selected
+                [styles.isSelected]: props.selected,
+                [styles.card]: props.layout === 'card',
+                [styles.row]: props.layout === 'row'
             })}
         >
             <ContextMenuTrigger
@@ -162,6 +164,7 @@ SpriteSelectorItem.propTypes = {
         username: PropTypes.string,
         handle: PropTypes.string
     })),
+    layout: PropTypes.oneOf(['tile', 'card', 'row']),
     // eslint-disable-next-line react/forbid-prop-types
     name: PropTypes.any,
     number: PropTypes.number,
@@ -176,6 +179,10 @@ SpriteSelectorItem.propTypes = {
     onMouseLeave: PropTypes.func,
     preventContextMenu: PropTypes.bool,
     selected: PropTypes.bool.isRequired
+};
+
+SpriteSelectorItem.defaultProps = {
+    layout: 'tile'
 };
 
 export default SpriteSelectorItem;

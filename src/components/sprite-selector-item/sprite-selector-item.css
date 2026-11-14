@@ -176,3 +176,241 @@
 [dir="rtl"] .number {
     right: 0.15rem;
 }
+
+.card,
+.row {
+    box-sizing: border-box;
+    padding: .25rem;
+    border: 0;
+    border-radius: .625rem;
+    background: transparent;
+    text-align: start;
+}
+
+.card:hover,
+.row:hover {
+    border: 0;
+    background: $ui-tertiary;
+}
+
+.card.is-selected,
+.row.is-selected {
+    border: 0;
+    background: $looks-transparent;
+    box-shadow: none;
+}
+
+.card .sprite-image,
+.row .sprite-image,
+.card:hover .sprite-image,
+.row:hover .sprite-image {
+    filter: none;
+}
+
+.card .sprite-info,
+.row .sprite-info {
+    min-width: 0;
+    border-radius: 0;
+    background: none;
+    font-size: .75rem;
+    line-height: 1.25;
+    text-align: start;
+}
+
+.card .sprite-name,
+.row .sprite-name {
+    font-weight: 600;
+}
+
+.card .sprite-details,
+.row .sprite-details {
+    margin-top: 0;
+    color: $text-primary-transparent;
+    font-size: .6875rem;
+}
+
+.card .number,
+.row .number {
+    color: $text-primary-transparent;
+    font-size: .6875rem;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.card .selection-button {
+    gap: .25rem;
+}
+
+.card .sprite-image-outer {
+    height: 4.5rem;
+    flex: 0 0 auto;
+    overflow: hidden;
+    border-radius: .5rem;
+    background: $ui-white;
+}
+
+.card .sprite-image {
+    max-width: calc(100% - .75rem);
+    max-height: calc(100% - .75rem);
+}
+
+.card .sprite-info {
+    padding: 0 .25rem .125rem;
+}
+
+.card .number {
+    top: .5rem;
+    padding: 0 .25rem;
+    border-radius: .25rem;
+    background: $ui-white-transparent;
+}
+
+[dir="ltr"] .card .number {
+    left: .5rem;
+}
+
+[dir="rtl"] .card .number {
+    right: .5rem;
+}
+
+.card .delete-button {
+    top: .375rem;
+}
+
+[dir="ltr"] .card .delete-button {
+    right: .375rem;
+}
+
+[dir="rtl"] .card .delete-button {
+    left: .375rem;
+}
+
+.row .selection-button {
+    display: grid;
+    min-height: 2.75rem;
+    box-sizing: border-box;
+    grid-template-columns: 1rem 2.25rem minmax(0, 1fr);
+    align-items: center;
+    column-gap: .375rem;
+}
+
+[dir="ltr"] .row.is-selected .selection-button {
+    padding-right: 2.125rem;
+}
+
+[dir="rtl"] .row.is-selected .selection-button {
+    padding-left: 2.125rem;
+}
+
+.row .number,
+[dir="ltr"] .row .number,
+[dir="rtl"] .row .number {
+    position: static;
+    grid-column: 1;
+    grid-row: 1;
+    text-align: center;
+}
+
+.row .sprite-image-outer {
+    width: 2.25rem;
+    height: 2.25rem;
+    grid-column: 2;
+    grid-row: 1;
+    border-radius: .5rem;
+    background: $ui-white;
+}
+
+.row .sprite-image {
+    max-width: 1.5rem;
+    max-height: 1.5rem;
+}
+
+.row .sprite-info {
+    padding: 0;
+    grid-column: 3;
+    grid-row: 1;
+}
+
+.row .delete-button {
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+[dir="ltr"] .row .delete-button {
+    right: .375rem;
+}
+
+[dir="rtl"] .row .delete-button {
+    left: .375rem;
+}
+
+@media only screen and (max-width: 900px) {
+    .card,
+    .row {
+        height: 100%;
+    }
+
+    .sprite-selector-item.card {
+        width: 4.75rem;
+    }
+
+    .sprite-selector-item.row {
+        width: 10rem;
+    }
+
+    .card .selection-button {
+        gap: .125rem;
+    }
+
+    .card .sprite-image-outer {
+        height: 0;
+        flex: 1 1 0;
+    }
+
+    .card .sprite-image {
+        max-width: calc(100% - .375rem);
+        max-height: calc(100% - .375rem);
+    }
+
+    .card .sprite-info {
+        padding: 0 .125rem;
+        font-size: .6875rem;
+    }
+
+    .card .sprite-details {
+        display: none;
+    }
+
+    .card .number {
+        top: .375rem;
+    }
+
+    [dir="ltr"] .card .number {
+        left: .375rem;
+    }
+
+    [dir="rtl"] .card .number {
+        right: .375rem;
+    }
+
+    .card .delete-button {
+        top: .125rem;
+        transform: scale(.8);
+    }
+
+    [dir="ltr"] .card .delete-button {
+        right: .125rem;
+        transform-origin: top right;
+    }
+
+    [dir="rtl"] .card .delete-button {
+        left: .125rem;
+        transform-origin: top left;
+    }
+
+    .row .selection-button {
+        height: 100%;
+        min-height: 0;
+    }
+}
+

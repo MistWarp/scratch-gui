@@ -36,7 +36,7 @@
 
     .selector {
         order: 2;
-        flex: 0 0 5rem;
+        flex: 0 0 4.5rem;
     }
 
     .detail-area {
@@ -63,31 +63,12 @@
 
     .detail-area :global([class*="paint-editor_editor-container-top_"]) {
         flex: 0 0 auto;
-        overflow-x: auto;
-        overflow-y: hidden;
-        padding-bottom: 0.25rem;
-        scrollbar-width: thin;
-    }
-
-    .detail-area :global([class*="paint-editor_editor-container-top_"] > [class*="paint-editor_row_"]) {
-        width: max-content;
-        min-width: 100%;
     }
 
     .detail-area :global([class*="paint-editor_top-align-row_"]) {
         min-width: 0;
         min-height: 0;
         padding-top: 0.25rem;
-    }
-
-    .detail-area :global([class*="paint-editor_mode-selector_"]) {
-        flex: 0 0 2.75rem;
-        max-width: 2.75rem;
-        flex-flow: column nowrap;
-        align-content: stretch;
-        justify-content: flex-start;
-        overflow-x: hidden;
-        overflow-y: auto;
     }
 
     .detail-area :global([class*="paint-editor_controls-container_"]) {
@@ -120,17 +101,14 @@
         padding-top: 0;
     }
 
-    .detail-area :global([class*="paint-editor_editor-container-top_"] > [class*="paint-editor_row_"]) {
-        width: 100%;
-        min-width: 0;
-    }
-
     .detail-area :global([class*="paint-editor_mode-selector_"]) {
         width: 100%;
         min-width: 100%;
         max-width: none;
         flex: 0 0 auto;
         flex-flow: row wrap;
+        align-content: stretch;
+        justify-content: flex-start;
         overflow: visible;
     }
 

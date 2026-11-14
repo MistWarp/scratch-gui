@@ -31,6 +31,7 @@ const Selector = props => {
     } = props;
 
     const isRelevantDrag = draggingType === dragType;
+    const isSoundList = dragType === DragConstants.SOUND;
 
     let newButtonSection = null;
 
@@ -54,7 +55,7 @@ const Selector = props => {
     return (
         <Box
             className={classNames(styles.wrapper, className, {
-                [styles.soundWrapper]: dragType === DragConstants.SOUND
+                [styles.soundWrapper]: isSoundList
             })}
             componentRef={containerRef}
         >
@@ -78,6 +79,7 @@ const Selector = props => {
                             editors={item.editors}
                             id={index}
                             index={index}
+                            layout={isSoundList ? 'row' : 'card'}
                             name={item.name}
                             number={index + 1 /* 1-indexed */}
                             selected={index === selectedItemIndex}
