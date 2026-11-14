@@ -59,11 +59,15 @@
     }
 
     .sound-wrapper {
-        width: 9.5rem;
+        width: 5rem;
     }
 
     .list-area {
         padding: .25rem .375rem;
+    }
+
+    .sound-wrapper .list-area {
+        padding: .25rem;
     }
 
     .wrapper:not(.sound-wrapper) .list-item :global([class*="sprite-selector-item_sprite-image-outer_"]) {
