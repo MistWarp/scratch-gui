@@ -75,3 +75,65 @@
 .sprite-input {
     width: 8rem;
 }
+
+.compact {
+    container-type: inline-size;
+}
+
+.wide-only {
+    display: none;
+}
+
+@container (min-width: 13rem) {
+    .compact .wide-only {
+        display: flex;
+    }
+
+    .compact-name {
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .compact-name > .group:first-child {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .compact-name .sprite-input {
+        width: 100%;
+    }
+
+    .compact-fields {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.5rem;
+    }
+
+    .compact-fields .group,
+    .compact-fields label {
+        display: flex;
+        min-width: 0;
+    }
+
+    .compact-fields label {
+        flex: 1 1 auto;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    [dir] .compact-fields label > span {
+        margin: 0 0 0.25rem;
+        overflow: hidden;
+        font-weight: normal;
+        text-overflow: ellipsis;
+    }
+
+    .compact-fields input {
+        width: 100%;
+    }
+
+    .compact input,
+    .compact .wide-only button {
+        height: 2.25rem;
+    }
+}
