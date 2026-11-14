@@ -18,44 +18,10 @@ class AudioBufferPlayer {
 
         this.startTime = null;
         this.updateCallback = null;
-        this.trimStart = null;
-        this.trimEnd = null;
         this.rangeStart = 0;
         this.rangeEnd = 0;
         this.loop = false;
         this.raf = null;
-    }
-
-    play (trimStart, trimEnd, onUpdate, onEnded) {
-        trimStart = Math.min(Math.max(trimStart, 0), 1);
-        trimEnd = Math.min(Math.max(trimEnd, trimStart), 1);
-
-        this.updateCallback = onUpdate;
-        this.trimStart = trimStart;
-        this.trimEnd = trimEnd;
-        this.startTime = Date.now();
-
-        const trimStartTime = this.buffer.duration * trimStart;
-        const trimmedDuration = (this.buffer.duration * trimEnd) - trimStartTime;
-
-        this.source = this.audioContext.createBufferSource();
-        this.source.onended = onEnded;
-        this.source.buffer = this.buffer;
-        this.source.connect(this.audioContext.destination);
-        this.source.start(0, trimStartTime, trimmedDuration);
-
-        this.update();
-    }
-
-    update () {
-        const timeSinceStart = (Date.now() - this.startTime) / 1000;
-        const percentage = timeSinceStart / this.buffer.duration;
-        if (percentage + this.trimStart < this.trimEnd && this.source && this.source.onended) {
-            requestAnimationFrame(this.update.bind(this));
-            this.updateCallback(percentage + this.trimStart);
-        } else {
-            this.updateCallback = null;
-        }
     }
 
     connectMeter (node) {

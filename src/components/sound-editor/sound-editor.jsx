@@ -7,15 +7,24 @@ import {
     ArrowUpToLine,
     AudioLines,
     Bot,
+    ChevronsLeft,
+    ChevronsRight,
     ClipboardPaste,
     Copy,
     CopyPlus,
     Crop,
+    Flag,
     Gauge,
     Layers,
+    Magnet,
     Maximize2,
+    Mic,
+    Minus,
+    MoveHorizontal,
+    Music2,
     Pause,
     Play,
+    Plus,
     Redo2,
     Repeat,
     Rewind,
@@ -37,6 +46,8 @@ import {
 import Input from '../forms/input.jsx';
 import BufferedInputHOC from '../forms/buffered-input-hoc.jsx';
 import SoundTimeline from './sound-timeline.jsx';
+import {LevelMeter, PlaybackClock} from './sound-readouts.jsx';
+import PlaybackMonitor from '../../lib/audio/playback-monitor.js';
 import {SOUND_BYTE_LIMIT} from '../../lib/audio/audio-util.js';
 import {TOOL_GROUPS, TOOLS, getTool} from '../../lib/audio/sound-tools.js';
 import {formatClock} from '../../lib/audio/sound-time.js';
@@ -54,6 +65,15 @@ const messages = defineMessages({
     pause: {id: 'mw.soundEditor.pause', description: 'Title of the button to pause the sound in the sound editor', defaultMessage: 'Pause'},
     stop: {id: 'gui.soundEditor.stop', description: 'Title of the button to stop the sound', defaultMessage: 'Stop'},
     toStart: {id: 'mw.soundEditor.toStart', description: 'Title of the button that moves the cursor to the start of the sound', defaultMessage: 'Go to start'},
+    record: {id: 'mw.soundEditor.record', description: 'Title of the button that records from the microphone into the sound at the cursor', defaultMessage: 'Record at the cursor'},
+    stopRecording: {id: 'mw.soundEditor.stopRecording', description: 'Title of the button that ends a microphone recording in the sound editor', defaultMessage: 'Stop recording'},
+    recordingHint: {id: 'mw.soundEditor.recordingHint', description: 'Shown while the sound editor is recording from the microphone', defaultMessage: 'Recording. Press Stop to add it to the sound.'},
+    snap: {id: 'mw.soundEditor.snap', description: 'Title of the toggle that moves selection edges to the nearest zero crossing', defaultMessage: 'Snap the selection to zero crossings, which avoids clicks'},
+    addMarker: {id: 'mw.soundEditor.addMarker', description: 'Title of the button that adds a marker at the cursor in the sound editor', defaultMessage: 'Add a marker at the cursor'},
+    removeMarker: {id: 'mw.soundEditor.removeMarker', description: 'Title of the button that removes the marker at the cursor in the sound editor', defaultMessage: 'Remove this marker'},
+    previousMarker: {id: 'mw.soundEditor.previousMarker', description: 'Title of the button that moves the cursor to the previous marker', defaultMessage: 'Go to the previous marker'},
+    nextMarker: {id: 'mw.soundEditor.nextMarker', description: 'Title of the button that moves the cursor to the next marker', defaultMessage: 'Go to the next marker'},
+    marker: {id: 'mw.soundEditor.marker', description: 'Accessible label of a marker on the sound editor ruler', defaultMessage: 'Marker at {time}'},
     loop: {id: 'mw.soundEditor.loop', description: 'Title of the button that toggles looping playback in the sound editor', defaultMessage: 'Loop playback'},
     copy: {id: 'gui.soundEditor.copy', description: 'Title of the button to copy the sound', defaultMessage: 'Copy'},
     cut: {id: 'mw.soundEditor.cut', description: 'Title of the button that cuts the selected audio', defaultMessage: 'Cut'},
@@ -74,6 +94,17 @@ const messages = defineMessages({
     left: {id: 'mw.soundEditor.leftChannel', description: 'Short label for the left channel lane of a stereo sound', defaultMessage: 'L'},
     right: {id: 'mw.soundEditor.rightChannel', description: 'Short label for the right channel lane of a stereo sound', defaultMessage: 'R'},
     tools: {id: 'mw.soundEditor.tools', description: 'Accessible label for the group of sound editing tools', defaultMessage: 'Sound tools'},
+    groupEdit: {id: 'mw.soundEditor.group.edit', description: 'Tab of cut, copy, paste and marker actions in the sound editor on small screens', defaultMessage: 'Edit'},
+    trimShort: {id: 'mw.soundEditor.short.trim', description: 'Short label of the button that keeps only the selected audio', defaultMessage: 'Trim'},
+    snapShort: {id: 'mw.soundEditor.short.snap', description: 'Short label of the toggle that moves selection edges to the nearest zero crossing', defaultMessage: 'Snap'},
+    markerShort: {id: 'mw.soundEditor.short.marker', description: 'Short label of the button that adds or removes a marker at the cursor', defaultMessage: 'Marker'},
+    previousShort: {id: 'mw.soundEditor.short.previousMarker', description: 'Short label of the button that moves the cursor to the previous marker', defaultMessage: 'Previous'},
+    nextShort: {id: 'mw.soundEditor.short.nextMarker', description: 'Short label of the button that moves the cursor to the next marker', defaultMessage: 'Next'},
+    peakLabel: {id: 'mw.soundEditor.peakLabel', description: 'Label above the loudest level of the sound or selection', defaultMessage: 'Peak'},
+    peakValue: {id: 'mw.soundEditor.peakValue', description: 'The loudest level of the sound or selection in decibels', defaultMessage: '{value} dB'},
+    tooLoud: {id: 'mw.soundEditor.tooLoud', description: 'Short warning shown instead of the peak label when the sound is loud enough to distort', defaultMessage: 'Too loud'},
+    decrease: {id: 'mw.soundEditor.decrease', description: 'Label of the minus button beside a sound tool setting, for example Decrease Delay', defaultMessage: 'Decrease {name}'},
+    increase: {id: 'mw.soundEditor.increase', description: 'Label of the plus button beside a sound tool setting, for example Increase Delay', defaultMessage: 'Increase {name}'},
     groupVolume: {id: 'mw.soundEditor.group.volume', description: 'Tab of volume tools in the sound editor', defaultMessage: 'Volume'},
     groupTime: {id: 'mw.soundEditor.group.time', description: 'Tab of time and speed tools in the sound editor', defaultMessage: 'Time'},
     groupEffects: {id: 'mw.soundEditor.group.effects', description: 'Tab of audio effects in the sound editor', defaultMessage: 'Effects'},
@@ -84,6 +115,8 @@ const messages = defineMessages({
     fadeOut: {id: 'gui.soundEditor.fadeOut', description: 'Title of the button to apply the fade out effect', defaultMessage: 'Fade out'},
     silence: {id: 'gui.soundEditor.mute', description: 'Title of the button to apply the mute effect', defaultMessage: 'Mute'},
     speed: {id: 'mw.soundEditor.tool.speed', description: 'Sound editor tool that speeds up or slows down audio, which also changes its pitch', defaultMessage: 'Speed'},
+    stretch: {id: 'mw.soundEditor.tool.stretch', description: 'Sound editor tool that makes audio longer or shorter without changing its pitch', defaultMessage: 'Stretch'},
+    pitch: {id: 'mw.soundEditor.tool.pitch', description: 'Sound editor tool that raises or lowers the pitch without changing the length', defaultMessage: 'Pitch'},
     reverse: {id: 'gui.soundEditor.reverse', description: 'Title of the button to apply the reverse effect', defaultMessage: 'Reverse'},
     insertSilence: {id: 'mw.soundEditor.tool.insertSilence', description: 'Sound editor tool that inserts silence at the cursor', defaultMessage: 'Insert silence'},
     echo: {id: 'gui.soundEditor.echo', description: 'Title of the button to apply the echo effect', defaultMessage: 'Echo'},
@@ -98,6 +131,8 @@ const messages = defineMessages({
     shapeLinear: {id: 'mw.soundEditor.param.shapeLinear', description: 'Fade shape option that changes volume at a constant rate', defaultMessage: 'Straight'},
     shapeSmooth: {id: 'mw.soundEditor.param.shapeSmooth', description: 'Fade shape option that eases in and out', defaultMessage: 'Smooth'},
     paramPercent: {id: 'mw.soundEditor.param.percent', description: 'Slider label for playback speed as a percentage', defaultMessage: 'Speed'},
+    paramLength: {id: 'mw.soundEditor.param.length', description: 'Slider label for the new length of stretched audio as a percentage', defaultMessage: 'Length'},
+    paramSemitones: {id: 'mw.soundEditor.param.semitones', description: 'Slider label for a pitch change in semitones', defaultMessage: 'Semitones'},
     paramSeconds: {id: 'mw.soundEditor.param.seconds', description: 'Slider label for how many seconds of silence to insert', defaultMessage: 'Duration'},
     paramDelay: {id: 'mw.soundEditor.param.delay', description: 'Slider label for the time between echoes', defaultMessage: 'Delay'},
     paramFeedback: {id: 'mw.soundEditor.param.feedback', description: 'Slider label for how strongly each echo repeats', defaultMessage: 'Repeats'},
@@ -112,6 +147,7 @@ const messages = defineMessages({
     appliesSelection: {id: 'mw.soundEditor.appliesSelection', description: 'Hint that an effect changes only the selected audio', defaultMessage: 'Applies to the selection.'},
     appliesWhole: {id: 'mw.soundEditor.appliesWhole', description: 'Hint that an effect changes the whole sound because nothing is selected', defaultMessage: 'Applies to the whole sound. Drag on the waveform to pick a part.'},
     appliesCursor: {id: 'mw.soundEditor.appliesCursor', description: 'Hint that a tool works at the cursor position', defaultMessage: 'Goes in at the cursor.'},
+    mixDragHint: {id: 'mw.soundEditor.mixDragHint', description: 'Hint in the mix tool about dragging a sound from the list', defaultMessage: 'Goes in at the cursor. You can also drag a sound from the list onto the waveform.'},
     peak: {id: 'mw.soundEditor.peak', description: 'Shows the loudest level of the sound or selection in decibels', defaultMessage: 'Peak {value} dB'},
     clipping: {id: 'mw.soundEditor.clipping', description: 'Warning that the sound is louder than can be saved and will distort', defaultMessage: 'Too loud, will distort'},
     waveform: {id: 'mw.soundEditor.waveform', description: 'Accessible label for the waveform in the sound editor', defaultMessage: 'Waveform'},
@@ -137,6 +173,8 @@ const TOOL_ICONS = {
     fadeOut: TrendingDown,
     silence: VolumeX,
     speed: Gauge,
+    stretch: MoveHorizontal,
+    pitch: Music2,
     reverse: Rewind,
     insertSilence: SquareSplitHorizontal,
     echo: Repeat,
@@ -148,6 +186,7 @@ const TOOL_ICONS = {
 };
 
 const GROUP_MESSAGES = {
+    edit: messages.groupEdit,
     volume: messages.groupVolume,
     time: messages.groupTime,
     effects: messages.groupEffects,
@@ -160,6 +199,8 @@ const PARAM_MESSAGES = {
     fadeIn: {shape: messages.paramShape},
     fadeOut: {shape: messages.paramShape},
     speed: {percent: messages.paramPercent},
+    stretch: {percent: messages.paramLength},
+    pitch: {semitones: messages.paramSemitones},
     insertSilence: {seconds: messages.paramSeconds},
     echo: {delay: messages.paramDelay, feedback: messages.paramFeedback},
     reverb: {size: messages.paramSize, mix: messages.paramMix},
@@ -173,11 +214,174 @@ const OPTION_MESSAGES = {
     smooth: messages.shapeSmooth
 };
 
+const PlainInput = props => <input {...props} />;
+const BufferedField = BufferedInputHOC(PlainInput);
+
+const REPEAT_DELAY = 400;
+const REPEAT_INTERVAL = 90;
+
 const formatParam = (param, value) => {
     const decimals = param.step < 1 ? Math.max(0, Math.ceil(-Math.log10(param.step))) : 0;
     const number = Number(value).toFixed(decimals);
-    const signed = param.unit === 'dB' && Number(value) > 0 ? `+${number}` : number;
-    return `${signed} ${param.unit}`;
+    const signed = (param.unit === 'dB' || param.signed) && Number(value) > 0 ? `+${number}` : number;
+    return param.unit ? `${signed} ${param.unit}` : signed;
+};
+
+const selectAll = event => event.target.select();
+
+const useRepeat = (action, disabled) => {
+    const timer = React.useRef(null);
+    const latest = React.useRef({action, disabled});
+    latest.current = {action, disabled};
+    const stop = React.useCallback(() => {
+        if (timer.current === null) return;
+        clearTimeout(timer.current);
+        timer.current = null;
+    }, []);
+    const start = React.useCallback(event => {
+        if (event.button) return;
+        stop();
+        latest.current.action();
+        const repeat = () => {
+            timer.current = null;
+            if (latest.current.disabled) return;
+            latest.current.action();
+            timer.current = setTimeout(repeat, REPEAT_INTERVAL);
+        };
+        timer.current = setTimeout(repeat, REPEAT_DELAY);
+    }, [stop]);
+    const click = React.useCallback(event => {
+        if (!event.detail) latest.current.action();
+    }, []);
+    React.useEffect(() => stop, [stop]);
+    return {handleClick: click, handleStart: start, handleStop: stop};
+};
+
+const StepButton = ({disabled, icon: Icon, label, onStep}) => {
+    const {handleClick, handleStart, handleStop} = useRepeat(onStep, disabled);
+    return (
+        <button
+            type="button"
+            aria-label={label}
+            className={styles.stepButton}
+            disabled={disabled}
+            title={label}
+            onClick={handleClick}
+            onPointerCancel={handleStop}
+            onPointerDown={handleStart}
+            onPointerLeave={handleStop}
+            onPointerUp={handleStop}
+        >
+            <Icon
+                size={16}
+                aria-hidden="true"
+            />
+        </button>
+    );
+};
+
+StepButton.propTypes = {
+    disabled: PropTypes.bool,
+    icon: PropTypes.elementType.isRequired,
+    label: PropTypes.string.isRequired,
+    onStep: PropTypes.func.isRequired
+};
+
+const ParamRow = ({decreaseLabel, increaseLabel, label, onNudge, onSubmit, param, value}) => {
+    const handleSubmit = React.useCallback(text => onSubmit(param.key, text), [onSubmit, param.key]);
+    const handleDown = React.useCallback(() => onNudge(param.key, -1), [onNudge, param.key]);
+    const handleUp = React.useCallback(() => onNudge(param.key, 1), [onNudge, param.key]);
+    const handleKeyDown = React.useCallback(event => {
+        if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+        event.preventDefault();
+        onNudge(param.key, event.key === 'ArrowUp' ? 1 : -1);
+    }, [onNudge, param.key]);
+    return (
+        <div className={styles.param}>
+            <span className={styles.paramLabel}>{label}</span>
+            <div className={styles.stepper}>
+                <StepButton
+                    disabled={value <= param.min}
+                    icon={Minus}
+                    label={decreaseLabel}
+                    onStep={handleDown}
+                />
+                <BufferedField
+                    aria-label={label}
+                    className={styles.stepInput}
+                    data-param={param.key}
+                    inputMode={param.min < 0 ? 'text' : 'decimal'}
+                    type="text"
+                    value={formatParam(param, value)}
+                    onFocus={selectAll}
+                    onKeyDown={handleKeyDown}
+                    onSubmit={handleSubmit}
+                />
+                <StepButton
+                    disabled={value >= param.max}
+                    icon={Plus}
+                    label={increaseLabel}
+                    onStep={handleUp}
+                />
+            </div>
+        </div>
+    );
+};
+
+ParamRow.propTypes = {
+    decreaseLabel: PropTypes.string.isRequired,
+    increaseLabel: PropTypes.string.isRequired,
+    label: PropTypes.string.isRequired,
+    onNudge: PropTypes.func.isRequired,
+    onSubmit: PropTypes.func.isRequired,
+    param: PropTypes.shape({
+        key: PropTypes.string,
+        max: PropTypes.number,
+        min: PropTypes.number,
+        step: PropTypes.number,
+        unit: PropTypes.string
+    }).isRequired,
+    value: PropTypes.number
+};
+
+const actionShape = PropTypes.shape({
+    active: PropTypes.bool,
+    disabled: PropTypes.bool,
+    flip: PropTypes.bool,
+    icon: PropTypes.elementType.isRequired,
+    id: PropTypes.string.isRequired,
+    label: PropTypes.string.isRequired,
+    onClick: PropTypes.func,
+    short: PropTypes.string
+});
+
+const ActionTile = ({action}) => {
+    const {icon: Icon, onClick} = action;
+    return (
+        <button
+            type="button"
+            aria-label={action.label}
+            aria-pressed={typeof action.active === 'boolean' ? action.active : null}
+            className={classNames(styles.rackTool, {
+                [styles.rackToolActive]: action.active,
+                [styles.flipInRtl]: action.flip
+            })}
+            data-action={action.id}
+            disabled={action.disabled}
+            title={action.label}
+            onClick={onClick}
+        >
+            <Icon
+                size={18}
+                aria-hidden="true"
+            />
+            <span>{action.short || action.label}</span>
+        </button>
+    );
+};
+
+ActionTile.propTypes = {
+    action: actionShape.isRequired
 };
 
 const ToolButton = ({active, icon: Icon, label, onClick, id}) => (
@@ -204,7 +408,7 @@ ToolButton.propTypes = {
     onClick: PropTypes.func.isRequired
 };
 
-const IconAction = ({disabled, icon: Icon, label, onClick, className, active}) => (
+const IconAction = ({disabled, icon: Icon, label, onClick, className, active, fill}) => (
     <button
         type="button"
         aria-label={label}
@@ -216,6 +420,7 @@ const IconAction = ({disabled, icon: Icon, label, onClick, className, active}) =
     >
         <Icon
             size={18}
+            fill={fill ? 'currentColor' : 'none'}
             aria-hidden="true"
         />
     </button>
@@ -225,6 +430,7 @@ IconAction.propTypes = {
     active: PropTypes.bool,
     className: PropTypes.string,
     disabled: PropTypes.bool,
+    fill: PropTypes.bool,
     icon: PropTypes.elementType.isRequired,
     label: PropTypes.string.isRequired,
     onClick: PropTypes.func
@@ -237,42 +443,193 @@ const StopIcon = iconProps => (
     />
 );
 
-const levelPercent = level => {
-    if (!level || level <= 0) return 0;
-    const db = gainToDb(level);
-    return Math.max(0, Math.min(100, ((db + 60) / 60) * 100));
-};
-
 let waveformHintCount = 0;
 
 const SoundEditor = props => {
     const {intl} = props;
     const format = intl.formatMessage;
     const [waveformHintId] = React.useState(() => `mw-sound-waveform-keys-${++waveformHintCount}`);
+    const compact = Boolean(props.compact);
+    const groups = compact ? ['edit', ...TOOL_GROUPS] : TOOL_GROUPS;
+    const activeGroup = groups.includes(props.activeGroup) ? props.activeGroup : groups[0];
     const hasSelection = Boolean(props.selection && props.selection.end > props.selection.start);
     const rate = props.sampleRate || 1;
-    const tool = getTool(props.activeTool);
-    const groupTools = TOOLS.filter(item => item.group === props.activeGroup);
+    const tool = activeGroup === 'edit' ? null : getTool(props.activeTool);
+    const groupTools = TOOLS.filter(item => item.group === activeGroup);
     const startSample = hasSelection ? props.selection.start : props.cursor;
     const endSample = hasSelection ? props.selection.end : props.cursor;
     const lengthSeconds = hasSelection ? (props.selection.end - props.selection.start) / rate : 0;
     const peakDb = props.peak > 0 ? gainToDb(props.peak) : -Infinity;
+    const peakText = Number.isFinite(peakDb) ? peakDb.toFixed(1) : '-∞';
     const clipping = props.peak > 1;
     const channelLabels = props.clip.channels.length === 2 ? [format(messages.left), format(messages.right)] : [];
+    const recording = props.recording !== 'idle';
+    const live = props.playing || props.previewing || props.recording === 'recording';
+    const markerAtCursor = props.markers.includes(startSample);
+    const markerLabels = props.markers.map(marker => format(messages.marker, {time: formatClock(marker / rate)}));
     let applyHint;
-    if (tool && tool.atCursor) applyHint = format(messages.appliesCursor);
+    if (recording) applyHint = format(messages.recordingHint);
+    else if (tool && tool.needsSource) applyHint = format(messages.mixDragHint);
+    else if (tool && tool.atCursor) applyHint = format(messages.appliesCursor);
     else if (hasSelection) applyHint = format(messages.appliesSelection);
     else applyHint = format(messages.appliesWhole);
     const sourceMissing = tool && tool.needsSource && props.mixSources.length === 0;
+    const infoText = [
+        format(messages.sampleRate, {
+            rate: intl.formatNumber(props.sampleRate / 1000, {maximumFractionDigits: 2})
+        }),
+        format(props.isStereo ? messages.stereo : messages.mono),
+        formatClock(props.duration),
+        formatBytes(props.size)
+    ].join(' · ');
+
+    const editActions = [
+        {id: 'cut', icon: Scissors, label: format(messages.cut), disabled: !props.canRemove, onClick: props.onCut},
+        {id: 'copy', icon: Copy, label: format(messages.copy), onClick: props.onCopy},
+        {
+            id: 'paste',
+            icon: ClipboardPaste,
+            label: format(messages.paste),
+            disabled: !props.canPaste,
+            onClick: props.onPaste
+        },
+        {
+            id: 'trim',
+            icon: Crop,
+            label: format(messages.trim),
+            short: format(messages.trimShort),
+            disabled: !props.canRemove,
+            onClick: props.onTrim
+        },
+        {
+            id: 'delete',
+            icon: Trash2,
+            label: format(messages.delete),
+            disabled: !props.canRemove,
+            onClick: props.onDelete
+        },
+        {id: 'copyToNew', icon: CopyPlus, label: format(messages.copyToNew), flip: true, onClick: props.onCopyToNew}
+    ];
+    const markActions = [
+        {
+            id: 'snap',
+            icon: Magnet,
+            label: format(messages.snap),
+            short: format(messages.snapShort),
+            active: Boolean(props.snap),
+            onClick: props.onToggleSnap
+        },
+        {
+            id: 'previousMarker',
+            icon: ChevronsLeft,
+            label: format(messages.previousMarker),
+            short: format(messages.previousShort),
+            disabled: !props.canPreviousMarker,
+            onClick: props.onPreviousMarker
+        },
+        {
+            id: 'marker',
+            icon: Flag,
+            label: format(markerAtCursor ? messages.removeMarker : messages.addMarker),
+            short: format(messages.markerShort),
+            active: markerAtCursor,
+            onClick: props.onToggleMarker
+        },
+        {
+            id: 'nextMarker',
+            icon: ChevronsRight,
+            label: format(messages.nextMarker),
+            short: format(messages.nextShort),
+            disabled: !props.canNextMarker,
+            onClick: props.onNextMarker
+        }
+    ];
+    const iconAction = ({active, disabled, flip, icon, id, label, onClick}) => (
+        <IconAction
+            key={id}
+            active={active}
+            className={flip ? styles.flipInRtl : null}
+            disabled={disabled}
+            icon={icon}
+            label={label}
+            onClick={onClick}
+        />
+    );
+
+    const playButton = (
+        <button
+            type="button"
+            aria-label={format(props.playing ? messages.pause : messages.play)}
+            className={styles.playButton}
+            disabled={recording}
+            title={format(props.playing ? messages.pause : messages.play)}
+            onClick={props.playing ? props.onPause : props.onPlay}
+        >
+            {props.playing ? (
+                <Pause
+                    size={22}
+                    fill="currentColor"
+                    aria-hidden="true"
+                />
+            ) : (
+                <Play
+                    size={22}
+                    fill="currentColor"
+                    aria-hidden="true"
+                />
+            )}
+        </button>
+    );
+    const transportActions = (
+        <React.Fragment>
+            {compact ? null : (
+                <IconAction
+                    disabled={!props.playing && props.playhead === null && !recording}
+                    icon={StopIcon}
+                    label={format(recording ? messages.stopRecording : messages.stop)}
+                    onClick={props.onStop}
+                />
+            )}
+            <IconAction
+                icon={SkipBack}
+                label={format(messages.toStart)}
+                onClick={props.onToStart}
+            />
+            <IconAction
+                active={props.loop}
+                icon={Repeat}
+                label={format(messages.loop)}
+                onClick={props.onToggleLoop}
+            />
+            <IconAction
+                active={recording}
+                className={classNames({[styles.recordActive]: recording})}
+                disabled={props.busy && !recording}
+                fill={recording}
+                icon={recording ? Square : Mic}
+                label={format(recording ? messages.stopRecording : messages.record)}
+                onClick={recording ? props.onStop : props.onRecord}
+            />
+        </React.Fragment>
+    );
+    const clock = (
+        <PlaybackClock
+            idleSample={props.playhead === null ? startSample : props.playhead}
+            monitor={props.monitor}
+            sampleRate={rate}
+        />
+    );
 
     return (
         <div
-            className={styles.editor}
+            className={classNames(styles.editor, {[styles.compact]: compact})}
             ref={props.setRef}
         >
             <div className={styles.header}>
                 <label className={styles.nameField}>
-                    <span className={styles.fieldLabel}>{format(messages.sound)}</span>
+                    <span className={compact ? styles.visuallyHidden : styles.fieldLabel}>
+                        {format(messages.sound)}
+                    </span>
                     <BufferedInput
                         type="text"
                         value={props.name}
@@ -294,54 +651,15 @@ const SoundEditor = props => {
                         onClick={props.onRedo}
                     />
                 </div>
-                <div className={styles.actionGroup}>
-                    <IconAction
-                        disabled={!props.canRemove}
-                        icon={Scissors}
-                        label={format(messages.cut)}
-                        onClick={props.onCut}
-                    />
-                    <IconAction
-                        icon={Copy}
-                        label={format(messages.copy)}
-                        onClick={props.onCopy}
-                    />
-                    <IconAction
-                        disabled={!props.canPaste}
-                        icon={ClipboardPaste}
-                        label={format(messages.paste)}
-                        onClick={props.onPaste}
-                    />
-                    <IconAction
-                        disabled={!props.canRemove}
-                        icon={Crop}
-                        label={format(messages.trim)}
-                        onClick={props.onTrim}
-                    />
-                    <IconAction
-                        disabled={!props.canRemove}
-                        icon={Trash2}
-                        label={format(messages.delete)}
-                        onClick={props.onDelete}
-                    />
-                    <IconAction
-                        className={styles.flipInRtl}
-                        icon={CopyPlus}
-                        label={format(messages.copyToNew)}
-                        onClick={props.onCopyToNew}
-                    />
-                </div>
-                <div className={styles.info}>
-                    {[
-                        format(messages.sampleRate, {
-                            rate: intl.formatNumber(props.sampleRate / 1000, {maximumFractionDigits: 2})
-                        }),
-                        format(props.isStereo ? messages.stereo : messages.mono),
-                        formatClock(props.duration),
-                        formatBytes(props.size)
-                    ].join(' · ')}
-                </div>
+                {compact ? null : <div className={styles.info}>{infoText}</div>}
             </div>
+
+            {compact ? null : (
+                <div className={styles.toolbar}>
+                    <div className={styles.actionGroup}>{editActions.map(iconAction)}</div>
+                    <div className={styles.actionGroup}>{markActions.map(iconAction)}</div>
+                </div>
+            )}
 
             <SoundTimeline
                 channelLabels={channelLabels}
@@ -349,15 +667,80 @@ const SoundEditor = props => {
                 clipVersion={props.clipVersion}
                 cursor={props.cursor}
                 describedBy={waveformHintId}
+                dropSample={props.dropSample}
+                footer={compact ? (
+                    <div className={styles.cells}>
+                        <label className={styles.cell}>
+                            <span className={styles.cellLabel}>{format(messages.start)}</span>
+                            <BufferedField
+                                className={styles.cellInput}
+                                type="text"
+                                inputMode="decimal"
+                                value={formatClock(startSample / rate)}
+                                onFocus={selectAll}
+                                onSubmit={props.onSubmitStart}
+                            />
+                        </label>
+                        <label className={styles.cell}>
+                            <span className={styles.cellLabel}>{format(messages.end)}</span>
+                            <BufferedField
+                                className={styles.cellInput}
+                                type="text"
+                                inputMode="decimal"
+                                value={formatClock(endSample / rate)}
+                                onFocus={selectAll}
+                                onSubmit={props.onSubmitEnd}
+                            />
+                        </label>
+                        <div className={styles.cell}>
+                            <span className={styles.cellLabel}>{format(messages.length)}</span>
+                            <span className={styles.cellValue}>{formatClock(lengthSeconds)}</span>
+                        </div>
+                        <div className={classNames(styles.cell, {[styles.cellHot]: clipping})}>
+                            <span className={styles.cellLabel}>
+                                {format(clipping ? messages.tooLoud : messages.peakLabel)}
+                            </span>
+                            <span className={styles.cellValue}>{format(messages.peakValue, {value: peakText})}</span>
+                        </div>
+                    </div>
+                ) : null}
                 label={format(messages.waveform)}
+                markerLabels={markerLabels}
+                markers={props.markers}
+                monitor={props.monitor}
+                overviewActions={
+                    <div className={styles.actionGroup}>
+                        <IconAction
+                            disabled={!props.canZoomOut}
+                            icon={ZoomOut}
+                            label={format(messages.zoomOut)}
+                            onClick={props.onZoomOut}
+                        />
+                        <IconAction
+                            disabled={!props.canZoomOut}
+                            icon={Maximize2}
+                            label={format(messages.zoomFit)}
+                            onClick={props.onZoomFit}
+                        />
+                        <IconAction
+                            disabled={!props.canZoomIn}
+                            icon={ZoomIn}
+                            label={format(messages.zoomIn)}
+                            onClick={props.onZoomIn}
+                        />
+                    </div>
+                }
                 peakIndex={props.peakIndex}
                 playhead={props.playhead}
+                ref={props.timelineRef}
                 selection={hasSelection ? props.selection : null}
                 theme={props.theme}
                 viewLength={props.viewLength}
                 viewStart={props.viewStart}
                 onSeek={props.onSeek}
                 onSelect={props.onSelect}
+                onSelectEnd={props.onSelectEnd}
+                onSelectRegion={props.onSelectRegion}
                 onView={props.onView}
                 onZoomAround={props.onZoomAround}
             />
@@ -368,131 +751,56 @@ const SoundEditor = props => {
                 {format(messages.waveformKeys)}
             </p>
 
-            <div className={styles.transport}>
-                <div className={styles.transportButtons}>
-                    <button
-                        type="button"
-                        aria-label={format(props.playing ? messages.pause : messages.play)}
-                        className={styles.playButton}
-                        title={format(props.playing ? messages.pause : messages.play)}
-                        onClick={props.playing ? props.onPause : props.onPlay}
-                    >
-                        {props.playing ? (
-                            <Pause
-                                size={22}
-                                fill="currentColor"
-                                aria-hidden="true"
-                            />
-                        ) : (
-                            <Play
-                                size={22}
-                                fill="currentColor"
-                                aria-hidden="true"
-                            />
-                        )}
-                    </button>
-                    <IconAction
-                        disabled={!props.playing && props.playhead === null}
-                        icon={StopIcon}
-                        label={format(messages.stop)}
-                        onClick={props.onStop}
-                    />
-                    <IconAction
-                        icon={SkipBack}
-                        label={format(messages.toStart)}
-                        onClick={props.onToStart}
-                    />
-                    <IconAction
-                        active={props.loop}
-                        icon={Repeat}
-                        label={format(messages.loop)}
-                        onClick={props.onToggleLoop}
-                    />
+            {compact ? (
+                <div className={styles.transport}>
+                    {playButton}
+                    {clock}
+                    <div className={classNames(styles.actionGroup, styles.transportGroup)}>{transportActions}</div>
                 </div>
-                <div
-                    className={styles.clock}
-                    aria-live="off"
-                >
-                    {formatClock((props.playhead === null ? startSample : props.playhead) / rate)}
-                </div>
-                <div className={styles.selectionFields}>
-                    <label className={styles.timeField}>
-                        <span className={styles.fieldLabel}>{format(messages.start)}</span>
-                        <BufferedInput
-                            className={styles.timeInput}
-                            type="text"
-                            inputMode="decimal"
-                            value={formatClock(startSample / rate)}
-                            onSubmit={props.onSubmitStart}
+            ) : (
+                <div className={styles.transport}>
+                    <div className={styles.transportButtons}>
+                        {playButton}
+                        {transportActions}
+                    </div>
+                    {clock}
+                    <div className={styles.readouts}>
+                        <label className={styles.timeField}>
+                            <span className={styles.fieldLabel}>{format(messages.start)}</span>
+                            <BufferedInput
+                                className={styles.timeInput}
+                                type="text"
+                                inputMode="decimal"
+                                value={formatClock(startSample / rate)}
+                                onSubmit={props.onSubmitStart}
+                            />
+                        </label>
+                        <label className={styles.timeField}>
+                            <span className={styles.fieldLabel}>{format(messages.end)}</span>
+                            <BufferedInput
+                                className={styles.timeInput}
+                                type="text"
+                                inputMode="decimal"
+                                value={formatClock(endSample / rate)}
+                                onSubmit={props.onSubmitEnd}
+                            />
+                        </label>
+                        <div className={styles.timeField}>
+                            <span className={styles.fieldLabel}>{format(messages.length)}</span>
+                            <span className={styles.timeValue}>{formatClock(lengthSeconds)}</span>
+                        </div>
+                        <LevelMeter
+                            channelCount={props.clip.channels.length}
+                            hot={clipping}
+                            label={format(messages.level)}
+                            live={live}
+                            monitor={props.monitor}
+                            peak={props.peak}
+                            text={clipping ? format(messages.clipping) : format(messages.peak, {value: peakText})}
                         />
-                    </label>
-                    <label className={styles.timeField}>
-                        <span className={styles.fieldLabel}>{format(messages.end)}</span>
-                        <BufferedInput
-                            className={styles.timeInput}
-                            type="text"
-                            inputMode="decimal"
-                            value={formatClock(endSample / rate)}
-                            onSubmit={props.onSubmitEnd}
-                        />
-                    </label>
-                    <div className={styles.timeField}>
-                        <span className={styles.fieldLabel}>{format(messages.length)}</span>
-                        <span className={styles.timeValue}>{formatClock(lengthSeconds)}</span>
                     </div>
                 </div>
-                <div
-                    className={styles.meter}
-                    role="meter"
-                    aria-label={format(messages.level)}
-                    aria-valuemin={-60}
-                    aria-valuemax={0}
-                    aria-valuenow={Number.isFinite(peakDb) ? Math.round(peakDb) : -60}
-                >
-                    <div className={classNames(styles.meterBars, {[styles.meterStatic]: !props.playing})}>
-                        {props.clip.channels.map((channel, c) => (
-                            <div
-                                key={c}
-                                className={styles.meterTrack}
-                            >
-                                <div
-                                    className={classNames(styles.meterFill, {
-                                        [styles.meterHot]: props.playing && props.levels[c] >= 1
-                                    })}
-                                    style={{
-                                        width: `${levelPercent(props.playing ? props.levels[c] : props.peak)}%`
-                                    }}
-                                />
-                            </div>
-                        ))}
-                    </div>
-                    <span className={classNames(styles.meterText, {[styles.meterTextHot]: clipping})}>
-                        {clipping ? format(messages.clipping) : format(messages.peak, {
-                            value: Number.isFinite(peakDb) ? peakDb.toFixed(1) : '-∞'
-                        })}
-                    </span>
-                </div>
-                <div className={styles.actionGroup}>
-                    <IconAction
-                        disabled={!props.canZoomOut}
-                        icon={ZoomOut}
-                        label={format(messages.zoomOut)}
-                        onClick={props.onZoomOut}
-                    />
-                    <IconAction
-                        disabled={!props.canZoomOut}
-                        icon={Maximize2}
-                        label={format(messages.zoomFit)}
-                        onClick={props.onZoomFit}
-                    />
-                    <IconAction
-                        disabled={!props.canZoomIn}
-                        icon={ZoomIn}
-                        label={format(messages.zoomIn)}
-                        onClick={props.onZoomIn}
-                    />
-                </div>
-            </div>
+            )}
 
             <div className={styles.rack}>
                 <div
@@ -500,13 +808,13 @@ const SoundEditor = props => {
                     role="group"
                     aria-label={format(messages.tools)}
                 >
-                    {TOOL_GROUPS.map(group => (
+                    {groups.map(group => (
                         <button
                             key={group}
                             type="button"
-                            aria-pressed={props.activeGroup === group}
+                            aria-pressed={activeGroup === group}
                             className={classNames(styles.groupTab, {
-                                [styles.groupTabActive]: props.activeGroup === group
+                                [styles.groupTabActive]: activeGroup === group
                             })}
                             data-group={group}
                             onClick={props.onSelectGroup}
@@ -520,7 +828,12 @@ const SoundEditor = props => {
                         className={styles.toolList}
                         role="group"
                     >
-                        {groupTools.map(item => (
+                        {activeGroup === 'edit' ? editActions.concat(markActions).map(action => (
+                            <ActionTile
+                                key={action.id}
+                                action={action}
+                            />
+                        )) : groupTools.map(item => (
                             <ToolButton
                                 key={item.id}
                                 active={props.activeTool === item.id}
@@ -557,19 +870,18 @@ const SoundEditor = props => {
                                         </label>
                                     )
                                 ) : null}
-                                {tool.params.map(param => (
-                                    param.options ? (
+                                {(sourceMissing ? [] : tool.params).map(param => {
+                                    const name = format(PARAM_MESSAGES[tool.id][param.key]);
+                                    return param.options ? (
                                         <div
                                             key={param.key}
                                             className={styles.param}
                                         >
-                                            <span className={styles.paramLabel}>
-                                                {format(PARAM_MESSAGES[tool.id][param.key])}
-                                            </span>
+                                            <span className={styles.paramLabel}>{name}</span>
                                             <div
                                                 className={styles.segmented}
                                                 role="group"
-                                                aria-label={format(PARAM_MESSAGES[tool.id][param.key])}
+                                                aria-label={name}
                                             >
                                                 {param.options.map(option => {
                                                     const selected = props.toolParams[param.key] === option;
@@ -592,35 +904,24 @@ const SoundEditor = props => {
                                             </div>
                                         </div>
                                     ) : (
-                                        <label
+                                        <ParamRow
                                             key={param.key}
-                                            className={styles.param}
-                                        >
-                                            <span className={styles.paramLabel}>
-                                                {format(PARAM_MESSAGES[tool.id][param.key])}
-                                            </span>
-                                            <input
-                                                className={styles.slider}
-                                                type="range"
-                                                min={param.min}
-                                                max={param.max}
-                                                step={param.step}
-                                                value={props.toolParams[param.key]}
-                                                data-param={param.key}
-                                                onChange={props.onChangeParam}
-                                            />
-                                            <span className={styles.paramValue}>
-                                                {formatParam(param, props.toolParams[param.key])}
-                                            </span>
-                                        </label>
-                                    )
-                                ))}
+                                            decreaseLabel={format(messages.decrease, {name})}
+                                            increaseLabel={format(messages.increase, {name})}
+                                            label={name}
+                                            param={param}
+                                            value={props.toolParams[param.key]}
+                                            onNudge={props.onNudgeParam}
+                                            onSubmit={props.onSubmitParam}
+                                        />
+                                    );
+                                })}
                                 {DESCRIPTIONS[tool.id] ? (
                                     <p className={styles.description}>{format(DESCRIPTIONS[tool.id])}</p>
                                 ) : null}
                             </div>
                             <div className={styles.toolFooter}>
-                                <p className={styles.hint}>{applyHint}</p>
+                                {sourceMissing ? null : <p className={styles.hint}>{applyHint}</p>}
                                 <div className={styles.toolActions}>
                                     <button
                                         type="button"
@@ -658,6 +959,8 @@ const SoundEditor = props => {
                 </div>
             </div>
 
+            {compact && activeGroup === 'edit' ? <div className={styles.info}>{infoText}</div> : null}
+
             {props.size >= SOUND_BYTE_LIMIT ? (
                 <div className={styles.alert}>
                     <FormattedMessage
@@ -675,7 +978,9 @@ SoundEditor.propTypes = {
     activeGroup: PropTypes.string.isRequired,
     activeTool: PropTypes.string,
     busy: PropTypes.bool,
+    canNextMarker: PropTypes.bool,
     canPaste: PropTypes.bool.isRequired,
+    canPreviousMarker: PropTypes.bool,
     canRemove: PropTypes.bool,
     canRedo: PropTypes.bool.isRequired,
     canUndo: PropTypes.bool.isRequired,
@@ -686,41 +991,52 @@ SoundEditor.propTypes = {
         sampleRate: PropTypes.number
     }).isRequired,
     clipVersion: PropTypes.number,
+    compact: PropTypes.bool,
     cursor: PropTypes.number.isRequired,
+    dropSample: PropTypes.number,
     duration: PropTypes.number.isRequired,
     intl: intlShape,
     isStereo: PropTypes.bool.isRequired,
-    levels: PropTypes.arrayOf(PropTypes.number),
     loop: PropTypes.bool,
+    markers: PropTypes.arrayOf(PropTypes.number),
     mixSource: PropTypes.string,
     mixSources: PropTypes.arrayOf(PropTypes.shape({
         index: PropTypes.string,
         name: PropTypes.string
     })),
+    monitor: PropTypes.instanceOf(PlaybackMonitor).isRequired,
     name: PropTypes.string.isRequired,
     onApply: PropTypes.func.isRequired,
     onChangeMixSource: PropTypes.func,
     onChangeName: PropTypes.func.isRequired,
     onChangeOption: PropTypes.func.isRequired,
-    onChangeParam: PropTypes.func.isRequired,
     onCopy: PropTypes.func.isRequired,
     onCopyToNew: PropTypes.func.isRequired,
     onCut: PropTypes.func.isRequired,
     onDelete: PropTypes.func.isRequired,
+    onNextMarker: PropTypes.func,
+    onNudgeParam: PropTypes.func.isRequired,
     onPaste: PropTypes.func.isRequired,
     onPause: PropTypes.func.isRequired,
     onPlay: PropTypes.func.isRequired,
     onPreview: PropTypes.func.isRequired,
+    onPreviousMarker: PropTypes.func,
+    onRecord: PropTypes.func,
     onRedo: PropTypes.func.isRequired,
     onSeek: PropTypes.func.isRequired,
     onSelect: PropTypes.func.isRequired,
+    onSelectEnd: PropTypes.func,
     onSelectGroup: PropTypes.func.isRequired,
+    onSelectRegion: PropTypes.func,
     onSelectTool: PropTypes.func.isRequired,
     onStop: PropTypes.func.isRequired,
     onSubmitEnd: PropTypes.func.isRequired,
+    onSubmitParam: PropTypes.func.isRequired,
     onSubmitStart: PropTypes.func.isRequired,
     onToStart: PropTypes.func.isRequired,
     onToggleLoop: PropTypes.func.isRequired,
+    onToggleMarker: PropTypes.func,
+    onToggleSnap: PropTypes.func,
     onTrim: PropTypes.func.isRequired,
     onUndo: PropTypes.func.isRequired,
     onView: PropTypes.func.isRequired,
@@ -736,6 +1052,7 @@ SoundEditor.propTypes = {
     playhead: PropTypes.number,
     playing: PropTypes.bool,
     previewing: PropTypes.bool,
+    recording: PropTypes.oneOf(['idle', 'starting', 'recording']),
     sampleRate: PropTypes.number.isRequired,
     selection: PropTypes.shape({
         start: PropTypes.number,
@@ -743,15 +1060,18 @@ SoundEditor.propTypes = {
     }),
     setRef: PropTypes.func,
     size: PropTypes.number.isRequired,
+    snap: PropTypes.bool,
     theme: PropTypes.object, // eslint-disable-line react/forbid-prop-types
+    timelineRef: PropTypes.func,
     toolParams: PropTypes.object, // eslint-disable-line react/forbid-prop-types
     viewLength: PropTypes.number.isRequired,
     viewStart: PropTypes.number.isRequired
 };
 
 SoundEditor.defaultProps = {
-    levels: [],
+    markers: [],
     mixSources: [],
+    recording: 'idle',
     toolParams: {}
 };
 

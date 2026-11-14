@@ -72,14 +72,18 @@ class SoundTimeline extends React.Component {
     constructor (props) {
         super(props);
         bindAll(this, [
+            'handleLaneDoubleClick',
             'handleLanePointerDown',
             'handleLanePointerMove',
             'handleLanePointerUp',
             'handleOverviewPointerDown',
             'handleOverviewPointerMove',
             'handleOverviewPointerUp',
+            'handleMarkerClick',
             'handleWheel',
             'handleResize',
+            'positionPlayhead',
+            'setPlayhead',
             'setRoot',
             'setLanes',
             'setLaneCanvas',
@@ -98,7 +102,9 @@ class SoundTimeline extends React.Component {
         }
         this.handleResize();
         if (this.root) this.root.addEventListener('wheel', this.handleWheel, {passive: false});
+        this.subscribe();
         this.drawAll();
+        this.positionPlayhead();
     }
     componentDidUpdate (prevProps, prevState) {
         const p = this.props;
@@ -110,10 +116,30 @@ class SoundTimeline extends React.Component {
         } else if (changedView) {
             this.drawLanes();
         }
+        if (prevProps.monitor !== p.monitor) this.subscribe();
+        this.positionPlayhead();
     }
     componentWillUnmount () {
+        if (this.unsubscribe) this.unsubscribe();
         if (this.resizeObserver) this.resizeObserver.disconnect();
         if (this.root) this.root.removeEventListener('wheel', this.handleWheel);
+    }
+    subscribe () {
+        if (this.unsubscribe) this.unsubscribe();
+        this.unsubscribe = this.props.monitor ? this.props.monitor.subscribe(this.positionPlayhead) : null;
+    }
+    positionPlayhead () {
+        const element = this.playheadElement;
+        if (!element) return;
+        const {monitor, playhead} = this.props;
+        const sample = monitor && monitor.sample !== null ? monitor.sample : playhead;
+        const x = typeof sample === 'number' ? this.xOf(sample) : -1;
+        if (x < 0 || x > this.state.width + 1) {
+            element.style.display = 'none';
+            return;
+        }
+        element.style.display = '';
+        element.style.transform = `translateX(${x}px)`;
     }
     handleResize () {
         if (!this.lanes) return;
@@ -164,6 +190,12 @@ class SoundTimeline extends React.Component {
                 levelOf(this.props.peakIndex, c)
             );
         });
+    }
+    sampleAtPoint (clientX, clientY) {
+        if (!this.lanes) return null;
+        const rect = this.lanes.getBoundingClientRect();
+        if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) return null;
+        return this.sampleAt(clientX);
     }
     sampleAt (clientX) {
         const rect = this.lanes.getBoundingClientRect();
@@ -253,7 +285,15 @@ class SoundTimeline extends React.Component {
         if (!drag) return;
         if (drag.mode === 'select' && !drag.moved) {
             this.props.onSeek(this.sampleAt(event.clientX));
+        } else if (this.props.onSelectEnd) {
+            this.props.onSelectEnd();
         }
+    }
+    handleLaneDoubleClick (event) {
+        if (this.props.onSelectRegion) this.props.onSelectRegion(this.sampleAt(event.clientX));
+    }
+    handleMarkerClick (event) {
+        this.props.onSeek(Number(event.currentTarget.getAttribute('data-sample')));
     }
     handleOverviewPointerDown (event) {
         event.preventDefault();
@@ -293,6 +333,9 @@ class SoundTimeline extends React.Component {
         const pixels = event.deltaMode === 1 ? delta * 16 : delta;
         this.props.onView(viewStart + ((pixels / Math.max(1, this.state.width)) * viewLength), viewLength);
     }
+    setPlayhead (element) {
+        this.playheadElement = element;
+    }
     setRoot (element) {
         this.root = element;
     }
@@ -323,6 +366,7 @@ class SoundTimeline extends React.Component {
             ticks.push(
                 <span
                     key={t.toFixed(4)}
+                    aria-hidden="true"
                     className={styles.tick}
                     style={{transform: `translateX(${x}px)`}}
                 >
@@ -344,8 +388,29 @@ class SoundTimeline extends React.Component {
             />
         );
     }
+    renderMarkers () {
+        const width = this.state.width;
+        if (!width) return null;
+        return this.props.markers.map((marker, index) => {
+            const x = this.xOf(marker);
+            if (x < -1 || x > width + 1) return null;
+            return (
+                <button
+                    key={marker}
+                    type="button"
+                    aria-label={this.props.markerLabels[index]}
+                    className={styles.marker}
+                    data-sample={marker}
+                    style={{transform: `translateX(${x}px)`}}
+                    title={this.props.markerLabels[index]}
+                    onClick={this.handleMarkerClick}
+                />
+            );
+        });
+    }
     render () {
-        const {clip, viewStart, viewLength, selection, cursor, playhead, channelLabels} = this.props;
+        const {clip, viewStart, viewLength, selection, cursor, dropSample, channelLabels} = this.props;
+        const dropping = typeof dropSample === 'number';
         const total = Math.max(1, clipLength(clip));
         const width = this.state.width;
         let selectionBox = null;
@@ -380,30 +445,33 @@ class SoundTimeline extends React.Component {
                 className={classNames(styles.timeline, {[styles.withLabels]: clip.channels.length > 1})}
                 ref={this.setRoot}
             >
-                <div
-                    className={styles.overview}
-                    onPointerDown={this.handleOverviewPointerDown}
-                    onPointerMove={this.handleOverviewPointerMove}
-                    onPointerUp={this.handleOverviewPointerUp}
-                    onPointerCancel={this.handleOverviewPointerUp}
-                >
-                    <canvas
-                        className={styles.overviewCanvas}
-                        ref={this.setOverviewCanvas}
-                    />
-                    {overviewSelection}
-                    {viewportWidth < 100 ? (
+                {this.props.compact ? null : (
+                    <div className={styles.overviewRow}>
                         <div
-                            className={styles.viewport}
-                            style={{left: `${viewportLeft}%`, width: `${Math.max(1, viewportWidth)}%`}}
-                        />
-                    ) : null}
-                </div>
-                <div
-                    className={styles.ruler}
-                    aria-hidden="true"
-                >
+                            className={styles.overview}
+                            onPointerDown={this.handleOverviewPointerDown}
+                            onPointerMove={this.handleOverviewPointerMove}
+                            onPointerUp={this.handleOverviewPointerUp}
+                            onPointerCancel={this.handleOverviewPointerUp}
+                        >
+                            <canvas
+                                className={styles.overviewCanvas}
+                                ref={this.setOverviewCanvas}
+                            />
+                            {overviewSelection}
+                            {viewportWidth < 100 ? (
+                                <div
+                                    className={styles.viewport}
+                                    style={{left: `${viewportLeft}%`, width: `${Math.max(1, viewportWidth)}%`}}
+                                />
+                            ) : null}
+                        </div>
+                        {this.props.overviewActions}
+                    </div>
+                )}
+                <div className={styles.ruler}>
                     {this.renderRuler()}
+                    {this.renderMarkers()}
                 </div>
                 <div className={styles.laneArea}>
                     {clip.channels.length > 1 ? (
@@ -417,7 +485,7 @@ class SoundTimeline extends React.Component {
                         </div>
                     ) : null}
                     <div
-                        className={styles.lanes}
+                        className={classNames(styles.lanes, {[styles.dropTarget]: dropping})}
                         ref={this.setLanes}
                         role="group"
                         tabIndex={0}
@@ -427,16 +495,26 @@ class SoundTimeline extends React.Component {
                         onPointerMove={this.handleLanePointerMove}
                         onPointerUp={this.handleLanePointerUp}
                         onPointerCancel={this.handleLanePointerUp}
+                        onDoubleClick={this.handleLaneDoubleClick}
                     >
                         <canvas
                             className={styles.laneCanvas}
                             ref={this.setLaneCanvas}
                         />
                         {selectionBox}
-                        {selection ? null : this.renderMarker(cursor, styles.cursor)}
-                        {this.renderMarker(playhead, styles.playhead)}
+                        {this.props.markers.map(marker => (
+                            <React.Fragment key={marker}>{this.renderMarker(marker, styles.markerLine)}</React.Fragment>
+                        ))}
+                        {selection || dropping ? null : this.renderMarker(cursor, styles.cursor)}
+                        {dropping ? this.renderMarker(dropSample, styles.dropLine) : null}
+                        <div
+                            className={styles.playhead}
+                            ref={this.setPlayhead}
+                            style={{display: 'none'}}
+                        />
                     </div>
                 </div>
+                {this.props.footer}
             </div>
         );
     }
@@ -449,13 +527,25 @@ SoundTimeline.propTypes = {
         sampleRate: PropTypes.number
     }).isRequired,
     clipVersion: PropTypes.number,
+    compact: PropTypes.bool,
     cursor: PropTypes.number,
     onSeek: PropTypes.func.isRequired,
     onSelect: PropTypes.func.isRequired,
     onView: PropTypes.func.isRequired,
     describedBy: PropTypes.string,
+    dropSample: PropTypes.number,
+    footer: PropTypes.node,
     label: PropTypes.string,
+    markerLabels: PropTypes.arrayOf(PropTypes.string),
+    markers: PropTypes.arrayOf(PropTypes.number),
+    monitor: PropTypes.shape({
+        sample: PropTypes.number,
+        subscribe: PropTypes.func
+    }),
+    onSelectEnd: PropTypes.func,
+    onSelectRegion: PropTypes.func,
     onZoomAround: PropTypes.func.isRequired,
+    overviewActions: PropTypes.node,
     peakIndex: PropTypes.shape({
         blockSize: PropTypes.number,
         channels: PropTypes.arrayOf(PropTypes.object)
@@ -471,7 +561,9 @@ SoundTimeline.propTypes = {
 };
 
 SoundTimeline.defaultProps = {
-    channelLabels: []
+    channelLabels: [],
+    markerLabels: [],
+    markers: []
 };
 
 export default SoundTimeline;

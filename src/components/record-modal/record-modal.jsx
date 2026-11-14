@@ -26,8 +26,6 @@ const RecordModal = props => (
             {props.samples ? (
                 <PlaybackStep
                     encoding={props.encoding}
-                    levels={props.levels}
-                    playhead={props.playhead}
                     playing={props.playing}
                     sampleRate={props.sampleRate}
                     samples={props.samples}
@@ -35,7 +33,6 @@ const RecordModal = props => (
                     trimStart={props.trimStart}
                     onBack={props.onBack}
                     onPlay={props.onPlay}
-                    onSetPlayhead={props.onSetPlayhead}
                     onSetTrimEnd={props.onSetTrimEnd}
                     onSetTrimStart={props.onSetTrimStart}
                     onStopPlaying={props.onStopPlaying}
@@ -55,18 +52,15 @@ const RecordModal = props => (
 RecordModal.propTypes = {
     encoding: PropTypes.bool.isRequired,
     intl: intlShape.isRequired,
-    levels: PropTypes.arrayOf(PropTypes.number),
     onBack: PropTypes.func.isRequired,
     onCancel: PropTypes.func.isRequired,
     onPlay: PropTypes.func.isRequired,
     onRecord: PropTypes.func.isRequired,
-    onSetPlayhead: PropTypes.func.isRequired,
     onSetTrimEnd: PropTypes.func.isRequired,
     onSetTrimStart: PropTypes.func.isRequired,
     onStopPlaying: PropTypes.func.isRequired,
     onStopRecording: PropTypes.func.isRequired,
     onSubmit: PropTypes.func.isRequired,
-    playhead: PropTypes.number,
     playing: PropTypes.bool,
     recording: PropTypes.bool,
     sampleRate: PropTypes.number,
