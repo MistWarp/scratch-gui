@@ -447,6 +447,37 @@ describe('Sound Editor Container', () => {
         expect(props(reopened).markers).toEqual([1]);
         props(reopened).onSeek(1);
         props(reopened).onToggleMarker();
+        expect(props(reopened).markers).toEqual([]);
+    });
+
+    test('an edit that finishes after a newer edit to the same sound does not overwrite it', async () => {
+        const audioUtil = require('../../../src/lib/audio/audio-util.js');
+        const sounds = vm.editingTarget.sprite.sounds;
+        sounds[1].assetId = 'original';
+        vm.updateSoundBuffer.mockImplementation(index => {
+            sounds[index].assetId = 'edited';
+        });
+        let finish;
+        audioUtil.resampleClip.mockImplementationOnce(clip => new Promise(resolve => {
+            finish = () => resolve({channels: clip.channels, sampleRate: 50});
+        }));
+        const wrapper = mount();
+        props(wrapper).onSelect(0, 2);
+        props(wrapper).onCopy();
+        buffers[1] = makeBuffer([new Float32Array([1, 0.5, 0.25, 0])], 50);
+        wrapper.setProps({soundIndex: 1});
+        const slow = props(wrapper).onPaste();
+        await flush();
+        wrapper.setProps({soundIndex: 0});
+        wrapper.setProps({soundIndex: 1});
+        props(wrapper).onSelect(1, 3);
+        expect(await props(wrapper).onDelete()).toBe(true);
+        expect(vm.updateSoundBuffer).toHaveBeenCalledTimes(1);
+        wrapper.setProps({soundIndex: 0});
+        finish();
+        expect(await slow).toBe(false);
+        expect(vm.updateSoundBuffer).toHaveBeenCalledTimes(1);
+        expect(saved()).toEqual([1, 0]);
     });
 
     test('an edit that finishes after the editor closes follows its sound when the list is reordered', async () => {
