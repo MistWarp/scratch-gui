@@ -356,15 +356,15 @@
 }
 
 @media only screen and (min-width: 901px) and (max-width: $full-size-paint) {
-    .row .selection-button {
+    .row:not([class~="sa-folders-folder"]) .selection-button {
         grid-template-columns: 1rem minmax(0, 1fr);
     }
 
-    .row .sprite-image-outer {
+    .row:not([class~="sa-folders-folder"]) .sprite-image-outer {
         display: none;
     }
 
-    .row .sprite-info {
+    .row:not([class~="sa-folders-folder"]) .sprite-info {
         grid-column: 2;
     }
 }
