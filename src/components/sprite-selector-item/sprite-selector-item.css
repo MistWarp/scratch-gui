@@ -355,6 +355,20 @@
     left: .375rem;
 }
 
+@media only screen and (min-width: 901px) and (max-width: $full-size-paint) {
+    .row .selection-button {
+        grid-template-columns: 1rem minmax(0, 1fr);
+    }
+
+    .row .sprite-image-outer {
+        display: none;
+    }
+
+    .row .sprite-info {
+        grid-column: 2;
+    }
+}
+
 @media only screen and (max-width: 900px) {
     .card,
     .row {
