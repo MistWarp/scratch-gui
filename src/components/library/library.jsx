@@ -51,7 +51,8 @@ class LibraryComponent extends React.Component {
             'handleSelect',
             'handleFavorite',
             'handleTagClick',
-            'setFilteredDataRef'
+            'setFilteredDataRef',
+            'setFilterInputRef'
         ]);
         const favorites = this.readFavoritesFromStorage();
         this._isMounted = false;
@@ -73,6 +74,7 @@ class LibraryComponent extends React.Component {
                 this.setState({
                     canDisplay: true
                 });
+                this.focusFilter();
             }
         });
         if (this.props.setStopHandler) this.props.setStopHandler(this.handlePlayingEnd);
@@ -176,6 +178,15 @@ class LibraryComponent extends React.Component {
     }
     handleFilterClear () {
         this.setState({filterQuery: ''});
+        this.focusFilter();
+    }
+    focusFilter () {
+        if (!this.filterInput) return;
+        if (window.matchMedia && !window.matchMedia('(pointer: fine)').matches) return;
+        this.filterInput.focus({preventScroll: true});
+    }
+    setFilterInputRef (ref) {
+        this.filterInput = ref;
     }
     getFilteredData () {
         // When no filtering, favorites get their own section
@@ -277,6 +288,7 @@ class LibraryComponent extends React.Component {
                                     )}
                                     filterQuery={this.state.filterQuery}
                                     inputClassName={styles.filterInput}
+                                    inputRef={this.setFilterInputRef}
                                     placeholderText={this.props.intl.formatMessage(messages.filterPlaceholder)}
                                     onChange={this.handleFilterChange}
                                     onClear={this.handleFilterClear}

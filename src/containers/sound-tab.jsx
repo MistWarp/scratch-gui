@@ -14,6 +14,7 @@ import surpriseIcon from '../components/action-menu/icon--surprise.svg';
 
 import SoundEditor from './sound-editor.jsx';
 import SoundLibrary from './sound-library.jsx';
+import SoundEmptyState from '../components/sound-empty-state/sound-empty-state.jsx';
 import SoundEditorNotSupported from '../components/tw-sound-editor-not-supported/sound-editor-not-supported.jsx';
 
 import {getSoundLibrary} from '../lib/libraries/tw-async-libraries';
@@ -24,6 +25,7 @@ import downloadBlob from '../lib/utils/download-blob';
 import {projectFilename} from '../lib/utils/safe-filename.js';
 import {selectedIndexAfterDelete} from '../lib/utils/asset-selection.js';
 import SharedAudioContext from '../lib/audio/shared-audio-context.js';
+import soundThumbnail from '../lib/audio/sound-thumbnail.js';
 
 import {connect} from 'react-redux';
 
@@ -289,9 +291,13 @@ class SoundTab extends React.Component {
 
         const sprite = vm.editingTarget.sprite;
 
-        const sounds = sprite.sounds ? sprite.sounds.map(sound => (
+        const thumbnailColor = getComputedStyle(document.documentElement)
+            .getPropertyValue('--looks-secondary')
+            .trim() || '#855cd6';
+        const sounds = sprite.sounds ? sprite.sounds.map((sound, index) => (
             {
-                url: isRtl ? soundIconRtl : soundIcon,
+                url: soundThumbnail(sound.assetId, isSupported ? vm.getSoundBuffer(index) : null, thumbnailColor) ||
+                    (isRtl ? soundIconRtl : soundIcon),
                 name: sound.name,
                 details: `${(sound.sampleCount / sound.rate).toFixed(2)}s`,
                 dragPayload: sound
@@ -337,7 +343,17 @@ class SoundTab extends React.Component {
                     ) : (
                         <SoundEditorNotSupported />
                     )
-                ) : null}
+                ) : (
+                    isSupported ? (
+                        <SoundEmptyState
+                            isStage={Boolean(vm.editingTarget && vm.editingTarget.isStage)}
+                            onChooseSound={onNewSoundFromLibraryClick}
+                            onRecordSound={onNewSoundFromRecordingClick}
+                        />
+                    ) : (
+                        <SoundEditorNotSupported />
+                    )
+                )}
                 {this.props.soundLibraryVisible ? (
                     <SoundLibrary
                         vm={this.props.vm}
@@ -371,6 +387,7 @@ SoundTab.propTypes = {
         nonce: PropTypes.number
     }),
     soundLibraryVisible: PropTypes.bool,
+    theme: PropTypes.object, // eslint-disable-line react/forbid-prop-types, react/no-unused-prop-types
     sprites: PropTypes.shape({
         id: PropTypes.shape({
             sounds: PropTypes.arrayOf(PropTypes.shape({
@@ -392,7 +409,8 @@ const mapStateToProps = state => ({
     sprites: state.scratchGui.targets.sprites,
     stage: state.scratchGui.targets.stage,
     soundLibraryVisible: state.scratchGui.modals.soundLibrary,
-    requestedSound: state.scratchGui.editorTab.requestedSound
+    requestedSound: state.scratchGui.editorTab.requestedSound,
+    theme: state.scratchGui.theme ? state.scratchGui.theme.theme : null
 });
 
 const mapDispatchToProps = dispatch => ({

@@ -23,7 +23,6 @@ class RecordModal extends React.Component {
             'handleBack',
             'handleSubmit',
             'handleCancel',
-            'handleSetPlayhead',
             'handleSetTrimStart',
             'handleSetTrimEnd'
         ]);
@@ -31,8 +30,6 @@ class RecordModal extends React.Component {
         this.state = {
             samples: null,
             encoding: false,
-            levels: null,
-            playhead: null,
             playing: false,
             recording: false,
             sampleRate: null,
@@ -53,14 +50,14 @@ class RecordModal extends React.Component {
     }
     handleStopRecording (samples, sampleRate, levels, trimStart, trimEnd) {
         if (samples.length > 0) {
-            this.setState({samples, sampleRate, levels, trimStart, trimEnd, recording: false});
+            this.setState({samples, sampleRate, trimStart, trimEnd, recording: false});
         }
     }
     handlePlay () {
         this.setState({playing: true});
     }
     handleStopPlaying () {
-        this.setState({playing: false, playhead: null});
+        this.setState({playing: false});
     }
     handleBack () {
         this.setState({playing: false, samples: null});
@@ -70,9 +67,6 @@ class RecordModal extends React.Component {
     }
     handleSetTrimStart (trimStart) {
         this.setState({trimStart});
-    }
-    handleSetPlayhead (playhead) {
-        this.setState({playhead});
     }
     handleSubmit () {
         if (this.submitPromise) return this.submitPromise;
@@ -119,8 +113,6 @@ class RecordModal extends React.Component {
         return (
             <RecordModalComponent
                 encoding={this.state.encoding}
-                levels={this.state.levels}
-                playhead={this.state.playhead}
                 playing={this.state.playing}
                 recording={this.state.recording}
                 sampleRate={this.state.sampleRate}
@@ -131,7 +123,6 @@ class RecordModal extends React.Component {
                 onCancel={this.handleCancel}
                 onPlay={this.handlePlay}
                 onRecord={this.handleRecord}
-                onSetPlayhead={this.handleSetPlayhead}
                 onSetTrimEnd={this.handleSetTrimEnd}
                 onSetTrimStart={this.handleSetTrimStart}
                 onStopPlaying={this.handleStopPlaying}

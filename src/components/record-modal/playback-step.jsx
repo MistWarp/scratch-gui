@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import Box from '../box/box.jsx';
-import Waveform from '../waveform/waveform.jsx';
-import Meter from '../meter/meter.jsx';
-import AudioTrimmer from '../../containers/audio-trimmer.jsx';
+import SoundTimeline from '../sound-editor/sound-timeline.jsx';
+import PlaybackMonitor from '../../lib/audio/playback-monitor.js';
+import {clipLength} from '../../lib/audio/sound-data.js';
 import TWRenderRecoloredImage from '../../lib/tw-recolor/render.jsx';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 
@@ -37,35 +37,34 @@ const messages = defineMessages({
         defaultMessage: 'Re-record',
         description: 'Button to re-record sound in recording playback',
         id: 'gui.playbackStep.reRecordMsg'
+    },
+    waveform: {
+        defaultMessage: 'Recording. Drag the edges of the selection to trim it.',
+        description: 'Accessible label for the waveform of a new recording. The selection is the part that is kept',
+        id: 'mw.playbackStep.waveform'
     }
 });
 
+const noop = () => {};
+
 const PlaybackStep = props => (
     <Box>
-        <Box className={styles.visualizationContainer}>
-
-            <Box className={styles.meterContainer}>
-                <Meter
-                    height={172}
-                    level={0}
-                    width={20}
-                />
-            </Box>
-            <Box className={styles.waveformContainer}>
-                <Waveform
-                    data={props.levels}
-                    height={150}
-                    level={0}
-                    width={480}
-                />
-                <AudioTrimmer
-                    playhead={props.playhead}
-                    trimEnd={props.trimEnd}
-                    trimStart={props.trimStart}
-                    onSetTrimEnd={props.onSetTrimEnd}
-                    onSetTrimStart={props.onSetTrimStart}
-                />
-            </Box>
+        <Box className={styles.timelineContainer}>
+            <SoundTimeline
+                hideOverview
+                clip={props.clip}
+                cursor={props.selection.start}
+                label={props.intl.formatMessage(messages.waveform)}
+                monitor={props.monitor}
+                peakIndex={props.peakIndex}
+                selection={props.selection}
+                viewLength={Math.max(1, clipLength(props.clip))}
+                viewStart={0}
+                onSeek={props.onSeek}
+                onSelect={props.onSelect}
+                onView={noop}
+                onZoomAround={noop}
+            />
         </Box>
         <Box className={styles.mainButtonRow}>
             <button
@@ -115,19 +114,28 @@ const PlaybackStep = props => (
 );
 
 PlaybackStep.propTypes = {
+    clip: PropTypes.shape({
+        channels: PropTypes.arrayOf(PropTypes.instanceOf(Float32Array)),
+        sampleRate: PropTypes.number
+    }).isRequired,
     encoding: PropTypes.bool.isRequired,
     intl: intlShape.isRequired,
-    levels: PropTypes.arrayOf(PropTypes.number).isRequired,
+    monitor: PropTypes.instanceOf(PlaybackMonitor).isRequired,
     onBack: PropTypes.func.isRequired,
     onPlay: PropTypes.func.isRequired,
-    onSetTrimEnd: PropTypes.func.isRequired,
-    onSetTrimStart: PropTypes.func.isRequired,
+    onSeek: PropTypes.func.isRequired,
+    onSelect: PropTypes.func.isRequired,
     onStopPlaying: PropTypes.func.isRequired,
     onSubmit: PropTypes.func.isRequired,
-    playhead: PropTypes.number,
+    peakIndex: PropTypes.shape({
+        blockSize: PropTypes.number,
+        channels: PropTypes.arrayOf(PropTypes.object)
+    }),
     playing: PropTypes.bool.isRequired,
-    trimEnd: PropTypes.number.isRequired,
-    trimStart: PropTypes.number.isRequired
+    selection: PropTypes.shape({
+        start: PropTypes.number,
+        end: PropTypes.number
+    }).isRequired
 };
 
 export default injectIntl(PlaybackStep);

@@ -7,7 +7,7 @@ const BuildVersionFooter = () => {
     const commitUrl = BUILD_ID && BUILD_ID !== 'dev' ?
         `https://github.com/MistWarp/scratch-gui/commit/${BUILD_ID}` : null;
     return (
-        <p className={styles.detail}>
+        <p className={styles.versionFooter}>
             <FormattedMessage
                 defaultMessage="Running version {version}."
                 description="Shows the currently deployed version in settings"
