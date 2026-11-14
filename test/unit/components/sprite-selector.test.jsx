@@ -19,6 +19,7 @@ describe('SpriteSelector', () => {
     const mount = overrides => {
         const props = {
             hoveredTarget: {hoveredSprite: null, receivedBlocks: false, sprite: null},
+            showEmptyState: true,
             sprites: {},
             stageSize: STAGE_DISPLAY_SIZES.large,
             onChangeSpriteDirection: jest.fn(),
@@ -51,6 +52,11 @@ describe('SpriteSelector', () => {
         expect(button.length).toBe(1);
         button.simulate('click');
         expect(props.onNewSpriteClick).toHaveBeenCalledTimes(1);
+    });
+
+    test('nothing is said while the project is still loading', () => {
+        const {wrapper} = mount({showEmptyState: false});
+        expect(wrapper.text()).not.toContain('This project has no sprites yet.');
     });
 
     test('a project with sprites lists them instead', () => {

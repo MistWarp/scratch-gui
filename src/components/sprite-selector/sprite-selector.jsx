@@ -62,6 +62,7 @@ const SpriteSelectorComponent = function (props) {
         onSurpriseSpriteClick,
         raised,
         selectedId,
+        showEmptyState,
         spriteFileInput,
         sprites,
         stageSize,
@@ -100,7 +101,7 @@ const SpriteSelectorComponent = function (props) {
 
             <SpriteList
                 editingTarget={editingTarget}
-                emptyState={
+                emptyState={showEmptyState ? (
                     <div className={styles.empty}>
                         <p className={styles.emptyText}>
                             <FormattedMessage
@@ -121,7 +122,7 @@ const SpriteSelectorComponent = function (props) {
                             {intl.formatMessage(messages.addSpriteFromLibrary)}
                         </button>
                     </div>
-                }
+                ) : null}
                 hoveredTarget={hoveredTarget}
                 items={Object.keys(sprites).map(id => sprites[id])}
                 raised={raised}
@@ -192,6 +193,7 @@ SpriteSelectorComponent.propTypes = {
     onSurpriseSpriteClick: PropTypes.func,
     raised: PropTypes.bool,
     selectedId: PropTypes.string,
+    showEmptyState: PropTypes.bool,
     spriteFileInput: PropTypes.func,
     sprites: PropTypes.shape({
         id: PropTypes.shape({
