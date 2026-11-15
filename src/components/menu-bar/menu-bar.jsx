@@ -70,6 +70,7 @@ import {getShortcutKey} from '../../lib/shortcuts/registry.js';
 import formatShortcutDisplay from '../../lib/shortcuts/display.js';
 import {isBlocksEditorVisible, isCodeMode} from '../../lib/editor-visibility.js';
 import ModeSwitch from '../code-mode/mode-switch.jsx';
+import codeModeMessages from '../code-mode/messages.js';
 
 import TWDesktopSettings from './tw-desktop-settings.jsx';
 import RoturAccount from './mw-rotur-account.jsx';
@@ -535,6 +536,7 @@ class MenuBar extends React.Component {
             'refreshMistWarpShared',
             'handleClickUndo',
             'handleClickApplyAllCode',
+            'handleClickToggleEditorMode',
             'handleClickRedo',
             'handleClickCollaboration',
             'handleClickAddonSettings',
@@ -1721,6 +1723,11 @@ class MenuBar extends React.Component {
     handleClickApplyAllCode () {
         executeShortcut({actionType: 'callback', action: 'applyAll'});
     }
+    handleClickToggleEditorMode () {
+        this.props.onRequestCloseEdit();
+        this.setState({moreMenuOpen: false});
+        executeShortcut({actionType: 'callback', action: 'toggleEditorMode'});
+    }
     redoBlocks () {
         if (!this.props.isPlayerOnly && this.props.blocksTabVisible && this.state.canRedo) {
             this.ensureScratchBlocks().then(ScratchBlocks => {
@@ -2296,6 +2303,19 @@ class MenuBar extends React.Component {
                                 open={this.props.editMenuOpen}
                                 place={this.props.isRtl ? 'left' : 'right'}
                             >
+                                {this.props.isMobileEditor && !this.props.isPlayerOnly ? (
+                                    <MenuSection>
+                                        <MenuItem
+                                            onClick={this.handleClickToggleEditorMode}
+                                            shortcut={shortcutHint('toggleEditorMode', this.props.customShortcuts)}
+                                        >
+                                            {this.props.codeMode ? <BlocksIcon /> : <Code />}
+                                            {this.props.intl.formatMessage(this.props.codeMode ?
+                                                codeModeMessages.switchToBlocks :
+                                                codeModeMessages.switchToCode)}
+                                        </MenuItem>
+                                    </MenuSection>
+                                ) : null}
                                 <MenuSection>
                                     {this.props.isPlayerOnly ? null : (
                                         <DeletionRestorer>{(handleRestore, {restorable, deletedItem}) => (
@@ -2752,6 +2772,7 @@ MenuBar.propTypes = {
     toolsMenuOpen: PropTypes.bool,
     handleSaveProject: PropTypes.func,
     intl: intlShape,
+    isMobileEditor: PropTypes.bool,
     isPlayerOnly: PropTypes.bool,
     isRtl: PropTypes.bool,
     onDeletionRestored: PropTypes.func,

@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 
 import Box from '../box/box.jsx';
-import ModeSwitch from '../code-mode/mode-switch.jsx';
 import {BLOCKS_TAB_INDEX, COSTUMES_TAB_INDEX, SOUNDS_TAB_INDEX} from '../../reducers/editor-tab';
 import {editorTabMessages, getEditorTabLabels} from './editor-tab-labels.js';
 import MobileEditorNavButton from './mobile-editor-nav-button.jsx';
@@ -65,11 +64,6 @@ const MobileEditorNav = ({
             role="tablist"
             aria-label={intl.formatMessage(messages.editorViews)}
         >
-            <ModeSwitch
-                compact
-                onSurface
-                className={styles.mobileModeSwitch}
-            />
             {codeMode ? (
                 <MobileEditorNavButton
                     icon={FilesIcon}

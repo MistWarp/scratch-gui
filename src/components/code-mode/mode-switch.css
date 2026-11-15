@@ -43,26 +43,3 @@
     opacity: 1;
     background: color-mix(in srgb, $menu-bar-foreground 28%, transparent);
 }
-
-.compact .mode-label {
-    display: none;
-}
-
-.compact .mode-button {
-    padding: 0 0.45rem;
-}
-
-.on-surface {
-    background: color-mix(in srgb, $text-primary 8%, transparent);
-    color: $text-primary;
-}
-
-.on-surface .mode-button:hover {
-    background: color-mix(in srgb, $text-primary 8%, transparent);
-}
-
-.on-surface .mode-button-active,
-.on-surface .mode-button-active:hover {
-    background: $looks-secondary;
-    color: $accent-foreground;
-}
