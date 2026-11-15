@@ -14,13 +14,21 @@
 }
 
 .new-buttons {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
     display: flex;
-    flex: 0 0 auto;
     flex-direction: column;
     align-items: center;
     padding: .5rem;
     color: $accent-text;
     text-align: center;
+    pointer-events: none;
+}
+
+.new-buttons > * {
+    pointer-events: auto;
 }
 
 .new-button-label {
@@ -37,6 +45,15 @@
     flex-direction: column;
     padding: .375rem .5rem;
     scrollbar-width: thin;
+    -webkit-mask-image: linear-gradient(to top, transparent 1rem, #000 4.5rem);
+    mask-image: linear-gradient(to top, transparent 1rem, #000 4.5rem);
+}
+
+.list-area::after {
+    content: "";
+    display: block;
+    flex: 0 0 4rem;
+    order: 99999999;
 }
 
 .sortable {
@@ -94,6 +111,17 @@
         overflow-x: auto;
         overflow-y: hidden;
         scrollbar-width: none;
+        -webkit-mask-image: linear-gradient(to left, transparent 1rem, #000 4.25rem);
+        mask-image: linear-gradient(to left, transparent 1rem, #000 4.25rem);
+    }
+
+    [dir="rtl"] .list-area {
+        -webkit-mask-image: linear-gradient(to right, transparent 1rem, #000 4.25rem);
+        mask-image: linear-gradient(to right, transparent 1rem, #000 4.25rem);
+    }
+
+    .list-area::after {
+        flex: 0 0 3.5rem;
     }
 
     .list-area::-webkit-scrollbar {
@@ -110,7 +138,14 @@
     }
 
     .new-buttons {
+        top: 0;
+        left: auto;
         justify-content: center;
         padding: 0 .5rem;
+    }
+
+    [dir="rtl"] .new-buttons {
+        right: auto;
+        left: 0;
     }
 }
