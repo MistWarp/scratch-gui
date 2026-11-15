@@ -8,6 +8,7 @@ import ClassroomRoute from './components/ClassroomRoute.jsx';
 import {useClassroomAvailable} from './classroom-availability.js';
 import {setRouteMeta} from './page-meta.js';
 import {initSiteErrorReporting} from '../lib/error-reporter.js';
+import {touchVisit} from './visit-analytics.js';
 import NavBar from './components/NavBar.jsx';
 import RouteLoading from './components/RouteLoading.jsx';
 import RouteErrorBoundary from './components/RouteErrorBoundary.jsx';
@@ -198,6 +199,24 @@ export const RouteMeta = () => {
     return null;
 };
 
+const VISIT_REFRESH_MS = 5 * 60 * 1000;
+
+const VisitStart = () => {
+    const {loading} = useUser();
+    const {pathname} = useLocation();
+    useEffect(() => {
+        if (!loading) touchVisit();
+    }, [loading, pathname]);
+    useEffect(() => {
+        if (loading) return;
+        const refresh = setInterval(() => {
+            if (document.visibilityState === 'visible' && document.hasFocus()) touchVisit();
+        }, VISIT_REFRESH_MS);
+        return () => clearInterval(refresh);
+    }, [loading]);
+    return null;
+};
+
 const App = () => {
     const {pathname} = useLocation();
     const {t} = useCommunityIntl();
@@ -207,6 +226,7 @@ const App = () => {
     return (<UserProvider>
         <a className={tokenStyles['mw-skip-link']} href="#mw-main-content">{t('a11y.skip')}</a>
         <RouteMeta />
+        <VisitStart />
         <NavBar />
         <AnnouncementBanner />
         <StandingBanner />

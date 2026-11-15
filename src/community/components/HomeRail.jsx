@@ -7,6 +7,7 @@ import api, {editorUrl, projectUrl} from '../api';
 import {timeAgo} from '../format';
 import {useCommunityIntl} from '../i18n.jsx';
 import {postUrl} from '../following-feed.js';
+import {forgetPlays, recentPlays, updatedSincePlayed} from '../recent-plays.js';
 import {richTranslator} from '../notification-text.jsx';
 import {STARTERS} from '../../lib/starter-projects';
 import fog from '../../lib/default-project/fog.svg';
@@ -192,17 +193,46 @@ RailProjects.propTypes = {
     username: PropTypes.string.isRequired
 };
 
+const GONE_STATUSES = [403, 404, 410];
+const PLAYING_COUNT = 3;
+
+const playableProject = item => api.getProject(item.id)
+    .then(data => {
+        const project = data && data.project;
+        if (!project || project.shared !== true || project.visibility !== 'public') return {gone: true};
+        return {game: {...project, lastPlayed: item.lastPlayed, seenUploadAt: item.seenUploadAt}};
+    })
+    .catch(error => (GONE_STATUSES.includes(error && error.status) ? {gone: true} : {game: item}));
+
+const devicePlays = async () => {
+    const queue = recentPlays();
+    const games = [];
+    const gone = [];
+    while (games.length < PLAYING_COUNT && queue.length) {
+        const batch = queue.splice(0, PLAYING_COUNT - games.length);
+        const results = await Promise.all(batch.map(playableProject));
+        results.forEach((result, index) => {
+            if (result.gone) gone.push(batch[index].id);
+            else games.push(result.game);
+        });
+    }
+    forgetPlays(gone);
+    return games;
+};
+
+const accountPlays = username => api.getUser(username)
+    .then(data => (data.recentActivity || []).filter(project => Number(project.lastPlayed) > 0));
+
 export const RailPlaying = ({username}) => {
     const {text} = useCommunityIntl();
     const [games, setGames] = useState(null);
     useEffect(() => {
         let active = true;
         setGames(null);
-        api.getUser(username)
-            .then(data => active && setGames((data.recentActivity || [])
-                .filter(project => Number(project.lastPlayed) > 0)
+        (username ? accountPlays(username) : devicePlays())
+            .then(list => active && setGames(list
                 .sort((left, right) => Number(right.lastPlayed) - Number(left.lastPlayed))
-                .slice(0, 3)))
+                .slice(0, PLAYING_COUNT)))
             .catch(() => active && setGames([]));
         return () => {
             active = false;
@@ -213,7 +243,7 @@ export const RailPlaying = ({username}) => {
         <RailCard
             id="home-playing-heading"
             title={text('Continue playing')}
-            action={<QuietLink to={`/users/${username}/library`}>{text('Game library')}</QuietLink>}
+            action={username ? <QuietLink to={`/users/${username}/library`}>{text('Game library')}</QuietLink> : null}
         >
             <ul className={styles.rows}>
                 {games.map(project => (
@@ -221,7 +251,12 @@ export const RailPlaying = ({username}) => {
                         key={project.id}
                         to={projectUrl(project)}
                         title={project.title}
-                        meta={project.owner}
+                        meta={updatedSincePlayed(project) ? (
+                            <span className={styles.metaSplit}>
+                                <span className={styles.metaOwner}>{project.owner}</span>
+                                <span className={styles.updated}>{text('Updated since you played')}</span>
+                            </span>
+                        ) : project.owner}
                         media={<ProjectThumbnail
                             project={project}
                             fallbackClassName={styles.fallback}
@@ -235,7 +270,7 @@ export const RailPlaying = ({username}) => {
 };
 
 RailPlaying.propTypes = {
-    username: PropTypes.string.isRequired
+    username: PropTypes.string
 };
 
 const describeActivity = (item, t, actor) => {

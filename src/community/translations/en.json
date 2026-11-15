@@ -3584,5 +3584,13 @@
   "Reports are anonymous and are deleted 7 days after they arrive.": "Reports are anonymous and are deleted 7 days after they arrive.",
   "Remix of {value1} by {value2}": "Remix of {value1} by {value2}",
   "Imported from Scratch": "Imported from Scratch",
-  "Make your own version of this project in the editor.": "Make your own version of this project in the editor."
+  "Make your own version of this project in the editor.": "Make your own version of this project in the editor.",
+  "Updated since you played": "Updated since you played",
+  "Returning visits": "Returning visits",
+  "{value1} visits in all": "{value1} visits in all",
+  "Visits reaching a second project": "Visits reaching a second project",
+  "{value1} reached five or more": "{value1} reached five or more",
+  "More like this clicks": "More like this clicks",
+  "{value1} of project page views": "{value1} of project page views",
+  "Uploaded {value1}": "Uploaded {value1}"
 }
