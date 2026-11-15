@@ -26,7 +26,7 @@ const findTriggerId = (fiber) => {
   return null;
 };
 
-const findPortalledMenu = (tab, ctxTarget) => {
+export const findPortalledMenu = (tab, ctxTarget) => {
   const id = findTriggerId(ctxTarget[tab.traps.getInternalKey(ctxTarget)]);
   if (!id) return null;
   return (

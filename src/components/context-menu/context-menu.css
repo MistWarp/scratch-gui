@@ -8,6 +8,8 @@
     margin: 2px 0 0; /* To keep the menu below the cursor comfortably */
     font-size: 0.85rem;
     text-align: left;
+    color: $text-primary;
+    user-select: none;
     background-color: $ui-white;
     border: 1px solid $ui-black-transparent;
     border-radius: calc($space / 2);
