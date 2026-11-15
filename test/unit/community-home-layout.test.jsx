@@ -62,7 +62,7 @@ describe('home layout', () => {
         global.gamesMounts = 0;
     });
 
-    test('tells signed-out visitors what MistWarp is, then games beside starters, creators and news', () => {
+    test('tells signed-out visitors what MistWarp is, then games beside their recent plays, starters, creators and news', () => {
         const login = jest.fn();
         useUser.mockReturnValue({user: null, login, loading: false});
         const wrapper = render();
@@ -70,7 +70,7 @@ describe('home layout', () => {
         expect(wrapper.find('h1').text()).toBe('Scratch Supercharged');
         expect(wrapper.find('a[href="/editor"]').first()
             .text()).toBe('Start creating');
-        expect(sectionOrder(wrapper)).toEqual(['games', 'starters', 'creators', 'news']);
+        expect(sectionOrder(wrapper)).toEqual(['games', 'playing', 'starters', 'creators', 'news']);
         expect(wrapper.text()).not.toMatch(/membership|jam/i);
 
         wrapper.find('button')

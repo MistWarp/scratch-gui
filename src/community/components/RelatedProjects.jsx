@@ -11,6 +11,7 @@ import styles from './RelatedProjects.module.css';
 import {session} from '../../modules/storage';
 
 const SEEN_KEY = 'mw:session-projects';
+const RELATED_COUNT = 3;
 
 const seenProjects = () => {
     try {
@@ -22,11 +23,13 @@ const seenProjects = () => {
 
 export const rememberProject = id => {
     try {
-        const seen = seenProjects().filter(item => item !== id);
+        const earlier = seenProjects();
+        const seen = earlier.filter(item => item !== id);
         seen.push(id);
         session.writeJSON(SEEN_KEY, seen.slice(-40));
+        return earlier.length >= 40 ? 0 : seen.length;
     } catch (e) {
-        return;
+        return 0;
     }
 };
 
@@ -67,7 +70,7 @@ const RelatedProjects = ({id}) => {
     useEffect(() => {
         let active = true;
         setProjects([]);
-        api.relatedProjects(id, {limit: 6})
+        api.relatedProjects(id, {limit: RELATED_COUNT})
             .then(data => active && setProjects(data.projects || []))
             .catch(() => active && setProjects([]));
         return () => {

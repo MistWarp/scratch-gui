@@ -12,6 +12,7 @@ import GroupTag from '../../components/GroupTag.jsx';
 import VisibilityMenu from '../../components/VisibilityMenu.jsx';
 import {canViewProjectSource} from '../../project-source-access';
 import {sameUser} from '../../format';
+import {fullTime, isoTime, projectPublishedAt, shortTime} from '../../project-times.js';
 import Button from '../../components/ui/Button.jsx';
 import Dropdown from '../../components/ui/Dropdown.jsx';
 import IconButton from '../../components/ui/IconButton.jsx';
@@ -31,6 +32,7 @@ const ProjectHeader = ({
     setDeleteConfirm, openModeration
 }) => {
     const {text: communityText} = useCommunityText();
+    const publishedAt = projectPublishedAt(project);
     const navigate = useNavigate();
     const [clawOpen, setClawOpen] = useState(false);
     const canPostToClaw = Boolean(user && isPublicProject({...project, visibility}));
@@ -82,6 +84,17 @@ const ProjectHeader = ({
                         >{communityText('by {value1}', {value1: project.owner})}</Link>
                         <GroupTag className={styles.projectGroupTag} username={project.owner} compact />
                         {project.groupTag ? <Link className={styles.groupByline} to={`/groups/${project.groupTag}`}>{communityText('for @')}{project.groupTag}</Link> : null}
+                        {publishedAt ? (
+                            <time
+                                className={styles.publishedTime}
+                                dateTime={isoTime(publishedAt)}
+                                title={fullTime(publishedAt)}
+                            >
+                                {project.shared ?
+                                    communityText('Shared {value1}', {value1: shortTime(publishedAt)}) :
+                                    communityText('Uploaded {value1}', {value1: shortTime(publishedAt)})}
+                            </time>
+                        ) : null}
                     </div>
                     {project.branding?.tagline ? <p className={styles.brandTagline}>{project.branding.tagline}</p> : null}
                 </div>

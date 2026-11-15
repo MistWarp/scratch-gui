@@ -135,6 +135,8 @@ const StatsOverview = ({view}) => {
     const signedOutViews = eventCount(events, 'project_view:signed_out');
     const editorOpens = eventCount(events, 'editor_open');
     const shareOpens = eventGroupCount(events, 'share_opened');
+    const visits = eventGroupCount(events, 'visit_start');
+    const moreLikeThisClicks = eventCount(events, 'related_project_click') + eventCount(events, 'next_project_click');
     const deviceLoads = Object.values(stats.loadsByDevice || {})
         .reduce((total, value) => total + Number(value || 0), 0);
     const exportDailyData = () => {
@@ -327,6 +329,21 @@ const StatsOverview = ({view}) => {
                             label={communityText('Project page views')}
                             value={num(projectViews)}
                             detail={communityText('{value1} while signed out', {value1: num(signedOutViews)})}
+                        />
+                        <StatTile
+                            label={communityText('Returning visits')}
+                            value={percent(eventCount(events, 'visit_start:returning'), visits)}
+                            detail={communityText('{value1} visits in all', {value1: num(visits)})}
+                        />
+                        <StatTile
+                            label={communityText('Visits reaching a second project')}
+                            value={percent(eventCount(events, 'visit_depth:2'), visits)}
+                            detail={communityText('{value1} reached five or more', {value1: num(eventCount(events, 'visit_depth:5'))})}
+                        />
+                        <StatTile
+                            label={communityText('More like this clicks')}
+                            value={num(moreLikeThisClicks)}
+                            detail={communityText('{value1} of project page views', {value1: percent(moreLikeThisClicks, projectViews)})}
                         />
                         <StatTile
                             label={communityText('Plays started')}

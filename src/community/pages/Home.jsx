@@ -98,6 +98,7 @@ const Home = () => {
                         />
                     ] : null}
                     {signedOut ? [
+                        <RailPlaying key="playing" />,
                         <RailStarters key="starters" />,
                         <RailCreators key="creators" />
                     ] : null}

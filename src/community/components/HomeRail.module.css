@@ -122,6 +122,11 @@
     white-space: nowrap;
 }
 
+.updated {
+    color: var(--accent-strong);
+    font-weight: 600;
+}
+
 .rowSkeleton > span {
     display: block;
     border-radius: var(--radius-xs);

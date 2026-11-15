@@ -3,7 +3,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useState, useMemo, useRef} from 'react';
 import {useParams, Link, useLocation, useNavigate} from 'react-router-dom';
-import {Blocks, CalendarDays, ShieldAlert, Trash2, SearchX} from 'lucide-react';
+import {Blocks, CalendarDays, History, ShieldAlert, Trash2, SearchX} from 'lucide-react';
 import api, {editorUrl, embedUrl} from '../api';
 import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
 import {listCommerceBounties} from '../credits';
@@ -13,7 +13,6 @@ import ProjectCompatibility from '../components/ProjectCompatibility.jsx';
 import CollectionSaveModal from '../components/CollectionSaveModal.jsx';
 import {useUser} from '../UserContext.jsx';
 import useAfterLogin from '../use-after-login.js';
-import {formatDate} from '../format';
 import ReportModal from '../components/ReportModal.jsx';
 import Button from '../components/ui/Button.jsx';
 import ConfirmModal from '../components/ui/ConfirmModal.jsx';
@@ -26,6 +25,9 @@ import projectRealtime from '../project-realtime.js';
 import styles from './Project.module.css';
 import RelatedProjects, {rememberProject} from '../components/RelatedProjects.jsx';
 import {track} from '../analytics';
+import {trackVisitDepth} from '../visit-analytics';
+import {rememberPlay} from '../recent-plays';
+import {fullTime, isoTime, projectPublishedAt, projectUpdatedAt} from '../project-times.js';
 import {
     activityHash, activityTabForHash, initialActivityTab, initialVersionControlTab, VERSION_CONTROL_HASHES
 } from './project/activity-tabs.js';
@@ -232,9 +234,14 @@ const Project = () => {
     useEffect(() => {
         if (userLoading || !id) return;
         api.view(id).catch(() => {});
-        rememberProject(id);
+        const depth = rememberProject(id);
         track('project_view', {variant: user ? 'signed_in' : 'signed_out'});
+        trackVisitDepth(depth);
     }, [id, userLoading]);
+
+    useEffect(() => {
+        if (project && projectLoadContext === id) rememberPlay(project);
+    }, [project, projectLoadContext, id]);
 
     // Scroll to a comment anchor after the comments section renders
     useEffect(() => {
@@ -621,7 +628,8 @@ const Project = () => {
     const ownsProject = Boolean(user && String(user.username).toLowerCase() === String(project.owner).toLowerCase());
     const seeInsideHref = editorUrl({platformProject: project.id});
     const remixHref = editorUrl({platformProject: project.id, from: 'remix'});
-    const sharedDate = formatDate(project.sharedAt || project.created);
+    const publishedAt = projectPublishedAt(project);
+    const updatedAt = projectUpdatedAt(project);
     const visibility = project.visibility || (project.shared ? 'public' : 'private');
     const hasContent = project.hasContent !== false;
     const followThemeDecision = themeMode === 'followed' && user && owner ?
@@ -790,24 +798,42 @@ const Project = () => {
                 />
 
                 <div className={styles.sideCol}>
-                    <ProjectInfoPanel
-                        project={project}
-                        facts={(
-                            <React.Fragment>
-                                {sharedDate ? <span><CalendarDays size={15} />{sharedDate}</span> : null}
-                                {blockStats ? (
-                                    <span>
-                                        <Blocks size={15} />
-                                        {communityText('{value1} blocks', {value1: blockStats.total.toLocaleString(getCommunityLocale())})}
-                                    </span>
-                                ) : null}
-                                <ProjectCompatibility compatibility={project.compatibility} compact />
-                            </React.Fragment>
-                        )}
-                        onSaved={updated => {
-                            if (updated) setProject(updated);
-                        }}
-                    />
+                    <div className={styles.infoSlot}>
+                        <ProjectInfoPanel
+                            project={project}
+                            facts={(
+                                <React.Fragment>
+                                    {publishedAt ? (
+                                        <span>
+                                            <CalendarDays size={15} />
+                                            <time dateTime={isoTime(publishedAt)}>
+                                                {project.shared ?
+                                                    communityText('Shared {value1}', {value1: fullTime(publishedAt)}) :
+                                                    communityText('Uploaded {value1}', {value1: fullTime(publishedAt)})}
+                                            </time>
+                                        </span>
+                                    ) : null}
+                                    {updatedAt ? (
+                                        <span>
+                                            <History size={15} />
+                                            <time dateTime={isoTime(updatedAt)}>{communityText('Updated {value1}', {value1: fullTime(updatedAt)})}</time>
+                                        </span>
+                                    ) : null}
+                                    {blockStats ? (
+                                        <span>
+                                            <Blocks size={15} />
+                                            {communityText('{value1} blocks', {value1: blockStats.total.toLocaleString(getCommunityLocale())})}
+                                        </span>
+                                    ) : null}
+                                    <ProjectCompatibility compatibility={project.compatibility} compact />
+                                </React.Fragment>
+                            )}
+                            onSaved={updated => {
+                                if (updated) setProject(updated);
+                            }}
+                        />
+                    </div>
+                    {project.shared ? <RelatedProjects id={project.id} /> : null}
                 </div>
             </div>
 
@@ -843,7 +869,6 @@ const Project = () => {
 
                 <aside className={styles.remixCol}>
                     <RemixTree id={id} baseUrl={baseProjectUrl} />
-                    {project.shared ? <RelatedProjects id={project.id} /> : null}
                 </aside>
             </div>
         </main>

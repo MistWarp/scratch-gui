@@ -8,6 +8,7 @@ import ClassroomRoute from './components/ClassroomRoute.jsx';
 import {useClassroomAvailable} from './classroom-availability.js';
 import {setRouteMeta} from './page-meta.js';
 import {initSiteErrorReporting} from '../lib/error-reporter.js';
+import {trackVisitStart} from './visit-analytics.js';
 import NavBar from './components/NavBar.jsx';
 import RouteLoading from './components/RouteLoading.jsx';
 import RouteErrorBoundary from './components/RouteErrorBoundary.jsx';
@@ -203,6 +204,7 @@ const App = () => {
     const {t} = useCommunityIntl();
     useEffect(() => {
         initSiteErrorReporting();
+        trackVisitStart();
     }, []);
     return (<UserProvider>
         <a className={tokenStyles['mw-skip-link']} href="#mw-main-content">{t('a11y.skip')}</a>
