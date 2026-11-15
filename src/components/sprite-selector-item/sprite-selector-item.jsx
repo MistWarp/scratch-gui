@@ -1,6 +1,7 @@
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
+import ReactDOM from 'react-dom';
 
 import DeleteButton from '../delete-button/delete-button.jsx';
 import styles from './sprite-selector-item.css';
@@ -86,7 +87,7 @@ const SpriteSelectorItem = props => {
                     onClick={props.onDeleteButtonClick}
                 />
             ) : null }
-            {hasContextMenu ? (
+            {hasContextMenu ? ReactDOM.createPortal((
                 <ContextMenu id={menuId}>
                     {props.onDuplicateButtonClick ? (
                         <MenuItem
@@ -149,7 +150,7 @@ const SpriteSelectorItem = props => {
                         </DangerousMenuItem>
                     ) : null }
                 </ContextMenu>
-            ) : null}
+            ), document.body) : null}
         </div>
     );
 };

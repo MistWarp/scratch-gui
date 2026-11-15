@@ -18,6 +18,25 @@ const findDragTypeProps = (fiber) => {
   return fallback;
 };
 
+const findTriggerId = (fiber) => {
+  for (let depth = 0; fiber && depth < 4; depth++, fiber = fiber.return) {
+    const props = fiber.stateNode?.props;
+    if (props && typeof props.id === "string" && "holdToDisplay" in props) return props.id;
+  }
+  return null;
+};
+
+const findPortalledMenu = (tab, ctxTarget) => {
+  const id = findTriggerId(ctxTarget[tab.traps.getInternalKey(ctxTarget)]);
+  if (!id) return null;
+  return (
+    Array.prototype.find.call(
+      document.querySelectorAll("body > nav.react-contextmenu"),
+      (menu) => menu[tab.traps.getInternalKey(menu)]?.return?.stateNode?.props?.id === id
+    ) || null
+  );
+};
+
 const onReactContextMenu = function (e) {
   if (!e.target) return;
   const ctxTarget = e.target.closest(".react-contextmenu-wrapper");
@@ -26,6 +45,7 @@ const onReactContextMenu = function (e) {
   if (!ctxMenu && ctxTarget.parentElement) {
     ctxMenu = ctxTarget.parentElement.querySelector(":scope > nav.react-contextmenu");
   }
+  if (!ctxMenu) ctxMenu = findPortalledMenu(this, ctxTarget);
   let type;
   const extra = {};
   if (false && !ctxMenu && ctxTarget.closest(".monitor-overlay")) {
@@ -56,6 +76,7 @@ const onReactContextMenu = function (e) {
   } else {
     return;
   }
+  if (!ctxMenu) return;
   const ctx = {
     menuItem: ctxMenu,
     target: ctxTarget,
