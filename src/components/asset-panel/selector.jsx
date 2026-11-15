@@ -55,7 +55,8 @@ const Selector = props => {
     return (
         <Box
             className={classNames(styles.wrapper, className, {
-                [styles.soundWrapper]: isSoundList
+                [styles.soundWrapper]: isSoundList,
+                [styles.hasNewButton]: newButtonSection !== null
             })}
             componentRef={containerRef}
         >

@@ -45,14 +45,17 @@
     flex-direction: column;
     padding: .375rem .5rem;
     scrollbar-width: thin;
+}
+
+.has-new-button .list-area {
     -webkit-mask-image: linear-gradient(to top, transparent 1rem, #000 4.5rem);
     mask-image: linear-gradient(to top, transparent 1rem, #000 4.5rem);
 }
 
-.list-area::after {
+.has-new-button .list-area::after {
     content: "";
     display: block;
-    flex: 0 0 4rem;
+    flex: 0 0 4.25rem;
     order: 99999999;
 }
 
@@ -111,17 +114,20 @@
         overflow-x: auto;
         overflow-y: hidden;
         scrollbar-width: none;
+    }
+
+    .has-new-button .list-area {
         -webkit-mask-image: linear-gradient(to left, transparent 1rem, #000 4.25rem);
         mask-image: linear-gradient(to left, transparent 1rem, #000 4.25rem);
     }
 
-    [dir="rtl"] .list-area {
+    [dir="rtl"] .has-new-button .list-area {
         -webkit-mask-image: linear-gradient(to right, transparent 1rem, #000 4.25rem);
         mask-image: linear-gradient(to right, transparent 1rem, #000 4.25rem);
     }
 
-    .list-area::after {
-        flex: 0 0 3.5rem;
+    .has-new-button .list-area::after {
+        flex: 0 0 3.875rem;
     }
 
     .list-area::-webkit-scrollbar {
