@@ -5,6 +5,11 @@ import DeleteButton from '../../../src/components/delete-button/delete-button';
 import {ContextMenu as StyledContextMenu} from '../../../src/components/context-menu/context-menu.jsx';
 import {ContextMenuTrigger} from 'react-contextmenu';
 
+jest.mock('react-dom', () => ({
+    ...jest.requireActual('react-dom'),
+    createPortal: node => node
+}));
+
 describe('SpriteSelectorItemComponent', () => {
     let className;
     let costumeURL;
