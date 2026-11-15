@@ -33,35 +33,41 @@ const saveVisit = (visit, now) => {
 
 export const visitProjects = (now = Date.now()) => currentVisit(now).seen;
 
+const startedKey = visit => visit.tracked.find(key => key.startsWith('visit_start:'));
+
+const withVisitStart = visit => {
+    if (startedKey(visit) || !analyticsEnabled()) return visit;
+    const day = today();
+    const firstVisitDay = local.readString(FIRST_VISIT_KEY);
+    if (!firstVisitDay) local.writeString(FIRST_VISIT_KEY, day);
+    const variant = visitKind(firstVisitDay, day);
+    track('visit_start', {variant});
+    return {...visit, tracked: [...visit.tracked, `visit_start:${variant}`]};
+};
+
+export const touchVisit = (now = Date.now()) => {
+    saveVisit(withVisitStart(currentVisit(now)), now);
+};
+
+export const trackVisitStart = touchVisit;
+
 export const rememberVisitProject = (id, now = Date.now()) => {
-    const visit = currentVisit(now);
+    const visit = withVisitStart(currentVisit(now));
     const earlier = visit.seen;
     const seen = [...earlier.filter(item => item !== id), id].slice(-MAX_SEEN);
     saveVisit({...visit, seen}, now);
     return earlier.length >= MAX_SEEN ? 0 : seen.length;
 };
 
-const trackOncePerVisit = (name, variant, now) => {
-    const visit = currentVisit(now);
-    const key = `${name}:${variant}`;
+export const trackVisitDepth = (count, now = Date.now()) => {
+    const depth = depthMilestone(count);
+    if (!depth || !analyticsEnabled()) return;
+    const visit = withVisitStart(currentVisit(now));
+    const key = `visit_depth:${depth}`;
     if (visit.tracked.includes(key)) {
         saveVisit(visit, now);
         return;
     }
     saveVisit({...visit, tracked: [...visit.tracked, key]}, now);
-    track(name, {variant});
-};
-
-export const trackVisitStart = (now = Date.now()) => {
-    if (!analyticsEnabled()) return;
-    const day = today();
-    const firstVisitDay = local.readString(FIRST_VISIT_KEY);
-    if (!firstVisitDay) local.writeString(FIRST_VISIT_KEY, day);
-    trackOncePerVisit('visit_start', visitKind(firstVisitDay, day), now);
-};
-
-export const trackVisitDepth = (count, now = Date.now()) => {
-    const depth = depthMilestone(count);
-    if (!depth || !analyticsEnabled()) return;
-    trackOncePerVisit('visit_depth', depth, now);
+    track('visit_depth', {variant: depth});
 };

@@ -109,9 +109,10 @@
 
 @media (min-width: 1101px) {
     .related {
-        flex: 0 1 314px;
-        min-height: 122px;
-        overflow: hidden;
+        flex: 0 1 327px;
+        min-height: 135px;
+        overflow: clip;
+        overflow-clip-margin: 6px;
         container: related / size;
     }
 
@@ -120,13 +121,13 @@
     }
 }
 
-@container related (max-height: 313.9px) {
+@container related (max-height: 326.9px) {
     .item:nth-child(3) {
         display: none;
     }
 }
 
-@container related (max-height: 217.9px) {
+@container related (max-height: 230.9px) {
     .item:nth-child(2) {
         display: none;
     }

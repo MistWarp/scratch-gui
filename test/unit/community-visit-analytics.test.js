@@ -1,6 +1,6 @@
 import {track} from '../../src/community/analytics';
 import {
-    depthMilestone, rememberVisitProject, trackVisitDepth, trackVisitStart, visitKind, visitProjects
+    depthMilestone, rememberVisitProject, touchVisit, trackVisitDepth, trackVisitStart, visitKind, visitProjects
 } from '../../src/community/visit-analytics.js';
 
 jest.mock('../../src/community/analytics', () => ({
@@ -44,7 +44,8 @@ describe('visit analytics', () => {
 
     test('each depth is counted once per visit', () => {
         [1, 2, 2, 3, 4, 5].forEach(count => trackVisitDepth(count));
-        expect(sentEvents().map(event => event.variant)).toEqual(['2', '3', '5']);
+        expect(sentEvents().filter(event => event.name === 'visit_depth')
+            .map(event => event.variant)).toEqual(['2', '3', '5']);
     });
 
     test('half an hour without activity starts a new visit', () => {
@@ -71,6 +72,24 @@ describe('visit analytics', () => {
         expect(rememberVisitProject('a', start + (2 * MINUTE))).toBe(2);
         expect(visitProjects(start + (3 * MINUTE))).toEqual(['b', 'a']);
         expect(rememberVisitProject('c', start + (40 * MINUTE))).toBe(1);
+    });
+
+    test('a project opened after the visit expired starts and counts a new visit', () => {
+        const start = Date.UTC(2026, 10, 15, 12);
+        trackVisitStart(start);
+        rememberVisitProject('a', start);
+        rememberVisitProject('b', start + (45 * MINUTE));
+        trackVisitDepth(rememberVisitProject('c', start + (46 * MINUTE)), start + (46 * MINUTE));
+        expect(sentEvents().map(event => event.name)).toEqual(['visit_start', 'visit_start', 'visit_depth']);
+    });
+
+    test('playing keeps the visit going', () => {
+        const start = Date.UTC(2026, 10, 15, 12);
+        rememberVisitProject('a', start);
+        touchVisit(start + (25 * MINUTE));
+        touchVisit(start + (50 * MINUTE));
+        expect(rememberVisitProject('b', start + (60 * MINUTE))).toBe(2);
+        expect(sentEvents()).toHaveLength(1);
     });
 
     test('broken visit storage starts a fresh visit', () => {

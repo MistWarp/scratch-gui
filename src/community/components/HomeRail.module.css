@@ -122,7 +122,20 @@
     white-space: nowrap;
 }
 
+.metaSplit {
+    display: flex;
+    min-width: 0;
+}
+
+.metaOwner {
+    overflow: hidden;
+    flex: 0 1 auto;
+    min-width: 2ch;
+    text-overflow: ellipsis;
+}
+
 .updated {
+    flex: none;
     color: var(--accent-strong);
     font-weight: 600;
 }

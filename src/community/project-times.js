@@ -10,10 +10,12 @@ const timeOf = value => {
 
 export const projectPublishedAt = project => {
     if (!project) return 0;
-    return timeOf(project.shared ? (project.sharedAt || project.created) : project.created);
+    if (project.shared) return timeOf(project.sharedAt || project.created);
+    return timeOf(project.lastUploadAt) || timeOf(project.created);
 };
 
 export const projectUpdatedAt = project => {
+    if (!project || !project.shared) return 0;
     const published = projectPublishedAt(project);
     const uploaded = timeOf(project && project.lastUploadAt);
     if (!published || !uploaded || uploaded - published < UPDATE_GAP_MS) return 0;

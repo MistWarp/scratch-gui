@@ -252,10 +252,10 @@ export const RailPlaying = ({username}) => {
                         to={projectUrl(project)}
                         title={project.title}
                         meta={updatedSincePlayed(project) ? (
-                            <>
-                                {project.owner}
+                            <span className={styles.metaSplit}>
+                                <span className={styles.metaOwner}>{project.owner}</span>
                                 <span className={styles.updated}>{text('Updated since you played')}</span>
-                            </>
+                            </span>
                         ) : project.owner}
                         media={<ProjectThumbnail
                             project={project}

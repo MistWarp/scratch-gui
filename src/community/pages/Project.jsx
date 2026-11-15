@@ -25,7 +25,7 @@ import projectRealtime from '../project-realtime.js';
 import styles from './Project.module.css';
 import RelatedProjects, {rememberProject} from '../components/RelatedProjects.jsx';
 import {track} from '../analytics';
-import {trackVisitDepth} from '../visit-analytics';
+import {touchVisit, trackVisitDepth} from '../visit-analytics';
 import {rememberPlay} from '../recent-plays';
 import {fullTime, isoTime, projectPublishedAt, projectUpdatedAt} from '../project-times.js';
 import {
@@ -110,7 +110,9 @@ const Project = () => {
         stageHeightRatio, setStageHeightRatio, blockStats, customExtensions, contentError,
         unsandboxed, setUnsandboxed, confirmUnsandboxed, setConfirmUnsandboxed, runUnsandboxed, confirmRunUnsandboxed
     } = useStageContent(id, project, stageFrame, () => {
-        if (!userLoading && !user && project && projectLoadContext === id && !project.isOwner) rememberPlay(project);
+        if (userLoading) return;
+        touchVisit();
+        if (!user && project && projectLoadContext === id && !project.isOwner) rememberPlay(project);
     });
     const owner = project && project.owner;
     const {
