@@ -11,9 +11,10 @@ describe('project times', () => {
         expect(projectPublishedAt(null)).toBe(0);
     });
 
-    test('an update shows only when it came at least a minute after sharing', () => {
-        expect(projectUpdatedAt({shared: true, sharedAt: 1000, edited: 1000 + 30000})).toBe(0);
-        expect(projectUpdatedAt({shared: true, sharedAt: 1000, edited: 1000 + DAY})).toBe(1000 + DAY);
+    test('an update shows only for new content at least a minute after sharing', () => {
+        expect(projectUpdatedAt({shared: true, sharedAt: 1000, lastUploadAt: 1000 + 30000})).toBe(0);
+        expect(projectUpdatedAt({shared: true, sharedAt: 1000, lastUploadAt: 1000 + DAY})).toBe(1000 + DAY);
+        expect(projectUpdatedAt({shared: true, sharedAt: 1000, lastUploadAt: 500, edited: 1000 + DAY})).toBe(0);
         expect(projectUpdatedAt({shared: true, sharedAt: 1000})).toBe(0);
     });
 
@@ -21,5 +22,9 @@ describe('project times', () => {
         const now = Date.UTC(2026, 10, 15, 12);
         expect(shortTime(now - (3 * DAY), now)).not.toMatch(/2026/);
         expect(shortTime(now - (30 * DAY), now)).toMatch(/2026/);
+    });
+
+    test('a time ahead of this clock reads as now, not as a date', () => {
+        expect(shortTime(Date.now() + (30 * DAY))).not.toMatch(/2026|2027/);
     });
 });

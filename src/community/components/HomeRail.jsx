@@ -7,7 +7,7 @@ import api, {editorUrl, projectUrl} from '../api';
 import {timeAgo} from '../format';
 import {useCommunityIntl} from '../i18n.jsx';
 import {postUrl} from '../following-feed.js';
-import {recentPlays, updatedSincePlayed} from '../recent-plays.js';
+import {forgetPlays, recentPlays, updatedSincePlayed} from '../recent-plays.js';
 import {richTranslator} from '../notification-text.jsx';
 import {STARTERS} from '../../lib/starter-projects';
 import fog from '../../lib/default-project/fog.svg';
@@ -196,15 +196,29 @@ RailProjects.propTypes = {
 const GONE_STATUSES = [403, 404, 410];
 const PLAYING_COUNT = 3;
 
-const devicePlays = () => Promise.all(recentPlays().slice(0, PLAYING_COUNT)
-    .map(item => api.getProject(item.id)
-        .then(data => {
-            const project = data && data.project;
-            if (!project || project.shared !== true || project.visibility !== 'public') return null;
-            return {...project, lastPlayed: item.lastPlayed};
-        })
-        .catch(error => (GONE_STATUSES.includes(error && error.status) ? null : item))))
-    .then(games => games.filter(Boolean));
+const playableProject = item => api.getProject(item.id)
+    .then(data => {
+        const project = data && data.project;
+        if (!project || project.shared !== true || project.visibility !== 'public') return {gone: true};
+        return {game: {...project, lastPlayed: item.lastPlayed, seenUploadAt: item.seenUploadAt}};
+    })
+    .catch(error => (GONE_STATUSES.includes(error && error.status) ? {gone: true} : {game: item}));
+
+const devicePlays = async () => {
+    const queue = recentPlays();
+    const games = [];
+    const gone = [];
+    while (games.length < PLAYING_COUNT && queue.length) {
+        const batch = queue.splice(0, PLAYING_COUNT - games.length);
+        const results = await Promise.all(batch.map(playableProject));
+        results.forEach((result, index) => {
+            if (result.gone) gone.push(batch[index].id);
+            else games.push(result.game);
+        });
+    }
+    forgetPlays(gone);
+    return games;
+};
 
 const accountPlays = username => api.getUser(username)
     .then(data => (data.recentActivity || []).filter(project => Number(project.lastPlayed) > 0));
@@ -237,9 +251,12 @@ export const RailPlaying = ({username}) => {
                         key={project.id}
                         to={projectUrl(project)}
                         title={project.title}
-                        meta={updatedSincePlayed(project) ?
-                            <span className={styles.updated}>{text('Updated since you played')}</span> :
-                            project.owner}
+                        meta={updatedSincePlayed(project) ? (
+                            <>
+                                {project.owner}
+                                <span className={styles.updated}>{text('Updated since you played')}</span>
+                            </>
+                        ) : project.owner}
                         media={<ProjectThumbnail
                             project={project}
                             fallbackClassName={styles.fallback}

@@ -70,6 +70,68 @@
     font-size: var(--fs-xs);
 }
 
+.skeleton .thumb {
+    display: block;
+}
+
+.skeleton .thumb,
+.skeleton .body > span {
+    animation: pulse 1.4s ease-in-out infinite;
+}
+
+.skeleton .body > span {
+    display: block;
+    height: 12px;
+    border-radius: var(--radius-xs);
+    background: var(--bg-raised);
+}
+
+.skeleton .body > span:first-child {
+    width: 70%;
+}
+
+.skeleton .body > span:last-child {
+    width: 40%;
+}
+
+@keyframes pulse {
+    50% {
+        opacity: .55;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .skeleton .thumb,
+    .skeleton .body > span {
+        animation: none;
+    }
+}
+
+@media (min-width: 1101px) {
+    .related {
+        flex: 0 1 314px;
+        min-height: 122px;
+        overflow: hidden;
+        container: related / size;
+    }
+
+    .item {
+        height: 88px;
+    }
+}
+
+@container related (max-height: 313.9px) {
+    .item:nth-child(3) {
+        display: none;
+    }
+}
+
+@container related (max-height: 217.9px) {
+    .item:nth-child(2) {
+        display: none;
+    }
+}
+
 @media (max-width: 1100px) {
     .list {
         grid-template-columns: repeat(3, minmax(0, 1fr));

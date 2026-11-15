@@ -109,7 +109,9 @@ const Project = () => {
     const {
         stageHeightRatio, setStageHeightRatio, blockStats, customExtensions, contentError,
         unsandboxed, setUnsandboxed, confirmUnsandboxed, setConfirmUnsandboxed, runUnsandboxed, confirmRunUnsandboxed
-    } = useStageContent(id, project, stageFrame);
+    } = useStageContent(id, project, stageFrame, () => {
+        if (!userLoading && !user && project && projectLoadContext === id && !project.isOwner) rememberPlay(project);
+    });
     const owner = project && project.owner;
     const {
         themeMode, projectThemeApplied, setProjectThemeApplied, revertTheme, setRevertTheme, followedOwner, setFollowedOwner
@@ -238,10 +240,6 @@ const Project = () => {
         track('project_view', {variant: user ? 'signed_in' : 'signed_out'});
         trackVisitDepth(depth);
     }, [id, userLoading]);
-
-    useEffect(() => {
-        if (project && projectLoadContext === id) rememberPlay(project);
-    }, [project, projectLoadContext, id]);
 
     // Scroll to a comment anchor after the comments section renders
     useEffect(() => {

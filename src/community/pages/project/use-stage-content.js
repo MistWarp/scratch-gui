@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {preloadContent} from '../../../lib/community/cached-fetch.js';
 import projectRealtime from '../../project-realtime.js';
 import {track} from '../../analytics';
@@ -7,13 +7,15 @@ import {analyzeBlocks, getCustomExtensions} from './embed-helpers.js';
 // What the player frame reports about the running project: its stage size, block count
 // and custom extensions, plus whether the project file could be fetched at all and
 // whether the viewer chose to run it outside the sandbox.
-const useStageContent = (id, project, stageFrame) => {
+const useStageContent = (id, project, stageFrame, onPlayStart) => {
     const [stageHeightRatio, setStageHeightRatio] = useState(3 / 4);
     const [blockStats, setBlockStats] = useState(null);
     const [customExtensions, setCustomExtensions] = useState([]);
     const [contentError, setContentError] = useState(false);
     const [unsandboxed, setUnsandboxed] = useState(false);
     const [confirmUnsandboxed, setConfirmUnsandboxed] = useState(false);
+    const playStart = useRef(onPlayStart);
+    playStart.current = onPlayStart;
 
     useEffect(() => {
         const onMessage = event => {
@@ -32,6 +34,7 @@ const useStageContent = (id, project, stageFrame) => {
                 projectRealtime.diagnostic(id, event.data.diagnostic);
                 if (event.data.diagnostic && event.data.diagnostic.type === 'playtime_start') {
                     track('project_play_start');
+                    if (playStart.current) playStart.current();
                 }
             }
         };

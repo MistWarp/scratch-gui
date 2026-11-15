@@ -127,6 +127,13 @@
     font-weight: 600;
 }
 
+.updated::before {
+    content: "\00B7";
+    margin: 0 6px;
+    color: var(--text-faint);
+    font-weight: 400;
+}
+
 .rowSkeleton > span {
     display: block;
     border-radius: var(--radius-xs);

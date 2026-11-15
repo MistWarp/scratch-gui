@@ -1,7 +1,6 @@
-import {recentPlays, rememberPlay, updatedSincePlayed} from '../../src/community/recent-plays.js';
-import {rememberProject} from '../../src/community/components/RelatedProjects.jsx';
+import {forgetPlays, recentPlays, rememberPlay, updatedSincePlayed} from '../../src/community/recent-plays.js';
 
-const project = (id, extra = {}) => ({id, title: `Game ${id}`, owner: 'maker', shared: true, visibility: 'public', edited: 100, ...extra});
+const project = (id, extra = {}) => ({id, title: `Game ${id}`, owner: 'maker', shared: true, visibility: 'public', lastUploadAt: 100, ...extra});
 
 describe('recent plays on this device', () => {
     beforeEach(() => {
@@ -29,16 +28,29 @@ describe('recent plays on this device', () => {
         expect(recentPlays()).toEqual([]);
     });
 
-    test('a project edited after the last play is updated', () => {
-        expect(updatedSincePlayed({edited: 200, lastPlayed: 100})).toBe(true);
-        expect(updatedSincePlayed({edited: 100, lastPlayed: 200})).toBe(false);
-        expect(updatedSincePlayed({edited: 0, lastPlayed: 200})).toBe(false);
-        expect(updatedSincePlayed({})).toBe(false);
+    test('a play remembers the upload it saw', () => {
+        rememberPlay(project('a'), 500);
+        expect(recentPlays()[0]).toMatchObject({id: 'a', seenUploadAt: 100, lastPlayed: 500});
     });
 
-    test('remembering a project returns how many this visit has seen', () => {
-        expect(rememberProject('a')).toBe(1);
-        expect(rememberProject('b')).toBe(2);
-        expect(rememberProject('a')).toBe(2);
+    test('forgotten plays leave the list', () => {
+        rememberPlay(project('a'), 1);
+        rememberPlay(project('b'), 2);
+        forgetPlays(['a']);
+        expect(recentPlays().map(item => item.id)).toEqual(['b']);
+    });
+
+    test('a device play is updated only by a newer upload than the one it saw', () => {
+        expect(updatedSincePlayed({lastUploadAt: 200, seenUploadAt: 100, lastPlayed: 999})).toBe(true);
+        expect(updatedSincePlayed({lastUploadAt: 100, seenUploadAt: 100, lastPlayed: 50})).toBe(false);
+        expect(updatedSincePlayed({lastUploadAt: 200, seenUploadAt: 0})).toBe(false);
+    });
+
+    test('an account play is updated by an upload after the last play', () => {
+        expect(updatedSincePlayed({lastUploadAt: 200, lastPlayed: 100})).toBe(true);
+        expect(updatedSincePlayed({lastUploadAt: 100, lastPlayed: 200})).toBe(false);
+        expect(updatedSincePlayed({edited: 300, lastPlayed: 200})).toBe(false);
+        expect(updatedSincePlayed({})).toBe(false);
+        expect(updatedSincePlayed(null)).toBe(false);
     });
 });

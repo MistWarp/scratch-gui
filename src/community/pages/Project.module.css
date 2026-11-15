@@ -265,11 +265,13 @@
     flex-direction: column;
     gap: 18px;
     min-width: 0;
+    min-height: 360px;
+    contain: size;
 }
 
 .infoSlot {
     position: relative;
-    flex: 1 1 auto;
+    flex: 1 1 220px;
     min-height: 220px;
 }
 
@@ -1012,6 +1014,11 @@
 @media (max-width: 1100px) {
     .stageRow {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .sideCol {
+        min-height: 0;
+        contain: none;
     }
 
     .infoSlot {

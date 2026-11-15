@@ -199,16 +199,24 @@ export const RouteMeta = () => {
     return null;
 };
 
+const VisitStart = () => {
+    const {loading} = useUser();
+    useEffect(() => {
+        if (!loading) trackVisitStart();
+    }, [loading]);
+    return null;
+};
+
 const App = () => {
     const {pathname} = useLocation();
     const {t} = useCommunityIntl();
     useEffect(() => {
         initSiteErrorReporting();
-        trackVisitStart();
     }, []);
     return (<UserProvider>
         <a className={tokenStyles['mw-skip-link']} href="#mw-main-content">{t('a11y.skip')}</a>
         <RouteMeta />
+        <VisitStart />
         <NavBar />
         <AnnouncementBanner />
         <StandingBanner />

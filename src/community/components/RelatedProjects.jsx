@@ -5,33 +5,14 @@ import {Shapes, SkipForward} from 'lucide-react';
 import api, {projectUrl} from '../api';
 import {track} from '../analytics';
 import {useCommunityIntl} from '../i18n.jsx';
+import {rememberVisitProject, visitProjects} from '../visit-analytics.js';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import SectionHeading from './ui/SectionHeading.jsx';
 import styles from './RelatedProjects.module.css';
-import {session} from '../../modules/storage';
 
-const SEEN_KEY = 'mw:session-projects';
 const RELATED_COUNT = 3;
 
-const seenProjects = () => {
-    try {
-        return session.readJSON(SEEN_KEY, null) || [];
-    } catch (e) {
-        return [];
-    }
-};
-
-export const rememberProject = id => {
-    try {
-        const earlier = seenProjects();
-        const seen = earlier.filter(item => item !== id);
-        seen.push(id);
-        session.writeJSON(SEEN_KEY, seen.slice(-40));
-        return earlier.length >= 40 ? 0 : seen.length;
-    } catch (e) {
-        return 0;
-    }
-};
+export const rememberProject = id => rememberVisitProject(id);
 
 export const NextProjectButton = ({id, className}) => {
     const {text} = useCommunityIntl();
@@ -40,7 +21,7 @@ export const NextProjectButton = ({id, className}) => {
     const next = async () => {
         setBusy(true);
         try {
-            const data = await api.relatedProjects(id, {exclude: seenProjects(), limit: 1});
+            const data = await api.relatedProjects(id, {exclude: visitProjects(), limit: 1});
             const project = (data.projects || [])[0];
             if (project) {
                 track('next_project_click');
@@ -66,10 +47,10 @@ NextProjectButton.propTypes = {
 
 const RelatedProjects = ({id}) => {
     const {text} = useCommunityIntl();
-    const [projects, setProjects] = useState([]);
+    const [projects, setProjects] = useState(null);
     useEffect(() => {
         let active = true;
-        setProjects([]);
+        setProjects(null);
         api.relatedProjects(id, {limit: RELATED_COUNT})
             .then(data => active && setProjects(data.projects || []))
             .catch(() => active && setProjects([]));
@@ -77,7 +58,28 @@ const RelatedProjects = ({id}) => {
             active = false;
         };
     }, [id]);
-    if (!projects.length) return null;
+    if (projects && !projects.length) return null;
+    if (!projects) {
+        return (
+            <section className={styles.related} aria-busy="true">
+                <SectionHeading
+                    icon={Shapes}
+                    title={text('More like this')}
+                />
+                <div className={styles.list}>
+                    {Array.from({length: RELATED_COUNT}, (_, index) => (
+                        <span key={index} className={`${styles.item} ${styles.skeleton}`}>
+                            <span className={styles.thumb} />
+                            <span className={styles.body}>
+                                <span />
+                                <span />
+                            </span>
+                        </span>
+                    ))}
+                </div>
+            </section>
+        );
+    }
     return (
         <section className={styles.related}>
             <SectionHeading
