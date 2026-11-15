@@ -271,10 +271,6 @@
     contain: inline-size;
 }
 
-.mobile-mode-switch {
-    flex-shrink: 0;
-}
-
 .tab-panel {
     composes: react-tabs__tab-panel from "react-tabs/style/react-tabs.css";
     position: relative;

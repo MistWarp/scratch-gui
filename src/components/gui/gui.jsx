@@ -298,6 +298,7 @@ const GUIComponent = props => {
                             canManageFiles={canManageFiles}
                             className={styles.menuBarPosition}
                             enableCommunity={enableCommunity}
+                            isMobileEditor={isMobileEditor}
                             logo={logo}
                             showOpenFilePicker={showOpenFilePicker}
                             showSaveFilePicker={showSaveFilePicker}

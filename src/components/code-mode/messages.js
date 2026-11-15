@@ -16,6 +16,16 @@ export default defineMessages({
         defaultMessage: 'Code',
         description: 'Button that switches the editor to Code mode, a text editor workbench'
     },
+    switchToBlocks: {
+        id: 'mw.codeMode.switchToBlocks',
+        defaultMessage: 'Switch to Blocks',
+        description: 'Edit menu item that switches the editor from Code mode back to Blocks mode'
+    },
+    switchToCode: {
+        id: 'mw.codeMode.switchToCode',
+        defaultMessage: 'Switch to Code',
+        description: 'Edit menu item that switches the editor to Code mode, a text editor workbench'
+    },
     explorer: {
         id: 'mw.codeMode.explorer',
         defaultMessage: 'Explorer',

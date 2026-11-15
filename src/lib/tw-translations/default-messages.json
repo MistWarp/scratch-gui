@@ -41,6 +41,8 @@
   "mw.codeMode.editorMode": "Editor mode",
   "mw.codeMode.blocksMode": "Blocks",
   "mw.codeMode.codeMode": "Code",
+  "mw.codeMode.switchToBlocks": "Switch to Blocks",
+  "mw.codeMode.switchToCode": "Switch to Code",
   "mw.codeMode.explorer": "Explorer",
   "mw.codeMode.toggleExplorer": "Toggle explorer",
   "mw.codeMode.stage": "Stage",

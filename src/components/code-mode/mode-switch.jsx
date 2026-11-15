@@ -13,7 +13,7 @@ import messages from './messages.js';
 import styles from './mode-switch.css';
 
 const ModeSwitch = props => {
-    const {blocksVisible, className, compact, customShortcuts, dispatch, intl, isCode, onSurface, vm} = props;
+    const {blocksVisible, className, customShortcuts, dispatch, intl, isCode, vm} = props;
     const shortcut = formatShortcutDisplay(getShortcutKey('toggleEditorMode', customShortcuts));
     const handleBlocks = useCallback(() => {
         if (isCode) switchToBlocks({dispatch, vm});
@@ -27,10 +27,7 @@ const ModeSwitch = props => {
     return (
         <div
             aria-label={intl.formatMessage(messages.editorMode)}
-            className={classNames(styles.modeSwitch, className, {
-                [styles.compact]: compact,
-                [styles.onSurface]: onSurface
-            })}
+            className={classNames(styles.modeSwitch, className)}
             role="group"
         >
             <button
@@ -60,12 +57,10 @@ const ModeSwitch = props => {
 ModeSwitch.propTypes = {
     blocksVisible: PropTypes.bool,
     className: PropTypes.string,
-    compact: PropTypes.bool,
     customShortcuts: PropTypes.object,
     dispatch: PropTypes.func.isRequired,
     intl: intlShape,
     isCode: PropTypes.bool,
-    onSurface: PropTypes.bool,
     vm: PropTypes.object.isRequired
 };
 
