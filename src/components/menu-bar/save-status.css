@@ -65,6 +65,7 @@
 .status-text {
     white-space: nowrap;
     font-weight: normal;
+    font-variant-numeric: tabular-nums;
     opacity: 0.85;
 }
 
@@ -140,25 +141,25 @@
     display: none;
 }
 
-:global([data-menu-fit~="save-status"]) .status-text:not(.status-short) {
+:global([data-menu-fit~="save-status"]) .status-text {
     display: none;
 }
 
-.status-short {
+.status-text.status-short {
+    display: none;
+}
+
+:global([data-menu-fit~="save-status"]) .status-text.status-short {
+    display: inline;
+}
+
+.status-live {
     position: absolute;
     width: 1px;
     height: 1px;
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
-}
-
-:global([data-menu-fit~="save-status"]) .status-short {
-    position: static;
-    width: auto;
-    height: auto;
-    overflow: visible;
-    clip-path: none;
 }
 
 :global([data-menu-fit~="save-label"]) .save-action {
@@ -203,4 +204,14 @@
 
 .open-unapplied:hover {
     background: color-mix(in srgb, currentColor 22%, transparent);
+}
+
+@media only screen and (max-width: 900px) {
+    .save-now .status-text.status-short {
+        display: none;
+    }
+}
+
+:global(.mw-compact-save) .status-text.status-short {
+    display: none;
 }

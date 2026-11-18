@@ -11,6 +11,7 @@ import {
     getScratchOrigin
 } from '../../../src/lib/community/publish.js';
 import {resetEditorIntent} from '../../../src/lib/mw/editor-intent.js';
+import {unappliedFileCount} from '../../../src/lib/code-mode/text-store.js';
 
 jest.mock('../../../src/lib/community/enabled.js', () => true);
 jest.mock('../../../src/lib/community/publish.js', () => ({
@@ -19,6 +20,10 @@ jest.mock('../../../src/lib/community/publish.js', () => ({
     getScratchOrigin: jest.fn(() => null)
 }));
 jest.mock('../../../src/lib/mw/open-mw-share-window.js', () => jest.fn());
+jest.mock('../../../src/lib/code-mode/text-store.js', () => ({
+    ...jest.requireActual('../../../src/lib/code-mode/text-store.js'),
+    unappliedFileCount: jest.fn(() => 0)
+}));
 
 const {setSaveFeedback} = require('../../../src/lib/mw/save-feedback.js');
 
@@ -69,7 +74,7 @@ describe('MistWarp save status', () => {
         );
 
         const button = wrapper.find('button');
-        expect(button.text()).toBe('Save to MistWarpUnsaved changes');
+        expect(button.text()).toBe('Save to MistWarpUnsaved changesUnsaved changes');
         // The button uploads, but Ctrl+S downloads a project not on MistWarp yet; the tooltip says so.
         expect(button.prop('title')).toBe('Unsaved changes. Uploads this project to your MistWarp account. ' +
             'Ctrl+S saves a copy to your computer instead.');
@@ -93,7 +98,7 @@ describe('MistWarp save status', () => {
         );
 
         const button = wrapper.find('button');
-        expect(button.text()).toBe('Remix to MistWarpUnsaved changes');
+        expect(button.text()).toBe('Remix to MistWarpUnsaved changesUnsaved changes');
         button.simulate('click');
         expect(openMistWarpShareWindow).toHaveBeenCalledWith(expect.objectContaining({action: 'remix'}));
         wrapper.unmount();
@@ -232,7 +237,7 @@ describe('MistWarp save status', () => {
         wrapper.setProps({projectChanged: false});
         wrapper.update();
         expect(statusText()).toBe('Saved');
-        expect(wrapper.find('button').text()).toBe('Save changesSaved just nowSaved');
+        expect(wrapper.find('button').text()).toBe('Save changesSaved just nowSavedSaved');
         wrapper.unmount();
     });
 
@@ -257,7 +262,7 @@ describe('MistWarp save status', () => {
         wrapper.setProps({projectChanged: false});
         wrapper.update();
         const button = () => wrapper.find('button');
-        expect(button().text()).toBe('Save changesAutosaved just nowAutosaved');
+        expect(button().text()).toBe('Save changesAutosaved just nowAutosavedAutosaved');
         expect(wrapper.find('[role="status"]').text()).toBe('Autosaved');
         expect(button().prop('title')).toBe('Autosaved just now. Autosave uploaded your latest changes to ' +
             'MistWarp, so it is safe to leave the editor.');
@@ -283,6 +288,52 @@ describe('MistWarp save status', () => {
         wrapper.unmount();
         clock.mockRestore();
         jest.useRealTimers();
+    });
+
+    test('does not call leaving safe while code edits are unapplied after an autosave', () => {
+        unappliedFileCount.mockReturnValue(2);
+        const vm = {};
+        const wrapper = mountWithIntl(
+            <TWSaveStatus
+                alertsList={[]}
+                projectChanged
+                projectTitle="Project"
+                roturReady
+                onProjectUnchanged={jest.fn()}
+                vm={vm}
+            />
+        );
+        act(() => setSaveFeedback(vm, 'autosaved'));
+        wrapper.setProps({projectChanged: false});
+        wrapper.update();
+        expect(wrapper.find('[role="status"]').text()).toBe('Saved. 2 files have unapplied changes');
+        const [save, open] = wrapper.find('button').map(button => button);
+        expect(save.prop('title')).not.toContain('safe to leave');
+        expect(open.text()).toBe('Open');
+        wrapper.unmount();
+        unappliedFileCount.mockReturnValue(0);
+    });
+
+    test('keeps one live region while the status changes', () => {
+        const vm = {};
+        const wrapper = mountWithIntl(
+            <TWSaveStatus
+                alertsList={[]}
+                projectChanged
+                projectTitle="Project"
+                roturReady
+                onProjectUnchanged={jest.fn()}
+                vm={vm}
+            />
+        );
+        const live = () => wrapper.find('[role="status"]').getDOMNode();
+        const before = live();
+        act(() => setSaveFeedback(vm, 'autosaved'));
+        wrapper.setProps({projectChanged: false});
+        wrapper.update();
+        expect(live()).toBe(before);
+        expect(live().textContent).toBe('Autosaved');
+        wrapper.unmount();
     });
 
     test('ignores clicks while another save or project change runs', () => {

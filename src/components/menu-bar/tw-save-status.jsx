@@ -130,9 +130,7 @@ const messages = defineMessages({
     },
     readOnlyDetail: {
         // eslint-disable-next-line max-len
-        // eslint-disable-next-line max-len
         defaultMessage: 'You can\'t save changes to this project or remix it. Use File > Save to your computer to keep a copy.',
-        // eslint-disable-next-line max-len
         // eslint-disable-next-line max-len
         description: 'Tooltip on the disabled save button for a read-only project. File > Save to your computer is a menu path.',
         id: 'mw.saveStatus.readOnlyDetail'
@@ -174,7 +172,6 @@ const messages = defineMessages({
     },
     shortcutDownloads: {
         defaultMessage: '{shortcut} saves a copy to your computer instead.',
-        // eslint-disable-next-line max-len
         // eslint-disable-next-line max-len
         description: 'Tooltip addition explaining that the save keyboard shortcut downloads a project that is not on MistWarp yet. {shortcut} is a key combination such as Ctrl+S.',
         id: 'mw.saveStatus.shortcutDownloads'
@@ -288,6 +285,7 @@ const TWSaveStatus = ({
             if (event.detail.vm !== vm) return;
             const next = getSaveFeedback(vm);
             setFeedback(next);
+            if (next === 'autosaved') setUnappliedNotice(unappliedFileCount());
             setSavedAt(getSaveFeedbackTime(vm));
             setNow(Date.now());
             // Downloads from this button, Ctrl+S and the shortcut all land here,
@@ -384,7 +382,7 @@ const TWSaveStatus = ({
         }
     }, [vm, projectTitle, mistwarpAction, onProjectUnchanged, unavailable]);
     const status = getSaveStatus({busy, downloadError, feedback, isOwner, projectChanged, readOnly});
-    const showUnapplied = status === 'saved' && unappliedNotice > 0 && !projectChanged;
+    const showUnapplied = (status === 'saved' || status === 'autosaved') && unappliedNotice > 0 && !projectChanged;
     const timed = !showUnapplied && savedAt !== null &&
         ((status === 'saved' && feedback === 'cloud') || status === 'autosaved');
     useEffect(() => {
@@ -402,6 +400,7 @@ const TWSaveStatus = ({
         statusText = intl.formatMessage(messages[status]);
     }
     const shortStatus = timed ? intl.formatMessage(messages[status]) : null;
+    const liveStatus = shortStatus || statusText;
     const label = intl.formatMessage(communityEnabled ?
         (mistwarpAction === 'remix' ? messages.remixLabel :
             mistwarpAction === 'update' ? messages.updateLabel : messages.uploadLabel) :
@@ -424,7 +423,7 @@ const TWSaveStatus = ({
     if (communityEnabled && !platformState && shortcut) {
         detail = `${detail} ${intl.formatMessage(messages.shortcutDownloads, {shortcut: formatShortcut(shortcut)})}`;
     }
-    if (status === 'autosaved') {
+    if (status === 'autosaved' && !showUnapplied) {
         detail = intl.formatMessage(messages.autosavedDetail);
     } else if (isOwner && !readOnly) {
         detail = `${detail} ${autosave ?
@@ -460,29 +459,28 @@ const TWSaveStatus = ({
                     ) : null}
                 </span>
                 <span className={styles.saveAction}>{label}</span>
-                {statusText && shortStatus ? (
-                    <React.Fragment>
-                        <span
-                            className={classNames(styles.statusText, styles.statusFull, styles[tone])}
-                            aria-hidden="true"
-                        >
-                            {statusText}
-                        </span>
-                        <span
-                            className={classNames(styles.statusText, styles.statusShort, styles[tone])}
-                            role="status"
-                        >
-                            {shortStatus}
-                        </span>
-                    </React.Fragment>
-                ) : statusText ? (
+                {statusText ? (
                     <span
                         className={classNames(styles.statusText, styles[tone])}
-                        role="status"
+                        aria-hidden="true"
                     >
                         {statusText}
                     </span>
                 ) : null}
+                {shortStatus ? (
+                    <span
+                        className={classNames(styles.statusText, styles.statusShort, styles[tone])}
+                        aria-hidden="true"
+                    >
+                        {shortStatus}
+                    </span>
+                ) : null}
+                <span
+                    className={styles.statusLive}
+                    role="status"
+                >
+                    {liveStatus}
+                </span>
             </button>
             {showUnapplied ? (
                 <button
