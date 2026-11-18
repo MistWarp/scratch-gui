@@ -232,7 +232,57 @@ describe('MistWarp save status', () => {
         wrapper.setProps({projectChanged: false});
         wrapper.update();
         expect(statusText()).toBe('Saved');
+        expect(wrapper.find('button').text()).toBe('Save changesSaved just nowSaved');
         wrapper.unmount();
+    });
+
+    test('says when autosave last uploaded the project and that leaving is safe', () => {
+        jest.useFakeTimers();
+        const start = new Date(2026, 10, 18, 16, 0, 0).getTime();
+        const clock = jest.spyOn(Date, 'now').mockReturnValue(start);
+        const vm = {};
+        const wrapper = mountWithIntl(
+            <TWSaveStatus
+                alertsList={[]}
+                projectChanged
+                projectTitle="Project"
+                roturReady
+                onProjectUnchanged={jest.fn()}
+                vm={vm}
+            />
+        );
+        act(() => setSaveFeedback(vm, 'uploading'));
+        act(() => setSaveFeedback(vm, 'cloud'));
+        act(() => setSaveFeedback(vm, 'autosaved'));
+        wrapper.setProps({projectChanged: false});
+        wrapper.update();
+        const button = () => wrapper.find('button');
+        expect(button().text()).toBe('Save changesAutosaved just nowAutosaved');
+        expect(wrapper.find('[role="status"]').text()).toBe('Autosaved');
+        expect(button().prop('title')).toBe('Autosaved just now. Autosave uploaded your latest changes to ' +
+            'MistWarp, so it is safe to leave the editor.');
+
+        clock.mockReturnValue(start + (4 * 60 * 1000));
+        act(() => {
+            jest.advanceTimersByTime(15 * 1000);
+        });
+        wrapper.update();
+        expect(button().text()).toContain('Autosaved 4 min ago');
+
+        clock.mockReturnValue(start + (2 * 60 * 60 * 1000));
+        act(() => {
+            jest.advanceTimersByTime(15 * 1000);
+        });
+        wrapper.update();
+        expect(button().text()).toContain('Autosaved at 4:00 PM');
+
+        wrapper.setProps({projectChanged: true});
+        wrapper.update();
+        expect(wrapper.find('[role="status"]').text()).toBe('Unsaved changes');
+        expect(button().prop('title')).toContain('Autosave is off.');
+        wrapper.unmount();
+        clock.mockRestore();
+        jest.useRealTimers();
     });
 
     test('ignores clicks while another save or project change runs', () => {
@@ -296,6 +346,8 @@ describe('getSaveStatus', () => {
         expect(getSaveStatus({...base, projectChanged: true, feedback: 'cloudFailed'})).toBe('saveFailed');
         expect(getSaveStatus({...base, projectChanged: true, feedback: 'cloud'})).toBe('unsaved');
         expect(getSaveStatus({...base, feedback: 'cloud'})).toBe('saved');
+        expect(getSaveStatus({...base, isOwner: true, feedback: 'autosaved'})).toBe('autosaved');
+        expect(getSaveStatus({...base, projectChanged: true, feedback: 'autosaved'})).toBe('unsaved');
         expect(getSaveStatus({...base, isOwner: true})).toBe('saved');
         expect(getSaveStatus({...base, feedback: 'downloaded'})).toBe('downloaded');
         expect(getSaveStatus({...base, readOnly: true, projectChanged: true})).toBe('readOnly');
