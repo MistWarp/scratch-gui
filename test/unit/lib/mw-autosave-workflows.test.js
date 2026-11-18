@@ -1,6 +1,7 @@
 import {runAutosave} from '../../../src/lib/mw/autosave.js';
 import {getRememberedPlatformProjectState, publishToMistWarp} from '../../../src/lib/community/publish.js';
 import {projectSession} from '../../../src/modules/project-session';
+import {getSaveFeedback} from '../../../src/lib/mw/save-feedback.js';
 
 jest.mock('../../../src/lib/community/publish.js', () => ({
     getRememberedPlatformProjectState: jest.fn(),
@@ -80,6 +81,27 @@ test('pushes the worktree without committing', async () => {
     expect(onSaved).toHaveBeenCalledTimes(1);
     expect(showToast).toHaveBeenCalledWith(expect.anything(), 'success');
     expect(showToast.mock.calls[0][0].props.defaultMessage).toBe('Project autosaved.');
+});
+
+test('marks the save status as autosaved', async () => {
+    const vm = {};
+    await expect(runAutosave({vm, projectChanged: true, settings})).resolves.toBe(true);
+    expect(getSaveFeedback(vm)).toBe('autosaved');
+});
+
+test('leaves the save status alone when the project changed during the upload', async () => {
+    const listeners = {};
+    const vm = {on: (name, fn) => {
+        listeners[name] = fn;
+    }};
+    publishToMistWarp.mockImplementation(async () => {
+        listeners.PROJECT_CHANGED();
+        return {id: '1'};
+    });
+    const onSaved = jest.fn();
+    await expect(runAutosave({vm, projectChanged: true, onSaved, settings})).resolves.toBe(true);
+    expect(getSaveFeedback(vm)).toBeNull();
+    expect(onSaved).not.toHaveBeenCalled();
 });
 
 test('stays quiet when the upload agreement is pending', async () => {

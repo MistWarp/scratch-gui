@@ -7,6 +7,7 @@ import {guardSavedCallback} from './smart-save.js';
 import {getSettings} from './autosave-settings.js';
 import {flushDraftWrites} from '../code-mode/code-drafts.js';
 import {projectSession} from '../../modules/project-session';
+import {setSaveFeedback} from './save-feedback.js';
 
 const messages = defineMessages({
     autosaved: {
@@ -52,7 +53,10 @@ const runAutosave = async ({
     // eslint-disable-next-line require-atomic-updates
     inFlight = true;
     try {
-        const onSavedIfCurrent = guardSavedCallback(vm, onSaved);
+        const onSavedIfCurrent = guardSavedCallback(vm, result => {
+            setSaveFeedback(vm, 'autosaved');
+            onSaved(result);
+        });
         onSavedIfCurrent(await publishToMistWarp({
             vm,
             title: null,

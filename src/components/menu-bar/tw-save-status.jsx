@@ -21,7 +21,12 @@ import {Cloud, Download, Save} from 'lucide-react';
 import smartSave, {EXPLICIT_SAVE_EVENT, guardSavedCallback} from '../../lib/mw/smart-save.js';
 import {subscribeTexts, unappliedFileCount} from '../../lib/code-mode/text-store.js';
 import {revealInCode} from '../../reducers/editor-tab.js';
-import {getSaveFeedback, setSaveFeedback, SAVE_FEEDBACK_EVENT} from '../../lib/mw/save-feedback.js';
+import {
+    getSaveFeedback,
+    getSaveFeedbackTime,
+    setSaveFeedback,
+    SAVE_FEEDBACK_EVENT
+} from '../../lib/mw/save-feedback.js';
 import {getSetting, onSettingsChanged} from '../../lib/mw/autosave-settings.js';
 import {takeEditorIntent} from '../../lib/mw/editor-intent.js';
 
@@ -67,6 +72,51 @@ const messages = defineMessages({
         defaultMessage: 'Saved',
         description: 'Menu bar save status when the latest changes are saved to MistWarp',
         id: 'mw.saveStatus.saved'
+    },
+    savedJustNow: {
+        defaultMessage: 'Saved just now',
+        description: 'Menu bar save status less than a minute after the user saved the project to MistWarp',
+        id: 'mw.saveStatus.savedJustNow'
+    },
+    savedMinutesAgo: {
+        defaultMessage: 'Saved {minutes} min ago',
+        // eslint-disable-next-line max-len
+        description: 'Menu bar save status some minutes after the user saved the project to MistWarp. {minutes} is a whole number from 1 to 59.',
+        id: 'mw.saveStatus.savedMinutesAgo'
+    },
+    savedAt: {
+        defaultMessage: 'Saved at {time}',
+        // eslint-disable-next-line max-len
+        description: 'Menu bar save status an hour or more after the user saved the project to MistWarp. {time} is a clock time such as 4:51 PM.',
+        id: 'mw.saveStatus.savedAt'
+    },
+    autosaved: {
+        defaultMessage: 'Autosaved',
+        // eslint-disable-next-line max-len
+        description: 'Short menu bar save status after autosave uploaded the latest changes, shown when the menu bar is crowded',
+        id: 'mw.saveStatus.autosaved'
+    },
+    autosavedJustNow: {
+        defaultMessage: 'Autosaved just now',
+        description: 'Menu bar save status less than a minute after autosave uploaded the latest changes to MistWarp',
+        id: 'mw.saveStatus.autosavedJustNow'
+    },
+    autosavedMinutesAgo: {
+        defaultMessage: 'Autosaved {minutes} min ago',
+        // eslint-disable-next-line max-len
+        description: 'Menu bar save status some minutes after autosave uploaded the latest changes to MistWarp. {minutes} is a whole number from 1 to 59.',
+        id: 'mw.saveStatus.autosavedMinutesAgo'
+    },
+    autosavedAt: {
+        defaultMessage: 'Autosaved at {time}',
+        // eslint-disable-next-line max-len
+        description: 'Menu bar save status an hour or more after autosave uploaded the latest changes to MistWarp. {time} is a clock time such as 4:51 PM.',
+        id: 'mw.saveStatus.autosavedAt'
+    },
+    autosavedDetail: {
+        defaultMessage: 'Autosave uploaded your latest changes to MistWarp, so it is safe to leave the editor.',
+        description: 'Tooltip on the menu bar save button after autosave uploaded the latest changes',
+        id: 'mw.saveStatus.autosavedDetail'
     },
     downloaded: {
         defaultMessage: 'Saved to computer',
@@ -131,15 +181,17 @@ const messages = defineMessages({
         description: 'Tooltip on the menu bar save button when it downloads the project',
         id: 'mw.saveStatus.downloadDetail'
     },
-    autosaveOn: {
-        defaultMessage: 'Browser autosave is on.',
-        description: 'Tooltip addition on the menu bar save button',
-        id: 'mw.saveStatus.autosaveOn'
+    autosaveEvery: {
+        // eslint-disable-next-line max-len
+        defaultMessage: 'Autosave uploads your changes to MistWarp every {minutes, plural, one {minute} other {# minutes}}.',
+        // eslint-disable-next-line max-len
+        description: 'Tooltip addition on the menu bar save button when autosave is on. {minutes} is the autosave interval.',
+        id: 'mw.saveStatus.autosaveEvery'
     },
-    autosaveOff: {
-        defaultMessage: 'Browser autosave is off.',
-        description: 'Tooltip addition on the menu bar save button',
-        id: 'mw.saveStatus.autosaveOff'
+    autosaveDisabled: {
+        defaultMessage: 'Autosave is off.',
+        description: 'Tooltip addition on the menu bar save button when autosave is off',
+        id: 'mw.saveStatus.autosaveDisabled'
     }
 });
 
@@ -152,6 +204,7 @@ const getSaveStatus = ({busy, downloadError, feedback, isOwner, projectChanged, 
     if (downloadError || feedback === 'downloadFailed') return 'downloadFailed';
     if (projectChanged && feedback === 'cloudFailed') return 'saveFailed';
     if (projectChanged) return 'unsaved';
+    if (feedback === 'autosaved') return 'autosaved';
     if (feedback === 'cloud' || isOwner) return 'saved';
     if (feedback === 'downloaded') return 'downloaded';
     return null;
@@ -165,7 +218,24 @@ const STATUS_TONES = {
     saveFailed: 'error',
     unsaved: 'unsaved',
     saved: 'saved',
+    autosaved: 'saved',
     downloaded: 'saved'
+};
+
+const MINUTE = 60 * 1000;
+const HOUR = 60 * MINUTE;
+
+const SAVED_TIME_MESSAGES = {
+    saved: [messages.savedJustNow, messages.savedMinutesAgo, messages.savedAt],
+    autosaved: [messages.autosavedJustNow, messages.autosavedMinutesAgo, messages.autosavedAt]
+};
+
+const formatSavedTime = (intl, status, savedAt, now) => {
+    const [justNow, minutesAgo, at] = SAVED_TIME_MESSAGES[status];
+    const elapsed = Math.max(0, now - savedAt);
+    if (elapsed < MINUTE) return intl.formatMessage(justNow);
+    if (elapsed < HOUR) return intl.formatMessage(minutesAgo, {minutes: Math.floor(elapsed / MINUTE)});
+    return intl.formatMessage(at, {time: intl.formatTime(savedAt, {hour: 'numeric', minute: '2-digit'})});
 };
 
 const formatShortcut = key => (isMac ? key.replace(/Ctrl/g, '⌘') : key);
@@ -200,7 +270,10 @@ const TWSaveStatus = ({
         };
     }, [vm]);
     const [feedback, setFeedback] = useState(() => getSaveFeedback(vm));
+    const [savedAt, setSavedAt] = useState(() => getSaveFeedbackTime(vm));
+    const [now, setNow] = useState(() => Date.now());
     const [autosave, setAutosave] = useState(() => getSetting('enabled'));
+    const [autosaveInterval, setAutosaveInterval] = useState(() => getSetting('interval'));
     const [downloadError, setDownloadError] = useState(false);
     const [busy, setBusy] = useState(false);
     const [operationActive, setOperationActive] = useState(() => isProjectOperationActive(vm));
@@ -212,6 +285,9 @@ const TWSaveStatus = ({
             if (event.detail.vm !== vm) return;
             const next = getSaveFeedback(vm);
             setFeedback(next);
+            if (next === 'autosaved') setUnappliedNotice(unappliedFileCount());
+            setSavedAt(getSaveFeedbackTime(vm));
+            setNow(Date.now());
             // Downloads from this button, Ctrl+S and the shortcut all land here,
             // so show their progress and outcome where the user can see it.
             // Uploads are reported by the status next to the button instead,
@@ -237,7 +313,10 @@ const TWSaveStatus = ({
         window.addEventListener(SAVE_FEEDBACK_EVENT, update);
         window.addEventListener(PROJECT_OPERATION_EVENT, operation);
         if (vm.runtime) vm.runtime.on('PROJECT_LOADED', reset);
-        const unsubscribe = onSettingsChanged(() => setAutosave(getSetting('enabled')));
+        const unsubscribe = onSettingsChanged(() => {
+            setAutosave(getSetting('enabled'));
+            setAutosaveInterval(getSetting('interval'));
+        });
         return () => {
             window.removeEventListener('mw:platform-project-changed', refresh);
             window.removeEventListener(SAVE_FEEDBACK_EVENT, update);
@@ -303,10 +382,25 @@ const TWSaveStatus = ({
         }
     }, [vm, projectTitle, mistwarpAction, onProjectUnchanged, unavailable]);
     const status = getSaveStatus({busy, downloadError, feedback, isOwner, projectChanged, readOnly});
-    const showUnapplied = status === 'saved' && unappliedNotice > 0 && !projectChanged;
-    const statusText = showUnapplied ?
-        intl.formatMessage(messages.savedWithUnapplied, {count: unappliedNotice}) :
-        (status ? intl.formatMessage(messages[status]) : '');
+    const showUnapplied = (status === 'saved' || status === 'autosaved') && unappliedNotice > 0 && !projectChanged;
+    const timed = !showUnapplied && savedAt !== null &&
+        ((status === 'saved' && feedback === 'cloud') || status === 'autosaved');
+    useEffect(() => {
+        if (!timed) return;
+        setNow(Date.now());
+        const timer = setInterval(() => setNow(Date.now()), 15 * 1000);
+        return () => clearInterval(timer);
+    }, [timed]);
+    let statusText = '';
+    if (showUnapplied) {
+        statusText = intl.formatMessage(messages.savedWithUnapplied, {count: unappliedNotice});
+    } else if (timed) {
+        statusText = formatSavedTime(intl, status, savedAt, now);
+    } else if (status) {
+        statusText = intl.formatMessage(messages[status]);
+    }
+    const shortStatus = timed ? intl.formatMessage(messages[status]) : null;
+    const liveStatus = shortStatus || statusText;
     const label = intl.formatMessage(communityEnabled ?
         (mistwarpAction === 'remix' ? messages.remixLabel :
             mistwarpAction === 'update' ? messages.updateLabel : messages.uploadLabel) :
@@ -329,8 +423,12 @@ const TWSaveStatus = ({
     if (communityEnabled && !platformState && shortcut) {
         detail = `${detail} ${intl.formatMessage(messages.shortcutDownloads, {shortcut: formatShortcut(shortcut)})}`;
     }
-    if (isOwner && !readOnly) {
-        detail = `${detail} ${intl.formatMessage(autosave ? messages.autosaveOn : messages.autosaveOff)}`;
+    if (status === 'autosaved' && !showUnapplied) {
+        detail = intl.formatMessage(messages.autosavedDetail);
+    } else if (isOwner && !readOnly) {
+        detail = `${detail} ${autosave ?
+            intl.formatMessage(messages.autosaveEvery, {minutes: autosaveInterval}) :
+            intl.formatMessage(messages.autosaveDisabled)}`;
     }
     const Icon = communityEnabled ? Cloud : feedback === 'downloaded' ? Download : Save;
     const tone = status ? STATUS_TONES[status] : null;
@@ -364,11 +462,25 @@ const TWSaveStatus = ({
                 {statusText ? (
                     <span
                         className={classNames(styles.statusText, styles[tone])}
-                        role="status"
+                        aria-hidden="true"
                     >
                         {statusText}
                     </span>
                 ) : null}
+                {shortStatus ? (
+                    <span
+                        className={classNames(styles.statusText, styles.statusShort, styles[tone])}
+                        aria-hidden="true"
+                    >
+                        {shortStatus}
+                    </span>
+                ) : null}
+                <span
+                    className={styles.statusLive}
+                    role="status"
+                >
+                    {liveStatus}
+                </span>
             </button>
             {showUnapplied ? (
                 <button
