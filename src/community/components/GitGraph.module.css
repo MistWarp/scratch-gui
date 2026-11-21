@@ -106,6 +106,18 @@
     color: inherit;
 }
 
+.meta {
+    white-space: nowrap;
+}
+
+.detail {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text-faint);
+    text-overflow: ellipsis;
+}
+
 .restore {
     position: relative;
     z-index: 2;

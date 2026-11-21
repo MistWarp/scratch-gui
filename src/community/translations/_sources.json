@@ -247,6 +247,58 @@
     "src/community/commit-changes.js:141",
     "src/community/components/ChangesView.jsx:263"
   ],
+  "{value1} sprites": [
+    "src/community/commit-summary.js:23"
+  ],
+  "Added 1 script in {value1}": [
+    "src/community/commit-summary.js:40"
+  ],
+  "Added {value1} scripts in {value2}": [
+    "src/community/commit-summary.js:41"
+  ],
+  "Removed 1 script in {value1}": [
+    "src/community/commit-summary.js:45"
+  ],
+  "Removed {value1} scripts in {value2}": [
+    "src/community/commit-summary.js:46"
+  ],
+  "Changed 1 script in {value1}": [
+    "src/community/commit-summary.js:49"
+  ],
+  "Changed {value1} scripts in {value2}": [
+    "src/community/commit-summary.js:50"
+  ],
+  "Changed 1 costume or sound in {value1}": [
+    "src/community/commit-summary.js:54"
+  ],
+  "Changed {value1} costumes and sounds in {value2}": [
+    "src/community/commit-summary.js:55"
+  ],
+  "Changed variables, lists or settings in {value1}": [
+    "src/community/commit-summary.js:58"
+  ],
+  "Changed {value1}, too large to summarize": [
+    "src/community/commit-summary.js:61"
+  ],
+  "Changed 1 project file": [
+    "src/community/commit-summary.js:65"
+  ],
+  "Changed {value1} project files": [
+    "src/community/commit-summary.js:66"
+  ],
+  "Only saved state changed": [
+    "src/community/commit-summary.js:68"
+  ],
+  "No changes to how the project runs": [
+    "src/community/commit-summary.js:69"
+  ],
+  "Untitled commit": [
+    "src/community/commit-summary.js:76",
+    "src/community/pages/Commit.jsx:400",
+    "src/community/pages/PullRequest.jsx:607",
+    "src/community/pages/PullRequest.jsx:659",
+    "src/community/pages/RemixTree.jsx:115"
+  ],
   "Activity": [
     "src/community/components/ActivityCard.jsx:28",
     "src/community/pages/Admin.jsx:33",
@@ -1446,14 +1498,14 @@
     "src/community/components/GifPicker.jsx:87"
   ],
   "View commit {value1}": [
-    "src/community/components/GitGraph.jsx:70"
+    "src/community/components/GitGraph.jsx:72"
   ],
   "Restoring…": [
-    "src/community/components/GitGraph.jsx:101",
-    "src/community/pages/project/HistoryList.jsx:100"
+    "src/community/components/GitGraph.jsx:106",
+    "src/community/pages/project/HistoryList.jsx:109"
   ],
   "Restore this version": [
-    "src/community/components/GitGraph.jsx:102"
+    "src/community/components/GitGraph.jsx:107"
   ],
   "{value1} projects, {value2} hearts": [
     "src/community/components/HomeDiscovery.jsx:79"
@@ -6489,12 +6541,6 @@
   "Commit loading progress": [
     "src/community/pages/Commit.jsx:380"
   ],
-  "Untitled commit": [
-    "src/community/pages/Commit.jsx:400",
-    "src/community/pages/PullRequest.jsx:607",
-    "src/community/pages/PullRequest.jsx:659",
-    "src/community/pages/RemixTree.jsx:115"
-  ],
   "committed {value1}": [
     "src/community/pages/Commit.jsx:408",
     "src/community/pages/PullRequest.jsx:659"
@@ -10755,25 +10801,25 @@
     "src/community/pages/project/ForkSetupModal.jsx:75"
   ],
   "Could not load version history.": [
-    "src/community/pages/project/HistoryList.jsx:73"
+    "src/community/pages/project/HistoryList.jsx:81"
   ],
   "No version history yet": [
-    "src/community/pages/project/HistoryList.jsx:78"
+    "src/community/pages/project/HistoryList.jsx:86"
   ],
   "Saved versions of this project will appear here.": [
-    "src/community/pages/project/HistoryList.jsx:79"
+    "src/community/pages/project/HistoryList.jsx:87"
   ],
   "Restore this version?": [
-    "src/community/pages/project/HistoryList.jsx:97"
+    "src/community/pages/project/HistoryList.jsx:106"
   ],
   "Restore version": [
-    "src/community/pages/project/HistoryList.jsx:98"
+    "src/community/pages/project/HistoryList.jsx:107"
   ],
   "{value1} will become the current project. Newer versions will stay in the history.": [
-    "src/community/pages/project/HistoryList.jsx:105"
+    "src/community/pages/project/HistoryList.jsx:114"
   ],
   "Saved version": [
-    "src/community/pages/project/HistoryList.jsx:106"
+    "src/community/pages/project/HistoryList.jsx:115"
   ],
   "Open pull requests from this project": [
     "src/community/pages/project/OutgoingPullNotice.jsx:36"

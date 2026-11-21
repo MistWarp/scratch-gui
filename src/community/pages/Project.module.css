@@ -559,6 +559,11 @@
     margin-inline-end: 10px;
 }
 
+.commitDetail {
+    color: var(--text-faint);
+    font-size: var(--fs-sm);
+}
+
 .pullBrowser {
     display: grid;
     gap: 12px;
