@@ -81,6 +81,16 @@ export const commitHeadline = (message, summary, text, locale) => {
     return {title: subject || text('Untitled commit'), detail: sentence};
 };
 
+export const uncommittedSummaryDetail = (uncommitted, text, locale) => {
+    if (!uncommitted) return '';
+    const sentence = uncommitted.summary && Object.keys(uncommitted.summary).length ?
+        commitSummarySentence(uncommitted.summary, text, locale) : '';
+    if (sentence) return sentence;
+    const files = Number(uncommitted.files) || 0;
+    if (!files) return '';
+    return files === 1 ? text('1 changed file') : text('{value1} changed files', {value1: files});
+};
+
 export const pendingSummaryShas = (shas, known, limit = SUMMARY_LIMIT) => {
     const seen = new Set();
     const pending = [];

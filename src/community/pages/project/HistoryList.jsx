@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {History} from 'lucide-react';
+import {CircleDashed, History} from 'lucide-react';
 import {useCommunityIntl as useCommunityText} from '../../i18n.jsx';
 import api, {projectUrl} from '../../api';
 import {buildSb3FromFileEntries} from '../../../lib/git/mwp.js';
@@ -13,7 +13,7 @@ import StatusMessage from '../../components/ui/StatusMessage.jsx';
 import UserLink from '../../components/UserLink.jsx';
 import styles from '../Project.module.css';
 import {getCommunityLocale} from '../../locale.js';
-import {commitHeadline} from '../../commit-summary.js';
+import {commitHeadline, uncommittedSummaryDetail} from '../../commit-summary.js';
 import useCommitSummaries from './use-commit-summaries.js';
 
 const HistoryList = ({id, history, canRestore, onChange, baseUrl}) => {
@@ -81,24 +81,28 @@ const HistoryList = ({id, history, canRestore, onChange, baseUrl}) => {
         return <StatusMessage error onRetry={onChange}>{communityText('Could not load version history.')}</StatusMessage>;
     }
     const commits = history.commits || [];
-    if (!commits.length) {
+    const uncommitted = history.uncommitted || null;
+    if (!commits.length && !uncommitted) {
         return (
             <EmptyState icon={History} title={communityText('No version history yet')}>
                 {communityText('Saved versions of this project will appear here.')}
             </EmptyState>
         );
     }
+    const commitBase = baseUrl || projectUrl(id);
     if (history.graph?.nodes?.length) {
         return (
             <>
                 {restoreError ? <Notice variant="error" className={styles.pageNotice}>{restoreError}</Notice> : null}
                 <GitGraph
                     projectId={id}
+                    baseUrl={commitBase}
                     graph={history.graph}
                     currentBranch={history.branch}
                     onRestore={canRestore ? requestRestore : null}
                     restoring={restoring}
                     summaries={summaries}
+                    uncommitted={uncommitted}
                 />
                 {restoreCandidate ? (
                     <ConfirmModal
@@ -119,14 +123,30 @@ const HistoryList = ({id, history, canRestore, onChange, baseUrl}) => {
             </>
         );
     }
+    const uncommittedDetail = uncommittedSummaryDetail(uncommitted, communityText, getCommunityLocale());
     return (
         <React.Fragment>
             <ul className={styles.commitList}>
+                {uncommitted ? (
+                    <li key="worktree" className={styles.commitUncommitted}>
+                        <Link className={styles.commitLink} to={`${commitBase}/commits/worktree`}>
+                            <span className={styles.uncommittedBadge}>
+                                <CircleDashed size={12} aria-hidden="true" />
+                                {communityText('Not committed')}
+                            </span>
+                            <span className={styles.commitMsg}>{communityText('Uncommitted changes')}</span>
+                            {uncommittedDetail ? <span className={styles.commitDetail}>{uncommittedDetail}</span> : null}
+                        </Link>
+                        {uncommitted.author ? (
+                            <UserLink className={styles.muted} username={uncommitted.author}>{uncommitted.author}</UserLink>
+                        ) : null}
+                    </li>
+                ) : null}
                 {commits.map(commit => {
                     const headline = commitHeadline(commit.message, summaries[commit.sha], communityText, getCommunityLocale());
                     return (
                         <li key={commit.sha}>
-                            <Link className={styles.commitLink} to={`${baseUrl || projectUrl(id)}/commits/${commit.sha}`}>
+                            <Link className={styles.commitLink} to={`${commitBase}/commits/${commit.sha}`}>
                                 <code>{commit.sha.slice(0, 7)}</code>
                                 <span className={styles.commitMsg}>{headline.title}</span>
                                 {headline.detail ? <span className={styles.commitDetail}>{headline.detail}</span> : null}

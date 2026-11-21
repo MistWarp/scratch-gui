@@ -27,6 +27,13 @@
     stroke-width: 3px;
 }
 
+.uncommittedNode {
+    fill: var(--bg);
+    stroke: var(--status-building);
+    stroke-width: 2px;
+    stroke-dasharray: 3 2;
+}
+
 .commits {
     flex: 1;
     min-width: 340px;
@@ -44,6 +51,13 @@
     gap: 3px;
     padding: 0 14px 0 2px;
     border-bottom: 1px solid var(--border-soft);
+}
+
+.uncommittedRow {
+    padding: 0 14px 0 10px;
+    border-bottom: 1px dashed color-mix(in srgb, var(--status-building) 40%, transparent);
+    border-radius: var(--radius-xs) var(--radius-xs) 0 0;
+    background: color-mix(in srgb, var(--status-building) 8%, transparent);
 }
 
 .commitHitArea {
@@ -93,6 +107,19 @@
     border-radius: var(--radius-2xs);
     background: var(--accent-soft);
     color: var(--accent-strong);
+    font-size: var(--fs-2xs);
+    font-weight: 700;
+}
+
+.uncommittedBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    flex: 0 0 auto;
+    padding: 2px 7px;
+    border-radius: var(--radius-2xs);
+    background: color-mix(in srgb, var(--status-building) 18%, transparent);
+    color: var(--status-building);
     font-size: var(--fs-2xs);
     font-weight: 700;
 }

@@ -23,6 +23,18 @@
     font-size: var(--fs-2xs);
 }
 
+.uncommittedBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 2px 8px;
+    border-radius: var(--radius-2xs);
+    background: color-mix(in srgb, var(--status-building) 18%, transparent);
+    color: var(--status-building);
+    font-size: var(--fs-2xs);
+    font-weight: 700;
+}
+
 .layout {
     display: grid;
     grid-template-columns: 270px minmax(0, 1fr);

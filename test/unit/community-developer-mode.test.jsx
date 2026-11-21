@@ -170,11 +170,9 @@ describe('developer view preference', () => {
     test('the view switch keeps the share key', async () => {
         setDeveloperMode(false);
         const wrapper = await mountProject('/project/project-1?k=secret');
-        const links = wrapper.find('nav[aria-label="Project view mode"] a');
-        expect(links.map(link => link.prop('href'))).toEqual([
-            '/project/project-1?k=secret',
-            '/project/project-1/code?k=secret'
-        ]);
+        const link = wrapper.find('a[aria-label="Developer view"]');
+        expect(link).toHaveLength(1);
+        expect(link.prop('href')).toBe('/project/project-1/code?k=secret');
         wrapper.unmount();
     });
 
@@ -211,7 +209,7 @@ describe('developer view preference', () => {
 
     test('opening the developer view in a new tab leaves the mode alone', async () => {
         const wrapper = await mountProject('/project/project-1');
-        const button = wrapper.find('nav[aria-label="Project view mode"] a').filterWhere(link => link.text() === 'Developer');
+        const button = wrapper.find('a[aria-label="Developer view"]');
         act(() => {
             button.simulate('click', {button: 0, ctrlKey: true});
         });
@@ -222,15 +220,33 @@ describe('developer view preference', () => {
     test('the developer view button turns it on', async () => {
         const wrapper = await mountProject('/project/project-1');
         expect(currentLocation.pathname).toBe('/project/project-1');
-        const button = wrapper.find('nav[aria-label="Project view mode"] a').filterWhere(link => link.text() === 'Developer');
+        const button = wrapper.find('a[aria-label="Developer view"]');
         expect(button).toHaveLength(1);
-        const projectItem = wrapper.find('nav[aria-label="Project view mode"] a').filterWhere(link => link.text() === 'Project');
-        expect(projectItem.prop('aria-current')).toBe('page');
         act(() => {
             button.simulate('click', {button: 0});
         });
         expect(isDeveloperMode()).toBe(true);
         expect(currentLocation.pathname).toBe('/project/project-1/code');
+        wrapper.unmount();
+    });
+
+    test('shows remix origin and ahead/behind indicator in the project header', async () => {
+        setDeveloperMode(false);
+        const wrapper = await mountProject('/project/project-1', {
+            remixFrom: {
+                id: 'parent-1',
+                owner: 'Alice',
+                title: 'Base Game',
+                vanitySlug: 'base-game',
+                ahead: 2,
+                behind: 1
+            }
+        });
+        expect(wrapper.text()).toContain('Remixed from');
+        const parentLink = wrapper.find('a').filterWhere(link => link.text() === 'Alice / Base Game');
+        expect(parentLink.prop('href')).toBe('/p/base-game');
+        const deltaLink = wrapper.find('a').filterWhere(link => link.text() === '2 ahead, 1 behind');
+        expect(deltaLink.prop('href')).toBe('/project/project-1/code/commits');
         wrapper.unmount();
     });
 });

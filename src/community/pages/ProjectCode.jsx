@@ -2,15 +2,18 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {Link, useLocation, useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import {
-    ExternalLink, GitFork, Lock
+    CircleDashed, ExternalLink, GitFork, Lock
 } from 'lucide-react';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
-import api, {editorUrl} from '../api';
+import api, {editorUrl, projectUrl} from '../api';
 import {useUser} from '../UserContext.jsx';
 import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
 import {canViewProjectSource} from '../project-source-access';
+import {uncommittedSummaryDetail} from '../commit-summary.js';
 import {formatBytes, safeDate, timeAgo} from '../format.js';
+import {getCommunityLocale} from '../locale.js';
 import setPageMeta from '../page-meta.js';
+import {hasRemixDivergence, remixDivergenceSentence, remixParentLabel} from '../remix-origin.js';
 import useLatest from '../use-latest.js';
 import Avatar from '../components/Avatar.jsx';
 import ProjectBranches from '../components/ProjectBranches.jsx';
@@ -244,6 +247,15 @@ const ProjectCodePage = ({id, vanitySlug}) => {
         releases: <React.Fragment>{communityText('Releases')}<Count value={counts.releases} /></React.Fragment>
     };
 
+    const uncommitted = versionHistory && versionHistory.uncommitted ? versionHistory.uncommitted : null;
+    const showUncommitted = Boolean(
+        uncommitted && (!uncommitted.branch || uncommitted.branch === branchName)
+    );
+    const uncommittedDetail = showUncommitted ?
+        uncommittedSummaryDetail(uncommitted, communityText, getCommunityLocale()) : '';
+    const remixFrom = project.remixFrom || null;
+    const remixParentUrl = remixFrom ? projectUrl(remixFrom) : '';
+
     return (
         <main className={styles.page}>
             <header className={styles.header}>
@@ -251,11 +263,22 @@ const ProjectCodePage = ({id, vanitySlug}) => {
                     <Link to={`/users/${project.owner}`} className={styles.ownerAvatar}>
                         <Avatar username={project.owner} size={32} />
                     </Link>
-                    <h1>
-                        <Link to={`/users/${project.owner}`}>{project.owner}</Link>
-                        <span className={styles.slash}>{'/'}</span>
-                        <Link to={codeTabPath(baseUrl, 'code')}>{project.title}</Link>
-                    </h1>
+                    <div className={styles.headingCopy}>
+                        <h1>
+                            <Link to={`/users/${project.owner}`}>{project.owner}</Link>
+                            <span className={styles.slash}>{'/'}</span>
+                            <Link to={codeTabPath(baseUrl, 'code')}>{project.title}</Link>
+                        </h1>
+                        {remixFrom ? (
+                            <p className={styles.remixOrigin}>
+                                <GitFork size={13} aria-hidden="true" />
+                                <span>{communityText('Remixed from')}</span>
+                                <Link to={codeTabPath(remixParentUrl, 'code')}>
+                                    {remixParentLabel(remixFrom)}
+                                </Link>
+                            </p>
+                        ) : null}
+                    </div>
                 </div>
                 <div className={styles.actions}>
                     <ViewModeSwitch
@@ -287,6 +310,35 @@ const ProjectCodePage = ({id, vanitySlug}) => {
                         {tab === 'code' ? (
                             <div className={place.kind === 'tree' && !place.path ? styles.codeLayout : styles.codeFull}>
                                 <div className={styles.main}>
+                                    {place.kind === 'tree' && !place.path && hasRemixDivergence(remixFrom) ? (
+                                        <div className={styles.forkStatus}>
+                                            <GitFork size={15} aria-hidden="true" />
+                                            <span>{remixDivergenceSentence(remixFrom, communityText)}</span>
+                                            {project.isOwner && remixFrom.ahead > 0 ? (
+                                                <Link className={styles.forkAction} to={`${remixParentUrl}#contribute`}>
+                                                    {communityText('Contribute')}
+                                                </Link>
+                                            ) : null}
+                                        </div>
+                                    ) : null}
+                                    {place.kind === 'tree' && !place.path && showUncommitted ? (
+                                        <div className={styles.uncommittedBanner}>
+                                            <span className={styles.uncommittedBadge}>
+                                                <CircleDashed size={13} aria-hidden="true" />
+                                                {communityText('Not committed')}
+                                            </span>
+                                            <span className={styles.uncommittedCopy}>
+                                                <strong>{communityText('Uncommitted changes')}</strong>
+                                                {uncommittedDetail ? <small>{uncommittedDetail}</small> : null}
+                                            </span>
+                                            <Link
+                                                className={styles.uncommittedAction}
+                                                to={withShareKey(`${baseUrl}/commits/worktree`, shareKey)}
+                                            >
+                                                {communityText('View changes')}
+                                            </Link>
+                                        </div>
+                                    ) : null}
                                     {browseProject && (branches !== null || !requestedBranch) ? (
                                         <CodeBrowser
                                             project={browseProject}
