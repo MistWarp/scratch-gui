@@ -3,7 +3,7 @@ import React, {useState, useEffect, useRef} from 'react';
 import {Link, useNavigate, useSearchParams} from 'react-router-dom';
 import {
     Palette, Radio, User, Bell, Eye, Shield, Database, Trash2, ExternalLink, SlidersHorizontal,
-    PanelTop, Paintbrush, Brush, Lock, Ban, VolumeX, Save, Package
+    PanelTop, Paintbrush, Brush, Lock, Ban, VolumeX, Save, Package, FileCode2
 } from 'lucide-react';
 import {applyTheme, applyThemeVisuals, detectTheme} from '../../lib/themes/themePersistance.js';
 import {ThemeAccentPanel} from '../../components/tw-settings-modal/theme-accent-panel.jsx';
@@ -20,6 +20,7 @@ import SectionHeading from '../components/ui/SectionHeading.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import {Switch, SwitchRow} from '../components/ui/Switch.jsx';
 import {useUser} from '../UserContext.jsx';
+import {useDeveloperMode} from '../developer-mode.js';
 import {
     getUsernameOverride,
     setUsernameOverride,
@@ -166,6 +167,7 @@ const Settings = () => {
         () => Object.keys(readActivityGrants()).length
     );
     const [projectThemeMode, setProjectThemeMode] = useState(getProjectThemeMode());
+    const [developerMode, changeDeveloperMode] = useDeveloperMode();
     const activeSection = settingsSection(searchParams.get('section'));
     const themeTab = settingsThemeTab(searchParams.get('tab'));
     const dataTab = settingsDataTab(searchParams.get('tab'));
@@ -587,6 +589,17 @@ const Settings = () => {
                                         {PROJECT_THEME_MODES.map(mode => <option key={mode.value} value={mode.value}>{communityText(mode.label)}</option>)}
                                     </select>
                                 </label>
+                                <SectionHeading
+                                    className={styles.headingAfterField}
+                                    icon={FileCode2}
+                                    title={communityText('Developer view')}
+                                    lead={communityText('Open projects on their files, commits and pull requests, with the player beside them. Projects with private source still open normally.')}
+                                />
+                                <SwitchRow
+                                    checked={developerMode}
+                                    label={communityText('Open projects in developer view')}
+                                    onChange={changeDeveloperMode}
+                                />
                             </div> : null}
                             {themeTab === 'custom' ? <div className={styles.themeContent} {...tabPanelProps('settings-theme', themeTab)}>
                                 <SectionHeading icon={Brush} title={communityText('Custom themes')} />

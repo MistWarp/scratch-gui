@@ -3720,5 +3720,7 @@
   "No files match": "No files match",
   "Try a different file name.": "Try a different file name.",
   "Parent folder": "Parent folder",
-  "Breadcrumb": "Breadcrumb"
+  "Breadcrumb": "Breadcrumb",
+  "Open projects on their files, commits and pull requests, with the player beside them. Projects with private source still open normally.": "Open projects on their files, commits and pull requests, with the player beside them. Projects with private source still open normally.",
+  "Open projects in developer view": "Open projects in developer view"
 }

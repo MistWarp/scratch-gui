@@ -41,6 +41,10 @@
     margin-bottom: 14px;
 }
 
+.headingAfterField {
+    margin-top: var(--space-6);
+}
+
 .noticeAfter {
     margin-top: 14px;
 }

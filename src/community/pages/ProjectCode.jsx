@@ -9,6 +9,7 @@ import api, {editorUrl} from '../api';
 import {useUser} from '../UserContext.jsx';
 import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
 import {canViewProjectSource} from '../project-source-access';
+import {setDeveloperMode} from '../developer-mode.js';
 import {formatBytes, safeDate, timeAgo} from '../format.js';
 import setPageMeta from '../page-meta.js';
 import useLatest from '../use-latest.js';
@@ -24,6 +25,7 @@ import SelectMenu from '../components/ui/SelectMenu.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import CodeBrowser from './project/CodeBrowser.jsx';
 import HistoryList from './project/HistoryList.jsx';
+import ProjectPreview from './project/ProjectPreview.jsx';
 import PullList from './project/PullList.jsx';
 import ReleaseList from './project/ReleaseList.jsx';
 import useProjectData from './project/use-project-data.js';
@@ -86,6 +88,7 @@ const AboutPanel = ({project, baseUrl, counts, fileCount, contributors}) => {
     const updated = safeDate(project.edited);
     return (
         <aside className={styles.side}>
+            <ProjectPreview project={project} />
             <section>
                 <h2>{communityText('Details')}</h2>
                 {(project.tags || []).length ? (
@@ -218,18 +221,18 @@ const ProjectCodePage = ({id, vanitySlug}) => {
                     <h1>
                         <Link to={`/users/${project.owner}`}>{project.owner}</Link>
                         <span className={styles.slash}>{'/'}</span>
-                        <Link to={baseUrl}>{project.title}</Link>
+                        <Link to={codeTabPath(baseUrl, 'code')}>{project.title}</Link>
                     </h1>
                 </div>
                 <div className={styles.actions}>
-                    <Button as={Link} variant="secondary" to={baseUrl}>
+                    <Button as={Link} variant="secondary" to={baseUrl} onClick={() => setDeveloperMode(false)}>
                         <Gamepad2 size={16} />{communityText('Project view')}</Button>
                     {project.canRemix && !project.isOwner ? (
                         <Button as="a" variant="secondary" href={editorUrl({platformProject: project.id, from: 'remix'})}>
                             <GitFork size={16} />{communityText('Remix')}</Button>
                     ) : null}
                     {canView ? (
-                        <Button as="a" variant="primary" href={editorUrl({platformProject: project.id})}>
+                        <Button as="a" variant="primary" href={editorUrl({platformProject: project.id, mode: 'code'})}>
                             <ExternalLink size={16} />{communityText('See inside')}</Button>
                     ) : null}
                 </div>

@@ -8,9 +8,14 @@ import ProjectCode, {
     codeLocation, codeTabPath, commitContributors
 } from '../../src/community/pages/ProjectCode.jsx';
 import {codeEntryUrl, listDirectory, searchFiles} from '../../src/community/pages/project/CodeBrowser.jsx';
+import {isDeveloperMode, setDeveloperMode} from '../../src/community/developer-mode.js';
 
 jest.mock('../../src/community/UserContext.jsx', () => ({
     useUser: () => ({user: null, loading: false, login: jest.fn()})
+}));
+jest.mock('../../src/lib/community/cached-fetch.js', () => ({
+    cachedFetchBuffer: jest.fn(() => Promise.resolve(new ArrayBuffer(0))),
+    preloadContent: jest.fn(() => Promise.resolve())
 }));
 
 const sha = letter => letter.repeat(40);
@@ -319,6 +324,56 @@ describe('project developer view page', () => {
         });
         await settle(wrapper);
         expect(currentLocation.pathname).toBe('/project/project-1/code/commits');
+    });
+
+    test('plays the project in the sidebar only once asked', async () => {
+        mockApi(baseProject({
+            projectJsonUrl: 'https://projects.example/project-1.sb3',
+            assetsBase: 'https://assets.example/',
+            hasContent: true,
+            thumbUrl: 'https://assets.example/thumb.png'
+        }));
+        const wrapper = mountAt('/project/project-1/code');
+        await settle(wrapper);
+
+        expect(wrapper.find('iframe')).toHaveLength(0);
+        const play = wrapper.find('button').filterWhere(button => button.prop('aria-label') === 'Play Space game');
+        expect(play).toHaveLength(1);
+        act(() => {
+            play.simulate('click');
+        });
+        wrapper.update();
+        const frame = wrapper.find('iframe');
+        expect(frame).toHaveLength(1);
+        expect(frame.prop('src')).toContain('platform_project=project-1');
+        expect(frame.prop('src')).toContain('apply_project_theme=0');
+        expect(frame.prop('sandbox')).toContain('allow-scripts');
+        expect(frame.prop('sandbox')).not.toContain('allow-same-origin');
+    });
+
+    test('leaves out the player when there is nothing to play', async () => {
+        mockApi(baseProject({hasContent: false}));
+        const wrapper = mountAt('/project/project-1/code');
+        await settle(wrapper);
+        expect(wrapper.find('button').filterWhere(button => button.prop('aria-label') === 'Play Space game')).toHaveLength(0);
+    });
+
+    test('opens the editor in code mode and turns the developer view off for project view', async () => {
+        mockApi(baseProject());
+        setDeveloperMode(true);
+        const wrapper = mountAt('/project/project-1/code');
+        await settle(wrapper);
+
+        const seeInside = wrapper.find('a').filterWhere(link => link.text() === 'See inside');
+        expect(seeInside.prop('href')).toContain('mode=code');
+        expect(seeInside.prop('href')).toContain('#mw-project-1');
+        const projectView = wrapper.find('a').filterWhere(link => link.text() === 'Project view');
+        act(() => {
+            projectView.simulate('click', {button: 0});
+        });
+        expect(isDeveloperMode()).toBe(false);
+        expect(currentLocation.pathname).toBe('/project/project-1');
+        localStorage.removeItem('mw:developer-view');
     });
 
     test('keeps private source hidden', async () => {
