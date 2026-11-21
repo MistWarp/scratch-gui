@@ -35,6 +35,33 @@ const translateSource = source => {
 };
 
 describe('scratchblocks translation', () => {
+    test('draws extension booleans, menus and hidden defaults in the right shapes', () => {
+        const parsed = parseFractch([
+            'sprite "A";',
+            'when broadcast "X" at 0,0 {',
+            '  if touchingMouse() && lmsLooksPlus.spriteVisible(' +
+                'TARGET: shadow lmsLooksPlus.menu_spriteMenu(field spriteMenu: "Field to type in")) {',
+            '    append(lists["MOUSE HOVERING"], 0);',
+            '  }',
+            '  if strings.identical(OPERAND1: vars["WHAT WAS TYPED"], OPERAND2: (PASSWORD ?? "a")) {',
+            '    say 1;',
+            '  }',
+            '  if !lmsclonesplus.isClone() {',
+            '    say 2;',
+            '  }',
+            '}',
+            ''
+        ].join('\n'));
+        const text = translateScript(parsed.scripts[0]);
+        expect(text).toContain(
+            'if <<touching [mouse-pointer v]?> and <sprite visible [Field to type in v] :: extension>> then'
+        );
+        expect(text).toContain('if <identical (WHAT WAS TYPED) (PASSWORD) :: extension> then');
+        expect(text).toContain('if <not <is clone :: extension>> then');
+        expect(text).not.toContain('<(');
+        expect(text).not.toContain('menu');
+    });
+
     test('translates hats to scratch language', () => {
         expect(translateSource('when flag {\n}\n')).toContain('when green flag clicked');
         expect(translateSource('when broadcast go {\n}\n')).toContain('when I receive [go v]');

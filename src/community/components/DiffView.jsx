@@ -10,6 +10,7 @@ import BlocksCompare from './BlocksCompare.jsx';
 import EmptyState from './ui/EmptyState.jsx';
 import StatusMessage from './ui/StatusMessage.jsx';
 import {groupFilesBySprite, spriteLabel, spriteOfPath} from './SpriteList.jsx';
+import {plainScriptTitle} from '../commit-changes.js';
 import styles from './DiffView.module.css';
 
 const DIFF_HEADER = /^diff --(?:mwp|git) a\/(.+?) b\/(.+)$/;
@@ -559,7 +560,7 @@ const DiffView = ({diff, spriteFilter = '', onOpenFile = null, loadAsset = null,
                                 >
                                     {blockScripts[group.name].slice(0, MAX_BLOCK_SCRIPTS).map(script => (
                                         <div className={styles.blockScript} key={script.key}>
-                                            <span className={styles.blockDesc}>{script.desc}</span>
+                                            <span className={styles.blockDesc}>{plainScriptTitle(script.desc)}</span>
                                             <BlocksCompare source={script.diff} />
                                         </div>
                                     ))}
