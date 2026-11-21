@@ -22,7 +22,8 @@ const MOVED_APP_PAGES = new Set(['/player', '/fullscreen', '/addons', '/credits'
 const PROJECT_PAGE = /^\/\d+(?:\/(editor|fullscreen))?$/;
 const PROJECT_PAGE_ASSETS = {editor: '/editor', fullscreen: '/fullscreen'};
 const FILE_PATH = /\/[^/]+\.(?!html$)[A-Za-z0-9]+$/;
-const PROJECT_CODE_PATH = /^\/code(?:\/(?:commits|branches|pulls|releases)|\/(?:tree|blob)(?:\/[^/]+)+)?$/;
+const PROJECT_CODE_PATH =
+    /^\/code(?:\/(?:commits|branches|pulls|releases|issues)|\/issues\/\d+|\/(?:tree|blob)(?:\/[^/]+)+)?$/;
 // The app pages live at the root, but people guess /editor/fullscreen and the like from the editor's URL.
 const EDITOR_PREFIXED_APP_PAGE = /^\/editor(\/[^/]+)$/;
 // Standalone HTML entries with their own tags; the community SPA is index.html.

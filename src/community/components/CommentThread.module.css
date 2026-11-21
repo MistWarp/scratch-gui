@@ -102,6 +102,29 @@
     font-size: var(--fs-xs);
 }
 
+.issue {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 7px;
+    border-radius: var(--radius-2xs);
+    background: color-mix(in srgb, var(--mw-success) 16%, transparent);
+    color: var(--mw-success);
+    font-size: var(--fs-2xs);
+    font-weight: 700;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+.issueDone {
+    background: var(--accent-softer);
+    color: var(--accent-strong);
+}
+
+a.issue:hover {
+    text-decoration: underline;
+}
+
 .pinned {
     display: inline-flex;
     align-items: center;

@@ -25,6 +25,8 @@ import SelectMenu from '../components/ui/SelectMenu.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import CodeBrowser from './project/CodeBrowser.jsx';
 import HistoryList from './project/HistoryList.jsx';
+import IssueList from './project/IssueList.jsx';
+import IssueThread from './project/IssueThread.jsx';
 import ProjectPreview from './project/ProjectPreview.jsx';
 import PullList from './project/PullList.jsx';
 import ReleaseList from './project/ReleaseList.jsx';
@@ -32,10 +34,11 @@ import useProjectData from './project/use-project-data.js';
 import styles from './ProjectCode.module.css';
 
 const TAB_ID_PREFIX = 'project-code';
-export const CODE_TABS = ['code', 'commits', 'branches', 'pulls', 'releases'];
+export const CODE_TABS = ['code', 'issues', 'commits', 'branches', 'pulls', 'releases'];
 export const codeLocation = splat => {
     const parts = String(splat || '').split('/').filter(Boolean);
     if (parts[0] === 'tree' || parts[0] === 'blob') return {tab: 'code', kind: parts[0], path: parts.slice(1).join('/')};
+    if (parts[0] === 'issues' && /^\d+$/.test(parts[1] || '')) return {tab: 'issues', kind: 'issue', path: '', number: Number(parts[1])};
     return {tab: CODE_TABS.includes(parts[0]) ? parts[0] : 'code', kind: 'tree', path: ''};
 };
 export const codeTabPath = (baseUrl, tab) => (tab === 'code' ? `${baseUrl}/code` : `${baseUrl}/code/${tab}`);
@@ -82,6 +85,7 @@ const AboutPanel = ({project, baseUrl, counts, fileCount, contributors}) => {
     const rows = [
         {key: 'commits', tab: 'commits', value: counts.commits, one: communityText('1 commit'), many: communityText('{value1} commits', {value1: counts.commits})},
         {key: 'branches', tab: 'branches', value: counts.branches, one: communityText('1 branch'), many: communityText('{value1} branches', {value1: counts.branches})},
+        {key: 'issues', tab: 'issues', value: counts.issues, one: communityText('1 open issue'), many: communityText('{value1} open issues', {value1: counts.issues})},
         {key: 'pulls', tab: 'pulls', value: counts.pulls, one: communityText('1 open pull request'), many: communityText('{value1} open pull requests', {value1: counts.pulls})},
         {key: 'releases', tab: 'releases', value: counts.releases, one: communityText('1 release'), many: communityText('{value1} releases', {value1: counts.releases})}
     ].filter(row => typeof row.value === 'number');
@@ -136,6 +140,7 @@ const ProjectCodePage = ({id, vanitySlug}) => {
     const [branches, setBranches] = useState(null);
     const [openPulls, setOpenPulls] = useState(null);
     const [releaseCount, setReleaseCount] = useState(null);
+    const [issueCounts, setIssueCounts] = useState(null);
     const [fileCount, setFileCount] = useState(null);
     const beginExtras = useLatest();
     const place = codeLocation(params['*']);
@@ -156,11 +161,13 @@ const ProjectCodePage = ({id, vanitySlug}) => {
         api.branches(id).then(fresh(data => setBranches(data.branches || []))).catch(fresh(() => setBranches([])));
         api.pulls(id).then(fresh(data => setOpenPulls((data.pulls || []).filter(pull => pull.state === 'open').length))).catch(() => {});
         api.releases(id).then(fresh(data => setReleaseCount((data.releases || []).length))).catch(() => {});
+        api.getComments(id, {limit: 1, issue: 'open'}).then(fresh(data => setIssueCounts(data.issueCounts || null))).catch(() => {});
     }, [beginExtras, canView, id]);
     useEffect(() => {
         setBranches(null);
         setOpenPulls(null);
         setReleaseCount(null);
+        setIssueCounts(null);
         setFileCount(null);
         loadBranches();
     }, [loadBranches]);
@@ -186,8 +193,11 @@ const ProjectCodePage = ({id, vanitySlug}) => {
         commits: project ? Number(project.commitCount) || (versionHistory?.commits?.length ?? null) : null,
         branches: branches ? branches.length : null,
         pulls: openPulls,
-        releases: releaseCount
+        releases: releaseCount,
+        issues: issueCounts ? issueCounts.open : null
     };
+    const hasIssues = Boolean(issueCounts && (issueCounts.open || issueCounts.done));
+    const visibleTabs = CODE_TABS.filter(key => key !== 'issues' || !project || !project.issuesOff || hasIssues);
 
     const pickBranch = name => {
         const next = new URLSearchParams(searchParams);
@@ -205,6 +215,7 @@ const ProjectCodePage = ({id, vanitySlug}) => {
 
     const tabLabels = {
         code: communityText('Code'),
+        issues: <React.Fragment>{communityText('Issues')}<Count value={counts.issues} /></React.Fragment>,
         commits: <React.Fragment>{communityText('Commits')}<Count value={counts.commits} /></React.Fragment>,
         branches: <React.Fragment>{communityText('Branches')}<Count value={counts.branches} /></React.Fragment>,
         pulls: <React.Fragment>{communityText('Pull requests')}<Count value={counts.pulls} /></React.Fragment>,
@@ -252,7 +263,7 @@ const ProjectCodePage = ({id, vanitySlug}) => {
                         idPrefix={TAB_ID_PREFIX}
                         value={tab}
                         onChange={showTab}
-                        items={CODE_TABS.map(key => ({key, label: tabLabels[key]}))}
+                        items={visibleTabs.map(key => ({key, label: tabLabels[key]}))}
                     />
                     <div {...tabPanelProps(TAB_ID_PREFIX, tab)} className={styles.panel}>
                         {tab === 'code' ? (
@@ -300,6 +311,12 @@ const ProjectCodePage = ({id, vanitySlug}) => {
                                     />
                                 ) : null}
                             </div>
+                        ) : null}
+                        {tab === 'issues' && place.kind === 'issue' ? (
+                            <IssueThread key={place.number} id={id} baseUrl={baseUrl} number={place.number} project={project} />
+                        ) : null}
+                        {tab === 'issues' && place.kind !== 'issue' ? (
+                            <IssueList id={id} baseUrl={baseUrl} project={project} onCounts={setIssueCounts} />
                         ) : null}
                         {tab === 'commits' ? (
                             <HistoryList id={id} baseUrl={baseUrl} history={versionHistory} canRestore={project.isOwner} onChange={refreshProjectAndHistory} />

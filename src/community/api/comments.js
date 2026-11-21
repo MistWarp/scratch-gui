@@ -21,6 +21,8 @@ export default {
         request(`/projects/${id}/comments/${commentId}/react`, {method: 'POST', body: {type}}),
     pinComment: (id, commentId, pinned) =>
         request(`/projects/${id}/comments/${commentId}/pin`, {method: 'POST', body: {pinned}}),
+    setCommentIssue: (id, commentId, state) =>
+        request(`/projects/${id}/comments/${commentId}/issue`, {method: 'PUT', body: {state}}),
     reactProfileComment: (name, commentId, type) =>
         request(`/users/${encodeURIComponent(name)}/comments/${commentId}/react`, {method: 'POST', body: {type}}),
     pinProfileComment: (name, commentId, pinned) =>

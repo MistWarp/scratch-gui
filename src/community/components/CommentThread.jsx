@@ -2,7 +2,10 @@ import {getCommunityLocale} from '../locale.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useState, useCallback, useMemo, useRef} from 'react';
 import {Link} from 'react-router-dom';
-import {Reply, Search, MoreHorizontal, MessageSquare, Pencil, Flag, Trash2, Coins, Pin, Trophy} from 'lucide-react';
+import {
+    Reply, Search, MoreHorizontal, MessageSquare, Pencil, Flag, Trash2, Coins, Pin, Trophy, CircleDot, CircleCheck,
+    CircleSlash, RotateCcw
+} from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import useAfterLogin from '../use-after-login.js';
 import Avatar from './Avatar.jsx';
@@ -21,6 +24,7 @@ import {timeAgo, sameUser, formatPlaytime} from '../format';
 import {payWithRotur} from '../../lib/rotur/payment-window.js';
 import useLatest from '../use-latest.js';
 import {readSessionDraft, writeSessionDraft} from '../session-draft.js';
+import {commentIssueNumber, commentIssueState, mergeCommentUpdate} from '../comment-issues.js';
 import styles from './CommentThread.module.css';
 
 const commentKindOptions = text => [
@@ -87,10 +91,25 @@ const kindLabel = (kind, text) => commentKindOptions(text).find(item => item.val
 const CommentRow = ({
     comment, onReply, onDelete, onEdit, onSaveEdit, onCancelEdit, onReact, onPin, onReport, canReply, canDelete,
     canEdit, canPin, canReport, deleting, editing, editText, editBusy, onEditTextChange, reacting, pinning,
-    isReply, id, authorBadge
+    isReply, id, authorBadge, canIssue, canTrackIssue, onIssue, issueBusy, issueHref
 }) => {
     const {text: communityText} = useCommunityText();
-    const hasMenu = canEdit || canPin || canReport || canDelete;
+    const issueState = commentIssueState(comment);
+    const issueNumber = commentIssueNumber(comment);
+    const showIssueActions = Boolean(canIssue && (issueState || canTrackIssue));
+    const hasMenu = canEdit || canPin || canReport || canDelete || showIssueActions;
+    const issueLabel = issueState === 'done' ?
+        communityText('Done #{value1}', {value1: issueNumber}) :
+        communityText('Issue #{value1}', {value1: issueNumber});
+    const issueBadge = issueState ? (
+        <React.Fragment>
+            {issueState === 'done' ?
+                <CircleCheck size={11} aria-hidden="true" /> :
+                <CircleDot size={11} aria-hidden="true" />}
+            {issueLabel}
+        </React.Fragment>
+    ) : null;
+    const issueClass = `${styles.issue} ${issueState === 'done' ? styles.issueDone : ''}`;
     const donationTier = commentDonationTier(donationAmount(comment));
     return (
         <div
@@ -143,6 +162,9 @@ const CommentRow = ({
                             {communityText('Edited')}
                         </span>
                     ) : null}
+                    {issueState && issueHref ? (
+                        <Link className={issueClass} to={issueHref(issueNumber)}>{issueBadge}</Link>
+                    ) : issueState ? <span className={issueClass}>{issueBadge}</span> : null}
                     {comment.pinned ? (
                         <span className={styles.pinned} title={communityText('Pinned comment')}>
                             <Pin size={11} />
@@ -190,6 +212,33 @@ const CommentRow = ({
                                     >
                                         <Pin size={14} />
                                         {comment.pinned ? communityText('Unpin') : communityText('Pin to top')}
+                                    </DropdownItem> : null}
+                                    {showIssueActions && !issueState ? <DropdownItem
+                                        disabled={issueBusy}
+                                        onClick={() => {
+                                            close(); onIssue('open');
+                                        }}
+                                    ><CircleDot size={14} />{communityText('Track as issue')}</DropdownItem> : null}
+                                    {showIssueActions && issueState === 'open' ? <DropdownItem
+                                        disabled={issueBusy}
+                                        onClick={() => {
+                                            close(); onIssue('done');
+                                        }}
+                                    ><CircleCheck size={14} />{communityText('Mark as done')}</DropdownItem> : null}
+                                    {showIssueActions && issueState === 'done' ? <DropdownItem
+                                        disabled={issueBusy}
+                                        onClick={() => {
+                                            close(); onIssue('open');
+                                        }}
+                                    ><RotateCcw size={14} />{communityText('Reopen issue')}</DropdownItem> : null}
+                                    {showIssueActions && issueState ? <DropdownItem
+                                        disabled={issueBusy}
+                                        onClick={() => {
+                                            close(); onIssue('none');
+                                        }}
+                                    >
+                                        <CircleSlash size={14} />
+                                        {communityText('Stop tracking as issue')}
                                     </DropdownItem> : null}
                                     {canReport ? <DropdownItem
                                         onClick={() => {
@@ -327,7 +376,7 @@ const InlineComposer = ({
 
 const CommentThread = ({
     source, canModerate, canPin = false, disabled, disabledReason, reportContext, projectComments = false,
-    composerAction, onCountChange = null, donationRecipient = '', draftKey = '', authorBadges = null
+    composerAction, onCountChange = null, donationRecipient = '', draftKey = '', authorBadges = null, issues = null
 }) => {
     const {text: communityText} = useCommunityText();
     const {user} = useUser();
@@ -358,6 +407,7 @@ const CommentThread = ({
     const [editBusy, setEditBusy] = useState(false);
     const [reactingIds, setReactingIds] = useState({});
     const [pinningIds, setPinningIds] = useState({});
+    const [issueIds, setIssueIds] = useState({});
     const [rootLimit, setRootLimit] = useState(ROOT_PAGE);
     const [totalRoots, setTotalRoots] = useState(0);
     const [nextOffset, setNextOffset] = useState(0);
@@ -532,7 +582,7 @@ const CommentThread = ({
             }
             if (event.type === 'comment_edited' && event.comment) {
                 setComments(current => current.map(comment => (
-                    comment.id === event.comment.id ? {...comment, ...event.comment} : comment
+                    comment.id === event.comment.id ? mergeCommentUpdate(comment, event.comment) : comment
                 )));
                 return;
             }
@@ -773,6 +823,32 @@ const CommentThread = ({
         }
     };
 
+    const setIssue = async (commentId, state) => {
+        if (!source.issue || !user) return;
+        const actionSource = source;
+        const actionViewer = viewerName;
+        const releaseAction = beginAction(actionSource, actionViewer, `issue:${commentId}`);
+        if (!releaseAction) return;
+        markPending(setIssueIds, commentId, true);
+        setError(null);
+        try {
+            const result = await actionSource.issue(commentId, state);
+            if (sourceRef.current !== actionSource || viewerRef.current !== actionViewer) return;
+            if (result && result.comment) {
+                setComments(cs => cs.map(c => (c.id === commentId ? mergeCommentUpdate(c, result.comment) : c)));
+            }
+        } catch (e) {
+            if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {
+                setError(e.message || communityText('Could not update the issue.'));
+            }
+        } finally {
+            releaseAction();
+            if (sourceRef.current === actionSource && viewerRef.current === actionViewer) {
+                markPending(setIssueIds, commentId, false);
+            }
+        }
+    };
+
     const openReply = (rootId, prefill = '') => {
         setReplyTo(rootId);
         setReplyText(prefill);
@@ -783,6 +859,8 @@ const CommentThread = ({
         (canModerate || user.isAdmin || sameUser(comment.author, user.username));
     const canEdit = comment => Boolean(source.edit && user) && sameUser(comment.author, user.username);
     const canPinComment = comment => Boolean(canPin && source.pin && user) && !comment.parent;
+    const canIssueComment = comment => Boolean(issues && source.issue && user) && !comment.parent &&
+        (Boolean(issues.canTriage) || sameUser(comment.author, user.username));
     const canReport = comment => Boolean(user) && !sameUser(comment.author, user.username);
     const authorBadgeFor = author => (authorBadges && author ? authorBadges[String(author).toLowerCase()] || '' : '');
     const canReply = Boolean(user) && !disabled;
@@ -936,6 +1014,11 @@ const CommentThread = ({
                                 canDelete={canDelete(comment)}
                                 canEdit={canEdit(comment)}
                                 canPin={canPinComment(comment)}
+                                canIssue={canIssueComment(comment)}
+                                canTrackIssue={Boolean(issues && issues.enabled)}
+                                onIssue={state => setIssue(comment.id, state)}
+                                issueBusy={Boolean(issueIds[comment.id])}
+                                issueHref={issues && issues.href}
                                 editing={editingId === comment.id}
                                 editBusy={editBusy}
                                 canReport={canReport(comment)}
