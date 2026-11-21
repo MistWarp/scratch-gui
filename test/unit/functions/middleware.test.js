@@ -534,7 +534,8 @@ describe('project pages', () => {
         ['/code/tree/Cat/assets', 'Developer view'],
         ['/code/blob/Cat/main.fractch', 'Developer view'],
         ['/code/issues', 'Developer view'],
-        ['/code/issues/12', 'Developer view']
+        ['/code/issues/12', 'Developer view'],
+        ['/code/comments', 'Developer view']
     ])('sub-page %s', async (rest, suffix) => {
         stubApi({[`${API}/projects/1`]: sharedProject()});
         const meta = await renderPath(`/project/1${rest}`);

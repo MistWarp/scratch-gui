@@ -254,6 +254,10 @@
     color: var(--text-dim);
 }
 
+.facts + .facts {
+    margin-top: var(--space-3);
+}
+
 .facts a {
     color: var(--mw-text);
     font-weight: 600;

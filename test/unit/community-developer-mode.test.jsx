@@ -150,6 +150,14 @@ describe('developer view preference', () => {
         wrapper.unmount();
     });
 
+    test('sends comment links to the developer view comments tab', async () => {
+        setDeveloperMode(true);
+        const wrapper = await mountProject('/project/project-1#comment-id-c1');
+        expect(currentLocation.pathname).toBe('/project/project-1/code/comments');
+        expect(currentLocation.hash).toBe('#comment-id-c1');
+        wrapper.unmount();
+    });
+
     test('keeps the project page for other anchors and private source', async () => {
         setDeveloperMode(true);
         let wrapper = await mountProject('/project/project-1#contribute');
@@ -183,7 +191,7 @@ describe('developer view preference', () => {
 
     test('opening the developer view in a new tab leaves the mode alone', async () => {
         const wrapper = await mountProject('/project/project-1');
-        const button = wrapper.find('a').filterWhere(link => link.text() === 'Developer view');
+        const button = wrapper.find('nav[aria-label="Project view mode"] a').filterWhere(link => link.text() === 'Developer');
         act(() => {
             button.simulate('click', {button: 0, ctrlKey: true});
         });
@@ -194,8 +202,10 @@ describe('developer view preference', () => {
     test('the developer view button turns it on', async () => {
         const wrapper = await mountProject('/project/project-1');
         expect(currentLocation.pathname).toBe('/project/project-1');
-        const button = wrapper.find('a').filterWhere(link => link.text() === 'Developer view');
+        const button = wrapper.find('nav[aria-label="Project view mode"] a').filterWhere(link => link.text() === 'Developer');
         expect(button).toHaveLength(1);
+        const projectItem = wrapper.find('nav[aria-label="Project view mode"] a').filterWhere(link => link.text() === 'Project');
+        expect(projectItem.prop('aria-current')).toBe('page');
         act(() => {
             button.simulate('click', {button: 0});
         });

@@ -32,6 +32,7 @@ export const setDeveloperMode = on => {
 
 export const developerViewPath = hash => {
     const key = hash || '';
+    if (/^#comment-id-./.test(key)) return '/comments';
     return Object.prototype.hasOwnProperty.call(DEVELOPER_TABS, key) ? DEVELOPER_TABS[key] : null;
 };
 

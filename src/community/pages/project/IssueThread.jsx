@@ -280,7 +280,7 @@ const IssueThread = ({id, baseUrl, number, project, onChange}) => {
             ) : null}
             <Link
                 className={styles.issueBack}
-                to={`${baseUrl}#comment-id-${root.id}`}
+                to={`${baseUrl}/code/comments#comment-id-${root.id}`}
             >{communityText('See it with the other comments')}</Link>
         </section>
     );

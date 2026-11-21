@@ -2,14 +2,13 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {Link, useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import {
-    ExternalLink, GitFork, Gamepad2, Lock
+    ExternalLink, GitFork, Lock
 } from 'lucide-react';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import api, {editorUrl} from '../api';
 import {useUser} from '../UserContext.jsx';
 import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
 import {canViewProjectSource} from '../project-source-access';
-import {plainClick, setDeveloperMode} from '../developer-mode.js';
 import {formatBytes, safeDate, timeAgo} from '../format.js';
 import setPageMeta from '../page-meta.js';
 import useLatest from '../use-latest.js';
@@ -19,12 +18,16 @@ import RichText from '../components/RichText.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import {tabPanelProps} from '../components/SectionTabs.jsx';
 import UserLink from '../components/UserLink.jsx';
+import ViewModeSwitch from '../components/ViewModeSwitch.jsx';
 import Button from '../components/ui/Button.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import SelectMenu from '../components/ui/SelectMenu.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import CodeBrowser from './project/CodeBrowser.jsx';
+import CommentThread from '../components/CommentThread.jsx';
+import scrollToAnchorWithRetry from '../scroll-to-anchor.js';
 import HistoryList from './project/HistoryList.jsx';
+import projectCommentSource from './project/comment-source.js';
 import IssueList from './project/IssueList.jsx';
 import IssueThread from './project/IssueThread.jsx';
 import ProjectPreview from './project/ProjectPreview.jsx';
@@ -34,7 +37,7 @@ import useProjectData from './project/use-project-data.js';
 import styles from './ProjectCode.module.css';
 
 const TAB_ID_PREFIX = 'project-code';
-export const CODE_TABS = ['code', 'issues', 'commits', 'branches', 'pulls', 'releases'];
+export const CODE_TABS = ['code', 'issues', 'comments', 'commits', 'branches', 'pulls', 'releases'];
 export const codeLocation = splat => {
     const parts = String(splat || '').split('/').filter(Boolean);
     if (parts[0] === 'tree' || parts[0] === 'blob') return {tab: 'code', kind: parts[0], path: parts.slice(1).join('/')};
@@ -108,6 +111,10 @@ const AboutPanel = ({project, baseUrl, counts, fileCount, contributors}) => {
                     {project.sizeBytes ? <li>{communityText('{value1} in total', {value1: formatBytes(project.sizeBytes)})}</li> : null}
                     {updated ? <li>{communityText('Updated {value1}', {value1: timeAgo(project.edited)})}</li> : null}
                 </ul>
+                <ul className={styles.facts}>
+                    <li><Link to={`${baseUrl}#reviews`}>{communityText('Read reviews')}</Link></li>
+                    <li><Link to={`/project/${project.id}/remixes`}>{communityText('See the remix tree')}</Link></li>
+                </ul>
             </section>
             {contributors.length ? (
                 <section>
@@ -148,9 +155,17 @@ const ProjectCodePage = ({id, vanitySlug}) => {
     const baseUrl = projectBaseUrl({project, projectId: id, vanitySlug});
     const canView = Boolean(project && canViewProjectSource(project));
 
+    const commentSource = useMemo(() => projectCommentSource(id), [id]);
+
     useEffect(() => {
         load();
     }, [load]);
+    useEffect(() => {
+        if (tab !== 'comments' || !canView) return;
+        const hash = window.location.hash;
+        if (!/^#comment-id-./.test(hash)) return;
+        return scrollToAnchorWithRetry(hash.slice(1));
+    }, [tab, canView]);
     useEffect(() => {
         if (canView) loadHistory();
     }, [canView, loadHistory]);
@@ -219,6 +234,7 @@ const ProjectCodePage = ({id, vanitySlug}) => {
 
     const tabLabels = {
         code: communityText('Code'),
+        comments: communityText('Comments'),
         issues: <React.Fragment>{communityText('Issues')}<Count value={counts.issues} /></React.Fragment>,
         commits: <React.Fragment>{communityText('Commits')}<Count value={counts.commits} /></React.Fragment>,
         branches: <React.Fragment>{communityText('Branches')}<Count value={counts.branches} /></React.Fragment>,
@@ -240,15 +256,11 @@ const ProjectCodePage = ({id, vanitySlug}) => {
                     </h1>
                 </div>
                 <div className={styles.actions}>
-                    <Button
-                        as={Link}
-                        variant="secondary"
-                        to={baseUrl}
-                        onClick={event => {
-                            if (plainClick(event)) setDeveloperMode(false);
-                        }}
-                    >
-                        <Gamepad2 size={16} />{communityText('Project view')}</Button>
+                    <ViewModeSwitch
+                        mode="developer"
+                        projectHref={baseUrl}
+                        developerHref={codeTabPath(baseUrl, 'code')}
+                    />
                     {project.canRemix && !project.isOwner ? (
                         <Button as="a" variant="secondary" href={editorUrl({platformProject: project.id, from: 'remix'})}>
                             <GitFork size={16} />{communityText('Remix')}</Button>
@@ -321,6 +333,24 @@ const ProjectCodePage = ({id, vanitySlug}) => {
                         ) : null}
                         {tab === 'issues' && place.kind !== 'issue' ? (
                             <IssueList id={id} baseUrl={baseUrl} project={project} onCounts={setIssueCounts} />
+                        ) : null}
+                        {tab === 'comments' ? (
+                            <CommentThread
+                                projectComments
+                                source={commentSource}
+                                donationRecipient={project.owner}
+                                canModerate={project.isOwner}
+                                canPin={project.isOwner}
+                                issues={{
+                                    canTriage: Boolean(project.isOwner),
+                                    enabled: !project.issuesOff,
+                                    href: number => `${baseUrl}/code/issues/${number}`
+                                }}
+                                disabled={Boolean(project.commentsOff)}
+                                disabledReason={communityText('Comments are turned off.')}
+                                reportContext={`project ${id}`}
+                                draftKey={`project:${project.id}`}
+                            />
                         ) : null}
                         {tab === 'commits' ? (
                             <HistoryList id={id} baseUrl={baseUrl} history={versionHistory} canRestore={project.isOwner} onChange={refreshProjectAndHistory} />
