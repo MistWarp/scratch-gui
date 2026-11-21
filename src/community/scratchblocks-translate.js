@@ -26,10 +26,12 @@ const cleanMenuValue = value => {
     return text.replace(/^_+|_+$/g, '');
 };
 
+const obscuredValue = node => (node.active && node.active.type !== 'null' ? node.active : node.shadow);
+
 const unwrapCall = value => {
     let node = value;
     while (node && ((node.type === 'call' && node.value && node.value !== node) || node.type === 'obscured')) {
-        node = node.type === 'obscured' ? (node.active || node.shadow) : node.value;
+        node = node.type === 'obscured' ? obscuredValue(node) : node.value;
     }
     return node;
 };
@@ -48,8 +50,10 @@ const opcodeOf = node => {
 
 const isMenuCall = node => {
     const name = calleeName(node);
-    return MENU_SHADOWS.has(name) || name.endsWith('menu') || name.endsWith('menus') || name.startsWith('menu_') ||
-        name.includes('_menu_');
+    if (MENU_SHADOWS.has(name) || name.endsWith('menu') || name.endsWith('menus')) return true;
+    if (name.startsWith('menu_')) return true;
+    const args = node?.args || [];
+    return name.includes('_menu_') && args.length === 1 && args[0].sep === 'field';
 };
 
 const wordsOf = name => String(name)
@@ -57,7 +61,6 @@ const wordsOf = name => String(name)
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
     .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
     .toLowerCase();
-
 
 const translateMenuValue = value => {
     if (typeof value === 'string') return cleanMenuValue(value);

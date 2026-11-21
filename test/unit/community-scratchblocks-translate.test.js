@@ -62,6 +62,17 @@ describe('scratchblocks translation', () => {
         expect(text).not.toContain('menu');
     });
 
+    test('keeps extension reporters with menu in their name as reporters', () => {
+        const parsed = parseFractch([
+            'sprite "A";',
+            'when flag at 0,0 {',
+            '  say lmsFoo.thing_menu_x(VALUE: 3);',
+            '}',
+            ''
+        ].join('\n'));
+        expect(translateScript(parsed.scripts[0])).toContain('say (thing menu x (3) :: extension)');
+    });
+
     test('translates hats to scratch language', () => {
         expect(translateSource('when flag {\n}\n')).toContain('when green flag clicked');
         expect(translateSource('when broadcast go {\n}\n')).toContain('when I receive [go v]');
