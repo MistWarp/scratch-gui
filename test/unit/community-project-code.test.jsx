@@ -1,7 +1,7 @@
 import React from 'react';
 import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
-import {MemoryRouter, Route, Routes, useLocation} from 'react-router-dom';
+import {MemoryRouter, Route, Routes, useLocation, useNavigate} from 'react-router-dom';
 
 import api from '../../src/community/api';
 import ProjectCode, {
@@ -48,7 +48,8 @@ const files = [
     {path: 'Cat/main.fractch', size: 20},
     {path: 'Cat/assets/Idle.svg', size: 6},
     {path: 'Stage/main.fractch', size: 20},
-    {path: 'fractch.json', size: 2}
+    {path: 'fractch.json', size: 2},
+    {path: 'Cat/assets/a#b?c%d é.txt', size: 4}
 ];
 
 const lastCommits = {
@@ -68,8 +69,10 @@ const lastCommits = {
 };
 
 let currentLocation = null;
+let navigateTo = null;
 const LocationProbe = () => {
     currentLocation = useLocation();
+    navigateTo = useNavigate();
     return null;
 };
 
@@ -139,6 +142,7 @@ describe('project developer view helpers', () => {
             ['Cat', true], ['Stage', true], ['fractch.json', false]
         ]);
         expect(listDirectory(files, 'Cat').map(entry => entry.path)).toEqual(['Cat/assets', 'Cat/main.fractch']);
+        expect(listDirectory(files, 'Cat/assets').map(entry => entry.name)).toEqual(['a#b?c%d é.txt', 'Idle.svg']);
         expect(listDirectory(files, 'Dog')).toEqual([]);
     });
 
@@ -243,6 +247,55 @@ describe('project developer view page', () => {
         expect(wrapper.text()).toContain('Level two');
         const catLink = wrapper.find('a').filterWhere(link => link.text() === 'Cat');
         expect(catLink.prop('href')).toBe('/project/project-1/code/tree/Cat?branch=levels');
+    });
+
+    test('opens files with characters that need encoding', async () => {
+        mockApi(baseProject());
+        const wrapper = mountAt('/project/project-1/code/tree/Cat/assets');
+        await settle(wrapper);
+        const link = wrapper.find('a').filterWhere(item => item.text() === 'a#b?c%d é.txt');
+        expect(link.prop('href')).toBe('/project/project-1/code/blob/Cat/assets/a%23b%3Fc%25d%20%C3%A9.txt');
+
+        const file = mountAt(link.prop('href'));
+        await settle(file);
+        expect(api.commitFile).toHaveBeenCalledWith('project-1', sha('a'), 'Cat/assets/a#b?c%d é.txt');
+    });
+
+    test('drops an unknown branch from links and tabs', async () => {
+        mockApi(baseProject());
+        const wrapper = mountAt('/project/project-1/code?branch=nope');
+        await settle(wrapper);
+        const catLink = wrapper.find('a').filterWhere(link => link.text() === 'Cat');
+        expect(catLink.prop('href')).toBe('/project/project-1/code/tree/Cat');
+    });
+
+    test('keeps the branch when going back to the code tab', async () => {
+        mockApi(baseProject());
+        const wrapper = mountAt('/project/project-1/code/commits?branch=levels');
+        await settle(wrapper);
+        act(() => {
+            wrapper.find('[role="tab"]').at(0)
+                .simulate('click');
+        });
+        await settle(wrapper);
+        expect(`${currentLocation.pathname}${currentLocation.search}`).toBe('/project/project-1/code?branch=levels');
+    });
+
+    test('replaces the project when the address moves to another one', async () => {
+        mockApi(baseProject());
+        api.getProject.mockImplementation(id => (id === 'project-2' ?
+            Promise.reject(Object.assign(new Error('missing'), {status: 404})) :
+            Promise.resolve({project: baseProject()})));
+        const wrapper = mountAt('/project/project-1/code');
+        await settle(wrapper);
+        expect(wrapper.find('h1').text()).toBe('mist/Space game');
+
+        act(() => {
+            navigateTo('/project/project-2/code');
+        });
+        await settle(wrapper);
+        expect(wrapper.find('h1').exists()).toBe(false);
+        expect(wrapper.text()).toContain('Project not found.');
     });
 
     test('still lists files when latest commits are unavailable', async () => {

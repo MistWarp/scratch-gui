@@ -109,9 +109,10 @@ const FolderCommit = ({baseUrl, sha, commit, summary, commitCount, commitsUrl}) 
 };
 
 const Breadcrumb = ({baseUrl, query, rootLabel, path}) => {
+    const {text: communityText} = useCommunityText();
     const parts = path.split('/').filter(Boolean);
     return (
-        <nav className={styles.breadcrumb} aria-label="Breadcrumb">
+        <nav className={styles.breadcrumb} aria-label={communityText('Breadcrumb')}>
             <Link to={codeEntryUrl(baseUrl, 'tree', '', query)}>{rootLabel}</Link>
             {parts.map((part, index) => {
                 const partPath = parts.slice(0, index + 1).join('/');

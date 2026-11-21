@@ -122,14 +122,13 @@ const AboutPanel = ({project, baseUrl, counts, fileCount, contributors}) => {
     );
 };
 
-const ProjectCode = () => {
+const ProjectCodePage = ({id, vanitySlug}) => {
     const {text: communityText} = useCommunityText();
     const navigate = useNavigate();
     const params = useParams();
     const [searchParams, setSearchParams] = useSearchParams();
     const {user} = useUser();
     const viewerName = (user && user.username) || '';
-    const {projectId: id, vanitySlug, resolving, resolveError} = useResolvedProjectId();
     const {project, versionHistory, error, load, loadHistory, refreshProjectAndHistory} = useProjectData(id);
     const [branches, setBranches] = useState(null);
     const [openPulls, setOpenPulls] = useState(null);
@@ -193,12 +192,11 @@ const ProjectCode = () => {
         else next.delete('branch');
         setSearchParams(next);
     };
-    const branchQuery = requestedBranch && requestedBranch !== defaultBranch ? `branch=${encodeURIComponent(requestedBranch)}` : '';
+    const branchQuery = selectedBranch && selectedBranch.name === requestedBranch && requestedBranch !== defaultBranch ?
+        `branch=${encodeURIComponent(requestedBranch)}` : '';
     const onFileCount = useCallback(count => setFileCount(count), []);
-    const showTab = key => navigate(codeTabPath(baseUrl, key));
+    const showTab = key => navigate(key === 'code' && branchQuery ? `${codeTabPath(baseUrl, key)}?${branchQuery}` : codeTabPath(baseUrl, key));
 
-    if (resolving) return <main className={styles.page}><StatusMessage>{communityText('Finding project…')}</StatusMessage></main>;
-    if (resolveError) return <main className={styles.page}><StatusMessage error>{resolveError}</StatusMessage></main>;
     if (error && !project) return <main className={styles.page}><StatusMessage error onRetry={load}>{error}</StatusMessage></main>;
     if (!project) return <main className={styles.page}><StatusMessage>{communityText('Loading project…')}</StatusMessage></main>;
 
@@ -321,6 +319,14 @@ const ProjectCode = () => {
             )}
         </main>
     );
+};
+
+const ProjectCode = () => {
+    const {text: communityText} = useCommunityText();
+    const {projectId, vanitySlug, resolving, resolveError} = useResolvedProjectId();
+    if (resolving) return <main className={styles.page}><StatusMessage>{communityText('Finding project…')}</StatusMessage></main>;
+    if (resolveError) return <main className={styles.page}><StatusMessage error>{resolveError}</StatusMessage></main>;
+    return <ProjectCodePage key={projectId} id={projectId} vanitySlug={vanitySlug} />;
 };
 
 export default ProjectCode;

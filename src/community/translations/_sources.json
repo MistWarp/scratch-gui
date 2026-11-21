@@ -1064,7 +1064,7 @@
   ],
   "Code": [
     "src/community/components/DiffView.jsx:19",
-    "src/community/pages/ProjectCode.jsx:206"
+    "src/community/pages/ProjectCode.jsx:204"
   ],
   "Costumes": [
     "src/community/components/DiffView.jsx:19"
@@ -1254,7 +1254,7 @@
   "Loading project…": [
     "src/community/components/FeaturedProject.jsx:102",
     "src/community/pages/Bounties.jsx:116",
-    "src/community/pages/ProjectCode.jsx:203",
+    "src/community/pages/ProjectCode.jsx:201",
     "src/community/pages/project/ProjectStage.jsx:54"
   ],
   "Play project": [
@@ -3080,7 +3080,7 @@
   ],
   "Branches": [
     "src/community/components/ProjectBranches.jsx:232",
-    "src/community/pages/ProjectCode.jsx:208",
+    "src/community/pages/ProjectCode.jsx:206",
     "src/community/pages/project/VersionControlPanel.jsx:23"
   ],
   "Each branch points to its latest saved project version.": [
@@ -3194,7 +3194,7 @@
   ],
   "Remix": [
     "src/community/components/ProjectCard.jsx:97",
-    "src/community/pages/ProjectCode.jsx:231",
+    "src/community/pages/ProjectCode.jsx:229",
     "src/community/pages/project/ProjectBounties.jsx:54",
     "src/community/pages/project/ProjectHeader.jsx:127",
     "src/community/pages/project/ProjectHeader.jsx:253"
@@ -3278,15 +3278,15 @@
   ],
   "Could not load project files.": [
     "src/community/components/ProjectFiles.jsx:438",
-    "src/community/pages/project/CodeBrowser.jsx:149"
+    "src/community/pages/project/CodeBrowser.jsx:150"
   ],
   "Files are private": [
     "src/community/components/ProjectFiles.jsx:458"
   ],
   "Loading project files…": [
     "src/community/components/ProjectFiles.jsx:466",
-    "src/community/pages/ProjectCode.jsx:282",
-    "src/community/pages/project/CodeBrowser.jsx:172"
+    "src/community/pages/ProjectCode.jsx:280",
+    "src/community/pages/project/CodeBrowser.jsx:173"
   ],
   "No files yet": [
     "src/community/components/ProjectFiles.jsx:471"
@@ -6551,7 +6551,7 @@
   "Finding project…": [
     "src/community/pages/Commit.jsx:365",
     "src/community/pages/Project.jsx:623",
-    "src/community/pages/ProjectCode.jsx:200",
+    "src/community/pages/ProjectCode.jsx:327",
     "src/community/pages/PullRequest.jsx:519",
     "src/community/pages/PullRequests.jsx:58",
     "src/community/pages/RemixTree.jsx:197"
@@ -8303,7 +8303,7 @@
   ],
   "{value1} branches": [
     "src/community/pages/ProjectCode.jsx:82",
-    "src/community/pages/ProjectCode.jsx:276"
+    "src/community/pages/ProjectCode.jsx:274"
   ],
   "1 open pull request": [
     "src/community/pages/ProjectCode.jsx:83"
@@ -8330,42 +8330,42 @@
     "src/community/pages/ProjectCode.jsx:107"
   ],
   "Developer view · {value1}": [
-    "src/community/pages/ProjectCode.jsx:167"
+    "src/community/pages/ProjectCode.jsx:166"
   ],
   "Commits": [
-    "src/community/pages/ProjectCode.jsx:207",
+    "src/community/pages/ProjectCode.jsx:205",
     "src/community/pages/PullRequest.jsx:570",
     "src/community/pages/RemixTree.jsx:278"
   ],
   "Pull requests": [
-    "src/community/pages/ProjectCode.jsx:209",
+    "src/community/pages/ProjectCode.jsx:207",
     "src/community/pages/PullRequests.jsx:70",
     "src/community/pages/Roadmap.jsx:134",
     "src/community/pages/project/VersionControlPanel.jsx:24"
   ],
   "Releases": [
-    "src/community/pages/ProjectCode.jsx:210",
+    "src/community/pages/ProjectCode.jsx:208",
     "src/community/pages/project/VersionControlPanel.jsx:25"
   ],
   "Project view": [
-    "src/community/pages/ProjectCode.jsx:228"
+    "src/community/pages/ProjectCode.jsx:226"
   ],
   "See inside": [
-    "src/community/pages/ProjectCode.jsx:235",
+    "src/community/pages/ProjectCode.jsx:233",
     "src/community/pages/project/ProjectHeader.jsx:154"
   ],
   "Developer view": [
-    "src/community/pages/ProjectCode.jsx:243",
+    "src/community/pages/ProjectCode.jsx:241",
     "src/community/pages/project/ProjectHeader.jsx:146"
   ],
   "Branch": [
-    "src/community/pages/ProjectCode.jsx:268"
+    "src/community/pages/ProjectCode.jsx:266"
   ],
   "The source of this project is private": [
-    "src/community/pages/ProjectCode.jsx:318"
+    "src/community/pages/ProjectCode.jsx:316"
   ],
   "Only people the creator has given access can see its files and history.": [
-    "src/community/pages/ProjectCode.jsx:319"
+    "src/community/pages/ProjectCode.jsx:317"
   ],
   "{title} · Pull request #{index}": [
     "src/community/pages/PullRequest.jsx:286"
@@ -10781,28 +10781,31 @@
   "Suspended": [
     "src/community/pages/admin/labels.js:4"
   ],
+  "Breadcrumb": [
+    "src/community/pages/project/CodeBrowser.jsx:115"
+  ],
   "This file does not exist on this branch": [
-    "src/community/pages/project/CodeBrowser.jsx:179"
+    "src/community/pages/project/CodeBrowser.jsx:180"
   ],
   "Go to the project files": [
-    "src/community/pages/project/CodeBrowser.jsx:180",
-    "src/community/pages/project/CodeBrowser.jsx:198"
+    "src/community/pages/project/CodeBrowser.jsx:181",
+    "src/community/pages/project/CodeBrowser.jsx:199"
   ],
   "This folder does not exist on this branch": [
-    "src/community/pages/project/CodeBrowser.jsx:197"
+    "src/community/pages/project/CodeBrowser.jsx:198"
   ],
   "Go to file": [
-    "src/community/pages/project/CodeBrowser.jsx:216",
-    "src/community/pages/project/CodeBrowser.jsx:217"
+    "src/community/pages/project/CodeBrowser.jsx:217",
+    "src/community/pages/project/CodeBrowser.jsx:218"
   ],
   "No files match": [
-    "src/community/pages/project/CodeBrowser.jsx:245"
-  ],
-  "Try a different file name.": [
     "src/community/pages/project/CodeBrowser.jsx:246"
   ],
+  "Try a different file name.": [
+    "src/community/pages/project/CodeBrowser.jsx:247"
+  ],
   "Parent folder": [
-    "src/community/pages/project/CodeBrowser.jsx:254"
+    "src/community/pages/project/CodeBrowser.jsx:255"
   ],
   "Add a fork project ID and title before sending.": [
     "src/community/pages/project/ContributionPanel.jsx:111"

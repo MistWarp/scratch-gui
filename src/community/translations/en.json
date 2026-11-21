@@ -3719,5 +3719,6 @@
   "Go to file": "Go to file",
   "No files match": "No files match",
   "Try a different file name.": "Try a different file name.",
-  "Parent folder": "Parent folder"
+  "Parent folder": "Parent folder",
+  "Breadcrumb": "Breadcrumb"
 }
