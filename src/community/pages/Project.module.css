@@ -1061,6 +1061,10 @@
         justify-content: center;
     }
 
+    .topActions > .menuWrap {
+        flex: none;
+    }
+
     .statsBar {
         flex-wrap: wrap;
         row-gap: 8px;

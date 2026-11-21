@@ -333,9 +333,12 @@
         max-height: none;
     }
 
-    .browserBounded > aside,
-    .browserBounded > .viewer {
+    .browserBounded > aside {
         height: auto;
         max-height: 620px;
+    }
+
+    .browserBounded > .viewer {
+        height: min(620px, 70vh);
     }
 }

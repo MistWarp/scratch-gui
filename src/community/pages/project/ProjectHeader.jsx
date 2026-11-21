@@ -4,7 +4,7 @@ import {Link, useNavigate} from 'react-router-dom';
 import {useCommunityIntl as useCommunityText} from '../../i18n.jsx';
 import {
     GitFork, ExternalLink, ImageUp, MonitorPlay, Flag, MoreHorizontal, Code2, Trash2, Link2, Coins,
-    SlidersHorizontal, Bookmark, BookmarkCheck, Star, Library, Eye, EyeOff, Ghost, UserCog, PawPrint
+    SlidersHorizontal, Bookmark, BookmarkCheck, Star, Library, Eye, EyeOff, Ghost, UserCog, PawPrint, FileCode2
 } from 'lucide-react';
 import {payLink} from '../../../lib/rotur/payment-window.js';
 import Avatar from '../../components/Avatar.jsx';
@@ -26,7 +26,7 @@ import {adminUserPath} from '../admin/admin-links.js';
 // Title, byline and the action buttons and menu at the top of a project page.
 const ProjectHeader = ({
     project, user, title, setTitle, savingTitle, saveTitle, visibility,
-    changeVisibility, savingVisibility, remixHref, toggleLibrary, savingLibrary, seeInsideHref,
+    changeVisibility, savingVisibility, remixHref, toggleLibrary, savingLibrary, seeInsideHref, codeHref,
     copyLink, setCollectionOpen, thumbnailStatus, useStageThumbnail, chooseThumbnailUpload,
     menuRemix, toggleFeatured, savingFeatured, featuredProject, menuReport, setActionError,
     setDeleteConfirm, openModeration
@@ -136,6 +136,14 @@ const ProjectHeader = ({
                         {project.saved ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
                         {project.saved ? communityText('Remove from library') : communityText('Save to library')}
                     </Button>
+                ) : null}
+                {canViewProjectSource(project) && codeHref ? (
+                    <Button
+                        as={Link}
+                        variant="secondary"
+                        to={codeHref}
+                    >
+                        <FileCode2 size={16} />{communityText('Developer view')}</Button>
                 ) : null}
                 {canViewProjectSource(project) ? (
                     <Button

@@ -30,6 +30,7 @@ const Project = lazy(() => import('./pages/Project.jsx'));
 const PullRequest = lazy(() => import('./pages/PullRequest.jsx'));
 const PullRequests = lazy(() => import('./pages/PullRequests.jsx'));
 const Commit = lazy(() => import('./pages/Commit.jsx'));
+const ProjectCode = lazy(() => import('./pages/ProjectCode.jsx'));
 const RemixTree = lazy(() => import('./pages/RemixTree.jsx'));
 const Profile = lazy(() => import('./pages/Profile.jsx'));
 const UserLibrary = lazy(() => import('./pages/UserLibrary.jsx'));
@@ -268,11 +269,13 @@ const App = () => {
                             <Route path="/p/:slug/pulls" element={<PullRequests />} />
                             <Route path="/p/:slug/pulls/:index" element={<PullRequest />} />
                             <Route path="/p/:slug/commits/:sha" element={<Commit />} />
+                            <Route path="/p/:slug/code/*" element={<ProjectCode />} />
                             <Route path="/project/:id" element={<Project />} />
                             <Route path="/project/:id/remixes" element={<RemixTree />} />
                             <Route path="/project/:id/pulls/:index" element={<PullRequest />} />
                             <Route path="/project/:id/pulls" element={<PullRequests />} />
                             <Route path="/project/:id/commits/:sha" element={<Commit />} />
+                            <Route path="/project/:id/code/*" element={<ProjectCode />} />
                             <Route path="/users/:name" element={<Profile />} />
                             <Route path="/users/:name/library" element={<UserLibrary />} />
                             <Route
