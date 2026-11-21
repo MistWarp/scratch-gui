@@ -100,10 +100,19 @@
 .meta {
     color: var(--text-dim);
     font-size: var(--fs-2xs);
+    white-space: nowrap;
 }
 
 .meta code {
     color: inherit;
+}
+
+.detail {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text-faint);
+    text-overflow: ellipsis;
 }
 
 .restore {

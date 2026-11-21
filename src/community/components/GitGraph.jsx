@@ -3,6 +3,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import {safeDate} from '../format.js';
+import {commitHeadline} from '../commit-summary.js';
 import UserLink from './UserLink.jsx';
 import {LANE_WIDTH, PADDING, layoutGraph} from '../../lib/git/graph-layout.js';
 import styles from './GitGraph.module.css';
@@ -15,7 +16,7 @@ const point = node => ({
     y: (node.row * ROW_HEIGHT) + (ROW_HEIGHT / 2)
 });
 
-const GitGraph = ({graph, currentBranch = 'main', onRestore, restoring, projectId = ''}) => {
+const GitGraph = ({graph, currentBranch = 'main', onRestore, restoring, projectId = '', summaries = null}) => {
     const {text: communityText} = useCommunityText();
     const layout = useMemo(() => layoutGraph(graph, currentBranch), [graph, currentBranch]);
     if (!layout.rows.length) return null;
@@ -60,6 +61,8 @@ const GitGraph = ({graph, currentBranch = 'main', onRestore, restoring, projectI
                         graph.branchLogs?.find(entry => entry.branch === branch)?.oids?.[0] === node.sha);
                     const nodeDate = safeDate(node.date);
                     const commitUrl = projectId ? `/project/${projectId}/commits/${node.sha}` : '';
+                    const summary = summaries?.[node.sha];
+                    const headline = commitHeadline(node.message, summary, communityText, getCommunityLocale());
                     return (
                         <li key={node.sha} className={styles.commit} style={{height: ROW_HEIGHT}}>
                             {commitUrl ? (
@@ -68,7 +71,7 @@ const GitGraph = ({graph, currentBranch = 'main', onRestore, restoring, projectI
                                     to={commitUrl}
                                     aria-current={node.sha === currentHead ? 'page' : null}
                                     aria-label={communityText('View commit {value1}', {
-                                        value1: (node.message || node.sha).split('\n')[0]
+                                        value1: headline.title
                                     })}
                                 />
                             ) : null}
@@ -76,7 +79,7 @@ const GitGraph = ({graph, currentBranch = 'main', onRestore, restoring, projectI
                                 {tipBranches.map(branch => (
                                     <span key={branch} className={styles.branch}>{branch}</span>
                                 ))}
-                                <span>{(node.message || 'Untitled commit').split('\n')[0]}</span>
+                                <span>{headline.title}</span>
                             </div>
                             <div className={styles.meta}>
                                 <code>{node.sha.slice(0, 7)}</code>
@@ -89,6 +92,9 @@ const GitGraph = ({graph, currentBranch = 'main', onRestore, restoring, projectI
                                     <time dateTime={nodeDate.toISOString()}>
                                         {nodeDate.toLocaleString(getCommunityLocale())}
                                     </time>
+                                ) : null}
+                                {headline.detail ? (
+                                    <span className={styles.detail}>{headline.detail}</span>
                                 ) : null}
                                 {onRestore && node.sha !== currentHead ? (
                                     <button

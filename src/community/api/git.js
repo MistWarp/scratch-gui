@@ -36,6 +36,13 @@ export default {
         `/projects/${id}/commits/${encodeURIComponent(sha)}/changes${projectAccessQuery()}`,
         {cache: false, timeoutMs: SLOW_GET_TIMEOUT}
     ),
+    commitSummaries: (id, shas) => {
+        const params = new URLSearchParams(projectAccessQuery().replace(/^\?/, ''));
+        params.set('shas', shas.join(','));
+        return request(`/projects/${id}/commit-summaries?${params.toString()}`, {
+            cache: false, timeoutMs: SLOW_GET_TIMEOUT
+        });
+    },
     commitTree: (id, sha) => request(
         `/projects/${id}/commits/${encodeURIComponent(sha)}/tree${projectAccessQuery()}`,
         {cache: false, timeoutMs: SLOW_GET_TIMEOUT}

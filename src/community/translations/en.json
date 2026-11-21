@@ -3676,5 +3676,22 @@
   "Show summary": "Show summary",
   "Show file diff": "Show file diff",
   "Too large to compare": "Too large to compare",
-  "Nothing in this commit changes how the project runs.": "Nothing in this commit changes how the project runs."
+  "Nothing in this commit changes how the project runs.": "Nothing in this commit changes how the project runs.",
+  "{value1} sprites": "{value1} sprites",
+  "Added 1 script in {value1}": "Added 1 script in {value1}",
+  "Added {value1} scripts in {value2}": "Added {value1} scripts in {value2}",
+  "Removed 1 script in {value1}": "Removed 1 script in {value1}",
+  "Removed {value1} scripts in {value2}": "Removed {value1} scripts in {value2}",
+  "Changed 1 script in {value1}": "Changed 1 script in {value1}",
+  "Changed {value1} scripts in {value2}": "Changed {value1} scripts in {value2}",
+  "Changed 1 costume or sound in {value1}": "Changed 1 costume or sound in {value1}",
+  "Changed {value1} costumes and sounds in {value2}": "Changed {value1} costumes and sounds in {value2}",
+  "Changed variables, lists or settings in {value1}": "Changed variables, lists or settings in {value1}",
+  "Changed {value1}, too large to summarize": "Changed {value1}, too large to summarize",
+  "Changed 1 project file": "Changed 1 project file",
+  "Changed {value1} project files": "Changed {value1} project files",
+  "Only saved state changed": "Only saved state changed",
+  "No changes to how the project runs": "No changes to how the project runs",
+  "Changed 1 asset file": "Changed 1 asset file",
+  "Changed {value1} asset files": "Changed {value1} asset files"
 }

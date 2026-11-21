@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {History} from 'lucide-react';
 import {useCommunityIntl as useCommunityText} from '../../i18n.jsx';
@@ -12,6 +12,9 @@ import Notice from '../../components/ui/Notice.jsx';
 import StatusMessage from '../../components/ui/StatusMessage.jsx';
 import UserLink from '../../components/UserLink.jsx';
 import styles from '../Project.module.css';
+import {getCommunityLocale} from '../../locale.js';
+import {commitHeadline} from '../../commit-summary.js';
+import useCommitSummaries from './use-commit-summaries.js';
 
 const HistoryList = ({id, history, canRestore, onChange, baseUrl}) => {
     const {text: communityText} = useCommunityText();
@@ -21,6 +24,11 @@ const HistoryList = ({id, history, canRestore, onChange, baseUrl}) => {
     const restoreLocks = useRef(new Set());
     const idRef = useRef(id);
     idRef.current = id;
+    const summaryShas = useMemo(() => {
+        const nodes = history?.graph?.nodes?.length ? history.graph.nodes : (history?.commits || []);
+        return nodes.map(node => node.sha).filter(Boolean);
+    }, [history]);
+    const summaries = useCommitSummaries(id, summaryShas);
     useEffect(() => {
         restoreLocks.current.clear();
         setRestoring(null);
@@ -90,6 +98,7 @@ const HistoryList = ({id, history, canRestore, onChange, baseUrl}) => {
                     currentBranch={history.branch}
                     onRestore={canRestore ? requestRestore : null}
                     restoring={restoring}
+                    summaries={summaries}
                 />
                 {restoreCandidate ? (
                     <ConfirmModal
@@ -113,15 +122,19 @@ const HistoryList = ({id, history, canRestore, onChange, baseUrl}) => {
     return (
         <React.Fragment>
             <ul className={styles.commitList}>
-                {commits.map(commit => (
-                    <li key={commit.sha}>
-                        <Link className={styles.commitLink} to={`${baseUrl || projectUrl(id)}/commits/${commit.sha}`}>
-                            <code>{commit.sha.slice(0, 7)}</code>
-                            <span className={styles.commitMsg}>{commit.message.split('\n')[0]}</span>
-                        </Link>
-                        <UserLink className={styles.muted} username={commit.author}>{commit.author}</UserLink>
-                    </li>
-                ))}
+                {commits.map(commit => {
+                    const headline = commitHeadline(commit.message, summaries[commit.sha], communityText, getCommunityLocale());
+                    return (
+                        <li key={commit.sha}>
+                            <Link className={styles.commitLink} to={`${baseUrl || projectUrl(id)}/commits/${commit.sha}`}>
+                                <code>{commit.sha.slice(0, 7)}</code>
+                                <span className={styles.commitMsg}>{headline.title}</span>
+                                {headline.detail ? <span className={styles.commitDetail}>{headline.detail}</span> : null}
+                            </Link>
+                            <UserLink className={styles.muted} username={commit.author}>{commit.author}</UserLink>
+                        </li>
+                    );
+                })}
             </ul>
         </React.Fragment>
     );
