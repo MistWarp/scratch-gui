@@ -54,7 +54,7 @@ ThreadComment.propTypes = {
     first: PropTypes.bool
 };
 
-const IssueThread = ({id, baseUrl, number, project}) => {
+const IssueThread = ({id, baseUrl, number, project, onChange}) => {
     const {text: communityText} = useCommunityText();
     const {user} = useUser();
     const [thread, setThread] = useState(null);
@@ -128,6 +128,7 @@ const IssueThread = ({id, baseUrl, number, project}) => {
             if (result && result.comment) {
                 setThread(current => (current ? {...current, root: mergeCommentUpdate(current.root, result.comment)} : current));
             }
+            if (onChange) onChange();
         } catch (e) {
             setActionError(e.message || communityText('Could not update the issue.'));
         } finally {
@@ -287,6 +288,7 @@ IssueThread.propTypes = {
     baseUrl: PropTypes.string.isRequired,
     id: PropTypes.string.isRequired,
     number: PropTypes.number.isRequired,
+    onChange: PropTypes.func,
     project: PropTypes.shape({
         commentsOff: PropTypes.bool,
         isOwner: PropTypes.bool

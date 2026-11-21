@@ -226,7 +226,7 @@ describe('developer view issues', () => {
         wrapper.unmount();
     });
 
-    const mountIssue = (user, extra = {}) => {
+    const mountIssue = (user, extra = {}, onChange = jest.fn()) => {
         useUser.mockReturnValue({user});
         jest.spyOn(projectRealtime, 'subscribe').mockReturnValue(() => {});
         const getComments = jest.spyOn(api, 'getComments').mockResolvedValue({comments: [openIssue, ...replies]});
@@ -243,6 +243,7 @@ describe('developer view issues', () => {
                             baseUrl="/project/p1"
                             number={2}
                             project={{...project, ...extra}}
+                            onChange={onChange}
                         />}
                     />
                 </Routes>
@@ -252,7 +253,8 @@ describe('developer view issues', () => {
     };
 
     test('shows the whole thread and lets the author mark it done', async () => {
-        const {wrapper, getComments} = mountIssue({username: 'Sam'});
+        const onChange = jest.fn();
+        const {wrapper, getComments} = mountIssue({username: 'Sam'}, {}, onChange);
         await settle(wrapper);
         expect(getComments).toHaveBeenCalledWith('p1', {all: true, issue: 'any', number: 2});
         expect(wrapper.find('h2').text()).toBe('The jump is too high #2');
@@ -272,6 +274,7 @@ describe('developer view issues', () => {
         });
         await settle(wrapper);
         expect(setIssue).toHaveBeenCalledWith('p1', 'c1', 'done');
+        expect(onChange).toHaveBeenCalledTimes(1);
         expect(wrapper.text()).toContain('Sam marked this done');
         expect(wrapper.find('button').filterWhere(button => button.text() === 'Reopen issue')).toHaveLength(1);
         wrapper.unmount();

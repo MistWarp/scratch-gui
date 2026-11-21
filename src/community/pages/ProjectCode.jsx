@@ -163,6 +163,9 @@ const ProjectCodePage = ({id, vanitySlug}) => {
         api.releases(id).then(fresh(data => setReleaseCount((data.releases || []).length))).catch(() => {});
         api.getComments(id, {limit: 1, issue: 'open'}).then(fresh(data => setIssueCounts(data.issueCounts || null))).catch(() => {});
     }, [beginExtras, canView, id]);
+    const refreshIssueCounts = useCallback(() => {
+        api.getComments(id, {limit: 1, issue: 'open'}).then(data => setIssueCounts(data.issueCounts || null)).catch(() => {});
+    }, [id]);
     useEffect(() => {
         setBranches(null);
         setOpenPulls(null);
@@ -313,7 +316,7 @@ const ProjectCodePage = ({id, vanitySlug}) => {
                             </div>
                         ) : null}
                         {tab === 'issues' && place.kind === 'issue' ? (
-                            <IssueThread key={place.number} id={id} baseUrl={baseUrl} number={place.number} project={project} />
+                            <IssueThread key={place.number} id={id} baseUrl={baseUrl} number={place.number} project={project} onChange={refreshIssueCounts} />
                         ) : null}
                         {tab === 'issues' && place.kind !== 'issue' ? (
                             <IssueList id={id} baseUrl={baseUrl} project={project} onCounts={setIssueCounts} />

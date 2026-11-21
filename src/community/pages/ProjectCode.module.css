@@ -693,6 +693,10 @@ a.rowMessage:hover {
 }
 
 @media (max-width: 620px) {
+    .issueReply {
+        margin-left: var(--space-4);
+    }
+
     .header {
         align-items: flex-start;
         flex-direction: column;
