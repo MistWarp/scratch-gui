@@ -1,7 +1,7 @@
 import React from 'react';
 import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
-import {MemoryRouter, Route, Routes, useLocation} from 'react-router-dom';
+import {MemoryRouter, Route, Routes, useLocation, useNavigate} from 'react-router-dom';
 
 import api from '../../src/community/api';
 import Project from '../../src/community/pages/Project.jsx';
@@ -33,8 +33,10 @@ jest.mock('../../src/lib/community/cached-fetch.js', () => ({
 }));
 
 let currentLocation = null;
+let navigateTo = null;
 const LocationProbe = () => {
     currentLocation = useLocation();
+    navigateTo = useNavigate();
     return null;
 };
 
@@ -154,6 +156,18 @@ describe('developer view preference', () => {
         expect(currentLocation.pathname).toBe('/project/project-1');
         wrapper.unmount();
         wrapper = await mountProject('/project/project-1', {canViewSource: false});
+        expect(currentLocation.pathname).toBe('/project/project-1');
+        wrapper.unmount();
+    });
+
+    test('only redirects when the page opens, not when its tabs change the anchor', async () => {
+        setDeveloperMode(true);
+        const wrapper = await mountProject('/project/project-1#contribute');
+        expect(currentLocation.pathname).toBe('/project/project-1');
+        await act(async () => {
+            navigateTo('/project/project-1');
+            await Promise.resolve();
+        });
         expect(currentLocation.pathname).toBe('/project/project-1');
         wrapper.unmount();
     });

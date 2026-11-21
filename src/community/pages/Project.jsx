@@ -76,6 +76,7 @@ const Project = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [developerMode] = useDeveloperMode();
+    const developerEntry = useRef(null);
     const {
         project, setProject, projectLoadContext, setProjectLoadContext, versionHistory, setVersionHistory,
         error, setError, errorLoadContext, beginHistoryLoad, load, loadHistory, refreshProjectAndHistory
@@ -627,7 +628,13 @@ const Project = () => {
         );
     }
 
-    const developerPath = developerMode && canViewProjectSource(project) ? developerViewPath(location.hash) : null;
+    if (!developerEntry.current || developerEntry.current.id !== id) {
+        developerEntry.current = {
+            id,
+            path: developerMode && canViewProjectSource(project) ? developerViewPath(location.hash) : null
+        };
+    }
+    const developerPath = developerEntry.current.path;
     if (developerPath !== null) {
         return <Navigate replace to={`${baseProjectUrl}/code${developerPath}${location.search}`} />;
     }
