@@ -397,11 +397,9 @@ describe('project developer view page', () => {
         mockApi(baseProject());
         const wrapper = mountAt('/project/project-1/code?k=secret');
         await settle(wrapper);
-        const switchLinks = wrapper.find('nav[aria-label="Project view mode"] a');
-        expect(switchLinks.map(link => link.prop('href'))).toEqual([
-            '/project/project-1?k=secret',
-            '/project/project-1/code?k=secret'
-        ]);
+        const projectView = wrapper.find('a').filterWhere(link => link.text() === 'Project view');
+        expect(projectView).toHaveLength(1);
+        expect(projectView.prop('href')).toBe('/project/project-1?k=secret');
         expect(wrapper.find('a').filterWhere(link => link.text() === 'Read reviews')
             .prop('href')).toBe('/project/project-1?k=secret#reviews');
         const comments = wrapper.find('[role="tab"]').filterWhere(item => item.text() === 'Comments');
@@ -453,16 +451,62 @@ describe('project developer view page', () => {
         const seeInside = wrapper.find('a').filterWhere(link => link.text() === 'See inside');
         expect(seeInside.prop('href')).toContain('mode=code');
         expect(seeInside.prop('href')).toContain('#mw-project-1');
-        const developer = wrapper.find('nav[aria-label="Project view mode"] a').filterWhere(link => link.text() === 'Developer');
-        expect(developer.prop('aria-current')).toBe('page');
-        const projectView = wrapper.find('nav[aria-label="Project view mode"] a').filterWhere(link => link.text() === 'Project');
-        expect(projectView.prop('aria-current')).toBeFalsy();
+        const projectView = wrapper.find('a').filterWhere(link => link.text() === 'Project view');
+        expect(projectView).toHaveLength(1);
         act(() => {
             projectView.simulate('click', {button: 0});
         });
         expect(isDeveloperMode()).toBe(false);
         expect(currentLocation.pathname).toBe('/project/project-1');
         localStorage.removeItem('mw:developer-view');
+    });
+
+    test('shows remix origin, divergence status bar and uncommitted banner on the code tab', async () => {
+        mockApi(baseProject({
+            isOwner: true,
+            remixFrom: {
+                id: 'parent-1',
+                owner: 'alice',
+                title: 'Original Space',
+                vanitySlug: 'original-space',
+                ahead: 3,
+                behind: 1
+            }
+        }));
+        api.commits.mockResolvedValue({
+            branch: 'main',
+            commits,
+            uncommitted: {
+                head: sha('a'),
+                branch: 'main',
+                author: 'mist',
+                date: 1790500000000,
+                files: 2,
+                summary: {
+                    sprites: ['Cat'],
+                    spriteCount: 1,
+                    authoredFiles: 2,
+                    totals: {
+                        scripts: {added: 1, removed: 0, changed: 0, moved: 0},
+                        assets: {added: 0, removed: 0, modified: 0}
+                    }
+                }
+            }
+        });
+        const wrapper = mountAt('/project/project-1/code');
+        await settle(wrapper);
+
+        expect(wrapper.text()).toContain('Remixed from');
+        const parentLink = wrapper.find('a').filterWhere(link => link.text() === 'alice / Original Space');
+        expect(parentLink.prop('href')).toBe('/p/original-space/code');
+        expect(wrapper.text()).toContain('This project is 3 commits ahead and 1 commit behind alice / Original Space.');
+        const contribute = wrapper.find('a').filterWhere(link => link.text() === 'Contribute');
+        expect(contribute.prop('href')).toBe('/p/original-space#contribute');
+        expect(wrapper.text()).toContain('Not committed');
+        expect(wrapper.text()).toContain('Uncommitted changes');
+        expect(wrapper.text()).toContain('Added 1 script in Cat');
+        const viewChanges = wrapper.find('a').filterWhere(link => link.text() === 'View changes');
+        expect(viewChanges.prop('href')).toBe('/project/project-1/commits/worktree');
     });
 
     test('keeps private source hidden', async () => {

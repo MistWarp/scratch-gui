@@ -4,31 +4,41 @@ import {Link} from 'react-router-dom';
 import {Blocks, Code} from 'lucide-react';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import {plainClick, setDeveloperMode} from '../developer-mode.js';
-import styles from './ViewModeSwitch.module.css';
+import Button from './ui/Button.jsx';
+import IconButton from './ui/IconButton.jsx';
 
 const ViewModeSwitch = ({mode, projectHref, developerHref, className}) => {
     const {text: communityText} = useCommunityText();
-    const item = (key, to, Icon, label, developer) => (
-        <Link
-            className={mode === key ? `${styles.item} ${styles.active}` : styles.item}
-            to={to}
-            aria-current={mode === key ? 'page' : null}
+    if (mode === 'project') {
+        return (
+            <IconButton
+                as={Link}
+                variant="secondary"
+                className={className}
+                to={developerHref}
+                label={communityText('Developer view')}
+                title={communityText('Developer view')}
+                onClick={event => {
+                    if (plainClick(event)) setDeveloperMode(true);
+                }}
+            >
+                <Code size={18} aria-hidden="true" />
+            </IconButton>
+        );
+    }
+    return (
+        <Button
+            as={Link}
+            variant="secondary"
+            className={className}
+            to={projectHref}
             onClick={event => {
-                if (plainClick(event)) setDeveloperMode(developer);
+                if (plainClick(event)) setDeveloperMode(false);
             }}
         >
-            <Icon size={16} aria-hidden="true" />
-            <span>{label}</span>
-        </Link>
-    );
-    return (
-        <nav
-            className={className ? `${styles.switch} ${className}` : styles.switch}
-            aria-label={communityText('Project view mode')}
-        >
-            {item('project', projectHref, Blocks, communityText('Project'), false)}
-            {item('developer', developerHref, Code, communityText('Developer'), true)}
-        </nav>
+            <Blocks size={16} aria-hidden="true" />
+            {communityText('Project view')}
+        </Button>
     );
 };
 

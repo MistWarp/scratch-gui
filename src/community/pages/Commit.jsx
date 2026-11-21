@@ -1,7 +1,7 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {GitCommitHorizontal, Plus, Settings2, X} from 'lucide-react';
+import {CircleDashed, GitCommitHorizontal, Plus, Settings2, X} from 'lucide-react';
 import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import api from '../api';
 import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
@@ -59,7 +59,7 @@ export const commitMutationSha = (result, fallback) => (
 );
 
 const remixBaseFor = (project, sha) => ({
-    enabled: Boolean(project.remixParent && project.remixBaseCommit && project.gitHead === sha),
+    enabled: Boolean(sha !== 'worktree' && project.remixParent && project.remixBaseCommit && project.gitHead === sha),
     projectId: project.remixParent,
     sha: project.remixBaseCommit,
     currentHead: project.gitHead
@@ -80,15 +80,16 @@ const loadChanges = async (id, sha, remixBase) => {
     }
 };
 
-const entryFromCommit = (inspected, sha) => {
+const entryFromCommit = (inspected, sha, loadedProject = null) => {
     const metadata = inspected.commit || {};
+    const isWorktree = sha === 'worktree';
     return {
         ...metadata,
         ...inspected,
         oid: inspected.oid || inspected.sha || sha,
         message: inspected.message || metadata.message || '',
-        date: inspected.date || metadata.date || 0,
-        authorName: metadata.author?.name || metadata.author || '',
+        date: inspected.date || metadata.date || (isWorktree ? (loadedProject?.edited || 0) : 0),
+        authorName: metadata.author?.name || metadata.author || (isWorktree ? (loadedProject?.owner || '') : ''),
         coAuthors: metadata.coAuthors || metadata.collaborators || []
     };
 };
@@ -96,6 +97,7 @@ const entryFromCommit = (inspected, sha) => {
 const Commit = () => {
     const {text: communityText} = useCommunityText();
     const {slug, sha} = useParams();
+    const isWorktree = sha === 'worktree';
     const {projectId: id, resolving, resolveError} = useResolvedProjectId();
     const {user} = useUser();
     const viewer = user?.username || '';
@@ -122,17 +124,19 @@ const Commit = () => {
         if (!id) return;
         const context = `${viewer}:${id}:${sha}`;
         setError('');
-        setLoadProgress({progress: 8, label: 'Finding this commit'});
+        setLoadProgress({progress: 8, label: isWorktree ? 'Finding uncommitted changes' : 'Finding this commit'});
         try {
             const projectData = await api.getProject(id);
             if (contextRef.current !== context) return;
             if (!canViewProjectSource(projectData.project || projectData)) {
                 throw new Error('You do not have permission to view commits for this project.');
             }
-            const coAuthorsPromise = api.commitCoAuthors(id, sha).catch(() => null);
+            const coAuthorsPromise = isWorktree ?
+                Promise.resolve(null) :
+                api.commitCoAuthors(id, sha).catch(() => null);
             const loadedProject = projectData.project || projectData;
             const remixBase = remixBaseFor(loadedProject, sha);
-            setLoadProgress({progress: 24, label: 'Reading commit'});
+            setLoadProgress({progress: 24, label: isWorktree ? 'Reading uncommitted changes' : 'Reading commit'});
             const structured = await loadChanges(id, sha, remixBase);
             if (contextRef.current !== context) return;
             let inspected = structured;
@@ -155,10 +159,14 @@ const Commit = () => {
             const metadata = inspected.commit || {};
             setProject(loadedProject);
             setLoadedContext(context);
-            setEntry(entryFromCommit(inspected, sha));
+            setEntry(entryFromCommit(inspected, sha, loadedProject));
             setChanges(structured);
             setDiff(structured ? null : (inspected.diff || 'No textual changes.'));
-            setPageMeta({title: communityText('{value1} · Commit', {value1: metadata.message || sha.slice(0, 7)})});
+            setPageMeta({
+                title: isWorktree ?
+                    communityText('Uncommitted changes · {value1}', {value1: loadedProject.title}) :
+                    communityText('{value1} · Commit', {value1: metadata.message || sha.slice(0, 7)})
+            });
             coAuthorsPromise.then(coAuthorData => {
                 if (!coAuthorData || contextRef.current !== context) return;
                 setEntry(current => (current ? ({
@@ -169,7 +177,7 @@ const Commit = () => {
         } catch (loadError) {
             if (contextRef.current === context) setError(loadError.message || 'Could not load this commit.');
         }
-    }, [id, sha, viewer]);
+    }, [id, isWorktree, sha, viewer]);
 
     useEffect(() => {
         setProject(null);
@@ -351,7 +359,13 @@ const Commit = () => {
     if (error) {
         return (
             <main className={styles.page}>
-                <PageHeader compact backTo={`${baseUrl}#history`} backLabel={communityText('Back to project')} icon={GitCommitHorizontal} title={communityText('Commit')} />
+                <PageHeader
+                    compact
+                    backTo={`${baseUrl}#history`}
+                    backLabel={communityText('Back to project')}
+                    icon={isWorktree ? CircleDashed : GitCommitHorizontal}
+                    title={isWorktree ? communityText('Uncommitted changes') : communityText('Commit')}
+                />
                 <StatusMessage error onRetry={load}>{error}</StatusMessage>
             </main>
         );
@@ -390,23 +404,43 @@ const Commit = () => {
         );
     }
 
+    const filesTabLabel = isWorktree ? communityText('Working files') : communityText('Files at this commit');
+
     return (
         <main className={styles.page}>
             <PageHeader
                 compact
                 backTo={`${baseUrl}#history`}
                 backLabel={project.title}
-                icon={GitCommitHorizontal}
-                title={entry.message || communityText('Untitled commit')}
-                actions={canManageCommit(project) ? (
+                icon={isWorktree ? CircleDashed : GitCommitHorizontal}
+                title={isWorktree ? communityText('Uncommitted changes') : (entry.message || communityText('Untitled commit'))}
+                actions={!isWorktree && canManageCommit(project) ? (
                     <Button onClick={openManage}><Settings2 size={14} />{communityText('Manage')}</Button>
                 ) : null}
             >
                 <div className={styles.meta}>
-                    <UserLink username={entry.authorName}><Avatar username={entry.authorName} size={26} /></UserLink>
-                    <UserLink username={entry.authorName}><strong>{entry.authorName}</strong></UserLink>
-                    <span>{communityText('committed {value1}', {value1: formatDateTime(entry.date || (entry.commit.author?.timestamp * 1000))})}</span>
-                    {normalizeCommitCoAuthors(entry).length ? (
+                    {isWorktree ? (
+                        <span className={styles.uncommittedBadge}>
+                            <CircleDashed size={13} aria-hidden="true" />
+                            {communityText('Not committed')}
+                        </span>
+                    ) : null}
+                    {entry.authorName ? (
+                        <React.Fragment>
+                            <UserLink username={entry.authorName}><Avatar username={entry.authorName} size={26} /></UserLink>
+                            <UserLink username={entry.authorName}><strong>{entry.authorName}</strong></UserLink>
+                        </React.Fragment>
+                    ) : null}
+                    {isWorktree ? (
+                        <span>
+                            {entry.date ?
+                                communityText('saved without committing {value1}', {value1: formatDateTime(entry.date)}) :
+                                communityText('saved without committing')}
+                        </span>
+                    ) : (
+                        <span>{communityText('committed {value1}', {value1: formatDateTime(entry.date || (entry.commit.author?.timestamp * 1000))})}</span>
+                    )}
+                    {!isWorktree && normalizeCommitCoAuthors(entry).length ? (
                         <span className={styles.credited}>{communityText('co-authored by')}{' '}{normalizeCommitCoAuthors(entry).map((username, index) => (
                             <React.Fragment key={username}>
                                 {index ? ', ' : ''}<UserLink username={username}>{username}</UserLink>
@@ -414,16 +448,16 @@ const Commit = () => {
                         ))}
                         </span>
                     ) : null}
-                    <code>{entry.oid}</code>
+                    <code>{isWorktree ? (entry.parent ? entry.parent.slice(0, 7) : communityText('Working copy')) : entry.oid}</code>
                 </div>
                 <UnderlineTabs
                     items={changes ? [
                         {key: 'changes', label: changeCount ? <>{communityText('Changes')} <b>{changeCount}</b></> : communityText('Changes')},
                         {key: 'lines', label: communityText('File diff')},
-                        {key: 'files', label: communityText('Files at this commit')}
+                        {key: 'files', label: filesTabLabel}
                     ] : [
                         {key: 'changes', label: <>{communityText('Changes')} <b>{files.length}</b></>},
-                        {key: 'files', label: communityText('Files at this commit')}
+                        {key: 'files', label: filesTabLabel}
                     ]}
                     value={activeView}
                     onChange={key => {
@@ -479,7 +513,13 @@ const Commit = () => {
                         />
                         <section className={styles.diff}><DiffView diff={diff} spriteFilter={activeSprite} onOpenFile={showFiles} loadAsset={loadCommitAsset} fileTexts={fileTexts} /></section>
                     </div>
-                ) : <EmptyState icon={GitCommitHorizontal} title={communityText('No files changed')}>{communityText('This commit did not change any files.')}</EmptyState>}
+                ) : (
+                    <EmptyState icon={isWorktree ? CircleDashed : GitCommitHorizontal} title={communityText('No files changed')}>
+                        {isWorktree ?
+                            communityText('There are no uncommitted changes.') :
+                            communityText('This commit did not change any files.')}
+                    </EmptyState>
+                )}
             </div>
             {manageOpen ? (
                 <Modal

@@ -3,16 +3,19 @@ import React, {useState} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
 import {useCommunityIntl as useCommunityText} from '../../i18n.jsx';
 import {
-    GitFork, ExternalLink, ImageUp, MonitorPlay, Flag, MoreHorizontal, Code2, Trash2, Link2, Coins,
+    GitFork, ExternalLink, ImageUp, MonitorPlay, Flag, MoreHorizontal, Code, Code2, Trash2, Link2, Coins,
     SlidersHorizontal, Bookmark, BookmarkCheck, Star, Library, Eye, EyeOff, Ghost, UserCog, PawPrint
 } from 'lucide-react';
 import {payLink} from '../../../lib/rotur/payment-window.js';
+import {projectUrl} from '../../api';
 import Avatar from '../../components/Avatar.jsx';
 import GroupTag from '../../components/GroupTag.jsx';
 import VisibilityMenu from '../../components/VisibilityMenu.jsx';
 import {canViewProjectSource} from '../../project-source-access';
+import {plainClick, setDeveloperMode} from '../../developer-mode.js';
 import {sameUser} from '../../format';
 import {fullTime, isoTime, projectPublishedAt, shortTime} from '../../project-times.js';
+import {hasRemixDivergence, remixDivergenceCompact, remixParentLabel} from '../../remix-origin.js';
 import Button from '../../components/ui/Button.jsx';
 import Dropdown from '../../components/ui/Dropdown.jsx';
 import IconButton from '../../components/ui/IconButton.jsx';
@@ -97,17 +100,33 @@ const ProjectHeader = ({
                             </time>
                         ) : null}
                     </div>
+                    {project.remixFrom ? (
+                        <div className={styles.remixRow}>
+                            <GitFork size={13} aria-hidden="true" />
+                            <span>{communityText('Remixed from')}</span>
+                            <Link className={styles.remixLink} to={projectUrl(project.remixFrom)}>
+                                {remixParentLabel(project.remixFrom)}
+                            </Link>
+                            {hasRemixDivergence(project.remixFrom) ? (
+                                canViewProjectSource(project) && codeHref ? (
+                                    <Link
+                                        className={styles.remixDelta}
+                                        to={codeHref.replace(/(\?|$)/, '/commits$1')}
+                                    >
+                                        {remixDivergenceCompact(project.remixFrom, communityText)}
+                                    </Link>
+                                ) : (
+                                    <span className={styles.remixDelta}>
+                                        {remixDivergenceCompact(project.remixFrom, communityText)}
+                                    </span>
+                                )
+                            ) : null}
+                        </div>
+                    ) : null}
                     {project.branding?.tagline ? <p className={styles.brandTagline}>{project.branding.tagline}</p> : null}
                 </div>
             </div>
             <div className={styles.topActions}>
-                {canViewProjectSource(project) && codeHref ? (
-                    <ViewModeSwitch
-                        mode="project"
-                        projectHref={projectHref}
-                        developerHref={codeHref}
-                    />
-                ) : null}
                 {user && !project.isOwner ? (
                     <Button
                         as="a"
@@ -153,6 +172,13 @@ const ProjectHeader = ({
                     >
                         <ExternalLink size={16} />{communityText('See inside')}</Button>
                 ) : null}
+                {canViewProjectSource(project) && codeHref ? (
+                    <ViewModeSwitch
+                        mode="project"
+                        projectHref={projectHref}
+                        developerHref={codeHref}
+                    />
+                ) : null}
                 <Dropdown
                     className={styles.menuWrap}
                     menuClassName={styles.actionMenu}
@@ -169,6 +195,16 @@ const ProjectHeader = ({
                 >
                     {({close}) => (
                         <React.Fragment>
+                            {canViewProjectSource(project) && codeHref ? (
+                                <Link
+                                    to={codeHref}
+                                    onClick={event => {
+                                        close();
+                                        if (plainClick(event)) setDeveloperMode(true);
+                                    }}
+                                >
+                                    <Code size={15} />{communityText('Developer view')}</Link>
+                            ) : null}
                             <button
                                 type="button"
                                 onClick={() => {
