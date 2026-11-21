@@ -54,6 +54,11 @@ export const commitSummarySentence = (summary, text, locale) => {
             text('Changed 1 costume or sound in {value1}', {value1: place}) :
             text('Changed {value1} costumes and sounds in {value2}', {value1: assetCount, value2: place});
     }
+    if (assetCount) {
+        return assetCount === 1 ?
+            text('Changed 1 asset file') :
+            text('Changed {value1} asset files', {value1: assetCount});
+    }
     if (Number(totals.items) && place) {
         return text('Changed variables, lists or settings in {value1}', {value1: place});
     }

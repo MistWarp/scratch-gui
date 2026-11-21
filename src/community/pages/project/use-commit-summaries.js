@@ -6,8 +6,11 @@ const useCommitSummaries = (projectId, shas) => {
     const [summaries, setSummaries] = useState({});
     const requested = useRef({projectId: '', shas: new Set()});
     const mounted = useRef(true);
-    useEffect(() => () => {
-        mounted.current = false;
+    useEffect(() => {
+        mounted.current = true;
+        return () => {
+            mounted.current = false;
+        };
     }, []);
     const key = shas.join(',');
     useEffect(() => {

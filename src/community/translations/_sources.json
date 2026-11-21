@@ -274,26 +274,32 @@
   "Changed {value1} costumes and sounds in {value2}": [
     "src/community/commit-summary.js:55"
   ],
+  "Changed 1 asset file": [
+    "src/community/commit-summary.js:59"
+  ],
+  "Changed {value1} asset files": [
+    "src/community/commit-summary.js:60"
+  ],
   "Changed variables, lists or settings in {value1}": [
-    "src/community/commit-summary.js:58"
+    "src/community/commit-summary.js:63"
   ],
   "Changed {value1}, too large to summarize": [
-    "src/community/commit-summary.js:61"
-  ],
-  "Changed 1 project file": [
-    "src/community/commit-summary.js:65"
-  ],
-  "Changed {value1} project files": [
     "src/community/commit-summary.js:66"
   ],
+  "Changed 1 project file": [
+    "src/community/commit-summary.js:70"
+  ],
+  "Changed {value1} project files": [
+    "src/community/commit-summary.js:71"
+  ],
   "Only saved state changed": [
-    "src/community/commit-summary.js:68"
+    "src/community/commit-summary.js:73"
   ],
   "No changes to how the project runs": [
-    "src/community/commit-summary.js:69"
+    "src/community/commit-summary.js:74"
   ],
   "Untitled commit": [
-    "src/community/commit-summary.js:76",
+    "src/community/commit-summary.js:81",
     "src/community/pages/Commit.jsx:400",
     "src/community/pages/PullRequest.jsx:607",
     "src/community/pages/PullRequest.jsx:659",
@@ -1498,14 +1504,14 @@
     "src/community/components/GifPicker.jsx:87"
   ],
   "View commit {value1}": [
-    "src/community/components/GitGraph.jsx:72"
+    "src/community/components/GitGraph.jsx:73"
   ],
   "Restoring…": [
-    "src/community/components/GitGraph.jsx:106",
+    "src/community/components/GitGraph.jsx:107",
     "src/community/pages/project/HistoryList.jsx:109"
   ],
   "Restore this version": [
-    "src/community/components/GitGraph.jsx:107"
+    "src/community/components/GitGraph.jsx:108"
   ],
   "{value1} projects, {value2} hearts": [
     "src/community/components/HomeDiscovery.jsx:79"

@@ -65,6 +65,8 @@ describe('commit list summaries', () => {
         expect(commitSummarySentence(summary({totals: {items: 2}}), text, 'en'))
             .toBe('Changed variables, lists or settings in Cat');
         expect(commitSummarySentence(summary({tooLarge: true}), text, 'en')).toBe('Changed Cat, too large to summarize');
+        expect(commitSummarySentence(summary({sprites: [], spriteCount: 0, totals: {assets: {added: 0, removed: 0, modified: 2}}}), text, 'en'))
+            .toBe('Changed 2 asset files');
         expect(commitSummarySentence(summary({sprites: [], spriteCount: 0, authoredFiles: 2}), text, 'en'))
             .toBe('Changed 2 project files');
         expect(commitSummarySentence(summary({sprites: [], spriteCount: 0, totals: {state: 3, stateOnly: true}}), text, 'en'))

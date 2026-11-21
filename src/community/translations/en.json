@@ -3691,5 +3691,7 @@
   "Changed 1 project file": "Changed 1 project file",
   "Changed {value1} project files": "Changed {value1} project files",
   "Only saved state changed": "Only saved state changed",
-  "No changes to how the project runs": "No changes to how the project runs"
+  "No changes to how the project runs": "No changes to how the project runs",
+  "Changed 1 asset file": "Changed 1 asset file",
+  "Changed {value1} asset files": "Changed {value1} asset files"
 }

@@ -100,14 +100,11 @@
 .meta {
     color: var(--text-dim);
     font-size: var(--fs-2xs);
+    white-space: nowrap;
 }
 
 .meta code {
     color: inherit;
-}
-
-.meta {
-    white-space: nowrap;
 }
 
 .detail {
