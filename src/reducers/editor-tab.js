@@ -22,8 +22,17 @@ const readStoredMode = () => (local.readString(EDITOR_MODE_KEY) === CODE_MODE ? 
 
 const readUrlMode = () => {
     try {
-        const mode = new URLSearchParams(window.location.search).get('mode');
-        return mode === CODE_MODE || mode === BLOCKS_MODE ? mode : null;
+        const params = new URLSearchParams(window.location.search);
+        const mode = params.get('mode');
+        if (mode !== CODE_MODE && mode !== BLOCKS_MODE) return null;
+        params.delete('mode');
+        const query = params.toString();
+        window.history.replaceState(
+            window.history.state,
+            '',
+            `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`
+        );
+        return mode;
     } catch (e) {
         return null;
     }

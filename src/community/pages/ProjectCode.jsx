@@ -9,7 +9,7 @@ import api, {editorUrl} from '../api';
 import {useUser} from '../UserContext.jsx';
 import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
 import {canViewProjectSource} from '../project-source-access';
-import {setDeveloperMode} from '../developer-mode.js';
+import {plainClick, setDeveloperMode} from '../developer-mode.js';
 import {formatBytes, safeDate, timeAgo} from '../format.js';
 import setPageMeta from '../page-meta.js';
 import useLatest from '../use-latest.js';
@@ -88,7 +88,7 @@ const AboutPanel = ({project, baseUrl, counts, fileCount, contributors}) => {
     const updated = safeDate(project.edited);
     return (
         <aside className={styles.side}>
-            <ProjectPreview project={project} />
+            <ProjectPreview key={project.id} project={project} />
             <section>
                 <h2>{communityText('Details')}</h2>
                 {(project.tags || []).length ? (
@@ -225,7 +225,14 @@ const ProjectCodePage = ({id, vanitySlug}) => {
                     </h1>
                 </div>
                 <div className={styles.actions}>
-                    <Button as={Link} variant="secondary" to={baseUrl} onClick={() => setDeveloperMode(false)}>
+                    <Button
+                        as={Link}
+                        variant="secondary"
+                        to={baseUrl}
+                        onClick={event => {
+                            if (plainClick(event)) setDeveloperMode(false);
+                        }}
+                    >
                         <Gamepad2 size={16} />{communityText('Project view')}</Button>
                     {project.canRemix && !project.isOwner ? (
                         <Button as="a" variant="secondary" href={editorUrl({platformProject: project.id, from: 'remix'})}>

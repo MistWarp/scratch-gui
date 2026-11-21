@@ -1,7 +1,3 @@
-/**
- * @jest-environment jsdom
- * @jest-environment-options {"url": "https://mistwarp.org/explore"}
- */
 import React from 'react';
 import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
@@ -10,7 +6,8 @@ import {MemoryRouter, Route, Routes, useLocation} from 'react-router-dom';
 import api from '../../src/community/api';
 import Project from '../../src/community/pages/Project.jsx';
 import {isDeveloperMode, setDeveloperMode, useDeveloperMode} from '../../src/community/developer-mode.js';
-import developerViewUrl from '../../src/lib/community/developer-view-url.js';
+import developerViewUrl, {projectPageUrl} from '../../src/lib/community/developer-view-url.js';
+import {local} from '../../src/modules/storage';
 import {setMockUserContext} from '../../src/community/UserContext.jsx';
 import rotur from '../../src/community/rotur.js';
 
@@ -51,6 +48,14 @@ const Harness = ({path}) => (
             <Route
                 path="/project/:id"
                 element={<Project />}
+            />
+            <Route
+                path="/p/:slug"
+                element={<Project />}
+            />
+            <Route
+                path="/p/:slug/code/*"
+                element={<p>{'developer view'}</p>}
             />
             <Route
                 path="/project/:id/code/*"
@@ -121,13 +126,54 @@ describe('developer view preference', () => {
         wrapper.unmount();
     });
 
-    test('keeps the project page for anchors and private source', async () => {
+    test('opens vanity links in the developer view', async () => {
+        setDeveloperMode(true);
+        jest.spyOn(api, 'resolveVanity').mockResolvedValue({id: 'project-1'});
+        const wrapper = await mountProject('/p/space-game', {vanitySlug: 'space-game'});
+        await act(async () => {
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+        expect(currentLocation.pathname).toBe('/p/space-game/code');
+        wrapper.unmount();
+    });
+
+    test('sends version control anchors to the matching developer view tab', async () => {
+        setDeveloperMode(true);
+        let wrapper = await mountProject('/project/project-1#history');
+        expect(currentLocation.pathname).toBe('/project/project-1/code/commits');
+        wrapper.unmount();
+        wrapper = await mountProject('/project/project-1#pull-requests');
+        expect(currentLocation.pathname).toBe('/project/project-1/code/pulls');
+        wrapper.unmount();
+    });
+
+    test('keeps the project page for other anchors and private source', async () => {
         setDeveloperMode(true);
         let wrapper = await mountProject('/project/project-1#contribute');
         expect(currentLocation.pathname).toBe('/project/project-1');
         wrapper.unmount();
         wrapper = await mountProject('/project/project-1', {canViewSource: false});
         expect(currentLocation.pathname).toBe('/project/project-1');
+        wrapper.unmount();
+    });
+
+    test('keeps working in memory when storage refuses writes', () => {
+        const write = jest.spyOn(local, 'writeString').mockReturnValue(false);
+        setDeveloperMode(true);
+        expect(isDeveloperMode()).toBe(true);
+        setDeveloperMode(false);
+        expect(isDeveloperMode()).toBe(false);
+        write.mockRestore();
+    });
+
+    test('opening the developer view in a new tab leaves the mode alone', async () => {
+        const wrapper = await mountProject('/project/project-1');
+        const button = wrapper.find('a').filterWhere(link => link.text() === 'Developer view');
+        act(() => {
+            button.simulate('click', {button: 0, ctrlKey: true});
+        });
+        expect(isDeveloperMode()).toBe(false);
         wrapper.unmount();
     });
 
@@ -152,6 +198,12 @@ describe('developerViewUrl', () => {
         expect(developerViewUrl('https://mistwarp.org/project/p1?k=abc#top')).toBe('https://mistwarp.org/project/p1/code?k=abc#top');
     });
 
+    test('only the editor in code mode goes to the developer view', () => {
+        expect(projectPageUrl('/p/my-game', true)).toBe('/p/my-game/code');
+        expect(projectPageUrl('/p/my-game', false)).toBe('/p/my-game');
+        expect(projectPageUrl('https://mistwarp.org/project/p1#comments', true)).toBe('https://mistwarp.org/project/p1/code#comments');
+    });
+
     test('leaves developer view links alone', () => {
         expect(developerViewUrl('/project/p1/code')).toBe('/project/p1/code');
         expect(developerViewUrl('')).toBe('');
@@ -161,8 +213,8 @@ describe('developerViewUrl', () => {
 describe('editor links', () => {
     test('editorUrl asks for code mode only for a project', () => {
         const {editorUrl} = require('../../src/community/api');
-        expect(editorUrl({platformProject: 'pAbc', mode: 'code'})).toBe('https://editor.mistwarp.org/?mode=code#mw-pAbc');
-        expect(editorUrl({mode: 'code'})).toBe('https://editor.mistwarp.org/');
+        expect(editorUrl({platformProject: 'pAbc', mode: 'code'})).toMatch(/\?mode=code#mw-pAbc$/);
+        expect(editorUrl({mode: 'code'})).not.toContain('mode=');
     });
 
     test('the editor starts in the mode from the address', () => {
@@ -175,6 +227,15 @@ describe('editor links', () => {
             return state.editorMode;
         };
         localStorage.setItem('mw:editor-mode', 'blocks');
+        window.history.replaceState(null, '', '/?mode=code&project_url=x#mw-p1');
+        let state;
+        jest.isolateModules(() => {
+            state = require('../../src/reducers/editor-tab.js').editorTabInitialState;
+        });
+        expect(state.editorMode).toBe('code');
+        expect(window.location.search).toBe('?project_url=x');
+        expect(window.location.hash).toBe('#mw-p1');
+        expect(load('')).toBe('blocks');
         expect(load('?mode=code')).toBe('code');
         localStorage.setItem('mw:editor-mode', 'code');
         expect(load('?mode=blocks')).toBe('blocks');

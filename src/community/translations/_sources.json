@@ -1050,9 +1050,9 @@
     "src/community/pages/ManageSpace.jsx:786",
     "src/community/pages/MyStuff.jsx:1325",
     "src/community/pages/MyStuff.jsx:1341",
-    "src/community/pages/Project.jsx:727",
-    "src/community/pages/Settings.jsx:1002",
-    "src/community/pages/Settings.jsx:1017",
+    "src/community/pages/Project.jsx:730",
+    "src/community/pages/Settings.jsx:1003",
+    "src/community/pages/Settings.jsx:1018",
     "src/community/pages/Theme.jsx:239",
     "src/community/pages/project/ReviewPanel.jsx:221"
   ],
@@ -1250,7 +1250,7 @@
   ],
   "Play {value1}": [
     "src/community/components/FeaturedProject.jsx:89",
-    "src/community/pages/project/ProjectPreview.jsx:36"
+    "src/community/pages/project/ProjectPreview.jsx:62"
   ],
   "Loading project…": [
     "src/community/components/FeaturedProject.jsx:102",
@@ -1751,8 +1751,8 @@
     "src/community/components/ui/StatusMessage.jsx:26",
     "src/community/pages/Notifications.jsx:784",
     "src/community/pages/Random.jsx:56",
-    "src/community/pages/Settings.jsx:724",
-    "src/community/pages/Settings.jsx:786"
+    "src/community/pages/Settings.jsx:725",
+    "src/community/pages/Settings.jsx:787"
   ],
   "Could not check who is online. Retrying…": [
     "src/community/components/LiveProjectSession.jsx:47"
@@ -2539,7 +2539,7 @@
     "src/community/components/NavBar.jsx:732",
     "src/community/pages/Notifications.jsx:765",
     "src/community/pages/Settings.jsx:102",
-    "src/community/pages/Settings.jsx:671"
+    "src/community/pages/Settings.jsx:672"
   ],
   "Notifications ({value1} unread)": [
     "src/community/components/NavBar.jsx:634",
@@ -2645,7 +2645,7 @@
   "Updated {value1}": [
     "src/community/components/NewsItem.jsx:205",
     "src/community/pages/NewsPost.jsx:136",
-    "src/community/pages/Project.jsx:827",
+    "src/community/pages/Project.jsx:830",
     "src/community/pages/ProjectCode.jsx:105"
   ],
   "Post analytics": [
@@ -3195,7 +3195,7 @@
   ],
   "Remix": [
     "src/community/components/ProjectCard.jsx:97",
-    "src/community/pages/ProjectCode.jsx:232",
+    "src/community/pages/ProjectCode.jsx:235",
     "src/community/pages/project/ProjectBounties.jsx:54",
     "src/community/pages/project/ProjectHeader.jsx:127",
     "src/community/pages/project/ProjectHeader.jsx:254"
@@ -3242,7 +3242,7 @@
   "Preview": [
     "src/community/components/ProjectFiles.jsx:322",
     "src/community/pages/News.jsx:199",
-    "src/community/pages/project/ProjectPreview.jsx:21"
+    "src/community/pages/project/ProjectPreview.jsx:44"
   ],
   "Source": [
     "src/community/components/ProjectFiles.jsx:327"
@@ -3287,7 +3287,7 @@
   ],
   "Loading project files…": [
     "src/community/components/ProjectFiles.jsx:466",
-    "src/community/pages/ProjectCode.jsx:283",
+    "src/community/pages/ProjectCode.jsx:286",
     "src/community/pages/project/CodeBrowser.jsx:173"
   ],
   "No files yet": [
@@ -4476,7 +4476,7 @@
   "Preparing…": [
     "src/community/components/classroom/DownloadDataButton.jsx:26",
     "src/community/pages/ClassroomSchool.jsx:242",
-    "src/community/pages/Settings.jsx:895"
+    "src/community/pages/Settings.jsx:896"
   ],
   "Login cards": [
     "src/community/components/classroom/LoginCards.jsx:24"
@@ -6008,7 +6008,7 @@
   ],
   "Contact support": [
     "src/community/pages/Classroom.jsx:555",
-    "src/community/pages/Settings.jsx:854"
+    "src/community/pages/Settings.jsx:855"
   ],
   "Classroom is licensed to schools. Ask your school to add you to its plan, or contact support to set one up.": [
     "src/community/pages/Classroom.jsx:557"
@@ -6553,7 +6553,7 @@
   "Finding project…": [
     "src/community/pages/Commit.jsx:365",
     "src/community/pages/Project.jsx:625",
-    "src/community/pages/ProjectCode.jsx:330",
+    "src/community/pages/ProjectCode.jsx:333",
     "src/community/pages/PullRequest.jsx:519",
     "src/community/pages/PullRequests.jsx:58",
     "src/community/pages/RemixTree.jsx:197"
@@ -7415,8 +7415,8 @@
     "src/community/pages/ManageSpace.jsx:729",
     "src/community/pages/ManageSpace.jsx:760",
     "src/community/pages/ManageSpace.jsx:775",
-    "src/community/pages/Settings.jsx:799",
-    "src/community/pages/Settings.jsx:817"
+    "src/community/pages/Settings.jsx:800",
+    "src/community/pages/Settings.jsx:818"
   ],
   "Remove": [
     "src/community/pages/ManageSpace.jsx:729",
@@ -8150,14 +8150,14 @@
   ],
   "Unmute": [
     "src/community/pages/Profile.jsx:848",
-    "src/community/pages/Settings.jsx:820"
+    "src/community/pages/Settings.jsx:821"
   ],
   "Mute": [
     "src/community/pages/Profile.jsx:848"
   ],
   "Unblock": [
     "src/community/pages/Profile.jsx:859",
-    "src/community/pages/Settings.jsx:802",
+    "src/community/pages/Settings.jsx:803",
     "src/community/pages/admin/ExtensionManager.jsx:299"
   ],
   "Block": [
@@ -8250,42 +8250,42 @@
     "src/community/pages/Project.jsx:615"
   ],
   "Delete project?": [
-    "src/community/pages/Project.jsx:724",
+    "src/community/pages/Project.jsx:727",
     "src/community/pages/admin/ProjectManager.jsx:68",
     "src/community/pages/admin/UserDetailCard.jsx:253"
   ],
   "Delete project": [
-    "src/community/pages/Project.jsx:725",
+    "src/community/pages/Project.jsx:728",
     "src/community/pages/admin/ProjectManager.jsx:70",
     "src/community/pages/admin/UserDetailCard.jsx:255",
     "src/community/pages/project/ProjectHeader.jsx:327"
   ],
   "{value1} will be deleted permanently. This cannot be undone.": [
-    "src/community/pages/Project.jsx:731"
+    "src/community/pages/Project.jsx:734"
   ],
   "Run custom extensions without the sandbox?": [
-    "src/community/pages/Project.jsx:737"
+    "src/community/pages/Project.jsx:740"
   ],
   "Keep sandbox": [
-    "src/community/pages/Project.jsx:738"
+    "src/community/pages/Project.jsx:741"
   ],
   "Run anyway": [
-    "src/community/pages/Project.jsx:739"
-  ],
-  "This gives the project full access to your MistWarp account. It could read your login session, act as you, or change your data. Continue only if you trust the creator.": [
     "src/community/pages/Project.jsx:742"
   ],
+  "This gives the project full access to your MistWarp account. It could read your login session, act as you, or change your data. Continue only if you trust the creator.": [
+    "src/community/pages/Project.jsx:745"
+  ],
   "Shared {value1}": [
-    "src/community/pages/Project.jsx:819",
+    "src/community/pages/Project.jsx:822",
     "src/community/pages/admin/UserDetailCard.jsx:323",
     "src/community/pages/project/ProjectHeader.jsx:94"
   ],
   "Uploaded {value1}": [
-    "src/community/pages/Project.jsx:820",
+    "src/community/pages/Project.jsx:823",
     "src/community/pages/project/ProjectHeader.jsx:95"
   ],
   "{value1} blocks": [
-    "src/community/pages/Project.jsx:833"
+    "src/community/pages/Project.jsx:836"
   ],
   "About this project": [
     "src/community/pages/ProjectCode.jsx:63"
@@ -8305,7 +8305,7 @@
   ],
   "{value1} branches": [
     "src/community/pages/ProjectCode.jsx:84",
-    "src/community/pages/ProjectCode.jsx:277"
+    "src/community/pages/ProjectCode.jsx:280"
   ],
   "1 open pull request": [
     "src/community/pages/ProjectCode.jsx:85"
@@ -8350,25 +8350,25 @@
     "src/community/pages/project/VersionControlPanel.jsx:25"
   ],
   "Project view": [
-    "src/community/pages/ProjectCode.jsx:229"
+    "src/community/pages/ProjectCode.jsx:232"
   ],
   "See inside": [
-    "src/community/pages/ProjectCode.jsx:236",
+    "src/community/pages/ProjectCode.jsx:239",
     "src/community/pages/project/ProjectHeader.jsx:155"
   ],
   "Developer view": [
-    "src/community/pages/ProjectCode.jsx:244",
-    "src/community/pages/Settings.jsx:594",
+    "src/community/pages/ProjectCode.jsx:247",
+    "src/community/pages/Settings.jsx:595",
     "src/community/pages/project/ProjectHeader.jsx:147"
   ],
   "Branch": [
-    "src/community/pages/ProjectCode.jsx:269"
+    "src/community/pages/ProjectCode.jsx:272"
   ],
   "The source of this project is private": [
-    "src/community/pages/ProjectCode.jsx:319"
+    "src/community/pages/ProjectCode.jsx:322"
   ],
   "Only people the creator has given access can see its files and history.": [
-    "src/community/pages/ProjectCode.jsx:320"
+    "src/community/pages/ProjectCode.jsx:323"
   ],
   "{title} · Pull request #{index}": [
     "src/community/pages/PullRequest.jsx:286"
@@ -8871,23 +8871,23 @@
   ],
   "Presence": [
     "src/community/pages/Settings.jsx:101",
-    "src/community/pages/Settings.jsx:619"
+    "src/community/pages/Settings.jsx:620"
   ],
   "Privacy": [
     "src/community/pages/Settings.jsx:103",
-    "src/community/pages/Settings.jsx:691",
+    "src/community/pages/Settings.jsx:692",
     "src/community/pages/Trust.jsx:51"
   ],
   "Safety": [
     "src/community/pages/Settings.jsx:104",
-    "src/community/pages/Settings.jsx:778"
+    "src/community/pages/Settings.jsx:779"
   ],
   "Your data": [
     "src/community/pages/Settings.jsx:105"
   ],
   "Identity": [
     "src/community/pages/Settings.jsx:106",
-    "src/community/pages/Settings.jsx:738"
+    "src/community/pages/Settings.jsx:739"
   ],
   "Other users can comment on your profile.": [
     "src/community/pages/Settings.jsx:424"
@@ -8920,220 +8920,220 @@
     "src/community/pages/Settings.jsx:587"
   ],
   "Open projects on their files, commits and pull requests, with the player beside them. Projects with private source still open normally.": [
-    "src/community/pages/Settings.jsx:595"
+    "src/community/pages/Settings.jsx:596"
   ],
   "Open projects in developer view": [
-    "src/community/pages/Settings.jsx:599"
+    "src/community/pages/Settings.jsx:600"
   ],
   "Custom themes": [
-    "src/community/pages/Settings.jsx:604"
+    "src/community/pages/Settings.jsx:605"
   ],
   "Logging in…": [
-    "src/community/pages/Settings.jsx:627"
+    "src/community/pages/Settings.jsx:628"
   ],
   "Log in again": [
-    "src/community/pages/Settings.jsx:630"
+    "src/community/pages/Settings.jsx:631"
   ],
   "Your current Rotur login is missing the status:update permission, so your editor activity cannot be shared. Log in again to grant it.": [
-    "src/community/pages/Settings.jsx:634"
+    "src/community/pages/Settings.jsx:635"
   ],
   "Let projects show activity on your profile": [
-    "src/community/pages/Settings.jsx:647"
+    "src/community/pages/Settings.jsx:648"
   ],
   "Reset per-project choices ({value1})": [
-    "src/community/pages/Settings.jsx:661"
+    "src/community/pages/Settings.jsx:662"
   ],
   "Hidden categories stay out of your notification list. Account and moderation messages remain available when you turn system messages back on.": [
-    "src/community/pages/Settings.jsx:672"
+    "src/community/pages/Settings.jsx:673"
   ],
   "Choose which MistWarp activity appears publicly on your profile.": [
-    "src/community/pages/Settings.jsx:692"
+    "src/community/pages/Settings.jsx:693"
   ],
   "Your Rotur account is under 18, so MistWarp keeps your profile out of user search and creator leaderboards, and keeps your hearts and saves out of activity feeds. Game activity and profile comments start turned off.": [
-    "src/community/pages/Settings.jsx:699"
+    "src/community/pages/Settings.jsx:700"
   ],
   "Sign in to manage profile privacy.": [
-    "src/community/pages/Settings.jsx:702"
+    "src/community/pages/Settings.jsx:703"
   ],
   "Show game activity and library": [
-    "src/community/pages/Settings.jsx:707"
-  ],
-  "Display playtime for games you have added to your public library.": [
     "src/community/pages/Settings.jsx:708"
   ],
-  "Allow comments on your profile": [
-    "src/community/pages/Settings.jsx:714"
+  "Display playtime for games you have added to your public library.": [
+    "src/community/pages/Settings.jsx:709"
   ],
-  "Let other users post on your profile wall.": [
+  "Allow comments on your profile": [
     "src/community/pages/Settings.jsx:715"
   ],
+  "Let other users post on your profile wall.": [
+    "src/community/pages/Settings.jsx:716"
+  ],
   "Your Rotur username identifies your account. You can use a different name inside projects without renaming your account.": [
-    "src/community/pages/Settings.jsx:739"
+    "src/community/pages/Settings.jsx:740"
   ],
   "To rename your account, change your username on rotur.dev. MistWarp moves your profile, projects and comments to the new name within a few minutes.": [
-    "src/community/pages/Settings.jsx:745"
+    "src/community/pages/Settings.jsx:746"
   ],
   "Change username": [
-    "src/community/pages/Settings.jsx:751"
+    "src/community/pages/Settings.jsx:752"
   ],
   "Project username": [
-    "src/community/pages/Settings.jsx:758"
+    "src/community/pages/Settings.jsx:759"
   ],
   "Use account username": [
-    "src/community/pages/Settings.jsx:765"
+    "src/community/pages/Settings.jsx:766"
   ],
   "Changes the value reported by the username block in projects. Leave this blank to use your Rotur username.": [
-    "src/community/pages/Settings.jsx:767"
+    "src/community/pages/Settings.jsx:768"
   ],
   "settings.languageHelp": [
-    "src/community/pages/Settings.jsx:770"
+    "src/community/pages/Settings.jsx:771"
   ],
   "Block or mute someone from their MistWarp profile. Blocking stops MistWarp comments and notifications between you. Muting only hides their MistWarp notifications.": [
-    "src/community/pages/Settings.jsx:779"
+    "src/community/pages/Settings.jsx:780"
   ],
   "Sign in to manage blocked and muted users.": [
-    "src/community/pages/Settings.jsx:781"
+    "src/community/pages/Settings.jsx:782"
   ],
   "Blocked users": [
-    "src/community/pages/Settings.jsx:793"
+    "src/community/pages/Settings.jsx:794"
   ],
   "No blocked users": [
-    "src/community/pages/Settings.jsx:805"
-  ],
-  "You have not blocked anyone.": [
     "src/community/pages/Settings.jsx:806"
   ],
+  "You have not blocked anyone.": [
+    "src/community/pages/Settings.jsx:807"
+  ],
   "Muted users": [
-    "src/community/pages/Settings.jsx:811"
+    "src/community/pages/Settings.jsx:812"
   ],
   "No muted users": [
-    "src/community/pages/Settings.jsx:823"
-  ],
-  "You have not muted anyone.": [
     "src/community/pages/Settings.jsx:824"
   ],
-  "Project permissions": [
-    "src/community/pages/Settings.jsx:833"
+  "You have not muted anyone.": [
+    "src/community/pages/Settings.jsx:825"
   ],
-  "Projects listed here cannot show security prompts. Allow prompts again if you blocked one by mistake.": [
+  "Project permissions": [
     "src/community/pages/Settings.jsx:834"
   ],
+  "Projects listed here cannot show security prompts. Allow prompts again if you blocked one by mistake.": [
+    "src/community/pages/Settings.jsx:835"
+  ],
   "Allow prompts again": [
-    "src/community/pages/Settings.jsx:841"
+    "src/community/pages/Settings.jsx:842"
   ],
   "No blocked projects": [
-    "src/community/pages/Settings.jsx:846"
-  ],
-  "No projects are blocked from asking for permission.": [
     "src/community/pages/Settings.jsx:847"
   ],
+  "No projects are blocked from asking for permission.": [
+    "src/community/pages/Settings.jsx:848"
+  ],
   "Contact MistWarp support for immediate safety concerns.": [
-    "src/community/pages/Settings.jsx:852"
+    "src/community/pages/Settings.jsx:853"
   ],
   "Your MistWarp data": [
-    "src/community/pages/Settings.jsx:863"
-  ],
-  "These controls apply to MistWarp. Your Rotur account and Rotur data are managed separately on rotur.dev.": [
     "src/community/pages/Settings.jsx:864"
   ],
+  "These controls apply to MistWarp. Your Rotur account and Rotur data are managed separately on rotur.dev.": [
+    "src/community/pages/Settings.jsx:865"
+  ],
   "settings.analytics": [
-    "src/community/pages/Settings.jsx:870",
-    "src/community/pages/Settings.jsx:876"
+    "src/community/pages/Settings.jsx:871",
+    "src/community/pages/Settings.jsx:877"
   ],
   "Anonymous analytics stay off for accounts under 18.": [
-    "src/community/pages/Settings.jsx:872"
-  ],
-  "settings.analyticsHelp": [
     "src/community/pages/Settings.jsx:873"
   ],
+  "settings.analyticsHelp": [
+    "src/community/pages/Settings.jsx:874"
+  ],
   "Sign in to download or delete your MistWarp data.": [
-    "src/community/pages/Settings.jsx:884"
+    "src/community/pages/Settings.jsx:885"
   ],
   "Download your data": [
-    "src/community/pages/Settings.jsx:890"
-  ],
-  "Get a JSON copy of your MistWarp profile, project metadata, comments, activity, settings, notifications, and safety list.": [
     "src/community/pages/Settings.jsx:891"
   ],
+  "Get a JSON copy of your MistWarp profile, project metadata, comments, activity, settings, notifications, and safety list.": [
+    "src/community/pages/Settings.jsx:892"
+  ],
   "Download": [
-    "src/community/pages/Settings.jsx:898"
+    "src/community/pages/Settings.jsx:899"
   ],
   "Delete your MistWarp data": [
-    "src/community/pages/Settings.jsx:904"
-  ],
-  "This deletes your MistWarp projects and profile data, anonymizes your public comments, and signs you out. Your Rotur account remains active, and signing in later creates a fresh MistWarp profile.": [
     "src/community/pages/Settings.jsx:905"
   ],
+  "This deletes your MistWarp projects and profile data, anonymizes your public comments, and signs you out. Your Rotur account remains active, and signing in later creates a fresh MistWarp profile.": [
+    "src/community/pages/Settings.jsx:906"
+  ],
   "Type {value1} to confirm": [
-    "src/community/pages/Settings.jsx:908"
+    "src/community/pages/Settings.jsx:909"
   ],
   "Delete MistWarp data": [
-    "src/community/pages/Settings.jsx:922"
+    "src/community/pages/Settings.jsx:923"
   ],
   "Privacy and community terms": [
-    "src/community/pages/Settings.jsx:928"
+    "src/community/pages/Settings.jsx:929"
   ],
   "Manage your Rotur account": [
-    "src/community/pages/Settings.jsx:929",
+    "src/community/pages/Settings.jsx:930",
     "src/community/pages/Trust.jsx:42"
   ],
   "Sign in to manage your game saves and portable items.": [
-    "src/community/pages/Settings.jsx:935"
+    "src/community/pages/Settings.jsx:936"
   ],
   "Loading game data…": [
-    "src/community/pages/Settings.jsx:938"
+    "src/community/pages/Settings.jsx:939"
   ],
   "Project saves": [
-    "src/community/pages/Settings.jsx:945"
+    "src/community/pages/Settings.jsx:946"
   ],
   "By @{value1}, {value2} bytes, revision {value3}": [
-    "src/community/pages/Settings.jsx:951"
-  ],
-  "{value1} bytes, revision {value2}": [
     "src/community/pages/Settings.jsx:952"
   ],
+  "{value1} bytes, revision {value2}": [
+    "src/community/pages/Settings.jsx:953"
+  ],
   "Delete save": [
-    "src/community/pages/Settings.jsx:958",
-    "src/community/pages/Settings.jsx:1018"
+    "src/community/pages/Settings.jsx:959",
+    "src/community/pages/Settings.jsx:1019"
   ],
   "No project saves": [
-    "src/community/pages/Settings.jsx:961"
-  ],
-  "You do not have any project save data yet.": [
     "src/community/pages/Settings.jsx:962"
   ],
-  "Portable items": [
-    "src/community/pages/Settings.jsx:969"
+  "You do not have any project save data yet.": [
+    "src/community/pages/Settings.jsx:963"
   ],
-  "Games see only items they define or explicitly allow from other projects.": [
+  "Portable items": [
     "src/community/pages/Settings.jsx:970"
   ],
+  "Games see only items they define or explicitly allow from other projects.": [
+    "src/community/pages/Settings.jsx:971"
+  ],
   "Quantity {value2}, from {value3}, ID {value1}": [
-    "src/community/pages/Settings.jsx:976"
+    "src/community/pages/Settings.jsx:977"
   ],
   "No portable items": [
-    "src/community/pages/Settings.jsx:981"
-  ],
-  "You do not own any portable game items yet.": [
     "src/community/pages/Settings.jsx:982"
   ],
+  "You do not own any portable game items yet.": [
+    "src/community/pages/Settings.jsx:983"
+  ],
   "Sign in to sync your settings across devices through your Rotur account.": [
-    "src/community/pages/Settings.jsx:992"
+    "src/community/pages/Settings.jsx:993"
   ],
   "Delete MistWarp data?": [
-    "src/community/pages/Settings.jsx:999"
+    "src/community/pages/Settings.jsx:1000"
   ],
   "Delete permanently": [
-    "src/community/pages/Settings.jsx:1003"
+    "src/community/pages/Settings.jsx:1004"
   ],
   "MistWarp will delete projects and profile data for @{value1}. Public comments and other shared history will be anonymized. This cannot be undone.": [
-    "src/community/pages/Settings.jsx:1008"
+    "src/community/pages/Settings.jsx:1009"
   ],
   "Delete game save?": [
-    "src/community/pages/Settings.jsx:1014"
+    "src/community/pages/Settings.jsx:1015"
   ],
   "Delete your production save for {value1}? The project will start you with a new save next time.": [
-    "src/community/pages/Settings.jsx:1022"
+    "src/community/pages/Settings.jsx:1023"
   ],
   "Could not rate this space.": [
     "src/community/pages/Space.jsx:208"

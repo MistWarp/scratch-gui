@@ -9,7 +9,7 @@ import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.j
 import {listCommerceBounties} from '../credits';
 import ProjectInfoPanel from '../components/ProjectInfoPanel.jsx';
 import {canViewProjectSource} from '../project-source-access';
-import {setDeveloperMode, useDeveloperMode} from '../developer-mode.js';
+import {developerViewPath, plainClick, setDeveloperMode, useDeveloperMode} from '../developer-mode.js';
 import ProjectCompatibility from '../components/ProjectCompatibility.jsx';
 import CollectionSaveModal from '../components/CollectionSaveModal.jsx';
 import {useUser} from '../UserContext.jsx';
@@ -627,8 +627,9 @@ const Project = () => {
         );
     }
 
-    if (developerMode && !location.hash && canViewProjectSource(project)) {
-        return <Navigate replace to={`${baseProjectUrl}/code${location.search}`} />;
+    const developerPath = developerMode && canViewProjectSource(project) ? developerViewPath(location.hash) : null;
+    if (developerPath !== null) {
+        return <Navigate replace to={`${baseProjectUrl}/code${developerPath}${location.search}`} />;
     }
 
     const ownsProject = Boolean(user && String(user.username).toLowerCase() === String(project.owner).toLowerCase());
@@ -688,7 +689,9 @@ const Project = () => {
                 savingLibrary={savingLibrary}
                 seeInsideHref={seeInsideHref}
                 codeHref={`${baseProjectUrl}/code`}
-                onOpenCode={() => setDeveloperMode(true)}
+                onOpenCode={event => {
+                    if (plainClick(event)) setDeveloperMode(true);
+                }}
                 copyLink={copyLink}
                 setCollectionOpen={setCollectionOpen}
                 thumbnailStatus={thumbnailStatus}

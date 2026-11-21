@@ -26,7 +26,7 @@ import {
 } from '../../lib/community/publish.js';
 import {getProject as getMistWarpProject} from '../../lib/community/api.js';
 import communityEnabled from '../../lib/community/enabled.js';
-import developerViewUrl from '../../lib/community/developer-view-url.js';
+import {projectPageUrl} from '../../lib/community/developer-view-url.js';
 import Divider from '../divider/divider.jsx';
 import MenuBarMenu from './menu-bar-menu.jsx';
 import MenuLabel from './tw-menu-label.jsx';
@@ -930,7 +930,7 @@ class MenuBar extends React.Component {
             const vanity = typeof stored.vanitySlug === 'string' ? stored.vanitySlug.trim() : '';
             const pageUrl = stored.url || (/^[A-Za-z0-9-]{3,40}$/.test(vanity) ?
                 `/p/${encodeURIComponent(vanity)}` : `/project/${stored.id}`);
-            window.location.href = this.props.codeMode ? developerViewUrl(pageUrl) : pageUrl;
+            window.location.href = projectPageUrl(pageUrl, this.props.codeMode);
         }
     }
 

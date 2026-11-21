@@ -7,4 +7,7 @@ const developerViewUrl = url => {
     return `${path.replace(/\/+$/, '')}/code${rest}`;
 };
 
+const projectPageUrl = (url, codeMode) => (codeMode ? developerViewUrl(url) : url);
+
+export {projectPageUrl};
 export default developerViewUrl;

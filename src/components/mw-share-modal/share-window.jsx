@@ -15,15 +15,15 @@ import {
 } from '../../lib/rotur/identity.js';
 import {track} from '../../community/analytics.js';
 import {isStudentSession} from '../../lib/rotur/student-flag.js';
-import developerViewUrl from '../../lib/community/developer-view-url.js';
+import {projectPageUrl} from '../../lib/community/developer-view-url.js';
 import {isCodeMode} from '../../lib/editor-visibility.js';
 import {projectSession} from '../../modules/project-session';
 import Button from '../button/button.jsx';
 import styles from './share-window.css';
 
-const projectPageUrl = url => {
+const editorInCodeMode = () => {
     const state = window.ReduxStore ? window.ReduxStore.getState() : null;
-    return state && isCodeMode(state) ? developerViewUrl(url) : url;
+    return Boolean(state && isCodeMode(state));
 };
 
 const MAX_SHOWN_DIFFERENCES = 6;
@@ -647,7 +647,8 @@ class ShareWindow extends React.Component {
                                 type="button"
                                 variant="primary"
                                 onClick={() => {
-                                    window.open(projectPageUrl(this.state.done.url), '_blank', 'noopener');
+                                    const pageUrl = projectPageUrl(this.state.done.url, editorInCodeMode());
+                                    window.open(pageUrl, '_blank', 'noopener');
                                     this.props.onClose();
                                 }}
                             >{intl.formatMessage(messages.openProjectPage)}</Button>
