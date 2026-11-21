@@ -109,7 +109,7 @@ describe('useCommitSummaries', () => {
         wrapper.unmount();
     });
 
-    test('keeps working after a remount', async () => {
+    test('loads again when the list mounts a second time', async () => {
         api.commitSummaries.mockResolvedValue({ok: true, summaries: {[sha(1)]: {ok: true, sha: sha(1)}}});
         let latest = {};
         const first = mount(<Probe
