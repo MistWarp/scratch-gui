@@ -9,9 +9,14 @@ import ProjectCode, {
 } from '../../src/community/pages/ProjectCode.jsx';
 import {codeEntryUrl, listDirectory, searchFiles} from '../../src/community/pages/project/CodeBrowser.jsx';
 import {isDeveloperMode, setDeveloperMode} from '../../src/community/developer-mode.js';
+import scrollToAnchorWithRetry from '../../src/community/scroll-to-anchor.js';
 
 jest.mock('../../src/community/UserContext.jsx', () => ({
     useUser: () => ({user: null, loading: false, login: jest.fn()})
+}));
+jest.mock('../../src/community/scroll-to-anchor.js', () => ({
+    __esModule: true,
+    default: jest.fn(() => () => {})
 }));
 jest.mock('../../src/lib/community/cached-fetch.js', () => ({
     cachedFetchBuffer: jest.fn(() => Promise.resolve(new ArrayBuffer(0))),
@@ -183,7 +188,11 @@ describe('project developer view page', () => {
 
         expect(wrapper.find('h1').text()).toBe('mist/Space game');
         const tabs = wrapper.find('[role="tab"]').map(tab => tab.text());
-        expect(tabs).toEqual(['Code', 'Issues2', 'Commits3', 'Branches2', 'Pull requests1', 'Releases1']);
+        expect(tabs).toEqual(['Code', 'Issues2', 'Comments', 'Commits3', 'Branches2', 'Pull requests1', 'Releases1']);
+        expect(wrapper.find('a').filterWhere(link => link.text() === 'Read reviews')
+            .prop('href')).toBe('/project/project-1#reviews');
+        expect(wrapper.find('a').filterWhere(link => link.text() === 'See the remix tree')
+            .prop('href')).toBe('/project/project-1/remixes');
         expect(wrapper.text()).toContain('2 open issues');
         expect(commitTree).toHaveBeenCalledWith('project-1', sha('a'));
         expect(api.commitLastCommits).toHaveBeenCalledWith('project-1', sha('a'));
@@ -324,7 +333,7 @@ describe('project developer view page', () => {
         await settle(wrapper);
 
         act(() => {
-            wrapper.find('[role="tab"]').at(2)
+            wrapper.find('[role="tab"]').at(3)
                 .simulate('click');
         });
         await settle(wrapper);
@@ -352,6 +361,55 @@ describe('project developer view page', () => {
         await settle(wrapper);
         expect(wrapper.find('[role="tab"]').map(tab => tab.text())).not.toContain('Issues0');
         wrapper.unmount();
+    });
+
+    test('shows every comment in the comments tab, with issue badges linking to their issue', async () => {
+        mockApi(baseProject());
+        api.getComments.mockResolvedValue({
+            comments: [
+                {id: 'c1', author: 'Sam', content: 'Jump is too high', created: 2, issue: {number: 4, state: 'open'}},
+                {id: 'c2', author: 'Lee', content: 'Love the music', created: 1},
+                {id: 'r1', author: 'mist', content: 'Thanks', parent: 'c2', created: 3}
+            ],
+            totalRoots: 2,
+            nextOffset: 2,
+            issueCounts: {open: 1, done: 0}
+        });
+        const wrapper = mountAt('/project/project-1/code/comments');
+        await settle(wrapper);
+        expect(wrapper.find('[role="tab"][aria-selected=true]').text()).toBe('Comments');
+        expect(wrapper.text()).toContain('Jump is too high');
+        expect(wrapper.text()).toContain('Love the music');
+        expect(wrapper.text()).toContain('Thanks');
+        expect(wrapper.find('a').filterWhere(link => link.text() === 'Issue #4')
+            .prop('href')).toBe('/project/project-1/code/issues/4');
+    });
+
+    test('scrolls to a linked comment in the comments tab', async () => {
+        mockApi(baseProject());
+        scrollToAnchorWithRetry.mockClear();
+        const wrapper = mountAt('/project/project-1/code/comments#comment-id-c1');
+        await settle(wrapper);
+        expect(scrollToAnchorWithRetry).toHaveBeenCalledWith('comment-id-c1');
+    });
+
+    test('keeps the share key on the view switch, tabs and details links', async () => {
+        mockApi(baseProject());
+        const wrapper = mountAt('/project/project-1/code?k=secret');
+        await settle(wrapper);
+        const switchLinks = wrapper.find('nav[aria-label="Project view mode"] a');
+        expect(switchLinks.map(link => link.prop('href'))).toEqual([
+            '/project/project-1?k=secret',
+            '/project/project-1/code?k=secret'
+        ]);
+        expect(wrapper.find('a').filterWhere(link => link.text() === 'Read reviews')
+            .prop('href')).toBe('/project/project-1?k=secret#reviews');
+        const comments = wrapper.find('[role="tab"]').filterWhere(item => item.text() === 'Comments');
+        await act(async () => {
+            comments.simulate('click');
+        });
+        expect(currentLocation.pathname).toBe('/project/project-1/code/comments');
+        expect(currentLocation.search).toBe('?k=secret');
     });
 
     test('plays the project in the sidebar only once asked', async () => {
@@ -395,7 +453,10 @@ describe('project developer view page', () => {
         const seeInside = wrapper.find('a').filterWhere(link => link.text() === 'See inside');
         expect(seeInside.prop('href')).toContain('mode=code');
         expect(seeInside.prop('href')).toContain('#mw-project-1');
-        const projectView = wrapper.find('a').filterWhere(link => link.text() === 'Project view');
+        const developer = wrapper.find('nav[aria-label="Project view mode"] a').filterWhere(link => link.text() === 'Developer');
+        expect(developer.prop('aria-current')).toBe('page');
+        const projectView = wrapper.find('nav[aria-label="Project view mode"] a').filterWhere(link => link.text() === 'Project');
+        expect(projectView.prop('aria-current')).toBeFalsy();
         act(() => {
             projectView.simulate('click', {button: 0});
         });

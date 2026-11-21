@@ -3708,7 +3708,6 @@
   "{value1} in total": "{value1} in total",
   "Contributors": "Contributors",
   "Developer view · {value1}": "Developer view · {value1}",
-  "Project view": "Project view",
   "Developer view": "Developer view",
   "Branch": "Branch",
   "The source of this project is private": "The source of this project is private",
@@ -3762,5 +3761,9 @@
   "Your comment was posted but could not be tracked as an issue. Try again to track it.": "Your comment was posted but could not be tracked as an issue. Try again to track it.",
   "1 finished issue": "1 finished issue",
   "{value1} finished issues": "{value1} finished issues",
-  "#{value1} opened {value2} by {value3}": "#{value1} opened {value2} by {value3}"
+  "#{value1} opened {value2} by {value3}": "#{value1} opened {value2} by {value3}",
+  "Read reviews": "Read reviews",
+  "See the remix tree": "See the remix tree",
+  "Project view mode": "Project view mode",
+  "Developer": "Developer"
 }

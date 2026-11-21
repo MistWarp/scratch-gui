@@ -328,6 +328,8 @@ describe('developer view issues', () => {
         await settle(wrapper);
         expect(getComments).toHaveBeenCalledWith('p1', {all: true, issue: 'any', number: 2});
         expect(wrapper.find('h2').text()).toBe('The jump is too high #2');
+        expect(wrapper.find('a').filterWhere(link => link.text() === 'See it with the other comments')
+            .prop('href')).toBe('/project/p1/code/comments#comment-id-c1');
         const texts = wrapper.find('article').map(node => node.text());
         expect(texts).toHaveLength(3);
         expect(texts[0]).toContain('It clips the ceiling');

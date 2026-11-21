@@ -1,15 +1,14 @@
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {Link, useNavigate, useParams, useSearchParams} from 'react-router-dom';
+import {Link, useLocation, useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import {
-    ExternalLink, GitFork, Gamepad2, Lock
+    ExternalLink, GitFork, Lock
 } from 'lucide-react';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import api, {editorUrl} from '../api';
 import {useUser} from '../UserContext.jsx';
 import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
 import {canViewProjectSource} from '../project-source-access';
-import {plainClick, setDeveloperMode} from '../developer-mode.js';
 import {formatBytes, safeDate, timeAgo} from '../format.js';
 import setPageMeta from '../page-meta.js';
 import useLatest from '../use-latest.js';
@@ -19,12 +18,17 @@ import RichText from '../components/RichText.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import {tabPanelProps} from '../components/SectionTabs.jsx';
 import UserLink from '../components/UserLink.jsx';
+import ViewModeSwitch from '../components/ViewModeSwitch.jsx';
+import {withShareKey} from '../developer-mode.js';
 import Button from '../components/ui/Button.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import SelectMenu from '../components/ui/SelectMenu.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import CodeBrowser from './project/CodeBrowser.jsx';
+import CommentThread from '../components/CommentThread.jsx';
+import scrollToAnchorWithRetry from '../scroll-to-anchor.js';
 import HistoryList from './project/HistoryList.jsx';
+import projectCommentSource from './project/comment-source.js';
 import IssueList from './project/IssueList.jsx';
 import IssueThread from './project/IssueThread.jsx';
 import ProjectPreview from './project/ProjectPreview.jsx';
@@ -34,7 +38,7 @@ import useProjectData from './project/use-project-data.js';
 import styles from './ProjectCode.module.css';
 
 const TAB_ID_PREFIX = 'project-code';
-export const CODE_TABS = ['code', 'issues', 'commits', 'branches', 'pulls', 'releases'];
+export const CODE_TABS = ['code', 'issues', 'comments', 'commits', 'branches', 'pulls', 'releases'];
 export const codeLocation = splat => {
     const parts = String(splat || '').split('/').filter(Boolean);
     if (parts[0] === 'tree' || parts[0] === 'blob') return {tab: 'code', kind: parts[0], path: parts.slice(1).join('/')};
@@ -80,7 +84,7 @@ const ReadmePanel = ({project}) => {
     );
 };
 
-const AboutPanel = ({project, baseUrl, counts, fileCount, contributors}) => {
+const AboutPanel = ({project, baseUrl, shareKey, counts, fileCount, contributors}) => {
     const {text: communityText} = useCommunityText();
     const rows = [
         {key: 'commits', tab: 'commits', value: counts.commits, one: communityText('1 commit'), many: communityText('{value1} commits', {value1: counts.commits})},
@@ -102,11 +106,15 @@ const AboutPanel = ({project, baseUrl, counts, fileCount, contributors}) => {
                 ) : null}
                 <ul className={styles.facts}>
                     {rows.map(row => (
-                        <li key={row.key}><Link to={codeTabPath(baseUrl, row.tab)}>{row.value === 1 ? row.one : row.many}</Link></li>
+                        <li key={row.key}><Link to={withShareKey(codeTabPath(baseUrl, row.tab), shareKey)}>{row.value === 1 ? row.one : row.many}</Link></li>
                     ))}
                     {fileCount !== null ? <li>{fileCount === 1 ? communityText('1 file') : communityText('{value1} files', {value1: fileCount})}</li> : null}
                     {project.sizeBytes ? <li>{communityText('{value1} in total', {value1: formatBytes(project.sizeBytes)})}</li> : null}
                     {updated ? <li>{communityText('Updated {value1}', {value1: timeAgo(project.edited)})}</li> : null}
+                </ul>
+                <ul className={styles.facts}>
+                    <li><Link to={withShareKey(`${baseUrl}#reviews`, shareKey)}>{communityText('Read reviews')}</Link></li>
+                    <li><Link to={withShareKey(`/project/${project.id}/remixes`, shareKey)}>{communityText('See the remix tree')}</Link></li>
                 </ul>
             </section>
             {contributors.length ? (
@@ -134,6 +142,7 @@ const ProjectCodePage = ({id, vanitySlug}) => {
     const navigate = useNavigate();
     const params = useParams();
     const [searchParams, setSearchParams] = useSearchParams();
+    const {hash: locationHash} = useLocation();
     const {user} = useUser();
     const viewerName = (user && user.username) || '';
     const {project, versionHistory, error, load, loadHistory, refreshProjectAndHistory} = useProjectData(id);
@@ -147,10 +156,18 @@ const ProjectCodePage = ({id, vanitySlug}) => {
     const tab = place.tab;
     const baseUrl = projectBaseUrl({project, projectId: id, vanitySlug});
     const canView = Boolean(project && canViewProjectSource(project));
+    const shareKey = searchParams.get('k') || '';
+
+    const commentSource = useMemo(() => projectCommentSource(id), [id]);
 
     useEffect(() => {
         load();
     }, [load]);
+    useEffect(() => {
+        if (tab !== 'comments' || !canView) return;
+        if (!/^#comment-id-./.test(locationHash)) return;
+        return scrollToAnchorWithRetry(locationHash.slice(1));
+    }, [tab, canView, locationHash]);
     useEffect(() => {
         if (canView) loadHistory();
     }, [canView, loadHistory]);
@@ -212,13 +229,14 @@ const ProjectCodePage = ({id, vanitySlug}) => {
     const branchQuery = selectedBranch && selectedBranch.name === requestedBranch && requestedBranch !== defaultBranch ?
         `branch=${encodeURIComponent(requestedBranch)}` : '';
     const onFileCount = useCallback(count => setFileCount(count), []);
-    const showTab = key => navigate(key === 'code' && branchQuery ? `${codeTabPath(baseUrl, key)}?${branchQuery}` : codeTabPath(baseUrl, key));
+    const showTab = key => navigate(withShareKey(key === 'code' && branchQuery ? `${codeTabPath(baseUrl, key)}?${branchQuery}` : codeTabPath(baseUrl, key), shareKey));
 
     if (error && !project) return <main className={styles.page}><StatusMessage error onRetry={load}>{error}</StatusMessage></main>;
     if (!project) return <main className={styles.page}><StatusMessage>{communityText('Loading project…')}</StatusMessage></main>;
 
     const tabLabels = {
         code: communityText('Code'),
+        comments: communityText('Comments'),
         issues: <React.Fragment>{communityText('Issues')}<Count value={counts.issues} /></React.Fragment>,
         commits: <React.Fragment>{communityText('Commits')}<Count value={counts.commits} /></React.Fragment>,
         branches: <React.Fragment>{communityText('Branches')}<Count value={counts.branches} /></React.Fragment>,
@@ -240,15 +258,11 @@ const ProjectCodePage = ({id, vanitySlug}) => {
                     </h1>
                 </div>
                 <div className={styles.actions}>
-                    <Button
-                        as={Link}
-                        variant="secondary"
-                        to={baseUrl}
-                        onClick={event => {
-                            if (plainClick(event)) setDeveloperMode(false);
-                        }}
-                    >
-                        <Gamepad2 size={16} />{communityText('Project view')}</Button>
+                    <ViewModeSwitch
+                        mode="developer"
+                        projectHref={withShareKey(baseUrl, shareKey)}
+                        developerHref={withShareKey(codeTabPath(baseUrl, 'code'), shareKey)}
+                    />
                     {project.canRemix && !project.isOwner ? (
                         <Button as="a" variant="secondary" href={editorUrl({platformProject: project.id, from: 'remix'})}>
                             <GitFork size={16} />{communityText('Remix')}</Button>
@@ -309,6 +323,7 @@ const ProjectCodePage = ({id, vanitySlug}) => {
                                     <AboutPanel
                                         project={project}
                                         baseUrl={baseUrl}
+                                        shareKey={shareKey}
                                         counts={counts}
                                         fileCount={fileCount}
                                         contributors={contributors}
@@ -317,10 +332,28 @@ const ProjectCodePage = ({id, vanitySlug}) => {
                             </div>
                         ) : null}
                         {tab === 'issues' && place.kind === 'issue' ? (
-                            <IssueThread key={`${id}:${place.number}`} id={id} baseUrl={baseUrl} number={place.number} project={project} onChange={refreshIssueCounts} />
+                            <IssueThread key={`${id}:${place.number}`} id={id} baseUrl={baseUrl} shareKey={shareKey} number={place.number} project={project} onChange={refreshIssueCounts} />
                         ) : null}
                         {tab === 'issues' && place.kind !== 'issue' ? (
                             <IssueList id={id} baseUrl={baseUrl} project={project} onCounts={setIssueCounts} />
+                        ) : null}
+                        {tab === 'comments' ? (
+                            <CommentThread
+                                projectComments
+                                source={commentSource}
+                                donationRecipient={project.owner}
+                                canModerate={project.isOwner}
+                                canPin={project.isOwner}
+                                issues={{
+                                    canTriage: Boolean(project.isOwner),
+                                    enabled: !project.issuesOff,
+                                    href: number => withShareKey(`${baseUrl}/code/issues/${number}`, shareKey)
+                                }}
+                                disabled={Boolean(project.commentsOff)}
+                                disabledReason={communityText('Comments are turned off.')}
+                                reportContext={`project ${id}`}
+                                draftKey={`project:${project.id}`}
+                            />
                         ) : null}
                         {tab === 'commits' ? (
                             <HistoryList id={id} baseUrl={baseUrl} history={versionHistory} canRestore={project.isOwner} onChange={refreshProjectAndHistory} />

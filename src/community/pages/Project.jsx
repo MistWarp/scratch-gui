@@ -9,7 +9,7 @@ import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.j
 import {listCommerceBounties} from '../credits';
 import ProjectInfoPanel from '../components/ProjectInfoPanel.jsx';
 import {canViewProjectSource} from '../project-source-access';
-import {developerViewPath, plainClick, setDeveloperMode, useDeveloperMode} from '../developer-mode.js';
+import {developerViewPath, useDeveloperMode, withShareKey} from '../developer-mode.js';
 import ProjectCompatibility from '../components/ProjectCompatibility.jsx';
 import CollectionSaveModal from '../components/CollectionSaveModal.jsx';
 import {useUser} from '../UserContext.jsx';
@@ -22,7 +22,6 @@ import StatusMessage from '../components/ui/StatusMessage.jsx';
 import setPageMeta from '../page-meta.js';
 import copyText from '../copy-text.js';
 import scrollToAnchorWithRetry from '../scroll-to-anchor.js';
-import projectRealtime from '../project-realtime.js';
 import styles from './Project.module.css';
 import RelatedProjects, {rememberProject} from '../components/RelatedProjects.jsx';
 import {track} from '../analytics';
@@ -43,6 +42,7 @@ import PullList from './project/PullList.jsx';
 import ReviewPanel from './project/ReviewPanel.jsx';
 import ReleaseList from './project/ReleaseList.jsx';
 import useProjectData from './project/use-project-data.js';
+import projectCommentSource from './project/comment-source.js';
 import useProjectRealtime from './project/use-project-realtime.js';
 import useStageContent from './project/use-stage-content.js';
 import useProjectTheme from './project/use-project-theme.js';
@@ -75,6 +75,7 @@ const Project = () => {
     const releaseAction = key => actionLocks.current.delete(key);
     const navigate = useNavigate();
     const location = useLocation();
+    const shareKey = new URLSearchParams(location.search).get('k') || '';
     const [developerMode] = useDeveloperMode();
     const developerEntry = useRef(null);
     const {
@@ -579,21 +580,7 @@ const Project = () => {
         thumbInput.current.click();
     };
 
-    const commentSource = useMemo(() => ({
-        list: options => api.getComments(id, options),
-        add: (content, parent, kind, donation) => api.addComment(id, content, parent, kind, donation),
-        donationIntent: (amount, returnUrl) => api.commentDonationIntent(id, amount, returnUrl),
-        remove: commentId => api.deleteComment(id, commentId),
-        edit: (commentId, content) => api.editComment(id, commentId, content),
-        react: (commentId, type) => api.reactComment(id, commentId, type),
-        pin: (commentId, pinned) => api.pinComment(id, commentId, pinned),
-        issue: (commentId, state) => api.setCommentIssue(id, commentId, state),
-        subscribe: listener => projectRealtime.subscribe(
-            id,
-            listener,
-            new URLSearchParams(window.location.search).get('k') || ''
-        )
-    }), [id]);
+    const commentSource = useMemo(() => projectCommentSource(id), [id]);
 
     if (vanityError && !project) {
         return (
@@ -637,7 +624,8 @@ const Project = () => {
     }
     const developerPath = developerEntry.current.path;
     if (developerPath !== null) {
-        return <Navigate replace to={`${baseProjectUrl}/code${developerPath}${location.search}`} />;
+        const anchor = developerPath === '/comments' ? location.hash : '';
+        return <Navigate replace to={`${baseProjectUrl}/code${developerPath}${location.search}${anchor}`} />;
     }
 
     const ownsProject = Boolean(user && String(user.username).toLowerCase() === String(project.owner).toLowerCase());
@@ -696,10 +684,8 @@ const Project = () => {
                 toggleLibrary={toggleLibrary}
                 savingLibrary={savingLibrary}
                 seeInsideHref={seeInsideHref}
-                codeHref={`${baseProjectUrl}/code`}
-                onOpenCode={event => {
-                    if (plainClick(event)) setDeveloperMode(true);
-                }}
+                codeHref={withShareKey(`${baseProjectUrl}/code`, shareKey)}
+                projectHref={withShareKey(baseProjectUrl, shareKey)}
                 copyLink={copyLink}
                 setCollectionOpen={setCollectionOpen}
                 thumbnailStatus={thumbnailStatus}

@@ -32,7 +32,16 @@ export const setDeveloperMode = on => {
 
 export const developerViewPath = hash => {
     const key = hash || '';
+    if (/^#comment-id-./.test(key)) return '/comments';
     return Object.prototype.hasOwnProperty.call(DEVELOPER_TABS, key) ? DEVELOPER_TABS[key] : null;
+};
+
+export const withShareKey = (path, key) => {
+    if (!key) return path;
+    const hashAt = path.indexOf('#');
+    const base = hashAt < 0 ? path : path.slice(0, hashAt);
+    const hash = hashAt < 0 ? '' : path.slice(hashAt);
+    return `${base}${base.includes('?') ? '&' : '?'}k=${encodeURIComponent(key)}${hash}`;
 };
 
 export const plainClick = event => !event || (
