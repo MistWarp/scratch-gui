@@ -24,7 +24,14 @@ import {textsFromInspectionFiles} from '../fractch-summary.js';
 import {formatDateTime} from '../format.js';
 import setPageMeta from '../page-meta.js';
 import {loadCommitInspection} from '../commit-diff.js';
-import {analyseChanges, isChangesResponse, sidebarFilesFor} from '../commit-changes.js';
+import {
+    analyseChanges,
+    describeTarget,
+    findTarget,
+    isChangesResponse,
+    loadSpriteTexts,
+    sidebarFilesFor
+} from '../commit-changes.js';
 import {canViewProjectSource} from '../project-source-access.js';
 import {useUser} from '../UserContext.jsx';
 import styles from './Commit.module.css';
@@ -50,8 +57,6 @@ export const normalizeCommitCoAuthors = entry => {
 export const commitMutationSha = (result, fallback) => (
     result?.commit?.sha || result?.sha || result?.rewrittenSha || fallback
 );
-
-const THUMB_TEXT_LIMIT = 40;
 
 const remixBaseFor = (project, sha) => ({
     enabled: Boolean(project.remixParent && project.remixBaseCommit && project.gitHead === sha),
@@ -102,7 +107,7 @@ const Commit = () => {
     const [diff, setDiff] = useState(null);
     const [changes, setChanges] = useState(null);
     const [lineDiffError, setLineDiffError] = useState('');
-    const [thumbTexts, setThumbTexts] = useState({});
+    const [thumbTexts, setThumbTexts] = useState(null);
     const [activeSprite, setActiveSprite] = useState('');
     const [error, setError] = useState('');
     const [manageOpen, setManageOpen] = useState(false);
@@ -172,7 +177,7 @@ const Commit = () => {
         setDiff(null);
         setChanges(null);
         setLineDiffError('');
-        setThumbTexts({});
+        setThumbTexts(null);
         setActiveSprite('');
         setLoadProgress({progress: 8, label: 'Finding this commit'});
         load();
@@ -181,24 +186,18 @@ const Commit = () => {
     const files = useMemo(() => parseDiff(diff), [diff]);
     const fileTexts = useMemo(() => ({
         ...textsFromInspectionFiles(entry?.files || []),
-        ...entry?.fileTexts,
-        ...thumbTexts
-    }), [entry, thumbTexts]);
+        ...entry?.fileTexts
+    }), [entry]);
     const analysis = useMemo(() => (changes ? analyseChanges(changes) : null), [changes]);
     const sidebarFiles = useMemo(() => sidebarFilesFor(analysis), [analysis]);
-    const spriteEntry = useCallback(
-        name => (analysis?.targets || []).find(target => target.dir === name) || null,
-        [analysis]
+    const describeSprite = useCallback(
+        sprite => {
+            const target = findTarget(analysis, sprite.name);
+            return target ? describeTarget(target, communityText) : '';
+        },
+        [analysis, communityText]
     );
-    const describeSprite = useCallback(sprite => {
-        const target = spriteEntry(sprite.name);
-        if (!target) return '';
-        if (!target.authored) {
-            return target.state.length ? communityText('Saved state only') : communityText('No block changes');
-        }
-        return target.count === 1 ? communityText('1 change') : communityText('{value1} changes', {value1: target.count});
-    }, [spriteEntry, communityText]);
-    const labelSprite = useCallback(sprite => spriteEntry(sprite.name)?.name || sprite.name, [spriteEntry]);
+    const labelSprite = useCallback(sprite => findTarget(analysis, sprite.name)?.name || sprite.name, [analysis]);
     const changeCount = useMemo(() => (analysis ? analysis.targets.reduce(
         (total, target) => total + target.count,
         analysis.others.length
@@ -280,16 +279,12 @@ const Commit = () => {
     useEffect(() => {
         if (!analysis) return () => {};
         let active = true;
-        const paths = analysis.targets
-            .filter(target => target.dir && target.dir !== 'Stage' && target.target.status !== 'removed')
-            .slice(0, THUMB_TEXT_LIMIT)
-            .map(target => `${target.dir}/main.fractch`);
-        Promise.all(paths.map(path => api.commitFile(id, sha, path)
-            .then(result => [path, {before: '', after: new TextDecoder().decode(base64ToBytes(result.content || ''))}])
-            .catch(() => null)))
-            .then(entries => {
-                if (active) setThumbTexts(Object.fromEntries(entries.filter(Boolean)));
-            });
+        loadSpriteTexts(analysis, async path => {
+            const result = await api.commitFile(id, sha, path);
+            return new TextDecoder().decode(base64ToBytes(result.content || ''));
+        }).then(texts => {
+            if (active) setThumbTexts(texts);
+        });
         return () => {
             active = false;
         };
@@ -452,8 +447,8 @@ const Commit = () => {
                     <div className={styles.layout}>
                         <SpriteList
                             files={sidebarFiles}
-                            fileTexts={fileTexts}
-                            loadAsset={loadCommitAsset}
+                            fileTexts={thumbTexts || {}}
+                            loadAsset={thumbTexts ? loadCommitAsset : null}
                             activeSprite={activeSprite}
                             describe={describeSprite}
                             labelOf={labelSprite}

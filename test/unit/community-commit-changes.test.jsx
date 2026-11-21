@@ -4,6 +4,8 @@ import {mount} from 'enzyme';
 import ChangesView from '../../src/community/components/ChangesView.jsx';
 import {
     analyseChanges,
+    describeTarget,
+    loadSpriteTexts,
     assetFileOf,
     formatStateValue,
     groupChangedFiles,
@@ -14,6 +16,11 @@ import {
 } from '../../src/community/commit-changes.js';
 import {scriptChangeDiff} from '../../src/community/scratchblocks-translate.js';
 import {usableChanges} from '../../src/community/pages/Commit.jsx';
+import {shouldLoadPullDiff} from '../../src/community/pages/PullRequest.jsx';
+
+const sectionFor = (wrapper, name) => wrapper.find('section')
+    .filterWhere(node => node.children('header').find('h3')
+        .someWhere(heading => heading.text() === name));
 
 const target = (path, extra = {}) => ({
     path,
@@ -118,14 +125,13 @@ describe('commit changes helpers', () => {
             scriptsChanged: 1,
             rewritten: 1,
             scriptsMoved: 1,
-            assets: 1,
             files: 1,
             stateSprites: 2,
             stateOnly: false
         }));
         const main = analysis.targets[0];
         expect(main.scripts.map(entry => entry.script.head)).toEqual(['when flag', 'when key space']);
-        expect(main.count).toBe(4);
+        expect(main.count).toBe(3);
     });
 
     test('does not count a sprite whose only change is a rewrite', () => {
@@ -174,6 +180,68 @@ describe('commit changes helpers', () => {
         expect(sidebarFilesFor(analyseChanges(withDeleted)).map(file => file.path)).not.toContain('Main/assets/sad.svg');
     });
 
+    test('gives asset changes without a fractch change their own sprite', () => {
+        const assetOnly = {
+            ...RESPONSE,
+            targets: [],
+            files: [{path: 'Cat/assets/idle.svg', status: 'modified', oldOid: 'a', newOid: 'b'}]
+        };
+        const analysis = analyseChanges(assetOnly);
+        expect(analysis.targets).toEqual([expect.objectContaining({dir: 'Cat', authored: true, count: 1})]);
+        expect(analysis.summary.stateOnly).toBe(false);
+    });
+
+    test('leaves fractch.json out of other files', () => {
+        const withOrder = {...RESPONSE, files: [...RESPONSE.files, {path: 'fractch.json', status: 'modified'}]};
+        expect(analyseChanges(withOrder).others.map(file => file.path)).toEqual(['README.md']);
+    });
+
+    test('describes too large, state-only and rewrite-only sprites', () => {
+        const text = (message, values) => message.replace('{value1}', values?.value1);
+        const label = source => describeTarget(
+            analyseChanges({...RESPONSE, targets: [source], files: []}).targets[0],
+            text
+        );
+        expect(label(target('Big', {tooLarge: true}))).toBe('Too large to compare');
+        expect(label(RESPONSE.targets[0])).toBe('Saved state only');
+        expect(label(target('Taskbar', {scripts: [RESPONSE.targets[1].scripts[1]]}))).toBe('No block changes');
+        expect(label(RESPONSE.targets[1])).toBe('3 changes');
+    });
+
+    test('loads sprite texts a few at a time and skips the ones that fail', async () => {
+        let running = 0;
+        let peak = 0;
+        const many = {
+            ...RESPONSE,
+            files: [],
+            targets: Array.from({length: 20}, (_, index) => target(`S${index}`, {
+                files: [`S${index}/main.fractch`, `S${index}/extra.fractch`],
+                items: [{change: 'added', kind: 'variable', name: 'v'}]
+            })).concat([RESPONSE.targets[0]])
+        };
+        const texts = await loadSpriteTexts(analyseChanges(many), async path => {
+            running++;
+            peak = Math.max(peak, running);
+            await new Promise(resolve => setTimeout(resolve, 1));
+            running--;
+            if (path === 'S3/main.fractch') throw new Error('gone');
+            return `text of ${path}`;
+        });
+        expect(peak).toBeLessThanOrEqual(6);
+        expect(Object.keys(texts)).toHaveLength(20);
+        expect(texts['S0/main.fractch']).toEqual({before: '', after: 'text of S0/main.fractch'});
+        expect(texts['S3/main.fractch']).toBeUndefined();
+        expect(texts['Mouse/main.fractch']).toEqual({before: '', after: 'text of Mouse/main.fractch'});
+    });
+
+    test('loads the pull diff only when the structured view is missing or the file diff is asked for', () => {
+        const pull = {index: 1};
+        expect(shouldLoadPullDiff({tab: 'files', pull, diff: null, diffError: '', changes: RESPONSE})).toBe(false);
+        expect(shouldLoadPullDiff({tab: 'files', pull, diff: null, diffError: '', changes: RESPONSE, fileDiff: true}))
+            .toBe(true);
+        expect(shouldLoadPullDiff({tab: 'files', pull, diff: null, diffError: '', changes: null})).toBe(true);
+    });
+
     test('falls back to the old view for an empty remix bootstrap commit', () => {
         const empty = {...RESPONSE, targets: [], files: []};
         expect(usableChanges(empty, {enabled: true})).toBeNull();
@@ -215,7 +283,10 @@ describe('ChangesView', () => {
 
     test('summarises the commit and folds saved state into one row', () => {
         const loadAsset = jest.fn(() => new Promise(() => {}));
-        const wrapper = mount(<ChangesView analysis={analyseChanges(RESPONSE)} loadAsset={loadAsset} />);
+        const wrapper = mount(<ChangesView
+            analysis={analyseChanges(RESPONSE)}
+            loadAsset={loadAsset}
+        />);
         const summary = wrapper.find('section[aria-labelledby="commit-changes-summary"]').text();
         expect(summary).toContain('1 script changed.');
         expect(summary).toContain('1 script was rewritten without changing its blocks.');
@@ -231,23 +302,42 @@ describe('ChangesView', () => {
     });
 
     test('lists moved scripts, spelling-only rewrites and items in sentences', () => {
-        const wrapper = mount(<ChangesView analysis={analyseChanges(RESPONSE)} loadAsset={jest.fn(() => new Promise(() => {}))} />);
-        const main = wrapper.find('section[aria-label="Main Sprite"]').first().text();
+        const wrapper = mount(<ChangesView
+            analysis={analyseChanges(RESPONSE)}
+            loadAsset={jest.fn(() => new Promise(() => {}))}
+        />);
+        const main = sectionFor(wrapper, 'Main Sprite').first()
+            .text();
         expect(main).toContain('Moved from Main/main.fractch to Main/input.fractch.');
         expect(main).toContain('when green flag clicked');
         expect(main).not.toContain('when this sprite clicked');
         expect(main).toContain('Costume "happy" added');
-        expect(wrapper.find('section[aria-label="Global"]').text()).toContain('Extension "iframePlus" added');
-        expect(wrapper.find('section[aria-label="Other files"]').text()).toContain('README.md');
+        expect(main).toContain('3 changes');
+        expect(sectionFor(wrapper, 'Global').text()).toContain('Extension "iframePlus" added');
+        expect(sectionFor(wrapper, 'Other files').text()).toContain('README.md');
     });
 
     test('shows only the selected sprite', () => {
         const wrapper = mount(
-            <ChangesView analysis={analyseChanges(RESPONSE)} spriteFilter="Stage" loadAsset={jest.fn(() => new Promise(() => {}))} />
+            <ChangesView
+                analysis={analyseChanges(RESPONSE)}
+                spriteFilter="Stage"
+                loadAsset={jest.fn(() => new Promise(() => {}))}
+            />
         );
-        expect(wrapper.find('section[aria-label="Main Sprite"]').exists()).toBe(false);
-        expect(wrapper.find('section[aria-label="Global"]').exists()).toBe(true);
-        expect(wrapper.find('section[aria-label="Other files"]').exists()).toBe(false);
+        expect(sectionFor(wrapper, 'Main Sprite').exists()).toBe(false);
+        expect(sectionFor(wrapper, 'Global').exists()).toBe(true);
+        expect(sectionFor(wrapper, 'Other files').exists()).toBe(false);
+    });
+
+    test('summarises only the selected sprite', () => {
+        const wrapper = mount(<ChangesView
+            analysis={analyseChanges(RESPONSE)}
+            spriteFilter="Stage"
+        />);
+        const summary = wrapper.find('section[aria-labelledby="commit-changes-summary"]').text();
+        expect(summary).toContain('1 extension changed.');
+        expect(summary).not.toContain('script');
     });
 
     test('says when only saved state changed', () => {

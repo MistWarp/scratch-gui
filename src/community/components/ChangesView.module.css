@@ -191,6 +191,13 @@
     color: var(--accent-strong);
 }
 
+.items summary:focus-visible,
+.state > summary:focus-visible {
+    border-radius: var(--radius-2xs);
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
 .items details[open] .code {
     margin-top: 6px;
 }

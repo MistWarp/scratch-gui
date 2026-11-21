@@ -8,7 +8,8 @@ import {
     formatStateValue,
     itemLines,
     plainScriptTitle,
-    scriptWasMoved
+    scriptWasMoved,
+    summarizeEntries
 } from '../commit-changes.js';
 import BlocksCompare from './BlocksCompare.jsx';
 import {AssetCompare, OpenFileButton} from './DiffView.jsx';
@@ -80,7 +81,8 @@ const itemSentence = (item, text) => {
     return text('{value1} "{value2}" changed', {value1: kind, value2: item.name});
 };
 
-const summarySentences = (summary, items, text) => {
+const summarySentences = (summary, text) => {
+    const items = summary.items;
     const sentences = [];
     const add = (count, one, many) => {
         if (count) sentences.push(count === 1 ? one : many);
@@ -114,6 +116,7 @@ const summarySentences = (summary, items, text) => {
         text('Saved state changed in 1 sprite.'),
         text('Saved state changed in {value1} sprites.', n(summary.stateSprites))
     );
+    if (!sentences.length) sentences.push(text('Nothing in this commit changes how the project runs.'));
     return sentences;
 };
 
@@ -173,7 +176,7 @@ const TargetScripts = ({scripts}) => {
     const list = expanded ? scripts : scripts.slice(0, SCRIPTS_SHOWN);
     const hidden = scripts.length - list.length;
     return (
-        <section className={styles.block} aria-label={communityText('Scripts')}>
+        <section className={styles.block}>
             <h4>{communityText('Scripts')}</h4>
             <ul className={styles.scripts}>
                 {list.map(({script, rendered}, index) => (
@@ -220,7 +223,7 @@ const AssetFiles = ({files, loadAsset, onOpenFile}) => {
     const {text: communityText} = useCommunityText();
     const statusLabels = {Added: communityText('Added'), Deleted: communityText('Deleted'), Modified: communityText('Modified')};
     return (
-        <section className={styles.block} aria-label={communityText('Costumes and sounds')}>
+        <section className={styles.block}>
             <h4>{communityText('Costumes and sounds')}</h4>
             {files.map(file => (
                 <div className={styles.asset} key={file.path}>
@@ -242,7 +245,7 @@ AssetFiles.propTypes = {
     onOpenFile: PropTypes.func
 };
 
-const TargetSection = ({entry, loadAsset, onOpenFile, onShowLines}) => {
+const TargetSection = ({entry, headingId, loadAsset, onOpenFile, onShowLines}) => {
     const {text: communityText} = useCommunityText();
     const assetNames = new Set(entry.items.filter(item => ASSET_KINDS.has(item.kind)).map(item => assetFileOf(item.after || item.before)));
     const orderedAssets = [...entry.assets].sort((a, b) => {
@@ -250,9 +253,9 @@ const TargetSection = ({entry, loadAsset, onOpenFile, onShowLines}) => {
         return named(a) - named(b);
     });
     return (
-        <section className={styles.target} aria-label={spriteLabel(entry.name)}>
+        <section className={styles.target} aria-labelledby={headingId}>
             <header className={styles.targetHead}>
-                <h3>{spriteLabel(entry.name)}</h3>
+                <h3 id={headingId}>{spriteLabel(entry.name)}</h3>
                 {entry.count ? (
                     <span>
                         {entry.count === 1 ?
@@ -271,7 +274,7 @@ const TargetSection = ({entry, loadAsset, onOpenFile, onShowLines}) => {
             ) : null}
             {entry.scripts.length ? <TargetScripts scripts={entry.scripts} /> : null}
             {entry.items.length ? (
-                <section className={styles.block} aria-label={communityText('Other changes')}>
+                <section className={styles.block}>
                     <h4>{communityText('Other changes')}</h4>
                     <ul className={styles.items}>
                         {entry.items.map((item, index) => <ItemRow key={`${item.kind}-${item.name}-${index}`} item={item} />)}
@@ -287,6 +290,7 @@ const TargetSection = ({entry, loadAsset, onOpenFile, onShowLines}) => {
 
 TargetSection.propTypes = {
     entry: PropTypes.object.isRequired,
+    headingId: PropTypes.string.isRequired,
     loadAsset: PropTypes.func,
     onOpenFile: PropTypes.func,
     onShowLines: PropTypes.func
@@ -318,7 +322,7 @@ const SavedState = ({targets}) => {
             </summary>
             <div className={styles.stateBody}>
                 {withState.map(target => (
-                    <section key={target.dir} aria-label={spriteLabel(target.name)}>
+                    <section key={target.dir}>
                         <h4>{spriteLabel(target.name)}</h4>
                         <dl>
                             {target.state.map((entry, index) => (
@@ -353,9 +357,9 @@ const OtherFiles = ({files, onOpenFile}) => {
     const {text: communityText} = useCommunityText();
     const statusLabels = {Added: communityText('Added'), Deleted: communityText('Deleted'), Modified: communityText('Modified')};
     return (
-        <section className={styles.target} aria-label={communityText('Other files')}>
+        <section className={styles.target} aria-labelledby="commit-changes-other-files">
             <header className={styles.targetHead}>
-                <h3>{communityText('Other files')}</h3>
+                <h3 id="commit-changes-other-files">{communityText('Other files')}</h3>
             </header>
             <ul className={styles.files}>
                 {files.map(file => (
@@ -378,9 +382,10 @@ OtherFiles.propTypes = {
 const ChangesView = ({analysis, spriteFilter, loadAsset, onOpenFile, onShowLines}) => {
     const {text: communityText} = useCommunityText();
     const targets = analysis.targets.filter(entry => !spriteFilter || entry.dir === spriteFilter);
-    const sentences = summarySentences(analysis.summary, analysis.items, communityText);
-    const authored = targets.filter(entry => entry.authored);
     const others = spriteFilter ? [] : analysis.others;
+    const summary = spriteFilter ? summarizeEntries(targets, others) : analysis.summary;
+    const sentences = summarySentences(summary, communityText);
+    const authored = targets.filter(entry => entry.authored);
     if (!analysis.targets.length && !analysis.others.length) {
         return (
             <EmptyState compact title={communityText('No changes')}>
@@ -394,10 +399,11 @@ const ChangesView = ({analysis, spriteFilter, loadAsset, onOpenFile, onShowLines
                 <h2 id="commit-changes-summary"><ListChecks size={16} aria-hidden="true" />{communityText('What changed')}</h2>
                 <p>{sentences.join(' ')}</p>
             </section>
-            {authored.map(entry => (
+            {authored.map((entry, index) => (
                 <TargetSection
                     key={entry.dir}
                     entry={entry}
+                    headingId={`commit-changes-target-${index}`}
                     loadAsset={loadAsset}
                     onOpenFile={onOpenFile}
                     onShowLines={onShowLines}

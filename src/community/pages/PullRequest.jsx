@@ -27,7 +27,14 @@ import {useUser} from '../UserContext.jsx';
 import {formatDate, timeAgo} from '../format.js';
 import setPageMeta from '../page-meta.js';
 import {buildCommitDiffFromInspection, loadCommitFileTexts, withFileCache} from '../commit-diff.js';
-import {analyseChanges, isChangesResponse, sidebarFilesFor} from '../commit-changes.js';
+import {
+    analyseChanges,
+    describeTarget,
+    findTarget,
+    isChangesResponse,
+    loadSpriteTexts,
+    sidebarFilesFor
+} from '../commit-changes.js';
 import {base64ToBytes, mediaTypeForAssetPath} from '../asset-media.js';
 import {buildProjectArtifactsFromFileEntries} from '../../lib/git/mwp.js';
 import styles from './PullRequest.module.css';
@@ -174,6 +181,7 @@ const PullRequest = () => {
     const [diff, setDiff] = useState(null);
     const [fileTexts, setFileTexts] = useState({});
     const [changes, setChanges] = useState(null);
+    const [spriteTexts, setSpriteTexts] = useState(null);
     const [fileDiff, setFileDiff] = useState(false);
     const [assetRefs, setAssetRefs] = useState(null);
     const [timeline, setTimeline] = useState({comments: [], commits: [], targetCommits: []});
@@ -289,6 +297,7 @@ const PullRequest = () => {
         setDiff(null);
         setFileTexts({});
         setChanges(null);
+        setSpriteTexts(null);
         setFileDiff(false);
         setAssetRefs(null);
         setTimeline({comments: [], commits: [], targetCommits: []});
@@ -456,19 +465,33 @@ const PullRequest = () => {
     const analysis = useMemo(() => (changes ? analyseChanges(changes) : null), [changes]);
     const showChanges = Boolean(analysis) && !fileDiff;
     const sidebarFiles = useMemo(() => (showChanges ? sidebarFilesFor(analysis) : files), [showChanges, analysis, files]);
-    const spriteEntry = useCallback(
-        name => (analysis?.targets || []).find(entry => entry.dir === name) || null,
-        [analysis]
+    const describeSprite = useCallback(
+        sprite => {
+            const target = findTarget(analysis, sprite.name);
+            return target ? describeTarget(target, communityText) : '';
+        },
+        [analysis, communityText]
     );
-    const describeSprite = useCallback(sprite => {
-        const entry = spriteEntry(sprite.name);
-        if (!entry) return '';
-        if (!entry.authored) {
-            return entry.state.length ? communityText('Saved state only') : communityText('No block changes');
-        }
-        return entry.count === 1 ? communityText('1 change') : communityText('{value1} changes', {value1: entry.count});
-    }, [spriteEntry, communityText]);
-    const labelSprite = useCallback(sprite => spriteEntry(sprite.name)?.name || sprite.name, [spriteEntry]);
+    const labelSprite = useCallback(sprite => findTarget(analysis, sprite.name)?.name || sprite.name, [analysis]);
+    useEffect(() => {
+        if (!analysis || !pull) return () => {};
+        let active = true;
+        loadSpriteTexts(analysis, async path => {
+            const result = await api.commitFile(
+                pull.sourceProjectId || id,
+                pull.headCommit,
+                path,
+                pull.index,
+                pull.targetProjectId || ''
+            );
+            return new TextDecoder().decode(base64ToBytes(result.content || ''));
+        }).then(texts => {
+            if (active) setSpriteTexts(texts);
+        });
+        return () => {
+            active = false;
+        };
+    }, [analysis, pull, id]);
     const loadPullAsset = useCallback(async (side, path) => {
         if (!assetRefs) return null;
         const target = side === 'old' ?
@@ -642,8 +665,8 @@ const PullRequest = () => {
                     <div className={styles.filesLayout}>
                         <SpriteList
                             files={sidebarFiles}
-                            fileTexts={fileTexts}
-                            loadAsset={loadPullAsset}
+                            fileTexts={showChanges ? (spriteTexts || {}) : fileTexts}
+                            loadAsset={showChanges && !spriteTexts ? null : loadPullAsset}
                             activeSprite={activeSprite}
                             describe={showChanges ? describeSprite : null}
                             labelOf={showChanges ? labelSprite : null}

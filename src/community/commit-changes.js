@@ -73,14 +73,51 @@ const analyseScripts = scripts => {
     return {shown, rewritten};
 };
 
+export const assetFileOf = body => {
+    const match = String(body || '').match(/\bfile\s+"([^"]+)"/);
+    return match ? match[1] : '';
+};
+
+const relativeAssetPath = path => String(path || '').split('/').slice(1).join('/');
+
+const emptyTarget = dir => ({path: dir, status: 'modified', files: [], scripts: [], items: [], state: []});
+
+export const summarizeEntries = (entries, others = []) => {
+    const scripts = entries.flatMap(entry => entry.scripts.map(item => item.script.change));
+    const countOf = change => scripts.filter(value => value === change).length;
+    const authored = entries.filter(entry => entry.authored);
+    const withState = entries.filter(entry => entry.state.length);
+    return {
+        sprites: authored.length,
+        scriptsChanged: countOf('changed'),
+        scriptsAdded: countOf('added'),
+        scriptsRemoved: countOf('removed'),
+        scriptsMoved: countOf('moved'),
+        rewritten: entries.reduce((sum, entry) => sum + entry.rewritten, 0),
+        items: entries.flatMap(entry => entry.items),
+        files: others.length,
+        stateSprites: withState.length,
+        stateOnly: !authored.length && !others.length && withState.length > 0,
+        tooLarge: entries.some(entry => entry.target.tooLarge)
+    };
+};
+
 export const analyseChanges = data => {
-    const {assets, others} = groupChangedFiles(data);
-    const targets = (data?.targets || []).map(target => {
+    const {assets, others: allOthers} = groupChangedFiles(data);
+    const others = allOthers.filter(file => file.path !== 'fractch.json');
+    const sources = [...(data?.targets || [])];
+    const known = new Set(sources.map(targetDir));
+    for (const dir of Object.keys(assets).sort()) {
+        if (!known.has(dir)) sources.push(emptyTarget(dir));
+    }
+    const targets = sources.map(target => {
         const dir = targetDir(target);
         const {shown, rewritten} = analyseScripts(target.scripts);
         const assetFiles = assets[dir] || [];
         const items = target.items || [];
-        const count = shown.length + items.length + assetFiles.length;
+        const named = new Set(items.map(item => assetFileOf(item.after || item.before)).filter(Boolean));
+        const unnamedAssets = assetFiles.filter(file => !named.has(relativeAssetPath(file.path)));
+        const count = shown.length + items.length + unnamedAssets.length;
         return {
             target,
             dir,
@@ -91,35 +128,48 @@ export const analyseChanges = data => {
             assets: assetFiles,
             state: target.state || [],
             count,
-            authored: Boolean(count || target.tooLarge)
+            authored: Boolean(count || assetFiles.length || target.tooLarge)
         };
     });
     const ordered = [...targets].sort((a, b) => Number(b.authored) - Number(a.authored));
-    const totals = data?.totals || {};
-    const scripts = totals.scripts || {};
-    const assetTotals = totals.assets || {};
-    const rewritten = targets.reduce((sum, entry) => sum + entry.rewritten, 0);
-    const allItems = targets.flatMap(entry => entry.items);
-    return {
-        targets: ordered,
-        others,
-        items: allItems,
-        summary: {
-            sprites: targets.filter(entry => entry.authored).length,
-            scriptsChanged: Math.max(0, (Number(scripts.changed) || 0) - rewritten),
-            scriptsAdded: Number(scripts.added) || 0,
-            scriptsRemoved: Number(scripts.removed) || 0,
-            scriptsMoved: Number(scripts.moved) || 0,
-            rewritten,
-            assets: (Number(assetTotals.added) || 0) + (Number(assetTotals.removed) || 0) +
-                (Number(assetTotals.modified) || 0),
-            files: Number(totals.files) || 0,
-            state: Number(totals.state) || 0,
-            stateSprites: targets.filter(entry => entry.state.length).length,
-            stateOnly: Boolean(totals.stateOnly),
-            tooLarge: targets.some(entry => entry.target.tooLarge)
+    return {targets: ordered, others, summary: summarizeEntries(targets, others)};
+};
+
+export const describeTarget = (entry, text) => {
+    if (entry.target.tooLarge && !entry.count) return text('Too large to compare');
+    if (!entry.authored) return entry.state.length ? text('Saved state only') : text('No block changes');
+    return entry.count === 1 ? text('1 change') : text('{value1} changes', {value1: entry.count});
+};
+
+export const findTarget = (analysis, dir) => (analysis?.targets || []).find(entry => entry.dir === dir) || null;
+
+export const spriteFractchPath = entry => {
+    const files = (entry.target.files || []).filter(path => FRACTCH_FILE.test(path));
+    return files.find(path => /\/main\.fractch$/i.test(path)) || files[0] || `${entry.dir}/main.fractch`;
+};
+
+const THUMB_TEXT_LIMIT = 40;
+const THUMB_TEXT_CONCURRENCY = 6;
+
+export const loadSpriteTexts = async (analysis, readText) => {
+    const paths = (analysis?.targets || [])
+        .filter(entry => entry.dir && entry.dir !== 'Stage' && entry.target.status !== 'removed')
+        .slice(0, THUMB_TEXT_LIMIT)
+        .map(spriteFractchPath);
+    const texts = {};
+    let next = 0;
+    const worker = async () => {
+        while (next < paths.length) {
+            const path = paths[next++];
+            try {
+                texts[path] = {before: '', after: await readText(path)};
+            } catch (error) {
+                texts[path] = null;
+            }
         }
     };
+    await Promise.all(Array.from({length: Math.min(THUMB_TEXT_CONCURRENCY, paths.length)}, worker));
+    return Object.fromEntries(Object.entries(texts).filter(([, value]) => value));
 };
 
 export const sidebarFilesFor = analysis => (analysis?.targets || []).flatMap(entry => {
@@ -143,11 +193,6 @@ export const formatStateValue = value => {
         return text.split(',').map(part => roundNumber(part.trim())).join(', ');
     }
     return roundNumber(text.trim());
-};
-
-export const assetFileOf = body => {
-    const match = String(body || '').match(/\bfile\s+"([^"]+)"/);
-    return match ? match[1] : '';
 };
 
 export const itemLines = text => String(text || '').split('\n')

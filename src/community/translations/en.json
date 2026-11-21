@@ -3674,5 +3674,7 @@
   "No block changes": "No block changes",
   "File diff": "File diff",
   "Show summary": "Show summary",
-  "Show file diff": "Show file diff"
+  "Show file diff": "Show file diff",
+  "Too large to compare": "Too large to compare",
+  "Nothing in this commit changes how the project runs.": "Nothing in this commit changes how the project runs."
 }
