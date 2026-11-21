@@ -3,13 +3,14 @@ import {STUDENT_HINT_PARAM, isStudentSession} from '../../lib/rotur/student-flag
 import {local} from '../../modules/storage';
 
 export const editorUrl = ({
-    chat, clone, platformProject, scratchProject, projectJson, assets, starter, restore, collaborate, from
+    chat, clone, platformProject, scratchProject, projectJson, assets, starter, restore, collaborate, from, mode
 } = {}) => {
     const root = editorRoot();
     const params = new URLSearchParams();
     if (isStudentSession()) params.set(STUDENT_HINT_PARAM, 'student');
     if (collaborate) params.set('collaborate', '1');
     if (from && (platformProject || scratchProject)) params.set('from', from);
+    if (mode === 'code' && (platformProject || scratchProject)) params.set('mode', 'code');
     if (platformProject || scratchProject) {
         const query = params.toString();
         return `${root}${query ? `?${query}` : ''}#${platformProject ? `mw-${platformProject}` : scratchProject}`;

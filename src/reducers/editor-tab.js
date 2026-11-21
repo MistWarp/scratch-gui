@@ -20,6 +20,26 @@ const EDITOR_MODE_KEY = 'mw:editor-mode';
 
 const readStoredMode = () => (local.readString(EDITOR_MODE_KEY) === CODE_MODE ? CODE_MODE : BLOCKS_MODE);
 
+const readUrlMode = () => {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const mode = params.get('mode');
+        if (mode !== CODE_MODE && mode !== BLOCKS_MODE) return null;
+        params.delete('mode');
+        const query = params.toString();
+        window.history.replaceState(
+            window.history.state,
+            '',
+            `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`
+        );
+        return mode;
+    } catch (e) {
+        return null;
+    }
+};
+
+const readInitialMode = () => readUrlMode() || readStoredMode();
+
 const storeEditorMode = mode => {
     local.writeString(EDITOR_MODE_KEY, mode === CODE_MODE ? CODE_MODE : BLOCKS_MODE);
 };
@@ -28,7 +48,7 @@ let nonce = 0;
 
 const initialState = {
     activeTabIndex: BLOCKS_TAB_INDEX,
-    editorMode: readStoredMode(),
+    editorMode: readInitialMode(),
     reveal: null,
     requestedSound: null,
     activeAssetEditor: null

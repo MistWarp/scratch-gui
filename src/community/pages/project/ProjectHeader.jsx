@@ -26,7 +26,7 @@ import {adminUserPath} from '../admin/admin-links.js';
 // Title, byline and the action buttons and menu at the top of a project page.
 const ProjectHeader = ({
     project, user, title, setTitle, savingTitle, saveTitle, visibility,
-    changeVisibility, savingVisibility, remixHref, toggleLibrary, savingLibrary, seeInsideHref, codeHref,
+    changeVisibility, savingVisibility, remixHref, toggleLibrary, savingLibrary, seeInsideHref, codeHref, onOpenCode,
     copyLink, setCollectionOpen, thumbnailStatus, useStageThumbnail, chooseThumbnailUpload,
     menuRemix, toggleFeatured, savingFeatured, featuredProject, menuReport, setActionError,
     setDeleteConfirm, openModeration
@@ -142,6 +142,7 @@ const ProjectHeader = ({
                         as={Link}
                         variant="secondary"
                         to={codeHref}
+                        onClick={onOpenCode}
                     >
                         <FileCode2 size={16} />{communityText('Developer view')}</Button>
                 ) : null}

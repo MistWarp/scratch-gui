@@ -26,6 +26,7 @@ import {
 } from '../../lib/community/publish.js';
 import {getProject as getMistWarpProject} from '../../lib/community/api.js';
 import communityEnabled from '../../lib/community/enabled.js';
+import {projectPageUrl} from '../../lib/community/developer-view-url.js';
 import Divider from '../divider/divider.jsx';
 import MenuBarMenu from './menu-bar-menu.jsx';
 import MenuLabel from './tw-menu-label.jsx';
@@ -926,13 +927,10 @@ class MenuBar extends React.Component {
         this.props.onRequestCloseFile();
         const stored = this.state.mistwarpProject;
         if (stored) {
-            if (stored.url) {
-                window.location.href = stored.url;
-                return;
-            }
             const vanity = typeof stored.vanitySlug === 'string' ? stored.vanitySlug.trim() : '';
-            window.location.href = /^[A-Za-z0-9-]{3,40}$/.test(vanity) ?
-                `/p/${encodeURIComponent(vanity)}` : `/project/${stored.id}`;
+            const pageUrl = stored.url || (/^[A-Za-z0-9-]{3,40}$/.test(vanity) ?
+                `/p/${encodeURIComponent(vanity)}` : `/project/${stored.id}`);
+            window.location.href = projectPageUrl(pageUrl, this.props.codeMode);
         }
     }
 

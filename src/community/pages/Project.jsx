@@ -2,13 +2,14 @@ import {getCommunityLocale} from '../locale.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useEffect, useState, useMemo, useRef} from 'react';
-import {useParams, Link, useLocation, useNavigate} from 'react-router-dom';
+import {useParams, Link, Navigate, useLocation, useNavigate} from 'react-router-dom';
 import {Blocks, CalendarDays, History, ShieldAlert, Trash2, SearchX} from 'lucide-react';
 import api, {editorUrl, embedUrl} from '../api';
 import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
 import {listCommerceBounties} from '../credits';
 import ProjectInfoPanel from '../components/ProjectInfoPanel.jsx';
 import {canViewProjectSource} from '../project-source-access';
+import {developerViewPath, plainClick, setDeveloperMode, useDeveloperMode} from '../developer-mode.js';
 import ProjectCompatibility from '../components/ProjectCompatibility.jsx';
 import CollectionSaveModal from '../components/CollectionSaveModal.jsx';
 import {useUser} from '../UserContext.jsx';
@@ -74,6 +75,8 @@ const Project = () => {
     const releaseAction = key => actionLocks.current.delete(key);
     const navigate = useNavigate();
     const location = useLocation();
+    const [developerMode] = useDeveloperMode();
+    const developerEntry = useRef(null);
     const {
         project, setProject, projectLoadContext, setProjectLoadContext, versionHistory, setVersionHistory,
         error, setError, errorLoadContext, beginHistoryLoad, load, loadHistory, refreshProjectAndHistory
@@ -625,6 +628,17 @@ const Project = () => {
         );
     }
 
+    if (!developerEntry.current || developerEntry.current.id !== id) {
+        developerEntry.current = {
+            id,
+            path: developerMode && canViewProjectSource(project) ? developerViewPath(location.hash) : null
+        };
+    }
+    const developerPath = developerEntry.current.path;
+    if (developerPath !== null) {
+        return <Navigate replace to={`${baseProjectUrl}/code${developerPath}${location.search}`} />;
+    }
+
     const ownsProject = Boolean(user && String(user.username).toLowerCase() === String(project.owner).toLowerCase());
     const seeInsideHref = editorUrl({platformProject: project.id});
     const remixHref = editorUrl({platformProject: project.id, from: 'remix'});
@@ -682,6 +696,9 @@ const Project = () => {
                 savingLibrary={savingLibrary}
                 seeInsideHref={seeInsideHref}
                 codeHref={`${baseProjectUrl}/code`}
+                onOpenCode={event => {
+                    if (plainClick(event)) setDeveloperMode(true);
+                }}
                 copyLink={copyLink}
                 setCollectionOpen={setCollectionOpen}
                 thumbnailStatus={thumbnailStatus}

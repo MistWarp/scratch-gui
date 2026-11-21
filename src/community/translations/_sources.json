@@ -1012,7 +1012,7 @@
     "src/community/pages/Following.jsx:67",
     "src/community/pages/Profile.jsx:446",
     "src/community/pages/Profile.jsx:623",
-    "src/community/pages/Project.jsx:623",
+    "src/community/pages/Project.jsx:625",
     "src/community/pages/RemixTree.jsx:248",
     "src/community/pages/Search.jsx:213",
     "src/community/pages/Spaces.jsx:344",
@@ -1050,9 +1050,9 @@
     "src/community/pages/ManageSpace.jsx:786",
     "src/community/pages/MyStuff.jsx:1325",
     "src/community/pages/MyStuff.jsx:1341",
-    "src/community/pages/Project.jsx:720",
-    "src/community/pages/Settings.jsx:990",
-    "src/community/pages/Settings.jsx:1005",
+    "src/community/pages/Project.jsx:730",
+    "src/community/pages/Settings.jsx:1003",
+    "src/community/pages/Settings.jsx:1018",
     "src/community/pages/Theme.jsx:239",
     "src/community/pages/project/ReviewPanel.jsx:221"
   ],
@@ -1064,7 +1064,7 @@
   ],
   "Code": [
     "src/community/components/DiffView.jsx:19",
-    "src/community/pages/ProjectCode.jsx:204"
+    "src/community/pages/ProjectCode.jsx:207"
   ],
   "Costumes": [
     "src/community/components/DiffView.jsx:19"
@@ -1183,7 +1183,7 @@
     "src/community/components/HomeGames.jsx:98",
     "src/community/pages/Explore.jsx:26",
     "src/community/pages/PaidPerks.jsx:246",
-    "src/community/pages/Settings.jsx:80"
+    "src/community/pages/Settings.jsx:81"
   ],
   "Challenges": [
     "src/community/components/ExploreNav.jsx:11",
@@ -1249,12 +1249,13 @@
     "src/community/pages/ManageProject.jsx:587"
   ],
   "Play {value1}": [
-    "src/community/components/FeaturedProject.jsx:89"
+    "src/community/components/FeaturedProject.jsx:89",
+    "src/community/pages/project/ProjectPreview.jsx:62"
   ],
   "Loading project…": [
     "src/community/components/FeaturedProject.jsx:102",
     "src/community/pages/Bounties.jsx:116",
-    "src/community/pages/ProjectCode.jsx:201",
+    "src/community/pages/ProjectCode.jsx:204",
     "src/community/pages/project/ProjectStage.jsx:54"
   ],
   "Play project": [
@@ -1750,8 +1751,8 @@
     "src/community/components/ui/StatusMessage.jsx:26",
     "src/community/pages/Notifications.jsx:784",
     "src/community/pages/Random.jsx:56",
-    "src/community/pages/Settings.jsx:712",
-    "src/community/pages/Settings.jsx:774"
+    "src/community/pages/Settings.jsx:725",
+    "src/community/pages/Settings.jsx:787"
   ],
   "Could not check who is online. Retrying…": [
     "src/community/components/LiveProjectSession.jsx:47"
@@ -1942,7 +1943,7 @@
     "src/community/pages/Profile.jsx:538",
     "src/community/pages/Profile.jsx:609",
     "src/community/pages/Search.jsx:224",
-    "src/community/pages/Settings.jsx:75",
+    "src/community/pages/Settings.jsx:76",
     "src/community/pages/Space.jsx:310",
     "src/community/pages/Studio.jsx:85",
     "src/community/pages/Studio.jsx:137",
@@ -2016,7 +2017,7 @@
   ],
   "All projects": [
     "src/community/components/MyStuffProjects.jsx:24",
-    "src/community/pages/Settings.jsx:68"
+    "src/community/pages/Settings.jsx:69"
   ],
   "Shared": [
     "src/community/components/MyStuffProjects.jsx:25",
@@ -2064,7 +2065,7 @@
   ],
   "Manage & analytics": [
     "src/community/components/MyStuffProjects.jsx:102",
-    "src/community/pages/project/ProjectHeader.jsx:242"
+    "src/community/pages/project/ProjectHeader.jsx:243"
   ],
   "Unshare": [
     "src/community/components/MyStuffProjects.jsx:107"
@@ -2075,15 +2076,15 @@
   ],
   "Save to collection": [
     "src/community/components/MyStuffProjects.jsx:115",
-    "src/community/pages/project/ProjectHeader.jsx:212"
+    "src/community/pages/project/ProjectHeader.jsx:213"
   ],
   "Remove profile feature": [
     "src/community/components/MyStuffProjects.jsx:120",
-    "src/community/pages/project/ProjectHeader.jsx:269"
+    "src/community/pages/project/ProjectHeader.jsx:270"
   ],
   "Feature on profile": [
     "src/community/components/MyStuffProjects.jsx:120",
-    "src/community/pages/project/ProjectHeader.jsx:269"
+    "src/community/pages/project/ProjectHeader.jsx:270"
   ],
   "Move to Trash": [
     "src/community/components/MyStuffProjects.jsx:130",
@@ -2537,8 +2538,8 @@
     "src/community/components/NavBar.jsx:726",
     "src/community/components/NavBar.jsx:732",
     "src/community/pages/Notifications.jsx:765",
-    "src/community/pages/Settings.jsx:101",
-    "src/community/pages/Settings.jsx:659"
+    "src/community/pages/Settings.jsx:102",
+    "src/community/pages/Settings.jsx:672"
   ],
   "Notifications ({value1} unread)": [
     "src/community/components/NavBar.jsx:634",
@@ -2644,8 +2645,8 @@
   "Updated {value1}": [
     "src/community/components/NewsItem.jsx:205",
     "src/community/pages/NewsPost.jsx:136",
-    "src/community/pages/Project.jsx:820",
-    "src/community/pages/ProjectCode.jsx:102"
+    "src/community/pages/Project.jsx:830",
+    "src/community/pages/ProjectCode.jsx:105"
   ],
   "Post analytics": [
     "src/community/components/NewsItem.jsx:214"
@@ -2899,7 +2900,7 @@
   ],
   "Post to claw": [
     "src/community/components/PostToClawModal.jsx:34",
-    "src/community/pages/project/ProjectHeader.jsx:202"
+    "src/community/pages/project/ProjectHeader.jsx:203"
   ],
   "Close": [
     "src/community/components/PostToClawModal.jsx:38",
@@ -3080,7 +3081,7 @@
   ],
   "Branches": [
     "src/community/components/ProjectBranches.jsx:232",
-    "src/community/pages/ProjectCode.jsx:206",
+    "src/community/pages/ProjectCode.jsx:209",
     "src/community/pages/project/VersionControlPanel.jsx:23"
   ],
   "Each branch points to its latest saved project version.": [
@@ -3194,10 +3195,10 @@
   ],
   "Remix": [
     "src/community/components/ProjectCard.jsx:97",
-    "src/community/pages/ProjectCode.jsx:229",
+    "src/community/pages/ProjectCode.jsx:235",
     "src/community/pages/project/ProjectBounties.jsx:54",
     "src/community/pages/project/ProjectHeader.jsx:127",
-    "src/community/pages/project/ProjectHeader.jsx:253"
+    "src/community/pages/project/ProjectHeader.jsx:254"
   ],
   "Touch": [
     "src/community/components/ProjectCompatibility.jsx:7"
@@ -3240,7 +3241,8 @@
   ],
   "Preview": [
     "src/community/components/ProjectFiles.jsx:322",
-    "src/community/pages/News.jsx:199"
+    "src/community/pages/News.jsx:199",
+    "src/community/pages/project/ProjectPreview.jsx:44"
   ],
   "Source": [
     "src/community/components/ProjectFiles.jsx:327"
@@ -3285,7 +3287,7 @@
   ],
   "Loading project files…": [
     "src/community/components/ProjectFiles.jsx:466",
-    "src/community/pages/ProjectCode.jsx:280",
+    "src/community/pages/ProjectCode.jsx:286",
     "src/community/pages/project/CodeBrowser.jsx:173"
   ],
   "No files yet": [
@@ -3306,7 +3308,7 @@
   "Details": [
     "src/community/components/ProjectInfoPanel.jsx:138",
     "src/community/pages/ManageSpace.jsx:33",
-    "src/community/pages/ProjectCode.jsx:90"
+    "src/community/pages/ProjectCode.jsx:93"
   ],
   "Project information": [
     "src/community/components/ProjectInfoPanel.jsx:143"
@@ -3328,7 +3330,7 @@
   "Instructions": [
     "src/community/components/ProjectInfoPanel.jsx:172",
     "src/community/components/classroom/AssignmentModal.jsx:95",
-    "src/community/pages/ProjectCode.jsx:64"
+    "src/community/pages/ProjectCode.jsx:66"
   ],
   "How do you play or use this project?": [
     "src/community/components/ProjectInfoPanel.jsx:179"
@@ -3341,7 +3343,7 @@
   ],
   "Creator notes": [
     "src/community/components/ProjectInfoPanel.jsx:192",
-    "src/community/pages/ProjectCode.jsx:70"
+    "src/community/pages/ProjectCode.jsx:72"
   ],
   "Development notes, known issues, or anything else worth sharing": [
     "src/community/components/ProjectInfoPanel.jsx:199"
@@ -3756,7 +3758,7 @@
   "Copy link": [
     "src/community/components/SocialPost.jsx:365",
     "src/community/components/classroom/ReleaseSection.jsx:69",
-    "src/community/pages/project/ProjectHeader.jsx:179"
+    "src/community/pages/project/ProjectHeader.jsx:180"
   ],
   "Edit": [
     "src/community/components/SocialPost.jsx:372",
@@ -3772,7 +3774,7 @@
     "src/community/components/SocialPost.jsx:399",
     "src/community/pages/Bounty.jsx:149",
     "src/community/pages/Profile.jsx:867",
-    "src/community/pages/project/ProjectHeader.jsx:281"
+    "src/community/pages/project/ProjectHeader.jsx:282"
   ],
   "Unblock {value1}": [
     "src/community/components/SocialPost.jsx:411"
@@ -4408,8 +4410,8 @@
   "Never": [
     "src/community/components/classroom/ClassStudents.jsx:241",
     "src/community/pages/ClassroomStudent.jsx:93",
-    "src/community/pages/Settings.jsx:58",
-    "src/community/pages/Settings.jsx:71"
+    "src/community/pages/Settings.jsx:59",
+    "src/community/pages/Settings.jsx:72"
   ],
   "Reset sign-in": [
     "src/community/components/classroom/ClassStudents.jsx:268",
@@ -4474,7 +4476,7 @@
   "Preparing…": [
     "src/community/components/classroom/DownloadDataButton.jsx:26",
     "src/community/pages/ClassroomSchool.jsx:242",
-    "src/community/pages/Settings.jsx:883"
+    "src/community/pages/Settings.jsx:896"
   ],
   "Login cards": [
     "src/community/components/classroom/LoginCards.jsx:24"
@@ -5678,7 +5680,7 @@
   "Theme": [
     "src/community/pages/Challenge.jsx:749",
     "src/community/pages/ManageSpace.jsx:645",
-    "src/community/pages/Settings.jsx:99",
+    "src/community/pages/Settings.jsx:100",
     "src/community/pages/Theme.jsx:118",
     "src/community/pages/Theme.jsx:200"
   ],
@@ -6006,7 +6008,7 @@
   ],
   "Contact support": [
     "src/community/pages/Classroom.jsx:555",
-    "src/community/pages/Settings.jsx:842"
+    "src/community/pages/Settings.jsx:855"
   ],
   "Classroom is licensed to schools. Ask your school to add you to its plan, or contact support to set one up.": [
     "src/community/pages/Classroom.jsx:557"
@@ -6294,7 +6296,7 @@
   ],
   "Settings": [
     "src/community/pages/ClassroomClass.jsx:92",
-    "src/community/pages/Settings.jsx:543"
+    "src/community/pages/Settings.jsx:545"
   ],
   "{value1, plural, one {# student signs} other {# students sign}} in with pictures.": [
     "src/community/pages/ClassroomClass.jsx:102"
@@ -6550,8 +6552,8 @@
   ],
   "Finding project…": [
     "src/community/pages/Commit.jsx:365",
-    "src/community/pages/Project.jsx:623",
-    "src/community/pages/ProjectCode.jsx:327",
+    "src/community/pages/Project.jsx:625",
+    "src/community/pages/ProjectCode.jsx:333",
     "src/community/pages/PullRequest.jsx:519",
     "src/community/pages/PullRequests.jsx:58",
     "src/community/pages/RemixTree.jsx:197"
@@ -6867,7 +6869,7 @@
   ],
   "Could not load this project.": [
     "src/community/pages/ManageProject.jsx:194",
-    "src/community/pages/Project.jsx:615"
+    "src/community/pages/Project.jsx:617"
   ],
   "Project titles cannot be empty.": [
     "src/community/pages/ManageProject.jsx:291"
@@ -7413,8 +7415,8 @@
     "src/community/pages/ManageSpace.jsx:729",
     "src/community/pages/ManageSpace.jsx:760",
     "src/community/pages/ManageSpace.jsx:775",
-    "src/community/pages/Settings.jsx:787",
-    "src/community/pages/Settings.jsx:805"
+    "src/community/pages/Settings.jsx:800",
+    "src/community/pages/Settings.jsx:818"
   ],
   "Remove": [
     "src/community/pages/ManageSpace.jsx:729",
@@ -8031,8 +8033,8 @@
   ],
   "Browse projects": [
     "src/community/pages/Profile.jsx:467",
-    "src/community/pages/Project.jsx:600",
-    "src/community/pages/Project.jsx:612"
+    "src/community/pages/Project.jsx:602",
+    "src/community/pages/Project.jsx:614"
   ],
   "This user does not exist on Rotur.": [
     "src/community/pages/Profile.jsx:468"
@@ -8148,14 +8150,14 @@
   ],
   "Unmute": [
     "src/community/pages/Profile.jsx:848",
-    "src/community/pages/Settings.jsx:808"
+    "src/community/pages/Settings.jsx:821"
   ],
   "Mute": [
     "src/community/pages/Profile.jsx:848"
   ],
   "Unblock": [
     "src/community/pages/Profile.jsx:859",
-    "src/community/pages/Settings.jsx:790",
+    "src/community/pages/Settings.jsx:803",
     "src/community/pages/admin/ExtensionManager.jsx:299"
   ],
   "Block": [
@@ -8238,134 +8240,135 @@
     "src/community/pages/Profile.jsx:987"
   ],
   "Project not found": [
-    "src/community/pages/Project.jsx:599",
-    "src/community/pages/Project.jsx:611"
-  ],
-  "This project link does not exist.": [
-    "src/community/pages/Project.jsx:601"
-  ],
-  "This project may have been deleted or unshared.": [
+    "src/community/pages/Project.jsx:601",
     "src/community/pages/Project.jsx:613"
   ],
+  "This project link does not exist.": [
+    "src/community/pages/Project.jsx:603"
+  ],
+  "This project may have been deleted or unshared.": [
+    "src/community/pages/Project.jsx:615"
+  ],
   "Delete project?": [
-    "src/community/pages/Project.jsx:717",
+    "src/community/pages/Project.jsx:727",
     "src/community/pages/admin/ProjectManager.jsx:68",
     "src/community/pages/admin/UserDetailCard.jsx:253"
   ],
   "Delete project": [
-    "src/community/pages/Project.jsx:718",
+    "src/community/pages/Project.jsx:728",
     "src/community/pages/admin/ProjectManager.jsx:70",
     "src/community/pages/admin/UserDetailCard.jsx:255",
-    "src/community/pages/project/ProjectHeader.jsx:326"
+    "src/community/pages/project/ProjectHeader.jsx:327"
   ],
   "{value1} will be deleted permanently. This cannot be undone.": [
-    "src/community/pages/Project.jsx:724"
+    "src/community/pages/Project.jsx:734"
   ],
   "Run custom extensions without the sandbox?": [
-    "src/community/pages/Project.jsx:730"
+    "src/community/pages/Project.jsx:740"
   ],
   "Keep sandbox": [
-    "src/community/pages/Project.jsx:731"
+    "src/community/pages/Project.jsx:741"
   ],
   "Run anyway": [
-    "src/community/pages/Project.jsx:732"
+    "src/community/pages/Project.jsx:742"
   ],
   "This gives the project full access to your MistWarp account. It could read your login session, act as you, or change your data. Continue only if you trust the creator.": [
-    "src/community/pages/Project.jsx:735"
+    "src/community/pages/Project.jsx:745"
   ],
   "Shared {value1}": [
-    "src/community/pages/Project.jsx:812",
+    "src/community/pages/Project.jsx:822",
     "src/community/pages/admin/UserDetailCard.jsx:323",
     "src/community/pages/project/ProjectHeader.jsx:94"
   ],
   "Uploaded {value1}": [
-    "src/community/pages/Project.jsx:813",
+    "src/community/pages/Project.jsx:823",
     "src/community/pages/project/ProjectHeader.jsx:95"
   ],
   "{value1} blocks": [
-    "src/community/pages/Project.jsx:826"
+    "src/community/pages/Project.jsx:836"
   ],
   "About this project": [
-    "src/community/pages/ProjectCode.jsx:61"
+    "src/community/pages/ProjectCode.jsx:63"
   ],
   "1 commit": [
-    "src/community/pages/ProjectCode.jsx:81",
-    "src/community/pages/ProjectCode.jsx:115",
+    "src/community/pages/ProjectCode.jsx:83",
+    "src/community/pages/ProjectCode.jsx:118",
     "src/community/pages/project/CodeBrowser.jsx:104"
   ],
   "{value1} commits": [
-    "src/community/pages/ProjectCode.jsx:81",
-    "src/community/pages/ProjectCode.jsx:115",
+    "src/community/pages/ProjectCode.jsx:83",
+    "src/community/pages/ProjectCode.jsx:118",
     "src/community/pages/project/CodeBrowser.jsx:104"
   ],
   "1 branch": [
-    "src/community/pages/ProjectCode.jsx:82"
+    "src/community/pages/ProjectCode.jsx:84"
   ],
   "{value1} branches": [
-    "src/community/pages/ProjectCode.jsx:82",
-    "src/community/pages/ProjectCode.jsx:274"
+    "src/community/pages/ProjectCode.jsx:84",
+    "src/community/pages/ProjectCode.jsx:280"
   ],
   "1 open pull request": [
-    "src/community/pages/ProjectCode.jsx:83"
+    "src/community/pages/ProjectCode.jsx:85"
   ],
   "{value1} open pull requests": [
-    "src/community/pages/ProjectCode.jsx:83"
+    "src/community/pages/ProjectCode.jsx:85"
   ],
   "1 release": [
-    "src/community/pages/ProjectCode.jsx:84"
+    "src/community/pages/ProjectCode.jsx:86"
   ],
   "{value1} releases": [
-    "src/community/pages/ProjectCode.jsx:84"
+    "src/community/pages/ProjectCode.jsx:86"
   ],
   "1 file": [
-    "src/community/pages/ProjectCode.jsx:100"
+    "src/community/pages/ProjectCode.jsx:103"
   ],
   "{value1} files": [
-    "src/community/pages/ProjectCode.jsx:100"
+    "src/community/pages/ProjectCode.jsx:103"
   ],
   "{value1} in total": [
-    "src/community/pages/ProjectCode.jsx:101"
+    "src/community/pages/ProjectCode.jsx:104"
   ],
   "Contributors": [
-    "src/community/pages/ProjectCode.jsx:107"
+    "src/community/pages/ProjectCode.jsx:110"
   ],
   "Developer view · {value1}": [
-    "src/community/pages/ProjectCode.jsx:166"
+    "src/community/pages/ProjectCode.jsx:169"
   ],
   "Commits": [
-    "src/community/pages/ProjectCode.jsx:205",
+    "src/community/pages/ProjectCode.jsx:208",
     "src/community/pages/PullRequest.jsx:570",
     "src/community/pages/RemixTree.jsx:278"
   ],
   "Pull requests": [
-    "src/community/pages/ProjectCode.jsx:207",
+    "src/community/pages/ProjectCode.jsx:210",
     "src/community/pages/PullRequests.jsx:70",
     "src/community/pages/Roadmap.jsx:134",
     "src/community/pages/project/VersionControlPanel.jsx:24"
   ],
   "Releases": [
-    "src/community/pages/ProjectCode.jsx:208",
+    "src/community/pages/ProjectCode.jsx:211",
     "src/community/pages/project/VersionControlPanel.jsx:25"
   ],
   "Project view": [
-    "src/community/pages/ProjectCode.jsx:226"
+    "src/community/pages/ProjectCode.jsx:232"
   ],
   "See inside": [
-    "src/community/pages/ProjectCode.jsx:233",
-    "src/community/pages/project/ProjectHeader.jsx:154"
+    "src/community/pages/ProjectCode.jsx:239",
+    "src/community/pages/project/ProjectHeader.jsx:155"
   ],
   "Developer view": [
-    "src/community/pages/ProjectCode.jsx:241",
-    "src/community/pages/project/ProjectHeader.jsx:146"
+    "src/community/pages/ProjectCode.jsx:247",
+    "src/community/pages/Settings.jsx:595",
+    "src/community/pages/project/ProjectHeader.jsx:147"
   ],
   "Branch": [
-    "src/community/pages/ProjectCode.jsx:266"
+    "src/community/pages/ProjectCode.jsx:272"
   ],
   "The source of this project is private": [
-    "src/community/pages/ProjectCode.jsx:316"
+    "src/community/pages/ProjectCode.jsx:322"
   ],
   "Only people the creator has given access can see its files and history.": [
-    "src/community/pages/ProjectCode.jsx:317"
+    "src/community/pages/ProjectCode.jsx:323"
   ],
   "{title} · Pull request #{index}": [
     "src/community/pages/PullRequest.jsx:286"
@@ -8846,285 +8849,291 @@
     "src/community/pages/Search.jsx:307"
   ],
   "Ask each project": [
-    "src/community/pages/Settings.jsx:56"
-  ],
-  "Always allow": [
     "src/community/pages/Settings.jsx:57"
   ],
-  "Only creators I follow": [
-    "src/community/pages/Settings.jsx:69"
+  "Always allow": [
+    "src/community/pages/Settings.jsx:58"
   ],
-  "Only projects I have hearted": [
+  "Only creators I follow": [
     "src/community/pages/Settings.jsx:70"
   ],
+  "Only projects I have hearted": [
+    "src/community/pages/Settings.jsx:71"
+  ],
   "Appearance": [
-    "src/community/pages/Settings.jsx:74"
+    "src/community/pages/Settings.jsx:75"
   ],
   "Custom": [
-    "src/community/pages/Settings.jsx:76"
+    "src/community/pages/Settings.jsx:77"
   ],
   "Account data": [
-    "src/community/pages/Settings.jsx:79"
+    "src/community/pages/Settings.jsx:80"
   ],
   "Presence": [
-    "src/community/pages/Settings.jsx:100",
-    "src/community/pages/Settings.jsx:607"
+    "src/community/pages/Settings.jsx:101",
+    "src/community/pages/Settings.jsx:620"
   ],
   "Privacy": [
-    "src/community/pages/Settings.jsx:102",
-    "src/community/pages/Settings.jsx:679",
+    "src/community/pages/Settings.jsx:103",
+    "src/community/pages/Settings.jsx:692",
     "src/community/pages/Trust.jsx:51"
   ],
   "Safety": [
-    "src/community/pages/Settings.jsx:103",
-    "src/community/pages/Settings.jsx:766"
+    "src/community/pages/Settings.jsx:104",
+    "src/community/pages/Settings.jsx:779"
   ],
   "Your data": [
-    "src/community/pages/Settings.jsx:104"
+    "src/community/pages/Settings.jsx:105"
   ],
   "Identity": [
-    "src/community/pages/Settings.jsx:105",
-    "src/community/pages/Settings.jsx:726"
-  ],
-  "Other users can comment on your profile.": [
-    "src/community/pages/Settings.jsx:422"
-  ],
-  "Comments on your profile are turned off.": [
-    "src/community/pages/Settings.jsx:423"
-  ],
-  "Could not update your privacy setting.": [
-    "src/community/pages/Settings.jsx:426"
-  ],
-  "These settings apply across all of MistWarp, including the editor and site.": [
-    "src/community/pages/Settings.jsx:544"
-  ],
-  "Menu bar": [
-    "src/community/pages/Settings.jsx:562"
-  ],
-  "Accent-colored menu bar": [
-    "src/community/pages/Settings.jsx:566"
-  ],
-  "Menu bar text": [
-    "src/community/pages/Settings.jsx:570"
-  ],
-  "Project themes": [
-    "src/community/pages/Settings.jsx:581"
-  ],
-  "Some projects come with their own MistWarp theme. Choose when the player should switch to it.": [
-    "src/community/pages/Settings.jsx:582"
-  ],
-  "Apply project themes for": [
-    "src/community/pages/Settings.jsx:585"
-  ],
-  "Custom themes": [
-    "src/community/pages/Settings.jsx:592"
-  ],
-  "Logging in…": [
-    "src/community/pages/Settings.jsx:615"
-  ],
-  "Log in again": [
-    "src/community/pages/Settings.jsx:618"
-  ],
-  "Your current Rotur login is missing the status:update permission, so your editor activity cannot be shared. Log in again to grant it.": [
-    "src/community/pages/Settings.jsx:622"
-  ],
-  "Let projects show activity on your profile": [
-    "src/community/pages/Settings.jsx:635"
-  ],
-  "Reset per-project choices ({value1})": [
-    "src/community/pages/Settings.jsx:649"
-  ],
-  "Hidden categories stay out of your notification list. Account and moderation messages remain available when you turn system messages back on.": [
-    "src/community/pages/Settings.jsx:660"
-  ],
-  "Choose which MistWarp activity appears publicly on your profile.": [
-    "src/community/pages/Settings.jsx:680"
-  ],
-  "Your Rotur account is under 18, so MistWarp keeps your profile out of user search and creator leaderboards, and keeps your hearts and saves out of activity feeds. Game activity and profile comments start turned off.": [
-    "src/community/pages/Settings.jsx:687"
-  ],
-  "Sign in to manage profile privacy.": [
-    "src/community/pages/Settings.jsx:690"
-  ],
-  "Show game activity and library": [
-    "src/community/pages/Settings.jsx:695"
-  ],
-  "Display playtime for games you have added to your public library.": [
-    "src/community/pages/Settings.jsx:696"
-  ],
-  "Allow comments on your profile": [
-    "src/community/pages/Settings.jsx:702"
-  ],
-  "Let other users post on your profile wall.": [
-    "src/community/pages/Settings.jsx:703"
-  ],
-  "Your Rotur username identifies your account. You can use a different name inside projects without renaming your account.": [
-    "src/community/pages/Settings.jsx:727"
-  ],
-  "To rename your account, change your username on rotur.dev. MistWarp moves your profile, projects and comments to the new name within a few minutes.": [
-    "src/community/pages/Settings.jsx:733"
-  ],
-  "Change username": [
+    "src/community/pages/Settings.jsx:106",
     "src/community/pages/Settings.jsx:739"
   ],
-  "Project username": [
+  "Other users can comment on your profile.": [
+    "src/community/pages/Settings.jsx:424"
+  ],
+  "Comments on your profile are turned off.": [
+    "src/community/pages/Settings.jsx:425"
+  ],
+  "Could not update your privacy setting.": [
+    "src/community/pages/Settings.jsx:428"
+  ],
+  "These settings apply across all of MistWarp, including the editor and site.": [
+    "src/community/pages/Settings.jsx:546"
+  ],
+  "Menu bar": [
+    "src/community/pages/Settings.jsx:564"
+  ],
+  "Accent-colored menu bar": [
+    "src/community/pages/Settings.jsx:568"
+  ],
+  "Menu bar text": [
+    "src/community/pages/Settings.jsx:572"
+  ],
+  "Project themes": [
+    "src/community/pages/Settings.jsx:583"
+  ],
+  "Some projects come with their own MistWarp theme. Choose when the player should switch to it.": [
+    "src/community/pages/Settings.jsx:584"
+  ],
+  "Apply project themes for": [
+    "src/community/pages/Settings.jsx:587"
+  ],
+  "Open projects on their files, commits and pull requests, with the player beside them. Projects with private source still open normally.": [
+    "src/community/pages/Settings.jsx:596"
+  ],
+  "Open projects in developer view": [
+    "src/community/pages/Settings.jsx:600"
+  ],
+  "Custom themes": [
+    "src/community/pages/Settings.jsx:605"
+  ],
+  "Logging in…": [
+    "src/community/pages/Settings.jsx:628"
+  ],
+  "Log in again": [
+    "src/community/pages/Settings.jsx:631"
+  ],
+  "Your current Rotur login is missing the status:update permission, so your editor activity cannot be shared. Log in again to grant it.": [
+    "src/community/pages/Settings.jsx:635"
+  ],
+  "Let projects show activity on your profile": [
+    "src/community/pages/Settings.jsx:648"
+  ],
+  "Reset per-project choices ({value1})": [
+    "src/community/pages/Settings.jsx:662"
+  ],
+  "Hidden categories stay out of your notification list. Account and moderation messages remain available when you turn system messages back on.": [
+    "src/community/pages/Settings.jsx:673"
+  ],
+  "Choose which MistWarp activity appears publicly on your profile.": [
+    "src/community/pages/Settings.jsx:693"
+  ],
+  "Your Rotur account is under 18, so MistWarp keeps your profile out of user search and creator leaderboards, and keeps your hearts and saves out of activity feeds. Game activity and profile comments start turned off.": [
+    "src/community/pages/Settings.jsx:700"
+  ],
+  "Sign in to manage profile privacy.": [
+    "src/community/pages/Settings.jsx:703"
+  ],
+  "Show game activity and library": [
+    "src/community/pages/Settings.jsx:708"
+  ],
+  "Display playtime for games you have added to your public library.": [
+    "src/community/pages/Settings.jsx:709"
+  ],
+  "Allow comments on your profile": [
+    "src/community/pages/Settings.jsx:715"
+  ],
+  "Let other users post on your profile wall.": [
+    "src/community/pages/Settings.jsx:716"
+  ],
+  "Your Rotur username identifies your account. You can use a different name inside projects without renaming your account.": [
+    "src/community/pages/Settings.jsx:740"
+  ],
+  "To rename your account, change your username on rotur.dev. MistWarp moves your profile, projects and comments to the new name within a few minutes.": [
     "src/community/pages/Settings.jsx:746"
   ],
+  "Change username": [
+    "src/community/pages/Settings.jsx:752"
+  ],
+  "Project username": [
+    "src/community/pages/Settings.jsx:759"
+  ],
   "Use account username": [
-    "src/community/pages/Settings.jsx:753"
+    "src/community/pages/Settings.jsx:766"
   ],
   "Changes the value reported by the username block in projects. Leave this blank to use your Rotur username.": [
-    "src/community/pages/Settings.jsx:755"
+    "src/community/pages/Settings.jsx:768"
   ],
   "settings.languageHelp": [
-    "src/community/pages/Settings.jsx:758"
+    "src/community/pages/Settings.jsx:771"
   ],
   "Block or mute someone from their MistWarp profile. Blocking stops MistWarp comments and notifications between you. Muting only hides their MistWarp notifications.": [
-    "src/community/pages/Settings.jsx:767"
+    "src/community/pages/Settings.jsx:780"
   ],
   "Sign in to manage blocked and muted users.": [
-    "src/community/pages/Settings.jsx:769"
+    "src/community/pages/Settings.jsx:782"
   ],
   "Blocked users": [
-    "src/community/pages/Settings.jsx:781"
-  ],
-  "No blocked users": [
-    "src/community/pages/Settings.jsx:793"
-  ],
-  "You have not blocked anyone.": [
     "src/community/pages/Settings.jsx:794"
   ],
+  "No blocked users": [
+    "src/community/pages/Settings.jsx:806"
+  ],
+  "You have not blocked anyone.": [
+    "src/community/pages/Settings.jsx:807"
+  ],
   "Muted users": [
-    "src/community/pages/Settings.jsx:799"
-  ],
-  "No muted users": [
-    "src/community/pages/Settings.jsx:811"
-  ],
-  "You have not muted anyone.": [
     "src/community/pages/Settings.jsx:812"
   ],
+  "No muted users": [
+    "src/community/pages/Settings.jsx:824"
+  ],
+  "You have not muted anyone.": [
+    "src/community/pages/Settings.jsx:825"
+  ],
   "Project permissions": [
-    "src/community/pages/Settings.jsx:821"
-  ],
-  "Projects listed here cannot show security prompts. Allow prompts again if you blocked one by mistake.": [
-    "src/community/pages/Settings.jsx:822"
-  ],
-  "Allow prompts again": [
-    "src/community/pages/Settings.jsx:829"
-  ],
-  "No blocked projects": [
     "src/community/pages/Settings.jsx:834"
   ],
-  "No projects are blocked from asking for permission.": [
+  "Projects listed here cannot show security prompts. Allow prompts again if you blocked one by mistake.": [
     "src/community/pages/Settings.jsx:835"
   ],
+  "Allow prompts again": [
+    "src/community/pages/Settings.jsx:842"
+  ],
+  "No blocked projects": [
+    "src/community/pages/Settings.jsx:847"
+  ],
+  "No projects are blocked from asking for permission.": [
+    "src/community/pages/Settings.jsx:848"
+  ],
   "Contact MistWarp support for immediate safety concerns.": [
-    "src/community/pages/Settings.jsx:840"
+    "src/community/pages/Settings.jsx:853"
   ],
   "Your MistWarp data": [
-    "src/community/pages/Settings.jsx:851"
-  ],
-  "These controls apply to MistWarp. Your Rotur account and Rotur data are managed separately on rotur.dev.": [
-    "src/community/pages/Settings.jsx:852"
-  ],
-  "settings.analytics": [
-    "src/community/pages/Settings.jsx:858",
     "src/community/pages/Settings.jsx:864"
   ],
+  "These controls apply to MistWarp. Your Rotur account and Rotur data are managed separately on rotur.dev.": [
+    "src/community/pages/Settings.jsx:865"
+  ],
+  "settings.analytics": [
+    "src/community/pages/Settings.jsx:871",
+    "src/community/pages/Settings.jsx:877"
+  ],
   "Anonymous analytics stay off for accounts under 18.": [
-    "src/community/pages/Settings.jsx:860"
+    "src/community/pages/Settings.jsx:873"
   ],
   "settings.analyticsHelp": [
-    "src/community/pages/Settings.jsx:861"
+    "src/community/pages/Settings.jsx:874"
   ],
   "Sign in to download or delete your MistWarp data.": [
-    "src/community/pages/Settings.jsx:872"
+    "src/community/pages/Settings.jsx:885"
   ],
   "Download your data": [
-    "src/community/pages/Settings.jsx:878"
+    "src/community/pages/Settings.jsx:891"
   ],
   "Get a JSON copy of your MistWarp profile, project metadata, comments, activity, settings, notifications, and safety list.": [
-    "src/community/pages/Settings.jsx:879"
-  ],
-  "Download": [
-    "src/community/pages/Settings.jsx:886"
-  ],
-  "Delete your MistWarp data": [
     "src/community/pages/Settings.jsx:892"
   ],
+  "Download": [
+    "src/community/pages/Settings.jsx:899"
+  ],
+  "Delete your MistWarp data": [
+    "src/community/pages/Settings.jsx:905"
+  ],
   "This deletes your MistWarp projects and profile data, anonymizes your public comments, and signs you out. Your Rotur account remains active, and signing in later creates a fresh MistWarp profile.": [
-    "src/community/pages/Settings.jsx:893"
+    "src/community/pages/Settings.jsx:906"
   ],
   "Type {value1} to confirm": [
-    "src/community/pages/Settings.jsx:896"
+    "src/community/pages/Settings.jsx:909"
   ],
   "Delete MistWarp data": [
-    "src/community/pages/Settings.jsx:910"
+    "src/community/pages/Settings.jsx:923"
   ],
   "Privacy and community terms": [
-    "src/community/pages/Settings.jsx:916"
+    "src/community/pages/Settings.jsx:929"
   ],
   "Manage your Rotur account": [
-    "src/community/pages/Settings.jsx:917",
+    "src/community/pages/Settings.jsx:930",
     "src/community/pages/Trust.jsx:42"
   ],
   "Sign in to manage your game saves and portable items.": [
-    "src/community/pages/Settings.jsx:923"
+    "src/community/pages/Settings.jsx:936"
   ],
   "Loading game data…": [
-    "src/community/pages/Settings.jsx:926"
-  ],
-  "Project saves": [
-    "src/community/pages/Settings.jsx:933"
-  ],
-  "By @{value1}, {value2} bytes, revision {value3}": [
     "src/community/pages/Settings.jsx:939"
   ],
+  "Project saves": [
+    "src/community/pages/Settings.jsx:946"
+  ],
+  "By @{value1}, {value2} bytes, revision {value3}": [
+    "src/community/pages/Settings.jsx:952"
+  ],
   "{value1} bytes, revision {value2}": [
-    "src/community/pages/Settings.jsx:940"
+    "src/community/pages/Settings.jsx:953"
   ],
   "Delete save": [
-    "src/community/pages/Settings.jsx:946",
-    "src/community/pages/Settings.jsx:1006"
+    "src/community/pages/Settings.jsx:959",
+    "src/community/pages/Settings.jsx:1019"
   ],
   "No project saves": [
-    "src/community/pages/Settings.jsx:949"
+    "src/community/pages/Settings.jsx:962"
   ],
   "You do not have any project save data yet.": [
-    "src/community/pages/Settings.jsx:950"
+    "src/community/pages/Settings.jsx:963"
   ],
   "Portable items": [
-    "src/community/pages/Settings.jsx:957"
-  ],
-  "Games see only items they define or explicitly allow from other projects.": [
-    "src/community/pages/Settings.jsx:958"
-  ],
-  "Quantity {value2}, from {value3}, ID {value1}": [
-    "src/community/pages/Settings.jsx:964"
-  ],
-  "No portable items": [
-    "src/community/pages/Settings.jsx:969"
-  ],
-  "You do not own any portable game items yet.": [
     "src/community/pages/Settings.jsx:970"
   ],
+  "Games see only items they define or explicitly allow from other projects.": [
+    "src/community/pages/Settings.jsx:971"
+  ],
+  "Quantity {value2}, from {value3}, ID {value1}": [
+    "src/community/pages/Settings.jsx:977"
+  ],
+  "No portable items": [
+    "src/community/pages/Settings.jsx:982"
+  ],
+  "You do not own any portable game items yet.": [
+    "src/community/pages/Settings.jsx:983"
+  ],
   "Sign in to sync your settings across devices through your Rotur account.": [
-    "src/community/pages/Settings.jsx:980"
+    "src/community/pages/Settings.jsx:993"
   ],
   "Delete MistWarp data?": [
-    "src/community/pages/Settings.jsx:987"
+    "src/community/pages/Settings.jsx:1000"
   ],
   "Delete permanently": [
-    "src/community/pages/Settings.jsx:991"
+    "src/community/pages/Settings.jsx:1004"
   ],
   "MistWarp will delete projects and profile data for @{value1}. Public comments and other shared history will be anonymized. This cannot be undone.": [
-    "src/community/pages/Settings.jsx:996"
+    "src/community/pages/Settings.jsx:1009"
   ],
   "Delete game save?": [
-    "src/community/pages/Settings.jsx:1002"
+    "src/community/pages/Settings.jsx:1015"
   ],
   "Delete your production save for {value1}? The project will start you with a new save next time.": [
-    "src/community/pages/Settings.jsx:1010"
+    "src/community/pages/Settings.jsx:1023"
   ],
   "Could not rate this space.": [
     "src/community/pages/Space.jsx:208"
@@ -10014,7 +10023,7 @@
     "src/community/pages/admin/ShadowBansSection.jsx:49",
     "src/community/pages/admin/ShadowBansSection.jsx:70",
     "src/community/pages/admin/UserDetailCard.jsx:665",
-    "src/community/pages/project/ProjectHeader.jsx:305",
+    "src/community/pages/project/ProjectHeader.jsx:306",
     "src/community/pages/project/ProjectNotices.jsx:58"
   ],
   "No projects found": [
@@ -10034,7 +10043,7 @@
   ],
   "Restore project": [
     "src/community/pages/admin/ProjectModerationDialog.jsx:24",
-    "src/community/pages/project/ProjectHeader.jsx:293"
+    "src/community/pages/project/ProjectHeader.jsx:294"
   ],
   "Shadow ban {value1}?": [
     "src/community/pages/admin/ProjectModerationDialog.jsx:30"
@@ -10993,25 +11002,25 @@
     "src/community/pages/project/ProjectHeader.jsx:137"
   ],
   "More actions": [
-    "src/community/pages/project/ProjectHeader.jsx:161"
+    "src/community/pages/project/ProjectHeader.jsx:162"
   ],
   "Copy embed code": [
-    "src/community/pages/project/ProjectHeader.jsx:192"
+    "src/community/pages/project/ProjectHeader.jsx:193"
   ],
   "Use stage as thumbnail": [
-    "src/community/pages/project/ProjectHeader.jsx:224"
+    "src/community/pages/project/ProjectHeader.jsx:225"
   ],
   "Upload thumbnail": [
-    "src/community/pages/project/ProjectHeader.jsx:235"
+    "src/community/pages/project/ProjectHeader.jsx:236"
   ],
   "Hide project…": [
-    "src/community/pages/project/ProjectHeader.jsx:293"
+    "src/community/pages/project/ProjectHeader.jsx:294"
   ],
   "Shadow ban project…": [
-    "src/community/pages/project/ProjectHeader.jsx:305"
+    "src/community/pages/project/ProjectHeader.jsx:306"
   ],
   "Moderate creator": [
-    "src/community/pages/project/ProjectHeader.jsx:313",
+    "src/community/pages/project/ProjectHeader.jsx:314",
     "src/community/pages/project/ProjectNotices.jsx:70"
   ],
   "Copied to clipboard.": [

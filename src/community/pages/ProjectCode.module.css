@@ -66,7 +66,7 @@
 
 .codeLayout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 280px;
+    grid-template-columns: minmax(0, 1fr) 340px;
     align-items: start;
     gap: var(--space-5);
 }
@@ -439,6 +439,80 @@ a.rowMessage:hover {
     flex: none;
     max-height: none;
     min-height: 200px;
+}
+
+.side .preview {
+    padding: var(--space-3);
+}
+
+.preview h2 {
+    margin: var(--space-1) var(--space-2) var(--space-3);
+}
+
+.previewFrame {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border-radius: var(--radius-xs);
+    background: var(--bg-field);
+}
+
+.previewStage,
+.previewStart {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.previewStart {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: var(--bg-field);
+    color: var(--text);
+    cursor: pointer;
+}
+
+.previewThumb {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    color: var(--text-dim);
+    font-size: var(--fs-lg);
+    font-weight: 600;
+}
+
+.previewPlay {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    font-size: var(--fs-md);
+    font-weight: 600;
+    box-shadow: 0 4px 16px var(--accent-shadow);
+    transition: transform 0.15s ease;
+}
+
+.previewStart:hover .previewPlay {
+    transform: scale(1.06);
+}
+
+.previewStart:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
 }
 
 @media (max-width: 1000px) {
