@@ -5,7 +5,7 @@ import {MemoryRouter, Route, Routes, useLocation, useNavigate} from 'react-route
 
 import api from '../../src/community/api';
 import Project from '../../src/community/pages/Project.jsx';
-import {isDeveloperMode, setDeveloperMode, useDeveloperMode} from '../../src/community/developer-mode.js';
+import {isDeveloperMode, setDeveloperMode, useDeveloperMode, withShareKey} from '../../src/community/developer-mode.js';
 import developerViewUrl, {projectPageUrl} from '../../src/lib/community/developer-view-url.js';
 import {local} from '../../src/modules/storage';
 import {setMockUserContext} from '../../src/community/UserContext.jsx';
@@ -158,6 +158,26 @@ describe('developer view preference', () => {
         wrapper.unmount();
     });
 
+    test('keeps the share key and the comment anchor when it redirects', async () => {
+        setDeveloperMode(true);
+        const wrapper = await mountProject('/project/project-1?k=secret#comment-id-c1');
+        expect(currentLocation.pathname).toBe('/project/project-1/code/comments');
+        expect(currentLocation.search).toBe('?k=secret');
+        expect(currentLocation.hash).toBe('#comment-id-c1');
+        wrapper.unmount();
+    });
+
+    test('the view switch keeps the share key', async () => {
+        setDeveloperMode(false);
+        const wrapper = await mountProject('/project/project-1?k=secret');
+        const links = wrapper.find('nav[aria-label="Project view mode"] a');
+        expect(links.map(link => link.prop('href'))).toEqual([
+            '/project/project-1?k=secret',
+            '/project/project-1/code?k=secret'
+        ]);
+        wrapper.unmount();
+    });
+
     test('keeps the project page for other anchors and private source', async () => {
         setDeveloperMode(true);
         let wrapper = await mountProject('/project/project-1#contribute');
@@ -212,6 +232,15 @@ describe('developer view preference', () => {
         expect(isDeveloperMode()).toBe(true);
         expect(currentLocation.pathname).toBe('/project/project-1/code');
         wrapper.unmount();
+    });
+});
+
+describe('withShareKey', () => {
+    test('adds the key before the anchor and leaves keyless paths alone', () => {
+        expect(withShareKey('/project/p1/code', '')).toBe('/project/p1/code');
+        expect(withShareKey('/project/p1/code', 'a b')).toBe('/project/p1/code?k=a%20b');
+        expect(withShareKey('/project/p1#reviews', 'abc')).toBe('/project/p1?k=abc#reviews');
+        expect(withShareKey('/project/p1/code?branch=dev', 'abc')).toBe('/project/p1/code?branch=dev&k=abc');
     });
 });
 

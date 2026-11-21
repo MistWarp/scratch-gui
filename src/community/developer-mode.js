@@ -36,6 +36,14 @@ export const developerViewPath = hash => {
     return Object.prototype.hasOwnProperty.call(DEVELOPER_TABS, key) ? DEVELOPER_TABS[key] : null;
 };
 
+export const withShareKey = (path, key) => {
+    if (!key) return path;
+    const hashAt = path.indexOf('#');
+    const base = hashAt < 0 ? path : path.slice(0, hashAt);
+    const hash = hashAt < 0 ? '' : path.slice(hashAt);
+    return `${base}${base.includes('?') ? '&' : '?'}k=${encodeURIComponent(key)}${hash}`;
+};
+
 export const plainClick = event => !event || (
     (event.button === 0 || typeof event.button === 'undefined') &&
     !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && !event.defaultPrevented

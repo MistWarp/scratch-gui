@@ -9,7 +9,7 @@ import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.j
 import {listCommerceBounties} from '../credits';
 import ProjectInfoPanel from '../components/ProjectInfoPanel.jsx';
 import {canViewProjectSource} from '../project-source-access';
-import {developerViewPath, useDeveloperMode} from '../developer-mode.js';
+import {developerViewPath, useDeveloperMode, withShareKey} from '../developer-mode.js';
 import ProjectCompatibility from '../components/ProjectCompatibility.jsx';
 import CollectionSaveModal from '../components/CollectionSaveModal.jsx';
 import {useUser} from '../UserContext.jsx';
@@ -75,6 +75,7 @@ const Project = () => {
     const releaseAction = key => actionLocks.current.delete(key);
     const navigate = useNavigate();
     const location = useLocation();
+    const shareKey = new URLSearchParams(location.search).get('k') || '';
     const [developerMode] = useDeveloperMode();
     const developerEntry = useRef(null);
     const {
@@ -683,8 +684,8 @@ const Project = () => {
                 toggleLibrary={toggleLibrary}
                 savingLibrary={savingLibrary}
                 seeInsideHref={seeInsideHref}
-                codeHref={`${baseProjectUrl}/code`}
-                projectHref={baseProjectUrl}
+                codeHref={withShareKey(`${baseProjectUrl}/code`, shareKey)}
+                projectHref={withShareKey(baseProjectUrl, shareKey)}
                 copyLink={copyLink}
                 setCollectionOpen={setCollectionOpen}
                 thumbnailStatus={thumbnailStatus}

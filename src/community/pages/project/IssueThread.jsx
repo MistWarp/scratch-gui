@@ -12,6 +12,7 @@ import projectRealtime from '../../project-realtime.js';
 import {
     canChangeIssue, commentIssueNumber, commentIssueState, issueThreads, issueTitle, mergeCommentUpdate
 } from '../../comment-issues.js';
+import {withShareKey} from '../../developer-mode.js';
 import Avatar from '../../components/Avatar.jsx';
 import RichText from '../../components/RichText.jsx';
 import UserLink from '../../components/UserLink.jsx';
@@ -49,7 +50,7 @@ ThreadComment.propTypes = {
     first: PropTypes.bool
 };
 
-const IssueThread = ({id, baseUrl, number, project, onChange}) => {
+const IssueThread = ({id, baseUrl, shareKey, number, project, onChange}) => {
     const {text: communityText} = useCommunityText();
     const {user} = useUser();
     const [thread, setThread] = useState(null);
@@ -280,7 +281,7 @@ const IssueThread = ({id, baseUrl, number, project, onChange}) => {
             ) : null}
             <Link
                 className={styles.issueBack}
-                to={`${baseUrl}/code/comments#comment-id-${root.id}`}
+                to={withShareKey(`${baseUrl}/code/comments#comment-id-${root.id}`, shareKey)}
             >{communityText('See it with the other comments')}</Link>
         </section>
     );
@@ -295,7 +296,8 @@ IssueThread.propTypes = {
         commentsOff: PropTypes.bool,
         isOwner: PropTypes.bool,
         issuesOff: PropTypes.bool
-    }).isRequired
+    }).isRequired,
+    shareKey: PropTypes.string
 };
 
 export default IssueThread;

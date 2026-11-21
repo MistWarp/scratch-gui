@@ -9,9 +9,14 @@ import ProjectCode, {
 } from '../../src/community/pages/ProjectCode.jsx';
 import {codeEntryUrl, listDirectory, searchFiles} from '../../src/community/pages/project/CodeBrowser.jsx';
 import {isDeveloperMode, setDeveloperMode} from '../../src/community/developer-mode.js';
+import scrollToAnchorWithRetry from '../../src/community/scroll-to-anchor.js';
 
 jest.mock('../../src/community/UserContext.jsx', () => ({
     useUser: () => ({user: null, loading: false, login: jest.fn()})
+}));
+jest.mock('../../src/community/scroll-to-anchor.js', () => ({
+    __esModule: true,
+    default: jest.fn(() => () => {})
 }));
 jest.mock('../../src/lib/community/cached-fetch.js', () => ({
     cachedFetchBuffer: jest.fn(() => Promise.resolve(new ArrayBuffer(0))),
@@ -378,6 +383,33 @@ describe('project developer view page', () => {
         expect(wrapper.text()).toContain('Thanks');
         expect(wrapper.find('a').filterWhere(link => link.text() === 'Issue #4')
             .prop('href')).toBe('/project/project-1/code/issues/4');
+    });
+
+    test('scrolls to a linked comment in the comments tab', async () => {
+        mockApi(baseProject());
+        scrollToAnchorWithRetry.mockClear();
+        const wrapper = mountAt('/project/project-1/code/comments#comment-id-c1');
+        await settle(wrapper);
+        expect(scrollToAnchorWithRetry).toHaveBeenCalledWith('comment-id-c1');
+    });
+
+    test('keeps the share key on the view switch, tabs and details links', async () => {
+        mockApi(baseProject());
+        const wrapper = mountAt('/project/project-1/code?k=secret');
+        await settle(wrapper);
+        const switchLinks = wrapper.find('nav[aria-label="Project view mode"] a');
+        expect(switchLinks.map(link => link.prop('href'))).toEqual([
+            '/project/project-1?k=secret',
+            '/project/project-1/code?k=secret'
+        ]);
+        expect(wrapper.find('a').filterWhere(link => link.text() === 'Read reviews')
+            .prop('href')).toBe('/project/project-1?k=secret#reviews');
+        const comments = wrapper.find('[role="tab"]').filterWhere(item => item.text() === 'Comments');
+        await act(async () => {
+            comments.simulate('click');
+        });
+        expect(currentLocation.pathname).toBe('/project/project-1/code/comments');
+        expect(currentLocation.search).toBe('?k=secret');
     });
 
     test('plays the project in the sidebar only once asked', async () => {
