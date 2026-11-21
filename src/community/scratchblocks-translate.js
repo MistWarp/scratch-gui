@@ -26,9 +26,13 @@ const cleanMenuValue = value => {
     return text.replace(/^_+|_+$/g, '');
 };
 
+const obscuredValue = node => (node.active && node.active.type !== 'null' ? node.active : node.shadow);
+
 const unwrapCall = value => {
     let node = value;
-    while (node && node.type === 'call' && node.value && node.value !== node) node = node.value;
+    while (node && ((node.type === 'call' && node.value && node.value !== node) || node.type === 'obscured')) {
+        node = node.type === 'obscured' ? obscuredValue(node) : node.value;
+    }
     return node;
 };
 
@@ -46,8 +50,17 @@ const opcodeOf = node => {
 
 const isMenuCall = node => {
     const name = calleeName(node);
-    return MENU_SHADOWS.has(name) || name.endsWith('menu') || name.endsWith('menus') || name.startsWith('menu_');
+    if (MENU_SHADOWS.has(name) || name.endsWith('menu') || name.endsWith('menus')) return true;
+    if (name.startsWith('menu_')) return true;
+    const args = node?.args || [];
+    return name.includes('_menu_') && args.length === 1 && args[0].sep === 'field';
 };
+
+const wordsOf = name => String(name)
+    .replace(/_/g, ' ')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+    .toLowerCase();
 
 const translateMenuValue = value => {
     if (typeof value === 'string') return cleanMenuValue(value);
@@ -134,7 +147,11 @@ const inputOf = (node, key, fallback = '0') => {
 const booleanInputOf = (node, key) => {
     const value = unwrapCall(argValue(node, key));
     if (!value || value.type === 'null') return '<>';
-    return translateValue(value);
+    const inner = value.type === 'call' && value.callee ? value : null;
+    if (!inner || isMenuCall(inner)) return translateValue(value);
+    // eslint-disable-next-line no-use-before-define
+    const text = translateCall(inner);
+    return text.startsWith('<') && text.endsWith('>') ? text : `<${text}>`;
 };
 
 const extensionColor = (text, color) => `${text} :: ${color}`;
@@ -163,7 +180,7 @@ export const translateCall = node => {
     const extension = translateKnownExtension(node);
     if (extension) return extension;
     if (node.callee.type === 'identOrMethod') {
-        const name = String(node.callee.method || node.callee.ident || 'extension block').replace(/_/g, ' ');
+        const name = wordsOf(node.callee.method || node.callee.ident || 'extension block');
         const inputs = (node.args || [])
             .filter(arg => arg.value !== null && typeof arg.value !== 'undefined')
             .map(arg => translateValue(arg.value))
@@ -275,8 +292,8 @@ export const translateCall = node => {
     case 'operator_lt': return `<${inputOf(node, 'OPERAND1')} < ${inputOf(node, 'OPERAND2')}>`;
     case 'operator_equals': return `<${inputOf(node, 'OPERAND1')} = ${inputOf(node, 'OPERAND2')}>`;
     case 'operator_gt': return `<${inputOf(node, 'OPERAND1')} > ${inputOf(node, 'OPERAND2')}>`;
-    case 'operator_and': return `<${inputOf(node, 'OPERAND1')} and ${inputOf(node, 'OPERAND2')}>`;
-    case 'operator_or': return `<${inputOf(node, 'OPERAND1')} or ${inputOf(node, 'OPERAND2')}>`;
+    case 'operator_and': return `<${booleanInputOf(node, 'OPERAND1')} and ${booleanInputOf(node, 'OPERAND2')}>`;
+    case 'operator_or': return `<${booleanInputOf(node, 'OPERAND1')} or ${booleanInputOf(node, 'OPERAND2')}>`;
     case 'operator_not': return `<not ${booleanInputOf(node, 'OPERAND')}>`;
     case 'operator_join': return `(join ${inputOf(node, 'STRING1', 'apple')} ${inputOf(node, 'STRING2', 'banana')})`;
     case 'operator_letter_of': return `(letter ${inputOf(node, 'LETTER', '1')} of ${inputOf(node, 'STRING', 'apple')})`;
@@ -325,14 +342,16 @@ export const translateCall = node => {
     case 'pen_setPenHueToNumber': return `set pen color to ${inputOf(node, 'HUE', '50')}`;
     case 'pen_changePenHueBy': return `change pen color by ${inputOf(node, 'HUE', '10')}`;
     default: {
-        const pretty = opcode.includes('_') ? opcode.slice(opcode.indexOf('_') + 1).replace(/_/g, ' ') : opcode;
+        const prefix = opcode.split('_')[0];
+        const core = CORE_OPCODE_PREFIXES.has(prefix);
+        const rest = opcode.includes('_') ? opcode.slice(opcode.indexOf('_') + 1) : opcode;
+        const pretty = core ? rest.replace(/_/g, ' ') : wordsOf(rest);
         const inputs = (node.args || [])
             .filter(arg => arg.key && arg.value !== null && typeof arg.value !== 'undefined')
             .map(arg => translateValue(arg.value))
             .join(' ');
         const text = inputs ? `${pretty} ${inputs}` : pretty;
-        const prefix = opcode.split('_')[0];
-        return !CORE_OPCODE_PREFIXES.has(prefix) ? `${text} :: extension` : text;
+        return core ? text : `${text} :: extension`;
     }
     }
 };
@@ -419,10 +438,7 @@ const translateStatements = (calls, indent, marks) => {
 };
 
 const conditionOf = (node, key) => {
-    const rawValue = argValue(node, key);
-    const value = unwrapCall(rawValue);
-    if (!value || value.type === 'null') return '<>';
-    const text = translateValue(rawValue);
+    const text = booleanInputOf(node, key);
     return text.startsWith('<') && text.endsWith('>') ? text : `<${text}>`;
 };
 

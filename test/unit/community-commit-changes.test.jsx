@@ -149,6 +149,7 @@ describe('commit changes helpers', () => {
         expect(plainScriptTitle('when [any v] key pressed')).toBe('when any key pressed');
         expect(plainScriptTitle('isVisible [iframe1] :: extension')).toBe('isVisible iframe1');
         expect(plainScriptTitle('Define "Typing system %s"')).toBe('Define "Typing system %s"');
+        expect(plainScriptTitle('set saved (key) to (1) :: #277a59')).toBe('set saved (key) to (1)');
     });
 
     test('rounds long decimals in saved values', () => {

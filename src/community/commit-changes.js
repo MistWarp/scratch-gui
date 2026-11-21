@@ -51,7 +51,7 @@ export const scriptWasMoved = script => script.change === 'moved';
 export const hasMarkedLines = diff => String(diff || '').split('\n').some(line => /^[+-]\s/.test(line));
 
 export const plainScriptTitle = title => String(title || '')
-    .replace(/\s*::\s*[a-z]+/gi, '')
+    .replace(/\s*::\s*[#\w-]+/g, '')
     .replace(/\[([^\]]*?)(?: v)?\]/g, '$1')
     .trim();
 
