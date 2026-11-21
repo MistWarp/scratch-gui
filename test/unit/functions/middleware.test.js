@@ -388,6 +388,8 @@ describe('rewritten pages', () => {
         '/project/1/pulls/2/extra',
         '/project/1/code/unknown',
         '/project/1/code/blob',
+        '/project/1/code/issues/abc',
+        '/project/1/code/issues/2/extra',
         '/users/alice/unknown',
         '/spaces/abc/unknown',
         '/mystuff/project'
@@ -530,7 +532,9 @@ describe('project pages', () => {
         ['/code', 'Developer view'],
         ['/code/commits', 'Developer view'],
         ['/code/tree/Cat/assets', 'Developer view'],
-        ['/code/blob/Cat/main.fractch', 'Developer view']
+        ['/code/blob/Cat/main.fractch', 'Developer view'],
+        ['/code/issues', 'Developer view'],
+        ['/code/issues/12', 'Developer view']
     ])('sub-page %s', async (rest, suffix) => {
         stubApi({[`${API}/projects/1`]: sharedProject()});
         const meta = await renderPath(`/project/1${rest}`);
@@ -607,7 +611,8 @@ describe('vanity project pages', () => {
         ['/pulls', 'Pull requests'],
         ['/commits/abc', 'Commit'],
         ['/code', 'Developer view'],
-        ['/code/blob/Stage/main.fractch', 'Developer view']
+        ['/code/blob/Stage/main.fractch', 'Developer view'],
+        ['/code/issues/3', 'Developer view']
     ])('sub-page %s', async (rest, suffix) => {
         stubApi({
             [`${API}/vanity/cool-game`]: {id: '55'},

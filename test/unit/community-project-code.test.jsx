@@ -116,6 +116,7 @@ const mockApi = (project, {last = lastCommits} = {}) => {
     jest.spyOn(api, 'pulls').mockResolvedValue({pulls: [{index: 1, state: 'open'}, {index: 2, state: 'closed'}]});
     jest.spyOn(api, 'releases').mockResolvedValue({releases: [{id: 'r1'}]});
     jest.spyOn(api, 'commitSummaries').mockResolvedValue({summaries: {}});
+    jest.spyOn(api, 'getComments').mockResolvedValue({comments: [], issueCounts: {open: 2, done: 1}});
     jest.spyOn(api, 'commitFile').mockResolvedValue({content: btoa('sprite "Cat";')});
     if (last) jest.spyOn(api, 'commitLastCommits').mockResolvedValue(last);
     else jest.spyOn(api, 'commitLastCommits').mockRejectedValue(new Error('not found'));
@@ -131,6 +132,9 @@ describe('project developer view helpers', () => {
         expect(codeLocation('')).toEqual({tab: 'code', kind: 'tree', path: ''});
         expect(codeLocation('commits')).toEqual({tab: 'commits', kind: 'tree', path: ''});
         expect(codeLocation('tree/Cat/assets')).toEqual({tab: 'code', kind: 'tree', path: 'Cat/assets'});
+        expect(codeLocation('issues')).toEqual({tab: 'issues', kind: 'tree', path: ''});
+        expect(codeLocation('issues/12')).toEqual({tab: 'issues', kind: 'issue', path: '', number: 12});
+        expect(codeLocation('issues/abc')).toEqual({tab: 'issues', kind: 'tree', path: ''});
         expect(codeLocation('blob/Cat/main.fractch')).toEqual({tab: 'code', kind: 'blob', path: 'Cat/main.fractch'});
         expect(codeLocation('unknown')).toEqual({tab: 'code', kind: 'tree', path: ''});
     });
@@ -179,7 +183,8 @@ describe('project developer view page', () => {
 
         expect(wrapper.find('h1').text()).toBe('mist/Space game');
         const tabs = wrapper.find('[role="tab"]').map(tab => tab.text());
-        expect(tabs).toEqual(['Code', 'Commits3', 'Branches2', 'Pull requests1', 'Releases1']);
+        expect(tabs).toEqual(['Code', 'Issues2', 'Commits3', 'Branches2', 'Pull requests1', 'Releases1']);
+        expect(wrapper.text()).toContain('2 open issues');
         expect(commitTree).toHaveBeenCalledWith('project-1', sha('a'));
         expect(api.commitLastCommits).toHaveBeenCalledWith('project-1', sha('a'));
         const rows = rowTexts(wrapper);
@@ -319,11 +324,34 @@ describe('project developer view page', () => {
         await settle(wrapper);
 
         act(() => {
-            wrapper.find('[role="tab"]').at(1)
+            wrapper.find('[role="tab"]').at(2)
                 .simulate('click');
         });
         await settle(wrapper);
         expect(currentLocation.pathname).toBe('/project/project-1/code/commits');
+        act(() => {
+            wrapper.find('[role="tab"]').at(1)
+                .simulate('click');
+        });
+        await settle(wrapper);
+        expect(currentLocation.pathname).toBe('/project/project-1/code/issues');
+    });
+
+    test('opens an issue thread from its address and hides the tab when issues are off', async () => {
+        mockApi(baseProject());
+        let wrapper = mountAt('/project/project-1/code/issues/4');
+        await settle(wrapper);
+        expect(api.getComments).toHaveBeenCalledWith('project-1', {all: true, issue: 'any', number: 4});
+        expect(wrapper.text()).toContain('Issue not found');
+        wrapper.unmount();
+
+        jest.restoreAllMocks();
+        mockApi(baseProject({issuesOff: true}));
+        api.getComments.mockResolvedValue({comments: [], issueCounts: {open: 0, done: 0}});
+        wrapper = mountAt('/project/project-1/code');
+        await settle(wrapper);
+        expect(wrapper.find('[role="tab"]').map(tab => tab.text())).not.toContain('Issues0');
+        wrapper.unmount();
     });
 
     test('plays the project in the sidebar only once asked', async () => {

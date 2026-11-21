@@ -1,4 +1,6 @@
-export const commentQuery = ({offset = 0, limit = 20, anchor = '', all = false, sort = 'newest'} = {}) => {
+export const commentQuery = ({
+    offset = 0, limit = 20, anchor = '', all = false, sort = 'newest', issue = '', number = 0
+} = {}) => {
     const params = new URLSearchParams();
     if (all) {
         params.set('all', '1');
@@ -8,6 +10,10 @@ export const commentQuery = ({offset = 0, limit = 20, anchor = '', all = false, 
     }
     if (anchor) params.set('anchor', anchor);
     if (sort === 'donations') params.set('sort', 'donations');
+    if (['open', 'done', 'any'].includes(issue)) {
+        params.set('issue', issue);
+        if (Number(number) > 0) params.set('number', String(Math.floor(Number(number))));
+    }
     return params.toString();
 };
 

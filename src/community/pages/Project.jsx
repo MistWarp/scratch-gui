@@ -587,6 +587,7 @@ const Project = () => {
         edit: (commentId, content) => api.editComment(id, commentId, content),
         react: (commentId, type) => api.reactComment(id, commentId, type),
         pin: (commentId, pinned) => api.pinComment(id, commentId, pinned),
+        issue: (commentId, state) => api.setCommentIssue(id, commentId, state),
         subscribe: listener => projectRealtime.subscribe(
             id,
             listener,

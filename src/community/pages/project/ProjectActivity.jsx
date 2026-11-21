@@ -73,6 +73,11 @@ const ProjectActivity = ({
                         donationRecipient={project.owner}
                         canModerate={project.isOwner}
                         canPin={project.isOwner}
+                        issues={{
+                            canTriage: Boolean(project.isOwner),
+                            enabled: !project.issuesOff,
+                            href: canViewProjectSource(project) ? number => `${baseProjectUrl}/code/issues/${number}` : null
+                        }}
                         disabled={Boolean(project.commentsOff)}
                         disabledReason={communityText('Comments are turned off.')}
                         reportContext={`project ${id}`}

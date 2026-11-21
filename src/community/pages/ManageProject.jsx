@@ -243,6 +243,7 @@ const ManageProject = () => {
             brandingTagline: project.branding?.tagline || '',
             remixShare: project.remixShare || 0,
             commentsOff: Boolean(project.commentsOff),
+            issuesOff: Boolean(project.issuesOff),
             remixable: project.remixable !== false,
             seeInside: project.seeInside !== false,
             visibility: project.visibility || (project.shared ? 'public' : 'private')
@@ -304,6 +305,7 @@ const ManageProject = () => {
                     tagline: form.brandingTagline.trim()
                 } : {},
                 commentsOff: form.commentsOff,
+                issuesOff: form.issuesOff,
                 remixable: form.remixable,
                 seeInside: form.seeInside,
                 remixShare: Math.max(0, Math.min(50, Number(form.remixShare) || 0))
@@ -660,6 +662,7 @@ const ManageProject = () => {
                                         <SwitchRow checked={form.seeInside} disabled={saving} label={communityText('Allow people to see inside')} onChange={value => set('seeInside', value)} />
                                         <p className={styles.cardHint}>{communityText('When enabled, See inside gives access to project files and version history.')}</p>
                                         <SwitchRow checked={form.commentsOff} disabled={saving} label={communityText('Turn off comments')} onChange={value => set('commentsOff', value)} />
+                                        <SwitchRow checked={form.issuesOff} disabled={saving} label={communityText('Turn off issues')} description={communityText('Stops new comments from being tracked as issues. Existing issues stay readable.')} onChange={value => set('issuesOff', value)} />
                                     </div>
                                     <div className={styles.formActions}>
                                         <span className={styles.formStatus} role="status" aria-live="polite">{status}</span>

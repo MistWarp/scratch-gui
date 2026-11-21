@@ -515,6 +515,171 @@ a.rowMessage:hover {
     outline-offset: -2px;
 }
 
+.issueRow div > .issueLatest {
+    display: flex;
+    gap: var(--space-2);
+    min-width: 0;
+    margin-top: var(--space-1);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-xs);
+    background: var(--bg-raised);
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+    font-weight: 400;
+}
+
+.issueLatest b {
+    flex: none;
+    color: var(--mw-text);
+    font-weight: 600;
+}
+
+.issueLatest span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.issueRow div > .issueLatest:hover {
+    color: var(--mw-text);
+}
+
+.issueComposer {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+}
+
+.issueComposer textarea {
+    width: 100%;
+    min-height: 88px;
+    padding: var(--space-3);
+    border: 0;
+    border-radius: var(--radius-xs);
+    background: var(--bg-field);
+    color: var(--mw-text);
+    font: inherit;
+    font-size: var(--fs-md);
+    resize: vertical;
+}
+
+.issueComposerActions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-2);
+}
+
+.issueThread {
+    display: grid;
+    gap: var(--space-4);
+    max-width: var(--maxw-mid);
+}
+
+.issueBack {
+    display: inline-flex;
+    align-items: center;
+    justify-self: start;
+    gap: var(--space-1);
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+}
+
+.issueBack:hover {
+    color: var(--accent-strong);
+}
+
+.issueHead h2 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--fs-xl);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.issueHead h2 span {
+    color: var(--text-dim);
+    font-weight: 400;
+}
+
+.issueMeta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+}
+
+.issueMeta > span {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.issueMeta > .issueState {
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius);
+    background: var(--mw-success);
+    color: #ffffff;
+    font-size: var(--fs-md);
+    font-weight: 600;
+}
+
+.issueState.issueStateDone {
+    background: var(--accent);
+    color: var(--accent-contrast);
+    font-size: var(--fs-md);
+    font-weight: 600;
+}
+
+.issueComments {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.issueComment {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+}
+
+.issueReply {
+    margin-left: var(--space-6);
+    background: var(--bg-raised);
+}
+
+.issueComment header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2);
+    margin-bottom: var(--space-1);
+    font-size: var(--fs-sm);
+}
+
+.issueComment header a {
+    color: var(--mw-text);
+    font-weight: 600;
+}
+
+.issueComment header span {
+    color: var(--text-dim);
+}
+
+.issueComment p {
+    margin: 0;
+    font-size: var(--fs-md);
+    line-height: 1.55;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
 @media (max-width: 1000px) {
     .codeLayout {
         grid-template-columns: minmax(0, 1fr);
@@ -528,6 +693,10 @@ a.rowMessage:hover {
 }
 
 @media (max-width: 620px) {
+    .issueReply {
+        margin-left: var(--space-4);
+    }
+
     .header {
         align-items: flex-start;
         flex-direction: column;
