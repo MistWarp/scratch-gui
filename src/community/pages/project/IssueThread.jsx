@@ -20,29 +20,24 @@ import EmptyState from '../../components/ui/EmptyState.jsx';
 import StatusMessage from '../../components/ui/StatusMessage.jsx';
 import styles from '../ProjectCode.module.css';
 
-const ThreadComment = ({comment, first}) => {
-    const {text: communityText} = useCommunityText();
-    return (
-        <article
-            id={`issue-comment-${comment.id}`}
-            className={first ? styles.issueComment : `${styles.issueComment} ${styles.issueReply}`}
-        >
-            <UserLink username={comment.author}><Avatar
-                username={comment.author}
-                size={first ? 36 : 28}
-            /></UserLink>
-            <div>
-                <header>
-                    <UserLink username={comment.author}>{comment.author}</UserLink>
-                    <span>{first ?
-                        communityText('opened this {value1}', {value1: timeAgo(comment.created)}) :
-                        timeAgo(comment.created)}</span>
-                </header>
-                <p><RichText text={comment.content} /></p>
-            </div>
-        </article>
-    );
-};
+const ThreadComment = ({comment, first}) => (
+    <article
+        id={`issue-comment-${comment.id}`}
+        className={first ? styles.issueComment : `${styles.issueComment} ${styles.issueReply}`}
+    >
+        <UserLink username={comment.author}><Avatar
+            username={comment.author}
+            size={first ? 36 : 28}
+        /></UserLink>
+        <div>
+            <header>
+                <UserLink username={comment.author}>{comment.author}</UserLink>
+                <span>{timeAgo(comment.created)}</span>
+            </header>
+            <p><RichText text={comment.content} /></p>
+        </div>
+    </article>
+);
 
 ThreadComment.propTypes = {
     comment: PropTypes.shape({
@@ -82,6 +77,13 @@ const IssueThread = ({id, baseUrl, number, project, onChange}) => {
         setThread(null);
         load();
     }, [load]);
+
+    useEffect(() => {
+        if (thread && !commentIssueState(thread.root)) {
+            setThread(null);
+            setMissing(true);
+        }
+    }, [thread]);
 
     const rootId = thread ? thread.root.id : '';
     useEffect(() => {
@@ -190,7 +192,7 @@ const IssueThread = ({id, baseUrl, number, project, onChange}) => {
 
     const {root, replies} = thread;
     const state = commentIssueState(root);
-    const canChange = canChangeIssue(root, user, project.isOwner);
+    const canChange = canChangeIssue(root, user, project.isOwner) && !project.issuesOff;
     const canReply = Boolean(user) && !project.commentsOff;
     const title = issueTitle(root.content) || communityText('Issue #{value1}', {value1: number});
 
@@ -291,7 +293,8 @@ IssueThread.propTypes = {
     onChange: PropTypes.func,
     project: PropTypes.shape({
         commentsOff: PropTypes.bool,
-        isOwner: PropTypes.bool
+        isOwner: PropTypes.bool,
+        issuesOff: PropTypes.bool
     }).isRequired
 };
 

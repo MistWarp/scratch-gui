@@ -200,7 +200,8 @@ const ProjectCodePage = ({id, vanitySlug}) => {
         issues: issueCounts ? issueCounts.open : null
     };
     const hasIssues = Boolean(issueCounts && (issueCounts.open || issueCounts.done));
-    const visibleTabs = CODE_TABS.filter(key => key !== 'issues' || !project || !project.issuesOff || hasIssues);
+    const visibleTabs = CODE_TABS.filter(key => key !== 'issues' || !project || !project.issuesOff ||
+        hasIssues || issueCounts === null || tab === 'issues');
 
     const pickBranch = name => {
         const next = new URLSearchParams(searchParams);
@@ -316,7 +317,7 @@ const ProjectCodePage = ({id, vanitySlug}) => {
                             </div>
                         ) : null}
                         {tab === 'issues' && place.kind === 'issue' ? (
-                            <IssueThread key={place.number} id={id} baseUrl={baseUrl} number={place.number} project={project} onChange={refreshIssueCounts} />
+                            <IssueThread key={`${id}:${place.number}`} id={id} baseUrl={baseUrl} number={place.number} project={project} onChange={refreshIssueCounts} />
                         ) : null}
                         {tab === 'issues' && place.kind !== 'issue' ? (
                             <IssueList id={id} baseUrl={baseUrl} project={project} onCounts={setIssueCounts} />

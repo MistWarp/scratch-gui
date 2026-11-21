@@ -39,6 +39,7 @@ describe('comment issue helpers', () => {
         expect(commentIssueState(openIssue)).toBe('open');
         expect(commentIssueState(doneIssue)).toBe('done');
         expect(commentIssueState({id: 'x', issue: {state: 'weird', number: 4}})).toBe('');
+        expect(commentIssueState({id: 'x', issue: {state: 'none', number: 4}})).toBe('');
         expect(commentIssueNumber({id: 'x', issue: {state: 'weird', number: 4}})).toBe(0);
         expect(commentIssueNumber(openIssue)).toBe(2);
     });
@@ -140,6 +141,31 @@ describe('issue actions on comments', () => {
         wrapper.unmount();
     });
 
+    test('with issues off, existing issues can only stop being tracked', async () => {
+        const {wrapper} = mountThread({username: 'mist'}, [openIssue], {canTriage: true, enabled: false});
+        await settle(wrapper);
+        openMenu(wrapper);
+        expect(menuItem(wrapper, 'Mark as done')).toHaveLength(0);
+        expect(menuItem(wrapper, 'Stop tracking as issue')).toHaveLength(1);
+        wrapper.unmount();
+    });
+
+    test('an issue that stops being tracked loses its badge', async () => {
+        const issue = jest.fn(() => Promise.resolve({comment: {...openIssue, issue: {number: 2, state: 'none'}}}));
+        const {wrapper} = mountThread({username: 'Sam'}, [openIssue], {canTriage: false, enabled: true}, issue);
+        await settle(wrapper);
+        expect(wrapper.text()).toContain('Issue #2');
+        openMenu(wrapper);
+        await act(async () => {
+            menuItem(wrapper, 'Stop tracking as issue').simulate('click');
+            await Promise.resolve();
+        });
+        wrapper.update();
+        expect(issue).toHaveBeenCalledWith('c1', 'none');
+        expect(wrapper.text()).not.toContain('Issue #2');
+        wrapper.unmount();
+    });
+
     test('pages without issues show no issue actions', async () => {
         const {wrapper} = mountThread({username: 'Sam'}, [openIssue], null);
         await settle(wrapper);
@@ -181,11 +207,11 @@ describe('developer view issues', () => {
         expect(title.prop('href')).toBe('/project/p1/code/issues/2');
         expect(row.text()).toContain('Still happens on level 3');
         expect(row.text()).toContain('#2 opened');
-        expect(wrapper.text()).toContain('4 done');
+        expect(wrapper.text()).toContain('4 finished issues');
         expect(wrapper.find('button').filterWhere(button => button.text() === 'New issue')).toHaveLength(0);
 
         await act(async () => {
-            wrapper.find('button').filterWhere(button => button.text() === '4 done')
+            wrapper.find('button').filterWhere(button => button.text() === '4 finished issues')
                 .simulate('click');
             await Promise.resolve();
         });
@@ -226,9 +252,53 @@ describe('developer view issues', () => {
         wrapper.unmount();
     });
 
+    test('retries only the tracking when it fails after the comment is posted', async () => {
+        useUser.mockReturnValue({user: {username: 'Lee'}});
+        jest.spyOn(api, 'getComments').mockResolvedValue({comments: [], issueCounts: {open: 0, done: 0}});
+        const add = jest.spyOn(api, 'addComment').mockResolvedValue({comment: {id: 'n1', author: 'Lee', content: 'Crash'}});
+        const track = jest.spyOn(api, 'setCommentIssue')
+            .mockRejectedValueOnce(new Error('offline'))
+            .mockResolvedValueOnce({comment: {id: 'n1', issue: {number: 3, state: 'open'}}});
+        const wrapper = mount(
+            <MemoryRouter future={future}>
+                <IssueList
+                    id="p1"
+                    baseUrl="/project/p1"
+                    project={project}
+                />
+            </MemoryRouter>
+        );
+        await settle(wrapper);
+        act(() => {
+            wrapper.find('button').filterWhere(button => button.text() === 'New issue')
+                .simulate('click');
+        });
+        wrapper.update();
+        wrapper.find('textarea').simulate('change', {target: {value: 'Crash'}});
+        await act(async () => {
+            wrapper.find('form').simulate('submit');
+            await Promise.resolve();
+        });
+        await settle(wrapper);
+        expect(wrapper.text()).toContain('Your comment was posted but could not be tracked as an issue.');
+        await act(async () => {
+            wrapper.find('form').simulate('submit');
+            await Promise.resolve();
+        });
+        await settle(wrapper);
+        expect(add).toHaveBeenCalledTimes(1);
+        expect(track).toHaveBeenCalledTimes(2);
+        expect(wrapper.find('textarea')).toHaveLength(0);
+        wrapper.unmount();
+    });
+
+    let realtime = null;
     const mountIssue = (user, extra = {}, onChange = jest.fn()) => {
         useUser.mockReturnValue({user});
-        jest.spyOn(projectRealtime, 'subscribe').mockReturnValue(() => {});
+        jest.spyOn(projectRealtime, 'subscribe').mockImplementation((projectId, listener) => {
+            realtime = listener;
+            return () => {};
+        });
         const getComments = jest.spyOn(api, 'getComments').mockResolvedValue({comments: [openIssue, ...replies]});
         const wrapper = mount(
             <MemoryRouter
@@ -293,6 +363,32 @@ describe('developer view issues', () => {
         await settle(wrapper);
         expect(add).toHaveBeenCalledWith('p1', 'Same here', 'c1');
         expect(wrapper.find('article')).toHaveLength(4);
+        wrapper.unmount();
+    });
+
+    test('follows replies and untracking from other people in real time', async () => {
+        const {wrapper} = mountIssue(null);
+        await settle(wrapper);
+        await act(async () => {
+            realtime({type: 'comment_created', comment: {id: 'r9', author: 'Ana', content: 'Me too', parent: 'c1', created: 60}});
+            realtime({type: 'comment_created', comment: {id: 'x1', author: 'Ana', content: 'Elsewhere', parent: 'other', created: 61}});
+        });
+        wrapper.update();
+        expect(wrapper.find('article')).toHaveLength(4);
+        expect(wrapper.text()).not.toContain('Elsewhere');
+        await act(async () => {
+            realtime({type: 'comment_edited', comment: {...openIssue, issue: {number: 2, state: 'none'}}});
+        });
+        wrapper.update();
+        expect(wrapper.text()).toContain('Issue not found');
+        wrapper.unmount();
+    });
+
+    test('hides done and reopen when issues are off', async () => {
+        const {wrapper} = mountIssue({username: 'Sam'}, {issuesOff: true});
+        await settle(wrapper);
+        expect(wrapper.find('button').filterWhere(button => button.text() === 'Mark as done')).toHaveLength(0);
+        expect(wrapper.find('textarea')).toHaveLength(1);
         wrapper.unmount();
     });
 

@@ -774,8 +774,8 @@
     "src/community/pages/News.jsx:299",
     "src/community/pages/Theme.jsx:225",
     "src/community/pages/Theme.jsx:258",
-    "src/community/pages/project/IssueThread.jsx:253",
-    "src/community/pages/project/IssueThread.jsx:262",
+    "src/community/pages/project/IssueThread.jsx:256",
+    "src/community/pages/project/IssueThread.jsx:265",
     "src/community/pages/project/ProjectStage.jsx:95",
     "src/community/pages/project/ReviewPanel.jsx:172"
   ],
@@ -832,8 +832,8 @@
   ],
   "Issue #{value1}": [
     "src/community/components/CommentThread.jsx:103",
-    "src/community/pages/project/IssueList.jsx:181",
-    "src/community/pages/project/IssueThread.jsx:194"
+    "src/community/pages/project/IssueList.jsx:188",
+    "src/community/pages/project/IssueThread.jsx:197"
   ],
   "Donation attached to this comment": [
     "src/community/components/CommentThread.jsx:149"
@@ -864,7 +864,7 @@
     "src/community/components/PostThread.jsx:160",
     "src/community/components/SocialPost.jsx:491",
     "src/community/components/SocialPost.jsx:561",
-    "src/community/pages/project/IssueThread.jsx:273"
+    "src/community/pages/project/IssueThread.jsx:276"
   ],
   "Comment actions": [
     "src/community/components/CommentThread.jsx:192",
@@ -882,15 +882,16 @@
     "src/community/components/CommentThread.jsx:214"
   ],
   "Track as issue": [
-    "src/community/components/CommentThread.jsx:221"
+    "src/community/components/CommentThread.jsx:221",
+    "src/community/pages/project/IssueList.jsx:74"
   ],
   "Mark as done": [
     "src/community/components/CommentThread.jsx:227",
-    "src/community/pages/project/IssueThread.jsx:255"
+    "src/community/pages/project/IssueThread.jsx:258"
   ],
   "Reopen issue": [
     "src/community/components/CommentThread.jsx:233",
-    "src/community/pages/project/IssueThread.jsx:264"
+    "src/community/pages/project/IssueThread.jsx:267"
   ],
   "Stop tracking as issue": [
     "src/community/components/CommentThread.jsx:241"
@@ -930,7 +931,7 @@
     "src/community/pages/Spaces.jsx:301",
     "src/community/pages/Theme.jsx:257",
     "src/community/pages/project/ForkSetupModal.jsx:68",
-    "src/community/pages/project/IssueList.jsx:60"
+    "src/community/pages/project/IssueList.jsx:67"
   ],
   "Post": [
     "src/community/components/CommentThread.jsx:305",
@@ -978,7 +979,7 @@
   ],
   "Could not update the issue.": [
     "src/community/components/CommentThread.jsx:842",
-    "src/community/pages/project/IssueThread.jsx:132"
+    "src/community/pages/project/IssueThread.jsx:135"
   ],
   "Comments are turned off.": [
     "src/community/components/CommentThread.jsx:911",
@@ -1094,7 +1095,7 @@
   ],
   "Code": [
     "src/community/components/DiffView.jsx:19",
-    "src/community/pages/ProjectCode.jsx:217"
+    "src/community/pages/ProjectCode.jsx:221"
   ],
   "Costumes": [
     "src/community/components/DiffView.jsx:19"
@@ -1285,7 +1286,7 @@
   "Loading project…": [
     "src/community/components/FeaturedProject.jsx:102",
     "src/community/pages/Bounties.jsx:116",
-    "src/community/pages/ProjectCode.jsx:214",
+    "src/community/pages/ProjectCode.jsx:218",
     "src/community/pages/project/ProjectStage.jsx:54"
   ],
   "Play project": [
@@ -2163,7 +2164,7 @@
     "src/community/components/classroom/CredentialsResult.jsx:48",
     "src/community/pages/ManageProject.jsx:846",
     "src/community/pages/Roadmap.jsx:34",
-    "src/community/pages/project/IssueThread.jsx:204"
+    "src/community/pages/project/IssueThread.jsx:207"
   ],
   "Search your projects": [
     "src/community/components/MyStuffProjects.jsx:235"
@@ -3112,7 +3113,7 @@
   ],
   "Branches": [
     "src/community/components/ProjectBranches.jsx:232",
-    "src/community/pages/ProjectCode.jsx:220",
+    "src/community/pages/ProjectCode.jsx:224",
     "src/community/pages/project/VersionControlPanel.jsx:23"
   ],
   "Each branch points to its latest saved project version.": [
@@ -3226,7 +3227,7 @@
   ],
   "Remix": [
     "src/community/components/ProjectCard.jsx:97",
-    "src/community/pages/ProjectCode.jsx:250",
+    "src/community/pages/ProjectCode.jsx:254",
     "src/community/pages/project/ProjectBounties.jsx:54",
     "src/community/pages/project/ProjectHeader.jsx:127",
     "src/community/pages/project/ProjectHeader.jsx:254"
@@ -3318,7 +3319,7 @@
   ],
   "Loading project files…": [
     "src/community/components/ProjectFiles.jsx:466",
-    "src/community/pages/ProjectCode.jsx:301",
+    "src/community/pages/ProjectCode.jsx:305",
     "src/community/pages/project/CodeBrowser.jsx:173"
   ],
   "No files yet": [
@@ -4567,7 +4568,7 @@
     "src/community/pages/PullRequest.jsx:555",
     "src/community/pages/admin/ErrorManager.jsx:212",
     "src/community/pages/admin/UserDetailCard.jsx:66",
-    "src/community/pages/project/IssueThread.jsx:204"
+    "src/community/pages/project/IssueThread.jsx:207"
   ],
   "Stopping…": [
     "src/community/components/classroom/PresentControls.jsx:149"
@@ -4671,7 +4672,7 @@
   "Opening…": [
     "src/community/components/classroom/StudentHome.jsx:102",
     "src/community/pages/Classroom.jsx:268",
-    "src/community/pages/project/IssueList.jsx:65"
+    "src/community/pages/project/IssueList.jsx:72"
   ],
   "Start": [
     "src/community/components/classroom/StudentHome.jsx:104"
@@ -6586,7 +6587,7 @@
   "Finding project…": [
     "src/community/pages/Commit.jsx:365",
     "src/community/pages/Project.jsx:627",
-    "src/community/pages/ProjectCode.jsx:354",
+    "src/community/pages/ProjectCode.jsx:358",
     "src/community/pages/PullRequest.jsx:519",
     "src/community/pages/PullRequests.jsx:58",
     "src/community/pages/RemixTree.jsx:197"
@@ -7730,7 +7731,7 @@
     "src/community/pages/News.jsx:299",
     "src/community/pages/PullRequest.jsx:624",
     "src/community/pages/Roadmap.jsx:500",
-    "src/community/pages/project/IssueThread.jsx:271"
+    "src/community/pages/project/IssueThread.jsx:274"
   ],
   "Publish post": [
     "src/community/pages/News.jsx:300"
@@ -8345,13 +8346,15 @@
   ],
   "{value1} branches": [
     "src/community/pages/ProjectCode.jsx:87",
-    "src/community/pages/ProjectCode.jsx:295"
+    "src/community/pages/ProjectCode.jsx:299"
   ],
   "1 open issue": [
-    "src/community/pages/ProjectCode.jsx:88"
+    "src/community/pages/ProjectCode.jsx:88",
+    "src/community/pages/project/IssueList.jsx:155"
   ],
   "{value1} open issues": [
-    "src/community/pages/ProjectCode.jsx:88"
+    "src/community/pages/ProjectCode.jsx:88",
+    "src/community/pages/project/IssueList.jsx:155"
   ],
   "1 open pull request": [
     "src/community/pages/ProjectCode.jsx:89"
@@ -8378,46 +8381,46 @@
     "src/community/pages/ProjectCode.jsx:114"
   ],
   "Developer view · {value1}": [
-    "src/community/pages/ProjectCode.jsx:176"
+    "src/community/pages/ProjectCode.jsx:179"
   ],
   "Issues": [
-    "src/community/pages/ProjectCode.jsx:218"
+    "src/community/pages/ProjectCode.jsx:222"
   ],
   "Commits": [
-    "src/community/pages/ProjectCode.jsx:219",
+    "src/community/pages/ProjectCode.jsx:223",
     "src/community/pages/PullRequest.jsx:570",
     "src/community/pages/RemixTree.jsx:278"
   ],
   "Pull requests": [
-    "src/community/pages/ProjectCode.jsx:221",
+    "src/community/pages/ProjectCode.jsx:225",
     "src/community/pages/PullRequests.jsx:70",
     "src/community/pages/Roadmap.jsx:134",
     "src/community/pages/project/VersionControlPanel.jsx:24"
   ],
   "Releases": [
-    "src/community/pages/ProjectCode.jsx:222",
+    "src/community/pages/ProjectCode.jsx:226",
     "src/community/pages/project/VersionControlPanel.jsx:25"
   ],
   "Project view": [
-    "src/community/pages/ProjectCode.jsx:247"
+    "src/community/pages/ProjectCode.jsx:251"
   ],
   "See inside": [
-    "src/community/pages/ProjectCode.jsx:254",
+    "src/community/pages/ProjectCode.jsx:258",
     "src/community/pages/project/ProjectHeader.jsx:155"
   ],
   "Developer view": [
-    "src/community/pages/ProjectCode.jsx:262",
+    "src/community/pages/ProjectCode.jsx:266",
     "src/community/pages/Settings.jsx:595",
     "src/community/pages/project/ProjectHeader.jsx:147"
   ],
   "Branch": [
-    "src/community/pages/ProjectCode.jsx:287"
+    "src/community/pages/ProjectCode.jsx:291"
   ],
   "The source of this project is private": [
-    "src/community/pages/ProjectCode.jsx:343"
+    "src/community/pages/ProjectCode.jsx:347"
   ],
   "Only people the creator has given access can see its files and history.": [
-    "src/community/pages/ProjectCode.jsx:344"
+    "src/community/pages/ProjectCode.jsx:348"
   ],
   "{title} · Pull request #{index}": [
     "src/community/pages/PullRequest.jsx:286"
@@ -10668,7 +10671,6 @@
   ],
   "{value1} open": [
     "src/community/pages/admin/UserDetailCard.jsx:432",
-    "src/community/pages/project/IssueList.jsx:148",
     "src/community/pages/project/PullList.jsx:58"
   ],
   "None open": [
@@ -10998,93 +11000,95 @@
     "src/community/pages/project/HistoryList.jsx:115"
   ],
   "Could not open the issue.": [
-    "src/community/pages/project/IssueList.jsx:34",
-    "src/community/pages/project/IssueList.jsx:38"
+    "src/community/pages/project/IssueList.jsx:37",
+    "src/community/pages/project/IssueList.jsx:45"
+  ],
+  "Your comment was posted but could not be tracked as an issue. Try again to track it.": [
+    "src/community/pages/project/IssueList.jsx:44"
   ],
   "Describe the issue": [
-    "src/community/pages/project/IssueList.jsx:49"
+    "src/community/pages/project/IssueList.jsx:56"
   ],
   "Describe the bug or idea. It is posted as a comment on the project.": [
-    "src/community/pages/project/IssueList.jsx:50"
+    "src/community/pages/project/IssueList.jsx:57"
   ],
   "Open issue": [
-    "src/community/pages/project/IssueList.jsx:67"
+    "src/community/pages/project/IssueList.jsx:74"
   ],
   "Search issues": [
-    "src/community/pages/project/IssueList.jsx:119"
+    "src/community/pages/project/IssueList.jsx:126"
   ],
   "New issue": [
-    "src/community/pages/project/IssueList.jsx:127"
+    "src/community/pages/project/IssueList.jsx:134"
   ],
-  "{value1} done": [
-    "src/community/pages/project/IssueList.jsx:154"
+  "1 finished issue": [
+    "src/community/pages/project/IssueList.jsx:161"
+  ],
+  "{value1} finished issues": [
+    "src/community/pages/project/IssueList.jsx:161"
   ],
   "Could not load issues.": [
-    "src/community/pages/project/IssueList.jsx:160"
+    "src/community/pages/project/IssueList.jsx:167"
   ],
   "Loading issues…": [
-    "src/community/pages/project/IssueList.jsx:162"
+    "src/community/pages/project/IssueList.jsx:169"
   ],
-  "#{value1} opened {value2} by": [
-    "src/community/pages/project/IssueList.jsx:183",
-    "src/community/pages/project/PullList.jsx:66"
+  "#{value1} opened {value2} by {value3}": [
+    "src/community/pages/project/IssueList.jsx:194"
   ],
   "1 reply": [
-    "src/community/pages/project/IssueList.jsx:204",
-    "src/community/pages/project/IssueThread.jsx:215"
+    "src/community/pages/project/IssueList.jsx:212",
+    "src/community/pages/project/IssueThread.jsx:218"
   ],
   "{value1} replies": [
-    "src/community/pages/project/IssueList.jsx:204",
-    "src/community/pages/project/IssueThread.jsx:215"
+    "src/community/pages/project/IssueList.jsx:212",
+    "src/community/pages/project/IssueThread.jsx:218"
   ],
   "No issues match your search": [
-    "src/community/pages/project/IssueList.jsx:213"
+    "src/community/pages/project/IssueList.jsx:221"
   ],
   "No open issues": [
-    "src/community/pages/project/IssueList.jsx:214"
+    "src/community/pages/project/IssueList.jsx:222"
   ],
   "No finished issues": [
-    "src/community/pages/project/IssueList.jsx:214"
+    "src/community/pages/project/IssueList.jsx:222"
   ],
   "The creator has turned off issues for this project.": [
-    "src/community/pages/project/IssueList.jsx:217"
+    "src/community/pages/project/IssueList.jsx:225"
   ],
   "Any comment can become an issue. Its author or the project team can track it from the comment menu.": [
-    "src/community/pages/project/IssueList.jsx:218"
-  ],
-  "opened this {value1}": [
-    "src/community/pages/project/IssueThread.jsx:38"
+    "src/community/pages/project/IssueList.jsx:226"
   ],
   "Could not post reply.": [
-    "src/community/pages/project/IssueThread.jsx:153"
+    "src/community/pages/project/IssueThread.jsx:156"
   ],
   "All issues": [
-    "src/community/pages/project/IssueThread.jsx:163"
+    "src/community/pages/project/IssueThread.jsx:166"
   ],
   "Could not load this issue.": [
-    "src/community/pages/project/IssueThread.jsx:173"
+    "src/community/pages/project/IssueThread.jsx:176"
   ],
   "Issue not found": [
-    "src/community/pages/project/IssueThread.jsx:183"
+    "src/community/pages/project/IssueThread.jsx:186"
   ],
   "It may have been deleted or turned back into a plain comment.": [
-    "src/community/pages/project/IssueThread.jsx:184"
+    "src/community/pages/project/IssueThread.jsx:187"
   ],
   "Loading issue…": [
-    "src/community/pages/project/IssueThread.jsx:188"
+    "src/community/pages/project/IssueThread.jsx:191"
   ],
   "{value1} marked this done {value2}": [
-    "src/community/pages/project/IssueThread.jsx:208"
+    "src/community/pages/project/IssueThread.jsx:211"
   ],
   "{value1} opened this {value2}": [
-    "src/community/pages/project/IssueThread.jsx:212"
+    "src/community/pages/project/IssueThread.jsx:215"
   ],
   "Reply to this issue": [
-    "src/community/pages/project/IssueThread.jsx:242",
-    "src/community/pages/project/IssueThread.jsx:243"
+    "src/community/pages/project/IssueThread.jsx:245",
+    "src/community/pages/project/IssueThread.jsx:246"
   ],
   "See it with the other comments": [
-    "src/community/pages/project/IssueThread.jsx:281"
+    "src/community/pages/project/IssueThread.jsx:284"
   ],
   "Open pull requests from this project": [
     "src/community/pages/project/OutgoingPullNotice.jsx:36"
@@ -11260,6 +11264,9 @@
   ],
   "{value1} closed": [
     "src/community/pages/project/PullList.jsx:59"
+  ],
+  "#{value1} opened {value2} by": [
+    "src/community/pages/project/PullList.jsx:66"
   ],
   "No open pull requests": [
     "src/community/pages/project/PullList.jsx:75"

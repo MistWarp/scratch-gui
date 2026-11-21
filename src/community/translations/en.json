@@ -3739,7 +3739,6 @@
   "Open issue": "Open issue",
   "Search issues": "Search issues",
   "New issue": "New issue",
-  "{value1} done": "{value1} done",
   "Could not load issues.": "Could not load issues.",
   "Loading issues…": "Loading issues…",
   "1 reply": "1 reply",
@@ -3748,7 +3747,6 @@
   "No finished issues": "No finished issues",
   "The creator has turned off issues for this project.": "The creator has turned off issues for this project.",
   "Any comment can become an issue. Its author or the project team can track it from the comment menu.": "Any comment can become an issue. Its author or the project team can track it from the comment menu.",
-  "opened this {value1}": "opened this {value1}",
   "Could not post reply.": "Could not post reply.",
   "All issues": "All issues",
   "Could not load this issue.": "Could not load this issue.",
@@ -3760,5 +3758,9 @@
   "Reply to this issue": "Reply to this issue",
   "See it with the other comments": "See it with the other comments",
   "Turn off issues": "Turn off issues",
-  "Stops new comments from being tracked as issues. Existing issues stay readable.": "Stops new comments from being tracked as issues. Existing issues stay readable."
+  "Stops new comments from being tracked as issues. Existing issues stay readable.": "Stops new comments from being tracked as issues. Existing issues stay readable.",
+  "Your comment was posted but could not be tracked as an issue. Try again to track it.": "Your comment was posted but could not be tracked as an issue. Try again to track it.",
+  "1 finished issue": "1 finished issue",
+  "{value1} finished issues": "{value1} finished issues",
+  "#{value1} opened {value2} by {value3}": "#{value1} opened {value2} by {value3}"
 }

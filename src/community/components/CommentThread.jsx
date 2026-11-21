@@ -213,19 +213,19 @@ const CommentRow = ({
                                         <Pin size={14} />
                                         {comment.pinned ? communityText('Unpin') : communityText('Pin to top')}
                                     </DropdownItem> : null}
-                                    {showIssueActions && !issueState ? <DropdownItem
+                                    {showIssueActions && canTrackIssue && !issueState ? <DropdownItem
                                         disabled={issueBusy}
                                         onClick={() => {
                                             close(); onIssue('open');
                                         }}
                                     ><CircleDot size={14} />{communityText('Track as issue')}</DropdownItem> : null}
-                                    {showIssueActions && issueState === 'open' ? <DropdownItem
+                                    {showIssueActions && canTrackIssue && issueState === 'open' ? <DropdownItem
                                         disabled={issueBusy}
                                         onClick={() => {
                                             close(); onIssue('done');
                                         }}
                                     ><CircleCheck size={14} />{communityText('Mark as done')}</DropdownItem> : null}
-                                    {showIssueActions && issueState === 'done' ? <DropdownItem
+                                    {showIssueActions && canTrackIssue && issueState === 'done' ? <DropdownItem
                                         disabled={issueBusy}
                                         onClick={() => {
                                             close(); onIssue('open');
