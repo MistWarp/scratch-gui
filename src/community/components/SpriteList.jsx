@@ -47,7 +47,8 @@ const firstImageAsset = (spriteName, files) => {
     return match ? match.path : '';
 };
 
-const SpriteRow = ({sprite, thumb, active, onSelect}) => {
+const SpriteRow = ({sprite, thumb, active, onSelect, describe, labelOf}) => {
+    const label = labelOf ? labelOf(sprite) : sprite.name;
     const {text: communityText} = useCommunityText();
     return (<button
         type="button"
@@ -58,20 +59,22 @@ const SpriteRow = ({sprite, thumb, active, onSelect}) => {
         {thumb?.url && thumb.mediaType.startsWith('image/') ? (
             <span className={styles.thumb}><img src={thumb.url} alt="" draggable={false} /></span>
         ) : (
-            <span className={styles.thumbFallback} aria-hidden="true">{spriteLabel(sprite.name).slice(0, 1)}</span>
+            <span className={styles.thumbFallback} aria-hidden="true">{spriteLabel(label).slice(0, 1)}</span>
         )}
         <span className={styles.rowText}>
-            <strong>{spriteLabel(sprite.name)}</strong>
-            <span>
-                {sprite.files.length}
-                {communityText(' changed file')}
-                {sprite.files.length === 1 ? '' : communityText('s')}
-            </span>
+            <strong>{spriteLabel(label)}</strong>
+            {describe ? <span>{describe(sprite)}</span> : (
+                <span>
+                    {sprite.files.length}
+                    {communityText(' changed file')}
+                    {sprite.files.length === 1 ? '' : communityText('s')}
+                </span>
+            )}
         </span>
     </button>);
 };
 
-const SpriteList = ({files, fileTexts, loadAsset, activeSprite, onSelect}) => {
+const SpriteList = ({files, fileTexts, loadAsset, activeSprite, onSelect, describe, labelOf}) => {
     const {text: communityText} = useCommunityText();
     const sprites = groupFilesBySprite(files).filter(sprite => sprite.name && sprite.name !== 'Stage');
     const [thumbs, setThumbs] = useState({});
@@ -81,7 +84,11 @@ const SpriteList = ({files, fileTexts, loadAsset, activeSprite, onSelect}) => {
         urlsRef.current = [];
     }, []);
     const spritesKey = sprites
-        .map(sprite => `${sprite.name}:${sprite.files.map(file => file.path).join(',')}`)
+        .map(sprite => [
+            sprite.name,
+            currentCostumeAsset(sprite.name, fileTexts),
+            sprite.files.map(file => file.path).join(',')
+        ].join(':'))
         .join('|');
 
     useEffect(() => {
@@ -127,6 +134,8 @@ const SpriteList = ({files, fileTexts, loadAsset, activeSprite, onSelect}) => {
                     thumb={thumbs[sprite.name]}
                     active={activeSprite === sprite.name}
                     onSelect={onSelect}
+                    describe={describe}
+                    labelOf={labelOf}
                 />
             ))}
         </aside>
@@ -138,13 +147,17 @@ SpriteList.propTypes = {
     fileTexts: PropTypes.object,
     loadAsset: PropTypes.func,
     activeSprite: PropTypes.string,
-    onSelect: PropTypes.func.isRequired
+    onSelect: PropTypes.func.isRequired,
+    describe: PropTypes.func,
+    labelOf: PropTypes.func
 };
 
 SpriteList.defaultProps = {
     fileTexts: {},
     loadAsset: null,
-    activeSprite: ''
+    activeSprite: '',
+    describe: null,
+    labelOf: null
 };
 
 export default SpriteList;

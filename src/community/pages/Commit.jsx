@@ -6,6 +6,7 @@ import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import api from '../api';
 import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
 import Avatar from '../components/Avatar.jsx';
+import ChangesView from '../components/ChangesView.jsx';
 import DiffView, {parseDiff} from '../components/DiffView.jsx';
 import ProjectFiles from '../components/ProjectFiles.jsx';
 import SpriteList from '../components/SpriteList.jsx';
@@ -23,6 +24,14 @@ import {textsFromInspectionFiles} from '../fractch-summary.js';
 import {formatDateTime} from '../format.js';
 import setPageMeta from '../page-meta.js';
 import {loadCommitInspection} from '../commit-diff.js';
+import {
+    analyseChanges,
+    describeTarget,
+    findTarget,
+    isChangesResponse,
+    loadSpriteTexts,
+    sidebarFilesFor
+} from '../commit-changes.js';
 import {canViewProjectSource} from '../project-source-access.js';
 import {useUser} from '../UserContext.jsx';
 import styles from './Commit.module.css';
@@ -49,6 +58,41 @@ export const commitMutationSha = (result, fallback) => (
     result?.commit?.sha || result?.sha || result?.rewrittenSha || fallback
 );
 
+const remixBaseFor = (project, sha) => ({
+    enabled: Boolean(project.remixParent && project.remixBaseCommit && project.gitHead === sha),
+    projectId: project.remixParent,
+    sha: project.remixBaseCommit,
+    currentHead: project.gitHead
+});
+
+export const usableChanges = (changes, remixBase) => {
+    if (!isChangesResponse(changes)) return null;
+    const empty = !changes.targets.length && !(changes.files || []).length;
+    if (empty && remixBase?.enabled) return null;
+    return changes;
+};
+
+const loadChanges = async (id, sha, remixBase) => {
+    try {
+        return usableChanges(await api.commitChanges(id, sha), remixBase);
+    } catch (error) {
+        return null;
+    }
+};
+
+const entryFromCommit = (inspected, sha) => {
+    const metadata = inspected.commit || {};
+    return {
+        ...metadata,
+        ...inspected,
+        oid: inspected.oid || inspected.sha || sha,
+        message: inspected.message || metadata.message || '',
+        date: inspected.date || metadata.date || 0,
+        authorName: metadata.author?.name || metadata.author || '',
+        coAuthors: metadata.coAuthors || metadata.collaborators || []
+    };
+};
+
 const Commit = () => {
     const {text: communityText} = useCommunityText();
     const {slug, sha} = useParams();
@@ -61,6 +105,9 @@ const Commit = () => {
     const [loadedContext, setLoadedContext] = useState('');
     const [entry, setEntry] = useState(null);
     const [diff, setDiff] = useState(null);
+    const [changes, setChanges] = useState(null);
+    const [lineDiffError, setLineDiffError] = useState('');
+    const [thumbTexts, setThumbTexts] = useState(null);
     const [activeSprite, setActiveSprite] = useState('');
     const [error, setError] = useState('');
     const [manageOpen, setManageOpen] = useState(false);
@@ -83,42 +130,34 @@ const Commit = () => {
                 throw new Error('You do not have permission to view commits for this project.');
             }
             const coAuthorsPromise = api.commitCoAuthors(id, sha).catch(() => null);
-            const remoteInspection = await api.commitInspection(id, sha);
-            if (contextRef.current !== context) return;
-            setLoadProgress({progress: 34, label: 'Reading project details'});
             const loadedProject = projectData.project || projectData;
-            const inspected = await loadCommitInspection({
-                apiClient: api,
-                projectId: id,
-                sha,
-                inspection: remoteInspection,
-                onProgress: next => {
-                    if (contextRef.current === context) setLoadProgress(next);
-                },
-                remixBase: {
-                    enabled: Boolean(
-                        loadedProject.remixParent &&
-                        loadedProject.remixBaseCommit &&
-                        loadedProject.gitHead === sha
-                    ),
-                    projectId: loadedProject.remixParent,
-                    sha: loadedProject.remixBaseCommit,
-                    currentHead: loadedProject.gitHead
-                }
-            });
+            const remixBase = remixBaseFor(loadedProject, sha);
+            setLoadProgress({progress: 24, label: 'Reading commit'});
+            const structured = await loadChanges(id, sha, remixBase);
             if (contextRef.current !== context) return;
+            let inspected = structured;
+            if (!structured) {
+                const remoteInspection = await api.commitInspection(id, sha);
+                if (contextRef.current !== context) return;
+                setLoadProgress({progress: 34, label: 'Reading project details'});
+                inspected = await loadCommitInspection({
+                    apiClient: api,
+                    projectId: id,
+                    sha,
+                    inspection: remoteInspection,
+                    onProgress: next => {
+                        if (contextRef.current === context) setLoadProgress(next);
+                    },
+                    remixBase
+                });
+                if (contextRef.current !== context) return;
+            }
             const metadata = inspected.commit || {};
             setProject(loadedProject);
             setLoadedContext(context);
-            setEntry({
-                ...metadata,
-                ...inspected,
-                message: inspected.message || metadata.message || '',
-                date: inspected.date || metadata.date || 0,
-                authorName: metadata.author?.name || metadata.author || '',
-                coAuthors: metadata.coAuthors || metadata.collaborators || []
-            });
-            setDiff(inspected.diff || 'No textual changes.');
+            setEntry(entryFromCommit(inspected, sha));
+            setChanges(structured);
+            setDiff(structured ? null : (inspected.diff || 'No textual changes.'));
             setPageMeta({title: communityText('{value1} · Commit', {value1: metadata.message || sha.slice(0, 7)})});
             coAuthorsPromise.then(coAuthorData => {
                 if (!coAuthorData || contextRef.current !== context) return;
@@ -136,6 +175,9 @@ const Commit = () => {
         setProject(null);
         setEntry(null);
         setDiff(null);
+        setChanges(null);
+        setLineDiffError('');
+        setThumbTexts(null);
         setActiveSprite('');
         setLoadProgress({progress: 8, label: 'Finding this commit'});
         load();
@@ -146,6 +188,20 @@ const Commit = () => {
         ...textsFromInspectionFiles(entry?.files || []),
         ...entry?.fileTexts
     }), [entry]);
+    const analysis = useMemo(() => (changes ? analyseChanges(changes) : null), [changes]);
+    const sidebarFiles = useMemo(() => sidebarFilesFor(analysis), [analysis]);
+    const describeSprite = useCallback(
+        sprite => {
+            const target = findTarget(analysis, sprite.name);
+            return target ? describeTarget(target, communityText) : '';
+        },
+        [analysis, communityText]
+    );
+    const labelSprite = useCallback(sprite => findTarget(analysis, sprite.name)?.name || sprite.name, [analysis]);
+    const changeCount = useMemo(() => (analysis ? analysis.targets.reduce(
+        (total, target) => total + target.count,
+        analysis.others.length
+    ) : 0), [analysis]);
     const assetMeta = useMemo(() => {
         const meta = new Map();
         for (const change of entry?.files || []) meta.set(change.path, change);
@@ -166,11 +222,20 @@ const Commit = () => {
         const result = await api.commitFile(target.projectId, target.sha, path);
         return {bytes: base64ToBytes(result.content || ''), mediaType: mediaTypeForAssetPath(path)};
     }, [assetMeta, commitParent, commitParentProject, id, sha]);
-    const fileView = searchParams.get('view') === 'files';
+    const viewParam = searchParams.get('view');
+    const fileView = viewParam === 'files';
+    const lineView = Boolean(changes) && viewParam === 'lines';
+    const activeView = fileView ? 'files' : lineView ? 'lines' : 'changes';
     const historicalPath = searchParams.get('path') || '';
     const showDiff = () => {
         const next = new URLSearchParams(searchParams);
         next.delete('view');
+        next.delete('path');
+        setSearchParams(next);
+    };
+    const showLines = () => {
+        const next = new URLSearchParams(searchParams);
+        next.set('view', 'lines');
         next.delete('path');
         setSearchParams(next);
     };
@@ -187,6 +252,43 @@ const Commit = () => {
         next.set('path', path);
         setSearchParams(next, {replace: true});
     };
+
+    useEffect(() => {
+        if (!lineView || diff !== null || lineDiffError || !project) return () => {};
+        let active = true;
+        (async () => {
+            try {
+                const inspected = await loadCommitInspection({
+                    apiClient: api,
+                    projectId: id,
+                    sha,
+                    remixBase: remixBaseFor(project, sha)
+                });
+                if (!active) return;
+                setEntry(current => (current ? {...current, fileTexts: inspected.fileTexts} : current));
+                setDiff(inspected.diff || 'No textual changes.');
+            } catch (loadError) {
+                if (active) setLineDiffError(loadError.message || 'Could not load the file diff.');
+            }
+        })();
+        return () => {
+            active = false;
+        };
+    }, [lineView, diff, lineDiffError, project, id, sha]);
+
+    useEffect(() => {
+        if (!analysis) return () => {};
+        let active = true;
+        loadSpriteTexts(analysis, async path => {
+            const result = await api.commitFile(id, sha, path);
+            return new TextDecoder().decode(base64ToBytes(result.content || ''));
+        }).then(texts => {
+            if (active) setThumbTexts(texts);
+        });
+        return () => {
+            active = false;
+        };
+    }, [analysis, id, sha]);
 
     const baseUrl = projectBaseUrl({project, projectId: id, vanitySlug: slug});
 
@@ -315,17 +417,25 @@ const Commit = () => {
                     <code>{entry.oid}</code>
                 </div>
                 <UnderlineTabs
-                    items={[
+                    items={changes ? [
+                        {key: 'changes', label: changeCount ? <>{communityText('Changes')} <b>{changeCount}</b></> : communityText('Changes')},
+                        {key: 'lines', label: communityText('File diff')},
+                        {key: 'files', label: communityText('Files at this commit')}
+                    ] : [
                         {key: 'changes', label: <>{communityText('Changes')} <b>{files.length}</b></>},
                         {key: 'files', label: communityText('Files at this commit')}
                     ]}
-                    value={fileView ? 'files' : 'changes'}
-                    onChange={key => (key === 'files' ? showFiles(historicalPath) : showDiff())}
+                    value={activeView}
+                    onChange={key => {
+                        if (key === 'files') showFiles(historicalPath);
+                        else if (key === 'lines') showLines();
+                        else showDiff();
+                    }}
                     ariaLabel="Commit views"
                     idPrefix="commit"
                 />
             </PageHeader>
-            <div {...tabPanelProps('commit', fileView ? 'files' : 'changes')}>
+            <div {...tabPanelProps('commit', activeView)}>
                 {fileView ? (
                     <ProjectFiles
                         bounded
@@ -333,6 +443,31 @@ const Commit = () => {
                         initialPath={historicalPath}
                         onSelectPath={selectHistoricalFile}
                     />
+                ) : changes && !lineView ? (
+                    <div className={styles.layout}>
+                        <SpriteList
+                            files={sidebarFiles}
+                            fileTexts={thumbTexts || {}}
+                            loadAsset={thumbTexts ? loadCommitAsset : null}
+                            activeSprite={activeSprite}
+                            describe={describeSprite}
+                            labelOf={labelSprite}
+                            onSelect={name => setActiveSprite(current => (current === name ? '' : name))}
+                        />
+                        <section className={styles.diff}>
+                            <ChangesView
+                                analysis={analysis}
+                                spriteFilter={activeSprite}
+                                loadAsset={loadCommitAsset}
+                                onOpenFile={showFiles}
+                                onShowLines={showLines}
+                            />
+                        </section>
+                    </div>
+                ) : lineView && lineDiffError ? (
+                    <StatusMessage error onRetry={() => setLineDiffError('')}>{lineDiffError}</StatusMessage>
+                ) : lineView && diff === null ? (
+                    <StatusMessage>{communityText('Loading diff…')}</StatusMessage>
                 ) : files.length ? (
                     <div className={styles.layout}>
                         <SpriteList

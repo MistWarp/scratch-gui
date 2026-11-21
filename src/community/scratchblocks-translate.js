@@ -771,3 +771,27 @@ const describeScriptHead = script => {
     }
     return 'Script';
 };
+
+const firstScript = source => {
+    if (!source) return null;
+    try {
+        const parsed = parseFractch(source);
+        if ((parsed.errors || []).length) return null;
+        return (parsed.scripts || [])[0] || null;
+    } catch (error) {
+        return null;
+    }
+};
+
+export const scriptChangeDiff = (beforeSource, afterSource) => {
+    const before = firstScript(beforeSource);
+    const after = firstScript(afterSource);
+    if ((beforeSource && !before) || (afterSource && !after) || (!before && !after)) return null;
+    return {
+        desc: describeScriptHead(after || before),
+        diff: compactScriptDiff(mergeScriptDiff(
+            before ? translateScript(before) : '',
+            after ? translateScript(after) : ''
+        ))
+    };
+};

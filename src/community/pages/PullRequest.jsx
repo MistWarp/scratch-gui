@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import api, {projectUrl} from '../api';
 import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
+import ChangesView from '../components/ChangesView.jsx';
 import DiffView, {parseDiff} from '../components/DiffView.jsx';
 import SpriteList from '../components/SpriteList.jsx';
 import Avatar from '../components/Avatar.jsx';
@@ -26,6 +27,14 @@ import {useUser} from '../UserContext.jsx';
 import {formatDate, timeAgo} from '../format.js';
 import setPageMeta from '../page-meta.js';
 import {buildCommitDiffFromInspection, loadCommitFileTexts, withFileCache} from '../commit-diff.js';
+import {
+    analyseChanges,
+    describeTarget,
+    findTarget,
+    isChangesResponse,
+    loadSpriteTexts,
+    sidebarFilesFor
+} from '../commit-changes.js';
 import {base64ToBytes, mediaTypeForAssetPath} from '../asset-media.js';
 import {buildProjectArtifactsFromFileEntries} from '../../lib/git/mwp.js';
 import styles from './PullRequest.module.css';
@@ -104,9 +113,18 @@ export const writePullDiffCache = (pull, diff) => {
     });
 };
 
-export const shouldLoadPullDiff = ({tab, pull, diff, diffError}) => (
-    tab === 'files' && Boolean(pull) && diff === null && !diffError
+export const shouldLoadPullDiff = ({tab, pull, diff, diffError, changes = null, fileDiff = false}) => (
+    tab === 'files' && Boolean(pull) && diff === null && !diffError && (!changes || fileDiff)
 );
+
+const loadPullChanges = async (id, index) => {
+    try {
+        const data = await api.pullChanges(id, index);
+        return isChangesResponse(data?.inspection) ? data.inspection : null;
+    } catch (error) {
+        return null;
+    }
+};
 
 export const pullApiFor = (apiClient, data) => ({
     commitFile: (projectId, sha, path) => apiClient.commitFile(
@@ -162,6 +180,9 @@ const PullRequest = () => {
     const [pull, setPull] = useState(null);
     const [diff, setDiff] = useState(null);
     const [fileTexts, setFileTexts] = useState({});
+    const [changes, setChanges] = useState(null);
+    const [spriteTexts, setSpriteTexts] = useState(null);
+    const [fileDiff, setFileDiff] = useState(false);
     const [assetRefs, setAssetRefs] = useState(null);
     const [timeline, setTimeline] = useState({comments: [], commits: [], targetCommits: []});
     const [tab, setTab] = useState('conversation');
@@ -181,7 +202,7 @@ const PullRequest = () => {
     const diffRequestRef = useRef('');
     contextRef.current = `${viewer}:${id}:${index}`;
 
-    const loadDiff = useCallback(async (activePull, context) => {
+    const loadDiff = useCallback(async (activePull, context, wantFileDiff = false) => {
         if (contextRef.current !== context || loadedContext !== context) return;
         if (diffRequestRef.current === context) return;
         diffRequestRef.current = context;
@@ -194,6 +215,16 @@ const PullRequest = () => {
                 pullIndex: activePull.index,
                 pullTarget: activePull.targetProjectId || ''
             });
+        }
+        if (!wantFileDiff) {
+            setDiffError('');
+            const structured = await loadPullChanges(id, index);
+            if (contextRef.current !== context) return;
+            if (structured) {
+                setChanges(structured);
+                if (diffRequestRef.current === context) diffRequestRef.current = '';
+                return;
+            }
         }
         const cached = readPullDiffCache(activePull);
         if (cached !== null) {
@@ -265,6 +296,9 @@ const PullRequest = () => {
         setPull(null);
         setDiff(null);
         setFileTexts({});
+        setChanges(null);
+        setSpriteTexts(null);
+        setFileDiff(false);
         setAssetRefs(null);
         setTimeline({comments: [], commits: [], targetCommits: []});
         setTab('conversation');
@@ -281,9 +315,9 @@ const PullRequest = () => {
     }, [load]);
 
     useEffect(() => {
-        if (!shouldLoadPullDiff({tab, pull, diff, diffError})) return;
-        loadDiff(pull, `${viewer}:${id}:${index}`);
-    }, [diff, diffError, id, index, loadDiff, pull, tab, viewer]);
+        if (!shouldLoadPullDiff({tab, pull, diff, diffError, changes, fileDiff})) return;
+        loadDiff(pull, `${viewer}:${id}:${index}`, fileDiff);
+    }, [changes, diff, diffError, fileDiff, id, index, loadDiff, pull, tab, viewer]);
 
     const uploadMerge = async (data, activePull, files) => {
         const result = await buildProjectArtifactsFromFileEntries(
@@ -428,6 +462,36 @@ const PullRequest = () => {
     };
 
     const files = useMemo(() => parseDiff(diff), [diff]);
+    const analysis = useMemo(() => (changes ? analyseChanges(changes) : null), [changes]);
+    const showChanges = Boolean(analysis) && !fileDiff;
+    const sidebarFiles = useMemo(() => (showChanges ? sidebarFilesFor(analysis) : files), [showChanges, analysis, files]);
+    const describeSprite = useCallback(
+        sprite => {
+            const target = findTarget(analysis, sprite.name);
+            return target ? describeTarget(target, communityText) : '';
+        },
+        [analysis, communityText]
+    );
+    const labelSprite = useCallback(sprite => findTarget(analysis, sprite.name)?.name || sprite.name, [analysis]);
+    useEffect(() => {
+        if (!analysis || !pull) return () => {};
+        let active = true;
+        loadSpriteTexts(analysis, async path => {
+            const result = await api.commitFile(
+                pull.sourceProjectId || id,
+                pull.headCommit,
+                path,
+                pull.index,
+                pull.targetProjectId || ''
+            );
+            return new TextDecoder().decode(base64ToBytes(result.content || ''));
+        }).then(texts => {
+            if (active) setSpriteTexts(texts);
+        });
+        return () => {
+            active = false;
+        };
+    }, [analysis, pull, id]);
     const loadPullAsset = useCallback(async (side, path) => {
         if (!assetRefs) return null;
         const target = side === 'old' ?
@@ -474,7 +538,9 @@ const PullRequest = () => {
     const open = pull.state === 'open';
     const canMerge = typeof pull.canMerge === 'boolean' ? pull.canMerge : canMergePullRequest(project);
     const canClose = canClosePullRequest(project, pull, user);
-    const changedFileCount = diff === null ? (pull.fileCount ?? pull.filesChanged ?? '…') : files.length;
+    const changedFileCount = analysis && !fileDiff ?
+        analysis.targets.reduce((total, entry) => total + entry.count, analysis.others.length) :
+        diff === null ? (pull.fileCount ?? pull.filesChanged ?? '…') : files.length;
     return (
         <main className={styles.page}>
             <PageHeader
@@ -598,14 +664,30 @@ const PullRequest = () => {
                 ) : (
                     <div className={styles.filesLayout}>
                         <SpriteList
-                            files={files}
-                            fileTexts={fileTexts}
-                            loadAsset={loadPullAsset}
+                            files={sidebarFiles}
+                            fileTexts={showChanges ? (spriteTexts || {}) : fileTexts}
+                            loadAsset={showChanges && !spriteTexts ? null : loadPullAsset}
                             activeSprite={activeSprite}
+                            describe={showChanges ? describeSprite : null}
+                            labelOf={showChanges ? labelSprite : null}
                             onSelect={name => setActiveSprite(current => (current === name ? '' : name))}
                         />
                         <section className={styles.diffColumn}>
-                            {diffError ? <StatusMessage error onRetry={() => loadDiff(pull, `${viewer}:${id}:${index}`)}>{diffError}</StatusMessage> : diff === null ? (
+                            {analysis ? (
+                                <div className={styles.diffViewSwitch}>
+                                    <Button onClick={() => setFileDiff(current => !current)}>
+                                        {fileDiff ? communityText('Show summary') : communityText('Show file diff')}
+                                    </Button>
+                                </div>
+                            ) : null}
+                            {showChanges ? (
+                                <ChangesView
+                                    analysis={analysis}
+                                    spriteFilter={activeSprite}
+                                    loadAsset={loadPullAsset}
+                                    onShowLines={() => setFileDiff(true)}
+                                />
+                            ) : diffError ? <StatusMessage error onRetry={() => loadDiff(pull, `${viewer}:${id}:${index}`, fileDiff)}>{diffError}</StatusMessage> : diff === null ? (
                                 <StatusMessage>{communityText('Loading file changes…')}</StatusMessage>
                             ) : <DiffView diff={diff} spriteFilter={activeSprite} loadAsset={loadPullAsset} fileTexts={fileTexts} />}
                         </section>
