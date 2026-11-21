@@ -32,6 +32,10 @@ export default {
             cache: false, timeoutMs: SLOW_GET_TIMEOUT
         });
     },
+    commitChanges: (id, sha) => request(
+        `/projects/${id}/commits/${encodeURIComponent(sha)}/changes${projectAccessQuery()}`,
+        {cache: false, timeoutMs: SLOW_GET_TIMEOUT}
+    ),
     commitTree: (id, sha) => request(
         `/projects/${id}/commits/${encodeURIComponent(sha)}/tree${projectAccessQuery()}`,
         {cache: false, timeoutMs: SLOW_GET_TIMEOUT}
@@ -60,6 +64,9 @@ export default {
     deletePullComment: (id, index, comment) =>
         request(`/projects/${id}/pulls/${index}/comments/${comment}`, {method: 'DELETE'}),
     pullDiff: (id, index) => request(`/projects/${id}/pulls/${index}/diff?inline=1`, {
+        cache: false, timeoutMs: SLOW_GET_TIMEOUT
+    }),
+    pullChanges: (id, index) => request(`/projects/${id}/pulls/${index}/diff?view=changes`, {
         cache: false, timeoutMs: SLOW_GET_TIMEOUT
     }),
     mergePull: (id, index) => request(`/projects/${id}/pulls/${index}/merge`, {method: 'POST'}),

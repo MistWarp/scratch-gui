@@ -387,6 +387,12 @@
     margin-top: 0;
 }
 
+.diffColumn > .diffViewSwitch {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 12px;
+}
+
 .conflicts {
     display: grid;
     gap: 14px;
