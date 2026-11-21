@@ -681,6 +681,7 @@ const Project = () => {
                 toggleLibrary={toggleLibrary}
                 savingLibrary={savingLibrary}
                 seeInsideHref={seeInsideHref}
+                codeHref={`${baseProjectUrl}/code`}
                 copyLink={copyLink}
                 setCollectionOpen={setCollectionOpen}
                 thumbnailStatus={thumbnailStatus}

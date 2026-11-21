@@ -243,7 +243,9 @@ const pagesAndAssets = (env, root, library, generatedInputs) => {
                 filename = `${filename.split('/').pop()}.html`;
             } else if (/^\d+$/.test(filename)) filename = 'player.html';
             else if (['addons', 'credits'].includes(filename)) filename += '.html';
-            else if (!filename || !path.extname(filename)) filename = 'index.html';
+            else if (!filename || !path.extname(filename) || /\/code\/(?:tree|blob)\//.test(filename)) {
+                filename = 'index.html';
+            }
             if (!pages.has(filename)) return next();
             try {
                 res.setHeader('Content-Type', 'text/html');

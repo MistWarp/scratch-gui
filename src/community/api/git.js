@@ -47,6 +47,10 @@ export default {
         `/projects/${id}/commits/${encodeURIComponent(sha)}/tree${projectAccessQuery()}`,
         {cache: false, timeoutMs: SLOW_GET_TIMEOUT}
     ),
+    commitLastCommits: (id, sha) => request(
+        `/projects/${id}/commits/${encodeURIComponent(sha)}/last-commits${projectAccessQuery()}`,
+        {cache: false, timeoutMs: SLOW_GET_TIMEOUT}
+    ),
     commitFile: (id, sha, path, pull = '', pullTarget = '') => {
         const params = new URLSearchParams(projectAccessQuery().replace(/^\?/, ''));
         params.set('path', path);
