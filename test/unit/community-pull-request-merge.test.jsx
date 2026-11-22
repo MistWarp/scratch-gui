@@ -272,7 +272,7 @@ describe('pull request merges', () => {
         expect(changesView.prop('analysis').targets.map(entry => entry.dir)).toEqual(['Fresh']);
     });
 
-    test('points at the branches page while the project is on another branch', async () => {
+    test('explains why a pull cannot be merged while the project is on another branch', async () => {
         api.getProject.mockImplementation(id => Promise.resolve({
             project: {id, title: id, owner: 'sam', isOwner: id === 'target', canViewSource: true, gitHead: sha('c'), gitBranch: 'feature'}
         }));
@@ -280,7 +280,60 @@ describe('pull request merges', () => {
         const wrapper = mountPull();
         await settle(wrapper);
         expect(button(wrapper, 'Merge pull request')).toHaveLength(0);
-        const link = wrapper.find('a').filterWhere(item => item.text() === 'Switch this project to the main branch before merging this pull request.');
-        expect(link.prop('href')).toBe('/project/target/code/branches');
+        expect(wrapper.text()).toContain('This pull request targets the main branch, and this project is on feature. It can be merged once the project is back on main.');
+    });
+
+    test('a diff that cannot be compared explains itself and can be retried', async () => {
+        api.pullChanges.mockReset().mockResolvedValue({inspection: {legacy: true}});
+        api.pullDiff.mockReset()
+            .mockRejectedValueOnce(Object.assign(new Error('raw server text'), {code: 'pull_history_unavailable', status: 409}))
+            .mockReturnValue(new Promise(() => {}));
+        const wrapper = mountPull();
+        await settle(wrapper);
+        await act(async () => {
+            wrapper.find('[role="tab"]').filterWhere(item => item.text().includes('Files changed'))
+                .simulate('click');
+        });
+        await settle(wrapper);
+        expect(wrapper.text()).toContain('The changes in this pull request could not be compared with the project.');
+        expect(wrapper.text()).not.toContain('raw server text');
+        await act(async () => {
+            wrapper.find('button').filterWhere(item => item.text().includes('Retry') || item.text().includes('Try again'))
+                .first()
+                .simulate('click');
+        });
+        await settle(wrapper);
+        expect(api.pullDiff).toHaveBeenCalledTimes(2);
+    });
+
+    test('a restart from the file diff brings the summary back', async () => {
+        api.pullChanges.mockReset().mockResolvedValue({inspection: {ok: true, targets: [{path: 'Cat'}]}, pull});
+        api.pullDiff.mockReset().mockReturnValue(new Promise(() => {}));
+        api.mergePull.mockRejectedValue(Object.assign(new Error('moved'), {code: 'pull_head_changed', status: 409}));
+        const wrapper = mountPull();
+        await settle(wrapper);
+        const tab = label => wrapper.find('[role="tab"]').filterWhere(item => item.text().includes(label));
+        await act(async () => {
+            tab('Files changed').simulate('click');
+        });
+        await settle(wrapper);
+        await act(async () => {
+            button(wrapper, 'Show file diff').simulate('click');
+        });
+        await settle(wrapper);
+        await act(async () => {
+            tab('Conversation').simulate('click');
+        });
+        await settle(wrapper);
+        await act(async () => {
+            button(wrapper, 'Merge pull request').simulate('click');
+        });
+        await settle(wrapper);
+        await act(async () => {
+            tab('Files changed').simulate('click');
+        });
+        await settle(wrapper);
+        expect(wrapper.find('ChangesView').exists()).toBe(true);
+        expect(api.pullChanges).toHaveBeenCalledTimes(2);
     });
 });

@@ -229,6 +229,7 @@ const PullRequest = () => {
     const [mergeError, setMergeError] = useState('');
     const [merging, setMerging] = useState(false);
     const [mergeSession, setMergeSession] = useState(null);
+    const [targetBranchGone, setTargetBranchGone] = useState(false);
     const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
     const [closing, setClosing] = useState(false);
     const [closeError, setCloseError] = useState('');
@@ -348,6 +349,7 @@ const PullRequest = () => {
         setTab('conversation');
         setActiveSprite('');
         setMergeSession(null);
+        setTargetBranchGone(false);
         setMergeError('');
         setCloseConfirmOpen(false);
         setClosing(false);
@@ -375,6 +377,7 @@ const PullRequest = () => {
     const failMerge = async (error, fallback) => {
         const failure = pullMergeFailure(error, communityText, fallback);
         setMergeError(failure.message);
+        if (error?.code === 'target_branch_missing') setTargetBranchGone(true);
         if (!failure.restart) return;
         setMergeSession(null);
         diffGenerationRef.current += 1;
@@ -384,6 +387,7 @@ const PullRequest = () => {
         setChanges(null);
         setFileTexts({});
         setSpriteTexts(null);
+        setFileDiff(false);
         setDiffError('');
     };
 
@@ -583,7 +587,7 @@ const PullRequest = () => {
     const open = pull.state === 'open';
     const canMerge = typeof pull.canMerge === 'boolean' ? pull.canMerge : canMergePullRequest(project);
     const canClose = canClosePullRequest(project, pull, user);
-    const wrongBranch = Boolean(pull.baseBranch && project.gitBranch && pull.baseBranch !== project.gitBranch);
+    const wrongBranch = Boolean(pull.baseBranch && project.gitBranch && pull.baseBranch !== project.gitBranch && !targetBranchGone);
     const changedFileCount = analysis && !fileDiff ?
         analysis.targets.reduce((total, entry) => total + entry.count, analysis.others.length) :
         diff === null ? (pull.fileCount ?? pull.filesChanged ?? '…') : files.length;
@@ -685,9 +689,7 @@ const PullRequest = () => {
                                 <p className={styles.note}>{communityText('Resolve the conflicts below to finish merging.')}</p>
                             ) : open && canMerge && wrongBranch ? (
                                 <p className={styles.note}>
-                                    <Link to={`${baseUrl}/code/branches`}>
-                                        {communityText('Switch this project to the {value1} branch before merging this pull request.', {value1: pull.baseBranch})}
-                                    </Link>
+                                    {communityText('This pull request targets the {value1} branch, and this project is on {value2}. It can be merged once the project is back on {value1}.', {value1: pull.baseBranch, value2: project.gitBranch})}
                                 </p>
                             ) : open && canMerge ? (
                                 <Button variant="primary" onClick={merge} busy={merging} busyLabel={communityText('Merging…')}>{communityText('Merge pull request')}</Button>

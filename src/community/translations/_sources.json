@@ -301,8 +301,8 @@
   "Untitled commit": [
     "src/community/commit-summary.js:81",
     "src/community/pages/Commit.jsx:416",
-    "src/community/pages/PullRequest.jsx:653",
-    "src/community/pages/PullRequest.jsx:713",
+    "src/community/pages/PullRequest.jsx:657",
+    "src/community/pages/PullRequest.jsx:715",
     "src/community/pages/RemixTree.jsx:115"
   ],
   "1 changed file": [
@@ -410,7 +410,7 @@
     "src/community/components/CommentThread.jsx:31",
     "src/community/components/CommentThread.jsx:89",
     "src/community/pages/Bounty.jsx:168",
-    "src/community/pages/PullRequest.jsx:670",
+    "src/community/pages/PullRequest.jsx:674",
     "src/community/pages/admin/labels.js:11"
   ],
   "Monitor": [
@@ -912,7 +912,7 @@
     "src/community/components/CommentThread.jsx:252",
     "src/community/components/CommentThread.jsx:1173",
     "src/community/pages/Bounty.jsx:162",
-    "src/community/pages/PullRequest.jsx:643"
+    "src/community/pages/PullRequest.jsx:647"
   ],
   "Cancel": [
     "src/community/components/CommentThread.jsx:269",
@@ -937,7 +937,7 @@
     "src/community/pages/ManageSpace.jsx:762",
     "src/community/pages/MyStuff.jsx:1298",
     "src/community/pages/News.jsx:293",
-    "src/community/pages/PullRequest.jsx:778",
+    "src/community/pages/PullRequest.jsx:780",
     "src/community/pages/Roadmap.jsx:501",
     "src/community/pages/Spaces.jsx:301",
     "src/community/pages/Theme.jsx:257",
@@ -3146,7 +3146,7 @@
   ],
   "Choose a version for {value1}.": [
     "src/community/components/ProjectBranches.jsx:122",
-    "src/community/pages/PullRequest.jsx:428",
+    "src/community/pages/PullRequest.jsx:432",
     "src/community/use-remix-sync.js:134"
   ],
   "Could not resolve the merge.": [
@@ -3205,8 +3205,8 @@
   "Merging…": [
     "src/community/components/ProjectBranches.jsx:253",
     "src/community/components/ProjectBranches.jsx:276",
-    "src/community/pages/PullRequest.jsx:693",
-    "src/community/pages/PullRequest.jsx:763"
+    "src/community/pages/PullRequest.jsx:695",
+    "src/community/pages/PullRequest.jsx:765"
   ],
   "Merge branches": [
     "src/community/components/ProjectBranches.jsx:255"
@@ -3216,7 +3216,7 @@
   ],
   "Resolve merge conflicts": [
     "src/community/components/ProjectBranches.jsx:268",
-    "src/community/pages/PullRequest.jsx:755"
+    "src/community/pages/PullRequest.jsx:757"
   ],
   "Edit text conflicts and choose which branch to keep for assets.": [
     "src/community/components/ProjectBranches.jsx:269"
@@ -3229,7 +3229,7 @@
   ],
   "Save resolutions and merge": [
     "src/community/components/ProjectBranches.jsx:274",
-    "src/community/pages/PullRequest.jsx:761"
+    "src/community/pages/PullRequest.jsx:763"
   ],
   "New name for {value1}": [
     "src/community/components/ProjectBranches.jsx:314"
@@ -3446,8 +3446,8 @@
     "src/community/components/ProjectInfoPanel.jsx:212",
     "src/community/components/classroom/PresentControls.jsx:94",
     "src/community/components/classroom/PresentControls.jsx:98",
-    "src/community/pages/PullRequest.jsx:594",
-    "src/community/pages/PullRequest.jsx:610",
+    "src/community/pages/PullRequest.jsx:598",
+    "src/community/pages/PullRequest.jsx:614",
     "src/community/pages/RemixTree.jsx:192",
     "src/community/pages/admin/ShadowBansSection.jsx:61",
     "src/community/pages/admin/labels.js:9"
@@ -4637,7 +4637,7 @@
     "src/community/components/classroom/StudentHome.jsx:64",
     "src/community/components/classroom/StudentHome.jsx:221",
     "src/community/pages/ManageProject.jsx:844",
-    "src/community/pages/PullRequest.jsx:601",
+    "src/community/pages/PullRequest.jsx:605",
     "src/community/pages/admin/ErrorManager.jsx:212",
     "src/community/pages/admin/UserDetailCard.jsx:66",
     "src/community/pages/project/IssueThread.jsx:208"
@@ -5513,7 +5513,7 @@
   ],
   "Conversation": [
     "src/community/pages/Bounty.jsx:159",
-    "src/community/pages/PullRequest.jsx:615"
+    "src/community/pages/PullRequest.jsx:619"
   ],
   "Ask a question or coordinate the work.": [
     "src/community/pages/Bounty.jsx:165"
@@ -5523,7 +5523,7 @@
   ],
   "Sign in to comment": [
     "src/community/pages/Bounty.jsx:168",
-    "src/community/pages/PullRequest.jsx:675"
+    "src/community/pages/PullRequest.jsx:679"
   ],
   "Working on this": [
     "src/community/pages/Bounty.jsx:173"
@@ -6649,7 +6649,7 @@
   "Back to project": [
     "src/community/pages/Commit.jsx:365",
     "src/community/pages/ManageProject.jsx:473",
-    "src/community/pages/PullRequest.jsx:576",
+    "src/community/pages/PullRequest.jsx:580",
     "src/community/pages/RemixTree.jsx:213"
   ],
   "Commit": [
@@ -6659,7 +6659,7 @@
     "src/community/pages/Commit.jsx:379",
     "src/community/pages/Project.jsx:614",
     "src/community/pages/ProjectCode.jsx:457",
-    "src/community/pages/PullRequest.jsx:564",
+    "src/community/pages/PullRequest.jsx:568",
     "src/community/pages/PullRequests.jsx:58",
     "src/community/pages/RemixTree.jsx:197"
   ],
@@ -6680,7 +6680,7 @@
   ],
   "committed {value1}": [
     "src/community/pages/Commit.jsx:441",
-    "src/community/pages/PullRequest.jsx:713"
+    "src/community/pages/PullRequest.jsx:715"
   ],
   "co-authored by": [
     "src/community/pages/Commit.jsx:444"
@@ -7811,7 +7811,7 @@
   ],
   "Posting…": [
     "src/community/pages/News.jsx:299",
-    "src/community/pages/PullRequest.jsx:670",
+    "src/community/pages/PullRequest.jsx:674",
     "src/community/pages/Roadmap.jsx:500",
     "src/community/pages/project/IssueThread.jsx:275"
   ],
@@ -8477,7 +8477,7 @@
   ],
   "Commits": [
     "src/community/pages/ProjectCode.jsx:258",
-    "src/community/pages/PullRequest.jsx:616",
+    "src/community/pages/PullRequest.jsx:620",
     "src/community/pages/RemixTree.jsx:278"
   ],
   "Pull requests": [
@@ -8514,8 +8514,7 @@
     "src/community/pages/PullRequest.jsx:118"
   ],
   "Switch this project to the {value1} branch before merging this pull request.": [
-    "src/community/pages/PullRequest.jsx:121",
-    "src/community/pages/PullRequest.jsx:689"
+    "src/community/pages/PullRequest.jsx:121"
   ],
   "This pull request targets the {value1} branch, which no longer exists. Close it and open a new one.": [
     "src/community/pages/PullRequest.jsx:124"
@@ -8536,132 +8535,135 @@
     "src/community/pages/PullRequest.jsx:139"
   ],
   "The changes in this pull request could not be compared with the project.": [
-    "src/community/pages/PullRequest.jsx:292"
-  ],
-  "Could not load these file changes.": [
     "src/community/pages/PullRequest.jsx:293"
   ],
+  "Could not load these file changes.": [
+    "src/community/pages/PullRequest.jsx:294"
+  ],
   "{title} · Pull request #{index}": [
-    "src/community/pages/PullRequest.jsx:330"
+    "src/community/pages/PullRequest.jsx:331"
   ],
   "Merge failed.": [
-    "src/community/pages/PullRequest.jsx:414"
+    "src/community/pages/PullRequest.jsx:418"
   ],
   "The conflicts could not be resolved.": [
-    "src/community/pages/PullRequest.jsx:433"
+    "src/community/pages/PullRequest.jsx:437"
   ],
   "This pull request was already closed or merged.": [
-    "src/community/pages/PullRequest.jsx:451"
-  ],
-  "Could not close this pull request.": [
     "src/community/pages/PullRequest.jsx:455"
   ],
+  "Could not close this pull request.": [
+    "src/community/pages/PullRequest.jsx:459"
+  ],
   "Pull request": [
-    "src/community/pages/PullRequest.jsx:576"
+    "src/community/pages/PullRequest.jsx:580"
   ],
   "Loading pull request…": [
-    "src/community/pages/PullRequest.jsx:581"
+    "src/community/pages/PullRequest.jsx:585"
   ],
   "Merged": [
-    "src/community/pages/PullRequest.jsx:601"
+    "src/community/pages/PullRequest.jsx:605"
   ],
   "Closed": [
-    "src/community/pages/PullRequest.jsx:601",
+    "src/community/pages/PullRequest.jsx:605",
     "src/community/pages/admin/UserDetailCard.jsx:66"
   ],
   "wants to merge from": [
-    "src/community/pages/PullRequest.jsx:604"
+    "src/community/pages/PullRequest.jsx:608"
   ],
   "Fork": [
-    "src/community/pages/PullRequest.jsx:606"
+    "src/community/pages/PullRequest.jsx:610"
   ],
   "Files changed": [
-    "src/community/pages/PullRequest.jsx:617"
+    "src/community/pages/PullRequest.jsx:621"
   ],
   "opened this pull request": [
-    "src/community/pages/PullRequest.jsx:633"
+    "src/community/pages/PullRequest.jsx:637"
   ],
   "No description was provided.": [
-    "src/community/pages/PullRequest.jsx:634"
+    "src/community/pages/PullRequest.jsx:638"
   ],
   "commented {value1}": [
-    "src/community/pages/PullRequest.jsx:641"
+    "src/community/pages/PullRequest.jsx:645"
   ],
   "committed to {value1}": [
-    "src/community/pages/PullRequest.jsx:652"
+    "src/community/pages/PullRequest.jsx:656"
   ],
   "committed on {value1}": [
-    "src/community/pages/PullRequest.jsx:652"
+    "src/community/pages/PullRequest.jsx:656"
   ],
   "Leave a comment": [
-    "src/community/pages/PullRequest.jsx:666"
+    "src/community/pages/PullRequest.jsx:670"
   ],
   "Join the conversation on this pull request once you are signed in.": [
-    "src/community/pages/PullRequest.jsx:675"
+    "src/community/pages/PullRequest.jsx:679"
   ],
   "Ready for review": [
-    "src/community/pages/PullRequest.jsx:681"
-  ],
-  "Pull request closed": [
-    "src/community/pages/PullRequest.jsx:681"
-  ],
-  "Review the files before merging.": [
-    "src/community/pages/PullRequest.jsx:681"
-  ],
-  "No more changes can be merged.": [
-    "src/community/pages/PullRequest.jsx:681"
-  ],
-  "Resolve the conflicts below to finish merging.": [
     "src/community/pages/PullRequest.jsx:685"
   ],
+  "Pull request closed": [
+    "src/community/pages/PullRequest.jsx:685"
+  ],
+  "Review the files before merging.": [
+    "src/community/pages/PullRequest.jsx:685"
+  ],
+  "No more changes can be merged.": [
+    "src/community/pages/PullRequest.jsx:685"
+  ],
+  "Resolve the conflicts below to finish merging.": [
+    "src/community/pages/PullRequest.jsx:689"
+  ],
+  "This pull request targets the {value1} branch, and this project is on {value2}. It can be merged once the project is back on {value1}.": [
+    "src/community/pages/PullRequest.jsx:692"
+  ],
   "Merge pull request": [
-    "src/community/pages/PullRequest.jsx:693"
+    "src/community/pages/PullRequest.jsx:695"
   ],
   "Only project owners and maintainers can merge this pull request.": [
-    "src/community/pages/PullRequest.jsx:694"
+    "src/community/pages/PullRequest.jsx:696"
   ],
   "Close pull request": [
-    "src/community/pages/PullRequest.jsx:703",
-    "src/community/pages/PullRequest.jsx:791"
+    "src/community/pages/PullRequest.jsx:705",
+    "src/community/pages/PullRequest.jsx:793"
   ],
   "Commits on {value1}": [
-    "src/community/pages/PullRequest.jsx:709"
+    "src/community/pages/PullRequest.jsx:711"
   ],
   "this pull request": [
-    "src/community/pages/PullRequest.jsx:709"
+    "src/community/pages/PullRequest.jsx:711"
   ],
   "No commits yet": [
-    "src/community/pages/PullRequest.jsx:716"
+    "src/community/pages/PullRequest.jsx:718"
   ],
   "No commits found after the fork point.": [
-    "src/community/pages/PullRequest.jsx:716"
+    "src/community/pages/PullRequest.jsx:718"
   ],
   "Show summary": [
-    "src/community/pages/PullRequest.jsx:733"
+    "src/community/pages/PullRequest.jsx:735"
   ],
   "Show file diff": [
-    "src/community/pages/PullRequest.jsx:733"
+    "src/community/pages/PullRequest.jsx:735"
   ],
   "Loading file changes…": [
-    "src/community/pages/PullRequest.jsx:745"
+    "src/community/pages/PullRequest.jsx:747"
   ],
   "Edit each text file, then choose which version to keep for every asset.": [
-    "src/community/pages/PullRequest.jsx:756"
+    "src/community/pages/PullRequest.jsx:758"
   ],
   "Keep current project": [
-    "src/community/pages/PullRequest.jsx:759"
+    "src/community/pages/PullRequest.jsx:761"
   ],
   "Use pull request": [
-    "src/community/pages/PullRequest.jsx:760"
+    "src/community/pages/PullRequest.jsx:762"
   ],
   "Close pull request?": [
-    "src/community/pages/PullRequest.jsx:787"
+    "src/community/pages/PullRequest.jsx:789"
   ],
   "Closing…": [
-    "src/community/pages/PullRequest.jsx:790"
+    "src/community/pages/PullRequest.jsx:792"
   ],
   "This closes the pull request without merging its changes.": [
-    "src/community/pages/PullRequest.jsx:796"
+    "src/community/pages/PullRequest.jsx:798"
   ],
   "Pull requests · {value1}": [
     "src/community/pages/PullRequests.jsx:36"

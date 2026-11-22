@@ -138,6 +138,8 @@ describe('pull request loading', () => {
         });
         expect(failure('target_branch_changed').message).toBe('Switch this project to the dev branch before merging this pull request.');
         expect(failure('target_branch_missing').message).toBe('This pull request targets the dev branch, which no longer exists. Close it and open a new one.');
+        expect(failure('target_branch_missing').restart).toBe(true);
+        expect(failure('target_branch_changed').restart).toBe(false);
         expect(failure('pull_head_changed').restart).toBe(true);
         expect(failure('pull_not_open')).toEqual({restart: true, message: 'This pull request was closed or merged while you were merging.'});
         expect(failure('pull_merge_unavailable').message).toBe('This pull request cannot be merged because the two histories could not be compared.');
