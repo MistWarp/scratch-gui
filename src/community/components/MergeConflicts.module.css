@@ -38,7 +38,7 @@
     border-radius: var(--radius-xs);
     background: var(--bg-field);
     color: var(--mw-text);
-    font-family: monospace;
+    font: 400 var(--fs-sm) / 1.5 ui-monospace, monospace;
 }
 
 .path {

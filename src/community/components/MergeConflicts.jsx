@@ -50,6 +50,8 @@ const MergeConflicts = ({
                 <label key={file.path}>
                     <span className={styles.path}>{file.path}</span>
                     <textarea
+                        className="monospace"
+                        spellCheck={false}
                         value={file.content}
                         disabled={busy}
                         onChange={event => onTextChange(file.path, event.target.value)}
