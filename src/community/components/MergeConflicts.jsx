@@ -14,6 +14,7 @@ const MergeConflicts = ({
     conflicts,
     error,
     focusOnMount,
+    headingLevel,
     keepLabel,
     lead,
     onChoose,
@@ -41,7 +42,7 @@ const MergeConflicts = ({
             aria-label={typeof title === 'string' ? title : null}
         >
             <SectionHeading
-                as="h3"
+                as={headingLevel || 'h3'}
                 icon={GitMerge}
                 title={title}
                 lead={lead}
@@ -59,7 +60,12 @@ const MergeConflicts = ({
                 </label>
             ))}
             {binaryConflicts.map(file => (
-                <div className={styles.binaryConflict} key={file.path}>
+                <div
+                    className={styles.binaryConflict}
+                    key={file.path}
+                    role="group"
+                    aria-label={file.path}
+                >
                     <span className={styles.path}>{file.path}</span>
                     <button
                         type="button"
@@ -106,6 +112,7 @@ MergeConflicts.propTypes = {
     })).isRequired,
     error: PropTypes.node,
     focusOnMount: PropTypes.bool,
+    headingLevel: PropTypes.oneOf(['h2', 'h3']),
     keepLabel: PropTypes.node.isRequired,
     lead: PropTypes.node,
     onChoose: PropTypes.func.isRequired,

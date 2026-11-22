@@ -3814,5 +3814,10 @@
   "Only maintainers of this remix can sync it, and only while they can see inside {value1}.": "Only maintainers of this remix can sync it, and only while they can see inside {value1}.",
   "Resolve the conflicts below to finish merging.": "Resolve the conflicts below to finish merging.",
   "This pull request targets the {value1} branch, which no longer exists. Close it and open a new one.": "This pull request targets the {value1} branch, which no longer exists. Close it and open a new one.",
-  "A branch changed while you were merging. Merge again to include the latest changes.": "A branch changed while you were merging. Merge again to include the latest changes."
+  "A branch changed while you were merging. Merge again to include the latest changes.": "A branch changed while you were merging. Merge again to include the latest changes.",
+  "This pull request was closed or merged while you were merging.": "This pull request was closed or merged while you were merging.",
+  "This pull request cannot be merged because the two histories could not be compared.": "This pull request cannot be merged because the two histories could not be compared.",
+  "The project saved, but the pull request could not be marked as merged. Reload the page to check its state.": "The project saved, but the pull request could not be marked as merged. Reload the page to check its state.",
+  "Both projects need saved commits before this remix can be synced.": "Both projects need saved commits before this remix can be synced.",
+  "This remix no longer shares any commits with {value1}, so it cannot be synced.": "This remix no longer shares any commits with {value1}, so it cannot be synced."
 }

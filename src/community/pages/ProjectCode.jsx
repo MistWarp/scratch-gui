@@ -324,7 +324,7 @@ const ProjectCodePage = ({id, vanitySlug}) => {
                         {tab === 'code' ? (
                             <div className={place.kind === 'tree' && !place.path ? styles.codeLayout : styles.codeFull}>
                                 <div className={styles.main}>
-                                    {place.kind === 'tree' && !place.path && branchName === defaultBranch && hasRemixDivergence(remixFrom) ? (
+                                    {place.kind === 'tree' && !place.path && branchName === defaultBranch && (!requestedBranch || requestedBranch === defaultBranch) && hasRemixDivergence(remixFrom) ? (
                                         <ForkStatus
                                             projectId={id}
                                             remixFrom={remixFrom}

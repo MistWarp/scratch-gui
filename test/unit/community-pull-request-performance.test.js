@@ -139,6 +139,9 @@ describe('pull request loading', () => {
         expect(failure('target_branch_changed').message).toBe('Switch this project to the dev branch before merging this pull request.');
         expect(failure('target_branch_missing').message).toBe('This pull request targets the dev branch, which no longer exists. Close it and open a new one.');
         expect(failure('pull_head_changed').restart).toBe(true);
+        expect(failure('pull_not_open')).toEqual({restart: true, message: 'This pull request was closed or merged while you were merging.'});
+        expect(failure('pull_merge_unavailable').message).toBe('This pull request cannot be merged because the two histories could not be compared.');
+        expect(failure('pull_not_closed').restart).toBe(true);
         expect(failure('head_changed').restart).toBe(true);
         expect(pullMergeFailure(new Error(''), text, 'Merge failed.')).toEqual({restart: false, message: 'Merge failed.'});
     });
@@ -147,7 +150,11 @@ describe('pull request loading', () => {
         const pull = {targetProjectId: 'target', baseCommit: 'a', headCommit: 'b', currentTargetHead: 'one'};
         const refs = {oldProject: 'target', oldSha: 'live-base', newProject: 'fork', newSha: 'b'};
         writePullDiffCache(pull, 'diff text', refs);
-        expect(readPullDiffCacheEntry(pull)).toEqual({diff: 'diff text', refs});
+        expect(readPullDiffCacheEntry(pull)).toEqual({diff: 'diff text', refs, fileTexts: {}});
+        writePullDiffCache(pull, 'diff text', refs, {'Cat/main.fractch': {old: 'a', new: 'b'}});
+        expect(readPullDiffCacheEntry(pull).fileTexts).toEqual({'Cat/main.fractch': {old: 'a', new: 'b'}});
+        writePullDiffCache(pull, 'diff text', refs, {'Cat/main.fractch': {old: 'x'.repeat(1024 * 1024), new: ''}});
+        expect(readPullDiffCacheEntry(pull).fileTexts).toBe(null);
         expect(readPullDiffCache(pull)).toBe('diff text');
     });
 });

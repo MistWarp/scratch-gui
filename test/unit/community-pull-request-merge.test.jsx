@@ -160,4 +160,51 @@ describe('pull request merges', () => {
         expect(wrapper.find('MergeConflicts').text()).toContain('Commit the changes saved in this project before merging this pull request.');
         expect(api.getPull).toHaveBeenCalledTimes(1);
     });
+
+    test('a file view still loading when the merge restarts is replaced by the new head', async () => {
+        let answerOld;
+        api.pullChanges.mockReset()
+            .mockReturnValueOnce(new Promise(resolve => {
+                answerOld = resolve;
+            }))
+            .mockResolvedValue({inspection: {ok: true, targets: []}, pull: {...pull, headCommit: sha('d')}});
+        api.mergePull.mockRejectedValue(Object.assign(new Error('moved'), {code: 'pull_head_changed', status: 409}));
+        const wrapper = mountPull();
+        await settle(wrapper);
+        const tab = label => wrapper.find('[role="tab"]').filterWhere(item => item.text().includes(label));
+        await act(async () => {
+            tab('Files changed').simulate('click');
+        });
+        await settle(wrapper);
+        expect(api.pullChanges).toHaveBeenCalledTimes(1);
+        await act(async () => {
+            tab('Conversation').simulate('click');
+        });
+        await settle(wrapper);
+        api.getPull.mockResolvedValue({pull: {...pull, headCommit: sha('d')}});
+        await act(async () => {
+            button(wrapper, 'Merge pull request').simulate('click');
+        });
+        await settle(wrapper);
+        await act(async () => {
+            answerOld({inspection: {ok: true, targets: []}, pull});
+        });
+        await settle(wrapper);
+        await act(async () => {
+            tab('Files changed').simulate('click');
+        });
+        await settle(wrapper);
+        expect(api.pullChanges).toHaveBeenCalledTimes(2);
+    });
+
+    test('a project that moved during the upload closes the session with a sentence', async () => {
+        api.uploadPullMerge.mockRejectedValue(Object.assign(new Error('raw'), {code: 'head_changed', status: 409}));
+        const wrapper = await openConflicts();
+        await act(async () => {
+            button(wrapper, 'Save resolutions and merge').simulate('click');
+        });
+        await settle(wrapper);
+        expect(wrapper.text()).not.toContain('Resolve merge conflicts');
+        expect(wrapper.text()).toContain('This project changed while you were merging. Merge again to include the latest changes.');
+    });
 });

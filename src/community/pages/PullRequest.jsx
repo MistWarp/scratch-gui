@@ -61,19 +61,25 @@ export const readPullDiffCacheEntry = pull => {
     if (raw === null) return null;
     try {
         const cached = JSON.parse(raw);
-        if (typeof cached.diff !== 'string') return {diff: raw, refs: null};
-        return {diff: cached.diff, refs: cached.refs && typeof cached.refs === 'object' ? cached.refs : null};
+        if (typeof cached.diff !== 'string') return {diff: raw, refs: null, fileTexts: null};
+        return {
+            diff: cached.diff,
+            refs: cached.refs && typeof cached.refs === 'object' ? cached.refs : null,
+            fileTexts: cached.fileTexts && typeof cached.fileTexts === 'object' ? cached.fileTexts : null
+        };
     } catch (error) {
-        return {diff: raw, refs: null};
+        return {diff: raw, refs: null, fileTexts: null};
     }
 };
 export const readPullDiffCache = pull => {
     const entry = readPullDiffCacheEntry(pull);
     return entry ? entry.diff : null;
 };
-export const writePullDiffCache = (pull, diff, refs = null) => {
+export const writePullDiffCache = (pull, diff, refs = null, fileTexts = {}) => {
     if (diff.length * 2 > PULL_DIFF_ENTRY_MAX_BYTES) return;
-    if (!sessionStore.writeJSON(pullDiffCacheKey(pull), {at: Date.now(), diff, refs})) return;
+    const textsFit = (JSON.stringify(fileTexts || {}).length + diff.length) * 2 <= PULL_DIFF_ENTRY_MAX_BYTES;
+    const stored = {at: Date.now(), diff, refs, fileTexts: textsFit ? fileTexts : null};
+    if (!sessionStore.writeJSON(pullDiffCacheKey(pull), stored)) return;
     const entries = [];
     for (const key of sessionStore.keys()) {
         if (!key.startsWith(PULL_DIFF_CACHE_PREFIX)) continue;
@@ -104,7 +110,7 @@ export const pullMergeUpload = (data, pullIndex, artifacts) => ({
     sourceHead: data.sourceHead
 });
 
-const RESTART_MERGE_CODES = ['head_changed', 'pull_head_changed'];
+const RESTART_MERGE_CODES = ['head_changed', 'pull_head_changed', 'pull_not_open'];
 
 export const pullMergeFailure = (error, communityText, fallback) => {
     const restart = RESTART_MERGE_CODES.includes(error?.code);
@@ -122,6 +128,15 @@ export const pullMergeFailure = (error, communityText, fallback) => {
     }
     if (error?.code === 'head_changed') {
         return {restart, message: communityText('This project changed while you were merging. Merge again to include the latest changes.')};
+    }
+    if (error?.code === 'pull_not_open') {
+        return {restart, message: communityText('This pull request was closed or merged while you were merging.')};
+    }
+    if (error?.code === 'pull_merge_unavailable' || error?.code === 'pull_history_unavailable') {
+        return {restart, message: communityText('This pull request cannot be merged because the two histories could not be compared.')};
+    }
+    if (error?.code === 'pull_not_closed') {
+        return {restart: true, message: communityText('The project saved, but the pull request could not be marked as merged. Reload the page to check its state.')};
     }
     return {restart, message: error?.message || fallback};
 };
@@ -222,11 +237,12 @@ const PullRequest = () => {
     const [commentError, setCommentError] = useState('');
     const contextRef = useRef(`${viewer}:${id}:${index}`);
     const diffRequestRef = useRef('');
+    const diffGenerationRef = useRef(0);
     contextRef.current = `${viewer}:${id}:${index}`;
 
     const loadDiff = useCallback(async (activePull, context, wantFileDiff = false, targetHead = '') => {
         if (contextRef.current !== context || loadedContext !== context) return;
-        const token = `${context}:${activePull.headCommit || ''}:${targetHead}:${wantFileDiff ? 'file' : 'summary'}`;
+        const token = `${diffGenerationRef.current}:${context}:${activePull.headCommit || ''}:${targetHead}:${wantFileDiff ? 'file' : 'summary'}`;
         if (diffRequestRef.current === token) return;
         diffRequestRef.current = token;
         const current = () => contextRef.current === context && diffRequestRef.current === token;
@@ -247,9 +263,10 @@ const PullRequest = () => {
         }
         const cacheKeyPull = {...activePull, currentTargetHead: targetHead};
         const cached = readPullDiffCacheEntry(cacheKeyPull);
-        if (cached !== null && cached.refs && cached.refs.newSha === (activePull.headCommit || '')) {
+        if (cached !== null && cached.refs && cached.refs.newSha === (activePull.headCommit || '') && (!wantFileDiff || cached.fileTexts)) {
             setAssetRefs(cached.refs);
             setDiff(cached.diff);
+            setFileTexts(cached.fileTexts || {});
             finish();
             return;
         }
@@ -263,7 +280,7 @@ const PullRequest = () => {
             ]);
             const renderedDiff = nextDiff || 'No textual changes.';
             const refs = pullAssetRefs({...activePull, ...(diffData.pull || {})}, id);
-            writePullDiffCache(cacheKeyPull, renderedDiff, refs);
+            writePullDiffCache(cacheKeyPull, renderedDiff, refs, nextTexts);
             if (current()) {
                 setAssetRefs(refs);
                 setDiff(renderedDiff);
@@ -356,10 +373,13 @@ const PullRequest = () => {
         setMergeError(failure.message);
         if (!failure.restart) return;
         setMergeSession(null);
+        diffGenerationRef.current += 1;
+        diffRequestRef.current = '';
         await load();
         setDiff(null);
         setChanges(null);
         setFileTexts({});
+        setDiffError('');
     };
 
     const merge = async () => {
@@ -724,6 +744,7 @@ const PullRequest = () => {
                         busyLabel={communityText('Merging…')}
                         error={mergeError}
                         focusOnMount
+                        headingLevel="h2"
                         onTextChange={updateTextConflict}
                         onChoose={updateBinaryConflict}
                         onSubmit={resolveConflicts}

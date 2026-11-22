@@ -66,6 +66,7 @@ const ForkStatus = ({canContribute, canSync, contributeHref, hasUncommitted, pro
                     busyLabel={communityText('Syncing…')}
                     error={error}
                     focusOnMount
+                    headingLevel="h2"
                     onTextChange={updateText}
                     onChoose={chooseBinary}
                     onSubmit={resolve}

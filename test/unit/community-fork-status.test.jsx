@@ -173,14 +173,25 @@ describe('remix fork status', () => {
         expect(wrapper.text()).not.toContain('Resolve sync conflicts');
     });
 
-    test('shows the server refusal when the sync cannot start', async () => {
-        api.syncRemix.mockRejectedValue(new Error('commit the changes saved in this remix before syncing it with the original'));
-        const wrapper = mountStatus();
-        await act(async () => {
-            syncButton(wrapper).simulate('click');
-        });
-        await settle(wrapper);
-        expect(wrapper.text()).toContain('commit the changes saved in this remix before syncing it with the original');
+    test('explains each refusal in a sentence of its own', async () => {
+        const refusals = [
+            [{code: 'uncommitted_changes', status: 409}, 'Commit your saved changes in the editor before syncing, so they are not replaced.'],
+            [{code: 'head_changed', status: 409}, 'This remix changed while it was syncing. Sync again to include the new changes.'],
+            [{code: 'sync_unavailable', status: 409}, 'This remix no longer shares any commits with flufi / Meowing Simulator, so it cannot be synced.'],
+            [{code: 'sync_history_unavailable', status: 409}, 'Both projects need saved commits before this remix can be synced.'],
+            [{status: 403}, 'Only maintainers of this remix can sync it, and only while they can see inside flufi / Meowing Simulator.']
+        ];
+        for (const [fields, sentence] of refusals) {
+            api.syncRemix.mockRejectedValueOnce(Object.assign(new Error('raw server text'), fields));
+            const wrapper = mountStatus();
+            await act(async () => {
+                syncButton(wrapper).simulate('click');
+            });
+            await settle(wrapper);
+            expect(wrapper.text()).toContain(sentence);
+            expect(wrapper.text()).not.toContain('raw server text');
+            wrapper.unmount();
+        }
     });
 
     test('a stale sync explains itself, closes the session and refreshes', async () => {

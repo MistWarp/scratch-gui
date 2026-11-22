@@ -51,6 +51,15 @@ const useRemixSync = ({projectId, remixFrom, onSynced}) => {
                 {value1: original}
             );
         }
+        if (syncError.code === 'sync_history_unavailable') {
+            return communityText('Both projects need saved commits before this remix can be synced.');
+        }
+        if (syncError.code === 'sync_unavailable') {
+            return communityText(
+                'This remix no longer shares any commits with {value1}, so it cannot be synced.',
+                {value1: original}
+            );
+        }
         if (syncError.status === 403) {
             return communityText(
                 'Only maintainers of this remix can sync it, and only while they can see inside {value1}.',

@@ -527,6 +527,13 @@ describe('project developer view page', () => {
         visitor.unmount();
 
         mockApi(baseProject({isOwner: true, remixFrom}));
+        api.branches.mockReturnValue(new Promise(() => {}));
+        const loadingBranches = mountAt('/project/project-1/code?branch=levels');
+        await settle(loadingBranches);
+        expect(syncButtons(loadingBranches)).toHaveLength(0);
+        loadingBranches.unmount();
+
+        mockApi(baseProject({isOwner: true, remixFrom}));
         const otherBranch = mountAt('/project/project-1/code?branch=levels');
         await settle(otherBranch);
         expect(otherBranch.text()).not.toContain('behind alice / Original Space');
