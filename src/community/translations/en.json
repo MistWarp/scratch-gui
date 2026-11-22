@@ -3810,5 +3810,7 @@
   "The remix changed while you were merging. Review the new changes, then merge again.": "The remix changed while you were merging. Review the new changes, then merge again.",
   "This project changed while you were merging. Merge again to include the latest changes.": "This project changed while you were merging. Merge again to include the latest changes.",
   "Merge failed.": "Merge failed.",
-  "The conflicts could not be resolved.": "The conflicts could not be resolved."
+  "The conflicts could not be resolved.": "The conflicts could not be resolved.",
+  "Only maintainers of this remix can sync it, and only while they can see inside {value1}.": "Only maintainers of this remix can sync it, and only while they can see inside {value1}.",
+  "Resolve the conflicts below to finish merging.": "Resolve the conflicts below to finish merging."
 }

@@ -141,6 +141,10 @@ const AboutPanel = ({project, baseUrl, shareKey, counts, fileCount, contributors
     );
 };
 
+const canMaintainProject = project => Boolean(
+    project.isOwner || project.myRole === 'owner' || project.myRole === 'maintainer'
+);
+
 const ProjectCodePage = ({id, vanitySlug}) => {
     const {text: communityText} = useCommunityText();
     const navigate = useNavigate();
@@ -311,14 +315,14 @@ const ProjectCodePage = ({id, vanitySlug}) => {
                         {tab === 'code' ? (
                             <div className={place.kind === 'tree' && !place.path ? styles.codeLayout : styles.codeFull}>
                                 <div className={styles.main}>
-                                    {place.kind === 'tree' && !place.path && hasRemixDivergence(remixFrom) ? (
+                                    {place.kind === 'tree' && !place.path && branchName === defaultBranch && hasRemixDivergence(remixFrom) ? (
                                         <ForkStatus
                                             projectId={id}
                                             remixFrom={remixFrom}
                                             canContribute={Boolean(project.isOwner && remixFrom.ahead > 0)}
                                             contributeHref={`${remixParentUrl}#contribute`}
-                                            canSync={Boolean(project.isOwner)}
-                                            hasUncommitted={showUncommitted}
+                                            canSync={canMaintainProject(project)}
+                                            hasUncommitted={Boolean(uncommitted)}
                                             onSynced={() => {
                                                 loadBranches();
                                                 return refreshProjectAndHistory();

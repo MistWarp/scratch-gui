@@ -5,6 +5,7 @@ import {
     pullAssetRefs,
     pullMergeFailure,
     pullMergeUpload,
+    readPullDiffCacheEntry,
     readPullDiffCache,
     writePullDiffCache,
     shouldLoadPullDiff
@@ -139,5 +140,13 @@ describe('pull request loading', () => {
         expect(failure('pull_head_changed').restart).toBe(true);
         expect(failure('head_changed').restart).toBe(true);
         expect(pullMergeFailure(new Error(''), text, 'Merge failed.')).toEqual({restart: false, message: 'Merge failed.'});
+    });
+
+    test('cached diffs remember the asset refs they were rendered with', () => {
+        const pull = {targetProjectId: 'target', baseCommit: 'a', headCommit: 'b', currentTargetHead: 'one'};
+        const refs = {oldProject: 'target', oldSha: 'live-base', newProject: 'fork', newSha: 'b'};
+        writePullDiffCache(pull, 'diff text', refs);
+        expect(readPullDiffCacheEntry(pull)).toEqual({diff: 'diff text', refs});
+        expect(readPullDiffCache(pull)).toBe('diff text');
     });
 });

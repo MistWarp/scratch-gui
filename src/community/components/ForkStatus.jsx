@@ -45,6 +45,12 @@ const ForkStatus = ({canContribute, canSync, contributeHref, hasUncommitted, onS
                 {value1: original}
             );
         }
+        if (syncError.status === 403) {
+            return communityText(
+                'Only maintainers of this remix can sync it, and only while they can see inside {value1}.',
+                {value1: original}
+            );
+        }
         return syncError.message || communityText('Could not sync this remix.');
     };
 

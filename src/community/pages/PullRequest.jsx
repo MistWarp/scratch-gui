@@ -56,19 +56,24 @@ const pullDiffCacheKey = pull => {
     const session = api.loadSession() || 'anonymous';
     return `${PULL_DIFF_CACHE_PREFIX}${session}:${pull.targetProjectId}:${pull.currentTargetHead || pull.baseCommit}:${pull.headCommit}`;
 };
-export const readPullDiffCache = pull => {
+export const readPullDiffCacheEntry = pull => {
     const raw = sessionStore.readString(pullDiffCacheKey(pull));
     if (raw === null) return null;
     try {
         const cached = JSON.parse(raw);
-        return typeof cached.diff === 'string' ? cached.diff : raw;
+        if (typeof cached.diff !== 'string') return {diff: raw, refs: null};
+        return {diff: cached.diff, refs: cached.refs && typeof cached.refs === 'object' ? cached.refs : null};
     } catch (error) {
-        return raw;
+        return {diff: raw, refs: null};
     }
 };
-export const writePullDiffCache = (pull, diff) => {
+export const readPullDiffCache = pull => {
+    const entry = readPullDiffCacheEntry(pull);
+    return entry ? entry.diff : null;
+};
+export const writePullDiffCache = (pull, diff, refs = null) => {
     if (diff.length * 2 > PULL_DIFF_ENTRY_MAX_BYTES) return;
-    if (!sessionStore.writeJSON(pullDiffCacheKey(pull), {at: Date.now(), diff})) return;
+    if (!sessionStore.writeJSON(pullDiffCacheKey(pull), {at: Date.now(), diff, refs})) return;
     const entries = [];
     for (const key of sessionStore.keys()) {
         if (!key.startsWith(PULL_DIFF_CACHE_PREFIX)) continue;
@@ -233,9 +238,12 @@ const PullRequest = () => {
             }
         }
         const cacheKeyPull = {...activePull, currentTargetHead: targetHead};
-        const cached = readPullDiffCache(cacheKeyPull);
+        const cached = readPullDiffCacheEntry(cacheKeyPull);
         if (cached !== null) {
-            if (contextRef.current === context) setDiff(cached);
+            if (contextRef.current === context) {
+                if (cached.refs) setAssetRefs(cached.refs);
+                setDiff(cached.diff);
+            }
             if (diffRequestRef.current === context) diffRequestRef.current = '';
             return;
         }
@@ -248,9 +256,10 @@ const PullRequest = () => {
                 buildPullRequestFileTexts(cachingApi, diffData)
             ]);
             const renderedDiff = nextDiff || 'No textual changes.';
-            writePullDiffCache(cacheKeyPull, renderedDiff);
+            const refs = pullAssetRefs({...activePull, ...(diffData.pull || {})}, id);
+            writePullDiffCache(cacheKeyPull, renderedDiff, refs);
             if (contextRef.current === context) {
-                if (diffData.pull) setAssetRefs(pullAssetRefs({...activePull, ...diffData.pull}, id));
+                setAssetRefs(refs);
                 setDiff(renderedDiff);
                 setFileTexts(nextTexts);
             }
@@ -633,7 +642,9 @@ const PullRequest = () => {
                                 <div><strong>{open ? communityText('Ready for review') : communityText('Pull request closed')}</strong><span>{open ? communityText('Review the files before merging.') : communityText('No more changes can be merged.')}</span></div>
                             </div>
                             {mergeError && !mergeSession ? <Notice variant="error">{mergeError}</Notice> : null}
-                            {open && canMerge ? (
+                            {open && canMerge && mergeSession ? (
+                                <p className={styles.note}>{communityText('Resolve the conflicts below to finish merging.')}</p>
+                            ) : open && canMerge ? (
                                 <Button variant="primary" onClick={merge} busy={merging} busyLabel={communityText('Merging…')}>{communityText('Merge pull request')}</Button>
                             ) : open ? <p className={styles.note}>{communityText('Only project owners and maintainers can merge this pull request.')}</p> : null}
                             {open && canClose ? (
@@ -710,6 +721,17 @@ const PullRequest = () => {
                         onTextChange={updateTextConflict}
                         onChoose={updateBinaryConflict}
                         onSubmit={resolveConflicts}
+                        actions={(
+                            <Button
+                                disabled={merging}
+                                onClick={() => {
+                                    setMergeSession(null);
+                                    setMergeError('');
+                                }}
+                            >
+                                {communityText('Cancel')}
+                            </Button>
+                        )}
                     />
                 </div>
             ) : null}

@@ -263,6 +263,17 @@ const ProjectBranches = ({id, canManage, onChange}) => {
                     onTextChange={updateText}
                     onChoose={chooseBinary}
                     onSubmit={resolve}
+                    actions={(
+                        <Button
+                            disabled={busy === 'merge'}
+                            onClick={() => {
+                                setSession(null);
+                                setError('');
+                            }}
+                        >
+                            {communityText('Cancel')}
+                        </Button>
+                    )}
                 />
             ) : null}
 
