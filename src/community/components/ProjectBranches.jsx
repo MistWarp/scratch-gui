@@ -5,42 +5,16 @@ import {Check, GitBranch, GitMerge, Pencil, Plus, Trash2, X} from 'lucide-react'
 import api from '../api';
 import {formatDate} from '../format.js';
 import {buildProjectArtifactsFromFileEntries} from '../../lib/git/mwp.js';
+import {
+    materializeMerge, resolvedMergeFiles, unresolvedBinaryConflict, withBinaryChoice, withTextResolution
+} from '../merge-session.js';
+import MergeConflicts from './MergeConflicts.jsx';
 import Button from './ui/Button.jsx';
 import EmptyState from './ui/EmptyState.jsx';
 import Notice from './ui/Notice.jsx';
 import SectionHeading from './ui/SectionHeading.jsx';
 import StatusMessage from './ui/StatusMessage.jsx';
 import styles from './ProjectBranches.module.css';
-
-const decodeBase64 = value => {
-    const binary = atob(value || '');
-    const bytes = new Uint8Array(binary.length);
-    for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index);
-    return bytes;
-};
-
-export const materializeBranchMerge = async data => {
-    const tree = await api.commitTree(data.targetProjectId, data.targetHead);
-    const loaded = await Promise.all((tree.files || []).map(async file => {
-        const result = await api.commitFile(data.targetProjectId, data.targetHead, file.path);
-        return [file.path, decodeBase64(result.content)];
-    }));
-    const files = new Map(loaded);
-    const conflicts = [];
-    const binaryConflicts = [];
-    for (const change of data.merge.changes || []) {
-        if (change.conflict && change.binary) {
-            binaryConflicts.push({...change, choice: ''});
-            continue;
-        }
-        if (change.deleted) files.delete(change.path);
-        else files.set(change.path, decodeBase64(change.content));
-        if (change.conflict) {
-            conflicts.push({path: change.path, content: new TextDecoder().decode(decodeBase64(change.content))});
-        }
-    }
-    return {files, conflicts, binaryConflicts};
-};
 
 const ProjectBranches = ({id, canManage, onChange}) => {
     const {text: communityText} = useCommunityText();
@@ -113,7 +87,7 @@ const ProjectBranches = ({id, canManage, onChange}) => {
                 setNotice(communityText('{value1} is already included in {value2}.', {value1: source, value2: target}));
                 return;
             }
-            const prepared = await materializeBranchMerge(mergeData);
+            const prepared = await materializeMerge(mergeData);
             if (prepared.conflicts.length || prepared.binaryConflicts.length) {
                 setSession({...prepared, data: mergeData});
             } else {
@@ -131,17 +105,9 @@ const ProjectBranches = ({id, canManage, onChange}) => {
         setBusy('merge');
         setError('');
         try {
-            const files = new Map(session.files);
-            for (const file of session.conflicts) files.set(file.path, new TextEncoder().encode(file.content));
-            for (const file of session.binaryConflicts) {
-                if (!file.choice) throw new Error(communityText('Choose a version for {value1}.', {value1: file.path}));
-                const useSource = file.choice === 'source';
-                const deleted = useSource ? file.theirsDeleted : file.oursDeleted;
-                const content = useSource ? file.theirs : file.ours;
-                if (deleted) files.delete(file.path);
-                else files.set(file.path, decodeBase64(content));
-            }
-            await upload(session.data, files);
+            const unresolved = unresolvedBinaryConflict(session);
+            if (unresolved) throw new Error(communityText('Choose a version for {value1}.', {value1: unresolved.path}));
+            await upload(session.data, resolvedMergeFiles(session));
         } catch (resolveError) {
             setError(resolveError.message || communityText('Could not resolve the merge.'));
         } finally {
@@ -214,14 +180,8 @@ const ProjectBranches = ({id, canManage, onChange}) => {
         }
     };
 
-    const updateText = (path, content) => setSession(current => ({
-        ...current,
-        conflicts: current.conflicts.map(file => (file.path === path ? {...file, content} : file))
-    }));
-    const chooseBinary = (path, choice) => setSession(current => ({
-        ...current,
-        binaryConflicts: current.binaryConflicts.map(file => (file.path === path ? {...file, choice} : file))
-    }));
+    const updateText = (path, content) => setSession(current => withTextResolution(current, path, content));
+    const chooseBinary = (path, choice) => setSession(current => withBinaryChoice(current, path, choice));
 
     if (!data) return <StatusMessage compact>{communityText('Loading branches…')}</StatusMessage>;
 
@@ -288,32 +248,20 @@ const ProjectBranches = ({id, canManage, onChange}) => {
             {notice ? <Notice variant="success" className={styles.message}>{notice}</Notice> : null}
 
             {session ? (
-                <section className={styles.conflicts}>
-                    <SectionHeading
-                        as="h3"
-                        icon={GitMerge}
-                        title={communityText('Resolve merge conflicts')}
-                        lead={communityText('Edit text conflicts and choose which branch to keep for assets.')}
-                    />
-                    {session.conflicts.map(file => (
-                        <label key={file.path}><span>{file.path}</span><textarea value={file.content} disabled={busy} onChange={event => updateText(file.path, event.target.value)} /></label>
-                    ))}
-                    {session.binaryConflicts.map(file => (
-                        <div className={styles.binaryConflict} key={file.path}>
-                            <span>{file.path}</span>
-                            <button type="button" className={file.choice === 'target' ? styles.choiceActive : ''} onClick={() => chooseBinary(file.path, 'target')}>
-                                {communityText('Keep {value1}', {value1: session.data.targetBranch})}
-                            </button>
-                            <button type="button" className={file.choice === 'source' ? styles.choiceActive : ''} onClick={() => chooseBinary(file.path, 'source')}>
-                                {communityText('Use {value1}', {value1: session.data.sourceBranch})}
-                            </button>
-                        </div>
-                    ))}
-                    <Button variant="primary" busy={busy === 'merge'} busyLabel={communityText('Merging…')} onClick={resolve}>
-                        <GitMerge size={16} />
-                        {communityText('Save resolutions and merge')}
-                    </Button>
-                </section>
+                <MergeConflicts
+                    title={communityText('Resolve merge conflicts')}
+                    lead={communityText('Edit text conflicts and choose which branch to keep for assets.')}
+                    conflicts={session.conflicts}
+                    binaryConflicts={session.binaryConflicts}
+                    keepLabel={communityText('Keep {value1}', {value1: session.data.targetBranch})}
+                    useLabel={communityText('Use {value1}', {value1: session.data.sourceBranch})}
+                    submitLabel={communityText('Save resolutions and merge')}
+                    busy={busy === 'merge'}
+                    busyLabel={communityText('Merging…')}
+                    onTextChange={updateText}
+                    onChoose={chooseBinary}
+                    onSubmit={resolve}
+                />
             ) : null}
 
             <div className={styles.list}>

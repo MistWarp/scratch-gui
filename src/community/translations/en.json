@@ -3792,5 +3792,15 @@
   "{value1} commits ahead": "{value1} commits ahead",
   "1 commit behind": "1 commit behind",
   "{value1} commits behind": "{value1} commits behind",
-  "{value1} ahead, {value2} behind": "{value1} ahead, {value2} behind"
+  "{value1} ahead, {value2} behind": "{value1} ahead, {value2} behind",
+  "Brought in the latest changes from {value1}.": "Brought in the latest changes from {value1}.",
+  "This remix already has every change from {value1}.": "This remix already has every change from {value1}.",
+  "Could not sync this remix.": "Could not sync this remix.",
+  "Sync with original": "Sync with original",
+  "Commit your saved changes in the editor before syncing, so they are not replaced.": "Commit your saved changes in the editor before syncing, so they are not replaced.",
+  "Resolve sync conflicts": "Resolve sync conflicts",
+  "This remix and {value1} changed the same files. Edit the text conflicts and choose which version of each asset to keep.": "This remix and {value1} changed the same files. Edit the text conflicts and choose which version of each asset to keep.",
+  "Keep this remix": "Keep this remix",
+  "Use the original": "Use the original",
+  "Save resolutions and sync": "Save resolutions and sync"
 }

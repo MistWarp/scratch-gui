@@ -120,11 +120,20 @@ export const shouldLoadPullDiff = ({tab, pull, diff, diffError, changes = null, 
 const loadPullChanges = async (id, index) => {
     try {
         const data = await api.pullChanges(id, index);
-        return isChangesResponse(data?.inspection) ? data.inspection : null;
+        return isChangesResponse(data?.inspection) ? {inspection: data.inspection, pull: data.pull || null} : null;
     } catch (error) {
         return null;
     }
 };
+
+export const pullAssetRefs = (pull, id) => ({
+    oldProject: pull.targetProjectId || id,
+    oldSha: pull.baseCommit || '',
+    newProject: pull.sourceProjectId || id,
+    newSha: pull.headCommit || '',
+    pullIndex: pull.index,
+    pullTarget: pull.targetProjectId || ''
+});
 
 export const pullApiFor = (apiClient, data) => ({
     commitFile: (projectId, sha, path) => apiClient.commitFile(
@@ -206,22 +215,14 @@ const PullRequest = () => {
         if (contextRef.current !== context || loadedContext !== context) return;
         if (diffRequestRef.current === context) return;
         diffRequestRef.current = context;
-        if (contextRef.current === context) {
-            setAssetRefs({
-                oldProject: activePull.targetProjectId || id,
-                oldSha: activePull.baseCommit || '',
-                newProject: activePull.sourceProjectId || id,
-                newSha: activePull.headCommit || '',
-                pullIndex: activePull.index,
-                pullTarget: activePull.targetProjectId || ''
-            });
-        }
+        if (contextRef.current === context) setAssetRefs(pullAssetRefs(activePull, id));
         if (!wantFileDiff) {
             setDiffError('');
             const structured = await loadPullChanges(id, index);
             if (contextRef.current !== context) return;
             if (structured) {
-                setChanges(structured);
+                if (structured.pull) setAssetRefs(pullAssetRefs({...activePull, ...structured.pull}, id));
+                setChanges(structured.inspection);
                 if (diffRequestRef.current === context) diffRequestRef.current = '';
                 return;
             }
@@ -243,6 +244,7 @@ const PullRequest = () => {
             const renderedDiff = nextDiff || 'No textual changes.';
             writePullDiffCache(activePull, renderedDiff);
             if (contextRef.current === context) {
+                if (diffData.pull) setAssetRefs(pullAssetRefs({...activePull, ...diffData.pull}, id));
                 setDiff(renderedDiff);
                 setFileTexts(nextTexts);
             }
@@ -327,7 +329,8 @@ const PullRequest = () => {
             sb3: result.sb3,
             mergeTree: result.tree,
             expectedHead: data.expectedHead,
-            pullId: activePull.index
+            pullId: activePull.index,
+            sourceHead: data.sourceHead
         });
         setMergeSession(null);
         await load();

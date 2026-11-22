@@ -13,9 +13,10 @@ import {uncommittedSummaryDetail} from '../commit-summary.js';
 import {formatBytes, safeDate, timeAgo} from '../format.js';
 import {getCommunityLocale} from '../locale.js';
 import setPageMeta from '../page-meta.js';
-import {hasRemixDivergence, remixDivergenceSentence, remixParentLabel} from '../remix-origin.js';
+import {hasRemixDivergence, remixParentLabel} from '../remix-origin.js';
 import useLatest from '../use-latest.js';
 import Avatar from '../components/Avatar.jsx';
+import ForkStatus from '../components/ForkStatus.jsx';
 import ProjectBranches from '../components/ProjectBranches.jsx';
 import RichText from '../components/RichText.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
@@ -311,15 +312,18 @@ const ProjectCodePage = ({id, vanitySlug}) => {
                             <div className={place.kind === 'tree' && !place.path ? styles.codeLayout : styles.codeFull}>
                                 <div className={styles.main}>
                                     {place.kind === 'tree' && !place.path && hasRemixDivergence(remixFrom) ? (
-                                        <div className={styles.forkStatus}>
-                                            <GitFork size={15} aria-hidden="true" />
-                                            <span>{remixDivergenceSentence(remixFrom, communityText)}</span>
-                                            {project.isOwner && remixFrom.ahead > 0 ? (
-                                                <Link className={styles.forkAction} to={`${remixParentUrl}#contribute`}>
-                                                    {communityText('Contribute')}
-                                                </Link>
-                                            ) : null}
-                                        </div>
+                                        <ForkStatus
+                                            projectId={id}
+                                            remixFrom={remixFrom}
+                                            canContribute={Boolean(project.isOwner && remixFrom.ahead > 0)}
+                                            contributeHref={`${remixParentUrl}#contribute`}
+                                            canSync={Boolean(project.isOwner)}
+                                            hasUncommitted={showUncommitted}
+                                            onSynced={() => {
+                                                loadBranches();
+                                                return refreshProjectAndHistory();
+                                            }}
+                                        />
                                     ) : null}
                                     {place.kind === 'tree' && !place.path && showUncommitted ? (
                                         <div className={styles.uncommittedBanner}>
