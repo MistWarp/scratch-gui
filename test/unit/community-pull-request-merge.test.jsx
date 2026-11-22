@@ -283,6 +283,32 @@ describe('pull request merges', () => {
         expect(wrapper.text()).toContain('This pull request targets the main branch, and this project is on feature. It can be merged once the project is back on main.');
     });
 
+    test('a pull whose target branch was deleted says so instead of offering a merge', async () => {
+        api.getPull.mockResolvedValue({pull: {...pull, baseBranch: 'old', baseBranchMissing: true}});
+        const wrapper = mountPull();
+        await settle(wrapper);
+        expect(button(wrapper, 'Merge pull request')).toHaveLength(0);
+        expect(wrapper.text()).toContain('This pull request targets the old branch, which no longer exists. Close it and open a new one.');
+        expect(wrapper.find('Notice')).toHaveLength(0);
+    });
+
+    test('a merge refused because the target branch is gone shows the sentence once', async () => {
+        api.getPull.mockResolvedValue({pull: {...pull, baseBranch: 'old'}});
+        api.mergePull.mockRejectedValue(Object.assign(new Error('raw server text'), {
+            code: 'target_branch_missing', status: 409, data: {branch: 'old'}
+        }));
+        const wrapper = mountPull();
+        await settle(wrapper);
+        await act(async () => {
+            button(wrapper, 'Merge pull request').simulate('click');
+        });
+        await settle(wrapper);
+        const sentence = 'This pull request targets the old branch, which no longer exists. Close it and open a new one.';
+        expect(wrapper.text().split(sentence)).toHaveLength(2);
+        expect(button(wrapper, 'Merge pull request')).toHaveLength(0);
+        expect(wrapper.text()).not.toContain('raw server text');
+    });
+
     test('a diff that cannot be compared explains itself and can be retried', async () => {
         api.pullChanges.mockReset().mockResolvedValue({inspection: {legacy: true}});
         api.pullDiff.mockReset()

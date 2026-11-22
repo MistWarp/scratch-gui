@@ -376,8 +376,9 @@ const PullRequest = () => {
 
     const failMerge = async (error, fallback) => {
         const failure = pullMergeFailure(error, communityText, fallback);
-        setMergeError(failure.message);
-        if (error?.code === 'target_branch_missing') setTargetBranchGone(true);
+        const gone = error?.code === 'target_branch_missing' && Boolean(pull?.baseBranch);
+        setMergeError(gone ? '' : failure.message);
+        if (gone) setTargetBranchGone(true);
         if (!failure.restart) return;
         setMergeSession(null);
         diffGenerationRef.current += 1;
@@ -587,7 +588,8 @@ const PullRequest = () => {
     const open = pull.state === 'open';
     const canMerge = typeof pull.canMerge === 'boolean' ? pull.canMerge : canMergePullRequest(project);
     const canClose = canClosePullRequest(project, pull, user);
-    const wrongBranch = Boolean(pull.baseBranch && project.gitBranch && pull.baseBranch !== project.gitBranch && !targetBranchGone);
+    const branchGone = Boolean(pull.baseBranch && (pull.baseBranchMissing || targetBranchGone));
+    const wrongBranch = Boolean(pull.baseBranch && project.gitBranch && pull.baseBranch !== project.gitBranch && !branchGone);
     const changedFileCount = analysis && !fileDiff ?
         analysis.targets.reduce((total, entry) => total + entry.count, analysis.others.length) :
         diff === null ? (pull.fileCount ?? pull.filesChanged ?? '…') : files.length;
@@ -687,6 +689,10 @@ const PullRequest = () => {
                             {mergeError && !mergeSession ? <Notice variant="error">{mergeError}</Notice> : null}
                             {open && canMerge && mergeSession ? (
                                 <p className={styles.note}>{communityText('Resolve the conflicts below to finish merging.')}</p>
+                            ) : open && canMerge && branchGone ? (
+                                <p className={styles.note}>
+                                    {communityText('This pull request targets the {value1} branch, which no longer exists. Close it and open a new one.', {value1: pull.baseBranch})}
+                                </p>
                             ) : open && canMerge && wrongBranch ? (
                                 <p className={styles.note}>
                                     {communityText('This pull request targets the {value1} branch, and this project is on {value2}. It can be merged once the project is back on {value1}.', {value1: pull.baseBranch, value2: project.gitBranch})}
