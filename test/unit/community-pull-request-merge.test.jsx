@@ -293,7 +293,8 @@ describe('pull request merges', () => {
     });
 
     test('a merge refused because the target branch is gone shows the sentence once', async () => {
-        api.getPull.mockResolvedValue({pull: {...pull, baseBranch: 'old'}});
+        api.getPull.mockResolvedValueOnce({pull: {...pull, baseBranch: 'old'}})
+            .mockResolvedValue({pull: {...pull, baseBranch: 'old', baseBranchMissing: true}});
         api.mergePull.mockRejectedValue(Object.assign(new Error('raw server text'), {
             code: 'target_branch_missing', status: 409, data: {branch: 'old'}
         }));
@@ -306,6 +307,58 @@ describe('pull request merges', () => {
         const sentence = 'This pull request targets the old branch, which no longer exists. Close it and open a new one.';
         expect(wrapper.text().split(sentence)).toHaveLength(2);
         expect(button(wrapper, 'Merge pull request')).toHaveLength(0);
+        expect(wrapper.text()).not.toContain('raw server text');
+    });
+
+    test('a blocked merge comes back when the viewer returns and the branch is there again', async () => {
+        api.getPull.mockResolvedValueOnce({pull: {...pull, baseBranch: 'old', baseBranchMissing: true}})
+            .mockResolvedValue({pull: {...pull, baseBranch: 'old'}});
+        const wrapper = mountPull();
+        await settle(wrapper);
+        expect(button(wrapper, 'Merge pull request')).toHaveLength(0);
+        await act(async () => {
+            window.dispatchEvent(new Event('focus'));
+        });
+        await settle(wrapper);
+        expect(button(wrapper, 'Merge pull request')).toHaveLength(1);
+        expect(wrapper.text()).not.toContain('which no longer exists');
+    });
+
+    test('a project that returns to the pull branch in another tab can be merged after refocusing', async () => {
+        api.getProject.mockImplementation(id => Promise.resolve({
+            project: {id, title: id, owner: 'sam', isOwner: id === 'target', canViewSource: true, gitHead: sha('c'), gitBranch: 'feature'}
+        }));
+        api.getPull.mockResolvedValue({pull: {...pull, baseBranch: 'main'}});
+        const wrapper = mountPull();
+        await settle(wrapper);
+        expect(button(wrapper, 'Merge pull request')).toHaveLength(0);
+        api.getProject.mockImplementation(id => Promise.resolve({
+            project: {id, title: id, owner: 'sam', isOwner: id === 'target', canViewSource: true, gitHead: sha('c'), gitBranch: 'main'}
+        }));
+        await act(async () => {
+            window.dispatchEvent(new Event('focus'));
+        });
+        await settle(wrapper);
+        expect(button(wrapper, 'Merge pull request')).toHaveLength(1);
+    });
+
+    test('a merge refused because the project switched branch hides the button and says so once', async () => {
+        api.getPull.mockResolvedValue({pull: {...pull, baseBranch: 'main'}});
+        api.mergePull.mockRejectedValue(Object.assign(new Error('raw server text'), {
+            code: 'target_branch_changed', status: 409, data: {branch: 'main'}
+        }));
+        const wrapper = mountPull();
+        await settle(wrapper);
+        api.getProject.mockImplementation(id => Promise.resolve({
+            project: {id, title: id, owner: 'sam', isOwner: id === 'target', canViewSource: true, gitHead: sha('c'), gitBranch: 'feature'}
+        }));
+        await act(async () => {
+            button(wrapper, 'Merge pull request').simulate('click');
+        });
+        await settle(wrapper);
+        expect(button(wrapper, 'Merge pull request')).toHaveLength(0);
+        expect(wrapper.text()).toContain('This pull request targets the main branch, and this project is on feature.');
+        expect(wrapper.text()).not.toContain('Switch this project to the main branch');
         expect(wrapper.text()).not.toContain('raw server text');
     });
 

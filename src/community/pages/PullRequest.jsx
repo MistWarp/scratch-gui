@@ -229,7 +229,6 @@ const PullRequest = () => {
     const [mergeError, setMergeError] = useState('');
     const [merging, setMerging] = useState(false);
     const [mergeSession, setMergeSession] = useState(null);
-    const [targetBranchGone, setTargetBranchGone] = useState(false);
     const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
     const [closing, setClosing] = useState(false);
     const [closeError, setCloseError] = useState('');
@@ -336,6 +335,27 @@ const PullRequest = () => {
         }
     }, [id, index, viewer]);
 
+    const refreshProject = useCallback(async () => {
+        const context = `${viewer}:${id}:${index}`;
+        const projectData = await api.getProject(id).catch(() => null);
+        if (projectData && contextRef.current === context) setProject(projectData.project || projectData);
+    }, [id, index, viewer]);
+
+    const branchBlocked = Boolean(pull?.state === 'open' && pull.baseBranch &&
+        (pull.baseBranchMissing || (project?.gitBranch && pull.baseBranch !== project.gitBranch)));
+    useEffect(() => {
+        if (!branchBlocked) return;
+        const onReturn = () => {
+            if (document.visibilityState !== 'hidden') load();
+        };
+        window.addEventListener('focus', onReturn);
+        document.addEventListener('visibilitychange', onReturn);
+        return () => {
+            window.removeEventListener('focus', onReturn);
+            document.removeEventListener('visibilitychange', onReturn);
+        };
+    }, [branchBlocked, load]);
+
     useEffect(() => {
         setProject(null);
         setPull(null);
@@ -349,7 +369,6 @@ const PullRequest = () => {
         setTab('conversation');
         setActiveSprite('');
         setMergeSession(null);
-        setTargetBranchGone(false);
         setMergeError('');
         setCloseConfirmOpen(false);
         setClosing(false);
@@ -376,9 +395,8 @@ const PullRequest = () => {
 
     const failMerge = async (error, fallback) => {
         const failure = pullMergeFailure(error, communityText, fallback);
-        const gone = error?.code === 'target_branch_missing' && Boolean(pull?.baseBranch);
-        setMergeError(gone ? '' : failure.message);
-        if (gone) setTargetBranchGone(true);
+        setMergeError(failure.message);
+        if (error?.code === 'target_branch_changed') await refreshProject();
         if (!failure.restart) return;
         setMergeSession(null);
         diffGenerationRef.current += 1;
@@ -588,7 +606,7 @@ const PullRequest = () => {
     const open = pull.state === 'open';
     const canMerge = typeof pull.canMerge === 'boolean' ? pull.canMerge : canMergePullRequest(project);
     const canClose = canClosePullRequest(project, pull, user);
-    const branchGone = Boolean(pull.baseBranch && (pull.baseBranchMissing || targetBranchGone));
+    const branchGone = Boolean(pull.baseBranch && pull.baseBranchMissing);
     const wrongBranch = Boolean(pull.baseBranch && project.gitBranch && pull.baseBranch !== project.gitBranch && !branchGone);
     const changedFileCount = analysis && !fileDiff ?
         analysis.targets.reduce((total, entry) => total + entry.count, analysis.others.length) :
@@ -686,7 +704,7 @@ const PullRequest = () => {
                                 {open ? <GitMerge size={20} /> : <Check size={20} />}
                                 <div><strong>{open ? communityText('Ready for review') : communityText('Pull request closed')}</strong><span>{open ? communityText('Review the files before merging.') : communityText('No more changes can be merged.')}</span></div>
                             </div>
-                            {mergeError && !mergeSession ? <Notice variant="error">{mergeError}</Notice> : null}
+                            {mergeError && !mergeSession && !branchGone && !wrongBranch ? <Notice variant="error">{mergeError}</Notice> : null}
                             {open && canMerge && mergeSession ? (
                                 <p className={styles.note}>{communityText('Resolve the conflicts below to finish merging.')}</p>
                             ) : open && canMerge && branchGone ? (
