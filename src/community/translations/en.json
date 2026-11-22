@@ -3804,5 +3804,11 @@
   "Use the original": "Use the original",
   "Save resolutions and sync": "Save resolutions and sync",
   "This remix changed while it was syncing. Sync again to include the new changes.": "This remix changed while it was syncing. Sync again to include the new changes.",
-  "{value1} changed while this remix was syncing. Sync again to get its latest changes.": "{value1} changed while this remix was syncing. Sync again to get its latest changes."
+  "{value1} changed while this remix was syncing. Sync again to get its latest changes.": "{value1} changed while this remix was syncing. Sync again to get its latest changes.",
+  "Commit the changes saved in this project before merging this pull request.": "Commit the changes saved in this project before merging this pull request.",
+  "Switch this project to the {value1} branch before merging this pull request.": "Switch this project to the {value1} branch before merging this pull request.",
+  "The remix changed while you were merging. Review the new changes, then merge again.": "The remix changed while you were merging. Review the new changes, then merge again.",
+  "This project changed while you were merging. Merge again to include the latest changes.": "This project changed while you were merging. Merge again to include the latest changes.",
+  "Merge failed.": "Merge failed.",
+  "The conflicts could not be resolved.": "The conflicts could not be resolved."
 }

@@ -3,6 +3,7 @@ import {
     canClosePullRequest,
     canMergePullRequest,
     pullAssetRefs,
+    pullMergeFailure,
     pullMergeUpload,
     readPullDiffCache,
     writePullDiffCache,
@@ -125,5 +126,18 @@ describe('pull request loading', () => {
             pullId: 4,
             sourceHead: 'fork-head'
         });
+    });
+
+    test('explains merge refusals and restarts when a head moved', () => {
+        const text = (message, values) => message.replace('{value1}', values?.value1);
+        const failure = code => pullMergeFailure(Object.assign(new Error('raw'), {code, data: {branch: 'dev'}}), text, 'Merge failed.');
+        expect(failure('uncommitted_changes')).toEqual({
+            restart: false,
+            message: 'Commit the changes saved in this project before merging this pull request.'
+        });
+        expect(failure('target_branch_changed').message).toBe('Switch this project to the dev branch before merging this pull request.');
+        expect(failure('pull_head_changed').restart).toBe(true);
+        expect(failure('head_changed').restart).toBe(true);
+        expect(pullMergeFailure(new Error(''), text, 'Merge failed.')).toEqual({restart: false, message: 'Merge failed.'});
     });
 });

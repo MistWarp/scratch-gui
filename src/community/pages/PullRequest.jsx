@@ -99,6 +99,25 @@ export const pullMergeUpload = (data, pullIndex, artifacts) => ({
     sourceHead: data.sourceHead
 });
 
+const RESTART_MERGE_CODES = ['head_changed', 'pull_head_changed'];
+
+export const pullMergeFailure = (error, communityText, fallback) => {
+    const restart = RESTART_MERGE_CODES.includes(error?.code);
+    if (error?.code === 'uncommitted_changes') {
+        return {restart, message: communityText('Commit the changes saved in this project before merging this pull request.')};
+    }
+    if (error?.code === 'target_branch_changed' && error.data?.branch) {
+        return {restart, message: communityText('Switch this project to the {value1} branch before merging this pull request.', {value1: error.data.branch})};
+    }
+    if (error?.code === 'pull_head_changed') {
+        return {restart, message: communityText('The remix changed while you were merging. Review the new changes, then merge again.')};
+    }
+    if (error?.code === 'head_changed') {
+        return {restart, message: communityText('This project changed while you were merging. Merge again to include the latest changes.')};
+    }
+    return {restart, message: error?.message || fallback};
+};
+
 export const shouldLoadPullDiff = ({tab, pull, diff, diffError, changes = null, fileDiff = false}) => (
     tab === 'files' && Boolean(pull) && diff === null && !diffError && (!changes || fileDiff)
 );
@@ -317,6 +336,17 @@ const PullRequest = () => {
         await load();
     };
 
+    const failMerge = async (error, fallback) => {
+        const failure = pullMergeFailure(error, communityText, fallback);
+        setMergeError(failure.message);
+        if (!failure.restart) return;
+        setMergeSession(null);
+        setDiff(null);
+        setChanges(null);
+        setFileTexts({});
+        await load();
+    };
+
     const merge = async () => {
         if (!pull || merging) return;
         setMerging(true);
@@ -341,7 +371,7 @@ const PullRequest = () => {
                 await uploadMerge(data, pull, result.files);
             }
         } catch (error) {
-            setMergeError(error.message || 'Merge failed.');
+            await failMerge(error, communityText('Merge failed.'));
         } finally {
             setMerging(false);
         }
@@ -360,7 +390,7 @@ const PullRequest = () => {
             }
             await uploadMerge(session.data, session.pull, resolvedMergeFiles(session));
         } catch (error) {
-            setMergeError(error.message || 'The conflicts could not be resolved.');
+            await failMerge(error, communityText('The conflicts could not be resolved.'));
         } finally {
             setMerging(false);
         }
@@ -602,7 +632,7 @@ const PullRequest = () => {
                                 {open ? <GitMerge size={20} /> : <Check size={20} />}
                                 <div><strong>{open ? communityText('Ready for review') : communityText('Pull request closed')}</strong><span>{open ? communityText('Review the files before merging.') : communityText('No more changes can be merged.')}</span></div>
                             </div>
-                            {mergeError ? <Notice variant="error">{mergeError}</Notice> : null}
+                            {mergeError && !mergeSession ? <Notice variant="error">{mergeError}</Notice> : null}
                             {open && canMerge ? (
                                 <Button variant="primary" onClick={merge} busy={merging} busyLabel={communityText('Merging…')}>{communityText('Merge pull request')}</Button>
                             ) : open ? <p className={styles.note}>{communityText('Only project owners and maintainers can merge this pull request.')}</p> : null}
