@@ -8,6 +8,7 @@ jest.mock('../../src/community/api', () => ({
 
 import api from '../../src/community/api';
 import {
+    mapLimited,
     materializeMerge,
     resolvedMergeFiles,
     unresolvedBinaryConflict,
@@ -65,5 +66,20 @@ describe('merge sessions', () => {
 
         const kept = resolvedMergeFiles(withBinaryChoice(session, 'b.svg', 'target'));
         expect(text(kept.get('b.svg'))).toBe('ours');
+    });
+
+    test('file fetches run a few at a time and keep their order', async () => {
+        let running = 0;
+        let peak = 0;
+        const results = await mapLimited([1, 2, 3, 4, 5, 6, 7], 3, async value => {
+            running++;
+            peak = Math.max(peak, running);
+            await new Promise(resolve => setTimeout(resolve, 5 * (8 - value)));
+            running--;
+            return value * 2;
+        });
+        expect(results).toEqual([2, 4, 6, 8, 10, 12, 14]);
+        expect(peak).toBe(3);
+        expect(await mapLimited([], 3, async value => value)).toEqual([]);
     });
 });

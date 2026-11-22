@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {GitFork, RefreshCw} from 'lucide-react';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
@@ -14,16 +14,48 @@ import Button from './ui/Button.jsx';
 import Notice from './ui/Notice.jsx';
 import styles from './ForkStatus.module.css';
 
+const RESTART_CODES = ['head_changed', 'original_changed', 'uncommitted_changes'];
+
 const ForkStatus = ({canContribute, canSync, contributeHref, hasUncommitted, onSynced, projectId, remixFrom}) => {
     const {text: communityText} = useCommunityText();
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
     const [notice, setNotice] = useState('');
     const [session, setSession] = useState(null);
+    const mounted = useRef(true);
+    useEffect(() => () => {
+        mounted.current = false;
+    }, []);
     const original = remixParentLabel(remixFrom);
+    const hintId = `fork-sync-hint-${projectId}`;
     const showSync = canSync && remixFrom.behind > 0 && !session;
     // eslint-disable-next-line max-len
     const conflictLead = communityText('This remix and {value1} changed the same files. Edit the text conflicts and choose which version of each asset to keep.', {value1: original});
+
+    const syncErrorMessage = syncError => {
+        if (syncError.code === 'uncommitted_changes') {
+            return communityText('Commit your saved changes in the editor before syncing, so they are not replaced.');
+        }
+        if (syncError.code === 'head_changed') {
+            return communityText('This remix changed while it was syncing. Sync again to include the new changes.');
+        }
+        if (syncError.code === 'original_changed') {
+            return communityText(
+                '{value1} changed while this remix was syncing. Sync again to get its latest changes.',
+                {value1: original}
+            );
+        }
+        return syncError.message || communityText('Could not sync this remix.');
+    };
+
+    const fail = async syncError => {
+        if (!mounted.current) return;
+        setError(syncErrorMessage(syncError));
+        if (RESTART_CODES.includes(syncError.code)) {
+            setSession(null);
+            if (onSynced) await onSynced();
+        }
+    };
 
     const upload = async (data, files) => {
         const artifacts = await buildProjectArtifactsFromFileEntries(
@@ -35,6 +67,7 @@ const ForkStatus = ({canContribute, canSync, contributeHref, hasUncommitted, onS
             expectedHead: data.expectedHead,
             syncHead: data.sourceHead
         });
+        if (!mounted.current) return;
         setSession(null);
         setNotice(communityText('Brought in the latest changes from {value1}.', {value1: original}));
         if (onSynced) await onSynced();
@@ -47,21 +80,23 @@ const ForkStatus = ({canContribute, canSync, contributeHref, hasUncommitted, onS
         setNotice('');
         try {
             const data = await api.syncRemix(projectId);
+            if (!mounted.current) return;
             if (data.merge.alreadyMerged) {
                 setNotice(communityText('This remix already has every change from {value1}.', {value1: original}));
                 if (onSynced) await onSynced();
                 return;
             }
             const prepared = await materializeMerge(data);
+            if (!mounted.current) return;
             if (prepared.conflicts.length || prepared.binaryConflicts.length) {
                 setSession({...prepared, data});
             } else {
                 await upload(data, prepared.files);
             }
         } catch (syncError) {
-            setError(syncError.message || communityText('Could not sync this remix.'));
+            await fail(syncError);
         } finally {
-            setBusy(false);
+            if (mounted.current) setBusy(false);
         }
     };
 
@@ -71,12 +106,15 @@ const ForkStatus = ({canContribute, canSync, contributeHref, hasUncommitted, onS
         setError('');
         try {
             const unresolved = unresolvedBinaryConflict(session);
-            if (unresolved) throw new Error(communityText('Choose a version for {value1}.', {value1: unresolved.path}));
+            if (unresolved) {
+                setError(communityText('Choose a version for {value1}.', {value1: unresolved.path}));
+                return;
+            }
             await upload(session.data, resolvedMergeFiles(session));
         } catch (resolveError) {
-            setError(resolveError.message || communityText('Could not sync this remix.'));
+            await fail(resolveError);
         } finally {
-            setBusy(false);
+            if (mounted.current) setBusy(false);
         }
     };
 
@@ -99,6 +137,7 @@ const ForkStatus = ({canContribute, canSync, contributeHref, hasUncommitted, onS
                         busy={busy}
                         busyLabel={communityText('Syncing…')}
                         disabled={hasUncommitted}
+                        aria-describedby={hasUncommitted ? hintId : null}
                         onClick={sync}
                     >
                         <RefreshCw size={14} />
@@ -107,11 +146,11 @@ const ForkStatus = ({canContribute, canSync, contributeHref, hasUncommitted, onS
                 ) : null}
             </div>
             {showSync && hasUncommitted ? (
-                <p className={styles.hint}>
+                <p className={styles.hint} id={hintId}>
                     {communityText('Commit your saved changes in the editor before syncing, so they are not replaced.')}
                 </p>
             ) : null}
-            {error ? <Notice variant="error">{error}</Notice> : null}
+            {error && !session ? <Notice variant="error">{error}</Notice> : null}
             {notice ? <Notice variant="success" onDismiss={() => setNotice('')}>{notice}</Notice> : null}
             {session ? (
                 <MergeConflicts
@@ -124,11 +163,19 @@ const ForkStatus = ({canContribute, canSync, contributeHref, hasUncommitted, onS
                     submitLabel={communityText('Save resolutions and sync')}
                     busy={busy}
                     busyLabel={communityText('Syncing…')}
+                    error={error}
+                    focusOnMount
                     onTextChange={(path, content) => setSession(current => withTextResolution(current, path, content))}
                     onChoose={(path, choice) => setSession(current => withBinaryChoice(current, path, choice))}
                     onSubmit={resolve}
                     actions={(
-                        <Button disabled={busy} onClick={() => setSession(null)}>
+                        <Button
+                            disabled={busy}
+                            onClick={() => {
+                                setSession(null);
+                                setError('');
+                            }}
+                        >
                             {communityText('Cancel')}
                         </Button>
                     )}

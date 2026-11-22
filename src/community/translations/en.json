@@ -3802,5 +3802,7 @@
   "This remix and {value1} changed the same files. Edit the text conflicts and choose which version of each asset to keep.": "This remix and {value1} changed the same files. Edit the text conflicts and choose which version of each asset to keep.",
   "Keep this remix": "Keep this remix",
   "Use the original": "Use the original",
-  "Save resolutions and sync": "Save resolutions and sync"
+  "Save resolutions and sync": "Save resolutions and sync",
+  "This remix changed while it was syncing. Sync again to include the new changes.": "This remix changed while it was syncing. Sync again to include the new changes.",
+  "{value1} changed while this remix was syncing. Sync again to get its latest changes.": "{value1} changed while this remix was syncing. Sync again to get its latest changes."
 }

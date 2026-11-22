@@ -7,12 +7,27 @@ export const decodeBase64 = value => {
     return bytes;
 };
 
+const FILE_FETCH_LIMIT = 8;
+
+export const mapLimited = async (items, limit, task) => {
+    const results = new Array(items.length);
+    let next = 0;
+    const worker = async () => {
+        while (next < items.length) {
+            const index = next++;
+            results[index] = await task(items[index], index);
+        }
+    };
+    await Promise.all(Array.from({length: Math.min(limit, items.length)}, worker));
+    return results;
+};
+
 export const materializeMerge = async data => {
     const tree = await api.commitTree(data.targetProjectId, data.targetHead);
-    const loaded = await Promise.all((tree.files || []).map(async file => {
+    const loaded = await mapLimited(tree.files || [], FILE_FETCH_LIMIT, async file => {
         const result = await api.commitFile(data.targetProjectId, data.targetHead, file.path);
         return [file.path, decodeBase64(result.content)];
-    }));
+    });
     const files = new Map(loaded);
     const conflicts = [];
     const binaryConflicts = [];

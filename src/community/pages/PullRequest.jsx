@@ -37,38 +37,16 @@ import {
 } from '../commit-changes.js';
 import {base64ToBytes, mediaTypeForAssetPath} from '../asset-media.js';
 import {buildProjectArtifactsFromFileEntries} from '../../lib/git/mwp.js';
+import MergeConflicts from '../components/MergeConflicts.jsx';
+import {
+    materializeMerge,
+    resolvedMergeFiles,
+    unresolvedBinaryConflict,
+    withBinaryChoice,
+    withTextResolution
+} from '../merge-session.js';
 import styles from './PullRequest.module.css';
 import {session as sessionStore} from '../../modules/storage';
-
-const decodeBase64 = value => {
-    const binary = atob(value || '');
-    const bytes = new Uint8Array(binary.length);
-    for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index);
-    return bytes;
-};
-
-const loadServerMerge = async data => {
-    const tree = await api.commitTree(data.targetProjectId, data.expectedHead);
-    const loaded = await Promise.all((tree.files || []).map(async file => {
-        const result = await api.commitFile(data.targetProjectId, data.expectedHead, file.path);
-        return [file.path, decodeBase64(result.content)];
-    }));
-    const files = new Map(loaded);
-    const conflicts = [];
-    const binaryConflicts = [];
-    for (const change of data.merge.changes || []) {
-        if (change.conflict && change.binary) {
-            binaryConflicts.push({...change, choice: ''});
-        } else {
-            if (change.deleted) files.delete(change.path);
-            else files.set(change.path, decodeBase64(change.content));
-            if (change.conflict) {
-                conflicts.push({path: change.path, content: new TextDecoder().decode(decodeBase64(change.content))});
-            }
-        }
-    }
-    return {files, conflicts, binaryConflicts};
-};
 
 const PULL_DIFF_CACHE_PREFIX = 'mw:pull-diff:';
 const PULL_DIFF_CACHE_MAX_ENTRIES = 6;
@@ -76,7 +54,7 @@ const PULL_DIFF_CACHE_MAX_BYTES = 8 * 1024 * 1024;
 const PULL_DIFF_ENTRY_MAX_BYTES = 2 * 1024 * 1024;
 const pullDiffCacheKey = pull => {
     const session = api.loadSession() || 'anonymous';
-    return `${PULL_DIFF_CACHE_PREFIX}${session}:${pull.targetProjectId}:${pull.baseCommit}:${pull.headCommit}`;
+    return `${PULL_DIFF_CACHE_PREFIX}${session}:${pull.targetProjectId}:${pull.currentTargetHead || pull.baseCommit}:${pull.headCommit}`;
 };
 export const readPullDiffCache = pull => {
     const raw = sessionStore.readString(pullDiffCacheKey(pull));
@@ -112,6 +90,14 @@ export const writePullDiffCache = (pull, diff) => {
         }
     });
 };
+
+export const pullMergeUpload = (data, pullIndex, artifacts) => ({
+    sb3: artifacts.sb3,
+    mergeTree: artifacts.tree,
+    expectedHead: data.expectedHead,
+    pullId: pullIndex,
+    sourceHead: data.sourceHead
+});
 
 export const shouldLoadPullDiff = ({tab, pull, diff, diffError, changes = null, fileDiff = false}) => (
     tab === 'files' && Boolean(pull) && diff === null && !diffError && (!changes || fileDiff)
@@ -211,7 +197,7 @@ const PullRequest = () => {
     const diffRequestRef = useRef('');
     contextRef.current = `${viewer}:${id}:${index}`;
 
-    const loadDiff = useCallback(async (activePull, context, wantFileDiff = false) => {
+    const loadDiff = useCallback(async (activePull, context, wantFileDiff = false, targetHead = '') => {
         if (contextRef.current !== context || loadedContext !== context) return;
         if (diffRequestRef.current === context) return;
         diffRequestRef.current = context;
@@ -227,7 +213,8 @@ const PullRequest = () => {
                 return;
             }
         }
-        const cached = readPullDiffCache(activePull);
+        const cacheKeyPull = {...activePull, currentTargetHead: targetHead};
+        const cached = readPullDiffCache(cacheKeyPull);
         if (cached !== null) {
             if (contextRef.current === context) setDiff(cached);
             if (diffRequestRef.current === context) diffRequestRef.current = '';
@@ -242,7 +229,7 @@ const PullRequest = () => {
                 buildPullRequestFileTexts(cachingApi, diffData)
             ]);
             const renderedDiff = nextDiff || 'No textual changes.';
-            writePullDiffCache(activePull, renderedDiff);
+            writePullDiffCache(cacheKeyPull, renderedDiff);
             if (contextRef.current === context) {
                 if (diffData.pull) setAssetRefs(pullAssetRefs({...activePull, ...diffData.pull}, id));
                 setDiff(renderedDiff);
@@ -318,20 +305,14 @@ const PullRequest = () => {
 
     useEffect(() => {
         if (!shouldLoadPullDiff({tab, pull, diff, diffError, changes, fileDiff})) return;
-        loadDiff(pull, `${viewer}:${id}:${index}`, fileDiff);
-    }, [changes, diff, diffError, fileDiff, id, index, loadDiff, pull, tab, viewer]);
+        loadDiff(pull, `${viewer}:${id}:${index}`, fileDiff, project?.gitHead || '');
+    }, [changes, diff, diffError, fileDiff, id, index, loadDiff, project, pull, tab, viewer]);
 
     const uploadMerge = async (data, activePull, files) => {
         const result = await buildProjectArtifactsFromFileEntries(
             [...files].map(([path, fileData]) => ({path, data: fileData}))
         );
-        await api.uploadPullMerge(id, {
-            sb3: result.sb3,
-            mergeTree: result.tree,
-            expectedHead: data.expectedHead,
-            pullId: activePull.index,
-            sourceHead: data.sourceHead
-        });
+        await api.uploadPullMerge(id, pullMergeUpload(data, activePull.index, result));
         setMergeSession(null);
         await load();
     };
@@ -347,7 +328,7 @@ const PullRequest = () => {
                 await load();
                 return;
             }
-            const result = await loadServerMerge(data);
+            const result = await materializeMerge({...data, targetHead: data.expectedHead});
             if (result.conflicts.length || result.binaryConflicts.length) {
                 setMergeSession({
                     pull,
@@ -372,18 +353,12 @@ const PullRequest = () => {
         setMerging(true);
         setMergeError('');
         try {
-            const resolvedFiles = new Map(session.files);
-            for (const file of session.conflicts) {
-                resolvedFiles.set(file.path, new TextEncoder().encode(file.content));
+            const unresolved = unresolvedBinaryConflict(session);
+            if (unresolved) {
+                setMergeError(communityText('Choose a version for {value1}.', {value1: unresolved.path}));
+                return;
             }
-            for (const file of session.binaryConflicts) {
-                if (!file.choice) throw new Error(`Choose a version for ${file.path}`);
-                const deleted = file.choice === 'theirs' ? file.theirsDeleted : file.oursDeleted;
-                const content = file.choice === 'theirs' ? file.theirs : file.ours;
-                if (deleted) resolvedFiles.delete(file.path);
-                else resolvedFiles.set(file.path, decodeBase64(content));
-            }
-            await uploadMerge(session.data, session.pull, resolvedFiles);
+            await uploadMerge(session.data, session.pull, resolvedMergeFiles(session));
         } catch (error) {
             setMergeError(error.message || 'The conflicts could not be resolved.');
         } finally {
@@ -407,21 +382,11 @@ const PullRequest = () => {
     };
 
     const updateTextConflict = (path, content) => {
-        setMergeSession(session => ({
-            ...session,
-            conflicts: session.conflicts.map(item => (
-                item.path === path ? {...item, content} : item
-            ))
-        }));
+        setMergeSession(session => withTextResolution(session, path, content));
     };
 
     const updateBinaryConflict = (path, choice) => {
-        setMergeSession(session => ({
-            ...session,
-            binaryConflicts: session.binaryConflicts.map(item => (
-                item.path === path ? {...item, choice} : item
-            ))
-        }));
+        setMergeSession(session => withBinaryChoice(session, path, choice));
     };
 
     const refreshTimeline = async () => {
@@ -690,7 +655,7 @@ const PullRequest = () => {
                                     loadAsset={loadPullAsset}
                                     onShowLines={() => setFileDiff(true)}
                                 />
-                            ) : diffError ? <StatusMessage error onRetry={() => loadDiff(pull, `${viewer}:${id}:${index}`, fileDiff)}>{diffError}</StatusMessage> : diff === null ? (
+                            ) : diffError ? <StatusMessage error onRetry={() => loadDiff(pull, `${viewer}:${id}:${index}`, fileDiff, project?.gitHead || '')}>{diffError}</StatusMessage> : diff === null ? (
                                 <StatusMessage>{communityText('Loading file changes…')}</StatusMessage>
                             ) : <DiffView diff={diff} spriteFilter={activeSprite} loadAsset={loadPullAsset} fileTexts={fileTexts} />}
                         </section>
@@ -699,28 +664,24 @@ const PullRequest = () => {
             </div>
 
             {mergeSession ? (
-                <section className={styles.conflicts}>
-                    <h2>{communityText('Resolve merge conflicts')}</h2>
-                    <p>{communityText('Edit each text file, then choose which version to keep for every asset.')}</p>
-                    {mergeSession.conflicts.map(file => (
-                        <label key={file.path}>
-                            <span>{file.path}</span>
-                            <textarea
-                                value={file.content}
-                                disabled={merging}
-                                onChange={event => updateTextConflict(file.path, event.target.value)}
-                            />
-                        </label>
-                    ))}
-                    {mergeSession.binaryConflicts.map(file => (
-                        <div className={styles.binaryConflict} key={file.path}>
-                            <span>{file.path}</span>
-                            <button className={file.choice === 'ours' ? styles.choiceActive : ''} onClick={() => updateBinaryConflict(file.path, 'ours')}>{communityText('Keep current project')}</button>
-                            <button className={file.choice === 'theirs' ? styles.choiceActive : ''} onClick={() => updateBinaryConflict(file.path, 'theirs')}>{communityText('Use pull request')}</button>
-                        </div>
-                    ))}
-                    <Button variant="primary" onClick={resolveConflicts} busy={merging} busyLabel={communityText('Merging…')}>{communityText('Save resolutions and merge')}</Button>
-                </section>
+                <div className={styles.conflicts}>
+                    <MergeConflicts
+                        title={communityText('Resolve merge conflicts')}
+                        lead={communityText('Edit each text file, then choose which version to keep for every asset.')}
+                        conflicts={mergeSession.conflicts}
+                        binaryConflicts={mergeSession.binaryConflicts}
+                        keepLabel={communityText('Keep current project')}
+                        useLabel={communityText('Use pull request')}
+                        submitLabel={communityText('Save resolutions and merge')}
+                        busy={merging}
+                        busyLabel={communityText('Merging…')}
+                        error={mergeError}
+                        focusOnMount
+                        onTextChange={updateTextConflict}
+                        onChoose={updateBinaryConflict}
+                        onSubmit={resolveConflicts}
+                    />
+                </div>
             ) : null}
             {closeConfirmOpen ? (
                 <ConfirmModal

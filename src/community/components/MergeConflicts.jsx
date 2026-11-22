@@ -1,7 +1,8 @@
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, {useEffect, useRef} from 'react';
 import {GitMerge} from 'lucide-react';
 import Button from './ui/Button.jsx';
+import Notice from './ui/Notice.jsx';
 import SectionHeading from './ui/SectionHeading.jsx';
 import styles from './MergeConflicts.module.css';
 
@@ -11,6 +12,8 @@ const MergeConflicts = ({
     busy,
     busyLabel,
     conflicts,
+    error,
+    focusOnMount,
     keepLabel,
     lead,
     onChoose,
@@ -19,54 +22,73 @@ const MergeConflicts = ({
     submitLabel,
     title,
     useLabel
-}) => (
-    <section className={styles.conflicts}>
-        <SectionHeading
-            as="h3"
-            icon={GitMerge}
-            title={title}
-            lead={lead}
-        />
-        {conflicts.map(file => (
-            <label key={file.path}>
-                <span>{file.path}</span>
-                <textarea
-                    value={file.content}
-                    disabled={busy}
-                    onChange={event => onTextChange(file.path, event.target.value)}
-                />
-            </label>
-        ))}
-        {binaryConflicts.map(file => (
-            <div className={styles.binaryConflict} key={file.path}>
-                <span>{file.path}</span>
-                <button
-                    type="button"
-                    aria-pressed={file.choice === 'target'}
-                    className={file.choice === 'target' ? styles.choiceActive : ''}
-                    onClick={() => onChoose(file.path, 'target')}
-                >
-                    {keepLabel}
-                </button>
-                <button
-                    type="button"
-                    aria-pressed={file.choice === 'source'}
-                    className={file.choice === 'source' ? styles.choiceActive : ''}
-                    onClick={() => onChoose(file.path, 'source')}
-                >
-                    {useLabel}
-                </button>
-            </div>
-        ))}
-        <div className={styles.actions}>
-            <Button variant="primary" busy={busy} busyLabel={busyLabel} onClick={onSubmit}>
-                <GitMerge size={16} />
-                {submitLabel}
-            </Button>
-            {actions}
-        </div>
-    </section>
-);
+}) => {
+    const sectionRef = useRef(null);
+    useEffect(() => {
+        if (focusOnMount && sectionRef.current) sectionRef.current.focus();
+    }, []);
+    const submit = (
+        <Button variant="primary" busy={busy} busyLabel={busyLabel} onClick={onSubmit}>
+            <GitMerge size={16} />
+            {submitLabel}
+        </Button>
+    );
+    return (
+        <section
+            ref={sectionRef}
+            className={styles.conflicts}
+            tabIndex={focusOnMount ? -1 : null}
+            aria-label={typeof title === 'string' ? title : null}
+        >
+            <SectionHeading
+                as="h3"
+                icon={GitMerge}
+                title={title}
+                lead={lead}
+            />
+            {conflicts.map(file => (
+                <label key={file.path}>
+                    <span className={styles.path}>{file.path}</span>
+                    <textarea
+                        value={file.content}
+                        disabled={busy}
+                        onChange={event => onTextChange(file.path, event.target.value)}
+                    />
+                </label>
+            ))}
+            {binaryConflicts.map(file => (
+                <div className={styles.binaryConflict} key={file.path}>
+                    <span className={styles.path}>{file.path}</span>
+                    <button
+                        type="button"
+                        aria-pressed={file.choice === 'target'}
+                        className={file.choice === 'target' ? styles.choiceActive : ''}
+                        disabled={busy}
+                        onClick={() => onChoose(file.path, 'target')}
+                    >
+                        {keepLabel}
+                    </button>
+                    <button
+                        type="button"
+                        aria-pressed={file.choice === 'source'}
+                        className={file.choice === 'source' ? styles.choiceActive : ''}
+                        disabled={busy}
+                        onClick={() => onChoose(file.path, 'source')}
+                    >
+                        {useLabel}
+                    </button>
+                </div>
+            ))}
+            {error ? <Notice variant="error">{error}</Notice> : null}
+            {actions ? (
+                <div className={styles.actions}>
+                    {submit}
+                    {actions}
+                </div>
+            ) : submit}
+        </section>
+    );
+};
 
 MergeConflicts.propTypes = {
     actions: PropTypes.node,
@@ -80,6 +102,8 @@ MergeConflicts.propTypes = {
         path: PropTypes.string,
         content: PropTypes.string
     })).isRequired,
+    error: PropTypes.node,
+    focusOnMount: PropTypes.bool,
     keepLabel: PropTypes.node.isRequired,
     lead: PropTypes.node,
     onChoose: PropTypes.func.isRequired,

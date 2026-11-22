@@ -244,7 +244,7 @@ const ProjectBranches = ({id, canManage, onChange}) => {
                 </section>
             ) : null}
 
-            {error ? <Notice variant="error" className={styles.message}>{error}</Notice> : null}
+            {error && !session ? <Notice variant="error" className={styles.message}>{error}</Notice> : null}
             {notice ? <Notice variant="success" className={styles.message}>{notice}</Notice> : null}
 
             {session ? (
@@ -258,6 +258,8 @@ const ProjectBranches = ({id, canManage, onChange}) => {
                     submitLabel={communityText('Save resolutions and merge')}
                     busy={busy === 'merge'}
                     busyLabel={communityText('Merging…')}
+                    error={error}
+                    focusOnMount
                     onTextChange={updateText}
                     onChoose={chooseBinary}
                     onSubmit={resolve}

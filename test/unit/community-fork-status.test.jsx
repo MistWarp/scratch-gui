@@ -167,4 +167,34 @@ describe('remix fork status', () => {
         await settle(wrapper);
         expect(wrapper.text()).toContain('commit the changes saved in this remix before syncing it with the original');
     });
+
+    test('a stale sync explains itself, closes the session and refreshes', async () => {
+        api.syncRemix.mockResolvedValue(syncResponse([
+            {path: 'Cat/main.fractch', conflict: true, content: encode('<<<<<<< this remix')}
+        ]));
+        const changed = Object.assign(new Error('the original changed'), {code: 'original_changed', status: 409});
+        api.uploadRemixSync.mockRejectedValue(changed);
+        const onSynced = jest.fn().mockResolvedValue();
+        const wrapper = mountStatus({onSynced});
+        await act(async () => {
+            syncButton(wrapper).simulate('click');
+        });
+        await settle(wrapper);
+        await act(async () => {
+            wrapper.find('button').filterWhere(button => button.text().includes('Save resolutions and sync'))
+                .simulate('click');
+        });
+        await settle(wrapper);
+
+        expect(wrapper.text()).toContain('flufi / Meowing Simulator changed while this remix was syncing.');
+        expect(wrapper.text()).not.toContain('Resolve sync conflicts');
+        expect(onSynced).toHaveBeenCalled();
+    });
+
+    test('points the disabled sync button at the reason', () => {
+        const wrapper = mountStatus({hasUncommitted: true});
+        const describedBy = syncButton(wrapper).prop('aria-describedby');
+        expect(describedBy).toBeTruthy();
+        expect(wrapper.find(`#${describedBy}`).text()).toContain('Commit your saved changes');
+    });
 });

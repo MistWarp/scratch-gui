@@ -8,12 +8,22 @@ jest.mock('../../src/community/api', () => ({
         branches: jest.fn(),
         createBranch: jest.fn().mockResolvedValue({ok: true}),
         renameBranch: jest.fn().mockResolvedValue({ok: true}),
-        deleteBranch: jest.fn().mockResolvedValue({ok: true})
+        deleteBranch: jest.fn().mockResolvedValue({ok: true}),
+        mergeBranches: jest.fn(),
+        uploadBranchMerge: jest.fn(),
+        commitTree: jest.fn(),
+        commitFile: jest.fn()
     }
+}));
+jest.mock('../../src/lib/git/mwp.js', () => ({
+    buildProjectArtifactsFromFileEntries: jest.fn(entries => Promise.resolve({sb3: 'sb3', tree: 'tree', entries}))
 }));
 
 import ProjectBranches from '../../src/community/components/ProjectBranches.jsx';
 import api from '../../src/community/api';
+import {buildProjectArtifactsFromFileEntries} from '../../src/lib/git/mwp.js';
+
+const encode = value => Buffer.from(value).toString('base64');
 
 const branchResponse = {
     ok: true,
@@ -117,5 +127,70 @@ describe('project branch management', () => {
         expect(wrapper.find('input[placeholder="feature-name"]')).toHaveLength(0);
         expect(wrapper.find('button[title^="Rename"]')).toHaveLength(0);
         expect(wrapper.text()).toContain('feature');
+    });
+
+    test('branch merge conflicts are resolved before the merge uploads', async () => {
+        const mainHead = 'a'.repeat(40);
+        const featureHead = 'b'.repeat(40);
+        api.mergeBranches.mockResolvedValue({
+            ok: true,
+            targetProjectId: '123',
+            targetHead: mainHead,
+            sourceHead: featureHead,
+            sourceBranch: 'feature',
+            targetBranch: 'main',
+            merge: {changes: [
+                {path: 'Cat/main.fractch', conflict: true, content: encode('<<<<<<< main')},
+                {path: 'Cat/a.svg', conflict: true, binary: true, ours: encode('main art'), theirs: encode('feature art')}
+            ]}
+        });
+        api.uploadBranchMerge.mockReset().mockResolvedValue({ok: true});
+        api.commitTree.mockResolvedValue({files: [{path: 'Cat/main.fractch'}, {path: 'Cat/a.svg'}]});
+        api.commitFile.mockResolvedValue({content: encode('main')});
+        buildProjectArtifactsFromFileEntries.mockClear();
+        const wrapper = mount(<ProjectBranches
+            id="123"
+            canManage
+        />);
+        await settle(wrapper);
+
+        await act(async () => {
+            wrapper.find('button').filterWhere(button => button.text().includes('Merge branches'))
+                .simulate('click');
+        });
+        await settle(wrapper);
+        await settle(wrapper);
+        expect(api.mergeBranches).toHaveBeenCalledWith('123', 'feature', 'main');
+        expect(wrapper.text()).toContain('Resolve merge conflicts');
+        expect(api.uploadBranchMerge).not.toHaveBeenCalled();
+
+        act(() => {
+            wrapper.find('textarea').props()
+                .onChange({target: {value: 'merged code'}});
+        });
+        wrapper.update();
+        act(() => {
+            wrapper.find('button').filterWhere(button => button.text() === 'Use feature')
+                .simulate('click');
+        });
+        wrapper.update();
+        await act(async () => {
+            wrapper.find('button').filterWhere(button => button.text().includes('Save resolutions and merge'))
+                .simulate('click');
+        });
+        await settle(wrapper);
+        await settle(wrapper);
+
+        const uploaded = buildProjectArtifactsFromFileEntries.mock.calls[0][0];
+        const entries = new Map(uploaded.map(entry => [entry.path, entry.data]));
+        expect(new TextDecoder().decode(entries.get('Cat/main.fractch'))).toBe('merged code');
+        expect(new TextDecoder().decode(entries.get('Cat/a.svg'))).toBe('feature art');
+        expect(api.uploadBranchMerge).toHaveBeenCalledWith('123', expect.objectContaining({
+            sourceBranch: 'feature',
+            targetBranch: 'main',
+            sourceHead: featureHead,
+            targetHead: mainHead
+        }));
+        expect(wrapper.text()).toContain('Merged feature into main.');
     });
 });
