@@ -39,6 +39,7 @@ import ProjectPreview from './project/ProjectPreview.jsx';
 import PullList from './project/PullList.jsx';
 import ReleaseList from './project/ReleaseList.jsx';
 import useProjectData from './project/use-project-data.js';
+import useRemixSync from '../use-remix-sync.js';
 import styles from './ProjectCode.module.css';
 
 const TAB_ID_PREFIX = 'project-code';
@@ -188,6 +189,14 @@ const ProjectCodePage = ({id, vanitySlug}) => {
         api.releases(id).then(fresh(data => setReleaseCount((data.releases || []).length))).catch(() => {});
         api.getComments(id, {limit: 1, issue: 'open'}).then(fresh(data => setIssueCounts(data.issueCounts || null))).catch(() => {});
     }, [beginExtras, canView, id]);
+    const remixSync = useRemixSync({
+        projectId: id,
+        remixFrom: project?.remixFrom || null,
+        onSynced: () => {
+            loadBranches();
+            return refreshProjectAndHistory();
+        }
+    });
     const refreshIssueCounts = useCallback(() => {
         api.getComments(id, {limit: 1, issue: 'open'}).then(data => setIssueCounts(data.issueCounts || null)).catch(() => {});
     }, [id]);
@@ -323,10 +332,7 @@ const ProjectCodePage = ({id, vanitySlug}) => {
                                             contributeHref={`${remixParentUrl}#contribute`}
                                             canSync={canMaintainProject(project)}
                                             hasUncommitted={Boolean(uncommitted)}
-                                            onSynced={() => {
-                                                loadBranches();
-                                                return refreshProjectAndHistory();
-                                            }}
+                                            sync={remixSync}
                                         />
                                     ) : null}
                                     {place.kind === 'tree' && !place.path && showUncommitted ? (

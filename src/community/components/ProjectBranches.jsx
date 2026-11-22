@@ -30,6 +30,7 @@ const ProjectBranches = ({id, canManage, onChange}) => {
     const [error, setError] = useState('');
     const [notice, setNotice] = useState('');
     const [session, setSession] = useState(null);
+    const [mergeError, setMergeError] = useState('');
 
     const load = useCallback(() => api.branches(id).then(result => {
         setData(result);
@@ -48,6 +49,7 @@ const ProjectBranches = ({id, canManage, onChange}) => {
         setData(null);
         setSession(null);
         setError('');
+        setMergeError('');
         setNotice('');
         load();
     }, [load]);
@@ -76,10 +78,20 @@ const ProjectBranches = ({id, canManage, onChange}) => {
         await Promise.all([load(), onChange ? onChange() : Promise.resolve()]);
     };
 
+    const failMerge = async (failure, fallback) => {
+        if (failure.code === 'branch_head_changed' || failure.code === 'head_changed') {
+            setMergeError(communityText('A branch changed while you were merging. Merge again to include the latest changes.'));
+            setSession(null);
+            await Promise.all([load(), onChange ? onChange() : Promise.resolve()]);
+            return;
+        }
+        setMergeError(failure.message || fallback);
+    };
+
     const merge = async () => {
-        if (!source || !target || source === target || busy) return;
+        if (!source || !target || source === target || busy || session) return;
         setBusy('merge');
-        setError('');
+        setMergeError('');
         setNotice('');
         try {
             const mergeData = await api.mergeBranches(id, source, target);
@@ -93,8 +105,8 @@ const ProjectBranches = ({id, canManage, onChange}) => {
             } else {
                 await upload(mergeData, prepared.files);
             }
-        } catch (mergeError) {
-            setError(mergeError.message || communityText('Could not merge the branches.'));
+        } catch (prepareError) {
+            await failMerge(prepareError, communityText('Could not merge the branches.'));
         } finally {
             setBusy('');
         }
@@ -103,13 +115,16 @@ const ProjectBranches = ({id, canManage, onChange}) => {
     const resolve = async () => {
         if (!session || busy) return;
         setBusy('merge');
-        setError('');
+        setMergeError('');
         try {
             const unresolved = unresolvedBinaryConflict(session);
-            if (unresolved) throw new Error(communityText('Choose a version for {value1}.', {value1: unresolved.path}));
+            if (unresolved) {
+                setMergeError(communityText('Choose a version for {value1}.', {value1: unresolved.path}));
+                return;
+            }
             await upload(session.data, resolvedMergeFiles(session));
         } catch (resolveError) {
-            setError(resolveError.message || communityText('Could not resolve the merge.'));
+            await failMerge(resolveError, communityText('Could not resolve the merge.'));
         } finally {
             setBusy('');
         }
@@ -219,7 +234,7 @@ const ProjectBranches = ({id, canManage, onChange}) => {
                 </form>
             ) : null}
 
-            {canManage && branches.length > 1 ? (
+            {canManage && branches.length > 1 && !session ? (
                 <section className={styles.mergeBox}>
                     <div className={styles.mergeFields}>
                         <label>
@@ -244,7 +259,8 @@ const ProjectBranches = ({id, canManage, onChange}) => {
                 </section>
             ) : null}
 
-            {error && !session ? <Notice variant="error" className={styles.message}>{error}</Notice> : null}
+            {error ? <Notice variant="error" className={styles.message}>{error}</Notice> : null}
+            {mergeError && !session ? <Notice variant="error" className={styles.message}>{mergeError}</Notice> : null}
             {notice ? <Notice variant="success" className={styles.message}>{notice}</Notice> : null}
 
             {session ? (
@@ -258,7 +274,7 @@ const ProjectBranches = ({id, canManage, onChange}) => {
                     submitLabel={communityText('Save resolutions and merge')}
                     busy={busy === 'merge'}
                     busyLabel={communityText('Merging…')}
-                    error={error}
+                    error={mergeError}
                     focusOnMount
                     onTextChange={updateText}
                     onChoose={chooseBinary}
@@ -268,7 +284,7 @@ const ProjectBranches = ({id, canManage, onChange}) => {
                             disabled={busy === 'merge'}
                             onClick={() => {
                                 setSession(null);
-                                setError('');
+                                setMergeError('');
                             }}
                         >
                             {communityText('Cancel')}

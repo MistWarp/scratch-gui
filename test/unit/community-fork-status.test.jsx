@@ -19,6 +19,7 @@ jest.mock('../../src/lib/git/mwp.js', () => ({
 import api from '../../src/community/api';
 import {buildProjectArtifactsFromFileEntries} from '../../src/lib/git/mwp.js';
 import ForkStatus from '../../src/community/components/ForkStatus.jsx';
+import useRemixSync from '../../src/community/use-remix-sync.js';
 
 const encode = value => Buffer.from(value).toString('base64');
 const remixFrom = (extra = {}) => ({id: 'parent', owner: 'flufi', title: 'Meowing Simulator', ahead: 1, behind: 1, ...extra});
@@ -32,17 +33,31 @@ const syncResponse = changes => ({
     expectedHead: 'a'.repeat(40)
 });
 
-const mountStatus = props => mount(
-    <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+// eslint-disable-next-line react/prop-types
+const Harness = ({onSynced, projectId = 'remix', remixFrom: from = remixFrom(), visible = true, ...props}) => {
+    const sync = useRemixSync({projectId, remixFrom: from, onSynced});
+    return visible ? (
         <ForkStatus
-            projectId="remix"
-            remixFrom={remixFrom()}
+            projectId={projectId}
+            remixFrom={from}
             canSync
             contributeHref="/p/meow#contribute"
+            sync={sync}
             {...props}
         />
+    ) : null;
+};
+
+const mountStatus = props => mount(
+    <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+        <Harness {...props} />
     </MemoryRouter>
 );
+
+const setHarness = (wrapper, props) => {
+    wrapper.setProps({children: <Harness {...props} />});
+    wrapper.update();
+};
 
 const settle = async wrapper => {
     for (let index = 0; index < 6; index++) {
@@ -196,5 +211,53 @@ describe('remix fork status', () => {
         const describedBy = syncButton(wrapper).prop('aria-describedby');
         expect(describedBy).toBeTruthy();
         expect(wrapper.find(`#${describedBy}`).text()).toContain('Commit your saved changes');
+    });
+
+    test('a conflict session survives the card being hidden and resets for another project', async () => {
+        api.syncRemix.mockResolvedValue(syncResponse([
+            {path: 'Cat/main.fractch', conflict: true, content: encode('<<<<<<< this remix')}
+        ]));
+        const wrapper = mountStatus();
+        await act(async () => {
+            syncButton(wrapper).simulate('click');
+        });
+        await settle(wrapper);
+        act(() => {
+            wrapper.find('textarea').props()
+                .onChange({target: {value: 'kept edit'}});
+        });
+        wrapper.update();
+
+        setHarness(wrapper, {visible: false});
+        expect(wrapper.text()).not.toContain('Resolve sync conflicts');
+        setHarness(wrapper, {});
+        expect(wrapper.find('textarea').prop('value')).toBe('kept edit');
+
+        await act(async () => {
+            setHarness(wrapper, {projectId: 'other'});
+        });
+        await settle(wrapper);
+        expect(wrapper.text()).not.toContain('Resolve sync conflicts');
+        expect(syncButton(wrapper)).toHaveLength(1);
+    });
+
+    test('a sync answer for a project the viewer has left is dropped', async () => {
+        let answer;
+        api.syncRemix.mockReturnValue(new Promise(resolve => {
+            answer = resolve;
+        }));
+        const wrapper = mountStatus();
+        await act(async () => {
+            syncButton(wrapper).simulate('click');
+        });
+        await act(async () => {
+            setHarness(wrapper, {projectId: 'other'});
+        });
+        await act(async () => {
+            answer(syncResponse([{path: 'Cat/main.fractch', conflict: true, content: encode('<<<<<<< this remix')}]));
+        });
+        await settle(wrapper);
+        expect(wrapper.text()).not.toContain('Resolve sync conflicts');
+        expect(api.uploadRemixSync).not.toHaveBeenCalled();
     });
 });

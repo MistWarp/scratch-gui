@@ -509,6 +509,30 @@ describe('project developer view page', () => {
         expect(viewChanges.prop('href')).toBe('/project/project-1/commits/worktree');
     });
 
+    test('offers a sync only to maintainers on the branch the remix has checked out', async () => {
+        const remixFrom = {id: 'parent-1', owner: 'alice', title: 'Original Space', ahead: 1, behind: 2};
+        const syncButtons = wrapper => wrapper.find('button').filterWhere(button => button.text().includes('Sync with original'));
+
+        mockApi(baseProject({myRole: 'maintainer', remixFrom}));
+        const maintainer = mountAt('/project/project-1/code');
+        await settle(maintainer);
+        expect(syncButtons(maintainer)).toHaveLength(1);
+        maintainer.unmount();
+
+        mockApi(baseProject({remixFrom}));
+        const visitor = mountAt('/project/project-1/code');
+        await settle(visitor);
+        expect(visitor.text()).toContain('1 commit ahead and 2 commits behind alice / Original Space');
+        expect(syncButtons(visitor)).toHaveLength(0);
+        visitor.unmount();
+
+        mockApi(baseProject({isOwner: true, remixFrom}));
+        const otherBranch = mountAt('/project/project-1/code?branch=levels');
+        await settle(otherBranch);
+        expect(otherBranch.text()).not.toContain('behind alice / Original Space');
+        expect(syncButtons(otherBranch)).toHaveLength(0);
+    });
+
     test('keeps private source hidden', async () => {
         mockApi(baseProject({canViewSource: false, canSeeInside: false, seeInside: false}));
         const wrapper = mountAt('/project/project-1/code');

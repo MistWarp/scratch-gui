@@ -163,6 +163,7 @@ describe('project branch management', () => {
         expect(api.mergeBranches).toHaveBeenCalledWith('123', 'feature', 'main');
         expect(wrapper.text()).toContain('Resolve merge conflicts');
         expect(api.uploadBranchMerge).not.toHaveBeenCalled();
+        expect(wrapper.find('button').filterWhere(button => button.text().includes('Merge branches'))).toHaveLength(0);
 
         act(() => {
             wrapper.find('textarea').props()
@@ -192,5 +193,86 @@ describe('project branch management', () => {
             targetHead: mainHead
         }));
         expect(wrapper.text()).toContain('Merged feature into main.');
+    });
+
+    test('a branch that moved during the merge closes the session and reloads the branches', async () => {
+        api.mergeBranches.mockResolvedValue({
+            ok: true,
+            targetProjectId: '123',
+            targetHead: 'a'.repeat(40),
+            sourceHead: 'b'.repeat(40),
+            sourceBranch: 'feature',
+            targetBranch: 'main',
+            merge: {changes: [{path: 'Cat/main.fractch', conflict: true, content: encode('<<<<<<< main')}]}
+        });
+        api.uploadBranchMerge.mockReset().mockRejectedValue(
+            Object.assign(new Error('a branch changed while this merge was processing'), {code: 'branch_head_changed', status: 409})
+        );
+        api.commitTree.mockResolvedValue({files: [{path: 'Cat/main.fractch'}]});
+        api.commitFile.mockResolvedValue({content: encode('main')});
+        const onChange = jest.fn().mockResolvedValue();
+        const wrapper = mount(<ProjectBranches
+            id="123"
+            canManage
+            onChange={onChange}
+        />);
+        await settle(wrapper);
+        await act(async () => {
+            wrapper.find('button').filterWhere(button => button.text().includes('Merge branches'))
+                .simulate('click');
+        });
+        await settle(wrapper);
+        await settle(wrapper);
+        const loadsBefore = api.branches.mock.calls.length;
+        await act(async () => {
+            wrapper.find('button').filterWhere(button => button.text().includes('Save resolutions and merge'))
+                .simulate('click');
+        });
+        await settle(wrapper);
+        await settle(wrapper);
+
+        expect(wrapper.text()).not.toContain('Resolve merge conflicts');
+        expect(wrapper.text()).toContain('A branch changed while you were merging. Merge again to include the latest changes.');
+        expect(api.branches.mock.calls.length).toBeGreaterThan(loadsBefore);
+        expect(onChange).toHaveBeenCalled();
+    });
+
+    test('branch management errors stay out of an open merge session', async () => {
+        api.mergeBranches.mockResolvedValue({
+            ok: true,
+            targetProjectId: '123',
+            targetHead: 'a'.repeat(40),
+            sourceHead: 'b'.repeat(40),
+            sourceBranch: 'feature',
+            targetBranch: 'main',
+            merge: {changes: [{path: 'Cat/main.fractch', conflict: true, content: encode('<<<<<<< main')}]}
+        });
+        api.commitTree.mockResolvedValue({files: [{path: 'Cat/main.fractch'}]});
+        api.commitFile.mockResolvedValue({content: encode('main')});
+        api.createBranch.mockRejectedValueOnce(new Error('A branch with that name already exists.'));
+        const wrapper = mount(<ProjectBranches
+            id="123"
+            canManage
+        />);
+        await settle(wrapper);
+        await act(async () => {
+            wrapper.find('button').filterWhere(button => button.text().includes('Merge branches'))
+                .simulate('click');
+        });
+        await settle(wrapper);
+        await settle(wrapper);
+        act(() => wrapper.find('input[placeholder="feature-name"]').props()
+            .onChange({target: {value: 'feature'}}));
+        wrapper.update();
+        await act(async () => {
+            wrapper.find('form').at(0)
+                .props()
+                .onSubmit({preventDefault: jest.fn()});
+        });
+        await settle(wrapper);
+
+        expect(wrapper.find('MergeConflicts').text()).not.toContain('A branch with that name already exists.');
+        expect(wrapper.text()).toContain('A branch with that name already exists.');
+        expect(wrapper.text()).toContain('Resolve merge conflicts');
     });
 });

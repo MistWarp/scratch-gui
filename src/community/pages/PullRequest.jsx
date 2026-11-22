@@ -226,28 +226,31 @@ const PullRequest = () => {
 
     const loadDiff = useCallback(async (activePull, context, wantFileDiff = false, targetHead = '') => {
         if (contextRef.current !== context || loadedContext !== context) return;
-        if (diffRequestRef.current === context) return;
-        diffRequestRef.current = context;
-        if (contextRef.current === context) setAssetRefs(pullAssetRefs(activePull, id));
+        const token = `${context}:${activePull.headCommit || ''}:${targetHead}:${wantFileDiff ? 'file' : 'summary'}`;
+        if (diffRequestRef.current === token) return;
+        diffRequestRef.current = token;
+        const current = () => contextRef.current === context && diffRequestRef.current === token;
+        const finish = () => {
+            if (diffRequestRef.current === token) diffRequestRef.current = '';
+        };
+        setAssetRefs(pullAssetRefs(activePull, id));
         if (!wantFileDiff) {
             setDiffError('');
             const structured = await loadPullChanges(id, index);
-            if (contextRef.current !== context) return;
+            if (!current()) return;
             if (structured) {
                 if (structured.pull) setAssetRefs(pullAssetRefs({...activePull, ...structured.pull}, id));
                 setChanges(structured.inspection);
-                if (diffRequestRef.current === context) diffRequestRef.current = '';
+                finish();
                 return;
             }
         }
         const cacheKeyPull = {...activePull, currentTargetHead: targetHead};
         const cached = readPullDiffCacheEntry(cacheKeyPull);
-        if (cached !== null) {
-            if (contextRef.current === context) {
-                if (cached.refs) setAssetRefs(cached.refs);
-                setDiff(cached.diff);
-            }
-            if (diffRequestRef.current === context) diffRequestRef.current = '';
+        if (cached !== null && cached.refs && cached.refs.newSha === (activePull.headCommit || '')) {
+            setAssetRefs(cached.refs);
+            setDiff(cached.diff);
+            finish();
             return;
         }
         setDiffError('');
@@ -261,15 +264,15 @@ const PullRequest = () => {
             const renderedDiff = nextDiff || 'No textual changes.';
             const refs = pullAssetRefs({...activePull, ...(diffData.pull || {})}, id);
             writePullDiffCache(cacheKeyPull, renderedDiff, refs);
-            if (contextRef.current === context) {
+            if (current()) {
                 setAssetRefs(refs);
                 setDiff(renderedDiff);
                 setFileTexts(nextTexts);
             }
         } catch (error) {
-            if (contextRef.current === context) setDiffError(error.message || 'Could not load these file changes.');
+            if (current()) setDiffError(error.message || 'Could not load these file changes.');
         } finally {
-            if (diffRequestRef.current === context) diffRequestRef.current = '';
+            finish();
         }
     }, [id, index, loadedContext]);
 
@@ -353,10 +356,10 @@ const PullRequest = () => {
         setMergeError(failure.message);
         if (!failure.restart) return;
         setMergeSession(null);
+        await load();
         setDiff(null);
         setChanges(null);
         setFileTexts({});
-        await load();
     };
 
     const merge = async () => {
