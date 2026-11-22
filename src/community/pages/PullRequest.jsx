@@ -440,7 +440,14 @@ const PullRequest = () => {
             setPull(data.pull);
             setCloseConfirmOpen(false);
         } catch (error) {
-            setCloseError(error.message || 'Could not close this pull request.');
+            if (error?.code === 'pull_not_open') {
+                setCloseConfirmOpen(false);
+                setMergeSession(null);
+                setMergeError(communityText('This pull request was already closed or merged.'));
+                await load();
+                return;
+            }
+            setCloseError(error.message || communityText('Could not close this pull request.'));
         } finally {
             setClosing(false);
         }

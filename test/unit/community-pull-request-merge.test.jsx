@@ -20,6 +20,7 @@ jest.mock('../../src/community/api', () => ({
         pullChanges: jest.fn(),
         pullDiff: jest.fn(),
         mergePull: jest.fn(),
+        closePull: jest.fn(),
         uploadPullMerge: jest.fn(),
         commitTree: jest.fn(),
         commitFile: jest.fn(),
@@ -206,5 +207,24 @@ describe('pull request merges', () => {
         await settle(wrapper);
         expect(wrapper.text()).not.toContain('Resolve merge conflicts');
         expect(wrapper.text()).toContain('This project changed while you were merging. Merge again to include the latest changes.');
+    });
+
+    test('closing a pull that someone else already closed reloads it with a sentence', async () => {
+        api.closePull.mockRejectedValue(Object.assign(new Error('the pull request is no longer open'), {code: 'pull_not_open', status: 409}));
+        const wrapper = mountPull();
+        await settle(wrapper);
+        act(() => {
+            button(wrapper, 'Close pull request').first()
+                .simulate('click');
+        });
+        wrapper.update();
+        api.getPull.mockResolvedValue({pull: {...pull, state: 'merged'}});
+        await act(async () => {
+            wrapper.find('ConfirmModal').prop('onConfirm')();
+        });
+        await settle(wrapper);
+        expect(wrapper.find('ConfirmModal')).toHaveLength(0);
+        expect(wrapper.text()).toContain('This pull request was already closed or merged.');
+        expect(api.getPull).toHaveBeenCalledTimes(2);
     });
 });

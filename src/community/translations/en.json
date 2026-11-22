@@ -3819,5 +3819,7 @@
   "This pull request cannot be merged because the two histories could not be compared.": "This pull request cannot be merged because the two histories could not be compared.",
   "The project saved, but the pull request could not be marked as merged. Reload the page to check its state.": "The project saved, but the pull request could not be marked as merged. Reload the page to check its state.",
   "Both projects need saved commits before this remix can be synced.": "Both projects need saved commits before this remix can be synced.",
-  "This remix no longer shares any commits with {value1}, so it cannot be synced.": "This remix no longer shares any commits with {value1}, so it cannot be synced."
+  "This remix no longer shares any commits with {value1}, so it cannot be synced.": "This remix no longer shares any commits with {value1}, so it cannot be synced.",
+  "This pull request was already closed or merged.": "This pull request was already closed or merged.",
+  "Could not close this pull request.": "Could not close this pull request."
 }
