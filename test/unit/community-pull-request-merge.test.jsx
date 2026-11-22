@@ -227,4 +227,60 @@ describe('pull request merges', () => {
         expect(wrapper.text()).toContain('This pull request was already closed or merged.');
         expect(api.getPull).toHaveBeenCalledTimes(2);
     });
+
+    test('a stale file view from before a restart cannot overwrite the reloaded one for the same head', async () => {
+        let answerOld;
+        let answerNew;
+        api.pullChanges.mockReset()
+            .mockReturnValueOnce(new Promise(resolve => {
+                answerOld = resolve;
+            }))
+            .mockReturnValueOnce(new Promise(resolve => {
+                answerNew = resolve;
+            }));
+        api.mergePull.mockRejectedValue(Object.assign(new Error('closed'), {code: 'pull_not_open', status: 409}));
+        const wrapper = mountPull();
+        await settle(wrapper);
+        const tab = label => wrapper.find('[role="tab"]').filterWhere(item => item.text().includes(label));
+        await act(async () => {
+            tab('Files changed').simulate('click');
+        });
+        await settle(wrapper);
+        await act(async () => {
+            tab('Conversation').simulate('click');
+        });
+        await settle(wrapper);
+        await act(async () => {
+            button(wrapper, 'Merge pull request').simulate('click');
+        });
+        await settle(wrapper);
+        await act(async () => {
+            tab('Files changed').simulate('click');
+        });
+        await settle(wrapper);
+        expect(api.pullChanges).toHaveBeenCalledTimes(2);
+        await act(async () => {
+            answerOld({inspection: {ok: true, targets: [{path: 'Stale'}]}, pull});
+        });
+        await settle(wrapper);
+        await act(async () => {
+            answerNew({inspection: {ok: true, targets: [{path: 'Fresh'}]}, pull});
+        });
+        await settle(wrapper);
+        const changesView = wrapper.find('ChangesView');
+        expect(changesView.exists()).toBe(true);
+        expect(changesView.prop('analysis').targets.map(entry => entry.dir)).toEqual(['Fresh']);
+    });
+
+    test('points at the branches page while the project is on another branch', async () => {
+        api.getProject.mockImplementation(id => Promise.resolve({
+            project: {id, title: id, owner: 'sam', isOwner: id === 'target', canViewSource: true, gitHead: sha('c'), gitBranch: 'feature'}
+        }));
+        api.getPull.mockResolvedValue({pull: {...pull, baseBranch: 'main'}});
+        const wrapper = mountPull();
+        await settle(wrapper);
+        expect(button(wrapper, 'Merge pull request')).toHaveLength(0);
+        const link = wrapper.find('a').filterWhere(item => item.text() === 'Switch this project to the main branch before merging this pull request.');
+        expect(link.prop('href')).toBe('/project/target/code/branches');
+    });
 });

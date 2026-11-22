@@ -6,6 +6,8 @@ import Notice from './ui/Notice.jsx';
 import SectionHeading from './ui/SectionHeading.jsx';
 import styles from './MergeConflicts.module.css';
 
+let nextConflictId = 0;
+
 const MergeConflicts = ({
     actions,
     binaryConflicts,
@@ -25,6 +27,11 @@ const MergeConflicts = ({
     useLabel
 }) => {
     const sectionRef = useRef(null);
+    const idPrefix = useRef(null);
+    if (idPrefix.current === null) {
+        nextConflictId += 1;
+        idPrefix.current = `merge-conflicts-${nextConflictId}`;
+    }
     useEffect(() => {
         if (focusOnMount && sectionRef.current) sectionRef.current.focus();
     }, []);
@@ -59,14 +66,17 @@ const MergeConflicts = ({
                     />
                 </label>
             ))}
-            {binaryConflicts.map(file => (
+            {binaryConflicts.map((file, position) => (
                 <div
                     className={styles.binaryConflict}
                     key={file.path}
                     role="group"
-                    aria-label={file.path}
+                    aria-labelledby={`${idPrefix.current}-asset-${position}`}
                 >
-                    <span className={styles.path}>{file.path}</span>
+                    <span
+                        className={styles.path}
+                        id={`${idPrefix.current}-asset-${position}`}
+                    >{file.path}</span>
                     <button
                         type="button"
                         aria-pressed={file.choice === 'target'}

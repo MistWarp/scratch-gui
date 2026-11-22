@@ -110,7 +110,7 @@ export const pullMergeUpload = (data, pullIndex, artifacts) => ({
     sourceHead: data.sourceHead
 });
 
-const RESTART_MERGE_CODES = ['head_changed', 'pull_head_changed', 'pull_not_open'];
+const RESTART_MERGE_CODES = ['head_changed', 'pull_head_changed', 'pull_not_open', 'target_branch_missing'];
 
 export const pullMergeFailure = (error, communityText, fallback) => {
     const restart = RESTART_MERGE_CODES.includes(error?.code);
@@ -132,7 +132,7 @@ export const pullMergeFailure = (error, communityText, fallback) => {
     if (error?.code === 'pull_not_open') {
         return {restart, message: communityText('This pull request was closed or merged while you were merging.')};
     }
-    if (error?.code === 'pull_merge_unavailable' || error?.code === 'pull_history_unavailable') {
+    if (error?.code === 'pull_merge_unavailable') {
         return {restart, message: communityText('This pull request cannot be merged because the two histories could not be compared.')};
     }
     if (error?.code === 'pull_not_closed') {
@@ -280,14 +280,18 @@ const PullRequest = () => {
             ]);
             const renderedDiff = nextDiff || 'No textual changes.';
             const refs = pullAssetRefs({...activePull, ...(diffData.pull || {})}, id);
-            writePullDiffCache(cacheKeyPull, renderedDiff, refs, nextTexts);
             if (current()) {
+                writePullDiffCache(cacheKeyPull, renderedDiff, refs, nextTexts);
                 setAssetRefs(refs);
                 setDiff(renderedDiff);
                 setFileTexts(nextTexts);
             }
         } catch (error) {
-            if (current()) setDiffError(error.message || 'Could not load these file changes.');
+            if (current()) {
+                setDiffError(error?.code === 'pull_history_unavailable' ?
+                    communityText('The changes in this pull request could not be compared with the project.') :
+                    (error.message || communityText('Could not load these file changes.')));
+            }
         } finally {
             finish();
         }
@@ -379,6 +383,7 @@ const PullRequest = () => {
         setDiff(null);
         setChanges(null);
         setFileTexts({});
+        setSpriteTexts(null);
         setDiffError('');
     };
 
@@ -578,6 +583,7 @@ const PullRequest = () => {
     const open = pull.state === 'open';
     const canMerge = typeof pull.canMerge === 'boolean' ? pull.canMerge : canMergePullRequest(project);
     const canClose = canClosePullRequest(project, pull, user);
+    const wrongBranch = Boolean(pull.baseBranch && project.gitBranch && pull.baseBranch !== project.gitBranch);
     const changedFileCount = analysis && !fileDiff ?
         analysis.targets.reduce((total, entry) => total + entry.count, analysis.others.length) :
         diff === null ? (pull.fileCount ?? pull.filesChanged ?? '…') : files.length;
@@ -677,6 +683,12 @@ const PullRequest = () => {
                             {mergeError && !mergeSession ? <Notice variant="error">{mergeError}</Notice> : null}
                             {open && canMerge && mergeSession ? (
                                 <p className={styles.note}>{communityText('Resolve the conflicts below to finish merging.')}</p>
+                            ) : open && canMerge && wrongBranch ? (
+                                <p className={styles.note}>
+                                    <Link to={`${baseUrl}/code/branches`}>
+                                        {communityText('Switch this project to the {value1} branch before merging this pull request.', {value1: pull.baseBranch})}
+                                    </Link>
+                                </p>
                             ) : open && canMerge ? (
                                 <Button variant="primary" onClick={merge} busy={merging} busyLabel={communityText('Merging…')}>{communityText('Merge pull request')}</Button>
                             ) : open ? <p className={styles.note}>{communityText('Only project owners and maintainers can merge this pull request.')}</p> : null}

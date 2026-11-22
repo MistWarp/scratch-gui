@@ -42,4 +42,23 @@ describe('merge conflicts', () => {
         expect(choices.at(0).prop('aria-pressed')).toBe(true);
         expect(choices.at(1).prop('aria-pressed')).toBe(false);
     });
+
+    test('uses the heading level it is given and h3 otherwise', () => {
+        expect(mount(<MergeConflicts {...props()} />).find('section h3')
+            .exists()).toBe(true);
+        const top = mount(<MergeConflicts {...props({headingLevel: 'h2'})} />);
+        expect(top.find('section h2').exists()).toBe(true);
+        expect(top.find('section h3').exists()).toBe(false);
+    });
+
+    test('names each asset choice group by its path', () => {
+        const wrapper = mount(<MergeConflicts
+            {...props({binaryConflicts: [{path: 'Cat/a.svg', choice: ''}, {path: 'Stage/b.wav', choice: ''}]})}
+        />);
+        const groups = wrapper.find('[role="group"]').hostNodes();
+        expect(groups).toHaveLength(2);
+        const names = groups.map(group => wrapper.find(`#${group.prop('aria-labelledby')}`).hostNodes()
+            .text());
+        expect(names).toEqual(['Cat/a.svg', 'Stage/b.wav']);
+    });
 });
