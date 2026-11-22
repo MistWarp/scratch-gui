@@ -3812,5 +3812,6 @@
   "Merge failed.": "Merge failed.",
   "The conflicts could not be resolved.": "The conflicts could not be resolved.",
   "Only maintainers of this remix can sync it, and only while they can see inside {value1}.": "Only maintainers of this remix can sync it, and only while they can see inside {value1}.",
-  "Resolve the conflicts below to finish merging.": "Resolve the conflicts below to finish merging."
+  "Resolve the conflicts below to finish merging.": "Resolve the conflicts below to finish merging.",
+  "This pull request targets the {value1} branch, which no longer exists. Close it and open a new one.": "This pull request targets the {value1} branch, which no longer exists. Close it and open a new one."
 }

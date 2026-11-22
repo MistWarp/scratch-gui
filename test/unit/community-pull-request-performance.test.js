@@ -137,6 +137,7 @@ describe('pull request loading', () => {
             message: 'Commit the changes saved in this project before merging this pull request.'
         });
         expect(failure('target_branch_changed').message).toBe('Switch this project to the dev branch before merging this pull request.');
+        expect(failure('target_branch_missing').message).toBe('This pull request targets the dev branch, which no longer exists. Close it and open a new one.');
         expect(failure('pull_head_changed').restart).toBe(true);
         expect(failure('head_changed').restart).toBe(true);
         expect(pullMergeFailure(new Error(''), text, 'Merge failed.')).toEqual({restart: false, message: 'Merge failed.'});

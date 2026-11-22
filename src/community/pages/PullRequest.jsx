@@ -114,6 +114,9 @@ export const pullMergeFailure = (error, communityText, fallback) => {
     if (error?.code === 'target_branch_changed' && error.data?.branch) {
         return {restart, message: communityText('Switch this project to the {value1} branch before merging this pull request.', {value1: error.data.branch})};
     }
+    if (error?.code === 'target_branch_missing' && error.data?.branch) {
+        return {restart, message: communityText('This pull request targets the {value1} branch, which no longer exists. Close it and open a new one.', {value1: error.data.branch})};
+    }
     if (error?.code === 'pull_head_changed') {
         return {restart, message: communityText('The remix changed while you were merging. Review the new changes, then merge again.')};
     }
