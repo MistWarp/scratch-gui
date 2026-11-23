@@ -301,8 +301,8 @@
   "Untitled commit": [
     "src/community/commit-summary.js:81",
     "src/community/pages/Commit.jsx:416",
-    "src/community/pages/PullRequest.jsx:677",
-    "src/community/pages/PullRequest.jsx:739",
+    "src/community/pages/PullRequest.jsx:746",
+    "src/community/pages/PullRequest.jsx:808",
     "src/community/pages/RemixTree.jsx:115"
   ],
   "1 changed file": [
@@ -410,7 +410,7 @@
     "src/community/components/CommentThread.jsx:31",
     "src/community/components/CommentThread.jsx:89",
     "src/community/pages/Bounty.jsx:168",
-    "src/community/pages/PullRequest.jsx:694",
+    "src/community/pages/PullRequest.jsx:763",
     "src/community/pages/admin/labels.js:11"
   ],
   "Monitor": [
@@ -470,7 +470,7 @@
   ],
   "Current": [
     "src/community/components/ChangesView.jsx:58",
-    "src/community/components/ProjectBranches.jsx:327"
+    "src/community/components/ProjectBranches.jsx:329"
   ],
   "Layout": [
     "src/community/components/ChangesView.jsx:59"
@@ -810,7 +810,7 @@
   ],
   "Creating…": [
     "src/community/components/CollectionSaveModal.jsx:228",
-    "src/community/components/ProjectBranches.jsx:230",
+    "src/community/components/ProjectBranches.jsx:232",
     "src/community/components/classroom/ClassGroups.jsx:96",
     "src/community/pages/Classroom.jsx:349",
     "src/community/pages/ManageProject.jsx:677",
@@ -912,14 +912,14 @@
     "src/community/components/CommentThread.jsx:252",
     "src/community/components/CommentThread.jsx:1173",
     "src/community/pages/Bounty.jsx:162",
-    "src/community/pages/PullRequest.jsx:667"
+    "src/community/pages/PullRequest.jsx:736"
   ],
   "Cancel": [
     "src/community/components/CommentThread.jsx:269",
     "src/community/components/CommentThread.jsx:365",
     "src/community/components/ForkStatus.jsx:78",
     "src/community/components/GameMarketplaceModal.jsx:227",
-    "src/community/components/ProjectBranches.jsx:290",
+    "src/community/components/ProjectBranches.jsx:292",
     "src/community/components/ProjectInfoPanel.jsx:422",
     "src/community/components/ReportModal.jsx:108",
     "src/community/components/RoturConsentModal.jsx:70",
@@ -937,7 +937,7 @@
     "src/community/pages/ManageSpace.jsx:762",
     "src/community/pages/MyStuff.jsx:1298",
     "src/community/pages/News.jsx:293",
-    "src/community/pages/PullRequest.jsx:804",
+    "src/community/pages/PullRequest.jsx:873",
     "src/community/pages/Roadmap.jsx:501",
     "src/community/pages/Spaces.jsx:301",
     "src/community/pages/Theme.jsx:257",
@@ -2721,7 +2721,7 @@
   ],
   "Delete {value1}": [
     "src/community/components/NewsItem.jsx:181",
-    "src/community/components/ProjectBranches.jsx:343",
+    "src/community/components/ProjectBranches.jsx:345",
     "src/community/components/classroom/ClassGroups.jsx:215"
   ],
   "By": [
@@ -3146,8 +3146,8 @@
   ],
   "Choose a version for {value1}.": [
     "src/community/components/ProjectBranches.jsx:122",
-    "src/community/pages/PullRequest.jsx:451",
-    "src/community/use-remix-sync.js:134"
+    "src/community/pages/PullRequest.jsx:511",
+    "src/community/use-remix-sync.js:137"
   ],
   "Could not resolve the merge.": [
     "src/community/components/ProjectBranches.jsx:127"
@@ -3171,92 +3171,92 @@
     "src/community/components/ProjectBranches.jsx:192"
   ],
   "Loading branches…": [
-    "src/community/components/ProjectBranches.jsx:201"
+    "src/community/components/ProjectBranches.jsx:203"
   ],
   "Branches": [
-    "src/community/components/ProjectBranches.jsx:207",
+    "src/community/components/ProjectBranches.jsx:209",
     "src/community/pages/ProjectCode.jsx:259",
     "src/community/pages/project/VersionControlPanel.jsx:23"
   ],
   "Each branch points to its latest saved project version.": [
-    "src/community/components/ProjectBranches.jsx:208"
+    "src/community/components/ProjectBranches.jsx:210"
   ],
   "New branch name": [
-    "src/community/components/ProjectBranches.jsx:214"
+    "src/community/components/ProjectBranches.jsx:216"
   ],
   "feature-name": [
-    "src/community/components/ProjectBranches.jsx:219"
+    "src/community/components/ProjectBranches.jsx:221"
   ],
   "Start from": [
-    "src/community/components/ProjectBranches.jsx:225"
+    "src/community/components/ProjectBranches.jsx:227"
   ],
   "Create branch": [
-    "src/community/components/ProjectBranches.jsx:232"
+    "src/community/components/ProjectBranches.jsx:234"
   ],
   "Merge": [
-    "src/community/components/ProjectBranches.jsx:241"
+    "src/community/components/ProjectBranches.jsx:243"
   ],
   "into": [
-    "src/community/components/ProjectBranches.jsx:246"
-  ],
-  "Target branch": [
     "src/community/components/ProjectBranches.jsx:248"
   ],
+  "Target branch": [
+    "src/community/components/ProjectBranches.jsx:250"
+  ],
   "Merging…": [
-    "src/community/components/ProjectBranches.jsx:253",
-    "src/community/components/ProjectBranches.jsx:276",
-    "src/community/pages/PullRequest.jsx:719",
-    "src/community/pages/PullRequest.jsx:789"
+    "src/community/components/ProjectBranches.jsx:255",
+    "src/community/components/ProjectBranches.jsx:278",
+    "src/community/pages/PullRequest.jsx:788",
+    "src/community/pages/PullRequest.jsx:858"
   ],
   "Merge branches": [
-    "src/community/components/ProjectBranches.jsx:255"
+    "src/community/components/ProjectBranches.jsx:257"
   ],
   "The project switches to the target branch after the merge.": [
-    "src/community/components/ProjectBranches.jsx:258"
+    "src/community/components/ProjectBranches.jsx:260"
   ],
   "Resolve merge conflicts": [
-    "src/community/components/ProjectBranches.jsx:268",
-    "src/community/pages/PullRequest.jsx:781"
+    "src/community/components/ProjectBranches.jsx:270",
+    "src/community/pages/PullRequest.jsx:850"
   ],
   "Edit text conflicts and choose which branch to keep for assets.": [
-    "src/community/components/ProjectBranches.jsx:269"
+    "src/community/components/ProjectBranches.jsx:271"
   ],
   "Keep {value1}": [
-    "src/community/components/ProjectBranches.jsx:272"
+    "src/community/components/ProjectBranches.jsx:274"
   ],
   "Use {value1}": [
-    "src/community/components/ProjectBranches.jsx:273"
+    "src/community/components/ProjectBranches.jsx:275"
   ],
   "Save resolutions and merge": [
-    "src/community/components/ProjectBranches.jsx:274",
-    "src/community/pages/PullRequest.jsx:787"
+    "src/community/components/ProjectBranches.jsx:276",
+    "src/community/pages/PullRequest.jsx:856"
   ],
   "New name for {value1}": [
-    "src/community/components/ProjectBranches.jsx:314"
+    "src/community/components/ProjectBranches.jsx:316"
   ],
   "Save branch name": [
-    "src/community/components/ProjectBranches.jsx:318"
+    "src/community/components/ProjectBranches.jsx:320"
   ],
   "Cancel rename": [
-    "src/community/components/ProjectBranches.jsx:319"
+    "src/community/components/ProjectBranches.jsx:321"
   ],
   "Rename {value1}": [
-    "src/community/components/ProjectBranches.jsx:331"
+    "src/community/components/ProjectBranches.jsx:333"
   ],
   "Delete?": [
-    "src/community/components/ProjectBranches.jsx:335"
-  ],
-  "Yes": [
-    "src/community/components/ProjectBranches.jsx:336"
-  ],
-  "No": [
     "src/community/components/ProjectBranches.jsx:337"
   ],
+  "Yes": [
+    "src/community/components/ProjectBranches.jsx:338"
+  ],
+  "No": [
+    "src/community/components/ProjectBranches.jsx:339"
+  ],
   "No branches yet": [
-    "src/community/components/ProjectBranches.jsx:359"
+    "src/community/components/ProjectBranches.jsx:361"
   ],
   "This project does not have saved branch history yet.": [
-    "src/community/components/ProjectBranches.jsx:360"
+    "src/community/components/ProjectBranches.jsx:362"
   ],
   "Open {value1}": [
     "src/community/components/ProjectCard.jsx:22",
@@ -3446,8 +3446,8 @@
     "src/community/components/ProjectInfoPanel.jsx:212",
     "src/community/components/classroom/PresentControls.jsx:94",
     "src/community/components/classroom/PresentControls.jsx:98",
-    "src/community/pages/PullRequest.jsx:618",
-    "src/community/pages/PullRequest.jsx:634",
+    "src/community/pages/PullRequest.jsx:687",
+    "src/community/pages/PullRequest.jsx:703",
     "src/community/pages/RemixTree.jsx:192",
     "src/community/pages/admin/ShadowBansSection.jsx:61",
     "src/community/pages/admin/labels.js:9"
@@ -4637,7 +4637,7 @@
     "src/community/components/classroom/StudentHome.jsx:64",
     "src/community/components/classroom/StudentHome.jsx:221",
     "src/community/pages/ManageProject.jsx:844",
-    "src/community/pages/PullRequest.jsx:625",
+    "src/community/pages/PullRequest.jsx:694",
     "src/community/pages/admin/ErrorManager.jsx:212",
     "src/community/pages/admin/UserDetailCard.jsx:66",
     "src/community/pages/project/IssueThread.jsx:208"
@@ -5513,7 +5513,7 @@
   ],
   "Conversation": [
     "src/community/pages/Bounty.jsx:159",
-    "src/community/pages/PullRequest.jsx:639"
+    "src/community/pages/PullRequest.jsx:708"
   ],
   "Ask a question or coordinate the work.": [
     "src/community/pages/Bounty.jsx:165"
@@ -5523,7 +5523,7 @@
   ],
   "Sign in to comment": [
     "src/community/pages/Bounty.jsx:168",
-    "src/community/pages/PullRequest.jsx:699"
+    "src/community/pages/PullRequest.jsx:768"
   ],
   "Working on this": [
     "src/community/pages/Bounty.jsx:173"
@@ -6649,7 +6649,7 @@
   "Back to project": [
     "src/community/pages/Commit.jsx:365",
     "src/community/pages/ManageProject.jsx:473",
-    "src/community/pages/PullRequest.jsx:599",
+    "src/community/pages/PullRequest.jsx:668",
     "src/community/pages/RemixTree.jsx:213"
   ],
   "Commit": [
@@ -6659,7 +6659,7 @@
     "src/community/pages/Commit.jsx:379",
     "src/community/pages/Project.jsx:614",
     "src/community/pages/ProjectCode.jsx:457",
-    "src/community/pages/PullRequest.jsx:587",
+    "src/community/pages/PullRequest.jsx:656",
     "src/community/pages/PullRequests.jsx:58",
     "src/community/pages/RemixTree.jsx:197"
   ],
@@ -6680,7 +6680,7 @@
   ],
   "committed {value1}": [
     "src/community/pages/Commit.jsx:441",
-    "src/community/pages/PullRequest.jsx:739"
+    "src/community/pages/PullRequest.jsx:808"
   ],
   "co-authored by": [
     "src/community/pages/Commit.jsx:444"
@@ -7811,7 +7811,7 @@
   ],
   "Posting…": [
     "src/community/pages/News.jsx:299",
-    "src/community/pages/PullRequest.jsx:694",
+    "src/community/pages/PullRequest.jsx:763",
     "src/community/pages/Roadmap.jsx:500",
     "src/community/pages/project/IssueThread.jsx:275"
   ],
@@ -8477,7 +8477,7 @@
   ],
   "Commits": [
     "src/community/pages/ProjectCode.jsx:258",
-    "src/community/pages/PullRequest.jsx:640",
+    "src/community/pages/PullRequest.jsx:709",
     "src/community/pages/RemixTree.jsx:278"
   ],
   "Pull requests": [
@@ -8518,7 +8518,7 @@
   ],
   "This pull request targets the {value1} branch, which no longer exists. Close it and open a new one.": [
     "src/community/pages/PullRequest.jsx:124",
-    "src/community/pages/PullRequest.jsx:712"
+    "src/community/pages/PullRequest.jsx:781"
   ],
   "The remix changed while you were merging. Review the new changes, then merge again.": [
     "src/community/pages/PullRequest.jsx:127"
@@ -8545,126 +8545,126 @@
     "src/community/pages/PullRequest.jsx:330"
   ],
   "Merge failed.": [
-    "src/community/pages/PullRequest.jsx:437"
+    "src/community/pages/PullRequest.jsx:496"
   ],
   "The conflicts could not be resolved.": [
-    "src/community/pages/PullRequest.jsx:456"
+    "src/community/pages/PullRequest.jsx:516"
   ],
   "This pull request was already closed or merged.": [
-    "src/community/pages/PullRequest.jsx:474"
+    "src/community/pages/PullRequest.jsx:539"
   ],
   "Could not close this pull request.": [
-    "src/community/pages/PullRequest.jsx:478"
+    "src/community/pages/PullRequest.jsx:543"
   ],
   "Pull request": [
-    "src/community/pages/PullRequest.jsx:599"
+    "src/community/pages/PullRequest.jsx:668"
   ],
   "Loading pull request…": [
-    "src/community/pages/PullRequest.jsx:604"
+    "src/community/pages/PullRequest.jsx:673"
   ],
   "Merged": [
-    "src/community/pages/PullRequest.jsx:625"
+    "src/community/pages/PullRequest.jsx:694"
   ],
   "Closed": [
-    "src/community/pages/PullRequest.jsx:625",
+    "src/community/pages/PullRequest.jsx:694",
     "src/community/pages/admin/UserDetailCard.jsx:66"
   ],
   "wants to merge from": [
-    "src/community/pages/PullRequest.jsx:628"
+    "src/community/pages/PullRequest.jsx:697"
   ],
   "Fork": [
-    "src/community/pages/PullRequest.jsx:630"
-  ],
-  "Files changed": [
-    "src/community/pages/PullRequest.jsx:641"
-  ],
-  "opened this pull request": [
-    "src/community/pages/PullRequest.jsx:657"
-  ],
-  "No description was provided.": [
-    "src/community/pages/PullRequest.jsx:658"
-  ],
-  "commented {value1}": [
-    "src/community/pages/PullRequest.jsx:665"
-  ],
-  "committed to {value1}": [
-    "src/community/pages/PullRequest.jsx:676"
-  ],
-  "committed on {value1}": [
-    "src/community/pages/PullRequest.jsx:676"
-  ],
-  "Leave a comment": [
-    "src/community/pages/PullRequest.jsx:690"
-  ],
-  "Join the conversation on this pull request once you are signed in.": [
     "src/community/pages/PullRequest.jsx:699"
   ],
+  "Files changed": [
+    "src/community/pages/PullRequest.jsx:710"
+  ],
+  "opened this pull request": [
+    "src/community/pages/PullRequest.jsx:726"
+  ],
+  "No description was provided.": [
+    "src/community/pages/PullRequest.jsx:727"
+  ],
+  "commented {value1}": [
+    "src/community/pages/PullRequest.jsx:734"
+  ],
+  "committed to {value1}": [
+    "src/community/pages/PullRequest.jsx:745"
+  ],
+  "committed on {value1}": [
+    "src/community/pages/PullRequest.jsx:745"
+  ],
+  "Leave a comment": [
+    "src/community/pages/PullRequest.jsx:759"
+  ],
+  "Join the conversation on this pull request once you are signed in.": [
+    "src/community/pages/PullRequest.jsx:768"
+  ],
   "Ready for review": [
-    "src/community/pages/PullRequest.jsx:705"
+    "src/community/pages/PullRequest.jsx:774"
   ],
   "Pull request closed": [
-    "src/community/pages/PullRequest.jsx:705"
+    "src/community/pages/PullRequest.jsx:774"
   ],
   "Review the files before merging.": [
-    "src/community/pages/PullRequest.jsx:705"
+    "src/community/pages/PullRequest.jsx:774"
   ],
   "No more changes can be merged.": [
-    "src/community/pages/PullRequest.jsx:705"
+    "src/community/pages/PullRequest.jsx:774"
   ],
   "Resolve the conflicts below to finish merging.": [
-    "src/community/pages/PullRequest.jsx:709"
+    "src/community/pages/PullRequest.jsx:778"
   ],
   "This pull request targets the {value1} branch, and this project is on {value2}. It can be merged once the project is back on {value1}.": [
-    "src/community/pages/PullRequest.jsx:716"
-  ],
-  "Merge pull request": [
-    "src/community/pages/PullRequest.jsx:719"
-  ],
-  "Only project owners and maintainers can merge this pull request.": [
-    "src/community/pages/PullRequest.jsx:720"
-  ],
-  "Close pull request": [
-    "src/community/pages/PullRequest.jsx:729",
-    "src/community/pages/PullRequest.jsx:817"
-  ],
-  "Commits on {value1}": [
-    "src/community/pages/PullRequest.jsx:735"
-  ],
-  "this pull request": [
-    "src/community/pages/PullRequest.jsx:735"
-  ],
-  "No commits yet": [
-    "src/community/pages/PullRequest.jsx:742"
-  ],
-  "No commits found after the fork point.": [
-    "src/community/pages/PullRequest.jsx:742"
-  ],
-  "Show summary": [
-    "src/community/pages/PullRequest.jsx:759"
-  ],
-  "Show file diff": [
-    "src/community/pages/PullRequest.jsx:759"
-  ],
-  "Loading file changes…": [
-    "src/community/pages/PullRequest.jsx:771"
-  ],
-  "Edit each text file, then choose which version to keep for every asset.": [
-    "src/community/pages/PullRequest.jsx:782"
-  ],
-  "Keep current project": [
     "src/community/pages/PullRequest.jsx:785"
   ],
+  "Merge pull request": [
+    "src/community/pages/PullRequest.jsx:788"
+  ],
+  "Only project owners and maintainers can merge this pull request.": [
+    "src/community/pages/PullRequest.jsx:789"
+  ],
+  "Close pull request": [
+    "src/community/pages/PullRequest.jsx:798",
+    "src/community/pages/PullRequest.jsx:886"
+  ],
+  "Commits on {value1}": [
+    "src/community/pages/PullRequest.jsx:804"
+  ],
+  "this pull request": [
+    "src/community/pages/PullRequest.jsx:804"
+  ],
+  "No commits yet": [
+    "src/community/pages/PullRequest.jsx:811"
+  ],
+  "No commits found after the fork point.": [
+    "src/community/pages/PullRequest.jsx:811"
+  ],
+  "Show summary": [
+    "src/community/pages/PullRequest.jsx:828"
+  ],
+  "Show file diff": [
+    "src/community/pages/PullRequest.jsx:828"
+  ],
+  "Loading file changes…": [
+    "src/community/pages/PullRequest.jsx:840"
+  ],
+  "Edit each text file, then choose which version to keep for every asset.": [
+    "src/community/pages/PullRequest.jsx:851"
+  ],
+  "Keep current project": [
+    "src/community/pages/PullRequest.jsx:854"
+  ],
   "Use pull request": [
-    "src/community/pages/PullRequest.jsx:786"
+    "src/community/pages/PullRequest.jsx:855"
   ],
   "Close pull request?": [
-    "src/community/pages/PullRequest.jsx:813"
+    "src/community/pages/PullRequest.jsx:882"
   ],
   "Closing…": [
-    "src/community/pages/PullRequest.jsx:816"
+    "src/community/pages/PullRequest.jsx:885"
   ],
   "This closes the pull request without merging its changes.": [
-    "src/community/pages/PullRequest.jsx:822"
+    "src/community/pages/PullRequest.jsx:891"
   ],
   "Pull requests · {value1}": [
     "src/community/pages/PullRequests.jsx:36"
@@ -11586,16 +11586,19 @@
   "This remix no longer shares any commits with {value1}, so it cannot be synced.": [
     "src/community/use-remix-sync.js:59"
   ],
+  "The original project for this remix no longer exists, so it cannot be synced.": [
+    "src/community/use-remix-sync.js:64"
+  ],
   "Only maintainers of this remix can sync it, and only while they can see inside {value1}.": [
-    "src/community/use-remix-sync.js:65"
+    "src/community/use-remix-sync.js:68"
   ],
   "Could not sync this remix.": [
-    "src/community/use-remix-sync.js:69"
+    "src/community/use-remix-sync.js:72"
   ],
   "Brought in the latest changes from {value1}.": [
-    "src/community/use-remix-sync.js:94"
+    "src/community/use-remix-sync.js:97"
   ],
   "This remix already has every change from {value1}.": [
-    "src/community/use-remix-sync.js:108"
+    "src/community/use-remix-sync.js:111"
   ]
 }

@@ -237,7 +237,7 @@ describe('project branch management', () => {
         expect(onChange).toHaveBeenCalled();
     });
 
-    test('branch management errors stay out of an open merge session', async () => {
+    test('branch management is locked while a merge session is open', async () => {
         api.mergeBranches.mockResolvedValue({
             ok: true,
             targetProjectId: '123',
@@ -249,7 +249,7 @@ describe('project branch management', () => {
         });
         api.commitTree.mockResolvedValue({files: [{path: 'Cat/main.fractch'}]});
         api.commitFile.mockResolvedValue({content: encode('main')});
-        api.createBranch.mockRejectedValueOnce(new Error('A branch with that name already exists.'));
+        api.createBranch.mockClear();
         const wrapper = mount(<ProjectBranches
             id="123"
             canManage
@@ -261,8 +261,12 @@ describe('project branch management', () => {
         });
         await settle(wrapper);
         await settle(wrapper);
+        expect(wrapper.text()).toContain('Resolve merge conflicts');
+        expect(wrapper.find('input[placeholder="feature-name"]').prop('disabled')).toBe(true);
+        expect(wrapper.find('button[title="Rename feature"]').prop('disabled')).toBe(true);
+        expect(wrapper.find('button[title="Delete feature"]').prop('disabled')).toBe(true);
         act(() => wrapper.find('input[placeholder="feature-name"]').props()
-            .onChange({target: {value: 'feature'}}));
+            .onChange({target: {value: 'other'}}));
         wrapper.update();
         await act(async () => {
             wrapper.find('form').at(0)
@@ -270,9 +274,7 @@ describe('project branch management', () => {
                 .onSubmit({preventDefault: jest.fn()});
         });
         await settle(wrapper);
-
-        expect(wrapper.find('MergeConflicts').text()).not.toContain('A branch with that name already exists.');
-        expect(wrapper.text()).toContain('A branch with that name already exists.');
+        expect(api.createBranch).not.toHaveBeenCalled();
         expect(wrapper.text()).toContain('Resolve merge conflicts');
     });
 });

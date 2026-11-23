@@ -60,6 +60,9 @@ const useRemixSync = ({projectId, remixFrom, onSynced}) => {
                 {value1: original}
             );
         }
+        if (syncError.status === 404) {
+            return communityText('The original project for this remix no longer exists, so it cannot be synced.');
+        }
         if (syncError.status === 403) {
             return communityText(
                 'Only maintainers of this remix can sync it, and only while they can see inside {value1}.',

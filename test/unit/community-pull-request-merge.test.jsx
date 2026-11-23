@@ -1,7 +1,7 @@
 import React from 'react';
 import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
-import {MemoryRouter, Route, Routes} from 'react-router-dom';
+import {MemoryRouter, Route, Routes, useNavigate} from 'react-router-dom';
 
 jest.mock('../../src/community/UserContext.jsx', () => ({
     useUser: () => ({user: {username: 'sam'}, loading: false, login: jest.fn()})
@@ -72,19 +72,33 @@ const settle = async wrapper => {
     wrapper.update();
 };
 
-const mountPull = () => mount(
+const navigation = {go: null};
+const Navigator = () => {
+    navigation.go = useNavigate();
+    return null;
+};
+
+const mounted = [];
+const mountPullPage = options => mount(
     <MemoryRouter
         initialEntries={['/project/target/pulls/2']}
         future={{v7_startTransition: true, v7_relativeSplatPath: true}}
     >
+        <Navigator />
         <Routes>
             <Route
                 path="/project/:id/pulls/:index"
                 element={<PullRequest />}
             />
         </Routes>
-    </MemoryRouter>
+    </MemoryRouter>,
+    options
 );
+const mountPull = (options = {}) => {
+    const wrapper = mountPullPage(options);
+    mounted.push(wrapper);
+    return wrapper;
+};
 
 const button = (wrapper, label) => wrapper.find('button').filterWhere(item => item.text().includes(label));
 
@@ -99,6 +113,15 @@ const openConflicts = async () => {
 };
 
 describe('pull request merges', () => {
+    afterEach(() => {
+        while (mounted.length) {
+            const wrapper = mounted.pop();
+            act(() => {
+                wrapper.unmount();
+            });
+        }
+    });
+
     beforeEach(() => {
         sessionStorage.clear();
         api.getProject.mockReset().mockImplementation(id => Promise.resolve({
@@ -292,6 +315,33 @@ describe('pull request merges', () => {
         expect(wrapper.find('Notice')).toHaveLength(0);
     });
 
+    test('a merge prepared for one pull request never opens on the next one', async () => {
+        let answer;
+        api.mergePull.mockReturnValue(new Promise(resolve => {
+            answer = resolve;
+        }));
+        api.getPull.mockImplementation((id, index) => Promise.resolve({pull: {...pull, index: Number(index), title: `Pull ${index}`}}));
+        const wrapper = mountPull();
+        await settle(wrapper);
+        await act(async () => {
+            button(wrapper, 'Merge pull request').simulate('click');
+        });
+        await act(async () => {
+            navigation.go('/project/target/pulls/3');
+        });
+        await settle(wrapper);
+        await act(async () => {
+            answer(conflictMerge);
+        });
+        await settle(wrapper);
+        expect(wrapper.text()).toContain('Pull 3');
+        expect(wrapper.text()).not.toContain('Resolve merge conflicts');
+        expect(button(wrapper, 'Merge pull request')).toHaveLength(1);
+        expect(button(wrapper, 'Merge pull request').prop('disabled')).toBeFalsy();
+        expect(button(wrapper, 'Close pull request').prop('disabled')).toBeFalsy();
+        expect(api.uploadPullMerge).not.toHaveBeenCalled();
+    });
+
     test('a merge refused because the target branch is gone shows the sentence once', async () => {
         api.getPull.mockResolvedValueOnce({pull: {...pull, baseBranch: 'old'}})
             .mockResolvedValue({pull: {...pull, baseBranch: 'old', baseBranchMissing: true}});
@@ -308,6 +358,21 @@ describe('pull request merges', () => {
         expect(wrapper.text().split(sentence)).toHaveLength(2);
         expect(button(wrapper, 'Merge pull request')).toHaveLength(0);
         expect(wrapper.text()).not.toContain('raw server text');
+
+        api.closePull.mockReset().mockResolvedValue({pull: {...pull, baseBranch: 'old', state: 'closed'}});
+        await act(async () => {
+            button(wrapper, 'Close pull request').simulate('click');
+        });
+        wrapper.update();
+        const confirm = wrapper.find('button')
+            .filterWhere(item => item.text() === 'Close pull request')
+            .last();
+        await act(async () => {
+            confirm.simulate('click');
+        });
+        await settle(wrapper);
+        expect(wrapper.text()).toContain('Pull request closed');
+        expect(wrapper.text()).not.toContain('which no longer exists');
     });
 
     test('a blocked merge comes back when the viewer returns and the branch is there again', async () => {
@@ -360,6 +425,51 @@ describe('pull request merges', () => {
         expect(wrapper.text()).toContain('This pull request targets the main branch, and this project is on feature.');
         expect(wrapper.text()).not.toContain('Switch this project to the main branch');
         expect(wrapper.text()).not.toContain('raw server text');
+
+        api.getProject.mockImplementation(id => Promise.resolve({
+            project: {id, title: id, owner: 'sam', isOwner: id === 'target', canViewSource: true, gitHead: sha('c'), gitBranch: 'main'}
+        }));
+        await act(async () => {
+            window.dispatchEvent(new Event('focus'));
+        });
+        await settle(wrapper);
+        expect(button(wrapper, 'Merge pull request')).toHaveLength(1);
+        expect(wrapper.text()).not.toContain('Switch this project to the main branch');
+    });
+
+    test('the reason a merge button disappeared is focused and announced', async () => {
+        api.getPull.mockResolvedValueOnce({pull: {...pull, baseBranch: 'old'}})
+            .mockResolvedValue({pull: {...pull, baseBranch: 'old', baseBranchMissing: true}});
+        api.mergePull.mockRejectedValue(Object.assign(new Error('raw'), {code: 'target_branch_missing', status: 409, data: {branch: 'old'}}));
+        const host = document.createElement('div');
+        document.body.appendChild(host);
+        const wrapper = mountPull({attachTo: host});
+        await settle(wrapper);
+        await act(async () => {
+            button(wrapper, 'Merge pull request').simulate('click');
+        });
+        await settle(wrapper);
+        expect(document.activeElement.textContent).toContain('which no longer exists');
+        expect(document.activeElement.getAttribute('role')).toBe('status');
+        mounted.splice(mounted.indexOf(wrapper), 1);
+        wrapper.detach();
+        host.remove();
+    });
+
+    test('returning to a blocked pull refreshes quietly, once, and keeps the page on a failure', async () => {
+        api.getPull.mockResolvedValue({pull: {...pull, baseBranch: 'old', baseBranchMissing: true}});
+        const wrapper = mountPull();
+        await settle(wrapper);
+        api.getPull.mockClear().mockRejectedValue(new Error('Network request failed'));
+        await act(async () => {
+            window.dispatchEvent(new Event('focus'));
+            document.dispatchEvent(new Event('visibilitychange'));
+        });
+        await settle(wrapper);
+        expect(api.getPull).toHaveBeenCalledTimes(1);
+        expect(wrapper.text()).toContain('Slow the cat down');
+        expect(wrapper.text()).not.toContain('Network request failed');
+        expect(wrapper.text()).toContain('which no longer exists');
     });
 
     test('a diff that cannot be compared explains itself and can be retried', async () => {

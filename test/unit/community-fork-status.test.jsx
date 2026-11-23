@@ -179,6 +179,7 @@ describe('remix fork status', () => {
             [{code: 'head_changed', status: 409}, 'This remix changed while it was syncing. Sync again to include the new changes.'],
             [{code: 'sync_unavailable', status: 409}, 'This remix no longer shares any commits with flufi / Meowing Simulator, so it cannot be synced.'],
             [{code: 'sync_history_unavailable', status: 409}, 'Both projects need saved commits before this remix can be synced.'],
+            [{status: 404}, 'The original project for this remix no longer exists, so it cannot be synced.'],
             [{status: 403}, 'Only maintainers of this remix can sync it, and only while they can see inside flufi / Meowing Simulator.']
         ];
         for (const [fields, sentence] of refusals) {

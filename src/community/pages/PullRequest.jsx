@@ -328,25 +328,59 @@ const PullRequest = () => {
                 targetCommits: timelineData.targetCommits || []
             });
             setPageMeta({title: communityText('{title} · Pull request #{index}', {title: pullData.pull.title, index: pullData.pull.index})});
+            return {pull: pullData.pull, project: projectData.project || projectData};
         } catch (error) {
             if (contextRef.current === context) {
                 setLoadingError(error.message || 'Could not load this pull request.');
             }
         }
+        return null;
     }, [id, index, viewer]);
 
     const refreshProject = useCallback(async () => {
         const context = `${viewer}:${id}:${index}`;
         const projectData = await api.getProject(id).catch(() => null);
-        if (projectData && contextRef.current === context) setProject(projectData.project || projectData);
+        if (!projectData || contextRef.current !== context) return null;
+        const nextProject = projectData.project || projectData;
+        setProject(nextProject);
+        return nextProject;
+    }, [id, index, viewer]);
+
+    const gateRefreshRef = useRef(null);
+    const refreshGate = useCallback(() => {
+        if (gateRefreshRef.current) return gateRefreshRef.current;
+        const context = `${viewer}:${id}:${index}`;
+        const refresh = Promise.all([api.getPull(id, index), api.getProject(id)])
+            .then(([pullData, projectData]) => {
+                if (contextRef.current !== context || !pullData?.pull || pullData.pull.canInspect === false) return;
+                setProject(projectData.project || projectData);
+                setPull(pullData.pull);
+            })
+            .catch(() => null)
+            .then(() => {
+                if (gateRefreshRef.current === refresh) gateRefreshRef.current = null;
+            });
+        gateRefreshRef.current = refresh;
+        return refresh;
     }, [id, index, viewer]);
 
     const branchBlocked = Boolean(pull?.state === 'open' && pull.baseBranch &&
         (pull.baseBranchMissing || (project?.gitBranch && pull.baseBranch !== project.gitBranch)));
+    const gateNoteRef = useRef(null);
+    const focusGateRef = useRef(false);
+    const focusGateNote = () => {
+        focusGateRef.current = !gateNoteRef.current;
+        if (gateNoteRef.current) gateNoteRef.current.focus();
+    };
+    useEffect(() => {
+        if (!branchBlocked || !focusGateRef.current) return;
+        focusGateRef.current = false;
+        if (gateNoteRef.current) gateNoteRef.current.focus();
+    }, [branchBlocked]);
     useEffect(() => {
         if (!branchBlocked) return;
         const onReturn = () => {
-            if (document.visibilityState !== 'hidden') load();
+            if (document.visibilityState !== 'hidden') refreshGate();
         };
         window.addEventListener('focus', onReturn);
         document.addEventListener('visibilitychange', onReturn);
@@ -354,9 +388,11 @@ const PullRequest = () => {
             window.removeEventListener('focus', onReturn);
             document.removeEventListener('visibilitychange', onReturn);
         };
-    }, [branchBlocked, load]);
+    }, [branchBlocked, refreshGate]);
 
     useEffect(() => {
+        gateRefreshRef.current = null;
+        focusGateRef.current = false;
         setProject(null);
         setPull(null);
         setDiff(null);
@@ -368,6 +404,7 @@ const PullRequest = () => {
         setTimeline({comments: [], commits: [], targetCommits: []});
         setTab('conversation');
         setActiveSprite('');
+        setMerging(false);
         setMergeSession(null);
         setMergeError('');
         setCloseConfirmOpen(false);
@@ -375,6 +412,7 @@ const PullRequest = () => {
         setCloseError('');
         setDiffError('');
         setCommentText('');
+        setCommentBusy(false);
         setCommentError('');
         load();
     }, [load]);
@@ -384,24 +422,42 @@ const PullRequest = () => {
         loadDiff(pull, `${viewer}:${id}:${index}`, fileDiff, project?.gitHead || '');
     }, [changes, diff, diffError, fileDiff, id, index, loadDiff, project, pull, tab, viewer]);
 
-    const uploadMerge = async (data, activePull, files) => {
+    const pageContext = () => `${viewer}:${id}:${index}`;
+    const stillOn = context => contextRef.current === context;
+
+    const uploadMerge = async (data, activePull, files, context) => {
         const result = await buildProjectArtifactsFromFileEntries(
             [...files].map(([path, fileData]) => ({path, data: fileData}))
         );
         await api.uploadPullMerge(id, pullMergeUpload(data, activePull.index, result));
+        if (!stillOn(context)) return;
         setMergeSession(null);
         await load();
     };
 
-    const failMerge = async (error, fallback) => {
+    const failMerge = async (error, fallback, context, inSession) => {
+        if (!stillOn(context)) return;
         const failure = pullMergeFailure(error, communityText, fallback);
-        setMergeError(failure.message);
-        if (error?.code === 'target_branch_changed') await refreshProject();
-        if (!failure.restart) return;
+        const baseBranch = pull?.baseBranch || '';
+        let gateShown = false;
+        if (error?.code === 'target_branch_changed' && !inSession) {
+            const refreshed = await refreshProject();
+            gateShown = Boolean(baseBranch && refreshed?.gitBranch && refreshed.gitBranch !== baseBranch);
+        }
+        if (!stillOn(context)) return;
+        if (!failure.restart) {
+            setMergeError(gateShown ? '' : failure.message);
+            if (gateShown) focusGateNote();
+            return;
+        }
         setMergeSession(null);
         diffGenerationRef.current += 1;
         diffRequestRef.current = '';
-        await load();
+        const reloaded = await load();
+        if (!stillOn(context)) return;
+        gateShown = error?.code === 'target_branch_missing' && Boolean(reloaded?.pull?.baseBranch && reloaded.pull.baseBranchMissing);
+        setMergeError(gateShown ? '' : failure.message);
+        if (gateShown) focusGateNote();
         setDiff(null);
         setChanges(null);
         setFileTexts({});
@@ -412,16 +468,19 @@ const PullRequest = () => {
 
     const merge = async () => {
         if (!pull || merging) return;
+        const context = pageContext();
         setMerging(true);
         setMergeError('');
         try {
             const data = await api.mergePull(id, pull.index);
+            if (!stillOn(context)) return;
             if (data.merged) {
                 setMergeSession(null);
                 await load();
                 return;
             }
             const result = await materializeMerge({...data, targetHead: data.expectedHead});
+            if (!stillOn(context)) return;
             if (result.conflicts.length || result.binaryConflicts.length) {
                 setMergeSession({
                     pull,
@@ -431,18 +490,19 @@ const PullRequest = () => {
                     binaryConflicts: result.binaryConflicts
                 });
             } else {
-                await uploadMerge(data, pull, result.files);
+                await uploadMerge(data, pull, result.files, context);
             }
         } catch (error) {
-            await failMerge(error, communityText('Merge failed.'));
+            await failMerge(error, communityText('Merge failed.'), context, false);
         } finally {
-            setMerging(false);
+            if (stillOn(context)) setMerging(false);
         }
     };
 
     const resolveConflicts = async () => {
         if (!mergeSession || merging) return;
         const session = mergeSession;
+        const context = pageContext();
         setMerging(true);
         setMergeError('');
         try {
@@ -451,23 +511,28 @@ const PullRequest = () => {
                 setMergeError(communityText('Choose a version for {value1}.', {value1: unresolved.path}));
                 return;
             }
-            await uploadMerge(session.data, session.pull, resolvedMergeFiles(session));
+            await uploadMerge(session.data, session.pull, resolvedMergeFiles(session), context);
         } catch (error) {
-            await failMerge(error, communityText('The conflicts could not be resolved.'));
+            await failMerge(error, communityText('The conflicts could not be resolved.'), context, true);
         } finally {
-            setMerging(false);
+            if (stillOn(context)) setMerging(false);
         }
     };
 
     const closePull = async () => {
         if (!pull || closing) return;
+        const context = pageContext();
         setClosing(true);
         setCloseError('');
         try {
             const data = await api.closePull(id, pull.index);
+            if (!stillOn(context)) return;
             setPull(data.pull);
+            setMergeSession(null);
+            setMergeError('');
             setCloseConfirmOpen(false);
         } catch (error) {
+            if (!stillOn(context)) return;
             if (error?.code === 'pull_not_open') {
                 setCloseConfirmOpen(false);
                 setMergeSession(null);
@@ -477,7 +542,7 @@ const PullRequest = () => {
             }
             setCloseError(error.message || communityText('Could not close this pull request.'));
         } finally {
-            setClosing(false);
+            if (stillOn(context)) setClosing(false);
         }
     };
 
@@ -489,8 +554,9 @@ const PullRequest = () => {
         setMergeSession(session => withBinaryChoice(session, path, choice));
     };
 
-    const refreshTimeline = async () => {
+    const refreshTimeline = async context => {
         const data = await api.pullTimeline(id, index);
+        if (!stillOn(context)) return;
         setTimeline({
             comments: data.comments || [],
             commits: data.commits || [],
@@ -502,30 +568,33 @@ const PullRequest = () => {
         event.preventDefault();
         const content = commentText.trim();
         if (!content || commentBusy) return;
+        const context = pageContext();
         setCommentBusy(true);
         setCommentError('');
         try {
             await api.addPullComment(id, index, content);
+            if (!stillOn(context)) return;
             setCommentText('');
-            await refreshTimeline();
+            await refreshTimeline(context);
         } catch (error) {
-            setCommentError(error.message || 'Could not post this comment.');
+            if (stillOn(context)) setCommentError(error.message || 'Could not post this comment.');
         } finally {
-            setCommentBusy(false);
+            if (stillOn(context)) setCommentBusy(false);
         }
     };
 
     const deleteComment = async comment => {
         if (commentBusy) return;
+        const context = pageContext();
         setCommentBusy(true);
         setCommentError('');
         try {
             await api.deletePullComment(id, index, comment.id);
-            await refreshTimeline();
+            await refreshTimeline(context);
         } catch (error) {
-            setCommentError(error.message || 'Could not delete this comment.');
+            if (stillOn(context)) setCommentError(error.message || 'Could not delete this comment.');
         } finally {
-            setCommentBusy(false);
+            if (stillOn(context)) setCommentBusy(false);
         }
     };
 
@@ -704,15 +773,15 @@ const PullRequest = () => {
                                 {open ? <GitMerge size={20} /> : <Check size={20} />}
                                 <div><strong>{open ? communityText('Ready for review') : communityText('Pull request closed')}</strong><span>{open ? communityText('Review the files before merging.') : communityText('No more changes can be merged.')}</span></div>
                             </div>
-                            {mergeError && !mergeSession && !branchGone && !wrongBranch ? <Notice variant="error">{mergeError}</Notice> : null}
+                            {mergeError && !mergeSession ? <Notice variant="error">{mergeError}</Notice> : null}
                             {open && canMerge && mergeSession ? (
                                 <p className={styles.note}>{communityText('Resolve the conflicts below to finish merging.')}</p>
                             ) : open && canMerge && branchGone ? (
-                                <p className={styles.note}>
+                                <p className={styles.note} ref={gateNoteRef} tabIndex={-1} role="status">
                                     {communityText('This pull request targets the {value1} branch, which no longer exists. Close it and open a new one.', {value1: pull.baseBranch})}
                                 </p>
                             ) : open && canMerge && wrongBranch ? (
-                                <p className={styles.note}>
+                                <p className={styles.note} ref={gateNoteRef} tabIndex={-1} role="status">
                                     {communityText('This pull request targets the {value1} branch, and this project is on {value2}. It can be merged once the project is back on {value1}.', {value1: pull.baseBranch, value2: project.gitBranch})}
                                 </p>
                             ) : open && canMerge ? (
