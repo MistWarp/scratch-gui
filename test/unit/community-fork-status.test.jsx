@@ -88,6 +88,11 @@ describe('remix fork status', () => {
 
         expect(syncButton(mountStatus({remixFrom: remixFrom({behind: 0})}))).toHaveLength(0);
         expect(syncButton(mountStatus({canSync: false}))).toHaveLength(0);
+        const unknownBehind = mountStatus({
+            gitHead: 'a'.repeat(40),
+            remixFrom: {id: 'parent', owner: 'flufi', title: 'Meowing Simulator', head: 'b'.repeat(40)}
+        });
+        expect(syncButton(unknownBehind)).toHaveLength(1);
     });
 
     test('asks for a commit first when the remix has uncommitted changes', () => {
@@ -195,24 +200,38 @@ describe('remix fork status', () => {
         }
     });
 
-    test('a stale sync explains itself, closes the session and refreshes', async () => {
+    test('a stale sync explains itself, closes the session and refreshes, while an uncommitted refusal keeps resolutions open', async () => {
         api.syncRemix.mockResolvedValue(syncResponse([
             {path: 'Cat/main.fractch', conflict: true, content: encode('<<<<<<< this remix')}
         ]));
-        const changed = Object.assign(new Error('the original changed'), {code: 'original_changed', status: 409});
-        api.uploadRemixSync.mockRejectedValue(changed);
+        api.uploadRemixSync
+            .mockRejectedValueOnce(Object.assign(new Error('dirty'), {code: 'uncommitted_changes', status: 409}))
+            .mockRejectedValueOnce(Object.assign(new Error('the original changed'), {code: 'original_changed', status: 409}));
         const onSynced = jest.fn().mockResolvedValue();
         const wrapper = mountStatus({onSynced});
         await act(async () => {
             syncButton(wrapper).simulate('click');
         });
         await settle(wrapper);
+        act(() => {
+            wrapper.find('textarea').props()
+                .onChange({target: {value: 'kept resolution'}});
+        });
+        wrapper.update();
         await act(async () => {
             wrapper.find('button').filterWhere(button => button.text().includes('Save resolutions and sync'))
                 .simulate('click');
         });
         await settle(wrapper);
+        expect(wrapper.text()).toContain('Commit your saved changes in the editor before syncing, so they are not replaced.');
+        expect(wrapper.text()).toContain('Resolve sync conflicts');
+        expect(wrapper.find('textarea').prop('value')).toBe('kept resolution');
 
+        await act(async () => {
+            wrapper.find('button').filterWhere(button => button.text().includes('Save resolutions and sync'))
+                .simulate('click');
+        });
+        await settle(wrapper);
         expect(wrapper.text()).toContain('flufi / Meowing Simulator changed while this remix was syncing.');
         expect(wrapper.text()).not.toContain('Resolve sync conflicts');
         expect(onSynced).toHaveBeenCalled();

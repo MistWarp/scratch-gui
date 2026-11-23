@@ -7,7 +7,7 @@ import {
 } from './merge-session.js';
 import {remixParentLabel} from './remix-origin.js';
 
-const RESTART_CODES = ['head_changed', 'original_changed', 'uncommitted_changes'];
+const RESTART_CODES = ['head_changed', 'original_changed'];
 
 const useRemixSync = ({projectId, remixFrom, onSynced}) => {
     const {text: communityText} = useCommunityText();

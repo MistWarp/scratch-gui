@@ -232,8 +232,8 @@ describe('pull request merges', () => {
         expect(wrapper.text()).toContain('This project changed while you were merging. Merge again to include the latest changes.');
     });
 
-    test('closing a pull that someone else already closed reloads it with a sentence', async () => {
-        api.closePull.mockRejectedValue(Object.assign(new Error('the pull request is no longer open'), {code: 'pull_not_open', status: 409}));
+    test('closing or merging a pull that someone else already closed reloads it with a sentence', async () => {
+        api.closePull.mockRejectedValue(Object.assign(new Error('open pull request not found'), {status: 404}));
         const wrapper = mountPull();
         await settle(wrapper);
         act(() => {
@@ -248,6 +248,7 @@ describe('pull request merges', () => {
         await settle(wrapper);
         expect(wrapper.find('ConfirmModal')).toHaveLength(0);
         expect(wrapper.text()).toContain('This pull request was already closed or merged.');
+        expect(wrapper.text()).not.toContain('open pull request not found');
         expect(api.getPull).toHaveBeenCalledTimes(2);
     });
 
@@ -315,15 +316,29 @@ describe('pull request merges', () => {
         expect(wrapper.find('Notice')).toHaveLength(0);
     });
 
-    test('a merge prepared for one pull request never opens on the next one', async () => {
+    test('a merge, close or comment started on one pull request never locks or lands on the next one', async () => {
         let answer;
         api.mergePull.mockReturnValue(new Promise(resolve => {
             answer = resolve;
         }));
+        api.closePull.mockReturnValue(new Promise(() => {}));
+        api.addPullComment = jest.fn(() => new Promise(() => {}));
         api.getPull.mockImplementation((id, index) => Promise.resolve({pull: {...pull, index: Number(index), title: `Pull ${index}`}}));
         const wrapper = mountPull();
         await settle(wrapper);
+        act(() => {
+            wrapper.find('textarea').props()
+                .onChange({target: {value: 'hello'}});
+        });
+        wrapper.update();
         await act(async () => {
+            wrapper.find('form').simulate('submit', {preventDefault: () => {}});
+            button(wrapper, 'Close pull request').first()
+                .simulate('click');
+        });
+        wrapper.update();
+        await act(async () => {
+            wrapper.find('ConfirmModal').prop('onConfirm')();
             button(wrapper, 'Merge pull request').simulate('click');
         });
         await act(async () => {
@@ -336,9 +351,11 @@ describe('pull request merges', () => {
         await settle(wrapper);
         expect(wrapper.text()).toContain('Pull 3');
         expect(wrapper.text()).not.toContain('Resolve merge conflicts');
+        expect(wrapper.find('ConfirmModal')).toHaveLength(0);
         expect(button(wrapper, 'Merge pull request')).toHaveLength(1);
         expect(button(wrapper, 'Merge pull request').prop('disabled')).toBeFalsy();
         expect(button(wrapper, 'Close pull request').prop('disabled')).toBeFalsy();
+        expect(button(wrapper, 'Comment').prop('busy')).toBeFalsy();
         expect(api.uploadPullMerge).not.toHaveBeenCalled();
     });
 

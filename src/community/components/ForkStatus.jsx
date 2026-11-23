@@ -9,13 +9,15 @@ import Button from './ui/Button.jsx';
 import Notice from './ui/Notice.jsx';
 import styles from './ForkStatus.module.css';
 
-const ForkStatus = ({canContribute, canSync, contributeHref, hasUncommitted, projectId, remixFrom, sync}) => {
+const ForkStatus = ({canContribute, canSync, contributeHref, gitHead, hasUncommitted, projectId, remixFrom, sync}) => {
     const {text: communityText} = useCommunityText();
     const {busy, error, notice, session, cancel, chooseBinary, dismissNotice, resolve, updateText} = sync;
     const startSync = sync.sync;
     const original = remixParentLabel(remixFrom);
     const hintId = `fork-sync-hint-${projectId}`;
-    const showSync = canSync && remixFrom.behind > 0 && !session;
+    const canSyncUnknown = typeof remixFrom.behind !== 'number' &&
+        Boolean(remixFrom.head && gitHead && remixFrom.head !== gitHead);
+    const showSync = canSync && (remixFrom.behind > 0 || canSyncUnknown) && !session;
     // eslint-disable-next-line max-len
     const conflictLead = communityText('This remix and {value1} changed the same files. Edit the text conflicts and choose which version of each asset to keep.', {value1: original});
 
@@ -88,11 +90,13 @@ ForkStatus.propTypes = {
     canContribute: PropTypes.bool,
     canSync: PropTypes.bool,
     contributeHref: PropTypes.string,
+    gitHead: PropTypes.string,
     hasUncommitted: PropTypes.bool,
     projectId: PropTypes.string.isRequired,
     remixFrom: PropTypes.shape({
         ahead: PropTypes.number,
         behind: PropTypes.number,
+        head: PropTypes.string,
         owner: PropTypes.string,
         title: PropTypes.string
     }).isRequired,

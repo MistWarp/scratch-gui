@@ -13,7 +13,7 @@ import {uncommittedSummaryDetail} from '../commit-summary.js';
 import {formatBytes, safeDate, timeAgo} from '../format.js';
 import {getCommunityLocale} from '../locale.js';
 import setPageMeta from '../page-meta.js';
-import {hasRemixDivergence, remixParentLabel} from '../remix-origin.js';
+import {canShowForkStatus, remixParentLabel} from '../remix-origin.js';
 import useLatest from '../use-latest.js';
 import Avatar from '../components/Avatar.jsx';
 import ForkStatus from '../components/ForkStatus.jsx';
@@ -154,7 +154,7 @@ const ProjectCodePage = ({id, vanitySlug}) => {
     const {hash: locationHash} = useLocation();
     const {user} = useUser();
     const viewerName = (user && user.username) || '';
-    const {project, versionHistory, error, load, loadHistory, refreshProjectAndHistory} = useProjectData(id);
+    const {project, versionHistory, error, load, loadHistory, refreshProjectAndHistory, refreshRemixState} = useProjectData(id);
     const [branches, setBranches] = useState(null);
     const [openPulls, setOpenPulls] = useState(null);
     const [releaseCount, setReleaseCount] = useState(null);
@@ -197,6 +197,21 @@ const ProjectCodePage = ({id, vanitySlug}) => {
             return refreshProjectAndHistory();
         }
     });
+    const canRefreshRemix = Boolean(
+        canView && tab === 'code' && place.kind === 'tree' && !place.path && project?.remixFrom
+    );
+    useEffect(() => {
+        if (!canRefreshRemix) return;
+        const onReturn = () => {
+            if (document.visibilityState !== 'hidden') refreshRemixState();
+        };
+        window.addEventListener('focus', onReturn);
+        document.addEventListener('visibilitychange', onReturn);
+        return () => {
+            window.removeEventListener('focus', onReturn);
+            document.removeEventListener('visibilitychange', onReturn);
+        };
+    }, [canRefreshRemix, refreshRemixState]);
     const refreshIssueCounts = useCallback(() => {
         api.getComments(id, {limit: 1, issue: 'open'}).then(data => setIssueCounts(data.issueCounts || null)).catch(() => {});
     }, [id]);
@@ -269,6 +284,7 @@ const ProjectCodePage = ({id, vanitySlug}) => {
         uncommittedSummaryDetail(uncommitted, communityText, getCommunityLocale()) : '';
     const remixFrom = project.remixFrom || null;
     const remixParentUrl = remixFrom ? projectUrl(remixFrom) : '';
+    const canSync = canMaintainProject(project);
 
     return (
         <main className={styles.page}>
@@ -324,13 +340,14 @@ const ProjectCodePage = ({id, vanitySlug}) => {
                         {tab === 'code' ? (
                             <div className={place.kind === 'tree' && !place.path ? styles.codeLayout : styles.codeFull}>
                                 <div className={styles.main}>
-                                    {place.kind === 'tree' && !place.path && branchName === defaultBranch && (!requestedBranch || requestedBranch === defaultBranch) && hasRemixDivergence(remixFrom) ? (
+                                    {place.kind === 'tree' && !place.path && branchName === defaultBranch && (!requestedBranch || requestedBranch === defaultBranch) && canShowForkStatus(remixFrom, canSync, project.gitHead) ? (
                                         <ForkStatus
                                             projectId={id}
                                             remixFrom={remixFrom}
+                                            gitHead={project.gitHead}
                                             canContribute={Boolean(project.isOwner && remixFrom.ahead > 0)}
                                             contributeHref={`${remixParentUrl}#contribute`}
-                                            canSync={canMaintainProject(project)}
+                                            canSync={canSync}
                                             hasUncommitted={Boolean(uncommitted)}
                                             sync={remixSync}
                                         />

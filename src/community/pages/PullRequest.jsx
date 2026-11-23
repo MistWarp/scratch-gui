@@ -129,8 +129,8 @@ export const pullMergeFailure = (error, communityText, fallback) => {
     if (error?.code === 'head_changed') {
         return {restart, message: communityText('This project changed while you were merging. Merge again to include the latest changes.')};
     }
-    if (error?.code === 'pull_not_open') {
-        return {restart, message: communityText('This pull request was closed or merged while you were merging.')};
+    if (error?.code === 'pull_not_open' || error?.status === 404) {
+        return {restart: true, message: communityText('This pull request was closed or merged while you were merging.')};
     }
     if (error?.code === 'pull_merge_unavailable') {
         return {restart, message: communityText('This pull request cannot be merged because the two histories could not be compared.')};
@@ -372,7 +372,11 @@ const PullRequest = () => {
         focusGateRef.current = !gateNoteRef.current;
         if (gateNoteRef.current) gateNoteRef.current.focus();
     };
+    useEffect(() => () => {
+        contextRef.current = '';
+    }, []);
     useEffect(() => {
+        if (branchBlocked) setMergeError('');
         if (!branchBlocked || !focusGateRef.current) return;
         focusGateRef.current = false;
         if (gateNoteRef.current) gateNoteRef.current.focus();
@@ -455,7 +459,9 @@ const PullRequest = () => {
         diffRequestRef.current = '';
         const reloaded = await load();
         if (!stillOn(context)) return;
-        gateShown = error?.code === 'target_branch_missing' && Boolean(reloaded?.pull?.baseBranch && reloaded.pull.baseBranchMissing);
+        const reloadedBlocked = Boolean(reloaded?.pull?.state === 'open' && reloaded.pull.baseBranch &&
+            (reloaded.pull.baseBranchMissing || (reloaded.project?.gitBranch && reloaded.pull.baseBranch !== reloaded.project.gitBranch)));
+        gateShown = reloadedBlocked;
         setMergeError(gateShown ? '' : failure.message);
         if (gateShown) focusGateNote();
         setDiff(null);
@@ -533,7 +539,7 @@ const PullRequest = () => {
             setCloseConfirmOpen(false);
         } catch (error) {
             if (!stillOn(context)) return;
-            if (error?.code === 'pull_not_open') {
+            if (error?.code === 'pull_not_open' || error?.status === 404) {
                 setCloseConfirmOpen(false);
                 setMergeSession(null);
                 setMergeError(communityText('This pull request was already closed or merged.'));
@@ -773,7 +779,7 @@ const PullRequest = () => {
                                 {open ? <GitMerge size={20} /> : <Check size={20} />}
                                 <div><strong>{open ? communityText('Ready for review') : communityText('Pull request closed')}</strong><span>{open ? communityText('Review the files before merging.') : communityText('No more changes can be merged.')}</span></div>
                             </div>
-                            {mergeError && !mergeSession ? <Notice variant="error">{mergeError}</Notice> : null}
+                            {mergeError && !mergeSession && !branchGone && !wrongBranch ? <Notice variant="error">{mergeError}</Notice> : null}
                             {open && canMerge && mergeSession ? (
                                 <p className={styles.note}>{communityText('Resolve the conflicts below to finish merging.')}</p>
                             ) : open && canMerge && branchGone ? (
