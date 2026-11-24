@@ -289,4 +289,40 @@ describe('project branch management', () => {
         expect(api.createBranch).not.toHaveBeenCalled();
         expect(wrapper.text()).toContain('Resolve merge conflicts');
     });
+
+    test('starting a branch merge clears an earlier branch-management error', async () => {
+        api.createBranch.mockRejectedValueOnce(new Error('Could not create the branch.'));
+        api.mergeBranches.mockResolvedValue({
+            ok: true,
+            targetProjectId: '123',
+            targetHead: 'a'.repeat(40),
+            sourceHead: 'b'.repeat(40),
+            sourceBranch: 'feature',
+            targetBranch: 'main',
+            merge: {alreadyMerged: true}
+        });
+        const wrapper = mount(<ProjectBranches
+            id="123"
+            canManage
+        />);
+        await settle(wrapper);
+        act(() => wrapper.find('input[placeholder="feature-name"]').props()
+            .onChange({target: {value: 'dup'}}));
+        wrapper.update();
+        await act(async () => {
+            wrapper.find('form').at(0)
+                .props()
+                .onSubmit({preventDefault: jest.fn()});
+        });
+        await settle(wrapper);
+        expect(wrapper.text()).toContain('Could not create the branch.');
+
+        await act(async () => {
+            wrapper.find('button').filterWhere(button => button.text().includes('Merge branches'))
+                .simulate('click');
+        });
+        await settle(wrapper);
+        expect(wrapper.text()).not.toContain('Could not create the branch.');
+        expect(wrapper.text()).toContain('feature is already included in main.');
+    });
 });

@@ -598,4 +598,36 @@ describe('pull request merges', () => {
         await settle(wrapper);
         expect(api.commitFile).toHaveBeenCalledWith('fork', sha('e'), 'Cat/main.fractch', 2, 'target');
     });
+
+    test('target_branch_changed during an open conflict session shows the branch gate and explains why in the conflict card', async () => {
+        api.getPull.mockResolvedValue({pull: {...pull, baseBranch: 'main'}});
+        api.uploadPullMerge.mockRejectedValue(Object.assign(new Error('raw server text'), {
+            code: 'target_branch_changed', status: 409, data: {branch: 'main'}
+        }));
+        const wrapper = await openConflicts();
+        api.getProject.mockImplementation(id => Promise.resolve({
+            project: {id, title: id, owner: 'sam', isOwner: id === 'target', canViewSource: true, gitHead: sha('c'), gitBranch: 'feature'}
+        }));
+        await act(async () => {
+            button(wrapper, 'Save resolutions and merge').simulate('click');
+        });
+        await settle(wrapper);
+        expect(wrapper.text()).toContain('Resolve merge conflicts');
+        expect(wrapper.text()).toContain('This pull request targets the main branch, and this project is on feature. It can be merged once the project is back on main.');
+        expect(wrapper.find('MergeConflicts').text()).toContain('Switch this project to the main branch before merging this pull request.');
+        expect(wrapper.text()).not.toContain('raw server text');
+    });
+
+    test('a 403 merge refusal reloads the pull request with a translated sentence instead of raw server text', async () => {
+        api.mergePull.mockRejectedValue(Object.assign(new Error('source code is not visible'), {status: 403}));
+        const wrapper = mountPull();
+        await settle(wrapper);
+        await act(async () => {
+            button(wrapper, 'Merge pull request').simulate('click');
+        });
+        await settle(wrapper);
+        expect(wrapper.text()).toContain('Only project owners and maintainers can merge this pull request, and only while they can see inside the remix.');
+        expect(wrapper.text()).not.toContain('source code is not visible');
+        expect(api.getPull).toHaveBeenCalledTimes(2);
+    });
 });

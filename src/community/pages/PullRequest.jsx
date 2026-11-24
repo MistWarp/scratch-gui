@@ -139,6 +139,12 @@ export const pullMergeFailure = (error, communityText, fallback) => {
     if (error?.code === 'pull_not_closed') {
         return {restart: true, message: communityText('The project saved, but the pull request could not be marked as merged. Reload the page to check its state.')};
     }
+    if (error?.status === 403) {
+        return {restart: true, message: communityText('Only project owners and maintainers can merge this pull request, and only while they can see inside the remix.')};
+    }
+    if (error?.status === 404) {
+        return {restart: true, message: fallback};
+    }
     return {restart, message: error?.message || fallback};
 };
 
@@ -365,20 +371,28 @@ const PullRequest = () => {
 
     const branchBlocked = Boolean(pull?.state === 'open' && pull.baseBranch &&
         (pull.baseBranchMissing || (project?.gitBranch && pull.baseBranch !== project.gitBranch)));
-    const gateNoteRef = useRef(null);
+    const gateNoteNodeRef = useRef(null);
     const focusGateRef = useRef(false);
+    const gateNoteRef = useCallback(node => {
+        gateNoteNodeRef.current = node;
+        if (node && focusGateRef.current) {
+            focusGateRef.current = false;
+            node.focus();
+        }
+    }, []);
     const focusGateNote = () => {
-        focusGateRef.current = !gateNoteRef.current;
-        if (gateNoteRef.current) gateNoteRef.current.focus();
+        if (gateNoteNodeRef.current) {
+            focusGateRef.current = false;
+            gateNoteNodeRef.current.focus();
+            return;
+        }
+        focusGateRef.current = true;
     };
     useEffect(() => () => {
         contextRef.current = '';
     }, []);
     useEffect(() => {
         if (branchBlocked) setMergeError('');
-        if (!branchBlocked || !focusGateRef.current) return;
-        focusGateRef.current = false;
-        if (gateNoteRef.current) gateNoteRef.current.focus();
     }, [branchBlocked]);
     useEffect(() => {
         if (!branchBlocked) return;
@@ -547,6 +561,13 @@ const PullRequest = () => {
                 setCloseConfirmOpen(false);
                 setMergeSession(null);
                 setMergeError(communityText('This pull request was already closed or merged.'));
+                await load();
+                return;
+            }
+            if (error?.status === 403 || error?.status === 404) {
+                setCloseConfirmOpen(false);
+                setMergeSession(null);
+                setMergeError(communityText('Could not close this pull request.'));
                 await load();
                 return;
             }
@@ -785,9 +806,7 @@ const PullRequest = () => {
                                 <div><strong>{open ? communityText('Ready for review') : communityText('Pull request closed')}</strong><span>{open ? communityText('Review the files before merging.') : communityText('No more changes can be merged.')}</span></div>
                             </div>
                             {mergeError && !mergeSession && !branchGone && !wrongBranch ? <Notice variant="error">{mergeError}</Notice> : null}
-                            {open && canMerge && mergeSession ? (
-                                <p className={styles.note}>{communityText('Resolve the conflicts below to finish merging.')}</p>
-                            ) : open && canMerge && branchGone ? (
+                            {open && canMerge && branchGone ? (
                                 <p className={styles.note} ref={gateNoteRef} tabIndex={-1} role="status">
                                     {communityText('This pull request targets the {value1} branch, which no longer exists. Close it and open a new one.', {value1: pull.baseBranch})}
                                 </p>
@@ -795,6 +814,8 @@ const PullRequest = () => {
                                 <p className={styles.note} ref={gateNoteRef} tabIndex={-1} role="status">
                                     {communityText('This pull request targets the {value1} branch, and this project is on {value2}. It can be merged once the project is back on {value1}.', {value1: pull.baseBranch, value2: project.gitBranch})}
                                 </p>
+                            ) : open && canMerge && mergeSession ? (
+                                <p className={styles.note}>{communityText('Resolve the conflicts below to finish merging.')}</p>
                             ) : open && canMerge ? (
                                 <Button variant="primary" onClick={merge} busy={merging} busyLabel={communityText('Merging…')}>{communityText('Merge pull request')}</Button>
                             ) : open ? <p className={styles.note}>{communityText('Only project owners and maintainers can merge this pull request.')}</p> : null}
@@ -867,7 +888,7 @@ const PullRequest = () => {
                         submitLabel={communityText('Save resolutions and merge')}
                         busy={merging}
                         busyLabel={communityText('Merging…')}
-                        error={mergeError}
+                        error={mergeError || (wrongBranch ? communityText('Switch this project to the {value1} branch before merging this pull request.', {value1: pull.baseBranch}) : '')}
                         focusOnMount
                         headingLevel="h2"
                         onTextChange={updateTextConflict}

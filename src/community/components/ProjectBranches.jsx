@@ -86,6 +86,16 @@ const ProjectBranches = ({id, canManage, onChange}) => {
             await Promise.all([load(), onChange ? onChange() : Promise.resolve()]);
             return;
         }
+        if (failure.status === 403) {
+            setMergeError(communityText('Only project owners and maintainers can merge branches.'));
+            setSession(null);
+            await Promise.all([load(), onChange ? onChange() : Promise.resolve()]);
+            return;
+        }
+        if (failure.status === 404) {
+            setMergeError(fallback);
+            return;
+        }
         setMergeError(failure.message || fallback);
     };
 
