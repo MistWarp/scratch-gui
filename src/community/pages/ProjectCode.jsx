@@ -239,11 +239,16 @@ const ProjectCodePage = ({id, vanitySlug}) => {
         return {...project, gitHead: selectedBranch.head, gitBranch: selectedBranch.name};
     }, [project, browsingOtherBranch, selectedBranch && selectedBranch.head, selectedBranch && selectedBranch.name]);
     const latestHistoryCommit = (versionHistory && versionHistory.commits && versionHistory.commits[0]) || null;
-    const latestCommit = !browsingOtherBranch && latestHistoryCommit && (!project?.gitHead || latestHistoryCommit.sha === project.gitHead) ?
-        latestHistoryCommit :
-        selectedBranch && selectedBranch.head ?
-            {sha: selectedBranch.head, author: selectedBranch.author, date: selectedBranch.date, message: selectedBranch.message} :
-            latestHistoryCommit;
+    const branchCommit = selectedBranch && selectedBranch.head ?
+        {sha: selectedBranch.head, author: selectedBranch.author, date: selectedBranch.date, message: selectedBranch.message} :
+        null;
+    const latestCommit = browsingOtherBranch ?
+        (branchCommit || latestHistoryCommit) :
+        latestHistoryCommit && (!project?.gitHead || latestHistoryCommit.sha === project.gitHead) ?
+            latestHistoryCommit :
+            branchCommit && (!project?.gitHead || branchCommit.sha === project.gitHead) ?
+                branchCommit :
+                null;
     const contributors = useMemo(() => commitContributors(versionHistory && versionHistory.commits), [versionHistory]);
     const counts = {
         commits: project ? Number(project.commitCount) || (versionHistory?.commits?.length ?? null) : null,

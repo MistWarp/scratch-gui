@@ -579,6 +579,7 @@ describe('project developer view page', () => {
         await settle(unknown);
         expect(syncButtons(unknown).prop('disabled')).toBeFalsy();
         expect(api.commitTree).toHaveBeenCalledWith('project-1', sha('c'));
+        expect(unknown.text()).toContain('Commit on editor');
 
         api.getProject.mockClear().mockRejectedValueOnce(new Error('network glitch'));
         api.commits.mockClear().mockResolvedValueOnce({
