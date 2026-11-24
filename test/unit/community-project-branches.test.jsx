@@ -229,6 +229,19 @@ describe('project branch management', () => {
                 .simulate('click');
         });
         await settle(wrapper);
+        expect(wrapper.text()).toContain('Resolve the conflict in Cat/main.fractch.');
+        expect(api.uploadBranchMerge).not.toHaveBeenCalled();
+
+        act(() => {
+            wrapper.find('textarea').props()
+                .onChange({target: {value: 'resolved'}});
+        });
+        wrapper.update();
+        await act(async () => {
+            wrapper.find('button').filterWhere(button => button.text().includes('Save resolutions and merge'))
+                .simulate('click');
+        });
+        await settle(wrapper);
         await settle(wrapper);
 
         expect(wrapper.text()).not.toContain('Resolve merge conflicts');

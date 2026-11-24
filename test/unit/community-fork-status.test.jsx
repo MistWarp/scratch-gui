@@ -152,7 +152,7 @@ describe('remix fork status', () => {
             submit().simulate('click');
         });
         await settle(wrapper);
-        expect(wrapper.text()).toContain('Choose a version for Cat/a.svg.');
+        expect(wrapper.text()).toContain('Resolve the conflict in Cat/main.fractch.');
         expect(api.uploadRemixSync).not.toHaveBeenCalled();
 
         act(() => {
@@ -160,6 +160,12 @@ describe('remix fork status', () => {
                 .onChange({target: {value: 'resolved'}});
         });
         wrapper.update();
+        await act(async () => {
+            submit().simulate('click');
+        });
+        await settle(wrapper);
+        expect(wrapper.text()).toContain('Choose a version for Cat/a.svg.');
+        expect(api.uploadRemixSync).not.toHaveBeenCalled();
         act(() => {
             wrapper.find('button').filterWhere(button => button.text() === 'Use the original')
                 .simulate('click');

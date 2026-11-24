@@ -3826,6 +3826,6 @@
   "Could not load these file changes.": "Could not load these file changes.",
   "This pull request targets the {value1} branch, and this project is on {value2}. It can be merged once the project is back on {value1}.": "This pull request targets the {value1} branch, and this project is on {value2}. It can be merged once the project is back on {value1}.",
   "The original project for this remix no longer exists, so it cannot be synced.": "The original project for this remix no longer exists, so it cannot be synced.",
-  "Remixed from {value1}.": "Remixed from {value1}.",
-  "This project can be synced with {value1}.": "This project can be synced with {value1}."
+  "This project can be synced with {value1}.": "This project can be synced with {value1}.",
+  "Resolve the conflict in {value1}.": "Resolve the conflict in {value1}."
 }

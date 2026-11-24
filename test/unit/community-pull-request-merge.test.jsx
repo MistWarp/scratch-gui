@@ -109,6 +109,12 @@ const openConflicts = async () => {
         button(wrapper, 'Merge pull request').simulate('click');
     });
     await settle(wrapper);
+    act(() => {
+        wrapper.find('MergeConflicts').find('textarea')
+            .props()
+            .onChange({target: {value: 'resolved'}});
+    });
+    wrapper.update();
     return wrapper;
 };
 
@@ -136,10 +142,22 @@ describe('pull request merges', () => {
     });
 
     test('an open conflict session replaces the merge button until it is cancelled', async () => {
-        const wrapper = await openConflicts();
+        const wrapper = mountPull();
+        await settle(wrapper);
+        await act(async () => {
+            button(wrapper, 'Merge pull request').simulate('click');
+        });
+        await settle(wrapper);
         expect(wrapper.text()).toContain('Resolve merge conflicts');
         expect(button(wrapper, 'Merge pull request')).toHaveLength(0);
         expect(wrapper.text()).toContain('Resolve the conflicts below to finish merging.');
+
+        await act(async () => {
+            button(wrapper, 'Save resolutions and merge').simulate('click');
+        });
+        await settle(wrapper);
+        expect(wrapper.find('MergeConflicts').text()).toContain('Resolve the conflict in Cat/main.fractch.');
+        expect(api.uploadPullMerge).not.toHaveBeenCalled();
 
         act(() => {
             button(wrapper, 'Cancel').simulate('click');

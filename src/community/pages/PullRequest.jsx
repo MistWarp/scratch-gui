@@ -42,6 +42,7 @@ import {
     materializeMerge,
     resolvedMergeFiles,
     unresolvedBinaryConflict,
+    unresolvedTextConflict,
     withBinaryChoice,
     withTextResolution
 } from '../merge-session.js';
@@ -512,6 +513,11 @@ const PullRequest = () => {
         setMerging(true);
         setMergeError('');
         try {
+            const unresolvedText = unresolvedTextConflict(session);
+            if (unresolvedText) {
+                setMergeError(communityText('Resolve the conflict in {value1}.', {value1: unresolvedText.path}));
+                return;
+            }
             const unresolved = unresolvedBinaryConflict(session);
             if (unresolved) {
                 setMergeError(communityText('Choose a version for {value1}.', {value1: unresolved.path}));
@@ -616,13 +622,14 @@ const PullRequest = () => {
         [analysis, communityText]
     );
     const labelSprite = useCallback(sprite => findTarget(analysis, sprite.name)?.name || sprite.name, [analysis]);
+    const liveSourceHead = assetRefs?.newSha || pull?.headCommit || '';
     useEffect(() => {
-        if (!analysis || !pull) return () => {};
+        if (!analysis || !pull || !liveSourceHead) return () => {};
         let active = true;
         loadSpriteTexts(analysis, async path => {
             const result = await api.commitFile(
                 pull.sourceProjectId || id,
-                pull.headCommit,
+                liveSourceHead,
                 path,
                 pull.index,
                 pull.targetProjectId || ''
@@ -634,7 +641,7 @@ const PullRequest = () => {
         return () => {
             active = false;
         };
-    }, [analysis, pull, id]);
+    }, [analysis, pull, id, liveSourceHead]);
     const loadPullAsset = useCallback(async (side, path) => {
         if (!assetRefs) return null;
         const target = side === 'old' ?

@@ -3,7 +3,8 @@ import {useCommunityIntl as useCommunityText} from './i18n.jsx';
 import api from './api';
 import {buildProjectArtifactsFromFileEntries} from '../lib/git/mwp.js';
 import {
-    materializeMerge, resolvedMergeFiles, unresolvedBinaryConflict, withBinaryChoice, withTextResolution
+    materializeMerge, resolvedMergeFiles, unresolvedBinaryConflict, unresolvedTextConflict,
+    withBinaryChoice, withTextResolution
 } from './merge-session.js';
 import {remixParentLabel} from './remix-origin.js';
 
@@ -132,6 +133,11 @@ const useRemixSync = ({projectId, remixFrom, onSynced}) => {
         setBusy(true);
         setError('');
         try {
+            const unresolvedText = unresolvedTextConflict(session);
+            if (unresolvedText) {
+                setError(communityText('Resolve the conflict in {value1}.', {value1: unresolvedText.path}));
+                return;
+            }
             const unresolved = unresolvedBinaryConflict(session);
             if (unresolved) {
                 setError(communityText('Choose a version for {value1}.', {value1: unresolved.path}));

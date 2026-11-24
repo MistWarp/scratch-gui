@@ -6,7 +6,8 @@ import api from '../api';
 import {formatDate} from '../format.js';
 import {buildProjectArtifactsFromFileEntries} from '../../lib/git/mwp.js';
 import {
-    materializeMerge, resolvedMergeFiles, unresolvedBinaryConflict, withBinaryChoice, withTextResolution
+    materializeMerge, resolvedMergeFiles, unresolvedBinaryConflict, unresolvedTextConflict,
+    withBinaryChoice, withTextResolution
 } from '../merge-session.js';
 import MergeConflicts from './MergeConflicts.jsx';
 import Button from './ui/Button.jsx';
@@ -117,6 +118,11 @@ const ProjectBranches = ({id, canManage, onChange}) => {
         setBusy('merge');
         setMergeError('');
         try {
+            const unresolvedText = unresolvedTextConflict(session);
+            if (unresolvedText) {
+                setMergeError(communityText('Resolve the conflict in {value1}.', {value1: unresolvedText.path}));
+                return;
+            }
             const unresolved = unresolvedBinaryConflict(session);
             if (unresolved) {
                 setMergeError(communityText('Choose a version for {value1}.', {value1: unresolved.path}));
