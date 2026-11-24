@@ -27,4 +27,11 @@ describe('merge uploads', () => {
             mergeTree: 'tree', expectedHead: 'a', syncHead: 'c'
         });
     });
+
+    test('commits and getPull bypass the response cache so focus refreshes read live heads', async () => {
+        await git.commits('p1');
+        expect(request).toHaveBeenCalledWith('/projects/p1/commits', {cache: false});
+        await git.getPull('p1', 3);
+        expect(request).toHaveBeenCalledWith('/projects/p1/pulls/3', {cache: false});
+    });
 });

@@ -150,6 +150,7 @@ const ProjectBranches = ({id, canManage, onChange}) => {
         if (!name || !newBranchFrom || busy || session) return;
         setBusy('create');
         setError('');
+        setMergeError('');
         setNotice('');
         try {
             await api.createBranch(id, name, newBranchFrom);
@@ -167,6 +168,7 @@ const ProjectBranches = ({id, canManage, onChange}) => {
         setEditingBranch(branch);
         setRenamedBranch(branch);
         setError('');
+        setMergeError('');
         setNotice('');
     };
 
@@ -175,6 +177,7 @@ const ProjectBranches = ({id, canManage, onChange}) => {
         if (!name || name === branch || busy || session) return;
         setBusy(`rename:${branch}`);
         setError('');
+        setMergeError('');
         setNotice('');
         try {
             await api.renameBranch(id, branch, name);
@@ -190,6 +193,7 @@ const ProjectBranches = ({id, canManage, onChange}) => {
         if (busy || session) return;
         setBusy(`delete:${branch}`);
         setError('');
+        setMergeError('');
         setNotice('');
         try {
             await api.deleteBranch(id, branch);
