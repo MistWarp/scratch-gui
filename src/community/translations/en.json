@@ -3830,5 +3830,6 @@
   "Resolve the conflict in {value1}.": "Resolve the conflict in {value1}.",
   "Only project owners and maintainers can merge branches.": "Only project owners and maintainers can merge branches.",
   "Only project owners and maintainers can merge this pull request, and only while they can see inside the remix.": "Only project owners and maintainers can merge this pull request, and only while they can see inside the remix.",
-  "Only the remix owner and project maintainers can close this pull request.": "Only the remix owner and project maintainers can close this pull request."
+  "Only the remix owner and project maintainers can close this pull request.": "Only the remix owner and project maintainers can close this pull request.",
+  "One of these branches no longer exists.": "One of these branches no longer exists."
 }

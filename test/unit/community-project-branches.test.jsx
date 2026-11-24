@@ -352,7 +352,7 @@ describe('project branch management', () => {
                 .simulate('click');
         });
         await settle(wrapper);
-        expect(wrapper.text()).toContain('Could not merge the branches.');
+        expect(wrapper.text()).toContain('One of these branches no longer exists.');
         expect(wrapper.text()).not.toContain('branch not found');
         expect(api.branches.mock.calls.length).toBe(loadsAfterMount + 2);
     });

@@ -93,7 +93,11 @@ const ProjectBranches = ({id, canManage, onChange}) => {
             return;
         }
         if (failure.status === 404) {
-            setMergeError(fallback);
+            setMergeError(
+                failure.message === 'branch not found' ?
+                    communityText('One of these branches no longer exists.') :
+                    fallback
+            );
             setSession(null);
             await Promise.all([load(), onChange ? onChange() : Promise.resolve()]);
             return;

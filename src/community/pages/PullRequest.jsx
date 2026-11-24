@@ -204,6 +204,15 @@ export const buildPullRequestFileTexts = (apiClient, data) => {
 
 export const canMergePullRequest = canMaintainProject;
 
+const canMergePull = (pull, project) => Boolean(
+    pull && (typeof pull.canMerge === 'boolean' ? pull.canMerge : canMergePullRequest(project))
+);
+
+const isPullBranchBlocked = (pull, project) => Boolean(
+    pull?.state === 'open' && canMergePull(pull, project) && pull.baseBranch &&
+    (pull.baseBranchMissing || (project?.gitBranch && pull.baseBranch !== project.gitBranch))
+);
+
 export const canClosePullRequest = (project, pull, user) => {
     if (typeof pull?.canClose === 'boolean') return pull.canClose;
     if (canMergePullRequest(project)) return true;
@@ -369,9 +378,8 @@ const PullRequest = () => {
         return refresh;
     }, [id, index, viewer]);
 
-    const canMerge = Boolean(pull && (typeof pull.canMerge === 'boolean' ? pull.canMerge : canMergePullRequest(project)));
-    const branchBlocked = Boolean(pull?.state === 'open' && canMerge && pull.baseBranch &&
-        (pull.baseBranchMissing || (project?.gitBranch && pull.baseBranch !== project.gitBranch)));
+    const canMerge = canMergePull(pull, project);
+    const branchBlocked = isPullBranchBlocked(pull, project);
     const gateNoteNodeRef = useRef(null);
     const focusGateRef = useRef(false);
     const gateNoteRef = useCallback(node => {
@@ -456,11 +464,10 @@ const PullRequest = () => {
     const failMerge = async (error, fallback, context) => {
         if (!stillOn(context)) return;
         const failure = pullMergeFailure(error, communityText, fallback);
-        const baseBranch = pull?.baseBranch || '';
         let gateShown = false;
         if (error?.code === 'target_branch_changed') {
             const refreshed = await refreshProject();
-            gateShown = Boolean(baseBranch && refreshed?.gitBranch && refreshed.gitBranch !== baseBranch);
+            gateShown = isPullBranchBlocked(pull, refreshed);
         }
         if (!stillOn(context)) return;
         if (!failure.restart) {
@@ -473,9 +480,7 @@ const PullRequest = () => {
         diffRequestRef.current = '';
         const reloaded = await load();
         if (!stillOn(context)) return;
-        const reloadedBlocked = Boolean(reloaded?.pull?.state === 'open' && reloaded.pull.baseBranch &&
-            (reloaded.pull.baseBranchMissing || (reloaded.project?.gitBranch && reloaded.pull.baseBranch !== reloaded.project.gitBranch)));
-        gateShown = reloadedBlocked;
+        gateShown = isPullBranchBlocked(reloaded?.pull, reloaded?.project);
         setMergeError(gateShown ? '' : failure.message);
         if (gateShown) focusGateNote();
         setDiff(null);
@@ -812,7 +817,7 @@ const PullRequest = () => {
                                 {open ? <GitMerge size={20} /> : <Check size={20} />}
                                 <div><strong>{open ? communityText('Ready for review') : communityText('Pull request closed')}</strong><span>{open ? communityText('Review the files before merging.') : communityText('No more changes can be merged.')}</span></div>
                             </div>
-                            {mergeError && !mergeSession && !(canMerge && (branchGone || wrongBranch)) ? <Notice variant="error">{mergeError}</Notice> : null}
+                            {mergeError && !mergeSession && !branchBlocked ? <Notice variant="error">{mergeError}</Notice> : null}
                             {open && canMerge && branchGone ? (
                                 <p className={styles.note} ref={gateNoteRef} tabIndex={-1} role="status">
                                     {communityText('This pull request targets the {value1} branch, which no longer exists. Close it and open a new one.', {value1: pull.baseBranch})}
