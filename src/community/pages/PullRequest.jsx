@@ -564,7 +564,14 @@ const PullRequest = () => {
                 await load();
                 return;
             }
-            if (error?.status === 403 || error?.status === 404) {
+            if (error?.status === 403) {
+                setCloseConfirmOpen(false);
+                setMergeSession(null);
+                setMergeError(communityText('Only the remix owner and project maintainers can close this pull request.'));
+                await load();
+                return;
+            }
+            if (error?.status === 404) {
                 setCloseConfirmOpen(false);
                 setMergeSession(null);
                 setMergeError(communityText('Could not close this pull request.'));
@@ -818,7 +825,7 @@ const PullRequest = () => {
                                 <p className={styles.note}>{communityText('Resolve the conflicts below to finish merging.')}</p>
                             ) : open && canMerge ? (
                                 <Button variant="primary" onClick={merge} busy={merging} busyLabel={communityText('Merging…')}>{communityText('Merge pull request')}</Button>
-                            ) : open ? <p className={styles.note}>{communityText('Only project owners and maintainers can merge this pull request.')}</p> : null}
+                            ) : open && !mergeError ? <p className={styles.note}>{communityText('Only project owners and maintainers can merge this pull request.')}</p> : null}
                             {open && canClose ? (
                                 <Button
                                     variant="secondary"

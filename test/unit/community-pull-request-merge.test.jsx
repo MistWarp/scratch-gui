@@ -618,7 +618,14 @@ describe('pull request merges', () => {
         expect(wrapper.text()).not.toContain('raw server text');
     });
 
-    test('a 403 merge refusal reloads the pull request with a translated sentence instead of raw server text', async () => {
+    test('a 403 merge or close refusal reloads the pull request with a translated sentence and no duplicate permission note', async () => {
+        api.getPull.mockResolvedValueOnce({pull})
+            .mockResolvedValueOnce({pull: {...pull, canMerge: false}});
+        api.getProject.mockImplementationOnce(id => Promise.resolve({
+            project: {id, title: id, owner: 'sam', isOwner: id === 'target', canViewSource: true, gitHead: sha('c')}
+        })).mockImplementation(id => Promise.resolve({
+            project: {id, title: id, owner: 'sam', isOwner: false, canViewSource: true, gitHead: sha('c')}
+        }));
         api.mergePull.mockRejectedValue(Object.assign(new Error('source code is not visible'), {status: 403}));
         const wrapper = mountPull();
         await settle(wrapper);
@@ -627,7 +634,24 @@ describe('pull request merges', () => {
         });
         await settle(wrapper);
         expect(wrapper.text()).toContain('Only project owners and maintainers can merge this pull request, and only while they can see inside the remix.');
+        expect(wrapper.text()).not.toContain('Only project owners and maintainers can merge this pull request.');
         expect(wrapper.text()).not.toContain('source code is not visible');
         expect(api.getPull).toHaveBeenCalledTimes(2);
+
+        api.closePull.mockRejectedValue(Object.assign(new Error('only the fork owner and project maintainers can close this pull request'), {status: 403}));
+        api.getPull.mockResolvedValueOnce({pull: {...pull, canMerge: false, canClose: false}});
+        act(() => {
+            button(wrapper, 'Close pull request').first()
+                .simulate('click');
+        });
+        wrapper.update();
+        await act(async () => {
+            wrapper.find('ConfirmModal').prop('onConfirm')();
+        });
+        await settle(wrapper);
+        expect(wrapper.find('ConfirmModal')).toHaveLength(0);
+        expect(wrapper.text()).toContain('Only the remix owner and project maintainers can close this pull request.');
+        expect(wrapper.text()).not.toContain('only the fork owner and project maintainers can close this pull request');
+        expect(api.getPull).toHaveBeenCalledTimes(3);
     });
 });

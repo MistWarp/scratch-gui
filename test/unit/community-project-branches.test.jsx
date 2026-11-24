@@ -325,4 +325,35 @@ describe('project branch management', () => {
         expect(wrapper.text()).not.toContain('Could not create the branch.');
         expect(wrapper.text()).toContain('feature is already included in main.');
     });
+
+    test('403 and 404 branch merge refusals clear the session, reload branches, and show translated sentences', async () => {
+        const onChange = jest.fn().mockResolvedValue();
+        api.mergeBranches.mockRejectedValueOnce(Object.assign(new Error('only project maintainers can merge branches'), {status: 403}));
+        const wrapper = mount(<ProjectBranches
+            id="123"
+            canManage
+            onChange={onChange}
+        />);
+        await settle(wrapper);
+        const loadsAfterMount = api.branches.mock.calls.length;
+
+        await act(async () => {
+            wrapper.find('button').filterWhere(button => button.text().includes('Merge branches'))
+                .simulate('click');
+        });
+        await settle(wrapper);
+        expect(wrapper.text()).toContain('Only project owners and maintainers can merge branches.');
+        expect(wrapper.text()).not.toContain('only project maintainers can merge branches');
+        expect(api.branches.mock.calls.length).toBe(loadsAfterMount + 1);
+
+        api.mergeBranches.mockRejectedValueOnce(Object.assign(new Error('branch not found'), {status: 404}));
+        await act(async () => {
+            wrapper.find('button').filterWhere(button => button.text().includes('Merge branches'))
+                .simulate('click');
+        });
+        await settle(wrapper);
+        expect(wrapper.text()).toContain('Could not merge the branches.');
+        expect(wrapper.text()).not.toContain('branch not found');
+        expect(api.branches.mock.calls.length).toBe(loadsAfterMount + 2);
+    });
 });

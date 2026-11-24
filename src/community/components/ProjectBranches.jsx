@@ -94,6 +94,8 @@ const ProjectBranches = ({id, canManage, onChange}) => {
         }
         if (failure.status === 404) {
             setMergeError(fallback);
+            setSession(null);
+            await Promise.all([load(), onChange ? onChange() : Promise.resolve()]);
             return;
         }
         setMergeError(failure.message || fallback);
