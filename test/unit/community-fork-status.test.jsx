@@ -189,8 +189,8 @@ describe('remix fork status', () => {
         const refusals = [
             [{code: 'uncommitted_changes', status: 409}, 'Commit your saved changes in the editor before syncing, so they are not replaced.'],
             [{code: 'head_changed', status: 409}, 'This remix changed while it was syncing. Sync again to include the new changes.'],
-            [{code: 'sync_unavailable', status: 409, message: 'the remix and its original project do not share any commits'}, 'This remix no longer shares any commits with flufi / Meowing Simulator, so it cannot be synced.'],
-            [{code: 'sync_unavailable', status: 409, message: 'could not prepare the sync'}, 'Could not sync this remix.'],
+            [{code: 'sync_unavailable', status: 409, message: 'the two projects do not share a common commit'}, 'This remix no longer shares any commits with flufi / Meowing Simulator, so it cannot be synced.'],
+            [{code: 'sync_unavailable', status: 409, message: 'target workspace archive is unavailable'}, 'Could not sync this remix.'],
             [{code: 'sync_history_unavailable', status: 409}, 'Both projects need saved commits before this remix can be synced.'],
             [{status: 404}, 'The original project for this remix no longer exists, so it cannot be synced.'],
             [{status: 403}, 'Only maintainers of this remix can sync it, and only while they can see inside flufi / Meowing Simulator.']

@@ -56,7 +56,7 @@ const useRemixSync = ({projectId, remixFrom, onSynced}) => {
             return communityText('Both projects need saved commits before this remix can be synced.');
         }
         if (syncError.code === 'sync_unavailable') {
-            if (syncError.message && syncError.message.includes('do not share any commits')) {
+            if (syncError.message && syncError.message.includes('do not share a common commit')) {
                 return communityText(
                     'This remix no longer shares any commits with {value1}, so it cannot be synced.',
                     {value1: original}
