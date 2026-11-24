@@ -356,4 +356,57 @@ describe('project branch management', () => {
         expect(wrapper.text()).not.toContain('branch not found');
         expect(api.branches.mock.calls.length).toBe(loadsAfterMount + 2);
     });
+
+    test('unmounting mid-merge skips unmounted state updates while still refreshing the parent', async () => {
+        let resolveUpload;
+        api.mergeBranches.mockResolvedValue({
+            ok: true,
+            targetProjectId: '123',
+            targetHead: 'a'.repeat(40),
+            sourceHead: 'b'.repeat(40),
+            sourceBranch: 'feature',
+            targetBranch: 'main',
+            merge: {changes: [{path: 'Cat/main.fractch', content: encode('clean merge')}]}
+        });
+        api.uploadBranchMerge.mockReset().mockReturnValue(new Promise(resolve => {
+            resolveUpload = resolve;
+        }));
+        api.commitTree.mockResolvedValue({files: [{path: 'Cat/main.fractch'}]});
+        api.commitFile.mockResolvedValue({content: encode('main')});
+        const onChange = jest.fn().mockResolvedValue();
+        const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+        try {
+            const wrapper = mount(<ProjectBranches
+                id="123"
+                canManage
+                onChange={onChange}
+            />);
+            await settle(wrapper);
+            const loadsBefore = api.branches.mock.calls.length;
+
+            await act(async () => {
+                wrapper.find('button').filterWhere(button => button.text().includes('Merge branches'))
+                    .simulate('click');
+            });
+            await act(async () => {
+                await Promise.resolve();
+                await Promise.resolve();
+                await Promise.resolve();
+            });
+            expect(api.uploadBranchMerge).toHaveBeenCalledTimes(1);
+
+            wrapper.unmount();
+            await act(async () => {
+                resolveUpload({ok: true});
+                await Promise.resolve();
+                await Promise.resolve();
+            });
+
+            expect(onChange).toHaveBeenCalledTimes(1);
+            expect(api.branches.mock.calls.length).toBe(loadsBefore);
+            expect(errorSpy).not.toHaveBeenCalled();
+        } finally {
+            errorSpy.mockRestore();
+        }
+    });
 });

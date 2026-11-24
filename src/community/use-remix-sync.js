@@ -79,7 +79,7 @@ const useRemixSync = ({projectId, remixFrom, onSynced}) => {
     const fail = async (syncError, startedFor) => {
         if (!stillFor(startedFor)) return;
         setError(errorMessage(syncError));
-        if (RESTART_CODES.includes(syncError.code)) {
+        if (RESTART_CODES.includes(syncError.code) || syncError.status === 404) {
             setSession(null);
             await refresh();
         }

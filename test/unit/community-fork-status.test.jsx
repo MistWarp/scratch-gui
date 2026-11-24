@@ -245,6 +245,34 @@ describe('remix fork status', () => {
         expect(onSynced).toHaveBeenCalled();
     });
 
+    test('a 404 during conflict resolution closes the session and refreshes', async () => {
+        api.syncRemix.mockResolvedValue(syncResponse([
+            {path: 'Cat/main.fractch', conflict: true, content: encode('<<<<<<<<< this remix\nmove 5\n=========\nmove 20\n>>>>>>>>> original')}
+        ]));
+        api.uploadRemixSync.mockRejectedValueOnce(
+            Object.assign(new Error('the original project was not found'), {status: 404})
+        );
+        const onSynced = jest.fn().mockResolvedValue();
+        const wrapper = mountStatus({onSynced});
+        await act(async () => {
+            syncButton(wrapper).simulate('click');
+        });
+        await settle(wrapper);
+        act(() => {
+            wrapper.find('textarea').props()
+                .onChange({target: {value: 'resolved'}});
+        });
+        wrapper.update();
+        await act(async () => {
+            wrapper.find('button').filterWhere(button => button.text().includes('Save resolutions and sync'))
+                .simulate('click');
+        });
+        await settle(wrapper);
+        expect(wrapper.text()).toContain('The original project for this remix no longer exists, so it cannot be synced.');
+        expect(wrapper.text()).not.toContain('Resolve sync conflicts');
+        expect(onSynced).toHaveBeenCalled();
+    });
+
     test('points the disabled sync button at the reason', () => {
         const wrapper = mountStatus({hasUncommitted: true});
         const describedBy = syncButton(wrapper).prop('aria-describedby');

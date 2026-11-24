@@ -1,6 +1,6 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Check, GitBranch, GitMerge, Pencil, Plus, Trash2, X} from 'lucide-react';
 import api from '../api';
 import {formatDate} from '../format.js';
@@ -32,28 +32,44 @@ const ProjectBranches = ({id, canManage, onChange}) => {
     const [notice, setNotice] = useState('');
     const [session, setSession] = useState(null);
     const [mergeError, setMergeError] = useState('');
+    const mounted = useRef(true);
+    const currentId = useRef(id);
+    currentId.current = id;
 
-    const load = useCallback(() => api.branches(id).then(result => {
-        setData(result);
-        const branches = result.branches || [];
-        const main = branches.find(branch => branch.name === 'main');
-        const current = branches.find(branch => branch.current);
-        setTarget(previous => (branches.some(branch => branch.name === previous) ? previous : (main || current || branches[0] || {}).name || ''));
-        setSource(previous => (branches.some(branch => branch.name === previous) && previous !== (main || {}).name ? previous : (branches.find(branch => branch.name !== (main || current || branches[0] || {}).name) || {}).name || ''));
-        setNewBranchFrom(previous => (branches.some(branch => branch.name === previous) ? previous : (current || main || branches[0] || {}).name || ''));
-    }).catch(loadError => {
-        setData({branches: []});
-        setError(loadError.message || communityText('Could not load branches.'));
-    }), [id]);
+    useEffect(() => () => {
+        mounted.current = false;
+    }, []);
+
+    const stillActive = useCallback(startedFor => mounted.current && currentId.current === startedFor, []);
+
+    const load = useCallback(() => {
+        const startedFor = id;
+        return api.branches(startedFor).then(result => {
+            if (!stillActive(startedFor)) return;
+            setData(result);
+            const branches = result.branches || [];
+            const main = branches.find(branch => branch.name === 'main');
+            const current = branches.find(branch => branch.current);
+            setTarget(previous => (branches.some(branch => branch.name === previous) ? previous : (main || current || branches[0] || {}).name || ''));
+            setSource(previous => (branches.some(branch => branch.name === previous) && previous !== (main || {}).name ? previous : (branches.find(branch => branch.name !== (main || current || branches[0] || {}).name) || {}).name || ''));
+            setNewBranchFrom(previous => (branches.some(branch => branch.name === previous) ? previous : (current || main || branches[0] || {}).name || ''));
+        }).catch(loadError => {
+            if (!stillActive(startedFor)) return;
+            setData({branches: []});
+            setError(loadError.message || communityText('Could not load branches.'));
+        });
+    }, [id, stillActive]);
 
     useEffect(() => {
+        currentId.current = id;
         setData(null);
         setSession(null);
+        setBusy('');
         setError('');
         setMergeError('');
         setNotice('');
         load();
-    }, [load]);
+    }, [id, load]);
 
     const branches = data?.branches || [];
     const availableSources = useMemo(() => branches.filter(branch => branch.name !== target), [branches, target]);
@@ -62,11 +78,12 @@ const ProjectBranches = ({id, canManage, onChange}) => {
         if (source === target) setSource((availableSources[0] || {}).name || '');
     }, [availableSources, source, target]);
 
-    const upload = async (mergeData, files) => {
+    const upload = async (mergeData, files, startedFor) => {
         const artifacts = await buildProjectArtifactsFromFileEntries(
             [...files].map(([path, fileData]) => ({path, data: fileData}))
         );
-        await api.uploadBranchMerge(id, {
+        if (!stillActive(startedFor)) return;
+        await api.uploadBranchMerge(startedFor, {
             sb3: artifacts.sb3,
             mergeTree: artifacts.tree,
             sourceBranch: mergeData.sourceBranch,
@@ -74,12 +91,18 @@ const ProjectBranches = ({id, canManage, onChange}) => {
             sourceHead: mergeData.sourceHead,
             targetHead: mergeData.targetHead
         });
+        const refreshParent = currentId.current === startedFor && onChange ? onChange() : Promise.resolve();
+        if (!stillActive(startedFor)) {
+            await refreshParent;
+            return;
+        }
         setSession(null);
         setNotice(communityText('Merged {value1} into {value2}.', {value1: mergeData.sourceBranch, value2: mergeData.targetBranch}));
-        await Promise.all([load(), onChange ? onChange() : Promise.resolve()]);
+        await Promise.all([load(), refreshParent]);
     };
 
-    const failMerge = async (failure, fallback) => {
+    const failMerge = async (failure, fallback, startedFor) => {
+        if (!stillActive(startedFor)) return;
         if (failure.code === 'branch_head_changed' || failure.code === 'head_changed') {
             setMergeError(communityText('A branch changed while you were merging. Merge again to include the latest changes.'));
             setSession(null);
@@ -107,31 +130,35 @@ const ProjectBranches = ({id, canManage, onChange}) => {
 
     const merge = async () => {
         if (!source || !target || source === target || busy || session) return;
+        const startedFor = id;
         setBusy('merge');
         setError('');
         setMergeError('');
         setNotice('');
         try {
-            const mergeData = await api.mergeBranches(id, source, target);
+            const mergeData = await api.mergeBranches(startedFor, source, target);
+            if (!stillActive(startedFor)) return;
             if (mergeData.merge.alreadyMerged) {
                 setNotice(communityText('{value1} is already included in {value2}.', {value1: source, value2: target}));
                 return;
             }
             const prepared = await materializeMerge(mergeData);
+            if (!stillActive(startedFor)) return;
             if (prepared.conflicts.length || prepared.binaryConflicts.length) {
                 setSession({...prepared, data: mergeData});
             } else {
-                await upload(mergeData, prepared.files);
+                await upload(mergeData, prepared.files, startedFor);
             }
         } catch (prepareError) {
-            await failMerge(prepareError, communityText('Could not merge the branches.'));
+            await failMerge(prepareError, communityText('Could not merge the branches.'), startedFor);
         } finally {
-            setBusy('');
+            if (stillActive(startedFor)) setBusy('');
         }
     };
 
     const resolve = async () => {
         if (!session || busy) return;
+        const startedFor = id;
         setBusy('merge');
         setError('');
         setMergeError('');
@@ -146,38 +173,47 @@ const ProjectBranches = ({id, canManage, onChange}) => {
                 setMergeError(communityText('Choose a version for {value1}.', {value1: unresolved.path}));
                 return;
             }
-            await upload(session.data, resolvedMergeFiles(session));
+            await upload(session.data, resolvedMergeFiles(session), startedFor);
         } catch (resolveError) {
-            await failMerge(resolveError, communityText('Could not resolve the merge.'));
+            await failMerge(resolveError, communityText('Could not resolve the merge.'), startedFor);
         } finally {
-            setBusy('');
+            if (stillActive(startedFor)) setBusy('');
         }
     };
 
-    const finishManagementAction = async message => {
+    const finishManagementAction = async (message, startedFor) => {
+        const refreshParent = currentId.current === startedFor && onChange ? onChange() : Promise.resolve();
+        if (!stillActive(startedFor)) {
+            await refreshParent;
+            return;
+        }
         setEditingBranch('');
         setRenamedBranch('');
         setDeletingBranch('');
         setNotice(message);
-        await Promise.all([load(), onChange ? onChange() : Promise.resolve()]);
+        await Promise.all([load(), refreshParent]);
     };
 
     const createBranch = async event => {
         event.preventDefault();
         const name = newBranch.trim();
         if (!name || !newBranchFrom || busy || session) return;
+        const startedFor = id;
         setBusy('create');
         setError('');
         setMergeError('');
         setNotice('');
         try {
-            await api.createBranch(id, name, newBranchFrom);
-            setNewBranch('');
-            await finishManagementAction(communityText('Created {value1} from {value2}.', {value1: name, value2: newBranchFrom}));
+            await api.createBranch(startedFor, name, newBranchFrom);
+            if (stillActive(startedFor)) setNewBranch('');
+            await finishManagementAction(
+                communityText('Created {value1} from {value2}.', {value1: name, value2: newBranchFrom}),
+                startedFor
+            );
         } catch (createError) {
-            setError(createError.message || communityText('Could not create the branch.'));
+            if (stillActive(startedFor)) setError(createError.message || communityText('Could not create the branch.'));
         } finally {
-            setBusy('');
+            if (stillActive(startedFor)) setBusy('');
         }
     };
 
@@ -193,33 +229,41 @@ const ProjectBranches = ({id, canManage, onChange}) => {
     const renameBranch = async branch => {
         const name = renamedBranch.trim();
         if (!name || name === branch || busy || session) return;
+        const startedFor = id;
         setBusy(`rename:${branch}`);
         setError('');
         setMergeError('');
         setNotice('');
         try {
-            await api.renameBranch(id, branch, name);
-            await finishManagementAction(communityText('Renamed {value1} to {value2}.', {value1: branch, value2: name}));
+            await api.renameBranch(startedFor, branch, name);
+            await finishManagementAction(
+                communityText('Renamed {value1} to {value2}.', {value1: branch, value2: name}),
+                startedFor
+            );
         } catch (renameError) {
-            setError(renameError.message || communityText('Could not rename the branch.'));
+            if (stillActive(startedFor)) setError(renameError.message || communityText('Could not rename the branch.'));
         } finally {
-            setBusy('');
+            if (stillActive(startedFor)) setBusy('');
         }
     };
 
     const deleteBranch = async branch => {
         if (busy || session) return;
+        const startedFor = id;
         setBusy(`delete:${branch}`);
         setError('');
         setMergeError('');
         setNotice('');
         try {
-            await api.deleteBranch(id, branch);
-            await finishManagementAction(communityText('Deleted {value1}.', {value1: branch}));
+            await api.deleteBranch(startedFor, branch);
+            await finishManagementAction(
+                communityText('Deleted {value1}.', {value1: branch}),
+                startedFor
+            );
         } catch (deleteError) {
-            setError(deleteError.message || communityText('Could not delete the branch.'));
+            if (stillActive(startedFor)) setError(deleteError.message || communityText('Could not delete the branch.'));
         } finally {
-            setBusy('');
+            if (stillActive(startedFor)) setBusy('');
         }
     };
 
