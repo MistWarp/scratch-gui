@@ -129,7 +129,7 @@ export const pullMergeFailure = (error, communityText, fallback) => {
     if (error?.code === 'head_changed') {
         return {restart, message: communityText('This project changed while you were merging. Merge again to include the latest changes.')};
     }
-    if (error?.code === 'pull_not_open' || error?.status === 404) {
+    if (error?.code === 'pull_not_open' || (error?.status === 404 && error?.message === 'open pull request not found')) {
         return {restart: true, message: communityText('This pull request was closed or merged while you were merging.')};
     }
     if (error?.code === 'pull_merge_unavailable') {
@@ -539,7 +539,7 @@ const PullRequest = () => {
             setCloseConfirmOpen(false);
         } catch (error) {
             if (!stillOn(context)) return;
-            if (error?.code === 'pull_not_open' || error?.status === 404) {
+            if (error?.code === 'pull_not_open' || (error?.status === 404 && error?.message === 'open pull request not found')) {
                 setCloseConfirmOpen(false);
                 setMergeSession(null);
                 setMergeError(communityText('This pull request was already closed or merged.'));

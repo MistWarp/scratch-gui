@@ -47,7 +47,7 @@ describe('remix origin helpers', () => {
         expect(remixParentLabel(parent(0, 0))).toBe('alice / Base Game');
         expect(remixParentLabel({title: 'Solo'})).toBe('Solo');
         expect(remixDivergenceSentence({id: 'p1', owner: 'alice', title: 'Base Game', head: sha('b')}, formatText))
-            .toBe('Remixed from alice / Base Game.');
+            .toBe('This project can be synced with alice / Base Game.');
     });
 
     test('formats full and compact ahead/behind descriptions', () => {

@@ -3,7 +3,7 @@ import React from 'react';
 import {Link} from 'react-router-dom';
 import {GitFork, RefreshCw} from 'lucide-react';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
-import {remixDivergenceSentence, remixParentLabel} from '../remix-origin.js';
+import {remixDivergenceSentence, remixParentLabel, remixSyncUnknown} from '../remix-origin.js';
 import MergeConflicts from './MergeConflicts.jsx';
 import Button from './ui/Button.jsx';
 import Notice from './ui/Notice.jsx';
@@ -15,9 +15,7 @@ const ForkStatus = ({canContribute, canSync, contributeHref, gitHead, hasUncommi
     const startSync = sync.sync;
     const original = remixParentLabel(remixFrom);
     const hintId = `fork-sync-hint-${projectId}`;
-    const canSyncUnknown = typeof remixFrom.behind !== 'number' &&
-        Boolean(remixFrom.head && gitHead && remixFrom.head !== gitHead);
-    const showSync = canSync && (remixFrom.behind > 0 || canSyncUnknown) && !session;
+    const showSync = canSync && (remixFrom.behind > 0 || remixSyncUnknown(remixFrom, gitHead)) && !session;
     // eslint-disable-next-line max-len
     const conflictLead = communityText('This remix and {value1} changed the same files. Edit the text conflicts and choose which version of each asset to keep.', {value1: original});
 

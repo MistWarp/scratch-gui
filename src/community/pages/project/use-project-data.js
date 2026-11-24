@@ -51,8 +51,10 @@ const useProjectData = id => {
         if (remixRefreshRef.current.id === id && remixRefreshRef.current.task) return remixRefreshRef.current.task;
         const freshProject = beginLoad();
         const freshHistory = beginHistoryLoad();
-        const task = Promise.all([api.getProject(id), api.commits(id)])
-            .then(([projectData, historyData]) => {
+        const task = Promise.allSettled([api.getProject(id), api.commits(id)])
+            .then(([projectOutcome, historyOutcome]) => {
+                const projectData = projectOutcome.status === 'fulfilled' ? projectOutcome.value : null;
+                const historyData = historyOutcome.status === 'fulfilled' ? historyOutcome.value : null;
                 if (projectData && projectData.project) {
                     freshProject(() => {
                         setProject(projectData.project);
@@ -63,7 +65,6 @@ const useProjectData = id => {
                     freshHistory(() => setVersionHistory(historyData))();
                 }
             })
-            .catch(() => null)
             .then(() => {
                 if (remixRefreshRef.current.task === task) remixRefreshRef.current = {id: '', task: null};
             });

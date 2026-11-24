@@ -917,7 +917,7 @@
   "Cancel": [
     "src/community/components/CommentThread.jsx:269",
     "src/community/components/CommentThread.jsx:365",
-    "src/community/components/ForkStatus.jsx:80",
+    "src/community/components/ForkStatus.jsx:78",
     "src/community/components/GameMarketplaceModal.jsx:227",
     "src/community/components/ProjectBranches.jsx:292",
     "src/community/components/ProjectInfoPanel.jsx:422",
@@ -1453,35 +1453,35 @@
     "src/community/components/Footer.jsx:130"
   ],
   "This remix and {value1} changed the same files. Edit the text conflicts and choose which version of each asset to keep.": [
-    "src/community/components/ForkStatus.jsx:22"
+    "src/community/components/ForkStatus.jsx:20"
   ],
   "Contribute": [
-    "src/community/components/ForkStatus.jsx:33",
+    "src/community/components/ForkStatus.jsx:31",
     "src/community/pages/project/ProjectActivity.jsx:40"
   ],
   "Syncing…": [
-    "src/community/components/ForkStatus.jsx:41",
-    "src/community/components/ForkStatus.jsx:68",
+    "src/community/components/ForkStatus.jsx:39",
+    "src/community/components/ForkStatus.jsx:66",
     "src/community/pages/admin/StatsOverview.jsx:195"
   ],
   "Sync with original": [
-    "src/community/components/ForkStatus.jsx:47"
+    "src/community/components/ForkStatus.jsx:45"
   ],
   "Commit your saved changes in the editor before syncing, so they are not replaced.": [
-    "src/community/components/ForkStatus.jsx:53",
+    "src/community/components/ForkStatus.jsx:51",
     "src/community/use-remix-sync.js:43"
   ],
   "Resolve sync conflicts": [
-    "src/community/components/ForkStatus.jsx:60"
+    "src/community/components/ForkStatus.jsx:58"
   ],
   "Keep this remix": [
-    "src/community/components/ForkStatus.jsx:64"
+    "src/community/components/ForkStatus.jsx:62"
   ],
   "Use the original": [
-    "src/community/components/ForkStatus.jsx:65"
+    "src/community/components/ForkStatus.jsx:63"
   ],
   "Save resolutions and sync": [
-    "src/community/components/ForkStatus.jsx:66"
+    "src/community/components/ForkStatus.jsx:64"
   ],
   "{value1, plural, one {# love} other {# loves}}": [
     "src/community/components/GameCard.jsx:172",
@@ -11525,53 +11525,53 @@
   "History": [
     "src/community/pages/project/VersionControlPanel.jsx:22"
   ],
-  "Remixed from {value1}.": [
-    "src/community/remix-origin.js:22"
+  "This project can be synced with {value1}.": [
+    "src/community/remix-origin.js:25"
   ],
   "This project is up to date with {value1}.": [
-    "src/community/remix-origin.js:26"
+    "src/community/remix-origin.js:29"
   ],
   "This project is 1 commit ahead of {value1}.": [
-    "src/community/remix-origin.js:30"
+    "src/community/remix-origin.js:33"
   ],
   "This project is {value1} commits ahead of {value2}.": [
-    "src/community/remix-origin.js:31"
+    "src/community/remix-origin.js:34"
   ],
   "This project is 1 commit behind {value1}.": [
-    "src/community/remix-origin.js:35"
+    "src/community/remix-origin.js:38"
   ],
   "This project is {value1} commits behind {value2}.": [
-    "src/community/remix-origin.js:36"
-  ],
-  "This project is 1 commit ahead and 1 commit behind {value1}.": [
     "src/community/remix-origin.js:39"
   ],
-  "This project is 1 commit ahead and {value1} commits behind {value2}.": [
+  "This project is 1 commit ahead and 1 commit behind {value1}.": [
     "src/community/remix-origin.js:42"
   ],
+  "This project is 1 commit ahead and {value1} commits behind {value2}.": [
+    "src/community/remix-origin.js:45"
+  ],
   "This project is {value1} commits ahead and 1 commit behind {value2}.": [
-    "src/community/remix-origin.js:48"
+    "src/community/remix-origin.js:51"
   ],
   "This project is {value1} commits ahead and {value2} commits behind {value3}.": [
-    "src/community/remix-origin.js:53"
+    "src/community/remix-origin.js:56"
   ],
   "Up to date": [
-    "src/community/remix-origin.js:63"
+    "src/community/remix-origin.js:66"
   ],
   "1 commit ahead": [
-    "src/community/remix-origin.js:65"
+    "src/community/remix-origin.js:68"
   ],
   "{value1} commits ahead": [
-    "src/community/remix-origin.js:65"
+    "src/community/remix-origin.js:68"
   ],
   "1 commit behind": [
-    "src/community/remix-origin.js:68"
+    "src/community/remix-origin.js:71"
   ],
   "{value1} commits behind": [
-    "src/community/remix-origin.js:68"
+    "src/community/remix-origin.js:71"
   ],
   "{value1} ahead, {value2} behind": [
-    "src/community/remix-origin.js:70"
+    "src/community/remix-origin.js:73"
   ],
   "MistWarp needs your permission on Rotur to do this.": [
     "src/community/rotur.js:52",

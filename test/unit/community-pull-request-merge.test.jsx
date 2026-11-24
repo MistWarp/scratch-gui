@@ -250,6 +250,20 @@ describe('pull request merges', () => {
         expect(wrapper.text()).toContain('This pull request was already closed or merged.');
         expect(wrapper.text()).not.toContain('open pull request not found');
         expect(api.getPull).toHaveBeenCalledTimes(2);
+
+        api.getPull.mockReset()
+            .mockResolvedValueOnce({pull})
+            .mockResolvedValueOnce({pull: {...pull, state: 'merged'}});
+        api.mergePull.mockRejectedValue(Object.assign(new Error('open pull request not found'), {status: 404}));
+        const merging = mountPull();
+        await settle(merging);
+        await act(async () => {
+            button(merging, 'Merge pull request').simulate('click');
+        });
+        await settle(merging);
+        expect(merging.text()).toContain('This pull request was closed or merged while you were merging.');
+        expect(merging.text()).not.toContain('open pull request not found');
+        expect(api.getPull).toHaveBeenCalledTimes(2);
     });
 
     test('a stale file view from before a restart cannot overwrite the reloaded one for the same head', async () => {
