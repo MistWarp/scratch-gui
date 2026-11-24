@@ -692,7 +692,7 @@ const PullRequest = () => {
     const wrongBranch = Boolean(pull.baseBranch && project.gitBranch && pull.baseBranch !== project.gitBranch && !branchGone);
     const changedFileCount = analysis && !fileDiff ?
         analysis.targets.reduce((total, entry) => total + entry.count, analysis.others.length) :
-        diff === null ? (!open ? (pull.fileCount ?? pull.filesChanged ?? '…') : '…') : files.length;
+        diff === null ? '…' : files.length;
     return (
         <main className={styles.page}>
             <PageHeader

@@ -576,7 +576,7 @@ describe('pull request merges', () => {
     });
 
     test('loads sprite source text from the live fork head reported by pullChanges', async () => {
-        api.getPull.mockResolvedValue({pull: {...pull, headCommit: sha('b'), fileCount: 1}});
+        api.getPull.mockResolvedValue({pull: {...pull, headCommit: sha('b')}});
         api.pullChanges.mockReset().mockResolvedValue({
             inspection: {
                 ok: true,
