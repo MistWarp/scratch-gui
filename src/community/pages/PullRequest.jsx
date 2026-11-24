@@ -812,7 +812,7 @@ const PullRequest = () => {
                                 {open ? <GitMerge size={20} /> : <Check size={20} />}
                                 <div><strong>{open ? communityText('Ready for review') : communityText('Pull request closed')}</strong><span>{open ? communityText('Review the files before merging.') : communityText('No more changes can be merged.')}</span></div>
                             </div>
-                            {mergeError && !mergeSession && !branchGone && !wrongBranch ? <Notice variant="error">{mergeError}</Notice> : null}
+                            {mergeError && !mergeSession && !(canMerge && (branchGone || wrongBranch)) ? <Notice variant="error">{mergeError}</Notice> : null}
                             {open && canMerge && branchGone ? (
                                 <p className={styles.note} ref={gateNoteRef} tabIndex={-1} role="status">
                                     {communityText('This pull request targets the {value1} branch, which no longer exists. Close it and open a new one.', {value1: pull.baseBranch})}

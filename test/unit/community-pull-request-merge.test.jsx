@@ -639,7 +639,10 @@ describe('pull request merges', () => {
         expect(api.getPull).toHaveBeenCalledTimes(2);
 
         api.closePull.mockRejectedValue(Object.assign(new Error('only the fork owner and project maintainers can close this pull request'), {status: 403}));
-        api.getPull.mockResolvedValueOnce({pull: {...pull, canMerge: false, canClose: false}});
+        api.getProject.mockImplementation(id => Promise.resolve({
+            project: {id, title: id, owner: 'sam', isOwner: false, canViewSource: true, gitHead: sha('c'), gitBranch: 'feature'}
+        }));
+        api.getPull.mockResolvedValueOnce({pull: {...pull, baseBranch: 'main', canMerge: false, canClose: false}});
         act(() => {
             button(wrapper, 'Close pull request').first()
                 .simulate('click');

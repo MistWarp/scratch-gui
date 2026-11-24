@@ -68,12 +68,12 @@ export const resolvedMergeFiles = session => {
     return files;
 };
 
-export const withTextResolution = (session, path, content) => ({
+export const withTextResolution = (session, path, content) => (session ? {
     ...session,
     conflicts: session.conflicts.map(file => (file.path === path ? {...file, content} : file))
-});
+} : session);
 
-export const withBinaryChoice = (session, path, choice) => ({
+export const withBinaryChoice = (session, path, choice) => (session ? {
     ...session,
     binaryConflicts: session.binaryConflicts.map(file => (file.path === path ? {...file, choice} : file))
-});
+} : session);
