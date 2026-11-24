@@ -8,7 +8,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import api, {editorUrl, projectUrl} from '../api';
 import {useUser} from '../UserContext.jsx';
 import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
-import {canViewProjectSource} from '../project-source-access';
+import {canMaintainProject, canViewProjectSource} from '../project-source-access';
 import {uncommittedSummaryDetail} from '../commit-summary.js';
 import {formatBytes, safeDate, timeAgo} from '../format.js';
 import {getCommunityLocale} from '../locale.js';
@@ -141,10 +141,6 @@ const AboutPanel = ({project, baseUrl, shareKey, counts, fileCount, contributors
         </aside>
     );
 };
-
-const canMaintainProject = project => Boolean(
-    project.isOwner || project.myRole === 'owner' || project.myRole === 'maintainer'
-);
 
 const ProjectCodePage = ({id, vanitySlug}) => {
     const {text: communityText} = useCommunityText();

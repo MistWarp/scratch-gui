@@ -22,7 +22,7 @@ import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import {tabPanelProps} from '../components/SectionTabs.jsx';
 import RichText from '../components/RichText.jsx';
 import UserLink from '../components/UserLink.jsx';
-import {canViewProjectSource} from '../project-source-access.js';
+import {canMaintainProject, canViewProjectSource} from '../project-source-access.js';
 import {useUser} from '../UserContext.jsx';
 import {formatDate, timeAgo} from '../format.js';
 import setPageMeta from '../page-meta.js';
@@ -196,9 +196,7 @@ export const buildPullRequestFileTexts = (apiClient, data) => {
     });
 };
 
-export const canMergePullRequest = project => Boolean(
-    project?.isOwner || project?.myRole === 'owner' || project?.myRole === 'maintainer'
-);
+export const canMergePullRequest = canMaintainProject;
 
 export const canClosePullRequest = (project, pull, user) => {
     if (typeof pull?.canClose === 'boolean') return pull.canClose;
@@ -440,12 +438,12 @@ const PullRequest = () => {
         await load();
     };
 
-    const failMerge = async (error, fallback, context, inSession) => {
+    const failMerge = async (error, fallback, context) => {
         if (!stillOn(context)) return;
         const failure = pullMergeFailure(error, communityText, fallback);
         const baseBranch = pull?.baseBranch || '';
         let gateShown = false;
-        if (error?.code === 'target_branch_changed' && !inSession) {
+        if (error?.code === 'target_branch_changed') {
             const refreshed = await refreshProject();
             gateShown = Boolean(baseBranch && refreshed?.gitBranch && refreshed.gitBranch !== baseBranch);
         }
@@ -500,7 +498,7 @@ const PullRequest = () => {
                 await uploadMerge(data, pull, result.files, context);
             }
         } catch (error) {
-            await failMerge(error, communityText('Merge failed.'), context, false);
+            await failMerge(error, communityText('Merge failed.'), context);
         } finally {
             if (stillOn(context)) setMerging(false);
         }
@@ -525,7 +523,7 @@ const PullRequest = () => {
             }
             await uploadMerge(session.data, session.pull, resolvedMergeFiles(session), context);
         } catch (error) {
-            await failMerge(error, communityText('The conflicts could not be resolved.'), context, true);
+            await failMerge(error, communityText('The conflicts could not be resolved.'), context);
         } finally {
             if (stillOn(context)) setMerging(false);
         }

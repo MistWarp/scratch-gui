@@ -92,6 +92,7 @@ const ProjectBranches = ({id, canManage, onChange}) => {
     const merge = async () => {
         if (!source || !target || source === target || busy || session) return;
         setBusy('merge');
+        setError('');
         setMergeError('');
         setNotice('');
         try {
@@ -116,6 +117,7 @@ const ProjectBranches = ({id, canManage, onChange}) => {
     const resolve = async () => {
         if (!session || busy) return;
         setBusy('merge');
+        setError('');
         setMergeError('');
         try {
             const unresolvedText = unresolvedTextConflict(session);
