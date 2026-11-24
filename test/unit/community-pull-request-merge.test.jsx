@@ -60,7 +60,7 @@ const conflictMerge = {
     sourceHead: sha('b'),
     targetProjectId: 'target',
     sourceProjectId: 'fork',
-    merge: {ok: true, changes: [{path: 'Cat/main.fractch', conflict: true, content: encode('<<<<<<< target')}]}
+    merge: {ok: true, changes: [{path: 'Cat/main.fractch', conflict: true, content: encode('<<<<<<<<< target\nmove 5\n=========\nmove 20\n>>>>>>>>> pull request')}]}
 };
 
 const settle = async wrapper => {
@@ -573,5 +573,29 @@ describe('pull request merges', () => {
         await settle(wrapper);
         expect(wrapper.find('ChangesView').exists()).toBe(true);
         expect(api.pullChanges).toHaveBeenCalledTimes(2);
+    });
+
+    test('loads sprite source text from the live fork head reported by pullChanges', async () => {
+        api.getPull.mockResolvedValue({pull: {...pull, headCommit: sha('b'), fileCount: 1}});
+        api.pullChanges.mockReset().mockResolvedValue({
+            inspection: {
+                ok: true,
+                targets: [{path: 'Cat', name: 'Cat', scripts: [{status: 'added', after: 'when flag clicked\n  move (10)'}]}]
+            },
+            pull: {...pull, headCommit: sha('e')}
+        });
+        api.pullDiff.mockReset().mockResolvedValue({
+            files: [{path: 'Cat/main.fractch', status: 'modified', additions: 1, deletions: 0, patch: ''}],
+            pull: {...pull, headCommit: sha('e')}
+        });
+        const wrapper = mountPull();
+        await settle(wrapper);
+        const tab = label => wrapper.find('[role="tab"]').filterWhere(item => item.text().includes(label));
+        expect(tab('Files changed').text()).toContain('…');
+        await act(async () => {
+            tab('Files changed').simulate('click');
+        });
+        await settle(wrapper);
+        expect(api.commitFile).toHaveBeenCalledWith('fork', sha('e'), 'Cat/main.fractch', 2, 'target');
     });
 });

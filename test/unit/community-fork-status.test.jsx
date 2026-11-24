@@ -133,8 +133,9 @@ describe('remix fork status', () => {
     });
 
     test('conflicts wait for a resolution before syncing', async () => {
+        const diff3Hunk = 'one\n<<<<<<<<< this remix\nmove 5\n=========\nmove 20\n>>>>>>>>> original\nthree';
         api.syncRemix.mockResolvedValue(syncResponse([
-            {path: 'Cat/main.fractch', conflict: true, content: encode('<<<<<<< target')},
+            {path: 'Cat/main.fractch', conflict: true, content: encode(diff3Hunk)},
             {path: 'Cat/a.svg', conflict: true, binary: true, ours: encode('ours'), theirs: encode('theirs')}
         ]));
         const wrapper = mountStatus();
@@ -208,7 +209,7 @@ describe('remix fork status', () => {
 
     test('a stale sync explains itself, closes the session and refreshes, while an uncommitted refusal keeps resolutions open', async () => {
         api.syncRemix.mockResolvedValue(syncResponse([
-            {path: 'Cat/main.fractch', conflict: true, content: encode('<<<<<<< this remix')}
+            {path: 'Cat/main.fractch', conflict: true, content: encode('<<<<<<<<< this remix\nmove 5\n=========\nmove 20\n>>>>>>>>> original')}
         ]));
         api.uploadRemixSync
             .mockRejectedValueOnce(Object.assign(new Error('dirty'), {code: 'uncommitted_changes', status: 409}))
@@ -252,7 +253,7 @@ describe('remix fork status', () => {
 
     test('a conflict session survives the card being hidden and resets for another project', async () => {
         api.syncRemix.mockResolvedValue(syncResponse([
-            {path: 'Cat/main.fractch', conflict: true, content: encode('<<<<<<< this remix')}
+            {path: 'Cat/main.fractch', conflict: true, content: encode('<<<<<<<<< this remix\nmove 5\n=========\nmove 20\n>>>>>>>>> original')}
         ]));
         const wrapper = mountStatus();
         await act(async () => {
@@ -291,7 +292,7 @@ describe('remix fork status', () => {
             setHarness(wrapper, {projectId: 'other'});
         });
         await act(async () => {
-            answer(syncResponse([{path: 'Cat/main.fractch', conflict: true, content: encode('<<<<<<< this remix')}]));
+            answer(syncResponse([{path: 'Cat/main.fractch', conflict: true, content: encode('<<<<<<<<< this remix\n=========\n>>>>>>>>> original')}]));
         });
         await settle(wrapper);
         expect(wrapper.text()).not.toContain('Resolve sync conflicts');

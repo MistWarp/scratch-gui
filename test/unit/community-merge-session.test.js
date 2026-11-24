@@ -12,12 +12,14 @@ import {
     materializeMerge,
     resolvedMergeFiles,
     unresolvedBinaryConflict,
+    unresolvedTextConflict,
     withBinaryChoice,
     withTextResolution
 } from '../../src/community/merge-session.js';
 
 const encode = value => Buffer.from(value).toString('base64');
 const text = bytes => new TextDecoder().decode(bytes);
+const diff3Conflict = 'one\n<<<<<<<<< this remix\nmove 5\n=========\nmove 20\n>>>>>>>>> original\nthree';
 
 describe('merge sessions', () => {
     test('materializing applies clean changes and collects conflicts on the target tree', async () => {
@@ -29,7 +31,7 @@ describe('merge sessions', () => {
             merge: {changes: [
                 {path: 'new.txt', content: encode('new')},
                 {path: 'old.txt', deleted: true},
-                {path: 'Cat/main.fractch', conflict: true, content: encode('<<<<<<< target')},
+                {path: 'Cat/main.fractch', conflict: true, content: encode(diff3Conflict)},
                 {path: 'Cat/a.svg', conflict: true, binary: true, ours: encode('ours'), theirs: encode('theirs')}
             ]}
         });
@@ -38,21 +40,26 @@ describe('merge sessions', () => {
         expect(text(prepared.files.get('new.txt'))).toBe('new');
         expect(prepared.files.has('old.txt')).toBe(false);
         expect(text(prepared.files.get('Cat/a.svg'))).toBe('remix:head:Cat/a.svg');
-        expect(prepared.conflicts).toEqual([{path: 'Cat/main.fractch', content: '<<<<<<< target'}]);
+        expect(prepared.conflicts).toEqual([{path: 'Cat/main.fractch', content: diff3Conflict}]);
+        expect(unresolvedTextConflict(prepared)?.path).toBe('Cat/main.fractch');
         expect(prepared.binaryConflicts.map(file => [file.path, file.choice])).toEqual([['Cat/a.svg', '']]);
     });
 
     test('resolving uses edited text and the chosen side of each binary conflict', () => {
         let session = {
             files: new Map([['keep.txt', new Uint8Array([1])]]),
-            conflicts: [{path: 'code.fractch', content: 'conflicted'}],
+            conflicts: [{path: 'code.fractch', content: diff3Conflict}],
             binaryConflicts: [
                 {path: 'a.svg', choice: '', ours: encode('ours'), theirs: encode('theirs')},
                 {path: 'b.svg', choice: '', ours: encode('ours'), theirsDeleted: true}
             ]
         };
+        expect(unresolvedTextConflict(session)?.path).toBe('code.fractch');
+        expect(unresolvedTextConflict(withTextResolution(session, 'code.fractch', 'one\nmove 5\n>>>>>>>>> original'))?.path).toBe('code.fractch');
+        expect(unresolvedTextConflict(withTextResolution(session, 'code.fractch', 'Heading\n=========\nresolved'))).toBeNull();
         expect(unresolvedBinaryConflict(session).path).toBe('a.svg');
         session = withTextResolution(session, 'code.fractch', 'resolved');
+        expect(unresolvedTextConflict(session)).toBeNull();
         session = withBinaryChoice(session, 'a.svg', 'source');
         expect(unresolvedBinaryConflict(session).path).toBe('b.svg');
         session = withBinaryChoice(session, 'b.svg', 'source');

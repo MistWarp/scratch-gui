@@ -5,7 +5,7 @@ import MergeConflicts from '../../src/community/components/MergeConflicts.jsx';
 
 const props = extra => ({
     title: 'Resolve merge conflicts',
-    conflicts: [{path: 'Cat/main.fractch', content: '<<<<<<< target'}],
+    conflicts: [{path: 'Cat/main.fractch', content: '<<<<<<<<< target\nmove 5\n=========\nmove 20\n>>>>>>>>> pull request'}],
     binaryConflicts: [{path: 'Cat/a.svg', choice: 'target'}],
     keepLabel: 'Keep current project',
     useLabel: 'Use pull request',

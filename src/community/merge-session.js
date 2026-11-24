@@ -45,7 +45,7 @@ export const materializeMerge = async data => {
     return {files, conflicts, binaryConflicts};
 };
 
-const CONFLICT_MARKER_PATTERN = /^(?:<{7}(?: .*)?|={7}|>{7}(?: .*)?)$/m;
+const CONFLICT_MARKER_PATTERN = /^(?:<{7,}|>{7,})(?: .*)?$/m;
 
 export const unresolvedTextConflict = session => (
     session.conflicts.find(file => CONFLICT_MARKER_PATTERN.test(file.content || '')) || null

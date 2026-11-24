@@ -140,7 +140,7 @@ describe('project branch management', () => {
             sourceBranch: 'feature',
             targetBranch: 'main',
             merge: {changes: [
-                {path: 'Cat/main.fractch', conflict: true, content: encode('<<<<<<< main')},
+                {path: 'Cat/main.fractch', conflict: true, content: encode('<<<<<<<<< main\nmove 5\n=========\nmove 20\n>>>>>>>>> feature')},
                 {path: 'Cat/a.svg', conflict: true, binary: true, ours: encode('main art'), theirs: encode('feature art')}
             ]}
         });
@@ -203,7 +203,7 @@ describe('project branch management', () => {
             sourceHead: 'b'.repeat(40),
             sourceBranch: 'feature',
             targetBranch: 'main',
-            merge: {changes: [{path: 'Cat/main.fractch', conflict: true, content: encode('<<<<<<< main')}]}
+            merge: {changes: [{path: 'Cat/main.fractch', conflict: true, content: encode('<<<<<<<<< main\nmove 5\n=========\nmove 20\n>>>>>>>>> feature')}]}
         });
         api.uploadBranchMerge.mockReset().mockRejectedValue(
             Object.assign(new Error('a branch changed while this merge was processing'), {code: 'branch_head_changed', status: 409})
@@ -221,7 +221,6 @@ describe('project branch management', () => {
             wrapper.find('button').filterWhere(button => button.text().includes('Merge branches'))
                 .simulate('click');
         });
-        await settle(wrapper);
         await settle(wrapper);
         const loadsBefore = api.branches.mock.calls.length;
         await act(async () => {
@@ -258,7 +257,7 @@ describe('project branch management', () => {
             sourceHead: 'b'.repeat(40),
             sourceBranch: 'feature',
             targetBranch: 'main',
-            merge: {changes: [{path: 'Cat/main.fractch', conflict: true, content: encode('<<<<<<< main')}]}
+            merge: {changes: [{path: 'Cat/main.fractch', conflict: true, content: encode('<<<<<<<<< main\nmove 5\n=========\nmove 20\n>>>>>>>>> feature')}]}
         });
         api.commitTree.mockResolvedValue({files: [{path: 'Cat/main.fractch'}]});
         api.commitFile.mockResolvedValue({content: encode('main')});
