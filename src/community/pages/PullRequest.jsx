@@ -369,7 +369,8 @@ const PullRequest = () => {
         return refresh;
     }, [id, index, viewer]);
 
-    const branchBlocked = Boolean(pull?.state === 'open' && pull.baseBranch &&
+    const canMerge = Boolean(pull && (typeof pull.canMerge === 'boolean' ? pull.canMerge : canMergePullRequest(project)));
+    const branchBlocked = Boolean(pull?.state === 'open' && canMerge && pull.baseBranch &&
         (pull.baseBranchMissing || (project?.gitBranch && pull.baseBranch !== project.gitBranch)));
     const gateNoteNodeRef = useRef(null);
     const focusGateRef = useRef(false);
@@ -712,7 +713,6 @@ const PullRequest = () => {
     if (!pull || !project || loadedContext !== `${viewer}:${id}:${index}`) return <main className={styles.page}><StatusMessage>{communityText('Loading pull request…')}</StatusMessage></main>;
 
     const open = pull.state === 'open';
-    const canMerge = typeof pull.canMerge === 'boolean' ? pull.canMerge : canMergePullRequest(project);
     const canClose = canClosePullRequest(project, pull, user);
     const branchGone = Boolean(pull.baseBranch && pull.baseBranchMissing);
     const wrongBranch = Boolean(pull.baseBranch && project.gitBranch && pull.baseBranch !== project.gitBranch && !branchGone);
