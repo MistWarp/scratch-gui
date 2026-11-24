@@ -233,13 +233,17 @@ const ProjectCodePage = ({id, vanitySlug}) => {
     const selectedBranch = (branches || []).find(branch => branch.name === requestedBranch) ||
         (branches || []).find(branch => branch.name === defaultBranch) || null;
     const branchName = selectedBranch ? selectedBranch.name : defaultBranch;
+    const browsingOtherBranch = Boolean(selectedBranch && selectedBranch.name !== defaultBranch);
     const browseProject = useMemo(() => {
-        if (!project || !selectedBranch || !selectedBranch.head || selectedBranch.head === project.gitHead) return project;
+        if (!project || !browsingOtherBranch || !selectedBranch.head || selectedBranch.head === project.gitHead) return project;
         return {...project, gitHead: selectedBranch.head, gitBranch: selectedBranch.name};
-    }, [project, selectedBranch && selectedBranch.head, selectedBranch && selectedBranch.name]);
-    const latestCommit = selectedBranch && selectedBranch.head ?
-        {sha: selectedBranch.head, author: selectedBranch.author, date: selectedBranch.date, message: selectedBranch.message} :
-        (versionHistory && versionHistory.commits && versionHistory.commits[0]) || null;
+    }, [project, browsingOtherBranch, selectedBranch && selectedBranch.head, selectedBranch && selectedBranch.name]);
+    const latestHistoryCommit = (versionHistory && versionHistory.commits && versionHistory.commits[0]) || null;
+    const latestCommit = !browsingOtherBranch && latestHistoryCommit && (!project?.gitHead || latestHistoryCommit.sha === project.gitHead) ?
+        latestHistoryCommit :
+        selectedBranch && selectedBranch.head ?
+            {sha: selectedBranch.head, author: selectedBranch.author, date: selectedBranch.date, message: selectedBranch.message} :
+            latestHistoryCommit;
     const contributors = useMemo(() => commitContributors(versionHistory && versionHistory.commits), [versionHistory]);
     const counts = {
         commits: project ? Number(project.commitCount) || (versionHistory?.commits?.length ?? null) : null,

@@ -556,6 +556,7 @@ describe('project developer view page', () => {
         api.commits.mockClear().mockImplementation(() => new Promise(resolve => {
             resolveCommits = resolve;
         }));
+        api.commitTree.mockClear();
         await act(async () => {
             window.dispatchEvent(new Event('focus'));
             document.dispatchEvent(new Event('visibilitychange'));
@@ -566,13 +567,30 @@ describe('project developer view page', () => {
             resolveProject({
                 project: baseProject({
                     isOwner: true,
+                    gitHead: sha('c'),
                     remixFrom: {id: 'parent-1', owner: 'alice', title: 'Original Space', ahead: 1, behind: 1}
                 })
             });
-            resolveCommits({branch: 'main', commits});
+            resolveCommits({
+                branch: 'main',
+                commits: [{sha: sha('c'), author: 'mist', date: 1700002000000, message: 'Commit on editor'}, ...commits]
+            });
         });
         await settle(unknown);
         expect(syncButtons(unknown).prop('disabled')).toBeFalsy();
+        expect(api.commitTree).toHaveBeenCalledWith('project-1', sha('c'));
+
+        api.getProject.mockClear().mockRejectedValueOnce(new Error('network glitch'));
+        api.commits.mockClear().mockResolvedValueOnce({
+            branch: 'main',
+            commits: [{sha: sha('c'), author: 'mist', date: 1700002000000, message: 'Commit on editor'}, ...commits],
+            uncommitted: {head: sha('c'), branch: 'main', files: 2}
+        });
+        await act(async () => {
+            window.dispatchEvent(new Event('focus'));
+        });
+        await settle(unknown);
+        expect(syncButtons(unknown).prop('disabled')).toBe(true);
         unknown.unmount();
 
         mockApi(baseProject({isOwner: true, remixFrom}));
