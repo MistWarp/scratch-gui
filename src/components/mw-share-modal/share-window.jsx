@@ -7,6 +7,7 @@ import {
     getScratchOrigin, rememberPlatformProject
 } from '../../lib/community/publish.js';
 import {getProject, request} from '../../lib/community/api.js';
+import {friendlyError} from '../../community/api-errors.js';
 import Markdown from '../../community/components/Markdown.jsx';
 import {
     getState as getIdentityState,
@@ -20,6 +21,9 @@ import {isCodeMode} from '../../lib/editor-visibility.js';
 import {projectSession} from '../../modules/project-session';
 import Button from '../button/button.jsx';
 import styles from './share-window.css';
+
+const SAVE_FALLBACK_ERROR =
+    'Could not save your project. Try again, or use File > Save to your computer to keep a copy.';
 
 const editorInCodeMode = () => {
     const state = window.ReduxStore ? window.ReduxStore.getState() : null;
@@ -202,7 +206,7 @@ class ShareWindow extends React.Component {
             phase: null,
             loaded: 0,
             total: 0,
-            error: props.initialError ? props.initialError.message : null,
+            error: props.initialError ? friendlyError(props.initialError, SAVE_FALLBACK_ERROR) : null,
             errorCode: props.initialError ? props.initialError.code : null,
             differences: props.initialError && Array.isArray(props.initialError.differences) ?
                 props.initialError.differences : [],
@@ -433,9 +437,9 @@ class ShareWindow extends React.Component {
                 phase: null,
                 loaded: 0,
                 total: 0,
-                error: e.message || 'Could not save',
-                errorCode: e.code || null,
-                differences: Array.isArray(e.differences) ? e.differences : []
+                error: friendlyError(e, SAVE_FALLBACK_ERROR),
+                errorCode: e && e.code ? e.code : null,
+                differences: e && Array.isArray(e.differences) ? e.differences : []
             });
         }
     }
@@ -454,7 +458,7 @@ class ShareWindow extends React.Component {
             ));
         } catch (e) {
             this.releaseAgreement();
-            this.setState({agreeBusy: false, agreeError: e.message || 'Could not accept agreement.'});
+            this.setState({agreeBusy: false, agreeError: friendlyError(e, 'Could not accept agreement.')});
         }
     }
     renderError () {
@@ -890,7 +894,7 @@ class ShareWindowSignIn extends React.Component {
             await roturLogin();
         } catch (e) {
             if (!this.unmounted && !isSignedIn(getIdentityState())) {
-                this.setState({error: (e && e.message) || this.props.intl.formatMessage(messages.signInFailed)});
+                this.setState({error: friendlyError(e, this.props.intl.formatMessage(messages.signInFailed))});
             }
         }
     }

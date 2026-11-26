@@ -2,7 +2,7 @@ import type {Store} from '../storage';
 import {createClient, type PlatformClient} from './client';
 import {createResponseCache, type ResponseCache} from './response-cache';
 import {createSessionManager, type SessionManager} from './session';
-import type {CredentialStore, ErrorFactory, Fetch} from './types';
+import type {ApiError, CredentialStore, ErrorFactory, Fetch} from './types';
 
 export type {PlatformClient, RequestBody, RequestOptions, UploadProgress} from './client';
 export type {CachedPathTest, ResponseCache} from './response-cache';
@@ -17,6 +17,7 @@ export interface PlatformApiOptions {
     errors: ErrorFactory;
     fetch?: Fetch;
     onSuccess?: (path: string, method: string) => void;
+    onError?: (error: ApiError, context: {method: string; path: string}) => void;
 }
 
 export interface PlatformApi extends PlatformClient {
@@ -27,10 +28,10 @@ export interface PlatformApi extends PlatformClient {
 const globalFetch: Fetch = (input, init) => globalThis.fetch(input, init);
 
 export const createPlatformApi = (
-    {baseUrl, credentials, cacheStore, errors, fetch = globalFetch, onSuccess}: PlatformApiOptions
+    {baseUrl, credentials, cacheStore, errors, fetch = globalFetch, onSuccess, onError}: PlatformApiOptions
 ): PlatformApi => {
     const cache = createResponseCache({store: cacheStore});
     const session = createSessionManager({baseUrl, credentials, cache, errors, fetch});
-    const client = createClient({baseUrl, session, cache, errors, fetch, onSuccess});
+    const client = createClient({baseUrl, session, cache, errors, fetch, onSuccess, onError});
     return {...client, session, cache};
 };

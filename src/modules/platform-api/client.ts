@@ -27,6 +27,7 @@ export interface ClientOptions {
     errors: ErrorFactory;
     fetch: Fetch;
     onSuccess?: (path: string, method: string) => void;
+    onError?: (error: ApiError, context: {method: string; path: string}) => void;
 }
 
 export interface PlatformClient {
@@ -41,10 +42,16 @@ const sleep = (ms: number): Promise<void> => new Promise(resolve => {
 });
 
 const isAuthPath = (path: string): boolean => path.startsWith('/auth') || path.startsWith('/logout');
+const isErrorReportPath = (path: string): boolean => path === '/errors' || path.startsWith('/errors?');
 
 export const createClient = (
-    {baseUrl, session, cache, errors, fetch, onSuccess}: ClientOptions
+    {baseUrl, session, cache, errors, fetch, onSuccess, onError}: ClientOptions
 ): PlatformClient => {
+    const notifyError = (error: unknown, method: string, path: string): void => {
+        if (!onError || isErrorReportPath(path)) return;
+        onError(error as ApiError, {method, path});
+    };
+
     const withToken = <R>(use: (token: string | null) => R | Promise<R>): R | Promise<R> => (
         session.hasProvider() ? session.current().then(use) : use(session.load())
     );
@@ -113,17 +120,22 @@ export const createClient = (
         };
 
         const run = async (): Promise<unknown> => {
-            let response = await fetchWithRetry();
-            if (response.status === 401 && !isAuthPath(path)) {
-                session.store(null);
-                response = await retryWithFreshSession(response);
+            try {
+                let response = await fetchWithRetry();
+                if (response.status === 401 && !isAuthPath(path)) {
+                    session.store(null);
+                    response = await retryWithFreshSession(response);
+                }
+                if (path === '/me' && response.status === 401) session.store(null);
+                if (raw) return response;
+                const data = await parseResponse(response, errors);
+                onSuccess?.(path, method);
+                if (cacheable && generation === cache.generation) cache.write(cacheKey, data);
+                return data;
+            } catch (error) {
+                notifyError(error, method, path);
+                throw error;
             }
-            if (path === '/me' && response.status === 401) session.store(null);
-            if (raw) return response;
-            const data = await parseResponse(response, errors);
-            onSuccess?.(path, method);
-            if (cacheable && generation === cache.generation) cache.write(cacheKey, data);
-            return data;
         };
 
         return cacheable ? cache.track(cacheKey, run()) : run();
@@ -192,7 +204,11 @@ export const createClient = (
         });
 
     const upload = <T>(path: string, form: FormData, onProgress?: UploadProgress): Promise<T> =>
-        Promise.resolve(withToken(token => sendUpload(path, form, onProgress, token))) as Promise<T>;
+        Promise.resolve(withToken(token => sendUpload(path, form, onProgress, token)))
+            .catch((error: unknown) => {
+                notifyError(error, 'POST', path);
+                throw error;
+            }) as Promise<T>;
 
     const request = <T>(path: string, options: RequestOptions = {}): Promise<T> =>
         send(path, false, options) as Promise<T>;

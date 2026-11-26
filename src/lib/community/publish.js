@@ -19,6 +19,7 @@ import {
 } from '../git/project-history.js';
 import {projectSession} from '../../modules/project-session';
 import {session} from '../../modules/storage';
+import {reportActionableError} from '../error-reporter.js';
 
 const ZIP_COMPRESSABLE = ['.json', '.svg', '.wav', '.ttf', '.otf'];
 
@@ -431,6 +432,7 @@ const publishToMistWarp = options => withProjectOperation(options.vm, async () =
         return await publishWorkspace(options);
     } catch (e) {
         setSaveFeedback(options.vm, 'cloudFailed');
+        reportActionableError(e, {context: 'save'});
         throw e;
     }
 });

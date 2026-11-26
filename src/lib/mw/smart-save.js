@@ -9,6 +9,7 @@ import {createMwp} from '../git/mwp.js';
 import {projectFilename} from '../utils/safe-filename.js';
 import {setSaveFeedback} from './save-feedback.js';
 import {trackDaily} from '../../community/analytics.js';
+import {reportActionableError} from '../error-reporter.js';
 
 let agreementConfirmed = false;
 
@@ -57,6 +58,7 @@ const runSmartSave = async ({vm, title, onSaved}) => {
                 return false;
             }
             setSaveFeedback(vm, 'downloadFailed');
+            reportActionableError(e, {context: 'save-download'});
             throw e;
         }
         downloadBlob(projectFilename(title, 'project', 'mwp'), blob);

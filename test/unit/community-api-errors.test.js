@@ -61,6 +61,8 @@ describe('community api errors', () => {
 
     test('friendlyError maps errors from outside the API layer', () => {
         expect(friendlyError(new TypeError('Failed to fetch'))).toBe('Can\'t reach MistWarp. Check your connection.');
+        expect(friendlyError(new TypeError('Cannot read properties of undefined (reading \'x\')'), 'Could not save.'))
+            .toBe('Could not save.');
         expect(friendlyError(Object.assign(new Error('Request failed (503)'), {status: 503})))
             .toBe('MistWarp is having trouble right now. Try again in a moment.');
         expect(friendlyError(new Error('empty'), 'Could not load this.')).toBe('Could not load this.');

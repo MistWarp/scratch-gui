@@ -7,6 +7,7 @@ import {sharedCredentials} from '../account/shared-credentials.js';
 import {
     createApiError, createNetworkError, createTimeoutError, friendlyError
 } from '../../community/api-errors.js';
+import {reportActionableError} from '../error-reporter.js';
 import {createPlatformApi, staleCacheTest} from '../../modules/platform-api';
 import {session as sessionStore} from '../../modules/storage';
 
@@ -24,7 +25,8 @@ const platformApi = createPlatformApi({
         network: createNetworkError,
         timeout: createTimeoutError
     },
-    onSuccess: trackApiSuccess
+    onSuccess: trackApiSuccess,
+    onError: (error, {method, path}) => reportActionableError(error, {context: 'api', method, path})
 });
 
 platformApi.session.setEvents({
@@ -93,6 +95,49 @@ const extensionSourceUrl = async (project, url) => {
 
 const checkProjectAssets = (id, assets) => request(`/projects/${id}/assets/check`, {method: 'POST', body: {assets}});
 
+const describeExtensionUrl = url => {
+    if (typeof url !== 'string') return {origin: 'unknown', label: ''};
+    if (url.startsWith('data:')) return {origin: 'data', label: ''};
+    if (url.startsWith('blob:')) return {origin: 'blob', label: ''};
+    try {
+        const parsed = new URL(url);
+        const clean = `${parsed.origin}${parsed.pathname}`;
+        return {
+            origin: 'remote',
+            label: clean.length > 140 ? `${clean.slice(0, 137)}...` : clean
+        };
+    } catch (e) {
+        return {origin: 'unknown', label: ''};
+    }
+};
+
+const createExtensionSourceError = (url, {status = 0, cause} = {}) => {
+    const {origin, label} = describeExtensionUrl(url);
+    let message;
+    if (origin === 'remote' && label) {
+        message = status ?
+            `Could not load the custom extension at ${label} before saving (HTTP ${status}). ` +
+                'Make sure the extension URL still works, or remove the extension from the project.' :
+            `Could not load the custom extension at ${label} before saving. ` +
+                'Make sure the extension URL is reachable and allows cross-origin requests, ' +
+                'or remove the extension from the project.';
+    } else {
+        message = status ?
+            `Could not read a custom extension before saving (HTTP ${status}). ` +
+                'Try reloading or removing the extension before saving again.' :
+            'Could not read a custom extension before saving. ' +
+                'Try reloading or removing the extension before saving again.';
+    }
+    const error = new Error(message);
+    error.code = 'extension_source_unavailable';
+    error.friendly = true;
+    error.extensionOrigin = origin;
+    if (label) error.extensionUrl = label;
+    if (status) error.httpStatus = status;
+    if (cause) error.cause = cause;
+    return error;
+};
+
 const collectExtensionSources = async sb3Blob => {
     const zip = await JSZip.loadAsync(sb3Blob);
     const projectFile = zip.file('project.json');
@@ -100,8 +145,13 @@ const collectExtensionSources = async sb3Blob => {
     const urls = getCustomExtensionUrls(JSON.parse(await projectFile.async('text')));
     const sources = {};
     await Promise.all(urls.map(async url => {
-        const response = await fetch(url, {credentials: 'omit'});
-        if (!response.ok) throw new Error(`Could not read custom extension source (${response.status}): ${url}`);
+        let response;
+        try {
+            response = await fetch(url, {credentials: 'omit'});
+        } catch (cause) {
+            throw createExtensionSourceError(url, {cause});
+        }
+        if (!response.ok) throw createExtensionSourceError(url, {status: response.status});
         sources[url] = await response.text();
     }));
     return sources;

@@ -29,6 +29,11 @@ jest.mock('../../src/lib/git/browser-git.js', () => ({
 jest.mock('../../src/lib/git/sync-remotes.js', () => ({
     syncConfiguredRemotes: jest.fn(() => Promise.resolve([]))
 }));
+const mockReportActionableError = jest.fn();
+
+jest.mock('../../src/lib/error-reporter.js', () => ({
+    reportActionableError: (...args) => mockReportActionableError(...args)
+}));
 jest.mock('../../src/lib/git/project-history.js', () => ({
     adoptImportedProjectHistory: jest.fn(),
     isProjectHistoryHydrated: jest.fn(() => false),
@@ -409,5 +414,14 @@ describe('MistWarp project upload packaging', () => {
 
         expect(mockCreateMwp).toHaveBeenCalledWith(expect.objectContaining({requireChanges: true}));
         expect(mockUploadProject).not.toHaveBeenCalled();
+    });
+
+    test('forwards save failures to reportActionableError', async () => {
+        const vm = {saveProjectSb3DontZip: jest.fn(() => ({'project.json': '{}'}))};
+        const failure = new TypeError('Cannot read properties of undefined (reading \'zip\')');
+        mockCreateMwp.mockRejectedValueOnce(failure);
+
+        await expect(publishToMistWarp({vm, title: 'Broken save'})).rejects.toBe(failure);
+        expect(mockReportActionableError).toHaveBeenCalledWith(failure, {context: 'save'});
     });
 });

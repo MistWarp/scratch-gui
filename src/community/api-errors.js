@@ -43,9 +43,22 @@ const responseMessage = (status, serverMessage) => (
     status < 500 && isHumanMessage(serverMessage) ? serverMessage.trim() : statusMessage(status)
 );
 
-const isNetworkFailure = error => error instanceof TypeError ||
-    /^(failed to fetch|load failed|networkerror when attempting to fetch resource|network error)/i
-        .test(String(error && error.message));
+const NETWORK_FAILURE_TEXT = new RegExp(
+    '^(failed to fetch|load failed|networkerror when attempting to fetch resource|' +
+    'network error|the internet connection appears to be offline)',
+    'i'
+);
+
+const isNetworkFailure = error => Boolean(error) && (
+    error.code === 'network' ||
+    NETWORK_FAILURE_TEXT.test(String(error.message || ''))
+);
+
+const isRuntimeError = error => error instanceof TypeError ||
+    error instanceof ReferenceError ||
+    error instanceof SyntaxError ||
+    error instanceof RangeError ||
+    error instanceof URIError;
 
 const isAbort = error => Boolean(error) && (error.name === 'AbortError' || error.name === 'TimeoutError');
 
@@ -82,6 +95,7 @@ const friendlyError = (error, fallback) => {
     if (error.code === 'timeout' || isAbort(error)) return timeoutMessage();
     if (error.status) return responseMessage(error.status, error.serverMessage || error.message);
     if (isNetworkFailure(error)) return networkMessage();
+    if (isRuntimeError(error)) return fallback || statusMessage(0);
     if (isHumanMessage(error.message)) return error.message;
     return fallback || statusMessage(0);
 };

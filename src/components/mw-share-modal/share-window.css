@@ -91,7 +91,9 @@
 .error {
     color: #f0a3a3;
     font-size: 13px;
+    line-height: 1.45;
     margin-top: 4px;
+    overflow-wrap: anywhere;
 }
 
 .error-panel {

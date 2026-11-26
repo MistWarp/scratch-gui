@@ -221,3 +221,138 @@ test('skips reports from hosts other than mistwarp.org', () => {
     spy.mockRestore();
     expect(request).not.toHaveBeenCalled();
 });
+
+test('scrubs identifying paths, tokens, data URIs and emails before sending', () => {
+    const {reportSiteError, request} = load();
+    reportSiteError({
+        message: 'Failed for alice@example.com with Bearer secret.tok at https://mistwarp.org/users/alice?k=1 and data:application/javascript,console.log(1)',
+        stack: 'Error: boom\n    at save (https://user:pass@mistwarp.org/project/proj99/pulls/4?token=abc:12:34)',
+        url: 'https://mistwarp.org/project/proj99/pulls/4?k=secret#top'
+    });
+    expect(request).toHaveBeenCalledTimes(1);
+    const body = JSON.parse(request.mock.calls[0][1].body);
+    expect(body.url).toBe('https://mistwarp.org/project/:id/pulls/:id');
+    expect(body.message).toContain('[email]');
+    expect(body.message).toContain('Bearer [redacted]');
+    expect(body.message).toContain('https://mistwarp.org/users/:id');
+    expect(body.message).toContain('data:[redacted]');
+    expect(body.message).not.toContain('alice');
+    expect(body.message).not.toContain('secret.tok');
+    expect(body.message).not.toContain('console.log');
+    expect(body.stack).toContain('https://mistwarp.org/project/:id/pulls/4:12:34');
+    expect(body.stack).not.toContain('user:pass');
+    expect(body.stack).not.toContain('proj99');
+    expect(body.stack).not.toContain('token=abc');
+});
+
+test('reportActionableError sends 5xx API failures anonymously with scrubbed routes', () => {
+    let reportActionableError;
+    let request;
+    jest.isolateModules(() => {
+        ({reportActionableError} = require('../../../src/lib/error-reporter'));
+        request = global.fetch;
+    });
+    const error = Object.assign(new Error('MistWarp is having trouble right now.'), {
+        status: 500,
+        code: 'storage_write_failed',
+        serverMessage: 'Failed writing for alice in proj99'
+    });
+    expect(reportActionableError(error, {context: 'api', method: 'POST', path: '/projects/proj99/upload?k=secret'})).toBe(true);
+    expect(reportActionableError(error, {context: 'save'})).toBe(false);
+    expect(request).toHaveBeenCalledTimes(1);
+    const [url, options] = request.mock.calls[0];
+    expect(url).toBe('https://api.mistwarp.org/v1/errors');
+    expect(options.credentials).toBe('omit');
+    expect(options.headers).toEqual({'Content-Type': 'application/json'});
+    const body = JSON.parse(options.body);
+    expect(body.kind).toBe('manual');
+    expect(body.message).toBe('[api] POST /projects/:id/upload -> HTTP 500 (storage_write_failed)');
+    expect(body.message).not.toContain('proj99');
+    expect(body.message).not.toContain('alice');
+    expect(body).not.toHaveProperty('projectId');
+});
+
+test('reportActionableError reports unexpected save errors and server upload timeouts', () => {
+    let reportActionableError;
+    let request;
+    jest.isolateModules(() => {
+        ({reportActionableError} = require('../../../src/lib/error-reporter'));
+        request = global.fetch;
+    });
+    const runtimeError = new TypeError('Cannot read properties of undefined (reading \'zip\')');
+    expect(reportActionableError(runtimeError, {context: 'save'})).toBe(true);
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(request.mock.calls[0][1].body).message).toBe(
+        '[save] Cannot read properties of undefined (reading \'zip\')'
+    );
+
+    jest.isolateModules(() => {
+        ({reportActionableError} = require('../../../src/lib/error-reporter'));
+        request = global.fetch;
+    });
+    const timeoutError = Object.assign(new Error('Upload timed out'), {code: 'upload_processing_timeout'});
+    expect(reportActionableError(timeoutError, {context: 'api', path: '/projects/p42/upload'})).toBe(true);
+    expect(JSON.parse(request.mock.calls[1][1].body).message).toBe(
+        '[api] Upload processing timeout (/projects/:id/upload)'
+    );
+});
+
+test('reportActionableError skips unactionable user, network and third-party extension errors', () => {
+    let reportActionableError;
+    let request;
+    jest.isolateModules(() => {
+        ({reportActionableError} = require('../../../src/lib/error-reporter'));
+        request = global.fetch;
+    });
+    const unactionable = [
+        Object.assign(new Error('Not found'), {status: 404}),
+        Object.assign(new Error('Sign in'), {status: 401}),
+        Object.assign(new Error('Too many requests'), {status: 429}),
+        Object.assign(new Error('Offline'), {code: 'network'}),
+        Object.assign(new Error('Timed out'), {code: 'timeout'}),
+        Object.assign(new Error('Stalled'), {code: 'upload_stalled'}),
+        Object.assign(new Error('Agreement required'), {code: 'agreement_required'}),
+        Object.assign(new Error('Changed elsewhere'), {code: 'head_changed'}),
+        Object.assign(new Error('Storage full'), {code: 'storage_full'}),
+        Object.assign(new Error('Not exact'), {code: 'project_not_exact'}),
+        Object.assign(new Error('Busy'), {code: 'project_operation_active'}),
+        new TypeError('Failed to fetch'),
+        Object.assign(new Error('Aborted'), {name: 'AbortError'}),
+        Object.assign(new Error('Could not load third party extension'), {
+            code: 'extension_source_unavailable',
+            extensionOrigin: 'remote',
+            extensionUrl: 'https://someone-else.example/ext.js'
+        })
+    ];
+    for (const error of unactionable) {
+        expect(reportActionableError(error, {context: 'save'})).toBe(false);
+    }
+    expect(request).not.toHaveBeenCalled();
+});
+
+test('reportActionableError reports first-party and data URI extension read failures', () => {
+    let reportActionableError;
+    let request;
+    jest.isolateModules(() => {
+        ({reportActionableError} = require('../../../src/lib/error-reporter'));
+        request = global.fetch;
+    });
+    const firstParty = Object.assign(new Error('Could not load extension'), {
+        code: 'extension_source_unavailable',
+        extensionOrigin: 'remote',
+        extensionUrl: 'https://rotur.dev/scratch/example.js'
+    });
+    expect(reportActionableError(firstParty, {context: 'save'})).toBe(true);
+    expect(request).toHaveBeenCalledTimes(1);
+
+    jest.isolateModules(() => {
+        ({reportActionableError} = require('../../../src/lib/error-reporter'));
+        request = global.fetch;
+    });
+    const dataExt = Object.assign(new Error('Could not read a custom extension before saving.'), {
+        code: 'extension_source_unavailable',
+        extensionOrigin: 'data'
+    });
+    expect(reportActionableError(dataExt, {context: 'save'})).toBe(true);
+    expect(request).toHaveBeenCalledTimes(2);
+});

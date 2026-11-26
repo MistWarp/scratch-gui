@@ -236,6 +236,32 @@ describe('MistWarp share window workflows', () => {
         expect(remixTitle('')).toBe('Untitled remix');
         expect(remixTitle('x'.repeat(100))).toHaveLength(100);
     });
+
+    test('turns raw fetch and runtime save errors into clear messages while keeping extension guidance', async () => {
+        publishToMistWarp.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+        const wrapper = makeWindow('save');
+        await wrapper.instance().handlePublish();
+        expect(wrapper.state('error')).toBe('Can\'t reach MistWarp. Check your connection.');
+
+        publishToMistWarp.mockRejectedValueOnce(new TypeError('Cannot read properties of undefined (reading \'zip\')'));
+        await wrapper.instance().handlePublish();
+        expect(wrapper.state('error')).toBe(
+            'Could not save your project. Try again, or use File > Save to your computer to keep a copy.'
+        );
+
+        const extError = Object.assign(
+            new Error('Could not load the custom extension at https://example.com/ext.js before saving.'),
+            {code: 'extension_source_unavailable', friendly: true}
+        );
+        publishToMistWarp.mockRejectedValueOnce(extError);
+        await wrapper.instance().handlePublish();
+        expect(wrapper.state('error')).toBe(extError.message);
+        wrapper.unmount();
+
+        const fromSmartSave = makeWindow('update', {initialError: new TypeError('Failed to fetch')});
+        expect(fromSmartSave.state('error')).toBe('Can\'t reach MistWarp. Check your connection.');
+        fromSmartSave.unmount();
+    });
 });
 
 describe('MistWarp save window sign-in', () => {
