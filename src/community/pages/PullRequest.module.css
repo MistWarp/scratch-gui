@@ -302,8 +302,7 @@
 }
 
 .description,
-.mergeBox,
-.conflicts {
+.mergeBox {
     border-radius: var(--radius-sm);
     background: var(--bg-card);
     box-shadow: var(--card-shadow);
@@ -394,62 +393,7 @@
 }
 
 .conflicts {
-    display: grid;
-    gap: 14px;
     margin-top: 24px;
-    padding: 18px;
-}
-
-.conflicts h2,
-.conflicts p {
-    margin: 0;
-}
-
-.conflicts > label {
-    display: grid;
-    gap: 6px;
-    color: var(--mw-text);
-    font-family: ui-monospace, monospace;
-    font-size: var(--fs-xs);
-}
-
-.conflicts textarea {
-    width: 100%;
-    min-height: 240px;
-    resize: vertical;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xs);
-    background: #111318;
-    color: #d8dbe3;
-    font: inherit;
-    padding: 12px;
-}
-
-.binaryConflict {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.binaryConflict > span {
-    margin-inline-end: auto;
-    font-family: ui-monospace, monospace;
-    font-size: var(--fs-xs);
-}
-
-.binaryConflict button {
-    padding: 7px 10px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xs);
-    background: var(--bg-raised);
-    color: var(--text-dim);
-}
-
-.binaryConflict .choiceActive {
-    border-color: var(--accent-border);
-    background: var(--accent-soft);
-    color: var(--accent-strong);
 }
 
 @media (max-width: 860px) {

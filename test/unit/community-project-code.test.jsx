@@ -507,6 +507,99 @@ describe('project developer view page', () => {
         expect(wrapper.text()).toContain('Added 1 script in Cat');
         const viewChanges = wrapper.find('a').filterWhere(link => link.text() === 'View changes');
         expect(viewChanges.prop('href')).toBe('/project/project-1/commits/worktree');
+        wrapper.unmount();
+    });
+
+    test('offers a sync only to maintainers on the branch the remix has checked out', async () => {
+        const remixFrom = {id: 'parent-1', owner: 'alice', title: 'Original Space', ahead: 1, behind: 2};
+        const syncButtons = wrapper => wrapper.find('button').filterWhere(button => button.text().includes('Sync with original'));
+
+        mockApi(baseProject({myRole: 'maintainer', remixFrom}));
+        const maintainer = mountAt('/project/project-1/code');
+        await settle(maintainer);
+        expect(syncButtons(maintainer)).toHaveLength(1);
+        maintainer.unmount();
+
+        mockApi(baseProject({remixFrom}));
+        const visitor = mountAt('/project/project-1/code');
+        await settle(visitor);
+        expect(visitor.text()).toContain('1 commit ahead and 2 commits behind alice / Original Space');
+        expect(syncButtons(visitor)).toHaveLength(0);
+        visitor.unmount();
+
+        mockApi(baseProject({isOwner: true, remixFrom}));
+        const otherBranch = mountAt('/project/project-1/code?branch=levels');
+        await settle(otherBranch);
+        expect(otherBranch.text()).not.toContain('behind alice / Original Space');
+        expect(syncButtons(otherBranch)).toHaveLength(0);
+        otherBranch.unmount();
+
+        mockApi(baseProject({
+            isOwner: true,
+            remixFrom: {id: 'parent-1', owner: 'alice', title: 'Original Space', head: sha('z')}
+        }));
+        api.commits.mockResolvedValue({
+            branch: 'main',
+            commits,
+            uncommitted: {head: sha('a'), branch: 'main', files: 1}
+        });
+        const unknown = mountAt('/project/project-1/code');
+        await settle(unknown);
+        expect(syncButtons(unknown)).toHaveLength(1);
+        expect(syncButtons(unknown).prop('disabled')).toBe(true);
+
+        let resolveProject;
+        let resolveCommits;
+        api.getProject.mockClear().mockImplementation(() => new Promise(resolve => {
+            resolveProject = resolve;
+        }));
+        api.commits.mockClear().mockImplementation(() => new Promise(resolve => {
+            resolveCommits = resolve;
+        }));
+        api.commitTree.mockClear();
+        await act(async () => {
+            window.dispatchEvent(new Event('focus'));
+            document.dispatchEvent(new Event('visibilitychange'));
+        });
+        expect(api.getProject).toHaveBeenCalledTimes(1);
+        expect(api.commits).toHaveBeenCalledTimes(1);
+        await act(async () => {
+            resolveProject({
+                project: baseProject({
+                    isOwner: true,
+                    gitHead: sha('c'),
+                    remixFrom: {id: 'parent-1', owner: 'alice', title: 'Original Space', ahead: 1, behind: 1}
+                })
+            });
+            resolveCommits({
+                branch: 'main',
+                commits: [{sha: sha('c'), author: 'mist', date: 1700002000000, message: 'Commit on editor'}, ...commits]
+            });
+        });
+        await settle(unknown);
+        expect(syncButtons(unknown).prop('disabled')).toBeFalsy();
+        expect(api.commitTree).toHaveBeenCalledWith('project-1', sha('c'));
+        expect(unknown.text()).toContain('Commit on editor');
+
+        api.getProject.mockClear().mockRejectedValueOnce(new Error('network glitch'));
+        api.commits.mockClear().mockResolvedValueOnce({
+            branch: 'main',
+            commits: [{sha: sha('c'), author: 'mist', date: 1700002000000, message: 'Commit on editor'}, ...commits],
+            uncommitted: {head: sha('c'), branch: 'main', files: 2}
+        });
+        await act(async () => {
+            window.dispatchEvent(new Event('focus'));
+        });
+        await settle(unknown);
+        expect(syncButtons(unknown).prop('disabled')).toBe(true);
+        unknown.unmount();
+
+        mockApi(baseProject({isOwner: true, remixFrom}));
+        api.branches.mockReturnValue(new Promise(() => {}));
+        const loadingBranches = mountAt('/project/project-1/code?branch=levels');
+        await settle(loadingBranches);
+        expect(syncButtons(loadingBranches)).toHaveLength(0);
+        loadingBranches.unmount();
     });
 
     test('keeps private source hidden', async () => {

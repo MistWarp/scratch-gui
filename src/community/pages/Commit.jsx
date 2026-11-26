@@ -32,13 +32,11 @@ import {
     loadSpriteTexts,
     sidebarFilesFor
 } from '../commit-changes.js';
-import {canViewProjectSource} from '../project-source-access.js';
+import {canMaintainProject, canViewProjectSource} from '../project-source-access.js';
 import {useUser} from '../UserContext.jsx';
 import styles from './Commit.module.css';
 
-export const canManageCommit = project => Boolean(
-    project?.isOwner || project?.myRole === 'owner' || project?.myRole === 'maintainer'
-);
+export const canManageCommit = canMaintainProject;
 
 export const normalizeCommitCoAuthors = entry => {
     const source = entry?.coAuthors || entry?.commit?.coAuthors ||

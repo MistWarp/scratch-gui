@@ -189,6 +189,7 @@ const uploadProject = async (id, sb3Blob, thumbnailBlob, onUploadProgress, {
     mergeTargetBranch,
     mergeSourceHead,
     mergeTargetHead,
+    syncHead,
     restoreCommit,
     restoreMessage,
     mergeTree,
@@ -209,6 +210,7 @@ const uploadProject = async (id, sb3Blob, thumbnailBlob, onUploadProgress, {
     if (mergeTargetBranch) form.append('mergeTargetBranch', mergeTargetBranch);
     if (mergeSourceHead) form.append('mergeSourceHead', mergeSourceHead);
     if (mergeTargetHead) form.append('mergeTargetHead', mergeTargetHead);
+    if (syncHead) form.append('syncHead', syncHead);
     if (restoreCommit) form.append('restoreCommit', restoreCommit);
     if (restoreMessage) form.append('restoreMessage', restoreMessage);
     if (mergeTree) form.append('mergeTree', mergeTree, 'merged-tree.zip');

@@ -22,7 +22,7 @@ import UnderlineTabs from '../components/UnderlineTabs.jsx';
 import {tabPanelProps} from '../components/SectionTabs.jsx';
 import RichText from '../components/RichText.jsx';
 import UserLink from '../components/UserLink.jsx';
-import {canViewProjectSource} from '../project-source-access.js';
+import {canMaintainProject, canViewProjectSource} from '../project-source-access.js';
 import {useUser} from '../UserContext.jsx';
 import {formatDate, timeAgo} from '../format.js';
 import setPageMeta from '../page-meta.js';
@@ -37,38 +37,17 @@ import {
 } from '../commit-changes.js';
 import {base64ToBytes, mediaTypeForAssetPath} from '../asset-media.js';
 import {buildProjectArtifactsFromFileEntries} from '../../lib/git/mwp.js';
+import MergeConflicts from '../components/MergeConflicts.jsx';
+import {
+    materializeMerge,
+    resolvedMergeFiles,
+    unresolvedBinaryConflict,
+    unresolvedTextConflict,
+    withBinaryChoice,
+    withTextResolution
+} from '../merge-session.js';
 import styles from './PullRequest.module.css';
 import {session as sessionStore} from '../../modules/storage';
-
-const decodeBase64 = value => {
-    const binary = atob(value || '');
-    const bytes = new Uint8Array(binary.length);
-    for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index);
-    return bytes;
-};
-
-const loadServerMerge = async data => {
-    const tree = await api.commitTree(data.targetProjectId, data.expectedHead);
-    const loaded = await Promise.all((tree.files || []).map(async file => {
-        const result = await api.commitFile(data.targetProjectId, data.expectedHead, file.path);
-        return [file.path, decodeBase64(result.content)];
-    }));
-    const files = new Map(loaded);
-    const conflicts = [];
-    const binaryConflicts = [];
-    for (const change of data.merge.changes || []) {
-        if (change.conflict && change.binary) {
-            binaryConflicts.push({...change, choice: ''});
-        } else {
-            if (change.deleted) files.delete(change.path);
-            else files.set(change.path, decodeBase64(change.content));
-            if (change.conflict) {
-                conflicts.push({path: change.path, content: new TextDecoder().decode(decodeBase64(change.content))});
-            }
-        }
-    }
-    return {files, conflicts, binaryConflicts};
-};
 
 const PULL_DIFF_CACHE_PREFIX = 'mw:pull-diff:';
 const PULL_DIFF_CACHE_MAX_ENTRIES = 6;
@@ -76,21 +55,32 @@ const PULL_DIFF_CACHE_MAX_BYTES = 8 * 1024 * 1024;
 const PULL_DIFF_ENTRY_MAX_BYTES = 2 * 1024 * 1024;
 const pullDiffCacheKey = pull => {
     const session = api.loadSession() || 'anonymous';
-    return `${PULL_DIFF_CACHE_PREFIX}${session}:${pull.targetProjectId}:${pull.baseCommit}:${pull.headCommit}`;
+    return `${PULL_DIFF_CACHE_PREFIX}${session}:${pull.targetProjectId}:${pull.currentTargetHead || pull.baseCommit}:${pull.headCommit}`;
 };
-export const readPullDiffCache = pull => {
+export const readPullDiffCacheEntry = pull => {
     const raw = sessionStore.readString(pullDiffCacheKey(pull));
     if (raw === null) return null;
     try {
         const cached = JSON.parse(raw);
-        return typeof cached.diff === 'string' ? cached.diff : raw;
+        if (typeof cached.diff !== 'string') return {diff: raw, refs: null, fileTexts: null};
+        return {
+            diff: cached.diff,
+            refs: cached.refs && typeof cached.refs === 'object' ? cached.refs : null,
+            fileTexts: cached.fileTexts && typeof cached.fileTexts === 'object' ? cached.fileTexts : null
+        };
     } catch (error) {
-        return raw;
+        return {diff: raw, refs: null, fileTexts: null};
     }
 };
-export const writePullDiffCache = (pull, diff) => {
+export const readPullDiffCache = pull => {
+    const entry = readPullDiffCacheEntry(pull);
+    return entry ? entry.diff : null;
+};
+export const writePullDiffCache = (pull, diff, refs = null, fileTexts = {}) => {
     if (diff.length * 2 > PULL_DIFF_ENTRY_MAX_BYTES) return;
-    if (!sessionStore.writeJSON(pullDiffCacheKey(pull), {at: Date.now(), diff})) return;
+    const textsFit = (JSON.stringify(fileTexts || {}).length + diff.length) * 2 <= PULL_DIFF_ENTRY_MAX_BYTES;
+    const stored = {at: Date.now(), diff, refs, fileTexts: textsFit ? fileTexts : null};
+    if (!sessionStore.writeJSON(pullDiffCacheKey(pull), stored)) return;
     const entries = [];
     for (const key of sessionStore.keys()) {
         if (!key.startsWith(PULL_DIFF_CACHE_PREFIX)) continue;
@@ -113,6 +103,51 @@ export const writePullDiffCache = (pull, diff) => {
     });
 };
 
+export const pullMergeUpload = (data, pullIndex, artifacts) => ({
+    sb3: artifacts.sb3,
+    mergeTree: artifacts.tree,
+    expectedHead: data.expectedHead,
+    pullId: pullIndex,
+    sourceHead: data.sourceHead
+});
+
+const RESTART_MERGE_CODES = ['head_changed', 'pull_head_changed', 'pull_not_open', 'target_branch_missing'];
+
+export const pullMergeFailure = (error, communityText, fallback) => {
+    const restart = RESTART_MERGE_CODES.includes(error?.code);
+    if (error?.code === 'uncommitted_changes') {
+        return {restart, message: communityText('Commit the changes saved in this project before merging this pull request.')};
+    }
+    if (error?.code === 'target_branch_changed' && error.data?.branch) {
+        return {restart, message: communityText('Switch this project to the {value1} branch before merging this pull request.', {value1: error.data.branch})};
+    }
+    if (error?.code === 'target_branch_missing' && error.data?.branch) {
+        return {restart, message: communityText('This pull request targets the {value1} branch, which no longer exists. Close it and open a new one.', {value1: error.data.branch})};
+    }
+    if (error?.code === 'pull_head_changed') {
+        return {restart, message: communityText('The remix changed while you were merging. Review the new changes, then merge again.')};
+    }
+    if (error?.code === 'head_changed') {
+        return {restart, message: communityText('This project changed while you were merging. Merge again to include the latest changes.')};
+    }
+    if (error?.code === 'pull_not_open' || (error?.status === 404 && error?.message === 'open pull request not found')) {
+        return {restart: true, message: communityText('This pull request was closed or merged while you were merging.')};
+    }
+    if (error?.code === 'pull_merge_unavailable') {
+        return {restart, message: communityText('This pull request cannot be merged because the two histories could not be compared.')};
+    }
+    if (error?.code === 'pull_not_closed') {
+        return {restart: true, message: communityText('The project saved, but the pull request could not be marked as merged. Reload the page to check its state.')};
+    }
+    if (error?.status === 403) {
+        return {restart: true, message: communityText('Only project owners and maintainers can merge this pull request, and only while they can see inside the remix.')};
+    }
+    if (error?.status === 404) {
+        return {restart: true, message: fallback};
+    }
+    return {restart, message: error?.message || fallback};
+};
+
 export const shouldLoadPullDiff = ({tab, pull, diff, diffError, changes = null, fileDiff = false}) => (
     tab === 'files' && Boolean(pull) && diff === null && !diffError && (!changes || fileDiff)
 );
@@ -120,11 +155,20 @@ export const shouldLoadPullDiff = ({tab, pull, diff, diffError, changes = null, 
 const loadPullChanges = async (id, index) => {
     try {
         const data = await api.pullChanges(id, index);
-        return isChangesResponse(data?.inspection) ? data.inspection : null;
+        return isChangesResponse(data?.inspection) ? {inspection: data.inspection, pull: data.pull || null} : null;
     } catch (error) {
         return null;
     }
 };
+
+export const pullAssetRefs = (pull, id) => ({
+    oldProject: pull.targetProjectId || id,
+    oldSha: pull.baseCommit || '',
+    newProject: pull.sourceProjectId || id,
+    newSha: pull.headCommit || '',
+    pullIndex: pull.index,
+    pullTarget: pull.targetProjectId || ''
+});
 
 export const pullApiFor = (apiClient, data) => ({
     commitFile: (projectId, sha, path) => apiClient.commitFile(
@@ -158,8 +202,15 @@ export const buildPullRequestFileTexts = (apiClient, data) => {
     });
 };
 
-export const canMergePullRequest = project => Boolean(
-    project?.isOwner || project?.myRole === 'owner' || project?.myRole === 'maintainer'
+export const canMergePullRequest = canMaintainProject;
+
+const canMergePull = (pull, project) => Boolean(
+    pull && (typeof pull.canMerge === 'boolean' ? pull.canMerge : canMergePullRequest(project))
+);
+
+const isPullBranchBlocked = (pull, project) => Boolean(
+    pull?.state === 'open' && canMergePull(pull, project) && pull.baseBranch &&
+    (pull.baseBranchMissing || (project?.gitBranch && pull.baseBranch !== project.gitBranch))
 );
 
 export const canClosePullRequest = (project, pull, user) => {
@@ -200,36 +251,37 @@ const PullRequest = () => {
     const [commentError, setCommentError] = useState('');
     const contextRef = useRef(`${viewer}:${id}:${index}`);
     const diffRequestRef = useRef('');
+    const diffGenerationRef = useRef(0);
     contextRef.current = `${viewer}:${id}:${index}`;
 
-    const loadDiff = useCallback(async (activePull, context, wantFileDiff = false) => {
+    const loadDiff = useCallback(async (activePull, context, wantFileDiff = false, targetHead = '') => {
         if (contextRef.current !== context || loadedContext !== context) return;
-        if (diffRequestRef.current === context) return;
-        diffRequestRef.current = context;
-        if (contextRef.current === context) {
-            setAssetRefs({
-                oldProject: activePull.targetProjectId || id,
-                oldSha: activePull.baseCommit || '',
-                newProject: activePull.sourceProjectId || id,
-                newSha: activePull.headCommit || '',
-                pullIndex: activePull.index,
-                pullTarget: activePull.targetProjectId || ''
-            });
-        }
+        const token = `${diffGenerationRef.current}:${context}:${activePull.headCommit || ''}:${targetHead}:${wantFileDiff ? 'file' : 'summary'}`;
+        if (diffRequestRef.current === token) return;
+        diffRequestRef.current = token;
+        const current = () => contextRef.current === context && diffRequestRef.current === token;
+        const finish = () => {
+            if (diffRequestRef.current === token) diffRequestRef.current = '';
+        };
+        setAssetRefs(pullAssetRefs(activePull, id));
         if (!wantFileDiff) {
             setDiffError('');
             const structured = await loadPullChanges(id, index);
-            if (contextRef.current !== context) return;
+            if (!current()) return;
             if (structured) {
-                setChanges(structured);
-                if (diffRequestRef.current === context) diffRequestRef.current = '';
+                if (structured.pull) setAssetRefs(pullAssetRefs({...activePull, ...structured.pull}, id));
+                setChanges(structured.inspection);
+                finish();
                 return;
             }
         }
-        const cached = readPullDiffCache(activePull);
-        if (cached !== null) {
-            if (contextRef.current === context) setDiff(cached);
-            if (diffRequestRef.current === context) diffRequestRef.current = '';
+        const cacheKeyPull = {...activePull, currentTargetHead: targetHead};
+        const cached = readPullDiffCacheEntry(cacheKeyPull);
+        if (cached !== null && cached.refs && cached.refs.newSha === (activePull.headCommit || '') && (!wantFileDiff || cached.fileTexts)) {
+            setAssetRefs(cached.refs);
+            setDiff(cached.diff);
+            setFileTexts(cached.fileTexts || {});
+            finish();
             return;
         }
         setDiffError('');
@@ -241,15 +293,21 @@ const PullRequest = () => {
                 buildPullRequestFileTexts(cachingApi, diffData)
             ]);
             const renderedDiff = nextDiff || 'No textual changes.';
-            writePullDiffCache(activePull, renderedDiff);
-            if (contextRef.current === context) {
+            const refs = pullAssetRefs({...activePull, ...(diffData.pull || {})}, id);
+            if (current()) {
+                writePullDiffCache(cacheKeyPull, renderedDiff, refs, nextTexts);
+                setAssetRefs(refs);
                 setDiff(renderedDiff);
                 setFileTexts(nextTexts);
             }
         } catch (error) {
-            if (contextRef.current === context) setDiffError(error.message || 'Could not load these file changes.');
+            if (current()) {
+                setDiffError(error?.code === 'pull_history_unavailable' ?
+                    communityText('The changes in this pull request could not be compared with the project.') :
+                    (error.message || communityText('Could not load these file changes.')));
+            }
         } finally {
-            if (diffRequestRef.current === context) diffRequestRef.current = '';
+            finish();
         }
     }, [id, index, loadedContext]);
 
@@ -284,14 +342,83 @@ const PullRequest = () => {
                 targetCommits: timelineData.targetCommits || []
             });
             setPageMeta({title: communityText('{title} · Pull request #{index}', {title: pullData.pull.title, index: pullData.pull.index})});
+            return {pull: pullData.pull, project: projectData.project || projectData};
         } catch (error) {
             if (contextRef.current === context) {
                 setLoadingError(error.message || 'Could not load this pull request.');
             }
         }
+        return null;
     }, [id, index, viewer]);
 
+    const refreshProject = useCallback(async () => {
+        const context = `${viewer}:${id}:${index}`;
+        const projectData = await api.getProject(id).catch(() => null);
+        if (!projectData || contextRef.current !== context) return null;
+        const nextProject = projectData.project || projectData;
+        setProject(nextProject);
+        return nextProject;
+    }, [id, index, viewer]);
+
+    const gateRefreshRef = useRef(null);
+    const refreshGate = useCallback(() => {
+        if (gateRefreshRef.current) return gateRefreshRef.current;
+        const context = `${viewer}:${id}:${index}`;
+        const refresh = Promise.all([api.getPull(id, index), api.getProject(id)])
+            .then(([pullData, projectData]) => {
+                if (contextRef.current !== context || !pullData?.pull || pullData.pull.canInspect === false) return;
+                setProject(projectData.project || projectData);
+                setPull(pullData.pull);
+            })
+            .catch(() => null)
+            .then(() => {
+                if (gateRefreshRef.current === refresh) gateRefreshRef.current = null;
+            });
+        gateRefreshRef.current = refresh;
+        return refresh;
+    }, [id, index, viewer]);
+
+    const canMerge = canMergePull(pull, project);
+    const branchBlocked = isPullBranchBlocked(pull, project);
+    const gateNoteNodeRef = useRef(null);
+    const focusGateRef = useRef(false);
+    const gateNoteRef = useCallback(node => {
+        gateNoteNodeRef.current = node;
+        if (node && focusGateRef.current) {
+            focusGateRef.current = false;
+            node.focus();
+        }
+    }, []);
+    const focusGateNote = () => {
+        if (gateNoteNodeRef.current) {
+            focusGateRef.current = false;
+            gateNoteNodeRef.current.focus();
+            return;
+        }
+        focusGateRef.current = true;
+    };
+    useEffect(() => () => {
+        contextRef.current = '';
+    }, []);
     useEffect(() => {
+        if (branchBlocked) setMergeError('');
+    }, [branchBlocked]);
+    useEffect(() => {
+        if (!branchBlocked) return;
+        const onReturn = () => {
+            if (document.visibilityState !== 'hidden') refreshGate();
+        };
+        window.addEventListener('focus', onReturn);
+        document.addEventListener('visibilitychange', onReturn);
+        return () => {
+            window.removeEventListener('focus', onReturn);
+            document.removeEventListener('visibilitychange', onReturn);
+        };
+    }, [branchBlocked, refreshGate]);
+
+    useEffect(() => {
+        gateRefreshRef.current = null;
+        focusGateRef.current = false;
         setProject(null);
         setPull(null);
         setDiff(null);
@@ -303,6 +430,7 @@ const PullRequest = () => {
         setTimeline({comments: [], commits: [], targetCommits: []});
         setTab('conversation');
         setActiveSprite('');
+        setMerging(false);
         setMergeSession(null);
         setMergeError('');
         setCloseConfirmOpen(false);
@@ -310,41 +438,74 @@ const PullRequest = () => {
         setCloseError('');
         setDiffError('');
         setCommentText('');
+        setCommentBusy(false);
         setCommentError('');
         load();
     }, [load]);
 
     useEffect(() => {
         if (!shouldLoadPullDiff({tab, pull, diff, diffError, changes, fileDiff})) return;
-        loadDiff(pull, `${viewer}:${id}:${index}`, fileDiff);
-    }, [changes, diff, diffError, fileDiff, id, index, loadDiff, pull, tab, viewer]);
+        loadDiff(pull, `${viewer}:${id}:${index}`, fileDiff, project?.gitHead || '');
+    }, [changes, diff, diffError, fileDiff, id, index, loadDiff, project, pull, tab, viewer]);
 
-    const uploadMerge = async (data, activePull, files) => {
+    const pageContext = () => `${viewer}:${id}:${index}`;
+    const stillOn = context => contextRef.current === context;
+
+    const uploadMerge = async (data, activePull, files, context) => {
         const result = await buildProjectArtifactsFromFileEntries(
             [...files].map(([path, fileData]) => ({path, data: fileData}))
         );
-        await api.uploadPullMerge(id, {
-            sb3: result.sb3,
-            mergeTree: result.tree,
-            expectedHead: data.expectedHead,
-            pullId: activePull.index
-        });
+        await api.uploadPullMerge(id, pullMergeUpload(data, activePull.index, result));
+        if (!stillOn(context)) return;
         setMergeSession(null);
         await load();
     };
 
+    const failMerge = async (error, fallback, context) => {
+        if (!stillOn(context)) return;
+        const failure = pullMergeFailure(error, communityText, fallback);
+        let gateShown = false;
+        if (error?.code === 'target_branch_changed') {
+            const refreshed = await refreshProject();
+            gateShown = isPullBranchBlocked(pull, refreshed);
+        }
+        if (!stillOn(context)) return;
+        if (!failure.restart) {
+            setMergeError(gateShown ? '' : failure.message);
+            if (gateShown) focusGateNote();
+            return;
+        }
+        setMergeSession(null);
+        diffGenerationRef.current += 1;
+        diffRequestRef.current = '';
+        const reloaded = await load();
+        if (!stillOn(context)) return;
+        gateShown = isPullBranchBlocked(reloaded?.pull, reloaded?.project);
+        setMergeError(gateShown ? '' : failure.message);
+        if (gateShown) focusGateNote();
+        setDiff(null);
+        setChanges(null);
+        setFileTexts({});
+        setSpriteTexts(null);
+        setFileDiff(false);
+        setDiffError('');
+    };
+
     const merge = async () => {
         if (!pull || merging) return;
+        const context = pageContext();
         setMerging(true);
         setMergeError('');
         try {
             const data = await api.mergePull(id, pull.index);
+            if (!stillOn(context)) return;
             if (data.merged) {
                 setMergeSession(null);
                 await load();
                 return;
             }
-            const result = await loadServerMerge(data);
+            const result = await materializeMerge({...data, targetHead: data.expectedHead});
+            if (!stillOn(context)) return;
             if (result.conflicts.length || result.binaryConflicts.length) {
                 setMergeSession({
                     pull,
@@ -354,75 +515,92 @@ const PullRequest = () => {
                     binaryConflicts: result.binaryConflicts
                 });
             } else {
-                await uploadMerge(data, pull, result.files);
+                await uploadMerge(data, pull, result.files, context);
             }
         } catch (error) {
-            setMergeError(error.message || 'Merge failed.');
+            await failMerge(error, communityText('Merge failed.'), context);
         } finally {
-            setMerging(false);
+            if (stillOn(context)) setMerging(false);
         }
     };
 
     const resolveConflicts = async () => {
         if (!mergeSession || merging) return;
         const session = mergeSession;
+        const context = pageContext();
         setMerging(true);
         setMergeError('');
         try {
-            const resolvedFiles = new Map(session.files);
-            for (const file of session.conflicts) {
-                resolvedFiles.set(file.path, new TextEncoder().encode(file.content));
+            const unresolvedText = unresolvedTextConflict(session);
+            if (unresolvedText) {
+                setMergeError(communityText('Resolve the conflict in {value1}.', {value1: unresolvedText.path}));
+                return;
             }
-            for (const file of session.binaryConflicts) {
-                if (!file.choice) throw new Error(`Choose a version for ${file.path}`);
-                const deleted = file.choice === 'theirs' ? file.theirsDeleted : file.oursDeleted;
-                const content = file.choice === 'theirs' ? file.theirs : file.ours;
-                if (deleted) resolvedFiles.delete(file.path);
-                else resolvedFiles.set(file.path, decodeBase64(content));
+            const unresolved = unresolvedBinaryConflict(session);
+            if (unresolved) {
+                setMergeError(communityText('Choose a version for {value1}.', {value1: unresolved.path}));
+                return;
             }
-            await uploadMerge(session.data, session.pull, resolvedFiles);
+            await uploadMerge(session.data, session.pull, resolvedMergeFiles(session), context);
         } catch (error) {
-            setMergeError(error.message || 'The conflicts could not be resolved.');
+            await failMerge(error, communityText('The conflicts could not be resolved.'), context);
         } finally {
-            setMerging(false);
+            if (stillOn(context)) setMerging(false);
         }
     };
 
     const closePull = async () => {
         if (!pull || closing) return;
+        const context = pageContext();
         setClosing(true);
         setCloseError('');
         try {
             const data = await api.closePull(id, pull.index);
+            if (!stillOn(context)) return;
             setPull(data.pull);
+            setMergeSession(null);
+            setMergeError('');
             setCloseConfirmOpen(false);
         } catch (error) {
-            setCloseError(error.message || 'Could not close this pull request.');
+            if (!stillOn(context)) return;
+            if (error?.code === 'pull_not_open' || (error?.status === 404 && error?.message === 'open pull request not found')) {
+                setCloseConfirmOpen(false);
+                setMergeSession(null);
+                setMergeError(communityText('This pull request was already closed or merged.'));
+                await load();
+                return;
+            }
+            if (error?.status === 403) {
+                setCloseConfirmOpen(false);
+                setMergeSession(null);
+                setMergeError(communityText('Only the remix owner and project maintainers can close this pull request.'));
+                await load();
+                return;
+            }
+            if (error?.status === 404) {
+                setCloseConfirmOpen(false);
+                setMergeSession(null);
+                setMergeError(communityText('Could not close this pull request.'));
+                await load();
+                return;
+            }
+            setCloseError(error.message || communityText('Could not close this pull request.'));
         } finally {
-            setClosing(false);
+            if (stillOn(context)) setClosing(false);
         }
     };
 
     const updateTextConflict = (path, content) => {
-        setMergeSession(session => ({
-            ...session,
-            conflicts: session.conflicts.map(item => (
-                item.path === path ? {...item, content} : item
-            ))
-        }));
+        setMergeSession(session => withTextResolution(session, path, content));
     };
 
     const updateBinaryConflict = (path, choice) => {
-        setMergeSession(session => ({
-            ...session,
-            binaryConflicts: session.binaryConflicts.map(item => (
-                item.path === path ? {...item, choice} : item
-            ))
-        }));
+        setMergeSession(session => withBinaryChoice(session, path, choice));
     };
 
-    const refreshTimeline = async () => {
+    const refreshTimeline = async context => {
         const data = await api.pullTimeline(id, index);
+        if (!stillOn(context)) return;
         setTimeline({
             comments: data.comments || [],
             commits: data.commits || [],
@@ -434,30 +612,33 @@ const PullRequest = () => {
         event.preventDefault();
         const content = commentText.trim();
         if (!content || commentBusy) return;
+        const context = pageContext();
         setCommentBusy(true);
         setCommentError('');
         try {
             await api.addPullComment(id, index, content);
+            if (!stillOn(context)) return;
             setCommentText('');
-            await refreshTimeline();
+            await refreshTimeline(context);
         } catch (error) {
-            setCommentError(error.message || 'Could not post this comment.');
+            if (stillOn(context)) setCommentError(error.message || 'Could not post this comment.');
         } finally {
-            setCommentBusy(false);
+            if (stillOn(context)) setCommentBusy(false);
         }
     };
 
     const deleteComment = async comment => {
         if (commentBusy) return;
+        const context = pageContext();
         setCommentBusy(true);
         setCommentError('');
         try {
             await api.deletePullComment(id, index, comment.id);
-            await refreshTimeline();
+            await refreshTimeline(context);
         } catch (error) {
-            setCommentError(error.message || 'Could not delete this comment.');
+            if (stillOn(context)) setCommentError(error.message || 'Could not delete this comment.');
         } finally {
-            setCommentBusy(false);
+            if (stillOn(context)) setCommentBusy(false);
         }
     };
 
@@ -473,13 +654,14 @@ const PullRequest = () => {
         [analysis, communityText]
     );
     const labelSprite = useCallback(sprite => findTarget(analysis, sprite.name)?.name || sprite.name, [analysis]);
+    const liveSourceHead = assetRefs?.newSha || pull?.headCommit || '';
     useEffect(() => {
-        if (!analysis || !pull) return () => {};
+        if (!analysis || !pull || !liveSourceHead) return () => {};
         let active = true;
         loadSpriteTexts(analysis, async path => {
             const result = await api.commitFile(
                 pull.sourceProjectId || id,
-                pull.headCommit,
+                liveSourceHead,
                 path,
                 pull.index,
                 pull.targetProjectId || ''
@@ -491,7 +673,7 @@ const PullRequest = () => {
         return () => {
             active = false;
         };
-    }, [analysis, pull, id]);
+    }, [analysis, pull, id, liveSourceHead]);
     const loadPullAsset = useCallback(async (side, path) => {
         if (!assetRefs) return null;
         const target = side === 'old' ?
@@ -536,11 +718,12 @@ const PullRequest = () => {
     if (!pull || !project || loadedContext !== `${viewer}:${id}:${index}`) return <main className={styles.page}><StatusMessage>{communityText('Loading pull request…')}</StatusMessage></main>;
 
     const open = pull.state === 'open';
-    const canMerge = typeof pull.canMerge === 'boolean' ? pull.canMerge : canMergePullRequest(project);
     const canClose = canClosePullRequest(project, pull, user);
+    const branchGone = Boolean(pull.baseBranch && pull.baseBranchMissing);
+    const wrongBranch = Boolean(pull.baseBranch && project.gitBranch && pull.baseBranch !== project.gitBranch && !branchGone);
     const changedFileCount = analysis && !fileDiff ?
         analysis.targets.reduce((total, entry) => total + entry.count, analysis.others.length) :
-        diff === null ? (pull.fileCount ?? pull.filesChanged ?? '…') : files.length;
+        diff === null ? '…' : files.length;
     return (
         <main className={styles.page}>
             <PageHeader
@@ -634,10 +817,20 @@ const PullRequest = () => {
                                 {open ? <GitMerge size={20} /> : <Check size={20} />}
                                 <div><strong>{open ? communityText('Ready for review') : communityText('Pull request closed')}</strong><span>{open ? communityText('Review the files before merging.') : communityText('No more changes can be merged.')}</span></div>
                             </div>
-                            {mergeError ? <Notice variant="error">{mergeError}</Notice> : null}
-                            {open && canMerge ? (
+                            {mergeError && !mergeSession && !branchBlocked ? <Notice variant="error">{mergeError}</Notice> : null}
+                            {open && canMerge && branchGone ? (
+                                <p className={styles.note} ref={gateNoteRef} tabIndex={-1} role="status">
+                                    {communityText('This pull request targets the {value1} branch, which no longer exists. Close it and open a new one.', {value1: pull.baseBranch})}
+                                </p>
+                            ) : open && canMerge && wrongBranch ? (
+                                <p className={styles.note} ref={gateNoteRef} tabIndex={-1} role="status">
+                                    {communityText('This pull request targets the {value1} branch, and this project is on {value2}. It can be merged once the project is back on {value1}.', {value1: pull.baseBranch, value2: project.gitBranch})}
+                                </p>
+                            ) : open && canMerge && mergeSession ? (
+                                <p className={styles.note}>{communityText('Resolve the conflicts below to finish merging.')}</p>
+                            ) : open && canMerge ? (
                                 <Button variant="primary" onClick={merge} busy={merging} busyLabel={communityText('Merging…')}>{communityText('Merge pull request')}</Button>
-                            ) : open ? <p className={styles.note}>{communityText('Only project owners and maintainers can merge this pull request.')}</p> : null}
+                            ) : open && !mergeError ? <p className={styles.note}>{communityText('Only project owners and maintainers can merge this pull request.')}</p> : null}
                             {open && canClose ? (
                                 <Button
                                     variant="secondary"
@@ -687,7 +880,7 @@ const PullRequest = () => {
                                     loadAsset={loadPullAsset}
                                     onShowLines={() => setFileDiff(true)}
                                 />
-                            ) : diffError ? <StatusMessage error onRetry={() => loadDiff(pull, `${viewer}:${id}:${index}`, fileDiff)}>{diffError}</StatusMessage> : diff === null ? (
+                            ) : diffError ? <StatusMessage error onRetry={() => loadDiff(pull, `${viewer}:${id}:${index}`, fileDiff, project?.gitHead || '')}>{diffError}</StatusMessage> : diff === null ? (
                                 <StatusMessage>{communityText('Loading file changes…')}</StatusMessage>
                             ) : <DiffView diff={diff} spriteFilter={activeSprite} loadAsset={loadPullAsset} fileTexts={fileTexts} />}
                         </section>
@@ -696,28 +889,36 @@ const PullRequest = () => {
             </div>
 
             {mergeSession ? (
-                <section className={styles.conflicts}>
-                    <h2>{communityText('Resolve merge conflicts')}</h2>
-                    <p>{communityText('Edit each text file, then choose which version to keep for every asset.')}</p>
-                    {mergeSession.conflicts.map(file => (
-                        <label key={file.path}>
-                            <span>{file.path}</span>
-                            <textarea
-                                value={file.content}
+                <div className={styles.conflicts}>
+                    <MergeConflicts
+                        title={communityText('Resolve merge conflicts')}
+                        lead={communityText('Edit each text file, then choose which version to keep for every asset.')}
+                        conflicts={mergeSession.conflicts}
+                        binaryConflicts={mergeSession.binaryConflicts}
+                        keepLabel={communityText('Keep current project')}
+                        useLabel={communityText('Use pull request')}
+                        submitLabel={communityText('Save resolutions and merge')}
+                        busy={merging}
+                        busyLabel={communityText('Merging…')}
+                        error={mergeError || (wrongBranch ? communityText('Switch this project to the {value1} branch before merging this pull request.', {value1: pull.baseBranch}) : '')}
+                        focusOnMount
+                        headingLevel="h2"
+                        onTextChange={updateTextConflict}
+                        onChoose={updateBinaryConflict}
+                        onSubmit={resolveConflicts}
+                        actions={(
+                            <Button
                                 disabled={merging}
-                                onChange={event => updateTextConflict(file.path, event.target.value)}
-                            />
-                        </label>
-                    ))}
-                    {mergeSession.binaryConflicts.map(file => (
-                        <div className={styles.binaryConflict} key={file.path}>
-                            <span>{file.path}</span>
-                            <button className={file.choice === 'ours' ? styles.choiceActive : ''} onClick={() => updateBinaryConflict(file.path, 'ours')}>{communityText('Keep current project')}</button>
-                            <button className={file.choice === 'theirs' ? styles.choiceActive : ''} onClick={() => updateBinaryConflict(file.path, 'theirs')}>{communityText('Use pull request')}</button>
-                        </div>
-                    ))}
-                    <Button variant="primary" onClick={resolveConflicts} busy={merging} busyLabel={communityText('Merging…')}>{communityText('Save resolutions and merge')}</Button>
-                </section>
+                                onClick={() => {
+                                    setMergeSession(null);
+                                    setMergeError('');
+                                }}
+                            >
+                                {communityText('Cancel')}
+                            </Button>
+                        )}
+                    />
+                </div>
             ) : null}
             {closeConfirmOpen ? (
                 <ConfirmModal

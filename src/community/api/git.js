@@ -7,7 +7,7 @@ const updateCommit = (id, sha, patch) => request(
 );
 
 export default {
-    commits: id => request(`/projects/${id}/commits`),
+    commits: id => request(`/projects/${id}/commits`, {cache: false}),
     branches: id => request(`/projects/${id}/branches`),
     createBranch: (id, name, from) => request(`/projects/${id}/branches`, {
         method: 'POST',
@@ -66,7 +66,7 @@ export default {
     updateCommit,
     setCommitCoAuthors: (id, sha, coAuthors) => updateCommit(id, sha, {coAuthors}),
     pulls: id => request(`/projects/${id}/pulls`),
-    getPull: (id, index) => request(`/projects/${id}/pulls/${index}`),
+    getPull: (id, index) => request(`/projects/${id}/pulls/${index}`, {cache: false}),
     pullTimeline: (id, index) => request(`/projects/${id}/pulls/${index}/timeline`),
     addPullComment: (id, index, content) =>
         request(`/projects/${id}/pulls/${index}/comments`, {method: 'POST', body: {content}}),
@@ -82,8 +82,11 @@ export default {
     }),
     mergePull: (id, index) => request(`/projects/${id}/pulls/${index}/merge`, {method: 'POST'}),
     closePull: (id, index) => request(`/projects/${id}/pulls/${index}/close`, {method: 'POST'}),
-    uploadPullMerge: (id, {sb3, mergeTree, expectedHead, pullId}) =>
-        uploadProject(id, sb3, null, null, {mergeTree, expectedHead, pullId}),
+    uploadPullMerge: (id, {sb3, mergeTree, expectedHead, pullId, sourceHead}) =>
+        uploadProject(id, sb3, null, null, {mergeTree, expectedHead, pullId, mergeSourceHead: sourceHead}),
+    syncRemix: id => request(`/projects/${id}/remix/sync`, {method: 'POST', timeoutMs: SLOW_GET_TIMEOUT}),
+    uploadRemixSync: (id, {sb3, mergeTree, expectedHead, syncHead}) =>
+        uploadProject(id, sb3, null, null, {mergeTree, expectedHead, syncHead}),
     uploadBranchMerge: (id, {sb3, mergeTree, sourceBranch, targetBranch, sourceHead, targetHead}) =>
         uploadProject(id, sb3, null, null, {
             mergeTree,

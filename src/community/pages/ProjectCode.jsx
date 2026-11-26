@@ -8,14 +8,15 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import api, {editorUrl, projectUrl} from '../api';
 import {useUser} from '../UserContext.jsx';
 import {useResolvedProjectId, projectBaseUrl} from '../use-resolved-project-id.js';
-import {canViewProjectSource} from '../project-source-access';
+import {canMaintainProject, canViewProjectSource} from '../project-source-access';
 import {uncommittedSummaryDetail} from '../commit-summary.js';
 import {formatBytes, safeDate, timeAgo} from '../format.js';
 import {getCommunityLocale} from '../locale.js';
 import setPageMeta from '../page-meta.js';
-import {hasRemixDivergence, remixDivergenceSentence, remixParentLabel} from '../remix-origin.js';
+import {canShowForkStatus, remixParentLabel} from '../remix-origin.js';
 import useLatest from '../use-latest.js';
 import Avatar from '../components/Avatar.jsx';
+import ForkStatus from '../components/ForkStatus.jsx';
 import ProjectBranches from '../components/ProjectBranches.jsx';
 import RichText from '../components/RichText.jsx';
 import UnderlineTabs from '../components/UnderlineTabs.jsx';
@@ -38,6 +39,7 @@ import ProjectPreview from './project/ProjectPreview.jsx';
 import PullList from './project/PullList.jsx';
 import ReleaseList from './project/ReleaseList.jsx';
 import useProjectData from './project/use-project-data.js';
+import useRemixSync from '../use-remix-sync.js';
 import styles from './ProjectCode.module.css';
 
 const TAB_ID_PREFIX = 'project-code';
@@ -148,7 +150,7 @@ const ProjectCodePage = ({id, vanitySlug}) => {
     const {hash: locationHash} = useLocation();
     const {user} = useUser();
     const viewerName = (user && user.username) || '';
-    const {project, versionHistory, error, load, loadHistory, refreshProjectAndHistory} = useProjectData(id);
+    const {project, versionHistory, error, load, loadHistory, refreshProjectAndHistory, refreshRemixState} = useProjectData(id);
     const [branches, setBranches] = useState(null);
     const [openPulls, setOpenPulls] = useState(null);
     const [releaseCount, setReleaseCount] = useState(null);
@@ -183,6 +185,29 @@ const ProjectCodePage = ({id, vanitySlug}) => {
         api.releases(id).then(fresh(data => setReleaseCount((data.releases || []).length))).catch(() => {});
         api.getComments(id, {limit: 1, issue: 'open'}).then(fresh(data => setIssueCounts(data.issueCounts || null))).catch(() => {});
     }, [beginExtras, canView, id]);
+    const remixSync = useRemixSync({
+        projectId: id,
+        remixFrom: project?.remixFrom || null,
+        onSynced: () => {
+            loadBranches();
+            return refreshProjectAndHistory();
+        }
+    });
+    const canRefreshRemix = Boolean(
+        canView && tab === 'code' && place.kind === 'tree' && !place.path && project?.remixFrom
+    );
+    useEffect(() => {
+        if (!canRefreshRemix) return;
+        const onReturn = () => {
+            if (document.visibilityState !== 'hidden') refreshRemixState();
+        };
+        window.addEventListener('focus', onReturn);
+        document.addEventListener('visibilitychange', onReturn);
+        return () => {
+            window.removeEventListener('focus', onReturn);
+            document.removeEventListener('visibilitychange', onReturn);
+        };
+    }, [canRefreshRemix, refreshRemixState]);
     const refreshIssueCounts = useCallback(() => {
         api.getComments(id, {limit: 1, issue: 'open'}).then(data => setIssueCounts(data.issueCounts || null)).catch(() => {});
     }, [id]);
@@ -204,13 +229,22 @@ const ProjectCodePage = ({id, vanitySlug}) => {
     const selectedBranch = (branches || []).find(branch => branch.name === requestedBranch) ||
         (branches || []).find(branch => branch.name === defaultBranch) || null;
     const branchName = selectedBranch ? selectedBranch.name : defaultBranch;
+    const browsingOtherBranch = Boolean(selectedBranch && selectedBranch.name !== defaultBranch);
     const browseProject = useMemo(() => {
-        if (!project || !selectedBranch || !selectedBranch.head || selectedBranch.head === project.gitHead) return project;
+        if (!project || !browsingOtherBranch || !selectedBranch.head || selectedBranch.head === project.gitHead) return project;
         return {...project, gitHead: selectedBranch.head, gitBranch: selectedBranch.name};
-    }, [project, selectedBranch && selectedBranch.head, selectedBranch && selectedBranch.name]);
-    const latestCommit = selectedBranch && selectedBranch.head ?
+    }, [project, browsingOtherBranch, selectedBranch && selectedBranch.head, selectedBranch && selectedBranch.name]);
+    const latestHistoryCommit = (versionHistory && versionHistory.commits && versionHistory.commits[0]) || null;
+    const branchCommit = selectedBranch && selectedBranch.head ?
         {sha: selectedBranch.head, author: selectedBranch.author, date: selectedBranch.date, message: selectedBranch.message} :
-        (versionHistory && versionHistory.commits && versionHistory.commits[0]) || null;
+        null;
+    const latestCommit = browsingOtherBranch ?
+        (branchCommit || latestHistoryCommit) :
+        latestHistoryCommit && (!project?.gitHead || latestHistoryCommit.sha === project.gitHead) ?
+            latestHistoryCommit :
+            branchCommit && (!project?.gitHead || branchCommit.sha === project.gitHead) ?
+                branchCommit :
+                null;
     const contributors = useMemo(() => commitContributors(versionHistory && versionHistory.commits), [versionHistory]);
     const counts = {
         commits: project ? Number(project.commitCount) || (versionHistory?.commits?.length ?? null) : null,
@@ -255,6 +289,7 @@ const ProjectCodePage = ({id, vanitySlug}) => {
         uncommittedSummaryDetail(uncommitted, communityText, getCommunityLocale()) : '';
     const remixFrom = project.remixFrom || null;
     const remixParentUrl = remixFrom ? projectUrl(remixFrom) : '';
+    const canSync = canMaintainProject(project);
 
     return (
         <main className={styles.page}>
@@ -310,16 +345,17 @@ const ProjectCodePage = ({id, vanitySlug}) => {
                         {tab === 'code' ? (
                             <div className={place.kind === 'tree' && !place.path ? styles.codeLayout : styles.codeFull}>
                                 <div className={styles.main}>
-                                    {place.kind === 'tree' && !place.path && hasRemixDivergence(remixFrom) ? (
-                                        <div className={styles.forkStatus}>
-                                            <GitFork size={15} aria-hidden="true" />
-                                            <span>{remixDivergenceSentence(remixFrom, communityText)}</span>
-                                            {project.isOwner && remixFrom.ahead > 0 ? (
-                                                <Link className={styles.forkAction} to={`${remixParentUrl}#contribute`}>
-                                                    {communityText('Contribute')}
-                                                </Link>
-                                            ) : null}
-                                        </div>
+                                    {place.kind === 'tree' && !place.path && branchName === defaultBranch && (!requestedBranch || requestedBranch === defaultBranch) && canShowForkStatus(remixFrom, canSync, project.gitHead) ? (
+                                        <ForkStatus
+                                            projectId={id}
+                                            remixFrom={remixFrom}
+                                            gitHead={project.gitHead}
+                                            canContribute={Boolean(project.isOwner && remixFrom.ahead > 0)}
+                                            contributeHref={`${remixParentUrl}#contribute`}
+                                            canSync={canSync}
+                                            hasUncommitted={Boolean(uncommitted)}
+                                            sync={remixSync}
+                                        />
                                     ) : null}
                                     {place.kind === 'tree' && !place.path && showUncommitted ? (
                                         <div className={styles.uncommittedBanner}>

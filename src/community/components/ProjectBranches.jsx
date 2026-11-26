@@ -1,46 +1,21 @@
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Check, GitBranch, GitMerge, Pencil, Plus, Trash2, X} from 'lucide-react';
 import api from '../api';
 import {formatDate} from '../format.js';
 import {buildProjectArtifactsFromFileEntries} from '../../lib/git/mwp.js';
+import {
+    materializeMerge, resolvedMergeFiles, unresolvedBinaryConflict, unresolvedTextConflict,
+    withBinaryChoice, withTextResolution
+} from '../merge-session.js';
+import MergeConflicts from './MergeConflicts.jsx';
 import Button from './ui/Button.jsx';
 import EmptyState from './ui/EmptyState.jsx';
 import Notice from './ui/Notice.jsx';
 import SectionHeading from './ui/SectionHeading.jsx';
 import StatusMessage from './ui/StatusMessage.jsx';
 import styles from './ProjectBranches.module.css';
-
-const decodeBase64 = value => {
-    const binary = atob(value || '');
-    const bytes = new Uint8Array(binary.length);
-    for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index);
-    return bytes;
-};
-
-export const materializeBranchMerge = async data => {
-    const tree = await api.commitTree(data.targetProjectId, data.targetHead);
-    const loaded = await Promise.all((tree.files || []).map(async file => {
-        const result = await api.commitFile(data.targetProjectId, data.targetHead, file.path);
-        return [file.path, decodeBase64(result.content)];
-    }));
-    const files = new Map(loaded);
-    const conflicts = [];
-    const binaryConflicts = [];
-    for (const change of data.merge.changes || []) {
-        if (change.conflict && change.binary) {
-            binaryConflicts.push({...change, choice: ''});
-            continue;
-        }
-        if (change.deleted) files.delete(change.path);
-        else files.set(change.path, decodeBase64(change.content));
-        if (change.conflict) {
-            conflicts.push({path: change.path, content: new TextDecoder().decode(decodeBase64(change.content))});
-        }
-    }
-    return {files, conflicts, binaryConflicts};
-};
 
 const ProjectBranches = ({id, canManage, onChange}) => {
     const {text: communityText} = useCommunityText();
@@ -56,27 +31,45 @@ const ProjectBranches = ({id, canManage, onChange}) => {
     const [error, setError] = useState('');
     const [notice, setNotice] = useState('');
     const [session, setSession] = useState(null);
+    const [mergeError, setMergeError] = useState('');
+    const mounted = useRef(true);
+    const currentId = useRef(id);
+    currentId.current = id;
 
-    const load = useCallback(() => api.branches(id).then(result => {
-        setData(result);
-        const branches = result.branches || [];
-        const main = branches.find(branch => branch.name === 'main');
-        const current = branches.find(branch => branch.current);
-        setTarget(previous => (branches.some(branch => branch.name === previous) ? previous : (main || current || branches[0] || {}).name || ''));
-        setSource(previous => (branches.some(branch => branch.name === previous) && previous !== (main || {}).name ? previous : (branches.find(branch => branch.name !== (main || current || branches[0] || {}).name) || {}).name || ''));
-        setNewBranchFrom(previous => (branches.some(branch => branch.name === previous) ? previous : (current || main || branches[0] || {}).name || ''));
-    }).catch(loadError => {
-        setData({branches: []});
-        setError(loadError.message || communityText('Could not load branches.'));
-    }), [id]);
+    useEffect(() => () => {
+        mounted.current = false;
+    }, []);
+
+    const stillActive = useCallback(startedFor => mounted.current && currentId.current === startedFor, []);
+
+    const load = useCallback(() => {
+        const startedFor = id;
+        return api.branches(startedFor).then(result => {
+            if (!stillActive(startedFor)) return;
+            setData(result);
+            const branches = result.branches || [];
+            const main = branches.find(branch => branch.name === 'main');
+            const current = branches.find(branch => branch.current);
+            setTarget(previous => (branches.some(branch => branch.name === previous) ? previous : (main || current || branches[0] || {}).name || ''));
+            setSource(previous => (branches.some(branch => branch.name === previous) && previous !== (main || {}).name ? previous : (branches.find(branch => branch.name !== (main || current || branches[0] || {}).name) || {}).name || ''));
+            setNewBranchFrom(previous => (branches.some(branch => branch.name === previous) ? previous : (current || main || branches[0] || {}).name || ''));
+        }).catch(loadError => {
+            if (!stillActive(startedFor)) return;
+            setData({branches: []});
+            setError(loadError.message || communityText('Could not load branches.'));
+        });
+    }, [id, stillActive]);
 
     useEffect(() => {
+        currentId.current = id;
         setData(null);
         setSession(null);
+        setBusy('');
         setError('');
+        setMergeError('');
         setNotice('');
         load();
-    }, [load]);
+    }, [id, load]);
 
     const branches = data?.branches || [];
     const availableSources = useMemo(() => branches.filter(branch => branch.name !== target), [branches, target]);
@@ -85,11 +78,12 @@ const ProjectBranches = ({id, canManage, onChange}) => {
         if (source === target) setSource((availableSources[0] || {}).name || '');
     }, [availableSources, source, target]);
 
-    const upload = async (mergeData, files) => {
+    const upload = async (mergeData, files, startedFor) => {
         const artifacts = await buildProjectArtifactsFromFileEntries(
             [...files].map(([path, fileData]) => ({path, data: fileData}))
         );
-        await api.uploadBranchMerge(id, {
+        if (!stillActive(startedFor)) return;
+        await api.uploadBranchMerge(startedFor, {
             sb3: artifacts.sb3,
             mergeTree: artifacts.tree,
             sourceBranch: mergeData.sourceBranch,
@@ -97,81 +91,129 @@ const ProjectBranches = ({id, canManage, onChange}) => {
             sourceHead: mergeData.sourceHead,
             targetHead: mergeData.targetHead
         });
+        const refreshParent = currentId.current === startedFor && onChange ? onChange() : Promise.resolve();
+        if (!stillActive(startedFor)) {
+            await refreshParent;
+            return;
+        }
         setSession(null);
         setNotice(communityText('Merged {value1} into {value2}.', {value1: mergeData.sourceBranch, value2: mergeData.targetBranch}));
-        await Promise.all([load(), onChange ? onChange() : Promise.resolve()]);
+        await Promise.all([load(), refreshParent]);
+    };
+
+    const failMerge = async (failure, fallback, startedFor) => {
+        if (!stillActive(startedFor)) return;
+        if (failure.code === 'branch_head_changed' || failure.code === 'head_changed') {
+            setMergeError(communityText('A branch changed while you were merging. Merge again to include the latest changes.'));
+            setSession(null);
+            await Promise.all([load(), onChange ? onChange() : Promise.resolve()]);
+            return;
+        }
+        if (failure.status === 403) {
+            setMergeError(communityText('Only project owners and maintainers can merge branches.'));
+            setSession(null);
+            await Promise.all([load(), onChange ? onChange() : Promise.resolve()]);
+            return;
+        }
+        if (failure.status === 404) {
+            setMergeError(
+                failure.message === 'branch not found' ?
+                    communityText('One of these branches no longer exists.') :
+                    fallback
+            );
+            setSession(null);
+            await Promise.all([load(), onChange ? onChange() : Promise.resolve()]);
+            return;
+        }
+        setMergeError(failure.message || fallback);
     };
 
     const merge = async () => {
-        if (!source || !target || source === target || busy) return;
+        if (!source || !target || source === target || busy || session) return;
+        const startedFor = id;
         setBusy('merge');
         setError('');
+        setMergeError('');
         setNotice('');
         try {
-            const mergeData = await api.mergeBranches(id, source, target);
+            const mergeData = await api.mergeBranches(startedFor, source, target);
+            if (!stillActive(startedFor)) return;
             if (mergeData.merge.alreadyMerged) {
                 setNotice(communityText('{value1} is already included in {value2}.', {value1: source, value2: target}));
                 return;
             }
-            const prepared = await materializeBranchMerge(mergeData);
+            const prepared = await materializeMerge(mergeData);
+            if (!stillActive(startedFor)) return;
             if (prepared.conflicts.length || prepared.binaryConflicts.length) {
                 setSession({...prepared, data: mergeData});
             } else {
-                await upload(mergeData, prepared.files);
+                await upload(mergeData, prepared.files, startedFor);
             }
-        } catch (mergeError) {
-            setError(mergeError.message || communityText('Could not merge the branches.'));
+        } catch (prepareError) {
+            await failMerge(prepareError, communityText('Could not merge the branches.'), startedFor);
         } finally {
-            setBusy('');
+            if (stillActive(startedFor)) setBusy('');
         }
     };
 
     const resolve = async () => {
         if (!session || busy) return;
+        const startedFor = id;
         setBusy('merge');
         setError('');
+        setMergeError('');
         try {
-            const files = new Map(session.files);
-            for (const file of session.conflicts) files.set(file.path, new TextEncoder().encode(file.content));
-            for (const file of session.binaryConflicts) {
-                if (!file.choice) throw new Error(communityText('Choose a version for {value1}.', {value1: file.path}));
-                const useSource = file.choice === 'source';
-                const deleted = useSource ? file.theirsDeleted : file.oursDeleted;
-                const content = useSource ? file.theirs : file.ours;
-                if (deleted) files.delete(file.path);
-                else files.set(file.path, decodeBase64(content));
+            const unresolvedText = unresolvedTextConflict(session);
+            if (unresolvedText) {
+                setMergeError(communityText('Resolve the conflict in {value1}.', {value1: unresolvedText.path}));
+                return;
             }
-            await upload(session.data, files);
+            const unresolved = unresolvedBinaryConflict(session);
+            if (unresolved) {
+                setMergeError(communityText('Choose a version for {value1}.', {value1: unresolved.path}));
+                return;
+            }
+            await upload(session.data, resolvedMergeFiles(session), startedFor);
         } catch (resolveError) {
-            setError(resolveError.message || communityText('Could not resolve the merge.'));
+            await failMerge(resolveError, communityText('Could not resolve the merge.'), startedFor);
         } finally {
-            setBusy('');
+            if (stillActive(startedFor)) setBusy('');
         }
     };
 
-    const finishManagementAction = async message => {
+    const finishManagementAction = async (message, startedFor) => {
+        const refreshParent = currentId.current === startedFor && onChange ? onChange() : Promise.resolve();
+        if (!stillActive(startedFor)) {
+            await refreshParent;
+            return;
+        }
         setEditingBranch('');
         setRenamedBranch('');
         setDeletingBranch('');
         setNotice(message);
-        await Promise.all([load(), onChange ? onChange() : Promise.resolve()]);
+        await Promise.all([load(), refreshParent]);
     };
 
     const createBranch = async event => {
         event.preventDefault();
         const name = newBranch.trim();
-        if (!name || !newBranchFrom || busy) return;
+        if (!name || !newBranchFrom || busy || session) return;
+        const startedFor = id;
         setBusy('create');
         setError('');
+        setMergeError('');
         setNotice('');
         try {
-            await api.createBranch(id, name, newBranchFrom);
-            setNewBranch('');
-            await finishManagementAction(communityText('Created {value1} from {value2}.', {value1: name, value2: newBranchFrom}));
+            await api.createBranch(startedFor, name, newBranchFrom);
+            if (stillActive(startedFor)) setNewBranch('');
+            await finishManagementAction(
+                communityText('Created {value1} from {value2}.', {value1: name, value2: newBranchFrom}),
+                startedFor
+            );
         } catch (createError) {
-            setError(createError.message || communityText('Could not create the branch.'));
+            if (stillActive(startedFor)) setError(createError.message || communityText('Could not create the branch.'));
         } finally {
-            setBusy('');
+            if (stillActive(startedFor)) setBusy('');
         }
     };
 
@@ -180,48 +222,55 @@ const ProjectBranches = ({id, canManage, onChange}) => {
         setEditingBranch(branch);
         setRenamedBranch(branch);
         setError('');
+        setMergeError('');
         setNotice('');
     };
 
     const renameBranch = async branch => {
         const name = renamedBranch.trim();
-        if (!name || name === branch || busy) return;
+        if (!name || name === branch || busy || session) return;
+        const startedFor = id;
         setBusy(`rename:${branch}`);
         setError('');
+        setMergeError('');
         setNotice('');
         try {
-            await api.renameBranch(id, branch, name);
-            await finishManagementAction(communityText('Renamed {value1} to {value2}.', {value1: branch, value2: name}));
+            await api.renameBranch(startedFor, branch, name);
+            await finishManagementAction(
+                communityText('Renamed {value1} to {value2}.', {value1: branch, value2: name}),
+                startedFor
+            );
         } catch (renameError) {
-            setError(renameError.message || communityText('Could not rename the branch.'));
+            if (stillActive(startedFor)) setError(renameError.message || communityText('Could not rename the branch.'));
         } finally {
-            setBusy('');
+            if (stillActive(startedFor)) setBusy('');
         }
     };
 
     const deleteBranch = async branch => {
-        if (busy) return;
+        if (busy || session) return;
+        const startedFor = id;
         setBusy(`delete:${branch}`);
         setError('');
+        setMergeError('');
         setNotice('');
         try {
-            await api.deleteBranch(id, branch);
-            await finishManagementAction(communityText('Deleted {value1}.', {value1: branch}));
+            await api.deleteBranch(startedFor, branch);
+            await finishManagementAction(
+                communityText('Deleted {value1}.', {value1: branch}),
+                startedFor
+            );
         } catch (deleteError) {
-            setError(deleteError.message || communityText('Could not delete the branch.'));
+            if (stillActive(startedFor)) setError(deleteError.message || communityText('Could not delete the branch.'));
         } finally {
-            setBusy('');
+            if (stillActive(startedFor)) setBusy('');
         }
     };
 
-    const updateText = (path, content) => setSession(current => ({
-        ...current,
-        conflicts: current.conflicts.map(file => (file.path === path ? {...file, content} : file))
-    }));
-    const chooseBinary = (path, choice) => setSession(current => ({
-        ...current,
-        binaryConflicts: current.binaryConflicts.map(file => (file.path === path ? {...file, choice} : file))
-    }));
+    const updateText = (path, content) => setSession(current => withTextResolution(current, path, content));
+    const chooseBinary = (path, choice) => setSession(current => withBinaryChoice(current, path, choice));
+
+    const locked = Boolean(busy) || Boolean(session);
 
     if (!data) return <StatusMessage compact>{communityText('Loading branches…')}</StatusMessage>;
 
@@ -242,24 +291,24 @@ const ProjectBranches = ({id, canManage, onChange}) => {
                             value={newBranch}
                             maxLength={100}
                             placeholder={communityText('feature-name')}
-                            disabled={Boolean(busy)}
+                            disabled={locked}
                             onChange={event => setNewBranch(event.target.value)}
                         />
                     </label>
                     <label>
                         <span>{communityText('Start from')}</span>
-                        <select value={newBranchFrom} disabled={Boolean(busy)} onChange={event => setNewBranchFrom(event.target.value)}>
+                        <select value={newBranchFrom} disabled={locked} onChange={event => setNewBranchFrom(event.target.value)}>
                             {branches.map(branch => <option key={branch.name}>{branch.name}</option>)}
                         </select>
                     </label>
-                    <Button type="submit" variant="primary" busy={busy === 'create'} busyLabel={communityText('Creating…')} disabled={!newBranch.trim() || !newBranchFrom || Boolean(busy)}>
+                    <Button type="submit" variant="primary" busy={busy === 'create'} busyLabel={communityText('Creating…')} disabled={!newBranch.trim() || !newBranchFrom || locked}>
                         <Plus size={16} />
                         {communityText('Create branch')}
                     </Button>
                 </form>
             ) : null}
 
-            {canManage && branches.length > 1 ? (
+            {canManage && branches.length > 1 && !session ? (
                 <section className={styles.mergeBox}>
                     <div className={styles.mergeFields}>
                         <label>
@@ -275,7 +324,7 @@ const ProjectBranches = ({id, canManage, onChange}) => {
                                 {branches.map(branch => <option key={branch.name}>{branch.name}</option>)}
                             </select>
                         </label>
-                        <Button variant="primary" onClick={merge} busy={busy === 'merge'} busyLabel={communityText('Merging…')} disabled={!source || !target || Boolean(busy)}>
+                        <Button variant="primary" onClick={merge} busy={busy === 'merge'} busyLabel={communityText('Merging…')} disabled={!source || !target || locked}>
                             <GitMerge size={16} />
                             {communityText('Merge branches')}
                         </Button>
@@ -285,35 +334,37 @@ const ProjectBranches = ({id, canManage, onChange}) => {
             ) : null}
 
             {error ? <Notice variant="error" className={styles.message}>{error}</Notice> : null}
+            {mergeError && !session ? <Notice variant="error" className={styles.message}>{mergeError}</Notice> : null}
             {notice ? <Notice variant="success" className={styles.message}>{notice}</Notice> : null}
 
             {session ? (
-                <section className={styles.conflicts}>
-                    <SectionHeading
-                        as="h3"
-                        icon={GitMerge}
-                        title={communityText('Resolve merge conflicts')}
-                        lead={communityText('Edit text conflicts and choose which branch to keep for assets.')}
-                    />
-                    {session.conflicts.map(file => (
-                        <label key={file.path}><span>{file.path}</span><textarea value={file.content} disabled={busy} onChange={event => updateText(file.path, event.target.value)} /></label>
-                    ))}
-                    {session.binaryConflicts.map(file => (
-                        <div className={styles.binaryConflict} key={file.path}>
-                            <span>{file.path}</span>
-                            <button type="button" className={file.choice === 'target' ? styles.choiceActive : ''} onClick={() => chooseBinary(file.path, 'target')}>
-                                {communityText('Keep {value1}', {value1: session.data.targetBranch})}
-                            </button>
-                            <button type="button" className={file.choice === 'source' ? styles.choiceActive : ''} onClick={() => chooseBinary(file.path, 'source')}>
-                                {communityText('Use {value1}', {value1: session.data.sourceBranch})}
-                            </button>
-                        </div>
-                    ))}
-                    <Button variant="primary" busy={busy === 'merge'} busyLabel={communityText('Merging…')} onClick={resolve}>
-                        <GitMerge size={16} />
-                        {communityText('Save resolutions and merge')}
-                    </Button>
-                </section>
+                <MergeConflicts
+                    title={communityText('Resolve merge conflicts')}
+                    lead={communityText('Edit text conflicts and choose which branch to keep for assets.')}
+                    conflicts={session.conflicts}
+                    binaryConflicts={session.binaryConflicts}
+                    keepLabel={communityText('Keep {value1}', {value1: session.data.targetBranch})}
+                    useLabel={communityText('Use {value1}', {value1: session.data.sourceBranch})}
+                    submitLabel={communityText('Save resolutions and merge')}
+                    busy={busy === 'merge'}
+                    busyLabel={communityText('Merging…')}
+                    error={mergeError}
+                    focusOnMount
+                    onTextChange={updateText}
+                    onChoose={chooseBinary}
+                    onSubmit={resolve}
+                    actions={(
+                        <Button
+                            disabled={busy === 'merge'}
+                            onClick={() => {
+                                setSession(null);
+                                setMergeError('');
+                            }}
+                        >
+                            {communityText('Cancel')}
+                        </Button>
+                    )}
+                />
             ) : null}
 
             <div className={styles.list}>
@@ -335,11 +386,11 @@ const ProjectBranches = ({id, canManage, onChange}) => {
                                         value={renamedBranch}
                                         maxLength={100}
                                         aria-label={communityText('New name for {value1}', {value1: branch.name})}
-                                        disabled={Boolean(busy)}
+                                        disabled={locked}
                                         onChange={event => setRenamedBranch(event.target.value)}
                                     />
-                                    <button type="submit" title={communityText('Save branch name')} disabled={!renamedBranch.trim() || renamedBranch.trim() === branch.name || Boolean(busy)}><Check size={15} /></button>
-                                    <button type="button" title={communityText('Cancel rename')} disabled={Boolean(busy)} onClick={() => setEditingBranch('')}><X size={15} /></button>
+                                    <button type="submit" title={communityText('Save branch name')} disabled={!renamedBranch.trim() || renamedBranch.trim() === branch.name || locked}><Check size={15} /></button>
+                                    <button type="button" title={communityText('Cancel rename')} disabled={locked} onClick={() => setEditingBranch('')}><X size={15} /></button>
                                 </form>
                             ) : <strong>{branch.name}</strong>}
                             {branch.message ? <span>{branch.message}</span> : null}
@@ -351,20 +402,20 @@ const ProjectBranches = ({id, canManage, onChange}) => {
                         </span>
                         {canManage ? (
                             <div className={styles.actions}>
-                                <button type="button" title={communityText('Rename {value1}', {value1: branch.name})} disabled={Boolean(busy)} onClick={() => beginRename(branch.name)}><Pencil size={15} /></button>
+                                <button type="button" title={communityText('Rename {value1}', {value1: branch.name})} disabled={locked} onClick={() => beginRename(branch.name)}><Pencil size={15} /></button>
                                 {!branch.current ? (
                                     deletingBranch === branch.name ? (
                                         <span className={styles.deleteConfirm}>
                                             {communityText('Delete?')}
-                                            <button type="button" disabled={Boolean(busy)} onClick={() => deleteBranch(branch.name)}>{communityText('Yes')}</button>
-                                            <button type="button" disabled={Boolean(busy)} onClick={() => setDeletingBranch('')}>{communityText('No')}</button>
+                                            <button type="button" disabled={locked} onClick={() => deleteBranch(branch.name)}>{communityText('Yes')}</button>
+                                            <button type="button" disabled={locked} onClick={() => setDeletingBranch('')}>{communityText('No')}</button>
                                         </span>
                                     ) : (
                                         <button
                                             type="button"
                                             className={styles.deleteButton}
                                             title={communityText('Delete {value1}', {value1: branch.name})}
-                                            disabled={Boolean(busy)}
+                                            disabled={locked}
                                             onClick={() => {
                                                 setEditingBranch('');
                                                 setDeletingBranch(branch.name);

@@ -2,6 +2,14 @@ export const hasRemixDivergence = remixFrom => Boolean(
     remixFrom && typeof remixFrom.ahead === 'number' && typeof remixFrom.behind === 'number'
 );
 
+export const remixSyncUnknown = (remixFrom, gitHead = '') => Boolean(
+    remixFrom && !hasRemixDivergence(remixFrom) && remixFrom.head && gitHead && remixFrom.head !== gitHead
+);
+
+export const canShowForkStatus = (remixFrom, canSync = false, gitHead = '') => Boolean(
+    hasRemixDivergence(remixFrom) || (canSync && remixSyncUnknown(remixFrom, gitHead))
+);
+
 export const remixParentLabel = remixFrom => {
     if (!remixFrom) return '';
     const owner = String(remixFrom.owner || '').trim();
@@ -11,8 +19,11 @@ export const remixParentLabel = remixFrom => {
 };
 
 export const remixDivergenceSentence = (remixFrom, text) => {
-    if (!hasRemixDivergence(remixFrom)) return '';
+    if (!remixFrom) return '';
     const parent = remixParentLabel(remixFrom);
+    if (!hasRemixDivergence(remixFrom)) {
+        return text('This project can be synced with {value1}.', {value1: parent});
+    }
     const {ahead, behind} = remixFrom;
     if (ahead === 0 && behind === 0) {
         return text('This project is up to date with {value1}.', {value1: parent});

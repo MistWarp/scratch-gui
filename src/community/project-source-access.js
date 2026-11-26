@@ -6,3 +6,7 @@ export const canViewProjectSource = project => {
     const owner = project.myRole ? project.myRole === 'owner' : project.isOwner === true;
     return owner || project.seeInside !== false;
 };
+
+export const canMaintainProject = project => Boolean(
+    project?.isOwner || project?.myRole === 'owner' || project?.myRole === 'maintainer'
+);
