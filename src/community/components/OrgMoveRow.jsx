@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import PropTypes from 'prop-types';
 import {Building2} from 'lucide-react';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
@@ -9,15 +9,38 @@ const ROTUR_NEW_ORG = 'https://rotur.dev/orgs/new';
 
 const orgName = org => (org.displayName ? `${org.displayName} (@${org.username})` : `@${org.username}`);
 
-const OrgMoveRow = ({orgs, owner, disabled, onMove, className}) => {
+const sameName = (a, b) => String(a || '').toLowerCase() === String(b || '').toLowerCase();
+
+const moveChoices = ({orgs, owner, self, ownedByOrg, selfLabel}) => {
+    const choices = orgs
+        .filter(org => !sameName(org.username, owner))
+        .map(org => ({value: org.username, label: orgName(org)}));
+    if (ownedByOrg && self && !sameName(self, owner)) choices.unshift({value: self, label: selfLabel});
+    return choices;
+};
+
+const OrgMoveRow = ({orgs, owner, self, ownedByOrg, loaded, failed, disabled, onMove, className}) => {
     const {text: communityText} = useCommunityText();
     const [choice, setChoice] = useState('');
-    const currentOwner = String(owner || '').toLowerCase();
-    const choices = orgs.filter(org => org.username.toLowerCase() !== currentOwner);
+    const choices = moveChoices({
+        orgs,
+        owner,
+        self,
+        ownedByOrg,
+        selfLabel: communityText('Your account (@{username})', {username: self})
+    });
+    const choiceStillOffered = choices.some(option => option.value === choice);
+    useEffect(() => {
+        if (choice && !choiceStillOffered) setChoice('');
+    }, [choice, choiceStillOffered]);
+    if (!loaded) return <p className={styles.hint}>{communityText('Loading your organisations…')}</p>;
+    if (failed && !choices.length) {
+        return <p className={styles.hint}>{communityText('Could not load your organisations. Try again later.')}</p>;
+    }
     if (!choices.length) {
         return (
             <p className={styles.hint}>
-                {choices.length < orgs.length ?
+                {orgs.length ?
                     communityText('Other organisations you can publish for will appear here.') :
                     communityText('Organisations you can publish for will appear here.')}{' '}
                 <a href={ROTUR_NEW_ORG} target="_blank" rel="noopener noreferrer">
@@ -26,18 +49,23 @@ const OrgMoveRow = ({orgs, owner, disabled, onMove, className}) => {
             </p>
         );
     }
+    const move = () => {
+        const target = choice;
+        setChoice('');
+        onMove(target);
+    };
     return (
         <div className={className}>
             <select
-                value={choice}
+                value={choiceStillOffered ? choice : ''}
                 disabled={disabled}
-                aria-label={communityText('Organisation')}
+                aria-label={communityText('Move to')}
                 onChange={event => setChoice(event.target.value)}
             >
-                <option value="">{communityText('Choose an organisation')}</option>
-                {choices.map(org => <option key={org.username} value={org.username}>{orgName(org)}</option>)}
+                <option value="">{communityText('Choose where to move it')}</option>
+                {choices.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
-            <Button variant="secondary" disabled={!choice || disabled} onClick={() => onMove(choice)}>
+            <Button variant="secondary" disabled={!choiceStillOffered || !choice || disabled} onClick={move}>
                 <Building2 size={16} />{communityText('Move')}
             </Button>
         </div>
@@ -47,12 +75,21 @@ const OrgMoveRow = ({orgs, owner, disabled, onMove, className}) => {
 OrgMoveRow.propTypes = {
     className: PropTypes.string,
     disabled: PropTypes.bool,
+    failed: PropTypes.bool,
+    loaded: PropTypes.bool,
     onMove: PropTypes.func.isRequired,
     orgs: PropTypes.arrayOf(PropTypes.shape({
         displayName: PropTypes.string,
         username: PropTypes.string.isRequired
     })).isRequired,
-    owner: PropTypes.string
+    owner: PropTypes.string,
+    ownedByOrg: PropTypes.bool,
+    self: PropTypes.string
 };
 
+OrgMoveRow.defaultProps = {
+    loaded: true
+};
+
+export {moveChoices};
 export default OrgMoveRow;

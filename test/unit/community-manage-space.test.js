@@ -68,6 +68,13 @@ describe('ManageSpace confirmations', () => {
             body: 'Transfer "Animation Club" to @Alex? Your access may change.',
             action: 'Transfer to @Alex'
         });
+        expect(spaceConfirmationDetails({type: 'transfer-space', owner: 'studio', kind: 'org'}, space)).toEqual({
+            title: 'Move space to an organisation?',
+            body: 'Move "Animation Club" to @studio? Members who can publish for the organisation will manage it.',
+            action: 'Move to @studio'
+        });
+        expect(spaceConfirmationDetails({type: 'transfer-space', owner: 'ada', kind: 'self'}, space).action)
+            .toBe('Move to your account');
     });
 });
 

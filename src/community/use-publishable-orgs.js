@@ -19,22 +19,22 @@ const ownerOptions = ({selfLabel, orgs, current}) => {
 };
 
 const usePublishableOrgs = username => {
-    const [state, setState] = useState({username: '', orgs: [], loaded: false});
+    const [state, setState] = useState({username: '', orgs: [], loaded: false, failed: false});
     useEffect(() => {
         if (!username) {
-            setState({username: '', orgs: [], loaded: true});
+            setState({username: '', orgs: [], loaded: true, failed: false});
             return () => {};
         }
         let active = true;
-        setState({username, orgs: [], loaded: false});
+        setState({username, orgs: [], loaded: false, failed: false});
         api.myOrgs()
-            .then(data => active && setState({username, orgs: publishableOrgs(data), loaded: true}))
-            .catch(() => active && setState({username, orgs: [], loaded: true}));
+            .then(data => active && setState({username, orgs: publishableOrgs(data), loaded: true, failed: false}))
+            .catch(() => active && setState({username, orgs: [], loaded: true, failed: true}));
         return () => {
             active = false;
         };
     }, [username]);
-    return state.username === (username || '') ? state : {username, orgs: [], loaded: false};
+    return state.username === (username || '') ? state : {username, orgs: [], loaded: false, failed: false};
 };
 
 export {ownerOptions, publishableOrgs};

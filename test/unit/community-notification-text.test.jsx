@@ -28,8 +28,6 @@ describe('notification targets', () => {
         [{type: 'profile_comment', commentId: 'c3'}, {to: '/users/viewer#comment-id-c3'}],
         [{type: 'news', newsId: 'n 1'}, {to: '/news/n%201'}],
         [{type: 'news'}, {to: '/news'}],
-        [{type: 'org_invite', org: 'cats', link: 'https://rotur.dev/orgs/invite/t1'}, {href: 'https://rotur.dev/orgs/invite/t1'}],
-        [{type: 'org_invite', org: 'cats', link: 'https://evil.example/orgs/invite/t1'}, {href: 'https://rotur.dev/@cats'}],
         [{type: 'group_invite', group_tag: 'cats'}, null],
         [{type: 'like_milestone', milestone: 5, path: '/posts/p1'}, {to: '/posts/p1'}],
         [{type: 'follow', actor: 'alice'}, null],

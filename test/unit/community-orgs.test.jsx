@@ -1,10 +1,10 @@
 import React from 'react';
 import {act} from 'react-dom/test-utils';
 import {mount} from 'enzyme';
-import {MemoryRouter, Route, Routes} from 'react-router-dom';
+import {MemoryRouter, Route, Routes, useLocation} from 'react-router-dom';
 
 import Org, {normalizeOrgTabParams, safeLinks} from '../../src/community/pages/Org.jsx';
-import {accountKind} from '../../src/community/pages/Account.jsx';
+import {OrgRedirect, accountKind, kindAfterError} from '../../src/community/pages/Account.jsx';
 import OrgLabel, {isOrgOwned} from '../../src/community/components/OrgLabel.jsx';
 import OrgMoveRow from '../../src/community/components/OrgMoveRow.jsx';
 import {ownerOptions, publishableOrgs} from '../../src/community/use-publishable-orgs.js';
@@ -69,6 +69,39 @@ describe('Rotur orgs on MistWarp', () => {
         expect(accountKind({account_type: 'org'})).toBe('org');
         expect(accountKind({account_type: 'bot'})).toBe('person');
         expect(accountKind(null)).toBe('person');
+        expect(kindAfterError({status: 404})).toBe('person');
+        expect(kindAfterError({status: 503})).toBe('unknown');
+        expect(kindAfterError(new Error('offline'))).toBe('unknown');
+    });
+
+    test('an old org link keeps its tab when it moves to the account page', async () => {
+        const Where = () => {
+            const location = useLocation();
+            return <p className="where">{`${location.pathname}${location.search}`}</p>;
+        };
+        let wrapper;
+        await act(async () => {
+            wrapper = mount(
+                <MemoryRouter
+                    initialEntries={['/orgs/studio?tab=members']}
+                    future={{v7_startTransition: true, v7_relativeSplatPath: true}}
+                >
+                    <Routes>
+                        <Route
+                            path="/orgs/:name"
+                            element={<OrgRedirect />}
+                        />
+                        <Route
+                            path="/users/:name"
+                            element={<Where />}
+                        />
+                    </Routes>
+                </MemoryRouter>
+            );
+            await Promise.resolve();
+        });
+        wrapper.update();
+        expect(wrapper.find('.where').text()).toBe('/users/studio?tab=members');
     });
 
     test('only content marked as org-owned gets the label', () => {
@@ -134,6 +167,7 @@ describe('Rotur orgs on MistWarp', () => {
         wrapper.find('select').simulate('change', {target: {value: 'other'}});
         wrapper.find('button').simulate('click');
         expect(onMove).toHaveBeenCalledWith('other');
+        expect(wrapper.find('button').prop('disabled')).toBe(true);
         const owned = mount(<OrgMoveRow
             orgs={[{username: 'studio'}]}
             owner="studio"
@@ -148,5 +182,41 @@ describe('Rotur orgs on MistWarp', () => {
         />);
         expect(none.text()).toContain('Organisations you can publish for will appear here.');
         expect(none.text()).not.toContain('Other');
+    });
+
+    test('org content can move back to the person managing it', () => {
+        const onMove = jest.fn();
+        const wrapper = mount(<OrgMoveRow
+            orgs={[{username: 'studio'}, {username: 'other'}]}
+            owner="studio"
+            self="ada"
+            ownedByOrg
+            onMove={onMove}
+        />);
+        expect(wrapper.find('option').map(node => node.prop('value'))).toEqual(['', 'ada', 'other']);
+        wrapper.find('select').simulate('change', {target: {value: 'ada'}});
+        wrapper.find('button').simulate('click');
+        expect(onMove).toHaveBeenCalledWith('ada');
+        const personal = mount(<OrgMoveRow
+            orgs={[{username: 'studio'}]}
+            owner="ada"
+            self="ada"
+            onMove={onMove}
+        />);
+        expect(personal.find('option').map(node => node.prop('value'))).toEqual(['', 'studio']);
+    });
+
+    test('the org list says when it is loading or failed instead of offering nothing', () => {
+        const onMove = jest.fn();
+        expect(mount(<OrgMoveRow
+            orgs={[]}
+            loaded={false}
+            onMove={onMove}
+        />).text()).toBe('Loading your organisations…');
+        expect(mount(<OrgMoveRow
+            orgs={[]}
+            failed
+            onMove={onMove}
+        />).text()).toBe('Could not load your organisations. Try again later.');
     });
 });

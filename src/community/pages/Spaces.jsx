@@ -107,12 +107,13 @@ const Spaces = () => {
     const [createBusy, setCreateBusy] = useState(false);
     const [form, setForm] = useState({title: '', description: '', kind: createKind, visibility: 'public', startsAt: '', endsAt: '', votingMode: 'judges', org: requestedOrg});
     const [error, setError] = useState('');
-    const {orgs: publishOrgs} = usePublishableOrgs(viewerName);
-    const ownerChoices = ownerOptions({
+    const {orgs: publishOrgs, loaded: orgsLoaded} = usePublishableOrgs(viewerName);
+    const ownerChoices = viewerName ? ownerOptions({
         selfLabel: communityText('You (@{username})', {username: viewerName}),
         orgs: publishOrgs,
-        current: form.org
-    });
+        current: orgsLoaded ? '' : form.org
+    }) : [];
+    const chosenOrgOffered = !form.org || publishOrgs.some(org => org.username.toLowerCase() === form.org.toLowerCase());
     const loadSequence = useRef(0);
     const createLocks = useRef(new Set());
     const currentViewer = useRef(viewerName);
@@ -173,6 +174,9 @@ const Spaces = () => {
     useEffect(() => {
         if (!creating) setError('');
     }, [creating]);
+    useEffect(() => {
+        if (orgsLoaded && !chosenOrgOffered) setForm(current => ({...current, org: ''}));
+    }, [chosenOrgOffered, orgsLoaded]);
     useEffect(() => {
         setCreateBusy(false);
         setError('');

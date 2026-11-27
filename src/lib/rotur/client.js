@@ -41,11 +41,7 @@ const SIGN_IN_SCOPES = [
     'blocked:manage',
     'following:view', // Who you follow, for Home and your own Following page.
     'following:follow', // Follow buttons on profiles and Home.
-    'following:unfollow',
-    'groups:view', // The Groups pages.
-    'groups:members.view',
-    'groups:join',
-    'groups:leave'
+    'following:unfollow'
 ];
 const PRESENCE_PERMISSION = 'status:update';
 // Rotur also lets a login that can edit the profile set the status.

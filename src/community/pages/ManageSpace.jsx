@@ -3,7 +3,7 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable max-len */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Link, useNavigate, useParams, useSearchParams} from 'react-router-dom';
-import {CalendarClock, Check, ExternalLink, Gavel, Image as ImageIcon, LayoutGrid, Plus, Search, Settings, Star, Trash2, Trophy, UserPlus, Users, X} from 'lucide-react';
+import {Building2, CalendarClock, Check, ExternalLink, Gavel, Image as ImageIcon, LayoutGrid, Plus, Search, Settings, Star, Trash2, Trophy, UserPlus, Users, X} from 'lucide-react';
 import api from '../api';
 import Avatar from '../components/Avatar.jsx';
 import UserLink from '../components/UserLink.jsx';
@@ -19,10 +19,16 @@ import StatusMessage from '../components/ui/StatusMessage.jsx';
 import {SwitchRow} from '../components/ui/Switch.jsx';
 import {useUser} from '../UserContext.jsx';
 import usePublishableOrgs from '../use-publishable-orgs.js';
+import {isOrgOwned} from '../components/OrgLabel.jsx';
 import OrgMoveRow from '../components/OrgMoveRow.jsx';
 import useLatest from '../use-latest.js';
 import {formatDateTime} from '../format.js';
 import styles from './Spaces.module.css';
+
+const confirmationIcon = confirmation => {
+    if (confirmation.type !== 'transfer-space') return Trash2;
+    return confirmation.kind === 'org' || confirmation.kind === 'self' ? Building2 : Users;
+};
 
 const SECTIONS = [
     {key: 'general', label: 'General', Icon: Settings},
@@ -86,6 +92,20 @@ const spaceConfirmationDetails = (confirmation, space) => {
             title: formatCommunityMessage('Delete {space}?', {space: space.title}),
             body: formatCommunityMessage('This permanently deletes the space. Its projects will not be deleted.'),
             action: formatCommunityMessage('Delete space')
+        };
+    }
+    if (confirmation.type === 'transfer-space' && confirmation.kind === 'org') {
+        return {
+            title: formatCommunityMessage('Move space to an organisation?'),
+            body: formatCommunityMessage('Move "{space}" to @{owner}? Members who can publish for the organisation will manage it.', {space: space.title, owner: confirmation.owner}),
+            action: formatCommunityMessage('Move to @{owner}', {owner: confirmation.owner})
+        };
+    }
+    if (confirmation.type === 'transfer-space' && confirmation.kind === 'self') {
+        return {
+            title: formatCommunityMessage('Move space to your account?'),
+            body: formatCommunityMessage('Move "{space}" to your account? The organisation will no longer own it.', {space: space.title}),
+            action: formatCommunityMessage('Move to your account')
         };
     }
     if (confirmation.type === 'transfer-space') {
@@ -155,7 +175,7 @@ const ManageSpace = () => {
     const requestedSection = searchParams.get('section');
     const {user, loading, login} = useUser();
     const viewerName = (user && user.username) || '';
-    const {orgs: publishOrgs} = usePublishableOrgs(viewerName);
+    const {orgs: publishOrgs, loaded: orgsLoaded, failed: orgsFailed} = usePublishableOrgs(viewerName);
     const loadContext = `${id}\u0000${viewerName}`;
     const [space, setSpace] = useState(null);
     const [spaceLoadContext, setSpaceLoadContext] = useState('');
@@ -348,8 +368,12 @@ const ManageSpace = () => {
 
     const confirmSpaceTransfer = nextOwner => {
         if (!nextOwner || transferBusy) return;
+        const lower = nextOwner.toLowerCase();
+        let kind = 'person';
+        if (publishOrgs.some(org => org.username.toLowerCase() === lower)) kind = 'org';
+        else if (space && isOrgOwned(space) && lower === viewerName.toLowerCase()) kind = 'self';
         setConfirmationError('');
-        setConfirmation({type: 'transfer-space', owner: nextOwner});
+        setConfirmation({type: 'transfer-space', owner: nextOwner, kind});
     };
 
     const requestSpaceTransfer = () => confirmSpaceTransfer(transferOwner.trim());
@@ -583,8 +607,8 @@ const ManageSpace = () => {
         <main className={`${styles.page} ${styles.managePage}`}>
             {confirmationDetails ? (
                 <ConfirmModal
-                    destructive
-                    icon={confirmation.type === 'transfer-space' ? Users : Trash2}
+                    destructive={!(confirmation.type === 'transfer-space' && confirmation.kind && confirmation.kind !== 'person')}
+                    icon={confirmationIcon(confirmation)}
                     title={confirmationDetails.title}
                     confirmLabel={confirmationDetails.action}
                     busy={destructiveActionInFlight.current.has(loadContext)}
@@ -641,8 +665,8 @@ const ManageSpace = () => {
                                 <label><span>{communityText('Name')}</span><input value={form.title} maxLength={100} required onChange={event => updateForm('title', event.target.value)} /></label>
                                 <label><span>{communityText('Description')}</span><textarea value={form.description || ''} maxLength={5000} onChange={event => updateForm('description', event.target.value)} /></label>
                                 <div className={styles.transferOwner}>
-                                    <span><strong>{communityText('Move to an organisation')}</strong><small>{communityText('Members of the organisation who can publish for it will manage this space with you.')}</small></span>
-                                    <OrgMoveRow className={styles.transferRow} orgs={publishOrgs} owner={space.owner} disabled={transferBusy} onMove={confirmSpaceTransfer} />
+                                    <span><strong>{isOrgOwned(space) ? communityText('Move this space') : communityText('Move to an organisation')}</strong><small>{isOrgOwned(space) ? communityText('Move it to another organisation you publish for, or back to your account.') : communityText('Members of the organisation who can publish for it will manage this space with you.')}</small></span>
+                                    <OrgMoveRow className={styles.transferRow} orgs={publishOrgs} owner={space.owner} self={viewerName} ownedByOrg={isOrgOwned(space)} loaded={orgsLoaded} failed={orgsFailed} disabled={transferBusy} onMove={confirmSpaceTransfer} />
                                 </div>
                                 <div className={styles.transferOwner}>
                                     <span><strong>{communityText('Transfer to another user')}</strong><small>{communityText('The new owner receives this {value1}.', {value1: space.kind})}</small></span>

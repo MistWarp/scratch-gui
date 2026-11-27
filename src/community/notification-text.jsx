@@ -14,8 +14,6 @@ export const SYSTEM_TYPES = [
     'classroom_transferred', 'classroom_returned'
 ];
 
-export const ORG_TYPES = ['org_invite'];
-
 // Rotur / usernames follow this shape; titles that don't match are app
 // messages rather than account names.
 export const USERNAME_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,19}$/;
@@ -44,25 +42,11 @@ export const actorFor = n => {
 
 export const commentAnchor = n => (n.commentId ? `#comment-id-${n.commentId}` : '');
 
-const ROTUR_ORIGIN = 'https://rotur.dev';
-
-const roturLink = value => {
-    try {
-        const link = new URL(String(value));
-        return link.origin === ROTUR_ORIGIN ? link.href : null;
-    } catch (e) {
-        return null;
-    }
-};
-
-const orgUrl = n => roturLink(n.link) || (n.org ? `${ROTUR_ORIGIN}/@${encodeURIComponent(n.org)}` : null);
-
 // Where a notification leads: {to} for in-app routes, {href} for external
 // pages, or null when there is nothing to open.
 export const targetFor = (n, viewerName) => {
     if (isMilestoneNotification(n)) return {to: milestoneLink(n)};
     if (!n.projectId && (n.post_id || n.original_post_id)) return {to: postUrl(n.post_id || n.original_post_id)};
-    if (ORG_TYPES.includes(n.type) && orgUrl(n)) return {href: orgUrl(n)};
     if (n.spaceId) return {to: `/spaces/${n.spaceId}${commentAnchor(n)}`};
     if (n.roadmapId) return {to: `/roadmap#idea-${n.roadmapId}`};
     if (n.projectId && n.pull) return {to: `/project/${n.projectId}/pulls/${n.pull}${commentAnchor(n)}`};
@@ -194,7 +178,6 @@ export const describeNotification = (n, t, actor) => {
     const project = n.projectTitle ? strong(n.projectTitle) : null;
     const pull = n.pull ? String(n.pull) : '';
     const space = strong(n.spaceTitle);
-    const org = strong(n.org);
     const amount = Number(n.amount) || 0;
     switch (n.type) {
     case 'project_shared': return project ?
@@ -254,7 +237,6 @@ export const describeNotification = (n, t, actor) => {
     case 'like': return t('{actor} liked your post', {actor});
     case 'repost': return t('{actor} reposted your post', {actor});
     case 'pounce': return t('{actor} pounced your post', {actor});
-    case 'org_invite': return t('{actor} invited you to join the organisation {org}', {actor, org});
     case 'cosmetic_gift': return t('{actor} sent you {item}', {actor, item: strong(n.cosmetic_name)});
     case 'item_received': return t('{actor} sent you {item}', {actor, item: strong(n.item_name)});
     case 'item_sold': return t('{actor} bought {item} from you', {actor, item: strong(n.item_name)});

@@ -39,8 +39,6 @@ const getExploreSection = (pathname, search) => {
     return null;
 };
 
-// Each section's placeholder is shaped like what it lists: cards for games,
-// spaces and themes, rows for people, groups, posts and bounties.
 const CARD_SECTIONS = ['studios', 'challenges', 'collections', 'themes'];
 const LIST_MEDIA = {bounties: null};
 const sectionSkeleton = (active, label) => {

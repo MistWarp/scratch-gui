@@ -304,9 +304,11 @@ const orgMeta = async name => {
     };
 };
 
+const ownedByOrg = data => (data.projects || []).some(project => project && project.ownerType === 'org');
+
 const userMeta = async (name, suffix) => {
     const data = await apiJson(`/users/${encodeURIComponent(name)}`);
-    if (!data || data.exists !== true) {
+    if (!data || data.exists !== true || (!suffix && ownedByOrg(data))) {
         return (!suffix && await orgMeta(name)) || {
             title: 'Profile - MistWarp',
             description: 'View this MistWarp profile.'
@@ -458,15 +460,24 @@ const editorHostRoute = url => {
     return {redirect: `${ACCOUNT_ORIGIN}${path}${url.search}`};
 };
 
+const ORG_PAGE = /^\/orgs\/([^/]+)$/;
+const GROUP_PAGE = /^\/groups(?:\/[^/]+)?$/;
+
+const renamedPagePath = path => {
+    const org = path.match(ORG_PAGE);
+    if (org) return `/users/${org[1]}`;
+    return GROUP_PAGE.test(path) ? '/explore' : path;
+};
+
 const accountHostRoute = url => {
-    const path = pagePath(url.pathname);
+    const path = renamedPagePath(pagePath(url.pathname));
     if (path === '/editor') return `${EDITOR_ORIGIN}/${url.search}`;
     if (MOVED_APP_PAGES.has(path) || PROJECT_PAGE.test(path)) return `${EDITOR_ORIGIN}${path}${url.search}`;
     return path === url.pathname ? null : `${url.origin}${path}${url.search}`;
 };
 
 const otherHostRoute = url => {
-    const path = pagePath(url.pathname);
+    const path = renamedPagePath(pagePath(url.pathname));
     return path === url.pathname ? null : `${url.origin}${path}${url.search}`;
 };
 
@@ -539,12 +550,6 @@ const metaForPath = pathname => {
         if (rest === '/followers') return userMeta(name, 'Followers');
         if (rest === '/following') return userMeta(name, 'Following');
         return NOT_FOUND_META;
-    }
-
-    match = normalizedPath.match(/^\/orgs\/([^/]+)$/);
-    if (match) {
-        const name = decodeSegment(match[1]);
-        return name === null ? NOT_FOUND_META : orgMeta(name).then(meta => meta || NOT_FOUND_META);
     }
 
     match = normalizedPath.match(/^\/news\/([^/]+)$/);

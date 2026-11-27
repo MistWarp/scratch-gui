@@ -5,8 +5,6 @@ import React from 'react';
 import {useCommunityIntl} from '../i18n.jsx';
 import styles from './ListSkeleton.module.css';
 
-// Placeholder rows for list pages (people, groups, posts) while the first
-// page loads: a picture and a couple of lines, like the rows that replace it.
 const ListSkeleton = ({className, count, label, lines, media}) => {
     const {text: communityText} = useCommunityIntl();
     return (

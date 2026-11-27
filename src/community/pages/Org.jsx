@@ -20,6 +20,7 @@ import {Link, useSearchParams} from 'react-router-dom';
 import api from '../api';
 import rotur from '../rotur.js';
 import useLatest from '../use-latest.js';
+import {useUser} from '../UserContext.jsx';
 import setPageMeta from '../page-meta.js';
 import Avatar from '../components/Avatar.jsx';
 import Markdown from '../components/Markdown.jsx';
@@ -36,32 +37,7 @@ import StatusMessage from '../components/ui/StatusMessage.jsx';
 import styles from './Org.module.css';
 
 const TAB_KEYS = ['projects', 'studios', 'challenges', 'collections', 'members', 'about'];
-const SPACE_KINDS = {
-    studio: {
-        icon: Layers3,
-        title: 'Studios run by {org}',
-        create: 'New studio',
-        empty: 'No studios yet',
-        emptyManager: 'Create the first studio for {org}.',
-        emptyPublic: '{org} has not published any studios.'
-    },
-    challenge: {
-        icon: Trophy,
-        title: 'Challenges from {org}',
-        create: 'New challenge',
-        empty: 'No challenges yet',
-        emptyManager: 'Create the first challenge for {org}.',
-        emptyPublic: '{org} has not published any challenges.'
-    },
-    collection: {
-        icon: Library,
-        title: 'Collections by {org}',
-        create: 'New collection',
-        empty: 'No collections yet',
-        emptyManager: 'Create the first collection for {org}.',
-        emptyPublic: '{org} has not published any collections.'
-    }
-};
+const SPACE_KIND_ICONS = {studio: Layers3, challenge: Trophy, collection: Library};
 const ROTUR = 'https://rotur.dev';
 const formatNumber = value => new Intl.NumberFormat(getCommunityLocale(), {maximumFractionDigits: 2}).format(Number(value) || 0);
 
@@ -88,6 +64,8 @@ const Org = ({name}) => {
     const requestedTab = searchParams.get('tab');
     const activeTab = TAB_KEYS.includes(requestedTab) ? requestedTab : 'projects';
     const beginLoad = useLatest();
+    const {user} = useUser();
+    const viewer = user ? user.username : '';
 
     const load = useCallback(() => {
         const fresh = beginLoad();
@@ -95,7 +73,7 @@ const Org = ({name}) => {
         return api.org(name)
             .then(fresh(setData))
             .catch(fresh(e => setError(e.message || communityText('Could not load this organisation.'))));
-    }, [beginLoad, name]);
+    }, [beginLoad, name, viewer]);
 
     useEffect(() => {
         const normalized = normalizeOrgTabParams(searchParams);
@@ -104,6 +82,9 @@ const Org = ({name}) => {
 
     useEffect(() => {
         setData(null);
+    }, [name]);
+
+    useEffect(() => {
         load();
     }, [load]);
 
@@ -113,7 +94,8 @@ const Org = ({name}) => {
         setPageMeta({
             title: org.displayName || org.username,
             description: org.bio,
-            image: rotur.avatar(org.username, 256)
+            image: rotur.avatar(org.username, 256),
+            card: 'summary'
         });
     }, [data]);
 
@@ -148,20 +130,45 @@ const Org = ({name}) => {
         {key: 'about', label: communityText('About')}
     ];
 
+    const spaceCopy = {
+        studio: {
+            title: communityText('Studios run by {org}', {org: title}),
+            create: communityText('New studio'),
+            empty: communityText('No studios yet'),
+            emptyManager: communityText('Create the first studio for {org}.', {org: title}),
+            emptyPublic: communityText('{org} has not published any studios.', {org: title})
+        },
+        challenge: {
+            title: communityText('Challenges from {org}', {org: title}),
+            create: communityText('New challenge'),
+            empty: communityText('No challenges yet'),
+            emptyManager: communityText('Create the first challenge for {org}.', {org: title}),
+            emptyPublic: communityText('{org} has not published any challenges.', {org: title})
+        },
+        collection: {
+            title: communityText('Collections by {org}', {org: title}),
+            create: communityText('New collection'),
+            empty: communityText('No collections yet'),
+            emptyManager: communityText('Create the first collection for {org}.', {org: title}),
+            emptyPublic: communityText('{org} has not published any collections.', {org: title})
+        }
+    };
+
     const createLink = kind => (manager ? (
-        <Button as={Link} variant="primary" to={`/spaces?create=1&org=${encodeURIComponent(handle)}&kind=${kind}`}><Plus size={16} />{communityText(SPACE_KINDS[kind].create)}</Button>
+        <Button as={Link} variant="primary" to={`/spaces?create=1&org=${encodeURIComponent(handle)}&kind=${kind}`}><Plus size={16} />{spaceCopy[kind].create}</Button>
     ) : null);
 
     const spacePanel = (items, kind) => {
-        const config = SPACE_KINDS[kind];
+        const copy = spaceCopy[kind];
+        const icon = SPACE_KIND_ICONS[kind];
         return (
             <section className={styles.contentSection}>
-                <SectionHeading icon={config.icon} title={communityText(config.title, {org: title})} actions={createLink(kind)} />
+                <SectionHeading icon={icon} title={copy.title} actions={createLink(kind)} />
                 {items.length ? (
                     <CardGrid>{items.map(space => <SpaceCard key={space._id} space={space} to={`/spaces/${space._id}`} />)}</CardGrid>
                 ) : (
-                    <EmptyState icon={config.icon} title={communityText(config.empty)} action={createLink(kind)}>
-                        {manager ? communityText(config.emptyManager, {org: title}) : communityText(config.emptyPublic, {org: title})}
+                    <EmptyState icon={icon} title={copy.empty} action={createLink(kind)}>
+                        {manager ? copy.emptyManager : copy.emptyPublic}
                     </EmptyState>
                 )}
             </section>
