@@ -9,7 +9,7 @@ import {
 import {payLink} from '../../../lib/rotur/payment-window.js';
 import {projectUrl} from '../../api';
 import Avatar from '../../components/Avatar.jsx';
-import GroupTag from '../../components/GroupTag.jsx';
+import OrgLabel, {isOrgOwned} from '../../components/OrgLabel.jsx';
 import VisibilityMenu from '../../components/VisibilityMenu.jsx';
 import {canViewProjectSource} from '../../project-source-access';
 import {plainClick, setDeveloperMode} from '../../developer-mode.js';
@@ -86,8 +86,7 @@ const ProjectHeader = ({
                             to={`/users/${project.owner}`}
                             className={styles.byline}
                         >{communityText('by {value1}', {value1: project.owner})}</Link>
-                        <GroupTag className={styles.projectGroupTag} username={project.owner} compact />
-                        {project.groupTag ? <Link className={styles.groupByline} to={`/groups/${project.groupTag}`}>{communityText('for @')}{project.groupTag}</Link> : null}
+                        <OrgLabel owned={isOrgOwned(project)} />
                         {publishedAt ? (
                             <time
                                 className={styles.publishedTime}

@@ -59,10 +59,6 @@ const STATIC_META = {
         title: 'Themes - MistWarp',
         description: 'Browse community-made editor themes for MistWarp.'
     },
-    '/groups': {
-        title: 'Groups - MistWarp',
-        description: 'Organisations that share projects, spaces, members, and funding on MistWarp.'
-    },
     '/posts': {
         title: 'Posts - MistWarp',
         description: 'Popular posts from claw, the Rotur social network, on MistWarp.'
@@ -293,10 +289,25 @@ const vanityPullMeta = async (slug, index) => {
     return pullMeta(data.id, index);
 };
 
+const orgMeta = async name => {
+    const data = await apiJson(`/orgs/${encodeURIComponent(name)}`);
+    const org = data && data.org;
+    if (!org) return null;
+    const username = org.username || name;
+    const title = org.displayName || username;
+    return {
+        title: `${title} - MistWarp`,
+        description: flatten(org.bio) ||
+            `${title} has shared ${(data.projects || []).length} projects on MistWarp.`,
+        image: `${AVATARS}/${encodeURIComponent(username.toLowerCase())}`,
+        card: 'summary'
+    };
+};
+
 const userMeta = async (name, suffix) => {
     const data = await apiJson(`/users/${encodeURIComponent(name)}`);
     if (!data || data.exists !== true) {
-        return {
+        return (!suffix && await orgMeta(name)) || {
             title: 'Profile - MistWarp',
             description: 'View this MistWarp profile.'
         };
@@ -334,25 +345,6 @@ const spaceMeta = async id => {
             `${space.title} is a MistWarp ${kind} by ${space.owner}.`,
         image,
         card: image ? 'summary_large_image' : 'summary'
-    };
-};
-
-const groupMeta = async tag => {
-    const data = await apiJson(`/groups/${encodeURIComponent(tag)}`);
-    const group = data && data.group;
-    if (!group) {
-        return {
-            title: 'Group - MistWarp',
-            description: 'View this MistWarp group.'
-        };
-    }
-    const projects = data.projects || [];
-    return {
-        title: `${group.name || tag} - MistWarp`,
-        description: flatten(group.description) ||
-            `${group.name || tag} has shared ${projects.length} projects on MistWarp.`,
-        image: group.icon_url || DEFAULT_IMAGE,
-        card: 'summary'
     };
 };
 
@@ -549,10 +541,10 @@ const metaForPath = pathname => {
         return NOT_FOUND_META;
     }
 
-    match = normalizedPath.match(/^\/groups\/([^/]+)$/);
+    match = normalizedPath.match(/^\/orgs\/([^/]+)$/);
     if (match) {
-        const tag = decodeSegment(match[1]);
-        return tag === null ? NOT_FOUND_META : groupMeta(tag);
+        const name = decodeSegment(match[1]);
+        return name === null ? NOT_FOUND_META : orgMeta(name).then(meta => meta || NOT_FOUND_META);
     }
 
     match = normalizedPath.match(/^\/news\/([^/]+)$/);

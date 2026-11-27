@@ -1,0 +1,16 @@
+.label {
+    display: inline-flex;
+    width: max-content;
+    min-height: 22px;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 7px;
+    border-radius: var(--radius-xs);
+    background: var(--accent-softer);
+    color: var(--accent-strong);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    line-height: 1;
+    vertical-align: middle;
+    white-space: nowrap;
+}

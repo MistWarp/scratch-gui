@@ -65,7 +65,7 @@ describe('ManageSpace confirmations', () => {
     test('explains the effects of transferring a space', () => {
         expect(spaceConfirmationDetails({type: 'transfer-space', owner: 'Alex'}, space)).toEqual({
             title: 'Transfer space?',
-            body: 'Transfer "Animation Club" to @Alex? Its group assignment will be cleared and your access may change.',
+            body: 'Transfer "Animation Club" to @Alex? Your access may change.',
             action: 'Transfer to @Alex'
         });
     });

@@ -5,7 +5,7 @@ import {Link} from 'react-router-dom';
 import {Clock3, FolderOpen, MessageCircle, Settings, UserMinus, UserPlus, Users} from 'lucide-react';
 import api from '../api';
 import Avatar from '../components/Avatar.jsx';
-import GroupTag from '../components/GroupTag.jsx';
+import OrgLabel, {isOrgOwned} from '../components/OrgLabel.jsx';
 import CommentThread from '../components/CommentThread.jsx';
 import useSpaceCommentSource from '../space-comments.js';
 import ProjectCard from '../components/ProjectCard.jsx';
@@ -123,7 +123,7 @@ const Studio = ({id, space, user, login, load}) => {
                     <dl className={styles.stats}>
                         <div><dt><Clock3 size={16} />{communityText('Total play time')}</dt><dd>{formatPlaytime(space.totalPlaytimeMs, false)}</dd></div>
                         <div><dt><Users size={16} />{communityText('Followers')}</dt><dd>{space.followerCount || 0}</dd></div>
-                        <div><dt>{communityText('Created by')}</dt><dd><Link to={`/users/${space.owner}`}>{space.owner}</Link> <GroupTag username={space.owner} compact /></dd></div>
+                        <div><dt>{communityText('Created by')}</dt><dd><Link to={`/users/${space.owner}`}>{space.owner}</Link> <OrgLabel owned={isOrgOwned(space)} /></dd></div>
                     </dl>
                 </aside>
                 <section className={styles.content}>
@@ -156,7 +156,7 @@ const Studio = ({id, space, user, login, load}) => {
                         {tab === 'curators' ? (
                             <section className={styles.curators}>
                                 <SectionHeading icon={Users} title={communityText('Curators')} lead={communityText('The people who organise this studio.')} />
-                                <div>{[space.owner, ...(space.managers || [])].map((name, index) => <Link key={name} to={`/users/${name}`}><Avatar username={name} size={42} /><span><strong>{name}</strong><GroupTag username={name} compact linked={false} /><small>{index === 0 ? communityText('Owner') : communityText('Curator')}</small></span></Link>)}</div>
+                                <div>{[space.owner, ...(space.managers || [])].map((name, index) => <Link key={name} to={`/users/${name}`}><Avatar username={name} size={42} /><span><strong>{name}</strong><small>{index === 0 ? communityText('Owner') : communityText('Curator')}</small></span></Link>)}</div>
                             </section>
                         ) : null}
                     </div>

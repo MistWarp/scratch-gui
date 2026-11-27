@@ -32,7 +32,8 @@ const PullRequests = lazy(() => import('./pages/PullRequests.jsx'));
 const Commit = lazy(() => import('./pages/Commit.jsx'));
 const ProjectCode = lazy(() => import('./pages/ProjectCode.jsx'));
 const RemixTree = lazy(() => import('./pages/RemixTree.jsx'));
-const Profile = lazy(() => import('./pages/Profile.jsx'));
+const Account = lazy(() => import('./pages/Account.jsx'));
+const OrgRedirect = lazy(() => import('./pages/Account.jsx').then(module => ({default: module.OrgRedirect})));
 const UserLibrary = lazy(() => import('./pages/UserLibrary.jsx'));
 const Following = lazy(() => import('./pages/Following.jsx'));
 const Settings = lazy(() => import('./pages/Settings.jsx'));
@@ -58,8 +59,6 @@ const Status = lazy(() => import('./pages/Status.jsx'));
 const PaidPerks = lazy(() => import('./pages/PaidPerks.jsx'));
 const Themes = lazy(() => import('./pages/Themes.jsx'));
 const Theme = lazy(() => import('./pages/Theme.jsx'));
-const Groups = lazy(() => import('./pages/Groups.jsx'));
-const Group = lazy(() => import('./pages/Group.jsx'));
 const Classroom = lazy(() => import('./pages/Classroom.jsx'));
 const ClassroomClass = lazy(() => import('./pages/ClassroomClass.jsx'));
 const ClassroomStudent = lazy(() => import('./pages/ClassroomStudent.jsx'));
@@ -78,8 +77,6 @@ const ROUTE_TITLES = [
     ['/random', 'Random project'],
     ['/themes/', 'Theme'],
     ['/themes', 'Themes'],
-    ['/groups/', 'Group'],
-    ['/groups', 'Groups'],
     ['/classroom/join', 'Student sign-in'],
     ['/classroom/claim', 'Move to your own account'],
     ['/classroom/school', 'School'],
@@ -110,6 +107,7 @@ const ROUTE_TITLES = [
     ['/status', 'Service status'],
     ['/admin', 'Admin'],
     ['/users/', 'Profile'],
+    ['/orgs/', 'Organisation'],
     ['/p/', 'Project'],
     ['/project/', 'Project']
 ];
@@ -246,8 +244,6 @@ const App = () => {
                             <Route path="/bounties" element={<Bounties />} />
                             <Route path="/themes" element={<Themes />} />
                             <Route path="/themes/:id" element={<Theme />} />
-                            <Route path="/groups" element={<Groups />} />
-                            <Route path="/groups/:tag" element={<Group />} />
                             <Route path="/classroom" element={<ClassroomRoute />}>
                                 <Route index element={<Classroom />} />
                                 <Route path="join" element={<ClassroomJoin />} />
@@ -276,7 +272,8 @@ const App = () => {
                             <Route path="/project/:id/pulls" element={<PullRequests />} />
                             <Route path="/project/:id/commits/:sha" element={<Commit />} />
                             <Route path="/project/:id/code/*" element={<ProjectCode />} />
-                            <Route path="/users/:name" element={<Profile />} />
+                            <Route path="/users/:name" element={<Account />} />
+                            <Route path="/orgs/:name" element={<OrgRedirect />} />
                             <Route path="/users/:name/library" element={<UserLibrary />} />
                             <Route
                                 path="/users/:name/followers"

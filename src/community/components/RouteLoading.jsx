@@ -17,7 +17,6 @@ const SECTION_LEADS = {
     studios: 'A shared place where curators organise projects and accept submissions.',
     challenges: 'A timed event where people make projects around a prompt.',
     collections: 'A curated project list with submissions closed by default.',
-    groups: 'Organisations that share projects, spaces, members, and funding.',
     bounties: 'Funded improvements open across public MistWarp projects.',
     themes: 'Discover community-made looks for MistWarp.',
     mine: 'Spaces you own, curate, follow, or have been invited to.',
@@ -28,7 +27,6 @@ const getExploreSection = (pathname, search) => {
     if (pathname === '/explore') return {active: 'projects', lead: null};
     if (pathname === '/posts') return {active: 'posts', lead: 'posts'};
     if (pathname === '/leaderboard') return {active: 'creators', lead: null};
-    if (pathname === '/groups') return {active: 'groups', lead: 'groups'};
     if (pathname === '/bounties') return {active: 'bounties', lead: 'bounties'};
     if (pathname === '/themes') return {active: 'themes', lead: 'themes'};
     if (pathname === '/spaces') {
@@ -44,7 +42,7 @@ const getExploreSection = (pathname, search) => {
 // Each section's placeholder is shaped like what it lists: cards for games,
 // spaces and themes, rows for people, groups, posts and bounties.
 const CARD_SECTIONS = ['studios', 'challenges', 'collections', 'themes'];
-const LIST_MEDIA = {bounties: null, groups: 'square'};
+const LIST_MEDIA = {bounties: null};
 const sectionSkeleton = (active, label) => {
     if (active === 'projects') return <CardGridSkeleton label={label} />;
     if (CARD_SECTIONS.includes(active)) {

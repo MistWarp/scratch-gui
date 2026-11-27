@@ -61,7 +61,6 @@ import roturKeysIcon from './rotur/keys.png';
 import roturStatusIcon from './rotur/status.png';
 import roturSocialIcon from './rotur/social.png';
 import roturShopIcon from './rotur/shop.png';
-import roturGroupsIcon from './rotur/groups.png';
 import roturFilesIcon from './rotur/files.png';
 import patchingIcon from './patching/patching.png';
 import customExtensionIcon from './custom/custom.svg';
@@ -198,15 +197,6 @@ export default [
         extensionId: 'roturShop',
         iconURL: roturShopIcon,
         description: 'Items and cosmetics marketplace.',
-        incompatibleWithScratch: true,
-        tags: ['rotur'],
-        featured: true
-    },
-    {
-        name: 'Rotur Groups',
-        extensionId: 'roturGroups',
-        iconURL: roturGroupsIcon,
-        description: 'Communities, roles, and group economy.',
         incompatibleWithScratch: true,
         tags: ['rotur'],
         featured: true

@@ -407,7 +407,7 @@ describe('rewritten pages', () => {
         '/project/%E0%A4%A',
         '/project/1/pulls/%E0%A4%A',
         '/users/%E0%A4%A',
-        '/groups/%E0%A4%A',
+        '/orgs/%E0%A4%A',
         '/news/%E0%A4%A',
         '/themes/%E0%A4%A',
         '/spaces/%E0%A4%A'
@@ -825,7 +825,7 @@ describe('user pages', () => {
     });
 });
 
-describe('space, group, news and theme pages', () => {
+describe('space, org, news and theme pages', () => {
     test('public space uses its thumbnail', async () => {
         stubApi({[`${API}/spaces/s1`]: {space: {
             title: 'Jam', owner: 'bob', kind: 'challenge', description: '', thumbnailUrl: 'https://t/s.png'
@@ -863,23 +863,30 @@ describe('space, group, news and theme pages', () => {
         expect(meta.description).toBe('View this MistWarp space.');
     });
 
-    test('group', async () => {
-        stubApi({[`${API}/groups/abc`]: {group: {name: 'ABC', icon_url: 'https://i/g.png'}, projects: [1]}});
-        const meta = await renderPath('/groups/abc');
-        expect(meta.title).toBe('ABC - MistWarp');
-        expect(meta.description).toBe('ABC has shared 1 projects on MistWarp.');
-        expect(meta.ogImage).toBe('https://i/g.png');
+    test('org', async () => {
+        stubApi({[`${API}/orgs/studio`]: {org: {username: 'Studio', displayName: 'The Studio'}, projects: [1]}});
+        const meta = await renderPath('/orgs/studio');
+        expect(meta.title).toBe('The Studio - MistWarp');
+        expect(meta.description).toBe('The Studio has shared 1 projects on MistWarp.');
+        expect(meta.ogImage).toBe('https://avatars.rotur.dev/studio');
     });
 
-    test('group without a name or icon, and a missing group', async () => {
-        stubApi({[`${API}/groups/abc`]: {group: {description: 'We  build'}}});
-        const meta = await renderPath('/groups/abc');
-        expect(meta.title).toBe('abc - MistWarp');
+    test('org with a README, and a missing org', async () => {
+        stubApi({[`${API}/orgs/studio`]: {org: {username: 'studio', bio: 'We  build'}}});
+        const meta = await renderPath('/orgs/studio');
+        expect(meta.title).toBe('studio - MistWarp');
         expect(meta.description).toBe('We build');
-        expect(meta.ogImage).toBe(DEFAULT_IMAGE);
 
         stubApi({});
-        expect((await renderPath('/groups/abc')).title).toBe('Group - MistWarp');
+        expect((await renderPath('/orgs/studio')).title).toBe('Page not found - MistWarp');
+    });
+
+    test('an org profile without a MistWarp account reads as the org', async () => {
+        stubApi({
+            [`${API}/users/studio`]: {exists: false},
+            [`${API}/orgs/studio`]: {org: {username: 'studio', displayName: 'The Studio'}, projects: []}
+        });
+        expect((await renderPath('/users/studio')).title).toBe('The Studio - MistWarp');
     });
 
     test('news item', async () => {
@@ -1014,7 +1021,7 @@ describe('legacy embed links', () => {
     });
 
     test('community pages that end in /embed are not treated as embeds', async () => {
-        for (const path of ['/users/embed', '/groups/embed', '/p/embed', '/settings/embed']) {
+        for (const path of ['/users/embed', '/orgs/embed', '/p/embed', '/settings/embed']) {
             const {next} = await run(path);
             expect(next).toHaveBeenCalledTimes(1);
         }

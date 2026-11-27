@@ -18,6 +18,8 @@ import SectionHeading from '../components/ui/SectionHeading.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 import {SwitchRow} from '../components/ui/Switch.jsx';
 import {useUser} from '../UserContext.jsx';
+import usePublishableOrgs from '../use-publishable-orgs.js';
+import OrgMoveRow from '../components/OrgMoveRow.jsx';
 import useLatest from '../use-latest.js';
 import {formatDateTime} from '../format.js';
 import styles from './Spaces.module.css';
@@ -89,7 +91,7 @@ const spaceConfirmationDetails = (confirmation, space) => {
     if (confirmation.type === 'transfer-space') {
         return {
             title: formatCommunityMessage('Transfer space?'),
-            body: formatCommunityMessage('Transfer "{space}" to @{owner}? Its group assignment will be cleared and your access may change.', {space: space.title, owner: confirmation.owner}),
+            body: formatCommunityMessage('Transfer "{space}" to @{owner}? Your access may change.', {space: space.title, owner: confirmation.owner}),
             action: formatCommunityMessage('Transfer to @{owner}', {owner: confirmation.owner})
         };
     }
@@ -124,7 +126,6 @@ const buildSpacePatch = (form, section, criteriaLocked) => {
     const patch = {
         title: form.title,
         description: form.description,
-        groupTag: form.groupTag || '',
         visibility: form.visibility,
         openSubmissions: form.openSubmissions,
         theme: form.theme,
@@ -154,6 +155,7 @@ const ManageSpace = () => {
     const requestedSection = searchParams.get('section');
     const {user, loading, login} = useUser();
     const viewerName = (user && user.username) || '';
+    const {orgs: publishOrgs} = usePublishableOrgs(viewerName);
     const loadContext = `${id}\u0000${viewerName}`;
     const [space, setSpace] = useState(null);
     const [spaceLoadContext, setSpaceLoadContext] = useState('');
@@ -344,12 +346,13 @@ const ManageSpace = () => {
         }
     };
 
-    const requestSpaceTransfer = () => {
-        const nextOwner = transferOwner.trim();
+    const confirmSpaceTransfer = nextOwner => {
         if (!nextOwner || transferBusy) return;
         setConfirmationError('');
         setConfirmation({type: 'transfer-space', owner: nextOwner});
     };
+
+    const requestSpaceTransfer = () => confirmSpaceTransfer(transferOwner.trim());
 
     const invite = async username => {
         const actionKey = beginAction('user');
@@ -637,9 +640,12 @@ const ManageSpace = () => {
                                 {space.kind === 'studio' ? <div className={styles.thumbnailEditor}>{space.thumbnailUrl ? <img src={space.thumbnailUrl} alt="" /> : <span><ImageIcon size={28} />{communityText('No thumbnail')}</span>}<label><strong>{thumbnailBusy ? communityText('Uploading…') : communityText('Choose image')}</strong><small>{communityText('PNG, JPG, or WebP up to 1 MB. A 4:3 image works best.')}</small><input type="file" accept="image/png,image/jpeg,image/webp" disabled={thumbnailBusy} onChange={uploadThumbnail} /></label></div> : null}
                                 <label><span>{communityText('Name')}</span><input value={form.title} maxLength={100} required onChange={event => updateForm('title', event.target.value)} /></label>
                                 <label><span>{communityText('Description')}</span><textarea value={form.description || ''} maxLength={5000} onChange={event => updateForm('description', event.target.value)} /></label>
-                                <label><span>{communityText('Owning group')}</span><input value={form.groupTag || ''} maxLength={32} placeholder={communityText('Optional Rotur group tag')} onChange={event => updateForm('groupTag', event.target.value)} /><small>{communityText('Enter a group tag to transfer this space into the group. Clear it to move the space back out.')}</small></label>
                                 <div className={styles.transferOwner}>
-                                    <span><strong>{communityText('Transfer to another user')}</strong><small>{communityText('The new owner receives this {value1}. Its group assignment is cleared.', {value1: space.kind})}</small></span>
+                                    <span><strong>{communityText('Move to an organisation')}</strong><small>{communityText('Members of the organisation who can publish for it will manage this space with you.')}</small></span>
+                                    <OrgMoveRow className={styles.transferRow} orgs={publishOrgs} owner={space.owner} disabled={transferBusy} onMove={confirmSpaceTransfer} />
+                                </div>
+                                <div className={styles.transferOwner}>
+                                    <span><strong>{communityText('Transfer to another user')}</strong><small>{communityText('The new owner receives this {value1}.', {value1: space.kind})}</small></span>
                                     <div className={styles.transferRow}><input disabled={transferBusy} value={transferOwner} placeholder={communityText('Rotur username')} onChange={event => setTransferOwner(event.target.value)} /><Button variant="secondary" disabled={!transferOwner.trim() || transferBusy} onClick={requestSpaceTransfer}>{communityText('Transfer')}</Button></div>
                                 </div>
                                 {space.kind === 'challenge' ? <><label><span>{communityText('Theme')}</span><input value={form.theme || ''} maxLength={200} placeholder={communityText('Optional theme or prompt')} onChange={event => updateForm('theme', event.target.value)} /></label><label><span>{communityText('Rules')}</span><textarea value={form.rules || ''} maxLength={10000} placeholder={communityText('Eligibility, team rules, allowed tools, and anything that could disqualify an entry')} onChange={event => updateForm('rules', event.target.value)} /></label></> : null}

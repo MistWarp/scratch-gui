@@ -4,8 +4,8 @@ import {Link} from 'react-router-dom';
 import {GitFork, GitPullRequest, Heart, Play, TrendingUp, Users} from 'lucide-react';
 import {projectUrl} from '../api';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
-import GroupTag from './GroupTag.jsx';
 import UserLink from './UserLink.jsx';
+import OrgLabel, {isOrgOwned} from './OrgLabel.jsx';
 import styles from './ProjectCard.module.css';
 
 const ProjectCard = ({project, showTrend = false}) => {
@@ -43,7 +43,7 @@ const ProjectCard = ({project, showTrend = false}) => {
                     <span>{communityRich('by {user}', {
                         user: <UserLink username={project.owner}>{project.owner}</UserLink>
                     })}</span>
-                    <GroupTag username={project.owner} compact linked={false} />
+                    <OrgLabel owned={isOrgOwned(project)} />
                 </div>
                 {project.description ? (
                     <p className={styles.desc}>{project.description}</p>

@@ -4,7 +4,6 @@ import {MemoryRouter} from 'react-router-dom';
 
 import ProjectCard from '../../src/community/components/ProjectCard.jsx';
 
-jest.mock('../../src/community/components/GroupTag.jsx', () => () => null);
 jest.mock('../../src/community/components/ProjectThumbnail.jsx', () => () => null);
 
 describe('ProjectCard', () => {

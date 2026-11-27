@@ -212,7 +212,8 @@
 }
 
 .previewResult input,
-.transferAction input {
+.transferAction input,
+.transferAction select {
     box-sizing: border-box;
     width: 100%;
     min-width: 0;

@@ -5,6 +5,7 @@ import {Link, useNavigate, useSearchParams} from 'react-router-dom';
 import {Gavel, Layers3, Trophy, Library, Plus, Star} from 'lucide-react';
 import api from '../api';
 import {useUser} from '../UserContext.jsx';
+import usePublishableOrgs, {ownerOptions} from '../use-publishable-orgs.js';
 import Button from '../components/ui/Button.jsx';
 import EmptyState, {SignInPrompt} from '../components/ui/EmptyState.jsx';
 import Notice from '../components/ui/Notice.jsx';
@@ -51,9 +52,10 @@ const normalizeSpaceParams = currentParams => {
     const query = (next.get('q') || '').trim();
     if (query) next.set('q', query);
     else next.delete('q');
-    const group = (next.get('group') || '').trim();
-    if (group) next.set('group', group);
-    else next.delete('group');
+    const org = (next.get('org') || '').trim();
+    if (org) next.set('org', org);
+    else next.delete('org');
+    next.delete('group');
     if (next.get('create') !== '1') next.delete('create');
     return next;
 };
@@ -63,7 +65,7 @@ const withSpaceCreate = (currentParams, open) => {
     if (open) next.set('create', '1');
     else {
         next.delete('create');
-        next.delete('group');
+        next.delete('org');
     }
     return next;
 };
@@ -92,7 +94,7 @@ const Spaces = () => {
     const requestedKind = searchParams.get('kind') || 'studio';
     const kind = KINDS.some(item => item.key === requestedKind) ? requestedKind : 'studio';
     const requestedQuery = searchParams.get('q') || '';
-    const requestedGroup = searchParams.get('group') || '';
+    const requestedOrg = searchParams.get('org') || '';
     const createKind = ['studio', 'challenge', 'collection'].includes(searchParams.get('kind')) ? searchParams.get('kind') : 'studio';
     const [spaces, setSpaces] = useState([]);
     const [query, setQuery] = useState(requestedQuery);
@@ -103,8 +105,14 @@ const Spaces = () => {
     const [loadMoreError, setLoadMoreError] = useState('');
     const creating = searchParams.get('create') === '1';
     const [createBusy, setCreateBusy] = useState(false);
-    const [form, setForm] = useState({title: '', description: '', kind: createKind, visibility: 'public', startsAt: '', endsAt: '', votingMode: 'judges', groupTag: requestedGroup});
+    const [form, setForm] = useState({title: '', description: '', kind: createKind, visibility: 'public', startsAt: '', endsAt: '', votingMode: 'judges', org: requestedOrg});
     const [error, setError] = useState('');
+    const {orgs: publishOrgs} = usePublishableOrgs(viewerName);
+    const ownerChoices = ownerOptions({
+        selfLabel: communityText('You (@{username})', {username: viewerName}),
+        orgs: publishOrgs,
+        current: form.org
+    });
     const loadSequence = useRef(0);
     const createLocks = useRef(new Set());
     const currentViewer = useRef(viewerName);
@@ -160,8 +168,8 @@ const Spaces = () => {
     useEffect(() => load(requestedQuery), [load, requestedQuery]);
     useEffect(() => {
         if (!creating) return;
-        setForm(current => ({...current, kind: createKind, groupTag: requestedGroup}));
-    }, [createKind, creating, requestedGroup]);
+        setForm(current => ({...current, kind: createKind, org: requestedOrg}));
+    }, [createKind, creating, requestedOrg]);
     useEffect(() => {
         if (!creating) setError('');
     }, [creating]);
@@ -193,7 +201,7 @@ const Spaces = () => {
         try {
             const data = await api.createSpace(payload);
             if (currentViewer.current === actionViewer) {
-                setForm({title: '', description: '', kind: 'studio', visibility: 'public', startsAt: '', endsAt: '', votingMode: 'judges', groupTag: ''});
+                setForm({title: '', description: '', kind: 'studio', visibility: 'public', startsAt: '', endsAt: '', votingMode: 'judges', org: ''});
                 navigate(`/spaces/${data.space._id}/manage`);
             }
         } catch (e) {
@@ -268,10 +276,14 @@ const Spaces = () => {
                             <option value="private">{communityText('Private')}</option>
                         </select>
                     </label>
-                    <label>
-                        <span>{communityText('Group owner')} <small>{communityText('optional Rotur group tag')}</small></span>
-                        <input maxLength="32" value={form.groupTag} disabled={createBusy} placeholder={communityText('for example, mistwarp')} onChange={event => updateForm('groupTag', event.target.value)} />
-                    </label>
+                    {ownerChoices.length > 1 ? (
+                        <label>
+                            <span>{communityText('Owner')}</span>
+                            <select value={form.org} disabled={createBusy} onChange={event => updateForm('org', event.target.value)}>
+                                {ownerChoices.map(choice => <option key={choice.value} value={choice.value}>{choice.label}</option>)}
+                            </select>
+                        </label>
+                    ) : null}
                     {form.kind === 'challenge' ? (
                         <div className={styles.formRow}>
                             <label><span>{communityText('Submissions open')}</span><input type="datetime-local" disabled={createBusy} required value={form.startsAt} onChange={event => updateForm('startsAt', event.target.value)} /></label>

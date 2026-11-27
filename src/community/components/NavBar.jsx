@@ -7,11 +7,9 @@ import {
 } from 'lucide-react';
 import {useUser} from '../UserContext.jsx';
 import api, {editorUrl, projectUrl} from '../api';
-import rotur from '../rotur.js';
 import {fetchNotifications} from '../../lib/rotur/client.js';
 import logo from '../assets/mistwarp-logo.png';
 import Avatar from './Avatar.jsx';
-import GroupTag from './GroupTag.jsx';
 import setFaviconBadge from '../faviconBadge';
 import searchPath from '../search-path.js';
 import {searchKeyAction} from '../search-keyboard.js';
@@ -63,7 +61,6 @@ const SearchBox = ({className, containerRef, inputRef, query, onQuery, onFocus, 
                     <>
                         <Avatar username={person.username} size={26} />
                         <span>{person.username}</span>
-                        {person.group_tag ? <GroupTag tag={person.group_tag} compact linked={false} /> : null}
                         <span className={styles.suggestionMeta}>{person.followers ?? 0}{communityText(' followers, ')}{person.projects}{communityText(' projects')}</span>
                     </>
                 )
@@ -223,7 +220,7 @@ const NavBar = () => {
     const headerRef = useRef(null);
     const navigate = useNavigate();
     const location = useLocation();
-    const exploreActive = ['/explore', '/spaces', '/themes', '/groups', '/bounties'].some(path => location.pathname.startsWith(path));
+    const exploreActive = ['/explore', '/spaces', '/themes', '/bounties'].some(path => location.pathname.startsWith(path));
     const innerRef = useRef(null);
     const linksRef = useRef(null);
     const accountRef = useRef(null);
@@ -384,15 +381,13 @@ const NavBar = () => {
                 api.searchUsers(q, {limit: 5}),
                 api.explore({q, sort: 'relevance', limit: 5}),
                 api.spaces({q, limit: 4})
-            ]).then(async results => {
+            ]).then(results => {
                 if (stale) return;
                 const [userResult, projectResult, spaceResult] = results;
                 const u = userResult.status === 'fulfilled' ? userResult.value : {users: []};
                 const p = projectResult.status === 'fulfilled' ? projectResult.value : {projects: []};
                 const s = spaceResult.status === 'fulfilled' ? spaceResult.value : {spaces: []};
-                const representedUsers = await rotur.withGroupTags(u.users || []);
-                if (stale) return;
-                setSuggestions(representedUsers);
+                setSuggestions(u.users || []);
                 setProjectSuggestions(p.projects || []);
                 setSpaceSuggestions((s.spaces || []).slice(0, 4));
                 setSuggestionsFailed(results.every(result => result.status === 'rejected'));

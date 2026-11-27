@@ -159,63 +159,6 @@ const clickAction = async (scopes, action) => {
     return authenticatedAction([], action);
 };
 
-const scopedGet = async (scopes, path, params = {}) => {
-    await ensureScopes(scopes);
-    return get(path, params);
-};
-
-const groupBundle = async (tag, {includeMembers = false} = {}) => {
-    await ensureScopes(includeMembers ? ['groups:view', 'groups:members.view'] : ['groups:view']);
-    const base = `/groups/${encodeURIComponent(tag)}`;
-    const safe = promise => promise.catch(() => []);
-    const [campaigns, announcements, events, products, roles, members] = await Promise.all([
-        safe(get(`${base}/campaigns`)),
-        safe(get(`${base}/announcements`)),
-        safe(get(`${base}/events`)),
-        safe(get(`${base}/products`)),
-        safe(get(`${base}/roles`)),
-        includeMembers ? get(`${base}/members`, {per_page: 100}).catch(() => null) : null
-    ]);
-    return {campaigns, announcements, events, products, roles, members};
-};
-
-// Group tags change rarely and show on every card and comment, so lookups are
-// shared: one request per person however many places show their tag, reused
-// for a few minutes. Rotur has no batch profile lookup, so this is the most
-// that can be saved.
-const GROUP_TAG_TTL = 5 * 60 * 1000;
-const groupTags = new Map();
-
-const groupTagKey = username => String(username || '').trim()
-    .toLowerCase();
-
-const groupTag = username => {
-    const key = groupTagKey(username);
-    if (!key) return Promise.resolve('');
-    const hit = groupTags.get(key);
-    if (hit && Date.now() - hit.at < GROUP_TAG_TTL) return hit.promise;
-    // A failed lookup is forgotten, so the next card asks again instead of
-    // showing no tag for minutes.
-    const promise = getProfile(key).then(profile => String((profile && profile.group_tag) || ''), () => {
-        if (groupTags.get(key)?.promise === promise) groupTags.delete(key);
-        return '';
-    });
-    groupTags.set(key, {at: Date.now(), promise});
-    if (groupTags.size > CACHE_MAX_ENTRIES) groupTags.delete(groupTags.keys().next().value);
-    return promise;
-};
-
-const setGroupTag = (username, tag) => {
-    const key = groupTagKey(username);
-    if (key) groupTags.set(key, {at: Date.now(), promise: Promise.resolve(String(tag || ''))});
-};
-
-const withGroupTags = users => Promise.all((users || []).map(async user => {
-    if (!user || user.group_tag) return user;
-    const tag = await groupTag(user.username);
-    return tag ? {...user, group_tag: tag} : user;
-}));
-
 const postBody = (content, options, madeWith) => {
     const body = {content, os: 'MistWarp', made_with: madeWith};
     if (options.attachment) body.attachment = options.attachment;
@@ -394,31 +337,7 @@ const rotur = {
     ),
     deletePost: id => authenticatedAction(['posts:delete'], client => client.posts.delete(id)),
     status: getStatus,
-    followerLeaderboard,
-    groupTag,
-    setGroupTag,
-    withGroupTags,
-    groups: {
-        search: query => get('/groups/search', {query}),
-        bundle: groupBundle,
-        mine: () => scopedGet(['groups:view'], '/groups/mine'),
-        get: tag => get(`/groups/${encodeURIComponent(tag)}`),
-        members: tag => scopedGet(
-            ['groups:view', 'groups:members.view'],
-            `/groups/${encodeURIComponent(tag)}/members`,
-            {per_page: 100}
-        ),
-        campaigns: tag => scopedGet(['groups:view'], `/groups/${encodeURIComponent(tag)}/campaigns`),
-        announcements: tag => scopedGet(['groups:view'], `/groups/${encodeURIComponent(tag)}/announcements`),
-        events: tag => scopedGet(['groups:view'], `/groups/${encodeURIComponent(tag)}/events`),
-        products: tag => scopedGet(['groups:view'], `/groups/${encodeURIComponent(tag)}/products`),
-        roles: tag => scopedGet(['groups:view'], `/groups/${encodeURIComponent(tag)}/roles`),
-        join: tag => mutate(`/groups/${encodeURIComponent(tag)}/join`, {scopes: ['groups:join']}),
-        requestJoin: (tag, message = '') => mutate(`/groups/${encodeURIComponent(tag)}/join_requests`, {
-            params: {message}, scopes: ['groups:join']
-        }),
-        leave: tag => mutate(`/groups/${encodeURIComponent(tag)}/leave`, {scopes: ['groups:leave']})
-    }
+    followerLeaderboard
 };
 
 export default rotur;

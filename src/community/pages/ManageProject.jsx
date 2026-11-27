@@ -4,11 +4,13 @@ import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import React, {useEffect, useRef, useState, useCallback} from 'react';
 import {useParams, Link, useNavigate, useSearchParams} from 'react-router-dom';
 import {
-    Activity, AlertTriangle, BarChart3, Bookmark, Check, ClipboardCheck, Clock3, Coins, Eye, FolderOpen, Gift, Heart,
-    Link2, Lock, MessageCircle, Palette, Plus, ShoppingBag, SlidersHorizontal, Tag, Trash2, Type, UserCog, Users
+    Activity, AlertTriangle, BarChart3, Bookmark, Building2, Check, ClipboardCheck, Clock3, Coins, Eye, FolderOpen, Gift, Heart,
+    Link2, Lock, MessageCircle, Palette, Plus, ShoppingBag, SlidersHorizontal, Trash2, Type, UserCog, Users
 } from 'lucide-react';
 import api, {projectUrl, editorUrl} from '../api';
 import {useUser} from '../UserContext.jsx';
+import usePublishableOrgs from '../use-publishable-orgs.js';
+import OrgMoveRow from '../components/OrgMoveRow.jsx';
 import VisibilityMenu from '../components/VisibilityMenu.jsx';
 import ProjectInfoPanel from '../components/ProjectInfoPanel.jsx';
 import ProjectDonationAnalytics from '../components/ProjectDonationAnalytics.jsx';
@@ -57,7 +59,11 @@ const ROLE_DESCRIPTIONS = {
     contributor: 'Works through pull requests. While in a live session, can edit and save with everyone else.',
     tester: 'Can open and test private drafts, and watch live sessions without editing.'
 };
-const projectTransferConfirmation = (project, nextOwner) => ({
+const projectTransferConfirmation = (project, nextOwner, toOrg = false) => (toOrg ? {
+    title: 'Move project to an organisation?',
+    body: `Move "${project.title}" to @${nextOwner}? Members who can publish for the organisation will manage it.`,
+    action: `Move to @${nextOwner}`
+} : {
     title: 'Transfer project?',
     body: `Transfer "${project.title}" to @${nextOwner}? You will lose owner access.`,
     action: `Transfer to @${nextOwner}`
@@ -122,6 +128,7 @@ const ManageProject = () => {
     const requestedSection = searchParams.get('section');
     const {user, loading, login} = useUser();
     const viewerName = (user && user.username) || '';
+    const {orgs: publishOrgs} = usePublishableOrgs(viewerName);
     const loadContext = `${id}\u0000${viewerName}`;
     const [project, setProject] = useState(null);
     const [projectLoadContext, setProjectLoadContext] = useState('');
@@ -237,7 +244,6 @@ const ManageProject = () => {
         if (!project) return;
         setForm({
             title: project.title || '',
-            groupTag: project.groupTag || '',
             vanitySlug: project.vanitySlug || project.vanityReserved || '',
             brandingAccent: project.branding?.accentColor || '#855cd6',
             brandingTagline: project.branding?.tagline || '',
@@ -298,7 +304,6 @@ const ManageProject = () => {
         try {
             let data = await api.updateProject(id, {
                 title: form.title.trim(),
-                groupTag: form.groupTag.trim(),
                 vanitySlug: form.vanitySlug.trim(),
                 branding: form.brandingTagline.trim() || form.brandingAccent !== '#855cd6' ? {
                     accentColor: form.brandingAccent,
@@ -328,12 +333,13 @@ const ManageProject = () => {
         }
     };
 
-    const requestProjectTransfer = () => {
-        const nextOwner = transferOwner.trim();
+    const confirmProjectTransfer = nextOwner => {
         if (!nextOwner || transferBusy) return;
         setTransferError('');
         setTransferConfirm(nextOwner);
     };
+
+    const requestProjectTransfer = () => confirmProjectTransfer(transferOwner.trim());
 
     const transferProject = async () => {
         const nextOwner = transferConfirm;
@@ -463,7 +469,8 @@ const ManageProject = () => {
         return true;
     });
     const activeSection = section;
-    const transferDetails = transferConfirm ? projectTransferConfirmation(project, transferConfirm) : null;
+    const transferToOrg = publishOrgs.some(org => org.username.toLowerCase() === transferConfirm.toLowerCase());
+    const transferDetails = transferConfirm ? projectTransferConfirmation(project, transferConfirm, transferToOrg) : null;
 
     return (
         <main className={styles.page}>
@@ -751,20 +758,10 @@ const ManageProject = () => {
 
                     {activeSection === 'ownership' ? (
                         <div className={styles.stack}>
-                            <PageHeading icon={UserCog} title={communityText('Ownership')} description={communityText('Move the project to a group or transfer it to someone else.')} />
+                            <PageHeading icon={UserCog} title={communityText('Ownership')} description={communityText('Move the project to an organisation or transfer it to someone else.')} />
                             <div className={styles.card}>
-                                <SectionHeading as="h3" icon={Tag} title={communityText('Owning group')} />
-                                <div className={styles.form}>
-                                    <label className={styles.field}>
-                                        <span>{communityText('Rotur group tag')}</span>
-                                        <input disabled={saving} value={form.groupTag} maxLength={32} placeholder={communityText('Optional group tag')} onChange={event => set('groupTag', event.target.value)} />
-                                        <small>{communityText('Clear this field to move the project back to your account.')}</small>
-                                    </label>
-                                    <div className={styles.formActions}>
-                                        <span className={styles.formStatus} role="status" aria-live="polite">{status}</span>
-                                        <Button variant="primary" busy={saving} busyLabel={communityText('Saving…')} onClick={save}><Check size={16} />{communityText('Save group')}</Button>
-                                    </div>
-                                </div>
+                                <SectionHeading as="h3" icon={Building2} title={communityText('Move to an organisation')} lead={communityText('Members of the organisation who can publish for it will manage this project with you.')} />
+                                <OrgMoveRow className={styles.transferAction} orgs={publishOrgs} owner={project.owner} disabled={transferBusy} onMove={confirmProjectTransfer} />
                             </div>
                             <div className={`${styles.card} ${styles.dangerCard}`}>
                                 <SectionHeading as="h3" icon={UserCog} title={communityText('Transfer project')} lead={communityText('The new owner gets the project. You will lose owner access.')} />

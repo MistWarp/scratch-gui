@@ -25,7 +25,6 @@ import EmptyState from './ui/EmptyState.jsx';
 import IconButton from './ui/IconButton.jsx';
 import Modal from './ui/Modal.jsx';
 import Notice from './ui/Notice.jsx';
-import GroupTag from './GroupTag.jsx';
 import PostAttachment from './PostAttachment.jsx';
 import PostProjectCard from './PostProjectCard.jsx';
 import PostReasons from './PostReasons.jsx';
@@ -329,7 +328,6 @@ const SocialPost = ({
                 <header>
                     <div className={styles.who}>
                         <UserLink className={styles.name} username={post.user}>{post.user}</UserLink>
-                        <GroupTag tag={post.group_tag} username={post.user} compact className={styles.group} />
                         {when && !detail ? (
                             <React.Fragment>
                                 <span className={styles.dot} aria-hidden="true">·</span>

@@ -37,14 +37,14 @@ describe('Spaces browsing and creation', () => {
     });
 
     test('canonicalizes fallback space filters and creation state', () => {
-        expect(normalizeSpaceParams(new URLSearchParams('kind=unknown&q=++club++&group=+makers+&create=yes')).toString())
-            .toBe('q=club&group=makers');
+        expect(normalizeSpaceParams(new URLSearchParams('kind=unknown&q=++club++&org=+makers+&group=old&create=yes')).toString())
+            .toBe('q=club&org=makers');
         expect(normalizeSpaceParams(new URLSearchParams('kind=studio&create=1')).toString()).toBe('create=1');
     });
 
     test('opens and closes the creation panel through URL state', () => {
         expect(withSpaceCreate(new URLSearchParams('kind=challenge'), true).toString()).toBe('kind=challenge&create=1');
-        expect(withSpaceCreate(new URLSearchParams('kind=challenge&create=1&group=makers'), false).toString())
+        expect(withSpaceCreate(new URLSearchParams('kind=challenge&create=1&org=makers'), false).toString())
             .toBe('kind=challenge');
     });
 

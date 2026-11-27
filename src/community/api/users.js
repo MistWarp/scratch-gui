@@ -8,5 +8,6 @@ export default {
         request(`/users/${encodeURIComponent(name)}/projects?offset=${offset}&limit=${limit}`),
     searchUsers: (q, {limit = 8} = {}) => request(`/search/users?q=${encodeURIComponent(q)}&limit=${limit}`),
     activity: users => request(`/activity?users=${encodeURIComponent(users.join(','))}`),
-    group: tag => request(`/groups/${encodeURIComponent(tag)}`)
+    org: name => request(`/orgs/${encodeURIComponent(name)}`),
+    myOrgs: () => request('/me/orgs', {cache: false})
 };

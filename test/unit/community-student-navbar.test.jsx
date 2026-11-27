@@ -32,7 +32,6 @@ jest.mock('../../src/community/api', () => ({
     editorUrl: jest.fn(() => '/editor'),
     projectUrl: jest.fn(() => '/project/x')
 }));
-jest.mock('../../src/community/rotur.js', () => ({withGroupTags: jest.fn(users => Promise.resolve(users))}));
 jest.mock('../../src/lib/rotur/client.js', () => ({fetchNotifications: jest.fn(() => Promise.resolve([]))}));
 jest.mock('../../src/community/faviconBadge.js', () => jest.fn());
 jest.mock('../../src/community/i18n.jsx', () => ({
