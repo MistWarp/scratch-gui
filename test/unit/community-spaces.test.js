@@ -6,6 +6,7 @@ import {
     mergeSpaces,
     normalizeSpaceParams,
     spaceCreatePayload,
+    spaceOwnerField,
     withSpaceCreate,
     withSpaceQuery
 } from '../../src/community/pages/Spaces.jsx';
@@ -40,6 +41,21 @@ describe('Spaces browsing and creation', () => {
         expect(normalizeSpaceParams(new URLSearchParams('kind=unknown&q=++club++&org=+makers+&group=old&create=yes')).toString())
             .toBe('q=club&org=makers');
         expect(normalizeSpaceParams(new URLSearchParams('kind=studio&create=1')).toString()).toBe('create=1');
+    });
+
+    test('an org asked for in the link is only dropped once the org list says it is not offered', () => {
+        const orgs = [{username: 'Studio'}];
+        expect(spaceOwnerField({org: 'studio', orgs, loaded: true, failed: false})).toEqual({pending: '', drop: false, unverified: false});
+        expect(spaceOwnerField({org: 'bank', orgs, loaded: true, failed: false})).toEqual({pending: '', drop: true, unverified: false});
+        expect(spaceOwnerField({org: 'bank', orgs: [], loaded: false, failed: false})).toEqual({pending: 'bank', drop: false, unverified: false});
+        expect(spaceOwnerField({org: 'bank', orgs: [], loaded: true, failed: true})).toEqual({pending: 'bank', drop: false, unverified: true});
+        expect(spaceOwnerField({org: '', orgs: [], loaded: true, failed: true})).toEqual({pending: '', drop: false, unverified: false});
+    });
+
+    test('an org-owned space is created with its org', () => {
+        const payload = spaceCreatePayload({title: ' Jam ', description: '', kind: 'studio', visibility: 'public', org: 'studio'});
+        expect(payload.org).toBe('studio');
+        expect(payload.title).toBe('Jam');
     });
 
     test('opens and closes the creation panel through URL state', () => {

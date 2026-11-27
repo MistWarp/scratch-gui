@@ -3835,8 +3835,6 @@
   "Organisation": "Organisation",
   "Organisations you can publish for will appear here.": "Organisations you can publish for will appear here.",
   "Create an organisation on Rotur": "Create an organisation on Rotur",
-  "Choose an organisation": "Choose an organisation",
-  "{actor} invited you to join the organisation {org}": "{actor} invited you to join the organisation {org}",
   "Move the project to an organisation or transfer it to someone else.": "Move the project to an organisation or transfer it to someone else.",
   "Move to an organisation": "Move to an organisation",
   "Members of the organisation who can publish for it will manage this project with you.": "Members of the organisation who can publish for it will manage this project with you.",
@@ -3889,5 +3887,7 @@
   "{org} has not published any challenges.": "{org} has not published any challenges.",
   "Collections by {org}": "Collections by {org}",
   "Create the first collection for {org}.": "Create the first collection for {org}.",
-  "{org} has not published any collections.": "{org} has not published any collections."
+  "{org} has not published any collections.": "{org} has not published any collections.",
+  "You can't publish for @{org}, so this space will be yours.": "You can't publish for @{org}, so this space will be yours.",
+  "Could not load your organisations, so creating this for @{org} may be refused.": "Could not load your organisations, so creating this for @{org} may be refused."
 }

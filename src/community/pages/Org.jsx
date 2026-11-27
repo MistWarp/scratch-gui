@@ -82,7 +82,7 @@ const Org = ({name}) => {
 
     useEffect(() => {
         setData(null);
-    }, [name]);
+    }, [name, viewer]);
 
     useEffect(() => {
         load();

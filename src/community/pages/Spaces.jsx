@@ -85,6 +85,16 @@ const spaceCreatePayload = form => ({
     openSubmissions: form.kind !== 'collection'
 });
 
+const spaceOwnerField = ({org, orgs, loaded, failed}) => {
+    const offered = !org || orgs.some(choice => choice.username.toLowerCase() === org.toLowerCase());
+    const settled = loaded && !failed;
+    return {
+        pending: settled ? '' : org,
+        drop: settled && !offered,
+        unverified: loaded && failed && Boolean(org)
+    };
+};
+
 const Spaces = () => {
     const {text: communityText} = useCommunityText();
     const {user, login} = useUser();
@@ -107,13 +117,14 @@ const Spaces = () => {
     const [createBusy, setCreateBusy] = useState(false);
     const [form, setForm] = useState({title: '', description: '', kind: createKind, visibility: 'public', startsAt: '', endsAt: '', votingMode: 'judges', org: requestedOrg});
     const [error, setError] = useState('');
-    const {orgs: publishOrgs, loaded: orgsLoaded} = usePublishableOrgs(viewerName);
+    const [droppedOrg, setDroppedOrg] = useState('');
+    const {orgs: publishOrgs, loaded: orgsLoaded, failed: orgsFailed} = usePublishableOrgs(viewerName);
+    const ownerField = spaceOwnerField({org: form.org, orgs: publishOrgs, loaded: orgsLoaded, failed: orgsFailed});
     const ownerChoices = viewerName ? ownerOptions({
         selfLabel: communityText('You (@{username})', {username: viewerName}),
         orgs: publishOrgs,
-        current: orgsLoaded ? '' : form.org
+        current: ownerField.pending
     }) : [];
-    const chosenOrgOffered = !form.org || publishOrgs.some(org => org.username.toLowerCase() === form.org.toLowerCase());
     const loadSequence = useRef(0);
     const createLocks = useRef(new Set());
     const currentViewer = useRef(viewerName);
@@ -170,16 +181,20 @@ const Spaces = () => {
     useEffect(() => {
         if (!creating) return;
         setForm(current => ({...current, kind: createKind, org: requestedOrg}));
+        setDroppedOrg('');
     }, [createKind, creating, requestedOrg]);
     useEffect(() => {
         if (!creating) setError('');
     }, [creating]);
     useEffect(() => {
-        if (orgsLoaded && !chosenOrgOffered) setForm(current => ({...current, org: ''}));
-    }, [chosenOrgOffered, orgsLoaded]);
+        if (!ownerField.drop) return;
+        setDroppedOrg(form.org);
+        setForm(current => ({...current, org: ''}));
+    }, [form.org, ownerField.drop]);
     useEffect(() => {
         setCreateBusy(false);
         setError('');
+        setDroppedOrg('');
     }, [viewerName]);
 
     const create = async event => {
@@ -311,6 +326,12 @@ const Spaces = () => {
                             </div>
                         </fieldset>
                     ) : null}
+                    {droppedOrg && !form.org ? (
+                        <Notice variant="warning">{communityText('You can\'t publish for @{org}, so this space will be yours.', {org: droppedOrg})}</Notice>
+                    ) : null}
+                    {ownerField.unverified ? (
+                        <Notice variant="warning">{communityText('Could not load your organisations, so creating this for @{org} may be refused.', {org: form.org})}</Notice>
+                    ) : null}
                     {error ? <Notice variant="error">{error}</Notice> : null}
                     <div className={styles.actions}>
                         <Button variant="primary" type="submit" busy={createBusy} busyLabel={communityText('Creating…')}><Plus size={16} />{communityText('Create')}</Button>
@@ -367,5 +388,5 @@ const Spaces = () => {
     );
 };
 
-export {withSpaceCreate, withSpaceQuery, challengeDatesValid, mergeSpaces, normalizeSpaceParams, spaceCreatePayload};
+export {withSpaceCreate, withSpaceQuery, challengeDatesValid, mergeSpaces, normalizeSpaceParams, spaceCreatePayload, spaceOwnerField};
 export default Spaces;

@@ -693,7 +693,7 @@
     "src/community/components/CollectionSaveModal.jsx:32",
     "src/community/components/CollectionSaveModal.jsx:219",
     "src/community/pages/ManageSpace.jsx:677",
-    "src/community/pages/Spaces.jsx:278"
+    "src/community/pages/Spaces.jsx:293"
   ],
   "Unlisted": [
     "src/community/components/CollectionSaveModal.jsx:33",
@@ -703,13 +703,13 @@
     "src/community/components/SpaceProjectPicker.jsx:236",
     "src/community/components/VisibilityMenu.jsx:9",
     "src/community/pages/ManageSpace.jsx:677",
-    "src/community/pages/Spaces.jsx:279"
+    "src/community/pages/Spaces.jsx:294"
   ],
   "Private": [
     "src/community/components/CollectionSaveModal.jsx:34",
     "src/community/components/CollectionSaveModal.jsx:221",
     "src/community/pages/ManageSpace.jsx:677",
-    "src/community/pages/Spaces.jsx:280"
+    "src/community/pages/Spaces.jsx:295"
   ],
   "Could not load your collections.": [
     "src/community/components/CollectionSaveModal.jsx:53",
@@ -815,7 +815,7 @@
     "src/community/components/classroom/ClassGroups.jsx:96",
     "src/community/pages/Classroom.jsx:349",
     "src/community/pages/ManageProject.jsx:705",
-    "src/community/pages/Spaces.jsx:316"
+    "src/community/pages/Spaces.jsx:337"
   ],
   "Create and save": [
     "src/community/components/CollectionSaveModal.jsx:231"
@@ -940,7 +940,7 @@
     "src/community/pages/News.jsx:293",
     "src/community/pages/PullRequest.jsx:917",
     "src/community/pages/Roadmap.jsx:501",
-    "src/community/pages/Spaces.jsx:317",
+    "src/community/pages/Spaces.jsx:338",
     "src/community/pages/Theme.jsx:257",
     "src/community/pages/project/ForkSetupModal.jsx:68",
     "src/community/pages/project/IssueList.jsx:67"
@@ -1045,7 +1045,7 @@
   ],
   "Loading…": [
     "src/community/components/CommentThread.jsx:1123",
-    "src/community/components/ListSkeleton.jsx:18",
+    "src/community/components/ListSkeleton.jsx:16",
     "src/community/components/MyStuffLibrary.jsx:104",
     "src/community/components/MyStuffProjects.jsx:390",
     "src/community/components/MyStuffSpaces.jsx:77",
@@ -1059,7 +1059,7 @@
     "src/community/pages/Project.jsx:614",
     "src/community/pages/RemixTree.jsx:248",
     "src/community/pages/Search.jsx:211",
-    "src/community/pages/Spaces.jsx:360",
+    "src/community/pages/Spaces.jsx:381",
     "src/community/pages/Themes.jsx:185",
     "src/community/pages/admin/ExtensionManager.jsx:146"
   ],
@@ -1347,7 +1347,7 @@
     "src/community/components/Footer.jsx:64",
     "src/community/components/NavBar.jsx:712",
     "src/community/components/NavBar.jsx:714",
-    "src/community/pages/Spaces.jsx:316"
+    "src/community/pages/Spaces.jsx:337"
   ],
   "Editor": [
     "src/community/components/Footer.jsx:65",
@@ -2124,7 +2124,7 @@
     "src/community/components/classroom/ClassStudents.jsx:222",
     "src/community/pages/ManageSpace.jsx:665",
     "src/community/pages/ManageSpace.jsx:737",
-    "src/community/pages/Spaces.jsx:253",
+    "src/community/pages/Spaces.jsx:268",
     "src/community/pages/Theme.jsx:263",
     "src/community/pages/Themes.jsx:221",
     "src/community/pages/admin/UserManager.jsx:114"
@@ -3508,7 +3508,7 @@
     "src/community/components/classroom/ClassSettings.jsx:254",
     "src/community/pages/ClassroomSchool.jsx:272",
     "src/community/pages/ManageSpace.jsx:789",
-    "src/community/pages/Spaces.jsx:285",
+    "src/community/pages/Spaces.jsx:300",
     "src/community/pages/Studio.jsx:159"
   ],
   "Contributor": [
@@ -3749,8 +3749,8 @@
     "src/community/components/RouteErrorBoundary.jsx:37"
   ],
   "Loading page…": [
-    "src/community/components/RouteLoading.jsx:82",
-    "src/community/components/RouteLoading.jsx:95"
+    "src/community/components/RouteLoading.jsx:80",
+    "src/community/components/RouteLoading.jsx:93"
   ],
   "Paste a Scratch project link": [
     "src/community/components/ScratchImport.jsx:35"
@@ -5480,7 +5480,7 @@
     "src/community/pages/Search.jsx:295",
     "src/community/pages/Search.jsx:300",
     "src/community/pages/Search.jsx:305",
-    "src/community/pages/Spaces.jsx:340"
+    "src/community/pages/Spaces.jsx:361"
   ],
   "Bounties on public projects will show up here when someone funds one.": [
     "src/community/pages/Bounties.jsx:126"
@@ -5570,7 +5570,7 @@
     "src/community/pages/Challenge.jsx:32",
     "src/community/pages/Challenge.jsx:483",
     "src/community/pages/ManageSpace.jsx:695",
-    "src/community/pages/Spaces.jsx:293"
+    "src/community/pages/Spaces.jsx:308"
   ],
   "Judging": [
     "src/community/pages/Challenge.jsx:33",
@@ -5713,7 +5713,7 @@
   "Submissions close": [
     "src/community/pages/Challenge.jsx:493",
     "src/community/pages/ManageSpace.jsx:696",
-    "src/community/pages/Spaces.jsx:294"
+    "src/community/pages/Spaces.jsx:309"
   ],
   "{value1} left to enter": [
     "src/community/pages/Challenge.jsx:497"
@@ -5843,12 +5843,12 @@
     "src/community/pages/Challenge.jsx:795",
     "src/community/pages/ManageSpace.jsx:719",
     "src/community/pages/ManageSpace.jsx:752",
-    "src/community/pages/Spaces.jsx:304"
+    "src/community/pages/Spaces.jsx:319"
   ],
   "Audience vote": [
     "src/community/pages/Challenge.jsx:769",
     "src/community/pages/ManageSpace.jsx:724",
-    "src/community/pages/Spaces.jsx:309"
+    "src/community/pages/Spaces.jsx:324"
   ],
   "Voting has closed. Signed-in members rated each entry from 1 to 5 stars, and the entry with the highest average rating won.": [
     "src/community/pages/Challenge.jsx:770"
@@ -6805,7 +6805,7 @@
   "Load more ({value1} left)": [
     "src/community/pages/Explore.jsx:272",
     "src/community/pages/Search.jsx:212",
-    "src/community/pages/Spaces.jsx:362"
+    "src/community/pages/Spaces.jsx:383"
   ],
   "Users {name} follows": [
     "src/community/pages/Following.jsx:27"
@@ -7038,7 +7038,7 @@
   "Visibility": [
     "src/community/pages/ManageProject.jsx:678",
     "src/community/pages/ManageSpace.jsx:677",
-    "src/community/pages/Spaces.jsx:276",
+    "src/community/pages/Spaces.jsx:291",
     "src/community/pages/project/ForkSetupModal.jsx:59"
   ],
   "Classroom projects stay private.": [
@@ -7410,7 +7410,7 @@
   "Who picks the winner?": [
     "src/community/pages/ManageSpace.jsx:709",
     "src/community/pages/ManageSpace.jsx:714",
-    "src/community/pages/Spaces.jsx:299"
+    "src/community/pages/Spaces.jsx:314"
   ],
   "Results are published, so this can no longer change.": [
     "src/community/pages/ManageSpace.jsx:710"
@@ -7420,11 +7420,11 @@
   ],
   "Invited judges score each entry from 1 to 10 against your criteria.": [
     "src/community/pages/ManageSpace.jsx:719",
-    "src/community/pages/Spaces.jsx:304"
+    "src/community/pages/Spaces.jsx:319"
   ],
   "Anyone signed in rates entries from 1 to 5 stars. The highest average wins. No judges needed.": [
     "src/community/pages/ManageSpace.jsx:724",
-    "src/community/pages/Spaces.jsx:309"
+    "src/community/pages/Spaces.jsx:324"
   ],
   "Scoring criteria": [
     "src/community/pages/ManageSpace.jsx:733"
@@ -8887,7 +8887,7 @@
   ],
   "Type": [
     "src/community/pages/Roadmap.jsx:486",
-    "src/community/pages/Spaces.jsx:261"
+    "src/community/pages/Spaces.jsx:276"
   ],
   "A clear summary": [
     "src/community/pages/Roadmap.jsx:494"
@@ -9028,14 +9028,14 @@
   ],
   "Could not load more spaces.": [
     "src/community/pages/Search.jsx:126",
-    "src/community/pages/Spaces.jsx:159"
+    "src/community/pages/Spaces.jsx:170"
   ],
   "Could not load people.": [
     "src/community/pages/Search.jsx:197"
   ],
   "Could not load spaces.": [
     "src/community/pages/Search.jsx:198",
-    "src/community/pages/Spaces.jsx:332"
+    "src/community/pages/Spaces.jsx:353"
   ],
   "Results for \"{value1}\"": [
     "src/community/pages/Search.jsx:246"
@@ -9409,52 +9409,58 @@
   ],
   "Your spaces": [
     "src/community/pages/Spaces.jsx:21",
-    "src/community/pages/Spaces.jsx:228"
+    "src/community/pages/Spaces.jsx:243"
   ],
   "You (@{username})": [
-    "src/community/pages/Spaces.jsx:112"
+    "src/community/pages/Spaces.jsx:124"
   ],
   "Enter a name for this space.": [
-    "src/community/pages/Spaces.jsx:193"
+    "src/community/pages/Spaces.jsx:208"
   ],
   "Submissions must close after they open.": [
-    "src/community/pages/Spaces.jsx:197"
+    "src/community/pages/Spaces.jsx:212"
   ],
   "Could not create the space.": [
-    "src/community/pages/Spaces.jsx:213"
+    "src/community/pages/Spaces.jsx:228"
   ],
   "Spaces you own, curate, follow, or have been invited to.": [
-    "src/community/pages/Spaces.jsx:225"
+    "src/community/pages/Spaces.jsx:240"
   ],
   "New space": [
-    "src/community/pages/Spaces.jsx:234"
+    "src/community/pages/Spaces.jsx:249"
   ],
   "Search your spaces": [
-    "src/community/pages/Spaces.jsx:239"
+    "src/community/pages/Spaces.jsx:254"
   ],
   "Search spaces": [
-    "src/community/pages/Spaces.jsx:239"
+    "src/community/pages/Spaces.jsx:254"
   ],
   "Create a space": [
-    "src/community/pages/Spaces.jsx:251"
+    "src/community/pages/Spaces.jsx:266"
   ],
   "What is it for?": [
-    "src/community/pages/Spaces.jsx:257"
+    "src/community/pages/Spaces.jsx:272"
+  ],
+  "You can't publish for @{org}, so this space will be yours.": [
+    "src/community/pages/Spaces.jsx:330"
+  ],
+  "Could not load your organisations, so creating this for @{org} may be refused.": [
+    "src/community/pages/Spaces.jsx:333"
   ],
   "Loading spaces…": [
-    "src/community/pages/Spaces.jsx:328"
+    "src/community/pages/Spaces.jsx:349"
   ],
   "Sign in to see your spaces": [
-    "src/community/pages/Spaces.jsx:334"
+    "src/community/pages/Spaces.jsx:355"
   ],
   "Sign in to see spaces you own, curate, follow, or have been invited to.": [
-    "src/community/pages/Spaces.jsx:335"
+    "src/community/pages/Spaces.jsx:356"
   ],
   "No spaces here yet": [
-    "src/community/pages/Spaces.jsx:339"
+    "src/community/pages/Spaces.jsx:360"
   ],
   "Create a space to get started.": [
-    "src/community/pages/Spaces.jsx:340"
+    "src/community/pages/Spaces.jsx:361"
   ],
   "Could not load platform stats.": [
     "src/community/pages/Stats.jsx:27"

@@ -664,14 +664,14 @@ const ManageSpace = () => {
                                 {space.kind === 'studio' ? <div className={styles.thumbnailEditor}>{space.thumbnailUrl ? <img src={space.thumbnailUrl} alt="" /> : <span><ImageIcon size={28} />{communityText('No thumbnail')}</span>}<label><strong>{thumbnailBusy ? communityText('Uploading…') : communityText('Choose image')}</strong><small>{communityText('PNG, JPG, or WebP up to 1 MB. A 4:3 image works best.')}</small><input type="file" accept="image/png,image/jpeg,image/webp" disabled={thumbnailBusy} onChange={uploadThumbnail} /></label></div> : null}
                                 <label><span>{communityText('Name')}</span><input value={form.title} maxLength={100} required onChange={event => updateForm('title', event.target.value)} /></label>
                                 <label><span>{communityText('Description')}</span><textarea value={form.description || ''} maxLength={5000} onChange={event => updateForm('description', event.target.value)} /></label>
-                                <div className={styles.transferOwner}>
+                                {space.isOwner ? <div className={styles.transferOwner}>
                                     <span><strong>{isOrgOwned(space) ? communityText('Move this space') : communityText('Move to an organisation')}</strong><small>{isOrgOwned(space) ? communityText('Move it to another organisation you publish for, or back to your account.') : communityText('Members of the organisation who can publish for it will manage this space with you.')}</small></span>
                                     <OrgMoveRow className={styles.transferRow} orgs={publishOrgs} owner={space.owner} self={viewerName} ownedByOrg={isOrgOwned(space)} loaded={orgsLoaded} failed={orgsFailed} disabled={transferBusy} onMove={confirmSpaceTransfer} />
-                                </div>
-                                <div className={styles.transferOwner}>
+                                </div> : null}
+                                {space.isOwner ? <div className={styles.transferOwner}>
                                     <span><strong>{communityText('Transfer to another user')}</strong><small>{communityText('The new owner receives this {value1}.', {value1: space.kind})}</small></span>
                                     <div className={styles.transferRow}><input disabled={transferBusy} value={transferOwner} placeholder={communityText('Rotur username')} onChange={event => setTransferOwner(event.target.value)} /><Button variant="secondary" disabled={!transferOwner.trim() || transferBusy} onClick={requestSpaceTransfer}>{communityText('Transfer')}</Button></div>
-                                </div>
+                                </div> : null}
                                 {space.kind === 'challenge' ? <><label><span>{communityText('Theme')}</span><input value={form.theme || ''} maxLength={200} placeholder={communityText('Optional theme or prompt')} onChange={event => updateForm('theme', event.target.value)} /></label><label><span>{communityText('Rules')}</span><textarea value={form.rules || ''} maxLength={10000} placeholder={communityText('Eligibility, team rules, allowed tools, and anything that could disqualify an entry')} onChange={event => updateForm('rules', event.target.value)} /></label></> : null}
                                 <div className={styles.formRow}>
                                     <label><span>{communityText('Visibility')}</span><select value={form.visibility} onChange={event => updateForm('visibility', event.target.value)}><option value="public">{communityText('Public')}</option><option value="unlisted">{communityText('Unlisted')}</option><option value="private">{communityText('Private')}</option></select></label>
