@@ -123,6 +123,27 @@ describe('Rotur orgs on MistWarp', () => {
         expect(safeLinks(null)).toEqual([]);
     });
 
+    test('an org that is gone says so in words people can read', async () => {
+        api.org.mockRejectedValue(Object.assign(new Error('organisation not found'), {status: 404}));
+        let wrapper;
+        await act(async () => {
+            wrapper = mount(
+                <MemoryRouter
+                    initialEntries={['/users/studio']}
+                    future={{v7_startTransition: true, v7_relativeSplatPath: true}}
+                >
+                    <Routes><Route
+                        path="/users/:name"
+                        element={<Org name="studio" />}
+                    /></Routes>
+                </MemoryRouter>
+            );
+            await Promise.resolve();
+        });
+        wrapper.update();
+        expect(wrapper.text()).toContain('Organisation not found.');
+    });
+
     test('the org page lists its projects and links to Rotur', async () => {
         const wrapper = await renderOrg();
         expect(api.org).toHaveBeenCalledWith('studio');
@@ -167,7 +188,7 @@ describe('Rotur orgs on MistWarp', () => {
         wrapper.find('select').simulate('change', {target: {value: 'other'}});
         wrapper.find('button').simulate('click');
         expect(onMove).toHaveBeenCalledWith('other');
-        expect(wrapper.find('button').prop('disabled')).toBe(true);
+        expect(wrapper.find('select').prop('value')).toBe('other');
         const owned = mount(<OrgMoveRow
             orgs={[{username: 'studio'}]}
             owner="studio"
@@ -213,10 +234,15 @@ describe('Rotur orgs on MistWarp', () => {
             loaded={false}
             onMove={onMove}
         />).text()).toBe('Loading your organisations…');
-        expect(mount(<OrgMoveRow
+        const onRetry = jest.fn();
+        const failed = mount(<OrgMoveRow
             orgs={[]}
             failed
             onMove={onMove}
-        />).text()).toBe('Could not load your organisations. Try again later.');
+            onRetry={onRetry}
+        />);
+        expect(failed.text()).toContain('Could not load your organisations.');
+        failed.find('button').simulate('click');
+        expect(onRetry).toHaveBeenCalled();
     });
 });

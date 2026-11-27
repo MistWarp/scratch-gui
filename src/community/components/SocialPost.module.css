@@ -74,10 +74,6 @@
     text-decoration: underline;
 }
 
-.group {
-    flex: 0 1 auto;
-}
-
 .dot,
 .timeLink,
 .edited {

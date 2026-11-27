@@ -175,7 +175,7 @@ const ManageSpace = () => {
     const requestedSection = searchParams.get('section');
     const {user, loading, login} = useUser();
     const viewerName = (user && user.username) || '';
-    const {orgs: publishOrgs, loaded: orgsLoaded, failed: orgsFailed} = usePublishableOrgs(viewerName);
+    const {orgs: publishOrgs, loaded: orgsLoaded, failed: orgsFailed, retry: retryOrgs} = usePublishableOrgs(viewerName);
     const loadContext = `${id}\u0000${viewerName}`;
     const [space, setSpace] = useState(null);
     const [spaceLoadContext, setSpaceLoadContext] = useState('');
@@ -666,7 +666,7 @@ const ManageSpace = () => {
                                 <label><span>{communityText('Description')}</span><textarea value={form.description || ''} maxLength={5000} onChange={event => updateForm('description', event.target.value)} /></label>
                                 {space.isOwner ? <div className={styles.transferOwner}>
                                     <span><strong>{isOrgOwned(space) ? communityText('Move this space') : communityText('Move to an organisation')}</strong><small>{isOrgOwned(space) ? communityText('Move it to another organisation you publish for, or back to your account.') : communityText('Members of the organisation who can publish for it will manage this space with you.')}</small></span>
-                                    <OrgMoveRow className={styles.transferRow} orgs={publishOrgs} owner={space.owner} self={viewerName} ownedByOrg={isOrgOwned(space)} loaded={orgsLoaded} failed={orgsFailed} disabled={transferBusy} onMove={confirmSpaceTransfer} />
+                                    <OrgMoveRow className={styles.transferRow} orgs={publishOrgs} owner={space.owner} self={viewerName} ownedByOrg={isOrgOwned(space)} loaded={orgsLoaded} failed={orgsFailed} disabled={transferBusy} onMove={confirmSpaceTransfer} onRetry={retryOrgs} />
                                 </div> : null}
                                 {space.isOwner ? <div className={styles.transferOwner}>
                                     <span><strong>{communityText('Transfer to another user')}</strong><small>{communityText('The new owner receives this {value1}.', {value1: space.kind})}</small></span>

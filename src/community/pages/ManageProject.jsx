@@ -149,7 +149,7 @@ const ManageProject = () => {
     const requestedSection = searchParams.get('section');
     const {user, loading, login} = useUser();
     const viewerName = (user && user.username) || '';
-    const {orgs: publishOrgs, loaded: orgsLoaded, failed: orgsFailed} = usePublishableOrgs(viewerName);
+    const {orgs: publishOrgs, loaded: orgsLoaded, failed: orgsFailed, retry: retryOrgs} = usePublishableOrgs(viewerName);
     const loadContext = `${id}\u0000${viewerName}`;
     const [project, setProject] = useState(null);
     const [projectLoadContext, setProjectLoadContext] = useState('');
@@ -782,7 +782,7 @@ const ManageProject = () => {
                             <PageHeading icon={UserCog} title={communityText('Ownership')} description={communityText('Move the project to an organisation or transfer it to someone else.')} />
                             <div className={styles.card}>
                                 <SectionHeading as="h3" icon={Building2} title={isOrgOwned(project) ? communityText('Move this project') : communityText('Move to an organisation')} lead={isOrgOwned(project) ? communityText('Move it to another organisation you publish for, or back to your account.') : communityText('Members of the organisation who can publish for it will manage this project with you.')} />
-                                <OrgMoveRow className={styles.transferAction} orgs={publishOrgs} owner={project.owner} self={viewerName} ownedByOrg={isOrgOwned(project)} loaded={orgsLoaded} failed={orgsFailed} disabled={transferBusy} onMove={confirmProjectTransfer} />
+                                <OrgMoveRow className={styles.transferAction} orgs={publishOrgs} owner={project.owner} self={viewerName} ownedByOrg={isOrgOwned(project)} loaded={orgsLoaded} failed={orgsFailed} disabled={transferBusy} onMove={confirmProjectTransfer} onRetry={retryOrgs} />
                             </div>
                             <div className={`${styles.card} ${styles.dangerCard}`}>
                                 <SectionHeading as="h3" icon={UserCog} title={communityText('Transfer project')} lead={communityText('The new owner gets the project. You will lose owner access.')} />

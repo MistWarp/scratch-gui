@@ -119,7 +119,7 @@ const Spaces = () => {
     const [error, setError] = useState('');
     const [droppedOrg, setDroppedOrg] = useState('');
     const {orgs: publishOrgs, loaded: orgsLoaded, failed: orgsFailed} = usePublishableOrgs(viewerName);
-    const ownerField = spaceOwnerField({org: form.org, orgs: publishOrgs, loaded: orgsLoaded, failed: orgsFailed});
+    const ownerField = spaceOwnerField({org: form.org, orgs: publishOrgs, loaded: orgsLoaded && Boolean(viewerName), failed: orgsFailed});
     const ownerChoices = viewerName ? ownerOptions({
         selfLabel: communityText('You (@{username})', {username: viewerName}),
         orgs: publishOrgs,
@@ -195,6 +195,7 @@ const Spaces = () => {
         setCreateBusy(false);
         setError('');
         setDroppedOrg('');
+        if (creating) setForm(current => ({...current, org: requestedOrg}));
     }, [viewerName]);
 
     const create = async event => {

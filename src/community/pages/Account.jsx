@@ -1,12 +1,12 @@
-import React, {lazy, useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {Navigate, useLocation, useParams} from 'react-router-dom';
 import rotur from '../rotur.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import RouteLoading from '../components/RouteLoading.jsx';
 import StatusMessage from '../components/ui/StatusMessage.jsx';
 
-const Profile = lazy(() => import('./Profile.jsx'));
-const Org = lazy(() => import('./Org.jsx'));
+import Profile from './Profile.jsx';
+import Org from './Org.jsx';
 
 const accountKind = profile => (profile && profile.account_type === 'org' ? 'org' : 'person');
 

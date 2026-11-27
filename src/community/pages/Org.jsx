@@ -59,30 +59,30 @@ const safeLinks = links => (Array.isArray(links) ? links : []).filter(link => {
 const Org = ({name}) => {
     const {text: communityText} = useCommunityText();
     const [searchParams, setSearchParams] = useSearchParams();
-    const [data, setData] = useState(null);
+    const [loaded, setLoaded] = useState({context: '', data: null});
     const [error, setError] = useState('');
     const requestedTab = searchParams.get('tab');
     const activeTab = TAB_KEYS.includes(requestedTab) ? requestedTab : 'projects';
     const beginLoad = useLatest();
     const {user} = useUser();
     const viewer = user ? user.username : '';
+    const context = `${name}\u0000${viewer}`;
+    const data = loaded.context === context ? loaded.data : null;
 
     const load = useCallback(() => {
         const fresh = beginLoad();
         setError('');
         return api.org(name)
-            .then(fresh(setData))
-            .catch(fresh(e => setError(e.message || communityText('Could not load this organisation.'))));
-    }, [beginLoad, name, viewer]);
+            .then(fresh(result => setLoaded({context, data: result})))
+            .catch(fresh(e => setError(e && e.status === 404 ?
+                communityText('Organisation not found.') :
+                ((e && e.message) || communityText('Could not load this organisation.')))));
+    }, [beginLoad, context, name]);
 
     useEffect(() => {
         const normalized = normalizeOrgTabParams(searchParams);
         if (normalized.toString() !== searchParams.toString()) setSearchParams(normalized, {replace: true});
     }, [searchParams, setSearchParams]);
-
-    useEffect(() => {
-        setData(null);
-    }, [name, viewer]);
 
     useEffect(() => {
         load();
