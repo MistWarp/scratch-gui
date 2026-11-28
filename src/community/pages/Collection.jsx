@@ -5,7 +5,7 @@ import {Link} from 'react-router-dom';
 import {Library, MessageCircle, Settings, UserMinus, UserPlus} from 'lucide-react';
 import api from '../api';
 import Avatar from '../components/Avatar.jsx';
-import GroupTag from '../components/GroupTag.jsx';
+import OrgLabel, {isOrgOwned} from '../components/OrgLabel.jsx';
 import CommentThread from '../components/CommentThread.jsx';
 import useSpaceCommentSource from '../space-comments.js';
 import ProjectCard from '../components/ProjectCard.jsx';
@@ -78,7 +78,7 @@ const Collection = ({id, space, user, login, load}) => {
                     </React.Fragment>
                 )}
             >
-                <div className={styles.owner}><Avatar username={space.owner} size={28} /><span>{communityText('Curated by')} <Link to={`/users/${space.owner}`}>{space.owner}</Link> <GroupTag username={space.owner} compact /></span></div>
+                <div className={styles.owner}><Avatar username={space.owner} size={28} /><span>{communityText('Curated by')} <Link to={`/users/${space.owner}`}>{space.owner}</Link> <OrgLabel owned={isOrgOwned(space)} /></span></div>
             </PageHeader>
             <UnderlineTabs items={tabs} value={view} onChange={setView} className={styles.tabs} ariaLabel="Collection sections" idPrefix="collection" />
             {error ? <Notice variant="error">{error}</Notice> : null}

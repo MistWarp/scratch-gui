@@ -922,7 +922,8 @@
     gap: 10px;
 }
 
-.transferRow input {
+.transferRow input,
+.transferRow select {
     min-width: 0;
     flex: 1;
     padding: 10px 11px;

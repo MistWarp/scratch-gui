@@ -3,7 +3,8 @@ import {
     normalizeCollaborators,
     normalizeProjectSectionParam,
     projectNavigationState,
-    projectTransferConfirmation
+    projectTransferConfirmation,
+    transferKind
 } from '../../src/community/pages/ManageProject.jsx';
 
 jest.mock('../../src/lib/themes/custom-themes.js', () => ({
@@ -38,6 +39,22 @@ describe('ManageProject navigation', () => {
             body: 'Transfer "Orbit" to @Alex? You will lose owner access.',
             action: 'Transfer to @Alex'
         });
+        expect(projectTransferConfirmation({title: 'Orbit', ownerType: 'org'}, 'Alex').body)
+            .toBe('Transfer "Orbit" to @Alex? The organisation will no longer own it.');
+    });
+
+    test('moving a project into or out of an organisation is not a hand-off', () => {
+        expect(projectTransferConfirmation({title: 'Orbit'}, 'studio', 'org')).toEqual({
+            title: 'Move project to an organisation?',
+            body: 'Move "Orbit" to @studio? Members who can publish for the organisation will manage it.',
+            action: 'Move to @studio'
+        });
+        expect(projectTransferConfirmation({title: 'Orbit'}, 'ada', 'self').action).toBe('Move to your account');
+        const orgs = [{username: 'Studio'}];
+        expect(transferKind({project: {ownerType: ''}, nextOwner: 'studio', viewerName: 'ada', orgs})).toBe('org');
+        expect(transferKind({project: {ownerType: 'org'}, nextOwner: 'Ada', viewerName: 'ada', orgs})).toBe('self');
+        expect(transferKind({project: {ownerType: ''}, nextOwner: 'ada', viewerName: 'ada', orgs})).toBe('person');
+        expect(transferKind({project: {ownerType: 'org'}, nextOwner: 'bob', viewerName: 'ada', orgs})).toBe('person');
     });
 
     test('normalizes old routes and preserves subtab routes', () => {

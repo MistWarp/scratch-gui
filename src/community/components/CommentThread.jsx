@@ -18,7 +18,6 @@ import Notice from './ui/Notice.jsx';
 import StatusMessage from './ui/StatusMessage.jsx';
 import SelectMenu from './ui/SelectMenu.jsx';
 import RichText from './RichText.jsx';
-import GroupTag from './GroupTag.jsx';
 import Dropdown, {DropdownItem} from './ui/Dropdown.jsx';
 import {timeAgo, sameUser, formatPlaytime} from '../format';
 import {payWithRotur} from '../../lib/rotur/payment-window.js';
@@ -130,7 +129,6 @@ const CommentRow = ({
                         to={`/users/${comment.author}`}
                         className={styles.author}
                     >{comment.author}</Link>
-                    <GroupTag username={comment.author} compact />
                     {authorBadge ? (
                         <span className={styles.authorBadge}>
                             <Trophy size={11} aria-hidden="true" />

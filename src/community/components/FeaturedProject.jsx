@@ -6,7 +6,6 @@ import api, {embedUrl, projectUrl} from '../api';
 import Avatar from './Avatar.jsx';
 import ProjectThumbnail from './ProjectThumbnail.jsx';
 import styles from './FeaturedProject.module.css';
-import GroupTag from './GroupTag.jsx';
 
 const FeaturedProject = ({project}) => {
     const {text: communityText} = useCommunityText();
@@ -61,7 +60,6 @@ const FeaturedProject = ({project}) => {
                     <Link to={`/users/${displayProject.owner}`} className={styles.owner}>
                         {communityText('by {value1}', {value1: displayProject.owner})}
                     </Link>
-                    <GroupTag username={displayProject.owner} compact />
                 </div>
                 <Link to={projectUrl(displayProject)} className={styles.openProject}>
                     <ExternalLink size={14} />

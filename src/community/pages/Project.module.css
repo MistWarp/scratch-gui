@@ -9,12 +9,6 @@
     padding-top: 16px;
 }
 
-.groupByline {
-    color: var(--project-accent, var(--accent));
-    font-size: var(--fs-sm);
-    font-weight: 600;
-}
-
 .brandTagline {
     margin: 4px 0 0;
     color: var(--project-accent, var(--text-dim));
@@ -148,17 +142,6 @@
 
 a.remixDelta:hover {
     color: var(--accent-strong);
-}
-
-.projectGroupTag {
-    min-height: 20px;
-    padding: 2px 6px 2px 3px;
-}
-
-.projectGroupTag img {
-    width: 14px;
-    height: 14px;
-    flex-basis: 14px;
 }
 
 .topActions {

@@ -65,9 +65,16 @@ describe('ManageSpace confirmations', () => {
     test('explains the effects of transferring a space', () => {
         expect(spaceConfirmationDetails({type: 'transfer-space', owner: 'Alex'}, space)).toEqual({
             title: 'Transfer space?',
-            body: 'Transfer "Animation Club" to @Alex? Its group assignment will be cleared and your access may change.',
+            body: 'Transfer "Animation Club" to @Alex? Your access may change.',
             action: 'Transfer to @Alex'
         });
+        expect(spaceConfirmationDetails({type: 'transfer-space', owner: 'studio', kind: 'org'}, space)).toEqual({
+            title: 'Move space to an organisation?',
+            body: 'Move "Animation Club" to @studio? Members who can publish for the organisation will manage it.',
+            action: 'Move to @studio'
+        });
+        expect(spaceConfirmationDetails({type: 'transfer-space', owner: 'ada', kind: 'self'}, space).action)
+            .toBe('Move to your account');
     });
 });
 

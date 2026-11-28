@@ -454,10 +454,10 @@ test('Rotur profile caching evicts old entries instead of growing without bound'
     expect(window.fetch).toHaveBeenCalledTimes(requestsBeforeRevisit + 1);
 });
 
-test('a full Rotur profile response also satisfies group tag profile reads', async () => {
+test('a full Rotur profile response also satisfies a plain profile read', async () => {
     window.fetch = jest.fn(() => Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({username: 'ProfileCacheCase', posts: [], group_tag: 'warp'})
+        json: () => Promise.resolve({username: 'ProfileCacheCase', posts: []})
     }));
 
     await rotur.profile('ProfileCacheCase', {includePosts: true});
@@ -467,40 +467,4 @@ test('a full Rotur profile response also satisfies group tag profile reads', asy
     expect(window.fetch.mock.calls[0][0]).toBe(
         'https://api.rotur.dev/profile/profilecachecase?include_posts=1&app=app_1938b6a87799f862'
     );
-});
-
-describe('Rotur group tags', () => {
-    const profileResponse = tag => Promise.resolve({ok: true, json: () => Promise.resolve({group_tag: tag})});
-
-    test('every tag for one person shares a single profile lookup', async () => {
-        window.fetch = jest.fn(() => profileResponse('warp'));
-
-        const tags = await Promise.all([
-            rotur.groupTag('SharedTagUser'),
-            rotur.groupTag('sharedtaguser'),
-            rotur.groupTag(' SharedTagUser ')
-        ]);
-        const users = await rotur.withGroupTags([{username: 'SHAREDTAGUSER'}, {username: 'x', group_tag: 'own'}]);
-
-        expect(tags).toEqual(['warp', 'warp', 'warp']);
-        expect(users).toEqual([{username: 'SHAREDTAGUSER', group_tag: 'warp'}, {username: 'x', group_tag: 'own'}]);
-        expect(window.fetch).toHaveBeenCalledTimes(1);
-    });
-
-    test('a failed lookup is retried instead of cached as no tag', async () => {
-        window.fetch = jest.fn()
-            .mockImplementationOnce(() => Promise.resolve({ok: false, status: 503, json: () => Promise.resolve({})}))
-            .mockImplementationOnce(() => profileResponse('builders'));
-
-        await expect(rotur.groupTag('retry-tag-user')).resolves.toBe('');
-        await expect(rotur.groupTag('retry-tag-user')).resolves.toBe('builders');
-        expect(window.fetch).toHaveBeenCalledTimes(2);
-    });
-
-    test('a tag set locally is used without a lookup', async () => {
-        window.fetch = jest.fn();
-        rotur.setGroupTag('LocalTagUser', 'makers');
-        await expect(rotur.groupTag('localtaguser')).resolves.toBe('makers');
-        expect(window.fetch).not.toHaveBeenCalled();
-    });
 });

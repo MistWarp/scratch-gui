@@ -1,0 +1,11 @@
+.hint {
+    margin: 0;
+    color: var(--text-dim);
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+}
+
+.hint a {
+    color: var(--accent-strong);
+    font-weight: 600;
+}

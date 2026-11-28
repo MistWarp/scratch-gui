@@ -14,16 +14,12 @@ jest.mock('../../src/community/api', () => ({
         spaces: jest.fn(() => Promise.resolve({spaces: [], total: 0}))
     }
 }));
-jest.mock('../../src/community/rotur.js', () => ({
-    withGroupTags: jest.fn(users => Promise.resolve(users))
-}));
 jest.mock('../../src/community/i18n.jsx', () => ({
     useCommunityIntl: () => ({t: key => key, text: key => key})
 }));
 jest.mock('../../src/community/components/ProjectCard.jsx', () => () => <div className="project" />);
 jest.mock('../../src/community/components/SpaceCard.jsx', () => () => <div className="space" />);
 jest.mock('../../src/community/components/Avatar.jsx', () => () => <div className="avatar" />);
-jest.mock('../../src/community/components/GroupTag.jsx', () => () => <div className="tag" />);
 
 const renderSearch = async (query, tab = '') => {
     let wrapper;

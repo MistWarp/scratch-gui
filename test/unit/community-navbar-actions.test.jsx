@@ -6,7 +6,6 @@ import {MemoryRouter} from 'react-router-dom';
 import NavBar from '../../src/community/components/NavBar.jsx';
 import Button from '../../src/community/components/ui/Button.jsx';
 import api from '../../src/community/api';
-import rotur from '../../src/community/rotur.js';
 import {loginOrThrow} from '../../src/community/UserContext.jsx';
 
 let mockUser = null;
@@ -29,9 +28,6 @@ jest.mock('../../src/community/api', () => ({
         spaces: jest.fn(() => Promise.resolve({spaces: []}))
     },
     editorUrl: jest.fn(() => '/editor')
-}));
-jest.mock('../../src/community/rotur.js', () => ({
-    withGroupTags: jest.fn(users => Promise.resolve(users))
 }));
 jest.mock('../../src/lib/rotur/client.js', () => ({
     fetchNotifications: jest.fn(() => Promise.resolve([]))
@@ -57,7 +53,6 @@ describe('community navigation actions', () => {
         api.explore.mockResolvedValue({projects: []});
         api.searchUsers.mockResolvedValue({users: [{username: 'Alex'}]});
         api.spaces.mockResolvedValue({spaces: []});
-        rotur.withGroupTags.mockImplementation(users => Promise.resolve(users));
     });
 
     test('shows notifications in the signed-in mobile dock', () => {
@@ -115,9 +110,11 @@ describe('community navigation actions', () => {
         wrapper.unmount();
     });
 
-    test('ends quick-search loading when group tags fail', async () => {
+    test('ends quick-search loading when every quick search fails', async () => {
         jest.useFakeTimers();
-        rotur.withGroupTags.mockRejectedValue(new Error('Rotur unavailable'));
+        api.explore.mockRejectedValue(new Error('Unavailable'));
+        api.searchUsers.mockRejectedValue(new Error('Unavailable'));
+        api.spaces.mockRejectedValue(new Error('Unavailable'));
         const wrapper = renderNav();
         const desktopSearch = wrapper.find('input[role="combobox"]').first();
 

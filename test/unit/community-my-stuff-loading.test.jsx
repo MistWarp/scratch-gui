@@ -13,7 +13,6 @@ jest.mock('../../src/community/UserContext.jsx', () => {
     const user = {username: 'Sophie', featuredProject: ''};
     return {useUser: () => ({user, loading: false, login: jest.fn()})};
 });
-jest.mock('../../src/community/components/GroupTag.jsx', () => () => null);
 jest.mock('../../src/community/api', () => ({
     __esModule: true,
     default: {

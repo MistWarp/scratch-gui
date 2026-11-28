@@ -100,14 +100,6 @@
     letter-spacing: -0.02em;
 }
 
-.profileGroupTag {
-    border: 0;
-}
-
-.profileGroupTag img {
-    box-shadow: none;
-}
-
 .profileMeta {
     display: flex;
     align-items: center;

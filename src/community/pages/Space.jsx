@@ -8,7 +8,7 @@ import setPageMeta from '../page-meta.js';
 import scrollToAnchorWithRetry from '../scroll-to-anchor.js';
 import {useUser} from '../UserContext.jsx';
 import Avatar from '../components/Avatar.jsx';
-import GroupTag from '../components/GroupTag.jsx';
+import OrgLabel, {isOrgOwned} from '../components/OrgLabel.jsx';
 import CommentThread from '../components/CommentThread.jsx';
 import useSpaceCommentSource from '../space-comments.js';
 import ProjectCard from '../components/ProjectCard.jsx';
@@ -252,7 +252,7 @@ const Space = () => {
             >
                 <div className={styles.spaceOwner}>
                     <Avatar username={space.owner} size={30} />
-                    <span>{communityText('Created by')} <Link to={`/users/${space.owner}`}>{space.owner}</Link> <GroupTag username={space.owner} compact /></span>
+                    <span>{communityText('Created by')} <Link to={`/users/${space.owner}`}>{space.owner}</Link> <OrgLabel owned={isOrgOwned(space)} /></span>
                 </div>
             </PageHeader>
             {space.invited ? (
@@ -299,7 +299,7 @@ const Space = () => {
                 />
                 <div className={styles.curatorFaces}>
                     {[space.owner, ...curators].map(name => (
-                        <Link key={name} to={`/users/${name}`} title={name}><Avatar username={name} size={34} /><span>{name}<GroupTag username={name} compact linked={false} /></span></Link>
+                        <Link key={name} to={`/users/${name}`} title={name}><Avatar username={name} size={34} /><span>{name}</span></Link>
                     ))}
                 </div>
             </section>

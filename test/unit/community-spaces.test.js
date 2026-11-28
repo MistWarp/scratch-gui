@@ -6,6 +6,7 @@ import {
     mergeSpaces,
     normalizeSpaceParams,
     spaceCreatePayload,
+    spaceOwnerField,
     withSpaceCreate,
     withSpaceQuery
 } from '../../src/community/pages/Spaces.jsx';
@@ -37,14 +38,30 @@ describe('Spaces browsing and creation', () => {
     });
 
     test('canonicalizes fallback space filters and creation state', () => {
-        expect(normalizeSpaceParams(new URLSearchParams('kind=unknown&q=++club++&group=+makers+&create=yes')).toString())
-            .toBe('q=club&group=makers');
+        expect(normalizeSpaceParams(new URLSearchParams('kind=unknown&q=++club++&org=+makers+&group=old&create=yes')).toString())
+            .toBe('q=club&org=makers');
         expect(normalizeSpaceParams(new URLSearchParams('kind=studio&create=1')).toString()).toBe('create=1');
+    });
+
+    test('an org asked for in the link is only dropped once the org list says it is not offered', () => {
+        const orgs = [{username: 'Studio'}];
+        expect(spaceOwnerField({org: 'Studio', orgs, loaded: true, failed: false})).toEqual({canonical: '', pending: '', drop: false, unverified: false});
+        expect(spaceOwnerField({org: 'studio', orgs, loaded: true, failed: false})).toEqual({canonical: 'Studio', pending: '', drop: false, unverified: false});
+        expect(spaceOwnerField({org: 'bank', orgs, loaded: true, failed: false})).toEqual({canonical: '', pending: '', drop: true, unverified: false});
+        expect(spaceOwnerField({org: 'bank', orgs: [], loaded: false, failed: false})).toEqual({canonical: '', pending: 'bank', drop: false, unverified: false});
+        expect(spaceOwnerField({org: 'bank', orgs: [], loaded: true, failed: true})).toEqual({canonical: '', pending: 'bank', drop: false, unverified: true});
+        expect(spaceOwnerField({org: '', orgs: [], loaded: true, failed: true})).toEqual({canonical: '', pending: '', drop: false, unverified: false});
+    });
+
+    test('an org-owned space is created with its org', () => {
+        const payload = spaceCreatePayload({title: ' Jam ', description: '', kind: 'studio', visibility: 'public', org: 'studio'});
+        expect(payload.org).toBe('studio');
+        expect(payload.title).toBe('Jam');
     });
 
     test('opens and closes the creation panel through URL state', () => {
         expect(withSpaceCreate(new URLSearchParams('kind=challenge'), true).toString()).toBe('kind=challenge&create=1');
-        expect(withSpaceCreate(new URLSearchParams('kind=challenge&create=1&group=makers'), false).toString())
+        expect(withSpaceCreate(new URLSearchParams('kind=challenge&create=1&org=makers'), false).toString())
             .toBe('kind=challenge');
     });
 

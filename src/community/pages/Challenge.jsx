@@ -7,7 +7,7 @@ import {CalendarDays, Check, ExternalLink, Gavel, Info, Lightbulb, Medal, Messag
 import api, {projectUrl} from '../api';
 import Avatar from '../components/Avatar.jsx';
 import Confetti, {useCelebration} from '../components/Confetti.jsx';
-import GroupTag from '../components/GroupTag.jsx';
+import OrgLabel, {isOrgOwned} from '../components/OrgLabel.jsx';
 import UserLink from '../components/UserLink.jsx';
 import CommentThread from '../components/CommentThread.jsx';
 import useSpaceCommentSource from '../space-comments.js';
@@ -724,7 +724,7 @@ const Challenge = ({id, space, user, login, load}) => {
                     <span className={styles.meta}>
                         <span className={styles.phase} data-tone={phase.tone}>{communityText(phase.label)}</span>
                         <Link to={`/users/${space.owner}`} className={styles.hostLink}><Avatar username={space.owner} size={22} /><span>{communityText('Hosted by {value1}', {value1: space.owner})}</span></Link>
-                        <GroupTag username={space.owner} compact />
+                        <OrgLabel owned={isOrgOwned(space)} />
                     </span>
                 )}
                 actions={(
@@ -795,7 +795,7 @@ const Challenge = ({id, space, user, login, load}) => {
                                         <h2><Users size={16} aria-hidden="true" />{communityText('Judges')}</h2>
                                         {judges.length ? (
                                             <ul className={styles.people}>
-                                                {judges.map(name => <li key={name}><Link to={`/users/${name}`}><Avatar username={name} size={28} /><span>{name}</span></Link><GroupTag username={name} compact linked={false} /></li>)}
+                                                {judges.map(name => <li key={name}><Link to={`/users/${name}`}><Avatar username={name} size={28} /><span>{name}</span></Link></li>)}
                                             </ul>
                                         ) : <p className={styles.sidebarEmpty}>{communityText('No judges announced yet.')}</p>}
                                     </div>

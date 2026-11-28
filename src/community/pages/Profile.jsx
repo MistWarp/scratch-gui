@@ -30,7 +30,6 @@ import ProfileBadges from '../components/ProfileBadges.jsx';
 import ProfilePosts from '../components/ProfilePosts.jsx';
 import ProfileConnections from '../components/ProfileConnections.jsx';
 import ThemeCard from '../components/ThemeCard.jsx';
-import GroupTag from '../components/GroupTag.jsx';
 import UserLink from '../components/UserLink.jsx';
 import UserStatus from '../components/UserStatus.jsx';
 import useLatest from '../use-latest.js';
@@ -788,9 +787,6 @@ const Profile = () => {
                             />
                             <div className={styles.nameRow}>
                                 <h1><UserLink username={profile.username || name}>{profile.username || name}</UserLink></h1>
-                                {profile.group_tag ? (
-                                    <GroupTag tag={profile.group_tag} className={styles.profileGroupTag} />
-                                ) : null}
                             </div>
                             <div className={styles.profileMeta}>
                                 {profile.pronouns ? <span className={styles.pronouns}>{profile.pronouns}</span> : null}

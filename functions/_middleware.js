@@ -59,10 +59,6 @@ const STATIC_META = {
         title: 'Themes - MistWarp',
         description: 'Browse community-made editor themes for MistWarp.'
     },
-    '/groups': {
-        title: 'Groups - MistWarp',
-        description: 'Organisations that share projects, spaces, members, and funding on MistWarp.'
-    },
     '/posts': {
         title: 'Posts - MistWarp',
         description: 'Popular posts from claw, the Rotur social network, on MistWarp.'
@@ -293,8 +289,27 @@ const vanityPullMeta = async (slug, index) => {
     return pullMeta(data.id, index);
 };
 
+const orgMeta = async name => {
+    const data = await apiJson(`/orgs/${encodeURIComponent(name)}`);
+    const org = data && data.org;
+    if (!org) return null;
+    const username = org.username || name;
+    const title = org.displayName || username;
+    return {
+        title: `${title} - MistWarp`,
+        description: flatten(org.bio) ||
+            `${title} has shared ${(data.projects || []).length} projects on MistWarp.`,
+        image: `${AVATARS}/${encodeURIComponent(username.toLowerCase())}`,
+        card: 'summary'
+    };
+};
+
+const ownedByOrg = data => (data.projects || []).some(project => project && project.ownerType === 'org');
+
 const userMeta = async (name, suffix) => {
     const data = await apiJson(`/users/${encodeURIComponent(name)}`);
+    const org = (!data || data.exists !== true || ownedByOrg(data)) && !suffix ? await orgMeta(name) : null;
+    if (org) return org;
     if (!data || data.exists !== true) {
         return {
             title: 'Profile - MistWarp',
@@ -334,25 +349,6 @@ const spaceMeta = async id => {
             `${space.title} is a MistWarp ${kind} by ${space.owner}.`,
         image,
         card: image ? 'summary_large_image' : 'summary'
-    };
-};
-
-const groupMeta = async tag => {
-    const data = await apiJson(`/groups/${encodeURIComponent(tag)}`);
-    const group = data && data.group;
-    if (!group) {
-        return {
-            title: 'Group - MistWarp',
-            description: 'View this MistWarp group.'
-        };
-    }
-    const projects = data.projects || [];
-    return {
-        title: `${group.name || tag} - MistWarp`,
-        description: flatten(group.description) ||
-            `${group.name || tag} has shared ${projects.length} projects on MistWarp.`,
-        image: group.icon_url || DEFAULT_IMAGE,
-        card: 'summary'
     };
 };
 
@@ -452,6 +448,15 @@ const legacyEmbedRedirect = url => {
     return permanent(`${url.origin}/embed${url.search}#${/^\d+$/.test(id) ? id : `mw-${id}`}`);
 };
 
+const ORG_PAGE = /^\/orgs\/([^/]+)$/;
+const GROUP_PAGE = /^\/groups(?:\/[^/]+)?$/;
+
+const renamedPagePath = path => {
+    const org = path.match(ORG_PAGE);
+    if (org) return `/users/${org[1]}`;
+    return GROUP_PAGE.test(path) ? '/explore' : path;
+};
+
 const editorHostRoute = url => {
     const path = pagePath(url.pathname);
     if (path === '/' || path === '/editor') {
@@ -463,18 +468,18 @@ const editorHostRoute = url => {
         return project ? {asset: PROJECT_PAGE_ASSETS[project[1]] || '/player'} : {asset: null};
     }
     if (isFilePath(url.pathname)) return {asset: null};
-    return {redirect: `${ACCOUNT_ORIGIN}${path}${url.search}`};
+    return {redirect: `${ACCOUNT_ORIGIN}${renamedPagePath(path)}${url.search}`};
 };
 
 const accountHostRoute = url => {
-    const path = pagePath(url.pathname);
+    const path = renamedPagePath(pagePath(url.pathname));
     if (path === '/editor') return `${EDITOR_ORIGIN}/${url.search}`;
     if (MOVED_APP_PAGES.has(path) || PROJECT_PAGE.test(path)) return `${EDITOR_ORIGIN}${path}${url.search}`;
     return path === url.pathname ? null : `${url.origin}${path}${url.search}`;
 };
 
 const otherHostRoute = url => {
-    const path = pagePath(url.pathname);
+    const path = renamedPagePath(pagePath(url.pathname));
     return path === url.pathname ? null : `${url.origin}${path}${url.search}`;
 };
 
@@ -547,12 +552,6 @@ const metaForPath = pathname => {
         if (rest === '/followers') return userMeta(name, 'Followers');
         if (rest === '/following') return userMeta(name, 'Following');
         return NOT_FOUND_META;
-    }
-
-    match = normalizedPath.match(/^\/groups\/([^/]+)$/);
-    if (match) {
-        const tag = decodeSegment(match[1]);
-        return tag === null ? NOT_FOUND_META : groupMeta(tag);
     }
 
     match = normalizedPath.match(/^\/news\/([^/]+)$/);

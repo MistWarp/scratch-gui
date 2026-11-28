@@ -109,7 +109,6 @@ const UserProvider = ({children}) => {
         setUser(normalizeUser(baseUser ? {
             ...baseUser,
             isNew: isNewAccount(me),
-            group_tag: roturProfile?.group_tag || '',
             subscription: roturProfile?.subscription || baseUser.subscription || ''
         } : null));
     }, []);
@@ -127,7 +126,6 @@ const UserProvider = ({children}) => {
         const nextUser = normalizeUser({
             ...user,
             ...(me || {}),
-            group_tag: roturProfile?.group_tag || '',
             subscription: roturProfile?.subscription || (me && me.subscription) || user.subscription || ''
         });
         setUser(nextUser);

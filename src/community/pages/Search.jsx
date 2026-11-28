@@ -4,13 +4,11 @@ import React, {useEffect, useRef, useState} from 'react';
 import {Link, Navigate, useNavigate, useSearchParams} from 'react-router-dom';
 import {Search as SearchIcon} from 'lucide-react';
 import api from '../api';
-import rotur from '../rotur';
 import searchPath from '../search-path.js';
 import useLatest from '../use-latest.js';
 import ProjectCard from '../components/ProjectCard.jsx';
 import SpaceCard from '../components/SpaceCard.jsx';
 import Avatar from '../components/Avatar.jsx';
-import GroupTag from '../components/GroupTag.jsx';
 import Button from '../components/ui/Button.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import {ExploreSearch} from '../components/ExploreHeader.jsx';
@@ -44,9 +42,10 @@ export const fetchSearchSection = (key, {q, sort, count}) => {
             .then(data => ({items: data.projects || [], total: data.total || 0}));
     }
     if (key === 'people') {
-        return api.searchUsers(q, {limit: count + PAGE_SIZE}).then(data => (
-            rotur.withGroupTags(data.users || []).then(users => ({items: users, total: data.total ?? users.length, replace: true}))
-        ));
+        return api.searchUsers(q, {limit: count + PAGE_SIZE}).then(data => {
+            const users = data.users || [];
+            return {items: users, total: data.total ?? users.length, replace: true};
+        });
     }
     return api.spaces({q, offset: count, limit: PAGE_SIZE})
         .then(data => ({items: data.spaces || [], total: data.total || 0}));
@@ -169,7 +168,6 @@ const Search = () => {
                     <Avatar username={person.username} size={44} />
                     <div className={styles.personInfo}>
                         <span className={styles.personName}>{person.username}</span>
-                        {person.group_tag ? <GroupTag tag={person.group_tag} compact linked={false} /> : null}
                         <span className={styles.personMeta}>
                             {communityText('{count, plural, one {# follower} other {# followers}}', {count: person.followers ?? 0})}
                             {', '}

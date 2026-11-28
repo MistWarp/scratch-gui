@@ -10,7 +10,6 @@
     transition: opacity .15s;
 }
 
-/* A row like the groups list: a divider under each, no box around it. */
 .row {
     display: flex;
     align-items: center;

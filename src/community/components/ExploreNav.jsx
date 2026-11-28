@@ -14,8 +14,7 @@ const GROUPS = [
     ],
     [
         {key: 'creators', label: 'Creators', to: '/leaderboard?board=loves'},
-        {key: 'posts', label: 'Posts', to: '/posts'},
-        {key: 'groups', label: 'Groups', to: '/groups'}
+        {key: 'posts', label: 'Posts', to: '/posts'}
     ],
     [
         {key: 'themes', label: 'Themes', to: '/themes'},

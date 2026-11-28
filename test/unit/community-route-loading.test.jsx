@@ -20,7 +20,6 @@ const renderAt = path => mount(
 describe('route loading keeps the Explore shell', () => {
     test('maps each Explore section route to its tab', () => {
         expect(getExploreSection('/explore', '')).toEqual({active: 'projects', lead: null});
-        expect(getExploreSection('/groups', '')).toEqual({active: 'groups', lead: 'groups'});
         expect(getExploreSection('/bounties', '')).toEqual({active: 'bounties', lead: 'bounties'});
         expect(getExploreSection('/themes', '')).toEqual({active: 'themes', lead: 'themes'});
     });
@@ -36,7 +35,7 @@ describe('route loading keeps the Explore shell', () => {
     test('leaves detail and unrelated routes to the generic loader', () => {
         expect(getExploreSection('/bounties/abc', '')).toBeNull();
         expect(getExploreSection('/themes/abc', '')).toBeNull();
-        expect(getExploreSection('/groups/some-tag', '')).toBeNull();
+        expect(getExploreSection('/groups', '')).toBeNull();
         expect(getExploreSection('/p/cool-project', '')).toBeNull();
         expect(getExploreSection('/', '')).toBeNull();
     });
@@ -54,8 +53,6 @@ describe('route loading keeps the Explore shell', () => {
             .exists()).toBe(true);
         expect(renderAt('/themes').find(CardRowSkeleton)
             .exists()).toBe(true);
-        expect(renderAt('/groups').find(ListSkeleton)
-            .prop('media')).toBe('square');
         expect(renderAt('/leaderboard').find(ListSkeleton)
             .prop('media')).toBe('round');
         expect(renderAt('/posts').find(ListSkeleton)
