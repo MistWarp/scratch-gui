@@ -1,4 +1,4 @@
-import {getCommunityLocale} from '../locale.js';
+import {formatCommunityMessage, getCommunityLocale} from '../locale.js';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 /* eslint-disable react/jsx-no-bind, max-len */
 import React, {useCallback, useEffect, useState} from 'react';
@@ -75,8 +75,8 @@ const Org = ({name}) => {
         return api.org(name)
             .then(fresh(result => setLoaded({context, data: result})))
             .catch(fresh(e => setError(e && e.status === 404 ?
-                communityText('Organisation not found.') :
-                ((e && e.message) || communityText('Could not load this organisation.')))));
+                formatCommunityMessage('Organisation not found.') :
+                ((e && e.message) || formatCommunityMessage('Could not load this organisation.')))));
     }, [beginLoad, context, name]);
 
     useEffect(() => {
@@ -163,7 +163,7 @@ const Org = ({name}) => {
         const icon = SPACE_KIND_ICONS[kind];
         return (
             <section className={styles.contentSection}>
-                <SectionHeading icon={icon} title={copy.title} actions={createLink(kind)} />
+                <SectionHeading icon={icon} title={copy.title} actions={items.length ? createLink(kind) : null} />
                 {items.length ? (
                     <CardGrid>{items.map(space => <SpaceCard key={space._id} space={space} to={`/spaces/${space._id}`} />)}</CardGrid>
                 ) : (

@@ -692,7 +692,7 @@
   "Public": [
     "src/community/components/CollectionSaveModal.jsx:32",
     "src/community/components/CollectionSaveModal.jsx:219",
-    "src/community/pages/ManageSpace.jsx:681",
+    "src/community/pages/ManageSpace.jsx:683",
     "src/community/pages/Spaces.jsx:299"
   ],
   "Unlisted": [
@@ -702,13 +702,13 @@
     "src/community/components/MyStuffProjects.jsx:300",
     "src/community/components/SpaceProjectPicker.jsx:236",
     "src/community/components/VisibilityMenu.jsx:9",
-    "src/community/pages/ManageSpace.jsx:681",
+    "src/community/pages/ManageSpace.jsx:683",
     "src/community/pages/Spaces.jsx:300"
   ],
   "Private": [
     "src/community/components/CollectionSaveModal.jsx:34",
     "src/community/components/CollectionSaveModal.jsx:221",
-    "src/community/pages/ManageSpace.jsx:681",
+    "src/community/pages/ManageSpace.jsx:683",
     "src/community/pages/Spaces.jsx:301"
   ],
   "Could not load your collections.": [
@@ -757,7 +757,7 @@
     "src/community/components/classroom/ClassSettings.jsx:208",
     "src/community/pages/Challenge.jsx:465",
     "src/community/pages/ClassroomAssignment.jsx:65",
-    "src/community/pages/ManageSpace.jsx:752"
+    "src/community/pages/ManageSpace.jsx:754"
   ],
   "Saving…": [
     "src/community/components/CollectionSaveModal.jsx:167",
@@ -776,9 +776,9 @@
     "src/community/pages/ManageProject.jsx:702",
     "src/community/pages/ManageProject.jsx:777",
     "src/community/pages/ManageProject.jsx:992",
-    "src/community/pages/ManageSpace.jsx:690",
-    "src/community/pages/ManageSpace.jsx:703",
-    "src/community/pages/ManageSpace.jsx:752",
+    "src/community/pages/ManageSpace.jsx:692",
+    "src/community/pages/ManageSpace.jsx:705",
+    "src/community/pages/ManageSpace.jsx:754",
     "src/community/pages/News.jsx:299",
     "src/community/pages/Theme.jsx:225",
     "src/community/pages/Theme.jsx:258",
@@ -935,7 +935,7 @@
     "src/community/pages/Classroom.jsx:93",
     "src/community/pages/Classroom.jsx:348",
     "src/community/pages/ManageProject.jsx:1072",
-    "src/community/pages/ManageSpace.jsx:796",
+    "src/community/pages/ManageSpace.jsx:798",
     "src/community/pages/MyStuff.jsx:1298",
     "src/community/pages/News.jsx:293",
     "src/community/pages/PullRequest.jsx:917",
@@ -1091,7 +1091,7 @@
   "Deleting…": [
     "src/community/components/CommentThread.jsx:1173",
     "src/community/components/NewsItem.jsx:132",
-    "src/community/pages/ManageSpace.jsx:820",
+    "src/community/pages/ManageSpace.jsx:822",
     "src/community/pages/MyStuff.jsx:1325",
     "src/community/pages/MyStuff.jsx:1341",
     "src/community/pages/Project.jsx:724",
@@ -1547,7 +1547,7 @@
   "Results": [
     "src/community/components/GifPicker.jsx:61",
     "src/community/pages/Challenge.jsx:693",
-    "src/community/pages/ManageSpace.jsx:767"
+    "src/community/pages/ManageSpace.jsx:769"
   ],
   "Popular GIFs": [
     "src/community/components/GifPicker.jsx:61"
@@ -1830,7 +1830,7 @@
   ],
   "Try again": [
     "src/community/components/LanguagePicker.jsx:20",
-    "src/community/components/OrgMoveRow.jsx:40",
+    "src/community/components/OrgMoveRow.jsx:38",
     "src/community/components/RouteErrorBoundary.jsx:26",
     "src/community/components/ui/StatusMessage.jsx:26",
     "src/community/pages/Notifications.jsx:778",
@@ -1955,7 +1955,7 @@
     "src/community/pages/Challenge.jsx:435",
     "src/community/pages/Challenge.jsx:559",
     "src/community/pages/Challenge.jsx:574",
-    "src/community/pages/ManageSpace.jsx:809",
+    "src/community/pages/ManageSpace.jsx:811",
     "src/community/pages/Profile.jsx:577"
   ],
   "Hidden from your profile": [
@@ -2022,7 +2022,7 @@
     "src/community/pages/ClassroomStudent.jsx:105",
     "src/community/pages/Collection.jsx:38",
     "src/community/pages/ManageSpace.jsx:36",
-    "src/community/pages/ManageSpace.jsx:804",
+    "src/community/pages/ManageSpace.jsx:806",
     "src/community/pages/Notifications.jsx:103",
     "src/community/pages/Org.jsx:125",
     "src/community/pages/Profile.jsx:537",
@@ -2124,8 +2124,8 @@
   "Name": [
     "src/community/components/MyStuffProjects.jsx:33",
     "src/community/components/classroom/ClassStudents.jsx:222",
-    "src/community/pages/ManageSpace.jsx:666",
-    "src/community/pages/ManageSpace.jsx:741",
+    "src/community/pages/ManageSpace.jsx:668",
+    "src/community/pages/ManageSpace.jsx:743",
     "src/community/pages/Spaces.jsx:274",
     "src/community/pages/Theme.jsx:263",
     "src/community/pages/Themes.jsx:221",
@@ -2449,7 +2449,7 @@
     "src/community/pages/ClassroomSchool.jsx:96",
     "src/community/pages/Commit.jsx:542",
     "src/community/pages/ManageProject.jsx:971",
-    "src/community/pages/ManageSpace.jsx:741"
+    "src/community/pages/ManageSpace.jsx:743"
   ],
   "Create a theme": [
     "src/community/components/MyStuffThemes.jsx:173"
@@ -2565,8 +2565,8 @@
   "Searching…": [
     "src/community/components/NavBar.jsx:171",
     "src/community/components/SpaceProjectPicker.jsx:205",
-    "src/community/pages/ManageSpace.jsx:760",
-    "src/community/pages/ManageSpace.jsx:781",
+    "src/community/pages/ManageSpace.jsx:762",
+    "src/community/pages/ManageSpace.jsx:783",
     "src/community/pages/Search.jsx:201",
     "src/community/pages/Search.jsx:270"
   ],
@@ -2728,7 +2728,7 @@
   ],
   "Published {value1}": [
     "src/community/components/NewsItem.jsx:203",
-    "src/community/pages/ManageSpace.jsx:768"
+    "src/community/pages/ManageSpace.jsx:770"
   ],
   "Updated {value1}": [
     "src/community/components/NewsItem.jsx:205",
@@ -2802,34 +2802,34 @@
     "src/community/components/NewsParts.jsx:145"
   ],
   "Organisation": [
-    "src/community/components/OrgLabel.jsx:14"
+    "src/community/components/OrgLabel.jsx:16"
   ],
   "Your account (@{username})": [
-    "src/community/components/OrgMoveRow.jsx:29"
+    "src/community/components/OrgMoveRow.jsx:27"
   ],
   "Loading your organisations…": [
-    "src/community/components/OrgMoveRow.jsx:35"
+    "src/community/components/OrgMoveRow.jsx:33"
   ],
   "Could not load your organisations.": [
-    "src/community/components/OrgMoveRow.jsx:38"
+    "src/community/components/OrgMoveRow.jsx:36"
   ],
   "Other organisations you can publish for will appear here.": [
-    "src/community/components/OrgMoveRow.jsx:49"
+    "src/community/components/OrgMoveRow.jsx:47"
   ],
   "Organisations you can publish for will appear here.": [
-    "src/community/components/OrgMoveRow.jsx:50"
+    "src/community/components/OrgMoveRow.jsx:48"
   ],
   "Create an organisation on Rotur": [
-    "src/community/components/OrgMoveRow.jsx:52"
+    "src/community/components/OrgMoveRow.jsx:50"
   ],
   "Move to": [
-    "src/community/components/OrgMoveRow.jsx:65"
+    "src/community/components/OrgMoveRow.jsx:63"
   ],
   "Choose where to move it": [
-    "src/community/components/OrgMoveRow.jsx:68"
+    "src/community/components/OrgMoveRow.jsx:66"
   ],
   "Move": [
-    "src/community/components/OrgMoveRow.jsx:72",
+    "src/community/components/OrgMoveRow.jsx:70",
     "src/community/components/classroom/ClassStudents.jsx:125"
   ],
   "Played {value1}": [
@@ -2937,7 +2937,7 @@
   "Schedule": [
     "src/community/components/PostComposer.jsx:286",
     "src/community/pages/ManageSpace.jsx:42",
-    "src/community/pages/ManageSpace.jsx:696"
+    "src/community/pages/ManageSpace.jsx:698"
   ],
   "Only show this post on your profile": [
     "src/community/components/PostComposer.jsx:293"
@@ -3509,7 +3509,7 @@
     "src/community/components/ProjectInfoPanel.jsx:226",
     "src/community/components/classroom/ClassSettings.jsx:254",
     "src/community/pages/ClassroomSchool.jsx:272",
-    "src/community/pages/ManageSpace.jsx:793",
+    "src/community/pages/ManageSpace.jsx:795",
     "src/community/pages/Spaces.jsx:306",
     "src/community/pages/Studio.jsx:159"
   ],
@@ -4206,7 +4206,7 @@
   "Save changes": [
     "src/community/components/classroom/AssignmentModal.jsx:131",
     "src/community/pages/ManageProject.jsx:648",
-    "src/community/pages/ManageSpace.jsx:690",
+    "src/community/pages/ManageSpace.jsx:692",
     "src/community/pages/News.jsx:300",
     "src/community/pages/Theme.jsx:258"
   ],
@@ -4396,7 +4396,7 @@
     "src/community/pages/Commit.jsx:555",
     "src/community/pages/ManageProject.jsx:801",
     "src/community/pages/ManageProject.jsx:924",
-    "src/community/pages/ManageSpace.jsx:677",
+    "src/community/pages/ManageSpace.jsx:679",
     "src/community/pages/Support.jsx:137"
   ],
   "Add co-teacher": [
@@ -4415,7 +4415,7 @@
     "src/community/components/classroom/ClassSettings.jsx:293",
     "src/community/components/classroom/ClassSettings.jsx:370",
     "src/community/pages/ManageProject.jsx:802",
-    "src/community/pages/ManageSpace.jsx:677"
+    "src/community/pages/ManageSpace.jsx:679"
   ],
   "Keep me as a co-teacher": [
     "src/community/components/classroom/ClassSettings.jsx:298"
@@ -4505,7 +4505,8 @@
   ],
   "Moving…": [
     "src/community/components/classroom/ClassStudents.jsx:123",
-    "src/community/pages/ClassroomClaim.jsx:113"
+    "src/community/pages/ClassroomClaim.jsx:113",
+    "src/community/pages/ManageProject.jsx:522"
   ],
   "Move to class": [
     "src/community/components/classroom/ClassStudents.jsx:132",
@@ -4728,7 +4729,7 @@
   ],
   "Cancelling…": [
     "src/community/components/classroom/ReleaseSection.jsx:77",
-    "src/community/pages/ManageSpace.jsx:796"
+    "src/community/pages/ManageSpace.jsx:798"
   ],
   "Cancel link": [
     "src/community/components/classroom/ReleaseSection.jsx:79"
@@ -5571,7 +5572,7 @@
   "Submissions open": [
     "src/community/pages/Challenge.jsx:32",
     "src/community/pages/Challenge.jsx:483",
-    "src/community/pages/ManageSpace.jsx:699",
+    "src/community/pages/ManageSpace.jsx:701",
     "src/community/pages/Spaces.jsx:314"
   ],
   "Judging": [
@@ -5670,7 +5671,7 @@
   ],
   "{value1} of {value2} entries scored": [
     "src/community/pages/Challenge.jsx:400",
-    "src/community/pages/ManageSpace.jsx:768"
+    "src/community/pages/ManageSpace.jsx:770"
   ],
   "Entries to judge": [
     "src/community/pages/Challenge.jsx:404"
@@ -5714,7 +5715,7 @@
   ],
   "Submissions close": [
     "src/community/pages/Challenge.jsx:493",
-    "src/community/pages/ManageSpace.jsx:700",
+    "src/community/pages/ManageSpace.jsx:702",
     "src/community/pages/Spaces.jsx:315"
   ],
   "{value1} left to enter": [
@@ -5722,11 +5723,11 @@
   ],
   "Voting ends": [
     "src/community/pages/Challenge.jsx:503",
-    "src/community/pages/ManageSpace.jsx:701"
+    "src/community/pages/ManageSpace.jsx:703"
   ],
   "Judging ends": [
     "src/community/pages/Challenge.jsx:503",
-    "src/community/pages/ManageSpace.jsx:701"
+    "src/community/pages/ManageSpace.jsx:703"
   ],
   "{value1} of voting left": [
     "src/community/pages/Challenge.jsx:507"
@@ -5771,7 +5772,7 @@
     "src/community/pages/Challenge.jsx:764",
     "src/community/pages/Challenge.jsx:815",
     "src/community/pages/ManageSpace.jsx:44",
-    "src/community/pages/ManageSpace.jsx:804"
+    "src/community/pages/ManageSpace.jsx:806"
   ],
   "Judge entries": [
     "src/community/pages/Challenge.jsx:692",
@@ -5813,7 +5814,7 @@
   ],
   "Theme": [
     "src/community/pages/Challenge.jsx:749",
-    "src/community/pages/ManageSpace.jsx:679",
+    "src/community/pages/ManageSpace.jsx:681",
     "src/community/pages/Settings.jsx:100",
     "src/community/pages/Theme.jsx:118",
     "src/community/pages/Theme.jsx:200"
@@ -5826,7 +5827,7 @@
   ],
   "Rules": [
     "src/community/pages/Challenge.jsx:757",
-    "src/community/pages/ManageSpace.jsx:679"
+    "src/community/pages/ManageSpace.jsx:681"
   ],
   "The host has not added rules yet.": [
     "src/community/pages/Challenge.jsx:758"
@@ -5843,13 +5844,13 @@
   "Judges": [
     "src/community/pages/Challenge.jsx:765",
     "src/community/pages/Challenge.jsx:795",
-    "src/community/pages/ManageSpace.jsx:723",
-    "src/community/pages/ManageSpace.jsx:756",
+    "src/community/pages/ManageSpace.jsx:725",
+    "src/community/pages/ManageSpace.jsx:758",
     "src/community/pages/Spaces.jsx:325"
   ],
   "Audience vote": [
     "src/community/pages/Challenge.jsx:769",
-    "src/community/pages/ManageSpace.jsx:728",
+    "src/community/pages/ManageSpace.jsx:730",
     "src/community/pages/Spaces.jsx:330"
   ],
   "Voting has closed. Signed-in members rated each entry from 1 to 5 stars, and the entry with the highest average rating won.": [
@@ -6892,7 +6893,7 @@
   ],
   "Transfer to @{owner}": [
     "src/community/pages/ManageProject.jsx:84",
-    "src/community/pages/ManageSpace.jsx:115"
+    "src/community/pages/ManageSpace.jsx:117"
   ],
   "Analytics": [
     "src/community/pages/ManageProject.jsx:96",
@@ -7042,7 +7043,7 @@
   ],
   "Visibility": [
     "src/community/pages/ManageProject.jsx:683",
-    "src/community/pages/ManageSpace.jsx:681",
+    "src/community/pages/ManageSpace.jsx:683",
     "src/community/pages/Spaces.jsx:297",
     "src/community/pages/project/ForkSetupModal.jsx:59"
   ],
@@ -7118,11 +7119,11 @@
   ],
   "Move to an organisation": [
     "src/community/pages/ManageProject.jsx:791",
-    "src/community/pages/ManageSpace.jsx:672"
+    "src/community/pages/ManageSpace.jsx:674"
   ],
   "Move it to another organisation you publish for, or back to your account.": [
     "src/community/pages/ManageProject.jsx:791",
-    "src/community/pages/ManageSpace.jsx:672"
+    "src/community/pages/ManageSpace.jsx:674"
   ],
   "Members of the organisation who can publish for it will manage this project with you.": [
     "src/community/pages/ManageProject.jsx:791"
@@ -7141,7 +7142,7 @@
   ],
   "New owner username": [
     "src/community/pages/ManageProject.jsx:801",
-    "src/community/pages/ManageSpace.jsx:677"
+    "src/community/pages/ManageSpace.jsx:679"
   ],
   "Review player feedback and recent runtime health.": [
     "src/community/pages/ManageProject.jsx:810",
@@ -7249,7 +7250,7 @@
   ],
   "Curators": [
     "src/community/pages/ManageSpace.jsx:35",
-    "src/community/pages/ManageSpace.jsx:776",
+    "src/community/pages/ManageSpace.jsx:778",
     "src/community/pages/Studio.jsx:87",
     "src/community/pages/Studio.jsx:158"
   ],
@@ -7280,7 +7281,7 @@
   ],
   "Publish results": [
     "src/community/pages/ManageSpace.jsx:87",
-    "src/community/pages/ManageSpace.jsx:770"
+    "src/community/pages/ManageSpace.jsx:772"
   ],
   "Delete {space}?": [
     "src/community/pages/ManageSpace.jsx:92"
@@ -7290,8 +7291,8 @@
   ],
   "Delete space": [
     "src/community/pages/ManageSpace.jsx:94",
-    "src/community/pages/ManageSpace.jsx:816",
-    "src/community/pages/ManageSpace.jsx:822"
+    "src/community/pages/ManageSpace.jsx:818",
+    "src/community/pages/ManageSpace.jsx:824"
   ],
   "Move space to an organisation?": [
     "src/community/pages/ManageSpace.jsx:99"
@@ -7308,258 +7309,264 @@
   "Transfer space?": [
     "src/community/pages/ManageSpace.jsx:113"
   ],
+  "Transfer \"{space}\" to @{owner}? The organisation will no longer own it.": [
+    "src/community/pages/ManageSpace.jsx:115"
+  ],
   "Transfer \"{space}\" to @{owner}? Your access may change.": [
-    "src/community/pages/ManageSpace.jsx:114"
+    "src/community/pages/ManageSpace.jsx:116"
   ],
   "Choose an image smaller than 1 MB.": [
-    "src/community/pages/ManageSpace.jsx:308"
+    "src/community/pages/ManageSpace.jsx:310"
   ],
   "Submissions must open first, close later, and judging must end last.": [
-    "src/community/pages/ManageSpace.jsx:342"
+    "src/community/pages/ManageSpace.jsx:344"
   ],
   "Loading management tools…": [
-    "src/community/pages/ManageSpace.jsx:575",
-    "src/community/pages/ManageSpace.jsx:596"
+    "src/community/pages/ManageSpace.jsx:577",
+    "src/community/pages/ManageSpace.jsx:598"
   ],
   "Sign in to manage this space.": [
-    "src/community/pages/ManageSpace.jsx:580"
+    "src/community/pages/ManageSpace.jsx:582"
   ],
   "Working…": [
-    "src/community/pages/ManageSpace.jsx:616",
+    "src/community/pages/ManageSpace.jsx:618",
     "src/community/pages/admin/AdminActionDialog.jsx:16"
   ],
   "Back to {value1}": [
-    "src/community/pages/ManageSpace.jsx:630"
+    "src/community/pages/ManageSpace.jsx:632"
   ],
   "Manage {value1}": [
-    "src/community/pages/ManageSpace.jsx:631"
+    "src/community/pages/ManageSpace.jsx:633"
   ],
   "View public page": [
-    "src/community/pages/ManageSpace.jsx:634"
+    "src/community/pages/ManageSpace.jsx:636"
   ],
   "Space settings": [
-    "src/community/pages/ManageSpace.jsx:638"
+    "src/community/pages/ManageSpace.jsx:640"
   ],
   "Voting": [
-    "src/community/pages/ManageSpace.jsx:650"
+    "src/community/pages/ManageSpace.jsx:652"
   ],
   "Challenge details": [
-    "src/community/pages/ManageSpace.jsx:661"
+    "src/community/pages/ManageSpace.jsx:663"
   ],
   "General details": [
-    "src/community/pages/ManageSpace.jsx:661"
+    "src/community/pages/ManageSpace.jsx:663"
   ],
   "Give participants the context they need before they enter.": [
-    "src/community/pages/ManageSpace.jsx:662"
+    "src/community/pages/ManageSpace.jsx:664"
   ],
   "Change how this space appears and who can submit projects.": [
-    "src/community/pages/ManageSpace.jsx:662"
+    "src/community/pages/ManageSpace.jsx:664"
   ],
   "No thumbnail": [
-    "src/community/pages/ManageSpace.jsx:665"
+    "src/community/pages/ManageSpace.jsx:667"
   ],
   "Uploading…": [
-    "src/community/pages/ManageSpace.jsx:665",
+    "src/community/pages/ManageSpace.jsx:667",
     "src/community/pages/MyStuff.jsx:1274"
   ],
   "Choose image": [
-    "src/community/pages/ManageSpace.jsx:665"
+    "src/community/pages/ManageSpace.jsx:667"
   ],
   "PNG, JPG, or WebP up to 1 MB. A 4:3 image works best.": [
-    "src/community/pages/ManageSpace.jsx:665"
+    "src/community/pages/ManageSpace.jsx:667"
   ],
   "Description": [
-    "src/community/pages/ManageSpace.jsx:667",
-    "src/community/pages/ManageSpace.jsx:741",
+    "src/community/pages/ManageSpace.jsx:669",
+    "src/community/pages/ManageSpace.jsx:743",
     "src/community/pages/Roadmap.jsx:495",
     "src/community/pages/Theme.jsx:264",
     "src/community/pages/Themes.jsx:222"
   ],
   "Move this space": [
-    "src/community/pages/ManageSpace.jsx:669",
-    "src/community/pages/ManageSpace.jsx:672"
+    "src/community/pages/ManageSpace.jsx:671",
+    "src/community/pages/ManageSpace.jsx:674"
   ],
   "Only an admin of @{org} can move this space out of the organisation.": [
-    "src/community/pages/ManageSpace.jsx:669"
+    "src/community/pages/ManageSpace.jsx:671"
   ],
   "Members of the organisation who can publish for it will manage this space with you.": [
-    "src/community/pages/ManageSpace.jsx:672"
+    "src/community/pages/ManageSpace.jsx:674"
   ],
   "Transfer to another user": [
-    "src/community/pages/ManageSpace.jsx:676"
+    "src/community/pages/ManageSpace.jsx:678"
+  ],
+  "The new owner receives this {value1}. The organisation will no longer own it.": [
+    "src/community/pages/ManageSpace.jsx:678"
   ],
   "The new owner receives this {value1}.": [
-    "src/community/pages/ManageSpace.jsx:676"
+    "src/community/pages/ManageSpace.jsx:678"
   ],
   "Optional theme or prompt": [
-    "src/community/pages/ManageSpace.jsx:679"
+    "src/community/pages/ManageSpace.jsx:681"
   ],
   "Eligibility, team rules, allowed tools, and anything that could disqualify an entry": [
-    "src/community/pages/ManageSpace.jsx:679"
+    "src/community/pages/ManageSpace.jsx:681"
   ],
   "Let people add their own shared or unlisted projects.": [
-    "src/community/pages/ManageSpace.jsx:685"
+    "src/community/pages/ManageSpace.jsx:687"
   ],
   "Open submissions": [
-    "src/community/pages/ManageSpace.jsx:686"
+    "src/community/pages/ManageSpace.jsx:688"
   ],
   "Each deadline changes what participants and voters can do.": [
-    "src/community/pages/ManageSpace.jsx:696"
+    "src/community/pages/ManageSpace.jsx:698"
   ],
   "Each deadline changes what participants and judges can do.": [
-    "src/community/pages/ManageSpace.jsx:696"
+    "src/community/pages/ManageSpace.jsx:698"
   ],
   "People can start entering projects.": [
-    "src/community/pages/ManageSpace.jsx:699"
-  ],
-  "Entries lock and voting starts.": [
-    "src/community/pages/ManageSpace.jsx:700"
-  ],
-  "Entries lock and judging starts.": [
-    "src/community/pages/ManageSpace.jsx:700"
-  ],
-  "The host can publish the final results.": [
     "src/community/pages/ManageSpace.jsx:701"
   ],
-  "Save schedule": [
+  "Entries lock and voting starts.": [
+    "src/community/pages/ManageSpace.jsx:702"
+  ],
+  "Entries lock and judging starts.": [
+    "src/community/pages/ManageSpace.jsx:702"
+  ],
+  "The host can publish the final results.": [
     "src/community/pages/ManageSpace.jsx:703"
   ],
+  "Save schedule": [
+    "src/community/pages/ManageSpace.jsx:705"
+  ],
   "Who picks the winner?": [
-    "src/community/pages/ManageSpace.jsx:713",
-    "src/community/pages/ManageSpace.jsx:718",
+    "src/community/pages/ManageSpace.jsx:715",
+    "src/community/pages/ManageSpace.jsx:720",
     "src/community/pages/Spaces.jsx:320"
   ],
   "Results are published, so this can no longer change.": [
-    "src/community/pages/ManageSpace.jsx:714"
+    "src/community/pages/ManageSpace.jsx:716"
   ],
   "You can switch until results are published.": [
-    "src/community/pages/ManageSpace.jsx:714"
+    "src/community/pages/ManageSpace.jsx:716"
   ],
   "Invited judges score each entry from 1 to 10 against your criteria.": [
-    "src/community/pages/ManageSpace.jsx:723",
+    "src/community/pages/ManageSpace.jsx:725",
     "src/community/pages/Spaces.jsx:325"
   ],
   "Anyone signed in rates entries from 1 to 5 stars. The highest average wins. No judges needed.": [
-    "src/community/pages/ManageSpace.jsx:728",
+    "src/community/pages/ManageSpace.jsx:730",
     "src/community/pages/Spaces.jsx:330"
   ],
   "Scoring criteria": [
-    "src/community/pages/ManageSpace.jsx:737"
+    "src/community/pages/ManageSpace.jsx:739"
   ],
   "Scoring has started, so the criteria are locked.": [
-    "src/community/pages/ManageSpace.jsx:738"
+    "src/community/pages/ManageSpace.jsx:740"
   ],
   "Judges score each entry from 1 to 10. Weights decide how much each criterion counts.": [
-    "src/community/pages/ManageSpace.jsx:738"
+    "src/community/pages/ManageSpace.jsx:740"
   ],
   "Weight {value1}": [
-    "src/community/pages/ManageSpace.jsx:741"
-  ],
-  "{value1} weight, {value2} of 5": [
-    "src/community/pages/ManageSpace.jsx:741"
-  ],
-  "Add criterion": [
     "src/community/pages/ManageSpace.jsx:743"
   ],
+  "{value1} weight, {value2} of 5": [
+    "src/community/pages/ManageSpace.jsx:743"
+  ],
+  "Add criterion": [
+    "src/community/pages/ManageSpace.jsx:745"
+  ],
   "Signed-in users can rate entries from 1 to 5 during judging. Audience ratings are shown separately and do not change the winner.": [
-    "src/community/pages/ManageSpace.jsx:746"
+    "src/community/pages/ManageSpace.jsx:748"
   ],
   "Audience ratings": [
-    "src/community/pages/ManageSpace.jsx:747"
+    "src/community/pages/ManageSpace.jsx:749"
   ],
   "Judges accept an invitation before they can score entries.": [
-    "src/community/pages/ManageSpace.jsx:756"
+    "src/community/pages/ManageSpace.jsx:758"
   ],
   "Search for a judge": [
-    "src/community/pages/ManageSpace.jsx:759"
+    "src/community/pages/ManageSpace.jsx:761"
   ],
   "Inviting…": [
-    "src/community/pages/ManageSpace.jsx:761",
-    "src/community/pages/ManageSpace.jsx:785"
-  ],
-  "MistWarp user": [
-    "src/community/pages/ManageSpace.jsx:761",
-    "src/community/pages/ManageSpace.jsx:785"
-  ],
-  "No available users found.": [
-    "src/community/pages/ManageSpace.jsx:761",
+    "src/community/pages/ManageSpace.jsx:763",
     "src/community/pages/ManageSpace.jsx:787"
   ],
+  "MistWarp user": [
+    "src/community/pages/ManageSpace.jsx:763",
+    "src/community/pages/ManageSpace.jsx:787"
+  ],
+  "No available users found.": [
+    "src/community/pages/ManageSpace.jsx:763",
+    "src/community/pages/ManageSpace.jsx:789"
+  ],
   "Judge": [
-    "src/community/pages/ManageSpace.jsx:763"
+    "src/community/pages/ManageSpace.jsx:765"
   ],
   "Removing…": [
-    "src/community/pages/ManageSpace.jsx:763",
-    "src/community/pages/ManageSpace.jsx:794",
-    "src/community/pages/ManageSpace.jsx:809",
+    "src/community/pages/ManageSpace.jsx:765",
+    "src/community/pages/ManageSpace.jsx:796",
+    "src/community/pages/ManageSpace.jsx:811",
     "src/community/pages/Settings.jsx:800",
     "src/community/pages/Settings.jsx:818"
   ],
   "Remove": [
-    "src/community/pages/ManageSpace.jsx:763",
-    "src/community/pages/ManageSpace.jsx:794",
-    "src/community/pages/ManageSpace.jsx:809",
+    "src/community/pages/ManageSpace.jsx:765",
+    "src/community/pages/ManageSpace.jsx:796",
+    "src/community/pages/ManageSpace.jsx:811",
     "src/community/pages/News.jsx:279",
     "src/community/pages/admin/AdminsSection.jsx:42"
   ],
   "No judges have accepted yet.": [
-    "src/community/pages/ManageSpace.jsx:763"
+    "src/community/pages/ManageSpace.jsx:765"
   ],
   "Pending invitations": [
-    "src/community/pages/ManageSpace.jsx:764",
-    "src/community/pages/ManageSpace.jsx:796"
+    "src/community/pages/ManageSpace.jsx:766",
+    "src/community/pages/ManageSpace.jsx:798"
   ],
   "Invited": [
-    "src/community/pages/ManageSpace.jsx:764",
-    "src/community/pages/ManageSpace.jsx:796"
+    "src/community/pages/ManageSpace.jsx:766",
+    "src/community/pages/ManageSpace.jsx:798"
   ],
   "Publishing reveals the ranking by average audience rating on the public challenge page.": [
-    "src/community/pages/ManageSpace.jsx:767"
+    "src/community/pages/ManageSpace.jsx:769"
   ],
   "Publishing reveals the ranked judge scores on the public challenge page.": [
-    "src/community/pages/ManageSpace.jsx:767"
+    "src/community/pages/ManageSpace.jsx:769"
   ],
   "{value1} of {value2} entries rated": [
-    "src/community/pages/ManageSpace.jsx:768"
+    "src/community/pages/ManageSpace.jsx:770"
   ],
   "Publishing…": [
-    "src/community/pages/ManageSpace.jsx:769",
+    "src/community/pages/ManageSpace.jsx:771",
     "src/community/pages/Themes.jsx:224",
     "src/community/pages/project/ReleaseList.jsx:95"
   ],
   "You can publish results after submissions close.": [
-    "src/community/pages/ManageSpace.jsx:769"
+    "src/community/pages/ManageSpace.jsx:771"
   ],
   "Results are live": [
-    "src/community/pages/ManageSpace.jsx:770"
+    "src/community/pages/ManageSpace.jsx:772"
   ],
   "Curators can edit this space and organise its projects. Invitations must be accepted before access is granted.": [
-    "src/community/pages/ManageSpace.jsx:776"
+    "src/community/pages/ManageSpace.jsx:778"
   ],
   "Search for someone to invite": [
-    "src/community/pages/ManageSpace.jsx:780"
+    "src/community/pages/ManageSpace.jsx:782"
   ],
   "Curator": [
-    "src/community/pages/ManageSpace.jsx:794",
+    "src/community/pages/ManageSpace.jsx:796",
     "src/community/pages/Studio.jsx:159"
   ],
   "Review entries or remove one that breaks the rules.": [
-    "src/community/pages/ManageSpace.jsx:805"
+    "src/community/pages/ManageSpace.jsx:807"
   ],
   "Add, find, and remove projects from this space.": [
-    "src/community/pages/ManageSpace.jsx:805"
+    "src/community/pages/ManageSpace.jsx:807"
   ],
   "Score submitted": [
-    "src/community/pages/ManageSpace.jsx:809"
+    "src/community/pages/ManageSpace.jsx:811"
   ],
   "View": [
-    "src/community/pages/ManageSpace.jsx:809"
+    "src/community/pages/ManageSpace.jsx:811"
   ],
   "No projects have been added yet.": [
-    "src/community/pages/ManageSpace.jsx:810"
+    "src/community/pages/ManageSpace.jsx:812"
   ],
   "This permanently removes the space. Projects are not deleted.": [
-    "src/community/pages/ManageSpace.jsx:816"
+    "src/community/pages/ManageSpace.jsx:818"
   ],
   "Could not load your inventory.": [
     "src/community/pages/MyStuff.jsx:66"

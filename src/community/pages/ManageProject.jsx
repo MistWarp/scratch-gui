@@ -10,7 +10,7 @@ import {
 import api, {projectUrl, editorUrl} from '../api';
 import {useUser} from '../UserContext.jsx';
 import usePublishableOrgs from '../use-publishable-orgs.js';
-import {isOrgOwned} from '../components/OrgLabel.jsx';
+import {isOrgOwned, ownershipMovable} from '../components/OrgLabel.jsx';
 import OrgMoveRow from '../components/OrgMoveRow.jsx';
 import VisibilityMenu from '../components/VisibilityMenu.jsx';
 import ProjectInfoPanel from '../components/ProjectInfoPanel.jsx';
@@ -364,7 +364,7 @@ const ManageProject = () => {
         setTransferConfirm(nextOwner);
     };
 
-    const requestProjectTransfer = () => confirmProjectTransfer(transferOwner.trim());
+    const requestProjectTransfer = () => confirmProjectTransfer(transferOwner.trim().replace(/^@/, ''));
 
     const transferProject = async () => {
         const nextOwner = transferConfirm;
@@ -495,7 +495,7 @@ const ManageProject = () => {
     });
     const activeSection = section;
     const transferKindNow = transferConfirmKind;
-    const movable = !isOrgOwned(project) || project.canMoveOut === true;
+    const movable = ownershipMovable(project);
     const transferDetails = transferConfirm ? projectTransferConfirmation(project, transferConfirm, transferKindNow) : null;
 
     return (
@@ -519,7 +519,7 @@ const ManageProject = () => {
                     title={transferDetails.title}
                     confirmLabel={transferDetails.action}
                     busy={transferBusy}
-                    busyLabel={communityText('Transferring…')}
+                    busyLabel={transferKindNow === 'person' ? communityText('Transferring…') : communityText('Moving…')}
                     error={transferError}
                     onConfirm={transferProject}
                     onCancel={() => setTransferConfirm('')}

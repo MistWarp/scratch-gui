@@ -19,7 +19,7 @@ import StatusMessage from '../components/ui/StatusMessage.jsx';
 import {SwitchRow} from '../components/ui/Switch.jsx';
 import {useUser} from '../UserContext.jsx';
 import usePublishableOrgs from '../use-publishable-orgs.js';
-import {isOrgOwned} from '../components/OrgLabel.jsx';
+import {isOrgOwned, ownershipMovable} from '../components/OrgLabel.jsx';
 import OrgMoveRow from '../components/OrgMoveRow.jsx';
 import useLatest from '../use-latest.js';
 import {formatDateTime} from '../format.js';
@@ -111,7 +111,9 @@ const spaceConfirmationDetails = (confirmation, space) => {
     if (confirmation.type === 'transfer-space') {
         return {
             title: formatCommunityMessage('Transfer space?'),
-            body: formatCommunityMessage('Transfer "{space}" to @{owner}? Your access may change.', {space: space.title, owner: confirmation.owner}),
+            body: isOrgOwned(space) ?
+                formatCommunityMessage('Transfer "{space}" to @{owner}? The organisation will no longer own it.', {space: space.title, owner: confirmation.owner}) :
+                formatCommunityMessage('Transfer "{space}" to @{owner}? Your access may change.', {space: space.title, owner: confirmation.owner}),
             action: formatCommunityMessage('Transfer to @{owner}', {owner: confirmation.owner})
         };
     }
@@ -376,7 +378,7 @@ const ManageSpace = () => {
         setConfirmation({type: 'transfer-space', owner: nextOwner, kind});
     };
 
-    const requestSpaceTransfer = () => confirmSpaceTransfer(transferOwner.trim());
+    const requestSpaceTransfer = () => confirmSpaceTransfer(transferOwner.trim().replace(/^@/, ''));
 
     const invite = async username => {
         const actionKey = beginAction('user');
@@ -602,7 +604,7 @@ const ManageSpace = () => {
     const audienceMode = space.votingMode === 'audience';
     const formAudienceMode = form.votingMode === 'audience';
     const confirmationDetails = spaceConfirmationDetails(confirmation, space);
-    const spaceMovable = !isOrgOwned(space) || space.canMoveOut === true;
+    const spaceMovable = ownershipMovable(space);
 
     return (
         <main className={`${styles.page} ${styles.managePage}`}>
@@ -673,7 +675,7 @@ const ManageSpace = () => {
                                     <OrgMoveRow className={styles.transferRow} orgs={publishOrgs} owner={space.owner} self={viewerName} ownedByOrg={isOrgOwned(space)} loaded={orgsLoaded} failed={orgsFailed} disabled={transferBusy} onMove={confirmSpaceTransfer} onRetry={retryOrgs} />
                                 </div> : null}
                                 {space.isOwner && spaceMovable ? <div className={styles.transferOwner}>
-                                    <span><strong>{communityText('Transfer to another user')}</strong><small>{communityText('The new owner receives this {value1}.', {value1: space.kind})}</small></span>
+                                    <span><strong>{communityText('Transfer to another user')}</strong><small>{isOrgOwned(space) ? communityText('The new owner receives this {value1}. The organisation will no longer own it.', {value1: space.kind}) : communityText('The new owner receives this {value1}.', {value1: space.kind})}</small></span>
                                     <div className={styles.transferRow}><input disabled={transferBusy} value={transferOwner} placeholder={communityText('Rotur username')} aria-label={communityText('New owner username')} onChange={event => setTransferOwner(event.target.value)} /><Button variant="secondary" disabled={!transferOwner.trim() || transferBusy} onClick={requestSpaceTransfer}>{communityText('Transfer')}</Button></div>
                                 </div> : null}
                                 {space.kind === 'challenge' ? <><label><span>{communityText('Theme')}</span><input value={form.theme || ''} maxLength={200} placeholder={communityText('Optional theme or prompt')} onChange={event => updateForm('theme', event.target.value)} /></label><label><span>{communityText('Rules')}</span><textarea value={form.rules || ''} maxLength={10000} placeholder={communityText('Eligibility, team rules, allowed tools, and anything that could disqualify an entry')} onChange={event => updateForm('rules', event.target.value)} /></label></> : null}

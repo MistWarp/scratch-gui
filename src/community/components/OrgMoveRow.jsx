@@ -3,12 +3,10 @@ import PropTypes from 'prop-types';
 import {Building2} from 'lucide-react';
 import {useCommunityIntl as useCommunityText} from '../i18n.jsx';
 import Button from './ui/Button.jsx';
-import {orgLabel} from '../use-publishable-orgs.js';
+import {orgLabel, sameName} from '../use-publishable-orgs.js';
 import styles from './OrgMoveRow.module.css';
 
 const ROTUR_NEW_ORG = 'https://rotur.dev/orgs/new';
-
-const sameName = (a, b) => String(a || '').toLowerCase() === String(b || '').toLowerCase();
 
 const moveChoices = ({orgs, owner, self, ownedByOrg, selfLabel}) => {
     const choices = orgs

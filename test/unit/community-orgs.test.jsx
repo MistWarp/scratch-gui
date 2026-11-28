@@ -5,7 +5,7 @@ import {MemoryRouter, Route, Routes, useLocation} from 'react-router-dom';
 
 import Org, {normalizeOrgTabParams, safeLinks} from '../../src/community/pages/Org.jsx';
 import {OrgRedirect, accountKind, kindAfterError} from '../../src/community/pages/Account.jsx';
-import OrgLabel, {isOrgOwned} from '../../src/community/components/OrgLabel.jsx';
+import OrgLabel, {isOrgOwned, ownershipMovable} from '../../src/community/components/OrgLabel.jsx';
 import OrgMoveRow from '../../src/community/components/OrgMoveRow.jsx';
 import {ownerOptions, publishableOrgs} from '../../src/community/use-publishable-orgs.js';
 import api from '../../src/community/api';
@@ -110,6 +110,14 @@ describe('Rotur orgs on MistWarp', () => {
         expect(isOrgOwned(null)).toBe(false);
         expect(mount(<OrgLabel owned={false} />).html()).toBeNull();
         expect(mount(<OrgLabel owned />).text()).toBe('Organisation');
+    });
+
+    test('only an org admin may move org content out of the org', () => {
+        expect(ownershipMovable({ownerType: ''})).toBe(true);
+        expect(ownershipMovable({ownerType: 'org', canMoveOut: true})).toBe(true);
+        expect(ownershipMovable({ownerType: 'org', canMoveOut: false})).toBe(false);
+        expect(ownershipMovable({ownerType: 'org'})).toBe(false);
+        expect(ownershipMovable(null)).toBe(false);
     });
 
     test('canonicalizes default and invalid org tabs', () => {

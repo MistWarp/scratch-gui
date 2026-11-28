@@ -41,5 +41,5 @@ const usePublishableOrgs = username => {
     return {...current, retry};
 };
 
-export {orgLabel, ownerOptions, publishableOrgs};
+export {orgLabel, ownerOptions, publishableOrgs, sameName};
 export default usePublishableOrgs;

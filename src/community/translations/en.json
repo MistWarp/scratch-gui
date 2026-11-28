@@ -3837,5 +3837,7 @@
   "Only an admin of @{org} can move this project out of the organisation.": "Only an admin of @{org} can move this project out of the organisation.",
   "The new owner gets the project. The organisation will no longer own it.": "The new owner gets the project. The organisation will no longer own it.",
   "Only an admin of @{org} can move this space out of the organisation.": "Only an admin of @{org} can move this space out of the organisation.",
-  "Could not load your organisations, so this space will be yours.": "Could not load your organisations, so this space will be yours."
+  "Could not load your organisations, so this space will be yours.": "Could not load your organisations, so this space will be yours.",
+  "Transfer \"{space}\" to @{owner}? The organisation will no longer own it.": "Transfer \"{space}\" to @{owner}? The organisation will no longer own it.",
+  "The new owner receives this {value1}. The organisation will no longer own it.": "The new owner receives this {value1}. The organisation will no longer own it."
 }

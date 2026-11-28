@@ -5,6 +5,8 @@ import styles from './OrgLabel.module.css';
 
 const isOrgOwned = value => Boolean(value) && value.ownerType === 'org';
 
+const ownershipMovable = item => Boolean(item) && (!isOrgOwned(item) || item.canMoveOut === true);
+
 const OrgLabel = ({owned, className = ''}) => {
     const {text: communityText} = useCommunityText();
     if (!owned) return null;
@@ -16,5 +18,5 @@ const OrgLabel = ({owned, className = ''}) => {
     );
 };
 
-export {isOrgOwned};
+export {isOrgOwned, ownershipMovable};
 export default OrgLabel;
