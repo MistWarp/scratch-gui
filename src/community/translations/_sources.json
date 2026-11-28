@@ -318,8 +318,8 @@
     "src/community/pages/Admin.jsx:33",
     "src/community/pages/ClassroomSchool.jsx:230",
     "src/community/pages/ManageProject.jsx:99",
-    "src/community/pages/ManageProject.jsx:799",
-    "src/community/pages/ManageProject.jsx:834",
+    "src/community/pages/ManageProject.jsx:801",
+    "src/community/pages/ManageProject.jsx:836",
     "src/community/pages/Profile.jsx:902",
     "src/community/pages/Wallet.jsx:232",
     "src/community/pages/admin/StatsOverview.jsx:155",
@@ -693,7 +693,7 @@
     "src/community/components/CollectionSaveModal.jsx:32",
     "src/community/components/CollectionSaveModal.jsx:219",
     "src/community/pages/ManageSpace.jsx:677",
-    "src/community/pages/Spaces.jsx:294"
+    "src/community/pages/Spaces.jsx:299"
   ],
   "Unlisted": [
     "src/community/components/CollectionSaveModal.jsx:33",
@@ -703,13 +703,13 @@
     "src/community/components/SpaceProjectPicker.jsx:236",
     "src/community/components/VisibilityMenu.jsx:9",
     "src/community/pages/ManageSpace.jsx:677",
-    "src/community/pages/Spaces.jsx:295"
+    "src/community/pages/Spaces.jsx:300"
   ],
   "Private": [
     "src/community/components/CollectionSaveModal.jsx:34",
     "src/community/components/CollectionSaveModal.jsx:221",
     "src/community/pages/ManageSpace.jsx:677",
-    "src/community/pages/Spaces.jsx:296"
+    "src/community/pages/Spaces.jsx:301"
   ],
   "Could not load your collections.": [
     "src/community/components/CollectionSaveModal.jsx:53",
@@ -772,10 +772,10 @@
     "src/community/pages/Classroom.jsx:228",
     "src/community/pages/ClassroomAssignment.jsx:63",
     "src/community/pages/Commit.jsx:563",
-    "src/community/pages/ManageProject.jsx:640",
-    "src/community/pages/ManageProject.jsx:697",
-    "src/community/pages/ManageProject.jsx:772",
-    "src/community/pages/ManageProject.jsx:981",
+    "src/community/pages/ManageProject.jsx:642",
+    "src/community/pages/ManageProject.jsx:699",
+    "src/community/pages/ManageProject.jsx:774",
+    "src/community/pages/ManageProject.jsx:983",
     "src/community/pages/ManageSpace.jsx:686",
     "src/community/pages/ManageSpace.jsx:699",
     "src/community/pages/ManageSpace.jsx:748",
@@ -814,8 +814,8 @@
     "src/community/components/ProjectBranches.jsx:304",
     "src/community/components/classroom/ClassGroups.jsx:96",
     "src/community/pages/Classroom.jsx:349",
-    "src/community/pages/ManageProject.jsx:705",
-    "src/community/pages/Spaces.jsx:338"
+    "src/community/pages/ManageProject.jsx:707",
+    "src/community/pages/Spaces.jsx:343"
   ],
   "Create and save": [
     "src/community/components/CollectionSaveModal.jsx:231"
@@ -852,7 +852,7 @@
     "src/community/components/ProjectDonationAnalytics.jsx:34",
     "src/community/components/ProjectDonationAnalytics.jsx:49",
     "src/community/components/ProjectDonationAnalytics.jsx:70",
-    "src/community/pages/ManageProject.jsx:747",
+    "src/community/pages/ManageProject.jsx:749",
     "src/community/pages/project/ProjectBounties.jsx:66"
   ],
   "Edited": [
@@ -934,13 +934,13 @@
     "src/community/components/ui/ConfirmModal.jsx:22",
     "src/community/pages/Classroom.jsx:93",
     "src/community/pages/Classroom.jsx:348",
-    "src/community/pages/ManageProject.jsx:1061",
+    "src/community/pages/ManageProject.jsx:1063",
     "src/community/pages/ManageSpace.jsx:792",
     "src/community/pages/MyStuff.jsx:1298",
     "src/community/pages/News.jsx:293",
     "src/community/pages/PullRequest.jsx:917",
     "src/community/pages/Roadmap.jsx:501",
-    "src/community/pages/Spaces.jsx:339",
+    "src/community/pages/Spaces.jsx:344",
     "src/community/pages/Theme.jsx:257",
     "src/community/pages/project/ForkSetupModal.jsx:68",
     "src/community/pages/project/IssueList.jsx:67"
@@ -1059,7 +1059,7 @@
     "src/community/pages/Project.jsx:614",
     "src/community/pages/RemixTree.jsx:248",
     "src/community/pages/Search.jsx:211",
-    "src/community/pages/Spaces.jsx:382",
+    "src/community/pages/Spaces.jsx:387",
     "src/community/pages/Themes.jsx:185",
     "src/community/pages/admin/ExtensionManager.jsx:146"
   ],
@@ -1260,8 +1260,8 @@
   ],
   "Bounties": [
     "src/community/components/ExploreNav.jsx:21",
-    "src/community/pages/ManageProject.jsx:879",
-    "src/community/pages/ManageProject.jsx:993",
+    "src/community/pages/ManageProject.jsx:881",
+    "src/community/pages/ManageProject.jsx:995",
     "src/community/pages/project/ProjectActivity.jsx:39",
     "src/community/pages/project/ProjectBounties.jsx:47"
   ],
@@ -1279,7 +1279,7 @@
     "src/community/components/MyStuffProjects.jsx:99",
     "src/community/pages/ClassroomStudent.jsx:125",
     "src/community/pages/ManageProject.jsx:95",
-    "src/community/pages/ManageProject.jsx:617"
+    "src/community/pages/ManageProject.jsx:619"
   ],
   "Play {value1}": [
     "src/community/components/FeaturedProject.jsx:87",
@@ -1347,12 +1347,12 @@
     "src/community/components/Footer.jsx:64",
     "src/community/components/NavBar.jsx:712",
     "src/community/components/NavBar.jsx:714",
-    "src/community/pages/Spaces.jsx:338"
+    "src/community/pages/Spaces.jsx:343"
   ],
   "Editor": [
     "src/community/components/Footer.jsx:65",
     "src/community/components/SharedProjects.jsx:18",
-    "src/community/pages/ManageProject.jsx:930",
+    "src/community/pages/ManageProject.jsx:932",
     "src/community/pages/Roadmap.jsx:497"
   ],
   "My stuff": [
@@ -1362,7 +1362,7 @@
     "src/community/components/NavBar.jsx:642",
     "src/community/components/NavBar.jsx:736",
     "src/community/components/NavBar.jsx:738",
-    "src/community/pages/ManageProject.jsx:506",
+    "src/community/pages/ManageProject.jsx:508",
     "src/community/pages/MyStuff.jsx:1262"
   ],
   "Community": [
@@ -1830,7 +1830,7 @@
   ],
   "Try again": [
     "src/community/components/LanguagePicker.jsx:20",
-    "src/community/components/OrgMoveRow.jsx:41",
+    "src/community/components/OrgMoveRow.jsx:40",
     "src/community/components/RouteErrorBoundary.jsx:26",
     "src/community/components/ui/StatusMessage.jsx:26",
     "src/community/pages/Notifications.jsx:778",
@@ -1860,21 +1860,21 @@
     "src/community/components/MembershipPreviews.jsx:24",
     "src/community/components/MyStuffOverview.jsx:105",
     "src/community/pages/Leaderboard.jsx:34",
-    "src/community/pages/ManageProject.jsx:546",
+    "src/community/pages/ManageProject.jsx:548",
     "src/community/pages/admin/StatsOverview.jsx:309"
   ],
   "Hearts": [
     "src/community/components/MembershipPreviews.jsx:25",
     "src/community/components/MyStuffOverview.jsx:55",
-    "src/community/pages/ManageProject.jsx:551"
+    "src/community/pages/ManageProject.jsx:553"
   ],
   "Library saves": [
     "src/community/components/MembershipPreviews.jsx:26",
-    "src/community/pages/ManageProject.jsx:556"
+    "src/community/pages/ManageProject.jsx:558"
   ],
   "Total playtime": [
     "src/community/components/MembershipPreviews.jsx:27",
-    "src/community/pages/ManageProject.jsx:561"
+    "src/community/pages/ManageProject.jsx:563"
   ],
   "Example project analytics showing views, hearts, saves, playtime, and CSV export": [
     "src/community/components/MembershipPreviews.jsx:31"
@@ -1884,7 +1884,7 @@
   ],
   "Export CSV": [
     "src/community/components/MembershipPreviews.jsx:45",
-    "src/community/pages/ManageProject.jsx:577"
+    "src/community/pages/ManageProject.jsx:579"
   ],
   "Project branding settings with an accent colour, a tagline, and a custom URL": [
     "src/community/components/MembershipPreviews.jsx:61"
@@ -1899,11 +1899,11 @@
   ],
   "Brand colour": [
     "src/community/components/MembershipPreviews.jsx:72",
-    "src/community/pages/ManageProject.jsx:651"
+    "src/community/pages/ManageProject.jsx:653"
   ],
   "Tagline": [
     "src/community/components/MembershipPreviews.jsx:86",
-    "src/community/pages/ManageProject.jsx:655"
+    "src/community/pages/ManageProject.jsx:657"
   ],
   "Custom URL": [
     "src/community/components/MembershipPreviews.jsx:90"
@@ -2047,7 +2047,7 @@
   ],
   "Views over the last 2 weeks": [
     "src/community/components/MyStuffOverview.jsx:69",
-    "src/community/pages/ManageProject.jsx:590"
+    "src/community/pages/ManageProject.jsx:592"
   ],
   "Could not load your views.": [
     "src/community/components/MyStuffOverview.jsx:108"
@@ -2125,7 +2125,7 @@
     "src/community/components/classroom/ClassStudents.jsx:222",
     "src/community/pages/ManageSpace.jsx:665",
     "src/community/pages/ManageSpace.jsx:737",
-    "src/community/pages/Spaces.jsx:269",
+    "src/community/pages/Spaces.jsx:274",
     "src/community/pages/Theme.jsx:263",
     "src/community/pages/Themes.jsx:221",
     "src/community/pages/admin/UserManager.jsx:114"
@@ -2215,7 +2215,7 @@
     "src/community/components/MyStuffProjects.jsx:230",
     "src/community/components/ReportModal.jsx:105",
     "src/community/components/classroom/CredentialsResult.jsx:48",
-    "src/community/pages/ManageProject.jsx:864",
+    "src/community/pages/ManageProject.jsx:866",
     "src/community/pages/Roadmap.jsx:34",
     "src/community/pages/project/IssueThread.jsx:208"
   ],
@@ -2447,7 +2447,7 @@
     "src/community/components/classroom/ClassSettings.jsx:266",
     "src/community/pages/ClassroomSchool.jsx:96",
     "src/community/pages/Commit.jsx:542",
-    "src/community/pages/ManageProject.jsx:960",
+    "src/community/pages/ManageProject.jsx:962",
     "src/community/pages/ManageSpace.jsx:737"
   ],
   "Create a theme": [
@@ -2810,25 +2810,25 @@
     "src/community/components/OrgMoveRow.jsx:35"
   ],
   "Could not load your organisations.": [
-    "src/community/components/OrgMoveRow.jsx:39"
+    "src/community/components/OrgMoveRow.jsx:38"
   ],
   "Other organisations you can publish for will appear here.": [
-    "src/community/components/OrgMoveRow.jsx:50"
+    "src/community/components/OrgMoveRow.jsx:49"
   ],
   "Organisations you can publish for will appear here.": [
-    "src/community/components/OrgMoveRow.jsx:51"
+    "src/community/components/OrgMoveRow.jsx:50"
   ],
   "Create an organisation on Rotur": [
-    "src/community/components/OrgMoveRow.jsx:53"
+    "src/community/components/OrgMoveRow.jsx:52"
   ],
   "Move to": [
-    "src/community/components/OrgMoveRow.jsx:64"
+    "src/community/components/OrgMoveRow.jsx:65"
   ],
   "Choose where to move it": [
-    "src/community/components/OrgMoveRow.jsx:67"
+    "src/community/components/OrgMoveRow.jsx:68"
   ],
   "Move": [
-    "src/community/components/OrgMoveRow.jsx:71",
+    "src/community/components/OrgMoveRow.jsx:72",
     "src/community/components/classroom/ClassStudents.jsx:125"
   ],
   "Played {value1}": [
@@ -3301,7 +3301,7 @@
   "Open {value1}": [
     "src/community/components/ProjectCard.jsx:22",
     "src/community/pages/Challenge.jsx:430",
-    "src/community/pages/ManageProject.jsx:633",
+    "src/community/pages/ManageProject.jsx:635",
     "src/community/pages/Profile.jsx:568"
   ],
   "Views in the last seven days": [
@@ -3495,8 +3495,8 @@
   ],
   "Team": [
     "src/community/components/ProjectInfoPanel.jsx:217",
-    "src/community/pages/ManageProject.jsx:879",
-    "src/community/pages/ManageProject.jsx:993"
+    "src/community/pages/ManageProject.jsx:881",
+    "src/community/pages/ManageProject.jsx:995"
   ],
   "person": [
     "src/community/components/ProjectInfoPanel.jsx:222"
@@ -3509,13 +3509,13 @@
     "src/community/components/classroom/ClassSettings.jsx:254",
     "src/community/pages/ClassroomSchool.jsx:272",
     "src/community/pages/ManageSpace.jsx:789",
-    "src/community/pages/Spaces.jsx:301",
+    "src/community/pages/Spaces.jsx:306",
     "src/community/pages/Studio.jsx:159"
   ],
   "Contributor": [
     "src/community/components/ProjectInfoPanel.jsx:230",
     "src/community/components/SharedProjects.jsx:20",
-    "src/community/pages/ManageProject.jsx:932"
+    "src/community/pages/ManageProject.jsx:934"
   ],
   "name or MistWarp username": [
     "src/community/components/ProjectInfoPanel.jsx:262"
@@ -3770,7 +3770,7 @@
   ],
   "Maintainer": [
     "src/community/components/SharedProjects.jsx:19",
-    "src/community/pages/ManageProject.jsx:931"
+    "src/community/pages/ManageProject.jsx:933"
   ],
   "Edit, publish, and manage changes.": [
     "src/community/components/SharedProjects.jsx:19"
@@ -3780,7 +3780,7 @@
   ],
   "Tester": [
     "src/community/components/SharedProjects.jsx:21",
-    "src/community/pages/ManageProject.jsx:933"
+    "src/community/pages/ManageProject.jsx:935"
   ],
   "Open and test private drafts.": [
     "src/community/components/SharedProjects.jsx:21"
@@ -4177,7 +4177,7 @@
   ],
   "Title": [
     "src/community/components/classroom/AssignmentModal.jsx:91",
-    "src/community/pages/ManageProject.jsx:622",
+    "src/community/pages/ManageProject.jsx:624",
     "src/community/pages/Roadmap.jsx:494"
   ],
   "Due date (optional)": [
@@ -4204,7 +4204,7 @@
   ],
   "Save changes": [
     "src/community/components/classroom/AssignmentModal.jsx:131",
-    "src/community/pages/ManageProject.jsx:643",
+    "src/community/pages/ManageProject.jsx:645",
     "src/community/pages/ManageSpace.jsx:686",
     "src/community/pages/News.jsx:300",
     "src/community/pages/Theme.jsx:258"
@@ -4393,8 +4393,8 @@
     "src/community/pages/ClassroomSchool.jsx:110",
     "src/community/pages/Commit.jsx:554",
     "src/community/pages/Commit.jsx:555",
-    "src/community/pages/ManageProject.jsx:790",
-    "src/community/pages/ManageProject.jsx:913",
+    "src/community/pages/ManageProject.jsx:792",
+    "src/community/pages/ManageProject.jsx:915",
     "src/community/pages/ManageSpace.jsx:673",
     "src/community/pages/Support.jsx:137"
   ],
@@ -4413,7 +4413,7 @@
   "Transfer": [
     "src/community/components/classroom/ClassSettings.jsx:293",
     "src/community/components/classroom/ClassSettings.jsx:370",
-    "src/community/pages/ManageProject.jsx:791",
+    "src/community/pages/ManageProject.jsx:793",
     "src/community/pages/ManageSpace.jsx:673"
   ],
   "Keep me as a co-teacher": [
@@ -4537,7 +4537,7 @@
     "src/community/components/classroom/ClassStudents.jsx:223",
     "src/community/pages/Admin.jsx:161",
     "src/community/pages/Admin.jsx:177",
-    "src/community/pages/ManageProject.jsx:909",
+    "src/community/pages/ManageProject.jsx:911",
     "src/community/pages/admin/AdminsSection.jsx:18"
   ],
   "Last sign-in": [
@@ -4678,7 +4678,7 @@
     "src/community/components/classroom/PresentControls.jsx:147",
     "src/community/components/classroom/StudentHome.jsx:64",
     "src/community/components/classroom/StudentHome.jsx:221",
-    "src/community/pages/ManageProject.jsx:862",
+    "src/community/pages/ManageProject.jsx:864",
     "src/community/pages/PullRequest.jsx:738",
     "src/community/pages/admin/ErrorManager.jsx:212",
     "src/community/pages/admin/UserDetailCard.jsx:66",
@@ -5281,7 +5281,7 @@
   ],
   "Errors": [
     "src/community/pages/Admin.jsx:34",
-    "src/community/pages/ManageProject.jsx:815",
+    "src/community/pages/ManageProject.jsx:817",
     "src/community/pages/admin/ErrorManager.jsx:145",
     "src/community/pages/admin/ErrorManager.jsx:171"
   ],
@@ -5430,7 +5430,7 @@
   ],
   "Could not load bounties.": [
     "src/community/pages/Bounties.jsx:64",
-    "src/community/pages/ManageProject.jsx:1022"
+    "src/community/pages/ManageProject.jsx:1024"
   ],
   "Funded improvements open across public MistWarp projects.": [
     "src/community/pages/Bounties.jsx:98"
@@ -5481,7 +5481,7 @@
     "src/community/pages/Search.jsx:295",
     "src/community/pages/Search.jsx:300",
     "src/community/pages/Search.jsx:305",
-    "src/community/pages/Spaces.jsx:362"
+    "src/community/pages/Spaces.jsx:367"
   ],
   "Bounties on public projects will show up here when someone funds one.": [
     "src/community/pages/Bounties.jsx:126"
@@ -5571,7 +5571,7 @@
     "src/community/pages/Challenge.jsx:32",
     "src/community/pages/Challenge.jsx:483",
     "src/community/pages/ManageSpace.jsx:695",
-    "src/community/pages/Spaces.jsx:309"
+    "src/community/pages/Spaces.jsx:314"
   ],
   "Judging": [
     "src/community/pages/Challenge.jsx:33",
@@ -5714,7 +5714,7 @@
   "Submissions close": [
     "src/community/pages/Challenge.jsx:493",
     "src/community/pages/ManageSpace.jsx:696",
-    "src/community/pages/Spaces.jsx:310"
+    "src/community/pages/Spaces.jsx:315"
   ],
   "{value1} left to enter": [
     "src/community/pages/Challenge.jsx:497"
@@ -5844,12 +5844,12 @@
     "src/community/pages/Challenge.jsx:795",
     "src/community/pages/ManageSpace.jsx:719",
     "src/community/pages/ManageSpace.jsx:752",
-    "src/community/pages/Spaces.jsx:320"
+    "src/community/pages/Spaces.jsx:325"
   ],
   "Audience vote": [
     "src/community/pages/Challenge.jsx:769",
     "src/community/pages/ManageSpace.jsx:724",
-    "src/community/pages/Spaces.jsx:325"
+    "src/community/pages/Spaces.jsx:330"
   ],
   "Voting has closed. Signed-in members rated each entry from 1 to 5 stars, and the entry with the highest average rating won.": [
     "src/community/pages/Challenge.jsx:770"
@@ -6313,8 +6313,8 @@
   ],
   "Feedback": [
     "src/community/pages/ClassroomAssignment.jsx:53",
-    "src/community/pages/ManageProject.jsx:801",
-    "src/community/pages/ManageProject.jsx:836"
+    "src/community/pages/ManageProject.jsx:803",
+    "src/community/pages/ManageProject.jsx:838"
   ],
   "Grade": [
     "src/community/pages/ClassroomAssignment.jsx:57"
@@ -6547,7 +6547,7 @@
   ],
   "Role": [
     "src/community/pages/ClassroomSchool.jsx:69",
-    "src/community/pages/ManageProject.jsx:921"
+    "src/community/pages/ManageProject.jsx:923"
   ],
   "Remove admin": [
     "src/community/pages/ClassroomSchool.jsx:93"
@@ -6673,7 +6673,7 @@
   ],
   "Back to project": [
     "src/community/pages/Commit.jsx:363",
-    "src/community/pages/ManageProject.jsx:501",
+    "src/community/pages/ManageProject.jsx:503",
     "src/community/pages/PullRequest.jsx:713",
     "src/community/pages/RemixTree.jsx:213"
   ],
@@ -6806,7 +6806,7 @@
   "Load more ({value1} left)": [
     "src/community/pages/Explore.jsx:272",
     "src/community/pages/Search.jsx:212",
-    "src/community/pages/Spaces.jsx:384"
+    "src/community/pages/Spaces.jsx:389"
   ],
   "Users {name} follows": [
     "src/community/pages/Following.jsx:27"
@@ -6892,348 +6892,348 @@
   ],
   "Analytics": [
     "src/community/pages/ManageProject.jsx:94",
-    "src/community/pages/ManageProject.jsx:541"
+    "src/community/pages/ManageProject.jsx:543"
   ],
   "Publishing": [
     "src/community/pages/ManageProject.jsx:96",
-    "src/community/pages/ManageProject.jsx:673"
+    "src/community/pages/ManageProject.jsx:675"
   ],
   "In-game products": [
     "src/community/pages/ManageProject.jsx:97",
-    "src/community/pages/ManageProject.jsx:715"
+    "src/community/pages/ManageProject.jsx:717"
   ],
   "Collaboration": [
     "src/community/pages/ManageProject.jsx:98",
-    "src/community/pages/ManageProject.jsx:877",
-    "src/community/pages/ManageProject.jsx:991",
+    "src/community/pages/ManageProject.jsx:879",
+    "src/community/pages/ManageProject.jsx:993",
     "src/community/pages/Roadmap.jsx:497"
   ],
   "Ownership": [
     "src/community/pages/ManageProject.jsx:100",
-    "src/community/pages/ManageProject.jsx:782"
+    "src/community/pages/ManageProject.jsx:784"
   ],
   "Project not found.": [
-    "src/community/pages/ManageProject.jsx:221"
+    "src/community/pages/ManageProject.jsx:222"
   ],
   "Could not load this project.": [
-    "src/community/pages/ManageProject.jsx:222",
+    "src/community/pages/ManageProject.jsx:223",
     "src/community/pages/Project.jsx:606"
   ],
   "Project titles cannot be empty.": [
-    "src/community/pages/ManageProject.jsx:319"
+    "src/community/pages/ManageProject.jsx:320"
   ],
   "Saved.": [
-    "src/community/pages/ManageProject.jsx:343"
+    "src/community/pages/ManageProject.jsx:344"
   ],
   "Could not save changes.": [
-    "src/community/pages/ManageProject.jsx:349"
+    "src/community/pages/ManageProject.jsx:350"
   ],
   "Team saved.": [
-    "src/community/pages/ManageProject.jsx:395"
+    "src/community/pages/ManageProject.jsx:397"
   ],
   "Could not save the team.": [
-    "src/community/pages/ManageProject.jsx:401"
+    "src/community/pages/ManageProject.jsx:403"
   ],
   "Could not create a preview link.": [
-    "src/community/pages/ManageProject.jsx:419"
+    "src/community/pages/ManageProject.jsx:421"
   ],
   "Sign in to manage your projects.": [
-    "src/community/pages/ManageProject.jsx:454"
+    "src/community/pages/ManageProject.jsx:456"
   ],
   "This is not your project": [
-    "src/community/pages/ManageProject.jsx:477"
+    "src/community/pages/ManageProject.jsx:479"
   ],
   "Only the owner and team of a project can manage it.": [
-    "src/community/pages/ManageProject.jsx:478"
+    "src/community/pages/ManageProject.jsx:480"
   ],
   "Manage this project and see how it is doing.": [
-    "src/community/pages/ManageProject.jsx:503"
+    "src/community/pages/ManageProject.jsx:505"
   ],
   "Transferring…": [
-    "src/community/pages/ManageProject.jsx:517"
+    "src/community/pages/ManageProject.jsx:519"
   ],
   "See how your project is doing.": [
-    "src/community/pages/ManageProject.jsx:541"
+    "src/community/pages/ManageProject.jsx:543"
   ],
   "Donated credits": [
-    "src/community/pages/ManageProject.jsx:566"
+    "src/community/pages/ManageProject.jsx:568"
   ],
   "Donors": [
-    "src/community/pages/ManageProject.jsx:571"
+    "src/community/pages/ManageProject.jsx:573"
   ],
   "Advanced analytics are included with your Rotur {value1} membership.": [
-    "src/community/pages/ManageProject.jsx:579"
+    "src/community/pages/ManageProject.jsx:581"
   ],
   "Rotur Plus includes downloadable analytics. Your current membership includes {value1} history.": [
-    "src/community/pages/ManageProject.jsx:583"
+    "src/community/pages/ManageProject.jsx:585"
   ],
   "all-time": [
-    "src/community/pages/ManageProject.jsx:584"
+    "src/community/pages/ManageProject.jsx:586"
   ],
   "{value1}-day": [
-    "src/community/pages/ManageProject.jsx:584"
+    "src/community/pages/ManageProject.jsx:586"
   ],
   "Publish checklist": [
-    "src/community/pages/ManageProject.jsx:596"
+    "src/community/pages/ManageProject.jsx:598"
   ],
   "Project uploaded": [
-    "src/community/pages/ManageProject.jsx:599"
-  ],
-  "Clear title": [
-    "src/community/pages/ManageProject.jsx:600"
-  ],
-  "Instructions added": [
     "src/community/pages/ManageProject.jsx:601"
   ],
-  "Description or notes added": [
+  "Clear title": [
     "src/community/pages/ManageProject.jsx:602"
   ],
-  "Tags added": [
+  "Instructions added": [
     "src/community/pages/ManageProject.jsx:603"
   ],
-  "Thumbnail ready": [
+  "Description or notes added": [
     "src/community/pages/ManageProject.jsx:604"
   ],
-  "Edit the name, branding, instructions, and public details people see.": [
-    "src/community/pages/ManageProject.jsx:617"
+  "Tags added": [
+    "src/community/pages/ManageProject.jsx:605"
   ],
-  "Name and address": [
+  "Thumbnail ready": [
+    "src/community/pages/ManageProject.jsx:606"
+  ],
+  "Edit the name, branding, instructions, and public details people see.": [
     "src/community/pages/ManageProject.jsx:619"
   ],
+  "Name and address": [
+    "src/community/pages/ManageProject.jsx:621"
+  ],
   "Vanity URL": [
-    "src/community/pages/ManageProject.jsx:631"
+    "src/community/pages/ManageProject.jsx:633"
   ],
   "/p/": [
-    "src/community/pages/ManageProject.jsx:632"
+    "src/community/pages/ManageProject.jsx:634"
   ],
   "my-project": [
-    "src/community/pages/ManageProject.jsx:632"
+    "src/community/pages/ManageProject.jsx:634"
   ],
   "This vanity URL is paused because your plan no longer includes one. It stays yours for 30 days. Clear it to give it up now.": [
-    "src/community/pages/ManageProject.jsx:633"
+    "src/community/pages/ManageProject.jsx:635"
   ],
   "Your {value1} membership includes a vanity URL.": [
-    "src/community/pages/ManageProject.jsx:633"
+    "src/community/pages/ManageProject.jsx:635"
   ],
   "Vanity project URLs are included with Rotur Pro.": [
-    "src/community/pages/ManageProject.jsx:633"
+    "src/community/pages/ManageProject.jsx:635"
   ],
   "Branding": [
-    "src/community/pages/ManageProject.jsx:648"
+    "src/community/pages/ManageProject.jsx:650"
   ],
   "A short line above your project": [
-    "src/community/pages/ManageProject.jsx:656"
+    "src/community/pages/ManageProject.jsx:658"
   ],
   "Included with your Rotur {value1} membership.": [
-    "src/community/pages/ManageProject.jsx:659"
+    "src/community/pages/ManageProject.jsx:661"
   ],
   "Custom branding is included with Rotur Plus and Pro.": [
-    "src/community/pages/ManageProject.jsx:659"
+    "src/community/pages/ManageProject.jsx:661"
   ],
   "Control who can open the project and what they can do with it.": [
-    "src/community/pages/ManageProject.jsx:673"
-  ],
-  "Access": [
     "src/community/pages/ManageProject.jsx:675"
   ],
+  "Access": [
+    "src/community/pages/ManageProject.jsx:677"
+  ],
   "Visibility": [
-    "src/community/pages/ManageProject.jsx:678",
+    "src/community/pages/ManageProject.jsx:680",
     "src/community/pages/ManageSpace.jsx:677",
-    "src/community/pages/Spaces.jsx:292",
+    "src/community/pages/Spaces.jsx:297",
     "src/community/pages/project/ForkSetupModal.jsx:59"
   ],
   "Classroom projects stay private.": [
-    "src/community/pages/ManageProject.jsx:685",
+    "src/community/pages/ManageProject.jsx:687",
     "src/community/pages/project/ProjectNotices.jsx:78"
   ],
   "Allow remixes": [
-    "src/community/pages/ManageProject.jsx:689"
-  ],
-  "Allow people to see inside": [
-    "src/community/pages/ManageProject.jsx:690"
-  ],
-  "When enabled, See inside gives access to project files and version history.": [
     "src/community/pages/ManageProject.jsx:691"
   ],
+  "Allow people to see inside": [
+    "src/community/pages/ManageProject.jsx:692"
+  ],
+  "When enabled, See inside gives access to project files and version history.": [
+    "src/community/pages/ManageProject.jsx:693"
+  ],
   "Turn off comments": [
-    "src/community/pages/ManageProject.jsx:692",
+    "src/community/pages/ManageProject.jsx:694",
     "src/community/pages/Profile.jsx:709",
     "src/community/pages/project/ProjectActivity.jsx:94"
   ],
   "Turn off issues": [
-    "src/community/pages/ManageProject.jsx:693"
+    "src/community/pages/ManageProject.jsx:695"
   ],
   "Stops new comments from being tracked as issues. Existing issues stay readable.": [
-    "src/community/pages/ManageProject.jsx:693"
+    "src/community/pages/ManageProject.jsx:695"
   ],
   "Save publishing settings": [
-    "src/community/pages/ManageProject.jsx:698"
+    "src/community/pages/ManageProject.jsx:700"
   ],
   "Private preview": [
-    "src/community/pages/ManageProject.jsx:703"
+    "src/community/pages/ManageProject.jsx:705"
   ],
   "Create a private play link that expires after 24 hours.": [
-    "src/community/pages/ManageProject.jsx:703"
+    "src/community/pages/ManageProject.jsx:705"
   ],
   "Create preview link": [
-    "src/community/pages/ManageProject.jsx:706"
-  ],
-  "Expires in 24 hours.": [
     "src/community/pages/ManageProject.jsx:708"
   ],
+  "Expires in 24 hours.": [
+    "src/community/pages/ManageProject.jsx:710"
+  ],
   "Products defined for this project that players can purchase during gameplay using credits.": [
-    "src/community/pages/ManageProject.jsx:715"
+    "src/community/pages/ManageProject.jsx:717"
   ],
   "No in-game products yet": [
-    "src/community/pages/ManageProject.jsx:753"
+    "src/community/pages/ManageProject.jsx:755"
   ],
   "No in-game products are configured for this project yet.": [
-    "src/community/pages/ManageProject.jsx:754"
+    "src/community/pages/ManageProject.jsx:756"
   ],
   "Open in editor to manage products": [
-    "src/community/pages/ManageProject.jsx:758"
+    "src/community/pages/ManageProject.jsx:760"
   ],
   "Original creator share": [
-    "src/community/pages/ManageProject.jsx:763"
+    "src/community/pages/ManageProject.jsx:765"
   ],
   "Share in percent": [
-    "src/community/pages/ManageProject.jsx:766"
-  ],
-  "Percentage of each in-game product sale paid to the original project.": [
     "src/community/pages/ManageProject.jsx:768"
   ],
+  "Percentage of each in-game product sale paid to the original project.": [
+    "src/community/pages/ManageProject.jsx:770"
+  ],
   "Save share": [
-    "src/community/pages/ManageProject.jsx:772"
+    "src/community/pages/ManageProject.jsx:774"
   ],
   "Move the project to an organisation or transfer it to someone else.": [
-    "src/community/pages/ManageProject.jsx:782"
-  ],
-  "Move this project": [
     "src/community/pages/ManageProject.jsx:784"
   ],
+  "Move this project": [
+    "src/community/pages/ManageProject.jsx:786"
+  ],
   "Move to an organisation": [
-    "src/community/pages/ManageProject.jsx:784",
+    "src/community/pages/ManageProject.jsx:786",
     "src/community/pages/ManageSpace.jsx:668"
   ],
   "Move it to another organisation you publish for, or back to your account.": [
-    "src/community/pages/ManageProject.jsx:784",
+    "src/community/pages/ManageProject.jsx:786",
     "src/community/pages/ManageSpace.jsx:668"
   ],
   "Members of the organisation who can publish for it will manage this project with you.": [
-    "src/community/pages/ManageProject.jsx:784"
+    "src/community/pages/ManageProject.jsx:786"
   ],
   "Transfer project": [
-    "src/community/pages/ManageProject.jsx:788"
-  ],
-  "The new owner gets the project. You will lose owner access.": [
-    "src/community/pages/ManageProject.jsx:788"
-  ],
-  "New owner username": [
     "src/community/pages/ManageProject.jsx:790"
   ],
-  "Review player feedback and recent runtime health.": [
-    "src/community/pages/ManageProject.jsx:799",
-    "src/community/pages/ManageProject.jsx:834"
+  "The new owner gets the project. You will lose owner access.": [
+    "src/community/pages/ManageProject.jsx:790"
   ],
-  "Diagnostics": [
+  "New owner username": [
+    "src/community/pages/ManageProject.jsx:792"
+  ],
+  "Review player feedback and recent runtime health.": [
     "src/community/pages/ManageProject.jsx:801",
     "src/community/pages/ManageProject.jsx:836"
   ],
+  "Diagnostics": [
+    "src/community/pages/ManageProject.jsx:803",
+    "src/community/pages/ManageProject.jsx:838"
+  ],
   "Activity sections": [
-    "src/community/pages/ManageProject.jsx:807",
-    "src/community/pages/ManageProject.jsx:842"
+    "src/community/pages/ManageProject.jsx:809",
+    "src/community/pages/ManageProject.jsx:844"
   ],
   "Player diagnostics": [
-    "src/community/pages/ManageProject.jsx:810"
+    "src/community/pages/ManageProject.jsx:812"
   ],
   "Anonymous runtime events from the most recent 500 sessions.": [
-    "src/community/pages/ManageProject.jsx:810"
+    "src/community/pages/ManageProject.jsx:812"
   ],
   "Loads": [
-    "src/community/pages/ManageProject.jsx:813",
+    "src/community/pages/ManageProject.jsx:815",
     "src/community/pages/admin/StatsOverview.jsx:484",
     "src/community/pages/admin/StatsOverview.jsx:527"
   ],
   "Green flags": [
-    "src/community/pages/ManageProject.jsx:814"
-  ],
-  "{value1} ms": [
     "src/community/pages/ManageProject.jsx:816"
   ],
+  "{value1} ms": [
+    "src/community/pages/ManageProject.jsx:818"
+  ],
   "Average load": [
-    "src/community/pages/ManageProject.jsx:816",
+    "src/community/pages/ManageProject.jsx:818",
     "src/community/pages/admin/StatsOverview.jsx:527"
   ],
   "Loading diagnostics…": [
-    "src/community/pages/ManageProject.jsx:820"
+    "src/community/pages/ManageProject.jsx:822"
   ],
   "Recent errors": [
-    "src/community/pages/ManageProject.jsx:824"
+    "src/community/pages/ManageProject.jsx:826"
   ],
   "Tracked feedback": [
-    "src/community/pages/ManageProject.jsx:845"
+    "src/community/pages/ManageProject.jsx:847"
   ],
   "Loading feedback…": [
-    "src/community/pages/ManageProject.jsx:846"
+    "src/community/pages/ManageProject.jsx:848"
   ],
   "No feedback yet": [
-    "src/community/pages/ManageProject.jsx:849"
+    "src/community/pages/ManageProject.jsx:851"
   ],
   "Feedback players send from inside the project will show up here.": [
-    "src/community/pages/ManageProject.jsx:850"
+    "src/community/pages/ManageProject.jsx:852"
   ],
   "Working": [
-    "src/community/pages/ManageProject.jsx:863"
-  ],
-  "Dismissed": [
     "src/community/pages/ManageProject.jsx:865"
   ],
+  "Dismissed": [
+    "src/community/pages/ManageProject.jsx:867"
+  ],
   "Manage project access and funded work.": [
-    "src/community/pages/ManageProject.jsx:877",
-    "src/community/pages/ManageProject.jsx:991"
+    "src/community/pages/ManageProject.jsx:879",
+    "src/community/pages/ManageProject.jsx:993"
   ],
   "Collaboration sections": [
-    "src/community/pages/ManageProject.jsx:885",
-    "src/community/pages/ManageProject.jsx:999"
+    "src/community/pages/ManageProject.jsx:887",
+    "src/community/pages/ManageProject.jsx:1001"
   ],
   "Project team": [
-    "src/community/pages/ManageProject.jsx:891"
+    "src/community/pages/ManageProject.jsx:893"
   ],
   "Give other people access without sharing your account.": [
-    "src/community/pages/ManageProject.jsx:892"
+    "src/community/pages/ManageProject.jsx:894"
   ],
   "Add teammate": [
-    "src/community/pages/ManageProject.jsx:901"
+    "src/community/pages/ManageProject.jsx:903"
   ],
   "Sale share": [
-    "src/community/pages/ManageProject.jsx:938"
+    "src/community/pages/ManageProject.jsx:940"
   ],
   "No teammates yet": [
-    "src/community/pages/ManageProject.jsx:972"
+    "src/community/pages/ManageProject.jsx:974"
   ],
   "Add someone when you are ready to work together.": [
-    "src/community/pages/ManageProject.jsx:973"
+    "src/community/pages/ManageProject.jsx:975"
   ],
   "Save team": [
-    "src/community/pages/ManageProject.jsx:984"
+    "src/community/pages/ManageProject.jsx:986"
   ],
   "Bounty cancelled and refunded.": [
-    "src/community/pages/ManageProject.jsx:1033"
+    "src/community/pages/ManageProject.jsx:1035"
   ],
   "Could not cancel the bounty.": [
-    "src/community/pages/ManageProject.jsx:1036"
+    "src/community/pages/ManageProject.jsx:1038"
   ],
   "Create a bounty": [
-    "src/community/pages/ManageProject.jsx:1045"
-  ],
-  "New bounties are paused while MistWarp moves payments to Rotur. Bounties already funded still pay out when you merge a linked pull request, and you can cancel them for a refund.": [
     "src/community/pages/ManageProject.jsx:1047"
   ],
+  "New bounties are paused while MistWarp moves payments to Rotur. Bounties already funded still pay out when you merge a linked pull request, and you can cancel them for a refund.": [
+    "src/community/pages/ManageProject.jsx:1049"
+  ],
   "Project bounties": [
-    "src/community/pages/ManageProject.jsx:1052"
+    "src/community/pages/ManageProject.jsx:1054"
   ],
   "No bounties yet": [
-    "src/community/pages/ManageProject.jsx:1067"
+    "src/community/pages/ManageProject.jsx:1069"
   ],
   "Curators": [
     "src/community/pages/ManageSpace.jsx:35",
@@ -7411,7 +7411,7 @@
   "Who picks the winner?": [
     "src/community/pages/ManageSpace.jsx:709",
     "src/community/pages/ManageSpace.jsx:714",
-    "src/community/pages/Spaces.jsx:315"
+    "src/community/pages/Spaces.jsx:320"
   ],
   "Results are published, so this can no longer change.": [
     "src/community/pages/ManageSpace.jsx:710"
@@ -7421,11 +7421,11 @@
   ],
   "Invited judges score each entry from 1 to 10 against your criteria.": [
     "src/community/pages/ManageSpace.jsx:719",
-    "src/community/pages/Spaces.jsx:320"
+    "src/community/pages/Spaces.jsx:325"
   ],
   "Anyone signed in rates entries from 1 to 5 stars. The highest average wins. No judges needed.": [
     "src/community/pages/ManageSpace.jsx:724",
-    "src/community/pages/Spaces.jsx:325"
+    "src/community/pages/Spaces.jsx:330"
   ],
   "Scoring criteria": [
     "src/community/pages/ManageSpace.jsx:733"
@@ -8891,7 +8891,7 @@
   ],
   "Type": [
     "src/community/pages/Roadmap.jsx:486",
-    "src/community/pages/Spaces.jsx:277"
+    "src/community/pages/Spaces.jsx:282"
   ],
   "A clear summary": [
     "src/community/pages/Roadmap.jsx:494"
@@ -9032,14 +9032,14 @@
   ],
   "Could not load more spaces.": [
     "src/community/pages/Search.jsx:126",
-    "src/community/pages/Spaces.jsx:170"
+    "src/community/pages/Spaces.jsx:172"
   ],
   "Could not load people.": [
     "src/community/pages/Search.jsx:197"
   ],
   "Could not load spaces.": [
     "src/community/pages/Search.jsx:198",
-    "src/community/pages/Spaces.jsx:354"
+    "src/community/pages/Spaces.jsx:359"
   ],
   "Results for \"{value1}\"": [
     "src/community/pages/Search.jsx:246"
@@ -9413,58 +9413,58 @@
   ],
   "Your spaces": [
     "src/community/pages/Spaces.jsx:21",
-    "src/community/pages/Spaces.jsx:244"
+    "src/community/pages/Spaces.jsx:249"
   ],
   "You (@{username})": [
-    "src/community/pages/Spaces.jsx:124"
+    "src/community/pages/Spaces.jsx:126"
   ],
   "Enter a name for this space.": [
-    "src/community/pages/Spaces.jsx:209"
+    "src/community/pages/Spaces.jsx:214"
   ],
   "Submissions must close after they open.": [
-    "src/community/pages/Spaces.jsx:213"
+    "src/community/pages/Spaces.jsx:218"
   ],
   "Could not create the space.": [
-    "src/community/pages/Spaces.jsx:229"
+    "src/community/pages/Spaces.jsx:234"
   ],
   "Spaces you own, curate, follow, or have been invited to.": [
-    "src/community/pages/Spaces.jsx:241"
+    "src/community/pages/Spaces.jsx:246"
   ],
   "New space": [
-    "src/community/pages/Spaces.jsx:250"
+    "src/community/pages/Spaces.jsx:255"
   ],
   "Search your spaces": [
-    "src/community/pages/Spaces.jsx:255"
+    "src/community/pages/Spaces.jsx:260"
   ],
   "Search spaces": [
-    "src/community/pages/Spaces.jsx:255"
+    "src/community/pages/Spaces.jsx:260"
   ],
   "Create a space": [
-    "src/community/pages/Spaces.jsx:267"
+    "src/community/pages/Spaces.jsx:272"
   ],
   "What is it for?": [
-    "src/community/pages/Spaces.jsx:273"
+    "src/community/pages/Spaces.jsx:278"
   ],
   "You can't publish for @{org}, so this space will be yours.": [
-    "src/community/pages/Spaces.jsx:331"
+    "src/community/pages/Spaces.jsx:336"
   ],
   "Could not load your organisations, so creating this for @{org} may be refused.": [
-    "src/community/pages/Spaces.jsx:334"
+    "src/community/pages/Spaces.jsx:339"
   ],
   "Loading spaces…": [
-    "src/community/pages/Spaces.jsx:350"
+    "src/community/pages/Spaces.jsx:355"
   ],
   "Sign in to see your spaces": [
-    "src/community/pages/Spaces.jsx:356"
-  ],
-  "Sign in to see spaces you own, curate, follow, or have been invited to.": [
-    "src/community/pages/Spaces.jsx:357"
-  ],
-  "No spaces here yet": [
     "src/community/pages/Spaces.jsx:361"
   ],
-  "Create a space to get started.": [
+  "Sign in to see spaces you own, curate, follow, or have been invited to.": [
     "src/community/pages/Spaces.jsx:362"
+  ],
+  "No spaces here yet": [
+    "src/community/pages/Spaces.jsx:366"
+  ],
+  "Create a space to get started.": [
+    "src/community/pages/Spaces.jsx:367"
   ],
   "Could not load platform stats.": [
     "src/community/pages/Stats.jsx:27"

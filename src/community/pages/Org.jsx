@@ -184,7 +184,7 @@ const Org = ({name}) => {
                     <div {...tabPanelProps('org', activeTab)}>
                         {activeTab === 'projects' ? (
                             <section className={styles.contentSection}>
-                                <SectionHeading icon={FolderKanban} title={communityText('Projects by {org}', {org: title})} lead={manager ? communityText('Move one of your projects here from its Ownership settings.') : null} />
+                                <SectionHeading icon={FolderKanban} title={communityText('Projects by {org}', {org: title})} lead={manager ? <Link to="/mystuff?section=projects">{communityText('Move one of your projects here from its Ownership settings.')}</Link> : null} />
                                 {projects.length ? <CardGrid>{projects.map(project => <ProjectCard key={project.id} project={project} />)}</CardGrid> : <EmptyState icon={FolderKanban} title={communityText('No projects yet')}>{communityText('Projects this organisation owns will appear here.')}</EmptyState>}
                             </section>
                         ) : null}

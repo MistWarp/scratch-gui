@@ -86,9 +86,11 @@ const spaceCreatePayload = form => ({
 });
 
 const spaceOwnerField = ({org, orgs, loaded, failed}) => {
-    const offered = !org || orgs.some(choice => choice.username.toLowerCase() === org.toLowerCase());
+    const match = org ? orgs.find(choice => choice.username.toLowerCase() === org.toLowerCase()) : null;
+    const offered = !org || Boolean(match);
     const settled = loaded && !failed;
     return {
+        canonical: match && match.username !== org ? match.username : '',
         pending: settled ? '' : org,
         drop: settled && !offered,
         unverified: loaded && failed && Boolean(org)
@@ -186,6 +188,9 @@ const Spaces = () => {
     useEffect(() => {
         if (!creating) setError('');
     }, [creating]);
+    useEffect(() => {
+        if (ownerField.canonical) setForm(current => ({...current, org: ownerField.canonical}));
+    }, [ownerField.canonical]);
     useEffect(() => {
         if (!ownerField.drop) return;
         setDroppedOrg(form.org);

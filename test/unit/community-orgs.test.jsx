@@ -244,5 +244,16 @@ describe('Rotur orgs on MistWarp', () => {
         expect(failed.text()).toContain('Could not load your organisations.');
         failed.find('button').simulate('click');
         expect(onRetry).toHaveBeenCalled();
+        const ownedFailed = mount(<OrgMoveRow
+            orgs={[]}
+            owner="studio"
+            self="ada"
+            ownedByOrg
+            failed
+            onMove={onMove}
+            onRetry={onRetry}
+        />);
+        expect(ownedFailed.text()).toContain('Could not load your organisations.');
+        expect(ownedFailed.find('option').map(node => node.prop('value'))).toEqual(['', 'ada']);
     });
 });

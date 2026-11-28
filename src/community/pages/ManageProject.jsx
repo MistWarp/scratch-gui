@@ -175,6 +175,7 @@ const ManageProject = () => {
     const [transferOwner, setTransferOwner] = useState('');
     const [transferBusy, setTransferBusy] = useState(false);
     const [transferConfirm, setTransferConfirm] = useState('');
+    const [transferConfirmKind, setTransferConfirmKind] = useState('person');
     const [transferError, setTransferError] = useState('');
     const [perks, setPerks] = useState(null);
     const actionLocks = useRef(new Set());
@@ -357,6 +358,7 @@ const ManageProject = () => {
     const confirmProjectTransfer = nextOwner => {
         if (!nextOwner || transferBusy) return;
         setTransferError('');
+        setTransferConfirmKind(transferKind({project, nextOwner, viewerName, orgs: publishOrgs}));
         setTransferConfirm(nextOwner);
     };
 
@@ -490,7 +492,7 @@ const ManageProject = () => {
         return true;
     });
     const activeSection = section;
-    const transferKindNow = transferKind({project, nextOwner: transferConfirm, viewerName, orgs: publishOrgs});
+    const transferKindNow = transferConfirmKind;
     const transferDetails = transferConfirm ? projectTransferConfirmation(project, transferConfirm, transferKindNow) : null;
 
     return (
@@ -777,7 +779,7 @@ const ManageProject = () => {
                         </div>
                     ) : null}
 
-                    {activeSection === 'ownership' ? (
+                    {activeSection === 'ownership' && project.myRole === 'owner' ? (
                         <div className={styles.stack}>
                             <PageHeading icon={UserCog} title={communityText('Ownership')} description={communityText('Move the project to an organisation or transfer it to someone else.')} />
                             <div className={styles.card}>

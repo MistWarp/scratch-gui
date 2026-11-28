@@ -45,11 +45,12 @@ describe('Spaces browsing and creation', () => {
 
     test('an org asked for in the link is only dropped once the org list says it is not offered', () => {
         const orgs = [{username: 'Studio'}];
-        expect(spaceOwnerField({org: 'studio', orgs, loaded: true, failed: false})).toEqual({pending: '', drop: false, unverified: false});
-        expect(spaceOwnerField({org: 'bank', orgs, loaded: true, failed: false})).toEqual({pending: '', drop: true, unverified: false});
-        expect(spaceOwnerField({org: 'bank', orgs: [], loaded: false, failed: false})).toEqual({pending: 'bank', drop: false, unverified: false});
-        expect(spaceOwnerField({org: 'bank', orgs: [], loaded: true, failed: true})).toEqual({pending: 'bank', drop: false, unverified: true});
-        expect(spaceOwnerField({org: '', orgs: [], loaded: true, failed: true})).toEqual({pending: '', drop: false, unverified: false});
+        expect(spaceOwnerField({org: 'Studio', orgs, loaded: true, failed: false})).toEqual({canonical: '', pending: '', drop: false, unverified: false});
+        expect(spaceOwnerField({org: 'studio', orgs, loaded: true, failed: false})).toEqual({canonical: 'Studio', pending: '', drop: false, unverified: false});
+        expect(spaceOwnerField({org: 'bank', orgs, loaded: true, failed: false})).toEqual({canonical: '', pending: '', drop: true, unverified: false});
+        expect(spaceOwnerField({org: 'bank', orgs: [], loaded: false, failed: false})).toEqual({canonical: '', pending: 'bank', drop: false, unverified: false});
+        expect(spaceOwnerField({org: 'bank', orgs: [], loaded: true, failed: true})).toEqual({canonical: '', pending: 'bank', drop: false, unverified: true});
+        expect(spaceOwnerField({org: '', orgs: [], loaded: true, failed: true})).toEqual({canonical: '', pending: '', drop: false, unverified: false});
     });
 
     test('an org-owned space is created with its org', () => {

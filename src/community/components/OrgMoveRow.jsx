@@ -33,16 +33,15 @@ const OrgMoveRow = ({orgs, owner, self, ownedByOrg, loaded, failed, disabled, on
         if (choice && !choiceStillOffered) setChoice('');
     }, [choice, choiceStillOffered]);
     if (!loaded) return <p className={styles.hint}>{communityText('Loading your organisations…')}</p>;
-    if (failed && !choices.length) {
-        return (
-            <p className={styles.hint}>
-                {communityText('Could not load your organisations.')}{' '}
-                {onRetry ? (
-                    <Button variant="secondary" size="small" onClick={onRetry}>{communityText('Try again')}</Button>
-                ) : null}
-            </p>
-        );
-    }
+    const failedHint = failed ? (
+        <p className={styles.hint}>
+            {communityText('Could not load your organisations.')}{' '}
+            {onRetry ? (
+                <Button variant="secondary" size="small" onClick={onRetry}>{communityText('Try again')}</Button>
+            ) : null}
+        </p>
+    ) : null;
+    if (failed && !choices.length) return failedHint;
     if (!choices.length) {
         return (
             <p className={styles.hint}>
@@ -57,20 +56,23 @@ const OrgMoveRow = ({orgs, owner, self, ownedByOrg, loaded, failed, disabled, on
     }
     const move = () => onMove(choice);
     return (
-        <div className={className}>
-            <select
-                value={choiceStillOffered ? choice : ''}
-                disabled={disabled}
-                aria-label={communityText('Move to')}
-                onChange={event => setChoice(event.target.value)}
-            >
-                <option value="">{communityText('Choose where to move it')}</option>
-                {choices.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
-            <Button variant="secondary" disabled={!choiceStillOffered || !choice || disabled} onClick={move}>
-                <Building2 size={16} />{communityText('Move')}
-            </Button>
-        </div>
+        <>
+            {failedHint}
+            <div className={className}>
+                <select
+                    value={choiceStillOffered ? choice : ''}
+                    disabled={disabled}
+                    aria-label={communityText('Move to')}
+                    onChange={event => setChoice(event.target.value)}
+                >
+                    <option value="">{communityText('Choose where to move it')}</option>
+                    {choices.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+                <Button variant="secondary" disabled={!choiceStillOffered || !choice || disabled} onClick={move}>
+                    <Building2 size={16} />{communityText('Move')}
+                </Button>
+            </div>
+        </>
     );
 };
 
