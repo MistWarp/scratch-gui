@@ -120,7 +120,7 @@ const Spaces = () => {
     const [form, setForm] = useState({title: '', description: '', kind: createKind, visibility: 'public', startsAt: '', endsAt: '', votingMode: 'judges', org: requestedOrg});
     const [error, setError] = useState('');
     const [droppedOrg, setDroppedOrg] = useState('');
-    const {orgs: publishOrgs, loaded: orgsLoaded, failed: orgsFailed} = usePublishableOrgs(viewerName);
+    const {orgs: publishOrgs, loaded: orgsLoaded, failed: orgsFailed, retry: retryOrgs} = usePublishableOrgs(viewerName);
     const ownerField = spaceOwnerField({org: form.org, orgs: publishOrgs, loaded: orgsLoaded && Boolean(viewerName), failed: orgsFailed});
     const ownerChoices = viewerName ? ownerOptions({
         selfLabel: communityText('You (@{username})', {username: viewerName}),
@@ -335,12 +335,18 @@ const Spaces = () => {
                     {droppedOrg && !form.org ? (
                         <Notice variant="warning">{communityText('You can\'t publish for @{org}, so this space will be yours.', {org: droppedOrg})}</Notice>
                     ) : null}
+                    {viewerName && orgsFailed && !form.org ? (
+                        <Notice
+                            variant="warning"
+                            action={<Button variant="secondary" size="small" type="button" onClick={retryOrgs}>{communityText('Try again')}</Button>}
+                        >{communityText('Could not load your organisations, so this space will be yours.')}</Notice>
+                    ) : null}
                     {ownerField.unverified ? (
                         <Notice variant="warning">{communityText('Could not load your organisations, so creating this for @{org} may be refused.', {org: form.org})}</Notice>
                     ) : null}
                     {error ? <Notice variant="error">{error}</Notice> : null}
                     <div className={styles.actions}>
-                        <Button variant="primary" type="submit" busy={createBusy} busyLabel={communityText('Creating…')}><Plus size={16} />{communityText('Create')}</Button>
+                        <Button variant="primary" type="submit" busy={createBusy} disabled={Boolean(viewerName) && !orgsLoaded} busyLabel={communityText('Creating…')}><Plus size={16} />{communityText('Create')}</Button>
                         <Button variant="secondary" type="button" disabled={createBusy} onClick={() => setSearchParams(withSpaceCreate(searchParams, false))}>{communityText('Cancel')}</Button>
                     </div>
                 </form>

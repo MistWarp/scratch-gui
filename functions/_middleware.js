@@ -308,8 +308,10 @@ const ownedByOrg = data => (data.projects || []).some(project => project && proj
 
 const userMeta = async (name, suffix) => {
     const data = await apiJson(`/users/${encodeURIComponent(name)}`);
-    if (!data || data.exists !== true || (!suffix && ownedByOrg(data))) {
-        return (!suffix && await orgMeta(name)) || {
+    const org = (!data || data.exists !== true || ownedByOrg(data)) && !suffix ? await orgMeta(name) : null;
+    if (org) return org;
+    if (!data || data.exists !== true) {
+        return {
             title: 'Profile - MistWarp',
             description: 'View this MistWarp profile.'
         };

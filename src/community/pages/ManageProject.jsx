@@ -78,7 +78,9 @@ const projectTransferConfirmation = (project, nextOwner, kind = 'person') => {
     }
     return {
         title: formatCommunityMessage('Transfer project?'),
-        body: formatCommunityMessage('Transfer "{project}" to @{owner}? You will lose owner access.', values),
+        body: isOrgOwned(project) ?
+            formatCommunityMessage('Transfer "{project}" to @{owner}? The organisation will no longer own it.', values) :
+            formatCommunityMessage('Transfer "{project}" to @{owner}? You will lose owner access.', values),
         action: formatCommunityMessage('Transfer to @{owner}', values)
     };
 };
@@ -493,6 +495,7 @@ const ManageProject = () => {
     });
     const activeSection = section;
     const transferKindNow = transferConfirmKind;
+    const movable = !isOrgOwned(project) || project.canMoveOut === true;
     const transferDetails = transferConfirm ? projectTransferConfirmation(project, transferConfirm, transferKindNow) : null;
 
     return (
@@ -783,16 +786,22 @@ const ManageProject = () => {
                         <div className={styles.stack}>
                             <PageHeading icon={UserCog} title={communityText('Ownership')} description={communityText('Move the project to an organisation or transfer it to someone else.')} />
                             <div className={styles.card}>
-                                <SectionHeading as="h3" icon={Building2} title={isOrgOwned(project) ? communityText('Move this project') : communityText('Move to an organisation')} lead={isOrgOwned(project) ? communityText('Move it to another organisation you publish for, or back to your account.') : communityText('Members of the organisation who can publish for it will manage this project with you.')} />
-                                <OrgMoveRow className={styles.transferAction} orgs={publishOrgs} owner={project.owner} self={viewerName} ownedByOrg={isOrgOwned(project)} loaded={orgsLoaded} failed={orgsFailed} disabled={transferBusy} onMove={confirmProjectTransfer} onRetry={retryOrgs} />
+                                {movable ? (
+                                    <>
+                                        <SectionHeading as="h3" icon={Building2} title={isOrgOwned(project) ? communityText('Move this project') : communityText('Move to an organisation')} lead={isOrgOwned(project) ? communityText('Move it to another organisation you publish for, or back to your account.') : communityText('Members of the organisation who can publish for it will manage this project with you.')} />
+                                        <OrgMoveRow className={styles.transferAction} orgs={publishOrgs} owner={project.owner} self={viewerName} ownedByOrg={isOrgOwned(project)} loaded={orgsLoaded} failed={orgsFailed} disabled={transferBusy} onMove={confirmProjectTransfer} onRetry={retryOrgs} />
+                                    </>
+                                ) : (
+                                    <SectionHeading as="h3" icon={Building2} title={communityText('Move this project')} lead={communityText('Only an admin of @{org} can move this project out of the organisation.', {org: project.owner})} />
+                                )}
                             </div>
-                            <div className={`${styles.card} ${styles.dangerCard}`}>
-                                <SectionHeading as="h3" icon={UserCog} title={communityText('Transfer project')} lead={communityText('The new owner gets the project. You will lose owner access.')} />
+                            {movable ? <div className={`${styles.card} ${styles.dangerCard}`}>
+                                <SectionHeading as="h3" icon={UserCog} title={communityText('Transfer project')} lead={isOrgOwned(project) ? communityText('The new owner gets the project. The organisation will no longer own it.') : communityText('The new owner gets the project. You will lose owner access.')} />
                                 <div className={styles.transferAction}>
                                     <input disabled={transferBusy} value={transferOwner} placeholder={communityText('Rotur username')} aria-label={communityText('New owner username')} onChange={event => setTransferOwner(event.target.value)} />
                                     <Button variant="danger" disabled={!transferOwner.trim() || transferBusy} onClick={requestProjectTransfer}>{communityText('Transfer')}</Button>
                                 </div>
-                            </div>
+                            </div> : null}
                         </div>
                     ) : null}
 

@@ -39,6 +39,8 @@ describe('ManageProject navigation', () => {
             body: 'Transfer "Orbit" to @Alex? You will lose owner access.',
             action: 'Transfer to @Alex'
         });
+        expect(projectTransferConfirmation({title: 'Orbit', ownerType: 'org'}, 'Alex').body)
+            .toBe('Transfer "Orbit" to @Alex? The organisation will no longer own it.');
     });
 
     test('moving a project into or out of an organisation is not a hand-off', () => {
