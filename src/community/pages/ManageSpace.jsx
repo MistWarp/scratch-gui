@@ -177,9 +177,9 @@ const ManageSpace = () => {
     const requestedSection = searchParams.get('section');
     const {user, loading, login} = useUser();
     const viewerName = (user && user.username) || '';
-    const {orgs: publishOrgs, loaded: orgsLoaded, failed: orgsFailed, retry: retryOrgs} = usePublishableOrgs(viewerName);
     const loadContext = `${id}\u0000${viewerName}`;
     const [space, setSpace] = useState(null);
+    const {orgs: publishOrgs, loaded: orgsLoaded, failed: orgsFailed, retry: retryOrgs} = usePublishableOrgs(space && space.isOwner ? viewerName : '');
     const [spaceLoadContext, setSpaceLoadContext] = useState('');
     const [form, setForm] = useState(null);
     const [active, setActive] = useState('general');

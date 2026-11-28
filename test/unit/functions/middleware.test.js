@@ -908,6 +908,14 @@ describe('space, org, news and theme pages', () => {
         expect(next).not.toHaveBeenCalled();
     });
 
+    test.each([
+        ['/orgs/studio', 'https://mistwarp.org/users/studio'],
+        ['/groups/cats', 'https://mistwarp.org/explore']
+    ])('the old %s page on the editor host goes to %s in one hop', async (path, location) => {
+        const {result} = await run(path, {origin: 'https://editor.mistwarp.org'});
+        expect(result.headers.get('location')).toBe(location);
+    });
+
     test('news item', async () => {
         stubApi({[`${API}/news/n1`]: {item: {title: 'Release', body: 'New\nthings'}}});
         const meta = await renderPath('/news/n1');

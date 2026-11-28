@@ -236,7 +236,7 @@ const Org = ({name}) => {
                             ) : null}
                             <div className={styles.externalLinks}>
                                 <a href={roturPage} target="_blank" rel="noopener noreferrer"><ExternalLink size={15} />{communityText('View on rotur.dev')}</a>
-                                {data.isMember ? <a href={roturSettings} target="_blank" rel="noopener noreferrer"><Settings size={15} />{communityText('Manage organisation')}</a> : null}
+                                {data.canManage ? <a href={roturSettings} target="_blank" rel="noopener noreferrer"><Settings size={15} />{communityText('Manage organisation')}</a> : null}
                             </div>
                         </div>
                     </section>

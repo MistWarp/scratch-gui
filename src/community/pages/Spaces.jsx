@@ -120,7 +120,7 @@ const Spaces = () => {
     const [form, setForm] = useState({title: '', description: '', kind: createKind, visibility: 'public', startsAt: '', endsAt: '', votingMode: 'judges', org: requestedOrg});
     const [error, setError] = useState('');
     const [droppedOrg, setDroppedOrg] = useState('');
-    const {orgs: publishOrgs, loaded: orgsLoaded, failed: orgsFailed, retry: retryOrgs} = usePublishableOrgs(viewerName);
+    const {orgs: publishOrgs, loaded: orgsLoaded, failed: orgsFailed, retry: retryOrgs} = usePublishableOrgs(creating ? viewerName : '');
     const ownerField = spaceOwnerField({org: form.org, orgs: publishOrgs, loaded: orgsLoaded && Boolean(viewerName), failed: orgsFailed});
     const ownerChoices = viewerName ? ownerOptions({
         selfLabel: communityText('You (@{username})', {username: viewerName}),

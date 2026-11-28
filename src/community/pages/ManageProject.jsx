@@ -151,9 +151,9 @@ const ManageProject = () => {
     const requestedSection = searchParams.get('section');
     const {user, loading, login} = useUser();
     const viewerName = (user && user.username) || '';
-    const {orgs: publishOrgs, loaded: orgsLoaded, failed: orgsFailed, retry: retryOrgs} = usePublishableOrgs(viewerName);
     const loadContext = `${id}\u0000${viewerName}`;
     const [project, setProject] = useState(null);
+    const {orgs: publishOrgs, loaded: orgsLoaded, failed: orgsFailed, retry: retryOrgs} = usePublishableOrgs(project && project.myRole === 'owner' ? viewerName : '');
     const [projectLoadContext, setProjectLoadContext] = useState('');
     const [error, setError] = useState(null);
     const [errorLoadContext, setErrorLoadContext] = useState('');

@@ -448,6 +448,15 @@ const legacyEmbedRedirect = url => {
     return permanent(`${url.origin}/embed${url.search}#${/^\d+$/.test(id) ? id : `mw-${id}`}`);
 };
 
+const ORG_PAGE = /^\/orgs\/([^/]+)$/;
+const GROUP_PAGE = /^\/groups(?:\/[^/]+)?$/;
+
+const renamedPagePath = path => {
+    const org = path.match(ORG_PAGE);
+    if (org) return `/users/${org[1]}`;
+    return GROUP_PAGE.test(path) ? '/explore' : path;
+};
+
 const editorHostRoute = url => {
     const path = pagePath(url.pathname);
     if (path === '/' || path === '/editor') {
@@ -459,16 +468,7 @@ const editorHostRoute = url => {
         return project ? {asset: PROJECT_PAGE_ASSETS[project[1]] || '/player'} : {asset: null};
     }
     if (isFilePath(url.pathname)) return {asset: null};
-    return {redirect: `${ACCOUNT_ORIGIN}${path}${url.search}`};
-};
-
-const ORG_PAGE = /^\/orgs\/([^/]+)$/;
-const GROUP_PAGE = /^\/groups(?:\/[^/]+)?$/;
-
-const renamedPagePath = path => {
-    const org = path.match(ORG_PAGE);
-    if (org) return `/users/${org[1]}`;
-    return GROUP_PAGE.test(path) ? '/explore' : path;
+    return {redirect: `${ACCOUNT_ORIGIN}${renamedPagePath(path)}${url.search}`};
 };
 
 const accountHostRoute = url => {
